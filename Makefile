@@ -1,23 +1,28 @@
-libname := libwally
+libname := wally
 
 src := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 
 bld := $(src)bld/
 
-srcs := \
+ccan_srcs := \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c
 
+lib_srcs := \
+    wordlist.c
+
+srcs := $(ccan_srcs) $(lib_srcs)
+
 objs := $(srcs:%.c=$(bld)%.o)
 
-CFLAGS ?= -O2 -g -Wall
-CFLAGS += -fPIC -I $(bld) -I ccan/
+override CFLAGS ?= -g -Wall -W -Wno-missing-field-initializers
+override CFLAGS += -fPIC -I $(bld) -I ccan/ -I .
 
 .PHONY: all clean
 all::;
 
 clean:
-	-rm -r $(bld)
+	-rm -rf $(bld)
 
 $(bld)config.h: $(bld)ccan/tools/configurator/configurator
 	$< > $@
@@ -30,7 +35,7 @@ $(bld)%.o: %.c $(bld)config.h
 	@-mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-shared_lib := $(bld)$(libname).so
+shared_lib := $(bld)lib$(libname).so
 $(shared_lib): $(objs)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ $(objs) $(LDLIBS)
 
