@@ -543,8 +543,7 @@ static bool run_test(const char *cmd, struct test *test)
 	fclose(outf);
 
 	if (verbose > 1)
-		if (system("cat " INPUT_FILE) == -1)
-			;
+		(void)system("cat " INPUT_FILE);
 
 	newcmd = strdup(cmd);
 
