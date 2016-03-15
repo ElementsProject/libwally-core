@@ -17,7 +17,7 @@ CFLAGS += -fPIC -I $(bld) -I ccan/
 all::;
 
 clean:
-	@rm -r $(bld)
+	-rm -r $(bld)
 
 $(bld)config.h: $(bld)ccan/tools/configurator/configurator
 	$< > $@
