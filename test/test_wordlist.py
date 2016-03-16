@@ -1,31 +1,20 @@
-#!/bin/env python
 import unittest
+import util
 from ctypes import *
-
-lib = CDLL('bld/libwally.so')
 
 class Wordlist:
 
     def __init__(self, words, sep):
-        def bind(name, res, args):
-            fn = getattr(lib, name)
-            fn.restype, fn.argtypes = res, args
-            return fn
 
-        self._init = bind('wordlist_init', c_void_p, [c_char_p, c_char])
-        self.wl = self._init(words, sep)
+        util.bind_all(self, util.wordlist_funcs)
 
-        self._word = bind('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p])
-        self.lookup_word = lambda word: self._word(self.wl, word)
-
-        self._index = bind('wordlist_lookup_index', c_char_p, [c_void_p, c_ulong])
-        self.lookup_index = lambda index: self._index(self.wl, index)
-
-        self._free = bind('wordlist_free', None, [c_void_p])
+        self.wl = self.wordlist_init(words, sep)
+        self.word = lambda w: self.wordlist_lookup_word(self.wl, w)
+        self.index = lambda i: self.wordlist_lookup_index(self.wl, i)
 
     def free(self):
         if self.is_valid():
-            self._free(self.wl)
+            self.wordlist_free(self.wl)
             self.wl = None
 
     def is_valid(self):
@@ -45,20 +34,22 @@ class WordlistTests(unittest.TestCase):
             self.words = ' '.join(self.words_list)
 
     def test_wordlist(self):
-        valid_lengths = [2, 4, 8, 16]
 
         for n in xrange(17):
+            # Build a wordlist of n words
             test_list = self.words_list[0 : n]
 
             wl = Wordlist(' '.join(test_list), ' ')
-            self.assertEqual(wl.is_valid(), n in valid_lengths)
+            self.assertTrue(wl.is_valid())
 
             if wl.is_valid():
                 for idx, word in enumerate(test_list):
-                    self.assertEqual(idx + 1, wl.lookup_word(word))
-                    self.assertEqual(wl.lookup_word(self.words_list[n + 1]), 0)
-                    self.assertEqual(wl.lookup_index(idx), word)
-                    self.assertIsNone(wl.lookup_index(n + 1))
+                    # Verify lookup by word and index
+                    self.assertEqual(idx + 1, wl.word(word))
+                    self.assertEqual(wl.word(self.words_list[n + 1]), 0)
+                    self.assertEqual(wl.index(idx), word)
+                    # Lookup of a non-present word
+                    self.assertIsNone(wl.index(n + 1))
 
             wl.free()
 

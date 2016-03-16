@@ -8,7 +8,7 @@
  * struct words- structure representing a parsed list of words
  */
 struct words {
-    /* Number of words in the list (2 ^ bits) */
+    /* Number of words in the list */
     size_t len;
     /* Number of bits representable by this word list */
     size_t bits;
@@ -21,13 +21,13 @@ struct words {
 /**
  * wordlist_init - Initialise a words structure.
  * @text: List of words to initialise from, split by single @sep characters
- *         and terminated by NUL. Must be UTF-8 encoded, sorted, and contain
- *         a power of two number of words.
- * @sep: The Non-NUL ASCII character separating words in @text.
+ *         and terminated by NUL. Must be UTF-8 encoded, and if you wish
+ *         to call wordlist_lookup_word() on it, sorted also.
+ * @sep: Word separator.
  *
  * The returned structure contains a copy of @text.
  */
-struct words *wordlist_init(const char *text, char sep);
+struct words *wordlist_init(const char *text, char sep); /* FIXME: utf-8 */
 
 /**
  * wordlist_lookup_word - Find a word in a wordlist.
@@ -35,6 +35,7 @@ struct words *wordlist_init(const char *text, char sep);
  * @word: The word to look up.
  *
  * Returns 0 if not found, index + 1 otherwise.
+ * @see wordlist_init.
  */
 size_t wordlist_lookup_word(const struct words *w, const char *word);
 
