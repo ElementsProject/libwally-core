@@ -9,6 +9,7 @@ ccan_srcs := \
     ccan/ccan/crypto/sha256/sha256.c
 
 lib_srcs := \
+    mnemonic.c \
     wordlist.c
 
 srcs := $(ccan_srcs) $(lib_srcs)
