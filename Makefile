@@ -15,6 +15,8 @@ srcs := $(ccan_srcs) $(lib_srcs)
 
 objs := $(srcs:%.c=$(bld)%.o)
 
+pytests := $(wildcard test/test_*.py)
+
 override CFLAGS ?= -g -Wall -W -Wno-missing-field-initializers
 override CFLAGS += -fPIC -I $(bld) -I ccan/ -I .
 
@@ -27,9 +29,9 @@ clean:
 $(bld)config.h: $(bld)ccan/tools/configurator/configurator
 	$< > $@
 
-$(bld)%: %.c
+$(bld)%.ok: %.py
 	@-mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $<
+	$< && touch $@
 
 $(bld)%.o: %.c $(bld)config.h
 	@-mkdir -p $(@D)
@@ -38,5 +40,8 @@ $(bld)%.o: %.c $(bld)config.h
 shared_lib := $(bld)lib$(libname).so
 $(shared_lib): $(objs)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ $(objs) $(LDLIBS)
+
+tests := $(pytests:%.py=$(bld)%.ok)
+test: $(shared_lib) $(tests)
 
 all:: $(shared_lib);
