@@ -33,6 +33,10 @@ $(bld)%.ok: %.py
 	@-mkdir -p $(@D)
 	$< && touch $@
 
+$(bld)%: %.c
+	@-mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $<
+
 $(bld)%.o: %.c $(bld)config.h
 	@-mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
