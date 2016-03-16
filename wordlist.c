@@ -13,6 +13,15 @@ inline static int is_power_of_two(size_t n)
     return n >= 2 && !(n & (n - 1));
 }
 
+/* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
+inline static int get_bits(size_t n)
+{
+    size_t bits = 0;
+    while (n >>= 1)
+        ++bits;
+    return bits;
+}
+
 /* Allocate a new words structure */
 static struct words *wordlist_alloc(const char* words, size_t len)
 {
@@ -21,6 +30,7 @@ static struct words *wordlist_alloc(const char* words, size_t len)
         w->str = strdup(words);
         if (w->str) {
             w->len = len;
+            w->bits = get_bits(len);
             w->indices = malloc(len * sizeof(const char*));
             if (w->indices)
                 return w;

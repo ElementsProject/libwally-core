@@ -8,8 +8,10 @@
  * struct words- structure representing a parsed list of words
  */
 struct words {
-    /* Number of words in the list */
+    /* Number of words in the list (2 ^ bits) */
     size_t len;
+    /* Number of bits representable by this word list */
+    size_t bits;
     /* The underlying string */
     const char* str;
    /* Pointers to the individual words */

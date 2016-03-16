@@ -2,8 +2,10 @@
 from __future__ import print_function
 import sys
 
+
 if __name__ == "__main__":
 
+    bits = { 2 ** x : x for x in range(12) } # Up to 4k words
     wordlist = sys.argv[1]
     struct_name = sys.argv[2]
     string_name = '%s_str' % struct_name
@@ -11,6 +13,9 @@ if __name__ == "__main__":
     with open(wordlist, 'r') as f:
 
         words = [l.strip() for l in f.readlines()]
+        assert len(words) >= 2
+        assert len(words) in bits
+
         lengths = [ 0 ];
         for w in words:
             lengths.append(lengths[-1] + len(w) + 1)
@@ -24,6 +29,7 @@ if __name__ == "__main__":
         print()
         print('const struct words %s = {' % struct_name)
         print('    {0},'.format(len(words)))
+        print('    {0},'.format(bits[len(words)]))
         print('    %s,' % string_name)
         print('    %s_idx' % string_name)
         print('};')
