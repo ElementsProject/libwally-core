@@ -18,6 +18,10 @@ class BIP39Tests(unittest.TestCase):
             util.bind_all(self, util.bip39_funcs)
 
 
+    def test_bip39_wordlists(self):
+        self.assertEqual(self.bip39_default_wordlist(),
+                         self.bip39_get_wordlist('en'))
+
     def test_bip39(self):
 
         wl = self.bip39_default_wordlist()
