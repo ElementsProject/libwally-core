@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
         lengths = [ 0 ];
         for w in words:
-            lengths.append(lengths[-1] + len(w) + 1)
+            lengths.append(lengths[-1] + len(w.encode('utf-8')) + 1)
         idxs = ['{0}+{1}'.format(string_name, n) for n in lengths]
 
         print('/* Generated file - do not edit! */')
