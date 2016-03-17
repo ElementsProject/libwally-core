@@ -22,7 +22,7 @@ const struct words *bip39_get_wordlist(const char* lang)
     if (!strcmp(lang, "it"))
         return &it_words;
 
-    return 0;
+    return NULL;
 }
 
 char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len)
@@ -39,12 +39,12 @@ char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, siz
     case BIP39_ENTROPY_LEN_256:
         break;
     default:
-        return 0;
+        return NULL;
     }
 
     {
         struct sha256 tmp;
-        sha256(&tmp, bytes, len);
+        sha256(&tmp, bytes, len); /* FIXME: Allow user to provide a SHA256 impl */
         checksum = tmp.u.u8[0];
     }
 
