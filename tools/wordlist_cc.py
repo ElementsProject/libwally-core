@@ -14,6 +14,7 @@ if __name__ == "__main__":
     with open(wordlist, 'r') as f:
 
         words = [l.strip() for l in f.readlines()]
+        is_sorted = sorted(words) == words
         assert len(words) >= 2
         assert len(words) in bits
 
@@ -45,6 +46,7 @@ if __name__ == "__main__":
         print('static const struct words %s = {' % struct_name)
         print('    {0},'.format(len(words)))
         print('    {0},'.format(bits[len(words)]))
+        print('    {0},'.format(str(is_sorted).lower()))
         print('    (const char *)%s_,' % string_name)
         print('    %s_i' % string_name)
         print('};')

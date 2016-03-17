@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /**
  * struct words- structure representing a parsed list of words
@@ -12,6 +13,8 @@ struct words {
     size_t len;
     /* Number of bits representable by this word list */
     size_t bits;
+    /* Is the word list sorted by unicode code point order? */
+    bool sorted;
     /* The underlying string */
     const char* str;
    /* Pointers to the individual words */

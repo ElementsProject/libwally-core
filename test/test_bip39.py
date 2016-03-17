@@ -39,9 +39,7 @@ class BIP39Tests(unittest.TestCase):
             word = self.wordlist_lookup_index(wl, i)
             self.assertEqual(word, words_list[i])
             idx = self.wordlist_lookup_word(wl, word)
-            # FIXME: Broken sue to word list sorting
-            #self.assertEqual(i, idx - 1)
-            #print(i, idx - 1, word)
+            self.assertEqual(i, idx - 1)
 
 
     def test_bip39(self):

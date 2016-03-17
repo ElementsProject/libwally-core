@@ -45,7 +45,7 @@ static size_t wordlist_count(const char *words, char sep)
 struct words *wordlist_init(const char *words, char sep)
 {
     struct words *w = 0;
-    size_t len = wordlist_count(words, sep);
+    size_t i, len = wordlist_count(words, sep);
 
     if ((w = wordlist_alloc(words, len))) {
        /* Tokenise the strings into w->indices */
@@ -59,16 +59,27 @@ struct words *wordlist_init(const char *words, char sep)
         }
     }
 
+    w->sorted = true;
+    for (i = 1; i < len && w->sorted; ++i)
+        if (strcmp(w->indices[i - 1], w->indices[i]) > 0)
+             w->sorted = false;
+
     return w;
 }
 
 size_t wordlist_lookup_word(const struct words *w, const char *word)
 {
     const size_t size = sizeof(const char*);
-    const char **found;
+    const char **found = NULL;
 
-    found = (const char **)bsearch(word, w->indices, w->len, size, bstrcmp);
-
+    if (w->sorted)
+        found = (const char **)bsearch(word, w->indices, w->len, size, bstrcmp);
+    else {
+        size_t i;
+        for (i = 0; i < w->len && !found; ++i)
+            if (!strcmp(word, w->indices[i]))
+                found = w->indices + i;
+    }
     return found ? found - w->indices + 1u : 0u;
 }
 

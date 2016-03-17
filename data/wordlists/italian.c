@@ -2401,6 +2401,7 @@ static const char *it_i[] = {
 static const struct words it_words = {
     2048,
     11,
+    true,
     (const char *)it_,
     it_i
 };
