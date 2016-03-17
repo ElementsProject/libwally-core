@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "data/wordlists/english.c"
+#include "data/wordlists/french.c"
+#include "data/wordlists/italian.c"
 
 const struct words *bip39_default_wordlist(void)
 {
@@ -15,6 +17,10 @@ const struct words *bip39_get_wordlist(const char* lang)
 {
     if (!strcmp(lang, "en"))
         return &en_words;
+    if (!strcmp(lang, "fr"))
+        return &en_words;
+    if (!strcmp(lang, "it"))
+        return &it_words;
 
     return 0;
 }

@@ -19,8 +19,13 @@ class BIP39Tests(unittest.TestCase):
 
 
     def test_bip39_wordlists(self):
+
+        for lang in ['en', 'fr', 'it']:
+            self.assertIsNotNone(self.bip39_get_wordlist(lang))
+
         self.assertEqual(self.bip39_default_wordlist(),
                          self.bip39_get_wordlist('en'))
+
 
     def test_bip39(self):
 

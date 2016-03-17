@@ -1,6 +1,8 @@
-#!/bin/env python
-from __future__ import print_function
+from binascii import b2a_hex
 import sys
+
+def as_hex(s):
+    return ','.join([hex(c) for c in s.encode('utf8')])
 
 if __name__ == "__main__":
 
@@ -24,22 +26,25 @@ if __name__ == "__main__":
         print('#include <wordlist.h>')
         print()
 
-        print('static const char %s[] =' % string_name)
-        grouped = [words[i : i + 6] for i in range(0, len(words), 6)]
-        for g in grouped:
-            print('    "%s\\0"' % ('\\0'.join(g)))
-        print('   ;')
+        print('static const uint8_t %s_[] = {' % string_name)
+        grouped = [words[i : i + 4] for i in range(0, len(words), 4)]
+        for w in words:
+            print('    %s,0,' % as_hex(w))
+        print('};')
+
+        print('#define %s ((const char*)%s_)' % (string_name, string_name))
 
         print('static const char *%s_i[] = {' % (string_name))
         grouped = [idxs[i : i + 6] for i in range(0, len(idxs), 6)]
         for g in grouped:
             print('    %s,' % (', '.join(g)))
         print('   };')
+        print('#undef %s' % string_name)
 
         print()
         print('static const struct words %s = {' % struct_name)
         print('    {0},'.format(len(words)))
         print('    {0},'.format(bits[len(words)]))
-        print('    %s,' % string_name)
+        print('    (const char *)%s_,' % string_name)
         print('    %s_i' % string_name)
         print('};')
