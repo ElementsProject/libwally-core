@@ -34,15 +34,15 @@ static struct words *wordlist_alloc(const char* words, size_t len)
     return NULL;
 }
 
-static size_t wordlist_count(const char *words, char sep)
+static size_t wordlist_count(const char *words, const char *sep)
 {
     size_t len = 1u; /* Always 1 less separator than words, so start from 1 */
     while (*words)
-        len += *words++ == sep; /* FIXME: utf-8 sep */
+        len += *words++ == *sep; /* FIXME: utf-8 sep */
     return len;
 }
 
-struct words *wordlist_init(const char *words, char sep)
+struct words *wordlist_init(const char *words, const char *sep)
 {
     struct words *w = 0;
     size_t i, len = wordlist_count(words, sep);
@@ -52,7 +52,7 @@ struct words *wordlist_init(const char *words, char sep)
         const char *p = w->str;
         for (len = 0; len < w->len; ++len) {
             w->indices[len] = p;
-            while (*p && *p != sep)
+            while (*p && *p != *sep) /* FIXME: utf-8 sep */
                 ++p;
             *((char *)p) = '\0';
             ++p;

@@ -30,7 +30,7 @@ struct words {
  *
  * The returned structure contains a copy of @text.
  */
-struct words *wordlist_init(const char *text, char sep); /* FIXME: utf-8 */
+struct words *wordlist_init(const char *text, const char *sep);
 
 /**
  * wordlist_lookup_word - Find a word in a wordlist.
