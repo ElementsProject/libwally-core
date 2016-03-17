@@ -16,7 +16,7 @@ class BIP39Tests(unittest.TestCase):
                 self.cases = json.load(f)["english"]
 
             util.bind_all(self, util.bip39_funcs + util.wordlist_funcs)
-            langs = ['en', 'fr', 'it']
+            langs = ['en', 'es', 'fr', 'it', 'jp']
             gwl = lambda lang: self.bip39_get_wordlist(lang)
             self.wordlists = {lang: gwl(lang) for lang in langs}
 
