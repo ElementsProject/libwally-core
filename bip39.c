@@ -44,5 +44,5 @@ char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, siz
 
     memcpy(checksummed_bytes, bytes, len);
     checksummed_bytes[len] = checksum;
-    return mnemonic_from_bytes(w, checksummed_bytes, sizeof(checksummed_bytes));
+    return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
 }

@@ -11,8 +11,8 @@ mnemonic_funcs = [('mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong
                   ('mnemonic_to_bytes', c_int, [c_void_p, c_char_p, c_void_p, c_ulong])]
 
 bip39_funcs = [('bip39_default_wordlist', c_void_p, []),
-              ('bip39_get_wordlist', c_void_p, [c_char_p]),
-              ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong])]
+               ('bip39_get_wordlist', c_void_p, [c_char_p]),
+               ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong])]
 
 def bind_fn(name, res, args):
     fn = getattr(libwally, name)
