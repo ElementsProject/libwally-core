@@ -21,17 +21,15 @@ class Wordlist:
         return self.wl is not None
 
 
+
 class WordlistTests(unittest.TestCase):
 
-    words_file = 'data/wordlists/english.txt'
     words_list = None
-    words = None
 
     def setUp(self):
-        if self.words is None:
-            with open(self.words_file, 'r') as f:
-                self.words_list = [l.strip() for l in f.readlines()]
-            self.words = ' '.join(self.words_list)
+        if self.words_list is None:
+            self.words_list, _ = util.load_english_words()
+
 
     def test_wordlist(self):
 
@@ -52,6 +50,7 @@ class WordlistTests(unittest.TestCase):
                     self.assertIsNone(wl.index(n + 1))
 
             wl.free()
+
 
 if __name__ == '__main__':
     unittest.main()

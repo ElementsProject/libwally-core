@@ -32,7 +32,7 @@ $(bld)config.h: $(bld)ccan/tools/configurator/configurator
 
 $(bld)%.ok: %.py
 	@-mkdir -p $(@D)
-	$< && touch $@
+	python $< && touch $@
 
 $(bld)%: %.c
 	@-mkdir -p $(@D)
