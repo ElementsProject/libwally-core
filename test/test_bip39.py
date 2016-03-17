@@ -16,15 +16,18 @@ class BIP39Tests(unittest.TestCase):
                 self.cases = json.load(f)["english"]
 
             util.bind_all(self, util.bip39_funcs)
+            langs = ['en', 'fr', 'it']
+            gwl = lambda lang: self.bip39_get_wordlist(lang)
+            self.wordlists = {lang: gwl(lang) for lang in langs}
 
 
     def test_bip39_wordlists(self):
 
-        for lang in ['en', 'fr', 'it']:
-            self.assertIsNotNone(self.bip39_get_wordlist(lang))
+        for lang, wl in self.wordlists.iteritems():
+            self.assertIsNotNone(wl)
 
         self.assertEqual(self.bip39_default_wordlist(),
-                         self.bip39_get_wordlist('en'))
+                         self.wordlists['en'])
 
 
     def test_bip39(self):
