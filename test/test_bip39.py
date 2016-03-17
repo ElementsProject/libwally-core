@@ -31,7 +31,7 @@ class BIP39Tests(unittest.TestCase):
         for lang, wl in self.wordlists.iteritems():
             self.assertIsNotNone(wl)
 
-        self.assertEqual(self.bip39_default_wordlist(),
+        self.assertEqual(self.bip39_get_wordlist(None),
                          self.wordlists['en'])
 
 
@@ -51,7 +51,7 @@ class BIP39Tests(unittest.TestCase):
 
     def test_bip39(self):
 
-        wl = self.bip39_default_wordlist()
+        wl = self.bip39_get_wordlist(None)
 
         for case in self.cases:
             hex_input, mnemonic = case[0], case[1]

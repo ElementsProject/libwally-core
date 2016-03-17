@@ -13,30 +13,25 @@
 #include "data/wordlists/japanese.c"
 
 
-const struct words *bip39_default_wordlist(void)
-{
-    return &en_words;
-}
+static const struct {
+    const char name[4];
+    const struct words* words;
+} lookup[] = {
+    { "en", &en_words}, { "es", &es_words}, { "fr", &fr_words},
+    { "it", &it_words}, { "jp", &jp_words}, { "zhs", &zhs_words},
+    { "zht", &zht_words},
+    /* FIXME: Should 'zh' map to traditional or simplified? */
+};
 
 const struct words *bip39_get_wordlist(const char* lang)
 {
-    if (!strcmp(lang, "en"))
-        return &en_words;
-    if (!strcmp(lang, "es"))
-        return &es_words;
-    if (!strcmp(lang, "fr"))
-        return &fr_words;
-    if (!strcmp(lang, "it"))
-        return &it_words;
-    if (!strcmp(lang, "jp"))
-        return &jp_words;
-    /* FIXME: Should zh map to traditional or simplified? */
-    if (!strcmp(lang, "zhs"))
-        return &zhs_words;
-    if (!strcmp(lang, "zht"))
-        return &zht_words;
-
-    return NULL;
+    if (lang) {
+        size_t i;
+        for (i = 0; i < sizeof(lookup) / sizeof(lookup[0]); ++i)
+            if (!strcmp(lang, lookup[i].name))
+                return lookup[i].words;
+    }
+    return &en_words; /* Fallback to English if not found */
 }
 
 char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len)

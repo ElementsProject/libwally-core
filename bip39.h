@@ -7,12 +7,9 @@
 struct words;
 
 /**
- * Get the default (English) word list.
- */
-const struct words *bip39_default_wordlist(void);
-
-/**
  * Get the default word list for language @lang.
+ *
+ * If @lang is NULL or not found the default English list is returned.
  */
 const struct words *bip39_get_wordlist(const char* lang);
 
