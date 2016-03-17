@@ -6,16 +6,6 @@ static int bstrcmp(const void *l, const void *r)
    return strcmp(l, (*(const char**)r));
 }
 
-#if 0
-/* FIXME: This is BIP39 specific */
-/* https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2 */
-inline static int is_power_of_two(size_t n)
-{
-    /* Minimum size is two words giving one bit numbers */
-    return n >= 2 && !(n & (n - 1));
-}
-#endif
-
 /* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
 inline static int get_bits(size_t n)
 {
@@ -57,7 +47,7 @@ struct words *wordlist_init(const char *words, char sep)
     struct words *w = 0;
     size_t len = wordlist_count(words, sep);
 
-    if (/*is_power_of_two(len) && */ (w = wordlist_alloc(words, len))) {
+    if ((w = wordlist_alloc(words, len))) {
        /* Tokenise the strings into w->indices */
         const char *p = w->str;
         for (len = 0; len < w->len; ++len) {
