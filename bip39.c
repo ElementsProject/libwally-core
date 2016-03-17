@@ -18,7 +18,7 @@ const struct words *bip39_get_wordlist(const char* lang)
     if (!strcmp(lang, "en"))
         return &en_words;
     if (!strcmp(lang, "fr"))
-        return &en_words;
+        return &fr_words;
     if (!strcmp(lang, "it"))
         return &it_words;
 
