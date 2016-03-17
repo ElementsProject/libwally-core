@@ -4,6 +4,8 @@
 #include <ccan/crypto/sha256/sha256.h>
 #include <string.h>
 
+#include "data/wordlists/chinese_simplified.c"
+#include "data/wordlists/chinese_traditional.c"
 #include "data/wordlists/english.c"
 #include "data/wordlists/french.c"
 #include "data/wordlists/italian.c"
@@ -28,6 +30,11 @@ const struct words *bip39_get_wordlist(const char* lang)
         return &it_words;
     if (!strcmp(lang, "jp"))
         return &jp_words;
+    /* FIXME: Should zh map to traditional or simplified? */
+    if (!strcmp(lang, "zhs"))
+        return &zhs_words;
+    if (!strcmp(lang, "zht"))
+        return &zht_words;
 
     return NULL;
 }
