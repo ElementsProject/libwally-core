@@ -14,6 +14,7 @@ bip39_funcs = [('bip39_default_wordlist', c_void_p, []),
                ('bip39_get_wordlist', c_void_p, [c_char_p]),
                ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong])]
 
+
 def bind_fn(name, res, args):
     fn = getattr(libwally, name)
     fn.restype, fn.argtypes = res, args
@@ -25,8 +26,9 @@ def bind_all(dest, funcs):
         name, restype, argtypes = f
         setattr(dest, name, bind_fn(name, restype, argtypes))
 
-def load_english_words():
-    with open('data/wordlists/english.txt', 'r') as f:
+
+def load_words(lang):
+    with open('data/wordlists/%s.txt' % lang, 'r') as f:
         words_list = [l.strip() for l in f.readlines()]
         return words_list, ' '.join(words_list)
 

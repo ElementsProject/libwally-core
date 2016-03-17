@@ -8,7 +8,7 @@ class MnemonicTests(unittest.TestCase):
 
     def setUp(self):
         if self.wl is None:
-            self.words_list, words = util.load_english_words()
+            self.words_list, words = util.load_words('english')
 
             util.bind_all(self, util.wordlist_funcs + util.mnemonic_funcs)
             self.wl = self.wordlist_init(words, ' ')

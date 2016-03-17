@@ -28,7 +28,7 @@ class WordlistTests(unittest.TestCase):
 
     def setUp(self):
         if self.words_list is None:
-            self.words_list, _ = util.load_english_words()
+            self.words_list, _ = util.load_words('english')
 
 
     def test_wordlist(self):

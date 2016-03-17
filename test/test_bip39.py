@@ -15,7 +15,7 @@ class BIP39Tests(unittest.TestCase):
             with open('data/wordlists/vectors.json', 'r') as f:
                 self.cases = json.load(f)["english"]
 
-            util.bind_all(self, util.bip39_funcs)
+            util.bind_all(self, util.bip39_funcs + util.wordlist_funcs)
             langs = ['en', 'fr', 'it']
             gwl = lambda lang: self.bip39_get_wordlist(lang)
             self.wordlists = {lang: gwl(lang) for lang in langs}
@@ -28,6 +28,20 @@ class BIP39Tests(unittest.TestCase):
 
         self.assertEqual(self.bip39_default_wordlist(),
                          self.wordlists['en'])
+
+
+    def test_accented_lookups(self):
+
+        wl = self.wordlists['fr']
+        words_list, _ = util.load_words('french')
+
+        for i in range(2048):
+            word = self.wordlist_lookup_index(wl, i)
+            self.assertEqual(word, words_list[i])
+            idx = self.wordlist_lookup_word(wl, word)
+            # FIXME: Broken sue to word list sorting
+            #self.assertEqual(i, idx - 1)
+            #print(i, idx - 1, word)
 
 
     def test_bip39(self):
