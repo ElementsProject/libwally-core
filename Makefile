@@ -9,6 +9,7 @@ ccan_srcs := \
     ccan/ccan/crypto/sha256/sha256.c
 
 lib_srcs := \
+    bip39.c \
     mnemonic.c \
     wordlist.c
 
