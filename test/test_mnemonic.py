@@ -11,7 +11,7 @@ class MnemonicTests(unittest.TestCase):
             self.words_list, words = util.load_words('english')
 
             util.bind_all(self, util.wordlist_funcs + util.mnemonic_funcs)
-            self.wl = self.wordlist_init(words, ' ')
+            self.wl = self.wordlist_init(words)
 
 
     def test_mnemonic(self):

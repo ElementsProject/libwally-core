@@ -2,7 +2,7 @@ from ctypes import *
 
 libwally = CDLL('bld/libwally.so')
 
-wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p, c_char_p]),
+wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
                   ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
                   ('wordlist_lookup_index', c_char_p, [c_void_p, c_ulong]),
                   ('wordlist_free', None, [c_void_p])]

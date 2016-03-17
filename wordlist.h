@@ -23,14 +23,12 @@ struct words {
 
 /**
  * wordlist_init - Initialise a words structure.
- * @text: List of words to initialise from, split by single @sep characters
- *         and terminated by NUL. Must be UTF-8 encoded, and if you wish
- *         to call wordlist_lookup_word() on it, sorted also.
- * @sep: Word separator.
+ * @text: List of words to initialise from, split by whitespace and
+ *        NUL terminated. Must be UTF-8 encoded.
  *
  * The returned structure contains a copy of @text.
  */
-struct words *wordlist_init(const char *text, const char *sep);
+struct words *wordlist_init(const char *text);
 
 /**
  * wordlist_lookup_word - Find a word in a wordlist.

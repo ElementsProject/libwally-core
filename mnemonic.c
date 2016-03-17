@@ -61,7 +61,7 @@ char* mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t le
 
 int mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *bytes, size_t len)
 {
-    struct words *mnemonic_w = wordlist_init(mnemonic, " "); /* FIXME: store in and use from w */
+    struct words *mnemonic_w = wordlist_init(mnemonic);
     size_t i;
 
     if (!mnemonic_w)
