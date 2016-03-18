@@ -15,7 +15,7 @@ struct words;
 #define BIP39_ENTROPY_LEN_256 32u
 
 /**
- * Get the list of default languages (those for which a wordlist is provided).
+ * Get the list of default supported languages.
  *
  * The names are returned separated by ' ' as a constant string.
  */
@@ -26,28 +26,22 @@ const char *bip39_get_languages();
  *
  * If @lang is NULL or not found the default English list is returned.
  */
-const struct words *bip39_get_wordlist(const char* lang);
+const struct words *bip39_get_wordlist(const char *lang);
 
 /**
  * Generate a mnemonic sentence from the entropy in @bytes.
+ * @w Word list to use. Pass NULL to use the default English list.
+ * @bytes: Entropy to covert.
+ * @len: The length of @bytes in bytes.
  */
-char *bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len);
+char *bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes,
+                                size_t len);
 
 /**
  * Validate the checksum embedded in the mnemonic sentence @mnemonic.
+ * @w Word list to use. Pass NULL to use the default English list.
+ * @mnemonic Mnemonic to validate.
  */
 bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic);
-
-#if 0
-/**
- * Generate a random 12 word mnemonic sentence with 128 bits of entropy.
- */
-char* bip39_mnemonic_128();
-
-/**
- * Generate a random 24 word mnemonic sentence with 256 bits of entropy.
- */
-char* bip39_mnemonic_256();
-#endif
 
 #endif /* LIBWALLY_BIP_39_H */

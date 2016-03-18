@@ -81,6 +81,15 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
     size_t mask, len;
     uint8_t checksum;
 
+    /* Ideally we would infer the wordlist here. Unfortunately this cannot
+     * work reliably because the default word lists overlap. In combination
+     * with being sorted lexographically, this means the default lists
+     * were poorly chosen. But we are stuck with them now.
+     *
+     * If the caller doesn't know which word list to use, they should iterate
+     * over the available ones and try any resulting list that the mnemonic
+     * validates against.
+     */
     w = w ? w : &en_words;
 
     if (w->bits != 11u)
