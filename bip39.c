@@ -75,10 +75,11 @@ char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, siz
     return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
 }
 
-bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
+size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
+                               uint8_t *bytes, size_t len)
 {
-    uint8_t bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
-    size_t mask, len;
+    uint8_t tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
+    size_t mask, tmp_len;
     uint8_t checksum;
 
     /* Ideally we would infer the wordlist here. Unfortunately this cannot
@@ -95,15 +96,29 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
     if (w->bits != 11u)
         return false;
 
-    len = mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes));
+    tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
 
-    if (!len || !(mask = entropy_len_to_mask(len - 1)))
+    if (!tmp_len || !(mask = entropy_len_to_mask(tmp_len - 1)))
         return false;
     else {
         struct sha256 tmp;
-        sha256(&tmp, bytes, len - 1); /* FIXME: Allow user to provide a SHA256 impl */
+
+        if (len < tmp_len - 1)
+            return 0; /* Callers buffer is too small */
+
+        sha256(&tmp, tmp_bytes, tmp_len - 1); /* FIXME: Allow user to provide a SHA256 impl */
         checksum = tmp.u.u8[0];
     }
 
-    return (bytes[len - 1] & mask) == (checksum & mask);
+    if ((tmp_bytes[tmp_len - 1] & mask) != (checksum & mask))
+        return 0; /* Mismatched checksum */
+
+    memcpy(bytes, tmp_bytes, tmp_len - 1);
+    return tmp_len - 1;
+}
+
+bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
+{
+    uint8_t bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
+    return bip39_mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes)) != 0;
 }

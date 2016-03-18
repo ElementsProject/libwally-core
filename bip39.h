@@ -38,6 +38,16 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes,
                                 size_t len);
 
 /**
+ * Convert a mnemonic sentence into entropy at @bytes.
+ * @w Word list to use. Pass NULL to use the default English list.
+ * @mnemonic Mnemonic to convert.
+ * @bytes: Where to store the resulting entropy.
+ * @len: The length of @bytes in bytes.
+ */
+size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
+                               uint8_t *bytes, size_t len);
+
+/**
  * Validate the checksum embedded in the mnemonic sentence @mnemonic.
  * @w Word list to use. Pass NULL to use the default English list.
  * @mnemonic Mnemonic to validate.

@@ -57,7 +57,7 @@ class BIP39Tests(unittest.TestCase):
 
 
     def test_bip39_vectors(self):
-
+        """Test conversion to and from the BIP39 specification vectors"""
         wl = self.bip39_get_wordlist(None)
 
         for case in self.cases:
@@ -68,6 +68,12 @@ class BIP39Tests(unittest.TestCase):
             result = self.bip39_mnemonic_from_bytes(wl, buf, hex_len)
             self.assertEqual(result, mnemonic)
             self.assertEqual(self.bip39_mnemonic_is_valid(wl, mnemonic), 1)
+
+            invalid_str = 'ff' * hex_len
+            rbuf = create_string_buffer(unhexlify(invalid_str), hex_len)
+            rlen = self.bip39_mnemonic_to_bytes(wl, result, rbuf, hex_len)
+            self.assertEqual(rlen, hex_len)
+            self.assertEqual(buf.raw, rbuf.raw)
 
 
 if __name__ == '__main__':
