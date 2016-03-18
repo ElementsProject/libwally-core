@@ -115,3 +115,28 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
     uint8_t bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
     return bip39_mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes)) != 0;
 }
+
+uint8_t *bip39_mnemonic_to_seed(const char *mnemonic, const char *password)
+{
+    const char *prefix = "mnemonic";
+    const size_t prefix_len = strlen(prefix);
+    const size_t password_len = strlen(password);
+    const size_t salt_len = prefix_len + password_len + 1;
+    uint8_t *output;
+    char *salt = malloc(salt_len);
+
+    if (!salt)
+        return NULL;
+
+    memcpy(salt, prefix, prefix_len);
+    memcpy(salt + prefix_len, password, password_len);
+    salt[salt_len - 1] = '\0';
+
+    output = malloc(BIP39_SEED_LEN_512);
+    if (output) {
+        /* FIXME PBKDF2 HMAC SHA512 */
+        (void)mnemonic;
+        free(salt);
+    }
+    return output;
+}

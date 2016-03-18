@@ -14,6 +14,9 @@ struct words;
 #define BIP39_ENTROPY_LEN_224 28u
 #define BIP39_ENTROPY_LEN_256 32u
 
+/* Returned seed length */
+#define BIP39_SEED_LEN_512 64u
+
 /**
  * Get the list of default supported languages.
  *
