@@ -35,7 +35,7 @@ class BIP39Tests(unittest.TestCase):
                          self.wordlists['en'])
 
 
-    def test_accented_lookups(self):
+    def test_all_lookups(self):
 
         for lang in self.langs.keys():
             wl = self.wordlists[lang]
@@ -47,7 +47,7 @@ class BIP39Tests(unittest.TestCase):
                 self.assertEqual(i, idx - 1)
 
 
-    def test_bip39(self):
+    def test_bip39_vectors(self):
 
         wl = self.bip39_get_wordlist(None)
 
@@ -58,6 +58,7 @@ class BIP39Tests(unittest.TestCase):
             buf = create_string_buffer(unhexlify(hex_input), hex_len)
             result = self.bip39_mnemonic_from_bytes(wl, buf, hex_len)
             self.assertEqual(result, mnemonic)
+            self.assertEqual(self.bip39_mnemonic_is_valid(wl, mnemonic), 1)
 
 
 if __name__ == '__main__':

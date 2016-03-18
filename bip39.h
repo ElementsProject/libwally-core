@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 struct words;
 
@@ -24,7 +25,12 @@ const struct words *bip39_get_wordlist(const char* lang);
 /**
  * Generate a mnemonic sentence from the entropy in @bytes.
  */
-char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len);
+char *bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len);
+
+/**
+ * Generate a mnemonic sentence from the entropy in @bytes.
+ */
+bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic);
 
 #if 0
 /**

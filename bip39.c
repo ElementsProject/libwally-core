@@ -34,24 +34,32 @@ const struct words *bip39_get_wordlist(const char* lang)
     return &en_words; /* Fallback to English if not found */
 }
 
+/* Convert an input entropy length to a mask for checksum bits. As it
+ * returns 0 for bad lengths, it serves as a validation function too.
+ */
+static size_t entropy_len_to_mask(size_t len)
+{
+    switch (len) {
+    case BIP39_ENTROPY_LEN_128: return 0xf0;
+    case BIP39_ENTROPY_LEN_160: return 0xf8;
+    case BIP39_ENTROPY_LEN_192: return 0xfc;
+    case BIP39_ENTROPY_LEN_224: return 0xfe;
+    case BIP39_ENTROPY_LEN_256: return 0xff;
+    }
+    return 0;
+}
+
 char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len)
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     uint8_t checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
     uint8_t checksum;
 
-    switch (len) {
-    case BIP39_ENTROPY_LEN_128:
-    case BIP39_ENTROPY_LEN_160:
-    case BIP39_ENTROPY_LEN_192:
-    case BIP39_ENTROPY_LEN_224:
-    case BIP39_ENTROPY_LEN_256:
-        break;
-    default:
-        return NULL;
-    }
+    w = w ? w : &en_words;
 
-    {
+    if (w->bits != 11u || !entropy_len_to_mask(len))
+        return NULL;
+    else {
         struct sha256 tmp;
         sha256(&tmp, bytes, len); /* FIXME: Allow user to provide a SHA256 impl */
         checksum = tmp.u.u8[0];
@@ -60,4 +68,28 @@ char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, siz
     memcpy(checksummed_bytes, bytes, len);
     checksummed_bytes[len] = checksum;
     return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
+}
+
+bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
+{
+    uint8_t bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
+    size_t mask, len;
+    uint8_t checksum;
+
+    w = w ? w : &en_words;
+
+    if (w->bits != 11u)
+        return false;
+
+    len = mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes));
+
+    if (!len || !(mask = entropy_len_to_mask(len - 1)))
+        return false;
+    else {
+        struct sha256 tmp;
+        sha256(&tmp, bytes, len - 1); /* FIXME: Allow user to provide a SHA256 impl */
+        checksum = tmp.u.u8[0];
+    }
+
+    return (bytes[len - 1] & mask) == (checksum & mask);
 }
