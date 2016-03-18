@@ -11,6 +11,7 @@ class BIP39Tests(unittest.TestCase):
     langs = { 'en': 'english',
               'es': 'spanish',
               'fr': 'french',
+              'it': 'italian',
               'jp': 'japanese',
               'zhs': 'chinese_simplified',
               'zht': 'chinese_traditional' }
@@ -25,6 +26,14 @@ class BIP39Tests(unittest.TestCase):
             gwl = lambda lang: self.bip39_get_wordlist(lang)
             self.wordlists = {l: gwl(l) for l in self.langs.keys()}
 
+
+    def test_all_langs(self):
+
+        all_langs = self.bip39_get_languages().split()
+        for lang in all_langs:
+            self.assertTrue(lang in self.langs)
+
+        self.assertEqual(len(all_langs), len(self.langs.keys()))
 
     def test_bip39_wordlists(self):
 

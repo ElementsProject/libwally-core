@@ -10,7 +10,8 @@ wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
 mnemonic_funcs = [('mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
                   ('mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong])]
 
-bip39_funcs = [('bip39_get_wordlist', c_void_p, [c_char_p]),
+bip39_funcs = [('bip39_get_languages', c_char_p, []),
+               ('bip39_get_wordlist', c_void_p, [c_char_p]),
                ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
                ('bip39_mnemonic_is_valid', c_ulong, [c_void_p, c_char_p])]
 
