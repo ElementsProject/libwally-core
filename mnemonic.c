@@ -59,13 +59,13 @@ char* mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t le
     return str;
 }
 
-int mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *bytes, size_t len)
+size_t mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *bytes, size_t len)
 {
     struct words *mnemonic_w = wordlist_init(mnemonic);
     size_t i;
 
     if (!mnemonic_w)
-        return -1;
+        return 0;
 
     /* FIXME: Check output size */
     memset(bytes, 0, len);
@@ -80,5 +80,5 @@ int mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *byte
     }
 
     wordlist_free(mnemonic_w);
-    return 0;
+    return (i * w->bits + 7u) / 8u;
 }

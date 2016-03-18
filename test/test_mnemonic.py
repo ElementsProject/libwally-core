@@ -18,13 +18,17 @@ class MnemonicTests(unittest.TestCase):
 
         LEN = 16
         PHRASES = LEN * 8 / 11 # 11 bits per phrase
+        PHRASES_BYTES = (PHRASES * 11 + 7) / 8 # Bytes needed to store
+        self.assertEqual(LEN, PHRASES_BYTES)
+
         buff = create_string_buffer(LEN)
 
         # Test round tripping
         for i in range(len(self.words_list) - PHRASES):
             phrase = ' '.join(self.words_list[i : i + PHRASES])
 
-            self.mnemonic_to_bytes(self.wl, phrase, buff, LEN)
+            written = self.mnemonic_to_bytes(self.wl, phrase, buff, LEN)
+            self.assertEqual(written, PHRASES_BYTES)
             generated = self.mnemonic_from_bytes(self.wl, buff, LEN)
             self.assertEqual(phrase, generated)
 

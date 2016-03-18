@@ -22,7 +22,9 @@ char* mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t le
  * @mnemonic: Mnemonic pass phrase to store.
  * @bytes: Where to store the converted representation.
  * @len: The length of @bytes in bytes.
+ *
+ * Returns the length of the written mnemonic in bytes, zero on error.
  */
-int mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *bytes, size_t len);
+size_t mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *bytes, size_t len);
 
 #endif /* LIBWALLY_MNEMONIC_H */
