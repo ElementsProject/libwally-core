@@ -54,24 +54,25 @@ static size_t entropy_len_to_mask(size_t len)
     return 0;
 }
 
+static uint8_t bip39_checksum(const uint8_t *bytes, size_t len)
+{
+    struct sha256 tmp;
+    sha256(&tmp, bytes, len); /* FIXME: Allow user to provide a SHA256 impl */
+    return tmp.u.u8[0];
+}
+
 char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len)
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     uint8_t checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
-    uint8_t checksum;
 
     w = w ? w : &en_words;
 
     if (w->bits != 11u || !entropy_len_to_mask(len))
         return NULL;
-    else {
-        struct sha256 tmp;
-        sha256(&tmp, bytes, len); /* FIXME: Allow user to provide a SHA256 impl */
-        checksum = tmp.u.u8[0];
-    }
 
     memcpy(checksummed_bytes, bytes, len);
-    checksummed_bytes[len] = checksum;
+    checksummed_bytes[len] = bip39_checksum(bytes, len);;
     return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
 }
 
@@ -80,7 +81,6 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 {
     uint8_t tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
     size_t mask, tmp_len;
-    uint8_t checksum;
 
     /* Ideally we would infer the wordlist here. Unfortunately this cannot
      * work reliably because the default word lists overlap. In combination
@@ -98,19 +98,12 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
     tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
 
-    if (!tmp_len || !(mask = entropy_len_to_mask(tmp_len - 1)))
-        return false;
-    else {
-        struct sha256 tmp;
+    if (!tmp_len || len < tmp_len - 1 ||
+        !(mask = entropy_len_to_mask(tmp_len - 1)))
+        return 0;
 
-        if (len < tmp_len - 1)
-            return 0; /* Callers buffer is too small */
-
-        sha256(&tmp, tmp_bytes, tmp_len - 1); /* FIXME: Allow user to provide a SHA256 impl */
-        checksum = tmp.u.u8[0];
-    }
-
-    if ((tmp_bytes[tmp_len - 1] & mask) != (checksum & mask))
+    if ((tmp_bytes[tmp_len - 1] & mask) !=
+        (bip39_checksum(tmp_bytes, tmp_len - 1) & mask))
         return 0; /* Mismatched checksum */
 
     memcpy(bytes, tmp_bytes, tmp_len - 1);
