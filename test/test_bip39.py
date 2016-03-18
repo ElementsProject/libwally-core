@@ -13,7 +13,7 @@ class BIP39Tests(unittest.TestCase):
               'fr': 'french',
               'jp': 'japanese',
               'zhs': 'chinese_simplified',
-              'zhs': 'chinese_traditional' }
+              'zht': 'chinese_traditional' }
 
 
     def setUp(self):
@@ -38,8 +38,6 @@ class BIP39Tests(unittest.TestCase):
     def test_accented_lookups(self):
 
         for lang in self.langs.keys():
-            if lang == 'zhs':
-                continue # FIXME: Problem with simplified
             wl = self.wordlists[lang]
             words_list, _ = util.load_words(self.langs[lang])
             for i in range(2048):
