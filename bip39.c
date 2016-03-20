@@ -120,7 +120,7 @@ uint8_t *bip39_mnemonic_to_seed(const char *mnemonic, const char *password)
 {
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
-    const size_t password_len = strlen(password);
+    const size_t password_len = password ? strlen(password) : 0;
     const size_t salt_len = prefix_len + password_len + 1;
     uint8_t *output;
     char *salt = malloc(salt_len);
