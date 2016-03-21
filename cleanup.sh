@@ -1,3 +1,9 @@
+#!/bin/sh
+
+# Clean up all generated files
+
+make distclean
+
 rm -rf bld/
 rm -rf autom4te.cache/
 rm -f Makefile.in
