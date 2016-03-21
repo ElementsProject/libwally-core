@@ -1,2 +1,8 @@
 bld
 test/*.pyc
+*.o
+*.lo
+*.la
+*.deps
+*.dirstamp
+*.libs
