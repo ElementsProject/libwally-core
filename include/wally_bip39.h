@@ -1,5 +1,7 @@
-#ifndef LIBWALLY_BIP_39_H
-#define LIBWALLY_BIP_39_H
+#ifndef LIBWALLY_CORE_BIP39_H
+#define LIBWALLY_CORE_BIP39_H
+
+#include "wally-core.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -22,14 +24,15 @@ struct words;
  *
  * The names are returned separated by ' ' as a constant string.
  */
-const char *bip39_get_languages();
+WALLY_CORE_API const char *bip39_get_languages();
 
 /**
  * Get the default word list for language @lang.
  *
  * If @lang is NULL or not found the default English list is returned.
  */
-const struct words *bip39_get_wordlist(const char *lang);
+WALLY_CORE_API const struct words *bip39_get_wordlist(
+    const char *lang);
 
 /**
  * Generate a mnemonic sentence from the entropy in @bytes.
@@ -37,8 +40,10 @@ const struct words *bip39_get_wordlist(const char *lang);
  * @bytes: Entropy to covert.
  * @len: The length of @bytes in bytes.
  */
-char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes,
-                                size_t len);
+WALLY_CORE_API char *bip39_mnemonic_from_bytes(
+    const struct words *w,
+    const unsigned char *bytes,
+    size_t len);
 
 /**
  * Convert a mnemonic sentence into entropy at @bytes.
@@ -47,14 +52,18 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
  * @bytes: Where to store the resulting entropy.
  * @len: The length of @bytes in bytes.
  */
-size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
-                               unsigned char *bytes, size_t len);
+WALLY_CORE_API size_t bip39_mnemonic_to_bytes(
+    const struct words *w,
+    const char *mnemonic,
+    unsigned char *bytes,
+    size_t len);
 
 /**
  * Validate the checksum embedded in the mnemonic sentence @mnemonic.
  * @w Word list to use. Pass NULL to use the default English list.
  * @mnemonic Mnemonic to validate.
  */
-bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic);
+WALLY_CORE_API bool bip39_mnemonic_is_valid(const struct words *w,
+                                            const char *mnemonic);
 
-#endif /* LIBWALLY_BIP_39_H */
+#endif /* LIBWALLY_CORE_BIP39_H */
