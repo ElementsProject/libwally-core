@@ -55,6 +55,7 @@ fi
 )
 AC_HAVE_UNALIGNED_ACCESS
 
+AC_CHECK_HEADERS([byteswap.h])
 
 AC_CONFIG_FILES([
  Makefile
