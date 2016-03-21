@@ -24,7 +24,7 @@ struct words;
  *
  * The names are returned separated by ' ' as a constant string.
  */
-WALLY_CORE_API const char *bip39_get_languages();
+WALLY_CORE_API const char *bip39_get_languages(void);
 
 /**
  * Get the default word list for language @lang.
