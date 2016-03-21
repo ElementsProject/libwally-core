@@ -54,17 +54,17 @@ static size_t entropy_len_to_mask(size_t len)
     return 0;
 }
 
-static uint8_t bip39_checksum(const uint8_t *bytes, size_t len)
+static unsigned char bip39_checksum(const unsigned char *bytes, size_t len)
 {
     struct sha256 tmp;
     sha256(&tmp, bytes, len); /* FIXME: Allow user to provide a SHA256 impl */
     return tmp.u.u8[0];
 }
 
-char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len)
+char* bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
-    uint8_t checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
+    unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
 
     w = w ? w : &en_words;
 
@@ -77,9 +77,9 @@ char* bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, siz
 }
 
 size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
-                               uint8_t *bytes, size_t len)
+                               unsigned char *bytes, size_t len)
 {
-    uint8_t tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
+    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
     size_t mask, tmp_len;
 
     /* Ideally we would infer the wordlist here. Unfortunately this cannot
@@ -112,17 +112,17 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
 bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
 {
-    uint8_t bytes[BIP39_ENTROPY_LEN_256 + sizeof(uint8_t)];
+    unsigned char bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
     return bip39_mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes)) != 0;
 }
 
-uint8_t *bip39_mnemonic_to_seed(const char *mnemonic, const char *password)
+unsigned char *bip39_mnemonic_to_seed(const char *mnemonic, const char *password)
 {
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
     const size_t salt_len = prefix_len + password_len + 1;
-    uint8_t *output;
+    unsigned char *output;
     char *salt = malloc(salt_len);
 
     if (!salt)

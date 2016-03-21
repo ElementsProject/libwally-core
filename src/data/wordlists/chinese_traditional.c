@@ -1,7 +1,7 @@
 /* Generated file - do not edit! */
 #include <wordlist.h>
 
-static const uint8_t zht_[] = {
+static const unsigned char zht_[] = {
     0xe7,0x9a,0x84,0,
     0xe4,0xb8,0x80,0,
     0xe6,0x98,0xaf,0,

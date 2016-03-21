@@ -6,7 +6,7 @@
 #define U8_MASK(pos) (1u << (7u - (pos) % 8u))
 
 /* Get n'th value (of w->bits length) from bytes */
-static size_t extract_index(size_t bits, const uint8_t *bytes, size_t n)
+static size_t extract_index(size_t bits, const unsigned char *bytes, size_t n)
 {
     size_t pos, end, value;
     for (pos = n * bits, end = pos + bits, value = 0; pos < end; ++pos)
@@ -18,7 +18,7 @@ static size_t extract_index(size_t bits, const uint8_t *bytes, size_t n)
  * Assumes: 1) the bits we are writing to are zero
  *          2) value fits within w->bits
  */
-static void store_index(size_t bits, uint8_t *bytes, size_t n, size_t value)
+static void store_index(size_t bits, unsigned char *bytes, size_t n, size_t value)
 {
     size_t i, pos;
     for (pos = n * bits, i = 0; i < bits; ++i, ++pos)
@@ -26,7 +26,7 @@ static void store_index(size_t bits, uint8_t *bytes, size_t n, size_t value)
             U8_AT(bytes, pos) |= U8_MASK(pos);
 }
 
-char* mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t len)
+char* mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
 {
     size_t total_bits = len * 8u; /* bits in 'bytes' */
     size_t total_mnemonics = total_bits / w->bits; /* Mnemonics in 'bytes' */
@@ -59,7 +59,7 @@ char* mnemonic_from_bytes(const struct words *w, const uint8_t *bytes, size_t le
     return str;
 }
 
-size_t mnemonic_to_bytes(const struct words *w, const char* mnemonic, uint8_t *bytes, size_t len)
+size_t mnemonic_to_bytes(const struct words *w, const char* mnemonic, unsigned char *bytes, size_t len)
 {
     struct words *mnemonic_w = wordlist_init(mnemonic);
     size_t i;

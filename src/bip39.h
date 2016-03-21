@@ -37,7 +37,7 @@ const struct words *bip39_get_wordlist(const char *lang);
  * @bytes: Entropy to covert.
  * @len: The length of @bytes in bytes.
  */
-char *bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes,
+char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes,
                                 size_t len);
 
 /**
@@ -48,7 +48,7 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const uint8_t *bytes,
  * @len: The length of @bytes in bytes.
  */
 size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
-                               uint8_t *bytes, size_t len);
+                               unsigned char *bytes, size_t len);
 
 /**
  * Validate the checksum embedded in the mnemonic sentence @mnemonic.

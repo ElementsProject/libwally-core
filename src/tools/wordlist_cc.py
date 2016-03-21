@@ -27,7 +27,7 @@ if __name__ == "__main__":
         print('#include <wordlist.h>')
         print()
 
-        print('static const uint8_t %s_[] = {' % string_name)
+        print('static const unsigned char %s_[] = {' % string_name)
         grouped = [words[i : i + 4] for i in range(0, len(words), 4)]
         for w in words:
             print('    %s,0,' % as_hex(w))
