@@ -19,7 +19,7 @@ class BIP39Tests(unittest.TestCase):
 
     def setUp(self):
         if self.cases is None:
-            with open('data/wordlists/vectors.json', 'r') as f:
+            with open(util.root_dir + 'src/data/wordlists/vectors.json', 'r') as f:
                 self.cases = json.load(f)["english"]
 
             util.bind_all(self, util.bip39_funcs + util.wordlist_funcs)

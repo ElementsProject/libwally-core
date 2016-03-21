@@ -1,6 +1,8 @@
 from ctypes import *
 
-libwally = CDLL('bld/libwally.so')
+root_dir = '../../'
+
+libwally = CDLL(root_dir + 'src/.libs/libwallycore.so')
 
 wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
                   ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
@@ -30,7 +32,7 @@ def bind_all(dest, funcs):
 
 
 def load_words(lang):
-    with open('data/wordlists/%s.txt' % lang, 'r') as f:
+    with open(root_dir + 'src/data/wordlists/%s.txt' % lang, 'r') as f:
         words_list = [l.strip() for l in f.readlines()]
         return words_list, ' '.join(words_list)
 
