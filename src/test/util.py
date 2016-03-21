@@ -1,8 +1,10 @@
 from ctypes import *
+import platform
 
 root_dir = '../../'
+SO_EXT = 'dylib' if platform.system() == 'Darwin' else 'so'
 
-libwally = CDLL(root_dir + 'src/.libs/libwallycore.so')
+libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
 
 wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
                   ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
