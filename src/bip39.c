@@ -1,8 +1,8 @@
-#include "bip39.h"
+#include <include/wally_bip39.h>
+#include <string.h>
 #include "mnemonic.h"
 #include "wordlist.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
-#include <string.h>
 
 #include "data/wordlists/chinese_simplified.c"
 #include "data/wordlists/chinese_traditional.c"
