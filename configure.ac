@@ -8,6 +8,7 @@ AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_PATH_PYTHON([2.7],, [:])
 LT_INIT
 
 AC_PROG_CC
