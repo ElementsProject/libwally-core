@@ -1,0 +1,10 @@
+
+# Ignore any errors from this command
+$ autoreconf --install
+
+$ mkdir bld
+$ cd bld
+$ ../configure [options]
+$ make
+$ make install
+
