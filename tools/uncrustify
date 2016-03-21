@@ -1,0 +1,3 @@
+#!/bin/sh
+# Use uncrustify to reformat the source
+uncrustify --replace --no-backup -c tools/uncrustify.cfg src/*.c src/*.h
