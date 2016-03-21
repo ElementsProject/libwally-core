@@ -12,7 +12,32 @@ LT_INIT
 
 AC_PROG_CC
 
-# C facilities we use
+#
+# C facilities
+#
+if test "x$CFLAGS" = "x"; then
+  CFLAGS="-O3 -g"
+fi
+
+warn_CFLAGS="-std=c89 -pedantic -Wall -W -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $warn_CFLAGS"
+AC_MSG_CHECKING([if ${CC} supports ${warn_CFLAGS}])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
+    [ AC_MSG_RESULT([yes]) ],
+    [ AC_MSG_RESULT([no])
+      CFLAGS="$saved_CFLAGS"
+    ])
+
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -fvisibility=hidden"
+AC_MSG_CHECKING([if ${CC} supports -fvisibility=hidden])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
+    [ AC_MSG_RESULT([yes]) ],
+    [ AC_MSG_RESULT([no])
+      CFLAGS="$saved_CFLAGS"
+    ])
+
 AC_C_BIGENDIAN()
 AC_C_INLINE
 AC_TYPE_SIZE_T
