@@ -1,5 +1,5 @@
 bld
-test/*.pyc
+src/test/*.pyc
 *.o
 *.lo
 *.la

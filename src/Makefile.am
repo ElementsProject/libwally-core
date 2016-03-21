@@ -7,6 +7,6 @@ libwallycore_la_SOURCES = \
     ccan/ccan/crypto/sha256/sha256.c
 
 libwallycore_la_INCLUDES = mnemonic.h wordlist.h
-libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan
+libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
 
-#SUBDIRS = test
+SUBDIRS = test

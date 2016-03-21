@@ -58,9 +58,15 @@ AC_HAVE_UNALIGNED_ACCESS
 
 AC_CHECK_HEADERS([byteswap.h])
 
+#
+# Python facilities
+#
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ":"])
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
+ src/test/Makefile
 ])
 
 AC_OUTPUT

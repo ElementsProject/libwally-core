@@ -22,7 +22,7 @@ class BIP39Tests(unittest.TestCase):
             with open(util.root_dir + 'src/data/wordlists/vectors.json', 'r') as f:
                 self.cases = json.load(f)["english"]
 
-            util.bind_all(self, util.bip39_funcs + util.wordlist_funcs)
+            util.bind_all(self, util.bip39_funcs)
             gwl = lambda lang: self.bip39_get_wordlist(lang)
             self.wordlists = {l: gwl(l) for l in self.langs.keys()}
 
@@ -44,16 +44,16 @@ class BIP39Tests(unittest.TestCase):
                          self.wordlists['en'])
 
 
-    def test_all_lookups(self):
-
-        for lang in self.langs.keys():
-            wl = self.wordlists[lang]
-            words_list, _ = util.load_words(self.langs[lang])
-            for i in range(2048):
-                word = self.wordlist_lookup_index(wl, i)
-                self.assertEqual(word, words_list[i])
-                idx = self.wordlist_lookup_word(wl, word)
-                self.assertEqual(i, idx - 1)
+#    def test_all_lookups(self):
+#
+#        for lang in self.langs.keys():
+#            wl = self.wordlists[lang]
+#            words_list, _ = util.load_words(self.langs[lang])
+#            for i in range(2048):
+#                word = self.wordlist_lookup_index(wl, i)
+#                self.assertEqual(word, words_list[i])
+#                idx = self.wordlist_lookup_word(wl, word)
+#                self.assertEqual(i, idx - 1)
 
 
     def test_bip39_vectors(self):
