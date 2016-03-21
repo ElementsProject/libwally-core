@@ -14,7 +14,7 @@ struct words;
  *
  * @bytes must be an even multiple of the number of bits in the wordlist used.
  */
-char* mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len);
+char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len);
 
 /**
  * mnemonic_to_bytes - Convert a mnemonic representation into a block of bytes.
@@ -25,6 +25,6 @@ char* mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
  *
  * Returns the length of the written mnemonic in bytes, zero on error.
  */
-size_t mnemonic_to_bytes(const struct words *w, const char* mnemonic, unsigned char *bytes, size_t len);
+size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned char *bytes, size_t len);
 
 #endif /* LIBWALLY_MNEMONIC_H */

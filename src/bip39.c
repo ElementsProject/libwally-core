@@ -15,7 +15,7 @@
 
 static const struct {
     const char name[4];
-    const struct words* words;
+    const struct words *words;
 } lookup[] = {
     { "en", &en_words}, { "es", &es_words}, { "fr", &fr_words},
     { "it", &it_words}, { "jp", &jp_words}, { "zhs", &zhs_words},
@@ -28,7 +28,7 @@ const char *bip39_get_languages()
     return "en es fr it jp zhs zht";
 }
 
-const struct words *bip39_get_wordlist(const char* lang)
+const struct words *bip39_get_wordlist(const char *lang)
 {
     if (lang) {
         size_t i;
@@ -61,7 +61,7 @@ static unsigned char bip39_checksum(const unsigned char *bytes, size_t len)
     return tmp.u.u8[0];
 }
 
-char* bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
+char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];

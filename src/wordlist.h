@@ -16,10 +16,10 @@ struct words {
     /* Is the word list sorted by unicode code point order? */
     bool sorted;
     /* The underlying string */
-    const char* str;
-   /* Pointers to the individual words */
+    const char *str;
+    /* Pointers to the individual words */
     const char **indices;
- };
+};
 
 /**
  * wordlist_init - Initialise a words structure.
@@ -47,7 +47,7 @@ size_t wordlist_lookup_word(const struct words *w, const char *word);
  *
  * Returns NULL if not found, the word otherwise.
  */
-const char* wordlist_lookup_index(const struct words *w, size_t index);
+const char *wordlist_lookup_index(const struct words *w, size_t index);
 
 /**
  * wordlist_free - Free a words structure.

@@ -3,7 +3,7 @@
 
 static int bstrcmp(const void *l, const void *r)
 {
-   return strcmp(l, (*(const char**)r));
+    return strcmp(l, (*(const char **)r));
 }
 
 /* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
@@ -16,7 +16,7 @@ inline static int get_bits(size_t n)
 }
 
 /* Allocate a new words structure */
-static struct words *wordlist_alloc(const char* words, size_t len)
+static struct words *wordlist_alloc(const char *words, size_t len)
 {
     struct words *w = malloc(sizeof(struct words));
     if (w) {
@@ -24,7 +24,7 @@ static struct words *wordlist_alloc(const char* words, size_t len)
         if (w->str) {
             w->len = len;
             w->bits = get_bits(len);
-            w->indices = malloc(len * sizeof(const char*));
+            w->indices = malloc(len * sizeof(const char *));
             if (w->indices)
                 return w;
             free((void *)w->str);
@@ -48,7 +48,7 @@ struct words *wordlist_init(const char *words)
     size_t i, len = wordlist_count(words);
 
     if ((w = wordlist_alloc(words, len))) {
-       /* Tokenise the strings into w->indices */
+        /* Tokenise the strings into w->indices */
         const char *p = w->str;
         for (len = 0; len < w->len; ++len) {
             w->indices[len] = p;
@@ -62,14 +62,14 @@ struct words *wordlist_init(const char *words)
     w->sorted = true;
     for (i = 1; i < len && w->sorted; ++i)
         if (strcmp(w->indices[i - 1], w->indices[i]) > 0)
-             w->sorted = false;
+            w->sorted = false;
 
     return w;
 }
 
 size_t wordlist_lookup_word(const struct words *w, const char *word)
 {
-    const size_t size = sizeof(const char*);
+    const size_t size = sizeof(const char *);
     const char **found = NULL;
 
     if (w->sorted)
@@ -83,7 +83,7 @@ size_t wordlist_lookup_word(const struct words *w, const char *word)
     return found ? found - w->indices + 1u : 0u;
 }
 
-const char* wordlist_lookup_index(const struct words *w, size_t index)
+const char *wordlist_lookup_index(const struct words *w, size_t index)
 {
     if (index >= w->len)
         return NULL;

@@ -26,7 +26,7 @@ static void store_index(size_t bits, unsigned char *bytes, size_t n, size_t valu
             U8_AT(bytes, pos) |= U8_MASK(pos);
 }
 
-char* mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
+char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
 {
     size_t total_bits = len * 8u; /* bits in 'bytes' */
     size_t total_mnemonics = total_bits / w->bits; /* Mnemonics in 'bytes' */
@@ -43,7 +43,7 @@ char* mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
 
     /* Allocate and fill result */
     if ((str = malloc(str_len))) {
-        char* out = str;
+        char *out = str;
 
         for (i = 0; i < total_mnemonics; ++i) {
             size_t index = extract_index(w->bits, bytes, i);
@@ -59,7 +59,7 @@ char* mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
     return str;
 }
 
-size_t mnemonic_to_bytes(const struct words *w, const char* mnemonic, unsigned char *bytes, size_t len)
+size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned char *bytes, size_t len)
 {
     struct words *mnemonic_w = wordlist_init(mnemonic);
     size_t i;
