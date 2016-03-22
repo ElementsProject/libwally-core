@@ -21,10 +21,8 @@
  */
 struct sha512 {
 	union {
-		/* Array of chars */
-		unsigned char u8[64];
-		/* Array of uint64_t */
 		uint64_t u64[8];
+		unsigned char u8[64];
 	} u;
 };
 
