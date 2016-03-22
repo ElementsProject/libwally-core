@@ -16,6 +16,11 @@ AC_PROG_CC
 #
 # C facilities
 #
+AC_ARG_ENABLE(export-all,
+    AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
+    [export_all=$enableval], [export_all=no])
+AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" = "xyes"])
+
 if test "x$CFLAGS" = "x"; then
   CFLAGS="-O3 -g"
 fi
@@ -27,17 +32,19 @@ AC_MSG_CHECKING([if ${CC} supports ${warn_CFLAGS}])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
     [ AC_MSG_RESULT([yes]) ],
     [ AC_MSG_RESULT([no])
-      CFLAGS="$saved_CFLAGS"
+        CFLAGS="$saved_CFLAGS"
     ])
 
-saved_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -fvisibility=hidden"
-AC_MSG_CHECKING([if ${CC} supports -fvisibility=hidden])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
-    [ AC_MSG_RESULT([yes]) ],
-    [ AC_MSG_RESULT([no])
-      CFLAGS="$saved_CFLAGS"
-    ])
+if test "x$export_all" != "xyes"; then
+    saved_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -fvisibility=hidden"
+    AC_MSG_CHECKING([if ${CC} supports -fvisibility=hidden])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
+        [ AC_MSG_RESULT([yes]) ],
+        [ AC_MSG_RESULT([no])
+            CFLAGS="$saved_CFLAGS"
+        ])
+fi
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
@@ -50,7 +57,7 @@ AC_TYPE_UINT8_T
 AC_DEFUN([AC_HAVE_UNALIGNED_ACCESS],
     [AC_TRY_RUN([int main(){static int a[2];return *((int*)(((char*)a)+1)) != 0;}],
         [ac_have_unaligned_access=yes], [ac_have_unaligned_access=no])]
-if test x"$ac_have_unaligned_access" = xyes ; then
+if test "x$ac_have_unaligned_access" = "xyes"; then
     AC_DEFINE([HAVE_UNALIGNED_ACCESS], [1], [Define if we have unaligned access])
 fi
 )

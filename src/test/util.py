@@ -22,10 +22,14 @@ bip39_funcs = [('bip39_get_languages', c_char_p, []),
 
 
 def bind_fn(name, res, args):
-    fn = getattr(libwally, name)
-    fn.restype, fn.argtypes = res, args
+    try:
+        fn = getattr(libwally, name)
+        fn.restype, fn.argtypes = res, args
+    except AttributeError:
+        # Internal function and --enable-export-all was not
+        # passed to configure.
+        fn = None
     return fn
-
 
 def bind_all(dest, funcs):
     for f in funcs:
