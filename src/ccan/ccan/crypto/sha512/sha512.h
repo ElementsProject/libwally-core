@@ -45,11 +45,11 @@ struct sha512_ctx {
 	SHA512_CTX c;
 #else
 	uint64_t s[8];
-	uint64_t bytes;
 	union {
 		uint64_t u64[16];
 		unsigned char u8[128];
 	} buf;
+	uint64_t bytes;
 #endif
 };
 
@@ -107,7 +107,8 @@ void sha512_init(struct sha512_ctx *ctx);
 	{ { 0x6a09e667f3bcc908ull, 0xbb67ae8584caa73bull,	\
 	    0x3c6ef372fe94f82bull, 0xa54ff53a5f1d36f1ull,	\
 	    0x510e527fade682d1ull, 0x9b05688c2b3e6c1full,	\
-	    0x1f83d9abfb41bd6bull, 0x5be0cd19137e2179ull }, 0 }
+	    0x1f83d9abfb41bd6bull, 0x5be0cd19137e2179ull },	\
+	  { { 0 } }, 0 }
 #endif
 
 /**
