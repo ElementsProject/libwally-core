@@ -49,7 +49,7 @@ struct sha512_ctx {
 	uint64_t s[8];
 	uint64_t bytes;
 	union {
-		uint64_t u64[8];
+		uint64_t u64[16];
 		unsigned char u8[128];
 	} buf;
 #endif
