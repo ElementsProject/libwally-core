@@ -90,21 +90,21 @@ static void Transform(uint64_t *s, const uint64_t *chunk)
 	uint64_t w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15;
 
 	Round(a, b, c, &d, e, f, g, &h, 0x428a2f98d728ae22ull, w0 = be64_to_cpu(chunk[0]));
-	Round(h, a, b, &c, d, e, f, &g, 0x7137449123ef65cdull, w1 = be64_to_cpu(chunk[8]));
-	Round(g, h, a, &b, c, d, e, &f, 0xb5c0fbcfec4d3b2full, w2 = be64_to_cpu(chunk[16]));
-	Round(f, g, h, &a, b, c, d, &e, 0xe9b5dba58189dbbcull, w3 = be64_to_cpu(chunk[24]));
-	Round(e, f, g, &h, a, b, c, &d, 0x3956c25bf348b538ull, w4 = be64_to_cpu(chunk[32]));
-	Round(d, e, f, &g, h, a, b, &c, 0x59f111f1b605d019ull, w5 = be64_to_cpu(chunk[40]));
-	Round(c, d, e, &f, g, h, a, &b, 0x923f82a4af194f9bull, w6 = be64_to_cpu(chunk[48]));
-	Round(b, c, d, &e, f, g, h, &a, 0xab1c5ed5da6d8118ull, w7 = be64_to_cpu(chunk[56]));
-	Round(a, b, c, &d, e, f, g, &h, 0xd807aa98a3030242ull, w8 = be64_to_cpu(chunk[64]));
-	Round(h, a, b, &c, d, e, f, &g, 0x12835b0145706fbeull, w9 = be64_to_cpu(chunk[72]));
-	Round(g, h, a, &b, c, d, e, &f, 0x243185be4ee4b28cull, w10 = be64_to_cpu(chunk[80]));
-	Round(f, g, h, &a, b, c, d, &e, 0x550c7dc3d5ffb4e2ull, w11 = be64_to_cpu(chunk[88]));
-	Round(e, f, g, &h, a, b, c, &d, 0x72be5d74f27b896full, w12 = be64_to_cpu(chunk[96]));
-	Round(d, e, f, &g, h, a, b, &c, 0x80deb1fe3b1696b1ull, w13 = be64_to_cpu(chunk[104]));
-	Round(c, d, e, &f, g, h, a, &b, 0x9bdc06a725c71235ull, w14 = be64_to_cpu(chunk[112]));
-	Round(b, c, d, &e, f, g, h, &a, 0xc19bf174cf692694ull, w15 = be64_to_cpu(chunk[120]));
+	Round(h, a, b, &c, d, e, f, &g, 0x7137449123ef65cdull, w1 = be64_to_cpu(chunk[1]));
+	Round(g, h, a, &b, c, d, e, &f, 0xb5c0fbcfec4d3b2full, w2 = be64_to_cpu(chunk[2]));
+	Round(f, g, h, &a, b, c, d, &e, 0xe9b5dba58189dbbcull, w3 = be64_to_cpu(chunk[3]));
+	Round(e, f, g, &h, a, b, c, &d, 0x3956c25bf348b538ull, w4 = be64_to_cpu(chunk[4]));
+	Round(d, e, f, &g, h, a, b, &c, 0x59f111f1b605d019ull, w5 = be64_to_cpu(chunk[5]));
+	Round(c, d, e, &f, g, h, a, &b, 0x923f82a4af194f9bull, w6 = be64_to_cpu(chunk[6]));
+	Round(b, c, d, &e, f, g, h, &a, 0xab1c5ed5da6d8118ull, w7 = be64_to_cpu(chunk[7]));
+	Round(a, b, c, &d, e, f, g, &h, 0xd807aa98a3030242ull, w8 = be64_to_cpu(chunk[8]));
+	Round(h, a, b, &c, d, e, f, &g, 0x12835b0145706fbeull, w9 = be64_to_cpu(chunk[9]));
+	Round(g, h, a, &b, c, d, e, &f, 0x243185be4ee4b28cull, w10 = be64_to_cpu(chunk[10]));
+	Round(f, g, h, &a, b, c, d, &e, 0x550c7dc3d5ffb4e2ull, w11 = be64_to_cpu(chunk[11]));
+	Round(e, f, g, &h, a, b, c, &d, 0x72be5d74f27b896full, w12 = be64_to_cpu(chunk[12]));
+	Round(d, e, f, &g, h, a, b, &c, 0x80deb1fe3b1696b1ull, w13 = be64_to_cpu(chunk[13]));
+	Round(c, d, e, &f, g, h, a, &b, 0x9bdc06a725c71235ull, w14 = be64_to_cpu(chunk[14]));
+	Round(b, c, d, &e, f, g, h, &a, 0xc19bf174cf692694ull, w15 = be64_to_cpu(chunk[15]));
 
 	Round(a, b, c, &d, e, f, g, &h, 0xe49b69c19ef14ad2ull, w0 += sigma1(w14) + w9 + sigma0(w1));
 	Round(h, a, b, &c, d, e, f, &g, 0xefbe4786384f25e3ull, w1 += sigma1(w15) + w10 + sigma0(w2));
@@ -246,7 +246,7 @@ void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 	uint64_t sizedesc[2] = { 0, cpu_to_be64(ctx->bytes << 3) };
 	size_t i;
 
-	/* Add '1' bit to terminate, then all 0 bits, up to next block - 8. */
+	/* Add '1' bit to terminate, then all 0 bits, up to next block - 16. */
 	add(ctx, pad, 1 + ((239 - (ctx->bytes % 128)) % 128));
 	/* Add number of bits of data (big endian) */
 	add(ctx, sizedesc, sizeof(sizedesc));
