@@ -247,7 +247,7 @@ void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 	size_t i;
 
 	/* Add '1' bit to terminate, then all 0 bits, up to next block - 16. */
-	add(ctx, pad, 1 + ((239 - (ctx->bytes % 128)) % 128));
+	add(ctx, pad, 1 + ((256 - 16 - (ctx->bytes % 128) - 1) % 128));
 	/* Add number of bits of data (big endian) */
 	add(ctx, sizedesc, sizeof(sizedesc));
 	for (i = 0; i < sizeof(ctx->s) / sizeof(ctx->s[0]); i++)
