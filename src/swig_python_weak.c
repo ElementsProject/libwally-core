@@ -8,10 +8,12 @@
  * these dummies.
  */
 #include <config.h>
+#include <include/wally-core.h>
+
 #ifdef HAVE_ATTRIBUTE_WEAK
 
 #define DUMMY_WEAKREF(func) \
-    void func(void) __attribute__((weak)); \
+    WALLY_CORE_API void func(void) __attribute__((weak)); \
     void func(void) {}
 
 DUMMY_WEAKREF(PyArg_ParseTuple)
