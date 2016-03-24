@@ -2,6 +2,7 @@ lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
     bip39.c \
+    hmac.c \
     mnemonic.c \
     wordlist.c \
     ccan/ccan/crypto/sha256/sha256.c \
