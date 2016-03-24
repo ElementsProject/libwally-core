@@ -130,33 +130,26 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
  */
-static void pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
-                               unsigned char *salt, size_t salt_len,
-                               unsigned char *key, size_t key_len)
+static void pbkdf2_hmac_sha512(unsigned char *output,
+                               const unsigned char *pass, size_t pass_len,
+                               unsigned char *salt, size_t salt_len)
 {
-    struct sha512 obuf, d1, d2;
-    size_t count, i, j, r;
+    struct sha512 d1, d2;
+    size_t i, j;
 
-    for (count = 1; key_len != 0; ++count) {
-        salt[salt_len + 0] = (count >> 24) & 0xff;
-        salt[salt_len + 1] = (count >> 16) & 0xff;
-        salt[salt_len + 2] = (count >> 8) & 0xff;
-        salt[salt_len + 3] = count & 0xff;
+    salt[salt_len + 0] = 0;
+    salt[salt_len + 1] = 0;
+    salt[salt_len + 2] = 0;
+    salt[salt_len + 3] = 1;
 
-        hmac_sha512(&d1, pass, pass_len, salt, salt_len + SALT_BYTES);
-        obuf = d1;
+    hmac_sha512(&d1, pass, pass_len, salt, salt_len + SALT_BYTES);
+    memcpy(output, d1.u.u8, sizeof(d1));
 
-        for (i = 1; i < 2048u; ++i) {
-            hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
-            d1 = d2;
-            for (j = 0; j < sizeof(obuf); ++j)
-                obuf.u.u8[j] ^= d1.u.u8[j];
-        }
-
-        r = key_len < sizeof(obuf) ? key_len : sizeof(obuf);
-        memcpy(key, obuf.u.u8, r);
-        key += r;
-        key_len -= r;
+    for (i = 1; i < 2048u; ++i) {
+        hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
+        d1 = d2;
+        for (j = 0; j < sizeof(d1); ++j)
+            output[j] ^= d1.u.u8[j];
     }
 }
 
@@ -175,8 +168,8 @@ int bip39_mnemonic_to_seed(unsigned char *output,
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
 
-    pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
-                       salt, salt_len, output, BIP39_SEED_LEN_512);
+    pbkdf2_hmac_sha512(output, (unsigned char *)mnemonic, strlen(mnemonic),
+                       salt, salt_len);
     free(salt);
     return 0;
 }
