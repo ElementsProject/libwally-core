@@ -1,5 +1,7 @@
 AC_PREREQ([2.69])
 AC_INIT(libwallycore, 0.1)
+AC_CONFIG_AUX_DIR([tools/build-aux])
+AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
 AC_CONFIG_HEADERS([src/config.h])
 AH_TOP([#ifndef LIBWALLYCORE_CONFIG_H])
@@ -8,7 +10,6 @@ AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-AM_PATH_PYTHON([2.7],, [:])
 LT_INIT
 
 AC_PROG_CC
@@ -68,7 +69,21 @@ AC_CHECK_HEADERS([byteswap.h])
 #
 # Python facilities
 #
-AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ":"])
+AC_PYTHON_DEVEL
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
+
+#
+# SWIG
+#
+AC_ARG_ENABLE(swig-python,
+    AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
+    [swig_python=$enableval], [swig_python=no])
+AM_CONDITIONAL([USE_SWIG_PYTHON], [test x"$swig_python" = "xyes"])
+
+if test "x$swig_python" == "xyes"; then
+    AC_PROG_SWIG
+    SWIG_PYTHON
+fi
 
 AC_CONFIG_FILES([
  Makefile

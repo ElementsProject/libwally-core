@@ -1,4 +1,5 @@
 bld
+src/*.pyc
 src/test/*.pyc
 *.o
 *.lo
@@ -26,5 +27,8 @@ src/Makefile.in
 src/config.h
 src/config.h.in
 src/stamp-h1
+src/swig_python_wrap.c
+src/wallycore.py
 src/test/Makefile
 src/test/Makefile.in
+tools/build-aux/m4/l*.m4
