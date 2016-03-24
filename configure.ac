@@ -64,6 +64,15 @@ fi
 )
 AC_HAVE_UNALIGNED_ACCESS
 
+AC_DEFUN([AC_HAVE_ATTRIBUTE_WEAK],
+    [AC_TRY_RUN([extern int foo(int) __attribute__((weak)); int main(){return 0;}],
+        [ac_have_attribute_weak=yes], [ac_have_attribute_weak=no])]
+if test "x$ac_have_attribute_weak" = "xyes"; then
+    AC_DEFINE([HAVE_ATTRIBUTE_WEAK], [1], [Define if we have __attribute__((weak)) support])
+fi
+)
+AC_HAVE_ATTRIBUTE_WEAK
+
 AC_CHECK_HEADERS([byteswap.h])
 
 #

@@ -1,10 +1,11 @@
 libwallycore_la_CFLAGS =
 
 if USE_SWIG_PYTHON
-BUILT_SOURCES = swig_python_wrap.c
+SWIG_SRCS = swig_python_wrap.c swig_python_weak.c
 
 libwallycore_la_CFLAGS += $(SWIG_PYTHON_CPPFLAGS)
 
+# We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python_wrap.c : swig.i
 	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $< && sed -i 's/_wallycore/libwallycore/g' wallycore.py $@
 endif
@@ -12,7 +13,7 @@ endif
 lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
-    $(BUILT_SOURCES) \
+    $(SWIG_SRCS) \
     bip39.c \
     hmac.c \
     mnemonic.c \
