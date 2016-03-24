@@ -2,7 +2,9 @@
 #include <string.h>
 #include "mnemonic.h"
 #include "wordlist.h"
+#include "hmac.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
+#include "ccan/ccan/crypto/sha512/sha512.h"
 
 #include "data/wordlists/chinese_simplified.c"
 #include "data/wordlists/chinese_traditional.c"
@@ -116,27 +118,65 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
     return bip39_mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes)) != 0;
 }
 
-unsigned char *bip39_mnemonic_to_seed(const char *mnemonic, const char *password)
+#define SALT_BYTES 4u /* Extra bytes for salt */
+
+/*
+ * This is a heavily modified version of openBSDs pkcs5_pbkdf2 from
+ * libutil/pkcs5_pbkdf2.c, whose copyright appears here:
+ *
+ * Copyright (c) 2008 Damien Bergamini <damien.bergamini@free.fr>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ */
+static void pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
+                               unsigned char *salt, size_t salt_len,
+                               unsigned char *key, size_t key_len)
+{
+    struct sha512 obuf, d1, d2;
+    size_t count, i, j, r;
+
+    for (count = 1; key_len != 0; ++count) {
+        salt[salt_len + 0] = (count >> 24) & 0xff;
+        salt[salt_len + 1] = (count >> 16) & 0xff;
+        salt[salt_len + 2] = (count >> 8) & 0xff;
+        salt[salt_len + 3] = count & 0xff;
+
+        hmac_sha512(&d1, pass, pass_len, salt, salt_len + SALT_BYTES);
+        obuf = d1;
+
+        for (i = 1; i < 2048u; ++i) {
+            hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
+            d1 = d2;
+            for (j = 0; j < sizeof(obuf); ++j)
+                obuf.u.u8[j] ^= d1.u.u8[j];
+        }
+
+        r = key_len < sizeof(obuf) ? key_len : sizeof(obuf);
+        memcpy(key, obuf.u.u8, r);
+        key += r;
+        key_len -= r;
+    }
+}
+
+int bip39_mnemonic_to_seed(unsigned char *output,
+                           const char *mnemonic, const char *password)
 {
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
-    const size_t salt_len = prefix_len + password_len + 1;
-    unsigned char *output;
-    char *salt = malloc(salt_len);
+    const size_t salt_len = prefix_len + password_len;
+    unsigned char *salt = malloc(salt_len + SALT_BYTES);
 
     if (!salt)
-        return NULL;
+        return -1;
 
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
-    salt[salt_len - 1] = '\0';
 
-    output = malloc(BIP39_SEED_LEN_512);
-    if (output) {
-        /* FIXME PBKDF2 HMAC SHA512 */
-        (void)mnemonic;
-        free(salt);
-    }
-    return output;
+    pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
+                       salt, salt_len, output, BIP39_SEED_LEN_512);
+    free(salt);
+    return 0;
 }

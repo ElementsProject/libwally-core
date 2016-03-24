@@ -1,5 +1,5 @@
 import unittest
-from binascii import unhexlify
+from binascii import hexlify, unhexlify
 import json
 import util
 from ctypes import create_string_buffer
@@ -77,6 +77,16 @@ class BIP39Tests(unittest.TestCase):
             rlen = self.bip39_mnemonic_to_bytes(wl, result, rbuf, hex_len)
             self.assertEqual(rlen, hex_len)
             self.assertEqual(buf.raw, rbuf.raw)
+
+    def test_mnemonic_to_seed(self):
+
+        for case in self.cases:
+            mnemonic, seed = case[1], case[2]
+
+            buf = create_string_buffer(64)
+            result = self.bip39_mnemonic_to_seed(buf, mnemonic, 'TREZOR')
+            self.assertEqual(result, 0)
+            self.assertEqual(hexlify(buf), seed)
 
 
 if __name__ == '__main__':
