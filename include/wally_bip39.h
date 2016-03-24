@@ -63,8 +63,9 @@ WALLY_CORE_API size_t bip39_mnemonic_to_bytes(
  * @w Word list to use. Pass NULL to use the default English list.
  * @mnemonic Mnemonic to validate.
  */
-WALLY_CORE_API bool bip39_mnemonic_is_valid(const struct words *w,
-                                            const char *mnemonic);
+WALLY_CORE_API bool bip39_mnemonic_is_valid(
+    const struct words *w,
+    const char *mnemonic);
 
 /**
  * Convert a mnemonic into a binary seed.
@@ -75,8 +76,9 @@ WALLY_CORE_API bool bip39_mnemonic_is_valid(const struct words *w,
  *
  * Returns 0 on success, non-zero otherwise.
  */
-WALLY_CORE_API int bip39_mnemonic_to_seed(unsigned char *output,
-                                          const char *mnemonic,
-                                          const char *password);
+WALLY_CORE_API int bip39_mnemonic_to_seed(
+    unsigned char *output,
+    const char *mnemonic,
+    const char *password);
 
 #endif /* LIBWALLY_CORE_BIP39_H */
