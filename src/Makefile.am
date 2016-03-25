@@ -19,6 +19,7 @@ lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
     $(SWIG_SRCS) \
+    bip32.c \
     bip39.c \
     hmac.c \
     mnemonic.c \
