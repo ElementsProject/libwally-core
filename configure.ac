@@ -14,6 +14,13 @@ LT_INIT
 
 AC_PROG_CC
 
+GNU_SED=sed
+AC_CHECK_PROG(HAVE_GSED,gsed,yes,no)
+if test "x$HAVE_GSED" == "xyes"; then
+  GNU_SED=gsed
+fi
+AC_SUBST([GNU_SED])
+
 #
 # C facilities
 #
