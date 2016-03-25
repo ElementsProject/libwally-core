@@ -34,3 +34,6 @@ src/wallycore.py
 src/test/Makefile
 src/test/Makefile.in
 tools/build-aux/m4/l*.m4
+src/secp256k1/test-suite.log
+src/secp256k1/tests.log
+src/secp256k1/tests.trs
