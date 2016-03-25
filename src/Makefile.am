@@ -1,3 +1,8 @@
+LIBSECP256K1=secp256k1/libsecp256k1.la
+
+$(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+
 libwallycore_la_CFLAGS =
 
 if USE_SWIG_PYTHON
@@ -23,5 +28,6 @@ libwallycore_la_SOURCES = \
 
 libwallycore_la_INCLUDES = mnemonic.h wordlist.h
 libwallycore_la_CFLAGS += -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
+libwallycore_la_LIBADD = $(LIBSECP256K1)
 
-SUBDIRS = test
+SUBDIRS = secp256k1 test
