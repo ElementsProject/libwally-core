@@ -18,6 +18,12 @@ GNU_SED=sed
 AC_CHECK_PROG(HAVE_GSED,gsed,yes,no)
 if test "x$HAVE_GSED" == "xyes"; then
   GNU_SED=gsed
+else
+    case $host_os in
+    *darwin*)
+        AC_MSG_ERROR([gsed must be available to build this library])
+        ;;
+    esac
 fi
 AC_SUBST([GNU_SED])
 
