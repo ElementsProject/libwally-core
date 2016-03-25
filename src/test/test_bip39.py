@@ -84,8 +84,8 @@ class BIP39Tests(unittest.TestCase):
             mnemonic, seed = case[1], case[2]
 
             buf = create_string_buffer(64)
-            result = self.bip39_mnemonic_to_seed(buf, mnemonic, 'TREZOR')
-            self.assertEqual(result, 0)
+            result = self.bip39_mnemonic_to_seed(mnemonic, 'TREZOR', buf, 64)
+            self.assertEqual(result, 64)
             self.assertEqual(hexlify(buf), seed)
 
 

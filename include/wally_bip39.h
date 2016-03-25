@@ -51,6 +51,8 @@ WALLY_CORE_API char *bip39_mnemonic_from_bytes(
  * @mnemonic Mnemonic to convert.
  * @bytes: Where to store the resulting entropy.
  * @len: The length of @bytes in bytes.
+ *
+ * Returns The number of bytes writen on success, zero otherwise.
  */
 WALLY_CORE_API size_t bip39_mnemonic_to_bytes(
     const struct words *w,
@@ -69,16 +71,18 @@ WALLY_CORE_API bool bip39_mnemonic_is_valid(
 
 /**
  * Convert a mnemonic into a binary seed.
- * @output The destination for the binary seed. This must point to
- *         memory at least @BIP39_SEED_LEN_512 bytes in size.
  * @mnemonic Mnemonic to convert.
  * @password Mnemonic password or NULL if no password is needed.
+ * @bytes The destination for the binary seed.
+ * @len The length of @bytes in bytes. Currently This must
+ *      be @BIP39_SEED_LEN_512.
  *
- * Returns 0 on success, non-zero otherwise.
+ * Returns @BIP39_SEED_LEN_512 on success, zero otherwise.
  */
-WALLY_CORE_API int bip39_mnemonic_to_seed(
-    unsigned char *output,
+WALLY_CORE_API size_t bip39_mnemonic_to_seed(
     const char *mnemonic,
-    const char *password);
+    const char *password,
+    unsigned char *bytes,
+    size_t len);
 
 #endif /* LIBWALLY_CORE_BIP39_H */

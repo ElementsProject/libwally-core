@@ -26,7 +26,7 @@ bip39_funcs = [('bip39_get_languages', c_char_p, []),
                ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
                ('bip39_mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),
                ('bip39_mnemonic_is_valid', c_ulong, [c_void_p, c_char_p]),
-               ('bip39_mnemonic_to_seed', c_ulong, [c_void_p, c_char_p, c_char_p])]
+               ('bip39_mnemonic_to_seed', c_ulong, [c_char_p, c_char_p, c_void_p, c_ulong])]
 
 sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
               ('sha512', None, [c_void_p, c_void_p, c_ulong]),

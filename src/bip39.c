@@ -130,7 +130,7 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
  */
-static void pbkdf2_hmac_sha512(unsigned char *output,
+static void pbkdf2_hmac_sha512(unsigned char *bytes,
                                const unsigned char *pass, size_t pass_len,
                                unsigned char *salt, size_t salt_len)
 {
@@ -143,18 +143,18 @@ static void pbkdf2_hmac_sha512(unsigned char *output,
     salt[salt_len + 3] = 1;
 
     hmac_sha512(&d1, pass, pass_len, salt, salt_len + SALT_BYTES);
-    memcpy(output, d1.u.u8, sizeof(d1));
+    memcpy(bytes, d1.u.u8, sizeof(d1));
 
     for (i = 1; i < 2048u; ++i) {
         hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
         d1 = d2;
         for (j = 0; j < sizeof(d1); ++j)
-            output[j] ^= d1.u.u8[j];
+            bytes[j] ^= d1.u.u8[j];
     }
 }
 
-int bip39_mnemonic_to_seed(unsigned char *output,
-                           const char *mnemonic, const char *password)
+size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
+                              unsigned char *bytes, size_t len)
 {
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
@@ -162,14 +162,14 @@ int bip39_mnemonic_to_seed(unsigned char *output,
     const size_t salt_len = prefix_len + password_len;
     unsigned char *salt = malloc(salt_len + SALT_BYTES);
 
-    if (!salt)
-        return -1;
+    if (!salt || len != BIP39_SEED_LEN_512)
+        return 0;
 
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
 
-    pbkdf2_hmac_sha512(output, (unsigned char *)mnemonic, strlen(mnemonic),
+    pbkdf2_hmac_sha512(bytes, (unsigned char *)mnemonic, strlen(mnemonic),
                        salt, salt_len);
     free(salt);
-    return 0;
+    return BIP39_SEED_LEN_512;
 }
