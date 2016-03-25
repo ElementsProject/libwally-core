@@ -36,8 +36,6 @@ int bip32_ext_key_from_bytes(const unsigned char *bytes, size_t len,
 {
     struct sha512 *sha = (struct sha512 *)dest;
 
-    int overflow = 0;
-
     if (len != BIP32_ENTROPY_LEN_256)
         return -1;
 
