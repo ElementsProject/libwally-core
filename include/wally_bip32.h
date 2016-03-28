@@ -20,12 +20,14 @@ struct ext_key {
     unsigned char chain_code[32];
     /* The private or public key with prefix byte */
     unsigned char key[33];
+    /* The depth of this key */
+    uint8_t depth;
     /* The child number of the parent key that this key represents */
     uint32_t child_num;
 };
 
-
-/** FIXME */
+/** FIXME: Do we need these in the interface? */
+#if 0
 WALLY_CORE_API struct ext_key *bip32_key_alloc(
     const unsigned char *chain_code,
     size_t chain_code_len,
@@ -33,8 +35,8 @@ WALLY_CORE_API struct ext_key *bip32_key_alloc(
     size_t len,
     uint32_t child_num);
 
-/** FIXME */
 WALLY_CORE_API void bip32_key_free(struct ext_key *key_in);
+#endif
 
 /**
  * Create a new master extended key from entropy.

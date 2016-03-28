@@ -57,9 +57,10 @@ static void init_from_sha512(const struct sha512 *sha, struct ext_key *key_out)
     memcpy(key_out->chain_code, sha->u.u8 + len, len);
 }
 
+#if 0
 struct ext_key *bip32_key_alloc(const unsigned char *chain_code, size_t cc_len,
                                 const unsigned char *bytes, size_t len,
-                                uint32_t child_num)
+                                uint8_t depth, uint32_t child_num)
 {
     struct ext_key *ret;
 
@@ -76,6 +77,7 @@ struct ext_key *bip32_key_alloc(const unsigned char *chain_code, size_t cc_len,
             *key++ = KEY_PRIVATE; /* 32 byte private key */
         memcpy(key, bytes, len);
         memcpy(ret->chain_code, chain_code, sizeof(ret->chain_code));
+        ret->depth = depth;
         ret->child_num = child_num;
     }
     return ret;
@@ -85,7 +87,7 @@ void bip32_key_free(struct ext_key *key_in)
 {
     free(key_in);
 }
-
+#endif
 
 int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
                          struct ext_key *key_out)
@@ -104,6 +106,7 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
 
     init_from_sha512(&sha, key_out);
 
+    key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
     return 0;
 }
@@ -160,6 +163,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
         return -1;
     }
 
+    key_out->depth = key_in->depth + 1;
     key_out->child_num = child_num;
     return 0;
 }
