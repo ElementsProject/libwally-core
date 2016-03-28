@@ -56,14 +56,14 @@ static size_t entropy_len_to_mask(size_t len)
     return 0;
 }
 
-static unsigned char bip39_checksum(const unsigned char *bytes, size_t len)
+static unsigned char bip39_checksum(const unsigned char *bytes_in, size_t len)
 {
     struct sha256 tmp;
-    sha256(&tmp, bytes, len); /* FIXME: Allow user to provide a SHA256 impl */
+    sha256(&tmp, bytes_in, len); /* FIXME: Allow user to provide a SHA256 impl */
     return tmp.u.u8[0];
 }
 
-char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, size_t len)
+char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, size_t len)
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
@@ -73,13 +73,13 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
     if (w->bits != 11u || !entropy_len_to_mask(len))
         return NULL;
 
-    memcpy(checksummed_bytes, bytes, len);
-    checksummed_bytes[len] = bip39_checksum(bytes, len);;
+    memcpy(checksummed_bytes, bytes_in, len);
+    checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
     return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
 }
 
 size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
-                               unsigned char *bytes, size_t len)
+                               unsigned char *bytes_out, size_t len)
 {
     unsigned char tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
     size_t mask, tmp_len;
@@ -108,7 +108,7 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
         (bip39_checksum(tmp_bytes, tmp_len - 1) & mask))
         return 0; /* Mismatched checksum */
 
-    memcpy(bytes, tmp_bytes, tmp_len - 1);
+    memcpy(bytes_out, tmp_bytes, tmp_len - 1);
     return tmp_len - 1;
 }
 
@@ -130,7 +130,7 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
  */
-static void pbkdf2_hmac_sha512(unsigned char *bytes,
+static void pbkdf2_hmac_sha512(unsigned char *bytes_out,
                                const unsigned char *pass, size_t pass_len,
                                unsigned char *salt, size_t salt_len)
 {
@@ -143,18 +143,18 @@ static void pbkdf2_hmac_sha512(unsigned char *bytes,
     salt[salt_len + 3] = 1;
 
     hmac_sha512(&d1, pass, pass_len, salt, salt_len + SALT_BYTES);
-    memcpy(bytes, d1.u.u8, sizeof(d1));
+    memcpy(bytes_out, d1.u.u8, sizeof(d1));
 
     for (i = 1; i < 2048u; ++i) {
         hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
         d1 = d2;
         for (j = 0; j < sizeof(d1); ++j)
-            bytes[j] ^= d1.u.u8[j];
+            bytes_out[j] ^= d1.u.u8[j];
     }
 }
 
 size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
-                              unsigned char *bytes, size_t len)
+                              unsigned char *bytes_out, size_t len)
 {
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
@@ -168,7 +168,7 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
 
-    pbkdf2_hmac_sha512(bytes, (unsigned char *)mnemonic, strlen(mnemonic),
+    pbkdf2_hmac_sha512(bytes_out, (unsigned char *)mnemonic, strlen(mnemonic),
                        salt, salt_len);
     free(salt);
     return BIP39_SEED_LEN_512;

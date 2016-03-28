@@ -35,29 +35,29 @@ WALLY_CORE_API const struct words *bip39_get_wordlist(
     const char *lang);
 
 /**
- * Generate a mnemonic sentence from the entropy in @bytes.
+ * Generate a mnemonic sentence from the entropy in @bytes_in.
  * @w Word list to use. Pass NULL to use the default English list.
- * @bytes: Entropy to covert.
- * @len: The length of @bytes in bytes.
+ * @bytes_in: Entropy to covert.
+ * @len: The length of @bytes_in in bytes.
  */
 WALLY_CORE_API char *bip39_mnemonic_from_bytes(
     const struct words *w,
-    const unsigned char *bytes,
+    const unsigned char *bytes_in,
     size_t len);
 
 /**
- * Convert a mnemonic sentence into entropy at @bytes.
+ * Convert a mnemonic sentence into entropy at @bytes_out.
  * @w Word list to use. Pass NULL to use the default English list.
  * @mnemonic Mnemonic to convert.
- * @bytes: Where to store the resulting entropy.
- * @len: The length of @bytes in bytes.
+ * @bytes_out: Where to store the resulting entropy.
+ * @len: The length of @bytes_out in bytes.
  *
  * Returns The number of bytes writen on success, zero otherwise.
  */
 WALLY_CORE_API size_t bip39_mnemonic_to_bytes(
     const struct words *w,
     const char *mnemonic,
-    unsigned char *bytes,
+    unsigned char *bytes_out,
     size_t len);
 
 /**
@@ -73,8 +73,8 @@ WALLY_CORE_API bool bip39_mnemonic_is_valid(
  * Convert a mnemonic into a binary seed.
  * @mnemonic Mnemonic to convert.
  * @password Mnemonic password or NULL if no password is needed.
- * @bytes The destination for the binary seed.
- * @len The length of @bytes in bytes. Currently This must
+ * @bytes_in The destination for the binary seed.
+ * @len The length of @bytes_in in bytes. Currently This must
  *      be @BIP39_SEED_LEN_512.
  *
  * Returns @BIP39_SEED_LEN_512 on success, zero otherwise.
@@ -82,7 +82,7 @@ WALLY_CORE_API bool bip39_mnemonic_is_valid(
 WALLY_CORE_API size_t bip39_mnemonic_to_seed(
     const char *mnemonic,
     const char *password,
-    unsigned char *bytes,
+    unsigned char *bytes_in,
     size_t len);
 
 #endif /* LIBWALLY_CORE_BIP39_H */
