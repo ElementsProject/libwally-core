@@ -2,7 +2,7 @@
 #include "hmac.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include "ccan/ccan/endian/endian.h"
-/*#include "secp256k1/include/secp256k1.h"*/
+#include "secp256k1/include/secp256k1.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -57,13 +57,42 @@ static void init_from_sha512(const struct sha512 *sha, struct ext_key *key_out)
     memcpy(key_out->chain_code, sha->u.u8 + len, len);
 }
 
+struct ext_key *bip32_key_alloc(const unsigned char *chain_code, size_t cc_len,
+                                const unsigned char *bytes, size_t len,
+                                uint32_t child_num)
+{
+    struct ext_key *ret;
+
+    if (cc_len != sizeof(ret->chain_code))
+        return NULL;
+
+    if (len != sizeof(ret->key) && len != sizeof(ret->key) - 1)
+        return NULL;
+
+    ret = malloc(sizeof(struct ext_key));
+    if (ret) {
+        unsigned char *key = ret->key;
+        if (len == sizeof(ret->key) - 1)
+            *key++ = KEY_PRIVATE; /* 32 byte private key */
+        memcpy(key, bytes, len);
+        memcpy(ret->chain_code, chain_code, sizeof(ret->chain_code));
+        ret->child_num = child_num;
+    }
+    return ret;
+}
+
+void bip32_key_free(struct ext_key *key_in)
+{
+    free(key_in);
+}
+
 
 int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
                          struct ext_key *key_out)
 {
     struct sha512 sha;
 
-    if (len != BIP32_ENTROPY_LEN_256)
+    if (len != BIP32_ENTROPY_LEN_256 && len != BIP32_ENTROPY_LEN_128)
         return -1;
 
     /* Generate key and chain code */
@@ -79,6 +108,10 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     return 0;
 }
 
+static const secp256k1_context *dummy_secp(void)
+{
+    return (const secp256k1_context *)1;
+}
 
 int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           struct ext_key *key_out)
@@ -101,7 +134,20 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
             /* I = HMAC-SHA512(Key = cpar, Data) */
             hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
                         buf, sizeof(buf));
+
+            /* Split I into two 32-byte sequences, IL and IR
+             * The returned chain code ci is IR
+             */
             init_from_sha512(&sha, key_out);
+
+            /* The returned child key ki is parse256(IL) + kpar (mod n)
+             * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
+             * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
+             */
+            if (!secp256k1_ec_privkey_tweak_add(dummy_secp(),
+                                                key_out->key + 1, sha.u.u8))
+                return -1; /* Out of bounds FIXME: Iterate the next? */
+
         } else {
             /* FIXME */
             return -1;

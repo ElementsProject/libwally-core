@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-/** The required length of entropy for @bip32_key_from_bytes */
+/** The required lengths of entropy for @bip32_key_from_bytes */
+#define BIP32_ENTROPY_LEN_128 16u
 #define BIP32_ENTROPY_LEN_256 32u
 
 /* Child number of the first hardened child */
@@ -23,6 +24,17 @@ struct ext_key {
     uint32_t child_num;
 };
 
+
+/** FIXME */
+WALLY_CORE_API struct ext_key *bip32_key_alloc(
+    const unsigned char *chain_code,
+    size_t chain_code_len,
+    const unsigned char *bytes,
+    size_t len,
+    uint32_t child_num);
+
+/** FIXME */
+WALLY_CORE_API void bip32_key_free(struct ext_key *key_in);
 
 /**
  * Create a new master extended key from entropy.

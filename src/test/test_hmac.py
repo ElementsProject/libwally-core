@@ -61,15 +61,11 @@ class HMACTests(unittest.TestCase):
         if not hasattr(self, 'hmac_sha512'):
             util.bind_all(self, util.sha2_funcs)
 
-    def make_buffer(self, hex_in):
-        hex_len = len(hex_in) / 2
-        return create_string_buffer(unhexlify(hex_in), hex_len), hex_len
-
     def doHMAC(self, hmac_fn, key_in, msg_in):
         buf_len = self.HMAC_SHA512_LEN
         buf = create_string_buffer(buf_len)
-        key, key_len = self.make_buffer(key_in)
-        msg, msg_len = self.make_buffer(msg_in)
+        key, key_len = util.make_cbuffer(key_in)
+        msg, msg_len = util.make_cbuffer(msg_in)
         hmac_fn(buf, key, key_len, msg, msg_len)
         return hexlify(buf)
 
