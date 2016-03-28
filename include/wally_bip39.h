@@ -37,7 +37,7 @@ WALLY_CORE_API const struct words *bip39_get_wordlist(
 /**
  * Generate a mnemonic sentence from the entropy in @bytes_in.
  * @w Word list to use. Pass NULL to use the default English list.
- * @bytes_in: Entropy to covert.
+ * @bytes_in: Entropy to convert.
  * @len: The length of @bytes_in in bytes.
  */
 WALLY_CORE_API char *bip39_mnemonic_from_bytes(
