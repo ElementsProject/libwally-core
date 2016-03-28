@@ -24,6 +24,10 @@ struct ext_key {
     uint8_t depth;
     /* The child number of the parent key that this key represents */
     uint32_t child_num;
+    /* The Hash160 of this keys parent */
+    unsigned char parent160[20];
+    /* The Hash160 of this key */
+    unsigned char hash160[20];
 };
 
 /** FIXME: Do we need these in the interface? */

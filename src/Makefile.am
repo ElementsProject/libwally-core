@@ -27,6 +27,7 @@ libwallycore_la_SOURCES = \
     hmac.c \
     mnemonic.c \
     wordlist.c \
+    ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
     ccan/ccan/crypto/sha512/sha512.c
 

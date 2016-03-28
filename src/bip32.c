@@ -1,7 +1,10 @@
 #include <include/wally_bip32.h>
 #include "hmac.h"
+#include "ccan/ccan/crypto/ripemd160/ripemd160.h"
+#include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include "ccan/ccan/endian/endian.h"
+#include "ccan/ccan/build_assert/build_assert.h"
 #include "secp256k1/include/secp256k1.h"
 #include <string.h>
 #include <stdint.h>
@@ -57,6 +60,18 @@ static void init_from_sha512(const struct sha512 *sha, struct ext_key *key_out)
     memcpy(key_out->chain_code, sha->u.u8 + len, len);
 }
 
+static void key_compute_hash160(struct ext_key *key_out)
+{
+    struct sha256 sha;
+    struct ripemd160 ripemd;
+
+    sha256(&sha, key_out->key, sizeof(key_out->key));
+    ripemd160(&ripemd, &sha, sizeof(sha));
+
+    BUILD_ASSERT(sizeof(key_out->hash160) == sizeof(ripemd));
+    memcpy(key_out->hash160, &ripemd, sizeof(ripemd));
+}
+
 #if 0
 struct ext_key *bip32_key_alloc(const unsigned char *chain_code, size_t cc_len,
                                 const unsigned char *bytes, size_t len,
@@ -108,6 +123,8 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
 
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
+    memset(key_out->parent160, 0, sizeof(key_out->parent160));
+    key_compute_hash160(key_out);
     return 0;
 }
 
@@ -165,5 +182,8 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
 
     key_out->depth = key_in->depth + 1;
     key_out->child_num = child_num;
+    BUILD_ASSERT(sizeof(key_out->parent160) == sizeof(key_in->hash160));
+    memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));
+    key_compute_hash160(key_out);
     return 0;
 }

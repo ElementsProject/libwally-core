@@ -26,7 +26,9 @@ class ext_key(Structure):
     _fields_ = [("chain_code", c_ubyte * 32),
                 ("key", c_ubyte * 33),
                 ("depth", c_ubyte),
-                ("child_num", c_uint)]
+                ("child_num", c_uint),
+                ("parent160", c_ubyte * 20),
+                ("hash160", c_ubyte * 20)]
 
 bip32_funcs = [#('bip32_key_alloc', c_void_p, [c_void_p, c_ulong, c_void_p, c_ulong, c_ubyte, c_uint]),
                #('bip32_key_free', None, [c_void_p]),
