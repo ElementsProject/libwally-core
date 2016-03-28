@@ -13,6 +13,9 @@ libwallycore_la_CFLAGS += $(SWIG_PYTHON_CPPFLAGS)
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python_wrap.c : swig.i
 	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' wallycore.py $@
+
+# FIXME: Add SWIG python tests, e.g.
+# PYTHONPATH=".libs" python mnemonic.py
 endif
 
 lib_LTLIBRARIES = libwallycore.la
