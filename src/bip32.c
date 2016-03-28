@@ -18,35 +18,71 @@ static const unsigned char SEED[] = {
 #define SECP256K1_N_2 ((uint64_t)0xFFFFFFFFFFFFFFFEULL)
 #define SECP256K1_N_3 ((uint64_t)0xFFFFFFFFFFFFFFFFULL)
 
-static int secp256k1_scalar_check_overflow(const struct sha512 *a)
+static int key_overflow(const uint64_t *a)
 {
     int yes = 0;
     int no = 0;
-    no |= (a->u.u64[3] < SECP256K1_N_3); /* No need for a > check. */
-    no |= (a->u.u64[2] < SECP256K1_N_2);
-    yes |= (a->u.u64[2] > SECP256K1_N_2) & ~no;
-    no |= (a->u.u64[1] < SECP256K1_N_1);
-    yes |= (a->u.u64[1] > SECP256K1_N_1) & ~no;
-    yes |= (a->u.u64[0] >= SECP256K1_N_0) & ~no;
+    no |= (a[3] < SECP256K1_N_3); /* No need for a > check. */
+    no |= (a[2] < SECP256K1_N_2);
+    yes |= (a[2] > SECP256K1_N_2) & ~no;
+    no |= (a[1] < SECP256K1_N_1);
+    yes |= (a[1] > SECP256K1_N_1) & ~no;
+    yes |= (a[0] >= SECP256K1_N_0) & ~no;
     return yes;
 }
 
-int bip32_ext_key_from_bytes(const unsigned char *bytes, size_t len,
-                             struct ext_key *dest)
+static int key_zero(const uint64_t *a)
 {
-    struct sha512 *sha = (struct sha512 *)dest;
+    return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0;
+}
 
+/* Check that a key lies between 0 and order(secp256k1) exclusive */
+static bool key_check(const struct ext_key *key_in)
+{
+    const uint64_t *a = (const uint64_t *)key_in;
+    return key_overflow(a) || key_zero(a);
+}
+
+static bool child_is_hardened(uint32_t child_num)
+{
+    return child_num >= BIP32_INITIAL_HARDENED_KEY;
+}
+
+
+int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
+                         struct ext_key *key_out)
+{
     if (len != BIP32_ENTROPY_LEN_256)
         return -1;
 
-    hmac_sha512((struct sha512 *)dest, SEED, sizeof(SEED), bytes, len);
+    /* This sha512 fills key and chain_code in key_out */
+    hmac_sha512((struct sha512 *)key_out, SEED, sizeof(SEED), bytes_in, len);
 
-    if (!sha->u.u64[0] && !sha->u.u64[1] && !sha->u.u64[2] && !sha->u.u64[3])
-        return -1;
+    if (key_check(key_out))
+        return -1; /* Invalid generated key */
 
-    if (secp256k1_scalar_check_overflow(sha))
-        return -1;
-
+    key_out->child_num = 0;
+    key_out->flags = BIP32_EXT_KEY_PRIVATE;
     return 0;
 }
 
+
+int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
+                          struct ext_key *key_out)
+{
+    key_out->child_num = child_num;
+    key_out->flags = key_in->flags & BIP32_EXT_KEY_PRIVATE;
+
+    if (key_in->flags & BIP32_EXT_KEY_PRIVATE) {
+        /* Private parent -> private child */
+        /* FIXME */
+    }
+    else {
+        /* Public parent -> public child */
+        if (child_is_hardened(child_num))
+            return -1; /* Hardened child cannot be made from public parent */
+        /* FIXME */
+    }
+
+    return 0;
+}
