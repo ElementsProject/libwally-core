@@ -10,8 +10,8 @@
 /** The required length of entropy for @bip32_key_from_bytes */
 #define BIP32_ENTROPY_LEN_256 32u
 
-/* Child number of the first hardened key */
-#define BIP32_INITIAL_HARDENED_KEY 0x80000000
+/* Child number of the first hardened child */
+#define BIP32_INITIAL_HARDENED_CHILD 0x80000000
 
 /** An extended key */
 struct ext_key {

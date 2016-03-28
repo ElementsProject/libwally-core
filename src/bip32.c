@@ -40,7 +40,7 @@ static int key_zero(const uint64_t *a)
 
 static bool child_is_hardened(uint32_t child_num)
 {
-    return child_num >= BIP32_INITIAL_HARDENED_KEY;
+    return child_num >= BIP32_INITIAL_HARDENED_CHILD;
 }
 
 
