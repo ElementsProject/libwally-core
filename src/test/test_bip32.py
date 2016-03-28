@@ -6,14 +6,8 @@ from ctypes import byref
 class BIP32Tests(unittest.TestCase):
 
     def setUp(self):
-        if not hasattr(self, 'bip32_key_alloc'):
+        if not hasattr(self, 'bip32_key_from_bytes'):
             util.bind_all(self, util.bip32_funcs)
-
-#    def get_key(self, chain_code, key, depth, child_num):
-#        chain_code, cc_len = util.make_cbuffer(chain_code)
-#        key, key_len = util.make_cbuffer(key)
-#        return self.bip32_key_alloc(chain_code, cc_len,
-#                                    key, key_len, depth, child_num)
 
     def test_from_seed(self):
         key_out = util.ext_key()

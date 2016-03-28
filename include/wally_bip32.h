@@ -30,17 +30,6 @@ struct ext_key {
     unsigned char hash160[20];
 };
 
-/** FIXME: Do we need these in the interface? */
-#if 0
-WALLY_CORE_API struct ext_key *bip32_key_alloc(
-    const unsigned char *chain_code,
-    size_t chain_code_len,
-    const unsigned char *bytes,
-    size_t len,
-    uint32_t child_num);
-
-WALLY_CORE_API void bip32_key_free(struct ext_key *key_in);
-#endif
 
 /**
  * Create a new master extended key from entropy.

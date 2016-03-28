@@ -72,37 +72,6 @@ static void key_compute_hash160(struct ext_key *key_out)
     memcpy(key_out->hash160, &ripemd, sizeof(ripemd));
 }
 
-#if 0
-struct ext_key *bip32_key_alloc(const unsigned char *chain_code, size_t cc_len,
-                                const unsigned char *bytes, size_t len,
-                                uint8_t depth, uint32_t child_num)
-{
-    struct ext_key *ret;
-
-    if (cc_len != sizeof(ret->chain_code))
-        return NULL;
-
-    if (len != sizeof(ret->key) && len != sizeof(ret->key) - 1)
-        return NULL;
-
-    ret = malloc(sizeof(struct ext_key));
-    if (ret) {
-        unsigned char *key = ret->key;
-        if (len == sizeof(ret->key) - 1)
-            *key++ = KEY_PRIVATE; /* 32 byte private key */
-        memcpy(key, bytes, len);
-        memcpy(ret->chain_code, chain_code, sizeof(ret->chain_code));
-        ret->depth = depth;
-        ret->child_num = child_num;
-    }
-    return ret;
-}
-
-void bip32_key_free(struct ext_key *key_in)
-{
-    free(key_in);
-}
-#endif
 
 int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
                          struct ext_key *key_out)

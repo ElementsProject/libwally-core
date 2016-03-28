@@ -30,9 +30,7 @@ class ext_key(Structure):
                 ("parent160", c_ubyte * 20),
                 ("hash160", c_ubyte * 20)]
 
-bip32_funcs = [#('bip32_key_alloc', c_void_p, [c_void_p, c_ulong, c_void_p, c_ulong, c_ubyte, c_uint]),
-               #('bip32_key_free', None, [c_void_p]),
-               ('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
+bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
                ('bip32_key_from_parent', c_int, [c_void_p, c_uint, POINTER(ext_key)])]
 
 bip39_funcs = [('bip39_get_languages', c_char_p, []),
