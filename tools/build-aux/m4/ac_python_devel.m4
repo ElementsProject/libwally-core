@@ -197,11 +197,9 @@ $ac_distutils_result])
 	# save current global flags
 	LIBS="$ac_save_LIBS $PYTHON_LDFLAGS"
 	CPPFLAGS="$ac_save_CPPFLAGS $PYTHON_CPPFLAGS"
-	AC_TRY_LINK([
-		#include <Python.h>
-	],[
-		Py_Initialize();
-	],[pythonexists=yes],[pythonexists=no])
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <Python.h>]],
+                                        [Py_Initialize();])],
+                       [pythonexists=yes], [pythonexists=no])
 
 	AC_MSG_RESULT([$pythonexists])
 
