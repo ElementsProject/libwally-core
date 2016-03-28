@@ -1,7 +1,7 @@
 
 Use the following commands to build and install the library:
 
-$ autoreconf --install # Ignore any errors from this command
+$ ./autogen.sh
 $ ./configure [options]
 $ make
 $ make install
@@ -10,4 +10,4 @@ Note that ./configure --help can be used to determine configuration options.
 
 To fully clean the library, run:
 
-$ ./cleanup.sh.
+$ ./cleanup.sh
