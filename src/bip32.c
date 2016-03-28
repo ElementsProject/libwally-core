@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define KEY_PRIVATE ((unsigned char)0)
+
 static const unsigned char SEED[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
 };
@@ -36,13 +38,6 @@ static int key_zero(const uint64_t *a)
     return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0;
 }
 
-/* Check that a key lies between 0 and order(secp256k1) exclusive */
-static bool key_check(const struct ext_key *key_in)
-{
-    const uint64_t *a = (const uint64_t *)key_in;
-    return key_overflow(a) || key_zero(a);
-}
-
 static bool child_is_hardened(uint32_t child_num)
 {
     return child_num >= BIP32_INITIAL_HARDENED_KEY;
@@ -52,17 +47,29 @@ static bool child_is_hardened(uint32_t child_num)
 int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
                          struct ext_key *key_out)
 {
+    struct sha512 sha;
+
     if (len != BIP32_ENTROPY_LEN_256)
         return -1;
 
-    /* This sha512 fills key and chain_code in key_out */
-    hmac_sha512((struct sha512 *)key_out, SEED, sizeof(SEED), bytes_in, len);
+    /* Generate key and chain code */
+    hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len);
 
-    if (key_check(key_out))
-        return -1; /* Invalid generated key */
+    /* Check that key lies between 0 and order(secp256k1) exclusive */
+    if (key_overflow(sha.u.u64) || key_zero(sha.u.u64))
+        return -1; /* Out of bounds */
+
+    /* The real size of the left and right (key/chain code) parts */
+    const size_t actual_len = sizeof(struct sha512) / 2;
+
+    /* Copy the key and set its prefix */
+    key_out->key[0] = KEY_PRIVATE;
+    memcpy(key_out->key + 1, sha.u.u8, actual_len);
+
+    /* Copy the chain code */
+    memcpy(key_out->chain_code, sha.u.u8 + actual_len, actual_len);
 
     key_out->child_num = 0;
-    key_out->flags = BIP32_EXT_KEY_PRIVATE;
     return 0;
 }
 
@@ -71,9 +78,8 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           struct ext_key *key_out)
 {
     key_out->child_num = child_num;
-    key_out->flags = key_in->flags & BIP32_EXT_KEY_PRIVATE;
 
-    if (key_in->flags & BIP32_EXT_KEY_PRIVATE) {
+    if (key_in->key[0] == KEY_PRIVATE) {
         /* Private parent -> private child */
         /* FIXME */
     }

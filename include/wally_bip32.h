@@ -13,19 +13,14 @@
 /* Child number of the first hardened key */
 #define BIP32_INITIAL_HARDENED_KEY 0x80000000
 
-/* Flag determining whether this key is private or not */
-#define BIP32_EXT_KEY_PRIVATE 0x1
-
 /** An extended key */
 struct ext_key {
-    /* The private or public key */
-    unsigned char key[32];
     /* The chain code for this key */
     unsigned char chain_code[32];
+    /* The private or public key with prefix byte */
+    unsigned char key[33];
     /* The child number of the parent key that this key represents */
     uint32_t child_num;
-    /* BIP32_EXT_KEY_* flags for this key */
-    uint32_t flags;
 };
 
 
