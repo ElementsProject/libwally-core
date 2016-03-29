@@ -76,9 +76,22 @@ static bool key_is_private(const struct ext_key *key_in)
     return key_in->priv_key[0] == KEY_PRIVATE;
 }
 
-static void key_compute_pub_key(struct ext_key *key_out)
+static int key_compute_pub_key(struct ext_key *key_out)
 {
-    /* FIXME */
+    secp256k1_pubkey pub_key;
+    size_t len = sizeof(key_out->pub_key);
+    const uint32_t flags = SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN;
+    secp256k1_context *ctx = secp256k1_context_create(flags); /* FIXME: Shared ctx */
+    int ret = 0;
+
+    if (!secp256k1_ec_pubkey_create(ctx, &pub_key, key_out->priv_key + 1) ||
+        !secp256k1_ec_pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
+                                       SECP256K1_EC_COMPRESSED) ||
+        len != sizeof(key_out->pub_key))
+        ret = -1;
+
+    secp256k1_context_destroy(ctx);
+    return ret;
 }
 
 static void key_compute_hash160(struct ext_key *key_out)
@@ -118,6 +131,7 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
     memset(key_out->parent160, 0, sizeof(key_out->parent160));
+    key_compute_pub_key(key_out);
     key_compute_hash160(key_out);
     return 0;
 }
@@ -255,6 +269,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                                                 key_out->priv_key + 1, sha.u.u8))
                 return -1; /* Out of bounds FIXME: Iterate to the next? */
 
+            key_compute_pub_key(key_out);
         } else {
             /* FIXME */
             return -1;
