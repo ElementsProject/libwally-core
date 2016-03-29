@@ -196,15 +196,17 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
             /* Split I into two 32-byte sequences, IL and IR
              * The returned chain code ci is IR
              */
-            init_from_sha512(&sha, key_out);
+            memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
+                   sizeof(key_out->chain_code));
 
             /* The returned child key ki is parse256(IL) + kpar (mod n)
              * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
              * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
              */
+            memcpy(key_out->key, key_in->key, sizeof(key_in->key));
             if (!secp256k1_ec_privkey_tweak_add(dummy_secp(),
                                                 key_out->key + 1, sha.u.u8))
-                return -1; /* Out of bounds FIXME: Iterate the next? */
+                return -1; /* Out of bounds FIXME: Iterate to the next? */
 
         } else {
             /* FIXME */
