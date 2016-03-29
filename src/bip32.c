@@ -171,7 +171,7 @@ static const secp256k1_context *dummy_secp(void)
 int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           struct ext_key *key_out)
 {
-    if (key_out->depth == 0xff)
+    if (key_in->depth == 0xff)
         return -1; /* Maximum depth reached */
 
     if (key_in->key[0] == KEY_PRIVATE) {
