@@ -15,7 +15,7 @@
 #define BIP32_SERIALISED_LEN ((size_t)(4 + 1 + 4 + 4 + 32 + 33))
 
 /* Length of an ext_key serialised using wally format */
-#define BIP32_FULL_SERIALISED_LEN ((size_t)(BIP32_SERIALISED_LEN + 20 + 20))
+#define BIP32_FULL_SERIALISED_LEN ((size_t)(BIP32_SERIALISED_LEN + 33 + 20 + 20))
 
 /* Child number of the first hardened child */
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
@@ -60,8 +60,8 @@ WALLY_CORE_API int bip32_key_from_bytes(
  * Serialise an extended key to memory.
  *
  * The key is always serialised using BIP32 format. If @len is passed as
- * @BIP32_FULL_SERIALISED_LEN then the hash160 of the key and its parent
- * are serialised after.
+ * @BIP32_FULL_SERIALISED_LEN then the 'other' key and hash160 of the key
+ * and its parent are serialised after the BIP32 data.
  *
  * @key_in The extended key to serialise.
  * @bytes_out Storage for the serialised key.

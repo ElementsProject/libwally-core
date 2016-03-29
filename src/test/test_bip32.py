@@ -28,8 +28,8 @@ vec_1 = {
 
 class BIP32Tests(unittest.TestCase):
 
-    SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33;
-    FULL_SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33 + 20 + 20;
+    SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33
+    FULL_SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33 + 33 + 20 + 20
 
     def setUp(self):
         if not hasattr(self, 'bip32_key_from_bytes'):
@@ -60,10 +60,30 @@ class BIP32Tests(unittest.TestCase):
 
 
     def test_serialisation(self):
-        buf, buf_len = util.make_cbuffer(vec_1['m']['ext_priv'])
-        # Bad length, since buf_len includes the check bytes
-        ret, _ = self.unserialise_key(buf, buf_len)
-        self.assertEqual(ret, -1)
+
+        # Try short, correct, long lengths. Trimming 8 chars is the correct
+        # length because the vector value contains 4 check bytes at the end.
+        for trim, expected in [(0, -1), (8, 0), (16, -1)]:
+            buf, buf_len = util.make_cbuffer(vec_1['m']['ext_priv'][0:-trim])
+            ret, _ = self.unserialise_key(buf, buf_len)
+            self.assertEqual(ret, expected)
+
+
+    def test_extended_serialisation(self):
+
+        ext_buf = vec_1['m']['ext_priv'][0:-8]
+        ext_buf += '02' * 33 # Fake public key
+
+        # ext_buf  master key has a fingerprint of 0's, check that we
+        # pass/fail unserialising if it matches/doesn't
+        for fingerprint, expected in [('00', 0), ('11', -1)]:
+            buf = ext_buf + fingerprint * 4 # fake hash160(parent)
+            buf += '00' * 16
+            buf += '00' * 20 # fake hash160(self)
+            buf, buf_len = util.make_cbuffer(buf)
+            self.assertEqual(buf_len, self.FULL_SERIALISED_LEN)
+            ret, _ = self.unserialise_key(buf, buf_len)
+            self.assertEqual(ret, expected)
 
 
     def test_bip32_vectors(self):

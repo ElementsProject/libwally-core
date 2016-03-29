@@ -11,7 +11,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define KEY_PRIVATE ((unsigned char)0)
+/* If priv_key[0] is KEY_PRIVATE then this is a private key,
+ * with a public key also present. If set to KEY_PUBLIC then
+ * this is a public key with an empty private key (In BIP32
+ * terms, a 'neutered' key).
+ */
+#define KEY_PRIVATE 0
+#define KEY_PUBLIC 1u
 
 static const unsigned char SEED[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
@@ -45,6 +51,16 @@ static int key_zero(const uint64_t *a)
 static bool child_is_hardened(uint32_t child_num)
 {
     return child_num >= BIP32_INITIAL_HARDENED_CHILD;
+}
+
+static bool key_is_private(const struct ext_key *key_in)
+{
+    return key_in->priv_key[0] == KEY_PRIVATE;
+}
+
+static void key_compute_pub_key(struct ext_key *key_out)
+{
+    /* FIXME */
 }
 
 static void key_compute_hash160(struct ext_key *key_out)
@@ -134,26 +150,42 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     key_out->child_num = pbe32_to_cpu(&bytes_in);
     memcpy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
     bytes_in += sizeof(key_out->chain_code);
-    if (bytes_in[0] == KEY_PRIVATE) {
+
+    if (bytes_in[0] == KEY_PRIVATE)
         memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
-        /* FIXME: Calc public, or use stored if BIP32_SERIALISED_LEN */
-    } else {
-        memset(key_out->priv_key, 0, sizeof(key_out->priv_key));
+    else {
         memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
+        key_out->priv_key[0] = KEY_PUBLIC;
     }
     bytes_in += sizeof(key_out->pub_key);
+
     if (len == BIP32_SERIALISED_LEN) {
         /* We only have the partial fingerprint available. Copy it,
-         * but the user will need to provide bip32_key_set_parent()
-         * if they want it to be usable later.
+         * but the user will need to call bip32_key_set_parent()
+         * later if they want it to be fully populated.
          */
-        memset(key_out->parent160, 0, sizeof(key_out->parent160));
         memcpy(key_out->parent160, fingerprint, sizeof(uint32_t));
+        memset(key_out->parent160 + sizeof(uint32_t), 0,
+               sizeof(key_out->parent160) - sizeof(uint32_t));
+        if (key_is_private(key_out))
+            key_compute_pub_key(key_out);
         key_compute_hash160(key_out);
     } else {
-        if (!memcmp(fingerprint, bytes_in, sizeof(uint32_t)))
-            return -1; /* Fingerprints don't match */
+        if (key_is_private(key_out))
+            memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
+        else {
+            /* Make sure no private key info was serialised for this key */
+            memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
+            if (key_out->priv_key[0] != KEY_PUBLIC ||
+                !key_zero((const uint64_t *)(key_out->priv_key + 1)))
+                return -1;
+        }
+
+        bytes_in += sizeof(key_out->pub_key);
         memcpy(key_out->parent160, bytes_in, sizeof(key_out->parent160));
+        if (memcmp(key_out->parent160, fingerprint, sizeof(uint32_t)))
+            return -1; /* Fingerprints don't match */
+
         bytes_in += sizeof(key_out->parent160);
         memcpy(key_out->hash160, bytes_in, sizeof(key_out->hash160));
         bytes_in += sizeof(key_out->hash160);
@@ -172,7 +204,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     if (key_in->depth == 0xff)
         return -1; /* Maximum depth reached */
 
-    if (key_in->priv_key[0] == KEY_PRIVATE) {
+    if (key_is_private(key_in)) {
         /*
          *  Private parent -> private child:
          *     CKDpriv((kpar, cpar), i) -> (ki, ci)
