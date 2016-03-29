@@ -23,6 +23,24 @@ static const unsigned char SEED[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
 };
 
+/* Check assumptions we expect to hold true */
+void assert_assumptions(void)
+{
+#define key_off(member) offsetof(struct ext_key,  member)
+
+    /* Our ripend buffers must be uint32_t aligned and the correct size */
+    BUILD_ASSERT(key_off(parent160) % sizeof(uint32_t) == 0);
+    BUILD_ASSERT(key_off(hash160) % sizeof(uint32_t) == 0);
+    BUILD_ASSERT(sizeof(((struct ext_key *)0)->parent160) == sizeof(struct ripemd160));
+    BUILD_ASSERT(sizeof(((struct ext_key *)0)->hash160) == sizeof(struct ripemd160));
+
+    /* Our keys following the parity byte must be uint64_t aligned */
+    BUILD_ASSERT((key_off(priv_key) + 1) % sizeof(uint64_t) == 0);
+    BUILD_ASSERT((key_off(pub_key) + 1) % sizeof(uint64_t) == 0);
+
+#undef key_off
+}
+
 /* Overflow check reproduced from secp256k1/src/scalar_4x64_impl.h,
  * Copyright (c) 2013, 2014 Pieter Wuille */
 #define SECP256K1_N_0 ((uint64_t)0xBFD25E8CD0364141ULL)
@@ -71,7 +89,6 @@ static void key_compute_hash160(struct ext_key *key_out)
     sha256(&sha, key_out->priv_key, sizeof(key_out->priv_key));
     ripemd160(&ripemd, &sha, sizeof(sha));
 
-    BUILD_ASSERT(sizeof(key_out->hash160) == sizeof(ripemd));
     memcpy(key_out->hash160, &ripemd, sizeof(ripemd));
 }
 
@@ -252,7 +269,6 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
 
     key_out->depth = key_in->depth + 1;
     key_out->child_num = child_num;
-    BUILD_ASSERT(sizeof(key_out->parent160) == sizeof(key_in->hash160));
     memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));
     key_compute_hash160(key_out);
     return 0;
