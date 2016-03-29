@@ -23,18 +23,22 @@
 
 /** An extended key */
 struct ext_key {
-    /* The chain code for this key */
+    /** The chain code for this key */
     unsigned char chain_code[32];
-    /* The private or public key with prefix byte */
-    unsigned char key[33];
-    /* The depth of this key */
-    uint8_t depth;
-    /* The child number of the parent key that this key represents */
-    uint32_t child_num;
-    /* The Hash160 of this keys parent */
+    /** The Hash160 of this keys parent */
     unsigned char parent160[20];
-    /* The Hash160 of this key */
+    /** The depth of this key */
+    uint8_t depth;
+    unsigned char pad1[10];
+    /** The private key with prefix byte 0 */
+    unsigned char priv_key[33];
+    /** The Hash160 of this key */
     unsigned char hash160[20];
+    /** The child number of the parent key that this key represents */
+    uint32_t child_num;
+    unsigned char pad2[7];
+    /** The public key with prefix byte 0x2 or 0x3 */
+    unsigned char pub_key[33];
 };
 
 

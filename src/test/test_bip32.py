@@ -54,7 +54,7 @@ class BIP32Tests(unittest.TestCase):
 
     def compare_keys(self, key, expected):
         self.assertEqual(h(expected.chain_code), h(key.chain_code))
-        self.assertEqual(h(expected.key), h(key.key))
+        self.assertEqual(h(expected.priv_key), h(key.priv_key))
         self.assertEqual(expected.depth, key.depth)
         self.assertEqual(expected.child_num, key.child_num)
 

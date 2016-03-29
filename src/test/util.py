@@ -24,11 +24,13 @@ mnemonic_funcs = [('mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong
 
 class ext_key(Structure):
     _fields_ = [("chain_code", c_ubyte * 32),
-                ("key", c_ubyte * 33),
-                ("depth", c_ubyte),
-                ("child_num", c_uint),
                 ("parent160", c_ubyte * 20),
-                ("hash160", c_ubyte * 20)]
+                ("depth", c_ubyte),
+                ("pad1", c_ubyte * 10),
+                ("priv_key", c_ubyte * 33),
+                ("hash160", c_ubyte * 20),
+                ("child_num", c_uint),
+                ("pub_key", c_ubyte * 33)]
 
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
                ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),

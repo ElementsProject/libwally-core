@@ -47,25 +47,12 @@ static bool child_is_hardened(uint32_t child_num)
     return child_num >= BIP32_INITIAL_HARDENED_CHILD;
 }
 
-static void init_from_sha512(const struct sha512 *sha, struct ext_key *key_out)
-{
-    /* Size of the left and right (key/chain code) parts */
-    const size_t len = sizeof(*sha) / 2;
-
-    /* Copy the key and set its prefix */
-    key_out->key[0] = KEY_PRIVATE;
-    memcpy(key_out->key + 1, sha->u.u8, len);
-
-    /* Copy the chain code */
-    memcpy(key_out->chain_code, sha->u.u8 + len, len);
-}
-
 static void key_compute_hash160(struct ext_key *key_out)
 {
     struct sha256 sha;
     struct ripemd160 ripemd;
 
-    sha256(&sha, key_out->key, sizeof(key_out->key));
+    sha256(&sha, key_out->priv_key, sizeof(key_out->priv_key));
     ripemd160(&ripemd, &sha, sizeof(sha));
 
     BUILD_ASSERT(sizeof(key_out->hash160) == sizeof(ripemd));
@@ -88,7 +75,12 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     if (key_overflow(sha.u.u64) || key_zero(sha.u.u64))
         return -1; /* Out of bounds */
 
-    init_from_sha512(&sha, key_out);
+    /* Copy the key and set its prefix */
+    key_out->priv_key[0] = KEY_PRIVATE;
+    memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
+
+    /* Copy the chain code */
+    memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
 
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
@@ -142,8 +134,14 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     key_out->child_num = pbe32_to_cpu(&bytes_in);
     memcpy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
     bytes_in += sizeof(key_out->chain_code);
-    memcpy(key_out->key, bytes_in, sizeof(key_out->key));
-    bytes_in += sizeof(key_out->key);
+    if (bytes_in[0] == KEY_PRIVATE) {
+        memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
+        /* FIXME: Calc public, or use stored if BIP32_SERIALISED_LEN */
+    } else {
+        memset(key_out->priv_key, 0, sizeof(key_out->priv_key));
+        memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
+    }
+    bytes_in += sizeof(key_out->pub_key);
     if (len == BIP32_SERIALISED_LEN) {
         /* We only have the partial fingerprint available. Copy it,
          * but the user will need to provide bip32_key_set_parent()
@@ -174,19 +172,19 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     if (key_in->depth == 0xff)
         return -1; /* Maximum depth reached */
 
-    if (key_in->key[0] == KEY_PRIVATE) {
+    if (key_in->priv_key[0] == KEY_PRIVATE) {
         /*
          *  Private parent -> private child:
          *     CKDpriv((kpar, cpar), i) -> (ki, ci)
          */
         if (child_is_hardened(child_num)) {
-            unsigned char buf[sizeof(key_in->key) + sizeof(child_num)];
+            unsigned char buf[sizeof(key_in->priv_key) + sizeof(child_num)];
             const beint32_t child_num_be = cpu_to_be32(child_num);
             struct sha512 sha;
 
             /* Data = 0x00 || ser256(kpar) || ser32(i)) */
-            memcpy(buf, key_in->key, sizeof(key_in->key));
-            memcpy(buf + sizeof(key_in->key),
+            memcpy(buf, key_in->priv_key, sizeof(key_in->priv_key));
+            memcpy(buf + sizeof(key_in->priv_key),
                    &child_num_be, sizeof(child_num_be));
 
             /* I = HMAC-SHA512(Key = cpar, Data) */
@@ -203,9 +201,9 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
              * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
              * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
              */
-            memcpy(key_out->key, key_in->key, sizeof(key_in->key));
+            memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
             if (!secp256k1_ec_privkey_tweak_add(dummy_secp(),
-                                                key_out->key + 1, sha.u.u8))
+                                                key_out->priv_key + 1, sha.u.u8))
                 return -1; /* Out of bounds FIXME: Iterate to the next? */
 
         } else {
