@@ -97,6 +97,71 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     return 0;
 }
 
+/* FIXME: ccan should have endian functions for reading/writing to buffers */
+static inline uint32_t pbe8_to_cpu(const unsigned char **pp)
+{
+    const unsigned char *p = *pp;
+    uint8_t v = p[0];
+    *pp += sizeof(v);
+    return v;
+}
+
+static inline uint32_t pbe32_to_cpu(const unsigned char **pp)
+{
+    const unsigned char *p = *pp;
+    uint32_t v = (p[0] << 24u) | (p[1] << 16u) | (p[2] << 8u) | p[3];
+    *pp += sizeof(v);
+    return v;
+}
+
+int bip32_key_serialise(const struct ext_key *key_in,
+                        unsigned char *bytes_out, size_t len)
+{
+    /* FIXME */
+    (void)key_in;
+    (void)bytes_out;
+    (void)len;
+    return 0;
+}
+
+int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
+                          struct ext_key *key_out)
+{
+    uint32_t version;
+    const unsigned char *fingerprint;
+
+    if (len != BIP32_SERIALISED_LEN && len != BIP32_FULL_SERIALISED_LEN)
+        return -1;
+
+    version = pbe32_to_cpu(&bytes_in);
+    /* FIXME: Test version */
+    (void)version;
+    key_out->depth = pbe8_to_cpu(&bytes_in);
+    fingerprint = bytes_in;
+    key_out->child_num = pbe32_to_cpu(&bytes_in);
+    memcpy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
+    bytes_in += sizeof(key_out->chain_code);
+    memcpy(key_out->key, bytes_in, sizeof(key_out->key));
+    bytes_in += sizeof(key_out->key);
+    if (len == BIP32_SERIALISED_LEN) {
+        /* We only have the partial fingerprint available. Copy it,
+         * but the user will need to provide bip32_key_set_parent()
+         * if they want it to be usable later.
+         */
+        memset(key_out->parent160, 0, sizeof(key_out->parent160));
+        memcpy(key_out->parent160, fingerprint, sizeof(uint32_t));
+        key_compute_hash160(key_out);
+    } else {
+        if (!memcmp(fingerprint, bytes_in, sizeof(uint32_t)))
+            return -1; /* Fingerprints don't match */
+        memcpy(key_out->parent160, bytes_in, sizeof(key_out->parent160));
+        bytes_in += sizeof(key_out->parent160);
+        memcpy(key_out->hash160, bytes_in, sizeof(key_out->hash160));
+        bytes_in += sizeof(key_out->hash160);
+    }
+    return 0;
+}
+
 static const secp256k1_context *dummy_secp(void)
 {
     return (const secp256k1_context *)1;

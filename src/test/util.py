@@ -31,6 +31,7 @@ class ext_key(Structure):
                 ("hash160", c_ubyte * 20)]
 
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
+               ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
                ('bip32_key_from_parent', c_int, [c_void_p, c_uint, POINTER(ext_key)])]
 
 bip39_funcs = [('bip39_get_languages', c_char_p, []),
