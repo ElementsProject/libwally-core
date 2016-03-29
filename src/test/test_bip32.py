@@ -7,22 +7,26 @@ def h(s):
     return hexlify(s)
 
 vec_1 = {
-    'seed':         '000102030405060708090a0b0c0d0e0f',
+    'seed':     '000102030405060708090a0b0c0d0e0f',
     'm': {
-        'ext_priv': '0488ADE4000000000000000000873DFF'
-                    '81C02F525623FD1FE5167EAC3A55A049'
-                    'DE3D314BB42EE227FFED37D50800E8F3'
-                    '2E723DECF4051AEFAC8E2C93C9C5B214'
-                    '313817CDB01A1494B917C8436B35E77E'
-                    '9D71'
+        'pub':  '0488B21E000000000000000000873DFF'
+                '81C02F525623FD1FE5167EAC3A55A049'
+                'DE3D314BB42EE227FFED37D5080339A3'
+                '6013301597DAEF41FBE593A02CC513D0'
+                'B55527EC2DF1050E2E8FF49C85C2AB473B21',
+
+        'priv': '0488ADE4000000000000000000873DFF'
+                '81C02F525623FD1FE5167EAC3A55A049'
+                'DE3D314BB42EE227FFED37D50800E8F3'
+                '2E723DECF4051AEFAC8E2C93C9C5B214'
+                '313817CDB01A1494B917C8436B35E77E9D71'
     },
     'm/0h': {
-        'ext_priv': '0488ADE4013442193E8000000047FDAC'
-                    'BD0F1097043B78C63C20C34EF4ED9A11'
-                    '1D980047AD16282C7AE623614100EDB2'
-                    'E14F9EE77D26DD93B4ECEDE8D16ED408'
-                    'CE149B6CD80B0715A2D911A0AFEA0A79'
-                    '4DEC'
+        'priv': '0488ADE4013442193E8000000047FDAC'
+                'BD0F1097043B78C63C20C34EF4ED9A11'
+                '1D980047AD16282C7AE623614100EDB2'
+                'E14F9EE77D26DD93B4ECEDE8D16ED408'
+                'CE149B6CD80B0715A2D911A0AFEA0A794DEC'
     },
 }
 
@@ -52,9 +56,11 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(ret, 0)
         return key_out
 
-    def compare_keys(self, key, expected):
+    def compare_keys(self, key, expected, typ):
         self.assertEqual(h(expected.chain_code), h(key.chain_code))
-        self.assertEqual(h(expected.priv_key), h(key.priv_key))
+        expected_cmp = getattr(expected, typ + '_key')
+        key_cmp = getattr(key, typ + '_key')
+        self.assertEqual(h(expected_cmp), h(key_cmp))
         self.assertEqual(expected.depth, key.depth)
         self.assertEqual(expected.child_num, key.child_num)
 
@@ -64,17 +70,17 @@ class BIP32Tests(unittest.TestCase):
         # Try short, correct, long lengths. Trimming 8 chars is the correct
         # length because the vector value contains 4 check bytes at the end.
         for trim, expected in [(0, -1), (8, 0), (16, -1)]:
-            buf, buf_len = util.make_cbuffer(vec_1['m']['ext_priv'][0:-trim])
+            buf, buf_len = util.make_cbuffer(vec_1['m']['priv'][0:-trim])
             ret, _ = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)
 
 
     def test_extended_serialisation(self):
 
-        ext_buf = vec_1['m']['ext_priv'][0:-8]
+        ext_buf = vec_1['m']['priv'][0:-8]
         ext_buf += '02' * 33 # Fake public key
 
-        # ext_buf  master key has a fingerprint of 0's, check that we
+        # ext_buf master key has a fingerprint of 0's, check that we
         # pass/fail unserialising if it matches/doesn't
         for fingerprint, expected in [('00', 0), ('11', -1)]:
             buf = ext_buf + fingerprint * 4 # fake hash160(parent)
@@ -95,12 +101,14 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(ret, 0)
 
         # Chain m:
-        key = self.get_test_key(vec_1, 'm', 'ext_priv')
-        self.compare_keys(master, self.get_test_key(vec_1, 'm', 'ext_priv'))
+        for typ in ['pub', 'priv']:
+            expected = self.get_test_key(vec_1, 'm', typ)
+            self.compare_keys(master, expected, typ)
 
         # Chain m/0h:
-        m_0h = self.derive_key(master, 0x80000000)
-        self.compare_keys(m_0h, self.get_test_key(vec_1, 'm/0h', 'ext_priv'))
+        m_0h = self.get_test_key(vec_1, 'm/0h', 'priv')
+        m_0h_priv = self.derive_key(master, 0x80000000)
+        self.compare_keys(m_0h, m_0h_priv, 'priv')
 
 
 if __name__ == '__main__':
