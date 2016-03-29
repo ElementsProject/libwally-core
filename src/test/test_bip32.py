@@ -3,6 +3,9 @@ import util
 from binascii import hexlify, unhexlify
 from ctypes import byref
 
+def h(s):
+    return hexlify(s)
+
 vector_1 = {
     'seed': '000102030405060708090a0b0c0d0e0f',
     'm': {
@@ -46,9 +49,13 @@ class BIP32Tests(unittest.TestCase):
         key_out = util.ext_key()
         ret = self.bip32_key_from_bytes(seed, seed_len, byref(key_out))
         self.assertEqual(ret, 0)
-        ext_pub = vector_1['m']['ext_pub'].lower()
-        encoded = hexlify(key_out.chain_code) + hexlify(key_out.key)
-        self.assertTrue(encoded in ext_pub)
+
+        buf, buf_len = util.make_cbuffer(vector_1['m']['ext_pub'])
+        _, expected = self.unserialise(buf, self.SERIALISED_LEN)
+        self.assertEqual(h(expected.chain_code), h(key_out.chain_code))
+        self.assertEqual(h(expected.key), h(key_out.key))
+        self.assertEqual(expected.depth, key_out.depth)
+        self.assertEqual(expected.child_num, key_out.child_num)
 
 
 if __name__ == '__main__':

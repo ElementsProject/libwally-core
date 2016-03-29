@@ -138,6 +138,7 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     (void)version;
     key_out->depth = pbe8_to_cpu(&bytes_in);
     fingerprint = bytes_in;
+    bytes_in += sizeof(uint32_t);
     key_out->child_num = pbe32_to_cpu(&bytes_in);
     memcpy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
     bytes_in += sizeof(key_out->chain_code);
