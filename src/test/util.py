@@ -34,7 +34,7 @@ class ext_key(Structure):
 
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
                ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
-               ('bip32_key_from_parent', c_int, [c_void_p, c_uint, POINTER(ext_key)])]
+               ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)])]
 
 bip39_funcs = [('bip39_get_languages', c_char_p, []),
                ('bip39_get_wordlist', c_void_p, [c_char_p]),

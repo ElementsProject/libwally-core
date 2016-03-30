@@ -77,6 +77,7 @@ class BIP32Tests(unittest.TestCase):
 
     SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33
     FULL_SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33 + 33 + 20 + 20
+    DERIVE_PRIVATE, DERIVE_PUBLIC = 0, 1
 
     def setUp(self):
         if not hasattr(self, 'bip32_key_from_bytes'):
@@ -93,9 +94,10 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(ret, 0)
         return key_out
 
-    def derive_key(self, parent, child_num):
+    def derive_key(self, parent, child_num, kind):
         key_out = util.ext_key()
-        ret = self.bip32_key_from_parent(byref(parent), child_num, byref(key_out))
+        ret = self.bip32_key_from_parent(byref(parent), child_num,
+                                         kind, byref(key_out))
         self.assertEqual(ret, 0)
         return key_out
 
@@ -153,7 +155,7 @@ class BIP32Tests(unittest.TestCase):
                         ('m/0H/1', 1),
                         ('m/0H/1/2H', 0x80000002)]:
 
-            derived = self.derive_key(derived, i)
+            derived = self.derive_key(derived, i, self.DERIVE_PRIVATE)
             for typ in ['pub', 'priv']:
                 expected = self.get_test_key(vec_1, path, typ)
                 self.compare_keys(derived, expected, typ)

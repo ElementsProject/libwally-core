@@ -76,6 +76,12 @@ static bool key_is_private(const struct ext_key *key_in)
     return key_in->priv_key[0] == KEY_PRIVATE;
 }
 
+static void key_strip_private_key(struct ext_key *key_out)
+{
+    key_out->priv_key[0] = KEY_PUBLIC;
+    memset(key_out->priv_key + 1, 0, sizeof(key_out->priv_key) - 1);
+}
+
 static int key_compute_pub_key(struct ext_key *key_out)
 {
     secp256k1_pubkey pub_key;
@@ -95,10 +101,16 @@ static void key_compute_hash160(struct ext_key *key_out)
 {
     struct sha256 sha;
     struct ripemd160 ripemd;
+    unsigned char *key_src;
 
-    sha256(&sha, key_out->priv_key, sizeof(key_out->priv_key));
+    if (key_is_private(key_out))
+        key_src = key_out->priv_key;
+    else
+        key_src = key_out->pub_key;
+
+    sha256(&sha, key_src, sizeof(key_out->pub_key));
     ripemd160(&ripemd, &sha, sizeof(sha));
-
+    /* FIXME: This is aligned, avoid the copy */
     memcpy(key_out->hash160, &ripemd, sizeof(ripemd));
 }
 
@@ -190,7 +202,7 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
 
     if (len == BIP32_SERIALISED_LEN) {
         /* We only have the partial fingerprint available. Copy it,
-         * but the user will need to call bip32_key_set_parent()
+         * but the user will need to call bip32_key_set_parent() FIXME: Implement
          * later if they want it to be fully populated.
          */
         memcpy(key_out->parent160, fingerprint, sizeof(uint32_t));
@@ -248,22 +260,33 @@ static const secp256k1_context *dummy_secp(void)
  * Further, there are no public-public vectors in the BIP32 spec either.
  */
 int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
-                          struct ext_key *key_out)
+                          uint32_t flags, struct ext_key *key_out)
 {
+    const bool we_are_private = key_is_private(key_in);
+    const bool derive_private = !(flags & BIP32_KEY_DERIVE_PUBLIC);
+    const bool hardened = child_is_hardened(child_num);
+
+    if (!we_are_private && (derive_private || hardened))
+        return -1; /* Unsupported derivation */
+
     if (key_in->depth == 0xff)
         return -1; /* Maximum depth reached */
 
-    if (key_is_private(key_in)) {
+    if (we_are_private) {
         /*
          *  Private parent -> private child:
-         *     CKDpriv((kpar, cpar), i) -> (ki, ci)
+         *    CKDpriv((kpar, cpar), i) -> (ki, ci)
+         *  Private parent -> public child:
+         *    N(CKDpriv((kpar, cpar), i) -> (ki, ci))
+         *  As we always calculate the public key, we can derive a public
+         *  child by deriving a private one and stripping its private key.
          */
         /* FIXME: Put child_num after priv_key and use that buffer directly? */
         unsigned char buf[sizeof(key_in->priv_key) + sizeof(child_num)];
         const beint32_t child_num_be = cpu_to_be32(child_num);
         struct sha512 sha;
 
-        if (child_is_hardened(child_num)) {
+        if (hardened) {
             /* Hardened: Data = 0x00 || ser256(kpar) || ser32(i)) */
             memcpy(buf, key_in->priv_key, sizeof(key_in->priv_key));
         } else {
@@ -296,10 +319,11 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
 
         if (key_compute_pub_key(key_out))
             return -1;
+
+        if (!derive_private)
+            key_strip_private_key(key_out);
     } else {
         /* Public parent -> public child */
-        if (child_is_hardened(child_num))
-            return -1; /* Hardened child cannot be made from public parent */
         /* FIXME */
         return -1;
     }
