@@ -22,6 +22,12 @@ vec_1 = {
                 '313817CDB01A1494B917C8436B35E77E9D71'
     },
     'm/0h': {
+        'pub':  '0488B21E013442193E8000000047FDAC'
+                'BD0F1097043B78C63C20C34EF4ED9A11'
+                '1D980047AD16282C7AE6236141035A78'
+                '4662A4A20A65BF6AAB9AE98A6C068A81'
+                'C52E4B032C0FB5400C706CFCCC56B8B9C580',
+
         'priv': '0488ADE4013442193E8000000047FDAC'
                 'BD0F1097043B78C63C20C34EF4ED9A11'
                 '1D980047AD16282C7AE623614100EDB2'
@@ -106,9 +112,10 @@ class BIP32Tests(unittest.TestCase):
             self.compare_keys(master, expected, typ)
 
         # Chain m/0h:
-        m_0h = self.get_test_key(vec_1, 'm/0h', 'priv')
-        m_0h_priv = self.derive_key(master, 0x80000000)
-        self.compare_keys(m_0h, m_0h_priv, 'priv')
+        for typ in ['pub', 'priv']:
+            expected = self.get_test_key(vec_1, 'm/0h', typ)
+            derived = self.derive_key(master, 0x80000000)
+            self.compare_keys(derived, expected, typ)
 
 
 if __name__ == '__main__':
