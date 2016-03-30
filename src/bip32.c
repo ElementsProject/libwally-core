@@ -100,7 +100,6 @@ static int key_compute_pub_key(struct ext_key *key_out)
 static void key_compute_hash160(struct ext_key *key_out)
 {
     struct sha256 sha;
-    struct ripemd160 ripemd;
     unsigned char *key_src;
 
     if (key_is_private(key_out))
@@ -109,9 +108,7 @@ static void key_compute_hash160(struct ext_key *key_out)
         key_src = key_out->pub_key;
 
     sha256(&sha, key_src, sizeof(key_out->pub_key));
-    ripemd160(&ripemd, &sha, sizeof(sha));
-    /* FIXME: This is aligned, avoid the copy */
-    memcpy(key_out->hash160, &ripemd, sizeof(ripemd));
+    ripemd160((struct ripemd160*)key_out->hash160, &sha, sizeof(sha));
 }
 
 
