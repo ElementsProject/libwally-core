@@ -108,6 +108,15 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(h(expected_cmp), h(key_cmp))
         self.assertEqual(expected.depth, key.depth)
         self.assertEqual(expected.child_num, key.child_num)
+        self.assertEqual(h(expected.chain_code), h(key.chain_code))
+        # These would be more useful tests if there were any public
+        # derivation test vectors
+        self.assertEqual(h(expected.hash160), h(key.hash160))
+        # We can only compare the first 4 bytes of the parent fingerprint
+        # Since that is all thats serialised.
+        # FIXME: Implement bip32_key_set_parent and test it here
+        fingerprint = lambda k: h(k.parent160)[0:8]
+        self.assertEqual(fingerprint(expected), fingerprint(key))
 
 
     def test_serialisation(self):
