@@ -132,13 +132,22 @@ class BIP32Tests(unittest.TestCase):
             ret, _ = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)
 
-        no_ver = vec_1['m']['priv'][8:-8]
-        for v, expected in [(self.VER_MAIN_PUBLIC, 0),
-                            (self.VER_MAIN_PRIVATE, 0),
-                            (self.VER_TEST_PUBLIC, 0),
-                            (self.VER_TEST_PRIVATE, 0),
-                            (0x01111111, -1)]:
-            v_str = '0' + hex(v)[2:]
+        # Check correct and incorrect version numbers as well
+        # as mismatched key types and versions
+        ver_cases = [(self.VER_MAIN_PUBLIC,  'pub',   0),
+                     (self.VER_MAIN_PUBLIC,  'priv', -1),
+                     (self.VER_MAIN_PRIVATE, 'pub',  -1),
+                     (self.VER_MAIN_PRIVATE, 'priv',  0),
+                     (self.VER_TEST_PUBLIC,  'pub',   0),
+                     (self.VER_TEST_PUBLIC , 'priv', -1),
+                     (self.VER_TEST_PRIVATE, 'pub',  -1),
+                     (self.VER_TEST_PRIVATE, 'priv',  0),
+                     (0x01111111,            'pub',  -1),
+                     (0x01111111,            'priv', -1)]
+
+        for ver, typ, expected in ver_cases:
+            no_ver = vec_1['m'][typ][8:-8]
+            v_str = '0' + hex(ver)[2:]
             buf, buf_len = util.make_cbuffer(v_str + no_ver)
             ret, _ = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)

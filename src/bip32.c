@@ -193,10 +193,18 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     bytes_in += sizeof(key_out->chain_code);
 
     if (bytes_in[0] == KEY_PRIVATE) {
+        if (version == BIP32_VER_MAIN_PUBLIC ||
+            version == BIP32_VER_TEST_PUBLIC)
+            return -1; /* Private key data in public key */
+
         memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
         if (key_compute_pub_key(key_out))
             return -1;
     } else {
+        if (version == BIP32_VER_MAIN_PRIVATE ||
+            version == BIP32_VER_TEST_PRIVATE)
+            return -1; /* Public key data in private key */
+
         memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
         key_strip_private_key(key_out);
     }
