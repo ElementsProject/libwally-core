@@ -155,10 +155,12 @@ class BIP32Tests(unittest.TestCase):
                         ('m/0H/1', 1),
                         ('m/0H/1/2H', 0x80000002)]:
 
+            parent160 = derived.hash160
             derived = self.derive_key(derived, i, self.DERIVE_PRIVATE)
             for typ in ['pub', 'priv']:
                 expected = self.get_test_key(vec_1, path, typ)
                 self.compare_keys(derived, expected, typ)
+                self.assertEqual(h(derived.parent160), h(parent160))
 
 
 if __name__ == '__main__':
