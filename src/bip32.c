@@ -231,20 +231,21 @@ static const secp256k1_context *dummy_secp(void)
  *
  * The spec doesn't have a simple table of derivations, its:
  *
- * Parent   Child    Hardened  Status  Path
- * private  private  no        OK      m/n
- * private  private  yes       OK      m/nH
- * private  public   no        OK      -
- * private  public   yes       OK      -
- * public   private  no        FAIL   (N/A)
- * public   private  yes       FAIL   (N/A)
- * public   public   no        OK      M/n
- * public   public   yes       FAIL    M/nH
+ * Parent   Child    Hardened  Status  Path  In Spec
+ * private  private  no        OK      m/n   Y
+ * private  private  yes       OK      m/nH  Y
+ * private  public   no        OK      -     N
+ * private  public   yes       OK      -     N
+ * public   private  no        FAIL   (N/A) (N/A)
+ * public   private  yes       FAIL   (N/A) (N/A)
+ * public   public   no        OK      M/n   N
+ * public   public   yes       FAIL    M/nH (N/A)
  *
  * The spec path nomenclature only expresses derivations where the parent
  * and desired child type match. For private->public the derivation is
  * described in terms of private-private and public->public, but there are
- * no test vectors or paths describe these values to validate against.
+ * no test vectors or paths describing these values to validate against.
+ * Further, there are no public-public vectors in the BIP32 spec either.
  */
 int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           struct ext_key *key_out)
