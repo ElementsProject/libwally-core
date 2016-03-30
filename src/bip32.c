@@ -167,60 +167,40 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
                           struct ext_key *key_out)
 {
     uint32_t version;
-    const unsigned char *fingerprint;
 
-    if (len != BIP32_SERIALISED_LEN && len != BIP32_FULL_SERIALISED_LEN)
+    if (len != BIP32_SERIALISED_LEN)
         return -1;
 
     version = pbe32_to_cpu(&bytes_in);
     /* FIXME: Test version */
     (void)version;
+
     key_out->depth = pbe8_to_cpu(&bytes_in);
-    fingerprint = bytes_in;
+
+    /* We only have a partial fingerprint available. Copy it, but the
+     * user will need to call bip32_key_set_parent() (FIXME: Implement)
+     * later if they want it to be fully populated.
+     */
+    memcpy(key_out->parent160, bytes_in, sizeof(uint32_t));
+    memset(key_out->parent160 + sizeof(uint32_t), 0,
+           sizeof(key_out->parent160) - sizeof(uint32_t));
     bytes_in += sizeof(uint32_t);
+
     key_out->child_num = pbe32_to_cpu(&bytes_in);
+
     memcpy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
     bytes_in += sizeof(key_out->chain_code);
 
-    if (bytes_in[0] == KEY_PRIVATE)
+    if (bytes_in[0] == KEY_PRIVATE) {
         memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
-    else {
-        memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
-        key_out->priv_key[0] = KEY_PUBLIC;
-    }
-    bytes_in += sizeof(key_out->pub_key);
-
-    if (len == BIP32_SERIALISED_LEN) {
-        /* We only have the partial fingerprint available. Copy it,
-         * but the user will need to call bip32_key_set_parent() FIXME: Implement
-         * later if they want it to be fully populated.
-         */
-        memcpy(key_out->parent160, fingerprint, sizeof(uint32_t));
-        memset(key_out->parent160 + sizeof(uint32_t), 0,
-               sizeof(key_out->parent160) - sizeof(uint32_t));
-        if (key_is_private(key_out) && key_compute_pub_key(key_out))
+        if (key_compute_pub_key(key_out))
             return -1;
-        key_compute_hash160(key_out);
     } else {
-        if (key_is_private(key_out))
-            memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
-        else {
-            /* Make sure no private key info was serialised for this key */
-            memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
-            if (key_out->priv_key[0] != KEY_PUBLIC ||
-                !key_zero((const uint64_t *)(key_out->priv_key + 1)))
-                return -1;
-        }
-
-        bytes_in += sizeof(key_out->pub_key);
-        memcpy(key_out->parent160, bytes_in, sizeof(key_out->parent160));
-        if (memcmp(key_out->parent160, fingerprint, sizeof(uint32_t)))
-            return -1; /* Fingerprints don't match */
-
-        bytes_in += sizeof(key_out->parent160);
-        memcpy(key_out->hash160, bytes_in, sizeof(key_out->hash160));
-        bytes_in += sizeof(key_out->hash160);
+        memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
+        key_strip_private_key(key_out);
     }
+
+    key_compute_hash160(key_out);
     return 0;
 }
 

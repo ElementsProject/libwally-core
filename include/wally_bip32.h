@@ -14,9 +14,6 @@
 /** Length of an ext_key serialised using BIP32 format */
 #define BIP32_SERIALISED_LEN ((size_t)(4 + 1 + 4 + 4 + 32 + 33))
 
-/** Length of an ext_key serialised using wally format */
-#define BIP32_FULL_SERIALISED_LEN ((size_t)(BIP32_SERIALISED_LEN + 33 + 20 + 20))
-
 /** Child number of the first hardened child */
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
 
@@ -61,28 +58,23 @@ WALLY_CORE_API int bip32_key_from_bytes(
 
 
 /**
- * Serialise an extended key to memory.
- *
- * The key is always serialised using BIP32 format. If @len is passed as
- * @BIP32_FULL_SERIALISED_LEN then the 'other' key and hash160 of the key
- * and its parent are serialised after the BIP32 data.
+ * Serialise an extended key to memory using BIP32 format.
  *
  * @key_in The extended key to serialise.
  * @bytes_out Storage for the serialised key.
- * @len Size of @bytes_out in bytes, either @BIP32_SERIALISED_LEN
- *      or @BIP32_FULL_SERIALISED_LEN.
+ * @len Size of @bytes_out in bytes. Must be @BIP32_SERIALISED_LEN.
  */
 WALLY_CORE_API int bip32_key_serialise(
     const struct ext_key *key_in,
     unsigned char *bytes_out,
     size_t len);
 
+
 /**
  * Un-serialise an extended key from memory.
  *
  * @bytes_in Storage holding the serialised key.
- * @len Size of @bytes_in in bytes, either @BIP32_SERIALISED_LEN
- *      or @BIP32_FULL_SERIALISED_LEN.
+ * @len Size of @bytes_in in bytes. Must be @BIP32_SERIALISED_LEN.
  * @key_out Destination for the resulting extended key.
  */
 WALLY_CORE_API int bip32_key_unserialise(
