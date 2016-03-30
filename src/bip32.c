@@ -238,41 +238,44 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
          *  Private parent -> private child:
          *     CKDpriv((kpar, cpar), i) -> (ki, ci)
          */
+        /* FIXME: Put child_num after priv_key and use that buffer directly? */
+        unsigned char buf[sizeof(key_in->priv_key) + sizeof(child_num)];
+        const beint32_t child_num_be = cpu_to_be32(child_num);
+        struct sha512 sha;
+
         if (child_is_hardened(child_num)) {
-            unsigned char buf[sizeof(key_in->priv_key) + sizeof(child_num)];
-            const beint32_t child_num_be = cpu_to_be32(child_num);
-            struct sha512 sha;
-
-            /* Data = 0x00 || ser256(kpar) || ser32(i)) */
+            /* Hardened: Data = 0x00 || ser256(kpar) || ser32(i)) */
             memcpy(buf, key_in->priv_key, sizeof(key_in->priv_key));
-            memcpy(buf + sizeof(key_in->priv_key),
-                   &child_num_be, sizeof(child_num_be));
-
-            /* I = HMAC-SHA512(Key = cpar, Data) */
-            hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
-                        buf, sizeof(buf));
-
-            /* Split I into two 32-byte sequences, IL and IR
-             * The returned chain code ci is IR
-             */
-            memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
-                   sizeof(key_out->chain_code));
-
-            /* The returned child key ki is parse256(IL) + kpar (mod n)
-             * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
-             * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
-             */
-            memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
-            if (!secp256k1_ec_privkey_tweak_add(dummy_secp(),
-                                                key_out->priv_key + 1, sha.u.u8))
-                return -1; /* Out of bounds FIXME: Iterate to the next? */
-
-            if (key_compute_pub_key(key_out))
-                return -1;
         } else {
-            /* FIXME */
-            return -1;
+            /* Non Hardened: Data = serP(point(kpar)) || ser32(i) */
+            memcpy(buf, key_in->pub_key, sizeof(key_in->pub_key));
         }
+
+        /* This is the '|| ser32(i)' part of the above */
+        memcpy(buf + sizeof(key_in->priv_key),
+               &child_num_be, sizeof(child_num_be));
+
+        /* I = HMAC-SHA512(Key = cpar, Data) */
+        hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
+                    buf, sizeof(buf));
+
+        /* Split I into two 32-byte sequences, IL and IR
+         * The returned chain code ci is IR
+         */
+        memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
+               sizeof(key_out->chain_code));
+
+        /* The returned child key ki is parse256(IL) + kpar (mod n)
+         * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
+         * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
+         */
+        memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
+        if (!secp256k1_ec_privkey_tweak_add(dummy_secp(),
+                                            key_out->priv_key + 1, sha.u.u8))
+            return -1;     /* Out of bounds FIXME: Iterate to the next? */
+
+        if (key_compute_pub_key(key_out))
+            return -1;
     } else {
         /* Public parent -> public child */
         if (child_is_hardened(child_num))
