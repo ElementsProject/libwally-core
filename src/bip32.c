@@ -1,11 +1,11 @@
 #include <include/wally_bip32.h>
+#include "internal.h"
 #include "hmac.h"
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include "ccan/ccan/endian/endian.h"
 #include "ccan/ccan/build_assert/build_assert.h"
-#include "secp256k1/include/secp256k1.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -80,18 +80,15 @@ static int key_compute_pub_key(struct ext_key *key_out)
 {
     secp256k1_pubkey pub_key;
     size_t len = sizeof(key_out->pub_key);
-    const uint32_t flags = SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN;
-    secp256k1_context *ctx = secp256k1_context_create(flags); /* FIXME: Shared ctx */
-    int ret = 0;
+    const secp256k1_context *ctx = secp_ctx();
 
     if (!secp256k1_ec_pubkey_create(ctx, &pub_key, key_out->priv_key + 1) ||
         !secp256k1_ec_pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
                                        SECP256K1_EC_COMPRESSED) ||
         len != sizeof(key_out->pub_key))
-        ret = -1;
+        return -1;
 
-    secp256k1_context_destroy(ctx);
-    return ret;
+    return 0;
 }
 
 static void key_compute_hash160(struct ext_key *key_out)
