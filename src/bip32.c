@@ -131,7 +131,8 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
     memset(key_out->parent160, 0, sizeof(key_out->parent160));
-    key_compute_pub_key(key_out);
+    if (key_compute_pub_key(key_out))
+        return -1;
     key_compute_hash160(key_out);
     return 0;
 }
@@ -198,8 +199,8 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
         memcpy(key_out->parent160, fingerprint, sizeof(uint32_t));
         memset(key_out->parent160 + sizeof(uint32_t), 0,
                sizeof(key_out->parent160) - sizeof(uint32_t));
-        if (key_is_private(key_out))
-            key_compute_pub_key(key_out);
+        if (key_is_private(key_out) && key_compute_pub_key(key_out))
+            return -1;
         key_compute_hash160(key_out);
     } else {
         if (key_is_private(key_out))
@@ -269,7 +270,8 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                                                 key_out->priv_key + 1, sha.u.u8))
                 return -1; /* Out of bounds FIXME: Iterate to the next? */
 
-            key_compute_pub_key(key_out);
+            if (key_compute_pub_key(key_out))
+                return -1;
         } else {
             /* FIXME */
             return -1;
