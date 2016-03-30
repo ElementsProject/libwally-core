@@ -78,6 +78,11 @@ class BIP32Tests(unittest.TestCase):
     SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33
     DERIVE_PRIVATE, DERIVE_PUBLIC = 0, 1
 
+    VER_MAIN_PUBLIC = 0x0488B21E
+    VER_MAIN_PRIVATE = 0x0488ADE4
+    VER_TEST_PUBLIC = 0x043587CF
+    VER_TEST_PRIVATE = 0x04358394
+
     def setUp(self):
         if not hasattr(self, 'bip32_key_from_bytes'):
             util.bind_all(self, util.bip32_funcs)
@@ -124,6 +129,17 @@ class BIP32Tests(unittest.TestCase):
         # length because the vector value contains 4 check bytes at the end.
         for trim, expected in [(0, -1), (8, 0), (16, -1)]:
             buf, buf_len = util.make_cbuffer(vec_1['m']['priv'][0:-trim])
+            ret, _ = self.unserialise_key(buf, buf_len)
+            self.assertEqual(ret, expected)
+
+        no_ver = vec_1['m']['priv'][8:-8]
+        for v, expected in [(self.VER_MAIN_PUBLIC, 0),
+                            (self.VER_MAIN_PRIVATE, 0),
+                            (self.VER_TEST_PUBLIC, 0),
+                            (self.VER_TEST_PRIVATE, 0),
+                            (0x01111111, -1)]:
+            v_str = '0' + hex(v)[2:]
+            buf, buf_len = util.make_cbuffer(v_str + no_ver)
             ret, _ = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)
 

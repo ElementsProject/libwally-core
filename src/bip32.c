@@ -172,8 +172,9 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
         return -1;
 
     version = pbe32_to_cpu(&bytes_in);
-    /* FIXME: Test version */
-    (void)version;
+    if (version != BIP32_VER_MAIN_PUBLIC && version != BIP32_VER_MAIN_PRIVATE &&
+        version != BIP32_VER_TEST_PUBLIC && version != BIP32_VER_TEST_PRIVATE)
+        return -1;
 
     key_out->depth = pbe8_to_cpu(&bytes_in);
 

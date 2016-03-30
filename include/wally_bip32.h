@@ -22,6 +22,13 @@
 /** Indicate that we want to derive a public key in @bip32_key_from_parent */
 #define BIP32_KEY_DERIVE_PUBLIC  0x1
 
+/** Version codes for extended keys */
+#define BIP32_VER_MAIN_PUBLIC  0x0488B21E
+#define BIP32_VER_MAIN_PRIVATE 0x0488ADE4
+#define BIP32_VER_TEST_PUBLIC  0x043587CF
+#define BIP32_VER_TEST_PRIVATE 0x04358394
+
+
 /** An extended key */
 struct ext_key {
     /** The chain code for this key */
