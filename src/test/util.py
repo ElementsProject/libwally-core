@@ -34,7 +34,7 @@ class ext_key(Structure):
                 ("pad2", c_ubyte * 3),
                 ("pub_key", c_ubyte * 33)]
 
-bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
+bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
                ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
                ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)])]
 

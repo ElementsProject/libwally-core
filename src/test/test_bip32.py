@@ -158,7 +158,8 @@ class BIP32Tests(unittest.TestCase):
         # BIP32 Test vector 1
         seed, seed_len = util.make_cbuffer(vec_1['seed'])
         master = util.ext_key()
-        ret = self.bip32_key_from_bytes(seed, seed_len, byref(master))
+        ret = self.bip32_key_from_bytes(seed, seed_len,
+                                        self.VER_MAIN_PRIVATE, byref(master))
         self.assertEqual(ret, 0)
 
         # Chain m:
