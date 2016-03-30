@@ -153,6 +153,22 @@ class BIP32Tests(unittest.TestCase):
             self.assertEqual(ret, expected)
 
 
+    def test_key_from_bytes(self):
+
+        seed, seed_len = util.make_cbuffer(vec_1['seed'])
+        key_out = util.ext_key()
+
+        # Only private key versions can be used
+        ver_cases = [(self.VER_MAIN_PUBLIC,  -1),
+                     (self.VER_MAIN_PRIVATE,  0),
+                     (self.VER_TEST_PUBLIC,  -1),
+                     (self.VER_TEST_PRIVATE,  0)]
+        for ver, expected in ver_cases:
+            ret = self.bip32_key_from_bytes(seed, seed_len,
+                                            ver, byref(key_out))
+            self.assertEqual(ret, expected)
+
+
     def test_bip32_vectors(self):
 
         # BIP32 Test vector 1
