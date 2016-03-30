@@ -153,21 +153,11 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     return 0;
 }
 
-/* FIXME: ccan should have endian functions for reading/writing to buffers */
-static inline uint32_t pbe8_to_cpu(const unsigned char **pp)
+static const unsigned char *copy(void *dest, const unsigned char *src,
+                                 size_t len)
 {
-    const unsigned char *p = *pp;
-    uint8_t v = p[0];
-    *pp += sizeof(v);
-    return v;
-}
-
-static inline uint32_t pbe32_to_cpu(const unsigned char **pp)
-{
-    const unsigned char *p = *pp;
-    uint32_t v = (p[0] << 24u) | (p[1] << 16u) | (p[2] << 8u) | p[3];
-    *pp += sizeof(v);
-    return v;
+    memcpy(dest, src, len);
+    return src + len;
 }
 
 int bip32_key_serialise(const struct ext_key *key_in,
@@ -186,32 +176,32 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     if (len != BIP32_SERIALISED_LEN)
         return -1;
 
-    key_out->version = pbe32_to_cpu(&bytes_in);
+    bytes_in = copy(&key_out->version, bytes_in, sizeof(key_out->version));
+    key_out->version = be32_to_cpu(key_out->version);
     if (!version_is_valid(key_out->version, KEY_PUBLIC))
         return -1;
 
-    key_out->depth = pbe8_to_cpu(&bytes_in);
+    bytes_in = copy(&key_out->depth, bytes_in, sizeof(key_out->depth));
 
     /* We only have a partial fingerprint available. Copy it, but the
      * user will need to call bip32_key_set_parent() (FIXME: Implement)
      * later if they want it to be fully populated.
      */
-    memcpy(key_out->parent160, bytes_in, sizeof(uint32_t));
+    bytes_in = copy(key_out->parent160, bytes_in, sizeof(uint32_t));
     memset(key_out->parent160 + sizeof(uint32_t), 0,
            sizeof(key_out->parent160) - sizeof(uint32_t));
-    bytes_in += sizeof(uint32_t);
 
-    key_out->child_num = pbe32_to_cpu(&bytes_in);
+    bytes_in = copy(&key_out->child_num, bytes_in, sizeof(key_out->child_num));
+    key_out->child_num = be32_to_cpu(key_out->child_num);
 
-    memcpy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
-    bytes_in += sizeof(key_out->chain_code);
+    bytes_in = copy(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
 
     if (bytes_in[0] == KEY_PRIVATE) {
         if (key_out->version == BIP32_VER_MAIN_PUBLIC ||
             key_out->version == BIP32_VER_TEST_PUBLIC)
             return -1; /* Private key data in public key */
 
-        memcpy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
+        copy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
         if (key_compute_pub_key(key_out))
             return -1;
     } else {
@@ -219,7 +209,7 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
             key_out->version == BIP32_VER_TEST_PRIVATE)
             return -1; /* Public key data in private key */
 
-        memcpy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
+        copy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
         key_strip_private_key(key_out);
     }
 
