@@ -148,23 +148,15 @@ class BIP32Tests(unittest.TestCase):
             expected = self.get_test_key(vec_1, 'm', typ)
             self.compare_keys(master, expected, typ)
 
-        # Chain m/0H:
-        derived = self.derive_key(master, 0x80000000)
-        for typ in ['pub', 'priv']:
-            expected = self.get_test_key(vec_1, 'm/0H', typ)
-            self.compare_keys(derived, expected, typ)
+        derived = master
+        for path, i in [('m/0H', 0x80000000),
+                        ('m/0H/1', 1),
+                        ('m/0H/1/2H', 0x80000002)]:
 
-        # Chain m/0H/1:
-        derived = self.derive_key(derived, 1)
-        for typ in ['pub', 'priv']:
-            expected = self.get_test_key(vec_1, 'm/0H/1', typ)
-            self.compare_keys(derived, expected, typ)
-
-        # Chain m/0H/1/2H
-        derived = self.derive_key(derived, 0x80000002)
-        for typ in ['pub', 'priv']:
-            expected = self.get_test_key(vec_1, 'm/0H/1/2H', typ)
-            self.compare_keys(derived, expected, typ)
+            derived = self.derive_key(derived, i)
+            for typ in ['pub', 'priv']:
+                expected = self.get_test_key(vec_1, path, typ)
+                self.compare_keys(derived, expected, typ)
 
 
 if __name__ == '__main__':
