@@ -92,6 +92,14 @@ class BIP32Tests(unittest.TestCase):
         ret = self.bip32_key_unserialise(buf, buf_len, byref(key_out))
         return ret, key_out
 
+    def get_test_master_key(self, vec):
+        seed, seed_len = util.make_cbuffer(vec['seed'])
+        master = util.ext_key()
+        ret = self.bip32_key_from_bytes(seed, seed_len,
+                                        self.VER_MAIN_PRIVATE, byref(master))
+        self.assertEqual(ret, 0)
+        return master
+
     def get_test_key(self, vec, path, typ):
         buf, buf_len = util.make_cbuffer(vec[path][typ])
         ret, key_out = self.unserialise_key(buf, self.SERIALISED_LEN)
@@ -172,11 +180,7 @@ class BIP32Tests(unittest.TestCase):
     def test_bip32_vectors(self):
 
         # BIP32 Test vector 1
-        seed, seed_len = util.make_cbuffer(vec_1['seed'])
-        master = util.ext_key()
-        ret = self.bip32_key_from_bytes(seed, seed_len,
-                                        self.VER_MAIN_PRIVATE, byref(master))
-        self.assertEqual(ret, 0)
+        master = self.get_test_master_key(vec_1)
 
         # Chain m:
         for typ in ['pub', 'priv']:
@@ -193,15 +197,47 @@ class BIP32Tests(unittest.TestCase):
             # the public child matches the public vector and has no private
             # key. Finally, check that the child holds the correct parent hash.
             parent160 = derived.hash160
-            pub = self.derive_key(derived, i, self.DERIVE_PUBLIC)
+            derived_pub = self.derive_key(derived, i, self.DERIVE_PUBLIC)
             derived = self.derive_key(derived, i, self.DERIVE_PRIVATE)
             for typ in ['pub', 'priv']:
                 expected = self.get_test_key(vec_1, path, typ)
                 self.compare_keys(derived, expected, typ)
                 if type == 'pub':
-                    self.compare_keys(pub, expected, typ)
-                    self.assertEqual(h(pub.priv_key), '02' + '00' * 32)
+                    self.compare_keys(derived_pub, expected, typ)
+                    self.assertEqual(h(derived_pub.priv_key), '02' + '00' * 32)
                 self.assertEqual(h(derived.parent160), h(parent160))
+
+
+    def test_public_derivation_identities(self):
+
+        # Start with BIP32 Test vector 1
+        master = self.get_test_master_key(vec_1)
+
+        # Derive the same child public and private keys from master
+        pub = self.derive_key(master, 1, self.DERIVE_PUBLIC)
+        priv = self.derive_key(master, 1, self.DERIVE_PRIVATE)
+
+        # From the private child we can derive public and private keys
+        priv_pub = self.derive_key(priv, 1, self.DERIVE_PUBLIC)
+        priv_priv = self.derive_key(priv, 1, self.DERIVE_PRIVATE)
+
+        # From the public child we can only derive a public key
+        pub_pub = self.derive_key(pub, 1, self.DERIVE_PUBLIC)
+        # Verify that trying to derive a private key doesn't work
+        key_out = util.ext_key()
+        ret = self.bip32_key_from_parent(byref(pub), 1,
+                                         self.DERIVE_PRIVATE, byref(key_out))
+        self.assertEqual(ret, -1)
+
+        # Now our identities:
+        # The children share the same public key
+        self.assertEqual(h(pub.pub_key), h(priv.pub_key))
+        # The grand-children share the same public key
+        self.assertEqual(h(priv_pub.pub_key), h(priv_priv.pub_key))
+        self.assertEqual(h(priv_pub.pub_key), h(pub_pub.pub_key))
+        # The children and grand-children do not share the same public key
+        self.assertNotEqual(h(pub.pub_key), h(priv_pub.pub_key))
+
 
 
 if __name__ == '__main__':

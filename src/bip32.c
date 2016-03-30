@@ -85,6 +85,11 @@ static bool version_is_valid(uint32_t ver, uint32_t flags)
            (ver == BIP32_VER_MAIN_PUBLIC || ver == BIP32_VER_TEST_PUBLIC);
 }
 
+static bool version_is_mainnet(uint32_t ver)
+{
+    return ver == BIP32_VER_MAIN_PRIVATE || ver == BIP32_VER_MAIN_PUBLIC;
+}
+
 static bool key_is_private(const struct ext_key *key_in)
 {
     return key_in->priv_key[0] == KEY_PRIVATE;
@@ -217,11 +222,6 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     return 0;
 }
 
-static const secp256k1_context *dummy_secp(void)
-{
-    return (const secp256k1_context *)1;
-}
-
 /* BIP32: Child Key Derivations
  *
  * The spec doesn't have a simple table of derivations, its:
@@ -245,6 +245,8 @@ static const secp256k1_context *dummy_secp(void)
 int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           uint32_t flags, struct ext_key *key_out)
 {
+    struct sha512 sha;
+    const secp256k1_context *ctx = secp_ctx();
     const bool we_are_private = key_is_private(key_in);
     const bool derive_private = !(flags & BIP32_KEY_DERIVE_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
@@ -255,58 +257,89 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     if (key_in->depth == 0xff)
         return -1; /* Maximum depth reached */
 
+    /*
+     *  Private parent -> private child:
+     *    CKDpriv((kpar, cpar), i) -> (ki, ci)
+     *
+     *  Private parent -> public child:
+     *    N(CKDpriv((kpar, cpar), i) -> (ki, ci))
+     *  As we always calculate the public key, we can derive a public
+     *  child by deriving a private one and stripping its private key.
+     *
+     * Public parent -> non hardened public child
+     *    CKDpub((Kpar, cpar), i) -> (Ki, ci)
+     */
+
+    /* NB: We use the key_outs' priv_key+child_num to hold 'Data' here */
+    if (hardened) {
+        /* Hardened: Data = 0x00 || ser256(kpar) || ser32(i)) */
+        memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
+    } else {
+        /* Non Hardened Private: Data = serP(point(kpar)) || ser32(i)
+         * Non Hardened Public : Data = serP(kpar) || ser32(i)
+         *   point(kpar) when par is private is the public key.
+         */
+        memcpy(key_out->priv_key, key_in->pub_key, sizeof(key_in->pub_key));
+    }
+
+    /* This is the '|| ser32(i)' part of the above */
+    key_out->child_num = cpu_to_be32(child_num);
+
+    /* I = HMAC-SHA512(Key = cpar, Data) */
+    hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
+                key_out->priv_key,
+                sizeof(key_out->priv_key) + sizeof(key_out->child_num));
+
+    /* Split I into two 32-byte sequences, IL and IR
+     * The returned chain code ci is IR (i.e. the 2nd half of our hmac sha512)
+     */
+    memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
+           sizeof(key_out->chain_code));
+
     if (we_are_private) {
-        /*
-         *  Private parent -> private child:
-         *    CKDpriv((kpar, cpar), i) -> (ki, ci)
-         *  Private parent -> public child:
-         *    N(CKDpriv((kpar, cpar), i) -> (ki, ci))
-         *  As we always calculate the public key, we can derive a public
-         *  child by deriving a private one and stripping its private key.
-         */
-        struct sha512 sha;
-
-        /* NB: We use the key_outs' priv_key+child_num to hold 'Data' here */
-        if (hardened) {
-            /* Hardened: Data = 0x00 || ser256(kpar) || ser32(i)) */
-            memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
-        } else {
-            /* Non Hardened: Data = serP(point(kpar)) || ser32(i) */
-            memcpy(key_out->priv_key, key_in->pub_key, sizeof(key_in->pub_key));
-        }
-
-        /* This is the '|| ser32(i)' part of the above */
-        key_out->child_num = cpu_to_be32(child_num);
-
-        /* I = HMAC-SHA512(Key = cpar, Data) */
-        hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
-                    key_out->priv_key,
-                    sizeof(key_out->priv_key) + sizeof(key_out->child_num));
-
-        /* Split I into two 32-byte sequences, IL and IR
-         * The returned chain code ci is IR
-         */
-        memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
-               sizeof(key_out->chain_code));
-
         /* The returned child key ki is parse256(IL) + kpar (mod n)
          * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
          * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
          */
         memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
-        if (!secp256k1_ec_privkey_tweak_add(dummy_secp(),
+        if (!secp256k1_ec_privkey_tweak_add(ctx,
                                             key_out->priv_key + 1, sha.u.u8))
-            return -1;     /* Out of bounds FIXME: Iterate to the next? */
+            return -1;         /* Out of bounds FIXME: Iterate to the next? */
 
         if (key_compute_pub_key(key_out))
             return -1;
-
-        if (!derive_private)
-            key_strip_private_key(key_out);
     } else {
-        /* Public parent -> public child */
-        /* FIXME */
-        return -1;
+        /* The returned child key ki is point(parse256(IL) + kpar)
+         * In case parse256(IL) ≥ n or Ki is the point at infinity, the
+         * resulting key is invalid (NOTE: secp256k1_ec_pubkey_tweak_add
+         * checks both conditions)
+         */
+        secp256k1_pubkey pub_key;
+        size_t len = sizeof(key_out->pub_key);
+
+        /* FIXME: Out of bounds on secp256k1_ec_pubkey_tweak_add */
+        if (!secp256k1_ec_pubkey_parse(ctx, &pub_key, key_in->pub_key,
+                                       sizeof(key_in->pub_key)) ||
+            !secp256k1_ec_pubkey_tweak_add(ctx, &pub_key, sha.u.u8) ||
+            !secp256k1_ec_pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
+                                           SECP256K1_EC_COMPRESSED) ||
+            len != sizeof(key_out->pub_key))
+            return -1;
+    }
+
+    if (derive_private) {
+        if (version_is_mainnet(key_in->version))
+            key_out->version = BIP32_VER_MAIN_PRIVATE;
+        else
+            key_out->version = BIP32_VER_TEST_PRIVATE;
+
+    } else {
+        if (version_is_mainnet(key_in->version))
+            key_out->version = BIP32_VER_MAIN_PUBLIC;
+        else
+            key_out->version = BIP32_VER_TEST_PUBLIC;
+
+        key_strip_private_key(key_out);
     }
 
     key_out->depth = key_in->depth + 1;
