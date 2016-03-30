@@ -6,8 +6,16 @@ from ctypes import byref
 def h(s):
     return hexlify(s)
 
+# These vectors are expressed in binary rather than base 58. The spec base 58
+# representation just obfuscates the data we are validating. For example, the
+# chain codes in pub/priv results can be seen as equal in the hex data only.
+#
+# The vector results are the serialised resulting extended key using either the
+# contained public or private key. This is not to be confused with private or
+# public derivation - these vectors only derive privately.
 vec_1 = {
     'seed':     '000102030405060708090a0b0c0d0e0f',
+
     'm': {
         'pub':  '0488B21E000000000000000000873DFF'
                 '81C02F525623FD1FE5167EAC3A55A049'
@@ -21,7 +29,8 @@ vec_1 = {
                 '2E723DECF4051AEFAC8E2C93C9C5B214'
                 '313817CDB01A1494B917C8436B35E77E9D71'
     },
-    'm/0h': {
+
+    'm/0H': {
         'pub':  '0488B21E013442193E8000000047FDAC'
                 'BD0F1097043B78C63C20C34EF4ED9A11'
                 '1D980047AD16282C7AE6236141035A78'
@@ -34,6 +43,20 @@ vec_1 = {
                 'E14F9EE77D26DD93B4ECEDE8D16ED408'
                 'CE149B6CD80B0715A2D911A0AFEA0A794DEC'
     },
+
+    'm/0H/1': {
+        'pub':  '0488B21E025C1BD648000000012A7857'
+                '631386BA23DACAC34180DD1983734E44'
+                '4FDBF774041578E9B6ADB37C1903501E'
+                '454BF00751F24B1B489AA925215D66AF'
+                '2234E3891C3B21A52BEDB3CD711C6F6E2AF7',
+
+        'priv': '0488ADE4025C1BD648000000012A7857'
+                '631386BA23DACAC34180DD1983734E44'
+                '4FDBF774041578E9B6ADB37C19003C6C'
+                'B8D0F6A264C91EA8B5030FADAA8E538B'
+                '020F0A387421A12DE9319DC93368B34BC442'
+    }
 }
 
 class BIP32Tests(unittest.TestCase):
@@ -111,10 +134,16 @@ class BIP32Tests(unittest.TestCase):
             expected = self.get_test_key(vec_1, 'm', typ)
             self.compare_keys(master, expected, typ)
 
-        # Chain m/0h:
+        # Chain m/0H:
+        derived = self.derive_key(master, 0x80000000)
         for typ in ['pub', 'priv']:
-            expected = self.get_test_key(vec_1, 'm/0h', typ)
-            derived = self.derive_key(master, 0x80000000)
+            expected = self.get_test_key(vec_1, 'm/0H', typ)
+            self.compare_keys(derived, expected, typ)
+
+        # Chain m/0H/1:
+        derived = self.derive_key(derived, 1)
+        for typ in ['pub', 'priv']:
+            expected = self.get_test_key(vec_1, 'm/0H/1', typ)
             self.compare_keys(derived, expected, typ)
 
 
