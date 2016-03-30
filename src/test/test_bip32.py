@@ -56,6 +56,20 @@ vec_1 = {
                 '4FDBF774041578E9B6ADB37C19003C6C'
                 'B8D0F6A264C91EA8B5030FADAA8E538B'
                 '020F0A387421A12DE9319DC93368B34BC442'
+    },
+
+    'm/0H/1/2H': {
+        'pub':  '0488B21E03BEF5A2F98000000204466B'
+                '9CC8E161E966409CA52986C584F07E9D'
+                'C81F735DB683C3FF6EC7B1503F0357BF'
+                'E1E341D01C69FE5654309956CBEA5168'
+                '22FBA8A601743A012A7896EE8DC2A5162AFA',
+
+        'priv': '0488ADE403BEF5A2F98000000204466B'
+                '9CC8E161E966409CA52986C584F07E9D'
+                'C81F735DB683C3FF6EC7B1503F00CBCE'
+                '0D719ECF7431D88E6A89FA1483E02E35'
+                '092AF60C042B1DF2FF59FA424DCA25814A3A'
     }
 }
 
@@ -144,6 +158,12 @@ class BIP32Tests(unittest.TestCase):
         derived = self.derive_key(derived, 1)
         for typ in ['pub', 'priv']:
             expected = self.get_test_key(vec_1, 'm/0H/1', typ)
+            self.compare_keys(derived, expected, typ)
+
+        # Chain m/0H/1/2H
+        derived = self.derive_key(derived, 0x80000002)
+        for typ in ['pub', 'priv']:
+            expected = self.get_test_key(vec_1, 'm/0H/1/2H', typ)
             self.compare_keys(derived, expected, typ)
 
 
