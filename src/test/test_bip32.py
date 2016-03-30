@@ -155,11 +155,19 @@ class BIP32Tests(unittest.TestCase):
                         ('m/0H/1', 1),
                         ('m/0H/1/2H', 0x80000002)]:
 
+            # Derive a public and private child. Verify that the private child
+            # contains the public and private published vectors. Verify that
+            # the public child matches the public vector and has no private
+            # key. Finally, check that the child holds the correct parent hash.
             parent160 = derived.hash160
+            pub = self.derive_key(derived, i, self.DERIVE_PUBLIC)
             derived = self.derive_key(derived, i, self.DERIVE_PRIVATE)
             for typ in ['pub', 'priv']:
                 expected = self.get_test_key(vec_1, path, typ)
                 self.compare_keys(derived, expected, typ)
+                if type == 'pub':
+                    self.compare_keys(pub, expected, typ)
+                    self.assertEqual(h(pub.priv_key), '02' + '00' * 32)
                 self.assertEqual(h(derived.parent160), h(parent160))
 
 
