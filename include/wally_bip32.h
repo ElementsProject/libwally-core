@@ -40,15 +40,16 @@ struct ext_key {
     unsigned char pad1[10];
     /** The private key with prefix byte 0 */
     unsigned char priv_key[33];
+    /** The child number of the parent key that this key represents */
+    uint32_t child_num;
     /** The Hash160 of this key */
     unsigned char hash160[20];
     /** The child number of the parent key that this key represents */
-    uint32_t child_num;
-    unsigned char pad2[7];
+    uint32_t version;
+    unsigned char pad2[3];
     /** The public key with prefix byte 0x2 or 0x3 */
     unsigned char pub_key[33];
 };
-
 
 /**
  * Create a new master extended key from entropy.

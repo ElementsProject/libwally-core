@@ -27,17 +27,22 @@ static const unsigned char SEED[] = {
 void assert_assumptions(void)
 {
 #define key_off(member) offsetof(struct ext_key,  member)
+#define key_size(member) sizeof(((struct ext_key *)0)->member)
 
     /* Our ripend buffers must be uint32_t aligned and the correct size */
     BUILD_ASSERT(key_off(parent160) % sizeof(uint32_t) == 0);
     BUILD_ASSERT(key_off(hash160) % sizeof(uint32_t) == 0);
-    BUILD_ASSERT(sizeof(((struct ext_key *)0)->parent160) == sizeof(struct ripemd160));
-    BUILD_ASSERT(sizeof(((struct ext_key *)0)->hash160) == sizeof(struct ripemd160));
+    BUILD_ASSERT(key_size(parent160) == sizeof(struct ripemd160));
+    BUILD_ASSERT(key_size(hash160) == sizeof(struct ripemd160));
 
     /* Our keys following the parity byte must be uint64_t aligned */
     BUILD_ASSERT((key_off(priv_key) + 1) % sizeof(uint64_t) == 0);
     BUILD_ASSERT((key_off(pub_key) + 1) % sizeof(uint64_t) == 0);
 
+    /* child_num must be contigous after priv_key */
+    BUILD_ASSERT((key_off(priv_key) + key_size(priv_key)) == key_off(child_num));
+
+#undef key_size
 #undef key_off
 }
 
@@ -260,26 +265,24 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
          *  As we always calculate the public key, we can derive a public
          *  child by deriving a private one and stripping its private key.
          */
-        /* FIXME: Put child_num after priv_key and use that buffer directly? */
-        unsigned char buf[sizeof(key_in->priv_key) + sizeof(child_num)];
-        const beint32_t child_num_be = cpu_to_be32(child_num);
         struct sha512 sha;
 
+        /* NB: We use the key_outs' priv_key+child_num to hold 'Data' here */
         if (hardened) {
             /* Hardened: Data = 0x00 || ser256(kpar) || ser32(i)) */
-            memcpy(buf, key_in->priv_key, sizeof(key_in->priv_key));
+            memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
         } else {
             /* Non Hardened: Data = serP(point(kpar)) || ser32(i) */
-            memcpy(buf, key_in->pub_key, sizeof(key_in->pub_key));
+            memcpy(key_out->priv_key, key_in->pub_key, sizeof(key_in->pub_key));
         }
 
         /* This is the '|| ser32(i)' part of the above */
-        memcpy(buf + sizeof(key_in->priv_key),
-               &child_num_be, sizeof(child_num_be));
+        key_out->child_num = cpu_to_be32(child_num);
 
         /* I = HMAC-SHA512(Key = cpar, Data) */
         hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
-                    buf, sizeof(buf));
+                    key_out->priv_key,
+                    sizeof(key_out->priv_key) + sizeof(key_out->child_num));
 
         /* Split I into two 32-byte sequences, IL and IR
          * The returned chain code ci is IR

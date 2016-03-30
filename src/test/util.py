@@ -28,8 +28,10 @@ class ext_key(Structure):
                 ("depth", c_ubyte),
                 ("pad1", c_ubyte * 10),
                 ("priv_key", c_ubyte * 33),
-                ("hash160", c_ubyte * 20),
                 ("child_num", c_uint),
+                ("hash160", c_ubyte * 20),
+                ("version", c_uint),
+                ("pad2", c_ubyte * 3),
                 ("pub_key", c_ubyte * 33)]
 
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, POINTER(ext_key)]),
