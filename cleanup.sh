@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Clean up all generated files
-make distclean
+make distclean >/dev/null 2>&1
 
 rm -f */*~
 rm -f *~
