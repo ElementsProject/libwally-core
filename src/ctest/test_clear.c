@@ -25,6 +25,7 @@
 
 static const char *MNEMONIC = "legal winner thank year wave sausage worth "
                               "useful legal winner thank yellow";
+static unsigned char *global_stack;
 
 /* Useful for developing these tests */
 static void dump_mem(const void *mem, size_t len)
@@ -49,16 +50,16 @@ static void *checked_malloc(size_t len)
     return ret;
 }
 
-static bool search_mem(const void *mem, size_t mem_len,
-                       const void *search, size_t search_len)
+static bool search_stack(const void *stack, size_t stack_len,
+                         const void *search, size_t search_len)
 {
     size_t i;
 
-    if (search_len >= mem_len)
+    if (search_len >= stack_len)
         abort(); /* Bad call */
 
-    for (i = 0; i < mem_len - search_len - 1; ++i)
-        if (!memcmp(((const unsigned char *)mem) + i, search, search_len))
+    for (i = 0; i < stack_len - search_len - 1; ++i)
+        if (!memcmp(((const unsigned char *)stack) + i, search, search_len))
             return true; /* Found */
 
     return false; /* Not found */
@@ -71,7 +72,7 @@ static bool test_search(void *stack)
     /* Don't let the optimiser elide buf off the stack */
     buf[8] = ((size_t)stack) && 0xff;
 
-    return search_mem(stack, PTHREAD_STACK_MIN, buf, sizeof(buf));
+    return search_stack(stack, PTHREAD_STACK_MIN, buf, sizeof(buf));
 }
 
 static bool test_bip39(void *stack)
@@ -83,14 +84,14 @@ static bool test_bip39(void *stack)
     if (bip39_mnemonic_to_bytes(NULL, MNEMONIC, bytes, len) != len)
         return false;
 
-    if (search_mem(stack, PTHREAD_STACK_MIN, bytes, len))
+    if (search_stack(stack, PTHREAD_STACK_MIN, bytes, len))
         return false;
 
     /* Internally converts to bytes */
     if (!bip39_mnemonic_is_valid(NULL, MNEMONIC))
         return false;
 
-    if (search_mem(stack, PTHREAD_STACK_MIN, bytes, len))
+    if (search_stack(stack, PTHREAD_STACK_MIN, bytes, len))
         return false;
 
     return true;
@@ -98,6 +99,11 @@ static bool test_bip39(void *stack)
 
 static void *run_tests(void *stack)
 {
+    if (stack != global_stack) {
+        printf("stack mismatch!\n");
+        return stack;
+    }
+
 #define RUN_TEST(t) if (!t(stack)) { printf(#t " failed!\n"); return stack; }
 
     RUN_TEST(test_search);
@@ -109,14 +115,13 @@ int main(void)
 {
     pthread_t id;
     pthread_attr_t attr;
-    unsigned char *stack;
-    void *tests_ok = &stack; /* Anything non-null */
+    void *tests_ok = &global_stack; /* Anything non-null */
 
-    stack = (unsigned char *)checked_malloc(PTHREAD_STACK_MIN);
+    global_stack = (unsigned char *)checked_malloc(PTHREAD_STACK_MIN);
 
     pthread_attr_init(&attr);
-    if (pthread_attr_setstack(&attr, stack, PTHREAD_STACK_MIN) ||
-        pthread_create(&id, &attr, run_tests, stack) ||
+    if (pthread_attr_setstack(&attr, global_stack, PTHREAD_STACK_MIN) ||
+        pthread_create(&id, &attr, run_tests, global_stack) ||
         pthread_join(id, &tests_ok))
         return -1; /* pthreads b0rked */
 
