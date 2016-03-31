@@ -33,7 +33,10 @@ src/swig_python_wrap.c
 src/wallycore.py
 src/test/Makefile
 src/test/Makefile.in
+src/test_clear*
+src/test-suite.log
 tools/build-aux/m4/l*.m4
+tools/build-aux/test-driver
 src/secp256k1/test-suite.log
 src/secp256k1/tests.log
 src/secp256k1/tests.trs
