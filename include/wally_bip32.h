@@ -28,7 +28,9 @@
 #define BIP32_VER_TEST_PUBLIC  0x043587CF
 #define BIP32_VER_TEST_PRIVATE 0x04358394
 
-
+#ifdef SWIG
+struct ext_key;
+#else
 /** An extended key */
 struct ext_key {
     /** The chain code for this key */
@@ -50,6 +52,7 @@ struct ext_key {
     /** The public key with prefix byte 0x2 or 0x3 */
     unsigned char pub_key[33];
 };
+#endif /* SWIG */
 
 /**
  * Create a new master extended key from entropy.

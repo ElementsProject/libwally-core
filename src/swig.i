@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "../include/wally-core.h"
 #include "../include/wally_bip39.h"
+#include "../include/wally_bip32.h"
 %}
 
 #ifdef SWIGPYTHON
@@ -14,3 +15,4 @@
 
 %include "../include/wally-core.h"
 %include "../include/wally_bip39.h"
+%include "../include/wally_bip32.h"
