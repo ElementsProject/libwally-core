@@ -110,7 +110,7 @@ int main(void)
     pthread_t id;
     pthread_attr_t attr;
     unsigned char *stack;
-    void *tests_ok = NULL;
+    void *tests_ok = &stack; /* Anything non-null */
 
     stack = (unsigned char *)checked_malloc(PTHREAD_STACK_MIN);
 
