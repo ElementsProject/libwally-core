@@ -30,14 +30,16 @@ AC_SUBST([GNU_SED])
 #
 # C facilities
 #
+if test "x$CC" == "xgcc"; then
+    # FIXME: Add an --enable-debug flag
+    CFLAGS="-O3"
+    LDFLAGS="-O3 -flto"
+fi
+
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
 AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" = "xyes"])
-
-if test "x$CFLAGS" = "x"; then
-  CFLAGS="-O3 -g"
-fi
 
 warn_CFLAGS="--pedantic -Wall -W -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
 saved_CFLAGS="$CFLAGS"
