@@ -100,16 +100,15 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
     tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
 
-    if (!tmp_len || len < tmp_len - 1 ||
-        !(mask = entropy_len_to_mask(tmp_len - 1)))
+    if (!tmp_len-- || len < tmp_len || !(mask = entropy_len_to_mask(tmp_len)))
         return 0;
 
-    if ((tmp_bytes[tmp_len - 1] & mask) !=
-        (bip39_checksum(tmp_bytes, tmp_len - 1) & mask))
+    if ((tmp_bytes[tmp_len] & mask) !=
+        (bip39_checksum(tmp_bytes, tmp_len) & mask))
         return 0; /* Mismatched checksum */
 
-    memcpy(bytes_out, tmp_bytes, tmp_len - 1);
-    return tmp_len - 1;
+    memcpy(bytes_out, tmp_bytes, tmp_len);
+    return tmp_len;
 }
 
 bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
