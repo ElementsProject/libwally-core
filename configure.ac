@@ -32,7 +32,7 @@ AC_SUBST([GNU_SED])
 #
 if test "x$CC" == "xgcc"; then
     # FIXME: Add an --enable-debug flag
-    CFLAGS="-O3"
+    CFLAGS="-O3 -flto"
     LDFLAGS="-O3 -flto"
 fi
 
