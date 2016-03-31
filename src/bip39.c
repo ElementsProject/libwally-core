@@ -1,5 +1,6 @@
 #include <include/wally_bip39.h>
 #include <string.h>
+#include "internal.h"
 #include "mnemonic.h"
 #include "wordlist.h"
 #include "hmac.h"
@@ -44,7 +45,7 @@ const struct words *bip39_get_wordlist(const char *lang)
 /* Convert an input entropy length to a mask for checksum bits. As it
  * returns 0 for bad lengths, it serves as a validation function too.
  */
-static size_t entropy_len_to_mask(size_t len)
+static size_t len_to_mask(size_t len)
 {
     switch (len) {
     case BIP39_ENTROPY_LEN_128: return 0xf0;
@@ -58,9 +59,12 @@ static size_t entropy_len_to_mask(size_t len)
 
 static unsigned char bip39_checksum(const unsigned char *bytes_in, size_t len)
 {
-    struct sha256 tmp;
-    sha256(&tmp, bytes_in, len); /* FIXME: Allow user to provide a SHA256 impl */
-    return tmp.u.u8[0];
+    struct sha256 sha;
+    unsigned char ret;
+    sha256(&sha, bytes_in, len); /* FIXME: Allow user to provide a SHA256 impl */
+    ret = sha.u.u8[0];
+    clear_all(1u, &sha, sizeof(sha));
+    return ret;
 }
 
 char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, size_t len)
@@ -70,12 +74,18 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
 
     w = w ? w : &en_words;
 
-    if (w->bits != 11u || !entropy_len_to_mask(len))
+    if (w->bits != 11u || !len_to_mask(len))
         return NULL;
 
     memcpy(checksummed_bytes, bytes_in, len);
     checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
     return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
+}
+
+static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
+{
+    /* The checksum is stored after the data to sum */
+    return (bytes[idx] & mask) == (bip39_checksum(bytes, idx) & mask);
 }
 
 size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
@@ -96,25 +106,28 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     w = w ? w : &en_words;
 
     if (w->bits != 11u)
-        return false;
+        return 0;
 
     tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
 
-    if (!tmp_len-- || len < tmp_len || !(mask = entropy_len_to_mask(tmp_len)))
+    if (!tmp_len-- || len < tmp_len || !(mask = len_to_mask(tmp_len)) ||
+        !checksum_ok(tmp_bytes, tmp_len, mask)) {
+        clear_all(1u, tmp_bytes, sizeof(tmp_bytes));
         return 0;
-
-    if ((tmp_bytes[tmp_len] & mask) !=
-        (bip39_checksum(tmp_bytes, tmp_len) & mask))
-        return 0; /* Mismatched checksum */
+    }
 
     memcpy(bytes_out, tmp_bytes, tmp_len);
+    clear_all(1u, tmp_bytes, sizeof(tmp_bytes));
     return tmp_len;
 }
 
 bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
 {
-    unsigned char bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
-    return bip39_mnemonic_to_bytes(w, mnemonic, bytes, sizeof(bytes)) != 0;
+    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
+    size_t len;
+    len = bip39_mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
+    clear_all(1u, tmp_bytes, sizeof(tmp_bytes));
+    return len != 0;
 }
 
 #define SALT_BYTES 4u /* Extra bytes for salt */
