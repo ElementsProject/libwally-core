@@ -10,7 +10,7 @@ AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
-LT_INIT
+LT_INIT([disable-static])
 
 AC_PROG_CC
 
