@@ -17,6 +17,7 @@ rm -f src/Makefile.in
 rm -f src/config.h.in
 rm -f src/test_clear*
 rm -f src/test-suite.log
+rm -rf src/.libs
 rm -f tools/build-aux/compile
 rm -f tools/build-aux/config.guess
 rm -f tools/build-aux/config.sub
