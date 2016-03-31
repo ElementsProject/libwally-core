@@ -38,8 +38,11 @@ libwallycore_la_LIBADD = $(LIBSECP256K1)
 
 SUBDIRS = secp256k1 test
 
+if USE_PTHREAD
 TESTS = test_clear
 noinst_PROGRAMS = test_clear
 test_clear_SOURCES = ctest/test_clear.c
-test_clear_CFLAGS = -I$(top_srcdir)/include
+test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS)
+test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES)
+endif

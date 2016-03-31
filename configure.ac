@@ -90,6 +90,12 @@ AC_HAVE_ATTRIBUTE_WEAK
 
 AC_CHECK_HEADERS([byteswap.h])
 
+AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
+AM_CONDITIONAL([USE_PTHREAD], [test x"$ac_have_pthread" = "xyes"])
+if test "x$ac_have_pthread" = "xyes"; then
+    AC_DEFINE([HAVE_PTHREAD], [1], [Define if we have pthread support])
+fi
+
 #
 # Python facilities
 #
