@@ -97,16 +97,14 @@ WALLY_CORE_API int bip32_key_unserialise(
 /**
  * Create a new child extended key from a parent extended key.
  *
- * This computes either a hardened or normal private
- * child extended key, depending on whether @child_num is hardened.
- *
- * If @key_in is public, this computes a public child extended key if
- * @child_num is normal, or returns an error if @child_num is hardened.
- *
  * @key_in The parent extended key.
  * @child_num The child number to create. Numbers greater
- *            than @BIP32_INITIAL_HARDENED_CHILD are hardened keys.
+ *            than or equal to @BIP32_INITIAL_HARDENED_CHILD represent
+ *            hardened keys that cannot be created from public parent
+ *            extended keys.
  * @flags BIP32_KEY_DERIVE_ Flags indicating the type of derivation wanted.
+ *        You can not derive a private child extended key from a public
+ *        parent extended key.
  * @key_out Destination for the resulting child extended key.
  */
 WALLY_CORE_API int bip32_key_from_parent(
