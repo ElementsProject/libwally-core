@@ -23,25 +23,33 @@
 #define PTHREAD_STACK_MIN 16384u
 #endif
 
-static const char *MNEMONIC = "legal winner thank year wave sausage worth "
-                              "useful legal winner thank yellow";
-static unsigned char *global_stack;
+/* Global alternate stack pointer */
+static unsigned char *gstack;
+/* Global scratch buffer */
+static unsigned char *gbytes;
+
+static const char *BIP39_MNEMONIC = "legal winner thank year wave sausage worth "
+                                    "useful legal winner thank yellow";
+static const unsigned char BIP39_SECRET[16] = {
+    0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+    0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
+};
 
 /* Useful for developing these tests */
 static void dump_mem(const void *mem, size_t len)
 {
+    const unsigned char *p = (const unsigned char *)mem;
     size_t i;
     for (i = 0; i < len; ++i) {
-        const unsigned char *p = ((const unsigned char *)mem) + i;
-        if (!*p)
+        if (!p[i])
             printf(".");
         else
-            printf("0x%02x, ", *p);
+            printf("%02x, ", p[i]);
     }
     printf("\n");
 }
 
-static void *checked_malloc(size_t len)
+static unsigned char *checked_malloc(size_t len)
 {
     void *ret = malloc(len);
     if (!ret)
@@ -50,64 +58,59 @@ static void *checked_malloc(size_t len)
     return ret;
 }
 
-static bool search_stack(const void *stack, size_t stack_len,
-                         const void *search, size_t search_len)
+static bool in_stack(const void *search, size_t len)
 {
     size_t i;
 
-    if (search_len >= stack_len)
-        abort(); /* Bad call */
-
-    for (i = 0; i < stack_len - search_len - 1; ++i)
-        if (!memcmp(((const unsigned char *)stack) + i, search, search_len))
+    for (i = 0; i < PTHREAD_STACK_MIN - len - 1; ++i)
+        if (!memcmp(gstack + i, search, len))
             return true; /* Found */
 
     return false; /* Not found */
 }
 
 /* Test that searching for data on the stack actually works */
-static bool test_search(void *stack)
+static bool test_search(void)
 {
     unsigned char buf[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
-    /* Don't let the optimiser elide buf off the stack */
-    buf[8] = ((size_t)stack) && 0xff;
 
-    return search_stack(stack, PTHREAD_STACK_MIN, buf, sizeof(buf));
+    /* Don't let the optimiser elide buf off the stack */
+    buf[7] ^= (((size_t)gstack) && 0xff);
+
+    return in_stack(buf, sizeof(buf));
 }
 
-static bool test_bip39(void *stack)
+static bool test_bip39(void)
 {
-    const size_t len = BIP39_ENTROPY_LEN_128;
-    unsigned char *bytes = checked_malloc(len);
-
     /* Converting uses a temporary buffer on the stack */
-    if (bip39_mnemonic_to_bytes(NULL, MNEMONIC, bytes, len) != len)
+    if (bip39_mnemonic_to_bytes(NULL, BIP39_MNEMONIC, gbytes,
+                                BIP39_ENTROPY_LEN_128) != BIP39_ENTROPY_LEN_128)
         return false;
 
-    if (search_stack(stack, PTHREAD_STACK_MIN, bytes, len))
+    if (in_stack(BIP39_SECRET, sizeof(BIP39_SECRET)))
         return false;
 
     /* Internally converts to bytes */
-    if (!bip39_mnemonic_is_valid(NULL, MNEMONIC))
+    if (!bip39_mnemonic_is_valid(NULL, BIP39_MNEMONIC))
         return false;
 
-    if (search_stack(stack, PTHREAD_STACK_MIN, bytes, len))
+    if (in_stack(gbytes, BIP39_ENTROPY_LEN_128))
         return false;
 
     return true;
 }
 
-static void *run_tests(void *stack)
+static void *run_tests(void *passed_stack)
 {
-    if (stack != global_stack) {
+    if (passed_stack != gstack) {
         printf("stack mismatch!\n");
-        return stack;
+        return passed_stack;
     }
 
-#define RUN_TEST(t) if (!t(stack)) { printf(#t " failed!\n"); return stack; }
+#define RUN(t) if (!t()) { printf(#t " failed!\n"); return gstack; }
 
-    RUN_TEST(test_search);
-    RUN_TEST(test_bip39);
+    RUN(test_search);
+    RUN(test_bip39);
     return NULL;
 }
 
@@ -115,13 +118,14 @@ int main(void)
 {
     pthread_t id;
     pthread_attr_t attr;
-    void *tests_ok = &global_stack; /* Anything non-null */
+    void *tests_ok = &gstack; /* Anything non-null */
 
-    global_stack = (unsigned char *)checked_malloc(PTHREAD_STACK_MIN);
+    gstack = checked_malloc(PTHREAD_STACK_MIN);
+    gbytes = checked_malloc(64u * 1024u);
 
     pthread_attr_init(&attr);
-    if (pthread_attr_setstack(&attr, global_stack, PTHREAD_STACK_MIN) ||
-        pthread_create(&id, &attr, run_tests, global_stack) ||
+    if (pthread_attr_setstack(&attr, gstack, PTHREAD_STACK_MIN) ||
+        pthread_create(&id, &attr, run_tests, gstack) ||
         pthread_join(id, &tests_ok))
         return -1; /* pthreads b0rked */
 
