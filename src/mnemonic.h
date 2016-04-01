@@ -31,7 +31,8 @@ char *mnemonic_from_bytes(
 size_t mnemonic_to_bytes(
     const struct words *w,
     const char *mnemonic,
-    unsigned char *bytes_out, size_t len);
+    unsigned char *bytes_out,
+    size_t len);
 
 /**
  * mnemonic_free - Free an allocated mnemonic.

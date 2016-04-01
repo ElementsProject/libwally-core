@@ -40,7 +40,9 @@ struct words *wordlist_init(const char *text);
  * Returns 0 if not found, index + 1 otherwise.
  * @see wordlist_init.
  */
-size_t wordlist_lookup_word(const struct words *w, const char *word);
+size_t wordlist_lookup_word(
+    const struct words *w,
+    const char *word);
 
 /**
  * wordlist_lookup_index - Return the Nth word in a wordlist.
@@ -49,7 +51,9 @@ size_t wordlist_lookup_word(const struct words *w, const char *word);
  *
  * Returns NULL if not found, the word otherwise.
  */
-const char *wordlist_lookup_index(const struct words *w, size_t index);
+const char *wordlist_lookup_index(
+    const struct words *w,
+    size_t index);
 
 /**
  * wordlist_free - Free a words structure.
