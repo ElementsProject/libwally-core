@@ -52,10 +52,11 @@ check-local:
 if HAVE_PYTHON
 	$(PYTHON) test/test_bip32.py
 	$(PYTHON) test/test_bip39.py
-if  EXPORT_ALL
+if EXPORT_ALL
 	$(PYTHON) test/test_hmac.py
 	$(PYTHON) test/test_mnemonic.py
 	$(PYTHON) test/test_sha2.py
 	$(PYTHON) test/test_wordlist.py
 endif
+        PYTHONPATH=.libs $(PYTHON) mnemonic.py # FIXME: Own dir for SWIG python tests
 endif

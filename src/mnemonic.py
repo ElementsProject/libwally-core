@@ -14,8 +14,8 @@ class Mnemonic(object):
     def __init__(self, language):
         self.wordlist = wallycore.bip39_get_wordlist(language)
 
-
-    def list_languages(self):
+    @staticmethod
+    def list_languages():
         return wallycore.bip39_get_languages().split()
 
 
@@ -52,3 +52,16 @@ class Mnemonic(object):
         if wallycore.bip39_mnemonic_to_seed(mnemonic, passphrase, buf) == 0:
             raise ValueError('Unable to create seed')
         return bytearray(buf)[0:wallycore.BIP39_SEED_LEN_512]
+
+
+if __name__ == "__main__":
+    # Just make sure the basics work
+    for lang in Mnemonic.list_languages():
+        m = Mnemonic(lang)
+        phrase = m.generate()
+        assert m.check(phrase)
+        assert not m.check(phrase + ' foo')
+        assert m.to_entropy(phrase) == m.to_entropy(phrase.split())
+        assert m.to_mnemonic(m.to_entropy(phrase)) == phrase
+        assert m.to_seed(phrase, 'foo') != m.to_seed(phrase, 'bar')
+
