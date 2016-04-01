@@ -21,7 +21,8 @@
  * allocations, side channels, or being swapped to disk.
  */
 #ifndef PTHREAD_STACK_MIN
-#define PTHREAD_STACK_MIN 16384u
+/* OSX Needs a minimum of 512K of stack per thread */
+#define PTHREAD_STACK_MIN 512u * 1024u;
 #endif
 
 /* Global alternate stack pointer */
