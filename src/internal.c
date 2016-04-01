@@ -18,7 +18,22 @@ const secp256k1_context *secp_ctx(void)
     return global_ctx;
 }
 
+#if 0
+/* This idea is taken from libressl's explicit_bzero.
+ * Use a weak symbol to force the compiler to consider dest as being read,
+ * since it can't know what any interposed function may read. Not ideal for
+ * us in case someone includes a __clear_fn symbol in a third party library,
+ * since it gets called with an address right in the middle of interesting
+ * things we are clearing out (even if the actual block is zeroed).
+ */
+__attribute__ ((visibility ("default"))) __attribute__((weak)) void __clear_fn(void *dest, size_t len);
+#endif
 
+/* Our implementation of secure clearing uses a variadic function.
+ * This appears sufficient to prevent the compiler detecting that
+ * the memory is not read after being zeroed and eliminating the
+ * call.
+ */
 void clear_n(unsigned int count, ...)
 {
     va_list args;
@@ -33,6 +48,20 @@ void clear_n(unsigned int count, ...)
         memset_s(dest, len, 0, len);
 #else
         memset(dest, 0, len);
+#endif
+#if 0
+        /* This is used by boringssl to prevent memset from being elided. It
+         * works by forcing a memory barrier and so can be slow.
+         */
+        __asm__ __volatile__ ("" : : "r" (dest) : "memory");
+#endif
+#if 0
+        /* Continuing libressl's implementation. The check here allows the
+         * implementation to remain undefined and thus a buggy compiler
+         * cannot see that it does nothing and elide it erroneously.
+         */
+        if (__clear_fn)
+            __clear_fn(dest, len);
 #endif
     }
 
