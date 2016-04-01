@@ -95,7 +95,7 @@ const char *wordlist_lookup_index(const struct words *w, size_t index)
 void wordlist_free(struct words *w)
 {
     if (w && w->str_len) {
-        clear((void*)w->str,  w->str_len);
+        clear((void *)w->str,  w->str_len);
         free((void *)w->str);
         free((void *)w->indices);
         clear(w, sizeof(*w));

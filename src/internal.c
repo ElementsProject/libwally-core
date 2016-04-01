@@ -19,7 +19,7 @@ const secp256k1_context *secp_ctx(void)
 }
 
 
-void clear_all(size_t count, ...)
+void clear_n(size_t count, ...)
 {
     va_list args;
     size_t i;

@@ -11,7 +11,8 @@
  * calling through function pointers, dummy asm contraints etc are
  * not always effective as optimisation continues to improve.
  *
- * Here we try to ensure that the clear_all() function works as advertised by:
+ * Here we try to ensure that the clear/clear_n() functions work as advertised
+ * by:
  * - Setting a custom thread stack, then
  * - Calling a function that processes sensitive data, then
  * - Searching the stack for any sensitive data when the function returns
