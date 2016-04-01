@@ -1,18 +1,17 @@
 from ctypes import *
 from binascii import unhexlify
+from os.path import isfile
 import platform
 
-root_dir = '../../'
+# Allow to run from any sub dir
 SO_EXT = 'dylib' if platform.system() == 'Darwin' else 'so'
+for depth in [0, 1, 2]:
+    root_dir = '../' * depth
+    if isfile(root_dir + 'src/.libs/libwallycore.' + SO_EXT):
+        break
 
-try:
-    # Assume 'make test' is running a from the src/test/ directory
-    libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
-except OSError:
-    # Perhaps we are manually running a test from the root dir using
-    # the full path
-    libwally = CDLL('src/.libs/libwallycore.' + SO_EXT)
-    root_dir = ''
+libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
+
 
 wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
                   ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
