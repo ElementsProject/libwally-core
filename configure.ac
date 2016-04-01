@@ -32,12 +32,8 @@ AC_SUBST([GNU_SED])
 #
 if test "x$CC" == "xgcc"; then
     # FIXME: Add an --enable-debug flag
-    # See issue #1, stack buffers are not effectively cleaned when these
-    # optimisations are enabled.
-    #CFLAGS="-O3 -flto"
-    #LDFLAGS="-O3 -flto"
-    CFLAGS="-O2"
-    LDFLAGS="-O2"
+    CFLAGS="-O3 -flto -ggdb"
+    LDFLAGS="-O3 -flto -ggdb"
 fi
 
 AC_ARG_ENABLE(export-all,
