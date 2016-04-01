@@ -263,4 +263,5 @@ void sha512(struct sha512 *sha, const void *p, size_t size)
 	sha512_init(&ctx);
 	sha512_update(&ctx, p, size);
 	sha512_done(&ctx, sha);
+	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
 }

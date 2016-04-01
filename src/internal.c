@@ -19,10 +19,10 @@ const secp256k1_context *secp_ctx(void)
 }
 
 
-void clear_n(size_t count, ...)
+void clear_n(unsigned int count, ...)
 {
     va_list args;
-    size_t i;
+    unsigned int i;
 
     va_start(args, count);
 

@@ -247,6 +247,7 @@ void sha256(struct sha256 *sha, const void *p, size_t size)
 	sha256_init(&ctx);
 	sha256_update(&ctx, p, size);
 	sha256_done(&ctx, sha);
+	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
 }
 	
 void sha256_u8(struct sha256_ctx *ctx, uint8_t v)

@@ -21,3 +21,8 @@
 #ifdef HAVE_BYTESWAP_H
 #define HAVE_BSWAP_64 1
 #endif
+
+/* Clear a set of memory areas passed as ptr1, len1, ptr2, len2 etc */
+void clear_n(unsigned int count, ...);
+
+#define CCAN_CLEAR_MEMORY(p, len) clear_n(1, p, len)

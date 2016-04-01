@@ -348,6 +348,7 @@ void ripemd160(struct ripemd160 *ripemd, const void *p, size_t size)
 	ripemd160_init(&ctx);
 	ripemd160_update(&ctx, p, size);
 	ripemd160_done(&ctx, ripemd);
+	CCAN_CLEAR_MEMORY(&ctx, sizeof(ctx));
 }
 	
 void ripemd160_u8(struct ripemd160_ctx *ctx, uint8_t v)
