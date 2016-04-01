@@ -3,9 +3,10 @@
 # Clean up all generated files
 make distclean >/dev/null 2>&1
 
+find . -name Makefile.in -exec rm {} \;
+
 rm -f */*~
 rm -f *~
-rm -f Makefile.in
 rm -f aclocal.m4
 rm -f config.h.in
 rm -f configure
@@ -13,7 +14,6 @@ rm -f src/*pyc
 rm -f src/test/*pyc
 rm -f src/wallycore.py
 rm -f src/swig_python_wrap.c
-rm -f src/Makefile.in
 rm -f src/config.h.in
 rm -f src/test_clear*
 rm -f src/test-suite.log
