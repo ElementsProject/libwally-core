@@ -8,9 +8,10 @@
  *
  * https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
  */
+#include "hmac.h"
+#include "internal.h"
 #include <ccan/ccan/crypto/sha512/sha512.h>
 #include <string.h>
-#include "hmac.h"
 
 static void mix(struct sha512 *sha, const unsigned char *pad,
                 const unsigned char *data, size_t data_len)
@@ -19,6 +20,7 @@ static void mix(struct sha512 *sha, const unsigned char *pad,
     sha512_update(&ctx, pad, sizeof(ctx.buf));
     sha512_update(&ctx, data, data_len);
     sha512_done(&ctx, sha);
+    clear(&ctx, sizeof(ctx));
 }
 
 void hmac_sha512(struct sha512 *sha,
@@ -44,4 +46,5 @@ void hmac_sha512(struct sha512 *sha,
 
     mix((struct sha512 *)ctx.buf.u8, ipad, msg, msg_len);
     mix(sha, opad, ctx.buf.u8, sizeof(*sha));
+    clear_n(3, &ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
 }

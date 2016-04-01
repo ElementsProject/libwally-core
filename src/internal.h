@@ -13,7 +13,7 @@ void clear_n(size_t count, ...);
 
 inline static void clear(void *p, size_t len)
 {
-    clear_n(1u, p, len);
+    clear_n(1, p, len);
 }
 
 #endif /* LIBWALLY_INTERNAL_H */
