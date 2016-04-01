@@ -29,9 +29,8 @@ static struct words *wordlist_alloc(const char *words, size_t len)
             w->indices = malloc(len * sizeof(const char *));
             if (w->indices)
                 return w;
-            free((void *)w->str);
         }
-        free(w);
+        wordlist_free(w);
     }
     return NULL;
 }
@@ -95,9 +94,12 @@ const char *wordlist_lookup_index(const struct words *w, size_t index)
 void wordlist_free(struct words *w)
 {
     if (w && w->str_len) {
-        clear((void *)w->str,  w->str_len);
-        free((void *)w->str);
-        free((void *)w->indices);
+        if (w->str) {
+            clear((void *)w->str,  w->str_len);
+            free((void *)w->str);
+        }
+        if (w->indices)
+            free((void *)w->indices); /* No need to clear */
         clear(w, sizeof(*w));
         free(w);
     }
