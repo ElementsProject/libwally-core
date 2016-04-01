@@ -63,7 +63,7 @@ static unsigned char bip39_checksum(const unsigned char *bytes_in, size_t len)
     unsigned char ret;
     sha256(&sha, bytes_in, len); /* FIXME: Allow user to provide a SHA256 impl */
     ret = sha.u.u8[0];
-    clear_n(1u, &sha, sizeof(sha));
+    clear(&sha, sizeof(sha));
     return ret;
 }
 
@@ -71,6 +71,7 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
+    char *ret;
 
     w = w ? w : &en_words;
 
@@ -79,7 +80,9 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
 
     memcpy(checksummed_bytes, bytes_in, len);
     checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
-    return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
+    ret = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
+    clear(checksummed_bytes, sizeof(checksummed_bytes));
+    return ret;
 }
 
 void bip39_mnemonic_free(const char *mnemonic)
@@ -117,12 +120,12 @@ size_t bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
     if (!tmp_len-- || len < tmp_len || !(mask = len_to_mask(tmp_len)) ||
         !checksum_ok(tmp_bytes, tmp_len, mask)) {
-        clear_n(1u, tmp_bytes, sizeof(tmp_bytes));
+        clear(tmp_bytes, sizeof(tmp_bytes));
         return 0;
     }
 
     memcpy(bytes_out, tmp_bytes, tmp_len);
-    clear_n(1u, tmp_bytes, sizeof(tmp_bytes));
+    clear(tmp_bytes, sizeof(tmp_bytes));
     return tmp_len;
 }
 
@@ -131,7 +134,7 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
     unsigned char tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
     size_t len;
     len = bip39_mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
-    clear_n(1u, tmp_bytes, sizeof(tmp_bytes));
+    clear(tmp_bytes, sizeof(tmp_bytes));
     return len != 0;
 }
 
@@ -168,6 +171,7 @@ static void pbkdf2_hmac_sha512(unsigned char *bytes_out,
         for (j = 0; j < sizeof(d1); ++j)
             bytes_out[j] ^= d1.u.u8[j];
     }
+    clear_n(2, &d1, sizeof(d1), &d2, sizeof(d2));
 }
 
 size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
@@ -187,6 +191,9 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
 
     pbkdf2_hmac_sha512(bytes_out, (unsigned char *)mnemonic, strlen(mnemonic),
                        salt, salt_len);
+
+    clear(salt, salt_len + SALT_BYTES);
     free(salt);
+
     return BIP39_SEED_LEN_512;
 }
