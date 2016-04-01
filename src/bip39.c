@@ -82,6 +82,11 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
     return mnemonic_from_bytes(w, checksummed_bytes, len + 1);
 }
 
+void bip39_mnemonic_free(const char *mnemonic)
+{
+    mnemonic_free((char *)mnemonic);
+}
+
 static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
 {
     /* The checksum is stored after the data to sum */

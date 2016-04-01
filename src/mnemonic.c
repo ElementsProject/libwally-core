@@ -1,4 +1,5 @@
 #include "mnemonic.h"
+#include "internal.h"
 #include "wordlist.h"
 #include <string.h>
 
@@ -74,6 +75,7 @@ size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned c
         size_t index = wordlist_lookup_word(w, mnemonic_w->indices[i]);
         if (!index) {
             wordlist_free(mnemonic_w);
+            clear(bytes_out, len);
             return -1;
         }
         store_index(w->bits, bytes_out, i, index - 1);
@@ -81,4 +83,12 @@ size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned c
 
     wordlist_free(mnemonic_w);
     return (i * w->bits + 7u) / 8u;
+}
+
+void mnemonic_free(char *mnemonic)
+{
+    if (mnemonic) {
+        clear(mnemonic, strlen(mnemonic));
+        free(mnemonic);
+    }
 }
