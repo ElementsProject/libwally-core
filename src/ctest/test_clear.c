@@ -115,20 +115,37 @@ static void *run_tests(void *passed_stack)
     return NULL;
 }
 
+static int error(const char *fn, int ret)
+{
+    printf("error: %s failed, returned %d\n", fn, ret);
+    return ret;
+}
+
 int main(void)
 {
     pthread_t id;
     pthread_attr_t attr;
     void *tests_ok = &gstack; /* Anything non-null */
+    int ret;
 
     gstack = checked_malloc(PTHREAD_STACK_MIN);
     gbytes = checked_malloc(64u * 1024u);
 
-    pthread_attr_init(&attr);
-    if (pthread_attr_setstack(&attr, gstack, PTHREAD_STACK_MIN) ||
-        pthread_create(&id, &attr, run_tests, gstack) ||
-        pthread_join(id, &tests_ok))
-        return -1; /* pthreads b0rked */
+    ret = pthread_attr_init(&attr);
+    if (ret)
+        return error("pthread_attr_init", ret);
+
+    ret = pthread_attr_setstack(&attr, gstack, PTHREAD_STACK_MIN);
+    if (ret)
+        return error("pthread_attr_setstack", ret);
+
+    ret = pthread_create(&id, &attr, run_tests, gstack);
+    if (ret)
+        return error("pthread_create", ret);
+
+    ret = pthread_join(id, &tests_ok);
+    if (ret)
+        return error("pthread_join", ret);
 
     return tests_ok == NULL ? 0 : 1;
 }
