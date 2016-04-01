@@ -95,7 +95,7 @@ static bool test_bip39(void)
     if (!bip39_mnemonic_is_valid(NULL, BIP39_MNEMONIC))
         return false;
 
-    if (in_stack(gbytes, BIP39_ENTROPY_LEN_128))
+    if (in_stack(BIP39_SECRET, sizeof(BIP39_SECRET)))
         return false;
 
     return true;
