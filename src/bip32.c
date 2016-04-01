@@ -11,6 +11,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define pubkey_create     secp256k1_ec_pubkey_create
+#define pubkey_parse      secp256k1_ec_pubkey_parse
+#define pubkey_tweak_add  secp256k1_ec_pubkey_tweak_add
+#define pubkey_serialize  secp256k1_ec_pubkey_serialize
+#define privkey_tweak_add secp256k1_ec_privkey_tweak_add
+
 /* If priv_key[0] is KEY_PRIVATE then this is a private key,
  * with a public key also present. If set to KEY_PUBLIC then
  * this is a public key with an empty private key (In BIP32
@@ -101,19 +107,22 @@ static void key_strip_private_key(struct ext_key *key_out)
     memset(key_out->priv_key + 1, 0, sizeof(key_out->priv_key) - 1);
 }
 
+/* Compute a public key from a private key */
 static int key_compute_pub_key(struct ext_key *key_out)
 {
     secp256k1_pubkey pub_key;
     size_t len = sizeof(key_out->pub_key);
     const secp256k1_context *ctx = secp_ctx();
 
-    if (!secp256k1_ec_pubkey_create(ctx, &pub_key, key_out->priv_key + 1) ||
-        !secp256k1_ec_pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
-                                       SECP256K1_EC_COMPRESSED) ||
-        len != sizeof(key_out->pub_key))
-        return -1;
+    int ret = (pubkey_create(ctx, &pub_key, key_out->priv_key + 1) &&
+               pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
+                                SECP256K1_EC_COMPRESSED) &&
+               len == sizeof(key_out->pub_key)) ? 0 : -1;
 
-    return 0;
+    clear(&pub_key, sizeof(pub_key));
+    if (ret != 0)
+        clear(key_out->pub_key, sizeof(key_out->pub_key));
+    return ret;
 }
 
 static void key_compute_hash160(struct ext_key *key_out)
@@ -121,6 +130,7 @@ static void key_compute_hash160(struct ext_key *key_out)
     struct sha256 sha;
     sha256(&sha, key_out->pub_key, sizeof(key_out->pub_key));
     ripemd160((struct ripemd160 *)key_out->hash160, &sha, sizeof(sha));
+    clear(&sha, sizeof(sha));
 }
 
 
@@ -139,12 +149,19 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len);
 
     /* Check that key lies between 0 and order(secp256k1) exclusive */
-    if (key_overflow(sha.u.u64) || key_zero(sha.u.u64))
+    if (key_overflow(sha.u.u64) || key_zero(sha.u.u64)) {
+        clear(&sha, sizeof(sha));
         return -1; /* Out of bounds */
+    }
 
-    /* Copy the key and set its prefix */
+    /* Copy the private key and set its prefix */
     key_out->priv_key[0] = KEY_PRIVATE;
     memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
+    if (key_compute_pub_key(key_out)) {
+        clear_n(2, &sha, sizeof(sha),
+                key_out->priv_key, sizeof(key_out->priv_key));
+        return -1;
+    }
 
     /* Copy the chain code */
     memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
@@ -152,9 +169,9 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
     memset(key_out->parent160, 0, sizeof(key_out->parent160));
-    if (key_compute_pub_key(key_out))
-        return -1;
+
     key_compute_hash160(key_out);
+    clear(&sha, sizeof(sha));
     return 0;
 }
 
@@ -175,16 +192,23 @@ int bip32_key_serialise(const struct ext_key *key_in,
     return 0;
 }
 
+/* Wipe a key and return failure for the caller to propigate */
+static int wipe_key_fail(struct ext_key *key_out)
+{
+    clear(key_out, sizeof(key_out));
+    return -1;
+}
+
 int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
                           struct ext_key *key_out)
 {
     if (len != BIP32_SERIALISED_LEN)
-        return -1;
+        return wipe_key_fail(key_out);
 
     bytes_in = copy(&key_out->version, bytes_in, sizeof(key_out->version));
     key_out->version = be32_to_cpu(key_out->version);
     if (!version_is_valid(key_out->version, KEY_PUBLIC))
-        return -1;
+        return wipe_key_fail(key_out);
 
     bytes_in = copy(&key_out->depth, bytes_in, sizeof(key_out->depth));
 
@@ -204,15 +228,15 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
     if (bytes_in[0] == KEY_PRIVATE) {
         if (key_out->version == BIP32_VER_MAIN_PUBLIC ||
             key_out->version == BIP32_VER_TEST_PUBLIC)
-            return -1; /* Private key data in public key */
+            return wipe_key_fail(key_out); /* Private key data in public key */
 
         copy(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
         if (key_compute_pub_key(key_out))
-            return -1;
+            return wipe_key_fail(key_out);
     } else {
         if (key_out->version == BIP32_VER_MAIN_PRIVATE ||
             key_out->version == BIP32_VER_TEST_PRIVATE)
-            return -1; /* Public key data in private key */
+            return wipe_key_fail(key_out); /* Public key data in private key */
 
         copy(key_out->pub_key, bytes_in, sizeof(key_out->pub_key));
         key_strip_private_key(key_out);
@@ -252,10 +276,10 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     const bool hardened = child_is_hardened(child_num);
 
     if (!we_are_private && (derive_private || hardened))
-        return -1; /* Unsupported derivation */
+        return wipe_key_fail(key_out); /* Unsupported derivation */
 
     if (key_in->depth == 0xff)
-        return -1; /* Maximum depth reached */
+        return wipe_key_fail(key_out); /* Maximum depth reached */
 
     /*
      *  Private parent -> private child:
@@ -299,32 +323,37 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     if (we_are_private) {
         /* The returned child key ki is parse256(IL) + kpar (mod n)
          * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
-         * (NOTE: secp256k1_ec_privkey_tweak_add checks both conditions)
+         * (NOTE: privkey_tweak_add checks both conditions)
          */
         memcpy(key_out->priv_key, key_in->priv_key, sizeof(key_in->priv_key));
-        if (!secp256k1_ec_privkey_tweak_add(ctx,
-                                            key_out->priv_key + 1, sha.u.u8))
-            return -1;         /* Out of bounds FIXME: Iterate to the next? */
+        if (!privkey_tweak_add(ctx, key_out->priv_key + 1, sha.u.u8)) {
+            clear(&sha, sizeof(sha));
+            return wipe_key_fail(key_out); /* Out of bounds FIXME: Iterate to the next? */
+        }
 
-        if (key_compute_pub_key(key_out))
-            return -1;
+        if (key_compute_pub_key(key_out)) {
+            clear(&sha, sizeof(sha));
+            return wipe_key_fail(key_out);
+        }
     } else {
         /* The returned child key ki is point(parse256(IL) + kpar)
          * In case parse256(IL) ≥ n or Ki is the point at infinity, the
-         * resulting key is invalid (NOTE: secp256k1_ec_pubkey_tweak_add
-         * checks both conditions)
+         * resulting key is invalid (NOTE: pubkey_tweak_add checks both
+         * conditions)
          */
         secp256k1_pubkey pub_key;
         size_t len = sizeof(key_out->pub_key);
 
-        /* FIXME: Out of bounds on secp256k1_ec_pubkey_tweak_add */
-        if (!secp256k1_ec_pubkey_parse(ctx, &pub_key, key_in->pub_key,
-                                       sizeof(key_in->pub_key)) ||
-            !secp256k1_ec_pubkey_tweak_add(ctx, &pub_key, sha.u.u8) ||
-            !secp256k1_ec_pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
-                                           SECP256K1_EC_COMPRESSED) ||
-            len != sizeof(key_out->pub_key))
-            return -1;
+        /* FIXME: Out of bounds on pubkey_tweak_add */
+        if (!pubkey_parse(ctx, &pub_key, key_in->pub_key,
+                          sizeof(key_in->pub_key)) ||
+            !pubkey_tweak_add(ctx, &pub_key, sha.u.u8) ||
+            !pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
+                              SECP256K1_EC_COMPRESSED) ||
+            len != sizeof(key_out->pub_key)) {
+            clear(&sha, sizeof(sha));
+            return wipe_key_fail(key_out);
+        }
     }
 
     if (derive_private) {
@@ -346,5 +375,6 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     key_out->child_num = child_num;
     memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));
     key_compute_hash160(key_out);
+    clear(&sha, sizeof(sha));
     return 0;
 }
