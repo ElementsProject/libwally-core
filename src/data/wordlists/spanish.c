@@ -2403,5 +2403,6 @@ static const struct words es_words = {
     11,
     false,
     (const char *)es_,
+    0, /* Constant string */
     es_i
 };

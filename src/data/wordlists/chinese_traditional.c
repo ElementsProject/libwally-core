@@ -2403,5 +2403,6 @@ static const struct words zht_words = {
     11,
     false,
     (const char *)zht_,
+    0, /* Constant string */
     zht_i
 };

@@ -48,5 +48,6 @@ if __name__ == "__main__":
         print('    {0},'.format(bits[len(words)]))
         print('    {0},'.format(str(is_sorted).lower()))
         print('    (const char *)%s_,' % string_name)
+        print('    0, /* Constant string */'
         print('    %s_i' % string_name)
         print('};')

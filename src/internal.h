@@ -11,5 +11,10 @@ const secp256k1_context *secp_ctx(void);
 /* Clear a set of memory areas passed as ptr1, len1, ptr2, len2 etc */
 void clear_all(size_t count, ...);
 
+inline static void clear(void *p, size_t len)
+{
+    clear_all(1u, p, len);
+}
+
 #endif /* LIBWALLY_INTERNAL_H */
 

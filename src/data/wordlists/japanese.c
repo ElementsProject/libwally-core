@@ -2403,5 +2403,6 @@ static const struct words jp_words = {
     11,
     false,
     (const char *)jp_,
+    0, /* Constant string */
     jp_i
 };

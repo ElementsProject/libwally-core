@@ -1,4 +1,5 @@
 #include "wordlist.h"
+#include "internal.h"
 #include <string.h>
 
 static int bstrcmp(const void *l, const void *r)
@@ -22,6 +23,7 @@ static struct words *wordlist_alloc(const char *words, size_t len)
     if (w) {
         w->str = strdup(words);
         if (w->str) {
+            w->str_len = strlen(w->str);
             w->len = len;
             w->bits = get_bits(len);
             w->indices = malloc(len * sizeof(const char *));
@@ -92,7 +94,11 @@ const char *wordlist_lookup_index(const struct words *w, size_t index)
 
 void wordlist_free(struct words *w)
 {
-    free((void *)w->str);
-    free((void *)w->indices);
-    free(w);
+    if (w && w->str_len) {
+        clear((void*)w->str,  w->str_len);
+        free((void *)w->str);
+        free((void *)w->indices);
+        clear(w, sizeof(*w));
+        free(w);
+    }
 }

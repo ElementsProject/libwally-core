@@ -15,8 +15,10 @@ struct words {
     size_t bits;
     /* Is the word list sorted by unicode code point order? */
     bool sorted;
-    /* The underlying string */
+    /* The underlying string (tokenised, containing embedded NULs) */
     const char *str;
+    /* The length of str, or 0 if str points to constant storage */
+    size_t str_len;
     /* Pointers to the individual words */
     const char **indices;
 };
