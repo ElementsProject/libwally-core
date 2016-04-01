@@ -124,7 +124,6 @@ fi
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
- src/test/Makefile
 ])
 
 ac_configure_args="${ac_configure_args} --disable-shared --disable-jni --with-pic --with-bignum=no"

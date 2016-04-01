@@ -36,13 +36,26 @@ libwallycore_la_INCLUDES = config.h hmac.h internal.h mnemonic.h wordlist.h
 libwallycore_la_CFLAGS += -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
 libwallycore_la_LIBADD = $(LIBSECP256K1)
 
-SUBDIRS = secp256k1 test
+SUBDIRS = secp256k1
 
+TESTS =
 if USE_PTHREAD
-TESTS = test_clear
+TESTS += test_clear
 noinst_PROGRAMS = test_clear
 test_clear_SOURCES = ctest/test_clear.c
 test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES)
+endif
+
+check-local:
+if HAVE_PYTHON
+	$(PYTHON) test/test_bip32.py
+	$(PYTHON) test/test_bip39.py
+if  EXPORT_ALL
+	$(PYTHON) test/test_hmac.py
+	$(PYTHON) test/test_mnemonic.py
+	$(PYTHON) test/test_sha2.py
+	$(PYTHON) test/test_wordlist.py
+endif
 endif
