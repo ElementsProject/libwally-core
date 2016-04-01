@@ -22,7 +22,7 @@
  */
 #ifndef PTHREAD_STACK_MIN
 /* OSX Needs a minimum of 512K of stack per thread */
-#define PTHREAD_STACK_MIN 512u * 1024u;
+#define PTHREAD_STACK_MIN 512u * 1024u
 #endif
 
 /* Global alternate stack pointer */
