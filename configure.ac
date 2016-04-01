@@ -94,6 +94,9 @@ fi
 )
 AC_HAVE_ATTRIBUTE_WEAK
 
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 1, 0, 1)]])],
+               [AC_DEFINE(HAVE_MEMSET_S, 1, [Define if we have memset_s])])
+
 AC_CHECK_HEADERS([byteswap.h])
 
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])

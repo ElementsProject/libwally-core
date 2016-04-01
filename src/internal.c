@@ -28,7 +28,12 @@ void clear_n(size_t count, ...)
 
     for (i = 0; i < count; ++i) {
         void *dest = va_arg(args, void *);
-        memset(dest, 0, va_arg(args, size_t));
+        size_t len = va_arg(args, size_t);
+#ifdef HAVE_MEMSET_S
+        memset_s(dest, len, 0, len);
+#else
+        memset(dest, 0, len);
+#endif
     }
 
     va_end(args);
