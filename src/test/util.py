@@ -12,7 +12,6 @@ for depth in [0, 1, 2]:
 
 libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
 
-
 wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
                   ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
                   ('wordlist_lookup_index', c_char_p, [c_void_p, c_ulong]),
@@ -37,7 +36,7 @@ bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINT
                ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
                ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)])]
 
-bip39_funcs = [('bip39_get_languages', c_char_p, []),
+bip39_funcs = [('bip39_get_languages', None, [POINTER(c_char_p)]),
                ('bip39_get_wordlist', c_void_p, [c_char_p]),
                ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
                ('bip39_mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),
@@ -48,20 +47,40 @@ sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
               ('sha512', None, [c_void_p, c_void_p, c_ulong]),
               ('hmac_sha512', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong])]
 
+# ctypes represents all types of pointer-to-pointer-of-X with the same type,
+# So we have to use explicit lists here to find functions to wrap
+string_funcs = ['bip39_get_languages']
+
 def bind_fn(name, res, args):
     try:
         fn = getattr(libwally, name)
         fn.restype, fn.argtypes = res, args
+        return fn
     except AttributeError:
-        # Internal function and --enable-export-all was not
-        # passed to configure.
-        fn = None
-    return fn
+        # Internal function and 'configure --enable-export-all' not used
+        return None
+
+wally_free_string = libwally.wally_free_string
+wally_free_string.restype, wally_free_string.argtypes = None, [c_char_p]
+
+def string_fn_wrapper(fn, *args):
+    # Return output string parameters directly without leaking
+    p = c_char_p()
+    new_args = [a for a in args] + [byref(p)]
+    ret = fn(*new_args)
+    ret_str = str(p.value)
+    wally_free_string(p)
+    return [ret_str, (ret, ret_str)][fn.restype is not None]
+
 
 def bind_all(dest, funcs):
     for f in funcs:
         name, restype, argtypes = f
-        setattr(dest, name, bind_fn(name, restype, argtypes))
+        fn = bind_fn(name, restype, argtypes)
+        def mkstr(f): return lambda *args: string_fn_wrapper(f, *args)
+        if name in string_funcs:
+            fn = mkstr(fn)
+        setattr(dest, name, fn)
 
 
 def load_words(lang):

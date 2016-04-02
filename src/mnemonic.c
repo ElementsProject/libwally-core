@@ -84,11 +84,3 @@ size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned c
     wordlist_free(mnemonic_w);
     return (i * w->bits + 7u) / 8u;
 }
-
-void mnemonic_free(char *mnemonic)
-{
-    if (mnemonic) {
-        clear(mnemonic, strlen(mnemonic));
-        free(mnemonic);
-    }
-}

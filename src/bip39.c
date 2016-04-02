@@ -26,9 +26,9 @@ static const struct {
     /* FIXME: Should 'zh' map to traditional or simplified? */
 };
 
-const char *bip39_get_languages()
+void bip39_get_languages(char **output)
 {
-    return "en es fr it jp zhs zht";
+    *output = strdup("en es fr it jp zhs zht");
 }
 
 const struct words *bip39_get_wordlist(const char *lang)
@@ -83,11 +83,6 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
     ret = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
     clear(checksummed_bytes, sizeof(checksummed_bytes));
     return ret;
-}
-
-void bip39_mnemonic_free(const char *mnemonic)
-{
-    mnemonic_free((char *)mnemonic);
 }
 
 static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)

@@ -34,10 +34,4 @@ size_t mnemonic_to_bytes(
     unsigned char *bytes_out,
     size_t len);
 
-/**
- * mnemonic_free - Free an allocated mnemonic.
- * @mnemonic: Mnemonic sentence to free.
- */
-void mnemonic_free(char *mnemonic);
-
 #endif /* LIBWALLY_MNEMONIC_H */
