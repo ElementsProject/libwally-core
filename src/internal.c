@@ -27,6 +27,12 @@ void wally_free_string(char *str)
     }
 }
 
+void wally_bzero(void *bytes, size_t len)
+{
+    if (bytes)
+        clear(bytes, len);
+}
+
 #if 0
 /* This idea is taken from libressl's explicit_bzero.
  * Use a weak symbol to force the compiler to consider dest as being read,

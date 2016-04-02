@@ -56,7 +56,7 @@ static unsigned char *checked_malloc(size_t len)
     void *ret = malloc(len);
     if (!ret)
         abort();
-    memset(ret, 0, len);
+    wally_bzero(ret, len);
     return ret;
 }
 
@@ -147,6 +147,9 @@ int main(void)
     ret = pthread_join(id, &tests_ok);
     if (ret)
         return error("pthread_join", ret);
+
+    free(gbytes);
+    free(gstack);
 
     return tests_ok == NULL ? 0 : 1;
 }

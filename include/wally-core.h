@@ -1,6 +1,8 @@
 #ifndef WALLY_CORE_H
 #define WALLY_CORE_H
 
+#include <stdlib.h>
+
 #ifndef WALLY_CORE_API
 # if defined(_WIN32)
 #  ifdef WALLY_CORE_BUILD
@@ -15,6 +17,11 @@
 # endif
 #endif
 
+
+/**
+ * Securely wipe memory.
+ */
+WALLY_CORE_API void wally_bzero(void *bytes, size_t len);
 
 /**
  * Securely wipe and then free a string allocted by the library.
