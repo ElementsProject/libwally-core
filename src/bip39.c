@@ -74,15 +74,16 @@ void bip39_mnemonic_from_bytes(const struct words *w,
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
 
+    *output = NULL;
+
     w = w ? w : &en_words;
 
-    if (w->bits != 11u || !len_to_mask(len))
-        return NULL;
-
-    memcpy(checksummed_bytes, bytes_in, len);
-    checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
-    *output = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
-    clear(checksummed_bytes, sizeof(checksummed_bytes));
+    if (w->bits == 11u && len_to_mask(len)) {
+        memcpy(checksummed_bytes, bytes_in, len);
+        checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
+        *output = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
+        clear(checksummed_bytes, sizeof(checksummed_bytes));
+    }
 }
 
 static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
