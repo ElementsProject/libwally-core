@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 /* FIXME: Not threadsafe, not randomised, not cleaned up, etc etc*/
 static secp256k1_context *global_ctx = NULL;
@@ -16,6 +17,14 @@ const secp256k1_context *secp_ctx(void)
     /* FIXME: Error handling if null */
 
     return global_ctx;
+}
+
+void wally_free_string(char *str)
+{
+    if (str) {
+        clear(str, strlen(str));
+        free(str);
+    }
 }
 
 #if 0
