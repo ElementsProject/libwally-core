@@ -121,7 +121,7 @@ AC_DEFUN([SWIG_MULTI_MODULE_SUPPORT],[
 # check system for example.
 AC_DEFUN([SWIG_PYTHON],[
         AC_REQUIRE([AC_PROG_SWIG])
-        AC_REQUIRE([AC_PYTHON_DEVEL])
+        AC_REQUIRE([AX_PYTHON_DEVEL])
         test "x$1" != "xno" || swig_shadow=" -noproxy"
         AC_SUBST([SWIG_PYTHON_OPT],[-python$swig_shadow])
         AC_SUBST([SWIG_PYTHON_CPPFLAGS],[$PYTHON_CPPFLAGS])
@@ -134,7 +134,7 @@ dnl This macro searches for installed WAD library.
 dnl
 AC_DEFUN([AC_LIB_WAD],
 [
-        AC_REQUIRE([AC_PYTHON_DEVEL])
+        AC_REQUIRE([AX_PYTHON_DEVEL])
         AC_ARG_ENABLE(wad,
         AC_HELP_STRING([--enable-wad], [enable wad module]),
         [

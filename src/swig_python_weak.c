@@ -98,4 +98,19 @@ DUMMY_VARIABLE_WEAKREF(_PyWeakref_ProxyType) /* NOTE: Warnings are harmless */
 DUMMY_VARIABLE_WEAKREF(_Py_NoneStruct)
 DUMMY_VARIABLE_WEAKREF(_Py_NotImplementedStruct) /* NOTE: Warnings are harmless */
 
+/* Python 3 exports */
+DUMMY_WEAKREF(PyUnicode_FromFormat)
+DUMMY_WEAKREF(PyImport_AddModule)
+DUMMY_WEAKREF(PyUnicode_AsUTF8String)
+DUMMY_WEAKREF(PyLong_FromSize_t)
+DUMMY_WEAKREF(PyInstanceMethod_New)
+DUMMY_WEAKREF(PyObject_SetAttr)
+DUMMY_WEAKREF(PyModule_Create2)
+DUMMY_WEAKREF(PyLong_AsLong)
+DUMMY_WEAKREF(PyUnicode_DecodeUTF8)
+DUMMY_WEAKREF(Py_DecRef)
+DUMMY_WEAKREF(PyUnicode_FromString)
+DUMMY_WEAKREF(PyUnicode_Concat)
+DUMMY_WEAKREF(PyBytes_AsStringAndSize)
+
 #endif /* HAVE_ATTRIBUTE_WEAK */
