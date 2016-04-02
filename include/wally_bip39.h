@@ -41,10 +41,11 @@ WALLY_CORE_API const struct words *bip39_get_wordlist(
  *
  * The string returned should be freed using @wally_free_string().
  */
-WALLY_CORE_API char *bip39_mnemonic_from_bytes(
+WALLY_CORE_API void bip39_mnemonic_from_bytes(
     const struct words *w,
     const unsigned char *bytes_in,
-    size_t len);
+    size_t len,
+    char **output);
 
 /**
  * Convert a mnemonic sentence into entropy at @bytes_out.

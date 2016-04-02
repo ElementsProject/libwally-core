@@ -67,11 +67,12 @@ static unsigned char bip39_checksum(const unsigned char *bytes_in, size_t len)
     return ret;
 }
 
-char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, size_t len)
+void bip39_mnemonic_from_bytes(const struct words *w,
+                               const unsigned char *bytes_in, size_t len,
+                               char **output)
 {
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
-    char *ret;
 
     w = w ? w : &en_words;
 
@@ -80,9 +81,8 @@ char *bip39_mnemonic_from_bytes(const struct words *w, const unsigned char *byte
 
     memcpy(checksummed_bytes, bytes_in, len);
     checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
-    ret = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
+    *output = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
     clear(checksummed_bytes, sizeof(checksummed_bytes));
-    return ret;
 }
 
 static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)

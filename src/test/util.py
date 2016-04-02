@@ -38,7 +38,7 @@ bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINT
 
 bip39_funcs = [('bip39_get_languages', None, [POINTER(c_char_p)]),
                ('bip39_get_wordlist', c_void_p, [c_char_p]),
-               ('bip39_mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
+               ('bip39_mnemonic_from_bytes', None, [c_void_p, c_void_p, c_ulong, POINTER(c_char_p)]),
                ('bip39_mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),
                ('bip39_mnemonic_is_valid', c_bool, [c_void_p, c_char_p]),
                ('bip39_mnemonic_to_seed', c_ulong, [c_char_p, c_char_p, c_void_p, c_ulong])]
@@ -49,7 +49,7 @@ sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
 
 # ctypes represents all types of pointer-to-pointer-of-X with the same type,
 # So we have to use explicit lists here to find functions to wrap
-string_funcs = ['bip39_get_languages']
+string_funcs = ['bip39_get_languages', 'bip39_mnemonic_from_bytes']
 
 def bind_fn(name, res, args):
     try:
