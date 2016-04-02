@@ -92,10 +92,10 @@ DUMMY_VARIABLE_WEAKREF(PyExc_SystemError)
 DUMMY_VARIABLE_WEAKREF(PyExc_TypeError)
 DUMMY_VARIABLE_WEAKREF(PyExc_ValueError)
 DUMMY_VARIABLE_WEAKREF(PyExc_ZeroDivisionError)
-DUMMY_VARIABLE_WEAKREF(PyInstance_Type)
-DUMMY_VARIABLE_WEAKREF(_PyWeakref_CallableProxyType)
-DUMMY_VARIABLE_WEAKREF(_PyWeakref_ProxyType)
+DUMMY_VARIABLE_WEAKREF(PyInstance_Type) /* NOTE: Warnings are harmless */
+DUMMY_VARIABLE_WEAKREF(_PyWeakref_CallableProxyType) /* NOTE: Warnings are harmless */
+DUMMY_VARIABLE_WEAKREF(_PyWeakref_ProxyType) /* NOTE: Warnings are harmless */
 DUMMY_VARIABLE_WEAKREF(_Py_NoneStruct)
-DUMMY_VARIABLE_WEAKREF(_Py_NotImplementedStruct)
+DUMMY_VARIABLE_WEAKREF(_Py_NotImplementedStruct) /* NOTE: Warnings are harmless */
 
 #endif /* HAVE_ATTRIBUTE_WEAK */
