@@ -104,7 +104,7 @@ fi
 #
 # Python facilities
 #
-AX_PYTHON_DEVEL([>= '3.0.0'])
+AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
 #
