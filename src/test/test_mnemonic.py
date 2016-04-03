@@ -1,5 +1,6 @@
 import unittest
 import util
+from util import utf8
 from ctypes import create_string_buffer
 
 class MnemonicTests(unittest.TestCase):
@@ -11,25 +12,25 @@ class MnemonicTests(unittest.TestCase):
             self.words_list, words = util.load_words('english')
 
             util.bind_all(self, util.wordlist_funcs + util.mnemonic_funcs)
-            self.wl = self.wordlist_init(words)
+            self.wl = self.wordlist_init(utf8(words))
 
 
     def test_mnemonic(self):
 
         LEN = 16
-        PHRASES = LEN * 8 / 11 # 11 bits per phrase
-        PHRASES_BYTES = (PHRASES * 11 + 7) / 8 # Bytes needed to store
+        PHRASES = LEN * 8 // 11 # 11 bits per phrase
+        PHRASES_BYTES = (PHRASES * 11 + 7) // 8 # Bytes needed to store
         self.assertEqual(LEN, PHRASES_BYTES)
 
-        buff = create_string_buffer(LEN)
+        buf = create_string_buffer(LEN)
 
         # Test round tripping
         for i in range(len(self.words_list) - PHRASES):
-            phrase = ' '.join(self.words_list[i : i + PHRASES])
+            phrase = utf8(' '.join(self.words_list[i : i + PHRASES]))
 
-            written = self.mnemonic_to_bytes(self.wl, phrase, buff, LEN)
+            written = self.mnemonic_to_bytes(self.wl, phrase, buf, LEN)
             self.assertEqual(written, PHRASES_BYTES)
-            generated = self.mnemonic_from_bytes(self.wl, buff, LEN)
+            generated = self.mnemonic_from_bytes(self.wl, buf, LEN)
             self.assertEqual(phrase, generated)
 
 

@@ -1,6 +1,6 @@
 import unittest
 import util
-from binascii import hexlify, unhexlify
+from binascii import hexlify
 from ctypes import byref
 
 def h(s):

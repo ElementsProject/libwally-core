@@ -63,12 +63,15 @@ def bind_fn(name, res, args):
 wally_free_string = libwally.wally_free_string
 wally_free_string.restype, wally_free_string.argtypes = None, [c_char_p]
 
+def utf8(s):
+    return s.encode('utf-8')
+
 def string_fn_wrapper(fn, *args):
     # Return output string parameters directly without leaking
     p = c_char_p()
     new_args = [a for a in args] + [byref(p)]
     ret = fn(*new_args)
-    ret_str = str(p.value)
+    ret_str = p.value.decode('utf-8')
     wally_free_string(p)
     return [ret_str, (ret, ret_str)][fn.restype is not None]
 
@@ -90,6 +93,6 @@ def load_words(lang):
 
 
 def make_cbuffer(hex_in):
-    hex_len = len(hex_in) / 2
-    return create_string_buffer(unhexlify(hex_in), hex_len), hex_len
+    hex_len = len(hex_in) // 2
+    return unhexlify(hex_in), hex_len
 
