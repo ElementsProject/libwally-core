@@ -2,6 +2,11 @@ from ctypes import *
 from binascii import unhexlify
 from os.path import isfile
 import platform
+import sys
+
+utf8 = lambda s: s
+if int(sys.version[0]) >= 3:
+    utf8 = lambda s: s.encode('utf-8')
 
 # Allow to run from any sub dir
 SO_EXT = 'dylib' if platform.system() == 'Darwin' else 'so'
@@ -62,9 +67,6 @@ def bind_fn(name, res, args):
 
 wally_free_string = libwally.wally_free_string
 wally_free_string.restype, wally_free_string.argtypes = None, [c_char_p]
-
-def utf8(s):
-    return s.encode('utf-8')
 
 def string_fn_wrapper(fn, *args):
     # Return output string parameters directly without leaking
