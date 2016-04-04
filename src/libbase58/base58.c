@@ -17,7 +17,9 @@
 #include <string.h>
 #include <sys/types.h>
 
+#if 0
 #include "libbase58.h"
+#endif
 
 bool (*b58_sha256_impl)(void *, const void *, size_t) = NULL;
 
