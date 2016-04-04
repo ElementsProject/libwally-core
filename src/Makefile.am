@@ -23,6 +23,7 @@ lib_LTLIBRARIES = libwallycore.la
 libwallycore_la_SOURCES = \
     $(SWIG_SRCS) \
     bip32.c \
+    bip38.c \
     bip39.c \
     hmac.c \
     internal.c \
@@ -32,7 +33,12 @@ libwallycore_la_SOURCES = \
     ccan/ccan/crypto/sha256/sha256.c \
     ccan/ccan/crypto/sha512/sha512.c
 
-libwallycore_la_INCLUDES = config.h hmac.h internal.h mnemonic.h wordlist.h
+
+libwallycore_la_INCLUDES = \
+    config.h hmac.h internal.h mnemonic.h wordlist.h \
+    include/wally_bip32.h include/wally_bip38.h \
+    include/wally_bip39.h include/wally-core.h
+
 libwallycore_la_CFLAGS += -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
 libwallycore_la_LIBADD = $(LIBSECP256K1)
 
