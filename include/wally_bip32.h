@@ -17,9 +17,9 @@
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
 
 /** Indicate that we want to derive a private key in @bip32_key_from_parent */
-#define BIP32_KEY_DERIVE_PRIVATE 0x0
+#define BIP32_KEY_PRIVATE 0x0
 /** Indicate that we want to derive a public key in @bip32_key_from_parent */
-#define BIP32_KEY_DERIVE_PUBLIC  0x1
+#define BIP32_KEY_PUBLIC  0x1
 
 /** Version codes for extended keys */
 #define BIP32_VER_MAIN_PUBLIC  0x0488B21E
@@ -75,10 +75,13 @@ WALLY_CORE_API int bip32_key_from_bytes(
  *
  * @key_in The extended key to serialise.
  * @bytes_out Storage for the serialised key.
+ * @flags BIP32_KEY_ Flags indicating which key to serialise. You can not
+ *        serialise a private extended key from a public extended key.
  * @len Size of @bytes_out in bytes. Must be @BIP32_SERIALISED_LEN.
  */
 WALLY_CORE_API int bip32_key_serialise(
     const struct ext_key *key_in,
+    uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
 
@@ -104,7 +107,7 @@ WALLY_CORE_API int bip32_key_unserialise(
  *            than or equal to @BIP32_INITIAL_HARDENED_CHILD represent
  *            hardened keys that cannot be created from public parent
  *            extended keys.
- * @flags BIP32_KEY_DERIVE_ Flags indicating the type of derivation wanted.
+ * @flags BIP32_KEY_ Flags indicating the type of derivation wanted.
  *        You can not derive a private child extended key from a public
  *        parent extended key.
  * @key_out Destination for the resulting child extended key.
