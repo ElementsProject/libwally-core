@@ -18,6 +18,9 @@ for depth in [0, 1, 2]:
 
 libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
 
+class output_str(object):
+    pass # Sentinel class indicating an output char*
+
 wordlist_funcs = [('wordlist_init', c_void_p, [c_char_p]),
                   ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
                   ('wordlist_lookup_index', c_char_p, [c_void_p, c_ulong]),
@@ -38,7 +41,7 @@ class ext_key(Structure):
                 ("pad2", c_ubyte * 3),
                 ("pub_key", c_ubyte * 33)]
 
-bip38_funcs = [('base58_string_from_bytes', None, [c_void_p, c_ulong, c_uint, POINTER(c_char_p)]),
+bip38_funcs = [('base58_string_from_bytes', None, [c_void_p, c_ulong, c_uint, output_str()]),
                ('base58_string_to_bytes', c_ulong, [c_char_p, c_void_p, c_ulong])]
 
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
@@ -46,9 +49,9 @@ bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINT
                ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
                ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)])]
 
-bip39_funcs = [('bip39_get_languages', None, [POINTER(c_char_p)]),
+bip39_funcs = [('bip39_get_languages', None, [output_str()]),
                ('bip39_get_wordlist', c_void_p, [c_char_p]),
-               ('bip39_mnemonic_from_bytes', None, [c_void_p, c_void_p, c_ulong, POINTER(c_char_p)]),
+               ('bip39_mnemonic_from_bytes', None, [c_void_p, c_void_p, c_ulong, output_str()]),
                ('bip39_mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),
                ('bip39_mnemonic_is_valid', c_bool, [c_void_p, c_char_p]),
                ('bip39_mnemonic_to_seed', c_ulong, [c_char_p, c_char_p, c_void_p, c_ulong])]
@@ -56,12 +59,6 @@ bip39_funcs = [('bip39_get_languages', None, [POINTER(c_char_p)]),
 sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
               ('sha512', None, [c_void_p, c_void_p, c_ulong]),
               ('hmac_sha512', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong])]
-
-# ctypes represents all types of pointer-to-pointer-of-X with the same type,
-# So we have to use explicit lists here to find functions to wrap
-# FIXME: Use a sentinel class in the arg list instead
-string_funcs = ['base58_string_from_bytes', 'bip39_get_languages',
-                'bip39_mnemonic_from_bytes']
 
 def bind_fn(name, res, args):
     try:
@@ -88,9 +85,12 @@ def string_fn_wrapper(fn, *args):
 def bind_all(dest, funcs):
     for f in funcs:
         name, restype, argtypes = f
+        is_str_fn = len(argtypes) and type(argtypes[-1]) == output_str
+        if is_str_fn:
+            argtypes[-1] = POINTER(c_char_p)
         fn = bind_fn(name, restype, argtypes)
         def mkstr(f): return lambda *args: string_fn_wrapper(f, *args)
-        if name in string_funcs:
+        if is_str_fn:
             fn = mkstr(fn)
         setattr(dest, name, fn)
 
