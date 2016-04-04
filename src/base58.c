@@ -5,12 +5,13 @@
 
 
 void base58_string_from_bytes(const unsigned char *bytes_in, size_t len,
-                              char **output)
+                              uint32_t flags, char **output)
 {
     size_t out_len = 0;
 
     *output = NULL;
 
+    /* FIXME: Handle flags */
     b58enc(NULL, &out_len, bytes_in, len); /* Find required size */
 
     if (out_len && (*output = malloc(out_len)))

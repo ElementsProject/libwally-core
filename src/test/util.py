@@ -4,8 +4,9 @@ from os.path import isfile
 import platform
 import sys
 
+is_python3 = int(sys.version[0]) >= 3
 utf8 = lambda s: s
-if int(sys.version[0]) >= 3:
+if is_python3:
     utf8 = lambda s: s.encode('utf-8')
 
 # Allow to run from any sub dir
@@ -37,6 +38,9 @@ class ext_key(Structure):
                 ("pad2", c_ubyte * 3),
                 ("pub_key", c_ubyte * 33)]
 
+bip38_funcs = [('base58_string_from_bytes', None, [c_void_p, c_ulong, c_uint, POINTER(c_char_p)]),
+               ('base58_string_to_bytes', c_ulong, [c_char_p, c_void_p, c_ulong])]
+
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
                ('bip32_key_serialise', c_int, [POINTER(ext_key), c_uint, c_void_p, c_ulong]),
                ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
@@ -55,7 +59,9 @@ sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
 
 # ctypes represents all types of pointer-to-pointer-of-X with the same type,
 # So we have to use explicit lists here to find functions to wrap
-string_funcs = ['bip39_get_languages', 'bip39_mnemonic_from_bytes']
+# FIXME: Use a sentinel class in the arg list instead
+string_funcs = ['base58_string_from_bytes', 'bip39_get_languages',
+                'bip39_mnemonic_from_bytes']
 
 def bind_fn(name, res, args):
     try:
