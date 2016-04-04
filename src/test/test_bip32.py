@@ -76,7 +76,7 @@ vec_1 = {
 class BIP32Tests(unittest.TestCase):
 
     SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33
-    DERIVE_PRIVATE, DERIVE_PUBLIC = 0, 1
+    KEY_PRIVATE, KEY_PUBLIC = 0, 1
 
     VER_MAIN_PUBLIC = 0x0488B21E
     VER_MAIN_PRIVATE = 0x0488ADE4
@@ -136,9 +136,18 @@ class BIP32Tests(unittest.TestCase):
         # Try short, correct, long lengths. Trimming 8 chars is the correct
         # length because the vector value contains 4 check bytes at the end.
         for trim, expected in [(0, -1), (8, 0), (16, -1)]:
-            buf, buf_len = util.make_cbuffer(vec_1['m']['priv'][0:-trim])
-            ret, _ = self.unserialise_key(buf, buf_len)
+            serialised_hex = vec_1['m']['priv'][0:-trim]
+            buf, buf_len = util.make_cbuffer(serialised_hex)
+            ret, key_out = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)
+            if ret == 0:
+                # Check this key serialises back to the same representation
+                # FIXME: Add full test cases for the serialisation code including errors
+                buf, buf_len = util.make_cbuffer('0' * len(serialised_hex))
+                ret = self.bip32_key_serialise(key_out, self.KEY_PRIVATE,
+                                               buf, buf_len)
+                self.assertEqual(ret, 0)
+                self.assertEqual(hexlify(buf).upper(), serialised_hex)
 
         # Check correct and incorrect version numbers as well
         # as mismatched key types and versions
@@ -197,8 +206,8 @@ class BIP32Tests(unittest.TestCase):
             # the public child matches the public vector and has no private
             # key. Finally, check that the child holds the correct parent hash.
             parent160 = derived.hash160
-            derived_pub = self.derive_key(derived, i, self.DERIVE_PUBLIC)
-            derived = self.derive_key(derived, i, self.DERIVE_PRIVATE)
+            derived_pub = self.derive_key(derived, i, self.KEY_PUBLIC)
+            derived = self.derive_key(derived, i, self.KEY_PRIVATE)
             for typ in ['pub', 'priv']:
                 expected = self.get_test_key(vec_1, path, typ)
                 self.compare_keys(derived, expected, typ)
@@ -214,19 +223,19 @@ class BIP32Tests(unittest.TestCase):
         master = self.get_test_master_key(vec_1)
 
         # Derive the same child public and private keys from master
-        pub = self.derive_key(master, 1, self.DERIVE_PUBLIC)
-        priv = self.derive_key(master, 1, self.DERIVE_PRIVATE)
+        pub = self.derive_key(master, 1, self.KEY_PUBLIC)
+        priv = self.derive_key(master, 1, self.KEY_PRIVATE)
 
         # From the private child we can derive public and private keys
-        priv_pub = self.derive_key(priv, 1, self.DERIVE_PUBLIC)
-        priv_priv = self.derive_key(priv, 1, self.DERIVE_PRIVATE)
+        priv_pub = self.derive_key(priv, 1, self.KEY_PUBLIC)
+        priv_priv = self.derive_key(priv, 1, self.KEY_PRIVATE)
 
         # From the public child we can only derive a public key
-        pub_pub = self.derive_key(pub, 1, self.DERIVE_PUBLIC)
+        pub_pub = self.derive_key(pub, 1, self.KEY_PUBLIC)
         # Verify that trying to derive a private key doesn't work
         key_out = util.ext_key()
         ret = self.bip32_key_from_parent(byref(pub), 1,
-                                         self.DERIVE_PRIVATE, byref(key_out))
+                                         self.KEY_PRIVATE, byref(key_out))
         self.assertEqual(ret, -1)
 
         # Now our identities:
