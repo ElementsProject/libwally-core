@@ -29,8 +29,8 @@
  *         should be the full length including any extra bytes passed.
  * @output Destination for the base 58 encoded string representing @bytes_in_out.
  */
-WALLY_CORE_API void base58_string_from_bytes(
-    const unsigned char *bytes_in_out,
+void base58_string_from_bytes(
+    unsigned char *bytes_in_out,
     size_t len,
     uint32_t flags,
     char **output);
@@ -44,7 +44,7 @@ WALLY_CORE_API void base58_string_from_bytes(
  *
  * Returns the number of bytes written to @bytes_out or 0 on error.
  */
-WALLY_CORE_API size_t base58_string_to_bytes(
+size_t base58_string_to_bytes(
     const char *str_in,
     unsigned char *bytes_out,
     size_t len);
