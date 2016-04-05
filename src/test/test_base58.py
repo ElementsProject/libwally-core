@@ -14,7 +14,7 @@ class AddressCase(object):
 
 class Base58Tests(unittest.TestCase):
 
-    CHECKSUM_GENERATE = 1
+    CHECKSUM = 1
     CHECKSUM_RESERVED = 2
 
     def setUp(self):
@@ -56,11 +56,19 @@ class Base58Tests(unittest.TestCase):
 
             # Compute the checksum in the call, appended to a temp
             # buffer or in-place, depending on the flags
-            for flags in [self.CHECKSUM_GENERATE, self.CHECKSUM_RESERVED]:
+            for flags in [self.CHECKSUM, self.CHECKSUM_RESERVED]:
                 base58 = self.encode(c.ripemd_network, flags)
                 self.assertEqual(base58, c.base58)
 
-            # FIXME: Call with flags to checksum and compare
+                # Decode without checksum validation/stripping, should match
+                # checksummed value
+                decoded = self.decode(c.base58, 0)
+                self.assertEqual(decoded, utf8(c.checksummed))
+
+                # Decode with checksum validation/stripping and compare
+                # to original ripemd + network
+                decoded = self.decode(c.base58, self.CHECKSUM)
+                self.assertEqual(decoded, utf8(c.ripemd_network))
 
 
 if __name__ == '__main__':
