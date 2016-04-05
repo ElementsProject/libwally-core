@@ -17,7 +17,7 @@ class Base58Tests(unittest.TestCase):
     CHECKSUM_RESERVED = 2
 
     def setUp(self):
-        if not hasattr(self, 'base58_string_from_bytes'):
+        if not hasattr(self, 'base58_from_bytes'):
             util.bind_all(self, util.bip38_funcs)
 
             # Test cases from https://github.com/ThePiachu/Bitcoin-Unit-Tests/
@@ -35,11 +35,11 @@ class Base58Tests(unittest.TestCase):
         if (flags == self.CHECKSUM_RESERVED):
             hex_in += '00000000' # Reserve checksum space
         buf, buf_len = util.make_cbuffer(hex_in)
-        return self.base58_string_from_bytes(buf, buf_len, flags)
+        return self.base58_from_bytes(buf, buf_len, flags)
 
     def decode(self, str_in, flags):
         buf, buf_len = util.make_cbuffer('00' * 1024)
-        buf_len = self.base58_string_to_bytes(utf8(str_in), flags, buf, buf_len)
+        buf_len = self.base58_to_bytes(utf8(str_in), flags, buf, buf_len)
         self.assertNotEqual(buf_len, 0)
         return hexlify(buf)[0:buf_len * 2].upper()
 
@@ -73,7 +73,7 @@ class Base58Tests(unittest.TestCase):
 
 
     def test_to_bytes(self):
-        fn = lambda s, f, b, l: self.base58_string_to_bytes(utf8(s), f, b, l)
+        fn = lambda s, f, b, l: self.base58_to_bytes(utf8(s), f, b, l)
 
         buf, buf_len = util.make_cbuffer('00' * 1024)
 
@@ -108,7 +108,7 @@ class Base58Tests(unittest.TestCase):
         self.assertEqual(self.encode('00', 0x7), None)
 
         buf, buf_len = util.make_cbuffer('00' * 8)
-        fn = self.base58_string_from_bytes
+        fn = self.base58_from_bytes
 
         # O length buffer, no checksum -> NULL
         self.assertEqual(fn(buf, 0, 0), None)

@@ -18,8 +18,8 @@ static uint32_t base58_checksum(const unsigned char *bytes_in, size_t len)
 }
 
 
-void base58_string_from_bytes(unsigned char *bytes_in_out, size_t len,
-                              uint32_t flags, char **output)
+void base58_from_bytes(unsigned char *bytes_in_out, size_t len,
+                       uint32_t flags, char **output)
 {
     unsigned char *copy = NULL;
     size_t out_len = 0;
@@ -59,8 +59,8 @@ void base58_string_from_bytes(unsigned char *bytes_in_out, size_t len,
     }
 }
 
-size_t base58_string_to_bytes(const char *str_in, uint32_t flags,
-                              unsigned char *bytes_out, size_t len)
+size_t base58_to_bytes(const char *str_in, uint32_t flags,
+                       unsigned char *bytes_out, size_t len)
 {
     unsigned char *actual_out;
     size_t out_len = len;

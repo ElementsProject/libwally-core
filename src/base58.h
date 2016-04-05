@@ -7,14 +7,14 @@
 /** The number of extra bytes required to hold a base58 checksum */
 #define BASE58_CHECKSUM_LEN 4u
 
-/** For @base58_string_from_bytes, indicates that a checksum should
- * be generated. For @base58_string_to_bytes, indicates that the
+/** For @base58_from_bytes, indicates that a checksum should
+ * be generated. For @base58_to_bytes, indicates that the
  * embedded checksum should be validated and stripped off the returned
  * bytes.
  **/
 #define BASE58_FLAG_CHECKSUM 0x1
 
-/** For @base58_string_from_bytes, indicates that 'bytes_in_out' contains
+/** For @base58_from_bytes, indicates that 'bytes_in_out' contains
  * @BASE58_CHECKSUM_LEN extra bytes for a checksum to be added into.
  */
 #define BASE58_FLAG_CHECKSUM_RESERVED 0x2
@@ -32,7 +32,7 @@
  *         should be the full length including any extra bytes passed.
  * @output Destination for the base 58 encoded string representing @bytes_in_out.
  */
-void base58_string_from_bytes(
+void base58_from_bytes(
     unsigned char *bytes_in_out,
     size_t len,
     uint32_t flags,
@@ -51,7 +51,7 @@ void base58_string_from_bytes(
  *
  * Returns the number of bytes written to @bytes_out or 0 on error.
  */
-size_t base58_string_to_bytes(
+size_t base58_to_bytes(
     const char *str_in,
     uint32_t flags,
     unsigned char *bytes_out,
