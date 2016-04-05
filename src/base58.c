@@ -26,8 +26,8 @@ void base58_string_from_bytes(unsigned char *bytes_in_out, size_t len,
 
     *output = NULL;
 
-    if (flags & ~(BASE58_FLAG_CHECKSUM | BASE58_FLAG_CHECKSUM_RESERVED))
-        return; /* Invalid flags */
+    if (flags & ~(BASE58_FLAG_CHECKSUM | BASE58_FLAG_CHECKSUM_RESERVED) || !len)
+        return; /* Invalid flags or no input */
 
     if (flags & (BASE58_FLAG_CHECKSUM | BASE58_FLAG_CHECKSUM_RESERVED)) {
         /* Caller wants a checksum generated and included in the returned string */
@@ -40,8 +40,8 @@ void base58_string_from_bytes(unsigned char *bytes_in_out, size_t len,
             memcpy(copy, bytes_in_out, len);
             bytes_in_out = copy;
             len += BASE58_CHECKSUM_LEN;
-        } else if (len < BASE58_CHECKSUM_LEN)
-            return;
+        } else if (len <= BASE58_CHECKSUM_LEN)
+            return; /* Not enough space to put the checksum */
 
         checksum = base58_checksum(bytes_in_out, len - BASE58_CHECKSUM_LEN);
         memcpy(bytes_in_out + len - BASE58_CHECKSUM_LEN,

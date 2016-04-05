@@ -80,7 +80,7 @@ def string_fn_wrapper(fn, *args):
     p = c_char_p()
     new_args = [a for a in args] + [byref(p)]
     ret = fn(*new_args)
-    ret_str = p.value.decode('utf-8')
+    ret_str = None if p.value is None else p.value.decode('utf-8')
     wally_free_string(p)
     return [ret_str, (ret, ret_str)][fn.restype is not None]
 

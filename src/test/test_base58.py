@@ -99,5 +99,26 @@ class Base58Tests(unittest.TestCase):
         self.assertEqual(fn(valid, 0, buf, 24), 0)
 
 
+    def test_from_bytes(self):
+
+        # Leading zeros become ones
+        self.assertEqual(self.encode('00', 0), '1')
+
+        # Invalid flags
+        self.assertEqual(self.encode('00', 0x7), None)
+
+        buf, buf_len = util.make_cbuffer('00' * 8)
+        fn = self.base58_string_from_bytes
+
+        # O length buffer, no checksum -> NULL
+        self.assertEqual(fn(buf, 0, 0), None)
+
+        # O length buffer, append checksum -> NULL
+        self.assertEqual(fn(buf, 0, self.CHECKSUM), None)
+
+        # 4 length buffer, checksum in place -> NULL
+        self.assertEqual(fn(buf, 4, self.CHECKSUM_RESERVED), None)
+
+
 if __name__ == '__main__':
     unittest.main()
