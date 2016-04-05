@@ -59,6 +59,22 @@ void base58_from_bytes(unsigned char *bytes_in_out, size_t len,
     }
 }
 
+
+size_t base58_get_length(const char *str_in)
+{
+    size_t len = strlen(str_in); /* Worst case, 1 char = 1 byte */
+    unsigned char *buf = len ? malloc(len) : NULL;
+
+    if (!buf)
+        return 0;
+
+    if (!b58tobin(buf, &len, str_in, 0))
+        len = 0; /* Invalid chars present */
+
+    free(buf);
+    return len;
+}
+
 size_t base58_to_bytes(const char *str_in, uint32_t flags,
                        unsigned char *bytes_out, size_t len)
 {

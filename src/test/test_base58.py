@@ -41,6 +41,12 @@ class Base58Tests(unittest.TestCase):
         buf, buf_len = util.make_cbuffer('00' * 1024)
         buf_len = self.base58_to_bytes(utf8(str_in), flags, buf, buf_len)
         self.assertNotEqual(buf_len, 0)
+        # Check that just computing the size returns us the actual size
+        #print 'processing "%s"' % str_in
+        bin_len = self.base58_get_length(str_in)
+        if flags == self.CHECKSUM:
+            bin_len -= 4 # Take off the 4 bytes of stripped checksum
+        self.assertEqual(bin_len, buf_len)
         return hexlify(buf)[0:buf_len * 2].upper()
 
 
@@ -96,6 +102,7 @@ class Base58Tests(unittest.TestCase):
 
         # Test output buffer too small
         valid = '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM' # decodes to 25 bytes
+        self.assertEqual(self.base58_get_length(valid), 25)
         self.assertEqual(fn(valid, 0, buf, 24), 0)
 
 

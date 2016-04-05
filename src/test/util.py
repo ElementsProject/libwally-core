@@ -39,6 +39,7 @@ class ext_key(Structure):
                 ("pub_key", c_ubyte * 33)]
 
 bip38_funcs = [('base58_from_bytes', None, [c_void_p, c_ulong, c_uint, POINTER(c_char_p)]),
+               ('base58_get_length', c_ulong, [c_char_p]),
                ('base58_to_bytes', c_ulong, [c_char_p, c_uint, c_void_p, c_ulong])]
 
 bip32_funcs = [('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
