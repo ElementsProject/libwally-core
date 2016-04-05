@@ -46,6 +46,7 @@ void base58_string_from_bytes(
  */
 size_t base58_string_to_bytes(
     const char *str_in,
+    uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
 

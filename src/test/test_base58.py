@@ -38,12 +38,21 @@ class Base58Tests(unittest.TestCase):
         buf, buf_len = util.make_cbuffer(hex_in)
         return self.base58_string_from_bytes(buf, buf_len, flags)
 
+    def decode(self, str_in, flags):
+        buf, buf_len = util.make_cbuffer('00' * 1024)
+        buf_len = self.base58_string_to_bytes(utf8(str_in), flags, buf, buf_len)
+        self.assertNotEqual(buf_len, 0)
+        return hexlify(buf)[0:buf_len * 2].upper()
+
     def test_address_vectors(self):
 
         for c in self.cases:
             # Checksummed should match directly in base 58
             base58 = self.encode(c.checksummed, 0)
             self.assertEqual(base58, c.base58)
+            # Decode it and make sure it matches checksummed again
+            decoded = self.decode(c.base58, 0)
+            self.assertEqual(decoded, utf8(c.checksummed))
 
             # Compute the checksum in the call, appended to a temp
             # buffer or in-place, depending on the flags

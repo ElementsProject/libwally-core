@@ -56,13 +56,25 @@ void base58_string_from_bytes(unsigned char *bytes_in_out, size_t len,
     }
 }
 
-size_t base58_string_to_bytes(const char *str_in,
+size_t base58_string_to_bytes(const char *str_in, uint32_t flags,
                               unsigned char *bytes_out, size_t len)
 {
+    unsigned char *actual_out;
     size_t out_len = len;
+
+    /* FIXME: Flags */
 
     if (!b58tobin(bytes_out, &out_len, str_in, 0))
         return 0;
 
+    /* b58tobin leaves the result at the end of bytes_out, so we have to
+     * shuffle the data to the start and wipe anything following it.
+     * FIXME: This sucks, and won't be fixed upstream, rewrite?
+     **/
+    actual_out = bytes_out + len - out_len;
+    if (actual_out != bytes_out) {
+        memmove(bytes_out, actual_out, out_len);
+        clear(bytes_out + out_len, len - out_len);
+    }
     return out_len;
 }
