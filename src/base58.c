@@ -68,7 +68,6 @@ size_t base58_to_bytes(const char *str_in, uint32_t flags,
     if (flags & ~BASE58_FLAG_CHECKSUM)
         return 0; /* Invalid flags */
 
-    /* FIXME: Test empty strings, set the min size correctly here + above */
     if (flags & BASE58_FLAG_CHECKSUM && len < BASE58_CHECKSUM_LEN)
         return 0; /* No room for checksum */
 
