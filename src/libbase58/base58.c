@@ -18,9 +18,9 @@
 
 #if 0
 #include "libbase58.h"
-#endif
 
 bool (*b58_sha256_impl)(void *, const void *, size_t) = NULL;
+#endif
 
 static const int8_t b58digits_map[] = {
 	-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
