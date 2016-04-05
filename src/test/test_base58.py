@@ -11,7 +11,6 @@ class AddressCase(object):
         self.checksummed = lines[8]
         self.base58 = lines[9]
 
-
 class Base58Tests(unittest.TestCase):
 
     CHECKSUM = 1
@@ -44,7 +43,9 @@ class Base58Tests(unittest.TestCase):
         self.assertNotEqual(buf_len, 0)
         return hexlify(buf)[0:buf_len * 2].upper()
 
+
     def test_address_vectors(self):
+        """Tests for encoding and decoding with and without checksums"""
 
         for c in self.cases:
             # Checksummed should match directly in base 58
@@ -69,6 +70,33 @@ class Base58Tests(unittest.TestCase):
                 # to original ripemd + network
                 decoded = self.decode(c.base58, self.CHECKSUM)
                 self.assertEqual(decoded, utf8(c.ripemd_network))
+
+
+    def test_to_bytes(self):
+        fn = lambda s, f, b, l: self.base58_string_to_bytes(utf8(s), f, b, l)
+
+        buf, buf_len = util.make_cbuffer('00' * 1024)
+
+        # Bad input base58 strings
+        for bad in [ '',      # Empty string can't be represented
+                     '0',     # Forbidden ASCII character
+                     '\x80',  # High bit set
+                   ]:
+            self.assertEqual(fn(bad, 0, buf, buf_len), 0)
+
+        # Bad checksummed base58 strings
+        for bad in [ # libbase58: decode-b58c-fail
+                    '19DXstMaV43WpYg4ceREiiTv2UntmoiA9a',
+                    # libbase58: decode-b58c-toolong
+                    '1119DXstMaV43WpYg4ceREiiTv2UntmoiA9a',
+                    # libbase58: decode-b58c-tooshort
+                    '111111111111111111114oLvT2'
+                ]:
+            self.assertEqual(fn(bad, self.CHECKSUM, buf, buf_len), 0)
+
+        # Test output buffer too small
+        valid = '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM' # decodes to 25 bytes
+        self.assertEqual(fn(valid, 0, buf, 24), 0)
 
 
 if __name__ == '__main__':

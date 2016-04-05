@@ -72,8 +72,11 @@ size_t base58_string_to_bytes(const char *str_in, uint32_t flags,
     if (flags & BASE58_FLAG_CHECKSUM && len < BASE58_CHECKSUM_LEN)
         return 0; /* No room for checksum */
 
-    if (!b58tobin(bytes_out, &out_len, str_in, 0))
+    if (!b58tobin(bytes_out, &out_len, str_in, 0) || out_len > len) {
+        /* Invalid chars present or not enough space */
+        clear(bytes_out, len);
         return 0;
+    }
 
     /* b58tobin leaves the result at the end of bytes_out, so we have to
      * shuffle the data to the start and wipe anything following it.
