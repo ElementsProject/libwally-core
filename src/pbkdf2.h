@@ -12,8 +12,20 @@
 /** Output length for @pbkdf2_hmac_sha512 */
 #define PBKDF2_HMAC_SHA512_LEN 64
 
-/* Note we only support a single output block at present - len must
- * be @PBKDF2_HMAC_SHA512_LEN
+/**
+ * Derive a pseudorandom key from inputs using HMAC SHA512.
+ *
+ * @pass: Password to derive from.
+ * @pass_len: Length of @pass in bytes.
+ * @salt: Salt to derive from.
+ * @salt_len: Length of @salt in bytes.
+ * @cost: The cost of the function expressed as a power of two. The larger
+ *        this number, the longer the key will take to derive.
+ * @bytes_out: Destination for the derived pseudorandom key.
+ * @len: The length of @bytes_out in bytes. This must be a multiple
+ *       of @PBKDF2_HMAC_SHA512_LEN.
+ *
+ * Returns 0 on success or non-zero if any paramter is invalid.
  */
 int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
                        unsigned char *salt, size_t salt_len,
