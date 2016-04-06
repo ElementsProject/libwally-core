@@ -27,7 +27,7 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
         return -1;
 
     /* If bytes out is suitably aligned, we can work on it directly */
-    if(alignment_ok(bytes_out, sizeof(SHA_ALIGN_T)))
+    if (alignment_ok(bytes_out, sizeof(SHA_ALIGN_T)))
         sha_cp = (struct SHA_T *)bytes_out;
 
     for (n = 0; n < len / PBKDF2_HMAC_SHA_LEN; ++n) {
@@ -43,7 +43,7 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
                 sha_cp->u.u8[j] ^= d1.u.u8[j];
         }
         if (sha_cp == &d2)
-            memcpy(bytes_out, sha_cp->u.u8, sizeof(*sha_cp));
+            memcpy(bytes_out, sha_cp, sizeof(*sha_cp));
         else
             sha_cp += PBKDF2_HMAC_SHA_LEN;
 
