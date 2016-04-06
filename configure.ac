@@ -62,6 +62,10 @@ if test "x$export_all" != "xyes"; then
         ])
 fi
 
+# Turn off assertions in ccan
+# FIXME: Enable in debug mode
+CFLAGS="$CFLAGS -DNDEBUG"
+
 AC_C_BIGENDIAN()
 AC_C_INLINE
 AC_TYPE_SIZE_T
