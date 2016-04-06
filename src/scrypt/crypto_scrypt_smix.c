@@ -29,9 +29,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#if 0
 #include "sysendian.h"
 
 #include "crypto_scrypt_smix.h"
+#endif
 
 static void blkcpy(void *, const void *, size_t);
 static void blkxor(void *, const void *, size_t);
