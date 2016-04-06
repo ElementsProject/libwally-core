@@ -17,16 +17,9 @@
 #include "ccan/ccan/crypto/sha512/sha512.h"
 
 
-void pbkdf2_hmac_sha256(unsigned char *bytes_out,
-                        const unsigned char *pass, size_t pass_len,
-                        unsigned char *salt, size_t salt_len)
-{
-    /* FIXME */
-}
-
-void pbkdf2_hmac_sha512(unsigned char *bytes_out,
-                        const unsigned char *pass, size_t pass_len,
-                        unsigned char *salt, size_t salt_len)
+int pbkdf2_hmac_sha512(unsigned char *bytes_out,
+                       const unsigned char *pass, size_t pass_len,
+                       unsigned char *salt, size_t salt_len)
 {
     struct sha512 d1, d2;
     size_t i, j;
@@ -45,4 +38,5 @@ void pbkdf2_hmac_sha512(unsigned char *bytes_out,
             bytes_out[j] ^= d1.u.u8[j];
     }
     clear_n(2, &d1, sizeof(d1), &d2, sizeof(d2));
+    return 0;
 }

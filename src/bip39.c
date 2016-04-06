@@ -142,6 +142,7 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
     const size_t salt_len = prefix_len + password_len + PBKDF2_SALT_BYTES;
+    size_t written = 0;
     unsigned char *salt = malloc(salt_len);
 
     if (!salt || len != BIP39_SEED_LEN_512)
@@ -150,11 +151,12 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
 
-    pbkdf2_hmac_sha512(bytes_out, (unsigned char *)mnemonic, strlen(mnemonic),
-                       salt, salt_len);
+    if (!pbkdf2_hmac_sha512(bytes_out, (unsigned char *)mnemonic, strlen(mnemonic),
+                       salt, salt_len))
+        written = BIP39_SEED_LEN_512; /* Succeeded */
 
     clear(salt, salt_len);
     free(salt);
 
-    return BIP39_SEED_LEN_512;
+    return written;
 }
