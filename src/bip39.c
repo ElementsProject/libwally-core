@@ -4,6 +4,7 @@
 #include "mnemonic.h"
 #include "wordlist.h"
 #include "hmac.h"
+#include "pbkdf2.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 
@@ -134,50 +135,14 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
     return len != 0;
 }
 
-#define SALT_BYTES 4u /* Extra bytes for salt */
-
-/*
- * This is a heavily modified version of openBSDs pkcs5_pbkdf2 from
- * libutil/pkcs5_pbkdf2.c, whose copyright appears here:
- *
- * Copyright (c) 2008 Damien Bergamini <damien.bergamini@free.fr>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- */
-static void pbkdf2_hmac_sha512(unsigned char *bytes_out,
-                               const unsigned char *pass, size_t pass_len,
-                               unsigned char *salt, size_t salt_len)
-{
-    struct sha512 d1, d2;
-    size_t i, j;
-
-    salt[salt_len + 0] = 0;
-    salt[salt_len + 1] = 0;
-    salt[salt_len + 2] = 0;
-    salt[salt_len + 3] = 1;
-
-    hmac_sha512(&d1, pass, pass_len, salt, salt_len + SALT_BYTES);
-    memcpy(bytes_out, d1.u.u8, sizeof(d1));
-
-    for (i = 1; i < 2048u; ++i) {
-        hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
-        d1 = d2;
-        for (j = 0; j < sizeof(d1); ++j)
-            bytes_out[j] ^= d1.u.u8[j];
-    }
-    clear_n(2, &d1, sizeof(d1), &d2, sizeof(d2));
-}
-
 size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
                               unsigned char *bytes_out, size_t len)
 {
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
-    const size_t salt_len = prefix_len + password_len;
-    unsigned char *salt = malloc(salt_len + SALT_BYTES);
+    const size_t salt_len = prefix_len + password_len + PBKDF2_SALT_BYTES;
+    unsigned char *salt = malloc(salt_len);
 
     if (!salt || len != BIP39_SEED_LEN_512)
         return 0;
@@ -188,7 +153,7 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     pbkdf2_hmac_sha512(bytes_out, (unsigned char *)mnemonic, strlen(mnemonic),
                        salt, salt_len);
 
-    clear(salt, salt_len + SALT_BYTES);
+    clear(salt, salt_len);
     free(salt);
 
     return BIP39_SEED_LEN_512;
