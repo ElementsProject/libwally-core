@@ -56,6 +56,7 @@ bip39_funcs = [('bip39_get_languages', None, [POINTER(c_char_p)]),
 
 sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
               ('sha512', None, [c_void_p, c_void_p, c_ulong]),
+              ('hmac_sha256', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong]),
               ('hmac_sha512', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong])]
 
 # ctypes represents all types of pointer-to-pointer-of-X with the same type,
