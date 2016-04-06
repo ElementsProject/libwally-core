@@ -10,9 +10,9 @@
  */
 
 int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
-                       unsigned char *salt, size_t salt_len,
-                       size_t cost,
-                       unsigned char *bytes_out, size_t len)
+                           unsigned char *salt, size_t salt_len,
+                           size_t cost,
+                           unsigned char *bytes_out, size_t len)
 {
     struct SHA_T d1, d2, *sha_cp = &d2;
     size_t n, c, j;

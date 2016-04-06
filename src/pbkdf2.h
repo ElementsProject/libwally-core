@@ -17,8 +17,9 @@
  *
  * @pass: Password to derive from.
  * @pass_len: Length of @pass in bytes.
- * @salt: Salt to derive from.
- * @salt_len: Length of @salt in bytes.
+ * @salt: Salt to derive from. This must have @PBKDF2_SALT_BYTES
+ *        of spare room at the end of the salt itself.
+ * @salt_len: Length of @salt in bytes including the extra @PBKDF2_SALT_BYTES.
  * @cost: The cost of the function. The larger this number, the
  *        longer the key will take to derive.
  * @bytes_out: Destination for the derived pseudorandom key.

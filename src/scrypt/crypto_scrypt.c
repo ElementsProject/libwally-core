@@ -233,7 +233,6 @@ selectsmix(void)
 	/* If we get here, something really bad happened. */
 	abort();
 }
-#endif
 
 /**
  * crypto_scrypt(passwd, passwdlen, salt, saltlen, N, r, p, buf, buflen):
@@ -249,10 +248,9 @@ crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
     const uint8_t * salt, size_t saltlen, uint64_t N, uint32_t _r, uint32_t _p,
     uint8_t * buf, size_t buflen)
 {
-#if 0
 	if (smix_func == NULL)
 		selectsmix();
-#endif
 	return (_crypto_scrypt(passwd, passwdlen, salt, saltlen, N, _r, _p,
 	    buf, buflen, smix_func));
 }
+#endif
