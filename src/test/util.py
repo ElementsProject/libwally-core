@@ -59,6 +59,8 @@ sha2_funcs = [('sha256', None, [c_void_p, c_void_p, c_ulong]),
               ('hmac_sha256', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong]),
               ('hmac_sha512', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong])]
 
+pbkdf2_funcs = [('pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_ulong, c_void_p, c_ulong])]
+
 # ctypes represents all types of pointer-to-pointer-of-X with the same type,
 # So we have to use explicit lists here to find functions to wrap
 # FIXME: Use a sentinel class in the arg list instead

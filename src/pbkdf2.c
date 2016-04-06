@@ -30,9 +30,10 @@ int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
                        unsigned char *bytes_out, size_t len)
 {
     struct sha512 d1, d2;
-    size_t n;
+    size_t n, c, j;
 
     BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_SALT_BYTES);
+    BUILD_ASSERT(sizeof(d1) == PBKDF2_HMAC_SHA512_LEN);
 
     if (salt_len <= PBKDF2_SALT_BYTES)
         return -1;
@@ -45,19 +46,17 @@ int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
 
     for (n = 0; n < len / PBKDF2_HMAC_SHA512_LEN; ++n) {
         beint32_t block = cpu_to_be32(n + 1); /* Block number */
-        size_t c;
 
         memcpy(salt + salt_len - sizeof(block), &block, sizeof(block));
         hmac_sha512(&d1, pass, pass_len, salt, salt_len);
-        memcpy(bytes_out, d1.u.u8, sizeof(d1));
+        d2 = d1;
 
         for (c = 0; c < cost - 1; ++c) {
-            size_t j;
-            hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
-            d1 = d2;
+            hmac_sha512(&d1, pass, pass_len, d1.u.u8, sizeof(d1));
             for (j = 0; j < sizeof(d1); ++j)
-                bytes_out[j] ^= d1.u.u8[j];
+                d2.u.u8[j] ^= d1.u.u8[j];
         }
+        memcpy(bytes_out, d2.u.u8, sizeof(d2));
         bytes_out += PBKDF2_HMAC_SHA512_LEN;
     }
 
