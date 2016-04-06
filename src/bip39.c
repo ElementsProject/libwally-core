@@ -138,6 +138,7 @@ bool bip39_mnemonic_is_valid(const struct words *w, const char *mnemonic)
 size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
                               unsigned char *bytes_out, size_t len)
 {
+    const size_t bip9_cost = 2048u;
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
@@ -152,7 +153,9 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     memcpy(salt + prefix_len, password, password_len);
 
     if (!pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
-                            salt, salt_len, bytes_out, len))
+                            salt, salt_len,
+                            bip9_cost,
+                            bytes_out, len))
         written = BIP39_SEED_LEN_512; /* Succeeded */
 
     clear(salt, salt_len);

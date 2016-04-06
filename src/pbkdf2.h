@@ -17,6 +17,7 @@
  */
 int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
                        unsigned char *salt, size_t salt_len,
+                       size_t cost,
                        unsigned char *bytes_out, size_t len);
 
 #endif /* LIBWALLY_PBKDF2_H */

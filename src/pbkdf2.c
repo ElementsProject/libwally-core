@@ -21,6 +21,7 @@
 
 int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
                        unsigned char *salt, size_t salt_len,
+                       size_t cost,
                        unsigned char *bytes_out, size_t len)
 {
     struct sha512 d1, d2;
@@ -36,7 +37,7 @@ int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
     hmac_sha512(&d1, pass, pass_len, salt, salt_len);
     memcpy(bytes_out, d1.u.u8, sizeof(d1));
 
-    for (i = 1; i < 2048u; ++i) {
+    for (i = 1; i < cost; ++i) {
         hmac_sha512(&d2, pass, pass_len, d1.u.u8, sizeof(d1));
         d1 = d2;
         for (j = 0; j < sizeof(d1); ++j)

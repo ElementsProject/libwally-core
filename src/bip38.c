@@ -20,14 +20,13 @@ static void le32enc(void *p, uint32_t value)
 
 static void PBKDF2_SHA256(const uint8_t *pass, size_t pass_len,
                           const uint8_t *salt, size_t salt_len,
-                          uint64_t c, uint8_t *bytes_out, size_t dk_len)
+                          uint64_t cost, uint8_t *bytes_out, size_t dk_len)
 {
     /* FIXME: Generalise our pbkdf2_hmac_sha512 and implement a 256 version,
      *        This is hacked to get it to compile.
      */
     size_t len = dk_len / PBKDF2_HMAC_SHA256_LEN;
-    (void)c;
-    pbkdf2_hmac_sha512(pass, pass_len, (void *)salt, salt_len, bytes_out, len);
+    pbkdf2_hmac_sha512(pass, pass_len, (void *)salt, salt_len, cost, bytes_out, len);
 }
 
 /* FIXME:
