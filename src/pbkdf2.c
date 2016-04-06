@@ -9,12 +9,14 @@
  * copyright notice and this permission notice appear in all copies.
  */
 #include <include/wally_bip39.h>
-#include <string.h>
+#include "pbkdf2.h"
 #include "internal.h"
 #include "hmac.h"
+#include <string.h>
 #include "ccan/ccan/endian/endian.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
+#include "ccan/ccan/build_assert/build_assert.h"
 
 
 int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
@@ -23,9 +25,12 @@ int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
 {
     struct sha512 d1, d2;
     size_t i, j;
-    beint32_t one = cpu_to_be32(1u);
+    beint32_t one = cpu_to_be32(1u); /* Block number */
 
-    /* FIXME: Add an error return and check salt_len */
+    BUILD_ASSERT(sizeof(one) == PBKDF2_SALT_BYTES);
+
+    if (salt_len <= PBKDF2_SALT_BYTES || len != PBKDF2_HMAC_SHA512_LEN)
+        return -1;
 
     memcpy(salt + salt_len - sizeof(one), &one, sizeof(one));
     hmac_sha512(&d1, pass, pass_len, salt, salt_len);
