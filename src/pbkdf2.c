@@ -12,6 +12,7 @@
 #include <string.h>
 #include "internal.h"
 #include "hmac.h"
+#include "ccan/ccan/endian/endian.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 
@@ -29,12 +30,11 @@ void pbkdf2_hmac_sha512(unsigned char *bytes_out,
 {
     struct sha512 d1, d2;
     size_t i, j;
+    beint32_t one = cpu_to_be32(1u);
 
-    salt[salt_len - 4] = 0;
-    salt[salt_len - 3] = 0;
-    salt[salt_len - 2] = 0;
-    salt[salt_len - 1] = 1;
+    /* FIXME: Add an error return and check salt_len */
 
+    memcpy(salt + salt_len - sizeof(one), &one, sizeof(one));
     hmac_sha512(&d1, pass, pass_len, salt, salt_len);
     memcpy(bytes_out, d1.u.u8, sizeof(d1));
 
