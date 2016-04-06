@@ -17,9 +17,9 @@
 #include "ccan/ccan/crypto/sha512/sha512.h"
 
 
-int pbkdf2_hmac_sha512(unsigned char *bytes_out,
-                       const unsigned char *pass, size_t pass_len,
-                       unsigned char *salt, size_t salt_len)
+int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
+                       unsigned char *salt, size_t salt_len,
+                       unsigned char *bytes_out, size_t len)
 {
     struct sha512 d1, d2;
     size_t i, j;

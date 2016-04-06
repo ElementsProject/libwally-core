@@ -151,8 +151,8 @@ size_t bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
 
-    if (!pbkdf2_hmac_sha512(bytes_out, (unsigned char *)mnemonic, strlen(mnemonic),
-                       salt, salt_len))
+    if (!pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
+                            salt, salt_len, bytes_out, len))
         written = BIP39_SEED_LEN_512; /* Succeeded */
 
     clear(salt, salt_len);
