@@ -5,6 +5,7 @@
 #include "ccan/ccan/endian/endian.h"
 #include <string.h>
 
+/* Implement functions required by the scrypt core */
 static uint32_t le32dec(const void *p)
 {
     leint32_t tmp;
@@ -18,21 +19,20 @@ static void le32enc(void *p, uint32_t value)
     memcpy(p, &tmp, sizeof(tmp));
 }
 
-static void PBKDF2_SHA256(const uint8_t *pass, size_t pass_len,
-                          const uint8_t *salt, size_t salt_len,
-                          uint64_t cost, uint8_t *bytes_out, size_t dk_len)
+static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
+                          const unsigned char *salt, size_t salt_len,
+                          uint64_t cost,
+                          unsigned char *bytes_out, size_t len)
 {
-    /* FIXME: Generalise our pbkdf2_hmac_sha512 and implement a 256 version,
-     *        This is hacked to get it to compile.
-     */
-    size_t len = dk_len / PBKDF2_HMAC_SHA256_LEN;
-    pbkdf2_hmac_sha512(pass, pass_len, (void *)salt, salt_len, cost, bytes_out, len);
+    /* We passed salt in to the caller, so we know we can cast away cons */
+    pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
+                       cost, bytes_out, len);
 }
 
 /* FIXME:
  * #ifdef HAVE_POSIX_MEMALIGN
  * #if !defined(MAP_ANON) || !defined(HAVE_MMAP)
  */
-#include "src/scrypt/crypto_scrypt_smix.c"
+#include "scrypt/crypto_scrypt_smix.c"
 #define smix_func crypto_scrypt_smix
-#include "src/scrypt/crypto_scrypt.c"
+#include "scrypt/crypto_scrypt.c"
