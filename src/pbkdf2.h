@@ -19,8 +19,8 @@
  * @pass_len: Length of @pass in bytes.
  * @salt: Salt to derive from.
  * @salt_len: Length of @salt in bytes.
- * @cost: The cost of the function expressed as a power of two. The larger
- *        this number, the longer the key will take to derive.
+ * @cost: The cost of the function. The larger this number, the
+ *        longer the key will take to derive.
  * @bytes_out: Destination for the derived pseudorandom key.
  * @len: The length of @bytes_out in bytes. This must be a multiple
  *       of @PBKDF2_HMAC_SHA512_LEN.

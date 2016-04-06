@@ -18,11 +18,6 @@
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include "ccan/ccan/build_assert/build_assert.h"
 
-/* https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2 */
-inline static int is_power_of_two(size_t n)
-{
-    return !(n & (n - 1));
-}
 
 int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
                        unsigned char *salt, size_t salt_len,
@@ -41,9 +36,6 @@ int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
     if (!len || len % PBKDF2_HMAC_SHA512_LEN)
         return -1;
 
-    if (cost < 1 || !is_power_of_two(cost))
-        return -1;
-
     for (n = 0; n < len / PBKDF2_HMAC_SHA512_LEN; ++n) {
         beint32_t block = cpu_to_be32(n + 1); /* Block number */
 
@@ -51,7 +43,7 @@ int pbkdf2_hmac_sha512(const unsigned char *pass, size_t pass_len,
         hmac_sha512(&d1, pass, pass_len, salt, salt_len);
         d2 = d1;
 
-        for (c = 0; c < cost - 1; ++c) {
+        for (c = 0; cost && c < cost - 1; ++c) {
             hmac_sha512(&d1, pass, pass_len, d1.u.u8, sizeof(d1));
             for (j = 0; j < sizeof(d1); ++j)
                 d2.u.u8[j] ^= d1.u.u8[j];
