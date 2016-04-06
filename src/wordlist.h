@@ -24,7 +24,8 @@ struct words {
 };
 
 /**
- * wordlist_init - Initialise a words structure.
+ * Initialise a words structure.
+ *
  * @text: List of words to initialise from, split by whitespace and
  *        NUL terminated. Must be UTF-8 encoded.
  *
@@ -33,7 +34,8 @@ struct words {
 struct words *wordlist_init(const char *text);
 
 /**
- * wordlist_lookup_word - Find a word in a wordlist.
+ * Find a word in a wordlist.
+ *
  * @w: Parsed list of words to look up in.
  * @word: The word to look up.
  *
@@ -45,7 +47,8 @@ size_t wordlist_lookup_word(
     const char *word);
 
 /**
- * wordlist_lookup_index - Return the Nth word in a wordlist.
+ * Return the Nth word in a wordlist.
+ *
  * @w: Parsed list of words to look up in.
  * @index: The index to look up.
  *

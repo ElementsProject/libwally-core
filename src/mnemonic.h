@@ -7,7 +7,8 @@
 struct words;
 
 /**
- * mnemonic_from_bytes - Return a mnemonic representation of a block of bytes.
+ * Return a mnemonic representation of a block of bytes.
+ *
  * @w: List of words.
  * @bytes_in: Bytes to convert to a mnemonic sentence.
  * @len: The length of @bytes_in in bytes.
@@ -20,7 +21,8 @@ char *mnemonic_from_bytes(
     size_t len);
 
 /**
- * mnemonic_to_bytes - Convert a mnemonic representation into a block of bytes.
+ * Convert a mnemonic representation into a block of bytes.
+ *
  * @w: List of words.
  * @mnemonic: Mnemonic sentence to store.
  * @bytes_out: Where to store the converted representation.
