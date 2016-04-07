@@ -75,10 +75,10 @@ class BIP39Tests(unittest.TestCase):
             self.assertEqual(result, mnemonic)
             self.assertEqual(self.bip39_mnemonic_is_valid(wl, mnemonic), 1)
 
-            result_buf = create_string_buffer(buf_len)
-            rlen = self.bip39_mnemonic_to_bytes(wl, result, result_buf, buf_len)
+            out_buf = create_string_buffer(buf_len)
+            rlen = self.bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len)
             self.assertEqual(rlen, buf_len)
-            self.assertEqual(buf, result_buf.raw)
+            self.assertEqual(buf, out_buf.raw)
 
 
     def test_mnemonic_to_seed(self):
