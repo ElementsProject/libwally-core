@@ -45,7 +45,7 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
         if (sha_cp == &d2)
             memcpy(bytes_out, sha_cp, sizeof(*sha_cp));
         else
-            sha_cp += PBKDF2_HMAC_SHA_LEN;
+            ++sha_cp;
 
         bytes_out += PBKDF2_HMAC_SHA_LEN;
     }
