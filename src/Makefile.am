@@ -13,9 +13,6 @@ libwallycore_la_CFLAGS += $(SWIG_PYTHON_CPPFLAGS)
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python_wrap.c : swig.i
 	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' wallycore.py $@
-
-# FIXME: Add SWIG python tests, e.g.
-# PYTHONPATH=".libs" python mnemonic.py
 endif
 
 lib_LTLIBRARIES = libwallycore.la
@@ -24,12 +21,12 @@ libwallycore_la_SOURCES = \
     $(SWIG_SRCS) \
     base58.c \
     bip32.c \
-    bip38.c \
     bip39.c \
     hmac.c \
     internal.c \
     mnemonic.c \
     pbkdf2.c \
+    scrypt.c \
     wordlist.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
@@ -37,7 +34,8 @@ libwallycore_la_SOURCES = \
 
 
 libwallycore_la_INCLUDES = \
-    base58.h config.h hmac.h internal.h mnemonic.h pbkdf2.h wordlist.h \
+    base58.h config.h hmac.h internal.h mnemonic.h \
+    pbkdf2.h scrypt.h wordlist.h \
     include/wally_bip32.h include/wally_bip38.h \
     include/wally_bip39.h include/wally-core.h
 

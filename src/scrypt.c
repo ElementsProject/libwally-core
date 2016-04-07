@@ -1,5 +1,6 @@
 #include <include/wally_bip38.h>
 #include "internal.h"
+#include "scrypt.h"
 #include "hmac.h"
 #include "pbkdf2.h"
 #include "ccan/ccan/endian/endian.h"
@@ -25,7 +26,7 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
                           unsigned char *bytes_out, size_t len)
 {
     /* We passed salt in to the caller, so we know we can cast away const,
-     * and that is has slack PBKDF2_SALT_BYTES in it.  */
+     * and that is has PBKDF2_SALT_BYTES slack bytes in it.  */
     pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
                        cost, bytes_out, len);
 }
@@ -42,7 +43,7 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
  */
 int scrypt(const unsigned char *pass, size_t pass_len,
            const unsigned char *salt, size_t salt_len,
-           uint64_t N, uint32_t r, uint32_t p,
+           uint32_t cost, uint32_t r, uint32_t p,
            unsigned char *bytes_out, size_t len)
 {
     /* Create a temp salt with space for slack bytes */
@@ -54,7 +55,7 @@ int scrypt(const unsigned char *pass, size_t pass_len,
 
         ret = _crypto_scrypt(pass, pass_len,
                              tmp_salt, salt_len + PBKDF2_SALT_BYTES,
-                             N, r, p,
+                             cost, r, p,
                              bytes_out, len,
                              crypto_scrypt_smix);
         free(tmp_salt);
