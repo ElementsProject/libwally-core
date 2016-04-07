@@ -22,7 +22,7 @@ static void invalidate_sha512(struct sha512_ctx *ctx)
 #endif
 }
 
-static void check_sha512(struct sha512_ctx *ctx)
+static void check_sha512(struct sha512_ctx *ctx UNUSED)
 {
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	assert(ctx->c.md_len != 0);
