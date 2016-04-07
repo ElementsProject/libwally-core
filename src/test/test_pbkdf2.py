@@ -34,14 +34,27 @@ class PBKDF2Tests(unittest.TestCase):
 
     def test_pbkdf2_hmac(self):
 
+        # Some test vectors are nuts (e.g. 2097152 cost), so only run the
+        # first few. set these to -1 to run the whole suite (only needed
+        # when refactoring the impl)
+        num_crazy_256, num_crazy_512 = 10, 10
+
         for case in self.cases:
 
             if case.typ == 256:
                 fn = self.pbkdf2_hmac_sha256
                 mult = self.PBKDF2_HMAC_SHA256_LEN
+                if case.cost > 100:
+                    if num_crazy_256 == 0:
+                         continue
+                    num_crazy_256 -= 1
             else:
                 fn = self.pbkdf2_hmac_sha512
                 mult = self.PBKDF2_HMAC_SHA512_LEN
+                if case.cost > 100:
+                    if num_crazy_512 == 0:
+                        continue
+                    num_crazy_512 -= 1
 
             out_buf, out_len = util.make_cbuffer('00' * case.expected_len)
             if case.expected_len % mult != 0:
