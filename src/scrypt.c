@@ -25,10 +25,9 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
                           uint64_t cost,
                           unsigned char *bytes_out, size_t len)
 {
-    /* We passed salt in to the caller, so we know we can cast away const,
-     * and that is has PBKDF2_SALT_BYTES slack bytes in it.  */
+    const uint32_t flags = 0;
     pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
-                       cost, bytes_out, len);
+                       flags, cost, bytes_out, len);
 }
 
 /* FIXME:
@@ -46,19 +45,7 @@ int scrypt(const unsigned char *pass, size_t pass_len,
            uint32_t cost, uint32_t block_size, uint32_t parallelism,
            unsigned char *bytes_out, size_t len)
 {
-    /* Create a temp salt with space for slack bytes */
-    unsigned char *tmp_salt = malloc(salt_len + PBKDF2_SALT_BYTES);
-    int ret = -1;
-
-    if (tmp_salt) {
-        memcpy(tmp_salt, salt, salt_len);
-
-        ret = _crypto_scrypt(pass, pass_len,
-                             tmp_salt, salt_len + PBKDF2_SALT_BYTES,
-                             cost, block_size, parallelism,
-                             bytes_out, len,
-                             crypto_scrypt_smix);
-        free(tmp_salt);
-    }
-    return ret;
+    return _crypto_scrypt(pass, pass_len, salt, salt_len,
+                          cost, block_size, parallelism,
+                          bytes_out, len, crypto_scrypt_smix);
 }

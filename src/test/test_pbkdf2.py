@@ -10,8 +10,9 @@ class PBKDF2Case(object):
         self.typ = int(items[0])
         assert self.typ in [256, 512]
         self.passwd = unhexlify(items[1])
-        extra_salt_bytes = '00000000'
-        self.salt, self.salt_len = util.make_cbuffer(items[2] + extra_salt_bytes)
+        self.salt = unhexlify(items[2])
+        #extra_salt_bytes = '00000000'
+        #self.salt, self.salt_len = util.make_cbuffer(items[2] + extra_salt_bytes)
         self.cost = int(items[3])
         self.expected, self.expected_len = util.make_cbuffer(items[4])
 
@@ -19,6 +20,7 @@ class PBKDF2Case(object):
 class PBKDF2Tests(unittest.TestCase):
 
     PBKDF2_HMAC_SHA256_LEN, PBKDF2_HMAC_SHA512_LEN = 32, 64
+    FLAG_BLOCK_RESERVED = 0x1
 
     def setUp(self):
         if not hasattr(self, 'pbkdf2_hmac_sha256'):
@@ -61,8 +63,8 @@ class PBKDF2Tests(unittest.TestCase):
                 # We only support output multiples of the hmac length
                 continue
 
-            ret = fn(case.passwd, len(case.passwd), case.salt, case.salt_len,
-                     case.cost, out_buf, out_len)
+            ret = fn(case.passwd, len(case.passwd), case.salt, len(case.salt),
+                     0, case.cost, out_buf, out_len)
 
             self.assertEqual(ret, 0)
             self.assertEqual(hexlify(out_buf), hexlify(case.expected))

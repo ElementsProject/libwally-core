@@ -10,21 +10,34 @@
  */
 
 int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
-                           unsigned char *salt, size_t salt_len,
-                           size_t cost,
+                           unsigned char *salt_in_out, size_t salt_len,
+                           uint32_t flags, size_t cost,
                            unsigned char *bytes_out, size_t len)
 {
+    unsigned char *tmp_salt = NULL;
     struct SHA_T d1, d2, *sha_cp = &d2;
     size_t n, c, j;
 
-    BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_SALT_BYTES);
+    BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_HMAC_EXTRA_LEN);
     BUILD_ASSERT(sizeof(d1) == PBKDF2_HMAC_SHA_LEN);
 
-    if (salt_len < PBKDF2_SALT_BYTES)
-        return -1;
+    if (flags & ~PBKDF2_HMAC_FLAG_BLOCK_RESERVED)
+        return -1; /* Invalid flag */
+
+    if (flags & PBKDF2_HMAC_FLAG_BLOCK_RESERVED && salt_len < PBKDF2_HMAC_EXTRA_LEN)
+        return -1; /* No room for block appending */
 
     if (!len || len % PBKDF2_HMAC_SHA_LEN)
         return -1;
+
+    if (!(flags & PBKDF2_HMAC_FLAG_BLOCK_RESERVED)) {
+        tmp_salt = malloc(salt_len + PBKDF2_HMAC_EXTRA_LEN);
+        if (!tmp_salt)
+            return -1;
+        memcpy(tmp_salt, salt_in_out, salt_len);
+        salt_in_out = tmp_salt;
+        salt_len += PBKDF2_HMAC_EXTRA_LEN;
+    }
 
     /* If bytes out is suitably aligned, we can work on it directly */
     if (alignment_ok(bytes_out, sizeof(SHA_ALIGN_T)))
@@ -33,8 +46,8 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     for (n = 0; n < len / PBKDF2_HMAC_SHA_LEN; ++n) {
         beint32_t block = cpu_to_be32(n + 1); /* Block number */
 
-        memcpy(salt + salt_len - sizeof(block), &block, sizeof(block));
-        SHA_POST(hmac_)(&d1, pass, pass_len, salt, salt_len);
+        memcpy(salt_in_out + salt_len - sizeof(block), &block, sizeof(block));
+        SHA_POST(hmac_)(&d1, pass, pass_len, salt_in_out, salt_len);
         memcpy(sha_cp, &d1, sizeof(d1));
 
         for (c = 0; cost && c < cost - 1; ++c) {
@@ -51,5 +64,9 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     }
 
     clear_n(2, &d1, sizeof(d1), &d2, sizeof(d2));
+    if (tmp_salt) {
+        clear(tmp_salt, salt_len);
+        free(tmp_salt);
+    }
     return 0;
 }
