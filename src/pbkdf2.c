@@ -20,6 +20,7 @@ static bool alignment_ok(const void *p UNUSED, size_t n UNUSED)
 
 #define SHA_T sha256
 #define SHA_ALIGN_T uint32_t
+#define SHA_MEM u32
 #define SHA_POST(name) name ## sha256
 #define PBKDF2_HMAC_SHA_LEN PBKDF2_HMAC_SHA256_LEN
 #include "pbkdf2.inl"
@@ -28,6 +29,8 @@ static bool alignment_ok(const void *p UNUSED, size_t n UNUSED)
 #define SHA_T sha512
 #undef SHA_ALIGN_T
 #define SHA_ALIGN_T uint64_t
+#undef SHA_MEM
+#define SHA_MEM u64
 #undef SHA_POST
 #define SHA_POST(name) name ## sha512
 #undef PBKDF2_HMAC_SHA_LEN

@@ -39,8 +39,8 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
 
         for (c = 0; cost && c < cost - 1; ++c) {
             SHA_POST(hmac_)(&d1, pass, pass_len, d1.u.u8, sizeof(d1));
-            for (j = 0; j < sizeof(d1); ++j)
-                sha_cp->u.u8[j] ^= d1.u.u8[j];
+            for (j = 0; j < sizeof(d1.u.SHA_MEM)/sizeof(d1.u.SHA_MEM[0]); ++j)
+                sha_cp->u.SHA_MEM[j] ^= d1.u.SHA_MEM[j];
         }
         if (sha_cp == &d2)
             memcpy(bytes_out, sha_cp, sizeof(*sha_cp));
