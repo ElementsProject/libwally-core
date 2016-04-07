@@ -1,38 +1,58 @@
 import unittest
 import util
 from util import utf8
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 from ctypes import create_string_buffer
+
+class PBKDF2Case(object):
+    def __init__(self, items):
+        # Format: HMAC_SHA_TYPE, PASSWORD, SALT, COST, EXPECTED
+        self.typ = int(items[0])
+        assert self.typ in [256, 512]
+        self.passwd = unhexlify(items[1])
+        extra_salt_bytes = '00000000'
+        self.salt, self.salt_len = util.make_cbuffer(items[2] + extra_salt_bytes)
+        self.cost = int(items[3])
+        self.expected, self.expected_len = util.make_cbuffer(items[4])
+
 
 class PBKDF2Tests(unittest.TestCase):
 
     PBKDF2_HMAC_SHA256_LEN, PBKDF2_HMAC_SHA512_LEN = 32, 64
-    SALT_EXTRA = '1234' # 4 chars to overwrite
 
     def setUp(self):
-        if not hasattr(self, 'pbkdf2_hmac_sha512'):
+        if not hasattr(self, 'pbkdf2_hmac_sha256'):
             util.bind_all(self, util.pbkdf2_funcs)
+            self.cases = []
+            with open(util.root_dir + 'src/data/pbkdf2_hmac_sha_vectors.txt', 'r') as f:
+                for l in f.readlines():
+                    l = l.strip()
+                    if len(l) == 0 or l.startswith('#'):
+                        continue
+                    self.cases.append(PBKDF2Case(l.split(',')))
 
-    def test_pbkdf2_hmac_sha512(self):
 
-        # First test case from
-        # https://github.com/Anti-weakpasswords/PBKDF2-Test-Vectors/releases
-        # FIXME: Import the file and test them all
-        passwd = 'passDATAb00AB7YxDTT'
-        salt = 'saltKEYbcTcXHCBxtjD' + self.SALT_EXTRA
-        salt = create_string_buffer(salt)
-        salt_len = len(salt) - 1 # Ignore trailing NUL from ctypes
-        cost = 1
-        out_len = 64
-        out, _ = util.make_cbuffer('00' * out_len)
-        ret = self.pbkdf2_hmac_sha512(passwd, len(passwd),
-                                      salt, salt_len,
-                                      cost, out, out_len)
-        expected = 'CBE6088AD4359AF42E603C2A33760EF9' \
-                   'D4017A7B2AAD10AF46F992C660A0B461' \
-                   'ECB0DC2A79C2570941BEA6A08D15D688' \
-                   '7E79F32B132E1C134E9525EEDDD744FA'
-        self.assertEqual(hexlify(out).upper(), expected)
+    def test_pbkdf2_hmac(self):
+
+        for case in self.cases:
+
+            if case.typ == 256:
+                fn = self.pbkdf2_hmac_sha256
+                mult = self.PBKDF2_HMAC_SHA256_LEN
+            else:
+                fn = self.pbkdf2_hmac_sha512
+                mult = self.PBKDF2_HMAC_SHA512_LEN
+
+            out_buf, out_len = util.make_cbuffer('00' * case.expected_len)
+            if case.expected_len % mult != 0:
+                # We only support output multiples of the hmac length
+                continue
+
+            ret = fn(case.passwd, len(case.passwd), case.salt, case.salt_len,
+                     case.cost, out_buf, out_len)
+
+            self.assertEqual(ret, 0)
+            self.assertEqual(out_buf, case.expected)
 
 
 if __name__ == '__main__':
