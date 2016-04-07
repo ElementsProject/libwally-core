@@ -18,7 +18,7 @@ static void invalidate_sha512(struct sha512_ctx *ctx)
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	ctx->c.md_len = 0;
 #else
-	ctx->bytes = -1ULL;
+	ctx->bytes = (size_t)-1;
 #endif
 }
 
@@ -27,7 +27,7 @@ static void check_sha512(struct sha512_ctx *ctx UNUSED)
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	assert(ctx->c.md_len != 0);
 #else
-	assert(ctx->bytes != -1ULL);
+	assert(ctx->bytes != (size_t)-1);
 #endif
 }
 
@@ -243,7 +243,7 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 {
 	static const unsigned char pad[128] = { 0x80 };
-	uint64_t sizedesc[2] = { 0, cpu_to_be64(ctx->bytes << 3) };
+	uint64_t sizedesc[2] = { 0, cpu_to_be64((uint64_t)ctx->bytes << 3) };
 	size_t i;
 
 	/* Add '1' bit to terminate, then all 0 bits, up to next block - 16. */

@@ -49,7 +49,7 @@ struct sha256_ctx {
 		uint32_t u32[16];
 		unsigned char u8[64];
 	} buf;
-	uint64_t bytes;
+	size_t bytes;
 #endif
 };
 
