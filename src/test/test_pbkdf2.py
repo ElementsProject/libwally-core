@@ -10,9 +10,7 @@ class PBKDF2Case(object):
         self.typ = int(items[0])
         assert self.typ in [256, 512]
         self.passwd = unhexlify(items[1])
-        self.salt = unhexlify(items[2])
-        #extra_salt_bytes = '00000000'
-        #self.salt, self.salt_len = util.make_cbuffer(items[2] + extra_salt_bytes)
+        self.salt = items[2]
         self.cost = int(items[3])
         self.expected, self.expected_len = util.make_cbuffer(items[4])
 
@@ -39,7 +37,7 @@ class PBKDF2Tests(unittest.TestCase):
         # Some test vectors are nuts (e.g. 2097152 cost), so only run the
         # first few. set these to -1 to run the whole suite (only needed
         # when refactoring the impl)
-        num_crazy_256, num_crazy_512 = 10, 10
+        num_crazy_256, num_crazy_512 = 8, 8
 
         for case in self.cases:
 
@@ -63,11 +61,16 @@ class PBKDF2Tests(unittest.TestCase):
                 # We only support output multiples of the hmac length
                 continue
 
-            ret = fn(case.passwd, len(case.passwd), case.salt, len(case.salt),
-                     0, case.cost, out_buf, out_len)
+            # Test both providing extra bytes and having them allocated for us
+            for flags in [0, self.FLAG_BLOCK_RESERVED]:
+                extra_bytes = '00000000' if flags else ''
+                salt, salt_len = util.make_cbuffer(case.salt + extra_bytes)
 
-            self.assertEqual(ret, 0)
-            self.assertEqual(hexlify(out_buf), hexlify(case.expected))
+                ret = fn(case.passwd, len(case.passwd), salt, salt_len,
+                         flags, case.cost, out_buf, out_len)
+
+                self.assertEqual(ret, 0)
+                self.assertEqual(hexlify(out_buf), hexlify(case.expected))
 
 
 if __name__ == '__main__':
