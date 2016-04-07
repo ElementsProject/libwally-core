@@ -20,7 +20,7 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_SALT_BYTES);
     BUILD_ASSERT(sizeof(d1) == PBKDF2_HMAC_SHA_LEN);
 
-    if (salt_len <= PBKDF2_SALT_BYTES)
+    if (salt_len < PBKDF2_SALT_BYTES)
         return -1;
 
     if (!len || len % PBKDF2_HMAC_SHA_LEN)

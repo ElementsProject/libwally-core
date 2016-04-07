@@ -65,7 +65,7 @@ class PBKDF2Tests(unittest.TestCase):
                      case.cost, out_buf, out_len)
 
             self.assertEqual(ret, 0)
-            self.assertEqual(out_buf, case.expected)
+            self.assertEqual(hexlify(out_buf), hexlify(case.expected))
 
 
 if __name__ == '__main__':
