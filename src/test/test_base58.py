@@ -2,7 +2,6 @@ import unittest
 import util
 from util import utf8
 from binascii import hexlify
-from ctypes import create_string_buffer
 
 class AddressCase(object):
     def __init__(self, lines):
