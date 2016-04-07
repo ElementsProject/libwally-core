@@ -43,7 +43,7 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
  */
 int scrypt(const unsigned char *pass, size_t pass_len,
            const unsigned char *salt, size_t salt_len,
-           uint32_t cost, uint32_t r, uint32_t p,
+           uint32_t cost, uint32_t block_size, uint32_t parallelism,
            unsigned char *bytes_out, size_t len)
 {
     /* Create a temp salt with space for slack bytes */
@@ -55,7 +55,7 @@ int scrypt(const unsigned char *pass, size_t pass_len,
 
         ret = _crypto_scrypt(pass, pass_len,
                              tmp_salt, salt_len + PBKDF2_SALT_BYTES,
-                             cost, r, p,
+                             cost, block_size, parallelism,
                              bytes_out, len,
                              crypto_scrypt_smix);
         free(tmp_salt);

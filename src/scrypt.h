@@ -14,8 +14,8 @@
  * @salt_len: Length of @salt in bytes.
  * @cost: The cost of the function. The larger this number, the
  *        longer the key will take to derive.
- * @r:
- * @p: Paralelism factor.
+ * @block_size: The size of memory blocks required.
+ * @parallelism: Parallelism factor.
  * @bytes_out: Destination for the derived pseudorandom key.
  * @len: The length of @bytes_out in bytes.
  *
@@ -23,7 +23,7 @@
  */
 int scrypt(const unsigned char *pass, size_t pass_len,
            const unsigned char *salt, size_t salt_len,
-           uint32_t cost, uint32_t r, uint32_t p,
+           uint32_t cost, uint32_t block_size, uint32_t parallelism,
            unsigned char *bytes_out, size_t len);
 
 #endif /* LIBWALLY_SCRYPT_H */
