@@ -54,9 +54,8 @@ class ScryptTests(unittest.TestCase):
                               salt, len(salt),
                               cost, block, parallel,
                               out_buf, out_len)
-            # FIXME
-            #self.assertEqual(ret, 0)
-            #self.assertEqual(hexlify(out_buf), expected)
+            self.assertEqual(ret, 0)
+            self.assertEqual(hexlify(out_buf), expected)
 
 
 if __name__ == '__main__':
