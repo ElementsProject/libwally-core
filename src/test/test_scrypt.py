@@ -1,7 +1,5 @@
 import unittest
-import util
-from util import utf8
-from binascii import hexlify
+from util import *
 
 # Test cases from
 # https://tools.ietf.org/html/draft-josefsson-scrypt-kdf-04
@@ -37,25 +35,18 @@ cases = [
 
 class ScryptTests(unittest.TestCase):
 
-    def setUp(self):
-        if not hasattr(self, 'scrypt'):
-            util.bind_all(self, util.bip38_funcs)
-
-
     def test_scrypt(self):
 
         for c in cases:
             passwd, salt, cost, block, parallel, length, expected = c
             expected = expected.replace(' ', '')
             assert len(expected) == length * 2
-            out_buf, out_len = util.make_cbuffer('0' * len(expected))
+            out_buf, out_len = make_cbuffer('0' * len(expected))
 
-            ret = self.scrypt(passwd, len(passwd),
-                              salt, len(salt),
-                              cost, block, parallel,
-                              out_buf, out_len)
+            ret = scrypt(passwd, len(passwd), salt, len(salt),
+                         cost, block, parallel, out_buf, out_len)
             self.assertEqual(ret, 0)
-            self.assertEqual(hexlify(out_buf), expected)
+            self.assertEqual(h(out_buf), expected)
 
 
 if __name__ == '__main__':

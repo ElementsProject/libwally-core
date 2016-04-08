@@ -1,6 +1,5 @@
 import unittest
-import util
-from util import utf8
+from util import *
 from ctypes import create_string_buffer
 
 class MnemonicTests(unittest.TestCase):
@@ -9,10 +8,9 @@ class MnemonicTests(unittest.TestCase):
 
     def setUp(self):
         if self.wl is None:
-            self.words_list, words = util.load_words('english')
+            self.words_list, words = load_words('english')
 
-            util.bind_all(self, util.wordlist_funcs + util.mnemonic_funcs)
-            self.wl = self.wordlist_init(utf8(words))
+            self.wl = wordlist_init(utf8(words))
 
 
     def test_mnemonic(self):
@@ -28,9 +26,9 @@ class MnemonicTests(unittest.TestCase):
         for i in range(len(self.words_list) - PHRASES):
             phrase = utf8(' '.join(self.words_list[i : i + PHRASES]))
 
-            written = self.mnemonic_to_bytes(self.wl, phrase, buf, LEN)
+            written = mnemonic_to_bytes(self.wl, phrase, buf, LEN)
             self.assertEqual(written, PHRASES_BYTES)
-            generated = self.mnemonic_from_bytes(self.wl, buf, LEN)
+            generated = mnemonic_from_bytes(self.wl, buf, LEN)
             self.assertEqual(phrase, generated)
 
 

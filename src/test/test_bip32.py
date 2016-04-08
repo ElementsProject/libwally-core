@@ -1,10 +1,6 @@
 import unittest
-import util
-from binascii import hexlify
+from util import *
 from ctypes import byref
-
-def h(s):
-    return hexlify(s)
 
 # These vectors are expressed in binary rather than base 58. The spec base 58
 # representation just obfuscates the data we are validating. For example, the
@@ -83,33 +79,30 @@ class BIP32Tests(unittest.TestCase):
     VER_TEST_PUBLIC = 0x043587CF
     VER_TEST_PRIVATE = 0x04358394
 
-    def setUp(self):
-        if not hasattr(self, 'bip32_key_from_bytes'):
-            util.bind_all(self, util.bip32_funcs)
 
     def unserialise_key(self, buf, buf_len):
-        key_out = util.ext_key()
-        ret = self.bip32_key_unserialise(buf, buf_len, byref(key_out))
+        key_out = ext_key()
+        ret = bip32_key_unserialise(buf, buf_len, byref(key_out))
         return ret, key_out
 
     def get_test_master_key(self, vec):
-        seed, seed_len = util.make_cbuffer(vec['seed'])
-        master = util.ext_key()
-        ret = self.bip32_key_from_bytes(seed, seed_len,
-                                        self.VER_MAIN_PRIVATE, byref(master))
+        seed, seed_len = make_cbuffer(vec['seed'])
+        master = ext_key()
+        ret = bip32_key_from_bytes(seed, seed_len,
+                                   self.VER_MAIN_PRIVATE, byref(master))
         self.assertEqual(ret, 0)
         return master
 
     def get_test_key(self, vec, path, typ):
-        buf, buf_len = util.make_cbuffer(vec[path][typ])
+        buf, buf_len = make_cbuffer(vec[path][typ])
         ret, key_out = self.unserialise_key(buf, self.SERIALISED_LEN)
         self.assertEqual(ret, 0)
         return key_out
 
     def derive_key(self, parent, child_num, kind):
-        key_out = util.ext_key()
-        ret = self.bip32_key_from_parent(byref(parent), child_num,
-                                         kind, byref(key_out))
+        key_out = ext_key()
+        ret = bip32_key_from_parent(byref(parent), child_num,
+                                    kind, byref(key_out))
         self.assertEqual(ret, 0)
         return key_out
 
@@ -137,17 +130,17 @@ class BIP32Tests(unittest.TestCase):
         # length because the vector value contains 4 check bytes at the end.
         for trim, expected in [(0, -1), (8, 0), (16, -1)]:
             serialised_hex = vec_1['m']['priv'][0:-trim]
-            buf, buf_len = util.make_cbuffer(serialised_hex)
+            buf, buf_len = make_cbuffer(serialised_hex)
             ret, key_out = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)
             if ret == 0:
                 # Check this key serialises back to the same representation
                 # FIXME: Add full test cases for the serialisation code including errors
-                buf, buf_len = util.make_cbuffer('0' * len(serialised_hex))
-                ret = self.bip32_key_serialise(key_out, self.KEY_PRIVATE,
-                                               buf, buf_len)
+                buf, buf_len = make_cbuffer('0' * len(serialised_hex))
+                ret = bip32_key_serialise(key_out, self.KEY_PRIVATE,
+                                          buf, buf_len)
                 self.assertEqual(ret, 0)
-                self.assertEqual(hexlify(buf).upper(), serialised_hex)
+                self.assertEqual(h(buf).upper(), serialised_hex)
 
         # Check correct and incorrect version numbers as well
         # as mismatched key types and versions
@@ -165,15 +158,15 @@ class BIP32Tests(unittest.TestCase):
         for ver, typ, expected in ver_cases:
             no_ver = vec_1['m'][typ][8:-8]
             v_str = '0' + hex(ver)[2:]
-            buf, buf_len = util.make_cbuffer(v_str + no_ver)
+            buf, buf_len = make_cbuffer(v_str + no_ver)
             ret, _ = self.unserialise_key(buf, buf_len)
             self.assertEqual(ret, expected)
 
 
     def test_key_from_bytes(self):
 
-        seed, seed_len = util.make_cbuffer(vec_1['seed'])
-        key_out = util.ext_key()
+        seed, seed_len = make_cbuffer(vec_1['seed'])
+        key_out = ext_key()
 
         # Only private key versions can be used
         ver_cases = [(self.VER_MAIN_PUBLIC,  -1),
@@ -181,8 +174,7 @@ class BIP32Tests(unittest.TestCase):
                      (self.VER_TEST_PUBLIC,  -1),
                      (self.VER_TEST_PRIVATE,  0)]
         for ver, expected in ver_cases:
-            ret = self.bip32_key_from_bytes(seed, seed_len,
-                                            ver, byref(key_out))
+            ret = bip32_key_from_bytes(seed, seed_len, ver, byref(key_out))
             self.assertEqual(ret, expected)
 
 
@@ -233,9 +225,9 @@ class BIP32Tests(unittest.TestCase):
         # From the public child we can only derive a public key
         pub_pub = self.derive_key(pub, 1, self.KEY_PUBLIC)
         # Verify that trying to derive a private key doesn't work
-        key_out = util.ext_key()
-        ret = self.bip32_key_from_parent(byref(pub), 1,
-                                         self.KEY_PRIVATE, byref(key_out))
+        key_out = ext_key()
+        ret = bip32_key_from_parent(byref(pub), 1,
+                                    self.KEY_PRIVATE, byref(key_out))
         self.assertEqual(ret, -1)
 
         # Now our identities:
@@ -246,7 +238,6 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(h(priv_pub.pub_key), h(pub_pub.pub_key))
         # The children and grand-children do not share the same public key
         self.assertNotEqual(h(pub.pub_key), h(priv_pub.pub_key))
-
 
 
 if __name__ == '__main__':

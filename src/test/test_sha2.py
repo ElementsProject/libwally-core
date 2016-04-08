@@ -1,7 +1,5 @@
 import unittest
-import util
-from util import utf8
-from binascii import hexlify
+from util import *
 from ctypes import create_string_buffer
 
 # NIST cases from http://www.di-mgt.com.au/sha_testvectors.html
@@ -38,23 +36,19 @@ class SHA2Tests(unittest.TestCase):
 
     SHA256_LEN, SHA512_LEN = 32, 64
 
-    def setUp(self):
-        if not hasattr(self, 'sha256'):
-            util.bind_all(self, util.sha2_funcs)
-
     def doSHA(self, sha_fn, hex_in):
-        buf_len = self.SHA256_LEN if sha_fn == self.sha256 else self.SHA512_LEN
-        in_bytes, in_bytes_len = util.make_cbuffer(hex_in)
+        buf_len = self.SHA256_LEN if sha_fn == sha256 else self.SHA512_LEN
+        in_bytes, in_bytes_len = make_cbuffer(hex_in)
         buf = create_string_buffer(buf_len)
         sha_fn(buf, in_bytes, in_bytes_len)
-        return hexlify(buf)
+        return h(buf)
 
 
     def test_vectors(self):
 
         for in_msg, values in sha2_cases.items():
-            msg = hexlify(utf8(in_msg))
-            for i, fn in enumerate([self.sha256, self.sha512]):
+            msg = h(utf8(in_msg))
+            for i, fn in enumerate([sha256, sha512]):
                 result = self.doSHA(fn, msg)
                 expected = utf8(values[i].replace(' ', ''))
                 self.assertEqual(result, expected)

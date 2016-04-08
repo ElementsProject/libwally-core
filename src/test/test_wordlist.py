@@ -1,21 +1,17 @@
 import unittest
-import util
-from util import utf8
-from ctypes import *
+from util import *
 
 class Wordlist:
 
     def __init__(self, words):
 
-        util.bind_all(self, util.wordlist_funcs)
-
-        self.wl = self.wordlist_init(utf8(words))
-        self.lookup_word = lambda w: self.wordlist_lookup_word(self.wl, w)
-        self.lookup_index = lambda i: self.wordlist_lookup_index(self.wl, i)
+        self.wl = wordlist_init(utf8(words))
+        self.lookup_word = lambda w: wordlist_lookup_word(self.wl, w)
+        self.lookup_index = lambda i: wordlist_lookup_index(self.wl, i)
 
     def free(self):
         if self.is_valid():
-            self.wordlist_free(self.wl)
+            wordlist_free(self.wl)
             self.wl = None
 
     def is_valid(self):
@@ -29,7 +25,7 @@ class WordlistTests(unittest.TestCase):
 
     def setUp(self):
         if self.words_list is None:
-            self.words_list, _ = util.load_words('english')
+            self.words_list, _ = load_words('english')
 
 
     def test_wordlist(self):

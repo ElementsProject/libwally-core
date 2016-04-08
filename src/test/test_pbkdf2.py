@@ -1,8 +1,6 @@
 import unittest
-import util
-from util import utf8
-from binascii import hexlify, unhexlify
-from ctypes import create_string_buffer
+from util import *
+from binascii import unhexlify
 
 class PBKDF2Case(object):
     def __init__(self, items):
@@ -12,7 +10,7 @@ class PBKDF2Case(object):
         self.passwd = unhexlify(items[1])
         self.salt = items[2]
         self.cost = int(items[3])
-        self.expected, self.expected_len = util.make_cbuffer(items[4])
+        self.expected, self.expected_len = make_cbuffer(items[4])
 
 
 class PBKDF2Tests(unittest.TestCase):
@@ -22,9 +20,8 @@ class PBKDF2Tests(unittest.TestCase):
 
     def setUp(self):
         if not hasattr(self, 'pbkdf2_hmac_sha256'):
-            util.bind_all(self, util.pbkdf2_funcs)
             self.cases = []
-            with open(util.root_dir + 'src/data/pbkdf2_hmac_sha_vectors.txt', 'r') as f:
+            with open(root_dir + 'src/data/pbkdf2_hmac_sha_vectors.txt', 'r') as f:
                 for l in f.readlines():
                     l = l.strip()
                     if len(l) == 0 or l.startswith('#'):
@@ -42,21 +39,21 @@ class PBKDF2Tests(unittest.TestCase):
         for case in self.cases:
 
             if case.typ == 256:
-                fn = self.pbkdf2_hmac_sha256
+                fn = pbkdf2_hmac_sha256
                 mult = self.PBKDF2_HMAC_SHA256_LEN
                 if case.cost > 100:
                     if num_crazy_256 == 0:
                          continue
                     num_crazy_256 -= 1
             else:
-                fn = self.pbkdf2_hmac_sha512
+                fn = pbkdf2_hmac_sha512
                 mult = self.PBKDF2_HMAC_SHA512_LEN
                 if case.cost > 100:
                     if num_crazy_512 == 0:
                         continue
                     num_crazy_512 -= 1
 
-            out_buf, out_len = util.make_cbuffer('00' * case.expected_len)
+            out_buf, out_len = make_cbuffer('00' * case.expected_len)
             if case.expected_len % mult != 0:
                 # We only support output multiples of the hmac length
                 continue
@@ -64,13 +61,13 @@ class PBKDF2Tests(unittest.TestCase):
             # Test both providing extra bytes and having them allocated for us
             for flags in [0, self.FLAG_BLOCK_RESERVED]:
                 extra_bytes = '00000000' if flags else ''
-                salt, salt_len = util.make_cbuffer(case.salt + extra_bytes)
+                salt, salt_len = make_cbuffer(case.salt + extra_bytes)
 
                 ret = fn(case.passwd, len(case.passwd), salt, salt_len,
                          flags, case.cost, out_buf, out_len)
 
                 self.assertEqual(ret, 0)
-                self.assertEqual(hexlify(out_buf), hexlify(case.expected))
+                self.assertEqual(h(out_buf), h(case.expected))
 
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
 import unittest
-import util
-from util import utf8
-from binascii import hexlify
+from util import *
 from ctypes import create_string_buffer
 
 # HMAC vectors from https://tools.ietf.org/html/rfc4231
@@ -70,25 +68,21 @@ hmac_cases = [
 
 class HMACTests(unittest.TestCase):
 
-    def setUp(self):
-        if not hasattr(self, 'hmac_sha512'):
-            util.bind_all(self, util.sha2_funcs)
-
     def doHMAC(self, hmac_fn, key_in, msg_in):
-        key, key_len = util.make_cbuffer(key_in)
-        msg, msg_len = util.make_cbuffer(msg_in)
-        buf_len = 64 if hmac_fn == self.hmac_sha512 else 32
+        key, key_len = make_cbuffer(key_in)
+        msg, msg_len = make_cbuffer(msg_in)
+        buf_len = 64 if hmac_fn == hmac_sha512 else 32
         buf = create_string_buffer(buf_len)
         hmac_fn(buf, key, key_len, msg, msg_len)
-        return hexlify(buf)
+        return h(buf)
 
 
     def test_vectors(self):
 
         for test in hmac_cases:
             k, msg = test[0], test[1]
-            for fn, expected in [#(self.hmac_sha256, test[2]),
-                                 (self.hmac_sha512, test[3])]:
+            for fn, expected in [#FIXME:(hmac_sha256, test[2]),
+                                 (hmac_sha512, test[3])]:
                 result = self.doHMAC(fn, k, msg)
                 expected = utf8(expected.replace(' ', ''))
                 # Note we truncate the result as one of the test vectors has
