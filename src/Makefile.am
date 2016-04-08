@@ -19,9 +19,12 @@ PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHO
 endif
 
 if USE_SWIG_JAVA
-SWIG_SRCS += swig_java/swig_java_wrap.c
+# Because we must pass -fno-strict-aliasing for the SWIG generated
+# Java code, we have to use a dummy library.
+noinst_LTLIBRARIES = libswig_java.la
+libswig_java_la_SOURCES = swig_java/swig_java_wrap.c
 
-libwallycore_la_CFLAGS += $(SWIG_JAVA_CPPFLAGS)
+libswig_java_la_CFLAGS = $(SWIG_JAVA_CPPFLAGS) -fno-strict-aliasing
 
 swig_java/swig_java_wrap.c : swig_java/swig.i
 	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -o $@ $<
