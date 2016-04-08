@@ -1,3 +1,4 @@
+#include <include/wally-core.h>
 #include "internal.h"
 #include <stdint.h>
 #include <string.h>
