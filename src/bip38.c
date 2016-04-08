@@ -67,7 +67,6 @@ static int get_address_hash(struct btc_address *address_in_out, uint32_t *hash_o
     char *base58;
     size_t base58_len;
 
-    /* FIXME: Assert layout of private key */
     /* FIXME: return an error code from base58_from_bytes  */
 
     /* Get the ASCII representation (i.e. base 58 check encoded) */
