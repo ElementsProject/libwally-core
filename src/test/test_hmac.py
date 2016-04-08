@@ -12,7 +12,7 @@ hmac_cases = [
 
     ['4a656665', '7768617420646f2079612077616e7420666f72206e6f7468696e673f',
 
-     '773ea91e36800e46854db8ebd09181a7 2959098b3ef8c122d9635514ced565fe',
+     '5bdcc146bf60754e6a042426089575c7 5a003f089d2739839dec58b964ec3843',
      '164b7a7bfcf819e2e395fbe73b56e0a3 87bd64222e831fd610270cd7ea250554'
      '9758bf75c05a994a6d034f65f8f0e6fd caeab1a34d4a6b4b636e070a38bce737'],
 
@@ -81,7 +81,7 @@ class HMACTests(unittest.TestCase):
 
         for test in hmac_cases:
             k, msg = test[0], test[1]
-            for fn, expected in [#FIXME:(hmac_sha256, test[2]),
+            for fn, expected in [(hmac_sha256, test[2]),
                                  (hmac_sha512, test[3])]:
                 result = self.doHMAC(fn, k, msg)
                 expected = utf8(expected.replace(' ', ''))
