@@ -50,8 +50,6 @@ libwallycore_la_SOURCES = \
 
 
 libwallycore_la_INCLUDES = \
-    base58.h config.h hmac.h internal.h mnemonic.h \
-    pbkdf2.h scrypt.h wordlist.h \
     include/wally_bip32.h include/wally_bip38.h \
     include/wally_bip39.h include/wally-core.h
 
