@@ -17,12 +17,12 @@ swig_python_wrap.c : swig.i
 endif
 
 if USE_SWIG_JAVA
-SWIG_SRCS += swig_java_wrap.c
+SWIG_SRCS += swig_java/swig_java_wrap.c
 
 libwallycore_la_CFLAGS += $(SWIG_JAVA_CPPFLAGS)
 
-swig_java_wrap.c : swig.i
-	$(SWIG) $(SWIG_JAVA_OPT) -o $@ $<
+swig_java/swig_java_wrap.c : swig.i
+	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -o $@ $<
 endif
 
 lib_LTLIBRARIES = libwallycore.la
