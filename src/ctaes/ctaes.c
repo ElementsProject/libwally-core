@@ -32,7 +32,7 @@ static void LoadByte(AES_state* s, unsigned char byte, int r, int c) {
 
 /** Load 16 bytes of data into 8 sliced integers */
 static void LoadBytes(AES_state *s, const unsigned char* data16) {
-    int b, c;
+    int c;
     for (c = 0; c < 4; c++) {
         int r;
         for (r = 0; r < 4; r++) {
