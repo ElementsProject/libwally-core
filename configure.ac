@@ -124,6 +124,22 @@ if test "x$swig_python" == "xyes"; then
     SWIG_PYTHON
 fi
 
+AC_ARG_ENABLE(swig-java,
+    AS_HELP_STRING([--enable-swig-java],[enable the SWIG java (JNI) interface (default: no)]),
+    [swig_java=$enableval], [swig_java=no])
+AM_CONDITIONAL([USE_SWIG_JAVA], [test x"$swig_java" = "xyes"])
+
+if test "x$swig_python" == "xyes"; then
+    AC_PROG_SWIG
+    AX_JNI_INCLUDE_DIR
+    for JNI_DIR in $JNI_INCLUDE_DIRS; do
+        SWIG_JAVA_CPPFLAGS="$SWIG_JAVA_CPPFLAGS -I$JNI_DIR"
+    done
+    SWIG_JAVA_OPT="-java"
+    AC_SUBST([SWIG_JAVA_CPPFLAGS])
+    AC_SUBST([SWIG_JAVA_OPT])
+fi
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
