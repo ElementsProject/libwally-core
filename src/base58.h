@@ -39,6 +39,16 @@ void base58_from_bytes(
     char **output);
 
 /**
+ * Calculate the base58 checksum of a block of binary data.
+ *
+ * @bytes_in_out: Binary data to calculate the checksum for.
+ * @len: The length of @bytes_in_out in bytes.
+ */
+uint32_t base58_get_checksum(
+    const unsigned char *bytes_in,
+    size_t len);
+
+/**
  * Return the length of a base58 encoded string once decoded into bytes.
  *
  * @str_in: Base 58 encoded string to find the length of.

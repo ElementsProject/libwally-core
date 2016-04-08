@@ -5,7 +5,7 @@
 #include "libbase58/base58.c"
 
 
-static uint32_t base58_checksum(const unsigned char *bytes_in, size_t len)
+uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
 {
     struct sha256 sha_1, sha_2;
     uint32_t checksum;
@@ -43,7 +43,7 @@ void base58_from_bytes(unsigned char *bytes_in_out, size_t len,
         } else if (len <= BASE58_CHECKSUM_LEN)
             return; /* Not enough space to put the checksum */
 
-        checksum = base58_checksum(bytes_in_out, len - BASE58_CHECKSUM_LEN);
+        checksum = base58_get_checksum(bytes_in_out, len - BASE58_CHECKSUM_LEN);
         memcpy(bytes_in_out + len - BASE58_CHECKSUM_LEN,
                &checksum, sizeof(checksum));
     }
@@ -105,7 +105,7 @@ size_t base58_to_bytes(const char *str_in, uint32_t flags,
 
     if (flags & BASE58_FLAG_CHECKSUM) {
         uint32_t checksum;
-        checksum = base58_checksum(bytes_out, out_len - BASE58_CHECKSUM_LEN);
+        checksum = base58_get_checksum(bytes_out, out_len - BASE58_CHECKSUM_LEN);
 
         if (memcmp(bytes_out + out_len - BASE58_CHECKSUM_LEN,
                    &checksum, sizeof(checksum))) {
