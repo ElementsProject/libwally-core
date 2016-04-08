@@ -29,14 +29,14 @@ src/Makefile.in
 src/config.h
 src/config.h.in
 src/stamp-h1
-src/swig_python_wrap.c
-src/wallycore.py
 src/test/Makefile
 src/test/Makefile.in
 src/test_clear*
 src/test-suite.log
 src/swig_java/swig_java_wrap.c
 src/swig_java/*.java
+src/swig_python/swig_python_wrap.c
+src/swig_python/wallycore.py
 tools/build-aux/m4/l*.m4
 tools/build-aux/test-driver
 src/secp256k1/test-suite.log

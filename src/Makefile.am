@@ -7,13 +7,15 @@ libwallycore_la_CFLAGS =
 
 SWIG_SRCS =
 if USE_SWIG_PYTHON
-SWIG_SRCS += swig_python_wrap.c swig_python_weak.c
+SWIG_SRCS += swig_python/swig_python_wrap.c swig_python/swig_python_weak.c
 
 libwallycore_la_CFLAGS += $(SWIG_PYTHON_CPPFLAGS)
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
-swig_python_wrap.c : swig.i
-	$(SWIG) $(SWIG_PYTHON_OPT) -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' wallycore.py $@
+swig_python/swig_python_wrap.c : swig_python/swig.i
+	$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@
+
+PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
 endif
 
 if USE_SWIG_JAVA
@@ -21,7 +23,7 @@ SWIG_SRCS += swig_java/swig_java_wrap.c
 
 libwallycore_la_CFLAGS += $(SWIG_JAVA_CPPFLAGS)
 
-swig_java/swig_java_wrap.c : swig.i
+swig_java/swig_java_wrap.c : swig_java/swig.i
 	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -o $@ $<
 endif
 
@@ -78,5 +80,7 @@ if EXPORT_ALL
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_sha2.py
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_wordlist.py
 endif
-        PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs $(PYTHON) mnemonic.py # FIXME: Own dir for SWIG python tests
+if USE_SWIG_PYTHON
+	$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+endif
 endif

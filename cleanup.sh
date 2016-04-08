@@ -12,11 +12,13 @@ rm -f config.h.in
 rm -f configure
 rm -f src/*pyc
 rm -f src/test/*pyc
-rm -f src/wallycore.py
-rm -f src/swig_python_wrap.c
 rm -f src/config.h.in
 rm -f src/test_clear*
 rm -f src/test-suite.log
+rm -f src/swig_java/swig_java_wrap.c
+rm -f src/swig_java/*java
+rm -f src/swig_python/wallycore.py
+rm -f src/swig_python/swig_python_wrap.c
 rm -rf src/.libs
 rm -f tools/build-aux/compile
 rm -f tools/build-aux/config.guess
