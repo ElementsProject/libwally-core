@@ -166,7 +166,6 @@ $ac_distutils_result])
 		PYTHON_CPPFLAGS=$python_path
 	fi
 	AC_MSG_RESULT([$PYTHON_CPPFLAGS])
-	AC_SUBST([PYTHON_CPPFLAGS])
 
 	#
 	# Check for Python library path
@@ -245,7 +244,6 @@ EOD`
 		fi
 	fi
 	AC_MSG_RESULT([$PYTHON_LIBS])
-	AC_SUBST([PYTHON_LIBS])
 
 	#
 	# Check for site packages
@@ -256,7 +254,6 @@ EOD`
 			print (distutils.sysconfig.get_python_lib(0,0));"`
 	fi
 	AC_MSG_RESULT([$PYTHON_SITE_PKG])
-	AC_SUBST([PYTHON_SITE_PKG])
 
 	#
 	# libraries which must be linked in when embedding
@@ -268,7 +265,6 @@ EOD`
                 print (conf('LIBS') + ' ' + conf('SYSLIBS'))"`
 	fi
 	AC_MSG_RESULT([$PYTHON_EXTRA_LIBS])
-	AC_SUBST(PYTHON_EXTRA_LIBS)
 
 	#
 	# linking flags needed when embedding
@@ -284,7 +280,6 @@ EOD`
 		fi
 	fi
 	AC_MSG_RESULT([$PYTHON_EXTRA_LDFLAGS])
-	AC_SUBST(PYTHON_EXTRA_LDFLAGS)
 
 	#
 	# final check to see if everything compiles alright
@@ -311,7 +306,7 @@ EOD`
 	AC_MSG_RESULT([$pythonexists])
 
         if test ! "x$pythonexists" = "xyes"; then
-	   AC_MSG_FAILURE([
+		AC_MSG_RESULT([
   Could not link test program to Python. Maybe the main Python library has been
   installed in some non-standard library path. If so, pass it to configure,
   via the LIBS environment variable.
@@ -322,9 +317,18 @@ EOD`
    for your distribution.  The exact name of this package varies among them.
   ============================================================================
 	   ])
-	  PYTHON_VERSION=""
+		PYTHON_VERSION=""
+		PYTHON_CPPFLAGS=""
+		PYTHON_LIBS=""
+		PYTHON_SITE_PKG=""
+		PYTHON_EXTRA_LDFLAGS=""
+		PYTHON_EXTRA_LIBS=""
 	fi
-
+	AC_SUBST([PYTHON_CPPFLAGS])
+	AC_SUBST([PYTHON_LIBS])
+	AC_SUBST([PYTHON_SITE_PKG])
+	AC_SUBST(PYTHON_EXTRA_LDFLAGS)
+	AC_SUBST(PYTHON_EXTRA_LIBS)
 	#
 	# all done!
 	#
