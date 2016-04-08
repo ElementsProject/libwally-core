@@ -21,6 +21,7 @@ libwallycore_la_SOURCES = \
     $(SWIG_SRCS) \
     base58.c \
     bip32.c \
+    bip38.c \
     bip39.c \
     hmac.c \
     internal.c \
