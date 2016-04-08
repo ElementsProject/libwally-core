@@ -141,6 +141,8 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
     /* Return base 58 encoded result with checksum */
     base58_from_bytes(result, sizeof(result),
                       BASE58_FLAG_CHECKSUM_RESERVED, output);
-    clear(&address, sizeof(address));
+
+    clear_n(3, derived_key, sizeof(derived_key),
+            result, sizeof(result), &address, sizeof(address));
     return 0;
 }
