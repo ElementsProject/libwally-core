@@ -20,7 +20,6 @@
 #include "libbase58.h"
 
 bool (*b58_sha256_impl)(void *, const void *, size_t) = NULL;
-#endif
 
 static const int8_t b58digits_map[] = {
 	-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
@@ -113,7 +112,6 @@ bool b58tobin(void *bin, size_t *binszp, const char *b58, size_t b58sz)
 	return true;
 }
 
-#if 0
 static
 bool my_dblsha256(void *hash, const void *data, size_t datasz)
 {
