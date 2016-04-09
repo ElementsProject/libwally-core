@@ -22,7 +22,7 @@ static void invalidate_ripemd160(struct ripemd160_ctx *ctx)
 #endif
 }
 
-static void check_ripemd160(struct ripemd160_ctx *ctx)
+static void check_ripemd160(struct ripemd160_ctx *ctx UNUSED)
 {
 #ifdef CCAN_CRYPTO_RIPEMD160_USE_OPENSSL
 	assert(ctx->c.num != -1U);
