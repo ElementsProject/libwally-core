@@ -54,7 +54,7 @@ libwallycore_la_INCLUDES = \
     include/wally_bip39.h include/wally-core.h
 
 libwallycore_la_CFLAGS += -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
-libwallycore_la_LIBADD = $(LIBSECP256K1)
+libwallycore_la_LIBADD = $(LIBSECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
 
