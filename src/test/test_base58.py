@@ -78,9 +78,11 @@ class Base58Tests(unittest.TestCase):
         buf, buf_len = make_cbuffer('00' * 1024)
 
         # Bad input base58 strings
-        for bad in [ '',      # Empty string can't be represented
-                     '0',     # Forbidden ASCII character
-                     '\x80',  # High bit set
+        for bad in [ '',        # Empty string can't be represented
+                     '0',       # Forbidden ASCII character
+                     'x0',      # Forbidden ASCII character, internal
+                     '\x80',    # High bit set
+                     'x\x80x',  # High bit set, internal
                    ]:
             ret = base58_to_bytes(utf8(bad), 0, buf, buf_len)
             self.assertEqual(ret, 0)
@@ -102,11 +104,26 @@ class Base58Tests(unittest.TestCase):
         ret = base58_to_bytes(utf8(valid), 0, buf, 24)
         self.assertEqual(ret, 0)
 
+        # Leading ones become zeros
+        for i in range(1, 10):
+            self.assertEqual(self.decode('1' * i, 0), '00' * i)
+
+        # Vectors from https://github.com/bitcoinj/bitcoinj/
+        self.assertEqual(self.decode('16Ho7Hs', 0), '00CEF022FA')
+        self.assertEqual(self.decode('4stwEBjT6FYyVV', self.CHECKSUM),
+                                     '45046252208D')
+        base58 = '93VYUMzRG9DdbRP72uQXjaWibbQwygnvaCu9DumcqDjGybD864T'
+        ret = self.decode(base58, self.CHECKSUM)
+        expected = 'EFFB309E964684B54E6069F146E2CD6DA' \
+                   'E936B711A7A98DF4097156B9FC9B344EB'
+        self.assertEqual(ret, expected)
+
 
     def test_from_bytes(self):
 
         # Leading zeros become ones
-        self.assertEqual(self.encode('00', 0), '1')
+        for i in range(1, 10):
+            self.assertEqual(self.encode('00' * i, 0), '1' * i)
 
         # Invalid flags
         self.assertEqual(self.encode('00', 0x7), None)
@@ -121,6 +138,12 @@ class Base58Tests(unittest.TestCase):
 
         # 4 length buffer, checksum in place -> NULL
         self.assertEqual(base58_from_bytes(buf, 4, self.RESERVED), None)
+
+        # Vectors from https://github.com/bitcoinj/bitcoinj/
+        self.assertEqual(self.encode('00CEF022FA', 0), '16Ho7Hs')
+        self.assertEqual(self.encode('45046252208D', self.CHECKSUM),
+                                     '4stwEBjT6FYyVV')
+
 
 
 if __name__ == '__main__':
