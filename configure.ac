@@ -14,6 +14,19 @@ LT_INIT([disable-static])
 
 AC_PROG_CC
 
+# Prefer gccs ar/ranlib as they handle flto files properly
+AC_CHECK_PROG(HAVE_GCC_AR,gcc-ar,yes,no)
+if test "x$HAVE_GCC_AR" == "xyes"; then
+    AR=gcc-ar
+    AC_SUBST([AR])
+fi
+
+AC_CHECK_PROG(HAVE_GCC_RANLIB,gcc-ranlib,yes,no)
+if test "x$HAVE_GCC_RANLIB" == "xyes"; then
+    RANLIB=gcc-ranlib
+    AC_SUBST([RANLIB])
+fi
+
 GNU_SED=sed
 AC_CHECK_PROG(HAVE_GSED,gsed,yes,no)
 if test "x$HAVE_GSED" == "xyes"; then
