@@ -3,37 +3,39 @@ LIBSECP256K1=secp256k1/libsecp256k1.la
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
-libwallycore_la_CFLAGS =
+noinst_LTLIBRARIES =
 
-SWIG_SRCS =
 if USE_SWIG_PYTHON
-SWIG_SRCS += swig_python/swig_python_wrap.c swig_python/swig_python_weak.c
+noinst_LTLIBRARIES += libswig_python.la
+libswig_python_la_SOURCES = \
+    swig_python/swig_python_wrap.c \
+    swig_python/swig_python_weak.c
 
-libwallycore_la_CFLAGS += $(SWIG_PYTHON_CPPFLAGS)
+libswig_python_la_CFLAGS = -I$(top_srcdir) $(SWIG_PYTHON_CPPFLAGS) -fno-strict-aliasing
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i
 	$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@
 
+PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
 endif
 
 if USE_SWIG_JAVA
-# Because we must pass -fno-strict-aliasing for the SWIG generated
-# Java code, we have to use a dummy library.
-noinst_LTLIBRARIES = libswig_java.la
-libswig_java_la_SOURCES = swig_java/swig_java_wrap.c
+noinst_LTLIBRARIES += libswig_java.la
+libswig_java_la_SOURCES = \
+    swig_java/swig_java_wrap.c
 
-libswig_java_la_CFLAGS = $(SWIG_JAVA_CPPFLAGS) -fno-strict-aliasing
+libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-aliasing
 
 swig_java/swig_java_wrap.c : swig_java/swig.i
 	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -o $@ $<
 endif
 
+
 lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
-    $(SWIG_SRCS) \
     base58.c \
     bip32.c \
     bip38.c \
@@ -50,10 +52,12 @@ libwallycore_la_SOURCES = \
 
 
 libwallycore_la_INCLUDES = \
-    include/wally_bip32.h include/wally_bip38.h \
-    include/wally_bip39.h include/wally-core.h
+    include/wally_bip32.h \
+    include/wally_bip38.h \
+    include/wally_bip39.h \
+    include/wally-core.h
 
-libwallycore_la_CFLAGS += -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
+libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
 libwallycore_la_LIBADD = $(LIBSECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
@@ -70,16 +74,16 @@ endif
 
 check-local:
 if HAVE_PYTHON
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_bip32.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_bip39.py
+	$(PYTHON_TEST) test/test_bip32.py
+	$(PYTHON_TEST) test/test_bip39.py
 if EXPORT_ALL
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_base58.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_hmac.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_mnemonic.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_pbkdf2.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_scrypt.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_sha2.py
-	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) test/test_wordlist.py
+	$(PYTHON_TEST) test/test_base58.py
+	$(PYTHON_TEST) test/test_hmac.py
+	$(PYTHON_TEST) test/test_mnemonic.py
+	$(PYTHON_TEST) test/test_pbkdf2.py
+	$(PYTHON_TEST) test/test_scrypt.py
+	$(PYTHON_TEST) test/test_sha2.py
+	$(PYTHON_TEST) test/test_wordlist.py
 endif
 if USE_SWIG_PYTHON
 	$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
