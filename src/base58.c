@@ -2,11 +2,11 @@
 #include "internal.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/endian/endian.h"
+#include <string.h>
 
-#include "libbase58/base58.c"
-
-/* Number of 32 bit words to use as a temporary stack buffer */
+/* Temporary stack buffer sizes */
 #define BIGNUM_WORDS 128u
+#define BIGNUM_BYTES (BIGNUM_WORDS * sizeof(uint32_t))
 
 static const unsigned char base58_to_byte[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ........ */
@@ -50,6 +50,17 @@ static const unsigned char base58_to_byte[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ........ */
 };
 
+static const char byte_to_base58[58] = {
+    '1', '2', '3', '4', '5', '6', '7', '8',
+    '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+    'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q',
+    'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
+    'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
+    'h', 'i', 'j', 'k', 'm', 'n', 'o', 'p',
+    'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+    'y','z'
+};
+
 /* Returns -1 on error. If 0 is returned then:
  * *len <= input value - OK, bytes_out contains data.
  * *len > input value - Failed and bytes_out untouched.
@@ -80,7 +91,7 @@ static int base58_decode(const char *base58, size_t base58_len,
 
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_words > BIGNUM_WORDS)
-        if (!(bn = malloc(bn_words * sizeof(uint32_t))))
+        if (!(bn = malloc(bn_words * sizeof(*bn))))
             return -1;
 
     /* Iterate through the characters adding them to our bignum. We keep
@@ -132,6 +143,75 @@ static int base58_decode(const char *base58, size_t base58_len,
     return 0;
 }
 
+/* Returns -1 on error. If 0 is returned then:
+ * *base58_len <= input value - OK, base58_out contains NUL terminated output.
+ * *base58_len > input value - Failed and base58_out untouched.
+ *
+ * The length returned in both cases *includes* the trailing NUL.
+ */
+static int base58_encode(const unsigned char *bytes_in, size_t len,
+                         char *base58_out, size_t *base58_len)
+{
+    unsigned char bn_buf[BIGNUM_BYTES];
+    unsigned char *bn = bn_buf, *top_byte, *bn_p;
+    size_t bn_bytes, zeros, i;
+
+    /* Process leading zeros */
+    for (zeros = 0; zeros < len && !bytes_in[zeros]; ++zeros)
+        ; /* no-op*/
+
+    if (!(len -= zeros)) {
+        if (base58_out && zeros + 1 <= *base58_len) {
+            memset(base58_out, '1', zeros);
+            base58_out[zeros] = '\0';
+        }
+        *base58_len = zeros + 1;
+        return 0; /* All 0's */
+    }
+    bytes_in += zeros; /* Skip over leading zeros */
+
+    bn_bytes = len * 138 / 100 + 1; /* log(256)/log(58) rounded up */
+
+    /* Allocate our bignum buffer if it won't fit on the stack */
+    if (bn_bytes > BIGNUM_BYTES)
+        if (!(bn = malloc(bn_bytes)))
+            return -1;
+
+    top_byte = bn + bn_bytes - 1;
+    *top_byte = 0;
+
+    for (i = 0; i < len; ++i)
+    {
+        uint32_t carry = bytes_in[i];
+        for (bn_p = bn + bn_bytes - 1; bn_p >= top_byte; --bn_p) {
+            carry = *bn_p * 256 + carry;
+            *bn_p = carry % 58;
+            carry = carry / 58;
+            if (carry && bn_p == top_byte)
+                *--top_byte = 0; /* Increase bignum size */
+        }
+    }
+
+    while (!*top_byte)
+        ++top_byte; /* Skip leading zero bytes in our bignum */
+
+    /* Copy the result if it fits, cleanup and return */
+    bn_bytes = bn + bn_bytes - top_byte;
+
+    if (base58_out && zeros + bn_bytes + 1 <= *base58_len) {
+        memset(base58_out, '1', zeros);
+        for (i = 0; i < bn_bytes; ++i)
+            base58_out[zeros + i] = byte_to_base58[top_byte[i]];
+        base58_out[zeros + bn_bytes] = '\0';
+    }
+
+    clear(bn, bn_bytes);
+    if (bn != bn_buf)
+        free(bn);
+    *base58_len = zeros + bn_bytes + 1;
+    return 0;
+}
+
 uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
 {
     struct sha256 sha_1, sha_2;
@@ -149,7 +229,7 @@ void base58_from_bytes(unsigned char *bytes_in_out, size_t len,
                        uint32_t flags, char **output)
 {
     unsigned char *copy = NULL;
-    size_t out_len = 0;
+    size_t out_len;
 
     *output = NULL;
 
@@ -175,10 +255,9 @@ void base58_from_bytes(unsigned char *bytes_in_out, size_t len,
                &checksum, sizeof(checksum));
     }
 
-    b58enc(NULL, &out_len, bytes_in_out, len); /* Find required size */
-
-    if (out_len && (*output = malloc(out_len)))
-        b58enc(*output, &out_len, bytes_in_out, len); /* Perform conversion */
+    if (!base58_encode(bytes_in_out, len, NULL, &out_len) &&
+        (*output = malloc(out_len)))
+        base58_encode(bytes_in_out, len, *output, &out_len); // FIXME: Errors
 
     if (copy) {
         clear(copy, len);
