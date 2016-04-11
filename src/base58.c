@@ -218,7 +218,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     /* Copy the result */
     bn_bytes = bn + bn_bytes - top_byte;
 
-    *output = malloc(zeros + bn_bytes);
+    *output = malloc(zeros + bn_bytes + 1);
     if (!*output)
         return -1;
     memset(*output, '1', zeros);
