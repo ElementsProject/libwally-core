@@ -28,59 +28,52 @@
 #define BIP38_DERVIED_KEY_LEN 64u
 #define AES256_BLOCK_LEN 16u
 
-struct btc_address
+/* FIXME: Share this with key_compute_pub_key in bip32.c */
+static int compute_pub_key(const unsigned char *priv_key, size_t priv_len,
+                           unsigned char *pub_key_out, bool compressed)
 {
-    unsigned char pad1[3];
-    unsigned char version;
-    struct ripemd160 ripemd160;
-};
-
-static void assert_assumptions(void)
-{
-#define addr_off(member) offsetof(struct btc_address,  member)
-
-    /* Our address members must be contiguous */
-    BUILD_ASSERT(addr_off(version) == 3u);
-    BUILD_ASSERT(addr_off(ripemd160) == 4u);
+    secp256k1_pubkey pk;
+    const secp256k1_context *ctx = secp_ctx();
+    unsigned int flags = compressed ? PUBKEY_COMPRESSED : PUBKEY_UNCOMPRESSED;
+    size_t len = compressed ? 33 : 65;
+    int ret = priv_len == BITCOIN_PRIVATE_KEY_LEN &&
+              pubkey_create(ctx, &pk, priv_key) &&
+              pubkey_serialize(ctx, pub_key_out, &len, &pk, flags) ? 0 : -1;
+    clear(&pk, sizeof(pk));
+    return ret;
 }
 
 
-static int address_from_private_key(unsigned char *priv_key, size_t priv_key_len,
-                                    struct btc_address *address)
+static int address_from_private_key(unsigned char *priv_key,
+                                    size_t priv_len,
+                                    unsigned char network,
+                                    bool compressed,
+                                    char **output)
 {
-    if (priv_key_len != BITCOIN_PRIVATE_KEY_LEN)
+    struct sha256 sha;
+    unsigned char pub_key[65];
+    struct
+    {
+        unsigned char pad1[3];
+        unsigned char network;
+        struct ripemd160 hash160;
+        uint32_t checksum;
+    } buf;
+    int ret;
+
+    BUILD_ASSERT(&buf.network + 1 == (void *)&buf.hash160);
+
+    if (compute_pub_key(priv_key, priv_len, pub_key, compressed))
         return -1;
 
-    /* FIXME */
-    (void)priv_key;
-    (void)address;
-    return 0;
-}
-
-/* Compute the Bitcoin address (ASCII), and take the first four bytes of
- * SHA256(SHA256()) of it. Let's call this "addresshash".
- */
-static int get_address_hash(struct btc_address *address_in_out, uint32_t *hash_out)
-{
-    char *base58;
-    size_t base58_len;
-
-    /* FIXME: return an error code from base58_from_bytes  */
-
-    /* Get the ASCII representation (i.e. base 58 check encoded) */
-    base58_from_bytes(&address_in_out->version,
-                      sizeof(unsigned char) + sizeof(struct ripemd160),
-                      BASE58_FLAG_CHECKSUM, &base58);
-    if (!base58)
-        return -1;
-
-    /* Compute and return double sha256 */
-    base58_len = strlen(base58);
-    /* FIXME: return an error code from base58_get_checksum */
-    *hash_out = base58_get_checksum((const unsigned char *)base58, base58_len);
-    clear(base58, base58_len);
-    free(base58);
-    return 0;
+    sha256(&sha, pub_key, compressed ? 33 : 65);
+    ripemd160(&buf.hash160, &sha, sizeof(sha));
+    buf.network = network;
+    buf.checksum = base58_get_checksum(&buf.network, 1 + 20);
+    ret = base58_from_bytes(&buf.network, 1 + 20 + 4,
+                            BASE58_FLAG_CHECKSUM, output);
+    clear_n(3, &sha, sizeof(sha), pub_key, sizeof(pub_key), &buf, sizeof(buf));
+    return ret;
 }
 
 static void aes_inc(unsigned char *block_in_out, const unsigned char *xor,
@@ -104,23 +97,26 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
 {
     const size_t l16 = 0, r16 = AES256_BLOCK_LEN; /* halves of derivedhalf1 */
     const size_t half2 = AES256_BLOCK_LEN * 2; /* derivedhalf2 */
-    const size_t addr_len = 1 + 20 + 4; /* version, ripemd160, hash */
+    const size_t addr_len = 1 + 20 + 4; /* network, hash160, checksum */
     const size_t prefix_len = 3 + sizeof(addr_len); /* 0x0142, flags, salt */
     unsigned char derived_key[BIP38_DERVIED_KEY_LEN];
-    struct btc_address address;
-    uint32_t address_hash;
+    uint32_t addr_hash;
     unsigned char result[prefix_len + AES256_BLOCK_LEN * 2];
+    char *addr58 = NULL;
 
     *output = NULL;
 
     /* Convert the private key to an address and get its hash */
-    if (address_from_private_key(priv_key, len, &address) ||
-        get_address_hash(&address, &address_hash))
+    unsigned char network = 0x00; /* MAIN : FIXME */
+    bool compressed = true;
+    if (address_from_private_key(priv_key, len, network, compressed, &addr58))
         return -1; /* Invalid private key */
+
+    addr_hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
 
     /* Compute derived key */
     if (scrypt(pass, pass_len,
-               (unsigned char *)&address_hash, sizeof(address_hash),
+               (unsigned char *)&addr_hash, sizeof(addr_hash),
                16382, 8, 8,
                derived_key, sizeof(derived_key)))
         return -1;
@@ -129,8 +125,8 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
     result[0] = 0x01;
     result[1] = 0x42; /* FIXME: Compression */
     result[2] = BIP38_FLAG_DEFAULT; /* FIXME: Compression */
-    memcpy(result + prefix_len - sizeof(address_hash),
-           &address_hash, sizeof(address_hash));
+    memcpy(result + prefix_len - sizeof(addr_hash),
+           &addr_hash, sizeof(addr_hash));
     aes_inc(priv_key + l16, derived_key + l16,
             derived_key + half2, result + prefix_len + l16);
     aes_inc(priv_key + r16, derived_key + r16,
@@ -140,7 +136,7 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
     base58_from_bytes(result, sizeof(result),
                       BASE58_FLAG_CHECKSUM, output);
 
-    clear_n(3, derived_key, sizeof(derived_key),
-            result, sizeof(result), &address, sizeof(address));
+    clear_n(2, derived_key, sizeof(derived_key),
+            result, sizeof(result));
     return 0;
 }

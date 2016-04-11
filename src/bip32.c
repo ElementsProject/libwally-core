@@ -11,12 +11,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define pubkey_create     secp256k1_ec_pubkey_create
-#define pubkey_parse      secp256k1_ec_pubkey_parse
-#define pubkey_tweak_add  secp256k1_ec_pubkey_tweak_add
-#define pubkey_serialize  secp256k1_ec_pubkey_serialize
-#define privkey_tweak_add secp256k1_ec_privkey_tweak_add
-
 static const unsigned char SEED[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
 };
@@ -131,7 +125,7 @@ static int key_compute_pub_key(struct ext_key *key_out)
 
     int ret = (pubkey_create(ctx, &pub_key, key_out->priv_key + 1) &&
                pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
-                                SECP256K1_EC_COMPRESSED) &&
+                                PUBKEY_COMPRESSED) &&
                len == sizeof(key_out->pub_key)) ? 0 : -1;
 
     clear(&pub_key, sizeof(pub_key));
@@ -443,7 +437,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           sizeof(key_in->pub_key)) ||
             !pubkey_tweak_add(ctx, &pub_key, sha.u.u8) ||
             !pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
-                              SECP256K1_EC_COMPRESSED) ||
+                              PUBKEY_COMPRESSED) ||
             len != sizeof(key_out->pub_key)) {
             clear(&sha, sizeof(sha));
             return wipe_key_fail(key_out);
