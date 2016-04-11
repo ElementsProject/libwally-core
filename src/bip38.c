@@ -110,7 +110,7 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
 
     hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
     if (scrypt(pass, pass_len, (unsigned char *)&hash, sizeof(hash),
-               16382, 8, 8, derived, sizeof(derived)))
+               16384, 8, 8, derived, sizeof(derived)))
         goto finish;
 
     buf[0] = 0x01;
