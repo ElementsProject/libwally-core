@@ -150,14 +150,20 @@ static int base58_decode(const char *base58, size_t base58_len,
  * The length returned in both cases *includes* the trailing NUL.
  */
 static int base58_encode(const unsigned char *bytes_in, size_t len,
-                         char *base58_out, size_t *base58_len)
+                         char *base58_out, size_t *base58_len,
+                         uint32_t *cs_p)
 {
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
-    size_t bn_bytes, zeros, i;
+    size_t bn_bytes, zeros, i, orig_len = len;
+
+    if (cs_p)
+        len += 4;
+
+#define b(n) (n < orig_len ? bytes_in[n] : ((unsigned char *)cs_p)[n - orig_len])
 
     /* Process leading zeros */
-    for (zeros = 0; zeros < len && !bytes_in[zeros]; ++zeros)
+    for (zeros = 0; zeros < len && !b(zeros); ++zeros)
         ; /* no-op*/
 
     if (zeros == len) {
@@ -181,7 +187,7 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
 
     for (i = zeros; i < len; ++i)
     {
-        uint32_t carry = bytes_in[i];
+        uint32_t carry = b(i);
         for (bn_p = bn + bn_bytes - 1; bn_p >= top_byte; --bn_p) {
             carry = *bn_p * 256 + carry;
             *bn_p = carry % 58;
@@ -224,44 +230,23 @@ uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
 }
 
 
-void base58_from_bytes(unsigned char *bytes_in_out, size_t len,
+void base58_from_bytes(unsigned char *bytes_in, size_t len,
                        uint32_t flags, char **output)
 {
-    unsigned char *copy = NULL;
+    uint32_t checksum, *cs_p = NULL;
     size_t out_len;
 
     *output = NULL;
 
-    if (flags & ~(BASE58_FLAG_CHECKSUM | BASE58_FLAG_CHECKSUM_RESERVED) || !len)
+    if (flags & ~BASE58_FLAG_CHECKSUM || !len)
         return; /* Invalid flags or no input */
 
-    if (flags & (BASE58_FLAG_CHECKSUM | BASE58_FLAG_CHECKSUM_RESERVED)) {
-        /* Caller wants a checksum generated and included in the returned string */
-        uint32_t checksum;
+    if (flags & BASE58_FLAG_CHECKSUM)
+        *(cs_p = &checksum) = base58_get_checksum(bytes_in, len);
 
-        if (!(flags & BASE58_FLAG_CHECKSUM_RESERVED)) {
-            /* No reserved space, use a temporary buffer */
-            if (!(copy = malloc(len + BASE58_CHECKSUM_LEN)))
-                return;
-            memcpy(copy, bytes_in_out, len);
-            bytes_in_out = copy;
-            len += BASE58_CHECKSUM_LEN;
-        } else if (len <= BASE58_CHECKSUM_LEN)
-            return; /* Not enough space to put the checksum */
-
-        checksum = base58_get_checksum(bytes_in_out, len - BASE58_CHECKSUM_LEN);
-        memcpy(bytes_in_out + len - BASE58_CHECKSUM_LEN,
-               &checksum, sizeof(checksum));
-    }
-
-    if (!base58_encode(bytes_in_out, len, NULL, &out_len) &&
+    if (!base58_encode(bytes_in, len, NULL, &out_len, cs_p) &&
         (*output = malloc(out_len)))
-        base58_encode(bytes_in_out, len, *output, &out_len); // FIXME: Errors
-
-    if (copy) {
-        clear(copy, len);
-        free(copy);
-    }
+        base58_encode(bytes_in, len, *output, &out_len, cs_p); // FIXME: Errors
 }
 
 /* FIXME: return int, take len as pointer */

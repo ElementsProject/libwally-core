@@ -14,22 +14,13 @@
  **/
 #define BASE58_FLAG_CHECKSUM 0x1
 
-/** For @base58_from_bytes, indicates that 'bytes_in_out' contains
- * @BASE58_CHECKSUM_LEN extra bytes for a checksum to be added into.
- */
-#define BASE58_FLAG_CHECKSUM_RESERVED 0x2
-
-
 /**
  * Create a base 58 encoded string representing binary data.
  *
  * @bytes_in_out: Binary data to convert.
  * @len: The length of @bytes_in_out in bytes.
  * @flags: Pass @BASE58_FLAG_CHECKSUM if @bytes_in_out should have a
- *         checksum calculated and appended before converting to base 58. Pass
- *         @BASE58_FLAG_CHECKSUM_RESERVED if @bytes_in_out contains an
- *         extra @BASE58_CHECKSUM_LEN bytes to calculate the checksum into. @len
- *         should be the full length including any extra bytes passed.
+ *         checksum calculated and appended before converting to base 58.
  * @output Destination for the base 58 encoded string representing @bytes_in_out.
  *         This should be freed using @wally_free_string().
  */

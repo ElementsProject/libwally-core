@@ -12,7 +12,6 @@ class AddressCase(object):
 class Base58Tests(unittest.TestCase):
 
     CHECKSUM = 1
-    RESERVED = 2
 
     def setUp(self):
         if not hasattr(self, 'cases'):
@@ -28,8 +27,6 @@ class Base58Tests(unittest.TestCase):
                         cur = []
 
     def encode(self, hex_in, flags):
-        if (flags == self.RESERVED):
-            hex_in += '00000000' # Reserve checksum space
         buf, buf_len = make_cbuffer(hex_in)
         return base58_from_bytes(buf, buf_len, flags)
 
@@ -57,21 +54,19 @@ class Base58Tests(unittest.TestCase):
             decoded = self.decode(c.base58, 0)
             self.assertEqual(decoded, utf8(c.checksummed))
 
-            # Compute the checksum in the call, appended to a temp
-            # buffer or in-place, depending on the flags
-            for flags in [self.CHECKSUM, self.RESERVED]:
-                base58 = self.encode(c.ripemd_network, flags)
-                self.assertEqual(base58, c.base58)
+            # Compute the checksum in the call
+            base58 = self.encode(c.ripemd_network, self.CHECKSUM)
+            self.assertEqual(base58, c.base58)
 
-                # Decode without checksum validation/stripping, should match
-                # checksummed value
-                decoded = self.decode(c.base58, 0)
-                self.assertEqual(decoded, utf8(c.checksummed))
+            # Decode without checksum validation/stripping, should match
+            # checksummed value
+            decoded = self.decode(c.base58, 0)
+            self.assertEqual(decoded, utf8(c.checksummed))
 
-                # Decode with checksum validation/stripping and compare
-                # to original ripemd + network
-                decoded = self.decode(c.base58, self.CHECKSUM)
-                self.assertEqual(decoded, utf8(c.ripemd_network))
+            # Decode with checksum validation/stripping and compare
+            # to original ripemd + network
+            decoded = self.decode(c.base58, self.CHECKSUM)
+            self.assertEqual(decoded, utf8(c.ripemd_network))
 
 
     def test_to_bytes(self):
@@ -135,9 +130,6 @@ class Base58Tests(unittest.TestCase):
 
         # O length buffer, append checksum -> NULL
         self.assertEqual(base58_from_bytes(buf, 0, self.CHECKSUM), None)
-
-        # 4 length buffer, checksum in place -> NULL
-        self.assertEqual(base58_from_bytes(buf, 4, self.RESERVED), None)
 
         # Vectors from https://github.com/bitcoinj/bitcoinj/
         self.assertEqual(self.encode('00CEF022FA', 0), '16Ho7Hs')
