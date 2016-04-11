@@ -43,6 +43,7 @@ for f in (
     ('bip32_key_serialise', c_int, [POINTER(ext_key), c_uint, c_void_p, c_ulong]),
     ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
     ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)]),
+    ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_int, c_bool, POINTER(c_char_p)]),
     ('bip39_get_languages', None, [POINTER(c_char_p)]),
     ('bip39_get_wordlist', c_void_p, [c_char_p]),
     ('bip39_mnemonic_from_bytes', None, [c_void_p, c_void_p, c_ulong, POINTER(c_char_p)]),
@@ -59,8 +60,8 @@ for f in (
     # ctypes represents all types of pointer-to-pointer-of-X with the same type,
     # So we have to use explicit lists here to find functions to wrap
     # FIXME: Use a sentinel class in the arg list instead
-    string_funcs = ['base58_from_bytes', 'bip39_get_languages',
-                    'bip39_mnemonic_from_bytes']
+    string_funcs = ['base58_from_bytes', 'bip38_from_private_key',
+                    'bip39_get_languages', 'bip39_mnemonic_from_bytes']
 
     def bind_fn(name, res, args):
         try:
