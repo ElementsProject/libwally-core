@@ -143,15 +143,37 @@ static int base58_decode(const char *base58, size_t base58_len,
     return 0;
 }
 
-static int base58_encode(const unsigned char *bytes_in, size_t len,
-                         char **base58_out, uint32_t *cs_p)
+uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
 {
+    struct sha256 sha_1, sha_2;
+    uint32_t checksum;
+
+    sha256(&sha_1, bytes_in, len);
+    sha256(&sha_2, &sha_1, sizeof(sha_1));
+    checksum = sha_2.u.u32[0];
+    clear_n(2, &sha_1, sizeof(sha_1), &sha_2, sizeof(sha_2));
+    return checksum;
+}
+
+
+int base58_from_bytes(unsigned char *bytes_in, size_t len,
+                      uint32_t flags, char **output)
+{
+    uint32_t checksum, *cs_p = NULL;
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
     size_t bn_bytes, zeros, i, orig_len = len;
 
-    if (cs_p)
+    *output = NULL;
+
+    if (flags & ~BASE58_FLAG_CHECKSUM || !len)
+        return -1; /* Invalid flags or no input */
+
+    if (flags & BASE58_FLAG_CHECKSUM) {
+        checksum = base58_get_checksum(bytes_in, len);
+        cs_p = &checksum;
         len += 4;
+    }
 
 #define b(n) (n < orig_len ? bytes_in[n] : ((unsigned char *)cs_p)[n - orig_len])
 
@@ -160,11 +182,11 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
         ; /* no-op*/
 
     if (zeros == len) {
-        *base58_out = malloc(zeros + 1);
-        if (!*base58_out)
+        *output = malloc(zeros + 1);
+        if (!*output)
             return -1;
-        memset(*base58_out, '1', zeros);
-        (*base58_out)[zeros] = '\0';
+        memset(*output, '1', zeros);
+        (*output)[zeros] = '\0';
         return 0; /* All 0's */
     }
 
@@ -196,13 +218,13 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
     /* Copy the result */
     bn_bytes = bn + bn_bytes - top_byte;
 
-    *base58_out = malloc(zeros + bn_bytes);
-    if (!*base58_out)
+    *output = malloc(zeros + bn_bytes);
+    if (!*output)
         return -1;
-    memset(*base58_out, '1', zeros);
+    memset(*output, '1', zeros);
     for (i = 0; i < bn_bytes; ++i)
-        (*base58_out)[zeros + i] = byte_to_base58[top_byte[i]];
-        (*base58_out)[zeros + bn_bytes] = '\0';
+        (*output)[zeros + i] = byte_to_base58[top_byte[i]];
+    (*output)[zeros + bn_bytes] = '\0';
 
     clear(bn, bn_bytes);
     if (bn != bn_buf)
@@ -210,34 +232,6 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
     return 0;
 }
 
-uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
-{
-    struct sha256 sha_1, sha_2;
-    uint32_t checksum;
-
-    sha256(&sha_1, bytes_in, len);
-    sha256(&sha_2, &sha_1, sizeof(sha_1));
-    checksum = sha_2.u.u32[0];
-    clear_n(2, &sha_1, sizeof(sha_1), &sha_2, sizeof(sha_2));
-    return checksum;
-}
-
-
-int base58_from_bytes(unsigned char *bytes_in, size_t len,
-                      uint32_t flags, char **output)
-{
-    uint32_t checksum, *cs_p = NULL;
-
-    *output = NULL;
-
-    if (flags & ~BASE58_FLAG_CHECKSUM || !len)
-        return -1; /* Invalid flags or no input */
-
-    if (flags & BASE58_FLAG_CHECKSUM)
-        *(cs_p = &checksum) = base58_get_checksum(bytes_in, len);
-
-    return base58_encode(bytes_in, len, output, cs_p);
-}
 
 /* FIXME: return int, take len as pointer */
 size_t base58_get_length(const char *str_in)
