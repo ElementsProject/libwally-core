@@ -33,7 +33,6 @@ struct btc_address
     unsigned char pad1[3];
     unsigned char version;
     struct ripemd160 ripemd160;
-    uint32_t checksum;
 };
 
 static void assert_assumptions(void)
@@ -43,7 +42,6 @@ static void assert_assumptions(void)
     /* Our address members must be contiguous */
     BUILD_ASSERT(addr_off(version) == 3u);
     BUILD_ASSERT(addr_off(ripemd160) == 4u);
-    BUILD_ASSERT(addr_off(checksum) == 24u);
 }
 
 
@@ -71,8 +69,8 @@ static int get_address_hash(struct btc_address *address_in_out, uint32_t *hash_o
 
     /* Get the ASCII representation (i.e. base 58 check encoded) */
     base58_from_bytes(&address_in_out->version,
-                      sizeof(address_in_out) - sizeof(address_in_out->pad1),
-                      BASE58_FLAG_CHECKSUM_RESERVED, &base58);
+                      sizeof(unsigned char) + sizeof(struct ripemd160),
+                      BASE58_FLAG_CHECKSUM, &base58);
     if (!base58)
         return -1;
 
@@ -111,7 +109,7 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
     unsigned char derived_key[BIP38_DERVIED_KEY_LEN];
     struct btc_address address;
     uint32_t address_hash;
-    unsigned char result[prefix_len + AES256_BLOCK_LEN * 2 + BASE58_CHECKSUM_LEN];
+    unsigned char result[prefix_len + AES256_BLOCK_LEN * 2];
 
     *output = NULL;
 
@@ -140,7 +138,7 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
 
     /* Return base 58 encoded result with checksum */
     base58_from_bytes(result, sizeof(result),
-                      BASE58_FLAG_CHECKSUM_RESERVED, output);
+                      BASE58_FLAG_CHECKSUM, output);
 
     clear_n(3, derived_key, sizeof(derived_key),
             result, sizeof(result), &address, sizeof(address));
