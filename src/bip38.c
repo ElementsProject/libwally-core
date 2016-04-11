@@ -115,7 +115,7 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
 
     buf[0] = 0x01;
     buf[1] = 0x42; /* FIXME: EC-Multiply support */
-    buf[2] = BIP38_FLAG_DEFAULT | compressed ? BIP38_FLAG_COMPRESSED : 0;
+    buf[2] = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
     memcpy(buf + 3, &hash, sizeof(hash));
     aes_inc(priv_key + 0, derived + 0, derived + 32, buf + 7 + 0);
     aes_inc(priv_key + 16, derived + 16, derived + 32, buf + 7 + 16);
