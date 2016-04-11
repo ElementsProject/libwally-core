@@ -24,7 +24,7 @@
  * @output Destination for the base 58 encoded string representing @bytes_in_out.
  *         This should be freed using @wally_free_string().
  */
-void base58_from_bytes(
+int base58_from_bytes(
     unsigned char *bytes_in_out,
     size_t len,
     uint32_t flags,

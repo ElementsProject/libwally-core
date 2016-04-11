@@ -35,7 +35,7 @@ for f in (
     ('wordlist_free', None, [c_void_p]),
     ('mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
     ('mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),
-    ('base58_from_bytes', None, [c_void_p, c_ulong, c_uint, POINTER(c_char_p)]),
+    ('base58_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(c_char_p)]),
     ('base58_get_length', c_ulong, [c_char_p]),
     ('base58_to_bytes', c_ulong, [c_char_p, c_uint, c_void_p, c_ulong]),
     ('scrypt', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_void_p, c_ulong]),

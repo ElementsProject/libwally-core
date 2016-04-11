@@ -28,7 +28,9 @@ class Base58Tests(unittest.TestCase):
 
     def encode(self, hex_in, flags):
         buf, buf_len = make_cbuffer(hex_in)
-        return base58_from_bytes(buf, buf_len, flags)
+        ret, base58 = base58_from_bytes(buf, buf_len, flags)
+        self.assertEqual(ret, -1 if base58 is None else 0)
+        return base58
 
     def decode(self, str_in, flags):
         buf, buf_len = make_cbuffer('00' * 1024)
@@ -126,10 +128,10 @@ class Base58Tests(unittest.TestCase):
         buf, buf_len = make_cbuffer('00' * 8)
 
         # O length buffer, no checksum -> NULL
-        self.assertEqual(base58_from_bytes(buf, 0, 0), None)
+        self.assertEqual(base58_from_bytes(buf, 0, 0), (-1, None))
 
         # O length buffer, append checksum -> NULL
-        self.assertEqual(base58_from_bytes(buf, 0, self.CHECKSUM), None)
+        self.assertEqual(base58_from_bytes(buf, 0, self.CHECKSUM), (-1, None))
 
         # Vectors from https://github.com/bitcoinj/bitcoinj/
         self.assertEqual(self.encode('00CEF022FA', 0), '16Ho7Hs')

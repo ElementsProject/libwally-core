@@ -230,8 +230,8 @@ uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
 }
 
 
-void base58_from_bytes(unsigned char *bytes_in, size_t len,
-                       uint32_t flags, char **output)
+int base58_from_bytes(unsigned char *bytes_in, size_t len,
+                      uint32_t flags, char **output)
 {
     uint32_t checksum, *cs_p = NULL;
     size_t out_len;
@@ -239,14 +239,16 @@ void base58_from_bytes(unsigned char *bytes_in, size_t len,
     *output = NULL;
 
     if (flags & ~BASE58_FLAG_CHECKSUM || !len)
-        return; /* Invalid flags or no input */
+        return -1; /* Invalid flags or no input */
 
     if (flags & BASE58_FLAG_CHECKSUM)
         *(cs_p = &checksum) = base58_get_checksum(bytes_in, len);
 
-    if (!base58_encode(bytes_in, len, NULL, &out_len, cs_p) &&
-        (*output = malloc(out_len)))
-        base58_encode(bytes_in, len, *output, &out_len, cs_p); // FIXME: Errors
+    if (base58_encode(bytes_in, len, NULL, &out_len, cs_p) ||
+        !(*output = malloc(out_len)))
+        return -1;
+
+    return base58_encode(bytes_in, len, *output, &out_len, cs_p);
 }
 
 /* FIXME: return int, take len as pointer */
