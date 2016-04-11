@@ -1,3 +1,4 @@
+#include <include/wally-core.h>
 /*#include <include/wally_bip38.h>*/
 #include "internal.h"
 #include "base58.h"
@@ -93,50 +94,35 @@ static void aes_inc(unsigned char *block_in_out, const unsigned char *xor,
 
 int bip38_from_private_key(unsigned char *priv_key, size_t len,
                            const unsigned char *pass, size_t pass_len,
+                           unsigned char network, bool compressed,
                            char **output)
 {
-    const size_t l16 = 0, r16 = AES256_BLOCK_LEN; /* halves of derivedhalf1 */
-    const size_t half2 = AES256_BLOCK_LEN * 2; /* derivedhalf2 */
-    const size_t addr_len = 1 + 20 + 4; /* network, hash160, checksum */
-    const size_t prefix_len = 3 + sizeof(addr_len); /* 0x0142, flags, salt */
-    unsigned char derived_key[BIP38_DERVIED_KEY_LEN];
-    uint32_t addr_hash;
-    unsigned char result[prefix_len + AES256_BLOCK_LEN * 2];
+    unsigned char derived[BIP38_DERVIED_KEY_LEN];
+    unsigned char buf[7 + AES256_BLOCK_LEN * 2];
+    uint32_t hash;
     char *addr58 = NULL;
+    int ret = -1;
 
     *output = NULL;
 
-    /* Convert the private key to an address and get its hash */
-    unsigned char network = 0x00; /* MAIN : FIXME */
-    bool compressed = true;
     if (address_from_private_key(priv_key, len, network, compressed, &addr58))
-        return -1; /* Invalid private key */
+        goto finish;
 
-    addr_hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
+    hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
+    if (scrypt(pass, pass_len, (unsigned char *)&hash, sizeof(hash),
+               16382, 8, 8, derived, sizeof(derived)))
+        goto finish;
 
-    /* Compute derived key */
-    if (scrypt(pass, pass_len,
-               (unsigned char *)&addr_hash, sizeof(addr_hash),
-               16382, 8, 8,
-               derived_key, sizeof(derived_key)))
-        return -1;
+    buf[0] = 0x01;
+    buf[1] = 0x42; /* FIXME: EC-Multiply support */
+    buf[2] = BIP38_FLAG_DEFAULT | compressed ? BIP38_FLAG_COMPRESSED : 0;
+    memcpy(buf + 3, &hash, sizeof(hash));
+    aes_inc(priv_key + 0, derived + 0, derived + 32, buf + 7 + 0);
+    aes_inc(priv_key + 16, derived + 16, derived + 32, buf + 7 + 16);
+    ret = base58_from_bytes(buf, sizeof(buf), BASE58_FLAG_CHECKSUM, output);
 
-    /* Construct encypted output */
-    result[0] = 0x01;
-    result[1] = 0x42; /* FIXME: Compression */
-    result[2] = BIP38_FLAG_DEFAULT; /* FIXME: Compression */
-    memcpy(result + prefix_len - sizeof(addr_hash),
-           &addr_hash, sizeof(addr_hash));
-    aes_inc(priv_key + l16, derived_key + l16,
-            derived_key + half2, result + prefix_len + l16);
-    aes_inc(priv_key + r16, derived_key + r16,
-            derived_key + half2, result + prefix_len + r16);
-
-    /* Return base 58 encoded result with checksum */
-    base58_from_bytes(result, sizeof(result),
-                      BASE58_FLAG_CHECKSUM, output);
-
-    clear_n(2, derived_key, sizeof(derived_key),
-            result, sizeof(result));
-    return 0;
+finish:
+    wally_free_string(addr58);
+    clear_n(3, derived, sizeof(derived), buf, sizeof(buf), &hash, sizeof(hash));
+    return ret;
 }
