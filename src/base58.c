@@ -160,7 +160,7 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
     for (zeros = 0; zeros < len && !bytes_in[zeros]; ++zeros)
         ; /* no-op*/
 
-    if (!(len -= zeros)) {
+    if (zeros == len) {
         if (base58_out && zeros + 1 <= *base58_len) {
             memset(base58_out, '1', zeros);
             base58_out[zeros] = '\0';
@@ -168,9 +168,8 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
         *base58_len = zeros + 1;
         return 0; /* All 0's */
     }
-    bytes_in += zeros; /* Skip over leading zeros */
 
-    bn_bytes = len * 138 / 100 + 1; /* log(256)/log(58) rounded up */
+    bn_bytes = (len - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
 
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_bytes > BIGNUM_BYTES)
@@ -180,7 +179,7 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
     top_byte = bn + bn_bytes - 1;
     *top_byte = 0;
 
-    for (i = 0; i < len; ++i)
+    for (i = zeros; i < len; ++i)
     {
         uint32_t carry = bytes_in[i];
         for (bn_p = bn + bn_bytes - 1; bn_p >= top_byte; --bn_p) {
