@@ -143,15 +143,8 @@ static int base58_decode(const char *base58, size_t base58_len,
     return 0;
 }
 
-/* Returns -1 on error. If 0 is returned then:
- * *base58_len <= input value - OK, base58_out contains NUL terminated output.
- * *base58_len > input value - Failed and base58_out untouched.
- *
- * The length returned in both cases *includes* the trailing NUL.
- */
 static int base58_encode(const unsigned char *bytes_in, size_t len,
-                         char *base58_out, size_t *base58_len,
-                         uint32_t *cs_p)
+                         char **base58_out, uint32_t *cs_p)
 {
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
@@ -167,11 +160,11 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
         ; /* no-op*/
 
     if (zeros == len) {
-        if (base58_out && zeros + 1 <= *base58_len) {
-            memset(base58_out, '1', zeros);
-            base58_out[zeros] = '\0';
-        }
-        *base58_len = zeros + 1;
+        *base58_out = malloc(zeros + 1);
+        if (!*base58_out)
+            return -1;
+        memset(*base58_out, '1', zeros);
+        (*base58_out)[zeros] = '\0';
         return 0; /* All 0's */
     }
 
@@ -200,20 +193,20 @@ static int base58_encode(const unsigned char *bytes_in, size_t len,
     while (!*top_byte)
         ++top_byte; /* Skip leading zero bytes in our bignum */
 
-    /* Copy the result if it fits, cleanup and return */
+    /* Copy the result */
     bn_bytes = bn + bn_bytes - top_byte;
 
-    if (base58_out && zeros + bn_bytes + 1 <= *base58_len) {
-        memset(base58_out, '1', zeros);
-        for (i = 0; i < bn_bytes; ++i)
-            base58_out[zeros + i] = byte_to_base58[top_byte[i]];
-        base58_out[zeros + bn_bytes] = '\0';
-    }
+    *base58_out = malloc(zeros + bn_bytes);
+    if (!*base58_out)
+        return -1;
+    memset(*base58_out, '1', zeros);
+    for (i = 0; i < bn_bytes; ++i)
+        (*base58_out)[zeros + i] = byte_to_base58[top_byte[i]];
+        (*base58_out)[zeros + bn_bytes] = '\0';
 
     clear(bn, bn_bytes);
     if (bn != bn_buf)
         free(bn);
-    *base58_len = zeros + bn_bytes + 1;
     return 0;
 }
 
@@ -234,7 +227,6 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
                       uint32_t flags, char **output)
 {
     uint32_t checksum, *cs_p = NULL;
-    size_t out_len;
 
     *output = NULL;
 
@@ -244,11 +236,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     if (flags & BASE58_FLAG_CHECKSUM)
         *(cs_p = &checksum) = base58_get_checksum(bytes_in, len);
 
-    if (base58_encode(bytes_in, len, NULL, &out_len, cs_p) ||
-        !(*output = malloc(out_len)))
-        return -1;
-
-    return base58_encode(bytes_in, len, *output, &out_len, cs_p);
+    return base58_encode(bytes_in, len, output, cs_p);
 }
 
 /* FIXME: return int, take len as pointer */
