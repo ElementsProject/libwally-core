@@ -46,7 +46,7 @@ static int compute_pub_key(const unsigned char *priv_key, size_t priv_len,
 
 
 /* FIXME: Export this with other address functions */
-static int address_from_private_key(unsigned char *priv_key,
+static int address_from_private_key(const unsigned char *priv_key,
                                     size_t priv_len,
                                     unsigned char network,
                                     bool compressed,
@@ -77,21 +77,22 @@ static int address_from_private_key(unsigned char *priv_key,
     return ret;
 }
 
-static void aes_enc(unsigned char *block_in_out, const unsigned char *xor,
+static void aes_enc(const unsigned char *src, const unsigned char *xor,
                     const unsigned char *key, unsigned char *bytes_out)
 {
+    uint32_t plaintext[AES256_BLOCK_LEN / sizeof(uint32_t)];
     AES256_ctx ctx;
     size_t i;
 
-    for (i = 0; i < AES256_BLOCK_LEN; ++i)
-        block_in_out[i] ^= xor[i];
+    for (i = 0; i < sizeof(plaintext) / sizeof(plaintext[0]); ++i)
+        plaintext[i] = ((uint32_t *)src)[i] ^ ((uint32_t *)xor)[i];
 
     AES256_init(&ctx, key);
-    AES256_encrypt(&ctx, 1, bytes_out, block_in_out);
-    clear(&ctx, sizeof(ctx));
+    AES256_encrypt(&ctx, 1, bytes_out, (unsigned char *)plaintext);
+    clear_n(2, plaintext, sizeof(plaintext), &ctx, sizeof(ctx));
 }
 
-int bip38_from_private_key(unsigned char *priv_key, size_t len,
+int bip38_from_private_key(const unsigned char *priv_key, size_t len,
                            const unsigned char *pass, size_t pass_len,
                            unsigned char network, bool compressed,
                            char **output)

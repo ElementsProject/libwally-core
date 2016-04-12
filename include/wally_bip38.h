@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 WALLY_CORE_API int bip38_from_private_key(
-    unsigned char *priv_key,
+    const unsigned char *priv_key,
     size_t len,
     const unsigned char *pass,
     size_t pass_len,
