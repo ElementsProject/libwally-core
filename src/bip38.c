@@ -71,8 +71,7 @@ static int address_from_private_key(unsigned char *priv_key,
     ripemd160(&buf.hash160, &sha, sizeof(sha));
     buf.network = network;
     buf.checksum = base58_get_checksum(&buf.network, 1 + 20);
-    ret = base58_from_bytes(&buf.network, 1 + 20 + 4,
-                            BASE58_FLAG_CHECKSUM, output);
+    ret = base58_from_bytes(&buf.network, 1 + 20 + 4, 0, output);
     clear_n(3, &sha, sizeof(sha), pub_key, sizeof(pub_key), &buf, sizeof(buf));
     return ret;
 }
