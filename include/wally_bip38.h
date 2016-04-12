@@ -6,4 +6,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#endif /* LIBWALLY_CORE_BIP39_H */
+WALLY_CORE_API int bip38_from_private_key(
+    unsigned char *priv_key,
+    size_t len,
+    const unsigned char *pass,
+    size_t pass_len,
+    unsigned char network,
+    bool compressed,
+    char **output);
+
+#endif /* LIBWALLY_CORE_BIP38_H */

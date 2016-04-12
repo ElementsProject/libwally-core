@@ -75,6 +75,7 @@ endif
 check-local:
 if HAVE_PYTHON
 	$(PYTHON_TEST) test/test_bip32.py
+	$(PYTHON_TEST) test/test_bip38.py
 	$(PYTHON_TEST) test/test_bip39.py
 if EXPORT_ALL
 	$(PYTHON_TEST) test/test_base58.py

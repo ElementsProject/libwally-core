@@ -1,5 +1,5 @@
 #include <include/wally-core.h>
-/*#include <include/wally_bip38.h>*/
+#include <include/wally_bip38.h>
 #include "internal.h"
 #include "base58.h"
 #include "scrypt.h"
@@ -45,6 +45,7 @@ static int compute_pub_key(const unsigned char *priv_key, size_t priv_len,
 }
 
 
+/* FIXME: Export this with other address functions */
 static int address_from_private_key(unsigned char *priv_key,
                                     size_t priv_len,
                                     unsigned char network,
@@ -76,13 +77,12 @@ static int address_from_private_key(unsigned char *priv_key,
     return ret;
 }
 
-static void aes_inc(unsigned char *block_in_out, const unsigned char *xor,
+static void aes_enc(unsigned char *block_in_out, const unsigned char *xor,
                     const unsigned char *key, unsigned char *bytes_out)
 {
     AES256_ctx ctx;
     size_t i;
 
-    memset(bytes_out, 0, AES256_BLOCK_LEN);
     for (i = 0; i < AES256_BLOCK_LEN; ++i)
         block_in_out[i] ^= xor[i];
 
@@ -116,8 +116,8 @@ int bip38_from_private_key(unsigned char *priv_key, size_t len,
     buf[1] = 0x42; /* FIXME: EC-Multiply support */
     buf[2] = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
     memcpy(buf + 3, &hash, sizeof(hash));
-    aes_inc(priv_key + 0, derived + 0, derived + 32, buf + 7 + 0);
-    aes_inc(priv_key + 16, derived + 16, derived + 32, buf + 7 + 16);
+    aes_enc(priv_key + 0, derived + 0, derived + 32, buf + 7 + 0);
+    aes_enc(priv_key + 16, derived + 16, derived + 32, buf + 7 + 16);
     ret = base58_from_bytes(buf, sizeof(buf), BASE58_FLAG_CHECKSUM, output);
 
 finish:
