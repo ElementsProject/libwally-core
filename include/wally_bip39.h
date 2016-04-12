@@ -54,7 +54,7 @@ WALLY_CORE_API void bip39_mnemonic_from_bytes(
  * @bytes_out: Where to store the resulting entropy.
  * @len: The length of @bytes_out in bytes.
  *
- * Returns The number of bytes writen on success, zero otherwise.
+ * Returns The number of bytes written on success, zero otherwise.
  */
 WALLY_CORE_API size_t bip39_mnemonic_to_bytes(
     const struct words *w,
