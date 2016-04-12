@@ -7,6 +7,8 @@
  * The non-weak symbols exported from python will be used instead of
  * these dummies.
  */
+#define WALLY_CORE_BUILD 1 /* Ensure these symbols are made public */
+
 #include <config.h>
 #include <include/wally-core.h>
 
