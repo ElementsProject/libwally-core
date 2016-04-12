@@ -93,7 +93,7 @@ static void aes_enc(const unsigned char *src, const unsigned char *xor,
 }
 
 int bip38_from_private_key(const unsigned char *priv_key, size_t len,
-                           const unsigned char *pass, size_t pass_len,
+                           const unsigned char *password, size_t password_len,
                            unsigned char network, bool compressed,
                            char **output)
 {
@@ -109,7 +109,7 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
         goto finish;
 
     hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
-    if (scrypt(pass, pass_len, (unsigned char *)&hash, sizeof(hash),
+    if (scrypt(password, password_len, (unsigned char *)&hash, sizeof(hash),
                16384, 8, 8, derived, sizeof(derived)))
         goto finish;
 
