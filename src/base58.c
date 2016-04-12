@@ -72,6 +72,7 @@ static int base58_decode(const char *base58, size_t base58_len,
     uint32_t *bn = bn_buf, *top_word, *bn_p;
     size_t bn_words, ones, cp_len, i;
     unsigned char *cp;
+    int ret = -1;
 
     /* Process leading '1's */
     for (ones = 0; ones < base58_len && base58[ones] == '1'; ++ones)
@@ -92,7 +93,7 @@ static int base58_decode(const char *base58, size_t base58_len,
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_words > BIGNUM_WORDS)
         if (!(bn = malloc(bn_words * sizeof(*bn))))
-            return -1;
+            goto cleanup;
 
     /* Iterate through the characters adding them to our bignum. We keep
      * track of the current top word to avoid iterating over words that
@@ -102,11 +103,8 @@ static int base58_decode(const char *base58, size_t base58_len,
 
     for (i = 0; i < base58_len; ++i) {
         unsigned char byte = base58_to_byte[((unsigned char *)base58)[i]];
-        if (!byte--) {
-            if (bn != bn_buf)
-                free(bn);
-            return -1; /* Invalid char */
-        }
+        if (!byte--)
+            goto cleanup; /* Invalid char */
 
         for (bn_p = bn + bn_words - 1; bn_p >= top_word; --bn_p) {
             uint64_t mult = *bn_p * 58ull + byte;
@@ -135,12 +133,17 @@ static int base58_decode(const char *base58, size_t base58_len,
         memcpy(bytes_out + ones, cp, cp_len);
     }
 
-    clear(cp, cp_len);
-    if (bn != bn_buf)
-        free(bn);
-
     *len = ones + cp_len;
-    return 0;
+    ret = 0;
+
+cleanup:
+    if (bn == bn_buf)
+        clear(bn_buf, sizeof(bn_buf));
+    else {
+        clear(bn, bn_words * sizeof(*bn));
+        free(bn);
+    }
+    return ret;
 }
 
 uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
@@ -163,11 +166,12 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
     size_t bn_bytes, zeros, i, orig_len = len;
+    int ret = -1;
 
     *output = NULL;
 
     if (flags & ~BASE58_FLAG_CHECKSUM || !len)
-        return -1; /* Invalid flags or no input */
+        goto cleanup; /* Invalid flags or no input */
 
     if (flags & BASE58_FLAG_CHECKSUM) {
         checksum = base58_get_checksum(bytes_in, len);
@@ -182,9 +186,9 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
         ; /* no-op*/
 
     if (zeros == len) {
-        *output = malloc(zeros + 1);
-        if (!*output)
-            return -1;
+        if (!(*output = malloc(zeros + 1)))
+            goto cleanup;
+
         memset(*output, '1', zeros);
         (*output)[zeros] = '\0';
         return 0; /* All 0's */
@@ -195,7 +199,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_bytes > BIGNUM_BYTES)
         if (!(bn = malloc(bn_bytes)))
-            return -1;
+            goto cleanup;
 
     top_byte = bn + bn_bytes - 1;
     *top_byte = 0;
@@ -218,18 +222,24 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     /* Copy the result */
     bn_bytes = bn + bn_bytes - top_byte;
 
-    *output = malloc(zeros + bn_bytes + 1);
-    if (!*output)
-        return -1;
+    if (!(*output = malloc(zeros + bn_bytes + 1)))
+        goto cleanup;
+
     memset(*output, '1', zeros);
     for (i = 0; i < bn_bytes; ++i)
         (*output)[zeros + i] = byte_to_base58[top_byte[i]];
     (*output)[zeros + bn_bytes] = '\0';
 
-    clear(bn, bn_bytes);
-    if (bn != bn_buf)
+    ret = 0;
+
+cleanup:
+    if (bn == bn_buf)
+        clear(bn_buf, sizeof(bn_buf));
+    else {
+        clear(bn, bn_bytes);
         free(bn);
-    return 0;
+    }
+    return ret;
 }
 
 
