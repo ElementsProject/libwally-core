@@ -77,11 +77,11 @@ static int check_result(int result)
 %typemap(argout) const struct NAME ** {
    if (*$1 != NULL) {
        Py_DecRef($result);
-       $result = PyCapsule_New(*$1, NULL, NULL);
+       $result = PyCapsule_New(*$1, "struct NAME *", NULL);
    }
 }
 %typemap (in) const struct NAME * {
-    $1 = PyCapsule_GetPointer($input, NULL);
+    $1 = PyCapsule_GetPointer($input, "struct NAME *");
 }
 %enddef
 
