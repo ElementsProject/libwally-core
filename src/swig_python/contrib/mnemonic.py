@@ -43,11 +43,7 @@ class Mnemonic(object):
 
 
     def check(self, mnemonic):
-        try:
-            wallycore.bip39_mnemonic_validate(self.wordlist, mnemonic)
-            return True
-        except:
-            return False
+        wallycore.bip39_mnemonic_validate(self.wordlist, mnemonic)
 
 
     def to_seed(self, mnemonic, passphrase = ''):
@@ -61,8 +57,12 @@ if __name__ == "__main__":
     for lang in Mnemonic.list_languages():
         m = Mnemonic(lang)
         phrase = m.generate()
-        assert m.check(phrase)
-        assert not m.check(phrase + ' foo')
+        m.check(phrase)
+        try:
+            m.check(phrase + ' foo')
+            assert False
+        except:
+            pass
         assert m.to_entropy(phrase) == m.to_entropy(phrase.split())
         assert m.to_mnemonic(m.to_entropy(phrase)) == phrase
         assert m.to_seed(phrase, 'foo') != m.to_seed(phrase, 'bar')
