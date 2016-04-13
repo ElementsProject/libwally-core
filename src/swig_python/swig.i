@@ -25,7 +25,6 @@ static int check_result(int result)
 }
 %}
 
-%include typemaps.i
 %include pybuffer.i
 %include exception.i
 
