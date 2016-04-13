@@ -20,11 +20,6 @@ class Mnemonic(object):
 
     def generate(self, strength = wallycore.BIP39_ENTROPY_LEN_128):
         from os import urandom
-        if strength not in [BIP39_ENTROPY_LEN_128, BIP39_ENTROPY_LEN_160,
-                            BIP39_ENTROPY_LEN_192, BIP39_ENTROPY_LEN_224,
-                            BIP39_ENTROPY_LEN_256]:
-            raise ValueError('Invalid strength %d.' % strength)
-
         return self.to_mnemonic(bytearray(urandom(strength)))
 
 
@@ -33,8 +28,6 @@ class Mnemonic(object):
             words = ' '.join(words)
         buf = bytearray(BIP39_ENTROPY_LEN_256)
         length = wallycore.bip39_mnemonic_to_bytes(self.wordlist, words, buf)
-        if length <= 0:
-            raise ValueError('Invalid word list. %s' % words)
         return bytearray(buf)[0:length]
 
 
@@ -58,6 +51,11 @@ if __name__ == "__main__":
         m = Mnemonic(lang)
         phrase = m.generate()
         m.check(phrase)
+        try:
+            m.generate(BIP39_ENTROPY_LEN_256 - 1)
+            assert False
+        except:
+            pass
         try:
             m.check(phrase + ' foo')
             assert False
