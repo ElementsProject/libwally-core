@@ -29,6 +29,19 @@
 #define BIP38_DERVIED_KEY_LEN 64u
 #define AES256_BLOCK_LEN 16u
 
+struct derived_t {
+    unsigned char half1_lo[BIP38_DERVIED_KEY_LEN / 4];
+    unsigned char half1_hi[BIP38_DERVIED_KEY_LEN / 4];
+    unsigned char half2[BIP38_DERVIED_KEY_LEN / 2];
+};
+
+/* Check assumptions we expect to hold true */
+static void assert_assumptions(void)
+{
+    /* derived_t layout must be contiguous */
+    BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERVIED_KEY_LEN);
+}
+
 /* FIXME: Share this with key_compute_pub_key in bip32.c */
 static int compute_pub_key(const unsigned char *priv_key, size_t priv_len,
                            unsigned char *pub_key_out, bool compressed)
@@ -97,7 +110,7 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
                            unsigned char network, bool compressed,
                            char **output)
 {
-    unsigned char derived[BIP38_DERVIED_KEY_LEN];
+    struct derived_t derived;
     unsigned char buf[7 + AES256_BLOCK_LEN * 2];
     uint32_t hash;
     char *addr58 = NULL;
@@ -110,19 +123,19 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
 
     hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
     if (scrypt(password, password_len, (unsigned char *)&hash, sizeof(hash),
-               16384, 8, 8, derived, sizeof(derived)))
+               16384, 8, 8, (unsigned char *)&derived, sizeof(derived)))
         goto finish;
 
     buf[0] = 0x01;
     buf[1] = 0x42; /* FIXME: EC-Multiply support */
     buf[2] = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
     memcpy(buf + 3, &hash, sizeof(hash));
-    aes_enc(priv_key + 0, derived + 0, derived + 32, buf + 7 + 0);
-    aes_enc(priv_key + 16, derived + 16, derived + 32, buf + 7 + 16);
+    aes_enc(priv_key + 0, derived.half1_lo, derived.half2, buf + 7 + 0);
+    aes_enc(priv_key + 16, derived.half1_hi, derived.half2, buf + 7 + 16);
     ret = base58_from_bytes(buf, sizeof(buf), BASE58_FLAG_CHECKSUM, output);
 
 finish:
     wally_free_string(addr58);
-    clear_n(3, derived, sizeof(derived), buf, sizeof(buf), &hash, sizeof(hash));
+    clear_n(3, &derived, sizeof(derived), buf, sizeof(buf), &hash, sizeof(hash));
     return ret;
 }
