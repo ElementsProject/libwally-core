@@ -53,11 +53,15 @@ if test "x$debug" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
     LDFLAGS="-Og -ggdb"
 else
+    # Optimise and harden
     AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
     AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [CFLAGS="$CFLAGS -DNDEBUG=1"])
-    LDFLAGS="-O3 -flto"
+    AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
+    AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS="$CFLAGS -fstack-protector-strong"])
+    LDFLAGS="-O3 -flto -Wl,-z,relro"
 fi
+
 
 AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS="$CFLAGS -Wall"])
 AX_CHECK_COMPILE_FLAG([-Wextra], [CFLAGS="$CFLAGS -Wextra"])
@@ -69,6 +73,8 @@ AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CFLAGS="$CFLAGS -Wstrict-prototype
 AX_CHECK_COMPILE_FLAG([-Wno-unused-function], [CFLAGS="$CFLAGS -Wno-unused-function"])
 AX_CHECK_COMPILE_FLAG([-Wno-long-long], [CFLAGS="$CFLAGS -Wno-long-long"])
 AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [CFLAGS="$CFLAGS -Wno-overlength-strings"])
+AX_CHECK_COMPILE_FLAG([-Wformat], [CFLAGS="$CFLAGS -Wformat"])
+AX_CHECK_COMPILE_FLAG([-Wformat-security], [CFLAGS="$CFLAGS -Wformat-security"])
 
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
