@@ -30,7 +30,9 @@ class BIP39Tests(unittest.TestCase):
 
     def test_all_langs(self):
 
-        all_langs = bip39_get_languages().split()
+        ret, all_langs = bip39_get_languages()
+        self.assertEqual(ret, 0)
+        all_langs = all_langs.split()
 
         for lang in all_langs:
             self.assertTrue(lang in self.langs)

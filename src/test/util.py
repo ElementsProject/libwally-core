@@ -45,7 +45,7 @@ for f in (
     ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)]),
     ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_int, c_bool, POINTER(c_char_p)]),
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_int, c_void_p, c_ulong]),
-    ('bip39_get_languages', None, [POINTER(c_char_p)]),
+    ('bip39_get_languages', c_int, [POINTER(c_char_p)]),
     ('bip39_get_wordlist', c_void_p, [c_char_p]),
     ('bip39_mnemonic_from_bytes', None, [c_void_p, c_void_p, c_ulong, POINTER(c_char_p)]),
     ('bip39_mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),

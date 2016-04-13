@@ -23,7 +23,8 @@ struct words;
  *
  * The string returned should be freed using @wally_free_string().
  */
-WALLY_CORE_API void bip39_get_languages(char **output);
+WALLY_CORE_API int bip39_get_languages(
+    char **output);
 
 /**
  * Get the default word list for language @lang.

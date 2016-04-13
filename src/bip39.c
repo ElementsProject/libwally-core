@@ -27,9 +27,10 @@ static const struct {
     /* FIXME: Should 'zh' map to traditional or simplified? */
 };
 
-void bip39_get_languages(char **output)
+int bip39_get_languages(char **output)
 {
     *output = strdup("en es fr it jp zhs zht");
+    return *output ? 0 : -1;
 }
 
 const struct words *bip39_get_wordlist(const char *lang)
