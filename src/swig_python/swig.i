@@ -4,49 +4,36 @@
 #include <stdbool.h>
 #include "../include/wally-core.h"
 #include "../include/wally_bip39.h"
+
+static int check_result(int result)
+{
+    /* FIXME: Map error codes to exceptions
+     * PyExc_ArithmeticError PyExc_AssertionError PyExc_AttributeError
+     * PyExc_EnvironmentError PyExc_EOFError PyExc_Exception
+     * PyExc_FloatingPointError PyExc_ImportError PyExc_IndexError
+     * PyExc_IOError PyExc_KeyError PyExc_KeyboardInterrupt PyExc_LookupError
+     * PyExc_MemoryError PyExc_NameError PyExc_NotImplementedError
+     * PyExc_OSError PyExc_OverflowError PyExc_RuntimeError
+     * PyExc_StandardError PyExc_SyntaxError PyExc_SystemError
+     * PyExc_TypeError PyExc_UnicodeError PyExc_ValueError
+     * PyExc_ZeroDivisionError
+     */
+    if (result) {
+        PyErr_SetString(PyExc_RuntimeError, "Error");
+    }
+    return result;
+}
 %}
 
 %include typemaps.i
 %include pybuffer.i
 %include exception.i
 
-/*
-FIXME: Map error codes to exceptions
-PyExc_ArithmeticError
-PyExc_AssertionError
-PyExc_AttributeError
-PyExc_EnvironmentError
-PyExc_EOFError
-PyExc_Exception
-PyExc_FloatingPointError
-PyExc_ImportError
-PyExc_IndexError
-PyExc_IOError
-PyExc_KeyError
-PyExc_KeyboardInterrupt
-PyExc_LookupError
-PyExc_MemoryError
-PyExc_NameError
-PyExc_NotImplementedError
-PyExc_OSError
-PyExc_OverflowError
-PyExc_RuntimeError
-PyExc_StandardError
-PyExc_SyntaxError
-PyExc_SystemError
-PyExc_TypeError
-PyExc_UnicodeError
-PyExc_ValueError
-PyExc_ZeroDivisionError
-*/
-
 /* Raise an exception whenever a function fails */
 %exception{
     $action
-    if (result) {
-        PyErr_SetString(PyExc_RuntimeError, "Error");
+    if (check_result(result))
         SWIG_fail;
-    }
 };
 
 
