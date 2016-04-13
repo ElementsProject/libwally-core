@@ -15,4 +15,11 @@ WALLY_CORE_API int bip38_from_private_key(
     bool compressed,
     char **output);
 
+WALLY_CORE_API int bip38_to_private_key(
+    const char *bip38,
+    const unsigned char *password,
+    size_t password_len,
+    unsigned char *bytes_out,
+    size_t len);
+
 #endif /* LIBWALLY_CORE_BIP38_H */

@@ -47,14 +47,18 @@ struct bip38_layout_t {
     uint32_t hash;
     unsigned char half1[AES256_BLOCK_LEN];
     unsigned char half2[AES256_BLOCK_LEN];
+    unsigned char decode_hash[BASE58_CHECKSUM_LEN];
 };
+#define LAYOUT_BYTES (sizeof(struct bip38_layout_t) - BASE58_CHECKSUM_LEN - 1)
+#define LAYOUT_CHKSUM_BYTES (sizeof(struct bip38_layout_t) - 1)
 
 /* Check assumptions we expect to hold true */
 static void assert_assumptions(void)
 {
     /* derived_t/bip38_layout_t must be contiguous */
     BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERVIED_KEY_LEN);
-    BUILD_ASSERT(sizeof(struct bip38_layout_t) == 40u); /* 39 + pad1 */
+    /* 44 -> pad1 + 39 + BASE58_CHECKSUM_LEN */
+    BUILD_ASSERT(sizeof(struct bip38_layout_t) == 44u);
 }
 
 /* FIXME: Share this with key_compute_pub_key in bip32.c */
@@ -146,10 +150,57 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
     buf.flags = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
     aes_enc(priv_key + 0, derived.half1_lo, derived.half2, buf.half1);
     aes_enc(priv_key + 16, derived.half1_hi, derived.half2, buf.half2);
-    ret = base58_from_bytes(&buf.prefix, sizeof(buf) - 1,
-                            BASE58_FLAG_CHECKSUM, output);
+    ret = base58_from_bytes(&buf.prefix, LAYOUT_BYTES, BASE58_FLAG_CHECKSUM,
+                            output);
 finish:
     wally_free_string(addr58);
+    clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
+    return ret;
+}
+
+static void aes_dec(const unsigned char *src, const unsigned char *xor,
+                    const unsigned char *key, unsigned char *bytes_out)
+{
+    AES256_ctx ctx;
+    size_t i;
+
+    AES256_init(&ctx, key);
+    AES256_decrypt(&ctx, 1, bytes_out, src);
+
+    for (i = 0; i < BITCOIN_PRIVATE_KEY_LEN; ++i)
+        bytes_out[i] ^= xor[i];
+
+    clear(&ctx, sizeof(ctx));
+}
+
+
+int bip38_to_private_key(const char *bip38,
+                         const unsigned char *password, size_t password_len,
+                         unsigned char *bytes_out, size_t len)
+{
+    struct derived_t derived;
+    struct bip38_layout_t buf;
+    int ret = -1;
+
+    if (len != BITCOIN_PRIVATE_KEY_LEN)
+        goto finish;
+
+    if (base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
+                        LAYOUT_CHKSUM_BYTES) != LAYOUT_BYTES)
+        goto finish;
+
+    if (scrypt(password, password_len,
+               (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
+               (unsigned char *)&derived, sizeof(derived)))
+        goto finish;
+
+    aes_dec(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
+    aes_dec(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
+
+    /* FIXME: Validate hash */
+    ret = 0;
+
+finish:
     clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }

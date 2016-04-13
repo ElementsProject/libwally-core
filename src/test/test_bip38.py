@@ -35,6 +35,11 @@ class BIP38Tests(unittest.TestCase):
         return bip38_from_private_key(priv, priv_len, passwd, len(passwd),
                                       0, compressed)
 
+    def to_priv(self, bip38, passwd):
+        priv, priv_len = make_cbuffer('00' * 32)
+        ret = bip38_to_private_key(bip38, passwd, len(passwd), priv, priv_len)
+        return ret, priv
+
     def test_bip38(self):
 
         for case in cases:
@@ -42,6 +47,10 @@ class BIP38Tests(unittest.TestCase):
             ret, bip38 = self.from_priv(priv_key, passwd, compressed)
             self.assertEqual(ret, 0)
             self.assertEqual(bip38, expected)
+
+            ret, new_priv_key = self.to_priv(bip38, passwd)
+            self.assertEqual(ret, 0)
+            self.assertEqual(h(new_priv_key).upper(), priv_key)
 
 
 if __name__ == '__main__':
