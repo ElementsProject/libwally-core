@@ -43,10 +43,19 @@ AC_SUBST([GNU_SED])
 #
 # C facilities
 #
+AC_ARG_ENABLE(debug,
+    AS_HELP_STRING([--enable-debug],[enable debugging (default: no)]),
+    [debug=$enableval], [debug=no])
+
 if test "x$CC" == "xgcc"; then
-    # FIXME: Add an --enable-debug flag
-    CFLAGS="-O3 -flto -ggdb"
-    LDFLAGS="-O3 -flto -ggdb"
+    if test "x$debug" == "xyes"; then
+        # Make debugging easier, leave assertions in
+        CFLAGS="-Og -ggdb"
+        LDFLAGS="-Og -ggdb"
+    else
+        CFLAGS="-O3 -flto -DNDEBUG=1"
+        LDFLAGS="-O3 -flto"
+    fi
 fi
 
 AC_ARG_ENABLE(export-all,
@@ -74,10 +83,6 @@ if test "x$export_all" != "xyes"; then
             CFLAGS="$saved_CFLAGS"
         ])
 fi
-
-# Turn off assertions in ccan
-# FIXME: Enable in debug mode
-CFLAGS="$CFLAGS -DNDEBUG"
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
