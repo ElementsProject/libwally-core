@@ -30,9 +30,12 @@ WALLY_CORE_API int bip39_get_languages(
  * Get the default word list for language @lang.
  *
  * If @lang is NULL or not found the default English list is returned.
+ *
+ * The returned structure should not be freed.
  */
-WALLY_CORE_API const struct words *bip39_get_wordlist(
-    const char *lang);
+WALLY_CORE_API int bip39_get_wordlist(
+    const char *lang,
+    const struct words **output);
 
 /**
  * Generate a mnemonic sentence from the entropy in @bytes_in.
@@ -42,7 +45,7 @@ WALLY_CORE_API const struct words *bip39_get_wordlist(
  *
  * The string returned should be freed using @wally_free_string().
  */
-WALLY_CORE_API void bip39_mnemonic_from_bytes(
+WALLY_CORE_API int bip39_mnemonic_from_bytes(
     const struct words *w,
     const unsigned char *bytes_in,
     size_t len,
@@ -53,22 +56,21 @@ WALLY_CORE_API void bip39_mnemonic_from_bytes(
  * @w Word list to use. Pass NULL to use the default English list.
  * @mnemonic Mnemonic to convert.
  * @bytes_out: Where to store the resulting entropy.
- * @len: The length of @bytes_out in bytes.
- *
- * Returns The number of bytes written on success, zero otherwise.
+ * @len_in_out: The length of @bytes_out in bytes.
  */
-WALLY_CORE_API size_t bip39_mnemonic_to_bytes(
+WALLY_CORE_API int bip39_mnemonic_to_bytes(
     const struct words *w,
     const char *mnemonic,
     unsigned char *bytes_out,
-    size_t len);
+    size_t len,
+    size_t *written);
 
 /**
  * Validate the checksum embedded in the mnemonic sentence @mnemonic.
  * @w Word list to use. Pass NULL to use the default English list.
  * @mnemonic Mnemonic to validate.
  */
-WALLY_CORE_API bool bip39_mnemonic_is_valid(
+WALLY_CORE_API int bip39_mnemonic_validate(
     const struct words *w,
     const char *mnemonic);
 
@@ -79,13 +81,12 @@ WALLY_CORE_API bool bip39_mnemonic_is_valid(
  * @bytes_out The destination for the binary seed.
  * @len The length of @bytes_out in bytes. Currently This must
  *      be @BIP39_SEED_LEN_512.
- *
- * Returns @BIP39_SEED_LEN_512 on success, zero otherwise.
  */
-WALLY_CORE_API size_t bip39_mnemonic_to_seed(
+WALLY_CORE_API int bip39_mnemonic_to_seed(
     const char *mnemonic,
     const char *password,
     unsigned char *bytes_out,
-    size_t len);
+    size_t len,
+    size_t *written);
 
 #endif /* LIBWALLY_CORE_BIP39_H */

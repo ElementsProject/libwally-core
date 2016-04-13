@@ -21,12 +21,12 @@
 /**
  * Securely wipe memory.
  */
-WALLY_CORE_API void wally_bzero(void *bytes, size_t len);
+WALLY_CORE_API int wally_bzero(void *bytes, size_t len);
 
 /**
  * Securely wipe and then free a string allocted by the library.
  */
-WALLY_CORE_API void wally_free_string(char *str);
+WALLY_CORE_API int wally_free_string(char *str);
 
 #endif /* WALLY_CORE_H */
 

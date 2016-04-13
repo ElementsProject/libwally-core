@@ -32,7 +32,8 @@ class Mnemonic(object):
         if isinstance(words, list):
             words = ' '.join(words)
         buf = bytearray(BIP39_ENTROPY_LEN_256)
-        length = wallycore.bip39_mnemonic_to_bytes(self.wordlist, words, buf)
+        # FIXME: Remove first return value
+        _, length = wallycore.bip39_mnemonic_to_bytes(self.wordlist, words, buf)
         if length <= 0:
             raise ValueError('Invalid word list. %s' % words)
         return bytearray(buf)[0:length]
@@ -43,14 +44,17 @@ class Mnemonic(object):
 
 
     def check(self, mnemonic):
-        return wallycore.bip39_mnemonic_is_valid(self.wordlist, mnemonic)
+        try:
+            wallycore.bip39_mnemonic_validate(self.wordlist, mnemonic)
+            return True
+        except:
+            return False
 
 
     def to_seed(self, mnemonic, passphrase = ''):
         buf = bytearray(wallycore.BIP39_SEED_LEN_512)
-        if wallycore.bip39_mnemonic_to_seed(mnemonic, passphrase, buf) == 0:
-            raise ValueError('Unable to create seed')
-        return bytearray(buf)[0:wallycore.BIP39_SEED_LEN_512]
+        wallycore.bip39_mnemonic_to_seed(mnemonic, passphrase, buf)
+        return buf
 
 
 if __name__ == "__main__":

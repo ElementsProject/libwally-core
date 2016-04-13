@@ -2,7 +2,6 @@ import unittest
 from binascii import hexlify
 import json
 from util import *
-from ctypes import create_string_buffer
 
 
 class BIP39Tests(unittest.TestCase):
@@ -16,6 +15,10 @@ class BIP39Tests(unittest.TestCase):
               'zhs': 'chinese_simplified',
               'zht': 'chinese_traditional' }
 
+    def get_wordlist(self, lang):
+        out = c_void_p()
+        bip39_get_wordlist(lang, byref(out))
+        return out
 
     def setUp(self):
         if self.cases is None:
@@ -24,7 +27,7 @@ class BIP39Tests(unittest.TestCase):
                 conv = lambda case: [utf8(x) for x in case]
                 self.cases = [conv(case) for case in cases]
 
-            gwl = lambda lang: bip39_get_wordlist(utf8(lang))
+            gwl = lambda lang: self.get_wordlist(utf8(lang))
             self.wordlists = {l: gwl(l) for l in list(self.langs.keys())}
 
 
@@ -39,12 +42,15 @@ class BIP39Tests(unittest.TestCase):
 
         self.assertEqual(len(all_langs), len(list(self.langs.keys())))
 
+
     def test_bip39_wordlists(self):
 
         for lang, wl in self.wordlists.items():
             self.assertIsNotNone(wl)
 
-        self.assertEqual(bip39_get_wordlist(None), self.wordlists['en'])
+        def_wl = self.get_wordlist(None)
+        en_wl = self.wordlists['en']
+        self.assertEqual(def_wl.value, en_wl.value)
 
 
     def test_all_lookups(self):
@@ -64,19 +70,22 @@ class BIP39Tests(unittest.TestCase):
 
     def test_bip39_vectors(self):
         """Test conversion to and from the BIP39 specification vectors"""
-        wl = bip39_get_wordlist(None)
+        wl = self.get_wordlist(None)
 
         for case in self.cases:
             hex_input, mnemonic = case[0], case[1]
             buf, buf_len = make_cbuffer(hex_input)
 
-            result = utf8(bip39_mnemonic_from_bytes(wl, buf, buf_len))
+            ret, result = bip39_mnemonic_from_bytes(wl, buf, buf_len)
+            self.assertEqual(ret, 0)
+            result = utf8(result)
             self.assertEqual(result, mnemonic)
-            self.assertEqual(bip39_mnemonic_is_valid(wl, mnemonic), 1)
+            bip39_mnemonic_validate(wl, mnemonic)
 
             out_buf = create_string_buffer(buf_len)
-            rlen = bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len)
-            self.assertEqual(rlen, buf_len)
+            rlen = c_ulong()
+            bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len, byref(rlen))
+            self.assertEqual(rlen.value, buf_len)
             self.assertEqual(buf, out_buf.raw)
 
 
@@ -86,8 +95,9 @@ class BIP39Tests(unittest.TestCase):
             mnemonic, seed = case[1], case[2]
 
             buf = create_string_buffer(64)
-            result = bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64)
-            self.assertEqual(result, 64)
+            count = c_ulong()
+            bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64, byref(count))
+            self.assertEqual(count.value, 64)
             self.assertEqual(hexlify(buf), seed)
 
 

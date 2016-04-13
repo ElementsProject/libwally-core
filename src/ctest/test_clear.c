@@ -84,16 +84,17 @@ static bool test_search(void)
 
 static bool test_bip39(void)
 {
+    static size_t len;
     /* Converting uses a temporary buffer on the stack */
     if (bip39_mnemonic_to_bytes(NULL, BIP39_MNEMONIC, gbytes,
-                                BIP39_ENTROPY_LEN_128) != BIP39_ENTROPY_LEN_128)
+                                BIP39_ENTROPY_LEN_128, &len))
         return false;
 
     if (in_stack(BIP39_SECRET, sizeof(BIP39_SECRET)))
         return false;
 
     /* Internally converts to bytes */
-    if (!bip39_mnemonic_is_valid(NULL, BIP39_MNEMONIC))
+    if (bip39_mnemonic_validate(NULL, BIP39_MNEMONIC))
         return false;
 
     if (in_stack(BIP39_SECRET, sizeof(BIP39_SECRET)))

@@ -20,18 +20,21 @@ const secp256k1_context *secp_ctx(void)
     return global_ctx;
 }
 
-void wally_free_string(char *str)
+int wally_free_string(char *str)
 {
-    if (str) {
-        clear(str, strlen(str));
-        free(str);
-    }
+    if (!str)
+        return -1;
+    clear(str, strlen(str));
+    free(str);
+    return 0;
 }
 
-void wally_bzero(void *bytes, size_t len)
+int wally_bzero(void *bytes, size_t len)
 {
-    if (bytes)
-        clear(bytes, len);
+    if (!bytes)
+        return -1;
+    clear(bytes, len);
+    return 0;
 }
 
 #if 0
