@@ -47,41 +47,36 @@ AC_ARG_ENABLE(debug,
     AS_HELP_STRING([--enable-debug],[enable debugging (default: no)]),
     [debug=$enableval], [debug=no])
 
-if test "x$CC" == "xgcc"; then
-    if test "x$debug" == "xyes"; then
-        # Make debugging easier, leave assertions in
-        CFLAGS="-Og -ggdb"
-        LDFLAGS="-Og -ggdb"
-    else
-        CFLAGS="-O3 -flto -DNDEBUG=1"
-        LDFLAGS="-O3 -flto"
-    fi
+if test "x$debug" == "xyes"; then
+    # Make debugging easier, leave assertions in
+    AX_CHECK_COMPILE_FLAG([-Og], [CFLAGS="$CFLAGS -Og"])
+    AX_CHECK_COMPILE_FLAG([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
+    LDFLAGS="-Og -ggdb"
+else
+    AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
+    AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
+    AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [CFLAGS="$CFLAGS -DNDEBUG=1"])
+    LDFLAGS="-O3 -flto"
 fi
+
+AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS="$CFLAGS -Wall"])
+AX_CHECK_COMPILE_FLAG([-Wextra], [CFLAGS="$CFLAGS -Wextra"])
+AX_CHECK_COMPILE_FLAG([-Wpedantic], [CFLAGS="$CFLAGS -Wpedantic"])
+AX_CHECK_COMPILE_FLAG([-Wcast-align], [CFLAGS="$CFLAGS -Wcast-align"])
+AX_CHECK_COMPILE_FLAG([-Wnested-externs], [CFLAGS="$CFLAGS -Wnested-externs"])
+AX_CHECK_COMPILE_FLAG([-Wshadow], [CFLAGS="$CFLAGS -Wshadow"])
+AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CFLAGS="$CFLAGS -Wstrict-prototypes"])
+AX_CHECK_COMPILE_FLAG([-Wno-unused-function], [CFLAGS="$CFLAGS -Wno-unused-function"])
+AX_CHECK_COMPILE_FLAG([-Wno-long-long], [CFLAGS="$CFLAGS -Wno-long-long"])
+AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [CFLAGS="$CFLAGS -Wno-overlength-strings"])
 
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
 AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" = "xyes"])
 
-warn_CFLAGS="--pedantic -Wall -W -Wextra -Wcast-align -Wnested-externs -Wshadow -Wstrict-prototypes -Wno-unused-function -Wno-long-long -Wno-overlength-strings"
-saved_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $warn_CFLAGS"
-AC_MSG_CHECKING([if ${CC} supports ${warn_CFLAGS}])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
-    [ AC_MSG_RESULT([yes]) ],
-    [ AC_MSG_RESULT([no])
-        CFLAGS="$saved_CFLAGS"
-    ])
-
 if test "x$export_all" != "xyes"; then
-    saved_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS -fvisibility=hidden"
-    AC_MSG_CHECKING([if ${CC} supports -fvisibility=hidden])
-    AC_COMPILE_IFELSE([AC_LANG_SOURCE([[char foo;]])],
-        [ AC_MSG_RESULT([yes]) ],
-        [ AC_MSG_RESULT([no])
-            CFLAGS="$saved_CFLAGS"
-        ])
+    AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [CFLAGS="$CFLAGS -fvisibility=hidden"])
 fi
 
 AC_C_BIGENDIAN()
