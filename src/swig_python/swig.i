@@ -75,25 +75,26 @@ PyExc_ZeroDivisionError
    }
 }
 
-/* Opaque types are passed along as capsules FIXME: Generalise */
-%typemap(in, numinputs=0) const struct words **output (struct words * w) {
+/* Opaque types are passed along as capsules */
+%define %py_opaque_struct(NAME)
+%typemap(in, numinputs=0) const struct NAME **output (struct NAME * w) {
    w = 0; $1 = ($1_ltype)&w;
 }
-%typemap(argout) const struct words ** {
+%typemap(argout) const struct NAME ** {
    Py_DecRef($result);
    if (*$1 == NULL) {
        Py_INCREF(Py_None);
-       //$result = SWIG_Python_AppendOutput($result, Py_None);
        $result = Py_None;
    } else {
        $result = PyCapsule_New(*$1, NULL, NULL);
    }
 }
-
-%typemap (in) const struct words *
-{
+%typemap (in) const struct NAME * {
     $1 = PyCapsule_GetPointer($input, NULL);
 }
+%enddef
+
+%py_opaque_struct(words);
 
 %include "../include/wally-core.h"
 %include "../include/wally_bip39.h"
