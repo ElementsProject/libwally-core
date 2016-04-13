@@ -32,8 +32,7 @@ class Mnemonic(object):
         if isinstance(words, list):
             words = ' '.join(words)
         buf = bytearray(BIP39_ENTROPY_LEN_256)
-        # FIXME: Remove first return value
-        _, length = wallycore.bip39_mnemonic_to_bytes(self.wordlist, words, buf)
+        length = wallycore.bip39_mnemonic_to_bytes(self.wordlist, words, buf)
         if length <= 0:
             raise ValueError('Invalid word list. %s' % words)
         return bytearray(buf)[0:length]

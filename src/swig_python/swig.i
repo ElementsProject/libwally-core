@@ -44,7 +44,13 @@ static int check_result(int result)
 
 /* Output parameters indicating how many bytes were written are converted
  * into return values. */
-%apply size_t *OUTPUT { size_t *written };
+%typemap(in, numinputs=0) size_t *written (size_t sz) {
+   sz = 0; $1 = ($1_ltype)&sz;
+}
+%typemap(argout) size_t* {
+   Py_DecRef($result);
+   $result = PyInt_FromSize_t(*$1);
+}
 
 /* Output strings are converted to native python strings and returned */
 %typemap(in, numinputs=0) char** (char* txt) {
