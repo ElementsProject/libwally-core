@@ -70,7 +70,7 @@ static int base58_decode(const char *base58, size_t base58_len,
 {
     uint32_t bn_buf[BIGNUM_WORDS];
     uint32_t *bn = bn_buf, *top_word, *bn_p;
-    size_t bn_words, ones, cp_len, i;
+    size_t bn_words = 0, ones, cp_len, i;
     unsigned char *cp;
     int ret = -1;
 
@@ -137,12 +137,9 @@ static int base58_decode(const char *base58, size_t base58_len,
     ret = 0;
 
 cleanup:
-    if (bn == bn_buf)
-        clear(bn_buf, sizeof(bn_buf));
-    else {
-        clear(bn, bn_words * sizeof(*bn));
+    clear(bn, bn_words * sizeof(*bn));
+    if (bn != bn_buf)
         free(bn);
-    }
     return ret;
 }
 
@@ -165,7 +162,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     uint32_t checksum, *cs_p = NULL;
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
-    size_t bn_bytes, zeros, i, orig_len = len;
+    size_t bn_bytes = 0, zeros, i, orig_len = len;
     int ret = -1;
 
     *output = NULL;
@@ -233,12 +230,9 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     ret = 0;
 
 cleanup:
-    if (bn == bn_buf)
-        clear(bn_buf, sizeof(bn_buf));
-    else {
-        clear(bn, bn_bytes);
+    clear(bn, bn_bytes);
+    if (bn != bn_buf)
         free(bn);
-    }
     return ret;
 }
 
