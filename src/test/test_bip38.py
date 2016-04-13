@@ -29,7 +29,6 @@ cases = [
 
 class BIP38Tests(unittest.TestCase):
 
-
     def from_priv(self, priv_key, passwd, compressed):
         priv, priv_len = make_cbuffer(priv_key)
         return bip38_from_private_key(priv, priv_len, passwd, len(passwd),
@@ -37,7 +36,8 @@ class BIP38Tests(unittest.TestCase):
 
     def to_priv(self, bip38, passwd):
         priv, priv_len = make_cbuffer('00' * 32)
-        ret = bip38_to_private_key(bip38, passwd, len(passwd), priv, priv_len)
+        ret = bip38_to_private_key(bip38, passwd, len(passwd), 0,
+                                   priv, priv_len)
         return ret, priv
 
     def test_bip38(self):

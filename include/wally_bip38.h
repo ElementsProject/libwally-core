@@ -19,6 +19,7 @@ WALLY_CORE_API int bip38_to_private_key(
     const char *bip38,
     const unsigned char *password,
     size_t password_len,
+    unsigned char network,
     unsigned char *bytes_out,
     size_t len);
 

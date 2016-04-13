@@ -176,10 +176,12 @@ static void aes_dec(const unsigned char *src, const unsigned char *xor,
 
 int bip38_to_private_key(const char *bip38,
                          const unsigned char *password, size_t password_len,
+                         unsigned char network,
                          unsigned char *bytes_out, size_t len)
 {
     struct derived_t derived;
     struct bip38_layout_t buf;
+    char *addr58 = NULL;
     int ret = -1;
 
     if (len != BITCOIN_PRIVATE_KEY_LEN)
@@ -197,7 +199,13 @@ int bip38_to_private_key(const char *bip38,
     aes_dec(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
     aes_dec(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
 
-    /* FIXME: Validate hash */
+    if (address_from_private_key(bytes_out, len, network,
+                                 buf.flags & BIP38_FLAG_COMPRESSED, &addr58))
+        goto finish;
+
+    if (buf.hash != base58_get_checksum((unsigned char *)addr58, strlen(addr58)))
+        goto finish;
+
     ret = 0;
 
 finish:
