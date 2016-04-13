@@ -29,17 +29,32 @@
 #define BIP38_DERVIED_KEY_LEN 64u
 #define AES256_BLOCK_LEN 16u
 
+#define BIP38_PREFIX   0x01
+#define BIP38_ECMUL    0x43
+#define BIP38_NO_ECMUL 0x42
+
 struct derived_t {
     unsigned char half1_lo[BIP38_DERVIED_KEY_LEN / 4];
     unsigned char half1_hi[BIP38_DERVIED_KEY_LEN / 4];
     unsigned char half2[BIP38_DERVIED_KEY_LEN / 2];
 };
 
+struct bip38_layout_t {
+    unsigned char pad1;
+    unsigned char prefix;
+    unsigned char ec_type;
+    unsigned char flags;
+    uint32_t hash;
+    unsigned char half1[AES256_BLOCK_LEN];
+    unsigned char half2[AES256_BLOCK_LEN];
+};
+
 /* Check assumptions we expect to hold true */
 static void assert_assumptions(void)
 {
-    /* derived_t layout must be contiguous */
+    /* derived_t/bip38_layout_t must be contiguous */
     BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERVIED_KEY_LEN);
+    BUILD_ASSERT(sizeof(struct bip38_layout_t) == 40u); /* 39 + pad1 */
 }
 
 /* FIXME: Share this with key_compute_pub_key in bip32.c */
@@ -111,8 +126,7 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
                            char **output)
 {
     struct derived_t derived;
-    unsigned char buf[7 + AES256_BLOCK_LEN * 2];
-    uint32_t hash;
+    struct bip38_layout_t buf;
     char *addr58 = NULL;
     int ret = -1;
 
@@ -121,21 +135,21 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
     if (address_from_private_key(priv_key, len, network, compressed, &addr58))
         goto finish;
 
-    hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
-    if (scrypt(password, password_len, (unsigned char *)&hash, sizeof(hash),
-               16384, 8, 8, (unsigned char *)&derived, sizeof(derived)))
+    buf.hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
+    if (scrypt(password, password_len,
+               (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
+               (unsigned char *)&derived, sizeof(derived)))
         goto finish;
 
-    buf[0] = 0x01;
-    buf[1] = 0x42; /* FIXME: EC-Multiply support */
-    buf[2] = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
-    memcpy(buf + 3, &hash, sizeof(hash));
-    aes_enc(priv_key + 0, derived.half1_lo, derived.half2, buf + 7 + 0);
-    aes_enc(priv_key + 16, derived.half1_hi, derived.half2, buf + 7 + 16);
-    ret = base58_from_bytes(buf, sizeof(buf), BASE58_FLAG_CHECKSUM, output);
-
+    buf.prefix = BIP38_PREFIX;
+    buf.ec_type = BIP38_NO_ECMUL; /* FIXME: EC-Multiply support */
+    buf.flags = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
+    aes_enc(priv_key + 0, derived.half1_lo, derived.half2, buf.half1);
+    aes_enc(priv_key + 16, derived.half1_hi, derived.half2, buf.half2);
+    ret = base58_from_bytes(&buf.prefix, sizeof(buf) - 1,
+                            BASE58_FLAG_CHECKSUM, output);
 finish:
     wally_free_string(addr58);
-    clear_n(3, &derived, sizeof(derived), buf, sizeof(buf), &hash, sizeof(hash));
+    clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
