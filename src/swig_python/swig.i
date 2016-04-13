@@ -35,6 +35,11 @@ static int check_result(int result)
         SWIG_fail;
 };
 
+/* Return None if we didn't throw instead of 0 */
+%typemap(out) int %{
+    Py_IncRef(Py_None);
+    $result = Py_None;
+%}
 
 /* Input buffers with lengths are passed as python buffers */
 %pybuffer_binary(const unsigned char *bytes_in, size_t len);
@@ -57,11 +62,8 @@ static int check_result(int result)
    $1 = ($1_ltype)&txt;
 }
 %typemap(argout) char** {
-   Py_DecRef($result);
-   if (*$1 == NULL) {
-       Py_INCREF(Py_None);
-       $result = Py_None;
-   } else {
+   if (*$1 != NULL) {
+       Py_DecRef($result);
        $result = PyString_FromString(*$1);
        wally_free_string(*$1);
    }
@@ -73,11 +75,8 @@ static int check_result(int result)
    w = 0; $1 = ($1_ltype)&w;
 }
 %typemap(argout) const struct NAME ** {
-   Py_DecRef($result);
-   if (*$1 == NULL) {
-       Py_INCREF(Py_None);
-       $result = Py_None;
-   } else {
+   if (*$1 != NULL) {
+       Py_DecRef($result);
        $result = PyCapsule_New(*$1, NULL, NULL);
    }
 }
