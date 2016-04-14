@@ -51,7 +51,6 @@ public class Mnemonic {
         }
     }
 
-    // FIXME: make mnemonic_to_seed return a new buffer
     public byte[] toSeed(final String mnemonic, final String passphrase) {
         final byte[] buf = new byte[(int) BIP39_SEED_LEN_512];
         wallycoreJNI.bip39_mnemonic_to_seed(mnemonic, passphrase, buf);
