@@ -6,9 +6,34 @@
 static void check_result(JNIEnv *jenv, int result) {
     if (!result)
         return;
-    /* FIXME: Use result to determine exception type */
-    jclass clazz = (*jenv)->FindClass(jenv, "java/lang/IllegalArgumentException");
-    (*jenv)->ThrowNew(jenv, clazz, "Invalid argument");
+    /* FIXME: Use result to determine exception type:
+     * SWIG_JavaOutOfMemoryError, SWIG_JavaRuntimeException */
+    SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
+}
+
+static jobject create_obj(JNIEnv *jenv, void* p, const char* typename) {
+
+    jclass clazz = (*jenv)->FindClass(jenv, "com/blockstream/libwally/wallycore$obj");
+    if (!clazz)
+        return NULL;
+    jmethodID ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(J)V");
+    if (!ctor)
+        return NULL;
+    jobject obj = (*jenv)->NewObject(jenv, clazz, ctor, (long)p);
+    return obj;
+}
+
+static void* get_obj(JNIEnv *jenv, jobject obj, const char* typename) {
+
+    if (!obj)
+        return NULL;
+    jclass clazz = (*jenv)->GetObjectClass(jenv, obj);
+    if (!clazz)
+        return NULL;
+    jmethodID getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
+    if (!getter)
+        return NULL;
+    return (void *)((*jenv)->CallLongMethod(jenv, obj, getter));
 }
 %}
 
@@ -26,7 +51,7 @@ static void check_result(JNIEnv *jenv, int result) {
         }
     }
 
-    private class obj {
+    static private class obj {
         private transient long ptr;
         protected obj(long p) { ptr = p; }
         protected long get() { return ptr; }
@@ -69,40 +94,42 @@ static void check_result(JNIEnv *jenv, int result) {
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 
-/* Opaque types are just cast to longs */
+/* Opaque types are converted to/from an internal object holder class */
 %define %java_opaque_struct(NAME)
 %typemap(in, numinputs=0) const struct NAME **output (const struct NAME * w) {
    w = 0; $1 = ($1_ltype)&w;
 }
 %typemap(argout) const struct NAME ** {
-   $result = (jlong)*$1;
+   $result = create_obj(jenv, *$1, "NAME");
 }
 %typemap (in) const struct NAME * {
-    $1 = (struct NAME *)$input;
+    $1 = (struct NAME *)get_obj(jenv, $input, "NAME");
 }
+%typemap(jtype) const struct NAME * "Object"
+%typemap(jni) const struct NAME * "jobject"
 %enddef
 
 /* Tell SWIG what uint32_t means */
 typedef unsigned int uint32_t;
 
 /* Change a functions return type to match its output type mapping */
-%define %return_decls(FUNC, JTYPE, JNITYPE, RETVAL)
+%define %return_decls(FUNC, JTYPE, JNITYPE)
 %typemap(jstype) int FUNC "JTYPE"
 %typemap(jtype) int FUNC "JTYPE"
 %typemap(jni) int FUNC "JNITYPE"
 %enddef
 
 %define %returns_void__(FUNC)
-%return_decls(FUNC, void, void, /*nothing*/)
+%return_decls(FUNC, void, void)
 %enddef
 %define %returns_size_t(FUNC)
-%return_decls(FUNC, long, jlong, $jnicall)
+%return_decls(FUNC, long, jlong)
 %enddef
 %define %returns_string(FUNC)
-%return_decls(FUNC, String, jstring, $jnicall)
+%return_decls(FUNC, String, jstring)
 %enddef
 %define %returns_struct(FUNC, STRUCT)
-%return_decls(FUNC, long, jlong, /*nothing*/)
+%return_decls(FUNC, Object, jobject)
 %enddef
 
 /* Our wrapped opaque types */
