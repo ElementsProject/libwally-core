@@ -21,7 +21,7 @@ struct words;
 /**
  * Get the list of default supported languages.
  *
- * The string returned should be freed using @wally_free_string().
+ * The string returned should be freed using @wally_free_string.
  */
 WALLY_CORE_API int bip39_get_languages(
     char **output);
@@ -38,12 +38,22 @@ WALLY_CORE_API int bip39_get_wordlist(
     const struct words **output);
 
 /**
+ * Get the 'index'th word from a word list.
+ *
+ * The string returned should be freed using @wally_free_string.
+ */
+WALLY_CORE_API int bip39_get_word(
+    const struct words *w,
+    size_t index,
+    char **output);
+
+/**
  * Generate a mnemonic sentence from the entropy in @bytes_in.
  * @w Word list to use. Pass NULL to use the default English list.
  * @bytes_in: Entropy to convert.
  * @len: The length of @bytes_in in bytes.
  *
- * The string returned should be freed using @wally_free_string().
+ * The string returned should be freed using @wally_free_string.
  */
 WALLY_CORE_API int bip39_mnemonic_from_bytes(
     const struct words *w,

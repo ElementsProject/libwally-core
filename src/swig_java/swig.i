@@ -106,6 +106,7 @@ typedef unsigned int uint32_t;
 /* Our wrapped functions return types */
 %returns_string(bip39_get_languages);
 %returns_struct(bip39_get_wordlist, words);
+%returns_string(bip39_get_word);
 %returns_string(bip39_mnemonic_from_bytes);
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);

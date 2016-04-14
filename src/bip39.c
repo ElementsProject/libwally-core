@@ -48,6 +48,19 @@ int bip39_get_wordlist(const char *lang, const struct words **output)
     return 0;
 }
 
+int bip39_get_word(const struct words *w, size_t index,
+                   char **output)
+{
+    const char *word;
+
+    if (!w || !output)
+        return -1;
+
+    word = wordlist_lookup_index(w, index);
+    *output = word ? strdup(word) : NULL;
+    return *output ? 0 : -1;
+}
+
 /* Convert an input entropy length to a mask for checksum bits. As it
  * returns 0 for bad lengths, it serves as a validation function too.
  */

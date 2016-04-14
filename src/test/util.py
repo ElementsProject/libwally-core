@@ -47,6 +47,7 @@ for f in (
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_int, c_void_p, c_ulong]),
     ('bip39_get_languages', c_int, [POINTER(c_char_p)]),
     ('bip39_get_wordlist', c_int, [c_char_p, POINTER(c_void_p)]),
+    ('bip39_get_word', c_int, [c_void_p, c_ulong, POINTER(c_char_p)]),
     ('bip39_mnemonic_from_bytes', c_int, [c_void_p, c_void_p, c_ulong, POINTER(c_char_p)]),
     ('bip39_mnemonic_to_bytes', c_int, [c_void_p, c_char_p, c_void_p, c_ulong, POINTER(c_ulong)]),
     ('bip39_mnemonic_validate', c_int, [c_void_p, c_char_p]),
@@ -62,7 +63,8 @@ for f in (
     # So we have to use explicit lists here to find functions to wrap
     # FIXME: Use a sentinel class in the arg list instead
     string_funcs = ['base58_from_bytes', 'bip38_from_private_key',
-                    'bip39_get_languages', 'bip39_mnemonic_from_bytes']
+                    'bip39_get_languages', 'bip39_mnemonic_from_bytes',
+                    'bip39_get_word' ]
 
     def bind_fn(name, res, args):
         try:

@@ -55,17 +55,18 @@ class BIP39Tests(unittest.TestCase):
 
     def test_all_lookups(self):
 
-        if wordlist_lookup_index is None:
-            return # No internal functions available
-
         for lang in list(self.langs.keys()):
             wl = self.wordlists[lang]
             words_list, _ = load_words(self.langs[lang])
             for i in range(2048):
-                word = wordlist_lookup_index(wl, i)
+                ret, word = bip39_get_word(wl, i)
+                word = word.encode('utf-8')
+                self.assertEqual(ret, 0)
                 self.assertEqual(word, utf8(words_list[i]))
                 idx = wordlist_lookup_word(wl, word)
                 self.assertEqual(i, idx - 1)
+
+        self.assertEqual(bip39_get_word(wl, 2048), (-1, None))
 
 
     def test_bip39_vectors(self):
