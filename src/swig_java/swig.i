@@ -12,6 +12,7 @@ static void check_result(JNIEnv *jenv, int result) {
 }
 %}
 
+%javaconst(1);
 %ignore wally_free_string;
 %ignore wally_bzero;
 

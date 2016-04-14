@@ -5,6 +5,7 @@ make distclean >/dev/null 2>&1
 
 find . -name Makefile -exec rm {} \;
 find . -name Makefile.in -exec rm {} \;
+find . -name "*.class" -exec rm {} \;
 
 rm -f */*~
 rm -f *~

@@ -9,14 +9,14 @@
 struct words;
 
 /** Valid entropy lengths */
-#define BIP39_ENTROPY_LEN_128 16u
-#define BIP39_ENTROPY_LEN_160 20u
-#define BIP39_ENTROPY_LEN_192 24u
-#define BIP39_ENTROPY_LEN_224 28u
-#define BIP39_ENTROPY_LEN_256 32u
+#define BIP39_ENTROPY_LEN_128 16
+#define BIP39_ENTROPY_LEN_160 20
+#define BIP39_ENTROPY_LEN_192 24
+#define BIP39_ENTROPY_LEN_224 28
+#define BIP39_ENTROPY_LEN_256 32
 
 /** The required size of the output buffer for @bip39_mnemonic_to_seed */
-#define BIP39_SEED_LEN_512 64u
+#define BIP39_SEED_LEN_512 64
 
 /**
  * Get the list of default supported languages.
