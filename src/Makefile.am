@@ -30,7 +30,7 @@ libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-alias
 
 swig_java/swig_java_wrap.c : swig_java/swig.i
 	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally -o $@ $<
-	rm swig_java/SWIGTYPE_p_words.java swig_java/wallycore.java
+	$(top_srcdir)/tools/swigjavapost.sh
 endif
 
 
