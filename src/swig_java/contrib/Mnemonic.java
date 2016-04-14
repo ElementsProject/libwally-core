@@ -22,8 +22,8 @@ public class Mnemonic {
         return wallycoreJNI.bip39_get_languages().split(" ");
     }
 
-    public String generate(final long strength) {
-        final byte[] seed = new byte[(int) strength];
+    public String generate(final int strength) {
+        final byte[] seed = new byte[strength];
         sr.nextBytes(seed);
         return toMnemonic(seed);
     }
@@ -33,7 +33,7 @@ public class Mnemonic {
     }
 
     public byte[] toEntropy(final String mnemonics) {
-        final byte[] buf = new byte[(int) BIP39_ENTROPY_LEN_256];
+        final byte[] buf = new byte[BIP39_ENTROPY_LEN_256];
         return Arrays.copyOf(buf, (int) wallycoreJNI.bip39_mnemonic_to_bytes(
                 wl, mnemonics, buf));
     }
@@ -52,7 +52,7 @@ public class Mnemonic {
     }
 
     public byte[] toSeed(final String mnemonic, final String passphrase) {
-        final byte[] buf = new byte[(int) BIP39_SEED_LEN_512];
+        final byte[] buf = new byte[BIP39_SEED_LEN_512];
         wallycoreJNI.bip39_mnemonic_to_seed(mnemonic, passphrase, buf);
         return buf;
     }
@@ -67,9 +67,9 @@ public class Mnemonic {
         final Map<String, byte[]> aMap = new HashMap<>();
         aMap.put(m, new byte[]{});
         aMap.put(m, null);
-        aMap.put("gibberish", new byte[(int) BIP39_ENTROPY_LEN_256]);
-        aMap.put("", new byte[(int) BIP39_ENTROPY_LEN_256]);
-        aMap.put(null, new byte[(int) BIP39_ENTROPY_LEN_256]);
+        aMap.put("gibberish", new byte[BIP39_ENTROPY_LEN_256]);
+        aMap.put("", new byte[BIP39_ENTROPY_LEN_256]);
+        aMap.put(null, new byte[BIP39_ENTROPY_LEN_256]);
         testMap = Collections.unmodifiableMap(aMap);
     }
     public static void main(final String[] args) {
