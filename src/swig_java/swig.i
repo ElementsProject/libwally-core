@@ -17,14 +17,20 @@ static void check_result(JNIEnv *jenv, int result) {
 %ignore wally_bzero;
 
 %pragma(java) jniclasscode=%{
-  static {
-    try {
-        System.loadLibrary("wallycore");
-    } catch (final UnsatisfiedLinkError e) {
-      System.err.println("Native code library failed to load.\n" + e);
-      System.exit(1);
+    static {
+        try {
+            System.loadLibrary("wallycore");
+        } catch (final UnsatisfiedLinkError e) {
+            System.err.println("Native code library failed to load.\n" + e);
+            System.exit(1);
+        }
     }
-  }
+
+    private class obj {
+        private transient long ptr;
+        protected obj(long p) { ptr = p; }
+        protected long get() { return ptr; }
+    }
 %}
 
 /* Raise an exception whenever a function fails */
