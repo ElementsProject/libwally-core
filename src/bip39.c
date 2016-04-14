@@ -132,8 +132,9 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
      */
     w = w ? w : &en_words;
 
-    *written = 0;
-    if (w->bits != 11u)
+    if (written)
+        *written = 0;
+    if (w->bits != 11u || !mnemonic || !bytes_out)
         return -1;
 
     tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
@@ -146,7 +147,8 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
     memcpy(bytes_out, tmp_bytes, tmp_len);
     clear(tmp_bytes, sizeof(tmp_bytes));
-    *written = tmp_len;
+    if (written)
+        *written = tmp_len;
     return 0;
 }
 
