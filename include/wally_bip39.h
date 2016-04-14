@@ -18,6 +18,9 @@ struct words;
 /** The required size of the output buffer for @bip39_mnemonic_to_seed */
 #define BIP39_SEED_LEN_512 64
 
+/** The number of words in a BIP39 compliant wordlist */
+#define BIP39_WORDLIST_LEN 2048
+
 /**
  * Get the list of default supported languages.
  *
