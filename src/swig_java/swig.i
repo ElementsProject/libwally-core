@@ -90,7 +90,6 @@ typedef unsigned int uint32_t;
 %typemap(jstype) int FUNC "JTYPE"
 %typemap(jtype) int FUNC "JTYPE"
 %typemap(jni) int FUNC "JNITYPE"
-%typemap(javaout) int FUNC { return RETVAL; }
 %enddef
 
 %define %returns_void__(FUNC)
