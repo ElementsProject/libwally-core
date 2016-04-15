@@ -11,30 +11,40 @@ static void check_result(JNIEnv *jenv, int result) {
     SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
 }
 
-static jobject create_obj(JNIEnv *jenv, void* p, long id) {
+/* Use a private static class to hold our opaque pointers */
+#define OBJ_CLASS "com/blockstream/libwally/wallycore$obj"
 
-    jclass clazz = (*jenv)->FindClass(jenv, "com/blockstream/libwally/wallycore$obj");
-    if (!clazz)
+/* Create and return a java object to hold an opaque pointer */
+static jobject create_obj(JNIEnv *jenv, void* p, long id) {
+    jclass clazz;
+    jmethodID ctor;
+
+    if (!(clazz = (*jenv)->FindClass(jenv, OBJ_CLASS)))
         return NULL;
-    jmethodID ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(JJ)V");
-    if (!ctor)
+    if (!(ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(JJ)V")))
         return NULL;
-    jobject obj = (*jenv)->NewObject(jenv, clazz, ctor, (long)p, id);
-    return obj;
+    return (*jenv)->NewObject(jenv, clazz, ctor, (long)p, id);
 }
 
+/* Fetch an opaque pointer from a java object */
 static void* get_obj(JNIEnv *jenv, jobject obj, long id) {
+    jclass clazz;
+    jmethodID getter;
 
-    if (!obj)
+    if (!obj || !(clazz = (*jenv)->GetObjectClass(jenv, obj)))
         return NULL;
-    jclass clazz = (*jenv)->GetObjectClass(jenv, obj);
-    if (!clazz)
-        return NULL;
-    jmethodID getter = (*jenv)->GetMethodID(jenv, clazz, "get_id", "()J");
+    getter = (*jenv)->GetMethodID(jenv, clazz, "get_id", "()J");
     if (!getter || (*jenv)->CallLongMethod(jenv, obj, getter) != id)
         return NULL;
     getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
     return getter ? (void *)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
+}
+
+static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *name) {
+    void * ret = get_obj(jenv, obj, id);
+    if (!ret)
+        SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, name);
+    return ret;
 }
 %}
 
@@ -57,7 +67,7 @@ static void* get_obj(JNIEnv *jenv, jobject obj, long id) {
         private final long id;
         protected obj(long ptr, long id) { this.ptr = ptr; this.id = id; }
         protected long get() { return ptr; }
-        protected long get_id() { return ptr; }
+        protected long get_id() { return id; }
     }
 %}
 
@@ -106,7 +116,9 @@ static void* get_obj(JNIEnv *jenv, jobject obj, long id) {
    $result = create_obj(jenv, *$1, ID);
 }
 %typemap (in) const struct NAME * {
-    $1 = (struct NAME *)get_obj(jenv, $input, ID);
+    $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
+    if (!$1)
+        return 0;
 }
 %typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
