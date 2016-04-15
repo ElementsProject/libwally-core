@@ -11,29 +11,30 @@ static void check_result(JNIEnv *jenv, int result) {
     SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
 }
 
-static jobject create_obj(JNIEnv *jenv, void* p, const char* typename) {
+static jobject create_obj(JNIEnv *jenv, void* p, long id) {
 
     jclass clazz = (*jenv)->FindClass(jenv, "com/blockstream/libwally/wallycore$obj");
     if (!clazz)
         return NULL;
-    jmethodID ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(J)V");
+    jmethodID ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(JJ)V");
     if (!ctor)
         return NULL;
-    jobject obj = (*jenv)->NewObject(jenv, clazz, ctor, (long)p);
+    jobject obj = (*jenv)->NewObject(jenv, clazz, ctor, (long)p, id);
     return obj;
 }
 
-static void* get_obj(JNIEnv *jenv, jobject obj, const char* typename) {
+static void* get_obj(JNIEnv *jenv, jobject obj, long id) {
 
     if (!obj)
         return NULL;
     jclass clazz = (*jenv)->GetObjectClass(jenv, obj);
     if (!clazz)
         return NULL;
-    jmethodID getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
-    if (!getter)
+    jmethodID getter = (*jenv)->GetMethodID(jenv, clazz, "get_id", "()J");
+    if (!getter || (*jenv)->CallLongMethod(jenv, obj, getter) != id)
         return NULL;
-    return (void *)((*jenv)->CallLongMethod(jenv, obj, getter));
+    getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
+    return getter ? (void *)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
 }
 %}
 
@@ -53,8 +54,10 @@ static void* get_obj(JNIEnv *jenv, jobject obj, const char* typename) {
 
     static private class obj {
         private transient long ptr;
-        protected obj(long p) { ptr = p; }
+        private final long id;
+        protected obj(long ptr, long id) { this.ptr = ptr; this.id = id; }
         protected long get() { return ptr; }
+        protected long get_id() { return ptr; }
     }
 %}
 
@@ -95,15 +98,15 @@ static void* get_obj(JNIEnv *jenv, jobject obj, const char* typename) {
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 
 /* Opaque types are converted to/from an internal object holder class */
-%define %java_opaque_struct(NAME)
+%define %java_opaque_struct(NAME, ID)
 %typemap(in, numinputs=0) const struct NAME **output (const struct NAME * w) {
    w = 0; $1 = ($1_ltype)&w;
 }
 %typemap(argout) const struct NAME ** {
-   $result = create_obj(jenv, *$1, "NAME");
+   $result = create_obj(jenv, *$1, ID);
 }
 %typemap (in) const struct NAME * {
-    $1 = (struct NAME *)get_obj(jenv, $input, "NAME");
+    $1 = (struct NAME *)get_obj(jenv, $input, ID);
 }
 %typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
@@ -133,7 +136,7 @@ typedef unsigned int uint32_t;
 %enddef
 
 /* Our wrapped opaque types */
-%java_opaque_struct(words)
+%java_opaque_struct(words, 1)
 
 /* Our wrapped functions return types */
 %returns_string(bip39_get_languages);
