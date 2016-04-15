@@ -12,7 +12,7 @@ import static com.blockstream.libwally.wallycore.BIP39_SEED_LEN_512;
 public class Mnemonic {
 
     private final SecureRandom sr = new SecureRandom();
-    private final Long wl;
+    private final Object wl;
 
     public Mnemonic(final String lang) {
         this.wl = wallycore.bip39_get_wordlist(lang);
