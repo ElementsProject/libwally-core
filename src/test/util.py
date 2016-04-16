@@ -44,7 +44,7 @@ for f in (
     ('mnemonic_to_bytes', c_int, [c_void_p, c_char_p, c_void_p, c_ulong, POINTER(c_ulong)]),
     ('base58_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('base58_get_length', c_int, [c_char_p, POINTER(c_ulong)]),
-    ('base58_to_bytes', c_ulong, [c_char_p, c_uint, c_void_p, c_ulong]),
+    ('base58_to_bytes', c_int, [c_char_p, c_uint, c_void_p, c_ulong, POINTER(c_ulong)]),
     ('scrypt', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_void_p, c_ulong]),
     ('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
     ('bip32_key_serialise', c_int, [POINTER(ext_key), c_uint, c_void_p, c_ulong]),

@@ -72,13 +72,17 @@ int base58_get_length(
  *         checksum into. The returned length will not include the checksum.
  * @bytes_out: Destination for converted binary data.
  * @len: The length of @bytes_out in bytes.
+ * @written: Destination for the length of the decoded bytes.
  *
- * Returns the number of bytes written to @bytes_out or 0 on error.
+ * If the function succeeds, you must check @written. If it is greater
+ * than @len then no data has been written and the function should be retried
+ * with a buffer of at least @written bytes in size.
  */
-size_t base58_to_bytes(
+int base58_to_bytes(
     const char *str_in,
     uint32_t flags,
     unsigned char *bytes_out,
-    size_t len);
+    size_t len,
+    size_t *written);
 
 #endif /* LIBWALLY_BASE58_H */

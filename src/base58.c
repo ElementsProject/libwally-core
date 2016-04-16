@@ -74,6 +74,9 @@ static int base58_decode(const char *base58, size_t base58_len,
     unsigned char *cp;
     int ret = WALLY_EINVAL;
 
+    if (!base58 || !base58_len)
+        return WALLY_EINVAL; /* Empty string can't be decoded or represented */
+
     /* Process leading '1's */
     for (ones = 0; ones < base58_len && base58[ones] == '1'; ++ones)
         ; /* no-op*/
@@ -82,7 +85,7 @@ static int base58_decode(const char *base58, size_t base58_len,
         if (bytes_out && ones <= *len)
             memset(bytes_out, 0, ones);
         *len = ones;
-        return 0; /* String of all '1's */
+        return WALLY_OK; /* String of all '1's */
     }
     base58 += ones; /* Skip over leading '1's */
 
@@ -163,7 +166,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
     size_t bn_bytes = 0, zeros, i, orig_len = len;
-    int ret = -1;
+    int ret = WALLY_EINVAL;
 
     *output = NULL;
 
@@ -188,7 +191,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
 
         memset(*output, '1', zeros);
         (*output)[zeros] = '\0';
-        return 0; /* All 0's */
+        return WALLY_OK; /* All 0's */
     }
 
     bn_bytes = (len - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
@@ -227,7 +230,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
         (*output)[zeros + i] = byte_to_base58[top_byte[i]];
     (*output)[zeros + bn_bytes] = '\0';
 
-    ret = 0;
+    ret = WALLY_OK;
 
 cleanup:
     clear(bn, bn_bytes);
@@ -237,38 +240,43 @@ cleanup:
 }
 
 
-int base58_get_length(const char *str_in, size_t* written)
+int base58_get_length(const char *str_in, size_t *written)
 {
     return base58_decode(str_in, strlen(str_in), NULL, written);
 }
 
-/* FIXME: return int, take len as pointer */
-size_t base58_to_bytes(const char *str_in, uint32_t flags,
-                       unsigned char *bytes_out, size_t len)
+int base58_to_bytes(const char *str_in, uint32_t flags,
+                    unsigned char *bytes_out, size_t len,
+                    size_t *written)
 {
-    size_t out_len = len;
+    int ret;
 
-    if (flags & ~BASE58_FLAG_CHECKSUM)
-        return 0; /* Invalid flags */
+    if (written)
+        *written = 0;
+
+    if (!str_in || flags & ~BASE58_FLAG_CHECKSUM ||
+        !bytes_out || !len || !written)
+        return WALLY_EINVAL;
 
     if (flags & BASE58_FLAG_CHECKSUM && len < BASE58_CHECKSUM_LEN)
-        return 0; /* No room for checksum */
+        return WALLY_EINVAL; /* No room for checksum */
 
-    if (base58_decode(str_in, strlen(str_in), bytes_out, &out_len) ||
-        out_len > len)
-        return 0; /* Invalid chars or not enough space */
+    *written = len;
+    ret = base58_decode(str_in, strlen(str_in), bytes_out, written);
+    if (!ret && *written > len)
+        return WALLY_OK; /* not enough space, return required amount */
 
-    if (flags & BASE58_FLAG_CHECKSUM) {
-        size_t offset = out_len - BASE58_CHECKSUM_LEN;
+    if (!ret && (flags & BASE58_FLAG_CHECKSUM)) {
+        size_t offset = *written - BASE58_CHECKSUM_LEN;
         uint32_t checksum = base58_get_checksum(bytes_out, offset);
 
         if (memcmp(bytes_out + offset, &checksum, sizeof(checksum))) {
             clear(bytes_out, len);
-            return 0; /* Checksum mismatch */
+            return WALLY_EINVAL; /* Checksum mismatch */
         }
 
         clear(bytes_out + offset, BASE58_CHECKSUM_LEN);
-        out_len -= BASE58_CHECKSUM_LEN;
+        *written -= BASE58_CHECKSUM_LEN;
     }
-    return out_len;
+    return ret;
 }

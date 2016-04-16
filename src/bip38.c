@@ -98,7 +98,7 @@ static int address_from_private_key(const unsigned char *priv_key,
     BUILD_ASSERT(&buf.network + 1 == (void *)&buf.hash160);
 
     if (compute_pub_key(priv_key, priv_len, pub_key, compressed))
-        return -1;
+        return WALLY_EINVAL;
 
     sha256(&sha, pub_key, compressed ? 33 : 65);
     ripemd160(&buf.hash160, &sha, sizeof(sha));
@@ -182,31 +182,35 @@ int bip38_to_private_key(const char *bip38,
     struct derived_t derived;
     struct bip38_layout_t buf;
     char *addr58 = NULL;
-    int ret = -1;
+    size_t written;
+    int ret = WALLY_EINVAL;
 
     if (len != BITCOIN_PRIVATE_KEY_LEN)
         goto finish;
 
-    if (base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
-                        LAYOUT_CHKSUM_BYTES) != LAYOUT_BYTES)
+    ret = base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
+                          LAYOUT_CHKSUM_BYTES, &written);
+    if (ret)
         goto finish;
+    if (written != LAYOUT_BYTES) {
+        ret = WALLY_EINVAL;
+        goto finish;
+    }
 
-    if (scrypt(password, password_len,
-               (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
-               (unsigned char *)&derived, sizeof(derived)))
+    ret = scrypt(password, password_len,
+                 (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
+                 (unsigned char *)&derived, sizeof(derived));
+    if (ret)
         goto finish;
 
     aes_dec(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
     aes_dec(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
 
-    if (address_from_private_key(bytes_out, len, network,
-                                 buf.flags & BIP38_FLAG_COMPRESSED, &addr58))
-        goto finish;
-
-    if (buf.hash != base58_get_checksum((unsigned char *)addr58, strlen(addr58)))
-        goto finish;
-
-    ret = 0;
+    ret = address_from_private_key(bytes_out, len, network,
+                                   buf.flags & BIP38_FLAG_COMPRESSED, &addr58);
+    if (!ret &&
+        buf.hash != base58_get_checksum((unsigned char *)addr58, strlen(addr58)))
+        ret = WALLY_EINVAL;
 
 finish:
     clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
