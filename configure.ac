@@ -114,6 +114,12 @@ fi
 )
 AC_HAVE_ATTRIBUTE_WEAK
 
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/mman.h>]],[[mmap(0,0,0,0,0,0)]])],
+               [AC_DEFINE(HAVE_MMAP, 1, [Define if we have mmap])])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],[[return posix_memalign(NULL,0,0)]])],
+               [AC_DEFINE(HAVE_POSIX_MEMALIGN, 1, [Define if we have posix_memalign])])
+
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 1, 0, 1)]])],
                [AC_DEFINE(HAVE_MEMSET_S, 1, [Define if we have memset_s])])
 

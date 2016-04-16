@@ -30,10 +30,6 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
                        flags, cost, bytes_out, len);
 }
 
-/* FIXME:
- * #ifdef HAVE_POSIX_MEMALIGN
- * #if !defined(MAP_ANON) || !defined(HAVE_MMAP)
- */
 #include "scrypt/crypto_scrypt_smix.c"
 #include "scrypt/crypto_scrypt.c"
 
