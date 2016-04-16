@@ -87,8 +87,8 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
 
 /* Raise an exception whenever a function fails */
 %exception {
-  $action
-  check_result(jenv, result);
+    $action
+    check_result(jenv, result);
 }
 
 /* Don't use our int return value except for exception checking */
@@ -106,14 +106,14 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
 
 /* Output strings are converted to native Java strings and returned */
 %typemap(in,noblock=1,numinputs=0) char **output(char *temp = 0) {
-  $1 = &temp;
+    $1 = &temp;
 }
 %typemap(argout,noblock=1) (char **output) {
-  if ($1) {
-    $result = JCALL1(NewStringUTF, jenv, *$1);
-    wally_free_string(*$1);
-  } else
-    $result = NULL;
+    if ($1) {
+        $result = (*jenv)->NewStringUTF(jenv, *$1);
+        wally_free_string(*$1);
+    } else
+        $result = NULL;
 }
 
 /* Array handling */
@@ -124,10 +124,10 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
 /* Opaque types are converted to/from an internal object holder class */
 %define %java_opaque_struct(NAME, ID)
 %typemap(in, numinputs=0) const struct NAME **output (const struct NAME * w) {
-   w = 0; $1 = ($1_ltype)&w;
+    w = 0; $1 = ($1_ltype)&w;
 }
 %typemap(argout) const struct NAME ** {
-   $result = create_obj(jenv, *$1, ID);
+    $result = create_obj(jenv, *$1, ID);
 }
 %typemap (in) const struct NAME * {
     $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
