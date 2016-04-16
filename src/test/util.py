@@ -28,6 +28,11 @@ class ext_key(Structure):
                 ("pad2", c_ubyte * 3),
                 ("pub_key", c_ubyte * 33)]
 
+# Sentinel class to indicate functions that return an output string
+class c_char_p_p_class(object):
+    pass
+c_char_p_p = c_char_p_p_class()
+
 for f in (
     ('wordlist_init', c_void_p, [c_char_p]),
     ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
@@ -35,7 +40,7 @@ for f in (
     ('wordlist_free', None, [c_void_p]),
     ('mnemonic_from_bytes', c_char_p, [c_void_p, c_void_p, c_ulong]),
     ('mnemonic_to_bytes', c_ulong, [c_void_p, c_char_p, c_void_p, c_ulong]),
-    ('base58_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(c_char_p)]),
+    ('base58_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('base58_get_length', c_ulong, [c_char_p]),
     ('base58_to_bytes', c_ulong, [c_char_p, c_uint, c_void_p, c_ulong]),
     ('scrypt', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_void_p, c_ulong]),
@@ -43,12 +48,12 @@ for f in (
     ('bip32_key_serialise', c_int, [POINTER(ext_key), c_uint, c_void_p, c_ulong]),
     ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
     ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)]),
-    ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_int, c_bool, POINTER(c_char_p)]),
+    ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_int, c_bool, c_char_p_p]),
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_int, c_void_p, c_ulong]),
-    ('bip39_get_languages', c_int, [POINTER(c_char_p)]),
+    ('bip39_get_languages', c_int, [c_char_p_p]),
     ('bip39_get_wordlist', c_int, [c_char_p, POINTER(c_void_p)]),
-    ('bip39_get_word', c_int, [c_void_p, c_ulong, POINTER(c_char_p)]),
-    ('bip39_mnemonic_from_bytes', c_int, [c_void_p, c_void_p, c_ulong, POINTER(c_char_p)]),
+    ('bip39_get_word', c_int, [c_void_p, c_ulong, c_char_p_p]),
+    ('bip39_mnemonic_from_bytes', c_int, [c_void_p, c_void_p, c_ulong, c_char_p_p]),
     ('bip39_mnemonic_to_bytes', c_int, [c_void_p, c_char_p, c_void_p, c_ulong, POINTER(c_ulong)]),
     ('bip39_mnemonic_validate', c_int, [c_void_p, c_char_p]),
     ('bip39_mnemonic_to_seed', c_int, [c_char_p, c_char_p, c_void_p, c_ulong, POINTER(c_ulong)]),
@@ -59,12 +64,6 @@ for f in (
     ('pbkdf2_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong]),
     ('pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong])
     ):
-    # ctypes represents all types of pointer-to-pointer-of-X with the same type,
-    # So we have to use explicit lists here to find functions to wrap
-    # FIXME: Use a sentinel class in the arg list instead
-    string_funcs = ['base58_from_bytes', 'bip38_from_private_key',
-                    'bip39_get_languages', 'bip39_mnemonic_from_bytes',
-                    'bip39_get_word' ]
 
     def bind_fn(name, res, args):
         try:
@@ -85,11 +84,12 @@ for f in (
         return [ret_str, (ret, ret_str)][fn.restype is not None]
 
     name, restype, argtypes = f
+    is_str_fn = type(argtypes[-1]) is c_char_p_p_class
+    if is_str_fn:
+        argtypes[-1] = POINTER(c_char_p)
     fn = bind_fn(name, restype, argtypes)
     def mkstr(f): return lambda *args: string_fn_wrapper(f, *args)
-    if name in string_funcs:
-        fn = mkstr(fn)
-    globals()[name] =  fn
+    globals()[name] = mkstr(fn) if is_str_fn else fn
 
 
 def load_words(lang):
