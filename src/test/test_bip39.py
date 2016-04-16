@@ -66,7 +66,7 @@ class BIP39Tests(unittest.TestCase):
                 idx = wordlist_lookup_word(wl, word)
                 self.assertEqual(i, idx - 1)
 
-        self.assertEqual(bip39_get_word(wl, 2048), (-1, None))
+        self.assertEqual(bip39_get_word(wl, 2048), (WALLY_EINVAL, None))
 
 
     def test_bip39_vectors(self):

@@ -16,6 +16,8 @@ libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
 wally_free_string = libwally.wally_free_string
 wally_free_string.restype, wally_free_string.argtypes = None, [c_char_p]
 
+WALLY_OK, WALLY_ERROR, WALLY_EINVAL, WALLY_ENOMEM = 0, -1, -2, -3
+
 class ext_key(Structure):
     _fields_ = [("chain_code", c_ubyte * 32),
                 ("parent160", c_ubyte * 20),

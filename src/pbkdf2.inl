@@ -21,19 +21,22 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_HMAC_EXTRA_LEN);
     BUILD_ASSERT(sizeof(d1) == PBKDF2_HMAC_SHA_LEN);
 
+    if (!bytes_out || !len)
+        return WALLY_EINVAL;
+
     if (flags & ~PBKDF2_HMAC_FLAG_BLOCK_RESERVED)
-        return -1; /* Invalid flag */
+        return WALLY_EINVAL; /* Invalid flag */
 
     if (flags & PBKDF2_HMAC_FLAG_BLOCK_RESERVED && salt_len < PBKDF2_HMAC_EXTRA_LEN)
-        return -1; /* No room for block appending */
+        return WALLY_EINVAL; /* No room for block appending */
 
     if (!len || len % PBKDF2_HMAC_SHA_LEN)
-        return -1;
+        return WALLY_EINVAL;
 
     if (!(flags & PBKDF2_HMAC_FLAG_BLOCK_RESERVED)) {
         tmp_salt = malloc(salt_len + PBKDF2_HMAC_EXTRA_LEN);
         if (!tmp_salt)
-            return -1;
+            return WALLY_ENOMEM;
         memcpy(tmp_salt, salt_in_out, salt_len);
         salt_in_out = tmp_salt;
         salt_len += PBKDF2_HMAC_EXTRA_LEN;
@@ -68,5 +71,5 @@ int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
         clear(tmp_salt, salt_len);
         free(tmp_salt);
     }
-    return 0;
+    return WALLY_OK;
 }

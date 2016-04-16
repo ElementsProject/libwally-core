@@ -29,13 +29,18 @@ static const struct {
 
 int bip39_get_languages(char **output)
 {
+    if (!output)
+        return WALLY_EINVAL;
     *output = strdup("en es fr it jp zhs zht");
-    return *output ? 0 : -1;
+    return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
 int bip39_get_wordlist(const char *lang, const struct words **output)
 {
     size_t i;
+
+    if (!output)
+        return WALLY_EINVAL;
 
     *output = &en_words; /* Fallback to English if not found */
 
@@ -45,7 +50,7 @@ int bip39_get_wordlist(const char *lang, const struct words **output)
                 *output = lookup[i].words;
                 break;
             }
-    return 0;
+    return WALLY_OK;
 }
 
 int bip39_get_word(const struct words *w, size_t index,
@@ -53,12 +58,14 @@ int bip39_get_word(const struct words *w, size_t index,
 {
     const char *word;
 
-    if (!w || !output)
-        return -1;
+    if (output)
+        *output = NULL;
 
-    word = wordlist_lookup_index(w, index);
+    if (!w || !output || !(word = wordlist_lookup_index(w, index)))
+        return WALLY_EINVAL;
+
     *output = word ? strdup(word) : NULL;
-    return *output ? 0 : -1;
+    return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
 /* Convert an input entropy length to a mask for checksum bits. As it
@@ -93,18 +100,22 @@ int bip39_mnemonic_from_bytes(const struct words *w,
     /* 128 to 256 bits of entropy require 4-8 bits of checksum */
     unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
 
-    *output = NULL;
+    if (output)
+        *output = NULL;
+
+    if (!bytes_in || !len || !output)
+        return WALLY_EINVAL;
 
     w = w ? w : &en_words;
 
     if (w->bits != 11u || !len_to_mask(len))
-        return -1;
+        return WALLY_EINVAL;
 
     memcpy(checksummed_bytes, bytes_in, len);
     checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
     *output = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
     clear(checksummed_bytes, sizeof(checksummed_bytes));
-    return *output ? 0 : -1;
+    return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
 static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
@@ -113,7 +124,6 @@ static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
     return (bytes[idx] & mask) == (bip39_checksum(bytes, idx) & mask);
 }
 
-/* FIXME: Decide the semantics of returning required length */
 int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
                             unsigned char *bytes_out, size_t len,
                             size_t *written)
@@ -134,22 +144,23 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
     if (written)
         *written = 0;
+
     if (w->bits != 11u || !mnemonic || !bytes_out)
-        return -1;
+        return WALLY_EINVAL;
 
     tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
 
     if (!tmp_len-- || len < tmp_len || !(mask = len_to_mask(tmp_len)) ||
         !checksum_ok(tmp_bytes, tmp_len, mask)) {
         clear(tmp_bytes, sizeof(tmp_bytes));
-        return -1;
+        return WALLY_EINVAL;
     }
 
     memcpy(bytes_out, tmp_bytes, tmp_len);
     clear(tmp_bytes, sizeof(tmp_bytes));
     if (written)
         *written = tmp_len;
-    return 0;
+    return WALLY_OK;
 }
 
 int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
@@ -171,26 +182,30 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     const size_t password_len = password ? strlen(password) : 0;
     const size_t salt_len = prefix_len + password_len + PBKDF2_HMAC_EXTRA_LEN;
     unsigned char *salt;
+    int ret;
 
-    *written = 0;
+    if (written)
+        *written = 0;
 
-    if (len != BIP39_SEED_LEN_512)
-        return -1;
+    if (!mnemonic || !password || !bytes_out || len != BIP39_SEED_LEN_512)
+        return WALLY_EINVAL;
 
     salt = malloc(salt_len);
     if (!salt)
-        return -1;
+        return WALLY_ENOMEM;
 
     memcpy(salt, prefix, prefix_len);
     memcpy(salt + prefix_len, password, password_len);
 
-    if (!pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
-                            salt, salt_len, PBKDF2_HMAC_FLAG_BLOCK_RESERVED,
-                            bip9_cost, bytes_out, len))
+    ret = pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
+                             salt, salt_len, PBKDF2_HMAC_FLAG_BLOCK_RESERVED,
+                             bip9_cost, bytes_out, len);
+
+    if (!ret && written)
         *written = BIP39_SEED_LEN_512; /* Succeeded */
 
     clear(salt, salt_len);
     free(salt);
 
-    return *written == BIP39_SEED_LEN_512 ? 0 : -1;
+    return ret;
 }

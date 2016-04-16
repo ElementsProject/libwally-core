@@ -17,6 +17,11 @@
 # endif
 #endif
 
+/** Return codes */
+#define WALLY_OK      0 /** Success */
+#define WALLY_ERROR  -1 /** General error */
+#define WALLY_EINVAL -2 /** Invalid argument */
+#define WALLY_ENOMEM -3 /** malloc() failed */
 
 /**
  * Securely wipe memory.
