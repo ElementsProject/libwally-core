@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Clean up all generated files
-make distclean >/dev/null 2>&1
+make -o configure distclean >/dev/null 2>&1
 
 find . -name Makefile -exec rm {} \;
 find . -name Makefile.in -exec rm {} \;
