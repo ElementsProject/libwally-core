@@ -132,7 +132,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
 %typemap (in) const struct NAME * {
     $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
     if (!$1)
-        return 0;
+        return $null;
 }
 %typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
