@@ -60,15 +60,24 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, 
     return str;
 }
 
-size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned char *bytes_out, size_t len)
+int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
+                      unsigned char *bytes_out, size_t len, size_t *written)
 {
     struct words *mnemonic_w = wordlist_init(mnemonic);
     size_t i;
 
-    if (!mnemonic_w)
-        return 0;
+    if (written)
+        *written = 0;
 
-    /* FIXME: Check output size */
+    if (!mnemonic_w)
+        return WALLY_ENOMEM;
+
+    if (!w || !bytes_out || !len)
+        return WALLY_EINVAL;
+
+    if ((mnemonic_w->len * w->bits + 7u) / 8u > len)
+        goto cleanup; /* Return the length we would have written */
+
     memset(bytes_out, 0, len);
 
     for (i = 0; i < mnemonic_w->len; ++i) {
@@ -76,11 +85,14 @@ size_t mnemonic_to_bytes(const struct words *w, const char *mnemonic, unsigned c
         if (!index) {
             wordlist_free(mnemonic_w);
             clear(bytes_out, len);
-            return -1;
+            return WALLY_EINVAL;
         }
         store_index(w->bits, bytes_out, i, index - 1);
     }
 
+cleanup:
+    if (written)
+        *written = (mnemonic_w->len * w->bits + 7u) / 8u;
     wordlist_free(mnemonic_w);
-    return (i * w->bits + 7u) / 8u;
+    return WALLY_OK;
 }

@@ -85,7 +85,8 @@ class BIP39Tests(unittest.TestCase):
 
             out_buf = create_string_buffer(buf_len)
             rlen = c_ulong()
-            bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len, byref(rlen))
+            ret = bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len, byref(rlen))
+            self.assertEqual(ret, 0)
             self.assertEqual(rlen.value, buf_len)
             self.assertEqual(buf, out_buf.raw)
 

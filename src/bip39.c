@@ -130,6 +130,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 {
     unsigned char tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
     size_t mask, tmp_len;
+    int ret;
 
     /* Ideally we would infer the wordlist here. Unfortunately this cannot
      * work reliably because the default word lists overlap. In combination
@@ -148,19 +149,29 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     if (w->bits != 11u || !mnemonic || !bytes_out)
         return WALLY_EINVAL;
 
-    tmp_len = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes));
+    ret = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes), &tmp_len);
 
-    if (!tmp_len-- || len < tmp_len || !(mask = len_to_mask(tmp_len)) ||
-        !checksum_ok(tmp_bytes, tmp_len, mask)) {
-        clear(tmp_bytes, sizeof(tmp_bytes));
-        return WALLY_EINVAL;
+    if (!ret) {
+        if (tmp_len > sizeof(tmp_bytes))
+            ret = WALLY_EINVAL; /* Too big for biggest supported entropy */
+        else {
+            --tmp_len; /* Ignore checksum byte */
+            if (tmp_len <= len) {
+                if (!(mask = len_to_mask(tmp_len)) ||
+                    !checksum_ok(tmp_bytes, tmp_len, mask)) {
+                    tmp_len = 0;
+                    ret = WALLY_EINVAL; /* Bad checksum */
+                }
+                else
+                    memcpy(bytes_out, tmp_bytes, tmp_len);
+            }
+        }
     }
 
-    memcpy(bytes_out, tmp_bytes, tmp_len);
     clear(tmp_bytes, sizeof(tmp_bytes));
-    if (written)
+    if (!ret && written)
         *written = tmp_len;
-    return WALLY_OK;
+    return ret;
 }
 
 int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)

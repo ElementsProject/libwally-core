@@ -27,13 +27,13 @@ char *mnemonic_from_bytes(
  * @mnemonic: Mnemonic sentence to store.
  * @bytes_out: Where to store the converted representation.
  * @len: The length of @bytes_out in bytes.
- *
- * Returns the length of the written mnemonic in bytes, zero on error.
+ * @written: Destination for the number of bytes written.
  */
-size_t mnemonic_to_bytes(
+int mnemonic_to_bytes(
     const struct words *w,
     const char *mnemonic,
     unsigned char *bytes_out,
-    size_t len);
+    size_t len,
+    size_t *written);
 
 #endif /* LIBWALLY_MNEMONIC_H */
