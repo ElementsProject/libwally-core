@@ -130,13 +130,14 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 #
 # SWIG
 #
+AC_PROG_SWIG
+
 AC_ARG_ENABLE(swig-python,
     AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test x"$swig_python" = "xyes"])
 
 if test "x$swig_python" == "xyes"; then
-    AC_PROG_SWIG
     SWIG_PYTHON
 fi
 
@@ -146,7 +147,6 @@ AC_ARG_ENABLE(swig-java,
 AM_CONDITIONAL([USE_SWIG_JAVA], [test x"$swig_java" = "xyes"])
 
 if test "x$swig_python" == "xyes"; then
-    AC_PROG_SWIG
     AX_JNI_INCLUDE_DIR
     for JNI_DIR in $JNI_INCLUDE_DIRS; do
         SWIG_JAVA_CPPFLAGS="$SWIG_JAVA_CPPFLAGS -I$JNI_DIR"
