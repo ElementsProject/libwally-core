@@ -47,7 +47,7 @@ AC_ARG_ENABLE(debug,
     AS_HELP_STRING([--enable-debug],[enable debugging (default: no)]),
     [debug=$enableval], [debug=no])
 
-CFLAGS=""
+CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2 -g//g'`
 if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
     AX_CHECK_COMPILE_FLAG([-Og], [CFLAGS="$CFLAGS -Og"])
