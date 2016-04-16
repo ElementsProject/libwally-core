@@ -7,20 +7,18 @@
 
 static int check_result(int result)
 {
-    /* FIXME: Map error codes to exceptions
-     * PyExc_ArithmeticError PyExc_AssertionError PyExc_AttributeError
-     * PyExc_EnvironmentError PyExc_EOFError PyExc_Exception
-     * PyExc_FloatingPointError PyExc_ImportError PyExc_IndexError
-     * PyExc_IOError PyExc_KeyError PyExc_KeyboardInterrupt PyExc_LookupError
-     * PyExc_MemoryError PyExc_NameError PyExc_NotImplementedError
-     * PyExc_OSError PyExc_OverflowError PyExc_RuntimeError
-     * PyExc_StandardError PyExc_SyntaxError PyExc_SystemError
-     * PyExc_TypeError PyExc_UnicodeError PyExc_ValueError
-     * PyExc_ZeroDivisionError
-     */
-    if (result) {
-        PyErr_SetString(PyExc_RuntimeError, "Error");
+    if (!result)
+        return 0;
+    if (result == WALLY_EINVAL) {
+        PyErr_SetString(PyExc_ValueError, "Invalid argument");
+        return result;
     }
+    if (result == WALLY_ENOMEM) {
+        PyErr_SetString(PyExc_MemoryError, "Out of memory");
+        return result;
+    }
+    /* WALLY_ERROR */
+    PyErr_SetString(PyExc_RuntimeError, "Failed");
     return result;
 }
 %}
