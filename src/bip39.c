@@ -87,7 +87,7 @@ static unsigned char bip39_checksum(const unsigned char *bytes_in, size_t len)
 {
     struct sha256 sha;
     unsigned char ret;
-    sha256(&sha, bytes_in, len); /* FIXME: Allow user to provide a SHA256 impl */
+    sha256(&sha, bytes_in, len);
     ret = sha.u.u8[0];
     clear(&sha, sizeof(sha));
     return ret;
