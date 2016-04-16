@@ -94,25 +94,13 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT8_T
 
-AC_DEFUN([AC_HAVE_UNALIGNED_ACCESS],
-    # Assume we have no unaligned access if cross-compiling
-    [AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
-        [ac_have_unaligned_access=yes], [ac_have_unaligned_access=no], [ac_have_unaligned_access=no])]
-if test "x$ac_have_unaligned_access" = "xyes"; then
-    AC_DEFINE([HAVE_UNALIGNED_ACCESS], [1], [Define if we have unaligned access])
-fi
-)
-AC_HAVE_UNALIGNED_ACCESS
+# Assume we have no unaligned access if cross-compiling
+AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
+              [AC_DEFINE([HAVE_UNALIGNED_ACCESS], [1], [Define if we have unaligned access])],,[foo=1])
 
-AC_DEFUN([AC_HAVE_ATTRIBUTE_WEAK],
-    # Assume we are using gcc (i.e. have this attribute) if cross-compiling
-    [AC_COMPILE_IFELSE([AC_LANG_SOURCE([extern int foo(int) __attribute__((weak)); int main(void){return 0;}])],
-        [ac_have_attribute_weak=yes], [ac_have_attribute_weak=no], [ac_have_attribute_weak=yes])]
-if test "x$ac_have_attribute_weak" = "xyes"; then
-    AC_DEFINE([HAVE_ATTRIBUTE_WEAK], [1], [Define if we have __attribute__((weak)) support])
-fi
-)
-AC_HAVE_ATTRIBUTE_WEAK
+# Assume we are using gcc (i.e. have this attribute) if cross-compiling
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([extern int foo(int) __attribute__((weak)); int main(void){return 0;}])],
+                  [AC_DEFINE([HAVE_ATTRIBUTE_WEAK], [1], [Define if we have __attribute__((weak))])])
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/mman.h>]],[[mmap(0,0,0,0,0,0)]])],
                [AC_DEFINE(HAVE_MMAP, 1, [Define if we have mmap])])
