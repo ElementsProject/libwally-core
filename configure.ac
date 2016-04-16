@@ -48,6 +48,15 @@ AC_ARG_ENABLE(debug,
     [debug=$enableval], [debug=no])
 
 CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2 -g//g'`
+
+AC_C_BIGENDIAN()
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT8_T
+
 if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
     AX_CHECK_COMPILE_FLAG([-Og], [CFLAGS="$CFLAGS -Og"])
@@ -57,17 +66,13 @@ if test "x$debug" == "xyes"; then
 else
     # Optimise and harden
     AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
-    if test "x$cross_compiling" != "xyes"; then
-        AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
-        AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
-        AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS="$CFLAGS -fstack-protector-strong"])
-    fi
+    AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
+    AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
+    AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS="$CFLAGS -fstack-protector-strong"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [CFLAGS="$CFLAGS -DNDEBUG=1"])
-    if test "x$cross_compiling" != "xyes"; then
-        AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
-        AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
-        AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
-    fi
+    AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
+    AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
+    AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 
 AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS="$CFLAGS -Wall"])
@@ -91,14 +96,6 @@ AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" = "xyes"])
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [CFLAGS="$CFLAGS -fvisibility=hidden"])
 fi
-
-AC_C_BIGENDIAN()
-AC_C_INLINE
-AC_TYPE_SIZE_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT8_T
 
 # Assume we have no unaligned access if cross-compiling
 AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
