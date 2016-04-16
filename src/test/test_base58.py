@@ -38,10 +38,12 @@ class Base58Tests(unittest.TestCase):
         self.assertNotEqual(buf_len, 0)
         # Check that just computing the size returns us the actual size
         #print 'processing "%s"' % str_in
-        bin_len = base58_get_length(str_in)
+        bin_len = c_ulong()
+        ret = base58_get_length(str_in, byref(bin_len))
+        self.assertEqual(ret, 0)
         if flags == self.CHECKSUM:
-            bin_len -= 4 # Take off the 4 bytes of stripped checksum
-        self.assertEqual(bin_len, buf_len)
+            bin_len.value -= 4 # Take off the 4 bytes of stripped checksum
+        self.assertEqual(bin_len.value, buf_len)
         return hexlify(buf)[0:buf_len * 2].upper()
 
 
@@ -97,7 +99,9 @@ class Base58Tests(unittest.TestCase):
 
         # Test output buffer too small
         valid = '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM' # decodes to 25 bytes
-        self.assertEqual(base58_get_length(valid), 25)
+        bin_len = c_ulong()
+        self.assertEqual(base58_get_length(valid, byref(bin_len)), 0)
+        self.assertEqual(bin_len.value, 25)
         ret = base58_to_bytes(utf8(valid), 0, buf, 24)
         self.assertEqual(ret, 0)
 

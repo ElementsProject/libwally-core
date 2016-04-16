@@ -46,19 +46,21 @@ uint32_t base58_get_checksum(
  * Return the length of a base58 encoded string once decoded into bytes.
  *
  * @str_in: Base 58 encoded string to find the length of.
+ * @written: Destination for the length of the decoded bytes.
  *
  * Returns the exact number of bytes that would be required to store @str_in
- * as decoded binary, including any embedded checksum. If the string conatains
- * invalid characters then zero is returned. Note that no checksum validation
- * takes place.
+ * as decoded binary, including any embedded checksum. If the string contains
+ * invalid characters then WALLY_EINVAL is returned. Note that no checksum
+ * validation takes place.
  *
  * In the worst case (an all zero buffer, represented by a string of '1'
  * characters), this function will return strlen(@str_in). You can therefore
  * safely use the length of @str_in as a buffer size to avoid calling this
  * function in most cases.
  */
-size_t base58_get_length(
-    const char *str_in);
+int base58_get_length(
+    const char *str_in,
+    size_t *written);
 
 /**
  * Decode a base 58 encoded string back into into binary data.

@@ -61,7 +61,7 @@ static const char byte_to_base58[58] = {
     'y','z'
 };
 
-/* Returns -1 on error. If 0 is returned then:
+/* Returns non-zero on error. If 0 is returned then:
  * *len <= input value - OK, bytes_out contains data.
  * *len > input value - Failed and bytes_out untouched.
  */
@@ -72,7 +72,7 @@ static int base58_decode(const char *base58, size_t base58_len,
     uint32_t *bn = bn_buf, *top_word, *bn_p;
     size_t bn_words = 0, ones, cp_len, i;
     unsigned char *cp;
-    int ret = -1;
+    int ret = WALLY_EINVAL;
 
     /* Process leading '1's */
     for (ones = 0; ones < base58_len && base58[ones] == '1'; ++ones)
@@ -134,7 +134,7 @@ static int base58_decode(const char *base58, size_t base58_len,
     }
 
     *len = ones + cp_len;
-    ret = 0;
+    ret = WALLY_OK;
 
 cleanup:
     clear(bn, bn_words * sizeof(*bn));
@@ -237,13 +237,9 @@ cleanup:
 }
 
 
-/* FIXME: return int, take len as pointer */
-size_t base58_get_length(const char *str_in)
+int base58_get_length(const char *str_in, size_t* written)
 {
-    size_t len = 0;
-    if (base58_decode(str_in, strlen(str_in), NULL, &len))
-        len = 0;
-    return len;
+    return base58_decode(str_in, strlen(str_in), NULL, written);
 }
 
 /* FIXME: return int, take len as pointer */
