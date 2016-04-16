@@ -243,8 +243,10 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 {
 	static const unsigned char pad[128] = { 0x80 };
-	uint64_t sizedesc[2] = { 0, cpu_to_be64((uint64_t)ctx->bytes << 3) };
+	uint64_t sizedesc[2] = { 0, 0 };
 	size_t i;
+
+	sizedesc[1] = cpu_to_be64((uint64_t)ctx->bytes << 3);
 
 	/* Add '1' bit to terminate, then all 0 bits, up to next block - 16. */
 	add(ctx, pad, 1 + ((256 - 16 - (ctx->bytes % 128) - 1) % 128));
