@@ -67,20 +67,21 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 	uint32_t * XY;
 	size_t r = _r, p = _p;
 	uint32_t i;
+        int ret = 0;
 
 	/* Sanity-check parameters. */
 #if SIZE_MAX > UINT32_MAX
 	if (buflen > (((uint64_t)(1) << 32) - 1) * 32) {
-		errno = EFBIG;
+		ret = WALLY_EINVAL;
 		goto err0;
 	}
 #endif
 	if ((uint64_t)(r) * (uint64_t)(p) >= (1 << 30)) {
-		errno = EFBIG;
+		ret = WALLY_EINVAL;
 		goto err0;
 	}
 	if (((N & (N - 1)) != 0) || (N < 2)) {
-		errno = EINVAL;
+		ret = WALLY_EINVAL;
 		goto err0;
 	}
 	if ((r > SIZE_MAX / 128 / p) ||
@@ -88,33 +89,45 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 	    (r > (SIZE_MAX - 64) / 256) ||
 #endif
 	    (N > SIZE_MAX / 128 / r)) {
-		errno = ENOMEM;
+		ret = WALLY_EINVAL;
 		goto err0;
 	}
 
 	/* Allocate memory. */
 #ifdef HAVE_POSIX_MEMALIGN
-	if ((errno = posix_memalign(&B0, 64, 128 * r * p)) != 0)
+	if ((errno = posix_memalign(&B0, 64, 128 * r * p)) != 0) {
+		ret = WALLY_ENOMEM;
 		goto err0;
+        }
 	B = (uint8_t *)(B0);
-	if ((errno = posix_memalign(&XY0, 64, 256 * r + 64)) != 0)
+	if ((errno = posix_memalign(&XY0, 64, 256 * r + 64)) != 0) {
+		ret = WALLY_ENOMEM;
 		goto err1;
+	}
 	XY = (uint32_t *)(XY0);
 #if !defined(MAP_ANON) || !defined(HAVE_MMAP)
-	if ((errno = posix_memalign(&V0, 64, 128 * r * N)) != 0)
+	if ((errno = posix_memalign(&V0, 64, 128 * r * N)) != 0) {
+		ret = WALLY_ENOMEM;
 		goto err2;
+	}
 	V = (uint32_t *)(V0);
 #endif
 #else
-	if ((B0 = malloc(128 * r * p + 63)) == NULL)
+	if ((B0 = malloc(128 * r * p + 63)) == NULL) {
+		ret = WALLY_ENOMEM;
 		goto err0;
+        }
 	B = (uint8_t *)(((uintptr_t)(B0) + 63) & ~ (uintptr_t)(63));
-	if ((XY0 = malloc(256 * r + 64 + 63)) == NULL)
+	if ((XY0 = malloc(256 * r + 64 + 63)) == NULL) {
+		ret = WALLY_ENOMEM;
 		goto err1;
+	}
 	XY = (uint32_t *)(((uintptr_t)(XY0) + 63) & ~ (uintptr_t)(63));
 #if !defined(MAP_ANON) || !defined(HAVE_MMAP)
-	if ((V0 = malloc(128 * r * N + 63)) == NULL)
+	if ((V0 = malloc(128 * r * N + 63)) == NULL) {
+		ret = WALLY_ENOMEM;
 		goto err2;
+	}
 	V = (uint32_t *)(((uintptr_t)(V0) + 63) & ~ (uintptr_t)(63));
 #endif
 #endif
@@ -125,8 +138,10 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 #else
 	    MAP_ANON | MAP_PRIVATE,
 #endif
-	    -1, 0)) == MAP_FAILED)
+	    -1, 0)) == MAP_FAILED) {
+		ret = WALLY_ENOMEM;
 		goto err2;
+	}
 	V = (uint32_t *)(V0);
 #endif
 
@@ -144,8 +159,10 @@ _crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
 
 	/* Free memory. */
 #if defined(MAP_ANON) && defined(HAVE_MMAP)
-	if (munmap(V0, 128 * r * N))
+	if (munmap(V0, 128 * r * N)) {
+		ret = WALLY_ENOMEM;
 		goto err2;
+	}
 #else
 	free(V0);
 #endif
@@ -161,7 +178,7 @@ err1:
 	free(B0);
 err0:
 	/* Failure! */
-	return (-1);
+	return ret;
 }
 
 #if 0
