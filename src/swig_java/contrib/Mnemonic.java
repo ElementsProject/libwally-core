@@ -80,8 +80,7 @@ public class Mnemonic {
                 m.check(String.format("%s foo", phrase)) ||
                 !Arrays.equals(m.toEntropy(phrase), m.toEntropy(phrase)) ||
                 !m.toMnemonic(m.toEntropy(phrase)).equals(phrase) ||
-                Arrays.equals(m.toSeed(phrase, "foo"), m.toSeed(phrase, "bar")) ||
-                !Arrays.equals(m.toSeed(phrase, null), m.toSeed(phrase)))
+                Arrays.equals(m.toSeed(phrase, "foo"), m.toSeed(phrase, "bar")))
                 throw new RuntimeException("Mnemonic failed basic verification");
         }
 

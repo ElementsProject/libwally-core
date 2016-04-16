@@ -7,9 +7,16 @@
 static void check_result(JNIEnv *jenv, int result) {
     if (!result)
         return;
-    /* FIXME: Use result to determine exception type:
-     * SWIG_JavaOutOfMemoryError, SWIG_JavaRuntimeException */
-    SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
+    if (result == WALLY_EINVAL) {
+        SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
+        return;
+    }
+    if (result == WALLY_ENOMEM) {
+        SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "Out of memory");
+        return;
+    }
+    /* WALLY_ERROR */
+    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, "Failed");
 }
 
 static int int_cast(JNIEnv *jenv, size_t value) {
