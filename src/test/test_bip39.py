@@ -84,10 +84,9 @@ class BIP39Tests(unittest.TestCase):
             bip39_mnemonic_validate(wl, mnemonic)
 
             out_buf = create_string_buffer(buf_len)
-            rlen = c_ulong()
-            ret = bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len, byref(rlen))
+            ret, rlen = bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len)
             self.assertEqual(ret, 0)
-            self.assertEqual(rlen.value, buf_len)
+            self.assertEqual(rlen, buf_len)
             self.assertEqual(buf, out_buf.raw)
 
 
@@ -97,9 +96,9 @@ class BIP39Tests(unittest.TestCase):
             mnemonic, seed = case[1], case[2]
 
             buf = create_string_buffer(64)
-            count = c_ulong()
-            bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64, byref(count))
-            self.assertEqual(count.value, 64)
+            ret, count = bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64)
+            self.assertEqual(ret, 0)
+            self.assertEqual(count, 64)
             self.assertEqual(hexlify(buf), seed)
 
 

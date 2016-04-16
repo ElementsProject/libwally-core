@@ -32,23 +32,17 @@ class Base58Tests(unittest.TestCase):
         self.assertEqual(ret, WALLY_EINVAL if base58 is None else WALLY_OK)
         return base58
 
-    def to_bytes(self, str_in, flags, buf, buf_len):
-        out_len = c_ulong()
-        ret = base58_to_bytes(utf8(str_in), flags, buf, buf_len, byref(out_len))
-        return ret, out_len.value
-
     def decode(self, str_in, flags):
         buf, buf_len = make_cbuffer('00' * 1024)
-        ret, buf_len = self.to_bytes(utf8(str_in), flags, buf, buf_len)
+        ret, buf_len = base58_to_bytes(utf8(str_in), flags, buf, buf_len)
         self.assertEqual(ret, 0)
         self.assertNotEqual(buf_len, 0)
         # Check that just computing the size returns us the actual size
-        bin_len = c_ulong()
-        ret = base58_get_length(str_in, byref(bin_len))
+        ret, bin_len = base58_get_length(str_in)
         self.assertEqual(ret, 0)
         if flags == self.CHECKSUM:
-            bin_len.value -= 4 # Take off the 4 bytes of stripped checksum
-        self.assertEqual(bin_len.value, buf_len)
+            bin_len -= 4 # Take off the 4 bytes of stripped checksum
+        self.assertEqual(bin_len, buf_len)
         return hexlify(buf)[0:buf_len * 2].upper()
 
 
@@ -88,7 +82,7 @@ class Base58Tests(unittest.TestCase):
                      '\x80',    # High bit set
                      'x\x80x',  # High bit set, internal
                    ]:
-            ret, _ = self.to_bytes(utf8(bad), 0, buf, buf_len)
+            ret, _ = base58_to_bytes(utf8(bad), 0, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
         # Bad checksummed base58 strings
@@ -99,15 +93,15 @@ class Base58Tests(unittest.TestCase):
                     # libbase58: decode-b58c-tooshort
                     '111111111111111111114oLvT2'
                 ]:
-            ret, _ = self.to_bytes(utf8(bad), self.CHECKSUM, buf, buf_len)
+            ret, _ = base58_to_bytes(utf8(bad), self.CHECKSUM, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
         # Test output buffer too small
         valid = '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM' # decodes to 25 bytes
-        bin_len = c_ulong()
-        self.assertEqual(base58_get_length(valid, byref(bin_len)), 0)
-        self.assertEqual(bin_len.value, 25)
-        ret, _ = self.to_bytes(utf8(valid), 0, buf, 24)
+        ret, bin_len = base58_get_length(valid)
+        self.assertEqual(ret, 0)
+        self.assertEqual(bin_len, 25)
+        ret, _ = base58_to_bytes(utf8(valid), 0, buf, 24)
         self.assertEqual(ret, 0)
 
         # Leading ones become zeros
