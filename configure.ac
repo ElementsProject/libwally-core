@@ -52,7 +52,8 @@ if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
     AX_CHECK_COMPILE_FLAG([-Og], [CFLAGS="$CFLAGS -Og"])
     AX_CHECK_COMPILE_FLAG([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
-    LDFLAGS="-Og -ggdb"
+    AX_CHECK_LINK_FLAG([-Og], [LDFLAGS="$LDFLAGS -Og"])
+    AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
 else
     # Optimise and harden
     AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
@@ -60,9 +61,10 @@ else
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [CFLAGS="$CFLAGS -DNDEBUG=1"])
     AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
     AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS="$CFLAGS -fstack-protector-strong"])
-    LDFLAGS="-O3 -flto -Wl,-z,relro"
+    AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
+    AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
+    AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
-
 
 AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS="$CFLAGS -Wall"])
 AX_CHECK_COMPILE_FLAG([-Wextra], [CFLAGS="$CFLAGS -Wextra"])
