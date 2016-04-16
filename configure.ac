@@ -147,7 +147,7 @@ AC_ARG_ENABLE(swig-java,
     [swig_java=$enableval], [swig_java=no])
 AM_CONDITIONAL([USE_SWIG_JAVA], [test x"$swig_java" = "xyes"])
 
-if test "x$swig_python" == "xyes"; then
+if test "x$swig_java" == "xyes"; then
     AX_JNI_INCLUDE_DIR
     for JNI_DIR in $JNI_INCLUDE_DIRS; do
         SWIG_JAVA_CPPFLAGS="$SWIG_JAVA_CPPFLAGS -I$JNI_DIR"
