@@ -34,7 +34,7 @@ public class Mnemonic {
 
     public byte[] toEntropy(final String mnemonics) {
         final byte[] buf = new byte[BIP39_ENTROPY_LEN_256];
-        return Arrays.copyOf(buf, (int) wallycore.bip39_mnemonic_to_bytes(
+        return Arrays.copyOf(buf, wallycore.bip39_mnemonic_to_bytes(
                 wl, mnemonics, buf));
     }
 

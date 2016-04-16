@@ -2,6 +2,7 @@
 %{
 #include "../include/wally-core.h"
 #include "../include/wally_bip39.h"
+#include <limits.h>
 
 static void check_result(JNIEnv *jenv, int result) {
     if (!result)
@@ -9,6 +10,12 @@ static void check_result(JNIEnv *jenv, int result) {
     /* FIXME: Use result to determine exception type:
      * SWIG_JavaOutOfMemoryError, SWIG_JavaRuntimeException */
     SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
+}
+
+static int int_cast(JNIEnv *jenv, size_t value) {
+    if (value > INT_MAX)
+        SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Invalid length");
+    return (int)value;
 }
 
 /* Use a private static class to hold our opaque pointers */
@@ -87,7 +94,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
     sz = 0; $1 = ($1_ltype)&sz;
 }
 %typemap(argout,noblock=1) size_t* {
-    $result = *$1;
+    $result = int_cast(jenv, *$1);
 }
 
 /* Output strings are converted to native Java strings and returned */
@@ -138,7 +145,7 @@ typedef unsigned int uint32_t;
 %return_decls(FUNC, void, void)
 %enddef
 %define %returns_size_t(FUNC)
-%return_decls(FUNC, long, jlong)
+%return_decls(FUNC, int, jint)
 %enddef
 %define %returns_string(FUNC)
 %return_decls(FUNC, String, jstring)
