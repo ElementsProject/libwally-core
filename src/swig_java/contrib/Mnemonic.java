@@ -57,9 +57,6 @@ public class Mnemonic {
         return buf;
     }
 
-    public byte[] toSeed(final String mnemonic) {
-        return toSeed(mnemonic, "");
-    }
     private static final Map<String, byte[]> testMap;
     static {
         final String m =
