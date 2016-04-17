@@ -88,23 +88,23 @@ static int address_from_private_key(const unsigned char *priv_key,
     unsigned char pub_key[65];
     struct
     {
-        unsigned char pad1[3];
-        unsigned char network;
+        uint32_t network;
         struct ripemd160 hash160;
         uint32_t checksum;
     } buf;
+    unsigned char *network_p = ((unsigned char *)&buf) + 3;
     int ret;
 
-    BUILD_ASSERT(&buf.network + 1 == (void *)&buf.hash160);
+    BUILD_ASSERT(sizeof(buf) == sizeof(struct ripemd160) + sizeof(uint32_t) * 2);
 
     if (compute_pub_key(priv_key, priv_len, pub_key, compressed))
         return WALLY_EINVAL;
 
     sha256(&sha, pub_key, compressed ? 33 : 65);
     ripemd160(&buf.hash160, &sha, sizeof(sha));
-    buf.network = network;
-    buf.checksum = base58_get_checksum(&buf.network, 1 + 20);
-    ret = base58_from_bytes(&buf.network, 1 + 20 + 4, 0, output);
+    *network_p = network;
+    buf.checksum = base58_get_checksum(network_p, 1 + 20);
+    ret = base58_from_bytes(network_p, 1 + 20 + 4, 0, output);
     clear_n(3, &sha, sizeof(sha), pub_key, sizeof(pub_key), &buf, sizeof(buf));
     return ret;
 }
