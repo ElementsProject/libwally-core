@@ -1,10 +1,14 @@
 #!/bin/sh
 
-# Clean up after swig java generation
-rm -f swig_java/SWIGTYPE_p_words.java swig_java/wallycore.java
+sed_exe=$1
+
+mkdir -p swig_java/src/com/blockstream/libwally
+result="swig_java/src/com/blockstream/libwally/wallycore.java"
 
 # Merge the constants and JNI interface into wallycore.java
-grep -v '^}$' swig_java/wallycoreJNI.java | sed 's/wallycoreJNI/wallycore/g' >swig_java/wallycore.java
-grep 'public final static' swig_java/wallycoreConstants.java >>swig_java/wallycore.java
-echo '}' >>swig_java/wallycore.java
-rm -f swig_java/wallycoreJNI.java swig_java/wallycoreConstants.java
+grep -v '^}$' swig_java/wallycoreJNI.java | $sed_exe 's/wallycoreJNI/wallycore/g' >$result
+grep 'public final static' swig_java/wallycoreConstants.java >>$result
+echo '}' >>$result
+
+# Clean up
+rm -f swig_java/*.java
