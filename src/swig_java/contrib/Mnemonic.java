@@ -12,7 +12,7 @@ import static com.blockstream.libwally.wallycore.BIP39_SEED_LEN_512;
 public class Mnemonic {
 
     private final SecureRandom sr = new SecureRandom();
-    private final Object wl;
+    private final wallycore.Obj wl;
 
     public Mnemonic(final String lang) {
         this.wl = wallycore.bip39_get_wordlist(lang);
@@ -83,10 +83,25 @@ public class Mnemonic {
 
         for(final Map.Entry<String, byte[]> entry : testMap.entrySet())
             try {
-                wallycore.bip39_mnemonic_to_bytes(0, entry.getKey(), entry.getValue());
+                wallycore.bip39_mnemonic_to_bytes(null, entry.getKey(), entry.getValue());
                 throw new RuntimeException("Mnemonic failed basic verification");
             } catch (final IllegalArgumentException e) {
                 // pass
             }
+        final byte[] data = new byte[BIP39_ENTROPY_LEN_256];
+
+        try {
+            wallycore.bip39_mnemonic_from_bytes(null, data);
+            throw new RuntimeException("Mnemonic failed basic verification");
+        } catch (final IllegalArgumentException e) {
+            // pass
+        }
+
+        try {
+            wallycore.bip39_mnemonic_from_bytes((wallycore.Obj)new Object(), data);
+            throw new RuntimeException("Mnemonic failed basic verification");
+        } catch (final ClassCastException e) {
+            // pass
+        }
     }
 }

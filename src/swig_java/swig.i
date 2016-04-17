@@ -25,36 +25,36 @@ static int int_cast(JNIEnv *jenv, size_t value) {
     return (int)value;
 }
 
-/* Use a private static class to hold our opaque pointers */
-#define OBJ_CLASS "com/blockstream/libwally/wallycore$obj"
+/* Use a static class to hold our opaque pointers */
+#define OBJ_CLASS "com/blockstream/libwally/wallycore$Obj"
 
 /* Create and return a java object to hold an opaque pointer */
-static jobject create_obj(JNIEnv *jenv, void* p, long id) {
+static jobject create_obj(JNIEnv *jenv, void* p, int id) {
     jclass clazz;
     jmethodID ctor;
 
     if (!(clazz = (*jenv)->FindClass(jenv, OBJ_CLASS)))
         return NULL;
-    if (!(ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(JJ)V")))
+    if (!(ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(JI)V")))
         return NULL;
-    return (*jenv)->NewObject(jenv, clazz, ctor, (long)p, id);
+    return (*jenv)->NewObject(jenv, clazz, ctor, (jlong)p, id);
 }
 
 /* Fetch an opaque pointer from a java object */
-static void* get_obj(JNIEnv *jenv, jobject obj, long id) {
+static void* get_obj(JNIEnv *jenv, jobject obj, int id) {
     jclass clazz;
     jmethodID getter;
 
     if (!obj || !(clazz = (*jenv)->GetObjectClass(jenv, obj)))
         return NULL;
-    getter = (*jenv)->GetMethodID(jenv, clazz, "get_id", "()J");
-    if (!getter || (*jenv)->CallLongMethod(jenv, obj, getter) != id)
+    getter = (*jenv)->GetMethodID(jenv, clazz, "get_id", "()I");
+    if (!getter || (*jenv)->CallIntMethod(jenv, obj, getter) != id)
         return NULL;
     getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
     return getter ? (void *)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
 }
 
-static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *name) {
+static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *name) {
     void * ret = get_obj(jenv, obj, id);
     if (!ret)
         SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, name);
@@ -76,12 +76,12 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
         }
     }
 
-    static private class obj {
-        private transient long ptr;
-        private final long id;
-        protected obj(long ptr, long id) { this.ptr = ptr; this.id = id; }
+    static class Obj {
+        private final transient long ptr;
+        private final int id;
+        protected Obj(final long ptr, final int id) { this.ptr = ptr; this.id = id; }
         protected long get() { return ptr; }
-        protected long get_id() { return id; }
+        protected int get_id() { return id; }
     }
 %}
 
@@ -134,7 +134,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, long id, const char *na
     if (!$1)
         return $null;
 }
-%typemap(jtype) const struct NAME * "Object"
+%typemap(jtype) const struct NAME * "Obj"
 %typemap(jni) const struct NAME * "jobject"
 %enddef
 
@@ -158,7 +158,7 @@ typedef unsigned int uint32_t;
 %return_decls(FUNC, String, jstring)
 %enddef
 %define %returns_struct(FUNC, STRUCT)
-%return_decls(FUNC, Object, jobject)
+%return_decls(FUNC, Obj, jobject)
 %enddef
 
 /* Our wrapped opaque types */
