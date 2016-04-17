@@ -37,7 +37,7 @@ static jobject create_obj(JNIEnv *jenv, void* p, int id) {
         return NULL;
     if (!(ctor = (*jenv)->GetMethodID(jenv, clazz, "<init>", "(JI)V")))
         return NULL;
-    return (*jenv)->NewObject(jenv, clazz, ctor, (jlong)p, id);
+    return (*jenv)->NewObject(jenv, clazz, ctor, (jlong)(uintptr_t)p, id);
 }
 
 /* Fetch an opaque pointer from a java object */
@@ -51,7 +51,7 @@ static void* get_obj(JNIEnv *jenv, jobject obj, int id) {
     if (!getter || (*jenv)->CallIntMethod(jenv, obj, getter) != id)
         return NULL;
     getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
-    return getter ? (void *)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
+    return getter ? (void *)(uintptr_t)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
 }
 
 static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *name) {
