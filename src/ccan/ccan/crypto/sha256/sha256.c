@@ -167,15 +167,6 @@ static void Transform(uint32_t *s, const uint32_t *chunk)
 	s[7] += h;
 }
 
-static bool alignment_ok(const void *p UNUSED, size_t n UNUSED)
-{
-#if HAVE_UNALIGNED_ACCESS
-	return true;
-#else
-	return ((size_t)p % n == 0);
-#endif
-}
-
 static void add(struct sha256_ctx *ctx, const void *p, size_t len)
 {
 	const unsigned char *data = p;

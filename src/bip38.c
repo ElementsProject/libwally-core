@@ -116,8 +116,14 @@ static void aes_enc(const unsigned char *src, const unsigned char *xor,
     AES256_ctx ctx;
     size_t i;
 
-    for (i = 0; i < sizeof(plaintext) / sizeof(plaintext[0]); ++i)
-        plaintext[i] = ((uint32_t *)src)[i] ^ ((uint32_t *)xor)[i];
+    if (alignment_ok(src, sizeof(uint32_t)) && alignment_ok(xor, sizeof(uint32_t)))
+        for (i = 0; i < sizeof(plaintext) / sizeof(plaintext[0]); ++i)
+            plaintext[i] = ((uint32_t *)src)[i] ^ ((uint32_t *)xor)[i];
+    else {
+        unsigned char *p = (unsigned char *)plaintext;
+        for (i = 0; i < sizeof(plaintext); ++i)
+            p[i] = src[i] ^ xor[i];
+    }
 
     AES256_init(&ctx, key);
     AES256_encrypt(&ctx, 1, bytes_out, (unsigned char *)plaintext);

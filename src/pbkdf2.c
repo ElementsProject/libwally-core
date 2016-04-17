@@ -9,15 +9,6 @@
 #include "ccan/ccan/build_assert/build_assert.h"
 #include <ccan/compiler/compiler.h>
 
-static bool alignment_ok(const void *p UNUSED, size_t n UNUSED)
-{
-#if HAVE_UNALIGNED_ACCESS
-    return true;
-#else
-    return ((size_t)p % n == 0);
-#endif
-}
-
 #define SHA_T sha256
 #define SHA_ALIGN_T uint32_t
 #define SHA_MEM u32
