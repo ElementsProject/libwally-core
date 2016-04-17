@@ -33,14 +33,14 @@ void HMAC_FUNCTION(struct SHA_T *sha,
     if (key_len <= sizeof(ctx.buf))
         memcpy(ctx.buf.u8, key, key_len);
     else
-        SHA_T((struct SHA_T *)ctx.buf.u8, key, key_len);
+        SHA_T((struct SHA_T *)ctx.buf.SHA_CTX_MEMBER, key, key_len);
 
     for (i = 0; i < sizeof(ctx.buf); ++i) {
         opad[i] = ctx.buf.u8[i] ^ 0x5c;
         ipad[i] = ctx.buf.u8[i] ^ 0x36;
     }
 
-    SHA_PRE(_mix)((struct SHA_T *)ctx.buf.u8, ipad, msg, msg_len);
+    SHA_PRE(_mix)((struct SHA_T *)ctx.buf.SHA_CTX_MEMBER, ipad, msg, msg_len);
     SHA_PRE(_mix)(sha, opad, ctx.buf.u8, sizeof(*sha));
     clear_n(3, &ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
 }
