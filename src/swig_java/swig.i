@@ -1,6 +1,6 @@
 %module wallycore
 %{
-#include "../include/wally-core.h"
+#include "../include/wally_core.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include <limits.h>
@@ -181,6 +181,6 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_void__(wally_scrypt);
 
-%include "../include/wally-core.h"
+%include "../include/wally_core.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"

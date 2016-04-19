@@ -1,4 +1,4 @@
-#include <include/wally-core.h>
+#include <include/wally_core.h>
 #include <include/wally_bip38.h>
 #include <include/wally_crypto.h>
 #include "internal.h"

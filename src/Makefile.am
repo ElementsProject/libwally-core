@@ -79,7 +79,7 @@ libwallycore_la_INCLUDES = \
     include/wally_bip32.h \
     include/wally_bip38.h \
     include/wally_bip39.h \
-    include/wally-core.h \
+    include/wally_core.h \
     include/wally-crypto.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1

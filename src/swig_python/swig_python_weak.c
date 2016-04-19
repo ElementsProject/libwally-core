@@ -10,7 +10,7 @@
 #define WALLY_CORE_BUILD 1 /* Ensure these symbols are made public */
 
 #include <config.h>
-#include <include/wally-core.h>
+#include <include/wally_core.h>
 
 #ifdef HAVE_ATTRIBUTE_WEAK
 

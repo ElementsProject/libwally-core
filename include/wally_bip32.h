@@ -1,7 +1,7 @@
 #ifndef LIBWALLY_CORE_BIP32_H
 #define LIBWALLY_CORE_BIP32_H
 
-#include "wally-core.h"
+#include "wally_core.h"
 
 #include <stdint.h>
 #include <stdbool.h>
