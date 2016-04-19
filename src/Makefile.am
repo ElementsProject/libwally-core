@@ -35,14 +35,27 @@ libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-alias
 
 swig_java/swig_java_wrap.c: swig_java/swig.i
 	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally -o $@ $< && $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@
+
+cblw=com/blockstream/libwally
+sjs=swig_java/src
+$(sjs)/$(cblw)/wallycore.java: swig_java/swig_java_wrap.c
 	$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
+
+$(sjs)/$(cblw)/wallycore.class: $(sjs)/$(cblw)/wallycore.java
+	$(JAVAC) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/wallycore.java
+
+swig_java/wallycore.jar: $(sjs)/$(cblw)/wallycore.class
+	$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/wallycore$$Obj.class' -C $(sjs) '$(cblw)/wallycore.class'
+
+if HAVE_JAVAC
+all: swig_java/wallycore.jar
+endif
 
 .PHONY: clean-swig-java
 clean-swig-java:
 	rm -rf swig_java/swig_java_wrap.c swig_java/src swig_java/*.java swig_java/*.jar
 clean-local: clean-swig-java
 endif
-
 
 lib_LTLIBRARIES = libwallycore.la
 

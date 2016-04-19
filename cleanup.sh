@@ -19,6 +19,7 @@ rm -f src/test_clear*
 rm -f src/test-suite.log
 rm -f src/swig_java/swig_java_wrap.c
 rm -f src/swig_java/*java
+rm -f src/swig_java/*jar
 rm -rf src/swig_java/src/
 rm -f src/swig_python/wallycore.py
 rm -f src/swig_python/swig_python_wrap.c

@@ -35,6 +35,7 @@ src/test_clear*
 src/test-suite.log
 src/swig_java/swig_java_wrap.c
 src/swig_java/*.java
+src/swig_java/*.jar
 src/swig_java/src/
 src/swig_python/swig_python_wrap.c
 src/swig_python/wallycore.py

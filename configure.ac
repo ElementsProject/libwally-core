@@ -157,6 +157,18 @@ if test "x$swig_java" == "xyes"; then
     AC_SUBST([SWIG_JAVA_OPT])
 fi
 
+if test "x$JAVA_HOME" != "x"; then
+    JAVAC="$JAVA_HOME/bin/javac"
+    AC_SUBST([JAVAC])
+    JAR="$JAVA_HOME/bin/jar"
+    AC_SUBST([JAR])
+else
+    AC_CHECK_PROGS(JAVAC, [javac])
+    AC_CHECK_PROGS(JAR, [jar])
+fi
+AM_CONDITIONAL([HAVE_JAVAC], [test "x$JAVAC" != "x"])
+
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
