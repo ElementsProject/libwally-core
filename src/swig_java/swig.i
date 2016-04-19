@@ -68,15 +68,17 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
 %ignore wally_bzero;
 
 %pragma(java) jniclasscode=%{
-    static {
+    private static boolean loadLibrary() {
         try {
             System.loadLibrary("wallycore");
-            enabled = true;
+            return true;
         } catch (final UnsatisfiedLinkError e) {
             System.err.println("Native code library failed to load.\n" + e);
+            return false;
         }
     }
-    private static boolean enabled = false;
+
+    private static final boolean enabled = loadLibrary();
     public static boolean isEnabled() {
         return enabled;
     }
