@@ -19,6 +19,11 @@ swig_python/swig_python_wrap.c : swig_python/swig.i
 
 PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
+
+.PHONY: clean-swig-python
+clean-swig-python:
+	rm -f swig_python/swig_python_wrap.c swig_python/wallycore.py
+clean-local: clean-swig-python
 endif
 
 if USE_SWIG_JAVA
@@ -31,6 +36,11 @@ libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-alias
 swig_java/swig_java_wrap.c: swig_java/swig.i
 	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally -o $@ $< && $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@
 	$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
+
+.PHONY: clean-swig-java
+clean-swig-java:
+	rm -rf swig_java/swig_java_wrap.c swig_java/src swig_java/*.java swig_java/*.jar
+clean-local: clean-swig-java
 endif
 
 
