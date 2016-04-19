@@ -81,13 +81,30 @@ class BIP39Tests(unittest.TestCase):
             self.assertEqual(ret, 0)
             result = utf8(result)
             self.assertEqual(result, mnemonic)
-            bip39_mnemonic_validate(wl, mnemonic)
+            self.assertEqual(bip39_mnemonic_validate(wl, mnemonic), 0)
 
             out_buf = create_string_buffer(buf_len)
             ret, rlen = bip39_mnemonic_to_bytes(wl, result, out_buf, buf_len)
             self.assertEqual(ret, 0)
             self.assertEqual(rlen, buf_len)
             self.assertEqual(buf, out_buf.raw)
+
+
+    def test_288(self):
+        """ Test a 288 bit (27 word) mnemonic phrase """
+        mnemonic = 'panel jaguar rib echo witness mean please festival ' \
+                   'issue item notable divorce conduct page tourist '    \
+                   'west off salmon ghost grit kitten pull marine toss ' \
+                   'dirt oak gloom'
+        self.assertEqual(bip39_mnemonic_validate(None, mnemonic), 0)
+
+        out_buf = create_string_buffer(36)
+        ret, rlen = bip39_mnemonic_to_bytes(None, mnemonic, out_buf, 36)
+        self.assertEqual(ret, 0)
+        self.assertEqual(rlen, 36)
+        expected = '9F8EE6E3A2FFCB13A99AA976AEDA5A2002ED' \
+                   '3DF97FCB9957CD863357B55AA2072D3EB2F9'
+        self.assertEqual(hexlify(out_buf).upper(), expected)
 
 
     def test_mnemonic_to_seed(self):

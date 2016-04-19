@@ -16,6 +16,8 @@
 #include "data/wordlists/spanish.c"
 #include "data/wordlists/japanese.c"
 
+/* Maximum length including up to 2 bytes for checksum */
+#define BIP39_ENTROPY_LEN_MAX (BIP39_ENTROPY_LEN_320 + sizeof(unsigned char) * 2)
 
 static const struct {
     const char name[4];
@@ -81,26 +83,28 @@ static size_t len_to_mask(size_t len)
     case BIP39_ENTROPY_LEN_192: return 0xfc;
     case BIP39_ENTROPY_LEN_224: return 0xfe;
     case BIP39_ENTROPY_LEN_256: return 0xff;
+    case BIP39_ENTROPY_LEN_288: return 0x80ff;
+    case BIP39_ENTROPY_LEN_320: return 0xC0ff;
     }
     return 0;
 }
 
-static unsigned char bip39_checksum(const unsigned char *bytes_in, size_t len)
+static size_t bip39_checksum(const unsigned char *bytes_in, size_t len, size_t mask)
 {
     struct sha256 sha;
-    unsigned char ret;
+    size_t ret;
     sha256(&sha, bytes_in, len);
-    ret = sha.u.u8[0];
+    ret = sha.u.u8[0] | (sha.u.u8[1] << 8);
     clear(&sha, sizeof(sha));
-    return ret;
+    return ret & mask;
 }
 
 int bip39_mnemonic_from_bytes(const struct words *w,
                               const unsigned char *bytes_in, size_t len,
                               char **output)
 {
-    /* 128 to 256 bits of entropy require 4-8 bits of checksum */
-    unsigned char checksummed_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
+    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_MAX];
+    size_t checksum, mask;
 
     if (output)
         *output = NULL;
@@ -110,27 +114,34 @@ int bip39_mnemonic_from_bytes(const struct words *w,
 
     w = w ? w : &en_words;
 
-    if (w->bits != 11u || !len_to_mask(len))
+    if (w->bits != 11u || !(mask = len_to_mask(len)))
         return WALLY_EINVAL;
 
-    memcpy(checksummed_bytes, bytes_in, len);
-    checksummed_bytes[len] = bip39_checksum(bytes_in, len);;
-    *output = mnemonic_from_bytes(w, checksummed_bytes, len + 1);
-    clear(checksummed_bytes, sizeof(checksummed_bytes));
+    memcpy(tmp_bytes, bytes_in, len);
+    checksum = bip39_checksum(bytes_in, len, mask);
+    tmp_bytes[len] = checksum & 0xff;
+    if (mask > 0xff)
+        tmp_bytes[++len] = (checksum >> 8) & 0xff;
+    *output = mnemonic_from_bytes(w, tmp_bytes, len + 1);
+    clear(tmp_bytes, sizeof(tmp_bytes));
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
 static bool checksum_ok(const unsigned char *bytes, size_t idx, size_t mask)
 {
     /* The checksum is stored after the data to sum */
-    return (bytes[idx] & mask) == (bip39_checksum(bytes, idx) & mask);
+    size_t calculated = bip39_checksum(bytes, idx, mask);
+    size_t stored = bytes[idx];
+    if (mask > 0xff)
+        stored |= (bytes[idx + 1] << 8);
+    return (stored & mask) == calculated;
 }
 
 int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
                             unsigned char *bytes_out, size_t len,
                             size_t *written)
 {
-    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
+    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_MAX];
     size_t mask, tmp_len;
     int ret;
 
@@ -154,10 +165,14 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     ret = mnemonic_to_bytes(w, mnemonic, tmp_bytes, sizeof(tmp_bytes), &tmp_len);
 
     if (!ret) {
+        /* Remove checksum bytes from the output length */
+        --tmp_len;
+        if (tmp_len > BIP39_ENTROPY_LEN_256)
+            --tmp_len; /* Second byte required */
+
         if (tmp_len > sizeof(tmp_bytes))
             ret = WALLY_EINVAL; /* Too big for biggest supported entropy */
         else {
-            --tmp_len; /* Ignore checksum byte */
             if (tmp_len <= len) {
                 if (!(mask = len_to_mask(tmp_len)) ||
                     !checksum_ok(tmp_bytes, tmp_len, mask)) {
@@ -178,7 +193,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
 int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
 {
-    unsigned char buf[BIP39_ENTROPY_LEN_256 + sizeof(unsigned char)];
+    unsigned char buf[BIP39_ENTROPY_LEN_MAX];
     size_t len;
     int ret = bip39_mnemonic_to_bytes(w, mnemonic, buf, sizeof(buf), &len);
     clear(buf, sizeof(buf));

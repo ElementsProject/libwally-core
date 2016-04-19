@@ -14,6 +14,8 @@ struct words;
 #define BIP39_ENTROPY_LEN_192 24
 #define BIP39_ENTROPY_LEN_224 28
 #define BIP39_ENTROPY_LEN_256 32
+#define BIP39_ENTROPY_LEN_288 36
+#define BIP39_ENTROPY_LEN_320 40
 
 /** The required size of the output buffer for @bip39_mnemonic_to_seed */
 #define BIP39_SEED_LEN_512 64
