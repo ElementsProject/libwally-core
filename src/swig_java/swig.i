@@ -70,10 +70,14 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
     static {
         try {
             System.loadLibrary("wallycore");
+            enabled = true;
         } catch (final UnsatisfiedLinkError e) {
             System.err.println("Native code library failed to load.\n" + e);
-            System.exit(1);
         }
+    }
+    private static boolean enabled = false;
+    public static boolean isEnabled() {
+        return enabled;
     }
 
     static final class Obj {
