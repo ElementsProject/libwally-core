@@ -76,7 +76,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
         }
     }
 
-    static class Obj {
+    static final class Obj {
         private final transient long ptr;
         private final int id;
         protected Obj(final long ptr, final int id) { this.ptr = ptr; this.id = id; }
@@ -134,7 +134,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
     if (!$1)
         return $null;
 }
-%typemap(jtype) const struct NAME * "Obj"
+%typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
 %enddef
 
@@ -158,7 +158,7 @@ typedef unsigned int uint32_t;
 %return_decls(FUNC, String, jstring)
 %enddef
 %define %returns_struct(FUNC, STRUCT)
-%return_decls(FUNC, Obj, jobject)
+%return_decls(FUNC, Object, jobject)
 %enddef
 
 /* Our wrapped opaque types */
