@@ -79,7 +79,8 @@ libwallycore_la_INCLUDES = \
     include/wally_bip32.h \
     include/wally_bip38.h \
     include/wally_bip39.h \
-    include/wally-core.h
+    include/wally-core.h \
+    include/wally-crypto.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
 libwallycore_la_LIBADD = $(LIBSECP256K1) $(noinst_LTLIBRARIES)
@@ -101,12 +102,12 @@ if HAVE_PYTHON
 	$(PYTHON_TEST) test/test_bip32.py
 	$(PYTHON_TEST) test/test_bip38.py
 	$(PYTHON_TEST) test/test_bip39.py
+	$(PYTHON_TEST) test/test_scrypt.py
 if EXPORT_ALL
 	$(PYTHON_TEST) test/test_base58.py
 	$(PYTHON_TEST) test/test_hmac.py
 	$(PYTHON_TEST) test/test_mnemonic.py
 	$(PYTHON_TEST) test/test_pbkdf2.py
-	$(PYTHON_TEST) test/test_scrypt.py
 	$(PYTHON_TEST) test/test_sha2.py
 	$(PYTHON_TEST) test/test_wordlist.py
 endif

@@ -43,7 +43,7 @@ class ScryptTests(unittest.TestCase):
             assert len(expected) == length * 2
             out_buf, out_len = make_cbuffer('0' * len(expected))
 
-            ret = scrypt(passwd, len(passwd), salt, len(salt),
+            ret = wally_scrypt(passwd, len(passwd), salt, len(salt),
                          cost, block, parallel, out_buf, out_len)
             self.assertEqual(ret, 0)
             self.assertEqual(h(out_buf), expected)

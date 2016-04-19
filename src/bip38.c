@@ -1,8 +1,8 @@
 #include <include/wally-core.h>
 #include <include/wally_bip38.h>
+#include <include/wally_crypto.h>
 #include "internal.h"
 #include "base58.h"
-#include "scrypt.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
 #include "ccan/ccan/endian/endian.h"
@@ -142,13 +142,15 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
 
     *output = NULL;
 
-    if (address_from_private_key(priv_key, len, network, compressed, &addr58))
+    ret = address_from_private_key(priv_key, len, network, compressed, &addr58);
+    if (ret)
         goto finish;
 
     buf.hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
-    if (scrypt(password, password_len,
-               (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
-               (unsigned char *)&derived, sizeof(derived)))
+    ret = wally_scrypt(password, password_len,
+                       (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
+                       (unsigned char *)&derived, sizeof(derived));
+    if (ret)
         goto finish;
 
     buf.prefix = BIP38_PREFIX;
@@ -203,9 +205,9 @@ int bip38_to_private_key(const char *bip38,
         goto finish;
     }
 
-    ret = scrypt(password, password_len,
-                 (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
-                 (unsigned char *)&derived, sizeof(derived));
+    ret = wally_scrypt(password, password_len,
+                       (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
+                       (unsigned char *)&derived, sizeof(derived));
     if (ret)
         goto finish;
 
