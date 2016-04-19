@@ -47,7 +47,7 @@ AC_ARG_ENABLE(debug,
     AS_HELP_STRING([--enable-debug],[enable debugging (default: no)]),
     [debug=$enableval], [debug=no])
 
-CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2 -g//g'`
+CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2//g' | $GNU_SED -e 's/-g//g'`
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
