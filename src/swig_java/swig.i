@@ -2,6 +2,7 @@
 %{
 #include "../include/wally-core.h"
 #include "../include/wally_bip39.h"
+#include "../include/wally_crypto.h"
 #include <limits.h>
 
 static void check_result(JNIEnv *jenv, int result) {
@@ -122,6 +123,8 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
 
 /* Array handling */
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 
@@ -176,6 +179,8 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
+%returns_void__(wally_scrypt);
 
 %include "../include/wally-core.h"
 %include "../include/wally_bip39.h"
+%include "../include/wally_crypto.h"
