@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* Many compilers these days will elide calls to memset when they
  * determine that the memory is not read afterwards. There are reports

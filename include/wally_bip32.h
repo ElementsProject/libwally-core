@@ -4,7 +4,6 @@
 #include "wally_core.h"
 
 #include <stdint.h>
-#include <stdbool.h>
 
 /** The required lengths of entropy for @bip32_key_from_bytes */
 #define BIP32_ENTROPY_LEN_128 16u

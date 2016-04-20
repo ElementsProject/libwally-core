@@ -4,7 +4,6 @@
 #include "wally_core.h"
 
 #include <stdint.h>
-#include <stdbool.h>
 
 struct words;
 

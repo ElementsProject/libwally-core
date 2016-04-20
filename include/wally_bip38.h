@@ -4,7 +4,6 @@
 #include "wally_core.h"
 
 #include <stdint.h>
-#include <stdbool.h>
 
 /* Flags for BIP38 conversion. The first 8 bits are reserved for the network */
 #define BIP38_KEY_MAINNET    0   /* Address is for main network */
