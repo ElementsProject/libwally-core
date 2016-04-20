@@ -152,7 +152,8 @@ integerify(const void * B, size_t r)
 {
 	const uint32_t * X = (const void *)((uintptr_t)(B) + (2 * r - 1) * 64);
 
-	return (((uint64_t)(X[1]) << 32) + X[0]);
+	/* Only return the lower 32 bits since N cannot be > 2^32 */
+	return *X;
 }
 
 /**
