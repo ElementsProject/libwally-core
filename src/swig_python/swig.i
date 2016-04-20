@@ -3,6 +3,7 @@
 #define SWIG_FILE_WITH_INIT
 #include <stdbool.h>
 #include "../include/wally_core.h"
+#include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 
@@ -89,5 +90,6 @@ static int check_result(int result)
 %py_opaque_struct(words);
 
 %include "../include/wally_core.h"
+%include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"

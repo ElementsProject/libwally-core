@@ -1,6 +1,7 @@
 %module wallycore
 %{
 #include "../include/wally_core.h"
+#include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include <limits.h>
@@ -174,6 +175,9 @@ typedef unsigned int uint32_t;
 %java_opaque_struct(words, 1)
 
 /* Our wrapped functions return types */
+%returns_void__(bip38_raw_from_private_key);
+%returns_string(bip38_from_private_key);
+%returns_void__(bip38_to_private_key);
 %returns_string(bip39_get_languages);
 %returns_struct(bip39_get_wordlist, words);
 %returns_string(bip39_get_word);
@@ -184,5 +188,6 @@ typedef unsigned int uint32_t;
 %returns_void__(wally_scrypt);
 
 %include "../include/wally_core.h"
+%include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
