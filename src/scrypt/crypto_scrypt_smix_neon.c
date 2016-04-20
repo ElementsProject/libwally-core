@@ -241,12 +241,11 @@ crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
     /* 2: for i = 0 to N - 1 do */
     for (i = 0; i < N; i += 2) {
         /* 3: V_i <-- X */
-        blkcpy((void *)((uintptr_t)(V) + i * 128 * r), X, 128 * r);
+        blkcpy(((unsigned char *)V) + i * 128 * r, X, 128 * r);
         /* 4: X <-- H(X) */
         blockmix_salsa8(X, Y, Z, r);
         /* 3: V_i <-- X */
-        blkcpy((void *)((uintptr_t)(V) + (i + 1) * 128 * r),
-               Y, 128 * r);
+        blkcpy(((unsigned char *)V) + (i + 1) * 128 * r, Y, 128 * r);
         /* 4: X <-- H(X) */
         blockmix_salsa8(Y, X, Z, r);
     }
@@ -255,12 +254,12 @@ crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
         /* 7: j <-- Integerify(X) mod N */
         j = integerify(X, r) & (N - 1);
         /* 8: X <-- H(X \xor V_j) */
-        blkxor(X, (void *)((uintptr_t)(V) + j * 128 * r), 128 * r);
+        blkxor(X, ((unsigned char *)V) + j * 128 * r, 128 * r);
         blockmix_salsa8(X, Y, Z, r);
         /* 7: j <-- Integerify(X) mod N */
         j = integerify(Y, r) & (N - 1);
         /* 8: X <-- H(X \xor V_j) */
-        blkxor(Y, (void *)((uintptr_t)(V) + j * 128 * r), 128 * r);
+        blkxor(Y, ((unsigned char *)V) + j * 128 * r, 128 * r);
         blockmix_salsa8(Y, X, Z, r);
     }
     /* 10: B' <-- X */
