@@ -116,6 +116,7 @@ salsa20_8_intrinsic(void * input)
     x8x13x2x7 = vbslq_u32(abab,x8x9x2x3,x12x13x6x7);
     x4x9x14x3 = vbslq_u32(abab,x4x5x14x15,x8x9x2x3);
     x12x1x6x11 = vbslq_u32(abab,x12x13x6x7,x0x1x10x11);
+    {
     uint32x4_t start0 = x0x5x10x15;
     uint32x4_t start1 = x12x1x6x11;
     uint32x4_t start3 = x4x9x14x3;
@@ -169,6 +170,7 @@ salsa20_8_intrinsic(void * input)
     vst1q_u8(16 + (uint8_t *) input,(uint8x16_t) x4x5x6x7);
     vst1q_u8(32 + (uint8_t *) input,(uint8x16_t) x8x9x10x11);
     vst1q_u8(48 + (uint8_t *) input,(uint8x16_t) x12x13x14x15);
+    }
 }
 
 /**
