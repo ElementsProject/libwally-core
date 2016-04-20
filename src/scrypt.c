@@ -30,11 +30,32 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
                        flags, cost, bytes_out, len);
 }
 
+/* Include a suitable smix function/functions */
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-#include <arm_neon.h>
-#include "scrypt/crypto_scrypt_smix_neon.c"
+# include <arm_neon.h>
+# include "scrypt/crypto_scrypt_smix_neon.c"
+# if !defined(__ANDROID__)
+/* No way to check for support, assume Neon present */
+#  define crypto_scrypt_smix_fn crypto_scrypt_smix_neon
+# else
+/* On Android, detect the version at runtime */
+#  include "cpufeatures/cpu-features.h"
+#  include "scrypt/crypto_scrypt_smix.c"
+static void
+crypto_scrypt_smix_fn(uint8_t *B, size_t r, uint64_t N, void *_V, void *XY)
+{
+    if (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON)
+        crypto_scrypt_smix_neon(B, r, N, _V, XY);
+    else
+        crypto_scrypt_smix_c(B, r, N, _V, XY);
+}
+# endif
+#else
+/* Use the C version */
+# include "scrypt/crypto_scrypt_smix.c"
+# define crypto_scrypt_smix_fn crypto_scrypt_smix_c
 #endif
-#include "scrypt/crypto_scrypt_smix.c"
+
 #include "scrypt/crypto_scrypt.c"
 
 /* Our scrypt wrapper. */
@@ -45,5 +66,5 @@ int wally_scrypt(const unsigned char *pass, size_t pass_len,
 {
     return _crypto_scrypt(pass, pass_len, salt, salt_len,
                           cost, block_size, parallelism,
-                          bytes_out, len, crypto_scrypt_smix);
+                          bytes_out, len, crypto_scrypt_smix_fn);
 }

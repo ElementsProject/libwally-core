@@ -33,13 +33,13 @@
 #include "sysendian.h"
 
 #include "crypto_scrypt_smix.h"
-#endif
 
 static void blkcpy(void *, const void *, size_t);
 static void blkxor(void *, const void *, size_t);
 static void salsa20_8(uint32_t[16]);
 static void blockmix_salsa8(const uint32_t *, uint32_t *, uint32_t *, size_t);
 static uint64_t integerify(const void *, size_t);
+#endif
 
 static void
 blkcpy(void * dest, const void * src, size_t len)
@@ -165,7 +165,7 @@ integerify(const void * B, size_t r)
  * multiple of 64 bytes.
  */
 static void
-crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * _V, void * XY)
+crypto_scrypt_smix_c(uint8_t * B, size_t r, uint64_t N, void * _V, void * XY)
 {
 	uint32_t * X = XY;
 	uint32_t * Y = (void *)((uint8_t *)(XY) + 128 * r);

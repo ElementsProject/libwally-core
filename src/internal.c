@@ -5,6 +5,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#ifdef __ANDROID__
+#include "cpufeatures/cpu-features.c"
+#endif
+
 /* FIXME: Not threadsafe, not randomised, not cleaned up, etc etc*/
 static secp256k1_context *global_ctx = NULL;
 
