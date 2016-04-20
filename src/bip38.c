@@ -132,14 +132,14 @@ static void aes_enc(const unsigned char *src, const unsigned char *xor,
 
 int bip38_from_private_key(const unsigned char *priv_key, size_t len,
                            const unsigned char *password, size_t password_len,
-                           unsigned char network, bool compressed,
-                           char **output)
+                           uint32_t flags, char **output)
 {
+    const unsigned char network = flags & 0xff;
+    const bool compressed = flags & BIP38_KEY_COMPRESSED;
     struct derived_t derived;
     struct bip38_layout_t buf;
     char *addr58 = NULL;
     int ret = -1;
-
     *output = NULL;
 
     ret = address_from_private_key(priv_key, len, network, compressed, &addr58);
@@ -184,9 +184,10 @@ static void aes_dec(const unsigned char *src, const unsigned char *xor,
 
 int bip38_to_private_key(const char *bip38,
                          const unsigned char *password, size_t password_len,
-                         unsigned char network,
+                         uint32_t flags,
                          unsigned char *bytes_out, size_t len)
 {
+    const unsigned char network = flags & 0xff;
     struct derived_t derived;
     struct bip38_layout_t buf;
     char *addr58 = NULL;

@@ -29,14 +29,17 @@ cases = [
 
 class BIP38Tests(unittest.TestCase):
 
+    KEY_MAINNET, KEY_TESTNET, KEY_COMPRESSED, KEY_EC_MULT = 0, 7, 256, 512
+
     def from_priv(self, priv_key, passwd, compressed):
-        priv, priv_len = make_cbuffer(priv_key)
-        return bip38_from_private_key(priv, priv_len, passwd, len(passwd),
-                                      0, compressed)
+        priv, p_len = make_cbuffer(priv_key)
+        flags = self.KEY_MAINNET | (self.KEY_COMPRESSED if compressed else 0)
+        return bip38_from_private_key(priv, p_len, passwd, len(passwd), flags)
 
     def to_priv(self, bip38, passwd):
         priv, priv_len = make_cbuffer('00' * 32)
-        ret = bip38_to_private_key(bip38, passwd, len(passwd), 0,
+        flags = self.KEY_MAINNET
+        ret = bip38_to_private_key(bip38, passwd, len(passwd), flags,
                                    priv, priv_len)
         return ret, priv
 
