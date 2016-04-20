@@ -15,14 +15,14 @@ libswig_python_la_CFLAGS = -I$(top_srcdir) $(SWIG_PYTHON_CPPFLAGS) -fno-strict-a
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i
-	$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@
+	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@
 
 PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
 
 .PHONY: clean-swig-python
 clean-swig-python:
-	rm -f swig_python/swig_python_wrap.c swig_python/wallycore.py
+	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore.py
 clean-local: clean-swig-python
 endif
 
@@ -34,18 +34,18 @@ libswig_java_la_SOURCES = \
 libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-aliasing
 
 swig_java/swig_java_wrap.c: swig_java/swig.i
-	$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally -o $@ $< && $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@
+	$(AM_V_at)$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally -o $@ $< && $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@
 
 cblw=com/blockstream/libwally
 sjs=swig_java/src
 $(sjs)/$(cblw)/wallycore.java: swig_java/swig_java_wrap.c
-	$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
+	$(AM_V_at)$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
 
 $(sjs)/$(cblw)/wallycore.class: $(sjs)/$(cblw)/wallycore.java
-	$(JAVAC) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/wallycore.java
+	$(AM_V_at)$(JAVAC) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/wallycore.java
 
 swig_java/wallycore.jar: $(sjs)/$(cblw)/wallycore.class
-	$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/wallycore$$Obj.class' -C $(sjs) '$(cblw)/wallycore.class'
+	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/wallycore$$Obj.class' -C $(sjs) '$(cblw)/wallycore.class'
 
 if HAVE_JAVAC
 all: swig_java/wallycore.jar
@@ -53,7 +53,7 @@ endif
 
 .PHONY: clean-swig-java
 clean-swig-java:
-	rm -rf swig_java/swig_java_wrap.c swig_java/src swig_java/*.java swig_java/*.jar
+	$(AM_V_at)rm -rf swig_java/swig_java_wrap.c swig_java/src swig_java/*.java swig_java/*.jar
 clean-local: clean-swig-java
 endif
 
@@ -99,19 +99,19 @@ endif
 
 check-local:
 if HAVE_PYTHON
-	$(PYTHON_TEST) test/test_bip32.py
-	$(PYTHON_TEST) test/test_bip38.py
-	$(PYTHON_TEST) test/test_bip39.py
-	$(PYTHON_TEST) test/test_scrypt.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
 if EXPORT_ALL
-	$(PYTHON_TEST) test/test_base58.py
-	$(PYTHON_TEST) test/test_hmac.py
-	$(PYTHON_TEST) test/test_mnemonic.py
-	$(PYTHON_TEST) test/test_pbkdf2.py
-	$(PYTHON_TEST) test/test_sha2.py
-	$(PYTHON_TEST) test/test_wordlist.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_sha2.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 endif
 if USE_SWIG_PYTHON
-	$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 endif
 endif
