@@ -980,7 +980,9 @@ android_cpuInit(void)
 #endif /* __aarch64__ */
 
 #if defined(__i386__) || defined(__x86_64__)
+    {
     int regs[4];
+    int vendorIsIntel;
 
 /* According to http://en.wikipedia.org/wiki/CPUID */
 #define VENDOR_INTEL_b  0x756e6547
@@ -988,9 +990,9 @@ android_cpuInit(void)
 #define VENDOR_INTEL_d  0x49656e69
 
     x86_cpuid(0, regs);
-    int vendorIsIntel = (regs[1] == VENDOR_INTEL_b &&
-                         regs[2] == VENDOR_INTEL_c &&
-                         regs[3] == VENDOR_INTEL_d);
+    vendorIsIntel = (regs[1] == VENDOR_INTEL_b &&
+                     regs[2] == VENDOR_INTEL_c &&
+                     regs[3] == VENDOR_INTEL_d);
 
     x86_cpuid(1, regs);
     if ((regs[2] & (1 << 9)) != 0) {
@@ -1007,6 +1009,7 @@ android_cpuInit(void)
     }
     if (vendorIsIntel && (regs[2] & (1 << 22)) != 0) {
         g_cpuFeatures |= ANDROID_CPU_X86_FEATURE_MOVBE;
+    }
     }
 #endif
 #if defined( __mips__)
