@@ -42,7 +42,7 @@ $(sjs)/$(cblw)/wallycore.java: swig_java/swig_java_wrap.c
 	$(AM_V_at)$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
 
 $(sjs)/$(cblw)/wallycore.class: $(sjs)/$(cblw)/wallycore.java
-	$(AM_V_at)$(JAVAC) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/wallycore.java
+	$(AM_V_at)$(JAVAC) -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/wallycore.java
 
 swig_java/wallycore.jar: $(sjs)/$(cblw)/wallycore.class
 	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/wallycore$$Obj.class' -C $(sjs) '$(cblw)/wallycore.class'
