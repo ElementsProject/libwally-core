@@ -33,9 +33,8 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
 #include "scrypt/crypto_scrypt_smix_neon.c"
-#else
-#include "scrypt/crypto_scrypt_smix.c"
 #endif
+#include "scrypt/crypto_scrypt_smix.c"
 #include "scrypt/crypto_scrypt.c"
 
 /* Our scrypt wrapper. */

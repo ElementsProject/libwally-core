@@ -51,7 +51,7 @@ static void smix(uint8_t *, size_t, uint64_t, void *, void *);
 #endif
 
 static void
-blkcpy(void * dest, void * src, size_t len)
+neon_blkcpy(void * dest, void * src, size_t len)
 {
     uint8x16_t * D = dest;
     uint8x16_t * S = src;
@@ -61,7 +61,7 @@ blkcpy(void * dest, void * src, size_t len)
         D[i] = S[i];
 }
 static void
-blkxor(void * dest, void * src, size_t len)
+neon_blkxor(void * dest, void * src, size_t len)
 {
     uint8x16_t * D = dest;
     uint8x16_t * S = src;
@@ -80,7 +80,7 @@ blkxor(void * dest, void * src, size_t len)
  */
 #define ROUNDS 8
 static void
-salsa20_8_intrinsic(void * input)
+neon_salsa20_8_intrinsic(void * input)
 {
     int i;
     const uint32x4_t abab = {-1,0,-1,0};
@@ -179,30 +179,30 @@ salsa20_8_intrinsic(void * input)
  * length; the temporary space Y must also be the same size.
  */
 static void
-blockmix_salsa8(uint8x16_t * Bin, uint8x16_t * Bout, uint8x16_t * X, size_t r)
+neon_blockmix_salsa8(uint8x16_t * Bin, uint8x16_t * Bout, uint8x16_t * X, size_t r)
 {
     size_t i;
     /* 1: X <-- B_{2r - 1} */
-    blkcpy(X, &Bin[8 * r - 4], 64);
+    neon_blkcpy(X, &Bin[8 * r - 4], 64);
     /* 2: for i = 0 to 2r - 1 do */
     for (i = 0; i < r; i++) {
         /* 3: X <-- H(X \xor B_i) */
-        blkxor(X, &Bin[i * 8], 64);
-        salsa20_8_intrinsic((void *) X);
+        neon_blkxor(X, &Bin[i * 8], 64);
+        neon_salsa20_8_intrinsic((void *) X);
         /* 4: Y_i <-- X */
         /* 6: B' <-- (Y_0, Y_2 ... Y_{2r-2}, Y_1, Y_3 ... Y_{2r-1}) */
-        blkcpy(&Bout[i * 4], X, 64);
+        neon_blkcpy(&Bout[i * 4], X, 64);
         /* 3: X <-- H(X \xor B_i) */
-        blkxor(X, &Bin[i * 8 + 4], 64);
-        salsa20_8_intrinsic((void *) X);
+        neon_blkxor(X, &Bin[i * 8 + 4], 64);
+        neon_salsa20_8_intrinsic((void *) X);
         /* 4: Y_i <-- X */
         /* 6: B' <-- (Y_0, Y_2 ... Y_{2r-2}, Y_1, Y_3 ... Y_{2r-1}) */
-        blkcpy(&Bout[(r + i) * 4], X, 64);
+        neon_blkcpy(&Bout[(r + i) * 4], X, 64);
     }
 }
 
 static inline uint64_t
-le64dec(const void *pp)
+neon_le64dec(const void *pp)
 {
 	const uint8_t *p = (uint8_t const *)pp;
 
@@ -216,10 +216,10 @@ le64dec(const void *pp)
  * Return the result of parsing B_{2r-1} as a little-endian integer.
  */
 static uint64_t
-integerify(void * B, size_t r)
+neon_integerify(void * B, size_t r)
 {
     uint8_t * X = (void*)((uintptr_t)(B) + (2 * r - 1) * 64);
-    return (le64dec(X));
+    return (neon_le64dec(X));
 }
 /**
  * smix(B, r, N, V, XY):
@@ -228,7 +228,7 @@ integerify(void * B, size_t r)
  * XY must be 256r bytes in length.  The value N must be a power of 2.
  */
 static void
-crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
+crypto_scrypt_smix_neon(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
 {
     uint8x16_t * X = XY;
     uint8x16_t * Y = (void *)((uintptr_t)(XY) + 128 * r);
@@ -236,31 +236,31 @@ crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
     uint64_t i, j;
 
     /* 1: X <-- B */
-    blkcpy(X, B, 128 * r);
+    neon_blkcpy(X, B, 128 * r);
     /* 2: for i = 0 to N - 1 do */
     for (i = 0; i < N; i += 2) {
         /* 3: V_i <-- X */
-        blkcpy(((unsigned char *)V) + i * 128 * r, X, 128 * r);
+        neon_blkcpy(((unsigned char *)V) + i * 128 * r, X, 128 * r);
         /* 4: X <-- H(X) */
-        blockmix_salsa8(X, Y, Z, r);
+        neon_blockmix_salsa8(X, Y, Z, r);
         /* 3: V_i <-- X */
-        blkcpy(((unsigned char *)V) + (i + 1) * 128 * r, Y, 128 * r);
+        neon_blkcpy(((unsigned char *)V) + (i + 1) * 128 * r, Y, 128 * r);
         /* 4: X <-- H(X) */
-        blockmix_salsa8(Y, X, Z, r);
+        neon_blockmix_salsa8(Y, X, Z, r);
     }
     /* 6: for i = 0 to N - 1 do */
     for (i = 0; i < N; i += 2) {
         /* 7: j <-- Integerify(X) mod N */
-        j = integerify(X, r) & (N - 1);
+        j = neon_integerify(X, r) & (N - 1);
         /* 8: X <-- H(X \xor V_j) */
-        blkxor(X, ((unsigned char *)V) + j * 128 * r, 128 * r);
-        blockmix_salsa8(X, Y, Z, r);
+        neon_blkxor(X, ((unsigned char *)V) + j * 128 * r, 128 * r);
+        neon_blockmix_salsa8(X, Y, Z, r);
         /* 7: j <-- Integerify(X) mod N */
-        j = integerify(Y, r) & (N - 1);
+        j = neon_integerify(Y, r) & (N - 1);
         /* 8: X <-- H(X \xor V_j) */
-        blkxor(Y, ((unsigned char *)V) + j * 128 * r, 128 * r);
-        blockmix_salsa8(Y, X, Z, r);
+        neon_blkxor(Y, ((unsigned char *)V) + j * 128 * r, 128 * r);
+        neon_blockmix_salsa8(Y, X, Z, r);
     }
     /* 10: B' <-- X */
-    blkcpy(B, X, 128 * r);
+    neon_blkcpy(B, X, 128 * r);
 }
