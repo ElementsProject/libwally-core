@@ -33,8 +33,12 @@ libswig_java_la_SOURCES = \
 
 libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-aliasing
 
+SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally
+
 swig_java/swig_java_wrap.c: swig_java/swig.i
-	$(AM_V_at)$(SWIG) $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally -o $@ $< && $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@
+	$(AM_V_at)$(SWIG) $(SWIG_JOPT) -o $@ $< && \
+    $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@ && \
+    $(GNU_SED) -i 's/ = (char \*) (\*jenv)->Get/ = (unsigned char \*) (\*jenv)->Get/g' $@
 
 cblw=com/blockstream/libwally
 sjs=swig_java/src
