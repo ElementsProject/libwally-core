@@ -215,7 +215,7 @@ enum {
     ANDROID_CPU_ARM_FEATURE_PMULL       = (1 << 13),
     ANDROID_CPU_ARM_FEATURE_SHA1        = (1 << 14),
     ANDROID_CPU_ARM_FEATURE_SHA2        = (1 << 15),
-    ANDROID_CPU_ARM_FEATURE_CRC32       = (1 << 16),
+    ANDROID_CPU_ARM_FEATURE_CRC32       = (1 << 16)
 };
 
 /* The bit flags corresponding to the output of android_getCpuFeatures()
@@ -250,7 +250,7 @@ enum {
     ANDROID_CPU_ARM64_FEATURE_PMULL   = (1 << 3),
     ANDROID_CPU_ARM64_FEATURE_SHA1    = (1 << 4),
     ANDROID_CPU_ARM64_FEATURE_SHA2    = (1 << 5),
-    ANDROID_CPU_ARM64_FEATURE_CRC32   = (1 << 6),
+    ANDROID_CPU_ARM64_FEATURE_CRC32   = (1 << 6)
 };
 
 /* The bit flags corresponding to the output of android_getCpuFeatures()
@@ -262,7 +262,7 @@ enum {
     ANDROID_CPU_X86_FEATURE_POPCNT = (1 << 1),
     ANDROID_CPU_X86_FEATURE_MOVBE  = (1 << 2),
     ANDROID_CPU_X86_FEATURE_SSE4_1 = (1 << 3),
-    ANDROID_CPU_X86_FEATURE_SSE4_2 = (1 << 4),
+    ANDROID_CPU_X86_FEATURE_SSE4_2 = (1 << 4)
 };
 
 /* The bit flags corresponding to the output of android_getCpuFeatures()
@@ -278,7 +278,7 @@ enum {
  */
 enum {
     ANDROID_CPU_MIPS_FEATURE_R6    = (1 << 0),
-    ANDROID_CPU_MIPS_FEATURE_MSA   = (1 << 1),
+    ANDROID_CPU_MIPS_FEATURE_MSA   = (1 << 1)
 };
 
 
