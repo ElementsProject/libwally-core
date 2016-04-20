@@ -30,10 +30,15 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
                        flags, cost, bytes_out, len);
 }
 
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#include <arm_neon.h>
+#include "scrypt/crypto_scrypt_smix_neon.c"
+#else
 #include "scrypt/crypto_scrypt_smix.c"
+#endif
 #include "scrypt/crypto_scrypt.c"
 
-/* * Our scrypt wrapper. */
+/* Our scrypt wrapper. */
 int wally_scrypt(const unsigned char *pass, size_t pass_len,
                  const unsigned char *salt, size_t salt_len,
                  uint32_t cost, uint32_t block_size, uint32_t parallelism,

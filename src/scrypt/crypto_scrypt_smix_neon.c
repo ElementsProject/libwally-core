@@ -26,8 +26,7 @@
  * This file was originally written by Colin Percival as part of the Tarsnap
  * online backup system.
  */
-#ifdef __ARM_NEON__
-
+#if 0
 #include "scrypt_platform.h"
 #include <arm_neon.h>
 #include <errno.h>
@@ -49,6 +48,8 @@ void crypto_core_salsa208_armneon2(void *);
 static void blockmix_salsa8(uint8x16_t *, uint8x16_t *, uint8x16_t *, size_t);
 static uint64_t integerify(void *, size_t);
 static void smix(uint8_t *, size_t, uint64_t, void *, void *);
+#endif
+
 static void
 blkcpy(void * dest, void * src, size_t len)
 {
@@ -197,6 +198,18 @@ blockmix_salsa8(uint8x16_t * Bin, uint8x16_t * Bout, uint8x16_t * X, size_t r)
         blkcpy(&Bout[(r + i) * 4], X, 64);
     }
 }
+
+static inline uint64_t
+le64dec(const void *pp)
+{
+	const uint8_t *p = (uint8_t const *)pp;
+
+	return ((uint64_t)(p[0]) + ((uint64_t)(p[1]) << 8) +
+	    ((uint64_t)(p[2]) << 16) + ((uint64_t)(p[3]) << 24) +
+	    ((uint64_t)(p[4]) << 32) + ((uint64_t)(p[5]) << 40) +
+	    ((uint64_t)(p[6]) << 48) + ((uint64_t)(p[7]) << 56));
+}
+
 /**
  * integerify(B, r):
  * Return the result of parsing B_{2r-1} as a little-endian integer.
@@ -214,7 +227,7 @@ integerify(void * B, size_t r)
  * XY must be 256r bytes in length.  The value N must be a power of 2.
  */
 static void
-smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
+crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
 {
     uint8x16_t * X = XY;
     uint8x16_t * Y = (void *)((uintptr_t)(XY) + 128 * r);
@@ -252,5 +265,3 @@ smix(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
     /* 10: B' <-- X */
     blkcpy(B, X, 128 * r);
 }
-
-#endif // __ARM_NEON__

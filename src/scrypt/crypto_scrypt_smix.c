@@ -163,7 +163,7 @@ integerify(const void * B, size_t r)
  * power of 2 greater than 1.  The arrays B, V, and XY must be aligned to a
  * multiple of 64 bytes.
  */
-void
+static void
 crypto_scrypt_smix(uint8_t * B, size_t r, uint64_t N, void * _V, void * XY)
 {
 	uint32_t * X = XY;
