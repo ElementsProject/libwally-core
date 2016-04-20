@@ -57,14 +57,14 @@ struct ext_key {
  *
  * This creates a new master key, i.e. the root of a new HD tree.
  * @bytes_in Entropy to use.
- * @len Size of @bytes_in in bytes.
+ * @len_in Size of @bytes_in in bytes.
  * @version Either @BIP32_VER_MAIN_PRIVATE or @BIP32_VER_TEST_PRIVATE.
  *
  * @dest Destination for the resulting master extended key.
  */
 WALLY_CORE_API int bip32_key_from_bytes(
     const unsigned char *bytes_in,
-    size_t len,
+    size_t len_in,
     uint32_t version,
     struct ext_key *key_out);
 
@@ -89,12 +89,12 @@ WALLY_CORE_API int bip32_key_serialise(
  * Un-serialise an extended key from memory.
  *
  * @bytes_in Storage holding the serialised key.
- * @len Size of @bytes_in in bytes. Must be @BIP32_SERIALISED_LEN.
+ * @len_in Size of @bytes_in in bytes. Must be @BIP32_SERIALISED_LEN.
  * @key_out Destination for the resulting extended key.
  */
 WALLY_CORE_API int bip32_key_unserialise(
     const unsigned char *bytes_in,
-    size_t len,
+    size_t len_in,
     struct ext_key *key_out);
 
 

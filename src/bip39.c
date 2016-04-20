@@ -100,7 +100,7 @@ static size_t bip39_checksum(const unsigned char *bytes_in, size_t len, size_t m
 }
 
 int bip39_mnemonic_from_bytes(const struct words *w,
-                              const unsigned char *bytes_in, size_t len,
+                              const unsigned char *bytes_in, size_t len_in,
                               char **output)
 {
     unsigned char tmp_bytes[BIP39_ENTROPY_LEN_MAX];
@@ -109,20 +109,20 @@ int bip39_mnemonic_from_bytes(const struct words *w,
     if (output)
         *output = NULL;
 
-    if (!bytes_in || !len || !output)
+    if (!bytes_in || !len_in || !output)
         return WALLY_EINVAL;
 
     w = w ? w : &en_words;
 
-    if (w->bits != 11u || !(mask = len_to_mask(len)))
+    if (w->bits != 11u || !(mask = len_to_mask(len_in)))
         return WALLY_EINVAL;
 
-    memcpy(tmp_bytes, bytes_in, len);
-    checksum = bip39_checksum(bytes_in, len, mask);
-    tmp_bytes[len] = checksum & 0xff;
+    memcpy(tmp_bytes, bytes_in, len_in);
+    checksum = bip39_checksum(bytes_in, len_in, mask);
+    tmp_bytes[len_in] = checksum & 0xff;
     if (mask > 0xff)
-        tmp_bytes[++len] = (checksum >> 8) & 0xff;
-    *output = mnemonic_from_bytes(w, tmp_bytes, len + 1);
+        tmp_bytes[++len_in] = (checksum >> 8) & 0xff;
+    *output = mnemonic_from_bytes(w, tmp_bytes, len_in + 1);
     clear(tmp_bytes, sizeof(tmp_bytes));
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }

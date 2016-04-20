@@ -143,19 +143,19 @@ static void key_compute_hash160(struct ext_key *key_out)
 }
 
 
-int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len,
+int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len_in,
                          uint32_t version, struct ext_key *key_out)
 {
     struct sha512 sha;
 
-    if (len != BIP32_ENTROPY_LEN_256 && len != BIP32_ENTROPY_LEN_128)
+    if (len_in != BIP32_ENTROPY_LEN_256 && len_in != BIP32_ENTROPY_LEN_128)
         return -1;
 
     if (!version_is_valid(key_out->version = version, BIP32_KEY_PRIVATE))
         return -1;
 
     /* Generate key and chain code */
-    hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len);
+    hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len_in);
 
     /* Check that key lies between 0 and order(secp256k1) exclusive */
     if (key_overflow(sha.u.u64) || key_zero(sha.u.u64)) {
@@ -287,10 +287,10 @@ static int wipe_key_fail(struct ext_key *key_out)
     return -1;
 }
 
-int bip32_key_unserialise(const unsigned char *bytes_in, size_t len,
+int bip32_key_unserialise(const unsigned char *bytes_in, size_t len_in,
                           struct ext_key *key_out)
 {
-    if (len != BIP32_SERIALISED_LEN)
+    if (len_in != BIP32_SERIALISED_LEN)
         return wipe_key_fail(key_out);
 
     bytes_in = copy_in(&key_out->version, bytes_in, sizeof(key_out->version));

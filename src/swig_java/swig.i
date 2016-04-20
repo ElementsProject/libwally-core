@@ -124,7 +124,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
 }
 
 /* Array handling */
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
