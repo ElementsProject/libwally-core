@@ -14,26 +14,26 @@
 #define BIP38_RAW_LEN 39 /* Length of a raw BIP38 key in bytes */
 
 WALLY_CORE_API int bip38_raw_from_private_key(
-    const unsigned char *priv_key,
+    const unsigned char *bytes_in,
     size_t len_in,
-    const unsigned char *password,
-    size_t password_len,
+    const unsigned char *pass,
+    size_t pass_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
 
 WALLY_CORE_API int bip38_from_private_key(
-    const unsigned char *priv_key,
+    const unsigned char *bytes_in,
     size_t len_in,
-    const unsigned char *password,
-    size_t password_len,
+    const unsigned char *pass,
+    size_t pass_len,
     uint32_t flags,
     char **output);
 
 WALLY_CORE_API int bip38_to_private_key(
     const char *bip38,
-    const unsigned char *password,
-    size_t password_len,
+    const unsigned char *pass,
+    size_t pass_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
