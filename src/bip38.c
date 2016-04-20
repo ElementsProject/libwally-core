@@ -59,6 +59,7 @@ static void assert_assumptions(void)
     BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERVIED_KEY_LEN);
     /* 44 -> pad1 + 39 + BASE58_CHECKSUM_LEN */
     BUILD_ASSERT(sizeof(struct bip38_layout_t) == 44u);
+    BUILD_ASSERT(LAYOUT_BYTES == BIP38_RAW_LEN);
 }
 
 /* FIXME: Share this with key_compute_pub_key in bip32.c */
@@ -130,19 +131,23 @@ static void aes_enc(const unsigned char *src, const unsigned char *xor,
     clear_n(2, plaintext, sizeof(plaintext), &ctx, sizeof(ctx));
 }
 
-int bip38_from_private_key(const unsigned char *priv_key, size_t len,
-                           const unsigned char *password, size_t password_len,
-                           uint32_t flags, char **output)
+int bip38_raw_from_private_key(const unsigned char *priv_key, size_t len_in,
+                               const unsigned char *password, size_t password_len,
+                               uint32_t flags,
+                               unsigned char *bytes_out, size_t len)
 {
     const unsigned char network = flags & 0xff;
     const bool compressed = flags & BIP38_KEY_COMPRESSED;
     struct derived_t derived;
     struct bip38_layout_t buf;
     char *addr58 = NULL;
-    int ret = -1;
-    *output = NULL;
+    int ret;
 
-    ret = address_from_private_key(priv_key, len, network, compressed, &addr58);
+    /* FIXME: check args not checked by address_from_private_key */
+    if (len != BIP38_RAW_LEN)
+        return WALLY_EINVAL;
+
+    ret = address_from_private_key(priv_key, len_in, network, compressed, &addr58);
     if (ret)
         goto finish;
 
@@ -158,13 +163,36 @@ int bip38_from_private_key(const unsigned char *priv_key, size_t len,
     buf.flags = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
     aes_enc(priv_key + 0, derived.half1_lo, derived.half2, buf.half1);
     aes_enc(priv_key + 16, derived.half1_hi, derived.half2, buf.half2);
-    ret = base58_from_bytes(&buf.prefix, LAYOUT_BYTES, BASE58_FLAG_CHECKSUM,
-                            output);
+
+    memcpy(bytes_out, &buf.prefix, BIP38_RAW_LEN);
+
 finish:
     wally_free_string(addr58);
     clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
+
+int bip38_from_private_key(const unsigned char *priv_key, size_t len,
+                           const unsigned char *password, size_t password_len,
+                           uint32_t flags, char **output)
+{
+    struct bip38_layout_t buf;
+    char *addr58 = NULL;
+    int ret;
+
+    *output = NULL;
+
+    ret = bip38_raw_from_private_key(priv_key, len, password, password_len,
+                                     flags, &buf.prefix, BIP38_RAW_LEN);
+    if (!ret)
+        ret = base58_from_bytes(&buf.prefix, BIP38_RAW_LEN,
+                                BASE58_FLAG_CHECKSUM, output);
+
+    wally_free_string(addr58);
+    clear(&buf, sizeof(buf));
+    return ret;
+}
+
 
 static void aes_dec(const unsigned char *src, const unsigned char *xor,
                     const unsigned char *key, unsigned char *bytes_out)
