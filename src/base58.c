@@ -204,8 +204,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     top_byte = bn + bn_bytes - 1;
     *top_byte = 0;
 
-    for (i = zeros; i < len; ++i)
-    {
+    for (i = zeros; i < len; ++i) {
         uint32_t carry = b(i);
         for (bn_p = bn + bn_bytes - 1; bn_p >= top_byte; --bn_p) {
             carry = *bn_p * 256 + carry;

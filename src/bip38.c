@@ -87,8 +87,7 @@ static int address_from_private_key(const unsigned char *bytes_in,
 {
     struct sha256 sha;
     unsigned char pub_key[65];
-    struct
-    {
+    struct {
         uint32_t network;
         struct ripemd160 hash160;
         uint32_t checksum;
