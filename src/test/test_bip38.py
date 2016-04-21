@@ -29,11 +29,13 @@ cases = [
 
 class BIP38Tests(unittest.TestCase):
 
-    KEY_MAINNET, KEY_TESTNET, KEY_COMPRESSED, KEY_EC_MULT = 0, 7, 256, 512
+    # FIXME: Test raw versions and skipping checksum check
+    KEY_MAINNET, KEY_TESTNET, KEY_COMPRESSED, KEY_EC_MULT, KEY_RAW = 0, 7, 256, 512, 1024
 
     def from_priv(self, priv_key, passwd, compressed):
         priv, p_len = make_cbuffer(priv_key)
-        flags = self.KEY_MAINNET | (self.KEY_COMPRESSED if compressed else 0)
+        flags = self.KEY_MAINNET
+        flags |= (self.KEY_COMPRESSED if compressed else 0)
         return bip38_from_private_key(priv, p_len, passwd, len(passwd), flags)
 
     def to_priv(self, bip38, passwd):
@@ -42,6 +44,7 @@ class BIP38Tests(unittest.TestCase):
         ret = bip38_to_private_key(bip38, passwd, len(passwd), flags,
                                    priv, priv_len)
         return ret, priv
+
 
     def test_bip38(self):
 

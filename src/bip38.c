@@ -139,18 +139,23 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     const bool compressed = flags & BIP38_KEY_COMPRESSED;
     struct derived_t derived;
     struct bip38_layout_t buf;
-    char *addr58 = NULL;
-    int ret;
+    int ret = WALLY_EINVAL;
 
-    /* FIXME: check args not checked by address_from_private_key */
-    if (len != BIP38_RAW_LEN)
-        return WALLY_EINVAL;
-
-    ret = address_from_private_key(bytes_in, len_in, network, compressed, &addr58);
-    if (ret)
+    if (!bytes_in || !len_in || !bytes_out || len != BIP38_RAW_LEN)
         goto finish;
 
-    buf.hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
+    if (flags & BIP38_KEY_RAW_MODE)
+        buf.hash = base58_get_checksum(bytes_in, len_in);
+    else {
+        char *addr58 = NULL;
+        if ((ret = address_from_private_key(bytes_in, len_in,
+                                            network, compressed, &addr58)))
+            goto finish;
+
+        buf.hash = base58_get_checksum((unsigned char *)addr58, strlen(addr58));
+        wally_free_string(addr58);
+    }
+
     ret = wally_scrypt(pass, pass_len,
                        (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
                        (unsigned char *)&derived, sizeof(derived));
@@ -166,28 +171,28 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     memcpy(bytes_out, &buf.prefix, BIP38_RAW_LEN);
 
 finish:
-    wally_free_string(addr58);
     clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
 
-int bip38_from_private_key(const unsigned char *bytes_in, size_t len,
+int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
                            const unsigned char *pass, size_t pass_len,
                            uint32_t flags, char **output)
 {
     struct bip38_layout_t buf;
-    char *addr58 = NULL;
     int ret;
+
+    if (!output)
+        return WALLY_EINVAL;
 
     *output = NULL;
 
-    ret = bip38_raw_from_private_key(bytes_in, len, pass, pass_len,
+    ret = bip38_raw_from_private_key(bytes_in, len_in, pass, pass_len,
                                      flags, &buf.prefix, BIP38_RAW_LEN);
     if (!ret)
         ret = base58_from_bytes(&buf.prefix, BIP38_RAW_LEN,
                                 BASE58_FLAG_CHECKSUM, output);
 
-    wally_free_string(addr58);
     clear(&buf, sizeof(buf));
     return ret;
 }
@@ -208,47 +213,82 @@ static void aes_dec(const unsigned char *src, const unsigned char *xor,
     clear(&ctx, sizeof(ctx));
 }
 
+static int to_private_key(const char *bip38,
+                          const unsigned char *bytes_in, size_t len_in,
+                          const unsigned char *pass, size_t pass_len,
+                          uint32_t flags,
+                          unsigned char *bytes_out, size_t len)
+{
+    struct derived_t derived;
+    struct bip38_layout_t buf;
+    int ret = WALLY_EINVAL;
+
+    if (!bytes_out || len != BITCOIN_PRIVATE_KEY_LEN)
+        goto finish;
+
+    if (bytes_in) {
+        if (len_in != BIP38_RAW_LEN)
+            goto finish;
+        memcpy(&buf.prefix, bytes_in, BIP38_RAW_LEN);
+    } else {
+        size_t written;
+        if ((ret = base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
+                                   LAYOUT_CHKSUM_BYTES, &written)))
+            goto finish;
+
+        if (written != LAYOUT_BYTES) {
+            ret = WALLY_EINVAL;
+            goto finish;
+        }
+    }
+
+    /* FIXME: EC Mul support */
+    if (buf.prefix != BIP38_PREFIX || buf.ec_type != BIP38_NO_ECMUL) {
+        ret = WALLY_EINVAL;
+        goto finish;
+    }
+
+    if((ret = wally_scrypt(pass, pass_len,
+                           (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
+                           (unsigned char *)&derived, sizeof(derived))))
+        goto finish;
+
+    aes_dec(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
+    aes_dec(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
+
+    if (flags & BIP38_KEY_RAW_MODE) {
+        if (buf.hash != base58_get_checksum(bytes_out, len))
+            ret = WALLY_EINVAL;
+    } else {
+        const unsigned char network = flags & 0xff;
+        char *addr58 = NULL;
+        ret = address_from_private_key(bytes_out, len, network,
+                                       buf.flags & BIP38_FLAG_COMPRESSED, &addr58);
+        if (!ret &&
+            buf.hash != base58_get_checksum((unsigned char *)addr58, strlen(addr58)))
+            ret = WALLY_EINVAL;
+        wally_free_string(addr58);
+    }
+
+finish:
+    clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
+    return ret;
+}
+
+int bip38_raw_to_private_key(const unsigned char *bytes_in, size_t len_in,
+                             const unsigned char *pass, size_t pass_len,
+                             uint32_t flags,
+                             unsigned char *bytes_out, size_t len)
+{
+    return to_private_key(NULL, bytes_in, len_in, pass, pass_len,
+                          flags, bytes_out, len);
+}
 
 int bip38_to_private_key(const char *bip38,
                          const unsigned char *pass, size_t pass_len,
                          uint32_t flags,
                          unsigned char *bytes_out, size_t len)
 {
-    const unsigned char network = flags & 0xff;
-    struct derived_t derived;
-    struct bip38_layout_t buf;
-    char *addr58 = NULL;
-    size_t written;
-    int ret = WALLY_EINVAL;
-
-    if (len != BITCOIN_PRIVATE_KEY_LEN)
-        goto finish;
-
-    ret = base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
-                          LAYOUT_CHKSUM_BYTES, &written);
-    if (ret)
-        goto finish;
-    if (written != LAYOUT_BYTES) {
-        ret = WALLY_EINVAL;
-        goto finish;
-    }
-
-    ret = wally_scrypt(pass, pass_len,
-                       (unsigned char *)&buf.hash, sizeof(buf.hash), 16384, 8, 8,
-                       (unsigned char *)&derived, sizeof(derived));
-    if (ret)
-        goto finish;
-
-    aes_dec(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
-    aes_dec(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
-
-    ret = address_from_private_key(bytes_out, len, network,
-                                   buf.flags & BIP38_FLAG_COMPRESSED, &addr58);
-    if (!ret &&
-        buf.hash != base58_get_checksum((unsigned char *)addr58, strlen(addr58)))
-        ret = WALLY_EINVAL;
-
-finish:
-    clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
-    return ret;
+    return to_private_key(bip38, NULL, 0, pass, pass_len, flags,
+                          bytes_out, len);
 }
