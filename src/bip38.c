@@ -141,7 +141,8 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     struct bip38_layout_t buf;
     int ret = WALLY_EINVAL;
 
-    if (!bytes_in || !len_in || !bytes_out || len != BIP38_RAW_LEN)
+    if (!bytes_in || len_in != BITCOIN_PRIVATE_KEY_LEN ||
+        !bytes_out || len != BIP38_RAW_LEN)
         goto finish;
 
     if (flags & BIP38_KEY_RAW_MODE)
