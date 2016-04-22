@@ -11,6 +11,7 @@
 #define BIP38_KEY_COMPRESSED   256 /* Public key is compressed */
 #define BIP38_KEY_EC_MULT      512 /* EC-Multiplied key (FIXME: Not implemented) */
 #define BIP38_KEY_RAW_MODE    1024 /* Treat bytes in as raw data */
+#define BIP38_KEY_SWAP_ORDER  2048 /* Hash comes after encrypted key */
 
 #define BIP38_RAW_LEN 39 /* Length of a raw BIP38 key in bytes */
 

@@ -169,6 +169,13 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     aes_enc(bytes_in + 0, derived.half1_lo, derived.half2, buf.half1);
     aes_enc(bytes_in + 16, derived.half1_hi, derived.half2, buf.half2);
 
+    if (flags & BIP38_KEY_SWAP_ORDER) {
+        /* Shuffle hash from the beginning to the end */
+        uint32_t tmp = buf.hash;
+        memmove(&buf.hash, buf.half1, AES256_BLOCK_LEN * 2);
+        memcpy(buf.decode_hash - sizeof(uint32_t), &tmp, sizeof(uint32_t));
+    }
+
     memcpy(bytes_out, &buf.prefix, BIP38_RAW_LEN);
 
 finish:
@@ -241,6 +248,14 @@ static int to_private_key(const char *bip38,
             ret = WALLY_EINVAL;
             goto finish;
         }
+    }
+
+    if (flags & BIP38_KEY_SWAP_ORDER) {
+        /* Shuffle hash from the end to the beginning */
+        uint32_t tmp;
+        memcpy(&tmp, buf.decode_hash - sizeof(uint32_t), sizeof(uint32_t));
+        memmove(buf.half1, &buf.hash, AES256_BLOCK_LEN * 2);
+        buf.hash = tmp;
     }
 
     /* FIXME: EC Mul support */
