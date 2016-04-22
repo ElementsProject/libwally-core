@@ -208,7 +208,7 @@ static void aes_dec(const unsigned char *src, const unsigned char *xor,
     AES256_init(&ctx, key);
     AES256_decrypt(&ctx, 1, bytes_out, src);
 
-    for (i = 0; i < BITCOIN_PRIVATE_KEY_LEN; ++i)
+    for (i = 0; i < AES256_BLOCK_LEN; ++i)
         bytes_out[i] ^= xor[i];
 
     clear(&ctx, sizeof(ctx));
