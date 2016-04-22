@@ -59,9 +59,9 @@ AC_TYPE_UINT8_T
 
 if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
-    AX_CHECK_COMPILE_FLAG([-Og], [CFLAGS="$CFLAGS -Og"])
+    AX_CHECK_COMPILE_FLAG([-O0], [CFLAGS="$CFLAGS -O0"])
     AX_CHECK_COMPILE_FLAG([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
-    AX_CHECK_LINK_FLAG([-Og], [LDFLAGS="$LDFLAGS -Og"])
+    AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
 else
     # Optimise and harden
