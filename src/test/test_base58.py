@@ -1,6 +1,5 @@
 import unittest
 from util import *
-from binascii import hexlify
 
 class AddressCase(object):
     def __init__(self, lines):
@@ -43,7 +42,7 @@ class Base58Tests(unittest.TestCase):
         if flags == self.CHECKSUM:
             bin_len -= 4 # Take off the 4 bytes of stripped checksum
         self.assertEqual(bin_len, buf_len)
-        return hexlify(buf)[0:buf_len * 2].upper()
+        return h(buf)[0:buf_len * 2].upper()
 
 
     def test_address_vectors(self):

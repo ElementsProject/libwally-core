@@ -1,7 +1,6 @@
 import unittest
-from binascii import hexlify
-import json
 from util import *
+import json
 
 
 class BIP39Tests(unittest.TestCase):
@@ -104,7 +103,7 @@ class BIP39Tests(unittest.TestCase):
         self.assertEqual(rlen, 36)
         expected = '9F8EE6E3A2FFCB13A99AA976AEDA5A2002ED' \
                    '3DF97FCB9957CD863357B55AA2072D3EB2F9'
-        self.assertEqual(hexlify(out_buf).upper(), expected)
+        self.assertEqual(h(out_buf).upper(), expected)
 
 
     def test_mnemonic_to_seed(self):
@@ -116,7 +115,7 @@ class BIP39Tests(unittest.TestCase):
             ret, count = bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64)
             self.assertEqual(ret, 0)
             self.assertEqual(count, 64)
-            self.assertEqual(hexlify(buf), seed)
+            self.assertEqual(h(buf), seed)
 
 
 if __name__ == '__main__':
