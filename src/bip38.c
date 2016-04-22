@@ -135,7 +135,6 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
                                uint32_t flags,
                                unsigned char *bytes_out, size_t len)
 {
-    const unsigned char network = flags & 0xff;
     const bool compressed = flags & BIP38_KEY_COMPRESSED;
     struct derived_t derived;
     struct bip38_layout_t buf;
@@ -148,6 +147,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     if (flags & BIP38_KEY_RAW_MODE)
         buf.hash = base58_get_checksum(bytes_in, len_in);
     else {
+        const unsigned char network = flags & 0xff;
         char *addr58 = NULL;
         if ((ret = address_from_private_key(bytes_in, len_in,
                                             network, compressed, &addr58)))
