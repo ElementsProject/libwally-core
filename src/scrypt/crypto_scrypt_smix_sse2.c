@@ -176,7 +176,7 @@ sse2_integerify(const void * B, size_t r)
 {
 	const uint32_t * X = (const void *)((uintptr_t)(B) + (2 * r - 1) * 64);
 
-	return (((uint64_t)(X[13]) << 32) + X[0]);
+	return X[0];
 }
 
 /**
