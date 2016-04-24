@@ -26,8 +26,11 @@
  * This file was originally written by Colin Percival as part of the Tarsnap
  * online backup system.
  */
+#include <emmintrin.h>
+
+#if 0
 #include "cpusupport.h"
-#ifdef CPUSUPPORT_X86_SSE2
+/*#ifdef CPUSUPPORT_X86_SSE2*/
 
 #include <emmintrin.h>
 #include <stdint.h>
@@ -41,9 +44,10 @@ static void blkxor(void *, const void *, size_t);
 static void salsa20_8(__m128i *);
 static void blockmix_salsa8(const __m128i *, __m128i *, __m128i *, size_t);
 static uint64_t integerify(const void *, size_t);
+#endif
 
 static void
-blkcpy(void * dest, const void * src, size_t len)
+sse2_blkcpy(void * dest, const void * src, size_t len)
 {
 	__m128i * D = dest;
 	const __m128i * S = src;
@@ -55,7 +59,7 @@ blkcpy(void * dest, const void * src, size_t len)
 }
 
 static void
-blkxor(void * dest, const void * src, size_t len)
+sse2_blkxor(void * dest, const void * src, size_t len)
 {
 	__m128i * D = dest;
 	const __m128i * S = src;
@@ -71,7 +75,7 @@ blkxor(void * dest, const void * src, size_t len)
  * Apply the salsa20/8 core to the provided block.
  */
 static void
-salsa20_8(__m128i B[4])
+sse2_salsa20_8(__m128i B[4])
 {
 	__m128i X0, X1, X2, X3;
 	__m128i T;
@@ -135,30 +139,30 @@ salsa20_8(__m128i B[4])
  * temporary space X must be 64 bytes.
  */
 static void
-blockmix_salsa8(const __m128i * Bin, __m128i * Bout, __m128i * X, size_t r)
+sse2_blockmix_salsa8(const __m128i * Bin, __m128i * Bout, __m128i * X, size_t r)
 {
 	size_t i;
 
 	/* 1: X <-- B_{2r - 1} */
-	blkcpy(X, &Bin[8 * r - 4], 64);
+	sse2_blkcpy(X, &Bin[8 * r - 4], 64);
 
 	/* 2: for i = 0 to 2r - 1 do */
 	for (i = 0; i < r; i++) {
 		/* 3: X <-- H(X \xor B_i) */
-		blkxor(X, &Bin[i * 8], 64);
-		salsa20_8(X);
+		sse2_blkxor(X, &Bin[i * 8], 64);
+		sse2_salsa20_8(X);
 
 		/* 4: Y_i <-- X */
 		/* 6: B' <-- (Y_0, Y_2 ... Y_{2r-2}, Y_1, Y_3 ... Y_{2r-1}) */
-		blkcpy(&Bout[i * 4], X, 64);
+		sse2_blkcpy(&Bout[i * 4], X, 64);
 
 		/* 3: X <-- H(X \xor B_i) */
-		blkxor(X, &Bin[i * 8 + 4], 64);
-		salsa20_8(X);
+		sse2_blkxor(X, &Bin[i * 8 + 4], 64);
+		sse2_salsa20_8(X);
 
 		/* 4: Y_i <-- X */
 		/* 6: B' <-- (Y_0, Y_2 ... Y_{2r-2}, Y_1, Y_3 ... Y_{2r-1}) */
-		blkcpy(&Bout[(r + i) * 4], X, 64);
+		sse2_blkcpy(&Bout[(r + i) * 4], X, 64);
 	}
 }
 
@@ -168,7 +172,7 @@ blockmix_salsa8(const __m128i * Bin, __m128i * Bout, __m128i * X, size_t r)
  * Note that B's layout is permuted compared to the generic implementation.
  */
 static uint64_t
-integerify(const void * B, size_t r)
+sse2_integerify(const void * B, size_t r)
 {
 	const uint32_t * X = (const void *)((uintptr_t)(B) + (2 * r - 1) * 64);
 
@@ -206,34 +210,34 @@ crypto_scrypt_smix_sse2(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
 	/* 2: for i = 0 to N - 1 do */
 	for (i = 0; i < N; i += 2) {
 		/* 3: V_i <-- X */
-		blkcpy((void *)((uintptr_t)(V) + i * 128 * r), X, 128 * r);
+		sse2_blkcpy((void *)((uintptr_t)(V) + i * 128 * r), X, 128 * r);
 
 		/* 4: X <-- H(X) */
-		blockmix_salsa8(X, Y, Z, r);
+		sse2_blockmix_salsa8(X, Y, Z, r);
 
 		/* 3: V_i <-- X */
-		blkcpy((void *)((uintptr_t)(V) + (i + 1) * 128 * r),
+		sse2_blkcpy((void *)((uintptr_t)(V) + (i + 1) * 128 * r),
 		    Y, 128 * r);
 
 		/* 4: X <-- H(X) */
-		blockmix_salsa8(Y, X, Z, r);
+		sse2_blockmix_salsa8(Y, X, Z, r);
 	}
 
 	/* 6: for i = 0 to N - 1 do */
 	for (i = 0; i < N; i += 2) {
 		/* 7: j <-- Integerify(X) mod N */
-		j = integerify(X, r) & (N - 1);
+		j = sse2_integerify(X, r) & (N - 1);
 
 		/* 8: X <-- H(X \xor V_j) */
-		blkxor(X, (void *)((uintptr_t)(V) + j * 128 * r), 128 * r);
-		blockmix_salsa8(X, Y, Z, r);
+		sse2_blkxor(X, (void *)((uintptr_t)(V) + j * 128 * r), 128 * r);
+		sse2_blockmix_salsa8(X, Y, Z, r);
 
 		/* 7: j <-- Integerify(X) mod N */
-		j = integerify(Y, r) & (N - 1);
+		j = sse2_integerify(Y, r) & (N - 1);
 
 		/* 8: X <-- H(X \xor V_j) */
-		blkxor(Y, (void *)((uintptr_t)(V) + j * 128 * r), 128 * r);
-		blockmix_salsa8(Y, X, Z, r);
+		sse2_blkxor(Y, (void *)((uintptr_t)(V) + j * 128 * r), 128 * r);
+		sse2_blockmix_salsa8(Y, X, Z, r);
 	}
 
 	/* 10: B' <-- X */
@@ -245,4 +249,4 @@ crypto_scrypt_smix_sse2(uint8_t * B, size_t r, uint64_t N, void * V, void * XY)
 	}
 }
 
-#endif /* CPUSUPPORT_X86_SSE2 */
+/*#endif*/

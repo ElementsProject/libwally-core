@@ -38,7 +38,7 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
 /* No way to check for support, assume Neon present */
 #  define crypto_scrypt_smix_fn crypto_scrypt_smix_neon
 # else
-/* On Android, detect the version at runtime */
+/* On Android, detect Neon support at runtime */
 #  include "cpufeatures/cpu-features.h"
 #  include "scrypt/crypto_scrypt_smix.c"
 static void
@@ -50,6 +50,10 @@ crypto_scrypt_smix_fn(uint8_t *B, size_t r, uint64_t N, void *_V, void *XY)
         crypto_scrypt_smix_c(B, r, N, _V, XY);
 }
 # endif
+#elif defined(__SSE2__)
+/* Use the SSE2 version */
+# include "scrypt/crypto_scrypt_smix_sse2.c"
+# define crypto_scrypt_smix_fn crypto_scrypt_smix_sse2
 #else
 /* Use the C version */
 # include "scrypt/crypto_scrypt_smix.c"
