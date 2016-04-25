@@ -263,6 +263,7 @@ static int to_private_key(const char *bip38,
 
     if (buf.prefix != BIP38_PREFIX ||
         buf.flags & BIP38_FLAGS_RESERVED ||
+        (buf.flags & BIP38_FLAG_DEFAULT) != BIP38_FLAG_DEFAULT ||
         buf.ec_type != BIP38_NO_ECMUL /* FIXME: EC Mul support */ ||
         buf.flags & BIP38_FLAG_HAVE_LOT) {
         ret = WALLY_EINVAL;
