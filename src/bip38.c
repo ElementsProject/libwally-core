@@ -230,7 +230,10 @@ static int to_private_key(const char *bip38,
     struct bip38_layout_t buf;
     int ret = WALLY_EINVAL;
 
-    if (!bytes_out || len != BITCOIN_PRIVATE_KEY_LEN)
+    if (len != BITCOIN_PRIVATE_KEY_LEN)
+        goto finish;
+
+    if (!(flags & BIP38_KEY_QUICK_CHECK) && !bytes_out)
         goto finish;
 
     if (bytes_in) {
@@ -258,9 +261,16 @@ static int to_private_key(const char *bip38,
         buf.hash = tmp;
     }
 
-    /* FIXME: EC Mul support */
-    if (buf.prefix != BIP38_PREFIX || buf.ec_type != BIP38_NO_ECMUL) {
+    if (buf.prefix != BIP38_PREFIX ||
+        buf.flags & BIP38_FLAGS_RESERVED ||
+        buf.ec_type != BIP38_NO_ECMUL /* FIXME: EC Mul support */ ||
+        buf.flags & BIP38_FLAG_HAVE_LOT) {
         ret = WALLY_EINVAL;
+        goto finish;
+    }
+
+    if (flags & BIP38_KEY_QUICK_CHECK) {
+        ret = WALLY_OK;
         goto finish;
     }
 

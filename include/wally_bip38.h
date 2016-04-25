@@ -10,10 +10,12 @@
 #define BIP38_KEY_TESTNET       7  /** Address is for test network */
 #define BIP38_KEY_COMPRESSED   256 /** Public key is compressed */
 #define BIP38_KEY_EC_MULT      512 /** EC-Multiplied key (FIXME: Not implemented) */
-#define BIP38_KEY_RAW_MODE    1024 /** Treat bytes in as raw data */
-#define BIP38_KEY_SWAP_ORDER  2048 /** Hash comes after encrypted key */
+#define BIP38_KEY_QUICK_CHECK 1024 /** Check structure only (no password required) */
+#define BIP38_KEY_RAW_MODE    2048 /** Treat bytes in as raw data */
+#define BIP38_KEY_SWAP_ORDER  4096 /** Hash comes after encrypted key */
 
 #define BIP38_SERIALISED_LEN 39 /** Length of a raw BIP38 key in bytes */
+
 
 /**
  * Encode a private key in raw BIP 38 address format.
