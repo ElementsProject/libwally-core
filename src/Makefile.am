@@ -87,7 +87,7 @@ libwallycore_la_INCLUDES = \
     include/wally-crypto.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
-libwallycore_la_LIBADD = $(LIBSECP256K1) $(noinst_LTLIBRARIES)
+libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
 

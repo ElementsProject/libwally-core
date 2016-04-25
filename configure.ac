@@ -89,6 +89,8 @@ AX_CHECK_COMPILE_FLAG([-Wformat], [CFLAGS="$CFLAGS -Wformat"])
 AX_CHECK_COMPILE_FLAG([-Wformat-security], [CFLAGS="$CFLAGS -Wformat-security"])
 AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [CFLAGS="$CFLAGS -Wformat-nonliteral"])
 
+AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
+
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
@@ -122,6 +124,31 @@ AM_CONDITIONAL([USE_PTHREAD], [test x"$ac_have_pthread" = "xyes"])
 if test "x$ac_have_pthread" = "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], [1], [Define if we have pthread support])
 fi
+
+#
+# libsecp256k1
+#
+# FIXME: This is needed to force libtool to use all object files from secp.
+#        We can only build secp properly by recursively invoking
+#        configure/make, and can't include it as a noinst_ library. Libtool
+#        assumes that such libraries will be installed along with our library
+#        target and so won't force all object files in the library to be
+#        included in ours - despite the fact that we are making a shared
+#        library and linking to a static one. This is broken and we work
+#        around it by hacking the whole-archive flags into the _LDADD variable
+#        for wallycore.
+#        Because automake tries to police its users very strictly and fails
+#        hard when flags are passed in this way, we have to substitute the
+#        flags here.
+#        Because libtool both intercepts -Wl and arbitrarily re-orders its
+#        command line inputs, we have to concoct a single expression to
+#        enforce linking that cannot be split, hence the below expression.
+if test "x$whole_archive" == "xyes"; then
+    LIBADD_SECP256K1="-Wl,--whole-archive,secp256k1/.libs/libsecp256k1.a,--no-whole-archive"
+else
+    LIBADD_SECP256K1="secp256k1/.libs/libsecp256k1.a"
+fi
+AC_SUBST([LIBADD_SECP256K1])
 
 #
 # Python facilities
@@ -177,7 +204,11 @@ AC_CONFIG_FILES([
  src/Makefile
 ])
 
-ac_configure_args="${ac_configure_args} --disable-shared --disable-jni --with-pic --with-bignum=no"
+secp_jni="--disable-jni"
+if test x"$swig_java" == "xyes"; then
+    secp_jni="--enable-jni"
+fi
+ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-schnorr --enable-module-ecdh --enable-endomorphism --disable-dependency-tracking"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 
