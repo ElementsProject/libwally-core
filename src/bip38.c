@@ -230,10 +230,8 @@ static int to_private_key(const char *bip38,
     struct bip38_layout_t buf;
     int ret = WALLY_EINVAL;
 
-    if (len != BITCOIN_PRIVATE_KEY_LEN)
-        goto finish;
-
-    if (!(flags & BIP38_KEY_QUICK_CHECK) && !bytes_out)
+    if (!(flags & BIP38_KEY_QUICK_CHECK) &&
+        (!bytes_out || len != BITCOIN_PRIVATE_KEY_LEN))
         goto finish;
 
     if (bytes_in) {
