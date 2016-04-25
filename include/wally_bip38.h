@@ -13,7 +13,7 @@
 #define BIP38_KEY_RAW_MODE    1024 /* Treat bytes in as raw data */
 #define BIP38_KEY_SWAP_ORDER  2048 /* Hash comes after encrypted key */
 
-#define BIP38_RAW_LEN 39 /* Length of a raw BIP38 key in bytes */
+#define BIP38_SERIALISED_LEN 39 /* Length of a raw BIP38 key in bytes */
 
 WALLY_CORE_API int bip38_raw_from_private_key(
     const unsigned char *bytes_in,
