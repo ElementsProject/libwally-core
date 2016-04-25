@@ -59,6 +59,7 @@ struct ext_key {
  * @bytes_in Entropy to use.
  * @len_in Size of @bytes_in in bytes.
  * @version Either @BIP32_VER_MAIN_PRIVATE or @BIP32_VER_TEST_PRIVATE.
+ * @key_out Destination for the resulting master extended key.
  *
  * @dest Destination for the resulting master extended key.
  */
@@ -73,9 +74,9 @@ WALLY_CORE_API int bip32_key_from_bytes(
  * Serialise an extended key to memory using BIP32 format.
  *
  * @key_in The extended key to serialise.
- * @bytes_out Storage for the serialised key.
  * @flags BIP32_KEY_ Flags indicating which key to serialise. You can not
  *        serialise a private extended key from a public extended key.
+ * @bytes_out Destination for the serialised key.
  * @len Size of @bytes_out in bytes. Must be @BIP32_SERIALISED_LEN.
  */
 WALLY_CORE_API int bip32_key_serialise(
