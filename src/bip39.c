@@ -217,7 +217,7 @@ int bip39_mnemonic_and_prefix_to_seed(const char *mnemonic,
     if (written)
         *written = 0;
 
-    if (!mnemonic || !password || !bytes_out || len != BIP39_SEED_LEN_512)
+    if (!mnemonic || !bytes_out || len != BIP39_SEED_LEN_512)
         return WALLY_EINVAL;
 
     salt = malloc(salt_len);
@@ -225,7 +225,8 @@ int bip39_mnemonic_and_prefix_to_seed(const char *mnemonic,
         return WALLY_ENOMEM;
 
     memcpy(salt, prefix_, prefix_len);
-    memcpy(salt + prefix_len, password, password_len);
+    if (password_len)
+        memcpy(salt + prefix_len, password, password_len);
 
     ret = pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
                              salt, salt_len, PBKDF2_HMAC_FLAG_BLOCK_RESERVED,
