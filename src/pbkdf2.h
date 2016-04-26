@@ -47,7 +47,7 @@ int pbkdf2_hmac_sha256(
     unsigned char *bytes_out,
     size_t len);
 
-/** @see pbkdf2_hmac_sha512.  */
+/** @see pbkdf2_hmac_sha512. */
 int pbkdf2_hmac_sha512(
     const unsigned char *pass,
     size_t pass_len,

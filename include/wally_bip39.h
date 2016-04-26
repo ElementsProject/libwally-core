@@ -103,22 +103,4 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
     size_t len,
     size_t *written);
 
-/**
- * Convert a mnemonic into a binary seed using a given prefix.
- * @mnemonic Mnemonic to convert.
- * @password Mnemonic password or NULL if no password is needed.
- * @prefix The prefix to use. Note that passing anything other
- *     than "mnemonic" makes the resulting seed non-BIP 39 compliant.
- * @bytes_out The destination for the binary seed.
- * @len The length of @bytes_out in bytes. Currently This must
- *      be @BIP39_SEED_LEN_512.
- */
-WALLY_CORE_API int bip39_mnemonic_and_prefix_to_seed(
-    const char *mnemonic,
-    const char *password,
-    const char *prefix,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written);
-
 #endif /* LIBWALLY_CORE_BIP39_H */

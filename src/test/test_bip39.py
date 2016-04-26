@@ -113,9 +113,9 @@ class BIP39Tests(unittest.TestCase):
 
             buf = create_string_buffer(64)
             ret, count = bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64)
-            self.assertEqual((ret, count, h(buf)), (0, 64, seed))
-            fn = bip39_mnemonic_and_prefix_to_seed
-            ret, count = fn(mnemonic, b'TREZOR', 'mnemonic', buf, 64)
+            self.assertEqual(ret, 0)
+            self.assertEqual(count, 64)
+            self.assertEqual(h(buf), seed)
 
 
 if __name__ == '__main__':

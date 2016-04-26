@@ -200,15 +200,13 @@ int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
     return ret;
 }
 
-
-int bip39_mnemonic_and_prefix_to_seed(const char *mnemonic,
-                                      const char *password, const char *prefix,
-                                      unsigned char *bytes_out, size_t len,
-                                      size_t *written)
+int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
+                            unsigned char *bytes_out, size_t len,
+                            size_t *written)
 {
     const size_t bip9_cost = 2048u;
-    const char *prefix_ = prefix ? prefix : "mnemonic";
-    const size_t prefix_len = strlen(prefix_);
+    const char *prefix = "mnemonic";
+    const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
     const size_t salt_len = prefix_len + password_len + PBKDF2_HMAC_EXTRA_LEN;
     unsigned char *salt;
@@ -224,7 +222,7 @@ int bip39_mnemonic_and_prefix_to_seed(const char *mnemonic,
     if (!salt)
         return WALLY_ENOMEM;
 
-    memcpy(salt, prefix_, prefix_len);
+    memcpy(salt, prefix, prefix_len);
     if (password_len)
         memcpy(salt + prefix_len, password, password_len);
 
@@ -239,13 +237,4 @@ int bip39_mnemonic_and_prefix_to_seed(const char *mnemonic,
     free(salt);
 
     return ret;
-}
-
-
-int bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
-                           unsigned char *bytes_out, size_t len,
-                           size_t *written)
-{
-    return bip39_mnemonic_and_prefix_to_seed(mnemonic, password, NULL,
-                                             bytes_out, len, written);
 }
