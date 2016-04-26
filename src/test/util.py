@@ -48,7 +48,6 @@ for f in (
     ('base58_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('base58_get_length', c_int, [c_char_p, c_ulong_p]),
     ('base58_to_bytes', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
-    ('wally_scrypt', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_void_p, c_ulong]),
     ('bip32_key_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
     ('bip32_key_serialise', c_int, [POINTER(ext_key), c_uint, c_void_p, c_ulong]),
     ('bip32_key_unserialise', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
@@ -68,8 +67,9 @@ for f in (
     ('sha512', None, [c_void_p, c_void_p, c_ulong]),
     ('hmac_sha256', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('hmac_sha512', None, [c_void_p, c_void_p, c_ulong, c_void_p, c_ulong]),
-    ('pbkdf2_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong]),
-    ('pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong])
+    ('wally_pbkdf2_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong]),
+    ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong]),
+    ('wally_scrypt', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_void_p, c_ulong]),
     ):
 
     def bind_fn(name, res, args):

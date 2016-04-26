@@ -9,10 +9,10 @@
  * copyright notice and this permission notice appear in all copies.
  */
 
-int SHA_POST(pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
-                           unsigned char *salt_in_out, size_t salt_len,
-                           uint32_t flags, size_t cost,
-                           unsigned char *bytes_out, size_t len)
+int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
+                                 unsigned char *salt_in_out, size_t salt_len,
+                                 uint32_t flags, uint32_t cost,
+                                 unsigned char *bytes_out, size_t len)
 {
     unsigned char *tmp_salt = NULL;
     struct SHA_T d1, d2, *sha_cp = &d2;

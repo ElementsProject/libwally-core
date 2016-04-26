@@ -46,6 +46,7 @@ static int check_result(int result)
 %pybuffer_binary(const unsigned char *pass, size_t pass_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
 %pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
+%pybuffer_mutable_binary(unsigned char *salt_in_out, size_t salt_len);
 %pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
 
 /* Output parameters indicating how many bytes were written are converted

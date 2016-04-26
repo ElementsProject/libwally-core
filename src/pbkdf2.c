@@ -1,5 +1,4 @@
-#include <include/wally_bip39.h>
-#include "pbkdf2.h"
+#include <include/wally_crypto.h>
 #include "internal.h"
 #include "hmac.h"
 #include <string.h>

@@ -130,6 +130,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
 
 /* Opaque types are converted to/from an internal object holder class */
 %define %java_opaque_struct(NAME, ID)
@@ -186,6 +187,8 @@ typedef unsigned int uint32_t;
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_void__(wally_scrypt);
+%returns_void__(wally_pbkdf2_hmac_sha256);
+%returns_void__(wally_pbkdf2_hmac_sha512);
 
 %include "../include/wally_core.h"
 %include "../include/wally_bip38.h"

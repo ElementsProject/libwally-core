@@ -1,10 +1,10 @@
 #include <include/wally_bip39.h>
+#include <include/wally_crypto.h>
 #include <string.h>
 #include "internal.h"
 #include "mnemonic.h"
 #include "wordlist.h"
 #include "hmac.h"
-#include "pbkdf2.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 
@@ -226,9 +226,10 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     if (password_len)
         memcpy(salt + prefix_len, password, password_len);
 
-    ret = pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
-                             salt, salt_len, PBKDF2_HMAC_FLAG_BLOCK_RESERVED,
-                             bip9_cost, bytes_out, len);
+    ret = wally_pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
+                                   salt, salt_len,
+                                   PBKDF2_HMAC_FLAG_BLOCK_RESERVED,
+                                   bip9_cost, bytes_out, len);
 
     if (!ret && written)
         *written = BIP39_SEED_LEN_512; /* Succeeded */

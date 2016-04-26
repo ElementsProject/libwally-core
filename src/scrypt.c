@@ -2,7 +2,6 @@
 #include <include/wally_crypto.h>
 #include "internal.h"
 #include "hmac.h"
-#include "pbkdf2.h"
 #include "ccan/ccan/endian/endian.h"
 #include <string.h>
 
@@ -26,8 +25,8 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
                           unsigned char *bytes_out, size_t len)
 {
     const uint32_t flags = 0;
-    pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
-                       flags, cost, bytes_out, len);
+    wally_pbkdf2_hmac_sha256(pass, pass_len, (unsigned char *)salt, salt_len,
+                             flags, (uint32_t)cost, bytes_out, len);
 }
 
 /* Include a suitable smix function/functions */

@@ -19,7 +19,7 @@ class PBKDF2Tests(unittest.TestCase):
     FLAG_BLOCK_RESERVED = 0x1
 
     def setUp(self):
-        if not hasattr(self, 'pbkdf2_hmac_sha256'):
+        if not hasattr(self, 'wally_pbkdf2_hmac_sha256'):
             self.cases = []
             with open(root_dir + 'src/data/pbkdf2_hmac_sha_vectors.txt', 'r') as f:
                 for l in f.readlines():
@@ -39,14 +39,14 @@ class PBKDF2Tests(unittest.TestCase):
         for case in self.cases:
 
             if case.typ == 256:
-                fn = pbkdf2_hmac_sha256
+                fn = wally_pbkdf2_hmac_sha256
                 mult = self.PBKDF2_HMAC_SHA256_LEN
                 if case.cost > 100:
                     if num_crazy_256 == 0:
                          continue
                     num_crazy_256 -= 1
             else:
-                fn = pbkdf2_hmac_sha512
+                fn = wally_pbkdf2_hmac_sha512
                 mult = self.PBKDF2_HMAC_SHA512_LEN
                 if case.cost > 100:
                     if num_crazy_512 == 0:
