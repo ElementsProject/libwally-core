@@ -33,15 +33,26 @@ WALLY_CORE_API int wally_scrypt(
     size_t len);
 
 
-#define AES_BLOCK_LEN   16
+#define AES_BLOCK_LEN   16 /** Length of AES encrypted blocks */
 
-#define AES_KEY_LEN_128 16
-#define AES_KEY_LEN_192 24
-#define AES_KEY_LEN_256 32
+#define AES_KEY_LEN_128 16 /** AES-128 Key length */
+#define AES_KEY_LEN_192 24 /** AES-192 Key length */
+#define AES_KEY_LEN_256 32 /** AES-256 Key length */
 
-#define AES_FLAG_ENCRYPT  1
-#define AES_FLAG_DECRYPT  2
+#define AES_FLAG_ENCRYPT  1 /** Encrypt */
+#define AES_FLAG_DECRYPT  2 /** Decrypt */
 
+/**
+ * Encrypt/decrypt data using AES (ECB mode, no padding).
+ *
+ * @key: Key material for initialisation.
+ * @key_len: Length of @key in bytes. Must be an AES_KEY_LEN_ constant.
+ * @bytes_in: Bytes to encrypt/decrypt.
+ * @len_in: Length of @bytes_in in bytes. Must be a multiple of @AES_BLOCK_LEN.
+ * @flags: AES_FLAG_ constants indicating the desired behaviour.
+ * @bytes_out: Destination for the encrypted/decrypted data.
+ * @len: The length of @bytes_out in bytes. Must be a multiple of @AES_BLOCK_LEN.
+ */
 WALLY_CORE_API int wally_aes(
     const unsigned char *key,
     size_t key_len,
