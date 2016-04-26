@@ -43,6 +43,7 @@ static int check_result(int result)
 
 /* Input buffers with lengths are passed as python buffers */
 %pybuffer_binary(const unsigned char *bytes_in, size_t len_in);
+%pybuffer_binary(const unsigned char *key, size_t key_len);
 %pybuffer_binary(const unsigned char *pass, size_t pass_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
 %pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
