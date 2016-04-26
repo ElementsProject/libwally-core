@@ -64,6 +64,7 @@ endif
 lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
+    aes.c \
     base58.c \
     bip32.c \
     bip38.c \

@@ -12,9 +12,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "ctaes/ctaes.h"
-#include "ctaes/ctaes.c"
-
 #define BIP38_FLAG_DEFAULT   (0x40 | 0x80)
 #define BIP38_FLAG_COMPRESSED 0x20
 #define BIP38_FLAG_RESERVED1  0x10
@@ -27,7 +24,6 @@
 
 #define BITCOIN_PRIVATE_KEY_LEN 32
 #define BIP38_DERVIED_KEY_LEN 64u
-#define AES256_BLOCK_LEN 16u
 
 #define BIP38_PREFIX   0x01
 #define BIP38_ECMUL    0x43
@@ -45,8 +41,8 @@ struct bip38_layout_t {
     unsigned char ec_type;
     unsigned char flags;
     uint32_t hash;
-    unsigned char half1[AES256_BLOCK_LEN];
-    unsigned char half2[AES256_BLOCK_LEN];
+    unsigned char half1[AES_BLOCK_LEN];
+    unsigned char half2[AES_BLOCK_LEN];
     unsigned char decode_hash[BASE58_CHECKSUM_LEN];
 };
 
@@ -111,8 +107,7 @@ static int address_from_private_key(const unsigned char *bytes_in,
 static void aes_enc(const unsigned char *src, const unsigned char *xor,
                     const unsigned char *key, unsigned char *bytes_out)
 {
-    uint32_t plaintext[AES256_BLOCK_LEN / sizeof(uint32_t)];
-    AES256_ctx ctx;
+    uint32_t plaintext[AES_BLOCK_LEN / sizeof(uint32_t)];
     size_t i;
 
     if (alignment_ok(src, sizeof(uint32_t)) && alignment_ok(xor, sizeof(uint32_t)))
@@ -124,9 +119,12 @@ static void aes_enc(const unsigned char *src, const unsigned char *xor,
             p[i] = src[i] ^ xor[i];
     }
 
-    AES256_init(&ctx, key);
-    AES256_encrypt(&ctx, 1, bytes_out, (unsigned char *)plaintext);
-    clear_n(2, plaintext, sizeof(plaintext), &ctx, sizeof(ctx));
+    wally_aes(key, AES_KEY_LEN_256,
+              (unsigned char *)plaintext, AES_BLOCK_LEN,
+              AES_FLAG_ENCRYPT,
+              bytes_out, AES_BLOCK_LEN);
+
+    clear(plaintext, sizeof(plaintext));
 }
 
 int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
@@ -171,7 +169,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     if (flags & BIP38_KEY_SWAP_ORDER) {
         /* Shuffle hash from the beginning to the end */
         uint32_t tmp = buf.hash;
-        memmove(&buf.hash, buf.half1, AES256_BLOCK_LEN * 2);
+        memmove(&buf.hash, buf.half1, AES_BLOCK_LEN * 2);
         memcpy(buf.decode_hash - sizeof(uint32_t), &tmp, sizeof(uint32_t));
     }
 
@@ -205,19 +203,18 @@ int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
 }
 
 
-static void aes_dec(const unsigned char *src, const unsigned char *xor,
+static void aes_dec(const unsigned char *cyphertext, const unsigned char *xor,
                     const unsigned char *key, unsigned char *bytes_out)
 {
-    AES256_ctx ctx;
     size_t i;
 
-    AES256_init(&ctx, key);
-    AES256_decrypt(&ctx, 1, bytes_out, src);
+    wally_aes(key, AES_KEY_LEN_256,
+              (unsigned char *)cyphertext, AES_BLOCK_LEN,
+              AES_FLAG_DECRYPT,
+              bytes_out, AES_BLOCK_LEN);
 
-    for (i = 0; i < AES256_BLOCK_LEN; ++i)
+    for (i = 0; i < AES_BLOCK_LEN; ++i)
         bytes_out[i] ^= xor[i];
-
-    clear(&ctx, sizeof(ctx));
 }
 
 static int to_private_key(const char *bip38,
@@ -255,7 +252,7 @@ static int to_private_key(const char *bip38,
         /* Shuffle hash from the end to the beginning */
         uint32_t tmp;
         memcpy(&tmp, buf.decode_hash - sizeof(uint32_t), sizeof(uint32_t));
-        memmove(buf.half1, &buf.hash, AES256_BLOCK_LEN * 2);
+        memmove(buf.half1, &buf.hash, AES_BLOCK_LEN * 2);
         buf.hash = tmp;
     }
 

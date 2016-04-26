@@ -33,6 +33,25 @@ WALLY_CORE_API int wally_scrypt(
     size_t len);
 
 
+#define AES_BLOCK_LEN   16
+
+#define AES_KEY_LEN_128 16
+#define AES_KEY_LEN_192 24
+#define AES_KEY_LEN_256 32
+
+#define AES_FLAG_ENCRYPT  1
+#define AES_FLAG_DECRYPT  2
+
+WALLY_CORE_API int wally_aes(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+
 /** Extra bytes required at the end of 'salt_in_out' for pbkdf2 functions */
 #define PBKDF2_HMAC_EXTRA_LEN 4
 
