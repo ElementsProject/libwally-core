@@ -104,6 +104,7 @@ endif
 
 check-local:
 if HAVE_PYTHON
+	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
