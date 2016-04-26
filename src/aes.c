@@ -18,7 +18,7 @@ int wally_aes(const unsigned char *key, size_t key_len,
     AES128_ctx *ctx128 = (AES128_ctx *)&ctx256;
     AES192_ctx *ctx192 = (AES192_ctx *)&ctx256;
 
-    if (!key || !bytes_in || !len_in ||
+    if (!key || !bytes_in || !len_in || len_in % AES_BLOCK_LEN ||
         !bytes_out || !len || len % AES_BLOCK_LEN ||
         flags & ~all_ops || (flags & all_ops) == all_ops)
         return WALLY_EINVAL;
