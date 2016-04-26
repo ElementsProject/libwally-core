@@ -64,7 +64,7 @@ if test "x$debug" == "xyes"; then
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
 else
-    # Optimise and harden
+    # Optimise and harden if we can
     AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
     AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
     AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
@@ -94,7 +94,7 @@ AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
-AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" = "xyes"])
+AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" == "xyes"])
 
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [CFLAGS="$CFLAGS -fvisibility=hidden"])
@@ -120,8 +120,8 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 
 AC_CHECK_HEADERS([byteswap.h])
 
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
-AM_CONDITIONAL([USE_PTHREAD], [test x"$ac_have_pthread" = "xyes"])
-if test "x$ac_have_pthread" = "xyes"; then
+AM_CONDITIONAL([USE_PTHREAD], [test x"$ac_have_pthread" == "xyes"])
+if test "x$ac_have_pthread" == "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], [1], [Define if we have pthread support])
 fi
 
@@ -164,7 +164,7 @@ AC_PROG_SWIG
 AC_ARG_ENABLE(swig-python,
     AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
-AM_CONDITIONAL([USE_SWIG_PYTHON], [test x"$swig_python" = "xyes"])
+AM_CONDITIONAL([USE_SWIG_PYTHON], [test x"$swig_python" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
     SWIG_PYTHON
@@ -173,7 +173,7 @@ fi
 AC_ARG_ENABLE(swig-java,
     AS_HELP_STRING([--enable-swig-java],[enable the SWIG java (JNI) interface (default: no)]),
     [swig_java=$enableval], [swig_java=no])
-AM_CONDITIONAL([USE_SWIG_JAVA], [test x"$swig_java" = "xyes"])
+AM_CONDITIONAL([USE_SWIG_JAVA], [test x"$swig_java" == "xyes"])
 
 if test "x$swig_java" == "xyes"; then
     AX_JNI_INCLUDE_DIR
