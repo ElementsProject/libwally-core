@@ -4,8 +4,9 @@ AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
 AC_CONFIG_HEADERS([src/config.h])
-AH_TOP([#ifndef LIBWALLYCORE_CONFIG_H])
-AH_TOP([#define LIBWALLYCORE_CONFIG_H])
+AC_CANONICAL_HOST
+AH_TOP([#ifndef LIBWALLYCORE_CONFIG_H
+#define LIBWALLYCORE_CONFIG_H])
 AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
