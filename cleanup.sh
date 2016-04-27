@@ -35,3 +35,4 @@ rm -f tools/build-aux/m4/l*.m4
 rm -f tools/build-aux/test-driver
 rm -rf autom4te.cache/
 rm -rf bld/
+exit 0
