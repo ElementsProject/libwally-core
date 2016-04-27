@@ -4,45 +4,38 @@ branches:
     only:
       - master
       - travis_testing
+language: c
+sudo: required
+os:
+  - linux
+  - osx
+dist: trusty
+compiler:
+  - clang
+  - gcc
 addons:
     apt:
         packages:
           - python
           - python-dev
+          - python3
+          - python3-dev
           - swig
           - gcc-multilib
-
 matrix:
   include:
-    - compiler: clang
-      os: linux
+    - os: linux
+      compiler: clang
       env: HOST=i686-linux-gnu
-    - compiler: gcc
-      os: linux
+    - os: linux
+      compiler: gcc
       env: HOST=i686-linux-gnu
     - compiler: gcc
       os: linux
       env: PYTHON_VERSION=3.4
-      addons:
-          apt:
-              sources:
-                - deadsnakes
-              packages:
-                - python3.4
-                - python3.4-dev
-                - swig
-
-language: c
-sudo: false
-compiler:
-  - clang
-  - gcc
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
 before_install:
   - ./tools/travis_install.sh
 script:
   - ./tools/travis_build.sh
-os:
-  - linux
-  - osx
