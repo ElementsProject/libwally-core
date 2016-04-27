@@ -20,5 +20,5 @@ compiler:
 before_script:
   - ./cleanup.sh && ./autogen.sh
 script:
-  - ./configure --enable-export-all --enable-swig-python --enable-swig-java && make && make check
+  - ./configure --enable-silent-rules --enable-export-all --enable-swig-python --enable-swig-java && make && make check
 os: linux
