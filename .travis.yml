@@ -20,5 +20,6 @@ compiler:
 before_script:
   - ./cleanup.sh && ./autogen.sh
 script:
-  - ./configure --enable-export-all --enable-swig-python --enable-swig-java && make check
+  - ./configure --enable-export-all --enable-swig-python --enable-swig-java
+  - cat config.log
 os: linux
