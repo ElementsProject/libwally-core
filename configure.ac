@@ -1,4 +1,4 @@
-AC_PREREQ([2.69])
+AC_PREREQ([2.60])
 AC_INIT([libwallycore],[0.1])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
