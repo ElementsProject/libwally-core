@@ -140,7 +140,7 @@ class BIP32Tests(unittest.TestCase):
                 ret = bip32_key_serialise(key_out, self.KEY_PRIVATE,
                                           buf, buf_len)
                 self.assertEqual(ret, 0)
-                self.assertEqual(h(buf).upper(), serialised_hex)
+                self.assertEqual(h(buf).upper(), utf8(serialised_hex))
 
         # Check correct and incorrect version numbers as well
         # as mismatched key types and versions

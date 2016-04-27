@@ -52,6 +52,7 @@ class BIP38Tests(unittest.TestCase):
 
     def to_priv(self, bip38, passwd, flags):
         priv, priv_len = make_cbuffer('00' * 32)
+        bip38 = utf8(bip38)
         if flags > K_RAW:
             raw, raw_len = make_cbuffer(bip38)
             ret = bip38_raw_to_private_key(raw, raw_len, passwd, len(passwd),
@@ -66,13 +67,15 @@ class BIP38Tests(unittest.TestCase):
 
         for case in cases:
             priv_key, passwd, flags, expected = case
+            passwd = utf8(passwd) if type(passwd) is not bytes else passwd
             ret, bip38 = self.from_priv(priv_key, passwd, flags)
             self.assertEqual(ret, 0)
+            bip38 = bip38.decode('utf-8') if type(bip38) is bytes else bip38
             self.assertEqual(bip38, expected)
 
             ret, new_priv_key = self.to_priv(bip38, passwd, flags)
             self.assertEqual(ret, 0)
-            self.assertEqual(h(new_priv_key).upper(), priv_key)
+            self.assertEqual(h(new_priv_key).upper(), utf8(priv_key))
             ret, new_priv_key = self.to_priv(bip38, '', flags + K_CHECK)
             self.assertEqual(ret, 0)
 

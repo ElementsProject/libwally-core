@@ -9,8 +9,6 @@ addons:
         packages:
           - python
           - python-dev
-          - python3
-          - python3-dev
           - swig
           - gcc-multilib
 
@@ -22,6 +20,17 @@ matrix:
     - compiler: gcc
       os: linux
       env: HOST=i686-linux-gnu
+    - compiler: gcc
+      os: linux
+      env: PYTHON_VERSION=3.4
+      addons:
+          apt:
+              sources:
+                - deadsnakes
+              packages:
+                - python3.4
+                - python3.4-dev
+                - swig
 
 language: c
 sudo: false

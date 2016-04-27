@@ -69,12 +69,12 @@ class AESTests(unittest.TestCase):
             ret = wally_aes(key, key_len, plain, plain_len,
                             self.ENCRYPT, out_buf, out_len)
             self.assertEqual(ret, 0)
-            self.assertEqual(h(out_buf), cypher_hex)
+            self.assertEqual(h(out_buf), utf8(cypher_hex))
 
             ret = wally_aes(key, key_len, cypher, cypher_len,
                             self.DECRYPT, out_buf, out_len)
             self.assertEqual(ret, 0)
-            self.assertEqual(h(out_buf), plain_hex)
+            self.assertEqual(h(out_buf), utf8(plain_hex))
 
 
 if __name__ == '__main__':

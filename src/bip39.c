@@ -55,7 +55,7 @@ int bip39_get_wordlist(const char *lang, const struct words **output)
     return WALLY_OK;
 }
 
-int bip39_get_word(const struct words *w, size_t index,
+int bip39_get_word(const struct words *w, size_t idx,
                    char **output)
 {
     const char *word;
@@ -65,7 +65,7 @@ int bip39_get_word(const struct words *w, size_t index,
 
     w = w ? w : &en_words;
 
-    if (!output || !(word = wordlist_lookup_index(w, index)))
+    if (!output || !(word = wordlist_lookup_index(w, idx)))
         return WALLY_EINVAL;
 
     *output = word ? strdup(word) : NULL;
