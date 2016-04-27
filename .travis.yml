@@ -1,0 +1,15 @@
+git:
+    depth: 5
+branches:
+    only:
+      - master
+language: c
+sudo: false
+compiler:
+  - clang
+  - gcc
+before_script:
+  - ./cleanup.sh && ./autogen.sh
+script:
+  - ./configure --enable-export-all --enable-swig-python --enable-swig-java && make check
+os: linux
