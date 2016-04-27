@@ -3,6 +3,15 @@ git:
 branches:
     only:
       - master
+addons:
+    apt:
+        packages:
+          - python
+          - python-dev
+          - python3
+          - python3-dev
+          - swig
+
 language: c
 sudo: false
 compiler:
