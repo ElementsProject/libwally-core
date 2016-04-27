@@ -66,12 +66,12 @@ if test "x$debug" == "xyes"; then
 else
     # Optimise and harden if we can
     AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
-    AX_CHECK_COMPILE_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
     AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
     AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS="$CFLAGS -fstack-protector-strong"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [CFLAGS="$CFLAGS -DNDEBUG=1"])
     AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
     AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
+    AX_CHECK_LINK_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 
