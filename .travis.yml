@@ -2,7 +2,7 @@ git:
     depth: 5
 branches:
     only:
-      - travis
+      - master
 addons:
     apt:
         packages:
