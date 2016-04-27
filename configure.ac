@@ -62,37 +62,39 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT8_T
 
+AM_CFLAGS=
 if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
-    AX_CHECK_COMPILE_FLAG([-O0], [CFLAGS="$CFLAGS -O0"])
-    AX_CHECK_COMPILE_FLAG([-ggdb], [CFLAGS="$CFLAGS -ggdb"])
+    AX_CHECK_COMPILE_FLAG([-O0], [AM_CFLAGS="$AM_CFLAGS -O0"])
+    AX_CHECK_COMPILE_FLAG([-ggdb], [AM_CFLAGS="$AM_CFLAGS -ggdb"])
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
 else
     # Optimise and harden if we can
-    AX_CHECK_COMPILE_FLAG([-O3], [CFLAGS="$CFLAGS -O3"])
-    AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=1"])
-    AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [CFLAGS="$CFLAGS -fstack-protector-strong"])
-    AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [CFLAGS="$CFLAGS -DNDEBUG=1"])
+    AX_CHECK_COMPILE_FLAG([-O3], [AM_CFLAGS="$AM_CFLAGS -O3"])
+    AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [AM_CFLAGS="$AM_CFLAGS -D_FORTIFY_SOURCE=1"])
+    AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [AM_CFLAGS="$AM_CFLAGS -fstack-protector-strong"])
+    AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [AM_CFLAGS="$AM_CFLAGS -DNDEBUG=1"])
     AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
     AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
-    AX_CHECK_LINK_FLAG([-flto], [CFLAGS="$CFLAGS -flto"])
+    AX_CHECK_LINK_FLAG([-flto], [AM_CFLAGS="$AM_CFLAGS -flto"])
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 
-AX_CHECK_COMPILE_FLAG([-Wall], [CFLAGS="$CFLAGS -Wall"])
-AX_CHECK_COMPILE_FLAG([-Wextra], [CFLAGS="$CFLAGS -Wextra"])
-AX_CHECK_COMPILE_FLAG([-Wpedantic], [CFLAGS="$CFLAGS -Wpedantic"])
-AX_CHECK_COMPILE_FLAG([-Wcast-align], [CFLAGS="$CFLAGS -Wcast-align"])
-AX_CHECK_COMPILE_FLAG([-Wnested-externs], [CFLAGS="$CFLAGS -Wnested-externs"])
-AX_CHECK_COMPILE_FLAG([-Wshadow], [CFLAGS="$CFLAGS -Wshadow"])
-AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CFLAGS="$CFLAGS -Wstrict-prototypes"])
-AX_CHECK_COMPILE_FLAG([-Wno-unused-function], [CFLAGS="$CFLAGS -Wno-unused-function"])
-AX_CHECK_COMPILE_FLAG([-Wno-long-long], [CFLAGS="$CFLAGS -Wno-long-long"])
-AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [CFLAGS="$CFLAGS -Wno-overlength-strings"])
-AX_CHECK_COMPILE_FLAG([-Wformat], [CFLAGS="$CFLAGS -Wformat"])
-AX_CHECK_COMPILE_FLAG([-Wformat-security], [CFLAGS="$CFLAGS -Wformat-security"])
-AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [CFLAGS="$CFLAGS -Wformat-nonliteral"])
+AX_CHECK_COMPILE_FLAG([-Wall], [AM_CFLAGS="$AM_CFLAGS -Wall"])
+AX_CHECK_COMPILE_FLAG([-Wextra], [AM_CFLAGS="$AM_CFLAGS -Wextra"])
+AX_CHECK_COMPILE_FLAG([-Wpedantic], [AM_CFLAGS="$AM_CFLAGS -Wpedantic"])
+AX_CHECK_COMPILE_FLAG([-Wcast-align], [AM_CFLAGS="$AM_CFLAGS -Wcast-align"])
+AX_CHECK_COMPILE_FLAG([-Wnested-externs], [AM_CFLAGS="$AM_CFLAGS -Wnested-externs"])
+AX_CHECK_COMPILE_FLAG([-Wshadow], [AM_CFLAGS="$AM_CFLAGS -Wshadow"])
+AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [AM_CFLAGS="$AM_CFLAGS -Wstrict-prototypes"])
+AX_CHECK_COMPILE_FLAG([-Wno-unused-function], [AM_CFLAGS="$AM_CFLAGS -Wno-unused-function"])
+AX_CHECK_COMPILE_FLAG([-Wno-long-long], [AM_CFLAGS="$AM_CFLAGS -Wno-long-long"])
+AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [AM_CFLAGS="$AM_CFLAGS -Wno-overlength-strings"])
+AX_CHECK_COMPILE_FLAG([-Wformat], [AM_CFLAGS="$AM_CFLAGS -Wformat"])
+AX_CHECK_COMPILE_FLAG([-Wformat-security], [AM_CFLAGS="$AM_CFLAGS -Wformat-security"])
+AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [AM_CFLAGS="$AM_CFLAGS -Wformat-nonliteral"])
+AC_SUBST([AM_CFLAGS])
 
 # Under OSX the compiler accepts this flag but the linker then fails.
 if test "x$is_osx" != "xyes"; then
@@ -100,11 +102,11 @@ if test "x$is_osx" != "xyes"; then
 fi
 
 # SWIG versions vary in generated code quality; skip warnings
-SWIG_WARN_CPPFLAGS="-fno-strict-aliasing"
-AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CPPFLAGS="$SWIG_WARN_CPPFLAGS -Wno-shadow"])
-AX_CHECK_COMPILE_FLAG([-Wno-self-assign], [SWIG_WARN_CPPFLAGS="$SWIG_WARN_CPPFLAGS -Wno-self-assign"])
-AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers], [SWIG_WARN_CPPFLAGS="$SWIG_WARN_CPPFLAGS -Wno-missing-field-initializers"])
-AC_SUBST([SWIG_WARN_CPPFLAGS])
+SWIG_WARN_CFLAGS="-fno-strict-aliasing"
+AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-shadow"])
+AX_CHECK_COMPILE_FLAG([-Wno-self-assign], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-self-assign"])
+AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-missing-field-initializers"])
+AC_SUBST([SWIG_WARN_CFLAGS])
 
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
@@ -112,7 +114,7 @@ AC_ARG_ENABLE(export-all,
 AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" == "xyes"])
 
 if test "x$export_all" != "xyes"; then
-    AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [CFLAGS="$CFLAGS -fvisibility=hidden"])
+    AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [AM_CFLAGS="$AM_CFLAGS -fvisibility=hidden"])
 fi
 
 # Assume we have no unaligned access if cross-compiling

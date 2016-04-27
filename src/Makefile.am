@@ -11,7 +11,7 @@ libswig_python_la_SOURCES = \
     swig_python/swig_python_wrap.c \
     swig_python/swig_python_weak.c
 
-libswig_python_la_CFLAGS = -I$(top_srcdir) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CPPFLAGS)
+libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS)
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i
@@ -31,7 +31,7 @@ noinst_LTLIBRARIES += libswig_java.la
 libswig_java_la_SOURCES = \
     swig_java/swig_java_wrap.c
 
-libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) $(SWIG_WARN_CPPFLAGS)
+libswig_java_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_JAVA_CPPFLAGS) $(SWIG_WARN_CFLAGS)
 
 SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally
 
@@ -87,7 +87,7 @@ libwallycore_la_INCLUDES = \
     include/wally_core.h \
     include/wally-crypto.h
 
-libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1
+libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
@@ -97,7 +97,7 @@ if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS = test_clear
 test_clear_SOURCES = ctest/test_clear.c
-test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS)
+test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES)
 endif
