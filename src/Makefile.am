@@ -11,7 +11,7 @@ libswig_python_la_SOURCES = \
     swig_python/swig_python_wrap.c \
     swig_python/swig_python_weak.c
 
-libswig_python_la_CFLAGS = -I$(top_srcdir) $(SWIG_PYTHON_CPPFLAGS) -fno-strict-aliasing
+libswig_python_la_CFLAGS = -I$(top_srcdir) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CPPFLAGS)
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i
@@ -31,7 +31,7 @@ noinst_LTLIBRARIES += libswig_java.la
 libswig_java_la_SOURCES = \
     swig_java/swig_java_wrap.c
 
-libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) -fno-strict-aliasing
+libswig_java_la_CFLAGS = -I$(top_srcdir) $(SWIG_JAVA_CPPFLAGS) $(SWIG_WARN_CPPFLAGS)
 
 SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally
 

@@ -99,6 +99,13 @@ if test "x$is_osx" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
 fi
 
+# SWIG versions vary in generated code quality; skip warnings
+SWIG_WARN_CPPFLAGS="-fno-strict-aliasing"
+AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CPPFLAGS="$SWIG_WARN_CPPFLAGS -Wno-shadow"])
+AX_CHECK_COMPILE_FLAG([-Wno-self-assign], [SWIG_WARN_CPPFLAGS="$SWIG_WARN_CPPFLAGS -Wno-self-assign"])
+AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers], [SWIG_WARN_CPPFLAGS="$SWIG_WARN_CPPFLAGS -Wno-missing-field-initializers"])
+AC_SUBST([SWIG_WARN_CPPFLAGS])
+
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
