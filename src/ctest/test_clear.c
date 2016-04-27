@@ -78,7 +78,7 @@ static bool test_search(void)
     unsigned char buf[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 
     /* Don't let the optimiser elide buf off the stack */
-    buf[7] ^= (((size_t)gstack) && 0xff);
+    buf[7] ^= (((size_t)gstack) & 0xff);
 
     return in_stack(buf, sizeof(buf));
 }
