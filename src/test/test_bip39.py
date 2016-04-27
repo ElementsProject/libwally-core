@@ -95,15 +95,15 @@ class BIP39Tests(unittest.TestCase):
                    'issue item notable divorce conduct page tourist '    \
                    'west off salmon ghost grit kitten pull marine toss ' \
                    'dirt oak gloom'
-        self.assertEqual(bip39_mnemonic_validate(None, mnemonic), 0)
+        self.assertEqual(bip39_mnemonic_validate(None, utf8(mnemonic)), 0)
 
         out_buf = create_string_buffer(36)
-        ret, rlen = bip39_mnemonic_to_bytes(None, mnemonic, out_buf, 36)
+        ret, rlen = bip39_mnemonic_to_bytes(None, utf8(mnemonic), out_buf, 36)
         self.assertEqual(ret, 0)
         self.assertEqual(rlen, 36)
         expected = '9F8EE6E3A2FFCB13A99AA976AEDA5A2002ED' \
                    '3DF97FCB9957CD863357B55AA2072D3EB2F9'
-        self.assertEqual(h(out_buf).upper(), expected)
+        self.assertEqual(h(out_buf).upper(), utf8(expected))
 
 
     def test_mnemonic_to_seed(self):
