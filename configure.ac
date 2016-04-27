@@ -9,6 +9,12 @@ AH_TOP([#define LIBWALLYCORE_CONFIG_H])
 AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
+case $host_os in
+*darwin*)
+    is_osx="yes"
+    ;;
+esac
+
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static])
 
@@ -32,11 +38,9 @@ AC_CHECK_PROG(HAVE_GSED,gsed,yes,no)
 if test "x$HAVE_GSED" == "xyes"; then
   GNU_SED=gsed
 else
-    case $host_os in
-    *darwin*)
+    if test "x$is_osx" == "xyes"; then
         AC_MSG_ERROR([gsed must be available to build this library])
-        ;;
-    esac
+    fi
 fi
 AC_SUBST([GNU_SED])
 
@@ -89,7 +93,10 @@ AX_CHECK_COMPILE_FLAG([-Wformat], [CFLAGS="$CFLAGS -Wformat"])
 AX_CHECK_COMPILE_FLAG([-Wformat-security], [CFLAGS="$CFLAGS -Wformat-security"])
 AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [CFLAGS="$CFLAGS -Wformat-nonliteral"])
 
-AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
+# Under OSX the compiler accepts this flag but the linker then fails.
+if test "x$is_osx" != "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
+fi
 
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
@@ -143,10 +150,9 @@ fi
 #        Because libtool both intercepts -Wl and arbitrarily re-orders its
 #        command line inputs, we have to concoct a single expression to
 #        enforce linking that cannot be split, hence the below expression.
+LIBADD_SECP256K1="secp256k1/.libs/libsecp256k1.a"
 if test "x$whole_archive" == "xyes"; then
     LIBADD_SECP256K1="-Wl,--whole-archive,secp256k1/.libs/libsecp256k1.a,--no-whole-archive"
-else
-    LIBADD_SECP256K1="secp256k1/.libs/libsecp256k1.a"
 fi
 AC_SUBST([LIBADD_SECP256K1])
 
