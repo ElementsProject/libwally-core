@@ -17,8 +17,10 @@ addons:
 matrix:
   include:
     - compiler: clang
+      os: linux
       env: HOST=i686-linux-gnu
     - compiler: gcc
+      os: linux
       env: HOST=i686-linux-gnu
 
 language: c
@@ -28,6 +30,10 @@ compiler:
   - gcc
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
+before_install:
+  - ./tools/travis_install.sh
 script:
   - ./tools/travis_build.sh
-os: linux
+os:
+  - linux
+  - osx
