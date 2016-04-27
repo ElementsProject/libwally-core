@@ -10,5 +10,5 @@ if [ -n "$HOST" ]; then
    fi
 fi
 
-./configure --enable-silent-rules --enable-export-all $ENABLE_SWIG_PYTHON --enable-swig-java $USE_HOST && make && make check
+./configure --enable-silent-rules --disable-dependency-tracking --enable-export-all $ENABLE_SWIG_PYTHON --enable-swig-java $USE_HOST && make && make check
 
