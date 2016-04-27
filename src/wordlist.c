@@ -84,11 +84,11 @@ size_t wordlist_lookup_word(const struct words *w, const char *word)
     return found ? found - w->indices + 1u : 0u;
 }
 
-const char *wordlist_lookup_index(const struct words *w, size_t index)
+const char *wordlist_lookup_index(const struct words *w, size_t idx)
 {
-    if (index >= w->len)
+    if (idx >= w->len)
         return NULL;
-    return w->indices[index];
+    return w->indices[idx];
 }
 
 void wordlist_free(struct words *w)
