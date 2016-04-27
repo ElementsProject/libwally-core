@@ -39,6 +39,8 @@ class ScryptTests(unittest.TestCase):
 
         for c in cases:
             passwd, salt, cost, block, parallel, length, expected = c
+            passwd = utf8(passwd)
+            salt = utf8(salt)
             expected = expected.replace(' ', '')
             assert len(expected) == length * 2
             out_buf, out_len = make_cbuffer('0' * len(expected))
@@ -46,7 +48,7 @@ class ScryptTests(unittest.TestCase):
             ret = wally_scrypt(passwd, len(passwd), salt, len(salt),
                          cost, block, parallel, out_buf, out_len)
             self.assertEqual(ret, 0)
-            self.assertEqual(h(out_buf), expected)
+            self.assertEqual(h(out_buf), utf8(expected))
 
 
 if __name__ == '__main__':
