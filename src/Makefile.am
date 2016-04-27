@@ -103,7 +103,7 @@ test_clear_LDADD = $(lib_LTLIBRARIES)
 endif
 
 check-local:
-if HAVE_PYTHON
+if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
@@ -120,4 +120,4 @@ endif
 if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 endif
-endif
+endif # RUN_PYTHON_TESTS

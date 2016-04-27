@@ -155,6 +155,7 @@ AC_SUBST([LIBADD_SECP256K1])
 #
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "x$pythonexists" == "xyes"])
 
 #
 # SWIG
@@ -167,6 +168,9 @@ AC_ARG_ENABLE(swig-python,
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test x"$swig_python" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
+    if test "x$pythonexists" != "xyes"; then
+        AC_MSG_FAILURE([ERROR: No usable python was found for swig-python])
+    fi
     SWIG_PYTHON
 fi
 
