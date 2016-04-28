@@ -94,7 +94,6 @@ AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [AM_CFLAGS="$AM_CFLAGS -Wno-ove
 AX_CHECK_COMPILE_FLAG([-Wformat], [AM_CFLAGS="$AM_CFLAGS -Wformat"])
 AX_CHECK_COMPILE_FLAG([-Wformat-security], [AM_CFLAGS="$AM_CFLAGS -Wformat-security"])
 AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [AM_CFLAGS="$AM_CFLAGS -Wformat-nonliteral"])
-AC_SUBST([AM_CFLAGS])
 
 # Under OSX the compiler accepts this flag but the linker then fails.
 if test "x$is_osx" != "xyes"; then
@@ -116,6 +115,7 @@ AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" == "xyes"])
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [AM_CFLAGS="$AM_CFLAGS -fvisibility=hidden"])
 fi
+AC_SUBST([AM_CFLAGS])
 
 # Assume we have no unaligned access if cross-compiling
 AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
