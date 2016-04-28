@@ -3,7 +3,6 @@ git:
 branches:
     only:
       - master
-      - travis_testing
 language: c
 sudo: required
 os:
