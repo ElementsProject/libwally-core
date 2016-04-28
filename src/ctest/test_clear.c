@@ -61,13 +61,19 @@ static unsigned char *checked_malloc(size_t len)
     return ret;
 }
 
-static bool in_stack(const void *search, size_t len)
+static bool in_stack(const char *caller, const void *search, size_t len)
 {
     size_t i;
 
     for (i = 0; i < PTHREAD_STACK_MIN - len - 1; ++i)
-        if (!memcmp(gstack + i, search, len))
+        if (!memcmp(gstack + i, search, len)) {
+            if (caller) {
+                printf("Found %s secret at stack position %ld\n", caller, i);
+                dump_mem(gstack + i, len);
+                dump_mem(search, len);
+            }
             return true; /* Found */
+        }
 
     return false; /* Not found */
 }
@@ -80,7 +86,7 @@ static bool test_search(void)
     /* Don't let the optimiser elide buf off the stack */
     buf[7] ^= (((size_t)gstack) & 0xff);
 
-    return in_stack(buf, sizeof(buf));
+    return in_stack(NULL, buf, sizeof(buf));
 }
 
 static bool test_bip39(void)
@@ -91,14 +97,14 @@ static bool test_bip39(void)
                                 BIP39_ENTROPY_LEN_128, &len))
         return false;
 
-    if (in_stack(BIP39_SECRET, sizeof(BIP39_SECRET)))
+    if (in_stack("bip39_mnemonic_to_bytes", BIP39_SECRET, sizeof(BIP39_SECRET)))
         return false;
 
     /* Internally converts to bytes */
     if (bip39_mnemonic_validate(NULL, BIP39_MNEMONIC))
         return false;
 
-    if (in_stack(BIP39_SECRET, sizeof(BIP39_SECRET)))
+    if (in_stack("bip39_mnemonic_validate", BIP39_SECRET, sizeof(BIP39_SECRET)))
         return false;
 
     return true;
@@ -111,7 +117,7 @@ static void *run_tests(void *passed_stack)
         return passed_stack;
     }
 
-#define RUN(t) if (!t()) { printf(#t " failed!\n"); return gstack; }
+#define RUN(t) if (!t()) { printf(#t " clear() test failed!\n"); return gstack; }
 
     RUN(test_search);
     RUN(test_bip39);
