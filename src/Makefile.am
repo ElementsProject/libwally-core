@@ -24,6 +24,16 @@ PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHO
 clean-swig-python:
 	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore.py
 clean-local: clean-swig-python
+
+if IS_OSX
+# Python requires the shared library have a .so extension for 'import'
+.libs/libwallycore.so:
+	$(AM_V_at)ln -s libwallycore.dylib .libs/libwallycore.so
+SWIG_PYTHON_TEST_DEPS = .libs/libwallycore.so
+# Weak symbols are b0rked, so link python in
+libswig_python_la_LIBADD = $(PYTHON_LIBS)
+endif
+
 endif
 
 if USE_SWIG_JAVA
@@ -102,7 +112,7 @@ test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES)
 endif
 
-check-local:
+check-local: $(SWIG_PYTHON_TEST_DEPS)
 if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py

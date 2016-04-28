@@ -15,6 +15,7 @@ case $host_os in
     is_osx="yes"
     ;;
 esac
+AM_CONDITIONAL([IS_OSX], [test x"$is_osx" == "xyes"])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static])
@@ -121,9 +122,11 @@ AC_SUBST([AM_CFLAGS])
 AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
               [AC_DEFINE([HAVE_UNALIGNED_ACCESS], [1], [Define if we have unaligned access])],,[foo=1])
 
-# Assume we are using gcc (i.e. have this attribute) if cross-compiling
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([extern int foo(int) __attribute__((weak)); int main(void){return 0;}])],
-                  [AC_DEFINE([HAVE_ATTRIBUTE_WEAK], [1], [Define if we have __attribute__((weak))])])
+if test "x$is_osx" != "xyes"; then
+    # Assume we are using gcc (i.e. have this attribute) if cross-compiling
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([extern int foo(int) __attribute__((weak)); int main(void){return 0;}])],
+                      [AC_DEFINE([HAVE_ATTRIBUTE_WEAK], [1], [Define if we have __attribute__((weak))])])
+fi
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/mman.h>]],[[mmap(0,0,0,0,0,0)]])],
                [AC_DEFINE(HAVE_MMAP, 1, [Define if we have mmap])])
