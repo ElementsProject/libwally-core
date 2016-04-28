@@ -15,7 +15,7 @@ case $host_os in
     is_osx="yes"
     ;;
 esac
-AM_CONDITIONAL([IS_OSX], [test x"$is_osx" == "xyes"])
+AM_CONDITIONAL([IS_OSX], [test "x$is_osx" == "xyes"])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static])
@@ -111,7 +111,7 @@ AC_SUBST([SWIG_WARN_CFLAGS])
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
-AM_CONDITIONAL([EXPORT_ALL], [test x"$export_all" == "xyes"])
+AM_CONDITIONAL([EXPORT_ALL], [test "x$export_all" == "xyes"])
 
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [AM_CFLAGS="$AM_CFLAGS -fvisibility=hidden"])
@@ -120,12 +120,12 @@ AC_SUBST([AM_CFLAGS])
 
 # Assume we have no unaligned access if cross-compiling
 AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
-              [AC_DEFINE([HAVE_UNALIGNED_ACCESS], [1], [Define if we have unaligned access])],,[foo=1])
+              [AC_DEFINE([HAVE_UNALIGNED_ACCESS], 1, [Define if we have unaligned access])],,[foo=1])
 
 if test "x$is_osx" != "xyes"; then
     # Assume we are using gcc (i.e. have this attribute) if cross-compiling
     AC_COMPILE_IFELSE([AC_LANG_SOURCE([extern int foo(int) __attribute__((weak)); int main(void){return 0;}])],
-                      [AC_DEFINE([HAVE_ATTRIBUTE_WEAK], [1], [Define if we have __attribute__((weak))])])
+                      [AC_DEFINE([HAVE_ATTRIBUTE_WEAK], 1, [Define if we have __attribute__((weak))])])
 fi
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/mman.h>]],[[mmap(0,0,0,0,0,0)]])],
@@ -140,9 +140,9 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 
 AC_CHECK_HEADERS([byteswap.h])
 
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
-AM_CONDITIONAL([USE_PTHREAD], [test x"$ac_have_pthread" == "xyes"])
+AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes"])
 if test "x$ac_have_pthread" == "xyes"; then
-    AC_DEFINE([HAVE_PTHREAD], [1], [Define if we have pthread support])
+    AC_DEFINE([HAVE_PTHREAD], 1, [Define if we have pthread support])
 fi
 
 #
@@ -184,7 +184,7 @@ AC_PROG_SWIG
 AC_ARG_ENABLE(swig-python,
     AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
-AM_CONDITIONAL([USE_SWIG_PYTHON], [test x"$swig_python" == "xyes"])
+AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
@@ -196,7 +196,7 @@ fi
 AC_ARG_ENABLE(swig-java,
     AS_HELP_STRING([--enable-swig-java],[enable the SWIG java (JNI) interface (default: no)]),
     [swig_java=$enableval], [swig_java=no])
-AM_CONDITIONAL([USE_SWIG_JAVA], [test x"$swig_java" == "xyes"])
+AM_CONDITIONAL([USE_SWIG_JAVA], [test "x$swig_java" == "xyes"])
 
 if test "x$swig_java" == "xyes"; then
     AX_JNI_INCLUDE_DIR
@@ -228,7 +228,7 @@ AC_CONFIG_FILES([
 ])
 
 secp_jni="--disable-jni"
-if test x"$swig_java" == "xyes"; then
+if test "x$swig_java" == "xyes"; then
     secp_jni="--enable-jni"
 fi
 ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-schnorr --enable-module-ecdh --disable-dependency-tracking"
