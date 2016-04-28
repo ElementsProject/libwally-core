@@ -23,16 +23,18 @@ addons:
           - swig
           - gcc-multilib
 matrix:
-  include:
-    - os: linux
-      compiler: clang
-      env: HOST=i686-linux-gnu
-    - os: linux
-      compiler: gcc
-      env: HOST=i686-linux-gnu
-    - compiler: gcc
-      os: linux
-      env: PYTHON_VERSION=3.4
+    include:
+      - os: linux
+        compiler: clang
+        env: HOST=i686-linux-gnu
+      - os: linux
+        compiler: gcc
+        env: HOST=i686-linux-gnu
+      - compiler: gcc
+        os: linux
+        env: PYTHON_VERSION=3.4
+    allow_failures:
+      - os: osx
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
 before_install:
