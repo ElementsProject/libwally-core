@@ -58,23 +58,39 @@ class AESTests(unittest.TestCase):
     def test_aes(self):
 
         for c in cases:
-            key_bits, key_hex, plain_hex, cypher_hex = c
-            key_bits = { 128: 16, 192: 24, 256: 32}[key_bits]
-            key, key_len = make_cbuffer(key_hex)
-            self.assertEqual(key_len, key_bits, 0)
-            plain, plain_len = make_cbuffer(plain_hex)
-            cypher, cypher_len = make_cbuffer(cypher_hex)
-            out_buf, out_len = make_cbuffer('0' * len(cypher_hex))
+            vals = [make_cbuffer(s) for s in c[1:]]
+            (key, key_len), (plain, plain_len), (cypher, cypher_len) = vals
+            key_bytes = { 128: 16, 192: 24, 256: 32}[c[0]]
+            self.assertEqual(key_len, key_bytes)
+            out_buf, out_len = make_cbuffer('00' * cypher_len)
 
-            ret = wally_aes(key, key_len, plain, plain_len,
-                            self.ENCRYPT, out_buf, out_len)
-            self.assertEqual(ret, 0)
-            self.assertEqual(h(out_buf), utf8(cypher_hex))
+            for i, il, f, o in [(plain,  plain_len,  self.ENCRYPT, c[3]),
+                                (cypher, cypher_len, self.DECRYPT, c[2])]:
 
-            ret = wally_aes(key, key_len, cypher, cypher_len,
-                            self.DECRYPT, out_buf, out_len)
+                ret = wally_aes(key, key_len, i, il, f, out_buf, out_len)
+                self.assertEqual(ret, 0)
+                self.assertEqual(h(out_buf), utf8(o))
+
+
+    def get_cbc_cases(self):
+        lines = []
+        with open(root_dir + 'src/data/aes-cbc-pkcs7.txt', 'r') as f:
+            for l in f.readlines():
+                if len(l.strip()) and not l.startswith('#'):
+                    lines.append(l.strip().split('=')[1])
+        return [lines[x:x+4] for x in range(0, len(lines), 4)]
+
+
+    def test_aes_cbc(self):
+        for c in self.get_cbc_cases():
+            vals = [make_cbuffer(s) for s in c]
+            (plain, plain_len), (key, key_len), (iv, iv_len), (cypher, cypher_len) = vals
+            out_buf, out_len = make_cbuffer('00' * cypher_len)
+
+            ret = wally_aes_cbc(key, key_len, iv, iv_len, plain, plain_len,
+                                self.ENCRYPT, out_buf, out_len)
             self.assertEqual(ret, 0)
-            self.assertEqual(h(out_buf), utf8(plain_hex))
+            self.assertEqual(h(out_buf), h(cypher))
 
 
 if __name__ == '__main__':

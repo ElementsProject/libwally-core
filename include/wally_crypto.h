@@ -62,6 +62,32 @@ WALLY_CORE_API int wally_aes(
     unsigned char *bytes_out,
     size_t len);
 
+/**
+ * Encrypt/decrypt data using AES (CBC mode).
+ *
+ * @key: Key material for initialisation.
+ * @key_len: Length of @key in bytes. Must be an AES_KEY_LEN_ constant.
+ * @iv: Initialisation vector.
+ * @iv_len: Length of @iv in bytes. Must be @AES_BLOCK_LEN.
+ * @bytes_in: Bytes to encrypt/decrypt.
+ * @len_in: Length of @bytes_in in bytes. Must be a multiple of @AES_BLOCK_LEN.
+ * @flags: AES_FLAG_ constants indicating the desired behaviour.
+ * @bytes_out: Destination for the encrypted/decrypted data.
+ * @len: The length of @bytes_out in bytes. Must be a multiple of @AES_BLOCK_LEN.
+ *
+ * Defaults to PKCS#7 padding.
+ */
+WALLY_CORE_API int wally_aes_cbc(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *iv,
+    size_t iv_len,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
 
 /** Extra bytes required at the end of 'salt_in_out' for pbkdf2 functions */
 #define PBKDF2_HMAC_EXTRA_LEN 4
