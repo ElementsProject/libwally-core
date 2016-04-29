@@ -87,9 +87,9 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
     static final class Obj {
         private final transient long ptr;
         private final int id;
-        protected Obj(final long ptr, final int id) { this.ptr = ptr; this.id = id; }
-        protected long get() { return ptr; }
-        protected int get_id() { return id; }
+        private Obj(final long ptr, final int id) { this.ptr = ptr; this.id = id; }
+        private long get() { return ptr; }
+        private int get_id() { return id; }
     }
 %}
 
