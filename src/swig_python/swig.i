@@ -9,18 +9,19 @@
 
 static int check_result(int result)
 {
-    if (!result)
-        return 0;
-    if (result == WALLY_EINVAL) {
+    switch (result) {
+    case WALLY_OK:
+        break;
+    case WALLY_EINVAL:
         PyErr_SetString(PyExc_ValueError, "Invalid argument");
-        return result;
-    }
-    if (result == WALLY_ENOMEM) {
+        break;
+    case WALLY_ENOMEM:
         PyErr_SetString(PyExc_MemoryError, "Out of memory");
-        return result;
+        break;
+    default: /* WALLY_ERROR */
+         PyErr_SetString(PyExc_RuntimeError, "Failed");
+         break;
     }
-    /* WALLY_ERROR */
-    PyErr_SetString(PyExc_RuntimeError, "Failed");
     return result;
 }
 %}
