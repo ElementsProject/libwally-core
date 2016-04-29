@@ -38,3 +38,5 @@ before_install:
   - ./tools/travis_install.sh
 script:
   - ./tools/travis_build.sh
+notifications:
+    email: false
