@@ -189,6 +189,7 @@ typedef unsigned int uint32_t;
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_void__(wally_aes);
+%returns_size_t(wally_aes_cbc);
 %returns_void__(wally_scrypt);
 %returns_void__(wally_pbkdf2_hmac_sha256);
 %returns_void__(wally_pbkdf2_hmac_sha512);

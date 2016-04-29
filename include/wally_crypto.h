@@ -86,7 +86,8 @@ WALLY_CORE_API int wally_aes_cbc(
     size_t len_in,
     uint32_t flags,
     unsigned char *bytes_out,
-    size_t len);
+    size_t len,
+    size_t *written);
 
 
 /** Extra bytes required at the end of 'salt_in_out' for pbkdf2 functions */

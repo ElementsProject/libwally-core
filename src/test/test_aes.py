@@ -87,9 +87,10 @@ class AESTests(unittest.TestCase):
             (plain, plain_len), (key, key_len), (iv, iv_len), (cypher, cypher_len) = vals
             out_buf, out_len = make_cbuffer('00' * cypher_len)
 
-            ret = wally_aes_cbc(key, key_len, iv, iv_len, plain, plain_len,
-                                self.ENCRYPT, out_buf, out_len)
+            ret, written = wally_aes_cbc(key, key_len, iv, iv_len, plain, plain_len,
+                                         self.ENCRYPT, out_buf, out_len)
             self.assertEqual(ret, 0)
+            self.assertEqual(written, len(cypher))
             self.assertEqual(h(out_buf), h(cypher))
 
 

@@ -100,21 +100,26 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
                   const unsigned char *iv, size_t iv_len,
                   const unsigned char *bytes_in, size_t len_in,
                   uint32_t flags,
-                  unsigned char *bytes_out, size_t len)
+                  unsigned char *bytes_out, size_t len,
+                  size_t *written)
 {
     unsigned char buf[AES_BLOCK_LEN];
     AES256_ctx ctx;
     size_t i, n, blocks;
     unsigned char remainder;
 
+    if (written)
+        *written = 0;
+
     if (!are_valid_args(key, key_len, bytes_in, bytes_out, len) ||
         !iv || iv_len != AES_BLOCK_LEN ||
-        flags & ~ALL_OPS || (flags & ALL_OPS) == ALL_OPS)
+        flags & ~ALL_OPS || (flags & ALL_OPS) == ALL_OPS || !written)
         return WALLY_EINVAL;
 
     blocks = len_in / AES_BLOCK_LEN;
-    if (len < (blocks + 1) * AES_BLOCK_LEN)
-        return WALLY_EINVAL;
+    *written = (blocks + 1) * AES_BLOCK_LEN;
+    if (len < *written)
+        return WALLY_OK; /* Inform caller how much space is needed */
 
     for (i = 0; i < blocks; ++i) {
         for (n = 0; n < AES_BLOCK_LEN; ++n)
