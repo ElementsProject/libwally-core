@@ -32,7 +32,7 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, 
     size_t total_bits = len * 8u; /* bits in 'bytes' */
     size_t total_mnemonics = total_bits / w->bits; /* Mnemonics in 'bytes' */
     size_t i, str_len = 0;
-    char *str;
+    char *str = NULL;
 
     /* Compute length of result */
     for (i = 0; i < total_mnemonics; ++i) {
@@ -43,7 +43,7 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, 
     }
 
     /* Allocate and fill result */
-    if ((str = malloc(str_len))) {
+    if (str_len && (str = malloc(str_len))) {
         char *out = str;
 
         for (i = 0; i < total_mnemonics; ++i) {
