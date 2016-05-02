@@ -62,11 +62,11 @@ class AESTests(unittest.TestCase):
             key_bytes = { 128: 16, 192: 24, 256: 32}[c[0]]
             self.assertEqual(len(key), key_bytes)
 
-            for p, pl, f, o in [(plain,  len(plain),  self.ENCRYPT, cypher),
-                                (cypher, len(cypher), self.DECRYPT, plain)]:
+            for p, f, o in [(plain,  self.ENCRYPT, cypher),
+                            (cypher, self.DECRYPT, plain)]:
 
                 out_buf, out_len = make_cbuffer('00' * len(o))
-                ret = wally_aes(key, len(key), p, pl, f, out_buf, out_len)
+                ret = wally_aes(key, len(key), p, len(p), f, out_buf, out_len)
                 self.assertEqual(ret, 0)
                 self.assertEqual(h(out_buf), h(o))
 
@@ -79,18 +79,18 @@ class AESTests(unittest.TestCase):
                     lines.append(l.strip().split('=')[1])
         return [lines[x:x+4] for x in range(0, len(lines), 4)]
 
-
     def test_aes_cbc(self):
         for c in self.get_cbc_cases():
-            vals = [make_cbuffer(s) for s in c]
-            (plain, plain_len), (key, key_len), (iv, iv_len), (cypher, cypher_len) = vals
-            out_buf, out_len = make_cbuffer('00' * cypher_len)
+            plain, key, iv, cypher = [make_cbuffer(s)[0] for s in c]
 
-            ret, written = wally_aes_cbc(key, key_len, iv, iv_len, plain, plain_len,
-                                         self.ENCRYPT, out_buf, out_len)
-            self.assertEqual(ret, 0)
-            self.assertEqual(written, len(cypher))
-            self.assertEqual(h(out_buf), h(cypher))
+            for p, f, o in [(plain,  self.ENCRYPT, cypher),
+                            (cypher, self.DECRYPT, plain)]:
+
+                out_buf, out_len = make_cbuffer('00' * len(o))
+                ret, written = wally_aes_cbc(key, len(key), iv, len(iv),
+                                             p, len(p), f, out_buf, out_len)
+                self.assertEqual((ret, written), (0, len(o)))
+                self.assertEqual(h(out_buf), h(o))
 
 
 if __name__ == '__main__':

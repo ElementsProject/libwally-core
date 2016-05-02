@@ -18,11 +18,10 @@ static bool is_valid_key_len(size_t key_len)
 }
 
 static bool are_valid_args(const unsigned char *key, size_t key_len,
-                           const unsigned char *bytes_in,
-                           unsigned char *bytes_out, size_t len)
+                           const unsigned char *bytes_in, uint32_t flags)
 {
     return key && is_valid_key_len(key_len) && bytes_in &&
-           bytes_out && len && !(len % AES_BLOCK_LEN);
+           (flags & ALL_OPS) != ALL_OPS;
 }
 
 static void aes_enc(AES256_ctx *ctx,
@@ -82,9 +81,9 @@ int wally_aes(const unsigned char *key, size_t key_len,
 {
     AES256_ctx ctx;
 
-    if (!are_valid_args(key, key_len, bytes_in, bytes_out, len) ||
-        !len_in || len_in % AES_BLOCK_LEN ||
-        flags & ~ALL_OPS || (flags & ALL_OPS) == ALL_OPS)
+    if (!are_valid_args(key, key_len, bytes_in, flags) ||
+        len % AES_BLOCK_LEN || !len_in || len_in % AES_BLOCK_LEN ||
+        flags & ~ALL_OPS || !bytes_out || !len)
         return WALLY_EINVAL;
 
     if (flags & AES_FLAG_ENCRYPT)
@@ -111,33 +110,74 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
     if (written)
         *written = 0;
 
-    if (!are_valid_args(key, key_len, bytes_in, bytes_out, len) ||
-        !iv || iv_len != AES_BLOCK_LEN ||
-        flags & ~ALL_OPS || (flags & ALL_OPS) == ALL_OPS || !written)
+    if (!are_valid_args(key, key_len, bytes_in, flags) ||
+        ((flags & AES_FLAG_ENCRYPT) && (len % AES_BLOCK_LEN)) ||
+        ((flags & AES_FLAG_DECRYPT) && (len_in % AES_BLOCK_LEN)) ||
+        !iv || iv_len != AES_BLOCK_LEN || flags & ~ALL_OPS || !written)
         return WALLY_EINVAL;
 
     blocks = len_in / AES_BLOCK_LEN;
-    *written = (blocks + 1) * AES_BLOCK_LEN;
-    if (len < *written)
-        return WALLY_OK; /* Inform caller how much space is needed */
+
+    if (flags & AES_FLAG_ENCRYPT) {
+        /* Determine output length from input length */
+        remainder = len_in % AES_BLOCK_LEN;
+        *written = (blocks + 1) * AES_BLOCK_LEN;
+    } else {
+        /* Determine output length from decrypted final block */
+        const unsigned char *last = bytes_in + len_in - AES_BLOCK_LEN;
+        const unsigned char *prev = last - AES_BLOCK_LEN;
+
+        if (!--blocks)
+            prev = iv;
+        aes_dec(&ctx, key, key_len, last, AES_BLOCK_LEN, buf);
+        for (n = 0; n < AES_BLOCK_LEN; ++n)
+            buf[n] = prev[n] ^ buf[n];
+
+        /* Modulo the resulting padding amount to the block size - we do
+         * not attempt to verify the decryption by checking the padding in
+         * the decrypted block. */
+        remainder = AES_BLOCK_LEN - (buf[AES_BLOCK_LEN - 1] % AES_BLOCK_LEN);
+        if (remainder == AES_BLOCK_LEN)
+            remainder = 0;
+        *written = blocks * AES_BLOCK_LEN + remainder;
+    }
+    if (len < *written || !*written)
+        goto finish; /* Inform caller how much space is needed */
+
+    if (!bytes_out) {
+        clear_n(2, buf, sizeof(buf), &ctx, sizeof(ctx));
+        return WALLY_EINVAL;
+    }
+
+    if (flags & AES_FLAG_DECRYPT)
+        memcpy(bytes_out + blocks * AES_BLOCK_LEN, buf, remainder);
 
     for (i = 0; i < blocks; ++i) {
-        for (n = 0; n < AES_BLOCK_LEN; ++n)
-            buf[n] = bytes_in[n] ^ iv[n];
-        aes_enc(&ctx, key, key_len, buf, AES_BLOCK_LEN, bytes_out);
-        iv = bytes_out;
+        if (flags & AES_FLAG_ENCRYPT) {
+            for (n = 0; n < AES_BLOCK_LEN; ++n)
+                buf[n] = bytes_in[n] ^ iv[n];
+            aes_enc(&ctx, key, key_len, buf, AES_BLOCK_LEN, bytes_out);
+            iv = bytes_out;
+        } else {
+            aes_dec(&ctx, key, key_len, bytes_in, AES_BLOCK_LEN, bytes_out);
+            for (n = 0; n < AES_BLOCK_LEN; ++n)
+                bytes_out[n] = bytes_out[n] ^ iv[n];
+            iv = bytes_in;
+        }
         bytes_in += AES_BLOCK_LEN;
         bytes_out += AES_BLOCK_LEN;
     }
 
-    remainder = len_in % AES_BLOCK_LEN;
-    for (n = 0; n < remainder; ++n)
-        buf[n] = bytes_in[n] ^ iv[n];
-    remainder = 16 - remainder;
-    for (; n < AES_BLOCK_LEN; ++n)
-        buf[n] = remainder ^ iv[n];
-    aes_enc(&ctx, key, key_len, buf, AES_BLOCK_LEN, bytes_out);
+    if (flags & AES_FLAG_ENCRYPT) {
+        for (n = 0; n < remainder; ++n)
+            buf[n] = bytes_in[n] ^ iv[n];
+        remainder = 16 - remainder;
+        for (; n < AES_BLOCK_LEN; ++n)
+            buf[n] = remainder ^ iv[n];
+        aes_enc(&ctx, key, key_len, buf, AES_BLOCK_LEN, bytes_out);
+    }
 
+finish:
     clear_n(2, buf, sizeof(buf), &ctx, sizeof(ctx));
     return WALLY_OK;
 }
