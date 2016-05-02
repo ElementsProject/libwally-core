@@ -122,15 +122,18 @@ static int key_compute_pub_key(struct ext_key *key_out)
     secp256k1_pubkey pub_key;
     size_t len = sizeof(key_out->pub_key);
     const secp256k1_context *ctx = secp_ctx();
+    int ret = WALLY_EINVAL;
 
-    int ret = (pubkey_create(ctx, &pub_key, key_out->priv_key + 1) &&
-               pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
-                                PUBKEY_COMPRESSED) &&
-               len == sizeof(key_out->pub_key)) ? 0 : -1;
+    if (!ctx)
+        return WALLY_ENOMEM;
+
+    if (pubkey_create(ctx, &pub_key, key_out->priv_key + 1) &&
+        pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
+                         PUBKEY_COMPRESSED) &&
+        len == sizeof(key_out->pub_key))
+        ret = WALLY_OK;
 
     clear(&pub_key, sizeof(pub_key));
-    if (ret != 0)
-        clear(key_out->pub_key, sizeof(key_out->pub_key));
     return ret;
 }
 
@@ -362,6 +365,9 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     const bool we_are_private = key_is_private(key_in);
     const bool derive_private = !(flags & BIP32_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
+
+    if (!ctx)
+        return WALLY_ENOMEM;
 
     if (!we_are_private && (derive_private || hardened))
         return wipe_key_fail(key_out); /* Unsupported derivation */

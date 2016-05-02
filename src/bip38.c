@@ -62,12 +62,19 @@ static int compute_pub_key(const unsigned char *bytes_in, size_t len_in,
                            unsigned char *pub_key_out, bool compressed)
 {
     secp256k1_pubkey pk;
-    const secp256k1_context *ctx = secp_ctx();
     unsigned int flags = compressed ? PUBKEY_COMPRESSED : PUBKEY_UNCOMPRESSED;
     size_t len = compressed ? 33 : 65;
-    int ret = len_in == BITCOIN_PRIVATE_KEY_LEN &&
-              pubkey_create(ctx, &pk, bytes_in) &&
-              pubkey_serialize(ctx, pub_key_out, &len, &pk, flags) ? 0 : -1;
+    const secp256k1_context *ctx = secp_ctx();
+    int ret = WALLY_EINVAL;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+
+    if (len_in == BITCOIN_PRIVATE_KEY_LEN &&
+        pubkey_create(ctx, &pk, bytes_in) &&
+        pubkey_serialize(ctx, pub_key_out, &len, &pk, flags))
+        ret = WALLY_OK;
+
     clear(&pk, sizeof(pk));
     return ret;
 }

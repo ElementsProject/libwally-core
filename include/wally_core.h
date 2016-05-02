@@ -25,13 +25,41 @@
 
 /**
  * Securely wipe memory.
+ *
+ * @bytes_in Memory to wipe
+ * @len_in Size of @bytes_in in bytes.
  */
-WALLY_CORE_API int wally_bzero(void *bytes, size_t len);
+WALLY_CORE_API int wally_bzero(
+    void *bytes,
+    size_t len_in);
 
 /**
  * Securely wipe and then free a string allocted by the library.
+ *
+ * @str String to free (must be NUL terminated UTF-8).
  */
-WALLY_CORE_API int wally_free_string(char *str);
+WALLY_CORE_API int wally_free_string(
+    char *str);
+
+/** Length of entropy required for @wally_randomize_context */
+#define WALLY_SECP_RANDOMISE_LEN 32
+
+/**
+ * Provide entropy to randomize the libraries internal secp256k1 context.
+ *
+ * @bytes_in Entropy to use.
+ * @len_in Size of @bytes_in in bytes. Must be @WALLY_SECP_RANDOMISE_LEN.
+ *
+ * Random data is used in libsecp256k1 to blind the data being processed, to
+ * make side channel attacks more difficult. libwallycore uses a single
+ * internal context for secp functions that is not randomized at run time.
+ * The caller should call this function before using any functions that rely on
+ * secp (anything using public/private keys).
+ */
+WALLY_CORE_API int wally_secp_randomize(
+    const unsigned char *bytes_in,
+    size_t len_in);
+
 
 #endif /* WALLY_CORE_H */
 

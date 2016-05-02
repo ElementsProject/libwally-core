@@ -195,6 +195,7 @@ typedef unsigned int uint32_t;
 %returns_void__(wally_hmac_sha512);
 %returns_void__(wally_pbkdf2_hmac_sha256);
 %returns_void__(wally_pbkdf2_hmac_sha512);
+%returns_void__(wally_secp_randomize);
 
 %include "../include/wally_core.h"
 %include "../include/wally_bip38.h"

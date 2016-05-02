@@ -9,7 +9,7 @@
 #include "cpufeatures/cpu-features.c"
 #endif
 
-/* FIXME: Not threadsafe, not randomised, not cleaned up, etc etc*/
+/* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
 
 const secp256k1_context *secp_ctx(void)
@@ -19,9 +19,24 @@ const secp256k1_context *secp_ctx(void)
     if (!global_ctx)
         global_ctx = secp256k1_context_create(flags);
 
-    /* FIXME: Error handling if null */
-
     return global_ctx;
+}
+
+
+int wally_secp_randomize(const unsigned char *bytes_in, size_t len_in)
+{
+    secp256k1_context *ctx;
+
+    if (!bytes_in || len_in != WALLY_SECP_RANDOMISE_LEN)
+        return WALLY_EINVAL;
+
+    if (!(ctx = (secp256k1_context *)secp_ctx()))
+        return WALLY_ENOMEM;
+
+    if (!secp256k1_context_randomize(ctx, bytes_in))
+        return WALLY_ERROR;
+
+    return WALLY_OK;
 }
 
 int wally_free_string(char *str)
