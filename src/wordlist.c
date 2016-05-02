@@ -30,6 +30,7 @@ static struct words *wordlist_alloc(const char *words, size_t len)
             if (w->indices)
                 return w;
         }
+        w->str_len = 0;
         wordlist_free(w);
     }
     return NULL;
