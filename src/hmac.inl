@@ -44,3 +44,23 @@ void HMAC_FUNCTION(struct SHA_T *sha,
     SHA_PRE(_mix)(sha, opad, ctx.buf.u8, sizeof(*sha));
     clear_n(3, &ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
 }
+
+int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
+                        const unsigned char *bytes_in, size_t len_in,
+                        unsigned char *bytes_out, size_t len)
+{
+    struct SHA_T sha;
+    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.SHA_CTX_MEMBER));
+    struct SHA_T *sha_p = aligned ? (struct SHA_T *)bytes_out : &sha;
+
+    if (!key || !key_len || !bytes_in || !len_in ||
+        !bytes_out || len != sizeof(struct SHA_T))
+        return WALLY_EINVAL;
+
+    HMAC_FUNCTION(sha_p, key, key_len, bytes_in, len_in);
+    if (!aligned) {
+        memcpy(bytes_out, sha_p, sizeof(*sha_p));
+        clear(sha_p, sizeof(*sha_p));
+    }
+    return WALLY_OK;
+}

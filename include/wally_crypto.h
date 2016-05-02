@@ -8,7 +8,7 @@
 
 /**
  * Derive a pseudorandom key from inputs using an expensive application
- * of HMAC SHA256.
+ * of HMAC SHA-256.
  *
  * @pass: Password to derive from.
  * @pass_len: Length of @pass in bytes.
@@ -90,6 +90,49 @@ WALLY_CORE_API int wally_aes_cbc(
     size_t *written);
 
 
+/** Output length for @wally_hmac_sha256 */
+#define HMAC_SHA256_LEN 32
+
+/** Output length for @wally_hmac_sha512 */
+#define HMAC_SHA512_LEN 64
+
+/**
+ * Compute an HMAC using SHA-256
+ *
+ * @key: The key for the hash
+ * @key_len: The length of @key in bytes.
+ * @bytes_in: The message to hash
+ * @len_in: The length of @bytes_in in bytes.
+ * @bytes_out: Destination for the resulting HMAC.
+ * @len: The length of @bytes_out in bytes. Must be @HMAC_SHA256_LEN.
+ */
+WALLY_CORE_API int wally_hmac_sha256(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Compute an HMAC using SHA-512
+ *
+ * @key: The key for the hash
+ * @key_len: The length of @key in bytes.
+ * @bytes_in: The message to hash
+ * @len_in: The length of @bytes_in in bytes.
+ * @bytes_out: Destination for the resulting HMAC.
+ * @len: The length of @bytes_out in bytes. Must be @HMAC_SHA512_LEN.
+ */
+WALLY_CORE_API int wally_hmac_sha512(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    unsigned char *bytes_out,
+    size_t len);
+
+
 /** Extra bytes required at the end of 'salt_in_out' for pbkdf2 functions */
 #define PBKDF2_HMAC_EXTRA_LEN 4
 
@@ -106,7 +149,7 @@ WALLY_CORE_API int wally_aes_cbc(
 
 
 /**
- * Derive a pseudorandom key from inputs using HMAC SHA256.
+ * Derive a pseudorandom key from inputs using HMAC SHA-256.
  *
  * @pass: Password to derive from.
  * @pass_len: Length of @pass in bytes.

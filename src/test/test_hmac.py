@@ -68,22 +68,23 @@ hmac_cases = [
 
 class HMACTests(unittest.TestCase):
 
-    def doHMAC(self, hmac_fn, key_in, msg_in):
+    def doHMAC(self, fn, key_in, msg_in):
         key, key_len = make_cbuffer(key_in)
         msg, msg_len = make_cbuffer(msg_in)
-        buf_len = 64 if hmac_fn == hmac_sha512 else 32
+        buf_len = 64 if fn == wally_hmac_sha512 else 32
         buf = create_string_buffer(buf_len)
-        hmac_fn(buf, key, key_len, msg, msg_len)
-        return h(buf)
+        ret = fn(key, key_len, msg, msg_len, buf, buf_len)
+        return ret, h(buf)
 
 
     def test_vectors(self):
 
         for test in hmac_cases:
             k, msg = test[0], test[1]
-            for fn, expected in [(hmac_sha256, test[2]),
-                                 (hmac_sha512, test[3])]:
-                result = self.doHMAC(fn, k, msg)
+            for fn, expected in [(wally_hmac_sha256, test[2]),
+                                 (wally_hmac_sha512, test[3])]:
+                ret, result = self.doHMAC(fn, k, msg)
+                self.assertEqual(ret, 0)
                 expected = utf8(expected.replace(' ', ''))
                 # Note we truncate the result as one of the test vectors has
                 # a truncated result in the RFC
