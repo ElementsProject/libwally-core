@@ -215,7 +215,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
         }
     }
 
-    while (!*top_byte)
+    while (!*top_byte && top_byte < bn + bn_bytes - 1)
         ++top_byte; /* Skip leading zero bytes in our bignum */
 
     /* Copy the result */
