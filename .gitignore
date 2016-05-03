@@ -2,6 +2,8 @@ bld
 src/*.pyc
 src/test/*.pyc
 *~
+*.gcno
+*.gcda
 *.o
 *.lo
 *.la
@@ -24,6 +26,7 @@ libtool
 ltmain.sh
 missing
 src/*~
+src/lcov*
 src/Makefile
 src/Makefile.in
 src/config.h

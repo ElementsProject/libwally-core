@@ -6,6 +6,8 @@ make -o configure distclean >/dev/null 2>&1
 find . -name Makefile -exec rm {} \;
 find . -name Makefile.in -exec rm {} \;
 find . -name "*.class" -exec rm {} \;
+find . -name "*.gcno" -exec rm {} \;
+find . -name "*.gcda" -exec rm {} \;
 
 rm -f */*~
 rm -f *~
@@ -15,6 +17,7 @@ rm -f configure
 rm -f src/*pyc
 rm -f src/test/*pyc
 rm -f src/config.h.in
+rm -rf src/lcov
 rm -f src/test_clear*
 rm -f src/test-suite.log
 rm -f src/swig_java/swig_java_wrap.c

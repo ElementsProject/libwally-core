@@ -52,6 +52,9 @@ AC_SUBST([GNU_SED])
 AC_ARG_ENABLE(debug,
     AS_HELP_STRING([--enable-debug],[enable debugging (default: no)]),
     [debug=$enableval], [debug=no])
+AC_ARG_ENABLE(coverage,
+    AS_HELP_STRING([--enable-coverage],[enable code coverage (default: no)]),
+    [coverage=$enableval], [coverage=no])
 
 CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2//g' | $GNU_SED -e 's/-g//g'`
 
@@ -70,6 +73,10 @@ if test "x$debug" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-ggdb], [AM_CFLAGS="$AM_CFLAGS -ggdb"])
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
+    if test "x$coverage" == "xyes"; then
+        AX_CHECK_COMPILE_FLAG([-fprofile-arcs -ftest-coverage], [AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"])
+        AX_CHECK_LINK_FLAG([-lgcov], [LDFLAGS="$LDFLAGS -lgcov"])
+    fi
 else
     # Optimise and harden if we can
     AX_CHECK_COMPILE_FLAG([-O3], [AM_CFLAGS="$AM_CFLAGS -O3"])
