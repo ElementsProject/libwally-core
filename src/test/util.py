@@ -64,6 +64,7 @@ for f in (
     ('bip39_mnemonic_validate', c_int, [c_void_p, c_char_p]),
     ('bip39_mnemonic_to_seed', c_int, [c_char_p, c_char_p, c_void_p, c_ulong, c_ulong_p]),
     ('wally_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_sha256d', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p]),
     ('wally_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p]),

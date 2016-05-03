@@ -70,8 +70,29 @@ int wally_sha256(const unsigned char *bytes_in, size_t len_in,
         return WALLY_EINVAL;
 
     sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes_in, len_in);
-    if (!aligned)
+    if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
+        clear(&sha, sizeof(sha));
+    }
+    return WALLY_OK;
+}
+
+int wally_sha256d(const unsigned char *bytes_in, size_t len_in,
+                  unsigned char *bytes_out, size_t len)
+{
+    struct sha256 sha_1, sha_2;
+    bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32));
+
+    if (!bytes_in || !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    sha256(&sha_1, bytes_in, len_in);
+    sha256(aligned ? (struct sha256 *)bytes_out : &sha_2, &sha_1, sizeof(sha_1));
+    if (!aligned) {
+        memcpy(bytes_out, &sha_2, sizeof(sha_2));
+        clear(&sha_2, sizeof(sha_2));
+    }
+    clear(&sha_1, sizeof(sha_1));
     return WALLY_OK;
 }
 
