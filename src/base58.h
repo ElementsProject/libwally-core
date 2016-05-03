@@ -33,8 +33,6 @@ int base58_from_bytes(
 /**
  * Calculate the base58 checksum of a block of binary data.
  *
- * FIXME: This is just a double sha256 - call it that and move it somewhere
- *
  * @bytes_in_out: Binary data to calculate the checksum for.
  * @len: The length of @bytes_in_out in bytes.
  */

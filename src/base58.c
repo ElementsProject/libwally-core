@@ -3,6 +3,7 @@
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/endian/endian.h"
 #include <string.h>
+#include <include/wally_crypto.h>
 
 /* Temporary stack buffer sizes */
 #define BIGNUM_WORDS 128u
@@ -146,15 +147,14 @@ cleanup:
     return ret;
 }
 
-uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len)
+uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len_in)
 {
-    struct sha256 sha_1, sha_2;
+    struct sha256 sha;
     uint32_t checksum;
 
-    sha256(&sha_1, bytes_in, len);
-    sha256(&sha_2, &sha_1, sizeof(sha_1));
-    checksum = sha_2.u.u32[0];
-    clear_n(2, &sha_1, sizeof(sha_1), &sha_2, sizeof(sha_2));
+    wally_sha256d(bytes_in, len_in, (unsigned char *)&sha, sizeof(sha));
+    checksum = sha.u.u32[0];
+    clear(&sha, sizeof(sha));
     return checksum;
 }
 
