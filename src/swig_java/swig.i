@@ -6,19 +6,22 @@
 #include "../include/wally_crypto.h"
 #include <limits.h>
 
-static void check_result(JNIEnv *jenv, int result) {
-    if (!result)
-        return;
-    if (result == WALLY_EINVAL) {
+static int check_result(JNIEnv *jenv, int result)
+{
+    switch (result) {
+    case WALLY_OK:
+        break;
+    case WALLY_EINVAL:
         SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, "Invalid argument");
-        return;
-    }
-    if (result == WALLY_ENOMEM) {
+        break;
+    case WALLY_ENOMEM:
         SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "Out of memory");
-        return;
+        break;
+    default: /* WALLY_ERROR */
+        SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, "Failed");
+        break;
     }
-    /* WALLY_ERROR */
-    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, "Failed");
+    return result;
 }
 
 static int int_cast(JNIEnv *jenv, size_t value) {
@@ -60,6 +63,20 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
     void * ret = get_obj(jenv, obj, id);
     if (!ret)
         SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, name);
+    return ret;
+}
+
+static unsigned char* malloc_or_throw(JNIEnv *jenv, size_t len) {
+    unsigned char *p = (unsigned char *)malloc(len);
+    if (!p)
+        SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "Out of memory");
+    return p;
+}
+
+static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len) {
+    jbyteArray ret = (*jenv)->NewByteArray(jenv, len);
+    if (ret)
+        (*jenv)->SetByteArrayRegion(jenv, ret, 0, len, (const jbyte*)p);
     return ret;
 }
 %}
@@ -173,14 +190,34 @@ typedef unsigned int uint32_t;
 %define %returns_struct(FUNC, STRUCT)
 %return_decls(FUNC, Object, jobject)
 %enddef
+%define %returns_array_(FUNC, ARRAYARG, LENARG, LEN)
+%return_decls(FUNC, byte[], jbyteArray)
+%exception FUNC {
+    if (!jarg ## ARRAYARG) {
+        arg ## LENARG = LEN;
+        arg ## ARRAYARG = malloc_or_throw(jenv, LEN);
+        if (!arg ## ARRAYARG)
+            return $null;
+    }
+    $action
+    if (check_result(jenv, result) == WALLY_OK && !jarg ## ARRAYARG)
+        jresult = create_array(jenv, arg ## ARRAYARG, LEN);
+    if (!jarg ## ARRAYARG) {
+        wally_bzero(arg ## ARRAYARG, LEN);
+        free(arg ## ARRAYARG);
+    }
+}
+%enddef
+
 
 /* Our wrapped opaque types */
 %java_opaque_struct(words, 1)
 
 /* Our wrapped functions return types */
-%returns_void__(bip38_raw_from_private_key);
+%returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALISED_LEN);
 %returns_string(bip38_from_private_key);
-%returns_void__(bip38_to_private_key);
+%returns_array_(bip38_raw_to_private_key, 6, 7, 32);
+%returns_array_(bip38_to_private_key, 5, 6, 32);
 %returns_string(bip39_get_languages);
 %returns_struct(bip39_get_wordlist, words);
 %returns_string(bip39_get_word);
@@ -188,16 +225,16 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
-%returns_void__(wally_aes);
+%returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
 %returns_void__(wally_scrypt);
-%returns_void__(wally_sha256);
-%returns_void__(wally_sha256d);
-%returns_void__(wally_sha512);
-%returns_void__(wally_hmac_sha256);
-%returns_void__(wally_hmac_sha512);
-%returns_void__(wally_pbkdf2_hmac_sha256);
-%returns_void__(wally_pbkdf2_hmac_sha512);
+%returns_array_(wally_sha256, 3, 4, SHA256_LEN);
+%returns_array_(wally_sha256d, 3, 4, SHA256_LEN);
+%returns_array_(wally_sha512, 3, 4, SHA512_LEN);
+%returns_array_(wally_hmac_sha256, 5, 6, HMAC_SHA256_LEN);
+%returns_array_(wally_hmac_sha512, 5, 6, HMAC_SHA512_LEN);
+%returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
+%returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_secp_randomize);
 
 %include "../include/wally_core.h"
