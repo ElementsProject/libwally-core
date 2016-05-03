@@ -68,7 +68,7 @@ static bool in_stack(const char *caller, const void *search, size_t len)
     for (i = 0; i < PTHREAD_STACK_MIN - len - 1; ++i)
         if (!memcmp(gstack + i, search, len)) {
             if (caller) {
-                printf("Found %s secret at stack position %ld\n", caller, i);
+                printf("Found %s secret at stack position %ld\n", caller, (long)i);
                 dump_mem(gstack + i, len);
                 dump_mem(search, len);
             }
