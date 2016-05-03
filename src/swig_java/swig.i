@@ -191,6 +191,8 @@ typedef unsigned int uint32_t;
 %returns_void__(wally_aes);
 %returns_size_t(wally_aes_cbc);
 %returns_void__(wally_scrypt);
+%returns_void__(wally_sha256);
+%returns_void__(wally_sha512);
 %returns_void__(wally_hmac_sha256);
 %returns_void__(wally_hmac_sha512);
 %returns_void__(wally_pbkdf2_hmac_sha256);

@@ -1,9 +1,13 @@
 #include <include/wally_core.h>
+#include <include/wally_crypto.h>
 #include "internal.h"
+#include "ccan/ccan/crypto/sha256/sha256.h"
+#include "ccan/ccan/crypto/sha512/sha512.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #ifdef __ANDROID__
 #include "cpufeatures/cpu-features.c"
@@ -45,7 +49,7 @@ int wally_free_string(char *str)
         return -1;
     clear(str, strlen(str));
     free(str);
-    return 0;
+    return WALLY_OK;
 }
 
 int wally_bzero(void *bytes, size_t len)
@@ -53,7 +57,37 @@ int wally_bzero(void *bytes, size_t len)
     if (!bytes)
         return -1;
     clear(bytes, len);
-    return 0;
+    return WALLY_OK;
+}
+
+int wally_sha256(const unsigned char *bytes_in, size_t len_in,
+                 unsigned char *bytes_out, size_t len)
+{
+    struct sha256 sha;
+    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
+
+    if (!bytes_in || !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes_in, len_in);
+    if (!aligned)
+        memcpy(bytes_out, &sha, sizeof(sha));
+    return WALLY_OK;
+}
+
+int wally_sha512(const unsigned char *bytes_in, size_t len_in,
+                 unsigned char *bytes_out, size_t len)
+{
+    struct sha512 sha;
+    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64));
+
+    if (!bytes_in || !bytes_out || len != SHA512_LEN)
+        return WALLY_EINVAL;
+
+    sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes_in, len_in);
+    if (!aligned)
+        memcpy(bytes_out, &sha, sizeof(sha));
+    return WALLY_OK;
 }
 
 #if 0

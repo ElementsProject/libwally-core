@@ -36,11 +36,12 @@ class SHA2Tests(unittest.TestCase):
 
     SHA256_LEN, SHA512_LEN = 32, 64
 
-    def doSHA(self, sha_fn, hex_in):
-        buf_len = self.SHA256_LEN if sha_fn == sha256 else self.SHA512_LEN
+    def doSHA(self, fn, hex_in):
+        buf_len = self.SHA256_LEN if fn == wally_sha256 else self.SHA512_LEN
         in_bytes, in_bytes_len = make_cbuffer(hex_in)
         buf = create_string_buffer(buf_len)
-        sha_fn(buf, in_bytes, in_bytes_len)
+        ret = fn(in_bytes, in_bytes_len, buf, buf_len)
+        self.assertEqual(ret, 0)
         return h(buf)
 
 
@@ -48,7 +49,7 @@ class SHA2Tests(unittest.TestCase):
 
         for in_msg, values in sha2_cases.items():
             msg = h(utf8(in_msg))
-            for i, fn in enumerate([sha256, sha512]):
+            for i, fn in enumerate([wally_sha256, wally_sha512]):
                 result = self.doSHA(fn, msg)
                 expected = utf8(values[i].replace(' ', ''))
                 self.assertEqual(result, expected)

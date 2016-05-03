@@ -90,6 +90,41 @@ WALLY_CORE_API int wally_aes_cbc(
     size_t *written);
 
 
+/** Output length for @wally_sha256 */
+#define SHA256_LEN 32
+
+/** Output length for @wally_sha512 */
+#define SHA512_LEN 64
+
+/**
+ * SHA-256
+ *
+ * @bytes_in: The message to hash
+ * @len_in: The length of @bytes_in in bytes.
+ * @bytes_out: Destination for the resulting HMAC.
+ * @len: The length of @bytes_out in bytes. Must be @SHA256_LEN.
+ */
+WALLY_CORE_API int wally_sha256(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * SHA-512
+ *
+ * @bytes_in: The message to hash
+ * @len_in: The length of @bytes_in in bytes.
+ * @bytes_out: Destination for the resulting HMAC.
+ * @len: The length of @bytes_out in bytes. Must be @SHA512_LEN.
+ */
+WALLY_CORE_API int wally_sha512(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    unsigned char *bytes_out,
+    size_t len);
+
+
 /** Output length for @wally_hmac_sha256 */
 #define HMAC_SHA256_LEN 32
 
