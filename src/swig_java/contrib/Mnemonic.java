@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.blockstream.libwally.wallycore.BIP39_ENTROPY_LEN_256;
-import static com.blockstream.libwally.wallycore.BIP39_SEED_LEN_512;
+import static com.blockstream.libwally.Wally.BIP39_ENTROPY_LEN_256;
+import static com.blockstream.libwally.Wally.BIP39_SEED_LEN_512;
 
 public class Mnemonic {
 
@@ -15,11 +15,11 @@ public class Mnemonic {
     private final Object wl;
 
     public Mnemonic(final String lang) {
-        this.wl = wallycore.bip39_get_wordlist(lang);
+        this.wl = Wally.bip39_get_wordlist(lang);
     }
 
     public static String[] getLanguages() {
-        return wallycore.bip39_get_languages().split(" ");
+        return Wally.bip39_get_languages().split(" ");
     }
 
     public String generate(final int strength) {
@@ -34,17 +34,17 @@ public class Mnemonic {
 
     public byte[] toEntropy(final String mnemonics) {
         final byte[] buf = new byte[BIP39_ENTROPY_LEN_256];
-        return Arrays.copyOf(buf, wallycore.bip39_mnemonic_to_bytes(
+        return Arrays.copyOf(buf, Wally.bip39_mnemonic_to_bytes(
                 wl, mnemonics, buf));
     }
 
     public String toMnemonic(final byte[] data) {
-        return wallycore.bip39_mnemonic_from_bytes(wl, data);
+        return Wally.bip39_mnemonic_from_bytes(wl, data);
     }
 
     public boolean check(final String mnemonic) {
         try {
-            wallycore.bip39_mnemonic_validate(wl, mnemonic);
+            Wally.bip39_mnemonic_validate(wl, mnemonic);
             return true;
         } catch (final Exception e) {
             return false;
@@ -53,7 +53,7 @@ public class Mnemonic {
 
     public byte[] toSeed(final String mnemonic, final String passphrase) {
         final byte[] buf = new byte[BIP39_SEED_LEN_512];
-        wallycore.bip39_mnemonic_to_seed(mnemonic, passphrase, buf);
+        Wally.bip39_mnemonic_to_seed(mnemonic, passphrase, buf);
         return buf;
     }
 
@@ -83,7 +83,7 @@ public class Mnemonic {
 
         for(final Map.Entry<String, byte[]> entry : testMap.entrySet())
             try {
-                wallycore.bip39_mnemonic_to_bytes(null, entry.getKey(), entry.getValue());
+                Wally.bip39_mnemonic_to_bytes(null, entry.getKey(), entry.getValue());
                 throw new RuntimeException("Mnemonic failed basic verification");
             } catch (final IllegalArgumentException e) {
                 // pass
@@ -91,14 +91,14 @@ public class Mnemonic {
         final byte[] data = new byte[BIP39_ENTROPY_LEN_256];
 
         try {
-            wallycore.bip39_mnemonic_from_bytes(null, data);
+            Wally.bip39_mnemonic_from_bytes(null, data);
             throw new RuntimeException("Mnemonic failed basic verification");
         } catch (final IllegalArgumentException e) {
             // pass
         }
 
         try {
-            wallycore.bip39_mnemonic_from_bytes(new Object(), data);
+            Wally.bip39_mnemonic_from_bytes(new Object(), data);
             throw new RuntimeException("Mnemonic failed basic verification");
         } catch (final IllegalArgumentException e) {
             // pass

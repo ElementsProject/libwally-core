@@ -3,10 +3,10 @@
 sed_exe=$1
 
 mkdir -p swig_java/src/com/blockstream/libwally
-result="swig_java/src/com/blockstream/libwally/wallycore.java"
+result="swig_java/src/com/blockstream/libwally/Wally.java"
 
-# Merge the constants and JNI interface into wallycore.java
-grep -v '^}$' swig_java/wallycoreJNI.java | $sed_exe 's/wallycoreJNI/wallycore/g' >$result
+# Merge the constants and JNI interface into Wally.java
+grep -v '^}$' swig_java/wallycoreJNI.java | $sed_exe 's/wallycoreJNI/Wally/g' >$result
 grep 'public final static' swig_java/wallycoreConstants.java >>$result
 echo '}' >>$result
 

@@ -47,19 +47,19 @@ SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream
 
 swig_java/swig_java_wrap.c: swig_java/swig.i
 	$(AM_V_at)$(SWIG) $(SWIG_JOPT) -o $@ $< && \
-    $(GNU_SED) -i 's/wallycoreJNI/wallycore/g' $@ && \
+    $(GNU_SED) -i 's/wallycoreJNI/Wally/g' $@ && \
     $(GNU_SED) -i 's/ = (char \*) (\*jenv)->Get/ = (unsigned char \*) (\*jenv)->Get/g' $@
 
 cblw=com/blockstream/libwally
 sjs=swig_java/src
-$(sjs)/$(cblw)/wallycore.java: swig_java/swig_java_wrap.c
+$(sjs)/$(cblw)/Wally.java: swig_java/swig_java_wrap.c
 	$(AM_V_at)$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
 
-$(sjs)/$(cblw)/wallycore.class: $(sjs)/$(cblw)/wallycore.java
-	$(AM_V_at)$(JAVAC) -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/wallycore.java
+$(sjs)/$(cblw)/Wally.class: $(sjs)/$(cblw)/Wally.java
+	$(AM_V_at)$(JAVAC) -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/Wally.java
 
-swig_java/wallycore.jar: $(sjs)/$(cblw)/wallycore.class
-	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/wallycore$$Obj.class' -C $(sjs) '$(cblw)/wallycore.class'
+swig_java/wallycore.jar: $(sjs)/$(cblw)/Wally.class
+	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/Wally$$Obj.class' -C $(sjs) '$(cblw)/Wally.class'
 
 if HAVE_JAVAC
 all: swig_java/wallycore.jar

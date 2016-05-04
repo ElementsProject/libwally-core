@@ -31,7 +31,7 @@ static int int_cast(JNIEnv *jenv, size_t value) {
 }
 
 /* Use a static class to hold our opaque pointers */
-#define OBJ_CLASS "com/blockstream/libwally/wallycore$Obj"
+#define OBJ_CLASS "com/blockstream/libwally/Wally$Obj"
 
 /* Create and return a java object to hold an opaque pointer */
 static jobject create_obj(JNIEnv *jenv, void* p, int id) {
