@@ -27,9 +27,9 @@ static void store_index(size_t bits, unsigned char *bytes_out, size_t n, size_t 
             U8_AT(bytes_out, pos) |= U8_MASK(pos);
 }
 
-char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, size_t len)
+char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, size_t len_in)
 {
-    size_t total_bits = len * 8u; /* bits in 'bytes' */
+    size_t total_bits = len_in * 8u; /* bits in 'bytes' */
     size_t total_mnemonics = total_bits / w->bits; /* Mnemonics in 'bytes' */
     size_t i, str_len = 0;
     char *str = NULL;

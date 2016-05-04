@@ -89,11 +89,11 @@ static size_t len_to_mask(size_t len)
     return 0;
 }
 
-static size_t bip39_checksum(const unsigned char *bytes_in, size_t len, size_t mask)
+static size_t bip39_checksum(const unsigned char *bytes_in, size_t len_in, size_t mask)
 {
     struct sha256 sha;
     size_t ret;
-    sha256(&sha, bytes_in, len);
+    sha256(&sha, bytes_in, len_in);
     ret = sha.u.u8[0] | (sha.u.u8[1] << 8);
     clear(&sha, sizeof(sha));
     return ret & mask;

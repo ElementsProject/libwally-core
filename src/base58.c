@@ -159,33 +159,33 @@ uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len_in)
 }
 
 
-int base58_from_bytes(unsigned char *bytes_in, size_t len,
+int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
                       uint32_t flags, char **output)
 {
     uint32_t checksum, *cs_p = NULL;
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
-    size_t bn_bytes = 0, zeros, i, orig_len = len;
+    size_t bn_bytes = 0, zeros, i, orig_len = len_in;
     int ret = WALLY_EINVAL;
 
     *output = NULL;
 
-    if (flags & ~BASE58_FLAG_CHECKSUM || !len)
+    if (flags & ~BASE58_FLAG_CHECKSUM || !len_in)
         goto cleanup; /* Invalid flags or no input */
 
     if (flags & BASE58_FLAG_CHECKSUM) {
-        checksum = base58_get_checksum(bytes_in, len);
+        checksum = base58_get_checksum(bytes_in, len_in);
         cs_p = &checksum;
-        len += 4;
+        len_in += 4;
     }
 
 #define b(n) (n < orig_len ? bytes_in[n] : ((unsigned char *)cs_p)[n - orig_len])
 
     /* Process leading zeros */
-    for (zeros = 0; zeros < len && !b(zeros); ++zeros)
+    for (zeros = 0; zeros < len_in && !b(zeros); ++zeros)
         ; /* no-op*/
 
-    if (zeros == len) {
+    if (zeros == len_in) {
         if (!(*output = malloc(zeros + 1)))
             goto cleanup;
 
@@ -194,7 +194,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
         return WALLY_OK; /* All 0's */
     }
 
-    bn_bytes = (len - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
+    bn_bytes = (len_in - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
 
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_bytes > BIGNUM_BYTES)
@@ -204,7 +204,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len,
     top_byte = bn + bn_bytes - 1;
     *top_byte = 0;
 
-    for (i = zeros; i < len; ++i) {
+    for (i = zeros; i < len_in; ++i) {
         uint32_t carry = b(i);
         for (bn_p = bn + bn_bytes - 1; bn_p >= top_byte; --bn_p) {
             carry = *bn_p * 256 + carry;
