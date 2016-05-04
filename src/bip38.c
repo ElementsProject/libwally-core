@@ -114,22 +114,14 @@ static int address_from_private_key(const unsigned char *bytes_in,
 static void aes_enc(const unsigned char *src, const unsigned char *xor,
                     const unsigned char *key, unsigned char *bytes_out)
 {
-    uint32_t plaintext[AES_BLOCK_LEN / sizeof(uint32_t)];
+    unsigned char plaintext[AES_BLOCK_LEN];
     size_t i;
 
-    if (alignment_ok(src, sizeof(uint32_t)) && alignment_ok(xor, sizeof(uint32_t)))
-        for (i = 0; i < sizeof(plaintext) / sizeof(plaintext[0]); ++i)
-            plaintext[i] = ((uint32_t *)src)[i] ^ ((uint32_t *)xor)[i];
-    else {
-        unsigned char *p = (unsigned char *)plaintext;
-        for (i = 0; i < sizeof(plaintext); ++i)
-            p[i] = src[i] ^ xor[i];
-    }
+    for (i = 0; i < sizeof(plaintext); ++i)
+        plaintext[i] = src[i] ^ xor[i];
 
-    wally_aes(key, AES_KEY_LEN_256,
-              (unsigned char *)plaintext, AES_BLOCK_LEN,
-              AES_FLAG_ENCRYPT,
-              bytes_out, AES_BLOCK_LEN);
+    wally_aes(key, AES_KEY_LEN_256, plaintext, AES_BLOCK_LEN,
+              AES_FLAG_ENCRYPT, bytes_out, AES_BLOCK_LEN);
 
     clear(plaintext, sizeof(plaintext));
 }
