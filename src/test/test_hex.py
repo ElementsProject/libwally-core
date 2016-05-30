@@ -9,20 +9,20 @@ class HexTests(unittest.TestCase):
 
         for i in range(256):
             for s in ("%02X" % i, "%02x" % i): # Upper/Lower
-                ret, written = wally_hex_to_bytes(s * LEN, buf, buf_len)
+                ret, written = wally_hex_to_bytes(utf8(s * LEN), buf, buf_len)
                 self.assertEqual((ret, written), (WALLY_OK, LEN))
 
         # Bad inputs
-        for (s, b, l) in [(None,  buf,  buf_len),
-                          ('00',  None, buf_len),
-                          ('000', buf,  buf_len),
-                          ('00',  buf,  0)]:
+        for (s, b, l) in [(None,        buf,  buf_len),
+                          (utf8('00'),  None, buf_len),
+                          (utf8('000'), buf,  buf_len),
+                          (utf8('00'),  buf,  0)]:
             ret, written = wally_hex_to_bytes(s, b, l)
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
         for l in (1,    # Too small, returns the required length
                   LEN): # Too large, returns length written
-            ret, written = wally_hex_to_bytes('0000', buf, l)
+            ret, written = wally_hex_to_bytes(utf8('0000'), buf, l)
             self.assertEqual((ret, written), (WALLY_OK, 2))
 
 
