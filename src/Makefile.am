@@ -79,6 +79,7 @@ libwallycore_la_SOURCES = \
     bip32.c \
     bip38.c \
     bip39.c \
+    hex.c \
     hmac.c \
     internal.c \
     mnemonic.c \
@@ -87,8 +88,8 @@ libwallycore_la_SOURCES = \
     wordlist.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
-    ccan/ccan/crypto/sha512/sha512.c
-
+    ccan/ccan/crypto/sha512/sha512.c \
+    ccan/ccan/str/hex/hex.c
 
 libwallycore_la_INCLUDES = \
     include/wally_bip32.h \
@@ -118,6 +119,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py

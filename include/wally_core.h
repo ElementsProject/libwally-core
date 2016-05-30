@@ -60,6 +60,33 @@ WALLY_CORE_API int wally_secp_randomize(
     const unsigned char *bytes_in,
     size_t len_in);
 
+/**
+ * Convert bytes to a (lower-case) hexadecimal string.
+ *
+ * @bytes_in Bytes to convert.
+ * @len_in Size of @bytes_in in bytes.
+ * @output Destination for the resulting hexadecimal string.
+ *
+ * The string returned should be freed using @wally_free_string.
+ */
+WALLY_CORE_API int wally_bytes_to_hex(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    char **output);
+
+/**
+ * Convert a hexadecimal string to bytes.
+ *
+ * @hex String to convert.
+ * @bytes_out: Where to store the resulting bytes.
+ * @len: The length of @bytes_out in bytes.
+ * @written: Destination for the number of bytes written to @bytes_out.
+ */
+WALLY_CORE_API int wally_hex_to_bytes(
+    const char *hex,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 #endif /* WALLY_CORE_H */
 

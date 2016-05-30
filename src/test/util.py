@@ -66,6 +66,8 @@ for f in (
     ('wally_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha256d', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_bytes_to_hex', c_int, [c_void_p, c_ulong, c_char_p_p]),
+    ('wally_hex_to_bytes', c_int, [c_char_p, c_void_p, c_ulong, c_ulong_p]),
     ('wally_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p]),
     ('wally_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p]),
     ('wally_aes', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
