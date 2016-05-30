@@ -69,7 +69,7 @@ WALLY_CORE_API int wally_secp_randomize(
  *
  * The string returned should be freed using @wally_free_string.
  */
-WALLY_CORE_API int wally_bytes_to_hex(
+WALLY_CORE_API int wally_hex_from_bytes(
     const unsigned char *bytes_in,
     size_t len_in,
     char **output);

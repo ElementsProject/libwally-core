@@ -5,13 +5,22 @@
 #include <stdlib.h>
 #include "ccan/ccan/str/hex/hex.h"
 
-int wally_bytes_to_hex(const unsigned char *bytes_in, size_t len_in,
-                       char **output)
+int wally_hex_from_bytes(const unsigned char *bytes_in, size_t len_in,
+                         char **output)
 {
-    (void)bytes_in;
-    (void)len_in;
-    (void)output;
-    return 0;
+    if (output)
+        *output = NULL;
+
+    if (!bytes_in || !len_in || !output)
+        return WALLY_EINVAL;
+
+    *output = malloc(hex_str_size(len_in));
+    if (!output)
+        return WALLY_ENOMEM;
+
+    /* Note we ignore the return value as this call cannot fail */
+    hex_encode(bytes_in, len_in, *output, hex_str_size(len_in));
+    return WALLY_OK;
 }
 
 int wally_hex_to_bytes(const char *hex,

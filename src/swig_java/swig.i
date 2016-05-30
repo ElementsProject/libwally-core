@@ -228,7 +228,7 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
-%returns_string(wally_bytes_to_hex);
+%returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
 %returns_void__(wally_scrypt);
 %returns_array_(wally_sha256, 3, 4, SHA256_LEN);

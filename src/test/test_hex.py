@@ -26,5 +26,21 @@ class HexTests(unittest.TestCase):
             self.assertEqual((ret, written), (WALLY_OK, 2))
 
 
+    def test_hex_from_bytes(self):
+        LEN = 4
+
+        for i in range(256):
+            s = "%02x" % i * LEN
+            buf, buf_len = make_cbuffer(s)
+            ret, retstr = wally_hex_from_bytes(buf, buf_len)
+            self.assertEqual((ret, retstr), (WALLY_OK, s))
+
+        # Bad inputs
+        for (b, l) in [(None,  buf_len),
+                       (buf,  0)]:
+            ret, written = wally_hex_from_bytes(b, l)
+            self.assertEqual((ret, written), (WALLY_EINVAL, None))
+
+
 if __name__ == '__main__':
     unittest.main()
