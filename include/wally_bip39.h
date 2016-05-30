@@ -44,6 +44,10 @@ WALLY_CORE_API int bip39_get_wordlist(
 /**
  * Get the 'index'th word from a word list.
  *
+ * @w Word list to use. Pass NULL to use the default English list.
+ * @index The 0-based index of the word in @w.
+ * @output Destination for the resulting word.
+ *
  * The string returned should be freed using @wally_free_string.
  */
 WALLY_CORE_API int bip39_get_word(
@@ -56,6 +60,7 @@ WALLY_CORE_API int bip39_get_word(
  * @w Word list to use. Pass NULL to use the default English list.
  * @bytes_in: Entropy to convert.
  * @len_in: The length of @bytes_in in bytes.
+ * @output Destination for the resulting mnemonic sentence.
  *
  * The string returned should be freed using @wally_free_string.
  */
@@ -71,6 +76,7 @@ WALLY_CORE_API int bip39_mnemonic_from_bytes(
  * @mnemonic Mnemonic to convert.
  * @bytes_out: Where to store the resulting entropy.
  * @len: The length of @bytes_out in bytes.
+ * @written: Destination for the number of bytes written to @bytes_out.
  */
 WALLY_CORE_API int bip39_mnemonic_to_bytes(
     const struct words *w,
@@ -95,6 +101,7 @@ WALLY_CORE_API int bip39_mnemonic_validate(
  * @bytes_out The destination for the binary seed.
  * @len The length of @bytes_out in bytes. Currently This must
  *      be @BIP39_SEED_LEN_512.
+ * @written: Destination for the number of bytes written to @bytes_out.
  */
 WALLY_CORE_API int bip39_mnemonic_to_seed(
     const char *mnemonic,

@@ -74,6 +74,7 @@ WALLY_CORE_API int wally_aes(
  * @flags: AES_FLAG_ constants indicating the desired behaviour.
  * @bytes_out: Destination for the encrypted/decrypted data.
  * @len: The length of @bytes_out in bytes. Must be a multiple of @AES_BLOCK_LEN.
+ * @written: Destination for the number of bytes written to @bytes_out.
  *
  * Defaults to PKCS#7 padding.
  */
