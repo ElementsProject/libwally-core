@@ -1,0 +1,9 @@
+  // Support methods for the JNI class
+
+  public final static byte[] hex_to_bytes(String arg) {
+      final byte[] ret = new byte[arg.length() / 2];
+      if (hex_to_bytes(arg, ret) != ret.length)
+          throw new IllegalArgumentException("invalid hex string length");
+      return ret;
+  }
+}
