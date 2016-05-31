@@ -163,7 +163,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
     w = 0; $1 = ($1_ltype)&w;
 }
 %typemap(argout) const struct NAME ** {
-    $result = create_obj(jenv, *$1, ID);
+    if (*$1)
+        $result = create_obj(jenv, *$1, ID);
 }
 %typemap (in) const struct NAME * {
     $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
