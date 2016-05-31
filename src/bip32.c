@@ -362,6 +362,24 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len_in,
     return 0;
 }
 
+int bip32_key_unserialise_alloc(const unsigned char *bytes_in, size_t len_in,
+                                const struct ext_key **output)
+{
+    int ret;
+
+    if (!output)
+        return WALLY_EINVAL;
+    *output = malloc(sizeof(struct ext_key));
+    if (!*output)
+        return WALLY_ENOMEM;
+    ret = bip32_key_unserialise(bytes_in, len_in, (struct ext_key *)*output);
+    if (ret) {
+        free((void *)*output);
+        *output = 0;
+    }
+    return ret;
+}
+
 /* BIP32: Child Key Derivations
  *
  * The spec doesn't have a simple table of derivations, its:

@@ -83,7 +83,7 @@ WALLY_CORE_API int bip32_key_from_seed(
 /**
  * As per @bip32_key_from_seed, but allocates the key.
  *
- * @note The returned key should be free with @bip32_key_free.
+ * @note The returned key should be freed with @bip32_key_free.
  */
 WALLY_CORE_API int bip32_key_from_seed_alloc(
     const unsigned char *bytes_in,
@@ -107,6 +107,7 @@ WALLY_CORE_API int bip32_key_serialise(
     size_t len);
 
 
+#ifndef SWIG
 /**
  * Un-serialise an extended key from memory.
  *
@@ -118,7 +119,17 @@ WALLY_CORE_API int bip32_key_unserialise(
     const unsigned char *bytes_in,
     size_t len_in,
     struct ext_key *output);
+#endif
 
+/**
+ * As per @bip32_key_unserialise, but allocates the key.
+ *
+ * @note The returned key should be freed with @bip32_key_free.
+ */
+WALLY_CORE_API int bip32_key_unserialise_alloc(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    const struct ext_key **output);
 
 /**
  * Create a new child extended key from a parent extended key.

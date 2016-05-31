@@ -227,6 +227,8 @@ typedef unsigned int uint32_t;
 %returns_void__(bip32_key_free);
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
+%returns_struct(bip32_key_unserialise_alloc, ext_key);
+%rename("bip32_key_unserialise") bip32_key_unserialise_alloc;
 %returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALISED_LEN);
 %returns_string(bip38_from_private_key);
 %returns_array_(bip38_raw_to_private_key, 6, 7, 32);
