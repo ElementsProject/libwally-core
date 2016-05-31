@@ -35,7 +35,7 @@ static int int_cast(JNIEnv *jenv, size_t value) {
 #define OBJ_CLASS "com/blockstream/libwally/Wally$Obj"
 
 /* Create and return a java object to hold an opaque pointer */
-static jobject create_obj(JNIEnv *jenv, void* p, int id) {
+static jobject create_obj(JNIEnv *jenv, void *p, int id) {
     jclass clazz;
     jmethodID ctor;
 
@@ -47,9 +47,10 @@ static jobject create_obj(JNIEnv *jenv, void* p, int id) {
 }
 
 /* Fetch an opaque pointer from a java object */
-static void* get_obj(JNIEnv *jenv, jobject obj, int id) {
+static void *get_obj(JNIEnv *jenv, jobject obj, int id) {
     jclass clazz;
     jmethodID getter;
+    void *ret;
 
     if (!obj || !(clazz = (*jenv)->GetObjectClass(jenv, obj)))
         return NULL;
@@ -58,11 +59,14 @@ static void* get_obj(JNIEnv *jenv, jobject obj, int id) {
         (*jenv)->ExceptionOccurred(jenv))
         return NULL;
     getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
-    return getter ? (void *)(uintptr_t)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
+    if (!getter)
+        return NULL;
+    ret = (void *)(uintptr_t)((*jenv)->CallLongMethod(jenv, obj, getter));
+    return (*jenv)->ExceptionOccurred(jenv) ? NULL : ret;
 }
 
 static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *name) {
-    void * ret = get_obj(jenv, obj, id);
+    void *ret = get_obj(jenv, obj, id);
     if (!ret)
         SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, name);
     return ret;
