@@ -5,12 +5,12 @@
 
 #include <stdint.h>
 
-/** The required lengths of entropy for @bip32_key_from_bytes */
-#define BIP32_ENTROPY_LEN_128 16u
-#define BIP32_ENTROPY_LEN_256 32u
+/** The required lengths of entropy for @bip32_key_from_seed */
+#define BIP32_ENTROPY_LEN_128 16
+#define BIP32_ENTROPY_LEN_256 32
 
 /** Length of an ext_key serialised using BIP32 format */
-#define BIP32_SERIALISED_LEN ((size_t)(4 + 1 + 4 + 4 + 32 + 33))
+#define BIP32_SERIALISED_LEN 78
 
 /** Child number of the first hardened child */
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
@@ -59,16 +59,23 @@ struct ext_key {
  * @bytes_in Entropy to use.
  * @len_in Size of @bytes_in in bytes.
  * @version Either @BIP32_VER_MAIN_PRIVATE or @BIP32_VER_TEST_PRIVATE.
- * @key_out Destination for the resulting master extended key.
+ * @output Destination for the resulting master extended key.
  *
  * @dest Destination for the resulting master extended key.
  */
-WALLY_CORE_API int bip32_key_from_bytes(
+#ifndef SWIG
+WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes_in,
     size_t len_in,
     uint32_t version,
-    struct ext_key *key_out);
+    struct ext_key *output);
+#endif
 
+WALLY_CORE_API int bip32_key_from_seed_alloc(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t version,
+    const struct ext_key **output);
 
 /**
  * Serialise an extended key to memory using BIP32 format.
@@ -91,12 +98,12 @@ WALLY_CORE_API int bip32_key_serialise(
  *
  * @bytes_in Storage holding the serialised key.
  * @len_in Size of @bytes_in in bytes. Must be @BIP32_SERIALISED_LEN.
- * @key_out Destination for the resulting extended key.
+ * @output Destination for the resulting extended key.
  */
 WALLY_CORE_API int bip32_key_unserialise(
     const unsigned char *bytes_in,
     size_t len_in,
-    struct ext_key *key_out);
+    struct ext_key *output);
 
 
 /**
@@ -110,12 +117,12 @@ WALLY_CORE_API int bip32_key_unserialise(
  * @flags BIP32_KEY_ Flags indicating the type of derivation wanted.
  *        You can not derive a private child extended key from a public
  *        parent extended key.
- * @key_out Destination for the resulting child extended key.
+ * @output Destination for the resulting child extended key.
  */
 WALLY_CORE_API int bip32_key_from_parent(
     const struct ext_key *key_in,
     uint32_t child_num,
     uint32_t flags,
-    struct ext_key *key_out);
+    struct ext_key *output);
 
 #endif /* LIBWALLY_CORE_BIP32_H */

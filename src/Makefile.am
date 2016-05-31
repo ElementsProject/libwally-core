@@ -68,7 +68,7 @@ $(sjs)/$(cbt)/%.class: $(sjs)/$(cbt)/%.java
 if HAVE_JAVAC
 all: swig_java/wallycore.jar
 
-SWIG_JAVA_TEST_DEPS = $(sjs)/$(cbt)/test_mnemonic.class
+SWIG_JAVA_TEST_DEPS = $(sjs)/$(cbt)/test_bip32.class $(sjs)/$(cbt)/test_mnemonic.class
 
 all: $(SWIG_JAVA_TEST_DEPS)
 
@@ -145,5 +145,6 @@ if USE_SWIG_PYTHON
 endif
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS
+	$(AM_V_at)$(JAVA_TEST)test_bip32
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
 endif

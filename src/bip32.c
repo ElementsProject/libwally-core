@@ -146,8 +146,8 @@ static void key_compute_hash160(struct ext_key *key_out)
 }
 
 
-int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len_in,
-                         uint32_t version, struct ext_key *key_out)
+int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
+                        uint32_t version, struct ext_key *key_out)
 {
     struct sha512 sha;
 
@@ -185,6 +185,24 @@ int bip32_key_from_bytes(const unsigned char *bytes_in, size_t len_in,
     key_compute_hash160(key_out);
     clear(&sha, sizeof(sha));
     return 0;
+}
+
+int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
+                              uint32_t version, const struct ext_key **output)
+{
+    int ret;
+
+    if (!output)
+        return WALLY_EINVAL;
+    *output = malloc(sizeof(struct ext_key));
+    if (!*output)
+        return WALLY_ENOMEM;
+    ret = bip32_key_from_seed(bytes_in, len_in, version, (struct ext_key *)*output);
+    if (ret) {
+        free((void *)*output);
+        *output = 0;
+    }
+    return ret;
 }
 
 static unsigned char *copy_out(unsigned char *dest,

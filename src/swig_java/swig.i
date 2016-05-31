@@ -1,6 +1,7 @@
 %module wallycore
 %{
 #include "../include/wally_core.h"
+#include "../include/wally_bip32.h"
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
@@ -213,8 +214,12 @@ typedef unsigned int uint32_t;
 
 /* Our wrapped opaque types */
 %java_opaque_struct(words, 1)
+%java_opaque_struct(ext_key, 2)
+
 
 /* Our wrapped functions return types */
+%returns_struct(bip32_key_from_seed_alloc, ext_key);
+%rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALISED_LEN);
 %returns_string(bip38_from_private_key);
 %returns_array_(bip38_raw_to_private_key, 6, 7, 32);
@@ -241,6 +246,7 @@ typedef unsigned int uint32_t;
 %returns_void__(wally_secp_randomize);
 
 %include "../include/wally_core.h"
+%include "../include/wally_bip32.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"

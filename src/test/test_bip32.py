@@ -88,8 +88,8 @@ class BIP32Tests(unittest.TestCase):
     def get_test_master_key(self, vec):
         seed, seed_len = make_cbuffer(vec['seed'])
         master = ext_key()
-        ret = bip32_key_from_bytes(seed, seed_len,
-                                   self.VER_MAIN_PRIVATE, byref(master))
+        ret = bip32_key_from_seed(seed, seed_len,
+                                  self.VER_MAIN_PRIVATE, byref(master))
         self.assertEqual(ret, 0)
         return master
 
@@ -163,7 +163,7 @@ class BIP32Tests(unittest.TestCase):
             self.assertEqual(ret, expected)
 
 
-    def test_key_from_bytes(self):
+    def test_key_from_seed(self):
 
         seed, seed_len = make_cbuffer(vec_1['seed'])
         key_out = ext_key()
@@ -174,7 +174,7 @@ class BIP32Tests(unittest.TestCase):
                      (self.VER_TEST_PUBLIC,  -1),
                      (self.VER_TEST_PRIVATE,  0)]
         for ver, expected in ver_cases:
-            ret = bip32_key_from_bytes(seed, seed_len, ver, byref(key_out))
+            ret = bip32_key_from_seed(seed, seed_len, ver, byref(key_out))
             self.assertEqual(ret, expected)
 
 
