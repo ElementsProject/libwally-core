@@ -145,6 +145,13 @@ static void key_compute_hash160(struct ext_key *key_out)
     clear(&sha, sizeof(sha));
 }
 
+int bip32_key_free(const struct ext_key *key_in)
+{
+    if (!key_in)
+        return WALLY_EINVAL;
+    free((void *)key_in);
+    return WALLY_OK;
+}
 
 int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
                         uint32_t version, struct ext_key *key_out)

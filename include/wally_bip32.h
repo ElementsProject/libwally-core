@@ -53,6 +53,16 @@ struct ext_key {
 #endif /* SWIG */
 
 /**
+ * Free a key allocated by @bip32_key_from_seed_alloc
+ * or @bip32_key_unserialise_alloc.
+ *
+ * @key_in Key to free.
+ */
+WALLY_CORE_API int bip32_key_free(
+    const struct ext_key *key_in);
+
+#ifndef SWIG
+/**
  * Create a new master extended key from entropy.
  *
  * This creates a new master key, i.e. the root of a new HD tree.
@@ -63,7 +73,6 @@ struct ext_key {
  *
  * @dest Destination for the resulting master extended key.
  */
-#ifndef SWIG
 WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes_in,
     size_t len_in,
@@ -71,6 +80,11 @@ WALLY_CORE_API int bip32_key_from_seed(
     struct ext_key *output);
 #endif
 
+/**
+ * As per @bip32_key_from_seed, but allocates the key.
+ *
+ * @note The returned key should be free with @bip32_key_free.
+ */
 WALLY_CORE_API int bip32_key_from_seed_alloc(
     const unsigned char *bytes_in,
     size_t len_in,
