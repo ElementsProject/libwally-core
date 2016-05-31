@@ -54,7 +54,8 @@ static void* get_obj(JNIEnv *jenv, jobject obj, int id) {
     if (!obj || !(clazz = (*jenv)->GetObjectClass(jenv, obj)))
         return NULL;
     getter = (*jenv)->GetMethodID(jenv, clazz, "get_id", "()I");
-    if (!getter || (*jenv)->CallIntMethod(jenv, obj, getter) != id)
+    if (!getter || (*jenv)->CallIntMethod(jenv, obj, getter) != id ||
+        (*jenv)->ExceptionOccurred(jenv))
         return NULL;
     getter = (*jenv)->GetMethodID(jenv, clazz, "get", "()J");
     return getter ? (void *)(uintptr_t)((*jenv)->CallLongMethod(jenv, obj, getter)) : NULL;
