@@ -2,6 +2,7 @@ bld
 src/*.pyc
 src/test/*.pyc
 *~
+*.class
 *.gcno
 *.gcda
 *.o
@@ -39,7 +40,7 @@ src/test-suite.log
 src/swig_java/swig_java_wrap.c
 src/swig_java/*.java
 src/swig_java/*.jar
-src/swig_java/src/
+src/swig_java/src/com/blockstream/libwally
 src/swig_python/swig_python_wrap.c
 src/swig_python/wallycore.py
 tools/build-aux/m4/l*.m4

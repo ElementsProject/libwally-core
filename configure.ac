@@ -216,15 +216,28 @@ if test "x$swig_java" == "xyes"; then
 fi
 
 if test "x$JAVA_HOME" != "x"; then
+    JAVA="$JAVA_HOME/bin/java"
+    AC_SUBST([JAVA])
     JAVAC="$JAVA_HOME/bin/javac"
     AC_SUBST([JAVAC])
     JAR="$JAVA_HOME/bin/jar"
     AC_SUBST([JAR])
 else
+    AC_CHECK_PROGS(JAVA, [java])
     AC_CHECK_PROGS(JAVAC, [javac])
     AC_CHECK_PROGS(JAR, [jar])
 fi
+AM_CONDITIONAL([HAVE_JAVA], [test "x$JAVA" != "x"])
 AM_CONDITIONAL([HAVE_JAVAC], [test "x$JAVAC" != "x"])
+if test "x$swig_java" == "xyes"; then
+    if test "x$JAVAC" != "x"; then
+        if test "x$JAVA" != "x"; then
+            # Only run tests if we have java-swig, compiler and interpreter
+            run_java_tests="yes"
+        fi
+    fi
+fi
+AM_CONDITIONAL([RUN_JAVA_TESTS], [test "x$run_java_tests" != "x"])
 JAVAC_TARGET=1.7
 AC_SUBST([JAVAC_TARGET])
 

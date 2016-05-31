@@ -1,4 +1,4 @@
-package com.blockstream.libwally;
+package com.blockstream.test;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -6,15 +6,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.blockstream.libwally.Wally;
 import static com.blockstream.libwally.Wally.BIP39_ENTROPY_LEN_256;
 import static com.blockstream.libwally.Wally.BIP39_SEED_LEN_512;
 
-public class Mnemonic {
+public class test_mnemonic {
 
     private final SecureRandom sr = new SecureRandom();
     private final Object wl;
 
-    public Mnemonic(final String lang) {
+    public test_mnemonic(final String lang) {
         this.wl = Wally.bip39_get_wordlist(lang);
     }
 
@@ -69,9 +70,10 @@ public class Mnemonic {
         aMap.put(null, new byte[BIP39_ENTROPY_LEN_256]);
         testMap = Collections.unmodifiableMap(aMap);
     }
+
     public static void main(final String[] args) {
         for (final String lang : getLanguages()) {
-            final Mnemonic m = new Mnemonic(lang);
+            final test_mnemonic m = new test_mnemonic(lang);
             final String phrase = m.generate();
             if (!m.check(phrase) ||
                 m.check(String.format("%s foo", phrase)) ||

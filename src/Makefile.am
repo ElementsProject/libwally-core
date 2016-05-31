@@ -51,6 +51,7 @@ swig_java/swig_java_wrap.c: swig_java/swig.i
     $(GNU_SED) -i 's/ = (char \*) (\*jenv)->Get/ = (unsigned char \*) (\*jenv)->Get/g' $@
 
 cblw=com/blockstream/libwally
+cbt=com/blockstream/test
 sjs=swig_java/src
 $(sjs)/$(cblw)/Wally.java: swig_java/swig_java_wrap.c
 	$(AM_V_at)$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
@@ -61,15 +62,25 @@ $(sjs)/$(cblw)/Wally.class: $(sjs)/$(cblw)/Wally.java
 swig_java/wallycore.jar: $(sjs)/$(cblw)/Wally.class
 	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/Wally$$Obj.class' -C $(sjs) '$(cblw)/Wally.class'
 
+$(sjs)/$(cbt)/%.class: $(sjs)/$(cbt)/%.java
+	$(AM_V_at)$(JAVAC) -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs) $^
+
 if HAVE_JAVAC
 all: swig_java/wallycore.jar
-endif
+
+SWIG_JAVA_TEST_DEPS = $(sjs)/$(cbt)/test_mnemonic.class
+
+all: $(SWIG_JAVA_TEST_DEPS)
+
+JAVA_TEST = LD_LIBRARY_PATH=.libs $(JAVA) -classpath $(sjs) com.blockstream.test.
+
+endif # HAVE_JAVAC
 
 .PHONY: clean-swig-java
 clean-swig-java:
-	$(AM_V_at)rm -rf swig_java/swig_java_wrap.c swig_java/src swig_java/*.java swig_java/*.jar
+	$(AM_V_at)rm -rf swig_java/swig_java_wrap.c $(sjs)/$(cblw) $(sjs)/$(cbt)/*.class swig_java/*.java swig_java/*.jar
 clean-local: clean-swig-java
-endif
+endif # USE_SWIG_JAVA
 
 lib_LTLIBRARIES = libwallycore.la
 
@@ -113,7 +124,7 @@ test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES)
 endif
 
-check-local: $(SWIG_PYTHON_TEST_DEPS)
+check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
 if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
@@ -133,3 +144,6 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 endif
 endif # RUN_PYTHON_TESTS
+if RUN_JAVA_TESTS
+	$(AM_V_at)$(JAVA_TEST)test_mnemonic
+endif
