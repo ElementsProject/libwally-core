@@ -40,7 +40,7 @@ static void assert_assumptions(void)
      * this is a public key with no private key (A BIP32 'neutered' key).
      *
      * For this to work BIP32_KEY_PRIVATE must be zero so the whole 33 byte
-     * private key is valid when serialised, and BIP32_KEY_PUBLIC cannot be
+     * private key is valid when serialized, and BIP32_KEY_PUBLIC cannot be
      * 2 or 3 as they are valid parity bytes for public keys.
      */
     BUILD_ASSERT(BIP32_KEY_PRIVATE == 0);
@@ -258,22 +258,22 @@ static int wipe_mem_fail(unsigned char *bytes_out, size_t len)
     return -1;
 }
 
-int bip32_key_serialise(const struct ext_key *key_in, uint32_t flags,
+int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
                         unsigned char *bytes_out, size_t len)
 {
-    const bool serialise_private = !(flags & BIP32_KEY_PUBLIC);
+    const bool serialize_private = !(flags & BIP32_KEY_PUBLIC);
     unsigned char *out = bytes_out;
     uint32_t tmp32;
     beint32_t tmp32_be;
 
     /* Validate our arguments and then the input key */
-    if (len != BIP32_SERIALISED_LEN ||
-        (serialise_private && !key_is_private(key_in)) ||
+    if (len != BIP32_SERIALIZED_LEN ||
+        (serialize_private && !key_is_private(key_in)) ||
         !key_is_valid(key_in))
         return wipe_mem_fail(bytes_out, len);
 
     tmp32 = key_in->version;
-    if (!serialise_private) {
+    if (!serialize_private) {
         /* Change version if serialising the public part of a private key */
         if (tmp32 == BIP32_VER_MAIN_PRIVATE)
             tmp32 = BIP32_VER_MAIN_PUBLIC;
@@ -293,7 +293,7 @@ int bip32_key_serialise(const struct ext_key *key_in, uint32_t flags,
 
     out = copy_out(out, key_in->chain_code, sizeof(key_in->chain_code));
 
-    if (serialise_private)
+    if (serialize_private)
         copy_out(out, key_in->priv_key, sizeof(key_in->priv_key));
     else
         copy_out(out, key_in->pub_key, sizeof(key_in->pub_key));
@@ -315,10 +315,10 @@ static int wipe_key_fail(struct ext_key *key_out)
     return -1;
 }
 
-int bip32_key_unserialise(const unsigned char *bytes_in, size_t len_in,
+int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
                           struct ext_key *key_out)
 {
-    if (len_in != BIP32_SERIALISED_LEN)
+    if (len_in != BIP32_SERIALIZED_LEN)
         return wipe_key_fail(key_out);
 
     bytes_in = copy_in(&key_out->version, bytes_in, sizeof(key_out->version));
@@ -362,7 +362,7 @@ int bip32_key_unserialise(const unsigned char *bytes_in, size_t len_in,
     return 0;
 }
 
-int bip32_key_unserialise_alloc(const unsigned char *bytes_in, size_t len_in,
+int bip32_key_unserialize_alloc(const unsigned char *bytes_in, size_t len_in,
                                 const struct ext_key **output)
 {
     int ret;
@@ -372,7 +372,7 @@ int bip32_key_unserialise_alloc(const unsigned char *bytes_in, size_t len_in,
     *output = malloc(sizeof(struct ext_key));
     if (!*output)
         return WALLY_ENOMEM;
-    ret = bip32_key_unserialise(bytes_in, len_in, (struct ext_key *)*output);
+    ret = bip32_key_unserialize(bytes_in, len_in, (struct ext_key *)*output);
     if (ret) {
         free((void *)*output);
         *output = 0;

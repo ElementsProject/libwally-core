@@ -18,9 +18,9 @@ public class test_bip32 {
         final String hex = "0488ADE4000000000000000000873DFF81C02F525623FD1FE5167EAC3A55" +
             "A049DE3D314BB42EE227FFED37D50800E8F32E723DECF4051AEFAC8E2C93C9C5B214313817C" +
             "DB01A1494B917C8436B35";
-        final byte[] serialised = Wally.hex_to_bytes(hex);
-        final Object unserialised = Wally.bip32_key_unserialise(serialised);
-        Wally.bip32_key_free(unserialised);
+        final byte[] serialized = Wally.hex_to_bytes(hex);
+        final Object unserialized = Wally.bip32_key_unserialize(serialized);
+        Wally.bip32_key_free(unserialized);
     }
 
     public static void main(final String[] args) {

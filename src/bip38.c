@@ -54,7 +54,7 @@ static void assert_assumptions(void)
     /* 44 -> pad1 + 39 + BASE58_CHECKSUM_LEN */
     BUILD_ASSERT(sizeof(struct bip38_layout_t) == 44u);
     BUILD_ASSERT((sizeof(struct bip38_layout_t) - BASE58_CHECKSUM_LEN - 1) ==
-                 BIP38_SERIALISED_LEN);
+                 BIP38_SERIALIZED_LEN);
 }
 
 /* FIXME: Share this with key_compute_pub_key in bip32.c */
@@ -137,7 +137,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     int ret = WALLY_EINVAL;
 
     if (!bytes_in || len_in != BITCOIN_PRIVATE_KEY_LEN ||
-        !bytes_out || len != BIP38_SERIALISED_LEN)
+        !bytes_out || len != BIP38_SERIALIZED_LEN)
         goto finish;
 
     if (flags & BIP38_KEY_RAW_MODE)
@@ -172,7 +172,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
         memcpy(buf.decode_hash - sizeof(uint32_t), &tmp, sizeof(uint32_t));
     }
 
-    memcpy(bytes_out, &buf.prefix, BIP38_SERIALISED_LEN);
+    memcpy(bytes_out, &buf.prefix, BIP38_SERIALIZED_LEN);
 
 finish:
     clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
@@ -192,9 +192,9 @@ int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
     *output = NULL;
 
     ret = bip38_raw_from_private_key(bytes_in, len_in, pass, pass_len,
-                                     flags, &buf.prefix, BIP38_SERIALISED_LEN);
+                                     flags, &buf.prefix, BIP38_SERIALIZED_LEN);
     if (!ret)
-        ret = base58_from_bytes(&buf.prefix, BIP38_SERIALISED_LEN,
+        ret = base58_from_bytes(&buf.prefix, BIP38_SERIALIZED_LEN,
                                 BASE58_FLAG_CHECKSUM, output);
 
     clear(&buf, sizeof(buf));
@@ -231,17 +231,17 @@ static int to_private_key(const char *bip38,
         goto finish;
 
     if (bytes_in) {
-        if (len_in != BIP38_SERIALISED_LEN)
+        if (len_in != BIP38_SERIALIZED_LEN)
             goto finish;
-        memcpy(&buf.prefix, bytes_in, BIP38_SERIALISED_LEN);
+        memcpy(&buf.prefix, bytes_in, BIP38_SERIALIZED_LEN);
     } else {
         size_t written;
         if ((ret = base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
-                                   BIP38_SERIALISED_LEN + BASE58_CHECKSUM_LEN,
+                                   BIP38_SERIALIZED_LEN + BASE58_CHECKSUM_LEN,
                                    &written)))
             goto finish;
 
-        if (written != BIP38_SERIALISED_LEN) {
+        if (written != BIP38_SERIALIZED_LEN) {
             ret = WALLY_EINVAL;
             goto finish;
         }

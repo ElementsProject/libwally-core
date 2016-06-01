@@ -24,9 +24,9 @@ struct words {
 };
 
 /**
- * Initialise a words structure.
+ * Initialize a words structure.
  *
- * @text: List of words to initialise from, split by whitespace and
+ * @text: List of words to initialize from, split by whitespace and
  *        NUL terminated. Must be UTF-8 encoded.
  *
  * The returned structure contains a copy of @text.

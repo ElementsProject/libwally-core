@@ -9,8 +9,8 @@
 #define BIP32_ENTROPY_LEN_128 16
 #define BIP32_ENTROPY_LEN_256 32
 
-/** Length of an ext_key serialised using BIP32 format */
-#define BIP32_SERIALISED_LEN 78
+/** Length of an ext_key serialized using BIP32 format */
+#define BIP32_SERIALIZED_LEN 78
 
 /** Child number of the first hardened child */
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
@@ -54,7 +54,7 @@ struct ext_key {
 
 /**
  * Free a key allocated by @bip32_key_from_seed_alloc
- * or @bip32_key_unserialise_alloc.
+ * or @bip32_key_unserialize_alloc.
  *
  * @key_in Key to free.
  */
@@ -92,15 +92,15 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
     const struct ext_key **output);
 
 /**
- * Serialise an extended key to memory using BIP32 format.
+ * Serialize an extended key to memory using BIP32 format.
  *
- * @key_in The extended key to serialise.
- * @flags BIP32_KEY_ Flags indicating which key to serialise. You can not
- *        serialise a private extended key from a public extended key.
- * @bytes_out Destination for the serialised key.
- * @len Size of @bytes_out in bytes. Must be @BIP32_SERIALISED_LEN.
+ * @key_in The extended key to serialize.
+ * @flags BIP32_KEY_ Flags indicating which key to serialize. You can not
+ *        serialize a private extended key from a public extended key.
+ * @bytes_out Destination for the serialized key.
+ * @len Size of @bytes_out in bytes. Must be @BIP32_SERIALIZED_LEN.
  */
-WALLY_CORE_API int bip32_key_serialise(
+WALLY_CORE_API int bip32_key_serialize(
     const struct ext_key *key_in,
     uint32_t flags,
     unsigned char *bytes_out,
@@ -109,24 +109,24 @@ WALLY_CORE_API int bip32_key_serialise(
 
 #ifndef SWIG
 /**
- * Un-serialise an extended key from memory.
+ * Un-serialize an extended key from memory.
  *
- * @bytes_in Storage holding the serialised key.
- * @len_in Size of @bytes_in in bytes. Must be @BIP32_SERIALISED_LEN.
+ * @bytes_in Storage holding the serialized key.
+ * @len_in Size of @bytes_in in bytes. Must be @BIP32_SERIALIZED_LEN.
  * @output Destination for the resulting extended key.
  */
-WALLY_CORE_API int bip32_key_unserialise(
+WALLY_CORE_API int bip32_key_unserialize(
     const unsigned char *bytes_in,
     size_t len_in,
     struct ext_key *output);
 #endif
 
 /**
- * As per @bip32_key_unserialise, but allocates the key.
+ * As per @bip32_key_unserialize, but allocates the key.
  *
  * @note The returned key should be freed with @bip32_key_free.
  */
-WALLY_CORE_API int bip32_key_unserialise_alloc(
+WALLY_CORE_API int bip32_key_unserialize_alloc(
     const unsigned char *bytes_in,
     size_t len_in,
     const struct ext_key **output);

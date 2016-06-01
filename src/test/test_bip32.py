@@ -6,7 +6,7 @@ from ctypes import byref
 # representation just obfuscates the data we are validating. For example, the
 # chain codes in pub/priv results can be seen as equal in the hex data only.
 #
-# The vector results are the serialised resulting extended key using either the
+# The vector results are the serialized resulting extended key using either the
 # contained public or private key. This is not to be confused with private or
 # public derivation - these vectors only derive privately.
 vec_1 = {
@@ -71,7 +71,7 @@ vec_1 = {
 
 class BIP32Tests(unittest.TestCase):
 
-    SERIALISED_LEN = 4 + 1 + 4 + 4 + 32 + 33
+    SERIALIZED_LEN = 4 + 1 + 4 + 4 + 32 + 33
     KEY_PRIVATE, KEY_PUBLIC = 0, 1
 
     VER_MAIN_PUBLIC = 0x0488B21E
@@ -80,9 +80,9 @@ class BIP32Tests(unittest.TestCase):
     VER_TEST_PRIVATE = 0x04358394
 
 
-    def unserialise_key(self, buf, buf_len):
+    def unserialize_key(self, buf, buf_len):
         key_out = ext_key()
-        ret = bip32_key_unserialise(buf, buf_len, byref(key_out))
+        ret = bip32_key_unserialize(buf, buf_len, byref(key_out))
         return ret, key_out
 
     def get_test_master_key(self, vec):
@@ -95,7 +95,7 @@ class BIP32Tests(unittest.TestCase):
 
     def get_test_key(self, vec, path, typ):
         buf, buf_len = make_cbuffer(vec[path][typ])
-        ret, key_out = self.unserialise_key(buf, self.SERIALISED_LEN)
+        ret, key_out = self.unserialize_key(buf, self.SERIALIZED_LEN)
         self.assertEqual(ret, 0)
         return key_out
 
@@ -118,7 +118,7 @@ class BIP32Tests(unittest.TestCase):
         # derivation test vectors
         self.assertEqual(h(expected.hash160), h(key.hash160))
         # We can only compare the first 4 bytes of the parent fingerprint
-        # Since that is all thats serialised.
+        # Since that is all thats serialized.
         # FIXME: Implement bip32_key_set_parent and test it here
         fingerprint = lambda k: h(k.parent160)[0:8]
         self.assertEqual(fingerprint(expected), fingerprint(key))
@@ -129,18 +129,18 @@ class BIP32Tests(unittest.TestCase):
         # Try short, correct, long lengths. Trimming 8 chars is the correct
         # length because the vector value contains 4 check bytes at the end.
         for trim, expected in [(0, -1), (8, 0), (16, -1)]:
-            serialised_hex = vec_1['m']['priv'][0:-trim]
-            buf, buf_len = make_cbuffer(serialised_hex)
-            ret, key_out = self.unserialise_key(buf, buf_len)
+            serialized_hex = vec_1['m']['priv'][0:-trim]
+            buf, buf_len = make_cbuffer(serialized_hex)
+            ret, key_out = self.unserialize_key(buf, buf_len)
             self.assertEqual(ret, expected)
             if ret == 0:
-                # Check this key serialises back to the same representation
+                # Check this key serializes back to the same representation
                 # FIXME: Add full test cases for the serialisation code including errors
-                buf, buf_len = make_cbuffer('0' * len(serialised_hex))
-                ret = bip32_key_serialise(key_out, self.KEY_PRIVATE,
+                buf, buf_len = make_cbuffer('0' * len(serialized_hex))
+                ret = bip32_key_serialize(key_out, self.KEY_PRIVATE,
                                           buf, buf_len)
                 self.assertEqual(ret, 0)
-                self.assertEqual(h(buf).upper(), utf8(serialised_hex))
+                self.assertEqual(h(buf).upper(), utf8(serialized_hex))
 
         # Check correct and incorrect version numbers as well
         # as mismatched key types and versions
@@ -159,7 +159,7 @@ class BIP32Tests(unittest.TestCase):
             no_ver = vec_1['m'][typ][8:-8]
             v_str = '0' + hex(ver)[2:]
             buf, buf_len = make_cbuffer(v_str + no_ver)
-            ret, _ = self.unserialise_key(buf, buf_len)
+            ret, _ = self.unserialize_key(buf, buf_len)
             self.assertEqual(ret, expected)
 
 
