@@ -1,4 +1,5 @@
 #include <include/wally_bip32.h>
+#include "bip32_int.h"
 #include "internal.h"
 #include "hmac.h"
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
@@ -534,3 +535,42 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
     }
     return ret;
 }
+
+#ifdef SWIG_JAVA_BUILD
+
+/* Getters for ext_key values */
+
+static int getb_impl(const struct ext_key *key_in,
+                     const unsigned char *src, size_t src_len,
+                     unsigned char *bytes_out, size_t len)
+{
+    if (!key_in || !bytes_out || len != src_len)
+        return WALLY_EINVAL;
+    memcpy(bytes_out, src, len);
+    return WALLY_OK;
+}
+
+#define GET_B(name) \
+    int bip32_key_get_ ## name(const struct ext_key *key_in, unsigned char *bytes_out, size_t len) { \
+        return getb_impl(key_in, key_in->name, sizeof(key_in->name), bytes_out, len); \
+    }
+
+GET_B(chain_code)
+GET_B(parent160)
+GET_B(priv_key)
+GET_B(hash160)
+GET_B(pub_key)
+
+#define GET_I(name) \
+    int bip32_key_get_ ## name(const struct ext_key *key_in, size_t *written) { \
+        if (written) *written = 0; \
+        if (!key_in || !written) return WALLY_EINVAL; \
+        *written = key_in->name; \
+        return WALLY_OK; \
+    }
+
+GET_I(depth)
+GET_I(child_num)
+GET_I(version)
+
+#endif // SWIG_JAVA_BUILD

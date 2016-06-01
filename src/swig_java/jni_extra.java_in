@@ -5,6 +5,26 @@
       return aes(jarg1, jarg2, jarg3, null);
   }
 
+  public final static byte[] bip32_key_get_chain_code(Object jarg1) {
+      return bip32_key_get_chain_code(jarg1, null);
+  }
+
+  public final static byte[] bip32_key_get_parent160(Object jarg1) {
+      return bip32_key_get_parent160(jarg1, null);
+  }
+
+  public final static byte[] bip32_key_get_priv_key(Object jarg1) {
+      return bip32_key_get_priv_key(jarg1, null);
+  }
+
+  public final static byte[] bip32_key_get_hash160(Object jarg1) {
+      return bip32_key_get_hash160(jarg1, null);
+  }
+
+  public final static byte[] bip32_key_get_pub_key(Object jarg1) {
+      return bip32_key_get_pub_key(jarg1, null);
+  }
+
   public final static byte[] bip32_key_serialize(Object jarg1, long jarg2) {
       return bip32_key_serialize(jarg1, jarg2, null);
   }

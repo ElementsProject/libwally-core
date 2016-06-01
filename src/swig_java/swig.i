@@ -2,6 +2,7 @@
 %{
 #include "../include/wally_core.h"
 #include "../include/wally_bip32.h"
+#include "bip32_int.h"
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
@@ -85,6 +86,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
         (*jenv)->SetByteArrayRegion(jenv, ret, 0, len, (const jbyte*)p);
     return ret;
 }
+
+#define member_size(struct_, member) sizeof(((struct struct_ *)0)->member)
 %}
 
 %javaconst(1);
@@ -229,6 +232,11 @@ typedef unsigned int uint32_t;
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
+%returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
+%returns_array_(bip32_key_get_parent160, 2, 3, member_size(ext_key, parent160));
+%returns_array_(bip32_key_get_priv_key, 2, 3, member_size(ext_key, priv_key));
+%returns_array_(bip32_key_get_hash160, 2, 3, member_size(ext_key, hash160));
+%returns_array_(bip32_key_get_pub_key, 2, 3, member_size(ext_key, pub_key));
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);
 %returns_struct(bip32_key_unserialize_alloc, ext_key);
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
@@ -259,6 +267,7 @@ typedef unsigned int uint32_t;
 
 %include "../include/wally_core.h"
 %include "../include/wally_bip32.h"
+%include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"

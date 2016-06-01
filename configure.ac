@@ -126,7 +126,6 @@ AM_CONDITIONAL([EXPORT_ALL], [test "x$export_all" == "xyes"])
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [AM_CFLAGS="$AM_CFLAGS -fvisibility=hidden"])
 fi
-AC_SUBST([AM_CFLAGS])
 
 # Assume we have no unaligned access if cross-compiling
 AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
@@ -216,6 +215,7 @@ if test "x$swig_java" == "xyes"; then
     SWIG_JAVA_OPT="-java"
     AC_SUBST([SWIG_JAVA_CPPFLAGS])
     AC_SUBST([SWIG_JAVA_OPT])
+    AX_CHECK_COMPILE_FLAG([-DSWIG_JAVA_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_JAVA_BUILD=1"])
 fi
 
 if test "x$JAVA_HOME" != "x"; then
@@ -244,6 +244,7 @@ AM_CONDITIONAL([RUN_JAVA_TESTS], [test "x$run_java_tests" != "x"])
 JAVAC_TARGET=1.7
 AC_SUBST([JAVAC_TARGET])
 
+AC_SUBST([AM_CFLAGS])
 
 AC_CONFIG_FILES([
  Makefile
