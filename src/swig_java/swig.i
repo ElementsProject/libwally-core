@@ -225,6 +225,8 @@ typedef unsigned int uint32_t;
 
 /* Our wrapped functions return types */
 %returns_void__(bip32_key_free);
+%returns_struct(bip32_key_from_parent_alloc, ext_key);
+%rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);

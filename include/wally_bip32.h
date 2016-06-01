@@ -131,6 +131,7 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
     size_t len_in,
     const struct ext_key **output);
 
+#ifndef SWIG
 /**
  * Create a new child extended key from a parent extended key.
  *
@@ -149,5 +150,17 @@ WALLY_CORE_API int bip32_key_from_parent(
     uint32_t child_num,
     uint32_t flags,
     struct ext_key *output);
+#endif
+
+/**
+ * As per @bip32_key_from_parent, but allocates the key.
+ *
+ * @note The returned key should be freed with @bip32_key_free.
+ */
+WALLY_CORE_API int bip32_key_from_parent_alloc(
+    const struct ext_key *key_in,
+    uint32_t child_num,
+    uint32_t flags,
+    const struct ext_key **output);
 
 #endif /* LIBWALLY_CORE_BIP32_H */

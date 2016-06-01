@@ -14,7 +14,6 @@ public class test_bip32 {
 
     public void test() {
         final Object seedKey = Wally.bip32_key_from_seed(mSeed, BIP32_VER_MAIN_PRIVATE);
-        Wally.bip32_key_free(seedKey);
 
         final String hex = "0488ade4000000000000000000873dff81c02f525623fd1fe5167eac3a55" +
             "a049de3d314bb42ee227ffed37d50800e8f32e723decf4051aefac8e2c93c9c5b214313817c" +
@@ -27,7 +26,11 @@ public class test_bip32 {
         if (!newHex.equals(hex))
             throw new RuntimeException("BIP32 serialization did not round-trip correctly");
 
+        final Object derivedKey = Wally.bip32_key_from_parent(seedKey, 0, BIP32_KEY_PRIVATE);
+
+        Wally.bip32_key_free(derivedKey);
         Wally.bip32_key_free(unserialized);
+        Wally.bip32_key_free(seedKey);
     }
 
     public static void main(final String[] args) {

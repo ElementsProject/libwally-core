@@ -515,3 +515,22 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     clear(&sha, sizeof(sha));
     return 0;
 }
+
+int bip32_key_from_parent_alloc(const struct ext_key *key_in,
+                                uint32_t child_num, uint32_t flags,
+                                const struct ext_key **output)
+{
+    int ret;
+
+    if (!output)
+        return WALLY_EINVAL;
+    *output = malloc(sizeof(struct ext_key));
+    if (!*output)
+        return WALLY_ENOMEM;
+    ret = bip32_key_from_parent(key_in, child_num, flags, (struct ext_key *)*output);
+    if (ret) {
+        free((void *)*output);
+        *output = 0;
+    }
+    return ret;
+}
