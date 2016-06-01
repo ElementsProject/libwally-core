@@ -1,6 +1,34 @@
 
   // Support methods for the JNI class
 
+  public final static byte[] aes(byte[] jarg1, byte[] jarg2, long jarg3) {
+      return aes(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] bip32_key_serialize(Object jarg1, long jarg2) {
+      return bip32_key_serialize(jarg1, jarg2, null);
+  }
+
+  public final static byte[] bip38_raw_from_private_key(byte[] jarg1, byte[] jarg2, long jarg3) {
+      return bip38_raw_from_private_key(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] bip38_to_private_key(String jarg1, byte[] jarg2, long jarg3) {
+      return bip38_to_private_key(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] sha256(byte[] jarg1) {
+      return sha256(jarg1, null);
+  }
+
+  public final static byte[] sha256d(byte[] jarg1) {
+      return sha256d(jarg1, null);
+  }
+
+  public final static byte[] sha512(byte[] jarg1) {
+      return sha512(jarg1, null);
+  }
+
   public final static byte[] hex_to_bytes(String jarg1) {
       final byte[] ret = new byte[jarg1.length() / 2];
       if (hex_to_bytes(jarg1, ret) != ret.length)
@@ -8,8 +36,20 @@
       return ret;
   }
 
-  public final static byte[] bip32_key_serialize(Object jarg1, long jarg2) {
-      return bip32_key_serialize(jarg1, jarg2, null);
+  public final static byte[] hmac_sha256(byte[] jarg1, byte[] jarg2) {
+      return hmac_sha256(jarg1, jarg2, null);
+  }
+
+  public final static byte[] hmac_sha512(byte[] jarg1, byte[] jarg2) {
+      return hmac_sha512(jarg1, jarg2, null);
+  }
+
+  public final static byte[] pbkdf2_hmac_sha256(byte[] jarg1, byte[] jarg2, long jarg3, long jarg4) {
+      return pbkdf2_hmac_sha256(jarg1, jarg2, jarg3, jarg4, null);
+  }
+
+  public final static byte[] pbkdf2_hmac_sha512(byte[] jarg1, byte[] jarg2, long jarg3, long jarg4) {
+      return pbkdf2_hmac_sha512(jarg1, jarg2, jarg3, jarg4, null);
   }
 
 }
