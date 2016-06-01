@@ -1,9 +1,15 @@
+
   // Support methods for the JNI class
 
-  public final static byte[] hex_to_bytes(String arg) {
-      final byte[] ret = new byte[arg.length() / 2];
-      if (hex_to_bytes(arg, ret) != ret.length)
+  public final static byte[] hex_to_bytes(String jarg1) {
+      final byte[] ret = new byte[jarg1.length() / 2];
+      if (hex_to_bytes(jarg1, ret) != ret.length)
           throw new IllegalArgumentException("invalid hex string length");
       return ret;
   }
+
+  public final static byte[] bip32_key_serialize(Object jarg1, long jarg2) {
+      return bip32_key_serialize(jarg1, jarg2, null);
+  }
+
 }
