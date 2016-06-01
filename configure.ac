@@ -10,12 +10,15 @@ AH_TOP([#ifndef LIBWALLYCORE_CONFIG_H
 AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
+LDPATH_VAR=LD_LIBRARY_PATH
 case $host_os in
 *darwin*)
     is_osx="yes"
+    LDPATH_VAR=DYLD_LIBRARY_PATH
     ;;
 esac
 AM_CONDITIONAL([IS_OSX], [test "x$is_osx" == "xyes"])
+AC_SUBST([LDPATH_VAR])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static])
