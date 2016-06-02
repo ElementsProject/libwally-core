@@ -29,7 +29,9 @@ public class test_bip32 {
         final Object derivedKey = Wally.bip32_key_from_parent(seedKey, 0, BIP32_KEY_PRIVATE);
         final String derivedChainCode = Wally.hex_from_bytes(Wally.bip32_key_get_chain_code(derivedKey));
         if (derivedChainCode.length() != 64)
-            throw new RuntimeException("BIP32 chain code wrong size");
+            throw new RuntimeException("BIP32 incorrect chain code");
+        if (Wally.bip32_key_get_depth(derivedKey) != 1)
+            throw new RuntimeException("BIP32 incorrect depth");
 
         Wally.bip32_key_free(derivedKey);
         Wally.bip32_key_free(unserialized);

@@ -134,6 +134,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %typemap(in,noblock=1,numinputs=0) size_t *written(size_t sz) {
     sz = 0; $1 = ($1_ltype)&sz;
 }
+/* Integer values are also returned as size_t's */
+%typemap(in,noblock=1,numinputs=0) size_t *output(size_t sz) {
+    sz = 0; $1 = ($1_ltype)&sz;
+}
 %typemap(argout,noblock=1) size_t* {
     $result = int_cast(jenv, *$1);
 }
@@ -233,10 +237,13 @@ typedef unsigned int uint32_t;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
+%returns_size_t(bip32_key_get_child_num);
+%returns_size_t(bip32_key_get_depth);
+%returns_array_(bip32_key_get_hash160, 2, 3, member_size(ext_key, hash160));
 %returns_array_(bip32_key_get_parent160, 2, 3, member_size(ext_key, parent160));
 %returns_array_(bip32_key_get_priv_key, 2, 3, member_size(ext_key, priv_key));
-%returns_array_(bip32_key_get_hash160, 2, 3, member_size(ext_key, hash160));
 %returns_array_(bip32_key_get_pub_key, 2, 3, member_size(ext_key, pub_key));
+%returns_size_t(bip32_key_get_version);
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);
 %returns_struct(bip32_key_unserialize_alloc, ext_key);
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
