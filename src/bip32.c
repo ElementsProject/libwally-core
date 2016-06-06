@@ -621,4 +621,4 @@ GET_I(depth)
 GET_I(child_num)
 GET_I(version)
 
-#endif // SWIG_JAVA_BUILD
+#endif /* SWIG_JAVA_BUILD */
