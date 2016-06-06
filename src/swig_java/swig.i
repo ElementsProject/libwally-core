@@ -156,9 +156,14 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 
 /* Array handling */
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *parent160, size_t parent160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
@@ -241,9 +246,11 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip32_key_get_depth);
 %returns_array_(bip32_key_get_hash160, 2, 3, member_size(ext_key, hash160));
 %returns_array_(bip32_key_get_parent160, 2, 3, member_size(ext_key, parent160));
-%returns_array_(bip32_key_get_priv_key, 2, 3, member_size(ext_key, priv_key));
+%returns_array_(bip32_key_get_priv_key, 2, 3, member_size(ext_key, priv_key) - 1);
 %returns_array_(bip32_key_get_pub_key, 2, 3, member_size(ext_key, pub_key));
 %returns_size_t(bip32_key_get_version);
+%returns_struct(bip32_key_init_alloc, ext_key);
+%rename("bip32_key_init") bip32_key_init_alloc;
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);
 %returns_struct(bip32_key_unserialize_alloc, ext_key);
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;

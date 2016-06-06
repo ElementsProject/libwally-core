@@ -48,9 +48,6 @@ static void assert_assumptions(void)
     BUILD_ASSERT(BIP32_KEY_PUBLIC != BIP32_KEY_PRIVATE &&
                  BIP32_KEY_PUBLIC != 2u &&
                  BIP32_KEY_PUBLIC != 3u);
-
-#undef key_size
-#undef key_off
 }
 
 static bool mem_is_zero(const void *mem, size_t len)
@@ -195,16 +192,20 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     return 0;
 }
 
+#define ALLOC_KEY() \
+    if (!output) \
+        return WALLY_EINVAL; \
+    *output = malloc(sizeof(struct ext_key)); \
+    if (!*output) \
+        return WALLY_ENOMEM; \
+    memset((void *)*output, 0, sizeof(struct ext_key))
+
 int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
                               uint32_t version, const struct ext_key **output)
 {
     int ret;
 
-    if (!output)
-        return WALLY_EINVAL;
-    *output = malloc(sizeof(struct ext_key));
-    if (!*output)
-        return WALLY_ENOMEM;
+    ALLOC_KEY();
     ret = bip32_key_from_seed(bytes_in, len_in, version, (struct ext_key *)*output);
     if (ret) {
         free((void *)*output);
@@ -256,7 +257,7 @@ static bool key_is_valid(const struct ext_key *key_in)
 static int wipe_mem_fail(unsigned char *bytes_out, size_t len)
 {
     clear(bytes_out, len);
-    return -1;
+    return WALLY_ERROR;
 }
 
 int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
@@ -368,11 +369,7 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes_in, size_t len_in,
 {
     int ret;
 
-    if (!output)
-        return WALLY_EINVAL;
-    *output = malloc(sizeof(struct ext_key));
-    if (!*output)
-        return WALLY_ENOMEM;
+    ALLOC_KEY();
     ret = bip32_key_unserialize(bytes_in, len_in, (struct ext_key *)*output);
     if (ret) {
         free((void *)*output);
@@ -523,11 +520,7 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
 {
     int ret;
 
-    if (!output)
-        return WALLY_EINVAL;
-    *output = malloc(sizeof(struct ext_key));
-    if (!*output)
-        return WALLY_ENOMEM;
+    ALLOC_KEY();
     ret = bip32_key_from_parent(key_in, child_num, flags, (struct ext_key *)*output);
     if (ret) {
         free((void *)*output);
@@ -535,6 +528,57 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
     }
     return ret;
 }
+
+int bip32_key_init_alloc(uint32_t version, uint32_t child_num, uint32_t depth,
+                         const unsigned char *chain_code, size_t chain_code_len,
+                         const unsigned char *pub_key, size_t pub_key_len,
+                         const unsigned char *priv_key, size_t priv_key_len,
+                         const unsigned char *hash160, size_t hash160_len,
+                         const unsigned char *parent160, size_t parent160_len,
+                         const struct ext_key **output)
+{
+    struct ext_key *dest;
+
+    if (!output)
+        return WALLY_EINVAL;
+    *output = NULL;
+
+    switch (version) {
+    case BIP32_VER_MAIN_PUBLIC:
+    case BIP32_VER_TEST_PUBLIC:
+        if (!pub_key || pub_key_len != key_size(pub_key))
+            return WALLY_EINVAL;
+    /* Fall through */
+    case BIP32_VER_MAIN_PRIVATE:
+    case BIP32_VER_TEST_PRIVATE:
+        if (!priv_key || priv_key_len != key_size(priv_key) - 1)
+            return WALLY_EINVAL;
+        break;
+    }
+
+    if (!chain_code || chain_code_len != key_size(chain_code))
+        return WALLY_EINVAL;
+
+    if ((hash160 && hash160_len != key_size(hash160)) || (!hash160 && hash160_len) ||
+        (parent160 && parent160_len != key_size(parent160)))
+        return WALLY_EINVAL;
+
+    ALLOC_KEY();
+
+    dest = (struct ext_key *)*output;
+    dest->version = version;
+    dest->child_num = child_num;
+    dest->depth = depth;
+
+    if (chain_code) memcpy(dest->chain_code, chain_code, key_size(chain_code));
+    if (pub_key) memcpy(dest->pub_key, pub_key, key_size(pub_key));
+    if (priv_key) memcpy(&dest->priv_key[1], priv_key, key_size(priv_key) - 1);
+    if (hash160) memcpy(dest->hash160, hash160, key_size(hash160));
+    if (parent160) memcpy(dest->parent160, parent160, key_size(parent160));
+
+    return WALLY_OK;
+}
+
 
 #ifdef SWIG_JAVA_BUILD
 
@@ -557,9 +601,13 @@ static int getb_impl(const struct ext_key *key_in,
 
 GET_B(chain_code)
 GET_B(parent160)
-GET_B(priv_key)
 GET_B(hash160)
 GET_B(pub_key)
+
+int bip32_key_get_priv_key(const struct ext_key *key_in, unsigned char *bytes_out, size_t len) {
+    return getb_impl(key_in, &key_in->priv_key[1], sizeof(key_in->priv_key) - 1, bytes_out, len);
+}
+
 
 #define GET_I(name) \
     int bip32_key_get_ ## name(const struct ext_key *key_in, size_t *output) { \

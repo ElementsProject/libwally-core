@@ -61,6 +61,24 @@ struct ext_key {
 WALLY_CORE_API int bip32_key_free(
     const struct ext_key *key_in);
 
+/**
+ */
+WALLY_CORE_API int bip32_key_init_alloc(
+    uint32_t version,
+    uint32_t child_num,
+    uint32_t depth,
+    const unsigned char *chain_code,
+    size_t chain_code_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *hash160,
+    size_t hash160_len,
+    const unsigned char *parent160,
+    size_t parent160_len,
+    const struct ext_key **output);
+
 #ifndef SWIG
 /**
  * Create a new master extended key from entropy.
