@@ -223,7 +223,7 @@ static unsigned char *copy_out(unsigned char *dest,
 static bool key_is_valid(const struct ext_key *key_in)
 {
     bool is_private = key_is_private(key_in);
-    bool is_master = !key_in->child_num;
+    bool is_master = !key_in->depth;
     uint8_t ver_flags = is_private ? BIP32_KEY_PRIVATE : BIP32_KEY_PUBLIC;
 
     if (!version_is_valid(key_in->version, ver_flags))
