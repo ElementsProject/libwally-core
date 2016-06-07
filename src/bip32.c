@@ -573,7 +573,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     key_out->child_num = child_num;
 
     if (chain_code) memcpy(key_out->chain_code, chain_code, key_size(chain_code));
-    if (priv_key) memcpy(&key_out->priv_key[1], priv_key, key_size(priv_key) - 1);
+    if (priv_key) memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
     if (pub_key) memcpy(key_out->pub_key, pub_key, key_size(pub_key));
     else if (version == BIP32_VER_MAIN_PRIVATE || version == BIP32_VER_TEST_PRIVATE) {
         /* Compute the public key if not given */
@@ -617,7 +617,7 @@ GET_B(hash160)
 GET_B(pub_key)
 
 int bip32_key_get_priv_key(const struct ext_key *key_in, unsigned char *bytes_out, size_t len) {
-    return getb_impl(key_in, &key_in->priv_key[1], sizeof(key_in->priv_key) - 1, bytes_out, len);
+    return getb_impl(key_in, key_in->priv_key + 1, sizeof(key_in->priv_key) - 1, bytes_out, len);
 }
 
 
