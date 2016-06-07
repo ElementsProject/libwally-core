@@ -32,8 +32,8 @@ public class test_bip32 {
             throw new RuntimeException("BIP32 incorrect depth");
 
         Object initKey = Wally.bip32_key_init(Wally.bip32_key_get_version(derivedKey),
-                                              Wally.bip32_key_get_child_num(derivedKey),
                                               Wally.bip32_key_get_depth(derivedKey),
+                                              Wally.bip32_key_get_child_num(derivedKey),
                                               Wally.bip32_key_get_chain_code(derivedKey),
                                               Wally.bip32_key_get_pub_key(derivedKey),
                                               Wally.bip32_key_get_priv_key(derivedKey),

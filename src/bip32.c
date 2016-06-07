@@ -529,7 +529,7 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
     return ret;
 }
 
-int bip32_key_init_alloc(uint32_t version, uint32_t child_num, uint32_t depth,
+int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
                          const unsigned char *chain_code, size_t chain_code_len,
                          const unsigned char *pub_key, size_t pub_key_len,
                          const unsigned char *priv_key, size_t priv_key_len,
@@ -567,8 +567,8 @@ int bip32_key_init_alloc(uint32_t version, uint32_t child_num, uint32_t depth,
 
     dest = (struct ext_key *)*output;
     dest->version = version;
-    dest->child_num = child_num;
     dest->depth = depth;
+    dest->child_num = child_num;
 
     if (chain_code) memcpy(dest->chain_code, chain_code, key_size(chain_code));
     if (pub_key) memcpy(dest->pub_key, pub_key, key_size(pub_key));

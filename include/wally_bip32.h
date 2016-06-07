@@ -65,8 +65,8 @@ WALLY_CORE_API int bip32_key_free(
  */
 WALLY_CORE_API int bip32_key_init_alloc(
     uint32_t version,
-    uint32_t child_num,
     uint32_t depth,
+    uint32_t child_num,
     const unsigned char *chain_code,
     size_t chain_code_len,
     const unsigned char *pub_key,
