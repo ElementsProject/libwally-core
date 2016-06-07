@@ -78,7 +78,7 @@ int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     if ((mnemonic_w->len * w->bits + 7u) / 8u > len)
         goto cleanup; /* Return the length we would have written */
 
-    memset(bytes_out, 0, len);
+    clear(bytes_out, len);
 
     for (i = 0; i < mnemonic_w->len; ++i) {
         size_t idx = wordlist_lookup_word(w, mnemonic_w->indices[i]);

@@ -111,7 +111,7 @@ static bool key_is_private(const struct ext_key *key_in)
 static void key_strip_private_key(struct ext_key *key_out)
 {
     key_out->priv_key[0] = BIP32_KEY_PUBLIC;
-    memset(key_out->priv_key + 1, 0, sizeof(key_out->priv_key) - 1);
+    clear(key_out->priv_key + 1, sizeof(key_out->priv_key) - 1);
 }
 
 /* Compute a public key from a private key */
@@ -185,7 +185,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
 
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
-    memset(key_out->parent160, 0, sizeof(key_out->parent160));
+    clear(key_out->parent160, sizeof(key_out->parent160));
 
     key_compute_hash160(key_out);
     clear(&sha, sizeof(sha));
@@ -198,7 +198,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     *output = malloc(sizeof(struct ext_key)); \
     if (!*output) \
         return WALLY_ENOMEM; \
-    memset((void *)*output, 0, sizeof(struct ext_key))
+    clear((void *)*output, sizeof(struct ext_key))
 
 int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
                               uint32_t version, const struct ext_key **output)
@@ -335,8 +335,8 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
      * later if they want it to be fully populated.
      */
     bytes_in = copy_in(key_out->parent160, bytes_in, sizeof(uint32_t));
-    memset(key_out->parent160 + sizeof(uint32_t), 0,
-           sizeof(key_out->parent160) - sizeof(uint32_t));
+    clear(key_out->parent160 + sizeof(uint32_t),
+          sizeof(key_out->parent160) - sizeof(uint32_t));
 
     bytes_in = copy_in(&key_out->child_num, bytes_in, sizeof(key_out->child_num));
     key_out->child_num = be32_to_cpu(key_out->child_num);

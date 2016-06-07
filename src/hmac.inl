@@ -28,7 +28,7 @@ void HMAC_FUNCTION(struct SHA_T *sha,
     unsigned char opad[sizeof(ctx.buf)];
     size_t i;
 
-    memset(ctx.buf.u8, 0, sizeof(ctx.buf));
+    clear(ctx.buf.u8, sizeof(ctx.buf));
 
     if (key_len <= sizeof(ctx.buf))
         memcpy(ctx.buf.u8, key, key_len);
