@@ -572,9 +572,14 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     key_out->depth = depth;
     key_out->child_num = child_num;
 
-    if (chain_code) memcpy(key_out->chain_code, chain_code, key_size(chain_code));
-    if (priv_key) memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
-    if (pub_key) memcpy(key_out->pub_key, pub_key, key_size(pub_key));
+    if (chain_code)
+        memcpy(key_out->chain_code, chain_code, key_size(chain_code));
+    if (priv_key && version != BIP32_VER_MAIN_PUBLIC && version != BIP32_VER_TEST_PUBLIC)
+        memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
+    else
+        key_out->priv_key[0] = BIP32_KEY_PUBLIC;
+    if (pub_key)
+        memcpy(key_out->pub_key, pub_key, key_size(pub_key));
     else if (version == BIP32_VER_MAIN_PRIVATE || version == BIP32_VER_TEST_PRIVATE) {
         /* Compute the public key if not given */
         int ret = key_compute_pub_key(key_out);
@@ -585,8 +590,12 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
             return ret;
         }
     }
-    if (hash160) memcpy(key_out->hash160, hash160, key_size(hash160));
-    if (parent160) memcpy(key_out->parent160, parent160, key_size(parent160));
+    if (hash160)
+        memcpy(key_out->hash160, hash160, key_size(hash160));
+    else
+        key_compute_hash160(key_out);
+    if (parent160)
+        memcpy(key_out->parent160, parent160, key_size(parent160));
 
     return WALLY_OK;
 }
