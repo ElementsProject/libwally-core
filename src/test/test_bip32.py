@@ -1,6 +1,6 @@
 import unittest
 from util import *
-from ctypes import byref
+from ctypes import byref, c_uint
 
 # These vectors are expressed in binary rather than base 58. The spec base 58
 # representation just obfuscates the data we are validating. For example, the
@@ -103,6 +103,21 @@ class BIP32Tests(unittest.TestCase):
         key_out = ext_key()
         ret = bip32_key_from_parent(byref(parent), child_num,
                                     kind, byref(key_out))
+        self.assertEqual(ret, 0)
+
+        # Verify that path derivation matches also
+        p_key_out = self.derive_key_by_path(parent, [child_num], kind)
+        typ = 'pub' if kind == self.KEY_PUBLIC else 'priv'
+        self.compare_keys(p_key_out, key_out, typ)
+        return key_out
+
+    def derive_key_by_path(self, parent, path, kind):
+        key_out = ext_key()
+        c_path = (c_uint * len(path))()
+        for i, n in enumerate(path):
+            c_path[i] = n
+        ret = bip32_key_from_parent_path(byref(parent), c_path, len(path),
+                                         kind, byref(key_out))
         self.assertEqual(ret, 0)
         return key_out
 
@@ -239,6 +254,11 @@ class BIP32Tests(unittest.TestCase):
         # The children and grand-children do not share the same public key
         self.assertNotEqual(h(pub.pub_key), h(priv_pub.pub_key))
 
+        # Test path derivation with multiple children elements
+        for kind, typ, expected in [(self.KEY_PUBLIC,  'pub',  pub_pub),
+                                    (self.KEY_PRIVATE, 'priv', priv_priv)]:
+            path_derived = self.derive_key_by_path(master, [1, 1], kind)
+            self.compare_keys(path_derived, expected, typ)
 
 if __name__ == '__main__':
     unittest.main()

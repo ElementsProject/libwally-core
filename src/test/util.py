@@ -38,6 +38,9 @@ class c_ulong_p_class(object):
     pass
 c_ulong_p = c_ulong_p_class()
 
+# ctypes is missing this for some reason
+c_uint_p = POINTER(c_uint)
+
 for f in (
     ('wordlist_init', c_void_p, [c_char_p]),
     ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
@@ -52,6 +55,7 @@ for f in (
     ('bip32_key_serialize', c_int, [POINTER(ext_key), c_uint, c_void_p, c_ulong]),
     ('bip32_key_unserialize', c_int, [c_void_p, c_uint, POINTER(ext_key)]),
     ('bip32_key_from_parent', c_int, [c_void_p, c_uint, c_uint, POINTER(ext_key)]),
+    ('bip32_key_from_parent_path', c_int, [c_void_p, c_uint_p, c_ulong, c_uint, POINTER(ext_key)]),
     ('bip38_raw_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
