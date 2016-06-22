@@ -1,7 +1,7 @@
 package com.blockstream.test;
 
 import com.blockstream.libwally.Wally;
-import static com.blockstream.libwally.Wally.BIP32_KEY_PRIVATE;
+import static com.blockstream.libwally.Wally.BIP32_FLAG_KEY_PRIVATE;
 import static com.blockstream.libwally.Wally.BIP32_VER_MAIN_PRIVATE;
 
 public class test_bip32 {
@@ -20,11 +20,11 @@ public class test_bip32 {
             "db01a1494b917c8436b35";
         final Object unserialized = Wally.bip32_key_unserialize(h(hex));
 
-        final byte[] newSerialized = Wally.bip32_key_serialize(unserialized, BIP32_KEY_PRIVATE);
+        final byte[] newSerialized = Wally.bip32_key_serialize(unserialized, BIP32_FLAG_KEY_PRIVATE);
         if (!h(newSerialized).equals(hex))
             throw new RuntimeException("BIP32 serialization did not round-trip correctly");
 
-        final Object derivedKey = Wally.bip32_key_from_parent(seedKey, 0, BIP32_KEY_PRIVATE);
+        final Object derivedKey = Wally.bip32_key_from_parent(seedKey, 0, BIP32_FLAG_KEY_PRIVATE);
         final String derivedChainCode = h(Wally.bip32_key_get_chain_code(derivedKey));
         if (derivedChainCode.length() != 64)
             throw new RuntimeException("BIP32 incorrect chain code");
@@ -40,8 +40,8 @@ public class test_bip32 {
                                               Wally.bip32_key_get_hash160(derivedKey),
                                               Wally.bip32_key_get_parent160(derivedKey));
 
-        final byte[] derivedSerialized = Wally.bip32_key_serialize(derivedKey, BIP32_KEY_PRIVATE);
-        final byte[] initSerialized = Wally.bip32_key_serialize(initKey, BIP32_KEY_PRIVATE);
+        final byte[] derivedSerialized = Wally.bip32_key_serialize(derivedKey, BIP32_FLAG_KEY_PRIVATE);
+        final byte[] initSerialized = Wally.bip32_key_serialize(initKey, BIP32_FLAG_KEY_PRIVATE);
 
         if (!h(initSerialized).equals(h(derivedSerialized)))
             throw new RuntimeException("BIP32 initialisation by member failed");

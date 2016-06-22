@@ -36,18 +36,18 @@ static void assert_assumptions(void)
     BUILD_ASSERT((key_off(priv_key) + key_size(priv_key)) == key_off(child_num));
 
     /* We use priv_key[0] to determine if this extended key is public or
-     * private, If priv_key[0] is BIP32_KEY_PRIVATE then this key is private
-     * with a computed public key present. If set to BIP32_KEY_PUBLIC then
+     * private, If priv_key[0] is BIP32_FLAG_KEY_PRIVATE then this key is private
+     * with a computed public key present. If set to BIP32_FLAG_KEY_PUBLIC then
      * this is a public key with no private key (A BIP32 'neutered' key).
      *
-     * For this to work BIP32_KEY_PRIVATE must be zero so the whole 33 byte
-     * private key is valid when serialized, and BIP32_KEY_PUBLIC cannot be
+     * For this to work BIP32_FLAG_KEY_PRIVATE must be zero so the whole 33 byte
+     * private key is valid when serialized, and BIP32_FLAG_KEY_PUBLIC cannot be
      * 2 or 3 as they are valid parity bytes for public keys.
      */
-    BUILD_ASSERT(BIP32_KEY_PRIVATE == 0);
-    BUILD_ASSERT(BIP32_KEY_PUBLIC != BIP32_KEY_PRIVATE &&
-                 BIP32_KEY_PUBLIC != 2u &&
-                 BIP32_KEY_PUBLIC != 3u);
+    BUILD_ASSERT(BIP32_FLAG_KEY_PRIVATE == 0);
+    BUILD_ASSERT(BIP32_FLAG_KEY_PUBLIC != BIP32_FLAG_KEY_PRIVATE &&
+                 BIP32_FLAG_KEY_PUBLIC != 2u &&
+                 BIP32_FLAG_KEY_PUBLIC != 3u);
 }
 
 static bool mem_is_zero(const void *mem, size_t len)
@@ -94,7 +94,7 @@ static bool version_is_valid(uint32_t ver, uint32_t flags)
     if (ver == BIP32_VER_MAIN_PRIVATE || ver == BIP32_VER_TEST_PRIVATE)
         return true;
 
-    return flags == BIP32_KEY_PUBLIC &&
+    return flags == BIP32_FLAG_KEY_PUBLIC &&
            (ver == BIP32_VER_MAIN_PUBLIC || ver == BIP32_VER_TEST_PUBLIC);
 }
 
@@ -105,12 +105,12 @@ static bool version_is_mainnet(uint32_t ver)
 
 static bool key_is_private(const struct ext_key *key_in)
 {
-    return key_in->priv_key[0] == BIP32_KEY_PRIVATE;
+    return key_in->priv_key[0] == BIP32_FLAG_KEY_PRIVATE;
 }
 
 static void key_strip_private_key(struct ext_key *key_out)
 {
-    key_out->priv_key[0] = BIP32_KEY_PUBLIC;
+    key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
     clear(key_out->priv_key + 1, sizeof(key_out->priv_key) - 1);
 }
 
@@ -159,7 +159,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     if (len_in != BIP32_ENTROPY_LEN_256 && len_in != BIP32_ENTROPY_LEN_128)
         return -1;
 
-    if (!version_is_valid(key_out->version = version, BIP32_KEY_PRIVATE))
+    if (!version_is_valid(key_out->version = version, BIP32_FLAG_KEY_PRIVATE))
         return -1;
 
     /* Generate key and chain code */
@@ -172,7 +172,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     }
 
     /* Copy the private key and set its prefix */
-    key_out->priv_key[0] = BIP32_KEY_PRIVATE;
+    key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
     memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
     if (key_compute_pub_key(key_out)) {
         clear_n(2, &sha, sizeof(sha),
@@ -225,7 +225,7 @@ static bool key_is_valid(const struct ext_key *key_in)
 {
     bool is_private = key_is_private(key_in);
     bool is_master = !key_in->depth;
-    uint8_t ver_flags = is_private ? BIP32_KEY_PRIVATE : BIP32_KEY_PUBLIC;
+    uint8_t ver_flags = is_private ? BIP32_FLAG_KEY_PRIVATE : BIP32_FLAG_KEY_PUBLIC;
 
     if (!version_is_valid(key_in->version, ver_flags))
         return false;
@@ -235,8 +235,8 @@ static bool key_is_valid(const struct ext_key *key_in)
         mem_is_zero(key_in->pub_key + 1, sizeof(key_in->pub_key) - 1))
         return false;
 
-    if (key_in->priv_key[0] != BIP32_KEY_PUBLIC &&
-        key_in->priv_key[0] != BIP32_KEY_PRIVATE)
+    if (key_in->priv_key[0] != BIP32_FLAG_KEY_PUBLIC &&
+        key_in->priv_key[0] != BIP32_FLAG_KEY_PRIVATE)
         return false;
 
     if (is_private &&
@@ -263,7 +263,7 @@ static int wipe_mem_fail(unsigned char *bytes_out, size_t len)
 int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
                         unsigned char *bytes_out, size_t len)
 {
-    const bool serialize_private = !(flags & BIP32_KEY_PUBLIC);
+    const bool serialize_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     unsigned char *out = bytes_out;
     uint32_t tmp32;
     beint32_t tmp32_be;
@@ -325,7 +325,7 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
 
     bytes_in = copy_in(&key_out->version, bytes_in, sizeof(key_out->version));
     key_out->version = be32_to_cpu(key_out->version);
-    if (!version_is_valid(key_out->version, BIP32_KEY_PUBLIC))
+    if (!version_is_valid(key_out->version, BIP32_FLAG_KEY_PUBLIC))
         return wipe_key_fail(key_out);
 
     bytes_in = copy_in(&key_out->depth, bytes_in, sizeof(key_out->depth));
@@ -343,7 +343,7 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
 
     bytes_in = copy_in(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
 
-    if (bytes_in[0] == BIP32_KEY_PRIVATE) {
+    if (bytes_in[0] == BIP32_FLAG_KEY_PRIVATE) {
         if (key_out->version == BIP32_VER_MAIN_PUBLIC ||
             key_out->version == BIP32_VER_TEST_PUBLIC)
             return wipe_key_fail(key_out); /* Private key data in public key */
@@ -404,7 +404,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     struct sha512 sha;
     const secp256k1_context *ctx = secp_ctx();
     const bool we_are_private = key_is_private(key_in);
-    const bool derive_private = !(flags & BIP32_KEY_PUBLIC);
+    const bool derive_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
 
     if (!ctx)
@@ -625,7 +625,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     if (priv_key && version != BIP32_VER_MAIN_PUBLIC && version != BIP32_VER_TEST_PUBLIC)
         memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
     else
-        key_out->priv_key[0] = BIP32_KEY_PUBLIC;
+        key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
     if (pub_key)
         memcpy(key_out->pub_key, pub_key, key_size(pub_key));
     else if (version == BIP32_VER_MAIN_PRIVATE || version == BIP32_VER_TEST_PRIVATE) {

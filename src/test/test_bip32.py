@@ -254,7 +254,7 @@ class BIP32Tests(unittest.TestCase):
         # The children and grand-children do not share the same public key
         self.assertNotEqual(h(pub.pub_key), h(priv_pub.pub_key))
 
-        # Test path derivation with multiple children elements
+        # Test path derivation with multiple child elements
         for kind, typ, expected in [(self.KEY_PUBLIC,  'pub',  pub_pub),
                                     (self.KEY_PRIVATE, 'priv', priv_priv)]:
             path_derived = self.derive_key_by_path(master, [1, 1], kind)

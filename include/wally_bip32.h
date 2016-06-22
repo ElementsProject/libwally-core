@@ -16,9 +16,9 @@
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
 
 /** Indicate that we want to derive a private key in @bip32_key_from_parent */
-#define BIP32_KEY_PRIVATE 0x0
+#define BIP32_FLAG_KEY_PRIVATE 0x0
 /** Indicate that we want to derive a public key in @bip32_key_from_parent */
-#define BIP32_KEY_PUBLIC  0x1
+#define BIP32_FLAG_KEY_PUBLIC  0x1
 
 /** Version codes for extended keys */
 #define BIP32_VER_MAIN_PUBLIC  0x0488B21E
