@@ -156,28 +156,29 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
 {
     struct sha512 sha;
 
-    if (len_in != BIP32_ENTROPY_LEN_256 && len_in != BIP32_ENTROPY_LEN_128)
-        return -1;
+    if (!bytes_in ||
+        (len_in != BIP32_ENTROPY_LEN_256 && len_in != BIP32_ENTROPY_LEN_128) ||
+        !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) || !key_out)
+        return WALLY_EINVAL;
 
-    if (!version_is_valid(key_out->version = version, BIP32_FLAG_KEY_PRIVATE))
-        return -1;
+    clear(key_out, sizeof(*key_out));
+    key_out->version = version;
 
     /* Generate key and chain code */
     hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len_in);
 
     /* Check that key lies between 0 and order(secp256k1) exclusive */
     if (key_overflow(sha.u.u64) || key_zero(sha.u.u64)) {
-        clear(&sha, sizeof(sha));
-        return -1; /* Out of bounds */
+        clear_n(2, &sha, sizeof(sha), key_out, sizeof(*key_out));
+        return WALLY_ERROR; /* Out of bounds */
     }
 
     /* Copy the private key and set its prefix */
     key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
     memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
     if (key_compute_pub_key(key_out)) {
-        clear_n(2, &sha, sizeof(sha),
-                key_out->priv_key, sizeof(key_out->priv_key));
-        return -1;
+        clear_n(2, &sha, sizeof(sha), key_out, sizeof(*key_out));
+        return WALLY_EINVAL;
     }
 
     /* Copy the chain code */
@@ -185,11 +186,9 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
 
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
-    clear(key_out->parent160, sizeof(key_out->parent160));
-
     key_compute_hash160(key_out);
     clear(&sha, sizeof(sha));
-    return 0;
+    return WALLY_OK;
 }
 
 #define ALLOC_KEY() \

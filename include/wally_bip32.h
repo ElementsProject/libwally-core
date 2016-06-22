@@ -90,6 +90,10 @@ WALLY_CORE_API int bip32_key_init_alloc(
  * @output Destination for the resulting master extended key.
  *
  * @dest Destination for the resulting master extended key.
+ *
+ * The entropy passed in may produce an invalid key. If this happens,
+ * WALLY_ERROR will be returned and the caller should retry with
+ * new entropy.
  */
 WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes_in,

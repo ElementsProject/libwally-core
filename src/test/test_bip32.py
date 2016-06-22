@@ -184,10 +184,10 @@ class BIP32Tests(unittest.TestCase):
         key_out = ext_key()
 
         # Only private key versions can be used
-        ver_cases = [(self.VER_MAIN_PUBLIC,  -1),
-                     (self.VER_MAIN_PRIVATE,  0),
-                     (self.VER_TEST_PUBLIC,  -1),
-                     (self.VER_TEST_PRIVATE,  0)]
+        ver_cases = [(self.VER_MAIN_PUBLIC,   WALLY_EINVAL),
+                     (self.VER_MAIN_PRIVATE,  WALLY_OK),
+                     (self.VER_TEST_PUBLIC,   WALLY_EINVAL),
+                     (self.VER_TEST_PRIVATE,  WALLY_OK)]
         for ver, expected in ver_cases:
             ret = bip32_key_from_seed(seed, seed_len, ver, byref(key_out))
             self.assertEqual(ret, expected)
