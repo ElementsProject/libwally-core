@@ -195,7 +195,7 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
     const struct ext_key *key_in,
-    uint32_t *child_num_in,
+    const uint32_t *child_num_in,
     size_t child_num_len,
     uint32_t flags,
     struct ext_key *output);
@@ -208,7 +208,7 @@ WALLY_CORE_API int bip32_key_from_parent_path(
  */
 WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     const struct ext_key *key_in,
-    uint32_t *child_num_in,
+    const uint32_t *child_num_in,
     size_t child_num_len,
     uint32_t flags,
     const struct ext_key **output);

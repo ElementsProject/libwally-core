@@ -530,7 +530,7 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
 }
 
 int bip32_key_from_parent_path(const struct ext_key *key_in,
-                               uint32_t *child_num_in, size_t child_num_len,
+                               const uint32_t *child_num_in, size_t child_num_len,
                                uint32_t flags, struct ext_key *key_out)
 {
     struct ext_key tmp[2];
@@ -561,7 +561,7 @@ int bip32_key_from_parent_path(const struct ext_key *key_in,
 }
 
 int bip32_key_from_parent_path_alloc(const struct ext_key *key_in,
-                                     uint32_t *child_num_in, size_t child_num_len,
+                                     const uint32_t *child_num_in, size_t child_num_len,
                                      uint32_t flags,
                                      const struct ext_key **output)
 {
