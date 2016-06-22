@@ -96,8 +96,10 @@ static int base58_decode(const char *base58, size_t base58_len,
 
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_words > BIGNUM_WORDS)
-        if (!(bn = malloc(bn_words * sizeof(*bn))))
+        if (!(bn = malloc(bn_words * sizeof(*bn)))) {
+            ret = WALLY_ENOMEM;
             goto cleanup;
+        }
 
     /* Iterate through the characters adding them to our bignum. We keep
      * track of the current top word to avoid iterating over words that
@@ -186,8 +188,10 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
         ; /* no-op*/
 
     if (zeros == len_in) {
-        if (!(*output = malloc(zeros + 1)))
+        if (!(*output = malloc(zeros + 1))) {
+            ret = WALLY_ENOMEM;
             goto cleanup;
+        }
 
         memset(*output, '1', zeros);
         (*output)[zeros] = '\0';
@@ -198,8 +202,10 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
 
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_bytes > BIGNUM_BYTES)
-        if (!(bn = malloc(bn_bytes)))
+        if (!(bn = malloc(bn_bytes))) {
+            ret = WALLY_ENOMEM;
             goto cleanup;
+        }
 
     top_byte = bn + bn_bytes - 1;
     *top_byte = 0;
@@ -221,8 +227,10 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
     /* Copy the result */
     bn_bytes = bn + bn_bytes - top_byte;
 
-    if (!(*output = malloc(zeros + bn_bytes + 1)))
+    if (!(*output = malloc(zeros + bn_bytes + 1))) {
+        ret = WALLY_ENOMEM;
         goto cleanup;
+    }
 
     memset(*output, '1', zeros);
     for (i = 0; i < bn_bytes; ++i)
