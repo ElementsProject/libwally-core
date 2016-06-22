@@ -252,13 +252,6 @@ static bool key_is_valid(const struct ext_key *key_in)
     return true;
 }
 
-/* Wipe memory and return failure for the caller to propigate */
-static int wipe_mem_fail(unsigned char *bytes_out, size_t len)
-{
-    clear(bytes_out, len);
-    return WALLY_ERROR;
-}
-
 int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
                         unsigned char *bytes_out, size_t len)
 {
@@ -268,10 +261,11 @@ int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
     beint32_t tmp32_be;
 
     /* Validate our arguments and then the input key */
-    if (len != BIP32_SERIALIZED_LEN ||
+    if (!key_in ||
         (serialize_private && !key_is_private(key_in)) ||
-        !key_is_valid(key_in))
-        return wipe_mem_fail(bytes_out, len);
+        !key_is_valid(key_in) ||
+        !bytes_out || len != BIP32_SERIALIZED_LEN)
+        return WALLY_EINVAL;
 
     tmp32 = key_in->version;
     if (!serialize_private) {
@@ -299,7 +293,7 @@ int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
     else
         copy_out(out, key_in->pub_key, sizeof(key_in->pub_key));
 
-    return 0;
+    return WALLY_OK;
 }
 
 static const unsigned char *copy_in(void *dest,
@@ -313,14 +307,16 @@ static const unsigned char *copy_in(void *dest,
 static int wipe_key_fail(struct ext_key *key_out)
 {
     clear(key_out, sizeof(key_out));
-    return -1;
+    return WALLY_EINVAL;
 }
 
 int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
                           struct ext_key *key_out)
 {
-    if (len_in != BIP32_SERIALIZED_LEN)
-        return wipe_key_fail(key_out);
+    if (!bytes_in || len_in != BIP32_SERIALIZED_LEN || !key_out)
+        return WALLY_EINVAL;
+
+    clear(key_out, sizeof(*key_out));
 
     bytes_in = copy_in(&key_out->version, bytes_in, sizeof(key_out->version));
     key_out->version = be32_to_cpu(key_out->version);
@@ -334,12 +330,8 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
      * later if they want it to be fully populated.
      */
     bytes_in = copy_in(key_out->parent160, bytes_in, sizeof(uint32_t));
-    clear(key_out->parent160 + sizeof(uint32_t),
-          sizeof(key_out->parent160) - sizeof(uint32_t));
-
     bytes_in = copy_in(&key_out->child_num, bytes_in, sizeof(key_out->child_num));
     key_out->child_num = be32_to_cpu(key_out->child_num);
-
     bytes_in = copy_in(key_out->chain_code, bytes_in, sizeof(key_out->chain_code));
 
     if (bytes_in[0] == BIP32_FLAG_KEY_PRIVATE) {
@@ -401,12 +393,15 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
                           uint32_t flags, struct ext_key *key_out)
 {
     struct sha512 sha;
-    const secp256k1_context *ctx = secp_ctx();
-    const bool we_are_private = key_is_private(key_in);
+    const secp256k1_context *ctx;
+    const bool we_are_private = key_in && key_is_private(key_in);
     const bool derive_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
 
-    if (!ctx)
+    if (!key_in || !key_out)
+        return WALLY_EINVAL;
+
+    if (!(ctx = secp_ctx()))
         return WALLY_ENOMEM;
 
     if (!we_are_private && (derive_private || hardened))

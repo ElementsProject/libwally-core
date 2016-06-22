@@ -143,7 +143,7 @@ class BIP32Tests(unittest.TestCase):
 
         # Try short, correct, long lengths. Trimming 8 chars is the correct
         # length because the vector value contains 4 check bytes at the end.
-        for trim, expected in [(0, -1), (8, 0), (16, -1)]:
+        for trim, expected in [(0, WALLY_EINVAL), (8, WALLY_OK), (16, WALLY_EINVAL)]:
             serialized_hex = vec_1['m']['priv'][0:-trim]
             buf, buf_len = make_cbuffer(serialized_hex)
             ret, key_out = self.unserialize_key(buf, buf_len)
@@ -159,16 +159,16 @@ class BIP32Tests(unittest.TestCase):
 
         # Check correct and incorrect version numbers as well
         # as mismatched key types and versions
-        ver_cases = [(self.VER_MAIN_PUBLIC,  'pub',   0),
-                     (self.VER_MAIN_PUBLIC,  'priv', -1),
-                     (self.VER_MAIN_PRIVATE, 'pub',  -1),
-                     (self.VER_MAIN_PRIVATE, 'priv',  0),
-                     (self.VER_TEST_PUBLIC,  'pub',   0),
-                     (self.VER_TEST_PUBLIC , 'priv', -1),
-                     (self.VER_TEST_PRIVATE, 'pub',  -1),
-                     (self.VER_TEST_PRIVATE, 'priv',  0),
-                     (0x01111111,            'pub',  -1),
-                     (0x01111111,            'priv', -1)]
+        ver_cases = [(self.VER_MAIN_PUBLIC,  'pub',  WALLY_OK),
+                     (self.VER_MAIN_PUBLIC,  'priv', WALLY_EINVAL),
+                     (self.VER_MAIN_PRIVATE, 'pub',  WALLY_EINVAL),
+                     (self.VER_MAIN_PRIVATE, 'priv', WALLY_OK),
+                     (self.VER_TEST_PUBLIC,  'pub',  WALLY_OK),
+                     (self.VER_TEST_PUBLIC , 'priv', WALLY_EINVAL),
+                     (self.VER_TEST_PRIVATE, 'pub',  WALLY_EINVAL),
+                     (self.VER_TEST_PRIVATE, 'priv', WALLY_OK),
+                     (0x01111111,            'pub',  WALLY_EINVAL),
+                     (0x01111111,            'priv', WALLY_EINVAL)]
 
         for ver, typ, expected in ver_cases:
             no_ver = vec_1['m'][typ][8:-8]
@@ -243,7 +243,7 @@ class BIP32Tests(unittest.TestCase):
         key_out = ext_key()
         ret = bip32_key_from_parent(byref(pub), 1,
                                     self.KEY_PRIVATE, byref(key_out))
-        self.assertEqual(ret, -1)
+        self.assertEqual(ret, WALLY_EINVAL)
 
         # Now our identities:
         # The children share the same public key
