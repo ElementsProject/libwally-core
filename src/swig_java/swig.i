@@ -154,6 +154,23 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
         $result = NULL;
 }
 
+/* Treat uint32 arrays like strings of ints
+ * If we need to support other array types in the future, this should
+ * be converted into a macro.
+ */
+%typemap(jni)     (uint32_t *STRING, size_t LENGTH) "jintArray"
+%typemap(jtype)   (uint32_t *STRING, size_t LENGTH) "int[]"
+%typemap(jstype)  (uint32_t *STRING, size_t LENGTH) "int[]"
+%typemap(javain)  (uint32_t *STRING, size_t LENGTH) "$javainput"
+%typemap(freearg) (uint32_t *STRING, size_t LENGTH) ""
+%typemap(in)      (uint32_t *STRING, size_t LENGTH) {
+    $1 = $input ? (uint32_t *) JCALL2(GetIntArrayElements, jenv, $input, 0) : 0;
+    $2 = $input ? (size_t) JCALL1(GetArrayLength, jenv, $input) : 0;
+}
+%typemap(argout)  (uint32_t *STRING, size_t LENGTH) {
+  if ($input) JCALL3(ReleaseIntArrayElements, jenv, $input, (jint *)$1, 0);
+}
+
 /* Array handling */
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
@@ -168,6 +185,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
 
 /* Opaque types are converted to/from an internal object holder class */
 %define %java_opaque_struct(NAME, ID)
@@ -239,6 +257,8 @@ typedef unsigned int uint32_t;
 %returns_void__(bip32_key_free);
 %returns_struct(bip32_key_from_parent_alloc, ext_key);
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
+%returns_struct(bip32_key_from_parent_path_alloc, ext_key);
+%rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
