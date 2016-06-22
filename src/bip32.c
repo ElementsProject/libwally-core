@@ -529,6 +529,54 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
     return ret;
 }
 
+int bip32_key_from_parent_path(const struct ext_key *key_in,
+                               uint32_t *child_num_in, size_t child_num_len,
+                               uint32_t flags, struct ext_key *key_out)
+{
+    struct ext_key tmp[2];
+    size_t i, tmp_idx = 0;
+    int ret;
+
+    if (!key_in || !child_num_in || !child_num_len || !key_out)
+        return WALLY_EINVAL;
+
+    /* FIXME: We can add flags to avoid calculating the parent hash and
+     *        public key in the intermediate nodes of this loop.
+     *        (We should add these flags anyway for callers who don't
+     *        need this data computed).
+     */
+    for (i = 0; i < child_num_len; ++i) {
+        struct ext_key *derived = &tmp[tmp_idx];
+        if ((ret = bip32_key_from_parent(key_in, child_num_in[i], flags, derived)))
+            break;
+        key_in = derived;    /* Derived becomes next parent */
+        tmp_idx = !tmp_idx; /* Use free slot in tmp for next derived */
+    }
+
+    if (ret == WALLY_OK)
+        memcpy(key_out, key_in, sizeof(*key_out));
+
+    clear(tmp, sizeof(tmp));
+    return ret;
+}
+
+int bip32_key_from_parent_path_alloc(const struct ext_key *key_in,
+                                     uint32_t *child_num_in, size_t child_num_len,
+                                     uint32_t flags,
+                                     const struct ext_key **output)
+{
+    int ret;
+
+    ALLOC_KEY();
+    ret = bip32_key_from_parent_path(key_in, child_num_in, child_num_len,
+                                     flags, (struct ext_key *)*output);
+    if (ret) {
+        free((void *)*output);
+        *output = 0;
+    }
+    return ret;
+}
+
 int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
                          const unsigned char *chain_code, size_t chain_code_len,
                          const unsigned char *pub_key, size_t pub_key_len,

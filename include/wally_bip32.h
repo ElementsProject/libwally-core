@@ -182,3 +182,33 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
     const struct ext_key **output);
 
 #endif /* LIBWALLY_CORE_BIP32_H */
+
+#ifndef SWIG
+/**
+ * Create a new child extended key from a parent extended key and a path.
+ *
+ * @key_in The parent extended key.
+ * @child_path_in The path of child numbers to create.
+ * @child_path_len The number of child numbers in @child_path_in.
+ * @flags BIP32_KEY_ Flags indicating the type of derivation wanted.
+ * @output Destination for the resulting child extended key.
+ */
+WALLY_CORE_API int bip32_key_from_parent_path(
+    const struct ext_key *key_in,
+    uint32_t *child_num_in,
+    size_t child_num_len,
+    uint32_t flags,
+    struct ext_key *output);
+#endif
+
+/**
+ * As per @bip32_key_from_parent_path, but allocates the key.
+ *
+ * @note The returned key should be freed with @bip32_key_free.
+ */
+WALLY_CORE_API int bip32_key_from_parent_path_alloc(
+    const struct ext_key *key_in,
+    uint32_t *child_num_in,
+    size_t child_num_len,
+    uint32_t flags,
+    const struct ext_key **output);
