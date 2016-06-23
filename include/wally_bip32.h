@@ -117,7 +117,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
  * Serialize an extended key to memory using BIP32 format.
  *
  * @key_in The extended key to serialize.
- * @flags BIP32_KEY_ Flags indicating which key to serialize. You can not
+ * @flags BIP32_FLAG_KEY_ Flags indicating which key to serialize. You can not
  *        serialize a private extended key from a public extended key.
  * @bytes_out Destination for the serialized key.
  * @len Size of @bytes_out in bytes. Must be @BIP32_SERIALIZED_LEN.
@@ -162,7 +162,7 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
  *            than or equal to @BIP32_INITIAL_HARDENED_CHILD represent
  *            hardened keys that cannot be created from public parent
  *            extended keys.
- * @flags BIP32_KEY_ Flags indicating the type of derivation wanted.
+ * @flags BIP32_FLAG_KEY_ Flags indicating the type of derivation wanted.
  *        You can not derive a private child extended key from a public
  *        parent extended key.
  * @output Destination for the resulting child extended key.
