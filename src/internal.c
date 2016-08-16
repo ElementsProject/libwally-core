@@ -46,7 +46,7 @@ int wally_secp_randomize(const unsigned char *bytes_in, size_t len_in)
 int wally_free_string(char *str)
 {
     if (!str)
-        return -1;
+        return WALLY_EINVAL;
     clear(str, strlen(str));
     free(str);
     return WALLY_OK;
@@ -55,7 +55,7 @@ int wally_free_string(char *str)
 int wally_bzero(void *bytes, size_t len)
 {
     if (!bytes)
-        return -1;
+        return WALLY_EINVAL;
     clear(bytes, len);
     return WALLY_OK;
 }
