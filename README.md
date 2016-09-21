@@ -33,4 +33,22 @@ $ make
 $ ./tools/cleanup.sh
 ```
 
+## Submitting patches
 
+Please use pull requests on github to submit. Before producing your patch you
+should format your changes using [uncrustify](https://github.com/uncrustify/uncrustify.git)
+version 0.60 or later. The script `./tools/uncrustify` will reformat all C
+sources in the library as needed, with the currently chosen uncrustify options.
+
+The version of uncrustify in Debian is unfortunately out of date and buggy. If
+you are using Debian this means you will need to download and build uncrustify
+from source using something like:
+
+```
+$ git clone --depth 1 https://github.com/uncrustify/uncrustify.git
+$ cd uncrustify
+$ ./autogen.sh
+$ ./configure
+$ make
+$ sudo make install
+```
