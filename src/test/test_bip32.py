@@ -1,6 +1,5 @@
 import unittest
 from util import *
-from ctypes import byref, c_uint
 
 # These vectors are expressed in binary rather than base 58. The spec base 58
 # representation just obfuscates the data we are validating. For example, the
