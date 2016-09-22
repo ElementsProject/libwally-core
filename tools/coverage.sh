@@ -4,7 +4,7 @@
 # $ ./configure --enable-debug --enable-coverage ...
 # $ make
 # $ ./tools/coverage.sh clean
-# $ make test
+# $ make check
 # $ ./tools/coverage.sh
 # $ firefox src/lcov/index.html
 
