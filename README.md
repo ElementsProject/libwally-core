@@ -9,8 +9,9 @@ Please report bugs and submit patches to https://github.com/jgriffiths/libwally-
 
 ```
 $ ./tools/autogen.sh
-$ ./configure
+$ ./configure <options>
 $ make
+$ make check
 ```
 
 ### configure options
@@ -18,7 +19,9 @@ $ make
 - `--enable-debug`. Enables debugging information and disables compiler
    optimisations (default: no).
 - `--enable-coverage`. Enables code coverage. See tools/coverage.sh for
-   instructions on generating a coverage report (default: no).
+   instructions on generating a coverage report (default: no). Note that
+   you will need [lcov](http://ltp.sourceforge.net/coverage/lcov.php)
+   installed to build with this option enabled and generate coverage reports.
 - `--enable-export-all`. Export all functions from the wally shared library.
    Ordinarily only API functions are exported. (default: no).
 - `--enable-swig-python`. Enable the SWIG python interface. The resulting
@@ -26,6 +29,10 @@ $ make
 - `--enable-swig-java`. Enable the SWIG java (JNI) interface. After building,
    see `src/swig_java/src/com/blockstream/libwally/Wally.java` for the Java
    interface definition (default: no).
+
+NOTE: If you wish to run the tests you currently need to pass
+      the `--enable-swig-python` option. This requirement may be removed
+      in a future release.
 
 ## Cleaning
 
@@ -52,3 +59,6 @@ $ ./configure
 $ make
 $ sudo make install
 ```
+
+You should also make sure the existing tests pass and if possible write tests
+covering any new functionality added, following the existing style.
