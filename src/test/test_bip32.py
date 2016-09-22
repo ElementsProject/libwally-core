@@ -1,7 +1,7 @@
 import unittest
 from util import *
 
-FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC = 0, 1
+FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC, FLAG_SKIP_HASH, = 0x0, 0x1, 0x2
 
 # These vectors are expressed in binary rather than base 58. The spec base 58
 # representation just obfuscates the data we are validating. For example, the
@@ -72,6 +72,7 @@ vec_1 = {
 
 class BIP32Tests(unittest.TestCase):
 
+    NULL_HASH160 = '00' * 20
     SERIALIZED_LEN = 4 + 1 + 4 + 4 + 32 + 33
 
     VER_MAIN_PUBLIC = 0x0488B21E
@@ -110,14 +111,14 @@ class BIP32Tests(unittest.TestCase):
         self.compare_keys(p_key_out, key_out, flags)
         return key_out
 
-    def derive_key_by_path(self, parent, path, flags):
+    def derive_key_by_path(self, parent, path, flags, expected=WALLY_OK):
         key_out = ext_key()
         c_path = (c_uint * len(path))()
         for i, n in enumerate(path):
             c_path[i] = n
         ret = bip32_key_from_parent_path(byref(parent), c_path, len(path),
                                          flags, byref(key_out))
-        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(ret, expected)
         return key_out
 
     def compare_keys(self, key, expected, flags):
@@ -131,12 +132,18 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(h(key.chain_code), h(expected.chain_code))
         # These would be more useful tests if there were any public
         # derivation test vectors
-        self.assertEqual(h(key.hash160), h(expected.hash160))
+        fingerprint = lambda k: h(k)[0:8]
+        if flags & FLAG_SKIP_HASH:
+            expected160 = self.NULL_HASH160
+            expectedFingerprint = self.NULL_HASH160[0:8]
+        else:
+            expected160 = h(expected.hash160)
+            expectedFingerprint = fingerprint(expected.parent160)
+        self.assertEqual(h(key.hash160), expected160)
         # We can only compare the first 4 bytes of the parent fingerprint
         # Since that is all thats serialized.
         # FIXME: Implement bip32_key_set_parent and test it here
-        fingerprint = lambda k: h(k.parent160)[0:8]
-        self.assertEqual(fingerprint(key), fingerprint(expected))
+        self.assertEqual(fingerprint(key.parent160), expectedFingerprint)
 
 
     def test_serialisation(self):
@@ -257,8 +264,11 @@ class BIP32Tests(unittest.TestCase):
         self.assertNotEqual(h(pub.pub_key), h(priv_pub.pub_key))
 
         # Test path derivation with multiple child elements
-        for flags, expected in [(FLAG_KEY_PUBLIC,  pub_pub),
-                                (FLAG_KEY_PRIVATE, priv_priv)]:
+        for flags, expected in [(FLAG_KEY_PUBLIC, pub_pub),
+                                (FLAG_KEY_PRIVATE, priv_priv),
+                                (FLAG_KEY_PUBLIC  | FLAG_SKIP_HASH, pub_pub),
+                                (FLAG_KEY_PRIVATE | FLAG_SKIP_HASH, priv_priv),
+        ]:
             path_derived = self.derive_key_by_path(master, [1, 1], flags)
             self.compare_keys(path_derived, expected, flags)
 

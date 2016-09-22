@@ -502,8 +502,13 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
 
     key_out->depth = key_in->depth + 1;
     key_out->child_num = child_num;
-    memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));
-    key_compute_hash160(key_out);
+    if (flags & BIP32_FLAG_SKIP_HASH)
+        clear_n(2, &key_out->parent160, sizeof(key_out->parent160),
+                &key_out->hash160, sizeof(key_out->hash160));
+    else {
+        memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));
+        key_compute_hash160(key_out);
+    }
     clear(&sha, sizeof(sha));
     return WALLY_OK;
 }
@@ -527,6 +532,8 @@ int bip32_key_from_parent_path(const struct ext_key *key_in,
                                const uint32_t *child_num_in, size_t child_num_len,
                                uint32_t flags, struct ext_key *key_out)
 {
+    /* Optimization: We can skip hash calculations for internal nodes */
+    uint32_t derivation_flags = flags | BIP32_FLAG_SKIP_HASH;
     struct ext_key tmp[2];
     size_t i, tmp_idx = 0;
     int ret;
@@ -534,14 +541,11 @@ int bip32_key_from_parent_path(const struct ext_key *key_in,
     if (!key_in || !child_num_in || !child_num_len || !key_out)
         return WALLY_EINVAL;
 
-    /* FIXME: We can add flags to avoid calculating the parent hash and
-     *        public key in the intermediate nodes of this loop.
-     *        (We should add these flags anyway for callers who don't
-     *        need this data computed).
-     */
     for (i = 0; i < child_num_len; ++i) {
         struct ext_key *derived = &tmp[tmp_idx];
-        if ((ret = bip32_key_from_parent(key_in, child_num_in[i], flags, derived)))
+        if (i + 2 >= child_num_len)
+            derivation_flags = flags; /* Use callers flags for the final derivations */
+        if (ret = bip32_key_from_parent(key_in, child_num_in[i], derivation_flags, derived))
             break;
         key_in = derived;    /* Derived becomes next parent */
         tmp_idx = !tmp_idx; /* Use free slot in tmp for next derived */
