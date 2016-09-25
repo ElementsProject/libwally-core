@@ -217,9 +217,11 @@ class BIP32Tests(unittest.TestCase):
             for typ in ['pub', 'priv']:
                 expected = self.get_test_key(vec_1, path, typ)
                 self.compare_keys(derived, expected, typ)
-                if type == 'pub':
+                if typ == 'pub':
                     self.compare_keys(derived_pub, expected, typ)
-                    self.assertEqual(h(derived_pub.priv_key), '02' + '00' * 32)
+                    # A neutered private key is indicated by
+                    # BIP32_FLAG_KEY_PUBLIC (0x1) as its first byte.
+                    self.assertEqual(h(derived_pub.priv_key), '01' + '00' * 32)
                 self.assertEqual(h(derived.parent160), h(parent160))
 
 
