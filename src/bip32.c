@@ -545,7 +545,8 @@ int bip32_key_from_parent_path(const struct ext_key *key_in,
         struct ext_key *derived = &tmp[tmp_idx];
         if (i + 2 >= child_num_len)
             derivation_flags = flags; /* Use callers flags for the final derivations */
-        if (ret = bip32_key_from_parent(key_in, child_num_in[i], derivation_flags, derived))
+        ret = bip32_key_from_parent(key_in, child_num_in[i], derivation_flags, derived);
+        if (ret != WALLY_OK)
             break;
         key_in = derived;    /* Derived becomes next parent */
         tmp_idx = !tmp_idx; /* Use free slot in tmp for next derived */
