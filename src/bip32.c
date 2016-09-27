@@ -352,7 +352,7 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
     }
 
     key_compute_hash160(key_out);
-    return 0;
+    return WALLY_OK;
 }
 
 int bip32_key_unserialize_alloc(const unsigned char *bytes_in, size_t len_in,
@@ -505,7 +505,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));
     key_compute_hash160(key_out);
     clear(&sha, sizeof(sha));
-    return 0;
+    return WALLY_OK;
 }
 
 int bip32_key_from_parent_alloc(const struct ext_key *key_in,

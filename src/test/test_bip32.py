@@ -90,20 +90,20 @@ class BIP32Tests(unittest.TestCase):
         master = ext_key()
         ret = bip32_key_from_seed(seed, seed_len,
                                   self.VER_MAIN_PRIVATE, byref(master))
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, WALLY_OK)
         return master
 
     def get_test_key(self, vec, path, flags):
         buf, buf_len = make_cbuffer(vec[path][flags])
         ret, key_out = self.unserialize_key(buf, self.SERIALIZED_LEN)
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, WALLY_OK)
         return key_out
 
     def derive_key(self, parent, child_num, flags):
         key_out = ext_key()
         ret = bip32_key_from_parent(byref(parent), child_num,
                                     flags, byref(key_out))
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, WALLY_OK)
 
         # Verify that path derivation matches also
         p_key_out = self.derive_key_by_path(parent, [child_num], flags)
@@ -117,7 +117,7 @@ class BIP32Tests(unittest.TestCase):
             c_path[i] = n
         ret = bip32_key_from_parent_path(byref(parent), c_path, len(path),
                                          flags, byref(key_out))
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, WALLY_OK)
         return key_out
 
     def compare_keys(self, key, expected, flags):
@@ -154,7 +154,7 @@ class BIP32Tests(unittest.TestCase):
                 buf, buf_len = make_cbuffer('0' * len(serialized_hex))
                 ret = bip32_key_serialize(key_out, FLAG_KEY_PRIVATE,
                                           buf, buf_len)
-                self.assertEqual(ret, 0)
+                self.assertEqual(ret, WALLY_OK)
                 self.assertEqual(h(buf).upper(), utf8(serialized_hex))
 
         # Check correct and incorrect version numbers as well
