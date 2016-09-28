@@ -1,12 +1,9 @@
 #/bin/bash
 
-# To generate coverage:
-# $ ./configure --enable-debug --enable-coverage ...
-# $ make
-# $ ./tools/coverage.sh clean
-# $ make check
-# $ ./tools/coverage.sh
-# $ firefox src/lcov/index.html
+# Helper to generate coverage reports.
+# ./tools/coverage.sh clean : Sets coverage stats to 0.
+# ./tools/coverage.sh       : Calculates coverage stats, produces
+#                             src/lcov/index.html as output.
 
 lcov="lcov --directory=src/ --base-directory src/"
 
