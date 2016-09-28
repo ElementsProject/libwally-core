@@ -10,7 +10,8 @@ class AddressCase(object):
 
 class Base58Tests(unittest.TestCase):
 
-    CHECKSUM = 1
+    FLAG_CHECKSUM = 0x1
+    CHECKSUM_LEN = 4
 
     def setUp(self):
         if not hasattr(self, 'cases'):
@@ -34,13 +35,13 @@ class Base58Tests(unittest.TestCase):
     def decode(self, str_in, flags):
         buf, buf_len = make_cbuffer('00' * 1024)
         ret, buf_len = base58_to_bytes(utf8(str_in), flags, buf, buf_len)
-        self.assertEqual(ret, 0)
+        self.assertEqual(ret, WALLY_OK)
         self.assertNotEqual(buf_len, 0)
         # Check that just computing the size returns us the actual size
         ret, bin_len = base58_get_length(utf8(str_in))
-        self.assertEqual(ret, 0)
-        if flags == self.CHECKSUM:
-            bin_len -= 4 # Take off the 4 bytes of stripped checksum
+        self.assertEqual(ret, WALLY_OK)
+        if flags == self.FLAG_CHECKSUM:
+            bin_len -= self.CHECKSUM_LEN
         self.assertEqual(bin_len, buf_len)
         return h(buf)[0:buf_len * 2].upper()
 
@@ -57,7 +58,7 @@ class Base58Tests(unittest.TestCase):
             self.assertEqual(decoded, utf8(c.checksummed))
 
             # Compute the checksum in the call
-            base58 = self.encode(c.ripemd_network, self.CHECKSUM)
+            base58 = self.encode(c.ripemd_network, self.FLAG_CHECKSUM)
             self.assertEqual(base58, c.base58)
 
             # Decode without checksum validation/stripping, should match
@@ -67,7 +68,7 @@ class Base58Tests(unittest.TestCase):
 
             # Decode with checksum validation/stripping and compare
             # to original ripemd + network
-            decoded = self.decode(c.base58, self.CHECKSUM)
+            decoded = self.decode(c.base58, self.FLAG_CHECKSUM)
             self.assertEqual(decoded, utf8(c.ripemd_network))
 
 
@@ -90,18 +91,24 @@ class Base58Tests(unittest.TestCase):
                     # libbase58: decode-b58c-toolong
                     '1119DXstMaV43WpYg4ceREiiTv2UntmoiA9a',
                     # libbase58: decode-b58c-tooshort
-                    '111111111111111111114oLvT2'
-                ]:
-            ret, _ = base58_to_bytes(utf8(bad), self.CHECKSUM, buf, buf_len)
+                    '111111111111111111114oLvT2']:
+            ret, _ = base58_to_bytes(utf8(bad), self.FLAG_CHECKSUM, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
-        # Test output buffer too small
-        valid = '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM' # decodes to 25 bytes
-        ret, bin_len = base58_get_length(utf8(valid))
-        self.assertEqual(ret, 0)
-        self.assertEqual(bin_len, 25)
-        ret, _ = base58_to_bytes(utf8(valid), 0, buf, 24)
-        self.assertEqual(ret, 0)
+        for base58 in ['BXvDbH', '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM']:
+            ret, out_len = base58_get_length(utf8(base58))
+            # Output buffer too small returns OK and the number of bytes required
+            ret, bin_len = base58_to_bytes(utf8(base58), 0, buf, out_len - 1)
+            self.assertEqual((ret, bin_len), (WALLY_OK, out_len))
+            # Unknown flags
+            ret, _ = base58_to_bytes(utf8(base58), 0x7, buf, buf_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        # If we ask for checksum validation/removal the output buffer
+        # must have room for a checksum.
+        ret, bin_len = base58_to_bytes(utf8('1'), self.FLAG_CHECKSUM,
+                                       buf, self.CHECKSUM_LEN)
+        self.assertEqual(ret, WALLY_EINVAL)
 
         # Leading ones become zeros
         for i in range(1, 10):
@@ -109,10 +116,10 @@ class Base58Tests(unittest.TestCase):
 
         # Vectors from https://github.com/bitcoinj/bitcoinj/
         self.assertEqual(self.decode('16Ho7Hs', 0), utf8('00CEF022FA'))
-        self.assertEqual(self.decode('4stwEBjT6FYyVV', self.CHECKSUM),
+        self.assertEqual(self.decode('4stwEBjT6FYyVV', self.FLAG_CHECKSUM),
                                      utf8('45046252208D'))
         base58 = '93VYUMzRG9DdbRP72uQXjaWibbQwygnvaCu9DumcqDjGybD864T'
-        ret = self.decode(base58, self.CHECKSUM)
+        ret = self.decode(base58, self.FLAG_CHECKSUM)
         expected = 'EFFB309E964684B54E6069F146E2CD6DA' \
                    'E936B711A7A98DF4097156B9FC9B344EB'
         self.assertEqual(ret, utf8(expected))
@@ -134,11 +141,11 @@ class Base58Tests(unittest.TestCase):
         self.assertEqual(base58_from_bytes(buf, 0, 0), FAIL_RET)
 
         # O length buffer, append checksum -> NULL
-        self.assertEqual(base58_from_bytes(buf, 0, self.CHECKSUM), FAIL_RET)
+        self.assertEqual(base58_from_bytes(buf, 0, self.FLAG_CHECKSUM), FAIL_RET)
 
         # Vectors from https://github.com/bitcoinj/bitcoinj/
         self.assertEqual(self.encode('00CEF022FA', 0), '16Ho7Hs')
-        self.assertEqual(self.encode('45046252208D', self.CHECKSUM),
+        self.assertEqual(self.encode('45046252208D', self.FLAG_CHECKSUM),
                                      '4stwEBjT6FYyVV')
 
 

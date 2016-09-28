@@ -265,7 +265,7 @@ int base58_to_bytes(const char *str_in, uint32_t flags,
         !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    if (flags & BASE58_FLAG_CHECKSUM && len < BASE58_CHECKSUM_LEN)
+    if (flags & BASE58_FLAG_CHECKSUM && len <= BASE58_CHECKSUM_LEN)
         return WALLY_EINVAL; /* No room for checksum */
 
     *written = len;
