@@ -57,13 +57,13 @@ $(sjs)/$(cblw)/Wally.java: swig_java/swig_java_wrap.c
 	$(AM_V_at)$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@
 
 $(sjs)/$(cblw)/Wally.class: $(sjs)/$(cblw)/Wally.java
-	$(AM_V_at)$(JAVAC) -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/Wally.java
+	$(AM_V_at)$(JAVAC) -implicit:none -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/Wally.java
 
 swig_java/wallycore.jar: $(sjs)/$(cblw)/Wally.class
 	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/Wally$$Obj.class' -C $(sjs) '$(cblw)/Wally.class'
 
 $(sjs)/$(cbt)/%.class: $(sjs)/$(cbt)/%.java swig_java/wallycore.jar
-	$(AM_V_at)$(JAVAC) -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs) $(filter %.java,$^)
+	$(AM_V_at)$(JAVAC) -implicit:none -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs) $(filter %.java,$^)
 
 if HAVE_JAVAC
 all: swig_java/wallycore.jar
