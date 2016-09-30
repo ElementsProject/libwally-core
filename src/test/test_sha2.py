@@ -61,6 +61,21 @@ class SHA2Tests(unittest.TestCase):
                     expected = utf8(values[i].replace(' ', ''))
                     self.assertEqual(result, expected)
 
+                    
+    def doSHA_wrong_len(self, fn, hex_in):
+        buf_len = self.SHA512_LEN + 1 if fn == wally_sha512 else self.SHA256_LEN +1
+        in_bytes, in_bytes_len = make_cbuffer(hex_in)
+        buf = create_string_buffer(buf_len)
+        ret = fn(in_bytes, in_bytes_len, buf, buf_len)
+        self.assertEqual(ret, WALLY_EINVAL)
+
+
+    def test_invalid(self):
+        msg = h(utf8('abc'))
+        values = sha2_cases['abc']
+        for i, fn in enumerate([wally_sha256, wally_sha512, wally_sha256d]):
+            self.doSHA_wrong_len(fn, msg)
+
 
 if __name__ == '__main__':
     unittest.main()
