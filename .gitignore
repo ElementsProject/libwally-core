@@ -1,6 +1,7 @@
 bld
 src/*.pyc
 src/test/*.pyc
+src/test/__pycache__/
 *~
 *.class
 *.gcno
