@@ -42,17 +42,21 @@ class SHA2Tests(unittest.TestCase):
 
     SHA256_LEN, SHA512_LEN = 32, 64
 
-    def doSHA(self, fn, hex_in):
+    def make_outbuf(self, fn):
         buf_len = self.SHA512_LEN if fn == wally_sha512 else self.SHA256_LEN
-        in_bytes, in_bytes_len = make_cbuffer(hex_in)
         buf = create_string_buffer(buf_len)
+        return buf, buf_len
+
+
+    def doSHA(self, fn, hex_in):
+        buf, buf_len = self.make_outbuf(fn)
+        in_bytes, in_bytes_len = make_cbuffer(hex_in)
         ret = fn(in_bytes, in_bytes_len, buf, buf_len)
         self.assertEqual(ret, 0)
         return h(buf)
 
 
     def test_vectors(self):
-
         for in_msg, values in sha2_cases.items():
             msg = h(utf8(in_msg))
             for i, fn in enumerate([wally_sha256, wally_sha512, wally_sha256d]):
@@ -61,20 +65,16 @@ class SHA2Tests(unittest.TestCase):
                     expected = utf8(values[i].replace(' ', ''))
                     self.assertEqual(result, expected)
 
-                    
-    def doSHA_wrong_len(self, fn, hex_in):
-        buf_len = self.SHA512_LEN + 1 if fn == wally_sha512 else self.SHA256_LEN +1
-        in_bytes, in_bytes_len = make_cbuffer(hex_in)
-        buf = create_string_buffer(buf_len)
-        ret = fn(in_bytes, in_bytes_len, buf, buf_len)
-        self.assertEqual(ret, WALLY_EINVAL)
 
-
-    def test_invalid(self):
-        msg = h(utf8('abc'))
-        values = sha2_cases['abc']
-        for i, fn in enumerate([wally_sha256, wally_sha512, wally_sha256d]):
-            self.doSHA_wrong_len(fn, msg)
+    def test_invalid_args(self):
+        in_bytes, in_bytes_len = make_cbuffer(h(utf8('abc')))
+        for fn in [wally_sha256, wally_sha512, wally_sha256d]:
+            buf, buf_len = self.make_outbuf(fn)
+            for args in [(None,     in_bytes_len, buf,  buf_len),
+                         (in_bytes, in_bytes_len, None, buf_len),
+                         (in_bytes, in_bytes_len, buf,  buf_len + 1)]:
+                self.assertEqual(fn(args[0], args[1], args[2], args[3]),
+                                 WALLY_EINVAL)
 
 
 if __name__ == '__main__':
