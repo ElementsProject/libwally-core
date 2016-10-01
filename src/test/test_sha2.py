@@ -42,18 +42,21 @@ class SHA2Tests(unittest.TestCase):
 
     SHA256_LEN, SHA512_LEN = 32, 64
 
-    def make_outbuf(self, fn):
+    def make_outbuf(self, fn, aligned=True):
         buf_len = self.SHA512_LEN if fn == wally_sha512 else self.SHA256_LEN
-        buf = create_string_buffer(buf_len)
-        return buf, buf_len
+        offset = 0 if aligned else 1
+        buf = create_string_buffer(buf_len + offset)
+        return byref(buf, offset), buf_len
 
 
-    def doSHA(self, fn, hex_in):
-        buf, buf_len = self.make_outbuf(fn)
+    def doSHA(self, fn, hex_in, aligned=True):
+        buf, buf_len = self.make_outbuf(fn, aligned)
         in_bytes, in_bytes_len = make_cbuffer(hex_in)
         ret = fn(in_bytes, in_bytes_len, buf, buf_len)
-        self.assertEqual(ret, 0)
-        return h(buf)
+        self.assertEqual(ret, WALLY_OK)
+        ret, result = wally_hex_from_bytes(buf, buf_len)
+        self.assertEqual(ret, WALLY_OK)
+        return result
 
 
     def test_vectors(self):
@@ -61,9 +64,10 @@ class SHA2Tests(unittest.TestCase):
             msg = h(utf8(in_msg))
             for i, fn in enumerate([wally_sha256, wally_sha512, wally_sha256d]):
                 if values[i] is not None:
-                    result = self.doSHA(fn, msg)
-                    expected = utf8(values[i].replace(' ', ''))
-                    self.assertEqual(result, expected)
+                    for aligned in [True, False]:
+                        result = self.doSHA(fn, msg, aligned)
+                        expected = utf8(values[i].replace(' ', ''))
+                        self.assertEqual(result, expected)
 
 
     def test_invalid_args(self):
