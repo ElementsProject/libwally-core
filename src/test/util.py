@@ -1,6 +1,7 @@
 from ctypes import *
 from binascii import hexlify, unhexlify
 from os.path import isfile
+from os import urandom
 import platform
 import sys
 
@@ -122,6 +123,7 @@ for f in (
         fn = mkint(fn)
     globals()[name] = fn
 
+assert wally_secp_randomize(urandom(32), 32) == WALLY_OK, "Random init failed"
 
 def load_words(lang):
     with open(root_dir + 'src/data/wordlists/%s.txt' % lang, 'r') as f:
