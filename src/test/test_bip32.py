@@ -137,8 +137,8 @@ class BIP32Tests(unittest.TestCase):
         # FIXME: Implement bip32_key_set_parent and test it here
         b32 = lambda k: h(k)[0:8]
         if flags & FLAG_SKIP_HASH:
-            self.assertEqual(h(key.hash160), self.NULL_HASH160)
-            self.assertEqual(b32(key.parent160), self.NULL_HASH160[0:8])
+            self.assertEqual(h(key.hash160), utf8(self.NULL_HASH160))
+            self.assertEqual(b32(key.parent160), utf8(self.NULL_HASH160[0:8]))
         else:
             self.assertEqual(h(key.hash160), h(expected.hash160))
             self.assertEqual(b32(key.parent160), b32(expected.parent160))
@@ -227,7 +227,7 @@ class BIP32Tests(unittest.TestCase):
                     self.compare_keys(derived_pub, expected, flags)
                     # A neutered private key is indicated by
                     # BIP32_FLAG_KEY_PUBLIC (0x1) as its first byte.
-                    self.assertEqual(h(derived_pub.priv_key), '01' + '00' * 32)
+                    self.assertEqual(h(derived_pub.priv_key), utf8('01' + '00' * 32))
                 self.assertEqual(h(derived.parent160), h(parent160))
 
 
