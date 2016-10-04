@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define BIP32_ALL_DEFINED_FLAGS (BIP32_FLAG_KEY_PRIVATE | BIP32_FLAG_KEY_PUBLIC | BIP32_FLAG_SKIP_HASH)
+
 static const unsigned char SEED[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
 };
@@ -260,6 +262,9 @@ int bip32_key_serialize(const struct ext_key *key_in, uint32_t flags,
     uint32_t tmp32;
     beint32_t tmp32_be;
 
+    if (flags & ~BIP32_FLAG_KEY_PUBLIC)
+        return WALLY_EINVAL; /* Only this flag makes sense here */
+
     /* Validate our arguments and then the input key */
     if (!key_in ||
         (serialize_private && !key_is_private(key_in)) ||
@@ -397,6 +402,9 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     const bool we_are_private = key_in && key_is_private(key_in);
     const bool derive_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
+
+    if (flags & ~BIP32_ALL_DEFINED_FLAGS)
+        return WALLY_EINVAL; /* These flags are not defined yet */
 
     if (!key_in || !key_out)
         return WALLY_EINVAL;
@@ -537,6 +545,9 @@ int bip32_key_from_parent_path(const struct ext_key *key_in,
     struct ext_key tmp[2];
     size_t i, tmp_idx = 0;
     int ret;
+
+    if (flags & ~BIP32_ALL_DEFINED_FLAGS)
+        return WALLY_EINVAL; /* These flags are not defined yet */
 
     if (!key_in || !child_num_in || !child_num_len || !key_out)
         return WALLY_EINVAL;

@@ -2,6 +2,8 @@ import unittest
 from util import *
 
 FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC, FLAG_SKIP_HASH, = 0x0, 0x1, 0x2
+ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH
+BIP32_SERIALIZED_LEN = 78
 
 # These vectors are expressed in binary rather than base 58. The spec base 58
 # representation just obfuscates the data we are validating. For example, the
@@ -111,11 +113,15 @@ class BIP32Tests(unittest.TestCase):
         self.compare_keys(p_key_out, key_out, flags)
         return key_out
 
-    def derive_key_by_path(self, parent, path, flags, expected=WALLY_OK):
-        key_out = ext_key()
+    def path_to_c(self, path):
         c_path = (c_uint * len(path))()
         for i, n in enumerate(path):
             c_path[i] = n
+        return c_path
+
+    def derive_key_by_path(self, parent, path, flags, expected=WALLY_OK):
+        key_out = ext_key()
+        c_path = self.path_to_c(path)
         ret = bip32_key_from_parent_path(byref(parent), c_path, len(path),
                                          flags, byref(key_out))
         self.assertEqual(ret, expected)
@@ -230,22 +236,24 @@ class BIP32Tests(unittest.TestCase):
                     self.assertEqual(h(derived_pub.priv_key), utf8('01' + '00' * 32))
                 self.assertEqual(h(derived.parent160), h(parent160))
 
-
-    def test_public_derivation_identities(self):
+    def create_master_pub_priv(self):
 
         # Start with BIP32 Test vector 1
         master = self.get_test_master_key(vec_1)
-
         # Derive the same child public and private keys from master
-        pub = self.derive_key(master, 1, FLAG_KEY_PUBLIC)
         priv = self.derive_key(master, 1, FLAG_KEY_PRIVATE)
+        pub = self.derive_key(master, 1, FLAG_KEY_PUBLIC)
+        return master, pub, priv
 
+    def test_public_derivation_identities(self):
+
+        master, pub, priv = self.create_master_pub_priv()
         # From the private child we can derive public and private keys
         priv_pub = self.derive_key(priv, 1, FLAG_KEY_PUBLIC)
         priv_priv = self.derive_key(priv, 1, FLAG_KEY_PRIVATE)
-
         # From the public child we can only derive a public key
         pub_pub = self.derive_key(pub, 1, FLAG_KEY_PUBLIC)
+
         # Verify that trying to derive a private key doesn't work
         key_out = ext_key()
         ret = bip32_key_from_parent(byref(pub), 1,
@@ -268,6 +276,7 @@ class BIP32Tests(unittest.TestCase):
                                 (FLAG_KEY_PRIVATE | FLAG_SKIP_HASH, priv_priv)]:
             path_derived = self.derive_key_by_path(master, [1, 1], flags)
             self.compare_keys(path_derived, expected, flags)
+
 
 if __name__ == '__main__':
     unittest.main()
