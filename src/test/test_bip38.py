@@ -69,15 +69,28 @@ class BIP38Tests(unittest.TestCase):
             priv_key, passwd, flags, expected = case
             passwd = utf8(passwd) if type(passwd) is not bytes else passwd
             ret, bip38 = self.from_priv(priv_key, passwd, flags)
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, WALLY_OK)
             bip38 = bip38.decode('utf-8') if type(bip38) is bytes else bip38
             self.assertEqual(bip38, expected)
 
             ret, new_priv_key = self.to_priv(bip38, passwd, flags)
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, WALLY_OK)
             self.assertEqual(h(new_priv_key).upper(), utf8(priv_key))
             ret, new_priv_key = self.to_priv(bip38, '', flags + K_CHECK)
-            self.assertEqual(ret, 0)
+            self.assertEqual(ret, WALLY_OK)
+
+
+    def test_bip38_invalid(self):
+        priv_key = 'CBF4B9F70470856BB4F40F80B87EDB90865997FFEE6DF315AB166D713AF433A5'
+        passwd = utf8('TestingInvalidFlags')
+        K_RES1 = 0x10 # BIP38_FLAG_RESERVED1
+
+        for flags, expected in [(0,            WALLY_OK),
+                                (K_RES1,       WALLY_EINVAL),
+                                (K_RAW,        WALLY_OK),
+                                (K_RAW+K_RES1, WALLY_EINVAL)]:
+            ret, _ = self.from_priv(priv_key, passwd, K_MAIN + flags)
+            self.assertEqual(ret, expected)
 
 
 if __name__ == '__main__':
