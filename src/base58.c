@@ -8,6 +8,7 @@
 /* Temporary stack buffer sizes */
 #define BIGNUM_WORDS 128u
 #define BIGNUM_BYTES (BIGNUM_WORDS * sizeof(uint32_t))
+#define BASE58_ALL_DEFINED_FLAGS (BASE58_FLAG_CHECKSUM)
 
 static const unsigned char base58_to_byte[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* ........ */
@@ -172,7 +173,7 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
 
     *output = NULL;
 
-    if (flags & ~BASE58_FLAG_CHECKSUM || !len_in)
+    if (flags & ~BASE58_ALL_DEFINED_FLAGS || !len_in)
         goto cleanup; /* Invalid flags or no input */
 
     if (flags & BASE58_FLAG_CHECKSUM) {
@@ -261,7 +262,7 @@ int base58_to_bytes(const char *str_in, uint32_t flags,
     if (written)
         *written = 0;
 
-    if (!str_in || flags & ~BASE58_FLAG_CHECKSUM ||
+    if (!str_in || flags & ~BASE58_ALL_DEFINED_FLAGS ||
         !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
