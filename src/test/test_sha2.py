@@ -56,7 +56,7 @@ class SHA2Tests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK)
         ret, result = wally_hex_from_bytes(buf, buf_len)
         self.assertEqual(ret, WALLY_OK)
-        return result
+        return utf8(result)
 
 
     def test_vectors(self):
