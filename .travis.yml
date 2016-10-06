@@ -32,6 +32,10 @@ matrix:
       - compiler: gcc
         os: linux
         env: PYTHON_VERSION=3.4
+
+    allow_failures:
+      - os: osx
+
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
 before_install:
