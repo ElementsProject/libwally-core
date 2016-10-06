@@ -659,7 +659,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
 }
 
 
-#ifdef SWIG_JAVA_BUILD
+#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD)
 
 /* Getters for ext_key values */
 
@@ -700,4 +700,4 @@ GET_I(depth)
 GET_I(child_num)
 GET_I(version)
 
-#endif /* SWIG_JAVA_BUILD */
+#endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */

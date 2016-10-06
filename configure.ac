@@ -200,6 +200,7 @@ if test "x$swig_python" == "xyes"; then
         AC_MSG_FAILURE([ERROR: No usable python was found for swig-python])
     fi
     SWIG_PYTHON
+    AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
 fi
 
 AC_ARG_ENABLE(swig-java,

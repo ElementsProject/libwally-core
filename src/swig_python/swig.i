@@ -3,6 +3,8 @@
 #define SWIG_FILE_WITH_INIT
 #include <stdbool.h>
 #include "../include/wally_core.h"
+#include "../include/wally_bip32.h"
+#include "bip32_int.h"
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
@@ -92,8 +94,20 @@ static int check_result(int result)
 %enddef
 
 %py_opaque_struct(words);
+%py_opaque_struct(ext_key);
+
+/* Tell SWIG what uint32_t means */
+typedef unsigned int uint32_t;
+
+%rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
+%rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
+%rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
+%rename("bip32_key_init") bip32_key_init_alloc;
+%rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 
 %include "../include/wally_core.h"
+%include "../include/wally_bip32.h"
+%include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
