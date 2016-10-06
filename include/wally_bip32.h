@@ -8,6 +8,7 @@
 /** The required lengths of entropy for @bip32_key_from_seed */
 #define BIP32_ENTROPY_LEN_128 16
 #define BIP32_ENTROPY_LEN_256 32
+#define BIP32_ENTROPY_LEN_512 64
 
 /** Length of an ext_key serialized using BIP32 format */
 #define BIP32_SERIALIZED_LEN 78

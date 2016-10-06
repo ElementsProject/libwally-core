@@ -153,13 +153,17 @@ int bip32_key_free(const struct ext_key *key_in)
     return WALLY_OK;
 }
 
+static bool is_valid_seed_len(size_t len) {
+    return len == BIP32_ENTROPY_LEN_512 || len == BIP32_ENTROPY_LEN_256 ||
+           len == BIP32_ENTROPY_LEN_128;
+}
+
 int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
                         uint32_t version, struct ext_key *key_out)
 {
     struct sha512 sha;
 
-    if (!bytes_in ||
-        (len_in != BIP32_ENTROPY_LEN_256 && len_in != BIP32_ENTROPY_LEN_128) ||
+    if (!bytes_in || !is_valid_seed_len(len_in) ||
         !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) || !key_out)
         return WALLY_EINVAL;
 
