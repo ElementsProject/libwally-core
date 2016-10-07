@@ -14,7 +14,7 @@ libswig_python_la_SOURCES = \
 libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
-swig_python/swig_python_wrap.c : swig_python/swig.i
+swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && \
     $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
     cat swig_python/python_extra.py_in >> swig_python/wallycore.py
@@ -47,7 +47,7 @@ libswig_java_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_JAVA_CPPFLAGS) $(SW
 
 SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally
 
-swig_java/swig_java_wrap.c: swig_java/swig.i
+swig_java/swig_java_wrap.c: swig_java/swig.i swig_java/jni_extra.java_in
 	$(AM_V_at)$(SWIG) $(SWIG_JOPT) -o $@ $< && \
     $(GNU_SED) -i 's/wallycoreJNI/Wally/g' $@ && \
     $(GNU_SED) -i 's/ = (char \*) (\*jenv)->Get/ = (unsigned char \*) (\*jenv)->Get/g' $@
