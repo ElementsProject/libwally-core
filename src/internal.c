@@ -106,8 +106,10 @@ int wally_sha512(const unsigned char *bytes_in, size_t len_in,
         return WALLY_EINVAL;
 
     sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes_in, len_in);
-    if (!aligned)
+    if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
+        clear(&sha, sizeof(sha));
+    }
     return WALLY_OK;
 }
 
