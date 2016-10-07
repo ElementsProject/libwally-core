@@ -26,6 +26,16 @@ static int check_result(int result)
     }
     return result;
 }
+
+#define capsule_cast(obj, name) \
+    (struct name *)PyCapsule_GetPointer(obj, "struct " #name " *")
+
+static void destroy_words(PyObject *obj) { (void)obj; }
+static void destroy_ext_key(PyObject *obj) {
+    struct ext_key *contained = capsule_cast(obj, ext_key);
+    if (contained)
+        bip32_key_free(contained);
+}
 %}
 
 %include pybuffer.i
@@ -85,7 +95,7 @@ static int check_result(int result)
 %typemap(argout) const struct NAME ** {
    if (*$1 != NULL) {
        Py_DecRef($result);
-       $result = PyCapsule_New(*$1, "struct NAME *", NULL);
+       $result = PyCapsule_New(*$1, "struct NAME *", destroy_ ## NAME);
    }
 }
 %typemap (in) const struct NAME * {
