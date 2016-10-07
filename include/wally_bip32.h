@@ -90,11 +90,11 @@ WALLY_CORE_API int bip32_key_init_alloc(
  *
  * This creates a new master key, i.e. the root of a new HD tree.
  * @bytes_in Entropy to use.
- * @len_in Size of @bytes_in in bytes.
- * @version Either @BIP32_VER_MAIN_PRIVATE or @BIP32_VER_TEST_PRIVATE.
+ * @len_in Size of @bytes_in in bytes. Must be one of @BIP32_ENTROPY_LEN_128,
+ *     @BIP32_ENTROPY_LEN_256 or @BIP32_ENTROPY_LEN_512.
+ * @version Either @BIP32_VER_MAIN_PRIVATE or @BIP32_VER_TEST_PRIVATE,
+ *     indicating mainnet or testnet/regtest respectively.
  * @output Destination for the resulting master extended key.
- *
- * @dest Destination for the resulting master extended key.
  *
  * The entropy passed in may produce an invalid key. If this happens,
  * WALLY_ERROR will be returned and the caller should retry with
