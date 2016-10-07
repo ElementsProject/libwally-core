@@ -63,8 +63,12 @@ void * PyInt_FromLong(long x) { (void)x; return NULL; }
 WALLY_CORE_API void * PyInt_FromSize_t(size_t x) __attribute__((weak));
 void * PyInt_FromSize_t(size_t x) { (void)x; return NULL; }
 DUMMY_WEAKREF(PyList_Append)
+WALLY_CORE_API void* PyList_GetItem(void *x, size_t y) __attribute__((weak));
+void* PyList_GetItem(void *x, size_t y) { (void)y; return x; }
 DUMMY_WEAKREF(PyList_New)
 DUMMY_WEAKREF(PyList_SetItem)
+WALLY_CORE_API size_t PyList_Size(void *x) __attribute__((weak));
+size_t PyList_Size(void *x) { (void)x; return 0; }
 DUMMY_WEAKREF(PyLong_AsDouble)
 WALLY_CORE_API unsigned long PyLong_AsUnsignedLong(void *x) __attribute__((weak));
 unsigned long PyLong_AsUnsignedLong(void *x) { (void)x; return 0; }

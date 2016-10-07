@@ -93,6 +93,38 @@ static int check_result(int result)
 }
 %enddef
 
+/* uint32_t arrays FIXME: Generalise */
+%typemap(in) (uint32_t *STRING, size_t LENGTH) {
+   size_t i;
+   if (!PyList_Check($input)) {
+       check_result(WALLY_EINVAL);
+       SWIG_fail;
+   }
+   $2 = PyList_Size($input);
+   if (!($1 = (uint32_t *) malloc(($2) * sizeof(uint32_t)))) {
+       check_result(WALLY_ENOMEM);
+       SWIG_fail;
+   }
+   for (i = 0; i < $2; ++i) {
+       PyObject *item = PyList_GetItem($input, i);
+       if (PyInt_Check(item)) {
+           long value = PyInt_AsLong(item);
+           if (value >= 0 && value <= 0xffffffff) {
+               $1[i] = (uint32_t)value;
+               continue;
+           }
+       }
+       check_result(WALLY_EINVAL);
+       SWIG_fail;
+   }
+}
+%typemap(freearg) (uint32_t *STRING, size_t LENGTH) {
+    if ($1)
+        free($1);
+}
+
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
+
 %py_opaque_struct(words);
 %py_opaque_struct(ext_key);
 
