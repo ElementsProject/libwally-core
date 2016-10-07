@@ -1,0 +1,29 @@
+# Support functions for the SWIG python wrapper
+
+def _wrap_bin(fn, len):
+    """Wrap functions that take a fixed size output buffer to create/return it"""
+    def wrapped(*args):
+        buf = bytearray(len)
+        ret = fn(*list(args)+[buf])
+        if ret is not None:
+            return ret, buf
+        return buf
+    return wrapped
+
+wally_sha256 = _wrap_bin(wally_sha256, SHA256_LEN)
+wally_sha256d = _wrap_bin(wally_sha256d, SHA256_LEN)
+wally_sha512 = _wrap_bin(wally_sha256, SHA512_LEN)
+wally_hmac_sha256 = _wrap_bin(wally_hmac_sha256, HMAC_SHA256_LEN)
+wally_hmac_sha512 = _wrap_bin(wally_hmac_sha512, HMAC_SHA512_LEN)
+
+bip32_key_serialize = _wrap_bin(bip32_key_serialize, BIP32_SERIALIZED_LEN)
+bip32_key_get_chain_code = _wrap_bin(bip32_key_get_chain_code, 32)
+bip32_key_get_priv_key = _wrap_bin(bip32_key_get_priv_key, 32)
+bip32_key_get_pub_key = _wrap_bin(bip32_key_get_pub_key, 33)
+bip32_key_get_parent160 = _wrap_bin(bip32_key_get_parent160, 20)
+bip32_key_get_hash160 = _wrap_bin(bip32_key_get_hash160, 20)
+
+bip38_raw_from_private_key = _wrap_bin(bip38_raw_from_private_key, BIP38_SERIALIZED_LEN)
+bip38_raw_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
+bip38_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
+bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed, BIP39_SEED_LEN_512)

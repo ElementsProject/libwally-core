@@ -15,7 +15,9 @@ libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) 
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i
-	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@
+	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && \
+    $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
+    cat swig_python/python_extra.py_in >> swig_python/wallycore.py
 
 PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
