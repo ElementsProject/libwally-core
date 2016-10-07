@@ -55,6 +55,7 @@ struct ext_key {
 };
 #endif /* SWIG */
 
+#ifndef SWIG_PYTHON
 /**
  * Free a key allocated by @bip32_key_from_seed_alloc
  * or @bip32_key_unserialize_alloc.
@@ -63,6 +64,7 @@ struct ext_key {
  */
 WALLY_CORE_API int bip32_key_free(
     const struct ext_key *key_in);
+#endif /* SWIG_PYTHON */
 
 /**
  */
