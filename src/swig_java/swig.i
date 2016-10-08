@@ -293,6 +293,7 @@ typedef unsigned int uint32_t;
 %returns_array_(wally_sha256, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha256d, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha512, 3, 4, SHA512_LEN);
+%returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_array_(wally_hmac_sha256, 5, 6, HMAC_SHA256_LEN);
 %returns_array_(wally_hmac_sha512, 5, 6, HMAC_SHA512_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);

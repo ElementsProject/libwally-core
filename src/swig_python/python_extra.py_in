@@ -13,6 +13,7 @@ def _wrap_bin(fn, len):
 wally_sha256 = _wrap_bin(wally_sha256, SHA256_LEN)
 wally_sha256d = _wrap_bin(wally_sha256d, SHA256_LEN)
 wally_sha512 = _wrap_bin(wally_sha256, SHA512_LEN)
+wally_hash160 = _wrap_bin(wally_hash160, HASH160_LEN)
 wally_hmac_sha256 = _wrap_bin(wally_hmac_sha256, HMAC_SHA256_LEN)
 wally_hmac_sha512 = _wrap_bin(wally_hmac_sha512, HMAC_SHA512_LEN)
 
@@ -20,8 +21,8 @@ bip32_key_serialize = _wrap_bin(bip32_key_serialize, BIP32_SERIALIZED_LEN)
 bip32_key_get_chain_code = _wrap_bin(bip32_key_get_chain_code, 32)
 bip32_key_get_priv_key = _wrap_bin(bip32_key_get_priv_key, 32)
 bip32_key_get_pub_key = _wrap_bin(bip32_key_get_pub_key, 33)
-bip32_key_get_parent160 = _wrap_bin(bip32_key_get_parent160, 20)
-bip32_key_get_hash160 = _wrap_bin(bip32_key_get_hash160, 20)
+bip32_key_get_parent160 = _wrap_bin(bip32_key_get_parent160, HASH160_LEN)
+bip32_key_get_hash160 = _wrap_bin(bip32_key_get_hash160, HASH160_LEN)
 
 bip38_raw_from_private_key = _wrap_bin(bip38_raw_from_private_key, BIP38_SERIALIZED_LEN)
 bip38_raw_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);

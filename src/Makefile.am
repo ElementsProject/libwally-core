@@ -132,11 +132,11 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
-	$(AM_V_at)$(PYTHON_TEST) test/test_sha2.py
 if EXPORT_ALL
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py

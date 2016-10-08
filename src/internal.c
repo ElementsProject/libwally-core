@@ -1,6 +1,8 @@
 #include <include/wally_core.h>
 #include <include/wally_crypto.h>
 #include "internal.h"
+#include "ccan/ccan/build_assert/build_assert.h"
+#include "ccan/ccan/crypto/ripemd160/ripemd160.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include <stdint.h>
@@ -110,6 +112,28 @@ int wally_sha512(const unsigned char *bytes_in, size_t len_in,
         memcpy(bytes_out, &sha, sizeof(sha));
         clear(&sha, sizeof(sha));
     }
+    return WALLY_OK;
+}
+
+int wally_hash160(const unsigned char *bytes_in, size_t len_in,
+                  unsigned char *bytes_out, size_t len)
+{
+    struct sha256 sha;
+    struct ripemd160 ripemd;
+    bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+
+    if (!bytes_in || !bytes_out || len != HASH160_LEN)
+        return WALLY_EINVAL;
+
+    BUILD_ASSERT(sizeof(ripemd) == HASH160_LEN);
+
+    sha256(&sha, bytes_in, len_in);
+    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &sha, sizeof(sha));
+    if (!aligned) {
+        memcpy(bytes_out, &ripemd, sizeof(ripemd));
+        clear(&ripemd, sizeof(ripemd));
+    }
+    clear(&sha, sizeof(sha));
     return WALLY_OK;
 }
 

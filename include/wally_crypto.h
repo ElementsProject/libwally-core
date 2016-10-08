@@ -98,7 +98,7 @@ WALLY_CORE_API int wally_aes_cbc(
 #define SHA512_LEN 64
 
 /**
- * SHA-256
+ * SHA-256(m)
  *
  * @bytes_in: The message to hash
  * @len_in: The length of @bytes_in in bytes.
@@ -112,7 +112,7 @@ WALLY_CORE_API int wally_sha256(
     size_t len);
 
 /**
- * SHA-256d (double SHA-256)
+ * SHA-256(SHA-256(m)) (double SHA-256)
  *
  * @bytes_in: The message to hash
  * @len_in: The length of @bytes_in in bytes.
@@ -126,7 +126,7 @@ WALLY_CORE_API int wally_sha256d(
     size_t len);
 
 /**
- * SHA-512
+ * SHA-512(m)
  *
  * @bytes_in: The message to hash
  * @len_in: The length of @bytes_in in bytes.
@@ -134,6 +134,23 @@ WALLY_CORE_API int wally_sha256d(
  * @len: The length of @bytes_out in bytes. Must be @SHA512_LEN.
  */
 WALLY_CORE_API int wally_sha512(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    unsigned char *bytes_out,
+    size_t len);
+
+/** Output length for @wally_hash160 */
+#define HASH160_LEN 20
+
+/**
+ * RIPEMD-160(SHA-256(m))
+ *
+ * @bytes_in: The message to hash
+ * @len_in: The length of @bytes_in in bytes.
+ * @bytes_out: Destination for the resulting hash.
+ * @len: The length of @bytes_out in bytes. Must be @HASH160_LEN.
+ */
+WALLY_CORE_API int wally_hash160(
     const unsigned char *bytes_in,
     size_t len_in,
     unsigned char *bytes_out,

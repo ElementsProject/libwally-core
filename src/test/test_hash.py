@@ -37,19 +37,39 @@ sha2_cases = {
          '80d1189477563e1b5206b2749f1afe4807e5705e8bd77887a60187a712156688'],
 }
 
+hash160_cases = [
+    # https://en.bitcoin.it/wiki/Technical_background_of_Bitcoin_addresses
+    [ '0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B235'
+      '22CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6',
+      '010966776006953D5567439E5E39F86A0D273BEE' ],
+    # Randomly generated cases from https://gobittest.appspot.com/Address
+    [ '045B3B9D153DDB9A9630C7C4F00A56212A3FCAD062E8014C3E95BF9DDBD651B37'
+      'FFC78E532BC15096F1BAF889B503228324485CCF02BA954F431D4B5BAE731070D',
+      '5CE3425A868F365E06272EA5472D344CC8D14E56' ],
+    [ '048DED2821E449EA2AD863A35972A97120074EF6A73C0D5DF97BF20538EF173EC'
+      '33E75210F7B5977BDD2939850B3EA3791049C83DF4F66296F935FDF38BD80C2AC',
+      'AFF2B47861A205E3AB67B2042C3F44F1C9283868' ],
+    [ '042125CC51DD979091CBA34E71A4B419708267566E72F68EB5891F70E90774A34'
+      '171C1C95F54DE84BC11CBC0E6BD4792D5C17C5C3A26F99A9D136AADB66463AD58',
+      '53190BD5877616554E72253D4CDD2D37E1AA0D73' ],
+]
 
-class SHA2Tests(unittest.TestCase):
+class HashTests(unittest.TestCase):
 
-    SHA256_LEN, SHA512_LEN = 32, 64
+    SHA256_LEN, SHA512_LEN, HASH160_LEN = 32, 64, 20
 
     def make_outbuf(self, fn, aligned=True):
-        buf_len = self.SHA512_LEN if fn == wally_sha512 else self.SHA256_LEN
+        buf_len = self.SHA256_LEN
+        if fn == wally_sha512:
+            buf_len = self.SHA512_LEN
+        elif fn == wally_hash160:
+            buf_len = self.HASH160_LEN
         offset = 0 if aligned else 1
         buf = create_string_buffer(buf_len + offset)
         return byref(buf, offset), buf_len
 
 
-    def doSHA(self, fn, hex_in, aligned=True):
+    def do_hash(self, fn, hex_in, aligned=True):
         buf, buf_len = self.make_outbuf(fn, aligned)
         in_bytes, in_bytes_len = make_cbuffer(hex_in)
         ret = fn(in_bytes, in_bytes_len, buf, buf_len)
@@ -59,20 +79,27 @@ class SHA2Tests(unittest.TestCase):
         return utf8(result)
 
 
-    def test_vectors(self):
+    def test_sha_vectors(self):
         for in_msg, values in sha2_cases.items():
             msg = h(utf8(in_msg))
             for i, fn in enumerate([wally_sha256, wally_sha512, wally_sha256d]):
                 if values[i] is not None:
                     for aligned in [True, False]:
-                        result = self.doSHA(fn, msg, aligned)
+                        result = self.do_hash(fn, msg, aligned)
                         expected = utf8(values[i].replace(' ', ''))
                         self.assertEqual(result, expected)
 
 
+    def test_hash160_vectors(self):
+        for msg, expected in hash160_cases:
+            for aligned in [True, False]:
+                result = self.do_hash(wally_hash160, utf8(msg), aligned)
+                self.assertEqual(result, utf8(expected.lower()))
+
+
     def test_invalid_args(self):
         in_bytes, in_bytes_len = make_cbuffer(h(utf8('abc')))
-        for fn in [wally_sha256, wally_sha512, wally_sha256d]:
+        for fn in [wally_sha256, wally_sha512, wally_sha256d, wally_hash160]:
             buf, buf_len = self.make_outbuf(fn)
             for args in [(None,     in_bytes_len, buf,  buf_len),
                          (in_bytes, in_bytes_len, None, buf_len),

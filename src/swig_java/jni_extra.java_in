@@ -49,6 +49,10 @@
       return sha512(jarg1, null);
   }
 
+  public final static byte[] hash160(byte[] jarg1) {
+      return hash160(jarg1, null);
+  }
+
   public final static byte[] hex_to_bytes(String jarg1) {
       final byte[] ret = new byte[jarg1.length() / 2];
       if (hex_to_bytes(jarg1, ret) != ret.length)
