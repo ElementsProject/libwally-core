@@ -12,7 +12,7 @@ def _wrap_bin(fn, len):
 
 wally_sha256 = _wrap_bin(wally_sha256, SHA256_LEN)
 wally_sha256d = _wrap_bin(wally_sha256d, SHA256_LEN)
-wally_sha512 = _wrap_bin(wally_sha256, SHA512_LEN)
+wally_sha512 = _wrap_bin(wally_sha512, SHA512_LEN)
 wally_hash160 = _wrap_bin(wally_hash160, HASH160_LEN)
 wally_hmac_sha256 = _wrap_bin(wally_hmac_sha256, HMAC_SHA256_LEN)
 wally_hmac_sha512 = _wrap_bin(wally_hmac_sha512, HMAC_SHA512_LEN)
