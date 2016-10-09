@@ -28,3 +28,6 @@ bip38_raw_from_private_key = _wrap_bin(bip38_raw_from_private_key, BIP38_SERIALI
 bip38_raw_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
 bip38_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
 bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed, BIP39_SEED_LEN_512)
+
+wally_pbkdf2_hmac_sha256 = _wrap_bin(wally_pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
+wally_pbkdf2_hmac_sha512 = _wrap_bin(wally_pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
