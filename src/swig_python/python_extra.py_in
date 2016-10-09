@@ -1,14 +1,19 @@
 # Support functions for the SWIG python wrapper
 
-def _wrap_bin(fn, len):
+def _wrap_bin(fn, length):
     """Wrap functions that take a fixed size output buffer to create/return it"""
     def wrapped(*args):
-        buf = bytearray(len)
+        buf = bytearray(length)
         ret = fn(*list(args)+[buf])
         if ret is not None:
             return ret, buf
         return buf
     return wrapped
+
+def hex_to_bytes(hex_str):
+    buf = bytearray(len(hex_str) * 2)
+    hex_to_bytes(hex_str, buf)
+    return buf
 
 sha256 = _wrap_bin(sha256, SHA256_LEN)
 sha256d = _wrap_bin(sha256d, SHA256_LEN)
