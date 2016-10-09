@@ -10,12 +10,12 @@ def _wrap_bin(fn, len):
         return buf
     return wrapped
 
-wally_sha256 = _wrap_bin(wally_sha256, SHA256_LEN)
-wally_sha256d = _wrap_bin(wally_sha256d, SHA256_LEN)
-wally_sha512 = _wrap_bin(wally_sha512, SHA512_LEN)
-wally_hash160 = _wrap_bin(wally_hash160, HASH160_LEN)
-wally_hmac_sha256 = _wrap_bin(wally_hmac_sha256, HMAC_SHA256_LEN)
-wally_hmac_sha512 = _wrap_bin(wally_hmac_sha512, HMAC_SHA512_LEN)
+sha256 = _wrap_bin(sha256, SHA256_LEN)
+sha256d = _wrap_bin(sha256d, SHA256_LEN)
+sha512 = _wrap_bin(sha512, SHA512_LEN)
+hash160 = _wrap_bin(hash160, HASH160_LEN)
+hmac_sha256 = _wrap_bin(hmac_sha256, HMAC_SHA256_LEN)
+hmac_sha512 = _wrap_bin(hmac_sha512, HMAC_SHA512_LEN)
 
 bip32_key_serialize = _wrap_bin(bip32_key_serialize, BIP32_SERIALIZED_LEN)
 bip32_key_get_chain_code = _wrap_bin(bip32_key_get_chain_code, 32)
@@ -29,5 +29,5 @@ bip38_raw_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
 bip38_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
 bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed, BIP39_SEED_LEN_512)
 
-wally_pbkdf2_hmac_sha256 = _wrap_bin(wally_pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
-wally_pbkdf2_hmac_sha512 = _wrap_bin(wally_pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
+pbkdf2_hmac_sha256 = _wrap_bin(pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
+pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)

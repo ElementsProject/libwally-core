@@ -146,6 +146,7 @@ typedef unsigned int uint32_t;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
+%rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
 %include "../include/wally_bip32.h"
