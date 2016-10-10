@@ -10,9 +10,10 @@ def _wrap_bin(fn, length):
         return buf
     return wrapped
 
+_unwrapped_hex_to_bytes = hex_to_bytes
 def hex_to_bytes(hex_str):
-    buf = bytearray(len(hex_str) * 2)
-    hex_to_bytes(hex_str, buf)
+    buf = bytearray(len(hex_str) / 2)
+    _unwrapped_hex_to_bytes(bytes(hex_str), buf)
     return buf
 
 sha256 = _wrap_bin(sha256, SHA256_LEN)
