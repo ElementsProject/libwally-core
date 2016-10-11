@@ -61,31 +61,6 @@ static bool mem_is_zero(const void *mem, size_t len)
     return true;
 }
 
-/* Overflow check reproduced from secp256k1/src/scalar_4x64_impl.h,
- * Copyright (c) 2013, 2014 Pieter Wuille */
-#define SECP256K1_N_0 ((uint64_t)0xBFD25E8CD0364141ULL)
-#define SECP256K1_N_1 ((uint64_t)0xBAAEDCE6AF48A03BULL)
-#define SECP256K1_N_2 ((uint64_t)0xFFFFFFFFFFFFFFFEULL)
-#define SECP256K1_N_3 ((uint64_t)0xFFFFFFFFFFFFFFFFULL)
-
-static int key_overflow(const uint64_t *a)
-{
-    int yes = 0;
-    int no = 0;
-    no |= (a[3] < SECP256K1_N_3); /* No need for a > check. */
-    no |= (a[2] < SECP256K1_N_2);
-    yes |= (a[2] > SECP256K1_N_2) & ~no;
-    no |= (a[1] < SECP256K1_N_1);
-    yes |= (a[1] > SECP256K1_N_1) & ~no;
-    yes |= (a[0] >= SECP256K1_N_0) & ~no;
-    return yes;
-}
-
-static int key_zero(const uint64_t *a)
-{
-    return a[0] == 0 && a[1] == 0 && a[2] == 0 && a[3] == 0;
-}
-
 static bool child_is_hardened(uint32_t child_num)
 {
     return child_num >= BIP32_INITIAL_HARDENED_CHILD;
@@ -161,6 +136,7 @@ static bool is_valid_seed_len(size_t len) {
 int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
                         uint32_t version, struct ext_key *key_out)
 {
+    const secp256k1_context *ctx;
     struct sha512 sha;
 
     if (!bytes_in || !is_valid_seed_len(len_in) ||
@@ -170,19 +146,22 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     clear(key_out, sizeof(*key_out));
     key_out->version = version;
 
-    /* Generate key and chain code */
+    if (!(ctx = secp_ctx()))
+        return WALLY_ENOMEM;
+
+    /* Generate private key and chain code */
     hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len_in);
 
-    /* Check that key lies between 0 and order(secp256k1) exclusive */
-    if (key_overflow(sha.u.u64) || key_zero(sha.u.u64)) {
-        clear_n(2, &sha, sizeof(sha), key_out, sizeof(*key_out));
-        return WALLY_ERROR; /* Out of bounds */
+    /* Check that the generated private key is valid */
+    if (!secp256k1_ec_seckey_verify(ctx, sha.u.u8)) {
+        clear(&sha, sizeof(sha));
+        return WALLY_ERROR; /* Invalid private key */
     }
 
     /* Copy the private key and set its prefix */
     key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
     memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
-    if (key_compute_pub_key(key_out)) {
+    if (key_compute_pub_key(key_out) != WALLY_OK) {
         clear_n(2, &sha, sizeof(sha), key_out, sizeof(*key_out));
         return WALLY_EINVAL;
     }
@@ -349,7 +328,7 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
             return wipe_key_fail(key_out); /* Private key data in public key */
 
         copy_in(key_out->priv_key, bytes_in, sizeof(key_out->priv_key));
-        if (key_compute_pub_key(key_out))
+        if (key_compute_pub_key(key_out) != WALLY_OK)
             return wipe_key_fail(key_out);
     } else {
         if (key_out->version == BIP32_VER_MAIN_PRIVATE ||
@@ -472,7 +451,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
             return wipe_key_fail(key_out); /* Out of bounds FIXME: Iterate to the next? */
         }
 
-        if (key_compute_pub_key(key_out)) {
+        if (key_compute_pub_key(key_out) != WALLY_OK) {
             clear(&sha, sizeof(sha));
             return wipe_key_fail(key_out);
         }
@@ -645,7 +624,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     else if (version == BIP32_VER_MAIN_PRIVATE || version == BIP32_VER_TEST_PRIVATE) {
         /* Compute the public key if not given */
         int ret = key_compute_pub_key(key_out);
-        if (ret) {
+        if (ret != WALLY_OK) {
             clear(key_out, sizeof(*key_out));
             free(key_out);
             *output = 0;
