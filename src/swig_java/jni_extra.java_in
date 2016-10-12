@@ -76,4 +76,7 @@
       return pbkdf2_hmac_sha512(jarg1, jarg2, jarg3, jarg4, null);
   }
 
+  public final static byte[] ec_sig_from_bytes(byte[] jarg1, byte[] jarg2, long jarg3) {
+      return ec_sig_from_bytes(jarg1, jarg2, jarg3, null);
+  }
 }

@@ -182,6 +182,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_in_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
@@ -287,6 +288,8 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
+%returns_void__(wally_ec_private_key_verify);
+%returns_array_(wally_ec_sig_from_bytes, 6, 7, EC_SIGNATURE_LEN);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
 %returns_void__(wally_scrypt);

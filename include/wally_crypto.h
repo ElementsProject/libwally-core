@@ -305,7 +305,7 @@ WALLY_CORE_API int wally_ec_private_key_verify(
  * @bytes_out: Destination for the resulting compact signature.
  * @len: The length of @bytes_out in bytes. Must be @EC_SIGNATURE_LEN.
  */
-WALLY_CORE_API int wally_ec_sign_hash(
+WALLY_CORE_API int wally_ec_sig_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
     const unsigned char *bytes_in,

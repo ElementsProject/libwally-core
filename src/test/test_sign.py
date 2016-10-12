@@ -22,8 +22,8 @@ class SignTests(unittest.TestCase):
         blen = lambda b: 0 if b is None else len(b)
         if out_len is None:
             out_len = blen(out_buf)
-        return wally_ec_sign_hash(priv_key, blen(priv_key), msg, blen(msg),
-                                  flags, out_buf, out_len)
+        return wally_ec_sig_from_bytes(priv_key, blen(priv_key),
+                                       msg, blen(msg), flags, out_buf, out_len)
 
 
     def test_sign_hash(self):
@@ -49,27 +49,27 @@ class SignTests(unittest.TestCase):
     def test_sign_hash_invalid_inputs(self):
         out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
 
-        priv_ok, msg_ok = self.cbufferize(['11' * 32, '22' * 32])
+        priv_key, msg = self.cbufferize(['11' * 32, '22' * 32])
+        priv_bad, msg_bad = self.cbufferize(['FF' * 32, '22' * 33])
         FLAGS_BOTH = FLAG_ECDSA | FLAG_SCHNORR
-        bad_priv, _ = make_cbuffer('FF' * 32)
 
-        cases = [(None,        msg_ok,      FLAG_ECDSA),   # Null priv_key
-                 (('11' * 33), msg_ok,      FLAG_ECDSA),   # Wrong priv_key len
-                 (bad_priv,    msg_ok,      FLAG_ECDSA),   # Bad private key
-                 (priv_ok,     None,        FLAG_ECDSA),   # Null message
-                 (priv_ok,     ('11' * 33), FLAG_ECDSA),   # Wrong message len
-                 (priv_ok,     msg_ok,      0),            # No flags set
-                 (priv_ok,     msg_ok,      FLAG_SCHNORR), # Not implemented
-                 (priv_ok,     msg_ok,      FLAGS_BOTH),   # Mutually exclusive
-                 (priv_ok,     msg_ok,      0x4)]          # Unknown flag
+        cases = [(None,         msg,     FLAG_ECDSA),   # Null priv_key
+                 (('11' * 33),  msg,     FLAG_ECDSA),   # Wrong priv_key len
+                 (priv_bad,     msg,     FLAG_ECDSA),   # Bad private key
+                 (priv_key,     None,    FLAG_ECDSA),   # Null message
+                 (priv_key,     msg_bad, FLAG_ECDSA),   # Wrong message len
+                 (priv_key,     msg,     0),            # No flags set
+                 (priv_key,     msg,     FLAG_SCHNORR), # Not yet implemented
+                 (priv_key,     msg,     FLAGS_BOTH),   # Mutually exclusive
+                 (priv_key,     msg,     0x4)]          # Unknown flag
 
         for case in cases:
             priv_key, msg, flags = case
             ret = self.sign(priv_key, msg, flags, out_buf)
             self.assertEqual(ret, WALLY_EINVAL)
 
-        for o, l in [(None, 32), (out_buf, -1)]: # Invalid out/out length
-            ret = self.sign(priv_ok, msg_ok, FLAG_ECDSA, o, l)
+        for o, l in [(None, 32), (out_buf, -1)]: # Null out/Invalid out length
+            ret = self.sign(priv_key, msg, FLAG_ECDSA, o, l)
             self.assertEqual(ret, WALLY_EINVAL)
 
 

@@ -65,6 +65,7 @@ static void destroy_ext_key(PyObject *obj) {
 %pybuffer_binary(const unsigned char *priv_key, size_t priv_key_len);
 %pybuffer_binary(const unsigned char *pub_key, size_t pub_key_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
+%pybuffer_binary(const unsigned char *sig_in, size_t sig_in_len);
 %pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
 %pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
 %pybuffer_mutable_binary(unsigned char *salt_in_out, size_t salt_len);

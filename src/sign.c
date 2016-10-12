@@ -35,10 +35,10 @@ int wally_ec_private_key_verify(const unsigned char *priv_key, size_t priv_key_l
 }
 
 
-int wally_ec_sign_hash(const unsigned char *priv_key, size_t priv_key_len,
-                       const unsigned char *bytes_in, size_t len_in,
-                       uint32_t flags,
-                       unsigned char *bytes_out, size_t len)
+int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
+                            const unsigned char *bytes_in, size_t len_in,
+                            uint32_t flags,
+                            unsigned char *bytes_out, size_t len)
 {
     secp256k1_context *ctx;
 

@@ -91,7 +91,7 @@ for f in (
     ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_ulong, c_void_p, c_ulong]),
     ('wally_scrypt', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_void_p, c_ulong]),
     ('wally_secp_randomize', c_int, [c_void_p, c_ulong]),
-    ('wally_ec_sign_hash', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
+    ('wally_ec_sig_from_bytes', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('wally_ec_private_key_verify', c_int, [c_void_p, c_ulong]),
     ('wally_get_operations', c_int, [POINTER(operations)]),
     ('wally_set_operations', c_int, [POINTER(operations)]),
