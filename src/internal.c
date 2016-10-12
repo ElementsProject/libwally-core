@@ -223,6 +223,15 @@ void wally_free(void *ptr)
     _ops.free_fn(ptr);
 }
 
+char *wally_strdup(const char *str)
+{
+    size_t len = strlen(str) + 1;
+    char *new_str = (char *)wally_malloc(len);
+    if (new_str)
+        memcpy(new_str, str, len); /* Copies terminating nul */
+    return new_str;
+}
+
 const struct wally_operations *wally_ops(void)
 {
     return &_ops;

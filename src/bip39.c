@@ -33,7 +33,7 @@ int bip39_get_languages(char **output)
 {
     if (!output)
         return WALLY_EINVAL;
-    *output = strdup("en es fr it jp zhs zht");
+    *output = wally_strdup("en es fr it jp zhs zht");
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
@@ -68,7 +68,7 @@ int bip39_get_word(const struct words *w, size_t idx,
     if (!output || !(word = wordlist_lookup_index(w, idx)))
         return WALLY_EINVAL;
 
-    *output = word ? strdup(word) : NULL;
+    *output = word ? wally_strdup(word) : NULL;
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 

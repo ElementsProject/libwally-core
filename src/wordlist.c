@@ -21,7 +21,7 @@ static struct words *wordlist_alloc(const char *words, size_t len)
 {
     struct words *w = wally_malloc(sizeof(struct words));
     if (w) {
-        w->str = strdup(words);
+        w->str = wally_strdup(words);
         if (w->str) {
             w->str_len = strlen(w->str);
             w->len = len;
