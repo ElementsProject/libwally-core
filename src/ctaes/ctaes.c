@@ -134,7 +134,7 @@ static void SubBytes(AES_state *s, int inv) {
         D = U7;
     }
 
-    /* Non-linear transformation (identical to the code in SubBytes) */
+    /* Non-linear transformation (shared between the forward and backward case) */
     M1 = T13 & T6;
     M6 = T3 & T16;
     M11 = T1 & T15;
@@ -286,59 +286,69 @@ static void InvShiftRows(AES_state* s) {
 
 #define ROT(x,b) (((x) >> ((b) * 4)) | ((x) << ((4-(b)) * 4)))
 
-static void MixColumns(AES_state* s) {
-    /* b(r,c) = 02 * a(r,c) + 02 * a(r+1,c) + a(r+1,c) + a(r+2,c) + a(r+3,c) */
-
-    uint16_t a0 = s->slice[0], a1 = s->slice[1], a2 = s->slice[2], a3 = s->slice[3];
-    uint16_t a4 = s->slice[4], a5 = s->slice[5], a6 = s->slice[6], a7 = s->slice[7];
-
-    uint16_t a0_01 = a0 ^ ROT(a0,1), a0_123 = ROT(a0_01,1) ^ ROT(a0, 3);
-    uint16_t a1_01 = a1 ^ ROT(a1,1), a1_123 = ROT(a1_01,1) ^ ROT(a1, 3);
-    uint16_t a2_01 = a2 ^ ROT(a2,1), a2_123 = ROT(a2_01,1) ^ ROT(a2, 3);
-    uint16_t a3_01 = a3 ^ ROT(a3,1), a3_123 = ROT(a3_01,1) ^ ROT(a3, 3);
-    uint16_t a4_01 = a4 ^ ROT(a4,1), a4_123 = ROT(a4_01,1) ^ ROT(a4, 3);
-    uint16_t a5_01 = a5 ^ ROT(a5,1), a5_123 = ROT(a5_01,1) ^ ROT(a5, 3);
-    uint16_t a6_01 = a6 ^ ROT(a6,1), a6_123 = ROT(a6_01,1) ^ ROT(a6, 3);
-    uint16_t a7_01 = a7 ^ ROT(a7,1), a7_123 = ROT(a7_01,1) ^ ROT(a7, 3);
-
-    s->slice[0] = a7_01 ^ a0_123;
-    s->slice[1] = a7_01 ^ a0_01 ^ a1_123;
-    s->slice[2] = a1_01 ^ a2_123;
-    s->slice[3] = a7_01 ^ a2_01 ^ a3_123;
-    s->slice[4] = a7_01 ^ a3_01 ^ a4_123;
-    s->slice[5] = a4_01 ^ a5_123;
-    s->slice[6] = a5_01 ^ a6_123;
-    s->slice[7] = a6_01 ^ a7_123;
-}
-
-static void InvMixColumns(AES_state* s) {
-    /* b(r,c) = 0e * a(r,c) + 0b * a(r+1,c) + 0d * a(r+2,c) + 09 * a(r+3,c)
-     * b(r,c) = 08 * (a(r,c) + a(r+1,c) + a(r+2,c) + a(r+3,c)) +
-     *          04 * (a(r,c) + a(r+2,c)) +
-     *          02 * (a(r,c) + a(r+1,c)) +
-     *          01 * (a(r+1,c) + a(r+2,c) + a(r+3,c))
+static void MixColumns(AES_state* s, int inv) {
+    /* The MixColumns transform treats the bytes of the columns of the state as
+     * coefficients of a 3rd degree polynomial over GF(2^8) and multiplies them
+     * by the fixed polynomial a(x) = {03}x^3 + {01}x^2 + {01}x + {02}, modulo
+     * x^4 + {01}.
+     *
+     * In the inverse transform, we multiply by the inverse of a(x),
+     * a^-1(x) = {0b}x^3 + {0d}x^2 + {09}x + {0e}. This is equal to
+     * a(x) * ({04}x^2 + {05}), so we can reuse the forward transform's code
+     * (found in OpenSSL's bsaes-x86_64.pl, attributed to Jussi Kivilinna)
+     *
+     * In the bitsliced representation, a multiplication of every column by x
+     * mod x^4 + 1 is simply a right rotation.
      */
 
-    uint16_t a0 = s->slice[0], a1 = s->slice[1], a2 = s->slice[2], a3 = s->slice[3];
-    uint16_t a4 = s->slice[4], a5 = s->slice[5], a6 = s->slice[6], a7 = s->slice[7];
-
-    uint16_t a0_01 = a0 ^ ROT(a0, 1), a0_12 = ROT(a0_01, 1), a0_123 = a0_12 ^ ROT(a0, 3), a0_0123 = a0 ^ a0_123, a0_02 = a0_01 ^ a0_12;
-    uint16_t a1_01 = a1 ^ ROT(a1, 1), a1_12 = ROT(a1_01, 1), a1_123 = a1_12 ^ ROT(a1, 3), a1_0123 = a1 ^ a1_123, a1_02 = a1_01 ^ a1_12;
-    uint16_t a2_01 = a2 ^ ROT(a2, 1), a2_12 = ROT(a2_01, 1), a2_123 = a2_12 ^ ROT(a2, 3), a2_0123 = a2 ^ a2_123, a2_02 = a2_01 ^ a2_12;
-    uint16_t a3_01 = a3 ^ ROT(a3, 1), a3_12 = ROT(a3_01, 1), a3_123 = a3_12 ^ ROT(a3, 3), a3_0123 = a3 ^ a3_123, a3_02 = a3_01 ^ a3_12;
-    uint16_t a4_01 = a4 ^ ROT(a4, 1), a4_12 = ROT(a4_01, 1), a4_123 = a4_12 ^ ROT(a4, 3), a4_0123 = a4 ^ a4_123, a4_02 = a4_01 ^ a4_12;
-    uint16_t a5_01 = a5 ^ ROT(a5, 1), a5_12 = ROT(a5_01, 1), a5_123 = a5_12 ^ ROT(a5, 3), a5_0123 = a5 ^ a5_123, a5_02 = a5_01 ^ a5_12;
-    uint16_t a6_01 = a6 ^ ROT(a6, 1), a6_12 = ROT(a6_01, 1), a6_123 = a6_12 ^ ROT(a6, 3), a6_0123 = a6 ^ a6_123, a6_02 = a6_01 ^ a6_12;
-    uint16_t a7_01 = a7 ^ ROT(a7, 1), a7_12 = ROT(a7_01, 1), a7_123 = a7_12 ^ ROT(a7, 3), a7_0123 = a7 ^ a7_123, a7_02 = a7_01 ^ a7_12;
-
-    s->slice[0] = a0_123 ^ a7_01 ^ a6_02 ^ a5_0123;
-    s->slice[1] = a1_123 ^ a0_01 ^ a7_12 ^ a6_02 ^ a5_0123 ^ a6_0123;
-    s->slice[2] = a2_123 ^ a1_01 ^ a0_02 ^ a7_02 ^ a6_0123 ^ a7_0123;
-    s->slice[3] = a3_123 ^ a2_01 ^ a7_01 ^ a1_02 ^ a6_02 ^ a0_0123 ^ a5_0123 ^ a7_0123;
-    s->slice[4] = a4_123 ^ a3_01 ^ a7_12 ^ a2_02 ^ a6_02 ^ a1_0123 ^ a5_0123 ^ a6_0123;
-    s->slice[5] = a5_123 ^ a4_01 ^ a3_02 ^ a7_02 ^ a2_0123 ^ a6_0123 ^ a7_0123;
-    s->slice[6] = a6_123 ^ a5_01 ^ a4_02 ^ a3_0123 ^ a7_0123;
-    s->slice[7] = a7_123 ^ a6_01 ^ a5_02 ^ a4_0123;
+    /* Shared for both directions is a multiplication by a(x), which can be
+     * rewritten as (x^3 + x^2 + x) + {02}*(x^3 + {01}).
+     *
+     * First compute s into the s? variables, (x^3 + {01}) * s into the s?_01
+     * variables and (x^3 + x^2 + x)*s into the s?_123 variables.
+     */
+    uint16_t s0 = s->slice[0], s1 = s->slice[1], s2 = s->slice[2], s3 = s->slice[3];
+    uint16_t s4 = s->slice[4], s5 = s->slice[5], s6 = s->slice[6], s7 = s->slice[7];
+    uint16_t s0_01 = s0 ^ ROT(s0, 1), s0_123 = ROT(s0_01, 1) ^ ROT(s0, 3);
+    uint16_t s1_01 = s1 ^ ROT(s1, 1), s1_123 = ROT(s1_01, 1) ^ ROT(s1, 3);
+    uint16_t s2_01 = s2 ^ ROT(s2, 1), s2_123 = ROT(s2_01, 1) ^ ROT(s2, 3);
+    uint16_t s3_01 = s3 ^ ROT(s3, 1), s3_123 = ROT(s3_01, 1) ^ ROT(s3, 3);
+    uint16_t s4_01 = s4 ^ ROT(s4, 1), s4_123 = ROT(s4_01, 1) ^ ROT(s4, 3);
+    uint16_t s5_01 = s5 ^ ROT(s5, 1), s5_123 = ROT(s5_01, 1) ^ ROT(s5, 3);
+    uint16_t s6_01 = s6 ^ ROT(s6, 1), s6_123 = ROT(s6_01, 1) ^ ROT(s6, 3);
+    uint16_t s7_01 = s7 ^ ROT(s7, 1), s7_123 = ROT(s7_01, 1) ^ ROT(s7, 3);
+    /* Now compute s = s?_123 + {02} * s?_01. */
+    s->slice[0] = s7_01 ^ s0_123;
+    s->slice[1] = s7_01 ^ s0_01 ^ s1_123;
+    s->slice[2] = s1_01 ^ s2_123;
+    s->slice[3] = s7_01 ^ s2_01 ^ s3_123;
+    s->slice[4] = s7_01 ^ s3_01 ^ s4_123;
+    s->slice[5] = s4_01 ^ s5_123;
+    s->slice[6] = s5_01 ^ s6_123;
+    s->slice[7] = s6_01 ^ s7_123;
+    if (inv) {
+        /* In the reverse direction, we further need to multiply by
+         * {04}x^2 + {05}, which can be written as {04} * (x^2 + {01}) + {01}.
+         *
+         * First compute (x^2 + {01}) * s into the t?_02 variables: */
+        uint16_t t0_02 = s->slice[0] ^ ROT(s->slice[0], 2);
+        uint16_t t1_02 = s->slice[1] ^ ROT(s->slice[1], 2);
+        uint16_t t2_02 = s->slice[2] ^ ROT(s->slice[2], 2);
+        uint16_t t3_02 = s->slice[3] ^ ROT(s->slice[3], 2);
+        uint16_t t4_02 = s->slice[4] ^ ROT(s->slice[4], 2);
+        uint16_t t5_02 = s->slice[5] ^ ROT(s->slice[5], 2);
+        uint16_t t6_02 = s->slice[6] ^ ROT(s->slice[6], 2);
+        uint16_t t7_02 = s->slice[7] ^ ROT(s->slice[7], 2);
+        /* And then update s += {04} * t?_02 */
+        s->slice[0] ^= t6_02;
+        s->slice[1] ^= t6_02 ^ t7_02;
+        s->slice[2] ^= t0_02 ^ t7_02;
+        s->slice[3] ^= t1_02 ^ t6_02;
+        s->slice[4] ^= t2_02 ^ t6_02 ^ t7_02;
+        s->slice[5] ^= t3_02 ^ t7_02;
+        s->slice[6] ^= t4_02;
+        s->slice[7] ^= t5_02;
+    }
 }
 
 static void AddRoundKey(AES_state* s, const AES_state* round) {
@@ -446,7 +456,7 @@ static void AES_encrypt(const AES_state* rounds, int nrounds, unsigned char* cip
     for (round = 1; round < nrounds; round++) {
         SubBytes(&s, 0);
         ShiftRows(&s);
-        MixColumns(&s);
+        MixColumns(&s, 0);
         AddRoundKey(&s, rounds++);
     }
 
@@ -459,9 +469,9 @@ static void AES_encrypt(const AES_state* rounds, int nrounds, unsigned char* cip
 
 static void AES_decrypt(const AES_state* rounds, int nrounds, unsigned char* plain16, const unsigned char* cipher16) {
     /* Most AES decryption implementations use the alternate scheme
-     * (the Equivalent Inverse Cipher), which looks more like encryption, but
-     * needs different round constants. We can't reuse any code here anyway, so
-     * don't bother. */
+     * (the Equivalent Inverse Cipher), which allows for more code reuse between
+     * the encryption and decryption code, but requires separate setup for both.
+     */
     AES_state s = {{0}};
     int round;
 
@@ -474,7 +484,7 @@ static void AES_decrypt(const AES_state* rounds, int nrounds, unsigned char* pla
         InvShiftRows(&s);
         SubBytes(&s, 1);
         AddRoundKey(&s, rounds--);
-        InvMixColumns(&s);
+        MixColumns(&s, 1);
     }
 
     InvShiftRows(&s);
