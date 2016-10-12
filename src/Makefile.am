@@ -98,6 +98,7 @@ libwallycore_la_SOURCES = \
     mnemonic.c \
     pbkdf2.c \
     scrypt.c \
+    sign.c \
     wordlist.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
@@ -137,6 +138,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_sign.py
 if EXPORT_ALL
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py

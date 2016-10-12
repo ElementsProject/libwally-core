@@ -43,7 +43,7 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes_in, 
     }
 
     /* Allocate and fill result */
-    if (str_len && (str = malloc(str_len))) {
+    if (str_len && (str = wally_malloc(str_len))) {
         char *out = str;
 
         for (i = 0; i < total_mnemonics; ++i) {

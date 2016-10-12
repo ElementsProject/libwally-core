@@ -124,7 +124,7 @@ int bip32_key_free(const struct ext_key *key_in)
 {
     if (!key_in)
         return WALLY_EINVAL;
-    free((void *)key_in);
+    wally_free((void *)key_in);
     return WALLY_OK;
 }
 
@@ -179,7 +179,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
 #define ALLOC_KEY() \
     if (!output) \
         return WALLY_EINVAL; \
-    *output = malloc(sizeof(struct ext_key)); \
+    *output = wally_malloc(sizeof(struct ext_key)); \
     if (!*output) \
         return WALLY_ENOMEM; \
     clear((void *)*output, sizeof(struct ext_key))
@@ -192,7 +192,7 @@ int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
     ALLOC_KEY();
     ret = bip32_key_from_seed(bytes_in, len_in, version, (struct ext_key *)*output);
     if (ret) {
-        free((void *)*output);
+        wally_free((void *)*output);
         *output = 0;
     }
     return ret;
@@ -351,7 +351,7 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes_in, size_t len_in,
     ALLOC_KEY();
     ret = bip32_key_unserialize(bytes_in, len_in, (struct ext_key *)*output);
     if (ret) {
-        free((void *)*output);
+        wally_free((void *)*output);
         *output = 0;
     }
     return ret;
@@ -513,7 +513,7 @@ int bip32_key_from_parent_alloc(const struct ext_key *key_in,
     ALLOC_KEY();
     ret = bip32_key_from_parent(key_in, child_num, flags, (struct ext_key *)*output);
     if (ret) {
-        free((void *)*output);
+        wally_free((void *)*output);
         *output = 0;
     }
     return ret;
@@ -564,7 +564,7 @@ int bip32_key_from_parent_path_alloc(const struct ext_key *key_in,
     ret = bip32_key_from_parent_path(key_in, child_num_in, child_num_len,
                                      flags, (struct ext_key *)*output);
     if (ret) {
-        free((void *)*output);
+        wally_free((void *)*output);
         *output = 0;
     }
     return ret;
@@ -626,7 +626,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
         int ret = key_compute_pub_key(key_out);
         if (ret != WALLY_OK) {
             clear(key_out, sizeof(*key_out));
-            free(key_out);
+            wally_free(key_out);
             *output = 0;
             return ret;
         }

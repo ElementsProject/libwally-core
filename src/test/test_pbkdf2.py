@@ -2,6 +2,9 @@ import unittest
 from util import *
 from binascii import unhexlify
 
+PBKDF2_HMAC_SHA256_LEN, PBKDF2_HMAC_SHA512_LEN = 32, 64
+FLAG_BLOCK_RESERVED = 0x1
+
 class PBKDF2Case(object):
     def __init__(self, items):
         # Format: HMAC_SHA_TYPE, PASSWORD, SALT, COST, EXPECTED
@@ -15,9 +18,6 @@ class PBKDF2Case(object):
 
 class PBKDF2Tests(unittest.TestCase):
 
-    PBKDF2_HMAC_SHA256_LEN, PBKDF2_HMAC_SHA512_LEN = 32, 64
-    FLAG_BLOCK_RESERVED = 0x1
-
     def setUp(self):
         if not hasattr(self, 'wally_pbkdf2_hmac_sha256'):
             self.cases = []
@@ -29,7 +29,7 @@ class PBKDF2Tests(unittest.TestCase):
                     self.cases.append(PBKDF2Case(l.split(',')))
 
 
-    def test_pbkdf2_hmac(self):
+    def test_pbkdf2_hmac_sha(self):
 
         # Some test vectors are nuts (e.g. 2097152 cost), so only run the
         # first few. set these to -1 to run the whole suite (only needed
@@ -40,14 +40,14 @@ class PBKDF2Tests(unittest.TestCase):
 
             if case.typ == 256:
                 fn = wally_pbkdf2_hmac_sha256
-                mult = self.PBKDF2_HMAC_SHA256_LEN
+                mult = PBKDF2_HMAC_SHA256_LEN
                 if case.cost > 100:
                     if num_crazy_256 == 0:
                          continue
                     num_crazy_256 -= 1
             else:
                 fn = wally_pbkdf2_hmac_sha512
-                mult = self.PBKDF2_HMAC_SHA512_LEN
+                mult = PBKDF2_HMAC_SHA512_LEN
                 if case.cost > 100:
                     if num_crazy_512 == 0:
                         continue
@@ -59,7 +59,7 @@ class PBKDF2Tests(unittest.TestCase):
                 continue
 
             # Test both providing extra bytes and having them allocated for us
-            for flags in [0, self.FLAG_BLOCK_RESERVED]:
+            for flags in [0, FLAG_BLOCK_RESERVED]:
                 extra_bytes = '00000000' if flags else ''
                 salt, salt_len = make_cbuffer(case.salt + extra_bytes)
 
@@ -68,6 +68,23 @@ class PBKDF2Tests(unittest.TestCase):
 
                 self.assertEqual(ret, 0)
                 self.assertEqual(h(out_buf), h(case.expected))
+
+
+    def _pbkdf2_hmac_sha_malloc_fail(self, fn, len):
+        fake_buf, fake_len = make_cbuffer('aabbccdd')
+        out_buf, out_len = make_cbuffer('00' * len)
+        ret = fn(fake_buf, fake_len, fake_buf, fake_len, 0, 1, out_buf, out_len)
+        self.assertEqual(ret, WALLY_ENOMEM)
+
+
+    @malloc_fail([1])
+    def test_pbkdf2_hmac_sha256_malloc(self):
+        self._pbkdf2_hmac_sha_malloc_fail(wally_pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
+
+
+    @malloc_fail([1])
+    def test_pbkdf2_hmac_sha512_malloc(self):
+        self._pbkdf2_hmac_sha_malloc_fail(wally_pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
 
 
 if __name__ == '__main__':

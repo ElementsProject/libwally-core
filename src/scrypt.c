@@ -5,6 +5,10 @@
 #include "ccan/ccan/endian/endian.h"
 #include <string.h>
 
+/* Use scrypts internal malloc/free */
+#undef malloc
+#undef free
+
 /* Implement functions required by the scrypt core */
 static uint32_t le32dec(const void *p)
 {

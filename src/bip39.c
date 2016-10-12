@@ -218,7 +218,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     if (!mnemonic || !bytes_out || len != BIP39_SEED_LEN_512)
         return WALLY_EINVAL;
 
-    salt = malloc(salt_len);
+    salt = wally_malloc(salt_len);
     if (!salt)
         return WALLY_ENOMEM;
 
@@ -235,7 +235,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
         *written = BIP39_SEED_LEN_512; /* Succeeded */
 
     clear(salt, salt_len);
-    free(salt);
+    wally_free(salt);
 
     return ret;
 }

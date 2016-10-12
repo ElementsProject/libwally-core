@@ -50,7 +50,7 @@ int wally_free_string(char *str)
     if (!str)
         return WALLY_EINVAL;
     clear(str, strlen(str));
-    free(str);
+    wally_free(str);
     return WALLY_OK;
 }
 
@@ -185,4 +185,61 @@ void clear_n(unsigned int count, ...)
     }
 
     va_end(args);
+}
+
+#undef malloc
+#undef free
+
+static void *wally_internal_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+static void wally_internal_free(void *ptr)
+{
+    free(ptr);
+}
+
+static int wally_internal_ec_nonce_fn(unsigned char *nonce32,
+                                      const unsigned char *msg32, const unsigned char *key32,
+                                      const unsigned char *algo16, void *data, unsigned int attempt)
+{
+    return secp256k1_nonce_function_default(nonce32, msg32, key32, algo16, data, attempt);
+}
+
+static struct wally_operations _ops = {
+    wally_internal_malloc,
+    wally_internal_free,
+    wally_internal_ec_nonce_fn
+};
+
+void *wally_malloc(size_t size)
+{
+    return _ops.malloc_fn(size);
+}
+
+void wally_free(void *ptr)
+{
+    _ops.free_fn(ptr);
+}
+
+const struct wally_operations *wally_ops(void)
+{
+    return &_ops;
+}
+
+int wally_get_operations(struct wally_operations *output)
+{
+    if (!output)
+        return WALLY_EINVAL;
+    memcpy(output, &_ops, sizeof(_ops));
+    return WALLY_OK;
+}
+
+int wally_set_operations(const struct wally_operations *ops)
+{
+    if (!ops)
+        return WALLY_EINVAL;
+    memcpy(&_ops, ops, sizeof(_ops));
+    return WALLY_OK;
 }

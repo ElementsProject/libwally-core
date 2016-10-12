@@ -56,6 +56,7 @@ static void destroy_ext_key(PyObject *obj) {
 
 /* Input buffers with lengths are passed as python buffers */
 %pybuffer_binary(const unsigned char *bytes_in, size_t len_in);
+%pybuffer_binary(const unsigned char *priv_key, size_t priv_key_len);
 %pybuffer_binary(const unsigned char *iv, size_t iv_len);
 %pybuffer_binary(const unsigned char *key, size_t key_len);
 %pybuffer_binary(const unsigned char *pass, size_t pass_len);

@@ -88,5 +88,48 @@ WALLY_CORE_API int wally_hex_to_bytes(
     size_t len,
     size_t *written);
 
-#endif /* WALLY_CORE_H */
+#ifndef SWIG
+/** The type of an overridable function to allocate memory */
+typedef void *(*wally_malloc_t)(
+    size_t size);
 
+/** The type of an overridable function to free memory */
+typedef void (*wally_free_t)(
+    void *ptr);
+
+/** The type of an overridable function to generate an EC nonce */
+typedef int (*wally_ec_nonce_t)(
+    unsigned char *nonce32,
+    const unsigned char *msg32,
+    const unsigned char *key32,
+    const unsigned char *algo16,
+    void *data,
+    unsigned int attempt
+    );
+
+/** Structure holding function pointers for overridable wally operations */
+struct wally_operations {
+    wally_malloc_t malloc_fn;
+    wally_free_t free_fn;
+    wally_ec_nonce_t ec_nonce_fn;
+};
+
+/**
+ * Fetch the current overridable operations used by wally.
+ *
+ * @output: Destination for the overridable operations.
+ */
+WALLY_CORE_API int wally_get_operations(
+    struct wally_operations *output);
+
+/**
+ * Set the current overridable operations used by wally.
+ *
+ * @ops: The overridable operations to set.
+ */
+WALLY_CORE_API int wally_set_operations(
+    const struct wally_operations *ops);
+
+#endif /* SWIG */
+
+#endif /* WALLY_CORE_H */
