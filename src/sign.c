@@ -8,11 +8,13 @@
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
 #define EC_FLAGS_ALL (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
 
+/* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
 static void assert_assumptions(void)
 {
     BUILD_ASSERT(sizeof(secp256k1_ecdsa_signature) == EC_SIGNATURE_LEN);
 }
+/* LCOV_EXCL_STOP */
 
 static bool is_valid_ec_type(uint32_t flags)
 {

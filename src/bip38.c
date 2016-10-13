@@ -46,6 +46,7 @@ struct bip38_layout_t {
     unsigned char decode_hash[BASE58_CHECKSUM_LEN];
 };
 
+/* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
 static void assert_assumptions(void)
 {
@@ -56,6 +57,7 @@ static void assert_assumptions(void)
     BUILD_ASSERT((sizeof(struct bip38_layout_t) - BASE58_CHECKSUM_LEN - 1) ==
                  BIP38_SERIALIZED_LEN);
 }
+/* LCOV_EXCL_STOP */
 
 /* FIXME: Share this with key_compute_pub_key in bip32.c */
 static int compute_pub_key(const unsigned char *bytes_in, size_t len_in,

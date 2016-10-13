@@ -18,6 +18,7 @@ static const unsigned char SEED[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
 };
 
+/* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
 static void assert_assumptions(void)
 {
@@ -51,6 +52,7 @@ static void assert_assumptions(void)
                  BIP32_FLAG_KEY_PUBLIC != 2u &&
                  BIP32_FLAG_KEY_PUBLIC != 3u);
 }
+/* LCOV_EXCL_STOP */
 
 static bool mem_is_zero(const void *mem, size_t len)
 {
