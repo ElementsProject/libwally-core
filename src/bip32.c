@@ -193,9 +193,9 @@ int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
 
     ALLOC_KEY();
     ret = bip32_key_from_seed(bytes_in, len_in, version, (struct ext_key *)*output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free((void *)*output);
-        *output = 0;
+        *output = NULL;
     }
     return ret;
 }
