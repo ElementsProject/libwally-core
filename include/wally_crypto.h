@@ -273,6 +273,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 
 /** The length of a private key used for EC signing */
 #define EC_PRIVATE_KEY_LEN 32
+/** The length of a public key used for EC signing */
+#define EC_PUBLIC_KEY_LEN 33
 /** The length of a message hash to EC sign */
 #define EC_MESSAGE_HASH_LEN 32
 /** The length of a signature produced by EC signing */
@@ -295,6 +297,20 @@ WALLY_CORE_API int wally_ec_private_key_verify(
     size_t priv_key_len);
 
 /**
+ * Create a public key from a private key.
+ *
+ * @priv_key: The private key to create a public key from.
+ * @priv_key_len: The length of @priv_key in bytes. Must be @EC_PRIVATE_KEY_LEN.
+ * @bytes_out: Destination for the resulting public key.
+ * @len: The length of @bytes_out in bytes. Must be @EC_PUBLIC_KEY_LEN.
+ */
+WALLY_CORE_API int wally_ec_public_key_from_private_key(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Sign a message hash with a private key, producing a compact signature.
  *
  * @priv_key: The private key to sign with.
@@ -313,5 +329,25 @@ WALLY_CORE_API int wally_ec_sig_from_bytes(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Verify a signed message hash.
+ *
+ * @pub_key: The public key to verify with.
+ * @pub_key_len: The length of @pub_key in bytes. Must be @EC_PUBLIC_KEY_LEN.
+ * @bytes_in: The message hash to verify.
+ * @len_in: The length of @bytes_in in bytes. Must be @EC_MESSAGE_HASH_LEN.
+ * @flags: EC_FLAG_ flag values indicating desired behaviour.
+ * @sig_in: The compact signature of the message in @bytes_in.
+ * @sig_in_len: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
+ */
+WALLY_CORE_API int wally_ec_sig_verify(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t flags,
+    const unsigned char *sig_in,
+    size_t sig_in_len);
 
 #endif /* LIBWALLY_CORE_CRYPTO_H */

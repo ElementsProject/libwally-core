@@ -2,7 +2,7 @@ import unittest
 from util import *
 
 FLAG_ECDSA, FLAG_SCHNORR = 1, 2
-EC_SIGNATURE_LEN = 64
+EC_SIGNATURE_LEN, EX_PRIV_KEY_LEN, EC_PUBIC_KEY_LEN = 64, 32, 33
 
 class SignTests(unittest.TestCase):
 
@@ -27,7 +27,7 @@ class SignTests(unittest.TestCase):
 
 
     def test_sign_hash(self):
-        out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
+        sig, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
 
         for case in self.get_sign_cases():
             priv_key, msg, nonce, r, s = case
@@ -37,11 +37,22 @@ class SignTests(unittest.TestCase):
                 # libraries allow. secp fails these keys so don't test them.
                 continue
 
+            # Sign
             set_fake_ec_nonce(nonce)
-            ret = self.sign(priv_key, msg, FLAG_ECDSA, out_buf)
+            ret = self.sign(priv_key, msg, FLAG_ECDSA, sig)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(h(r), h(out_buf[0:32]))
-            self.assertEqual(h(s), h(out_buf[32:64]))
+            self.assertEqual(h(r), h(sig[0:32]))
+            self.assertEqual(h(s), h(sig[32:64]))
+
+            # Verify
+            pub_key, _ = make_cbuffer('00' * 33)
+            ret = wally_ec_public_key_from_private_key(priv_key, len(priv_key),
+                                                       pub_key, len(pub_key))
+            self.assertEqual(ret, WALLY_OK)
+            ret = wally_ec_sig_verify(pub_key, len(pub_key), msg, len(msg),
+                                      FLAG_ECDSA, sig, len(sig))
+            self.assertEqual(ret, WALLY_OK)
+
 
         set_fake_ec_nonce(None)
 
@@ -53,6 +64,7 @@ class SignTests(unittest.TestCase):
         priv_bad, msg_bad = self.cbufferize(['FF' * 32, '22' * 33])
         FLAGS_BOTH = FLAG_ECDSA | FLAG_SCHNORR
 
+        # Signing
         cases = [(None,         msg,     FLAG_ECDSA),   # Null priv_key
                  (('11' * 33),  msg,     FLAG_ECDSA),   # Wrong priv_key len
                  (priv_bad,     msg,     FLAG_ECDSA),   # Bad private key
@@ -63,13 +75,30 @@ class SignTests(unittest.TestCase):
                  (priv_key,     msg,     FLAGS_BOTH),   # Mutually exclusive
                  (priv_key,     msg,     0x4)]          # Unknown flag
 
-        for case in cases:
-            priv_key, msg, flags = case
+        for priv_key, msg, flags in cases:
             ret = self.sign(priv_key, msg, flags, out_buf)
             self.assertEqual(ret, WALLY_EINVAL)
 
-        for o, l in [(None, 32), (out_buf, -1)]: # Null out/Invalid out length
-            ret = self.sign(priv_key, msg, FLAG_ECDSA, o, l)
+        for o, o_len in [(None, 32), (out_buf, -1)]: # Null out, Wrong out len
+            ret = self.sign(priv_key, msg, FLAG_ECDSA, o, o_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        # wally_ec_private_key_verify
+        for pk, pk_len in  [(None,     len(priv_key)),  # Null priv_key
+                            (priv_key, 10),             # Wrong priv_key len
+                            (priv_bad, len(priv_key))]: # Bad private key
+            self.assertEqual(wally_ec_private_key_verify(pk, pk_len), WALLY_EINVAL)
+
+        # wally_ec_public_key_from_private_key
+        out_buf, out_len = make_cbuffer('00' * EC_PUBIC_KEY_LEN)
+        cases = [(None,     len(priv_key),   out_buf, len(out_buf)), # Null priv_key
+                 (priv_key, 10,              out_buf, len(out_buf)), # Wrong priv_key len
+                 (priv_bad, len(priv_key),   out_buf, len(out_buf)), # Bad private key
+                 (priv_key, len(priv_key),   None,    len(out_buf)), # Null out
+                 (priv_key, len(priv_key),   out_buf, 10)]           # Wrong out len
+
+        for pk, pk_len, o, o_len in cases:
+            ret = wally_ec_public_key_from_private_key(pk, pk_len, o, o_len);
             self.assertEqual(ret, WALLY_EINVAL)
 
 
