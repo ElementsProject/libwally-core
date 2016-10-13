@@ -134,6 +134,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %typemap(in,noblock=1,numinputs=0) size_t *written(size_t sz) {
     sz = 0; $1 = ($1_ltype)&sz;
 }
+
 /* Integer values are also returned as size_t's */
 %typemap(in,noblock=1,numinputs=0) size_t *output(size_t sz) {
     sz = 0; $1 = ($1_ltype)&sz;
@@ -291,6 +292,7 @@ typedef unsigned int uint32_t;
 %returns_void__(wally_ec_private_key_verify);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_sig_from_bytes, 6, 7, EC_SIGNATURE_LEN);
+%returns_size_t(wally_ec_sig_to_der);
 %returns_void__(wally_ec_sig_verify);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);

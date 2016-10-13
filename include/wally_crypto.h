@@ -277,8 +277,10 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_PUBLIC_KEY_LEN 33
 /** The length of a message hash to EC sign */
 #define EC_MESSAGE_HASH_LEN 32
-/** The length of a signature produced by EC signing */
+/** The length of a compact signature produced by EC signing */
 #define EC_SIGNATURE_LEN 64
+/** The maximum encoded length of a DER encoded signature */
+#define EC_SIGNATURE_DER_MAX_LEN 72
 
 /** Indicates that a signature using ECDSA/secpk2561 is required */
 #define EC_FLAG_ECDSA 0x1
@@ -329,6 +331,22 @@ WALLY_CORE_API int wally_ec_sig_from_bytes(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Convert a compact signature to DER encoding.
+ *
+ * @sig_in: The compact signature to convert.
+ * @sig_in_len: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
+ * @bytes_out: Destination for the resulting DER encoded signature.
+ * @len: The length of @bytes_out in bytes. Must be @EC_SIGNATURE_DER_MAX_LEN.
+ * @written: Destination for the number of bytes written to @bytes_out.
+ */
+WALLY_CORE_API int wally_ec_sig_to_der(
+    const unsigned char *sig_in,
+    size_t sig_in_len,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  * Verify a signed message hash.

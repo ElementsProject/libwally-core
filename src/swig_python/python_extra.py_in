@@ -1,11 +1,13 @@
 # Support functions for the SWIG python wrapper
 
-def _wrap_bin(fn, length):
+def _wrap_bin(fn, length, resize=False):
     """Wrap functions that take a fixed size output buffer to create/return it"""
     def wrapped(*args):
         buf = bytearray(length)
         ret = fn(*list(args)+[buf])
         if ret is not None:
+            if resize and ret != length:
+                buf = buf[0:ret] # Truncate buf to bytes written
             return ret, buf
         return buf
     return wrapped
@@ -40,3 +42,4 @@ pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
 
 ec_public_key_from_private_key = _wrap_bin(ec_public_key_from_private_key, EC_PUBLIC_KEY_LEN)
 ec_sig_from_bytes = _wrap_bin(ec_sig_from_bytes, EC_SIGNATURE_LEN)
+ec_sig_to_der = _wrap_bin(ec_sig_to_der, EC_SIGNATURE_LEN, resize=True)
