@@ -33,6 +33,9 @@ char *wally_strdup(const char *str);
 
 #define malloc(size) __use_wally_malloc_internally__
 #define free(ptr) __use_wally_free_internally__
+#ifdef strdup
+#undef strdup
+#endif
 #define strdup(ptr) __use_wally_strdup_internally__
 
 #endif /* LIBWALLY_INTERNAL_H */
