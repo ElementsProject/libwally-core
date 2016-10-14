@@ -76,7 +76,6 @@ class SignTests(unittest.TestCase):
                  (priv_key,     None,    FLAG_ECDSA),   # Null message
                  (priv_key,     msg_bad, FLAG_ECDSA),   # Wrong message len
                  (priv_key,     msg,     0),            # No flags set
-                 (priv_key,     msg,     FLAG_SCHNORR), # Not yet implemented
                  (priv_key,     msg,     FLAGS_BOTH),   # Mutually exclusive
                  (priv_key,     msg,     0x4)]          # Unknown flag
 
