@@ -123,14 +123,13 @@ static void destroy_ext_key(PyObject *obj) {
    }
    for (i = 0; i < $2; ++i) {
        PyObject *item = PyList_GetItem($input, i);
-       if (PyInt_Check(item)) {
-           long value = PyInt_AsLong(item);
-           if (value >= 0 && value <= 0xffffffff) {
-               $1[i] = (uint32_t)value;
-               continue;
-           }
+       Py_ssize_t value = PyNumber_AsSsize_t(item, NULL);
+       Py_DECREF(item);
+       if (value >= 0 && value <= 0xffffffff) {
+           $1[i] = (uint32_t)value;
+           continue;
        }
-       check_result(WALLY_EINVAL);
+       PyErr_SetString(PyExc_OverflowError, "List item cannot be represented as uint32_t");
        SWIG_fail;
    }
 }

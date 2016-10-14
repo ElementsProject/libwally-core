@@ -81,7 +81,8 @@ WALLY_CORE_API int PyModule_AddObject(void *x, void *y, void *z) __attribute__((
 int PyModule_AddObject(void *x, void *y, void *z) { (void)x; (void)y; (void)z; return 0; }
 WALLY_CORE_API void * PyModule_GetDict(void *x) __attribute__((weak));
 void * PyModule_GetDict(void *x) { return x; }
-
+WALLY_CORE_API size_t PyNumber_AsSsize_t(void *x, void *y) __attribute__((weak));
+size_t PyNumber_AsSsize_t(void *x, void *y) { (void)x; (void)y; return 0; }
 DUMMY_WEAKREF(PyOS_snprintf)
 WALLY_CORE_API int PyObject_AsReadBuffer(void *x, void* y, void *z) __attribute__((weak));
 int PyObject_AsReadBuffer(void *x, void* y, void *z) { (void)x; (void)y; (void)z; return 0; }
