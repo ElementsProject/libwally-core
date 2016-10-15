@@ -293,6 +293,7 @@ typedef unsigned int uint32_t;
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_sig_from_bytes, 6, 7, EC_SIGNATURE_LEN);
+%returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);
 %returns_void__(wally_ec_sig_verify);
 %returns_string(wally_hex_from_bytes);

@@ -27,8 +27,8 @@ class SignTests(unittest.TestCase):
                                        msg, blen(msg), flags, out_buf, out_len)
 
 
-    def test_sign_hash(self):
-        sig, _ = make_cbuffer('00' * EC_SIGNATURE_LEN)
+    def test_sign_and_verify(self):
+        sig, sig2 = self.cbufferize(['00' * EC_SIGNATURE_LEN] * 2)
         der, der_len = make_cbuffer('00' * EC_SIGNATURE_DER_MAX_LEN)
 
         for case in self.get_sign_cases():
@@ -46,8 +46,12 @@ class SignTests(unittest.TestCase):
             self.assertEqual(h(r), h(sig[0:32]))
             self.assertEqual(h(s), h(sig[32:64]))
 
+            # Check signature conversions
             ret, written = wally_ec_sig_to_der(sig, len(sig), der, der_len)
             self.assertEqual(ret, WALLY_OK)
+            ret = wally_ec_sig_from_der(der, written, sig2, len(sig2))
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(sig, sig2)
 
             # Verify
             pub_key, _ = make_cbuffer('00' * 33)
@@ -62,7 +66,7 @@ class SignTests(unittest.TestCase):
         set_fake_ec_nonce(None)
 
 
-    def test_sign_hash_invalid_inputs(self):
+    def test_invalid_inputs(self):
         out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
 
         priv_key, msg = self.cbufferize(['11' * 32, '22' * 32])
