@@ -290,6 +290,7 @@ typedef unsigned int uint32_t;
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
 %returns_void__(wally_ec_private_key_verify);
+%returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_sig_from_bytes, 6, 7, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);

@@ -2,7 +2,7 @@ import unittest
 from util import *
 
 FLAG_ECDSA, FLAG_SCHNORR = 1, 2
-EX_PRIV_KEY_LEN, EC_PUBIC_KEY_LEN = 32, 33
+EX_PRIV_KEY_LEN, EC_PUBIC_KEY_LEN, EC_PUBIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
 EC_SIGNATURE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 72
 
 class SignTests(unittest.TestCase):
@@ -92,6 +92,19 @@ class SignTests(unittest.TestCase):
                             (priv_key, 10),             # Wrong priv_key len
                             (priv_bad, len(priv_key))]: # Bad private key
             self.assertEqual(wally_ec_private_key_verify(pk, pk_len), WALLY_EINVAL)
+
+        # wally_ec_public_key_decompress
+        sig, _ = make_cbuffer('13' * EC_SIGNATURE_LEN)
+        out_buf, out_len = make_cbuffer('00' * EC_PUBIC_KEY_UNCOMPRESSED_LEN)
+
+        cases = [(None, len(sig), out_buf, out_len), # Null sig
+                 (sig,  15,       out_buf, out_len), # Wrong sig len
+                 (sig,  len(sig), None, out_len),    # Null out
+                 (sig,  len(sig), out_buf, 15)]      # Wrong out len
+
+        for s, s_len, o, o_len in cases:
+            ret, written = wally_ec_sig_to_der(s, s_len, o, o_len)
+            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
         # wally_ec_sig_to_der
         sig, _ = make_cbuffer('13' * EC_SIGNATURE_LEN)

@@ -275,6 +275,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_PRIVATE_KEY_LEN 32
 /** The length of a public key used for EC signing */
 #define EC_PUBLIC_KEY_LEN 33
+/** The length of an uncompressed public key */
+#define EC_PUBLIC_KEY_UNCOMPRESSED_LEN 65
 /** The length of a message hash to EC sign */
 #define EC_MESSAGE_HASH_LEN 32
 /** The length of a compact signature produced by EC signing */
@@ -309,6 +311,20 @@ WALLY_CORE_API int wally_ec_private_key_verify(
 WALLY_CORE_API int wally_ec_public_key_from_private_key(
     const unsigned char *priv_key,
     size_t priv_key_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Create an uncompressed public key from a compressed public key.
+ *
+ * @pub_key: The private key to create a public key from.
+ * @pub_key_len: The length of @pub_key in bytes. Must be @EC_PUBLIC_KEY_LEN.
+ * @bytes_out: Destination for the resulting public key.
+ * @len: The length of @bytes_out in bytes. Must be @EC_PUBLIC_KEY_UNCOMPRESSED_LEN.
+ */
+WALLY_CORE_API int wally_ec_public_key_decompress(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
     unsigned char *bytes_out,
     size_t len);
 
