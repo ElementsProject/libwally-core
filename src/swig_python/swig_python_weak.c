@@ -34,12 +34,12 @@ WALLY_CORE_API void* PyCapsule_Import(void *x, int y) __attribute__((weak));
 void* PyCapsule_Import(void *x, int y) { (void)y; return x; }
 WALLY_CORE_API void* PyCapsule_New(void *x, void* y, void *z) __attribute__((weak));
 void* PyCapsule_New(void *x, void* y, void *z) { (void)x; (void)y; (void)z; return 0; }
+WALLY_CORE_API void _Py_Dealloc(void *x) __attribute__((weak));
+void _Py_Dealloc(void *x) { (void)x; }
 WALLY_CORE_API void* PyDict_GetItem(void *x, void *y) __attribute__((weak));
 void* PyDict_GetItem(void *x, void *y) { (void)x; return y; }
-
 WALLY_CORE_API void * PyDict_New(void) __attribute__((weak));
 void * PyDict_New(void) { return NULL; }
-
 WALLY_CORE_API int PyDict_SetItem(void *x, void *y, void *z) __attribute__((weak));
 int PyDict_SetItem(void *x, void *y, void *z) { (void)x; (void)y; (void)z; return 0; }
 WALLY_CORE_API int PyDict_SetItemString(void *x, void *y, void *z) __attribute__((weak));
@@ -69,6 +69,8 @@ DUMMY_WEAKREF(PyList_New)
 DUMMY_WEAKREF(PyList_SetItem)
 WALLY_CORE_API size_t PyList_Size(void *x) __attribute__((weak));
 size_t PyList_Size(void *x) { (void)x; return 0; }
+WALLY_CORE_API void _Py_NegativeRefcount(void *x, int y, void* z) __attribute__((weak));
+void _Py_NegativeRefcount(void *x, int y, void* z) { (void)x; (void)y; (void)z; }
 DUMMY_WEAKREF(PyLong_AsDouble)
 WALLY_CORE_API unsigned long PyLong_AsUnsignedLong(void *x) __attribute__((weak));
 unsigned long PyLong_AsUnsignedLong(void *x) { (void)x; return 0; }
@@ -133,6 +135,8 @@ WALLY_CORE_API void Py_IncRef(void *x) __attribute__((weak));
 void Py_IncRef(void *x) { (void)x; }
 WALLY_CORE_API void* Py_InitModule4_64(void *x, void* y, void *z, void *z2, int z3) __attribute__((weak));
 void* Py_InitModule4_64(void *x, void* y, void *z, void *z2, int z3) { (void)x; (void)y; (void)z; (void)z2; (void)z3; return NULL; }
+WALLY_CORE_API void* Py_InitModule4TraceRefs_64(void *x, void* y, void *z, void *z2, int z3) __attribute__((weak));
+void* Py_InitModule4TraceRefs_64(void *x, void* y, void *z, void *z2, int z3) { (void)x; (void)y; (void)z; (void)z2; (void)z3; return NULL; }
 WALLY_CORE_API void* _PyInstance_Lookup(void *x, void *y) __attribute__((weak));
 void* _PyInstance_Lookup(void *x, void *y) { (void)x; return y; }
 WALLY_CORE_API void * _PyObject_GetDictPtr(void *x) __attribute__((weak));
@@ -161,6 +165,7 @@ DUMMY_VARIABLE_WEAKREF(_PyWeakref_CallableProxyType) /* NOTE: Warnings are harml
 DUMMY_VARIABLE_WEAKREF(_PyWeakref_ProxyType) /* NOTE: Warnings are harmless */
 DUMMY_VARIABLE_WEAKREF(_Py_NoneStruct)
 DUMMY_VARIABLE_WEAKREF(_Py_NotImplementedStruct) /* NOTE: Warnings are harmless */
+DUMMY_VARIABLE_WEAKREF(_Py_RefTotal)
 
 /* Python 3 exports */
 DUMMY_VARIABLE_WEAKREF(PyBaseObject_Type)
