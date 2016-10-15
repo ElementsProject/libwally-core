@@ -46,6 +46,7 @@ class Base58Tests(unittest.TestCase):
         return h(buf)[0:buf_len * 2].upper()
 
 
+    @internal_only()
     def test_address_vectors(self):
         """Tests for encoding and decoding with and without checksums"""
 
@@ -72,6 +73,7 @@ class Base58Tests(unittest.TestCase):
             self.assertEqual(decoded, utf8(c.ripemd_network))
 
 
+    @internal_only()
     def test_to_bytes(self):
         buf, buf_len = make_cbuffer('00' * 1024)
 
@@ -125,6 +127,7 @@ class Base58Tests(unittest.TestCase):
         self.assertEqual(ret, utf8(expected))
 
 
+    @internal_only()
     def test_from_bytes(self):
 
         # Leading zeros become ones

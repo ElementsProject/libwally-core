@@ -24,10 +24,10 @@ class WordlistTests(unittest.TestCase):
     words_list = None
 
     def setUp(self):
-        if self.words_list is None:
+        if self.words_list is None and wordlist_init is not None:
             self.words_list, _ = load_words('english')
 
-
+    @internal_only()
     def test_wordlist(self):
 
         for n in range(17):

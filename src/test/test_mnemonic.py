@@ -6,12 +6,12 @@ class MnemonicTests(unittest.TestCase):
     words_list, wl = None, None
 
     def setUp(self):
-        if self.wl is None:
+        if self.wl is None and wordlist_init is not None:
             self.words_list, words = load_words('english')
-
             self.wl = wordlist_init(utf8(words))
 
 
+    @internal_only()
     def test_mnemonic(self):
 
         LEN = 16

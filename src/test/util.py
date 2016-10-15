@@ -166,6 +166,17 @@ _new_ops = operations()
 for ops in (_original_ops, _new_ops):
     assert wally_get_operations(byref(ops)) == WALLY_OK
 
+# Disable internal tests if not available
+def internal_only():
+    def decorator(test_func):
+        def wrapped(*args):
+            if wordlist_init is None:
+                print test_func.__name__ + ' disabled, use --enable-export-all to enable '
+            else:
+                return test_func(*args)
+        return wrapped
+    return decorator
+
 # Support for malloc testing
 _fail_malloc_at = 0
 _fail_malloc_counter = 0

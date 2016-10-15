@@ -62,8 +62,9 @@ class BIP39Tests(unittest.TestCase):
                 word = word.encode('utf-8')
                 self.assertEqual(ret, 0)
                 self.assertEqual(word, utf8(words_list[i]))
-                idx = wordlist_lookup_word(wl, word)
-                self.assertEqual(i, idx - 1)
+                if wordlist_lookup_word is not None:
+                    idx = wordlist_lookup_word(wl, word)
+                    self.assertEqual(i, idx - 1)
 
         self.assertEqual(bip39_get_word(wl, 2048), (WALLY_EINVAL, None))
 
