@@ -124,7 +124,6 @@ static void destroy_ext_key(PyObject *obj) {
    for (i = 0; i < $2; ++i) {
        PyObject *item = PyList_GetItem($input, i);
        Py_ssize_t value = PyNumber_AsSsize_t(item, NULL);
-       Py_DECREF(item);
        if (value >= 0 && value <= 0xffffffff) {
            $1[i] = (uint32_t)value;
            continue;
