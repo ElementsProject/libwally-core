@@ -174,7 +174,7 @@ def internal_only():
     def decorator(test_func):
         def wrapped(*args):
             if wordlist_init is None:
-                print test_func.__name__ + ' disabled, use --enable-export-all to enable '
+                print (test_func.__name__ + ' disabled, use --enable-export-all to enable ')
             else:
                 return test_func(*args)
         return wrapped
