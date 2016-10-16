@@ -7,11 +7,10 @@ noinst_LTLIBRARIES =
 
 if USE_SWIG_PYTHON
 noinst_LTLIBRARIES += libswig_python.la
-libswig_python_la_SOURCES = \
-    swig_python/swig_python_wrap.c \
-    swig_python/swig_python_weak.c
+libswig_python_la_SOURCES = swig_python/swig_python_wrap.c
 
 libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
+libswig_python_la_LIBADD = $(PYTHON_LIBS)
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
@@ -32,8 +31,6 @@ if IS_OSX
 .libs/libwallycore.so:
 	$(AM_V_at)ln -s libwallycore.dylib .libs/libwallycore.so
 SWIG_PYTHON_TEST_DEPS = .libs/libwallycore.so
-# Weak symbols are b0rked, so link python in
-libswig_python_la_LIBADD = $(PYTHON_LIBS)
 endif
 
 endif

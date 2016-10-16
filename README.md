@@ -25,8 +25,8 @@ $ make check
    if you want to test the internal functions of the library or are planning
    to submit patches.
 - `--enable-swig-python`. Enable the [SWIG](http://www.swig.org/) python
-   interface. The resulting shared library can be directly imported from
-   Python. (default: no).
+   interface. The resulting shared library can be imported from Python using
+   the generated interface file `src/swig_python/wallycore.py`. (default: no).
 - `--enable-swig-java`. Enable the [SWIG](http://www.swig.org/) Java (JNI)
    interface. After building, see `src/swig_java/src/com/blockstream/libwally/Wally.java`
    for the Java interface definition (default: no).
