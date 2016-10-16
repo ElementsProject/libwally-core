@@ -110,7 +110,7 @@ int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_in_len,
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-int wally_ec_sig_from_der(const unsigned char *bytes_in, size_t bytes_in_len,
+int wally_ec_sig_from_der(const unsigned char *bytes_in, size_t len_in,
                           unsigned char *bytes_out, size_t len)
 {
     secp256k1_ecdsa_signature sig;
@@ -120,8 +120,8 @@ int wally_ec_sig_from_der(const unsigned char *bytes_in, size_t bytes_in_len,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = bytes_in && bytes_in_len && bytes_out && len == EC_SIGNATURE_LEN &&
-         secp256k1_ecdsa_signature_parse_der(ctx, &sig, bytes_in, bytes_in_len) &&
+    ok = bytes_in && len_in && bytes_out && len == EC_SIGNATURE_LEN &&
+         secp256k1_ecdsa_signature_parse_der(ctx, &sig, bytes_in, len_in) &&
          secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig);
 
     if (!ok && bytes_out)

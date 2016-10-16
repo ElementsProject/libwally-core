@@ -368,13 +368,13 @@ WALLY_CORE_API int wally_ec_sig_to_der(
  * Convert a DER encoded signature to a compact signature.
  *
  * @bytes_in: The DER encoded signature to convert.
- * @bytes_in_len: The length of @sig_in in bytes.
+ * @len_in: The length of @sig_in in bytes.
  * @bytes_out: Destination for the resulting compact signature.
  * @len: The length of @bytes_out in bytes. Must be @EC_SIGNATURE_LEN.
  */
 WALLY_CORE_API int wally_ec_sig_from_der(
     const unsigned char *bytes_in,
-    size_t bytes_in_len,
+    size_t len_in,
     unsigned char *bytes_out,
     size_t len);
 
