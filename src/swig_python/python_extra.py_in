@@ -44,4 +44,5 @@ ec_public_key_decompress = _wrap_bin(ec_public_key_decompress, EC_PUBLIC_KEY_UNC
 ec_public_key_from_private_key = _wrap_bin(ec_public_key_from_private_key, EC_PUBLIC_KEY_LEN)
 ec_sig_from_bytes = _wrap_bin(ec_sig_from_bytes, EC_SIGNATURE_LEN)
 ec_sig_from_der = _wrap_bin(ec_sig_from_der, EC_SIGNATURE_LEN)
+ec_sig_normalize = _wrap_bin(ec_sig_normalize, EC_SIGNATURE_LEN)
 ec_sig_to_der = _wrap_bin(ec_sig_to_der, EC_SIGNATURE_DER_MAX_LEN, resize=True)

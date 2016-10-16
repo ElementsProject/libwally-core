@@ -50,8 +50,9 @@ class SignTests(unittest.TestCase):
             ret, written = wally_ec_sig_to_der(sig, len(sig), der, der_len)
             self.assertEqual(ret, WALLY_OK)
             ret = wally_ec_sig_from_der(der, written, sig2, len(sig2))
-            self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(sig, sig2)
+            self.assertEqual((ret, h(sig)), (WALLY_OK, h(sig2)))
+            ret = wally_ec_sig_normalize(sig2, len(sig2), sig, len(sig))
+            self.assertEqual((ret, h(sig)), (WALLY_OK, h(sig2))) # All sigs low-s
 
             # Verify
             pub_key, _ = make_cbuffer('00' * 33)

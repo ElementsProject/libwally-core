@@ -84,6 +84,10 @@
       return ec_sig_from_bytes(jarg1, jarg2, jarg3, null);
   }
 
+  public final static byte[] ec_sig_normalize(byte[] jarg1) {
+      return ec_sig_normalize(jarg1, null);
+  }
+
   public final static byte[] ec_sig_from_der(byte[] jarg1) {
       return ec_sig_from_der(jarg1, null);
   }

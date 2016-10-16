@@ -82,6 +82,33 @@ int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
+int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
+                           unsigned char *bytes_out, size_t len)
+{
+    secp256k1_ecdsa_signature sig, sig_low;
+    const secp256k1_context *ctx = secp_ctx();
+    bool ok;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+
+    ok = sig_in && sig_in_len == EC_SIGNATURE_LEN &&
+         bytes_out && len == EC_SIGNATURE_LEN &&
+         secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in);
+
+    /* Note no error is returned, just whether the sig was changed */
+    if (ok)
+        secp256k1_ecdsa_signature_normalize(ctx, &sig_low, &sig);
+
+    if (ok)
+        ok = secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out,
+                                                         &sig_low);
+    if (!ok && bytes_out)
+        clear(bytes_out, len);
+    clear_n(2, &sig, sizeof(sig), &sig_low, sizeof(sig_low));
+    return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
 int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_in_len,
                         unsigned char *bytes_out, size_t len, size_t *written)
 {
