@@ -8,6 +8,12 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../internal.h"
+
+#undef malloc
+#undef free
+#define malloc(size) wally_malloc(size)
+#define free(ptr) wally_free(ptr)
 
 static int check_result(int result)
 {
@@ -36,6 +42,8 @@ static void destroy_ext_key(PyObject *obj) {
     if (contained)
         bip32_key_free(contained);
 }
+
+#define MAX_LOCAL_STACK 256u
 %}
 
 %include pybuffer.i
@@ -109,20 +117,22 @@ static void destroy_ext_key(PyObject *obj) {
 }
 %enddef
 
-/* uint32_t arrays FIXME: Generalise */
-%typemap(in) (uint32_t *STRING, size_t LENGTH) {
+/* uint32_t arrays FIXME: Generalise to other data types if needed */
+%typemap(in) (uint32_t *STRING, size_t LENGTH) (uint32_t tmp_buf[MAX_LOCAL_STACK/sizeof(uint32_t)]) {
    size_t i;
    if (!PyList_Check($input)) {
        check_result(WALLY_EINVAL);
        SWIG_fail;
    }
    $2 = PyList_Size($input);
-   if (!($1 = (uint32_t *) malloc(($2) * sizeof(uint32_t)))) {
-       check_result(WALLY_ENOMEM);
-       SWIG_fail;
-   }
+   $1 = tmp_buf;
+   if ($2 * sizeof(uint32_t) > sizeof(tmp_buf))
+       if (!($1 = (uint32_t *) wally_malloc(($2) * sizeof(uint32_t)))) {
+           check_result(WALLY_ENOMEM);
+           SWIG_fail;
+       }
    for (i = 0; i < $2; ++i) {
-       PyObject *item = PyList_GetItem($input, i);
+       PyObject *item = PyList_GET_ITEM($input, i);
        Py_ssize_t value = PyNumber_AsSsize_t(item, NULL);
        if (value >= 0 && value <= 0xffffffff) {
            $1[i] = (uint32_t)value;
@@ -133,8 +143,8 @@ static void destroy_ext_key(PyObject *obj) {
    }
 }
 %typemap(freearg) (uint32_t *STRING, size_t LENGTH) {
-    if ($1)
-        free($1);
+    if ($1 && $1 != tmp_buf$argnum)
+        wally_free($1);
 }
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
