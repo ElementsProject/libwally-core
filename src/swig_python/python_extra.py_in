@@ -5,11 +5,9 @@ def _wrap_bin(fn, length, resize=False):
     def wrapped(*args):
         buf = bytearray(length)
         ret = fn(*list(args)+[buf])
-        if ret is not None:
-            if resize and ret == WALLY_OK and ret != length:
-                buf = buf[0:ret] # Truncate buf to bytes written
-            return ret, buf
-        return buf
+        if resize:
+            return buf[0:ret] # Truncate buf to bytes written
+        return (ret, buf) if ret is not None else buf
     return wrapped
 
 _unwrapped_hex_to_bytes = hex_to_bytes
