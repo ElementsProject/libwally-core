@@ -51,6 +51,9 @@ After building the library with SWIG Python support you can install it using:
 ```
 $ python setup.py build
 $ python setup.py install
+
+It is suggested you only install this way into a virtualenv while the library
+is under heavy development.
 ```
 
 ## Cleaning
