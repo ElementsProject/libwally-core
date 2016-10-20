@@ -24,9 +24,9 @@ $ make check
    Ordinarily only API functions are exported. (default: no). Enable this
    if you want to test the internal functions of the library or are planning
    to submit patches.
-- `--enable-swig-python`. Enable the [SWIG](http://www.swig.org/) python
+- `--enable-swig-python`. Enable the [SWIG](http://www.swig.org/) Python
    interface. The resulting shared library can be imported from Python using
-   the generated interface file `src/swig_python/wallycore.py`. (default: no).
+   the generated interface file `src/swig_python/wallycore/wallycore.py`. (default: no).
 - `--enable-swig-java`. Enable the [SWIG](http://www.swig.org/) Java (JNI)
    interface. After building, see `src/swig_java/src/com/blockstream/libwally/Wally.java`
    for the Java interface definition (default: no).
@@ -34,7 +34,7 @@ $ make check
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.
 
-NOTE: If you wish to run the python tests you currently need to pass
+NOTE: If you wish to run the Python tests you currently need to pass
       the `--enable-swig-python` option. This requirement will be removed
       in a future release.
 
@@ -42,6 +42,15 @@ NOTE: If you wish to run the python tests you currently need to pass
 
 ```
 $ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-coverage
+```
+
+### Python
+
+After building the library with SWIG Python support you can install it using:
+
+```
+$ python setup.py build
+$ python setup.py install
 ```
 
 ## Cleaning

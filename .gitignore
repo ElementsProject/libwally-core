@@ -16,6 +16,7 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
+build
 compile
 config.guess
 config.log
@@ -23,6 +24,7 @@ config.status
 config.sub
 configure
 depcomp
+dist
 install-sh
 libtool
 ltmain.sh
@@ -43,9 +45,11 @@ src/swig_java/*.java
 src/swig_java/*.jar
 src/swig_java/src/com/blockstream/libwally
 src/swig_python/swig_python_wrap.c
-src/swig_python/wallycore.py
+src/swig_python/wallycore/wallycore.py
+src/swig_python/wallycore/wallycore.egg-info
 tools/build-aux/m4/l*.m4
 tools/build-aux/test-driver
 src/secp256k1/test-suite.log
 src/secp256k1/tests.log
 src/secp256k1/tests.trs
+wallycore.egg-info/

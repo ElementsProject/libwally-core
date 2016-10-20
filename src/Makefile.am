@@ -16,14 +16,15 @@ libswig_python_la_LIBADD = $(PYTHON_LIBS)
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && \
     $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
-    cat swig_python/python_extra.py_in >> swig_python/wallycore.py
+    cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/wallycore.py && \
+    rm swig_python/wallycore.py
 
 PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
 
 .PHONY: clean-swig-python
 clean-swig-python:
-	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore.py
+	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore/wallycore.py
 clean-local: clean-swig-python
 
 if IS_OSX
