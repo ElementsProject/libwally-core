@@ -29,7 +29,6 @@ setup(
     author_email='jon_p_griffiths@yahoo.com',
     license='MIT',
     zip_safe=False,
-    # distclass=Distr,
     libraries=[('wallycore',{'sources':['include/wally_core.h']})],
     cmdclass={
         'build_clib': build_clib,

@@ -49,12 +49,11 @@ $ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-c
 You can build and install it using:
 
 ```
-
 $ python setup.py install
+```
 
 It is suggested you only install this way into a virtualenv while the library
 is under heavy development.
-```
 
 ## Cleaning
 
