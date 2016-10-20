@@ -94,6 +94,7 @@ WALLY_CORE_API int bip32_key_init_alloc(
  *     @BIP32_ENTROPY_LEN_256 or @BIP32_ENTROPY_LEN_512.
  * @version Either @BIP32_VER_MAIN_PRIVATE or @BIP32_VER_TEST_PRIVATE,
  *     indicating mainnet or testnet/regtest respectively.
+ * @flags Either BIP32_FLAG_SKIP_HASH to skip hash160 calculation, or 0.
  * @output Destination for the resulting master extended key.
  *
  * The entropy passed in may produce an invalid key. If this happens,
@@ -104,6 +105,7 @@ WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes_in,
     size_t len_in,
     uint32_t version,
+    uint32_t flags,
     struct ext_key *output);
 #endif
 
@@ -116,6 +118,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
     const unsigned char *bytes_in,
     size_t len_in,
     uint32_t version,
+    uint32_t flags,
     const struct ext_key **output);
 
 /**

@@ -1,4 +1,5 @@
 #include <include/wally_bip32.h>
+#include <include/wally_crypto.h>
 #include "bip32_int.h"
 #include "internal.h"
 #include "hmac.h"
@@ -116,10 +117,8 @@ static int key_compute_pub_key(struct ext_key *key_out)
 
 static void key_compute_hash160(struct ext_key *key_out)
 {
-    struct sha256 sha;
-    sha256(&sha, key_out->pub_key, sizeof(key_out->pub_key));
-    ripemd160((struct ripemd160 *)key_out->hash160, &sha, sizeof(sha));
-    clear(&sha, sizeof(sha));
+    wally_hash160(key_out->pub_key, sizeof(key_out->pub_key),
+                  key_out->hash160, sizeof(key_out->hash160));
 }
 
 int bip32_key_free(const struct ext_key *key_in)
@@ -136,13 +135,15 @@ static bool is_valid_seed_len(size_t len) {
 }
 
 int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
-                        uint32_t version, struct ext_key *key_out)
+                        uint32_t version, uint32_t flags,
+                        struct ext_key *key_out)
 {
     const secp256k1_context *ctx;
     struct sha512 sha;
 
     if (!bytes_in || !is_valid_seed_len(len_in) ||
-        !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) || !key_out)
+        !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) ||
+        (flags & ~BIP32_FLAG_SKIP_HASH) || !key_out)
         return WALLY_EINVAL;
 
     clear(key_out, sizeof(*key_out));
@@ -173,7 +174,8 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
 
     key_out->depth = 0; /* Master key, depth 0 */
     key_out->child_num = 0;
-    key_compute_hash160(key_out);
+    if (!(flags & BIP32_FLAG_SKIP_HASH))
+        key_compute_hash160(key_out);
     clear(&sha, sizeof(sha));
     return WALLY_OK;
 }
@@ -187,12 +189,14 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     clear((void *)*output, sizeof(struct ext_key))
 
 int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
-                              uint32_t version, const struct ext_key **output)
+                              uint32_t version, uint32_t flags,
+                              const struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
-    ret = bip32_key_from_seed(bytes_in, len_in, version, (struct ext_key *)*output);
+    ret = bip32_key_from_seed(bytes_in, len_in, version, flags,
+                              (struct ext_key *)*output);
     if (ret != WALLY_OK) {
         wally_free((void *)*output);
         *output = NULL;

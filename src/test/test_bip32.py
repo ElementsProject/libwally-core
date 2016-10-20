@@ -1,6 +1,11 @@
 import unittest
 from util import *
 
+VER_MAIN_PUBLIC = 0x0488B21E
+VER_MAIN_PRIVATE = 0x0488ADE4
+VER_TEST_PUBLIC = 0x043587CF
+VER_TEST_PRIVATE = 0x04358394
+
 FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC, FLAG_SKIP_HASH, = 0x0, 0x1, 0x2
 ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH
 BIP32_SERIALIZED_LEN = 78
@@ -77,12 +82,6 @@ class BIP32Tests(unittest.TestCase):
     NULL_HASH160 = '00' * 20
     SERIALIZED_LEN = 4 + 1 + 4 + 4 + 32 + 33
 
-    VER_MAIN_PUBLIC = 0x0488B21E
-    VER_MAIN_PRIVATE = 0x0488ADE4
-    VER_TEST_PUBLIC = 0x043587CF
-    VER_TEST_PRIVATE = 0x04358394
-
-
     def unserialize_key(self, buf, buf_len):
         key_out = ext_key()
         ret = bip32_key_unserialize(buf, buf_len, byref(key_out))
@@ -92,7 +91,7 @@ class BIP32Tests(unittest.TestCase):
         seed, seed_len = make_cbuffer(vec['seed'])
         master = ext_key()
         ret = bip32_key_from_seed(seed, seed_len,
-                                  self.VER_MAIN_PRIVATE, byref(master))
+                                  VER_MAIN_PRIVATE, 0, byref(master))
         self.assertEqual(ret, WALLY_OK)
         return master
 
@@ -170,14 +169,14 @@ class BIP32Tests(unittest.TestCase):
 
         # Check correct and incorrect version numbers as well
         # as mismatched key types and versions
-        ver_cases = [(self.VER_MAIN_PUBLIC,  FLAG_KEY_PUBLIC,  WALLY_OK),
-                     (self.VER_MAIN_PUBLIC,  FLAG_KEY_PRIVATE, WALLY_EINVAL),
-                     (self.VER_MAIN_PRIVATE, FLAG_KEY_PUBLIC,  WALLY_EINVAL),
-                     (self.VER_MAIN_PRIVATE, FLAG_KEY_PRIVATE, WALLY_OK),
-                     (self.VER_TEST_PUBLIC,  FLAG_KEY_PUBLIC,  WALLY_OK),
-                     (self.VER_TEST_PUBLIC , FLAG_KEY_PRIVATE, WALLY_EINVAL),
-                     (self.VER_TEST_PRIVATE, FLAG_KEY_PUBLIC,  WALLY_EINVAL),
-                     (self.VER_TEST_PRIVATE, FLAG_KEY_PRIVATE, WALLY_OK),
+        ver_cases = [(VER_MAIN_PUBLIC,  FLAG_KEY_PUBLIC,  WALLY_OK),
+                     (VER_MAIN_PUBLIC,  FLAG_KEY_PRIVATE, WALLY_EINVAL),
+                     (VER_MAIN_PRIVATE, FLAG_KEY_PUBLIC,  WALLY_EINVAL),
+                     (VER_MAIN_PRIVATE, FLAG_KEY_PRIVATE, WALLY_OK),
+                     (VER_TEST_PUBLIC,  FLAG_KEY_PUBLIC,  WALLY_OK),
+                     (VER_TEST_PUBLIC , FLAG_KEY_PRIVATE, WALLY_EINVAL),
+                     (VER_TEST_PRIVATE, FLAG_KEY_PUBLIC,  WALLY_EINVAL),
+                     (VER_TEST_PRIVATE, FLAG_KEY_PRIVATE, WALLY_OK),
                      (0x01111111,            FLAG_KEY_PUBLIC,  WALLY_EINVAL),
                      (0x01111111,            FLAG_KEY_PRIVATE, WALLY_EINVAL)]
 
@@ -195,12 +194,14 @@ class BIP32Tests(unittest.TestCase):
         key_out = ext_key()
 
         # Only private key versions can be used
-        ver_cases = [(self.VER_MAIN_PUBLIC,   WALLY_EINVAL),
-                     (self.VER_MAIN_PRIVATE,  WALLY_OK),
-                     (self.VER_TEST_PUBLIC,   WALLY_EINVAL),
-                     (self.VER_TEST_PRIVATE,  WALLY_OK)]
-        for ver, expected in ver_cases:
-            ret = bip32_key_from_seed(seed, seed_len, ver, byref(key_out))
+        ver_cases = [(VER_MAIN_PUBLIC,   0,               WALLY_EINVAL),
+                     (VER_MAIN_PRIVATE,  0,               WALLY_OK),
+                     (VER_TEST_PUBLIC,   0,               WALLY_EINVAL),
+                     (VER_TEST_PRIVATE,  0,               WALLY_OK),
+                     (VER_TEST_PRIVATE,  FLAG_KEY_PUBLIC, WALLY_EINVAL),
+                     (VER_TEST_PRIVATE,  FLAG_SKIP_HASH,  WALLY_OK)]
+        for ver, flags, expected in ver_cases:
+            ret = bip32_key_from_seed(seed, seed_len, ver, flags, byref(key_out))
             self.assertEqual(ret, expected)
 
 

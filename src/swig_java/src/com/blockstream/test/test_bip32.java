@@ -13,7 +13,7 @@ public class test_bip32 {
     }
 
     public void test() {
-        final Object seedKey = Wally.bip32_key_from_seed(mSeed, BIP32_VER_MAIN_PRIVATE);
+        final Object seedKey = Wally.bip32_key_from_seed(mSeed, BIP32_VER_MAIN_PRIVATE, 0);
 
         final String hex = "0488ade4000000000000000000873dff81c02f525623fd1fe5167eac3a55" +
             "a049de3d314bb42ee227ffed37d50800e8f32e723decf4051aefac8e2c93c9c5b214313817c" +
