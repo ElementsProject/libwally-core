@@ -1,5 +1,22 @@
 """setuptools config for wallycore """
 from setuptools import setup
+from setuptools import Distribution
+import os
+import subprocess
+from distutils.command.build_clib import build_clib as _build_clib
+
+class Distr(Distribution):
+    def has_c_libraries(self):
+        return True
+
+class build_clib(_build_clib):
+    def run(self):
+        abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
+
+        for cmd in ('./tools/autogen.sh',
+                    './configure --enable-swig-python',
+                    'make'):
+            subprocess.check_call(cmd.split(' '), cwd=abs_path)
 
 setup(
     name='wallycore',
@@ -12,6 +29,11 @@ setup(
     author_email='jon_p_griffiths@yahoo.com',
     license='MIT',
     zip_safe=False,
+    # distclass=Distr,
+    libraries=[('wallycore',{'sources':['include/wally_core.h']})],
+    cmdclass={
+        'build_clib': build_clib,
+    },
 
     classifiers=[
         'Development Status :: 3 - Alpha',

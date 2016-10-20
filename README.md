@@ -46,10 +46,10 @@ $ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-c
 
 ### Python
 
-After building the library with SWIG Python support you can install it using:
+You can build and install it using:
 
 ```
-$ python setup.py build
+
 $ python setup.py install
 
 It is suggested you only install this way into a virtualenv while the library
