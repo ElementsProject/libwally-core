@@ -8,7 +8,7 @@ find . -name Makefile.in -exec rm {} \;
 find . -name "*.class" -exec rm {} \;
 find . -name "*.gcno" -exec rm {} \;
 find . -name "*.gcda" -exec rm {} \;
-find . -name "*.egg-info" -exec rm -rf {} 2>&1 \;
+find . -name "*.egg-info" -exec rm -rf {} 2>/dev/null \;
 
 rm -f */*~
 rm -f *~
@@ -28,6 +28,7 @@ rm -f src/swig_java/*java
 rm -f src/swig_java/*jar
 rm -rf src/swig_java/src/com/blockstream/libwally
 rm -f src/swig_python/wallycore.py
+rm -f src/swig_python/wallycore/__init__.py
 rm -f src/swig_python/swig_python_wrap.c
 rm -rf src/.libs
 rm -f tools/build-aux/compile

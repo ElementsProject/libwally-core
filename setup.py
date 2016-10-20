@@ -11,6 +11,7 @@ setup(
     author='Jon Griffiths',
     author_email='jon_p_griffiths@yahoo.com',
     license='MIT',
+    zip_safe=False,
 
     classifiers=[
         'Development Status :: 3 - Alpha',
