@@ -11,9 +11,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#ifdef __ANDROID__
-#include "cpufeatures/cpu-features.c"
-#endif
+#undef malloc
+#undef free
 
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
@@ -187,9 +186,6 @@ void clear_n(unsigned int count, ...)
     va_end(args);
 }
 
-#undef malloc
-#undef free
-
 static void *wally_internal_malloc(size_t size)
 {
     return malloc(size);
@@ -252,3 +248,9 @@ int wally_set_operations(const struct wally_operations *ops)
     memcpy(&_ops, ops, sizeof(_ops));
     return WALLY_OK;
 }
+
+#ifdef __ANDROID__
+#define malloc(size) wally_malloc(size)
+#define free(ptr) wally_free(ptr)
+#include "cpufeatures/cpu-features.c"
+#endif
