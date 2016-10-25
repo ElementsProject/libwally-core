@@ -62,16 +62,33 @@ static void destroy_ext_key(PyObject *obj) {
     $result = Py_None;
 %}
 
+%define %pybuffer_nullable_binary(TYPEMAP, SIZE)
+%typemap(in) (TYPEMAP, SIZE)
+  (int res, Py_ssize_t size = 0, const void *buf = 0) {
+  if ($input == Py_None)
+    $2 = 0;
+  else {
+    res = PyObject_AsReadBuffer($input, &buf, &size);
+    if (res<0) {
+      PyErr_Clear();
+      %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
+    }
+    $1 = ($1_ltype) buf;
+    $2 = ($2_ltype) (size / sizeof($*1_type));
+  }
+}
+%enddef
+
 /* Input buffers with lengths are passed as python buffers */
-%pybuffer_binary(const unsigned char *bytes_in, size_t len_in);
+%pybuffer_nullable_binary(const unsigned char *bytes_in, size_t len_in);
 %pybuffer_binary(const unsigned char *chain_code, size_t chain_code_len);
-%pybuffer_binary(const unsigned char *hash160, size_t hash160_len);
+%pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
 %pybuffer_binary(const unsigned char *iv, size_t iv_len);
 %pybuffer_binary(const unsigned char *key, size_t key_len);
 %pybuffer_binary(const unsigned char *pass, size_t pass_len);
-%pybuffer_binary(const unsigned char *parent160, size_t parent160_len);
-%pybuffer_binary(const unsigned char *priv_key, size_t priv_key_len);
-%pybuffer_binary(const unsigned char *pub_key, size_t pub_key_len);
+%pybuffer_nullable_binary(const unsigned char *parent160, size_t parent160_len);
+%pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
+%pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
 %pybuffer_binary(const unsigned char *sig_in, size_t sig_in_len);
 %pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
