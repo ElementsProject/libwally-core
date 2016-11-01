@@ -76,7 +76,7 @@ static void secp256k1_rangeproof_context_build(secp256k1_rangeproof_context *ctx
         }
     }
     VERIFY_CHECK(pos == 1005);
-    secp256k1_ge_set_all_gej_var(1005, prec, precj, cb);
+    secp256k1_ge_set_all_gej_var(prec, precj, 1005, cb);
 
     free(precj);
 
