@@ -76,7 +76,7 @@ static void secp256k1_pedersen_context_build(secp256k1_pedersen_context *ctx, co
                 secp256k1_gej_add_var(&numsbase, &numsbase, &nums_gej, NULL);
             }
         }
-        secp256k1_ge_set_all_gej_var(256, prec, precj, cb);
+        secp256k1_ge_set_all_gej_var(prec, precj, 256, cb);
     }
     for (j = 0; j < 16; j++) {
         for (i = 0; i < 16; i++) {
