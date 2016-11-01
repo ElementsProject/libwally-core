@@ -46,10 +46,10 @@ static size_t wordlist_count(const char *words)
 
 struct words *wordlist_init(const char *words)
 {
-    struct words *w = 0;
     size_t i, len = wordlist_count(words);
+    struct words *w = wordlist_alloc(words, len);
 
-    if ((w = wordlist_alloc(words, len))) {
+    if (w) {
         /* Tokenise the strings into w->indices */
         const char *p = w->str;
         for (len = 0; len < w->len; ++len) {
@@ -59,13 +59,12 @@ struct words *wordlist_init(const char *words)
             *((char *)p) = '\0';
             ++p;
         }
+
+        w->sorted = true;
+        for (i = 1; i < len && w->sorted; ++i)
+            if (strcmp(w->indices[i - 1], w->indices[i]) > 0)
+                w->sorted = false;
     }
-
-    w->sorted = true;
-    for (i = 1; i < len && w->sorted; ++i)
-        if (strcmp(w->indices[i - 1], w->indices[i]) > 0)
-            w->sorted = false;
-
     return w;
 }
 
