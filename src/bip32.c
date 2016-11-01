@@ -300,7 +300,7 @@ static const unsigned char *copy_in(void *dest,
 /* Wipe a key and return failure for the caller to propigate */
 static int wipe_key_fail(struct ext_key *key_out)
 {
-    clear(key_out, sizeof(key_out));
+    clear(key_out, sizeof(*key_out));
     return WALLY_EINVAL;
 }
 
