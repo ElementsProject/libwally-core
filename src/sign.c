@@ -96,13 +96,14 @@ int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
          bytes_out && len == EC_SIGNATURE_LEN &&
          secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in);
 
-    /* Note no error is returned, just whether the sig was changed */
-    if (ok)
+    if (ok) {
+        /* Note no error is returned, just whether the sig was changed */
         secp256k1_ecdsa_signature_normalize(ctx, &sig_low, &sig);
 
-    if (ok)
         ok = secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out,
                                                          &sig_low);
+    }
+
     if (!ok && bytes_out)
         clear(bytes_out, len);
     clear_n(2, &sig, sizeof(sig), &sig_low, sizeof(sig_low));
