@@ -22,7 +22,6 @@
 #define BIP38_FLAGS_RESERVED (BIP38_FLAG_RESERVED1 | BIP38_FLAG_RESERVED2 | \
                               BIP38_FLAG_RESERVED3 | BIP38_FLAG_RESERVED4)
 
-#define BITCOIN_PRIVATE_KEY_LEN 32
 #define BIP38_DERVIED_KEY_LEN 64u
 
 #define BIP38_PREFIX   0x01
@@ -59,29 +58,6 @@ static void assert_assumptions(void)
 }
 /* LCOV_EXCL_STOP */
 
-/* FIXME: Share this with key_compute_pub_key in bip32.c */
-static int compute_pub_key(const unsigned char *bytes_in, size_t len_in,
-                           unsigned char *pub_key_out, bool compressed)
-{
-    secp256k1_pubkey pk;
-    unsigned int flags = compressed ? PUBKEY_COMPRESSED : PUBKEY_UNCOMPRESSED;
-    size_t len = compressed ? 33 : 65;
-    const secp256k1_context *ctx = secp_ctx();
-    int ret = WALLY_EINVAL;
-
-    if (!ctx)
-        return WALLY_ENOMEM;
-
-    if (len_in == BITCOIN_PRIVATE_KEY_LEN &&
-        pubkey_create(ctx, &pk, bytes_in) &&
-        pubkey_serialize(ctx, pub_key_out, &len, &pk, flags))
-        ret = WALLY_OK;
-
-    clear(&pk, sizeof(pk));
-    return ret;
-}
-
-
 /* FIXME: Export this with other address functions */
 static int address_from_private_key(const unsigned char *bytes_in,
                                     size_t len_in,
@@ -90,7 +66,10 @@ static int address_from_private_key(const unsigned char *bytes_in,
                                     char **output)
 {
     struct sha256 sha;
-    unsigned char pub_key[65];
+    unsigned char pub_key_short[EC_PUBLIC_KEY_LEN];
+    unsigned char pub_key_long[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    unsigned char *pub_key = pub_key_short;
+    size_t pub_key_len = compressed ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
     struct {
         uint32_t network;
         struct ripemd160 hash160;
@@ -101,15 +80,22 @@ static int address_from_private_key(const unsigned char *bytes_in,
 
     BUILD_ASSERT(sizeof(buf) == sizeof(struct ripemd160) + sizeof(uint32_t) * 2);
 
-    if (compute_pub_key(bytes_in, len_in, pub_key, compressed))
-        return WALLY_EINVAL;
-
-    sha256(&sha, pub_key, compressed ? 33 : 65);
-    ripemd160(&buf.hash160, &sha, sizeof(sha));
-    *network_p = network;
-    buf.checksum = base58_get_checksum(network_p, 1 + 20);
-    ret = base58_from_bytes(network_p, 1 + 20 + 4, 0, output);
-    clear_n(3, &sha, sizeof(sha), pub_key, sizeof(pub_key), &buf, sizeof(buf));
+    ret = wally_ec_public_key_from_private_key(bytes_in, len_in,
+                                               pub_key_short, sizeof(pub_key_short));
+    if (ret == WALLY_OK && !compressed) {
+        ret = wally_ec_public_key_decompress(pub_key_short, sizeof(pub_key_short),
+                                             pub_key_long, sizeof(pub_key_long));
+        pub_key = pub_key_long;
+    }
+    if (ret == WALLY_OK) {
+        sha256(&sha, pub_key, pub_key_len);
+        ripemd160(&buf.hash160, &sha, sizeof(sha));
+        *network_p = network;
+        buf.checksum = base58_get_checksum(network_p, 1 + 20);
+        ret = base58_from_bytes(network_p, 1 + 20 + 4, 0, output);
+    }
+    clear_n(4, &sha, sizeof(sha), pub_key_short, sizeof(pub_key_short),
+            pub_key_long, sizeof(pub_key_long), &buf, sizeof(buf));
     return ret;
 }
 
@@ -138,7 +124,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     struct bip38_layout_t buf;
     int ret = WALLY_EINVAL;
 
-    if (!bytes_in || len_in != BITCOIN_PRIVATE_KEY_LEN ||
+    if (!bytes_in || len_in != EC_PRIVATE_KEY_LEN ||
         !bytes_out || len != BIP38_SERIALIZED_LEN)
         goto finish;
 
@@ -229,7 +215,7 @@ static int to_private_key(const char *bip38,
     int ret = WALLY_EINVAL;
 
     if (!(flags & BIP38_KEY_QUICK_CHECK) &&
-        (!bytes_out || len != BITCOIN_PRIVATE_KEY_LEN))
+        (!bytes_out || len != EC_PRIVATE_KEY_LEN))
         goto finish;
 
     if (bytes_in) {
