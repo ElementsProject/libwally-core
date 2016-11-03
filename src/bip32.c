@@ -31,6 +31,7 @@ static void assert_assumptions(void)
     BUILD_ASSERT(key_off(hash160) % sizeof(uint32_t) == 0);
     BUILD_ASSERT(key_size(parent160) == sizeof(struct ripemd160));
     BUILD_ASSERT(key_size(hash160) == sizeof(struct ripemd160));
+    BUILD_ASSERT(key_size(priv_key) == EC_PRIVATE_KEY_LEN + 1);
 
     /* Our keys following the parity byte must be uint64_t aligned */
     BUILD_ASSERT((key_off(priv_key) + 1) % sizeof(uint64_t) == 0);
@@ -97,22 +98,10 @@ static void key_strip_private_key(struct ext_key *key_out)
 /* Compute a public key from a private key */
 static int key_compute_pub_key(struct ext_key *key_out)
 {
-    secp256k1_pubkey pub_key;
-    size_t len = sizeof(key_out->pub_key);
-    const secp256k1_context *ctx = secp_ctx();
-    int ret = WALLY_EINVAL;
-
-    if (!ctx)
-        return WALLY_ENOMEM;
-
-    if (pubkey_create(ctx, &pub_key, key_out->priv_key + 1) &&
-        pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
-                         PUBKEY_COMPRESSED) &&
-        len == sizeof(key_out->pub_key))
-        ret = WALLY_OK;
-
-    clear(&pub_key, sizeof(pub_key));
-    return ret;
+    return wally_ec_public_key_from_private_key(key_out->priv_key + 1,
+                                                EC_PRIVATE_KEY_LEN,
+                                                key_out->pub_key,
+                                                sizeof(key_out->pub_key));
 }
 
 static void key_compute_hash160(struct ext_key *key_out)
