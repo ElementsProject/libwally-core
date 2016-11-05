@@ -1,40 +1,16 @@
 #ifndef LIBWALLY_BASE58_H
 #define LIBWALLY_BASE58_H
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <include/wally_core.h>
 
 /** The number of extra bytes required to hold a base58 checksum */
 #define BASE58_CHECKSUM_LEN 4u
 
-/** For @base58_from_bytes, indicates that a checksum should
- * be generated. For @base58_to_bytes, indicates that the
- * embedded checksum should be validated and stripped off the returned
- * bytes.
- **/
-#define BASE58_FLAG_CHECKSUM 0x1
-
-/**
- * Create a base 58 encoded string representing binary data.
- *
- * @bytes_in_out: Binary data to convert.
- * @len: The length of @bytes_in_out in bytes.
- * @flags: Pass @BASE58_FLAG_CHECKSUM if @bytes_in_out should have a
- *         checksum calculated and appended before converting to base 58.
- * @output Destination for the base 58 encoded string representing @bytes_in_out.
- *         This should be freed using @wally_free_string().
- */
-int base58_from_bytes(
-    unsigned char *bytes_in_out,
-    size_t len,
-    uint32_t flags,
-    char **output);
-
 /**
  * Calculate the base58 checksum of a block of binary data.
  *
- * @bytes_in_out: Binary data to calculate the checksum for.
- * @len: The length of @bytes_in_out in bytes.
+ * @bytes_in: Binary data to calculate the checksum for.
+ * @len: The length of @bytes_in in bytes.
  */
 uint32_t base58_get_checksum(
     const unsigned char *bytes_in,

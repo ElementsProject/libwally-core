@@ -2,6 +2,7 @@
 #define WALLY_CORE_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifndef WALLY_CORE_API
 # if defined(_WIN32)
@@ -87,6 +88,30 @@ WALLY_CORE_API int wally_hex_to_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/** For @wally_base58_from_bytes, indicates that a checksum should
+ * be generated. For @base58_to_bytes, indicates that the
+ * embedded checksum should be validated and stripped off the returned
+ * bytes.
+ **/
+#define BASE58_FLAG_CHECKSUM 0x1
+
+/**
+ * Create a base 58 encoded string representing binary data.
+ *
+ * @bytes_in: Binary data to convert.
+ * @len_in: The length of @bytes_in in bytes.
+ * @flags: Pass @BASE58_FLAG_CHECKSUM if @bytes_in should have a
+ *         checksum calculated and appended before converting to base 58.
+ * @output Destination for the base 58 encoded string representing @bytes_in.
+ *         The string returned should be freed using @wally_free_string.
+ */
+WALLY_CORE_API int wally_base58_from_bytes(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t flags,
+    char **output);
+
 
 #ifndef SWIG
 /** The type of an overridable function to allocate memory */

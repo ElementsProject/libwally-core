@@ -289,6 +289,7 @@ typedef unsigned int uint32_t;
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
+%returns_string(wally_base58_from_bytes);
 %returns_void__(wally_ec_private_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);

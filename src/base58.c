@@ -162,8 +162,8 @@ uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len_in)
 }
 
 
-int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
-                      uint32_t flags, char **output)
+int wally_base58_from_bytes(const unsigned char *bytes_in, size_t len_in,
+                            uint32_t flags, char **output)
 {
     uint32_t checksum, *cs_p = NULL;
     unsigned char bn_buf[BIGNUM_BYTES];
@@ -171,10 +171,11 @@ int base58_from_bytes(unsigned char *bytes_in, size_t len_in,
     size_t bn_bytes = 0, zeros, i, orig_len = len_in;
     int ret = WALLY_EINVAL;
 
-    *output = NULL;
+    if (*output)
+        *output = NULL;
 
-    if (flags & ~BASE58_ALL_DEFINED_FLAGS || !len_in)
-        goto cleanup; /* Invalid flags or no input */
+    if (!bytes_in || !len_in || (flags & ~BASE58_ALL_DEFINED_FLAGS) || !output)
+        goto cleanup; /* Invalid argument */
 
     if (flags & BASE58_FLAG_CHECKSUM) {
         checksum = base58_get_checksum(bytes_in, len_in);

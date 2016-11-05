@@ -71,14 +71,16 @@ static int address_from_private_key(const unsigned char *bytes_in,
     unsigned char *pub_key = pub_key_short;
     size_t pub_key_len = compressed ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
     struct {
-        uint32_t network;
+        union {
+            uint32_t network;
+            unsigned char bytes[4];
+        } network_bytes; /* Used for alignment */
         struct ripemd160 hash160;
-        uint32_t checksum;
     } buf;
-    unsigned char *network_p = ((unsigned char *)&buf) + 3;
     int ret;
 
-    BUILD_ASSERT(sizeof(buf) == sizeof(struct ripemd160) + sizeof(uint32_t) * 2);
+    /* Network and hash160 must be contiguous */
+    BUILD_ASSERT(sizeof(buf) == sizeof(struct ripemd160) + sizeof(uint32_t));
 
     ret = wally_ec_public_key_from_private_key(bytes_in, len_in,
                                                pub_key_short, sizeof(pub_key_short));
@@ -90,9 +92,10 @@ static int address_from_private_key(const unsigned char *bytes_in,
     if (ret == WALLY_OK) {
         sha256(&sha, pub_key, pub_key_len);
         ripemd160(&buf.hash160, &sha, sizeof(sha));
-        *network_p = network;
-        buf.checksum = base58_get_checksum(network_p, 1 + 20);
-        ret = base58_from_bytes(network_p, 1 + 20 + 4, 0, output);
+        buf.network_bytes.bytes[3] = network;
+        ret = wally_base58_from_bytes(&buf.network_bytes.bytes[3],
+                                      sizeof(unsigned char) + sizeof(buf.hash160),
+                                      BASE58_FLAG_CHECKSUM, output);
     }
     clear_n(4, &sha, sizeof(sha), pub_key_short, sizeof(pub_key_short),
             pub_key_long, sizeof(pub_key_long), &buf, sizeof(buf));
@@ -182,8 +185,8 @@ int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
     ret = bip38_raw_from_private_key(bytes_in, len_in, pass, pass_len,
                                      flags, &buf.prefix, BIP38_SERIALIZED_LEN);
     if (!ret)
-        ret = base58_from_bytes(&buf.prefix, BIP38_SERIALIZED_LEN,
-                                BASE58_FLAG_CHECKSUM, output);
+        ret = wally_base58_from_bytes(&buf.prefix, BIP38_SERIALIZED_LEN,
+                                      BASE58_FLAG_CHECKSUM, output);
 
     clear(&buf, sizeof(buf));
     return ret;
