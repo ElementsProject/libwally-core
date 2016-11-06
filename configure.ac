@@ -258,7 +258,7 @@ secp_jni="--disable-jni"
 if test "x$swig_java" == "xyes"; then
     secp_jni="--enable-jni"
 fi
-ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-schnorr --enable-module-ecdh --disable-dependency-tracking"
+ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-schnorr --enable-module-ecdh --enable-openssl-tests=no --disable-dependency-tracking"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 
