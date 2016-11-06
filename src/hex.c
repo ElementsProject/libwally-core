@@ -1,8 +1,4 @@
-#include <include/wally_core.h>
 #include "internal.h"
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include "ccan/ccan/str/hex/hex.h"
 
 int wally_hex_from_bytes(const unsigned char *bytes_in, size_t len_in,

@@ -1,8 +1,6 @@
 #ifndef LIBWALLY_HMAC_H
 #define LIBWALLY_HMAC_H
 
-#include <stdlib.h>
-
 struct sha256;
 struct sha512;
 

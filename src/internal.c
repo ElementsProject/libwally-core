@@ -1,14 +1,10 @@
-#include <include/wally_core.h>
-#include <include/wally_crypto.h>
 #include "internal.h"
+#include <include/wally_crypto.h>
 #include "ccan/ccan/build_assert/build_assert.h"
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
-#include <stdint.h>
-#include <string.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 #undef malloc

@@ -1,8 +1,7 @@
-#include "base58.h"
 #include "internal.h"
+#include "base58.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/endian/endian.h"
-#include <string.h>
 #include <include/wally_crypto.h>
 
 /* Temporary stack buffer sizes */

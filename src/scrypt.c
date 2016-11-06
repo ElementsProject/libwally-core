@@ -1,9 +1,8 @@
+#include "internal.h"
 #include <include/wally_bip38.h>
 #include <include/wally_crypto.h>
-#include "internal.h"
 #include "hmac.h"
 #include "ccan/ccan/endian/endian.h"
-#include <string.h>
 
 /* Use scrypts internal malloc/free */
 #undef malloc

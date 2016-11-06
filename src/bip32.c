@@ -1,6 +1,3 @@
-#include <include/wally_bip32.h>
-#include <include/wally_crypto.h>
-#include "bip32_int.h"
 #include "internal.h"
 #include "hmac.h"
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
@@ -8,9 +5,9 @@
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include "ccan/ccan/endian/endian.h"
 #include "ccan/ccan/build_assert/build_assert.h"
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <include/wally_bip32.h>
+#include <include/wally_crypto.h>
+#include "bip32_int.h"
 #include <stdbool.h>
 
 #define BIP32_ALL_DEFINED_FLAGS (BIP32_FLAG_KEY_PRIVATE | BIP32_FLAG_KEY_PUBLIC | BIP32_FLAG_SKIP_HASH)

@@ -1,8 +1,6 @@
 #ifndef LIBWALLY_WORDLIST_H
 #define LIBWALLY_WORDLIST_H
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 /**

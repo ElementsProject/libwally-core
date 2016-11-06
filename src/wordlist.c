@@ -1,6 +1,5 @@
-#include "wordlist.h"
 #include "internal.h"
-#include <string.h>
+#include "wordlist.h"
 
 static int bstrcmp(const void *l, const void *r)
 {

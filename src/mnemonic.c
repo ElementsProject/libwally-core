@@ -1,7 +1,6 @@
-#include "mnemonic.h"
 #include "internal.h"
+#include "mnemonic.h"
 #include "wordlist.h"
-#include <string.h>
 
 #define U8_AT(bytes, pos) (bytes)[(pos) / 8u]
 #define U8_MASK(pos) (1u << (7u - (pos) % 8u))

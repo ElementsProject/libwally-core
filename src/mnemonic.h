@@ -1,9 +1,6 @@
 #ifndef LIBWALLY_MNEMONIC_H
 #define LIBWALLY_MNEMONIC_H
 
-#include <stdint.h>
-#include <stdlib.h>
-
 struct words;
 
 /**

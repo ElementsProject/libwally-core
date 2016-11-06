@@ -1,8 +1,6 @@
 #ifndef LIBWALLY_BASE58_H
 #define LIBWALLY_BASE58_H
 
-#include <include/wally_core.h>
-
 /** The number of extra bytes required to hold a base58 checksum */
 #define BASE58_CHECKSUM_LEN 4u
 

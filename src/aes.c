@@ -1,9 +1,5 @@
-#include <include/wally_core.h>
-#include <include/wally_crypto.h>
 #include "internal.h"
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <include/wally_crypto.h>
 #include <stdbool.h>
 
 #include "ctaes/ctaes.h"

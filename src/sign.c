@@ -1,6 +1,5 @@
-#include <include/wally_core.h>
-#include <include/wally_crypto.h>
 #include "internal.h"
+#include <include/wally_crypto.h>
 #include "secp256k1/include/secp256k1_schnorr.h"
 #include "ccan/ccan/build_assert/build_assert.h"
 #include <stdbool.h>

@@ -1,9 +1,8 @@
-#include "hmac.h"
 #include "internal.h"
+#include "hmac.h"
 #include <ccan/ccan/crypto/sha256/sha256.h>
 #include <ccan/ccan/crypto/sha512/sha512.h>
 #include <include/wally_crypto.h>
-#include <string.h>
 #include <stdbool.h>
 
 #define SHA_T sha256

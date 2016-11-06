@@ -4,6 +4,7 @@
 #include <include/wally_core.h>
 #include "secp256k1/include/secp256k1.h"
 #include <config.h>
+#include <string.h>
 
 /* Fetch an internal secp context */
 const secp256k1_context *secp_ctx(void);
