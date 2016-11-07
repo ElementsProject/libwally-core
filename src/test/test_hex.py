@@ -25,6 +25,10 @@ class HexTests(unittest.TestCase):
             ret, written = wally_hex_to_bytes(utf8('0000'), buf, l)
             self.assertEqual((ret, written), (WALLY_OK, 2))
 
+        # Empty string
+        ret, written = wally_hex_to_bytes('', buf, buf_len)
+        self.assertEqual((ret, written), (WALLY_OK, 0))
+
 
     def test_hex_from_bytes(self):
         LEN = 4
@@ -35,11 +39,13 @@ class HexTests(unittest.TestCase):
             ret, retstr = wally_hex_from_bytes(buf, buf_len)
             self.assertEqual((ret, retstr), (WALLY_OK, s))
 
-        # Bad inputs
-        for (b, l) in [(None,  buf_len),
-                       (buf,  0)]:
-            ret, written = wally_hex_from_bytes(b, l)
-            self.assertEqual((ret, written), (WALLY_EINVAL, None))
+        # Bad input
+        ret, written = wally_hex_from_bytes(None, buf_len)
+        self.assertEqual((ret, written), (WALLY_EINVAL, None))
+
+        # Empty buffer
+        ret, written = wally_hex_from_bytes(buf, 0)
+        self.assertEqual((ret, written), (WALLY_OK, ''))
 
 
 if __name__ == '__main__':
