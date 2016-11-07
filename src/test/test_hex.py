@@ -26,7 +26,7 @@ class HexTests(unittest.TestCase):
             self.assertEqual((ret, written), (WALLY_OK, 2))
 
         # Empty string
-        ret, written = wally_hex_to_bytes('', buf, buf_len)
+        ret, written = wally_hex_to_bytes(utf8(''), buf, buf_len)
         self.assertEqual((ret, written), (WALLY_OK, 0))
 
 
