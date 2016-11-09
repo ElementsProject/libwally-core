@@ -1,15 +1,24 @@
 # libwally-core
 
-Useful primitives for wallets.
+Wally is a collection of useful primitives for cryptocurrency wallets.
+
+Note that the library is currently pre-release and so the API may change
+without notice.
 
 Please report bugs and submit patches to https://github.com/jgriffiths/libwally-core.
 
 [![Build Status](https://travis-ci.org/jgriffiths/libwally-core.svg?branch=master)](https://travis-ci.org/jgriffiths/libwally-core)
 
+## Platforms
+
+Wally currently builds on all linux and OSX platforms as well as all supported
+Android NDK targets. Bindings for Python and Java are included.
+
+Windows support and further language bindings such as JavaScript are planned.
+
 ## Building
 
 ```
-$ ./tools/cleanup.sh
 $ ./tools/autogen.sh
 $ ./configure <options - see below>
 $ make
@@ -36,7 +45,7 @@ $ make check
 
 NOTE: If you wish to run the Python tests you currently need to pass
       the `--enable-swig-python` option. This requirement will be removed
-      in a future release.
+      in a future version.
 
 ### Recommended development configure options
 
@@ -46,7 +55,7 @@ $ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-c
 
 ### Python
 
-You can build and install it using:
+For python development, you can build and install wally using:
 
 ```
 $ python setup.py install
