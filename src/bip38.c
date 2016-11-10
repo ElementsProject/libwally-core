@@ -223,9 +223,9 @@ static int to_private_key(const char *bip38,
         memcpy(&buf.prefix, bytes_in, BIP38_SERIALIZED_LEN);
     } else {
         size_t written;
-        if ((ret = base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
-                                   BIP38_SERIALIZED_LEN + BASE58_CHECKSUM_LEN,
-                                   &written)))
+        if ((ret = wally_base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
+                                         BIP38_SERIALIZED_LEN + BASE58_CHECKSUM_LEN,
+                                         &written)))
             goto finish;
 
         if (written != BIP38_SERIALIZED_LEN) {

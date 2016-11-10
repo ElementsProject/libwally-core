@@ -1,9 +1,10 @@
 # Support functions for the SWIG python wrapper
 
 def _wrap_bin(fn, length, resize=False):
-    """Wrap functions that take a fixed size output buffer to create/return it"""
+    """ Wrap functions that take an output buffer to create/return it """
     def wrapped(*args):
-        buf = bytearray(length)
+        #assert type(args[0]) is not unicode
+        buf = bytearray(length(*args) if callable(length) else length)
         ret = fn(*list(args)+[buf])
         if resize:
             return buf[0:ret] # Truncate buf to bytes written
@@ -47,3 +48,10 @@ ec_sig_to_der = _wrap_bin(ec_sig_to_der, EC_SIGNATURE_DER_MAX_LEN, resize=True)
 
 def base58check_from_bytes(buf):
     return base58_from_bytes(buf, BASE58_FLAG_CHECKSUM)
+
+def _base58_len_fn(base58, flags):
+    return len(base58) + (4 if (flags & BASE58_FLAG_CHECKSUM) else 0)
+base58_to_bytes = _wrap_bin(base58_to_bytes, _base58_len_fn, resize=True)
+
+def base58check_to_bytes(base58):
+    return base58_to_bytes(base58, BASE58_FLAG_CHECKSUM)

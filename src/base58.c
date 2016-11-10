@@ -248,14 +248,14 @@ cleanup:
 }
 
 
-int base58_get_length(const char *str_in, size_t *written)
+int wally_base58_get_length(const char *str_in, size_t *written)
 {
     return base58_decode(str_in, strlen(str_in), NULL, written);
 }
 
-int base58_to_bytes(const char *str_in, uint32_t flags,
-                    unsigned char *bytes_out, size_t len,
-                    size_t *written)
+int wally_base58_to_bytes(const char *str_in, uint32_t flags,
+                          unsigned char *bytes_out, size_t len,
+                          size_t *written)
 {
     int ret;
 

@@ -34,11 +34,11 @@ class Base58Tests(unittest.TestCase):
 
     def decode(self, str_in, flags):
         buf, buf_len = make_cbuffer('00' * 1024)
-        ret, buf_len = base58_to_bytes(utf8(str_in), flags, buf, buf_len)
+        ret, buf_len = wally_base58_to_bytes(utf8(str_in), flags, buf, buf_len)
         self.assertEqual(ret, WALLY_OK)
         self.assertNotEqual(buf_len, 0)
         # Check that just computing the size returns us the actual size
-        ret, bin_len = base58_get_length(utf8(str_in))
+        ret, bin_len = wally_base58_get_length(utf8(str_in))
         self.assertEqual(ret, WALLY_OK)
         if flags == self.FLAG_CHECKSUM:
             bin_len -= self.CHECKSUM_LEN
@@ -46,7 +46,6 @@ class Base58Tests(unittest.TestCase):
         return h(buf)[0:buf_len * 2].upper()
 
 
-    @internal_only()
     def test_address_vectors(self):
         """Tests for encoding and decoding with and without checksums"""
 
@@ -73,7 +72,6 @@ class Base58Tests(unittest.TestCase):
             self.assertEqual(decoded, utf8(c.ripemd_network))
 
 
-    @internal_only()
     def test_to_bytes(self):
         buf, buf_len = make_cbuffer('00' * 1024)
 
@@ -84,7 +82,7 @@ class Base58Tests(unittest.TestCase):
                      '\x80',    # High bit set
                      'x\x80x',  # High bit set, internal
                    ]:
-            ret, _ = base58_to_bytes(utf8(bad), 0, buf, buf_len)
+            ret, _ = wally_base58_to_bytes(utf8(bad), 0, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
         # Bad checksummed base58 strings
@@ -94,22 +92,22 @@ class Base58Tests(unittest.TestCase):
                     '1119DXstMaV43WpYg4ceREiiTv2UntmoiA9a',
                     # libbase58: decode-b58c-tooshort
                     '111111111111111111114oLvT2']:
-            ret, _ = base58_to_bytes(utf8(bad), self.FLAG_CHECKSUM, buf, buf_len)
+            ret, _ = wally_base58_to_bytes(utf8(bad), self.FLAG_CHECKSUM, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
         for base58 in ['BXvDbH', '16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM']:
-            ret, out_len = base58_get_length(utf8(base58))
+            ret, out_len = wally_base58_get_length(utf8(base58))
             # Output buffer too small returns OK and the number of bytes required
-            ret, bin_len = base58_to_bytes(utf8(base58), 0, buf, out_len - 1)
+            ret, bin_len = wally_base58_to_bytes(utf8(base58), 0, buf, out_len - 1)
             self.assertEqual((ret, bin_len), (WALLY_OK, out_len))
             # Unknown flags
-            ret, _ = base58_to_bytes(utf8(base58), 0x7, buf, buf_len)
+            ret, _ = wally_base58_to_bytes(utf8(base58), 0x7, buf, buf_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
         # If we ask for checksum validation/removal the output buffer
         # must have room for a checksum.
-        ret, bin_len = base58_to_bytes(utf8('1'), self.FLAG_CHECKSUM,
-                                       buf, self.CHECKSUM_LEN)
+        ret, bin_len = wally_base58_to_bytes(utf8('1'), self.FLAG_CHECKSUM,
+                                             buf, self.CHECKSUM_LEN)
         self.assertEqual(ret, WALLY_EINVAL)
 
         # Leading ones become zeros
@@ -127,7 +125,6 @@ class Base58Tests(unittest.TestCase):
         self.assertEqual(ret, utf8(expected))
 
 
-    @internal_only()
     def test_from_bytes(self):
 
         # Leading zeros become ones
