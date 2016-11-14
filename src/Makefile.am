@@ -72,7 +72,7 @@ SWIG_JAVA_TEST_DEPS = $(sjs)/$(cbt)/test_bip32.class $(sjs)/$(cbt)/test_mnemonic
 
 all: $(SWIG_JAVA_TEST_DEPS)
 
-JAVA_TEST = @LDPATH_VAR@=.libs $(JAVA) -classpath $(sjs) com.blockstream.test.
+JAVA_TEST = @LDPATH_VAR@=.libs $(JAVA) -Djava.library.path=.libs -classpath $(sjs) com.blockstream.test.
 
 endif # HAVE_JAVAC
 
