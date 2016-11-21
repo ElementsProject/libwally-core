@@ -41,4 +41,5 @@ rm -f tools/build-aux/missing
 rm -f tools/build-aux/m4/l*.m4
 rm -f tools/build-aux/test-driver
 rm -rf autom4te.cache/
+rm -rf .venv
 exit 0

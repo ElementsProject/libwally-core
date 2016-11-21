@@ -12,6 +12,7 @@ src/test/__pycache__/
 *.deps
 *.dirstamp
 *.libs
+*.venv
 Makefile
 Makefile.in
 aclocal.m4
