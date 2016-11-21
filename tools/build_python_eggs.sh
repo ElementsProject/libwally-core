@@ -18,6 +18,7 @@ function build {
     cp setup.py dist
     mv dist $NAME-$1
     tar czf $NAME-$1.tar.gz $NAME-$1
+    sha256sum $NAME-$1.tar.gz >$NAME-$1.tar.gz.sha256
     rm -r $NAME-$1
     deactivate
 }
