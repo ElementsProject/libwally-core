@@ -412,4 +412,31 @@ WALLY_CORE_API int wally_ec_sig_verify(
     const unsigned char *sig_in,
     size_t sig_in_len);
 
+/** The maximim size of input message that can be formatted */
+#define BITCOIN_MESSAGE_MAX_LEN (64 * 1024 - 64)
+
+/** Indicates that SHA256D(message) should be returned */
+#define BITCOIN_MESSAGE_FLAG_HASH 1
+
+/**
+ * Format a message for use as a bitcoin signed message.
+ *
+ * @bytes_in: The message string to sign.
+ * @len_in: The length of @bytes_in in bytes. Must be less than
+ *          or equal to BITCOIN_MESSAGE_MAX_LEN.
+ * @flags: BITCOIN_MESSAGE_FLAG_ flags indicating the desired output.
+ *         if BITCOIN_MESSAGE_FLAG_HASH is passed, the double SHA256 hash
+ *         of the message is placed in @bytes_out instead of the formatted
+ *         message. In this case @len must be at least @SHA256_LEN.
+ * @bytes_out: Destination for the formatted message or message hash.
+ * @len: The length of @bytes_out in bytes.
+ * @written: Destination for the number of bytes written to @bytes_out.
+ */
+WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes_in,
+                                                size_t len_in,
+                                                uint32_t flags,
+                                                unsigned char *bytes_out,
+                                                size_t len,
+                                                size_t *written);
+
 #endif /* LIBWALLY_CORE_CRYPTO_H */

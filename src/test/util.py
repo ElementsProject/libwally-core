@@ -101,6 +101,7 @@ for f in (
     ('wally_ec_sig_verify', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('wally_get_operations', c_int, [POINTER(operations)]),
     ('wally_set_operations', c_int, [POINTER(operations)]),
+    ('wally_format_bitcoin_message', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ):
 
     def bind_fn(name, res, args):

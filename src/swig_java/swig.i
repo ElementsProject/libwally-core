@@ -302,6 +302,7 @@ typedef unsigned int uint32_t;
 %returns_void__(wally_ec_sig_verify);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
+%returns_size_t(wally_format_bitcoin_message);
 %returns_void__(wally_scrypt);
 %returns_array_(wally_sha256, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha256d, 3, 4, SHA256_LEN);

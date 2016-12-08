@@ -1,9 +1,11 @@
 import unittest
 from util import *
+from hashlib import sha256
 
 FLAG_ECDSA, FLAG_SCHNORR = 1, 2
 EX_PRIV_KEY_LEN, EC_PUBIC_KEY_LEN, EC_PUBIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
 EC_SIGNATURE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 72
+BITCOIN_MESSAGE_HASH_FLAG = 1
 
 class SignTests(unittest.TestCase):
 
@@ -134,6 +136,46 @@ class SignTests(unittest.TestCase):
 
         for pk, pk_len, o, o_len in cases:
             ret = wally_ec_public_key_from_private_key(pk, pk_len, o, o_len);
+            self.assertEqual(ret, WALLY_EINVAL)
+
+
+    def test_format_message(self):
+        PREFIX, MAX_LEN = b'\x18Bitcoin Signed Message:\n', 64 * 1024 - 64
+        out_buf, out_len = make_cbuffer('00' * 64 * 1024)
+        cases = [(b'a',           b'\x01'),
+                 (b'aaa',         b'\x03'),
+                 (b'a' * 252,     b'\xfc'),
+                 (b'a' * 253,     b'\xfd\xfd\x00'),
+                 (b'a' * 254,     b'\xfd\xfe\x00'),
+                 (b'a' * 255,     b'\xfd\xff\x00'),
+                 (b'a' * 256,     b'\xfd\x00\x01'),
+                 (b'a' * 257,     b'\xfd\x01\x01'),
+                 (b'a' * MAX_LEN, b'\xfd\xc0\xff')]
+        for msg, varint, in cases:
+            fn = lambda flags, ol: wally_format_bitcoin_message(msg, len(msg), flags,
+                                                            out_buf, ol)
+            for flags in (0, BITCOIN_MESSAGE_HASH_FLAG):
+                expected = PREFIX + varint + msg
+                if flags:
+                    expected = sha256(sha256(expected).digest()).digest()
+
+                ret, written = fn(flags, out_len)
+                self.assertEqual((ret, written), (WALLY_OK, len(expected)))
+                self.assertEqual(out_buf[:written], expected)
+
+                ret, written = fn(flags, 1) # Short length
+                self.assertEqual((ret, written), (WALLY_OK, len(expected)))
+
+
+        # Invalid cases
+        msg = 'a'
+        cases = [(None, len(msg),    0, out_buf, out_len), # Null message
+                 (msg,  0,           0, out_buf, out_len), # Zero length message
+                 (msg,  MAX_LEN + 1, 0, out_buf, out_len), # Message too large
+                 (msg,  len(msg),    2, out_buf, out_len), # Bad flags
+                 (msg,  len(msg),    0, None,    out_len)] # Null output
+        for msg, msg_len, flags, o, o_len in cases:
+            ret, written = wally_format_bitcoin_message(msg, msg_len, flags, o, o_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
 

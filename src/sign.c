@@ -7,6 +7,10 @@
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
 #define EC_FLAGS_ALL (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
 
+#define MSG_ALL_FLAGS (BITCOIN_MESSAGE_FLAG_HASH)
+
+static const char MSG_PREFIX[] = "\x18" "Bitcoin Signed Message:\n";
+
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
 static void assert_assumptions(void)
@@ -225,4 +229,64 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
 
     clear_n(2, &pub, sizeof(pub), &sig, sizeof(sig));
     return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+static inline size_t varint_len(size_t len_in) {
+    return len_in < 0xfd ? 1u : 3u;
+}
+
+int wally_format_bitcoin_message(const unsigned char *bytes_in, size_t len_in,
+                                 uint32_t flags,
+                                 unsigned char *bytes_out, size_t len,
+                                 size_t *written)
+{
+    unsigned char buf[256], *msg_buf = bytes_out, *out;
+    const bool do_hash = (flags & BITCOIN_MESSAGE_FLAG_HASH);
+    size_t msg_len;
+
+    if (written)
+        *written = 0;
+
+    if (!bytes_in || !len_in || len_in > BITCOIN_MESSAGE_MAX_LEN ||
+        (flags & ~MSG_ALL_FLAGS) || !bytes_out || !written)
+        return WALLY_EINVAL;
+
+    msg_len = sizeof(MSG_PREFIX) - 1 + varint_len(len_in) + len_in;
+    *written = do_hash ? SHA256_LEN : msg_len;
+
+    if (len < *written)
+        return WALLY_OK; /* Not enough output space, return required size */
+
+    if (do_hash) {
+        /* Ensure we have a suitable temporary buffer to serialise into */
+        msg_buf = buf;
+        if (msg_len > sizeof(buf)) {
+            msg_buf = wally_malloc(msg_len);
+            if (!msg_buf) {
+                *written = 0;
+                return WALLY_ENOMEM;
+            }
+        }
+    }
+
+    /* Serialise the message */
+    out = msg_buf;
+    memcpy(out, MSG_PREFIX, sizeof(MSG_PREFIX) - 1);
+    out += sizeof(MSG_PREFIX) - 1;
+    if (len_in < 0xfd)
+        *out++ = len_in;
+    else {
+        *out++ = 0xfd;
+        *out++ = len_in & 0xff;
+        *out++ = len_in >> 8;
+    }
+    memcpy(out, bytes_in, len_in);
+
+    if (do_hash) {
+        wally_sha256d(msg_buf, msg_len, bytes_out, SHA256_LEN);
+        clear(msg_buf, msg_len);
+        if (msg_buf != buf)
+            wally_free(msg_buf);
+    }
+    return WALLY_OK;
 }
