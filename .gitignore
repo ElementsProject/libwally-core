@@ -54,3 +54,6 @@ src/secp256k1/test-suite.log
 src/secp256k1/tests.log
 src/secp256k1/tests.trs
 wallycore.egg-info/
+wally*.gz
+wally*.sha256
+wally*.asc
