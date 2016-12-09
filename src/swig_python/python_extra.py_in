@@ -13,6 +13,7 @@ def _wrap_bin(fn, length, resize=False):
 
 _unwrapped_hex_to_bytes = hex_to_bytes
 def hex_to_bytes(hex_str):
+    hex_str = hex_str.encode('ascii')
     buf = bytearray(len(hex_str) / 2)
     _unwrapped_hex_to_bytes(bytes(hex_str), buf)
     return buf
