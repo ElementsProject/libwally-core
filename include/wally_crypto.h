@@ -355,7 +355,6 @@ WALLY_CORE_API int wally_ec_sig_from_bytes(
  * @sig_in_len: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
  * @bytes_out: Destination for the resulting low-s signature.
  * @len: The length of @bytes_out in bytes. Must be @EC_SIGNATURE_LEN.
- * @written: Destination for the number of bytes written to @bytes_out.
  */
 WALLY_CORE_API int wally_ec_sig_normalize(
     const unsigned char *sig_in,
