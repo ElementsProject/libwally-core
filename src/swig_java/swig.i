@@ -300,6 +300,7 @@ typedef unsigned int uint32_t;
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);
 %returns_void__(wally_ec_sig_verify);
+%returns_size_t(wally_format_bitcoin_message);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
 %returns_size_t(wally_format_bitcoin_message);
