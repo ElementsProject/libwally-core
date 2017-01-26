@@ -134,8 +134,9 @@ static void destroy_ext_key(PyObject *obj) {
 }
 %enddef
 
-/* uint32_t arrays FIXME: Generalise to other data types if needed */
-%typemap(in) (uint32_t *STRING, size_t LENGTH) (uint32_t tmp_buf[MAX_LOCAL_STACK/sizeof(uint32_t)]) {
+/* Integer arrays */
+%define %py_int_array(INTTYPE, INTMAX)
+%typemap(in) (INTTYPE *STRING, size_t LENGTH) (INTTYPE tmp_buf[MAX_LOCAL_STACK/sizeof(INTTYPE)]) {
    size_t i;
    if (!PyList_Check($input)) {
        check_result(WALLY_EINVAL);
@@ -143,26 +144,28 @@ static void destroy_ext_key(PyObject *obj) {
    }
    $2 = PyList_Size($input);
    $1 = tmp_buf;
-   if ($2 * sizeof(uint32_t) > sizeof(tmp_buf))
-       if (!($1 = (uint32_t *) wally_malloc(($2) * sizeof(uint32_t)))) {
+   if ($2 * sizeof(INTTYPE) > sizeof(tmp_buf))
+       if (!($1 = (INTTYPE *) wally_malloc(($2) * sizeof(INTTYPE)))) {
            check_result(WALLY_ENOMEM);
            SWIG_fail;
        }
    for (i = 0; i < $2; ++i) {
        PyObject *item = PyList_GET_ITEM($input, i);
        Py_ssize_t value = PyNumber_AsSsize_t(item, NULL);
-       if (value >= 0 && value <= 0xffffffff) {
-           $1[i] = (uint32_t)value;
+       if (value >= 0 && value <= INTMAX) {
+           $1[i] = (INTTYPE)value;
            continue;
        }
-       PyErr_SetString(PyExc_OverflowError, "List item cannot be represented as uint32_t");
+       PyErr_SetString(PyExc_OverflowError, "List item cannot be represented as " #INTTYPE);
        SWIG_fail;
    }
 }
-%typemap(freearg) (uint32_t *STRING, size_t LENGTH) {
+%typemap(freearg) (INTTYPE *STRING, size_t LENGTH) {
     if ($1 && $1 != tmp_buf$argnum)
         wally_free($1);
 }
+%enddef
+%py_int_array(uint32_t, 0xffffffff)
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
 
