@@ -151,13 +151,12 @@ static void destroy_ext_key(PyObject *obj) {
        }
    for (i = 0; i < $2; ++i) {
        PyObject *item = PyList_GET_ITEM($input, i);
-       Py_ssize_t value = PyNumber_AsSsize_t(item, NULL);
-       if (value >= 0 && value <= INTMAX) {
-           $1[i] = (INTTYPE)value;
-           continue;
+       unsigned long long v;
+       if (!SWIG_IsOK(SWIG_AsVal_unsigned_SS_long_SS_long(item, &v)) || v > INTMAX) {
+           PyErr_SetString(PyExc_OverflowError, "Invalid unsigned integer");
+           SWIG_fail;
        }
-       PyErr_SetString(PyExc_OverflowError, "List item cannot be represented as " #INTTYPE);
-       SWIG_fail;
+       $1[i] = (INTTYPE)v;
    }
 }
 %typemap(freearg) (INTTYPE *STRING, size_t LENGTH) {
