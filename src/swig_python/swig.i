@@ -95,12 +95,11 @@ static void destroy_ext_key(PyObject *obj) {
 %pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
 %pybuffer_mutable_binary(unsigned char *salt_in_out, size_t salt_len);
 
-/* Output parameters indicating how many bytes were written are converted
- * into return values. */
+/* Output integer values are converted into return values. */
 %typemap(in, numinputs=0) size_t *written (size_t sz) {
    sz = 0; $1 = ($1_ltype)&sz;
 }
-%typemap(argout) size_t* {
+%typemap(argout) size_t* written {
    Py_DecRef($result);
    $result = PyInt_FromSize_t(*$1);
 }
@@ -135,8 +134,8 @@ static void destroy_ext_key(PyObject *obj) {
 %enddef
 
 /* Integer arrays */
-%define %py_int_array(INTTYPE, INTMAX)
-%typemap(in) (INTTYPE *STRING, size_t LENGTH) (INTTYPE tmp_buf[MAX_LOCAL_STACK/sizeof(INTTYPE)]) {
+%define %py_int_array(INTTYPE, INTMAX, PNAME, LNAME)
+%typemap(in) (const INTTYPE *PNAME, size_t LNAME) (INTTYPE tmp_buf[MAX_LOCAL_STACK/sizeof(INTTYPE)]) {
    size_t i;
    if (!PyList_Check($input)) {
        check_result(WALLY_EINVAL);
@@ -159,20 +158,20 @@ static void destroy_ext_key(PyObject *obj) {
        $1[i] = (INTTYPE)v;
    }
 }
-%typemap(freearg) (INTTYPE *STRING, size_t LENGTH) {
+%typemap(freearg) (const INTTYPE *PNAME, size_t LNAME) {
     if ($1 && $1 != tmp_buf$argnum)
         wally_free($1);
 }
 %enddef
-%py_int_array(uint32_t, 0xffffffff)
-
-%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
+%py_int_array(uint32_t, 0xffffffffull, child_num_in, child_num_len)
+%py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
 
 %py_opaque_struct(words);
 %py_opaque_struct(ext_key);
 
-/* Tell SWIG what uint32_t means */
+/* Tell SWIG what uint32_t/uint64_t mean */
 typedef unsigned int uint32_t;
+typedef unsigned long long uint64_t;
 
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
