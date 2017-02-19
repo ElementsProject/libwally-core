@@ -233,18 +233,22 @@ typedef unsigned int uint32_t;
 %define %returns_array_(FUNC, ARRAYARG, LENARG, LEN)
 %return_decls(FUNC, byte[], jbyteArray)
 %exception FUNC {
+    int skip = 0;
+    jresult = NULL;
     if (!jarg ## ARRAYARG) {
         arg ## LENARG = LEN;
         arg ## ARRAYARG = malloc_or_throw(jenv, LEN);
         if (!arg ## ARRAYARG)
-            return $null;
+            skip = 1; /* Exception set by malloc_or_throw */
     }
-    $action
-    if (check_result(jenv, result) == WALLY_OK && !jarg ## ARRAYARG)
-        jresult = create_array(jenv, arg ## ARRAYARG, LEN);
-    if (!jarg ## ARRAYARG) {
-        wally_bzero(arg ## ARRAYARG, LEN);
-        free(arg ## ARRAYARG);
+    if (!skip) {
+        $action
+        if (check_result(jenv, result) == WALLY_OK && !jarg ## ARRAYARG)
+           jresult = create_array(jenv, arg ## ARRAYARG, LEN);
+        if (!jarg ## ARRAYARG) {
+            wally_bzero(arg ## ARRAYARG, LEN);
+            free(arg ## ARRAYARG);
+        }
     }
 }
 %enddef
