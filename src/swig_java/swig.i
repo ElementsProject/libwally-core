@@ -32,6 +32,12 @@ static int int_cast(JNIEnv *jenv, size_t value) {
     return (int)value;
 }
 
+static uint32_t uint32_cast(JNIEnv *jenv, jlong value) {
+    if (value < 0 || value > UINT_MAX)
+        SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Invalid uint32_t");
+    return (uint32_t)value;
+}
+
 /* Use a static class to hold our opaque pointers */
 #define OBJ_CLASS "com/blockstream/libwally/Wally$Obj"
 
@@ -129,13 +135,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %typemap(out) int %{
 %}
 
-/* Output parameters indicating how many bytes were written are converted
- * into return values. */
+/* Output parameters indicating how many bytes were written/sizes are
+ * converted into return values. */
 %typemap(in,noblock=1,numinputs=0) size_t *written(size_t sz) {
     sz = 0; $1 = ($1_ltype)&sz;
 }
-
-/* Integer values are also returned as size_t's */
 %typemap(in,noblock=1,numinputs=0) size_t *output(size_t sz) {
     sz = 0; $1 = ($1_ltype)&sz;
 }
@@ -155,24 +159,37 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
         $result = NULL;
 }
 
-/* Treat uint32 arrays like strings of ints
- * If we need to support other array types in the future, this should
- * be converted into a macro.
- */
-%typemap(jni)     (uint32_t *STRING, size_t LENGTH) "jintArray"
-%typemap(jtype)   (uint32_t *STRING, size_t LENGTH) "int[]"
-%typemap(jstype)  (uint32_t *STRING, size_t LENGTH) "int[]"
-%typemap(javain)  (uint32_t *STRING, size_t LENGTH) "$javainput"
-%typemap(freearg) (uint32_t *STRING, size_t LENGTH) ""
-%typemap(in)      (uint32_t *STRING, size_t LENGTH) {
-    $1 = $input ? (uint32_t *) JCALL2(GetIntArrayElements, jenv, $input, 0) : 0;
-    $2 = $input ? (size_t) JCALL1(GetArrayLength, jenv, $input) : 0;
-}
-%typemap(argout)  (uint32_t *STRING, size_t LENGTH) {
-  if ($input) JCALL3(ReleaseIntArrayElements, jenv, $input, (jint *)$1, 0);
+/* uint32_t input arguments are taken as longs and cast with range checking */
+%typemap(in) uint32_t {
+    $1 = uint32_cast(jenv, $input);
 }
 
-/* Array handling */
+/* uint62_t input arguments are taken as longs and cast unchecked. This means
+ * callers need to take care with treating negative values correctly */
+%typemap(in) uint64_t {
+    $1 = (uint64_t)($input);
+}
+
+/* Treat uint32_t/uint64_t arrays like strings of ints */
+%define %java_int_array(INTTYPE, JNITYPE, JTYPE, GETFN, RELEASEFN)
+%typemap(jni)     (INTTYPE *STRING, size_t LENGTH) "JNITYPE"
+%typemap(jtype)   (INTTYPE *STRING, size_t LENGTH) "JTYPE[]"
+%typemap(jstype)  (INTTYPE *STRING, size_t LENGTH) "JTYPE[]"
+%typemap(javain)  (INTTYPE *STRING, size_t LENGTH) "$javainput"
+%typemap(freearg) (INTTYPE *STRING, size_t LENGTH) ""
+%typemap(in)      (INTTYPE *STRING, size_t LENGTH) {
+    $1 = $input ? (INTTYPE *) JCALL2(GETFN, jenv, $input, 0) : 0;
+    $2 = $input ? (size_t) JCALL1(GetArrayLength, jenv, $input) : 0;
+}
+%typemap(argout)  (INTTYPE *STRING, size_t LENGTH) {
+  if ($input) JCALL3(RELEASEFN, jenv, $input, (j##JTYPE *)$1, 0);
+}
+%enddef
+
+%java_int_array(uint32_t, jintArray, int, GetIntArrayElements, ReleaseIntArrayElements)
+%java_int_array(uint64_t, jlongArray, long, GetLongArrayElements, ReleaseLongArrayElements)
+
+/* Input buffers with lengths are passed as arrays */
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
@@ -184,10 +201,20 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_in_len) };
+
+/* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
+
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
+
+%typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
+   val = 0; $1 = ($1_ltype)&val;
+}
+%typemap(argout) uint64_t* value_out{
+   $result = (jlong)*$1;
+}
 
 /* Opaque types are converted to/from an internal object holder class */
 %define %java_opaque_struct(NAME, ID)
@@ -207,9 +234,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %typemap(jni) const struct NAME * "jobject"
 %enddef
 
-/* Tell SWIG what uint32_t means */
-typedef unsigned int uint32_t;
-
 /* Change a functions return type to match its output type mapping */
 %define %return_decls(FUNC, JTYPE, JNITYPE)
 %typemap(jstype) int FUNC "JTYPE"
@@ -223,6 +247,9 @@ typedef unsigned int uint32_t;
 %enddef
 %define %returns_size_t(FUNC)
 %return_decls(FUNC, int, jint)
+%enddef
+%define %returns_uint64(FUNC)
+%return_decls(FUNC, long, jlong)
 %enddef
 %define %returns_string(FUNC)
 %return_decls(FUNC, String, jstring)
