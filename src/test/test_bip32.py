@@ -77,6 +77,41 @@ vec_1 = {
     }
 }
 
+vec_3 = {
+    'seed':               '4B381541583BE4423346C643850DA4B3'
+                          '20E46A87AE3D2A4E6DA11EBA819CD4AC'
+                          'BA45D239319AC14F863B8D5AB5A0D0C6'
+                          '4D2E8A1E7D1457DF2E5A3C51C73235BE',
+
+    'm': {
+        FLAG_KEY_PUBLIC:  '0488B21E00000000000000000001D28A'
+                          '3E53CFFA419EC122C968B3259E16B650'
+                          '76495494D97CAE10BBFEC3C36F03683A'
+                          'F1BA5743BDFC798CF814EFEEAB2735EC'
+                          '52D95ECED528E692B8E34C4E56696541E136',
+
+        FLAG_KEY_PRIVATE: '0488ADE400000000000000000001D28A'
+                          '3E53CFFA419EC122C968B3259E16B650'
+                          '76495494D97CAE10BBFEC3C36F0000DD'
+                          'B80B067E0D4993197FE10F2657A844A3'
+                          '84589847602D56F0C629C81AAE3233C0C6BF'
+    },
+
+    'm/0H': {
+        FLAG_KEY_PUBLIC:  '0488B21E0141D63B5080000000E5FEA1'
+                          '2A97B927FC9DC3D2CB0D1EA1CF50AA5A'
+                          '1FDC1F933E8906BB38DF3377BD026557'
+                          'FDDA1D5D43D79611F784780471F086D5'
+                          '8E8126B8C40ACB82272A7712E7F20158D8FD',
+
+        FLAG_KEY_PRIVATE: '0488ADE40141D63B5080000000E5FEA1'
+                          '2A97B927FC9DC3D2CB0D1EA1CF50AA5A'
+                          '1FDC1F933E8906BB38DF3377BD00491F'
+                          '7A2EEBC7B57028E0D3FAA0ACDA02E75C'
+                          '33B03C48FB288C41E2EA44E1DAEF7332BB35'
+    }
+}
+
 class BIP32Tests(unittest.TestCase):
 
     NULL_HASH160 = '00' * 20
@@ -206,19 +241,26 @@ class BIP32Tests(unittest.TestCase):
 
 
     def test_bip32_vectors(self):
+        self.do_test_vector(vec_1)
+        self.do_test_vector(vec_3)
+
+    def do_test_vector(self, vec):
 
         # BIP32 Test vector 1
-        master = self.get_test_master_key(vec_1)
+        master = self.get_test_master_key(vec)
 
         # Chain m:
         for flags in [FLAG_KEY_PUBLIC, FLAG_KEY_PRIVATE]:
-            expected = self.get_test_key(vec_1, 'm', flags)
+            expected = self.get_test_key(vec, 'm', flags)
             self.compare_keys(master, expected, flags)
 
         derived = master
         for path, i in [('m/0H', 0x80000000),
                         ('m/0H/1', 1),
                         ('m/0H/1/2H', 0x80000002)]:
+
+            if path not in vec:
+                continue
 
             # Derive a public and private child. Verify that the private child
             # contains the public and private published vectors. Verify that
@@ -228,7 +270,7 @@ class BIP32Tests(unittest.TestCase):
             derived_pub = self.derive_key(derived, i, FLAG_KEY_PUBLIC)
             derived = self.derive_key(derived, i, FLAG_KEY_PRIVATE)
             for flags in [FLAG_KEY_PUBLIC, FLAG_KEY_PRIVATE]:
-                expected = self.get_test_key(vec_1, path, flags)
+                expected = self.get_test_key(vec, path, flags)
                 self.compare_keys(derived, expected, flags)
                 if flags & FLAG_KEY_PUBLIC:
                     self.compare_keys(derived_pub, expected, flags)
