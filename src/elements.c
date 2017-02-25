@@ -167,6 +167,8 @@ int wally_asset_rangeproof(uint64_t value,
     memcpy(message + ASSET_TAG_LEN, abf, ASSET_TAG_LEN);
 
     *written = ASSET_RANGEPROOF_MAX_LEN;
+    /* FIXME: This only allows 32 bit values. The caller should be able to
+     * pass in the maximum value allowed */
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, 0, &commit,
                                   vbf, nonce_sha.u.u8, 0, 32, value,
                                   message, sizeof(message),
