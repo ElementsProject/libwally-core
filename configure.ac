@@ -155,7 +155,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],[[return posix_memalign(
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 1, 0, 1)]])],
                [AC_DEFINE(HAVE_MEMSET_S, 1, [Define if we have memset_s])])
 
-AC_CHECK_HEADERS([byteswap.h])
+AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
 AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes"])
@@ -211,6 +211,22 @@ if test "x$swig_python" == "xyes"; then
     fi
     SWIG_PYTHON
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
+fi
+
+AC_ARG_ENABLE(swig-js,
+    AS_HELP_STRING([--enable-swig-js],[enable the SWIG Javascript interface (default: no)]),
+    [swig_js=$enableval], [swig_js=no])
+AM_CONDITIONAL([USE_SWIG_JS], [test "x$swig_js" == "xyes"])
+
+if test "x$swig_js" == "xyes"; then
+# FIXME: Check other build deps
+    if test "x$pythonexists" != "xyes"; then
+        AC_MSG_FAILURE([ERROR: No usable python was found for generating swig-js wrappers])
+    fi
+    if test "x$swig_python" != "xyes"; then
+        SWIG_PYTHON
+    fi
+    AX_CHECK_COMPILE_FLAG([-DSWIG_JAVASCRIPT_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_JAVASCRIPT_BUILD=1"])
 fi
 
 AC_ARG_ENABLE(swig-java,

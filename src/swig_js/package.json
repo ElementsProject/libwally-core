@@ -1,0 +1,15 @@
+{
+  "name": "wallyjs",
+  "version": "0.0.0",
+  "description": "",
+  "main": "wally.js",
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "author": "",
+  "license": "MIT",
+  "gypfile": true,
+  "dependencies": {
+    "nan": "^2.5.1"
+  }
+}

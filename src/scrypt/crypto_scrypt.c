@@ -31,7 +31,9 @@
 #endif
 
 #include <sys/types.h>
+#ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
+#endif
 
 #include <errno.h>
 #include <stdint.h>

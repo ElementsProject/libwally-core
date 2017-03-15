@@ -32,6 +32,11 @@ rm -rf src/swig_java/src/com/blockstream/libwally
 rm -f src/swig_python/wallycore.py
 rm -f src/swig_python/wallycore/__init__.py
 rm -f src/swig_python/swig_python_wrap.c
+rm -rf src/swig_js/build
+rm -f src/swig_js/CDVWally.swift
+rm -f src/swig_js/WallyCordova.java
+rm -f src/swig_js/swig.i
+rm -f src/swig_js/wally.js
 rm -rf src/.libs
 rm -f tools/build-aux/compile
 rm -f tools/build-aux/config.guess

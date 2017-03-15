@@ -45,7 +45,32 @@ if IS_OSX
 SWIG_PYTHON_TEST_DEPS = .libs/libwallycore.so
 endif
 
-endif
+endif # USE_SWIG_PYTHON
+
+if USE_SWIG_JS
+# The SWIG interface files and wrappers are generated from a python script
+swig_js/swig.i:
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) swig_js/makewrappers/wrap.py swig_js/
+
+# We generate the swig wrapper normally...
+# FIXME: Put this in the autoconf machinery
+SWIG_JS_OPT := -javascript -node -c++
+swig_js/swig_js_wrap.cxx : swig_js/swig.i
+	$(AM_V_at)$(SWIG) $(SWIG_JS_OPT) -outdir swig_js -o $@ $<
+
+# ...And then build it with node-gyp
+swig_js/build/Release/wallycore.node: swig_js/swig_js_wrap.cxx
+	cd swig_js && node-gyp configure && node-gyp build
+
+bin_PROGRAMS = swig_js/build/Release/wallycore.node
+
+# FIXME: Run the test(s) as part of 'make check'
+
+.PHONY: clean-swig-js
+clean-swig-js:
+	$(AM_V_at)rm -f swig_js/swig_js_wrap.cxx
+clean-local: clean-swig-js
+endif # USE_SWIG_JS
 
 if USE_SWIG_JAVA
 noinst_LTLIBRARIES += libswig_java.la
