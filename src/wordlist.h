@@ -2,6 +2,7 @@
 #define LIBWALLY_WORDLIST_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 /**
  * struct words- structure representing a parsed list of words
