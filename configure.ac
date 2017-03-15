@@ -252,6 +252,11 @@ AC_SUBST([JAVAC_TARGET])
 
 AC_SUBST([AM_CFLAGS])
 
+if test "x$enable_static" == "xyes"; then
+    CTEST_EXTRA_STATIC='$(libwallycore_la_LIBADD)'
+fi
+AC_SUBST([CTEST_EXTRA_STATIC])
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile

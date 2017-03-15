@@ -122,7 +122,7 @@ noinst_PROGRAMS = test_clear
 test_clear_SOURCES = ctest/test_clear.c
 test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
-test_clear_LDADD = $(lib_LTLIBRARIES) $(libwallycore_la_LIBADD)
+test_clear_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
