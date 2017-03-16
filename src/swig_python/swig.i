@@ -33,6 +33,26 @@ static int check_result(int result)
     return result;
 }
 
+static bool ulonglong_cast(PyObject *item, unsigned long long *val)
+{
+#if PY_MAJOR_VERSION < 3
+    if (PyInt_Check(item)) {
+        *val = PyInt_AsUnsignedLongMask(item);
+        if (!PyErr_Occurred())
+          return true;
+        PyErr_Clear();
+        return false;
+    }
+#endif
+    if (PyLong_Check(item)) {
+        *val = PyLong_AsUnsignedLongLong(item);
+        if (!PyErr_Occurred())
+          return true;
+        PyErr_Clear();
+    }
+    return false;
+}
+
 #define capsule_cast(obj, name) \
     (struct name *)PyCapsule_GetPointer(obj, "struct " #name " *")
 
@@ -151,7 +171,7 @@ static void destroy_ext_key(PyObject *obj) {
    for (i = 0; i < $2; ++i) {
        PyObject *item = PyList_GET_ITEM($input, i);
        unsigned long long v;
-       if (!SWIG_IsOK(SWIG_AsVal_unsigned_SS_long_SS_long(item, &v)) || v > INTMAX) {
+       if (!ulonglong_cast(item, &v) || v > INTMAX) {
            PyErr_SetString(PyExc_OverflowError, "Invalid unsigned integer");
            SWIG_fail;
        }

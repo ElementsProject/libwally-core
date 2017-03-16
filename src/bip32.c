@@ -664,10 +664,10 @@ int bip32_key_get_priv_key(const struct ext_key *key_in, unsigned char *bytes_ou
 
 
 #define GET_I(name) \
-    int bip32_key_get_ ## name(const struct ext_key *key_in, size_t *output) { \
-        if (output) *output = 0; \
-        if (!key_in || !output) return WALLY_EINVAL; \
-        *output = key_in->name; \
+    int bip32_key_get_ ## name(const struct ext_key *key_in, size_t *written) { \
+        if (written) *written = 0; \
+        if (!key_in || !written) return WALLY_EINVAL; \
+        *written = key_in->name; \
         return WALLY_OK; \
     }
 

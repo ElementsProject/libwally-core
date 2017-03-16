@@ -9,9 +9,9 @@ WALLY_CORE_API int bip32_key_get_priv_key(const struct ext_key *key_in, unsigned
 WALLY_CORE_API int bip32_key_get_hash160(const struct ext_key *key_in, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int bip32_key_get_pub_key(const struct ext_key *key_in, unsigned char *bytes_out, size_t len);
 
-WALLY_CORE_API int bip32_key_get_depth(const struct ext_key *key_in, size_t *output);
-WALLY_CORE_API int bip32_key_get_child_num(const struct ext_key *key_in, size_t *output);
-WALLY_CORE_API int bip32_key_get_version(const struct ext_key *key_in, size_t *output);
+WALLY_CORE_API int bip32_key_get_depth(const struct ext_key *key_in, size_t *written);
+WALLY_CORE_API int bip32_key_get_child_num(const struct ext_key *key_in, size_t *written);
+WALLY_CORE_API int bip32_key_get_version(const struct ext_key *key_in, size_t *written);
 
 #endif /* SWIG_JAVA_BUILD/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
 
