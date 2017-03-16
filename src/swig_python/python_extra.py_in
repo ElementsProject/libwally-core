@@ -1,4 +1,5 @@
 # Support functions for the SWIG python wrapper
+from sys import version as _wally_py_version
 
 def _wrap_bin(fn, length, resize=False):
     """ Wrap functions that take an output buffer to create/return it """
@@ -12,11 +13,17 @@ def _wrap_bin(fn, length, resize=False):
     return wrapped
 
 _unwrapped_hex_to_bytes = hex_to_bytes
-def hex_to_bytes(hex_str):
-    hex_str = hex_str.encode('ascii')
-    buf = bytearray(len(hex_str) / 2)
-    _unwrapped_hex_to_bytes(bytes(hex_str), buf)
-    return buf
+if int(_wally_py_version[0]) >= 3:
+    def hex_to_bytes(hex_str):
+        buf = bytearray(len(hex_str) // 2)
+        _unwrapped_hex_to_bytes(hex_str, buf)
+        return buf
+else:
+    def hex_to_bytes(hex_str):
+        hex_str = hex_str.encode('ascii')
+        buf = bytearray(len(hex_str) // 2)
+        _unwrapped_hex_to_bytes(bytes(hex_str), buf)
+        return buf
 
 sha256 = _wrap_bin(sha256, SHA256_LEN)
 sha256d = _wrap_bin(sha256d, SHA256_LEN)

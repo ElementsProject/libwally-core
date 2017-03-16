@@ -9,6 +9,7 @@ find . -name "*.class" -exec rm {} \;
 find . -name "*.gcno" -exec rm {} \;
 find . -name "*.gcda" -exec rm {} \;
 find . -name "*.egg-info" -exec rm -rf {} 2>/dev/null \;
+find . -name "__pycache__" -exec rm -rf {} 2>/dev/null \;
 
 rm -f */*~
 rm -f *~
@@ -19,7 +20,6 @@ rm -f configure
 rm -rf dist/
 rm -f src/*pyc
 rm -f src/test/*pyc
-rm -rf src/test/__pycache__
 rm -f src/config.h.in
 rm -rf src/lcov*
 rm -f src/test_clear*
