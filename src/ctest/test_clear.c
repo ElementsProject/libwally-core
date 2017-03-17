@@ -1,3 +1,8 @@
+#include "config.h"
+
+#ifdef HAVE_ASM_PAGE_H
+#   include <asm/page.h>
+#endif
 #include <wally_bip32.h>
 #include <wally_bip39.h>
 #include <pthread.h>
