@@ -6,6 +6,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_elements.h"
 #include <limits.h>
 
 static int check_result(JNIEnv *jenv, int result)
@@ -190,14 +191,22 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %java_int_array(uint64_t, jlongArray, long, GetLongArrayElements, ReleaseLongArrayElements)
 
 /* Input buffers with lengths are passed as arrays */
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *abf, size_t abf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *asset, size_t asset_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_abf, size_t output_abf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_asset, size_t output_asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_generator, size_t output_generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *parent160, size_t parent160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_in_len) };
@@ -206,8 +215,25 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
+
+/* Output buffers */
+%apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char *abf_out, size_t abf_out_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) }; /* FIXME: Needed? */
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
+%apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t values_len) }
+
+%typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
+   val = 0; $1 = ($1_ltype)&val;
+}
+%typemap(argout) uint64_t* value_out{
+   $result = (jlong)*$1;
+}
 
 %typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
    val = 0; $1 = ($1_ltype)&val;
@@ -346,9 +372,18 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_secp_randomize);
 
+%returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
+%returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
+%returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
+%returns_size_t(wally_asset_rangeproof);
+%returns_size_t(wally_asset_surjectionproof_size);
+%returns_size_t(wally_asset_surjectionproof);
+%returns_uint64(wally_asset_unblind);
+
 %include "../include/wally_core.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_elements.h"

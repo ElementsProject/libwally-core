@@ -90,6 +90,7 @@ libwallycore_la_SOURCES = \
     bip32.c \
     bip38.c \
     bip39.c \
+    elements.c \
     hex.c \
     hmac.c \
     internal.c \

@@ -8,6 +8,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_elements.h"
 #include "../internal.h"
 
 #undef malloc
@@ -100,20 +101,34 @@ static void destroy_ext_key(PyObject *obj) {
 %enddef
 
 /* Input buffers with lengths are passed as python buffers */
+%pybuffer_binary(const unsigned char *abf, size_t abf_len);
+%pybuffer_binary(const unsigned char *asset, size_t asset_len);
 %pybuffer_nullable_binary(const unsigned char *bytes_in, size_t len_in);
 %pybuffer_binary(const unsigned char *chain_code, size_t chain_code_len);
+%pybuffer_binary(const unsigned char *commitment, size_t commitment_len);
+%pybuffer_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
 %pybuffer_binary(const unsigned char *iv, size_t iv_len);
 %pybuffer_binary(const unsigned char *key, size_t key_len);
+%pybuffer_binary(const unsigned char *output_abf, size_t output_abf_len);
+%pybuffer_binary(const unsigned char *output_asset, size_t output_asset_len);
+%pybuffer_binary(const unsigned char *output_generator, size_t output_generator_len);
 %pybuffer_binary(const unsigned char *pass, size_t pass_len);
 %pybuffer_nullable_binary(const unsigned char *parent160, size_t parent160_len);
 %pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
+%pybuffer_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
 %pybuffer_binary(const unsigned char *sig_in, size_t sig_in_len);
+%pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
+
+/* Output buffers */
+%pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
+%pybuffer_mutable_binary(unsigned char *abf_out, size_t abf_out_len);
 %pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
 %pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
 %pybuffer_mutable_binary(unsigned char *salt_in_out, size_t salt_len);
+%pybuffer_mutable_binary(unsigned char *vbf_out, size_t vbf_out_len); /* FIXME: Needed? */
 
 /* Output integer values are converted into return values. */
 %typemap(in, numinputs=0) size_t *written (size_t sz) {
@@ -122,6 +137,14 @@ static void destroy_ext_key(PyObject *obj) {
 %typemap(argout) size_t* written {
    Py_DecRef($result);
    $result = PyInt_FromSize_t(*$1);
+}
+
+%typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
+   val = 0; $1 = ($1_ltype)&val;
+}
+%typemap(argout) uint64_t* value_out{
+   Py_DecRef($result);
+   $result = PyLong_FromUnsignedLongLong(*$1);
 }
 
 /* Output strings are converted to native python strings and returned */
@@ -206,3 +229,4 @@ typedef unsigned long long uint64_t;
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_elements.h"
