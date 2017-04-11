@@ -101,4 +101,45 @@
           throw new IllegalArgumentException("Invalid formatted message");
       return ret;
   }
+
+  public final static byte[] asset_generator_from_bytes(byte[] jarg1, byte[] jarg2) {
+      return asset_generator_from_bytes(jarg1, jarg2, null);
+  }
+
+  public final static byte[] asset_final_vbf(long[] jarg1, long jarg2, byte[] jarg3, byte[] jarg4) {
+      return asset_final_vbf(jarg1, jarg2, jarg3, jarg4, null);
+  }
+
+  public final static byte[] asset_value_commitment(long jarg1, byte[] jarg2, byte[] jarg3) {
+      return asset_value_commitment(jarg1, jarg2, jarg3, null);
+  }
+
+  private final static byte[] trimBuffer(final byte[] buf, final int len) {
+      if (len > buf.length) throw new IllegalArgumentException();
+      return len == buf.length ? buf: java.util.Arrays.copyOf(buf, len);
+  }
+
+  public final static byte[] asset_rangeproof(long jarg1, byte[] jarg2, byte[] jarg3, byte[] jarg4,
+                                              byte[] jarg5, byte[] jarg6, byte[] jarg7, byte[] jarg8) {
+      final byte[] buf = new byte[ASSET_RANGEPROOF_MAX_LEN];
+      final int len = asset_rangeproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, jarg8, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] asset_surjectionproof(byte[] jarg1, byte[] jarg2, byte[] jarg3,
+                                                   byte[] jarg4, byte[] jarg5, byte[] jarg6, byte[] jarg7) {
+      final byte[] buf = new byte[asset_surjectionproof_size(jarg5.length / ASSET_TAG_LEN)];
+      final int len = asset_surjectionproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
+                                         byte[] commitment, byte[] generator,
+                                         final java.util.List<byte[]> outputs) {
+      // We return asset_out, abf_out, vbf_out in the passed list
+      for (int i = 0; i < 3; i++) // asset_out, abf_out, vbf_out
+          outputs.add(new byte[ASSET_TAG_LEN]);
+      return asset_unblind(pub_key, priv_key, proof, commitment, generator,
+                           outputs.get(0), outputs.get(1), outputs.get(2));
+  }
 }

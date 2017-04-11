@@ -1,6 +1,8 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
+#if 0
 #include "secp256k1/include/secp256k1_schnorr.h"
+#endif
 #include "ccan/ccan/build_assert/build_assert.h"
 #include <stdbool.h>
 
@@ -179,10 +181,13 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
         return WALLY_ENOMEM;
 
     if (flags & EC_FLAG_SCHNORR) {
+        return WALLY_EINVAL;
+#if 0 /*FIXME: Schnorr is unavailable in secp for now*/
         if (!secp256k1_schnorr_sign(ctx, bytes_out, bytes_in,
                                     priv_key, nonce_fn, NULL))
             return WALLY_EINVAL; /* Failed to sign */
         return WALLY_OK;
+#endif
     } else {
         secp256k1_ecdsa_signature sig;
 
@@ -222,7 +227,11 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
     ok = pubkey_parse(ctx, &pub, pub_key, pub_key_len);
 
     if (flags & EC_FLAG_SCHNORR)
+#if 0 /*FIXME: Schnorr is unavailable in secp for now*/
         ok = ok && secp256k1_schnorr_verify(ctx, sig_in, bytes_in, &pub);
+#else
+        ok = false;
+#endif
     else
         ok = ok && secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in) &&
              secp256k1_ecdsa_verify(ctx, &sig, bytes_in, &pub);

@@ -51,8 +51,8 @@ src/swig_python/wallycore/wallycore.egg-info
 tools/build-aux/m4/l*.m4
 tools/build-aux/test-driver
 src/secp256k1/test-suite.log
-src/secp256k1/tests.log
-src/secp256k1/tests.trs
+src/secp256k1/*.log
+src/secp256k1/*.trs
 wallycore.egg-info/
 wally*.gz
 wally*.sha256
