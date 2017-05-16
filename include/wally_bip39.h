@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct words;
 
 /** Valid entropy lengths */
@@ -109,5 +113,9 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBWALLY_CORE_BIP39_H */

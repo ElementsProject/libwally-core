@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Derive a pseudorandom key from inputs using an expensive application
  * of HMAC SHA-256.
@@ -438,5 +442,9 @@ WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes_in,
                                                 unsigned char *bytes_out,
                                                 size_t len,
                                                 size_t *written);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBWALLY_CORE_CRYPTO_H */

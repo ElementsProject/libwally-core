@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** The required lengths of entropy for @bip32_key_from_seed */
 #define BIP32_ENTROPY_LEN_128 16
 #define BIP32_ENTROPY_LEN_256 32
@@ -193,8 +197,6 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
     uint32_t flags,
     const struct ext_key **output);
 
-#endif /* LIBWALLY_CORE_BIP32_H */
-
 #ifndef SWIG
 /**
  * Create a new child extended key from a parent extended key and a path.
@@ -224,3 +226,9 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     size_t child_num_len,
     uint32_t flags,
     const struct ext_key **output);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* LIBWALLY_CORE_BIP32_H */

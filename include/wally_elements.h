@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ASSET_TAG_LEN 32 /** Length of an Asset Tag */
 
@@ -114,5 +117,9 @@ WALLY_CORE_API int wally_asset_unblind(
     unsigned char *vbf_out, /* FIXME: Do we need this? */
     size_t vbf_out_len,
     uint64_t *value_out);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBWALLY_CORE_ELEMENTS_H */

@@ -5,6 +5,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Flags for BIP38 conversion. The first 8 bits are reserved for the network */
 #define BIP38_KEY_MAINNET       0  /** Address is for main network */
 #define BIP38_KEY_TESTNET       7  /** Address is for test network */
@@ -92,5 +96,9 @@ WALLY_CORE_API int bip38_to_private_key(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBWALLY_CORE_BIP38_H */
