@@ -5,6 +5,9 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 
 noinst_LTLIBRARIES =
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = wallycore.pc
+
 if USE_SWIG_PYTHON
 noinst_LTLIBRARIES += libswig_python.la
 libswig_python_la_SOURCES = swig_python/swig_python_wrap.c

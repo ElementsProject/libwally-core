@@ -18,6 +18,7 @@ rm -rf build/
 rm -f config.h.in
 rm -f configure
 rm -rf dist/
+rm -rf src/wallycore.pc
 rm -f src/*pyc
 rm -f src/test/*pyc
 rm -f src/config.h.in

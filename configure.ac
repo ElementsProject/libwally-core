@@ -261,6 +261,7 @@ AC_SUBST([CTEST_EXTRA_STATIC])
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
+ src/wallycore.pc
 ])
 
 secp_jni="--disable-jni"

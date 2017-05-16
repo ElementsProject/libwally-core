@@ -39,6 +39,7 @@ src/config.h.in
 src/stamp-h1
 src/test/Makefile
 src/test/Makefile.in
+src/wallycore.pc
 src/test_clear*
 src/test-suite.log
 src/swig_java/swig_java_wrap.c
