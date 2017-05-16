@@ -416,7 +416,7 @@ WALLY_CORE_API int wally_ec_sig_verify(
     const unsigned char *sig_in,
     size_t sig_in_len);
 
-/** The maximim size of input message that can be formatted */
+/** The maximum size of input message that can be formatted */
 #define BITCOIN_MESSAGE_MAX_LEN (64 * 1024 - 64)
 
 /** Indicates that SHA256D(message) should be returned */
