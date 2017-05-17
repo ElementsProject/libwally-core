@@ -5,6 +5,14 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 
 noinst_LTLIBRARIES =
 
+include_HEADERS =
+include_HEADERS += $(top_srcdir)/include/wally_bip32.h
+include_HEADERS += $(top_srcdir)/include/wally_bip38.h
+include_HEADERS += $(top_srcdir)/include/wally_bip39.h
+include_HEADERS += $(top_srcdir)/include/wally_core.h
+include_HEADERS += $(top_srcdir)/include/wally_crypto.h
+include_HEADERS += $(top_srcdir)/include/wally_elements.h
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = wallycore.pc
 
@@ -115,7 +123,8 @@ libwallycore_la_INCLUDES = \
     include/wally_bip38.h \
     include/wally_bip39.h \
     include/wally_core.h \
-    include/wally-crypto.h
+    include/wally_crypto.h \
+    include/wally_elements.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
