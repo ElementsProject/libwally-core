@@ -72,7 +72,7 @@ installed.
 For python development, you can build and install wally using:
 
 ```
-$ python setup.py install
+$ pip install .
 ```
 
 It is suggested you only install this way into a virtualenv while the library
@@ -82,7 +82,7 @@ If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
 running `setup.py` or (when compiling manually) `./configure`.
 
-You can also install the binary wally releases using the released egg or
+You can also install the binary wally releases using the released
 wheel files without having to compile the library.
 
 For wheel releases you can install directly using the released wheel files
@@ -92,14 +92,7 @@ and pip install, e.g.:
 pip install wallycore-0.4.0-cp27-cp27mu-linux_x86_64.whl
 ```
 
-For egg releases, untar the tarball which will create a directory of the
-form `wallcore-<platform>-<python version>`. You can install using:
-
-```
-python <dir>/setup.py easy_install <dir>/*.egg
-```
-
-The script `tools/build_python_eggs.sh` builds the release files and can be
+The script `tools/build_python_wheels.sh` builds the release files and can be
 used as an example for your own python projects.
 
 ### Android
