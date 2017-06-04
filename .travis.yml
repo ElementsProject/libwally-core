@@ -15,6 +15,7 @@ compiler:
 addons:
     apt:
         packages:
+          - llvm-dev
           - python
           - python-dev
           - python3
