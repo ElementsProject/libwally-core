@@ -262,7 +262,12 @@ enum {
     ANDROID_CPU_X86_FEATURE_POPCNT = (1 << 1),
     ANDROID_CPU_X86_FEATURE_MOVBE  = (1 << 2),
     ANDROID_CPU_X86_FEATURE_SSE4_1 = (1 << 3),
-    ANDROID_CPU_X86_FEATURE_SSE4_2 = (1 << 4)
+    ANDROID_CPU_X86_FEATURE_SSE4_2 = (1 << 4),
+    ANDROID_CPU_X86_FEATURE_AES_NI = (1 << 5),
+    ANDROID_CPU_X86_FEATURE_AVX =    (1 << 6),
+    ANDROID_CPU_X86_FEATURE_RDRAND = (1 << 7),
+    ANDROID_CPU_X86_FEATURE_AVX2 =   (1 << 8),
+    ANDROID_CPU_X86_FEATURE_SHA_NI = (1 << 9)
 };
 
 /* The bit flags corresponding to the output of android_getCpuFeatures()
