@@ -5,9 +5,9 @@ Wally is a collection of useful primitives for cryptocurrency wallets.
 Note that the library is currently pre-release and so the API may change
 without notice.
 
-Please report bugs and submit patches to https://github.com/jgriffiths/libwally-core.
+Please report bugs and submit patches to https://github.com/ElementsProject/libwally-core.
 
-[![Build Status](https://travis-ci.org/jgriffiths/libwally-core.svg?branch=master)](https://travis-ci.org/jgriffiths/libwally-core)
+[![Build Status](https://travis-ci.org/ElementsProject/libwally-core.svg?branch=master)](https://travis-ci.org/ElementsProject/libwally-core)
 
 ## Platforms
 
