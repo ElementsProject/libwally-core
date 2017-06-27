@@ -197,6 +197,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra_commit, size_t extra_commit_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
