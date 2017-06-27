@@ -124,6 +124,7 @@ int wally_asset_rangeproof(uint64_t value,
                            const unsigned char *vbf, size_t vbf_len,
                            const unsigned char *commitment, size_t commitment_len,
                            const unsigned char *generator, size_t generator_len,
+                           const unsigned char *extra_commit, size_t extra_commit_len,
                            unsigned char *bytes_out, size_t len,
                            size_t *written)
 {
@@ -169,10 +170,10 @@ int wally_asset_rangeproof(uint64_t value,
     *written = ASSET_RANGEPROOF_MAX_LEN;
     /* FIXME: This only allows 32 bit values. The caller should be able to
      * pass in the maximum value allowed */
-    if (secp256k1_rangeproof_sign(ctx, bytes_out, written, 0, &commit,
+    if (secp256k1_rangeproof_sign(ctx, bytes_out, written, 1, &commit,
                                   vbf, nonce_sha.u.u8, 0, 32, value,
                                   message, sizeof(message),
-                                  NULL, 0, /* FIXME: Do we want to commit to anything else? */
+                                  extra_commit, extra_commit_len,
                                   &gen))
         ret = WALLY_OK;
     else {
@@ -192,6 +193,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                         const unsigned char *proof, size_t proof_len,
                         const unsigned char *commitment, size_t commitment_len,
                         const unsigned char *generator, size_t generator_len,
+                        const unsigned char *extra_commit, size_t extra_commit_len,
                         unsigned char *asset_out, size_t asset_out_len,
                         unsigned char *abf_out, size_t abf_out_len,
                         unsigned char *vbf_out, size_t vbf_out_len,
@@ -231,7 +233,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                                      message, &message_len,
                                      nonce_sha.u.u8, &min_value, &max_value,
                                      &commit, proof, proof_len,
-                                     NULL, 0, /* FIXME: Do we want to commit to anything else? */
+                                     extra_commit, extra_commit_len,
                                      &gen))
         goto cleanup;
 
@@ -328,6 +330,10 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
         goto cleanup;
     }
 
+    if (!secp256k1_surjectionproof_verify(ctx, &proof, generators, num_inputs, &gen)) {
+        ret = WALLY_ERROR; /* Surjection proof creation failed */
+        goto cleanup;
+    }
     /* FIXME: secp256k1_surjectionproof_verify - is it needed? */
 
     *written = len;
