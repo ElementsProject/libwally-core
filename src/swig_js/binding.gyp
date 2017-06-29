@@ -30,7 +30,7 @@
     {
       "target_name": "wallycore",
       "dependencies": [ "deps" ],
-      "sources": [ "nan_wrap.cc" ],
+      "sources": [ "nodejs_wrap.cc" ],
       "include_dirs": [ "<(libwally_dir)/src", "<!(node -e \"require('nan')\")" ],
       "defines": [ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H" ],
       "conditions": [

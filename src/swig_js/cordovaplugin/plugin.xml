@@ -26,14 +26,14 @@
     </platform>
     <platform name="ios">
 <!--        <source-file src="libsecp256k1/src/basic-config.h" target-dir="libsecp256k1" /> -->
-        <source-file src="CDVWally.swift" target-dir="Wally" />
+        <source-file src="WallyCordova.swift" target-dir="Wally" />
 	<source-file src="libwally-core-ios.xcodeproj" target-dir="" />
 	<source-file src="WallyModule/module.map" target-dir="Wally" />
 	<source-file src="WallyModule/wally_define_javascript_build.h" target-dir="Wally" />
 
         <config-file target="config.xml" parent="/*">
             <feature name="Wally">
-                <param name="ios-package" value="CDVWally"/>
+                <param name="ios-package" value="WallyCordova"/>
             </feature>
         </config-file>
         <hook type="after_plugin_install" src="scripts/add_swift_support.js" />

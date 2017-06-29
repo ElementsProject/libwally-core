@@ -213,20 +213,24 @@ if test "x$swig_python" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
 fi
 
-AC_ARG_ENABLE(swig-js,
-    AS_HELP_STRING([--enable-swig-js],[enable the SWIG Javascript interface (default: no)]),
-    [swig_js=$enableval], [swig_js=no])
-AM_CONDITIONAL([USE_SWIG_JS], [test "x$swig_js" == "xyes"])
+AC_ARG_ENABLE(js-wrappers,
+    AS_HELP_STRING([--enable-js-wrappers],[enable the Javascript interface wrappers (default: no)]),
+    [js_wrappers=$enableval], [js_wrappers=no])
+AM_CONDITIONAL([USE_JS_WRAPPERS], [test "x$js_wrappers" == "xyes"])
 
-if test "x$swig_js" == "xyes"; then
-# FIXME: Check other build deps
+if test "x$js_wrappers" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable python was found for generating swig-js wrappers])
+        AC_MSG_FAILURE([ERROR: No usable python was found for generating js wrappers])
     fi
     if test "x$swig_python" != "xyes"; then
         SWIG_PYTHON
     fi
     AX_CHECK_COMPILE_FLAG([-DSWIG_JAVASCRIPT_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_JAVASCRIPT_BUILD=1"])
+    AC_CHECK_PROG(HAVE_NPM,npm,yes,no)
+    if test "x$HAVE_NPM" != "xyes"; then
+        AC_MSG_FAILURE([ERROR: No usable npm was found, please install npm before re-running])
+    fi
+    npm install --prefix ./src/swig_js node-gyp nan tape big-integer
 fi
 
 AC_ARG_ENABLE(swig-java,

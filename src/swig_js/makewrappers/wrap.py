@@ -163,19 +163,24 @@ def open_file(prefix, name):
     return open(os.path.join(prefix, name), "w")
 
 def main():
-    prefix = sys.argv[1] if len(sys.argv) > 1 else '.'
+    prefix = 'swig_js/'
 
-    with open_file(prefix, 'nan_wrap.cc') as f:
-        f.write(nan.generate(FUNCS + FUNCS_NODE))
-
-    with open_file(prefix, 'wally.js') as f:
-        f.write(js.generate(FUNCS + FUNCS_NODE))
-
-    with open_file(prefix, 'WallyCordova.java') as f:
-        f.write(java.generate(FUNCS))
-
-    with open_file(prefix, 'CDVWally.swift') as f:
-        f.write(swift.generate(FUNCS))
+    if sys.argv[1] == 'nodejs':
+        # Node.js wrapper using Native Abstractions for Node.js
+        with open_file(prefix, 'nodejs_wrap.cc') as f:
+            f.write(nan.generate(FUNCS + FUNCS_NODE))
+    elif sys.argv[1] == 'wally':
+        # JS wrapper to choose cordova or node at run time
+        with open_file(prefix, 'wally.js') as f:
+            f.write(js.generate(FUNCS + FUNCS_NODE))
+    elif sys.argv[1] == 'cordova-java':
+        # Java cordova plugin for Android
+        with open_file(prefix, 'WallyCordova.java') as f:
+            f.write(java.generate(FUNCS))
+    elif sys.argv[1] == 'cordova-swift':
+        # Swift cordova plugin for iOS
+        with open_file(prefix, 'WallyCordova.swift') as f:
+            f.write(swift.generate(FUNCS))
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 
 TEMPLATE = '''import Wally
 
-@objc(CDVWally) class CDVWally : CDVPlugin {
+@objc(WallyCordova) class WallyCordova : CDVPlugin {
     !!swift_cases!!
 }'''
 
