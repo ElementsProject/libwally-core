@@ -21,18 +21,21 @@ AM_CONDITIONAL([IS_OSX], [test "x$is_osx" == "xyes"])
 AC_SUBST([LDPATH_VAR])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+LT_INIT([disable-static])
 
 AC_PROG_CC
 
 # Prefer gccs ar/ranlib as they handle flto files properly
 AC_CHECK_PROG(HAVE_GCC_AR,gcc-ar,yes,no)
 if test "x$HAVE_GCC_AR" == "xyes"; then
-    AC_CHECK_TOOL([AR], gcc-ar)
+    AR=gcc-ar
+    AC_SUBST([AR])
 fi
 
 AC_CHECK_PROG(HAVE_GCC_RANLIB,gcc-ranlib,yes,no)
 if test "x$HAVE_GCC_RANLIB" == "xyes"; then
-    AC_CHECK_TOOL([RANLIB], gcc-ranlib)
+    RANLIB=gcc-ranlib
+    AC_SUBST([RANLIB])
 fi
 
 GNU_SED=sed
@@ -46,8 +49,6 @@ else
 fi
 AC_SUBST([GNU_SED])
 
-LT_INIT([disable-static])
-
 #
 # C facilities
 #
@@ -57,9 +58,6 @@ AC_ARG_ENABLE(debug,
 AC_ARG_ENABLE(coverage,
     AS_HELP_STRING([--enable-coverage],[enable code coverage (default: no)]),
     [coverage=$enableval], [coverage=no])
-AC_ARG_ENABLE(lto,
-    AS_HELP_STRING([--enable-lto],[enable lto (default: yes)]),
-    [lto=$enableval], [lto=yes])
 
 CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2//g' | $GNU_SED -e 's/-g//g'`
 
@@ -89,10 +87,8 @@ else
     AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [AM_CFLAGS="$AM_CFLAGS -fstack-protector-strong"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [AM_CFLAGS="$AM_CFLAGS -DNDEBUG=1"])
     AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
-    if test "x$lto" == "xyes"; then
-        AX_CHECK_COMPILE_FLAG([-flto], [AM_CFLAGS="$AM_CFLAGS -flto"])
-        AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
-    fi
+    AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
+    AX_CHECK_LINK_FLAG([-flto], [AM_CFLAGS="$AM_CFLAGS -flto"])
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 
