@@ -193,9 +193,8 @@ class BIP32Tests(unittest.TestCase):
             buf, buf_len = make_cbuffer(serialized_hex)
             ret, key_out = self.unserialize_key(buf, buf_len)
             self.assertEqual(ret, expected)
-            if ret == 0:
+            if ret == WALLY_OK:
                 # Check this key serializes back to the same representation
-                # FIXME: Add full test cases for the serialisation code including errors
                 buf, buf_len = make_cbuffer('0' * len(serialized_hex))
                 ret = bip32_key_serialize(key_out, FLAG_KEY_PRIVATE,
                                           buf, buf_len)
@@ -212,8 +211,8 @@ class BIP32Tests(unittest.TestCase):
                      (VER_TEST_PUBLIC , FLAG_KEY_PRIVATE, WALLY_EINVAL),
                      (VER_TEST_PRIVATE, FLAG_KEY_PUBLIC,  WALLY_EINVAL),
                      (VER_TEST_PRIVATE, FLAG_KEY_PRIVATE, WALLY_OK),
-                     (0x01111111,            FLAG_KEY_PUBLIC,  WALLY_EINVAL),
-                     (0x01111111,            FLAG_KEY_PRIVATE, WALLY_EINVAL)]
+                     (0x01111111,       FLAG_KEY_PUBLIC,  WALLY_EINVAL),
+                     (0x01111111,       FLAG_KEY_PRIVATE, WALLY_EINVAL)]
 
         for ver, flags, expected in ver_cases:
             no_ver = vec_1['m'][flags][8:-8]
@@ -222,6 +221,18 @@ class BIP32Tests(unittest.TestCase):
             ret, _ = self.unserialize_key(buf, buf_len)
             self.assertEqual(ret, expected)
 
+        # Check invalid arguments fail
+        master = self.get_test_master_key(vec_1)
+        pub = self.derive_key(master, 1, FLAG_KEY_PUBLIC)
+        key_out = ext_key()
+        cases = [
+            [~ALL_DEFINED_FLAGS, BIP32_SERIALIZED_LEN],
+            [FLAG_KEY_PRIVATE, BIP32_SERIALIZED_LEN],
+            [FLAG_KEY_PUBLIC, BIP32_SERIALIZED_LEN + 1],
+        ]
+        for (flags, len_out) in cases:
+            ret = bip32_key_serialize(byref(pub), flags, byref(key_out), len_out)
+            self.assertEqual(WALLY_EINVAL, ret)
 
     def test_key_from_seed(self):
 
@@ -320,6 +331,32 @@ class BIP32Tests(unittest.TestCase):
             path_derived = self.derive_key_by_path(master, [1, 1], flags)
             self.compare_keys(path_derived, expected, flags)
 
+    def test_key_from_parent_invalid(self):
+        master, pub, priv = self.create_master_pub_priv()
+        key_out = byref(ext_key())
+
+        cases = [[None,        FLAG_KEY_PRIVATE,   key_out],  # Null parent
+                 [byref(priv), FLAG_KEY_PRIVATE,   None],     # Null output key
+                 [byref(pub),  ~ALL_DEFINED_FLAGS, key_out],  # Invalid flags (pub)
+                 [byref(priv), ~ALL_DEFINED_FLAGS, key_out]]  # Invalid flags (priv)
+
+        for key, flags, key_out in cases:
+            ret = bip32_key_from_parent(key, 1, flags, key_out)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        m = byref(master)
+        c_path = self.path_to_c([1, 1])
+        cases = [(None, len(c_path), FLAG_KEY_PRIVATE,   key_out), # Null parent
+                 (m,    len(c_path), FLAG_KEY_PRIVATE,   None),    # Null output key
+                 (m,    len(c_path), ~ALL_DEFINED_FLAGS, key_out), # Invalid flags
+                 (m,     0,          FLAG_KEY_PRIVATE,   key_out)] # Bad path length
+
+        for key, plen, flags, key_out in cases:
+            ret = bip32_key_from_parent_path(key, c_path, plen, flags, key_out)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+    def test_free_invalid(self):
+        self.assertEqual(WALLY_EINVAL, bip32_key_free(None))
 
 if __name__ == '__main__':
     unittest.main()
