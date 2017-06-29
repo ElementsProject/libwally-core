@@ -84,13 +84,22 @@ _AS_ECHO_LOG([_JINC=$_JINC])
 # On Mac OS X 10.6.4, jni.h is a symlink:
 # /System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers/jni.h
 # -> ../../CurrentJDK/Headers/jni.h.
-AC_CHECK_FILE([$_JINC/jni.h],
-	[JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC"],
-	[_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
-	 AC_CHECK_FILE([$_JTOPDIR/include/jni.h],
-		[JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include"],
-                AC_MSG_ERROR([cannot find JDK header files]))
-	])
+
+AC_CACHE_CHECK(jni headers, ac_cv_jni_header_path,
+[
+if test -f "$_JINC/jni.h"; then
+  ac_cv_jni_header_path="$_JINC"
+  JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
+else
+  _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
+  if test -f "$_JTOPDIR/include/jni.h"; then
+    ac_cv_jni_header_path="$_JTOPDIR/include"
+    JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
+  else
+    ac_cv_jni_header_path=none
+  fi
+fi
+])
 
 # get the likely subdirectories for system specific java includes
 case "$host_os" in
