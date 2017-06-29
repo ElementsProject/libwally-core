@@ -72,6 +72,8 @@ WALLY_CORE_API int wally_asset_rangeproof(
     size_t commitment_len,
     const unsigned char *generator,
     size_t generator_len,
+    const unsigned char *extra_commit,
+    size_t extra_commit_len,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
@@ -110,6 +112,8 @@ WALLY_CORE_API int wally_asset_unblind(
     size_t commitment_len,
     const unsigned char *generator,
     size_t generator_len,
+    const unsigned char *extra_commit,
+    size_t extra_commit_len,
     unsigned char *asset_out,
     size_t asset_out_len,
     unsigned char *abf_out,
