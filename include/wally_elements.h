@@ -70,8 +70,11 @@ WALLY_CORE_API int wally_asset_rangeproof(
     size_t vbf_len,
     const unsigned char *commitment,
     size_t commitment_len,
+    const unsigned char *extra_commit,
+    size_t extra_commit_len,
     const unsigned char *generator,
     size_t generator_len,
+    size_t min_value,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
@@ -108,13 +111,15 @@ WALLY_CORE_API int wally_asset_unblind(
     size_t proof_len,
     const unsigned char *commitment,
     size_t commitment_len,
+    const unsigned char *extra_commit,
+    size_t extra_commit_len,
     const unsigned char *generator,
     size_t generator_len,
     unsigned char *asset_out,
     size_t asset_out_len,
     unsigned char *abf_out,
     size_t abf_out_len,
-    unsigned char *vbf_out, /* FIXME: Do we need this? */
+    unsigned char *vbf_out,
     size_t vbf_out_len,
     uint64_t *value_out);
 

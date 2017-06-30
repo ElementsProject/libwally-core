@@ -40,10 +40,11 @@ def _generate_nan(funcname, f):
             args.append('res_size')
         elif arg.startswith('const_bytes'):
             input_args.append(
-                'unsigned char *arg_%s_ptr = (unsigned char*) node::Buffer::Data(info[%s]->ToObject());'
-                'size_t arg_%s_size = node::Buffer::Length(info[%s]->ToObject());' % tuple(
-                    [i]*4
-                )
+                'unsigned char *arg_%s_ptr = 0; size_t arg_%s_size = 0;\n'
+                'if (!info[%s]->IsNull() && !info[%s]->IsUndefined()) {\n'
+                '    arg_%s_ptr = (unsigned char*) node::Buffer::Data(info[%s]->ToObject());\n'
+                '    arg_%s_size = node::Buffer::Length(info[%s]->ToObject());\n'
+                '}' % tuple([i]*8)
             )
             args.append('arg_%s_ptr' % i)
             args.append('arg_%s_size' % i)
@@ -55,7 +56,7 @@ def _generate_nan(funcname, f):
             input_args.extend([
                 'v8::Array *arr%s = (v8::Array*)*(info[%s]->ToObject());' % (i, i),
                 'uint64_t *uint64s%s = new uint64_t[arr%s->Length()];' % (i, i),
-                'for (int i = 0; i < arr%s->Length(); ++i) {' % i,
+                'for (size_t i = 0; i < arr%s->Length(); ++i) {' % i,
                 '   unsigned char *bytes = (unsigned char*) node::Buffer::Data(arr%s->Get(i)->ToObject());' % i,
                 '   uint64s%s[i] = be64_to_cpu(*((uint64_t*)bytes));' % i,
                 '}'
@@ -130,6 +131,8 @@ def _generate_nan(funcname, f):
                     'bip32_priv_out': 'BIP32_FLAG_KEY_PRIVATE'}[arg]
             postprocessing.append('bip32_key_serialize(outkey, %s, out, BIP32_SERIALIZED_LEN);' % flag)
             postprocessing.append('bip32_key_free(outkey);')
+        else:
+            assert False, 'unknown argument type'
     return ('''
         void %s(const Nan::FunctionCallbackInfo<v8::Value>& info) {
             !!input_args!!

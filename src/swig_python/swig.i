@@ -106,6 +106,7 @@ static void destroy_ext_key(PyObject *obj) {
 %pybuffer_nullable_binary(const unsigned char *bytes_in, size_t len_in);
 %pybuffer_binary(const unsigned char *chain_code, size_t chain_code_len);
 %pybuffer_binary(const unsigned char *commitment, size_t commitment_len);
+%pybuffer_binary(const unsigned char *extra_commit, size_t extra_commit_len);
 %pybuffer_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
 %pybuffer_binary(const unsigned char *iv, size_t iv_len);

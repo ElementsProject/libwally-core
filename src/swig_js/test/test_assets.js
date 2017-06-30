@@ -41,7 +41,7 @@ test('unblind', function (t) {
   var expectedAbf = '5dd4b83ac4dc828b033874f818bd0b5575371cc0e1278c554905dfbb49740fda';
   var expectedVbf = 'ca4bb9102694dbe0e4b777fd9b199fbdaf51493e2167c24418ec5c3da5024af8';
 
-  wally.wally_asset_unblind(h(pubkey), h(privkey), h(rangeproof), h(commitment), h(generator)).then(function (res) {
+  wally.wally_asset_unblind(h(pubkey), h(privkey), h(rangeproof), h(commitment), null, h(generator)).then(function (res) {
     t.equal(b(res[0]), expectedAsset, 'asset');
     t.equal(b(res[1]), expectedAbf, 'abf');
     t.equal(b(res[2]), expectedVbf, 'vbf');
