@@ -18,7 +18,7 @@ packages:
 - "python"
 remotes:
 - "dir": "libwally-core"
-  "url": "https://github.com/jgriffiths/libwally-core.git"
+  "url": "https://github.com/ElementsProject/libwally-core.git"
 files: []
 script: |
 

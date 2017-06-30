@@ -5,7 +5,7 @@ includedir=@includedir@
 
 Name: libwallycore
 Description: Wally is a collection of useful primitives for cryptocurrency wallets
-URL: https://github.com/jgriffiths/libwally-core
+URL: https://github.com/ElementsProject/libwally-core
 Version: @PACKAGE_VERSION@
 Cflags: -I${includedir}
 Libs: -L${libdir} -lwallycore

@@ -24,7 +24,7 @@ setup(
     version='0.2.0',
     description='libwally Bitcoin library',
     long_description='Python bindings for the libwally Bitcoin library',
-    url='https://github.com/jgriffiths/libwally-core',
+    url='https://github.com/ElementsProject/libwally-core',
     author='Jon Griffiths',
     author_email='jon_p_griffiths@yahoo.com',
     license='MIT',
