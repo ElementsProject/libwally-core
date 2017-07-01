@@ -189,7 +189,7 @@ AC_SUBST([LIBADD_SECP256K1])
 #
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
-AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "x$pythonexists" == "xyes"])
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes"])
 
 #
 # SWIG
