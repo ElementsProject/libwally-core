@@ -72,7 +72,7 @@ It is suggested you only install this way into a virtualenv while the library
 is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
-`PYTHON_VERSION` environment variable (to e.g. '2', `2.7`, `3` etc) before
+`PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
 running `./configure`.
 
 ## Cleaning
