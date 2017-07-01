@@ -35,7 +35,6 @@ rm -f src/swig_python/swig_python_wrap.c
 rm -rf src/wrap_js/build
 rm -rf src/wrap_js/node_modules/
 rm -f src/wrap_js/nodejs_wrap.cc
-rm -rf src/wrap_js/src/
 rm -f src/wrap_js/WallyCordova.java
 rm -f src/wrap_js/WallyCordova.swift
 rm -f src/wrap_js/wally.js

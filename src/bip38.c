@@ -54,7 +54,7 @@ struct bip38_layout_t {
 
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
-static void assert_assumptions(void)
+static void assert_bip38_assumptions(void)
 {
     /* derived_t/bip38_layout_t must be contiguous */
     BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERVIED_KEY_LEN);
@@ -109,8 +109,8 @@ static int address_from_private_key(const unsigned char *bytes_in,
     return ret;
 }
 
-static void aes_enc(const unsigned char *src, const unsigned char *xor,
-                    const unsigned char *key, unsigned char *bytes_out)
+static void aes_enc_impl(const unsigned char *src, const unsigned char *xor,
+                         const unsigned char *key, unsigned char *bytes_out)
 {
     unsigned char plaintext[AES_BLOCK_LEN];
     size_t i;
@@ -161,8 +161,8 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     buf.prefix = BIP38_PREFIX;
     buf.ec_type = BIP38_NO_ECMUL; /* FIXME: EC-Multiply support */
     buf.flags = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
-    aes_enc(bytes_in + 0, derived.half1_lo, derived.half2, buf.half1);
-    aes_enc(bytes_in + 16, derived.half1_hi, derived.half2, buf.half2);
+    aes_enc_impl(bytes_in + 0, derived.half1_lo, derived.half2, buf.half1);
+    aes_enc_impl(bytes_in + 16, derived.half1_hi, derived.half2, buf.half2);
 
     if (flags & BIP38_KEY_SWAP_ORDER) {
         /* Shuffle hash from the beginning to the end */
@@ -201,8 +201,8 @@ int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
 }
 
 
-static void aes_dec(const unsigned char *cyphertext, const unsigned char *xor,
-                    const unsigned char *key, unsigned char *bytes_out)
+static void aes_dec_impl(const unsigned char *cyphertext, const unsigned char *xor,
+                         const unsigned char *key, unsigned char *bytes_out)
 {
     size_t i;
 
@@ -276,8 +276,8 @@ static int to_private_key(const char *bip38,
                            (unsigned char *)&derived, sizeof(derived))))
         goto finish;
 
-    aes_dec(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
-    aes_dec(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
+    aes_dec_impl(buf.half1, derived.half1_lo, derived.half2, bytes_out + 0);
+    aes_dec_impl(buf.half2, derived.half1_hi, derived.half2, bytes_out + 16);
 
     if (flags & BIP38_KEY_RAW_MODE) {
         if (buf.hash != base58_get_checksum(bytes_out, len))

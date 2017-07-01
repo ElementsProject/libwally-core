@@ -49,7 +49,6 @@ src/wrap_js/WallyCordova.java
 src/wrap_js/WallyCordova.swift
 src/wrap_js/node_modules/
 src/wrap_js/nodejs_wrap.cc
-src/wrap_js/src/
 src/wrap_js/wally.js
 src/swig_python/swig_python_wrap.c
 src/swig_python/wallycore/__init__.py

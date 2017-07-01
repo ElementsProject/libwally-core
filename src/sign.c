@@ -15,7 +15,7 @@ static const char MSG_PREFIX[] = "\x18" "Bitcoin Signed Message:\n";
 
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
-static void assert_assumptions(void)
+static void assert_sign_assumptions(void)
 {
     BUILD_ASSERT(sizeof(secp256k1_ecdsa_signature) == EC_SIGNATURE_LEN);
 }
