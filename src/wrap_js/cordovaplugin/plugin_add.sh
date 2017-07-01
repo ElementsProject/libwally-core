@@ -12,7 +12,7 @@ else
     READLINK=readlink
 fi
 PLUGINDIR="$($READLINK -f "$(dirname "$(test -L "$0" && $READLINK "$0" || echo "$0")")")"
-SWIGJSDIR=$PLUGINDIR/..  # libwally-core/src/swig_js/
+SWIGJSDIR=$PLUGINDIR/..  # libwally-core/src/wrap_js/
 SRCDIR=$SWIGJSDIR/..  # libwally-core/src/
 LIBWALLYDIR=$SRCDIR/..  # libwally-core/
 
@@ -100,7 +100,7 @@ else
     all_android_archs="armeabi armeabi-v7a arm64-v8a mips mips64 x86 x86_64"
 fi
 
-cd $LIBWALLYDIR  #  cd from src/swig_js/cordovaplugin to wallycore root
+cd $LIBWALLYDIR  #  cd from src/wrap_js/cordovaplugin to wallycore root
 
 ./tools/cleanup.sh
 ./tools/autogen.sh

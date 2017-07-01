@@ -170,7 +170,7 @@ def open_file(prefix, name):
     return open(os.path.join(prefix, name), "w")
 
 def main():
-    prefix = 'swig_js/'
+    prefix = 'wrap_js/'
     build_type = sys.argv[2]
 
     if sys.argv[1] == 'nodejs':
