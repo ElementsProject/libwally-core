@@ -227,6 +227,13 @@ if test "x$js_wrappers" == "xyes"; then
         AC_MSG_FAILURE([ERROR: No usable npm was found, please install npm before re-running])
     fi
     npm install --prefix ./src/swig_js node-gyp nan tape big-integer
+    NODE_GYP_DIR="Release"
+    if test "x$debug" == "xyes"; then
+        NODE_GYP_FLAGS="--debug"
+        NODE_GYP_DIR="Debug"
+    fi
+    AC_SUBST([NODE_GYP_FLAGS])
+    AC_SUBST([NODE_GYP_DIR])
 fi
 
 AC_ARG_ENABLE(swig-java,

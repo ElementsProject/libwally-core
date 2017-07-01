@@ -1,7 +1,6 @@
 TEMPLATE='''#include <nan.h>
 #include <ccan/ccan/endian/endian.h>
 
-extern "C" {
 #include "../include/wally_core.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"
@@ -9,11 +8,70 @@ extern "C" {
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_elements.h"
+
+namespace {
+
+typedef v8::Local<v8::Object> LocalObject;
+
+template<typename T>
+static bool IsValid(const typename v8::Local<T>& local)
+{
+    return !local.IsEmpty() && !local->IsNull() && !local->IsUndefined();
+}
+
+struct LocalArray {
+    LocalArray(const Nan::FunctionCallbackInfo<v8::Value>& info, int n)
+        : mData(0), mLength(0)
+    {
+        if (IsValid(info[n])) {
+            mBuffer = info[n]->ToObject();
+            if (IsValid(mBuffer)) {
+                mData = (unsigned char*) node::Buffer::Data(mBuffer);
+                mLength = node::Buffer::Length(mBuffer);
+            }
+        }
+    }
+
+    LocalArray(size_t len)
+        : mData(0), mLength(0)
+    {
+        const v8::MaybeLocal<v8::Object> local = Nan::NewBuffer(len);
+        if (local.ToLocal(&mBuffer)) {
+            mData = (unsigned char*) node::Buffer::Data(mBuffer);
+            mLength = len;
+        }
+    }
+
+    LocalObject mBuffer;
+    unsigned char *mData;
+    size_t mLength;
+};
+
+static bool CheckException(const Nan::FunctionCallbackInfo<v8::Value>& info,
+                           int ret, const char* errorText)
+{
+    switch (ret) {
+    case WALLY_ERROR:
+        Nan::ThrowError(errorText);
+        return true;
+    case WALLY_EINVAL:
+        Nan::ThrowTypeError(errorText);
+        return true;
+    case WALLY_ENOMEM:
+        Nan::ThrowError(errorText); // FIXME: Better Error?
+        return true;
+    }
+    return false;
+}
+
 }
 
 !!nan_impl!!
 
-void Init(v8::Local<v8::Object> exports) {
+#define DO_EXPORT(f) exports->Set(Nan::New(#f).ToLocalChecked(), \\
+    Nan::New<v8::FunctionTemplate>(f)->GetFunction())
+
+static void Init(LocalObject exports) {
     !!nan_decl!!
 }
 
@@ -30,26 +88,19 @@ def _generate_nan(funcname, f):
         cur_out = 0
         input_args.append('v8::Local<v8::Array> res = v8::Array::New(v8::Isolate::GetCurrent(), %s);' % num_outs)
     for i, arg in enumerate(f.arguments):
-        # (const unsigned char*) arg1, arg2, (unsigned char*) arg3, arg4
         if isinstance(arg, tuple):
-            output_args.append(
-                'const size_t res_size = %s;'
-                'v8::Local<v8::Object> res = Nan::NewBuffer(res_size).ToLocalChecked();'
-                'unsigned char *res_ptr = (unsigned char*) node::Buffer::Data(res);' % arg[1])
-            args.append('res_ptr')
-            args.append('res_size')
+            # Fixed output array size
+            output_args.append('LocalArray res(%s);' % arg[1])
+            output_args.append('if (!res.mLength) ret = WALLY_ENOMEM;')
+            args.append('res.mData')
+            args.append('res.mLength')
+            result_wrap = 'res.mBuffer'
         elif arg.startswith('const_bytes'):
-            input_args.append(
-                'unsigned char *arg_%s_ptr = 0; size_t arg_%s_size = 0;\n'
-                'if (!info[%s]->IsNull() && !info[%s]->IsUndefined()) {\n'
-                '    arg_%s_ptr = (unsigned char*) node::Buffer::Data(info[%s]->ToObject());\n'
-                '    arg_%s_size = node::Buffer::Length(info[%s]->ToObject());\n'
-                '}' % tuple([i]*8)
-            )
-            args.append('arg_%s_ptr' % i)
-            args.append('arg_%s_size' % i)
+            input_args.append('LocalArray arg%s(info, %s);' % (i, i))
+            args.append('arg%s.mData' % i)
+            args.append('arg%s.mLength' % i)
         elif arg.startswith('uint32_t'):
-            args.append('info[%s]->ToInteger()->Value()' % i)
+            args.append('info[%s]->Uint32Value()' % i)
         elif arg.startswith('string'):
             args.append('*Nan::Utf8String(info[%s])' % i)
         elif arg.startswith('const_uint64s'):
@@ -85,11 +136,11 @@ def _generate_nan(funcname, f):
             args.append('res_ptr')
             args.append('res_size')
             args.append('&out_size')
-            postprocessing.append('v8::Local<v8::Object> res = Nan::NewBuffer((char*)res_ptr, out_size).ToLocalChecked();')
+            postprocessing.append('LocalObject res = Nan::NewBuffer((char*)res_ptr, out_size).ToLocalChecked();')
         elif arg == 'out_bytes_fixedsized':
             output_args.extend([
                 'const size_t res_size%s = info[%s]->ToInteger()->Value();' % (i, i),
-                'v8::Local<v8::Object> res%s = Nan::NewBuffer(res_size%s).ToLocalChecked();' % (i, i),
+                'LocalObject res%s = Nan::NewBuffer(res_size%s).ToLocalChecked();' % (i, i),
                 'unsigned char *res_ptr%s  = (unsigned char*) node::Buffer::Data(res%s);' % (i, i)
             ])
             args.append('res_ptr%s' % i)
@@ -99,7 +150,7 @@ def _generate_nan(funcname, f):
                 cur_out += 1
             else:
                 output_args.append(
-                    'v8::Local<v8::Object> res = res%s;' % i,
+                    'LocalObject res = res%s;' % i,
                 )
         elif arg == 'out_uint64_t':
             assert num_outs > 1  # wally_asset_unblind is the only func using this type
@@ -123,7 +174,7 @@ def _generate_nan(funcname, f):
         elif arg in ['bip32_pub_out', 'bip32_priv_out']:
             output_args.append(
                 'const ext_key *outkey;'
-                'v8::Local<v8::Object> res = Nan::NewBuffer(BIP32_SERIALIZED_LEN).ToLocalChecked();'
+                'LocalObject res = Nan::NewBuffer(BIP32_SERIALIZED_LEN).ToLocalChecked();'
                 'unsigned char *out = (unsigned char*) node::Buffer::Data(res);'
             )
             args.append('&outkey')
@@ -133,42 +184,39 @@ def _generate_nan(funcname, f):
             postprocessing.append('bip32_key_free(outkey);')
         else:
             assert False, 'unknown argument type'
+
+    call_name = (f.wally_name or funcname) + ('_alloc' if f.nodejs_append_alloc else '')
     return ('''
-        void %s(const Nan::FunctionCallbackInfo<v8::Value>& info) {
-            !!input_args!!
-            !!output_args!!
-
-            %s(!!args!!);
-
-            !!postprocessing!!
-
-            info.GetReturnValue().Set(%s);
-        }
-    ''' % (funcname,
-           (f.wally_name or funcname) + ('_alloc' if f.nodejs_append_alloc else ''),
-           result_wrap)).replace(
-        '!!input_args!!', '\n'.join(input_args)
+NAN_METHOD(%s) {
+    int ret = WALLY_OK;
+    !!input_args!!
+    !!output_args!!
+    if (ret == WALLY_OK)
+        ret = %s(!!args!!);
+    !!postprocessing!!
+    if (!CheckException(info, ret, "%s"))
+        info.GetReturnValue().Set(%s);
+}
+''' % (funcname, call_name, funcname, result_wrap)).replace(
+        '!!input_args!!', '\n    '.join(input_args)
     ).replace(
-        '!!output_args!!', '\n'.join(output_args)
+        '!!output_args!!', '\n    '.join(output_args)
     ).replace(
         '!!args!!', ', '.join(args)
     ).replace(
-        '!!postprocessing!!', '\n'.join(postprocessing)
+        '!!postprocessing!!', '\n    '.join(postprocessing)
     )
 
-def generate(functions):
+def generate(functions, build_type):
     nan_implementations = []
     nan_declarations = []
     for i, (funcname, f) in enumerate(functions):
         nan_implementations.append(_generate_nan(funcname, f))
-        nan_declarations.append('''
-            exports->Set(Nan::New("%s").ToLocalChecked(),
-                         Nan::New<v8::FunctionTemplate>(%s)->GetFunction());
-        ''' % (funcname, funcname))
+        nan_declarations.append('DO_EXPORT(%s);' % funcname)
     return TEMPLATE.replace(
         '!!nan_impl!!',
         ''.join(nan_implementations)
     ).replace(
         '!!nan_decl!!',
-        ''.join(nan_declarations)
+        '\n    '.join(nan_declarations)
     )

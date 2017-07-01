@@ -171,23 +171,24 @@ def open_file(prefix, name):
 
 def main():
     prefix = 'swig_js/'
+    build_type = sys.argv[2]
 
     if sys.argv[1] == 'nodejs':
         # Node.js wrapper using Native Abstractions for Node.js
         with open_file(prefix, 'nodejs_wrap.cc') as f:
-            f.write(nan.generate(FUNCS + FUNCS_NODE))
+            f.write(nan.generate(FUNCS + FUNCS_NODE, build_type))
     elif sys.argv[1] == 'wally':
         # JS wrapper to choose cordova or node at run time
         with open_file(prefix, 'wally.js') as f:
-            f.write(js.generate(FUNCS + FUNCS_NODE))
+            f.write(js.generate(FUNCS + FUNCS_NODE, build_type))
     elif sys.argv[1] == 'cordova-java':
         # Java cordova plugin for Android
         with open_file(prefix, 'WallyCordova.java') as f:
-            f.write(java.generate(FUNCS))
+            f.write(java.generate(FUNCS), build_type)
     elif sys.argv[1] == 'cordova-swift':
         # Swift cordova plugin for iOS
         with open_file(prefix, 'WallyCordova.swift') as f:
-            f.write(swift.generate(FUNCS))
+            f.write(swift.generate(FUNCS), build_type)
 
 
 if __name__ == '__main__':

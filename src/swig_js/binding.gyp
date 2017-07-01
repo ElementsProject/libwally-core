@@ -35,10 +35,10 @@
       "defines": [ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H" ],
       "conditions": [
         [ 'OS=="win"', {
-          "libraries": [ "Release/deps.lib" ],
+          "libraries": [ "<!(echo %NODE_GYP_DIR%/deps.lib)" ],
         }],
         [ 'OS!="win"', {
-          "libraries": [ "Release/deps.a" ],
+          "libraries": [ "<!(echo $NODE_GYP_DIR/deps.a)" ],
         }]
       ]
     }

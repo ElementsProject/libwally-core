@@ -120,7 +120,7 @@ def _generate_swift(funcname, f):
     )
 
 
-def generate(functions):
+def generate(functions, build_type):
     swift_cases = []
     for i, (funcname, f) in enumerate(functions):
         swift_cases.append(_generate_swift(funcname, f))

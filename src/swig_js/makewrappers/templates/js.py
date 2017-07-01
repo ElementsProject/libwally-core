@@ -16,7 +16,7 @@ if (window.cordova) {
 
     !!list_of_cordova_funcs!!
 } else {
-    var wallycore = require('./build/Release/wallycore');
+    var wallycore = require('./build/!!build_type!!/wallycore');
     // nodejs
     !!list_of_nodejs_funcs!!
 }
@@ -101,14 +101,16 @@ def _generate_nodejs(funcname, func):
     )
 
 
-def generate(functions):
+def generate(functions, build_type):
     list_of_cordova_funcs = []
     list_of_nodejs_funcs = []
     for funcname, f in functions:
         list_of_cordova_funcs.append(_generate_cordovajs(funcname, f))
         list_of_nodejs_funcs.append(_generate_nodejs(funcname, f))
     return TEMPLATE.replace(
-        '!!list_of_cordova_funcs!!',
+        '!!build_type!!', build_type
+    ).replace(
+         '!!list_of_cordova_funcs!!',
         '\n\n'.join(list_of_cordova_funcs)
     ).replace(
         '!!list_of_nodejs_funcs!!',

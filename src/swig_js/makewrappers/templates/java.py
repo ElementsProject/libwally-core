@@ -93,7 +93,7 @@ def _generate_java(funcname, f):
     )
 
 
-def generate(functions):
+def generate(functions, build_type):
     java_cases = []
     for i, (funcname, f) in enumerate(functions):
         java_cases.append(_generate_java(funcname, f))
