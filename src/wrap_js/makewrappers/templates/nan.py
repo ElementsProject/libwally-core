@@ -19,22 +19,36 @@ static bool IsValid(const typename v8::Local<T>& local)
     return !local.IsEmpty() && !local->IsNull() && !local->IsUndefined();
 }
 
+template<typename T>
+static bool IsValid(const typename Nan::Maybe<T>& maybe)
+{
+    return maybe.IsJust();
+}
+
 struct LocalArray {
-    LocalArray(const Nan::FunctionCallbackInfo<v8::Value>& info, int n)
+    LocalArray(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
         : mData(0), mLength(0)
     {
+        if (ret != WALLY_OK)
+            return; // Do nothing, caller will already throw
         if (IsValid(info[n])) {
-            mBuffer = info[n]->ToObject();
-            if (IsValid(mBuffer)) {
-                mData = (unsigned char*) node::Buffer::Data(mBuffer);
-                mLength = node::Buffer::Length(mBuffer);
+            if (!node::Buffer::HasInstance(info[n]))
+                ret = WALLY_EINVAL;
+            else {
+                mBuffer = info[n]->ToObject();
+                if (IsValid(mBuffer)) {
+                    mData = (unsigned char*) node::Buffer::Data(mBuffer);
+                    mLength = node::Buffer::Length(mBuffer);
+                }
             }
         }
     }
 
-    LocalArray(size_t len)
+    LocalArray(size_t len, int& ret)
         : mData(0), mLength(0)
     {
+        if (ret != WALLY_OK)
+            return; // Do nothing, caller will already throw
         const v8::MaybeLocal<v8::Object> local = Nan::NewBuffer(len);
         if (local.ToLocal(&mBuffer)) {
             mData = (unsigned char*) node::Buffer::Data(mBuffer);
@@ -47,7 +61,24 @@ struct LocalArray {
     size_t mLength;
 };
 
-static bool CheckException(const Nan::FunctionCallbackInfo<v8::Value>& info,
+static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
+{
+    uint32_t value = 0;
+    if (ret == WALLY_OK) {
+        if (!IsValid(info[n]) || !info[n]->IsUint32())
+            ret = WALLY_EINVAL;
+        else {
+            Nan::Maybe<uint32_t> m = Nan::To<uint32_t>(info[n]);
+            if (IsValid(m))
+                value = m.FromJust();
+            else
+                ret = WALLY_EINVAL;
+        }
+    }
+    return value;
+}
+
+static bool CheckException(Nan::NAN_METHOD_ARGS_TYPE info,
                            int ret, const char* errorText)
 {
     switch (ret) {
@@ -68,10 +99,7 @@ static bool CheckException(const Nan::FunctionCallbackInfo<v8::Value>& info,
 
 !!nan_impl!!
 
-#define DO_EXPORT(f) exports->Set(Nan::New(#f).ToLocalChecked(), \\
-    Nan::New<v8::FunctionTemplate>(f)->GetFunction())
-
-static void Init(LocalObject exports) {
+NAN_MODULE_INIT(Init) {
     !!nan_decl!!
 }
 
@@ -90,17 +118,18 @@ def _generate_nan(funcname, f):
     for i, arg in enumerate(f.arguments):
         if isinstance(arg, tuple):
             # Fixed output array size
-            output_args.append('LocalArray res(%s);' % arg[1])
-            output_args.append('if (!res.mLength) ret = WALLY_ENOMEM;')
+            output_args.append('LocalArray res(%s, ret);' % arg[1])
+            output_args.append('if (ret == WALLY_OK && !res.mLength) ret = WALLY_ENOMEM;')
             args.append('res.mData')
             args.append('res.mLength')
             result_wrap = 'res.mBuffer'
         elif arg.startswith('const_bytes'):
-            input_args.append('LocalArray arg%s(info, %s);' % (i, i))
+            input_args.append('LocalArray arg%s(info, %s, ret);' % (i, i))
             args.append('arg%s.mData' % i)
             args.append('arg%s.mLength' % i)
         elif arg.startswith('uint32_t'):
-            args.append('info[%s]->Uint32Value()' % i)
+            input_args.append('uint32_t arg%s = GetUInt32(info, %s, ret);' % (i, i))
+            args.append('arg%s' % i)
         elif arg.startswith('string'):
             args.append('*Nan::Utf8String(info[%s])' % i)
         elif arg.startswith('const_uint64s'):
@@ -212,7 +241,7 @@ def generate(functions, build_type):
     nan_declarations = []
     for i, (funcname, f) in enumerate(functions):
         nan_implementations.append(_generate_nan(funcname, f))
-        nan_declarations.append('DO_EXPORT(%s);' % funcname)
+        nan_declarations.append('NAN_EXPORT(target, %s);' % funcname)
     return TEMPLATE.replace(
         '!!nan_impl!!',
         ''.join(nan_implementations)
