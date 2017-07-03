@@ -25,6 +25,7 @@ static bool IsValid(const typename Nan::Maybe<T>& maybe)
     return maybe.IsJust();
 }
 
+// Binary data is expected as objects supporting the JS Buffer interface
 struct LocalArray {
     LocalArray(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
         : mData(0), mLength(0)
@@ -61,6 +62,7 @@ struct LocalArray {
     size_t mLength;
 };
 
+// uint32_t values are expected as normal JS numbers from 0 to 2^32-1
 static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
 {
     uint32_t value = 0;
@@ -77,6 +79,24 @@ static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
     }
     return value;
 }
+
+// uint64_t values are expected as an 8 byte buffer of big endian bytes
+struct LocalUInt64 : public LocalArray {
+    LocalUInt64(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
+        : LocalArray(info, n, ret)
+    {
+        if (mData || mLength) {
+            if (mLength != sizeof(mValue))
+                ret = WALLY_EINVAL;
+            else {
+                memcpy(&mValue, mData, sizeof(mValue));
+                mValue = be64_to_cpu(mValue);
+            }
+        } else if (ret == WALLY_OK)
+            ret = WALLY_EINVAL; // Null not allowed for uint64_t values
+    }
+    uint64_t mValue;
+};
 
 static bool CheckException(Nan::NAN_METHOD_ARGS_TYPE info,
                            int ret, const char* errorText)
@@ -145,13 +165,8 @@ def _generate_nan(funcname, f):
             args.append('uint64s%s' % i)
             args.append('arr%s->Length()' % i)
         elif arg.startswith('uint64_t'):
-            input_args.extend([
-                '   uint64_t arg%s; { ' % i,
-                '      unsigned char *bytes = (unsigned char*) node::Buffer::Data(info[%s]->ToObject());' % i,
-                '      arg%s = be64_to_cpu(*((uint64_t*)bytes));' % i,
-                '   }'
-            ])
-            args.append('arg%s' % i)
+            input_args.append('LocalUInt64 arg%s(info, %s, ret);' % (i, i))
+            args.append('arg%s.mValue' % i)
         elif arg == 'out_str_p':
             output_args.append('char *result_ptr;')
             args.append('&result_ptr')
