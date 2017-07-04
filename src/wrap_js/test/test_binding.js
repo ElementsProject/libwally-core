@@ -7,6 +7,7 @@ var valid = new Buffer('00CEF022FA', 'hex');
 var h = function (h) { return new Buffer(h, 'hex'); };
 var vbf = h("8b5d87d94b9f54dc5dd9f31df5dffedc974fc4d5bf0d2ee1297e5aba504ccc26");
 var generator = h("0ba4fd25e0e2108e55aec683810a8652f9b067242419a1f7cc0f01f92b4b078252");
+var b38pass = new Buffer('Satoshi', 'ascii');
 
 var cases = [
     [ function() { wally.wally_base58_from_bytes(null, 0); },
@@ -37,6 +38,18 @@ var cases = [
       /TypeError/, 'undefined uint64_t' ],
     [ function() { wally.wally_asset_value_commitment(10, vbf, generator); },
       /TypeError/, 'non-integer uint64_t' ],
+    /* FIXME: These aren't actually testing the binding code, they are testing
+     *        the wrapped output length calculation. We probably want tests
+     *        for all functions wrapped in this way... */
+    [ function() { wally.wally_base58_to_bytes(null, 0); },
+      /TypeError/, 'null string' ],
+    [ function() { wally.wally_base58_to_bytes(undef, 0); },
+      /TypeError/, 'undefined string' ],
+    /* End FIXME */
+    [ function() { wally.bip38_to_private_key(null, b38pass, 0); },
+      /TypeError/, 'null string' ],
+    [ function() { wally.bip38_to_private_key(undef, b38pass, 0); },
+      /TypeError/, 'undefined string' ],
 ]
 
 test('Bindings', function (t) {
