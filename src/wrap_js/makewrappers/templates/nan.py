@@ -178,9 +178,19 @@ def _generate_nan(funcname, f):
             input_args.append('LocalUInt64 arg%s(info, %s, ret);' % (i, i))
             args.append('arg%s.mValue' % i)
         elif arg == 'out_str_p':
-            output_args.append('char *result_ptr;')
+            output_args.append('char *result_ptr = 0;')
             args.append('&result_ptr')
-            result_wrap = 'v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr)'
+            postprocessing.extend([
+                'v8::Local<v8::String> str_res;',
+                'if (ret == WALLY_OK) {',
+                '    str_res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr);',
+                '    wally_free_string(result_ptr);',
+                '    if (!IsValid(str_res))',
+                '        ret = WALLY_ENOMEM;',
+                '}',
+            ])
+            #result_wrap = 'v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr)'
+            result_wrap = 'str_res'
         elif arg == 'out_bytes_sized':
             output_args.extend([
                 'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
