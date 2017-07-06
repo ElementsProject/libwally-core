@@ -184,11 +184,11 @@ def main():
     elif sys.argv[1] == 'cordova-java':
         # Java cordova plugin for Android
         with open_file(prefix, 'WallyCordova.java') as f:
-            f.write(java.generate(FUNCS), build_type)
+            f.write(java.generate(FUNCS, build_type))
     elif sys.argv[1] == 'cordova-swift':
         # Swift cordova plugin for iOS
         with open_file(prefix, 'WallyCordova.swift') as f:
-            f.write(swift.generate(FUNCS), build_type)
+            f.write(swift.generate(FUNCS, build_type))
 
 
 if __name__ == '__main__':
