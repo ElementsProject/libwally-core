@@ -11,6 +11,8 @@ TEMPLATE='''#include <nan.h>
 
 namespace {
 
+static struct wally_operations w_ops;
+
 typedef v8::Local<v8::Object> LocalObject;
 
 template<typename T>
@@ -115,12 +117,20 @@ static bool CheckException(Nan::NAN_METHOD_ARGS_TYPE info,
     return false;
 }
 
+static void free_callback(char *data, void *hint)
+{
+    if (data && hint)
+        wally_bzero(data, reinterpret_cast<uint64_t>(hint));
+    w_ops.free_fn(data);
 }
+
+} // namespace
 
 !!nan_impl!!
 
 NAN_MODULE_INIT(Init) {
-    !!nan_decl!!
+    wally_get_operations(&w_ops);
+     !!nan_decl!!
 }
 
 NODE_MODULE(wallycore, Init)'''
@@ -173,14 +183,32 @@ def _generate_nan(funcname, f):
             result_wrap = 'v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr)'
         elif arg == 'out_bytes_sized':
             output_args.extend([
-                'const size_t res_size = info[%s]->ToInteger()->Value();' % i,
-                'unsigned char *res_ptr = new unsigned char[res_size];',
+                'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
+                'unsigned char *res_ptr = 0;',
+                'if (ret == WALLY_OK) {',
+                '    res_ptr = reinterpret_cast<unsigned char*>(w_ops.malloc_fn(res_size));',
+                '    if (!res_ptr)',
+                '        ret = WALLY_ENOMEM;',
+                '}',
                 'size_t out_size;'
             ])
             args.append('res_ptr')
             args.append('res_size')
             args.append('&out_size')
-            postprocessing.append('LocalObject res = Nan::NewBuffer((char*)res_ptr, out_size).ToLocalChecked();')
+            postprocessing.extend([
+                'LocalObject res;',
+                'if (ret == WALLY_OK) {',
+                '    void *hint = reinterpret_cast<void*>(res_size);',
+                '    Nan::MaybeLocal<v8::Object> buff;',
+                '    buff = Nan::NewBuffer(reinterpret_cast<char*>(res_ptr),',
+                '                          out_size, free_callback, hint);',
+                '    if (buff.IsEmpty()) {',
+                '        ret = WALLY_ENOMEM;',
+                '        free_callback(reinterpret_cast<char*>(res_ptr), hint);',
+                '    } else',
+                '        res = buff.ToLocalChecked();',
+                '}',
+            ])
         elif arg == 'out_bytes_fixedsized':
             output_args.extend([
                 'const size_t res_size%s = info[%s]->ToInteger()->Value();' % (i, i),
