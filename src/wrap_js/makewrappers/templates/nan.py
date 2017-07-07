@@ -191,7 +191,14 @@ def _generate_nan(funcname, f):
     num_outs = len([arg for arg in f.arguments if 'out' in arg])
     if num_outs > 1:
         cur_out = 0
-        input_args.append('v8::Local<v8::Array> res = v8::Array::New(v8::Isolate::GetCurrent(), %s);' % num_outs)
+        input_args.extend([
+            'v8::Local<v8::Array> res;',
+            'if (ret == WALLY_OK) {',
+            '    res = v8::Array::New(v8::Isolate::GetCurrent(), %s);' % num_outs,
+            '    if (!IsValid(res))',
+            '       ret = WALLY_ENOMEM;',
+            '}',
+        ])
     for i, arg in enumerate(f.arguments):
         if isinstance(arg, tuple):
             # Fixed output array size
@@ -260,7 +267,10 @@ def _generate_nan(funcname, f):
             args.append('res_ptr%s' % i)
             args.append('res_size%s' % i)
             if num_outs > 1:
-                postprocessing.append('res->Set(%s, res%s);' % (cur_out, i))
+                postprocessing.extend([
+                    'if (ret == WALLY_OK)',
+                    '    res->Set(%s, res%s);' % (cur_out, i),
+                ])
                 cur_out += 1
             else:
                 result_wrap = 'res%s' % i
@@ -273,8 +283,10 @@ def _generate_nan(funcname, f):
             ])
             args.append('be64%s' % i)
             postprocessing.extend([
-                '*be64%s = cpu_to_be64(*be64%s);' % (i, i),
-                'res->Set(%s, res%s);' % (cur_out, i)
+                'if (ret == WALLY_OK) {',
+                '    *be64%s = cpu_to_be64(*be64%s);' % (i, i),
+                '    res->Set(%s, res%s);' % (cur_out, i),
+                '}',
             ])
             cur_out += 1
         elif arg == 'bip32_in':
