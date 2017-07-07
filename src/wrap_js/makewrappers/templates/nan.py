@@ -117,11 +117,39 @@ static bool CheckException(Nan::NAN_METHOD_ARGS_TYPE info,
     return false;
 }
 
-static void free_callback(char *data, void *hint)
+static void FreeMemoryCB(char *data, void *hint)
 {
     if (data && hint)
         wally_bzero(data, reinterpret_cast<uint64_t>(hint));
     w_ops.free_fn(data);
+}
+
+static unsigned char* Allocate(uint32_t size, int& ret)
+{
+    unsigned char *res = 0;
+    if (ret == WALLY_OK) {
+        res = reinterpret_cast<unsigned char*>(w_ops.malloc_fn(size));
+        if (!res)
+            ret = WALLY_ENOMEM;
+    }
+    return res;
+}
+
+static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t allocated_size, int& ret)
+{
+    LocalObject res;
+    if (ret == WALLY_OK) {
+        void *hint = reinterpret_cast<void*>(allocated_size);
+        Nan::MaybeLocal<v8::Object> buff;
+        buff = Nan::NewBuffer(reinterpret_cast<char*>(ptr),
+                              size, FreeMemoryCB, hint);
+        if (buff.IsEmpty()) {
+            ret = WALLY_ENOMEM;
+            FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
+        } else
+            res = buff.ToLocalChecked();
+    }
+    return res;
 }
 
 } // namespace
@@ -189,41 +217,24 @@ def _generate_nan(funcname, f):
                 '        ret = WALLY_ENOMEM;',
                 '}',
             ])
-            #result_wrap = 'v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr)'
             result_wrap = 'str_res'
         elif arg == 'out_bytes_sized':
             output_args.extend([
                 'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
-                'unsigned char *res_ptr = 0;',
-                'if (ret == WALLY_OK) {',
-                '    res_ptr = reinterpret_cast<unsigned char*>(w_ops.malloc_fn(res_size));',
-                '    if (!res_ptr)',
-                '        ret = WALLY_ENOMEM;',
-                '}',
+                'unsigned char *res_ptr = Allocate(res_size, ret);',
                 'size_t out_size;'
             ])
             args.append('res_ptr')
             args.append('res_size')
             args.append('&out_size')
             postprocessing.extend([
-                'LocalObject res;',
-                'if (ret == WALLY_OK) {',
-                '    void *hint = reinterpret_cast<void*>(res_size);',
-                '    Nan::MaybeLocal<v8::Object> buff;',
-                '    buff = Nan::NewBuffer(reinterpret_cast<char*>(res_ptr),',
-                '                          out_size, free_callback, hint);',
-                '    if (buff.IsEmpty()) {',
-                '        ret = WALLY_ENOMEM;',
-                '        free_callback(reinterpret_cast<char*>(res_ptr), hint);',
-                '    } else',
-                '        res = buff.ToLocalChecked();',
-                '}',
+                'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);'
             ])
         elif arg == 'out_bytes_fixedsized':
             output_args.extend([
-                'const size_t res_size%s = info[%s]->ToInteger()->Value();' % (i, i),
-                'LocalObject res%s = Nan::NewBuffer(res_size%s).ToLocalChecked();' % (i, i),
-                'unsigned char *res_ptr%s  = (unsigned char*) node::Buffer::Data(res%s);' % (i, i)
+                'const uint32_t res_size%s = GetUInt32(info, %s, ret);' % (i, i),
+                'unsigned char *res_ptr%s = Allocate(res_size%s, ret);' % (i, i),
+                'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
             ])
             args.append('res_ptr%s' % i)
             args.append('res_size%s' % i)
@@ -231,9 +242,7 @@ def _generate_nan(funcname, f):
                 postprocessing.append('res->Set(%s, res%s);' % (cur_out, i))
                 cur_out += 1
             else:
-                output_args.append(
-                    'LocalObject res = res%s;' % i,
-                )
+                result_wrap = 'res%s' % i
         elif arg == 'out_uint64_t':
             assert num_outs > 1  # wally_asset_unblind is the only func using this type
             output_args.extend([
