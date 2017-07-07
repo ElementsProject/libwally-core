@@ -246,12 +246,14 @@ def _generate_nan(funcname, f):
         elif arg == 'out_uint64_t':
             assert num_outs > 1  # wally_asset_unblind is the only func using this type
             output_args.extend([
-                'uint64_t *res%s = (uint64_t*)malloc(8);' % i,
+                'unsigned char *res_ptr%s = Allocate(sizeof(uint64_t), ret);' % i,
+                'LocalObject res%s = AllocateBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
+                'uint64_t *be64%s = reinterpret_cast<uint64_t *>(res_ptr%s);' % (i, i),
             ])
-            args.append('res%s' % i)
+            args.append('be64%s' % i)
             postprocessing.extend([
-                '*res%s = cpu_to_be64(*res%s);' % (i, i),
-                'res->Set(%s, Nan::NewBuffer((char*)res%s, 8).ToLocalChecked());' % (cur_out, i)
+                '*be64%s = cpu_to_be64(*be64%s);' % (i, i),
+                'res->Set(%s, res%s);' % (cur_out, i)
             ])
             cur_out += 1
         elif arg == 'bip32_in':
