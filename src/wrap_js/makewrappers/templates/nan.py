@@ -8,6 +8,7 @@ TEMPLATE='''#include <nan.h>
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_elements.h"
+#include <vector>
 
 namespace {
 
@@ -32,13 +33,21 @@ struct LocalArray {
     LocalArray(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
         : mData(0), mLength(0)
     {
-        if (ret != WALLY_OK)
-            return; // Do nothing, caller will already throw
-        if (IsValid(info[n])) {
-            if (!node::Buffer::HasInstance(info[n]))
+        Init(info[n], ret);
+    }
+
+    LocalArray(const v8::Local<v8::Value>& obj, int& ret)
+        : mData(0), mLength(0)
+    {
+        Init(obj, ret);
+    }
+
+    void Init(const v8::Local<v8::Value>& obj, int& ret) {
+        if (ret == WALLY_OK && IsValid(obj)) {
+            if (!node::Buffer::HasInstance(obj))
                 ret = WALLY_EINVAL;
             else {
-                mBuffer = info[n]->ToObject();
+                mBuffer = obj->ToObject();
                 if (IsValid(mBuffer)) {
                     mData = (unsigned char*) node::Buffer::Data(mBuffer);
                     mLength = node::Buffer::Length(mBuffer);
@@ -87,6 +96,16 @@ struct LocalUInt64 : public LocalArray {
     LocalUInt64(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
         : LocalArray(info, n, ret)
     {
+        DerivedInit(ret);
+    }
+
+    LocalUInt64(const v8::Local<v8::Value>& obj, int& ret)
+        : LocalArray(obj, ret)
+    {
+        DerivedInit(ret);
+    }
+
+    void DerivedInit(int& ret) {
         if (mData || mLength) {
             if (mLength != sizeof(mValue))
                 ret = WALLY_EINVAL;
@@ -193,15 +212,17 @@ def _generate_nan(funcname, f):
         elif arg.startswith('const_uint64s'):
             input_args.extend([
                 'v8::Array *arr%s = (v8::Array*)*(info[%s]->ToObject());' % (i, i),
-                'uint64_t *uint64s%s = new uint64_t[arr%s->Length()];' % (i, i),
-                'for (size_t i = 0; i < arr%s->Length(); ++i) {' % i,
-                '   unsigned char *bytes = (unsigned char*) node::Buffer::Data(arr%s->Get(i)->ToObject());' % i,
-                '   uint64s%s[i] = be64_to_cpu(*((uint64_t*)bytes));' % i,
-                '}'
+                'std::vector<uint64_t> be64array%s;' % i,
+                'be64array%s.reserve(arr%s->Length());' % (i, i),
+                'for (size_t i = 0; i < arr%s->Length(); ++i)' % i,
+                '    be64array%s.push_back(LocalUInt64(arr%s->Get(i), ret).mValue);' % (i, i),
             ])
-            postprocessing.append('delete[] uint64s%s;' % i)
-            args.append('uint64s%s' % i)
-            args.append('arr%s->Length()' % i)
+            postprocessing.extend([
+                'if (!be64array%s.empty())' % i,
+                '    wally_bzero(&be64array%s[0], be64array%s.size());' % (i, i)
+            ])
+            args.append('be64array%s.empty() ? 0 : &be64array%s[0]' % (i, i))
+            args.append('be64array%s.size()' % i)
         elif arg.startswith('uint64_t'):
             input_args.append('LocalUInt64 arg%s(info, %s, ret);' % (i, i))
             args.append('arg%s.mValue' % i)
