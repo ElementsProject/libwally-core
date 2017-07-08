@@ -20,6 +20,9 @@ if (window.cordova) {
     // nodejs
     !!list_of_nodejs_funcs!!
 }
+var _export = function(name, value) {
+    Object.defineProperty(module.exports, name, {'value': value, 'writable': false});
+}
 
 '''
 

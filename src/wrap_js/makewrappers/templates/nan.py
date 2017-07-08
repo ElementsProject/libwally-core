@@ -200,7 +200,7 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
 
 NAN_MODULE_INIT(Init) {
     wally_get_operations(&w_ops);
-     !!nan_decl!!
+    !!nan_decl!!
 }
 
 NODE_MODULE(wallycore, Init)'''
