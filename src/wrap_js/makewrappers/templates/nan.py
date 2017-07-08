@@ -73,6 +73,29 @@ struct LocalBuffer {
     size_t mLength;
 };
 
+struct LocalArray {
+    LocalArray(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
+    {
+        Init(info[n], ret);
+    }
+
+    void Init(const v8::Local<v8::Value>& obj, int& ret) {
+        if (ret != WALLY_OK)
+            return;
+        if (!IsValid(obj) || !obj->IsArray())
+            ret = WALLY_EINVAL;
+        else {
+            mArray = obj->ToObject();
+            if (!IsValid(mArray))
+                ret = WALLY_EINVAL;
+        }
+    }
+
+    v8::Array& get() { return *reinterpret_cast<v8::Array *>(*mArray); }
+    LocalObject mArray;
+};
+
+
 // uint32_t values are expected as normal JS numbers from 0 to 2^32-1
 static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
 {
@@ -218,11 +241,14 @@ def _generate_nan(funcname, f):
             args.append('*Nan::Utf8String(info[%s])' % i)
         elif arg.startswith('const_uint64s'):
             input_args.extend([
-                'v8::Array *arr%s = (v8::Array*)*(info[%s]->ToObject());' % (i, i),
                 'std::vector<uint64_t> be64array%s;' % i,
-                'be64array%s.reserve(arr%s->Length());' % (i, i),
-                'for (size_t i = 0; i < arr%s->Length(); ++i)' % i,
-                '    be64array%s.push_back(LocalUInt64(arr%s->Get(i), ret).mValue);' % (i, i),
+                'LocalArray arr%s(info, %s, ret);' % (i, i),
+                'if (ret == WALLY_OK) {',
+                '    const size_t len = arr%s.get().Length();' % i,
+                '    be64array%s.reserve(len);' % i,
+                '    for (size_t i = 0; i < len && ret == WALLY_OK; ++i)',
+                '        be64array%s.push_back(LocalUInt64(arr%s.get().Get(i), ret).mValue);' % (i, i),
+                '}',
             ])
             postprocessing.extend([
                 'if (!be64array%s.empty())' % i,
