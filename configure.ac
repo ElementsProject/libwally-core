@@ -59,7 +59,7 @@ AC_ARG_ENABLE(coverage,
     AS_HELP_STRING([--enable-coverage],[enable code coverage (default: no)]),
     [coverage=$enableval], [coverage=no])
 
-CFLAGS=`echo $CFLAGS | $GNU_SED -e 's/-O2//g' | $GNU_SED -e 's/-g//g'`
+CFLAGS=`echo $CFLAGS | $GNU_SED 's/-[Og][0-9]*[ $$]*//'`
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
@@ -94,21 +94,31 @@ fi
 
 # -flax-vector-conversions is needed for our arm assembly
 AX_CHECK_COMPILE_FLAG([-flax-vector-conversions], [AM_CFLAGS="$AM_CFLAGS -flax-vector-conversions"])
+AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [NOALIAS_CFLAGS="$AM_CFLAGS -fno-strict-aliasing $AM_CFLAGS"])
 
-AX_CHECK_COMPILE_FLAG([-Wall], [AM_CFLAGS="$AM_CFLAGS -Wall"])
-AX_CHECK_COMPILE_FLAG([-Wextra], [AM_CFLAGS="$AM_CFLAGS -Wextra"])
-AX_CHECK_COMPILE_FLAG([-Wpedantic], [AM_CFLAGS="$AM_CFLAGS -Wpedantic"])
-AX_CHECK_COMPILE_FLAG([-Wcast-align], [AM_CFLAGS="$AM_CFLAGS -Wcast-align"])
-AX_CHECK_COMPILE_FLAG([-Wnested-externs], [AM_CFLAGS="$AM_CFLAGS -Wnested-externs"])
-AX_CHECK_COMPILE_FLAG([-Wshadow], [AM_CFLAGS="$AM_CFLAGS -Wshadow"])
-AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [AM_CFLAGS="$AM_CFLAGS -Wstrict-prototypes"])
+AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [AM_CFLAGS="-Wformat-nonliteral $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wformat-security], [AM_CFLAGS="-Wformat-security $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wformat], [AM_CFLAGS="-Wformat $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [AM_CFLAGS="-Wstrict-prototypes $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wshadow], [AM_CFLAGS="-Wshadow $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wnested-externs], [AM_CFLAGS="-Wnested-externs $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wcast-align], [AM_CFLAGS="-Wcast-align $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wpedantic], [AM_CFLAGS="-Wpedantic $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wextra], [AM_CFLAGS="-Wextra $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-Wall], [AM_CFLAGS="-Wall $AM_CFLAGS"])
+
+# Disable some unhelpful errors from those enabled above
 AX_CHECK_COMPILE_FLAG([-Wno-unused-function], [AM_CFLAGS="$AM_CFLAGS -Wno-unused-function"])
 AX_CHECK_COMPILE_FLAG([-Wno-long-long], [AM_CFLAGS="$AM_CFLAGS -Wno-long-long"])
 AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [AM_CFLAGS="$AM_CFLAGS -Wno-overlength-strings"])
-AX_CHECK_COMPILE_FLAG([-Wformat], [AM_CFLAGS="$AM_CFLAGS -Wformat"])
-AX_CHECK_COMPILE_FLAG([-Wformat-security], [AM_CFLAGS="$AM_CFLAGS -Wformat-security"])
-AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [AM_CFLAGS="$AM_CFLAGS -Wformat-nonliteral"])
-AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [NOALIAS_CFLAGS="-fno-strict-aliasing"])
+AX_CHECK_COMPILE_FLAG([-Wno-variadic-macros], [AM_CFLAGS="$AM_CFLAGS -Wno-variadic-macros"])
+
+if [[ "$CC" == *"clang"* ]]; then
+    AX_CHECK_COMPILE_FLAG([-Wno-gnu-statement-expression], [AM_CFLAGS="$AM_CFLAGS -Wno-gnu-statement-expression"])
+    AX_CHECK_COMPILE_FLAG([-Wno-zero-length-array], [AM_CFLAGS="$AM_CFLAGS -Wno-zero-length-array"])
+    AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [AM_CFLAGS="$AM_CFLAGS -Wno-language-extension-token"])
+    AX_CHECK_COMPILE_FLAG([-Wno-unknown-attributes], [AM_CFLAGS="$AM_CFLAGS -Wno-unknown-attributes"])
+fi
 AC_SUBST([NOALIAS_CFLAGS])
 
 # Under OSX the compiler accepts this flag but the linker then fails.
