@@ -29,14 +29,14 @@ static bool IsValid(const typename Nan::Maybe<T>& maybe)
 }
 
 // Binary data is expected as objects supporting the JS Buffer interface
-struct LocalArray {
-    LocalArray(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
+struct LocalBuffer {
+    LocalBuffer(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
         : mData(0), mLength(0)
     {
         Init(info[n], ret);
     }
 
-    LocalArray(const v8::Local<v8::Value>& obj, int& ret)
+    LocalBuffer(const v8::Local<v8::Value>& obj, int& ret)
         : mData(0), mLength(0)
     {
         Init(obj, ret);
@@ -56,7 +56,7 @@ struct LocalArray {
         }
     }
 
-    LocalArray(size_t len, int& ret)
+    LocalBuffer(size_t len, int& ret)
         : mData(0), mLength(0)
     {
         if (ret != WALLY_OK)
@@ -92,15 +92,15 @@ static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
 }
 
 // uint64_t values are expected as an 8 byte buffer of big endian bytes
-struct LocalUInt64 : public LocalArray {
+struct LocalUInt64 : public LocalBuffer {
     LocalUInt64(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
-        : LocalArray(info, n, ret)
+        : LocalBuffer(info, n, ret)
     {
         DerivedInit(ret);
     }
 
     LocalUInt64(const v8::Local<v8::Value>& obj, int& ret)
-        : LocalArray(obj, ret)
+        : LocalBuffer(obj, ret)
     {
         DerivedInit(ret);
     }
@@ -202,13 +202,13 @@ def _generate_nan(funcname, f):
     for i, arg in enumerate(f.arguments):
         if isinstance(arg, tuple):
             # Fixed output array size
-            output_args.append('LocalArray res(%s, ret);' % arg[1])
+            output_args.append('LocalBuffer res(%s, ret);' % arg[1])
             output_args.append('if (ret == WALLY_OK && !res.mLength) ret = WALLY_ENOMEM;')
             args.append('res.mData')
             args.append('res.mLength')
             result_wrap = 'res.mBuffer'
         elif arg.startswith('const_bytes'):
-            input_args.append('LocalArray arg%s(info, %s, ret);' % (i, i))
+            input_args.append('LocalBuffer arg%s(info, %s, ret);' % (i, i))
             args.append('arg%s.mData' % i)
             args.append('arg%s.mLength' % i)
         elif arg.startswith('uint32_t'):
