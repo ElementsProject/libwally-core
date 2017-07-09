@@ -237,14 +237,17 @@ if test "x$js_wrappers" == "xyes"; then
         AC_MSG_FAILURE([ERROR: No usable npm was found, please install npm before re-running])
     fi
     npm install --prefix ./src/wrap_js node-gyp nan tape big-integer
-    NODE_GYP_DIR="Release"
-    if test "x$debug" == "xyes"; then
-        NODE_GYP_FLAGS="--debug"
-        NODE_GYP_DIR="Debug"
-    fi
-    AC_SUBST([NODE_GYP_FLAGS])
-    AC_SUBST([NODE_GYP_DIR])
 fi
+
+# Set node-gyp flags regardless of  JS enablement; they are used for wrapper
+# generation which can be usefully run without enabling JS/requiring npm
+NODE_GYP_DIR="Release"
+if test "x$debug" == "xyes"; then
+    NODE_GYP_FLAGS="--debug"
+    NODE_GYP_DIR="Debug"
+fi
+AC_SUBST([NODE_GYP_FLAGS])
+AC_SUBST([NODE_GYP_DIR])
 
 AC_ARG_ENABLE(swig-java,
     AS_HELP_STRING([--enable-swig-java],[enable the SWIG java (JNI) interface (default: no)]),
