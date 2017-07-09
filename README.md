@@ -75,6 +75,24 @@ If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
 running `./configure`.
 
+### Android
+
+Android builds are currently supported for all Android binary targets using
+a toolchain directory created with the Android SDK tool
+`make_standalone_toolchain.py`. The script `tools/android_helpers.sh` can be
+sourced from the shell or scripts to make it easier to produce builds:
+
+```
+$ export ANDROID_HOME=/opt/android-sdk
+$ . ./tools/android_helpers.sh
+
+$ android_get_arch_list
+armeabi armeabi-v7a arm64-v8a mips mips64 x86 x86_64
+
+$ # See the comments in tools/android_helpers.sh for arguments
+$ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 14 "--enable-swig-java"
+```
+
 ## Cleaning
 
 ```
