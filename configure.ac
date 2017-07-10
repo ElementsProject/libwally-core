@@ -23,6 +23,8 @@ AC_SUBST([LDPATH_VAR])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static])
 
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 AC_PROG_CC
 
 # Prefer gccs ar/ranlib as they handle flto files properly
