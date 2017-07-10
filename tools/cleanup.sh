@@ -37,6 +37,10 @@ rm -rf src/wrap_js/node_modules/
 rm -f src/wrap_js/nodejs_wrap.cc
 rm -f src/wrap_js/WallyCordova.java
 rm -f src/wrap_js/WallyCordova.swift
+rm -f src/wrap_js/cordovaplugin/Wally.java
+rm -f src/wrap_js/cordovaplugin/WallyCordova.java
+rm -f src/wrap_js/cordovaplugin/WallyCordova.swift
+rm -rf src/wrap_js/cordovaplugin/jniLibs/
 rm -f src/wrap_js/wally.js
 rm -rf src/.libs
 rm -f tools/build-aux/compile
