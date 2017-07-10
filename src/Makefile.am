@@ -32,7 +32,6 @@ swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_
 
 PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
 
-.PHONY: clean-swig-python
 clean-swig-python:
 	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore/__init__.py
 clean-local: clean-swig-python
@@ -61,11 +60,22 @@ wrap_js/wally.js: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/js.py
 	grep '#define' $(top_srcdir)/include/wally_*.h | $(GNU_SED) -e 's/.*#define /_export("/' -e 's/ \/.*//' | \
 	grep ' ' | $(GNU_SED) -e 's/  */", /' -e 's/$$/);/' >>$@
 
-wrap_js/WallyCordova.java: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/java.py
+wrap_js/cordovaplugin/wally.js: wrap_js/wally.js
+	cp $^ $@
+
+wrap_js/cordovaplugin/WallyCordova.java: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/java.py
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) wrap_js/makewrappers/wrap.py cordova-java @NODE_GYP_DIR@
 
-wrap_js/WallyCordova.swift: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/swift.py
+wrap_js/cordovaplugin/WallyCordova.swift: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/swift.py
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) wrap_js/makewrappers/wrap.py cordova-swift @NODE_GYP_DIR@
+
+cordova_wrap_files = wrap_js/cordovaplugin/wally.js wrap_js/cordovaplugin/WallyCordova.java wrap_js/cordovaplugin/WallyCordova.swift
+if USE_SWIG_JAVA
+cordova_wrap_files += wrap_js/cordovaplugin/Wally.java
+wrap_js/cordovaplugin/Wally.java: swig_java/src/com/blockstream/libwally/Wally.java
+	cp $^ $@
+endif
+cordova-wrappers: $(cordova_wrap_files)
 
 if USE_JS_WRAPPERS
 # The node wrapper is built by node-gyp
@@ -76,14 +86,13 @@ bin_PROGRAMS = wrap_js/build/@NODE_GYP_DIR@/wallycore.node
 
 # FIXME: Run the test(s) as part of 'make check'
 
-.PHONY: clean-js-wrappers
 clean-js-wrappers:
-	$(AM_V_at)rm -f wrap_js/nodejs_wrap.cc wrap_js/wally.js
-	$(AM_V_at)rm -f wrap_js/WallyCordova.java wrap_js/WallyCordova.swift
+	$(AM_V_at)rm -f wrap_js/nodejs_wrap.cc wrap_js/wally.js $(cordova_wrap_files)
 clean-local: clean-js-wrappers
 endif # USE_JS_WRAPPERS
 
 if USE_SWIG_JAVA
+
 noinst_LTLIBRARIES += libswig_java.la
 libswig_java_la_SOURCES = \
     swig_java/swig_java_wrap.c
@@ -126,7 +135,6 @@ JAVA_TEST = @LDPATH_VAR@=.libs $(JAVA) -Djava.library.path=.libs -classpath $(sj
 
 endif # HAVE_JAVAC
 
-.PHONY: clean-swig-java
 clean-swig-java:
 	$(AM_V_at)rm -rf swig_java/swig_java_wrap.c $(sjs)/$(cblw) $(sjs)/$(cbt)/*.class swig_java/*.java swig_java/*.jar
 clean-local: clean-swig-java
@@ -211,3 +219,5 @@ if USE_JS_WRAPPERS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_hash.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 endif
+
+.PHONY: clean-swig-python clean-js-wrappers clean-swig-java cordova-wrappers

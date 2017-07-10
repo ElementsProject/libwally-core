@@ -187,7 +187,7 @@ def main():
             f.write(java.generate(FUNCS, build_type))
     elif sys.argv[1] == 'cordova-swift':
         # Swift cordova plugin for iOS
-        with open_file(prefix, 'WallyCordova.swift') as f:
+        with open_file(prefix + 'cordovaplugin', 'WallyCordova.swift') as f:
             f.write(swift.generate(FUNCS, build_type))
 
 
