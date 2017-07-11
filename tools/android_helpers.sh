@@ -25,6 +25,13 @@ function android_create_toolchain() {
         fi
         local cmd=$ANDROID_NDK/build/tools/make_standalone_toolchain.py
         $cmd --arch $arch --api $api --install-dir=$toolsdir
+        case $arch in
+            mips64)
+                # Work around a bug in the install
+                if [[ ! -e $toolsdir/sysroot/usr/lib ]]; then
+                   ln -s $toolsdir/sysroot/usr/lib64 $toolsdir/sysroot/usr/lib
+                fi
+        esac
     fi
 }
 
@@ -34,7 +41,11 @@ function android_create_toolchain() {
 # api:      The Android API level to build for (e.g. 21)
 function android_get_cflags() {
     local arch=$1 toolsdir=$2 api=$3
-    local cflags="--sysroot=$toolsdir/sysroot -isystem $toolsdir/sysroot/usr/include -D__ANDROID_API__=$api"
+    local cflags=""
+    if [[ -n "$WALLY_USE_GCC" ]]; then
+        cflags="$cflags --sysroot=$toolsdir/sysroot -D__ANDROID_API__=$api"
+    fi
+    cflags="$cflags -isystem $toolsdir/sysroot/usr/include"
     case $arch in
        armeabi) cflags="$cflags -march=armv5te -mtune=xscale -msoft-float -mthumb";;
        armeabi-v7a) cflags="$cflags -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb";;
@@ -65,7 +76,7 @@ function android_get_configure_flags() {
     local arch=$1 toolsdir=$2 api=$3
     shift 3
     local useropts=$*
-    local host=$(basename $toolsdir/bin/*-gcc | sed 's/-gcc$//')
+    local host=$(basename $toolsdir/bin/*-strip | sed 's/-strip$//')
     local args="--host=$host $useropts --enable-endomorph"
     case $arch in
        arm*) args="$args --with-asm=auto";;
@@ -88,6 +99,10 @@ function android_build_wally() {
 
     # Set cross compilation options for configure
     # TODO: Support NDK > 14 and clang when they work
+    if [[ -z "$WALLY_USE_GCC" ]]; then
+        export CC="$toolsdir/bin/clang"
+    fi
+
     export CFLAGS=$(android_get_cflags $arch $toolsdir $api)
     export LDFLAGS=$(android_get_ldflags $arch $toolsdir $api)
 
@@ -98,5 +113,5 @@ function android_build_wally() {
     fi
     PATH="$toolsdir/bin:$PATH" make -o configure clean
     PATH="$toolsdir/bin:$PATH" make -o configure -j $num_jobs
-    unset CFLAGS LDFLAGS
+    unset CC CFLAGS LDFLAGS
 }
