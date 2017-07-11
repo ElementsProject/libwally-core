@@ -12,6 +12,12 @@ var toBigInt = function (n) {
   return new Uint8Array(new Buffer(s, 'hex'));
 }
 
+test('constants', function (t) {
+  t.plan(2);
+  t.equal(toBigInt(0).toString(), wally.ZERO_64.toString());
+  t.equal(toBigInt(1).toString(), wally.ONE_64.toString());
+});
+
 test('value commitment', function (t) {
   t.plan(1);
   var vbf = h("8b5d87d94b9f54dc5dd9f31df5dffedc974fc4d5bf0d2ee1297e5aba504ccc26");

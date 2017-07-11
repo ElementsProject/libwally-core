@@ -23,6 +23,10 @@ if (window.cordova) {
 var _export = function(name, value) {
     Object.defineProperty(module.exports, name, {'value': value, 'writable': false});
 }
+var _zero = new Uint8Array([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]);
+var _one = new Uint8Array([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01]);
+_export('ZERO_64', _zero);
+_export('ONE_64', _one);
 
 '''
 
