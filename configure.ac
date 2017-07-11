@@ -27,17 +27,19 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_PROG_CC
 
-# Prefer gccs ar/ranlib as they handle flto files properly
-AC_CHECK_PROG(HAVE_GCC_AR,gcc-ar,yes,no)
-if test "x$HAVE_GCC_AR" == "xyes"; then
-    AR=gcc-ar
-    AC_SUBST([AR])
-fi
+if test x"$ac_cv_c_compiler_gnu" == "xyes"; then
+    # For gcc, prefer gccs ar/ranlib as they handle flto files properly
+    AC_CHECK_PROG(HAVE_GCC_AR,gcc-ar,yes,no)
+    if test "x$HAVE_GCC_AR" == "xyes"; then
+        AR=gcc-ar
+        AC_SUBST([AR])
+    fi
 
-AC_CHECK_PROG(HAVE_GCC_RANLIB,gcc-ranlib,yes,no)
-if test "x$HAVE_GCC_RANLIB" == "xyes"; then
-    RANLIB=gcc-ranlib
-    AC_SUBST([RANLIB])
+    AC_CHECK_PROG(HAVE_GCC_RANLIB,gcc-ranlib,yes,no)
+    if test "x$HAVE_GCC_RANLIB" == "xyes"; then
+        RANLIB=gcc-ranlib
+        AC_SUBST([RANLIB])
+    fi
 fi
 
 GNU_SED=sed
