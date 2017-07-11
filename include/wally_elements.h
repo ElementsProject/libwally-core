@@ -74,7 +74,7 @@ WALLY_CORE_API int wally_asset_rangeproof(
     size_t extra_commit_len,
     const unsigned char *generator,
     size_t generator_len,
-    size_t min_value,
+    uint64_t min_value,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);

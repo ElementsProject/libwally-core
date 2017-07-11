@@ -126,7 +126,7 @@ int wally_asset_rangeproof(uint64_t value,
                            const unsigned char *commitment, size_t commitment_len,
                            const unsigned char *extra_commit, size_t extra_commit_len,
                            const unsigned char *generator, size_t generator_len,
-                           size_t min_value, unsigned char *bytes_out, size_t len,
+                           uint64_t min_value, unsigned char *bytes_out, size_t len,
                            size_t *written)
 {
     const secp256k1_context *ctx = secp_ctx();
