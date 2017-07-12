@@ -89,7 +89,7 @@ $ . ./tools/android_helpers.sh
 $ android_get_arch_list
 armeabi armeabi-v7a arm64-v8a mips mips64 x86 x86_64
 
-# Optional, uses gcc instead of clang (needed e.g. for NDK r15 with mip64)
+# Optional, uses gcc instead of clang (needed e.g. for NDK r15 with mips64)
 $ export WALLY_USE_GCC=1
 
 # See the comments in tools/android_helpers.sh for arguments

@@ -259,7 +259,15 @@ AC_ARG_ENABLE(swig-java,
 AM_CONDITIONAL([USE_SWIG_JAVA], [test "x$swig_java" == "xyes"])
 
 if test "x$swig_java" == "xyes"; then
+    saved_JAVA_HOME=$JAVA_HOME
+    if test x"$cross_compiling" = "xyes"; then
+        # For cross compiling we assume the users host O/S Java install is not
+        # usable and that they have provided suitable FLAGS/LDFLAGS
+        JAVA_HOME=/does_not_exist
+    fi
+    export JAVA_HOME
     AX_JNI_INCLUDE_DIR
+    export JAVA_HOME=$saved_JAVA_HOME
     for JNI_DIR in $JNI_INCLUDE_DIRS; do
         SWIG_JAVA_CPPFLAGS="$SWIG_JAVA_CPPFLAGS -I$JNI_DIR"
     done
@@ -311,6 +319,12 @@ AC_CONFIG_FILES([
 secp_jni="--disable-jni"
 if test "x$swig_java" == "xyes"; then
     secp_jni="--enable-jni"
+fi
+
+if test x"$cross_compiling" = "xyes"; then
+    # For cross compiling we assume the users host O/S Java install is not
+    # usable and that they have provided suitable FLAGS/LDFLAGS
+    export JAVA_HOME=/does_not_exist
 fi
 ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --disable-dependency-tracking"
 AC_CONFIG_SUBDIRS([src/secp256k1])
