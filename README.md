@@ -53,12 +53,19 @@ $ make check
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.
+- `--disable-shared`. Disables building a shared library and builds a static
+  library instead.
 
 ### Recommended development configure options
 
 ```
 $ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-coverage
 ```
+
+### Compiler options
+
+Set `CC=clang` to use clang for building instead of gcc, when both are
+installed.
 
 ### Python
 
