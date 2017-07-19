@@ -46,13 +46,12 @@ static const unsigned char BIP39_SECRET[16] = {
 /* Useful for developing these tests */
 static void dump_mem(const void *mem, size_t len)
 {
-    const unsigned char *p = (const unsigned char *)mem;
-    size_t i;
+    static size_t i;
     for (i = 0; i < len; ++i) {
-        if (!p[i])
+        if (!((const unsigned char *)mem)[i])
             printf(".");
         else
-            printf("%02x, ", p[i]);
+            printf("%02x, ", ((const unsigned char *)mem)[i]);
     }
     printf("\n");
 }
@@ -74,7 +73,6 @@ static bool in_stack(const char *caller, const void *search, size_t len)
         if (!memcmp(gstack + i, search, len)) {
             if (caller) {
                 printf("Found %s secret at stack position %ld\n", caller, (long)i);
-                dump_mem(gstack + i, len);
                 dump_mem(search, len);
             }
             return true; /* Found */
