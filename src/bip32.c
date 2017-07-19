@@ -139,7 +139,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
         return WALLY_ENOMEM;
 
     /* Generate private key and chain code */
-    hmac_sha512(&sha, SEED, sizeof(SEED), bytes_in, len_in);
+    hmac_sha512_impl(&sha, SEED, sizeof(SEED), bytes_in, len_in);
 
     /* Check that the generated private key is valid */
     if (!secp256k1_ec_seckey_verify(ctx, sha.u.u8)) {
@@ -422,9 +422,9 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     key_out->child_num = cpu_to_be32(child_num);
 
     /* I = HMAC-SHA512(Key = cpar, Data) */
-    hmac_sha512(&sha, key_in->chain_code, sizeof(key_in->chain_code),
-                key_out->priv_key,
-                sizeof(key_out->priv_key) + sizeof(key_out->child_num));
+    hmac_sha512_impl(&sha, key_in->chain_code, sizeof(key_in->chain_code),
+                     key_out->priv_key,
+                     sizeof(key_out->priv_key) + sizeof(key_out->child_num));
 
     /* Split I into two 32-byte sequences, IL and IR
      * The returned chain code ci is IR (i.e. the 2nd half of our hmac sha512)

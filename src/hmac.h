@@ -13,9 +13,9 @@ struct sha512;
  * @msg: The message to hash
  * @msg_len: The length of @msg in bytes.
  */
-void hmac_sha256(struct sha256 *sha,
-                 const unsigned char *key, size_t key_len,
-                 const unsigned char *msg, size_t msg_len);
+void hmac_sha256_impl(struct sha256 *sha,
+                      const unsigned char *key, size_t key_len,
+                      const unsigned char *msg, size_t msg_len);
 
 /**
  * hmac_sha512 - Compute an HMAC using SHA-512
@@ -26,8 +26,8 @@ void hmac_sha256(struct sha256 *sha,
  * @msg: The message to hash
  * @msg_len: The length of @msg in bytes.
  */
-void hmac_sha512(struct sha512 *sha,
-                 const unsigned char *key, size_t key_len,
-                 const unsigned char *msg, size_t msg_len);
+void hmac_sha512_impl(struct sha512 *sha,
+                      const unsigned char *key, size_t key_len,
+                      const unsigned char *msg, size_t msg_len);
 
 #endif /* LIBWALLY_HMAC_H */
