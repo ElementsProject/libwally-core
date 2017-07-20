@@ -2,7 +2,9 @@
 
 #ifdef WORDS_BIGENDIAN
 # define HAVE_BIG_ENDIAN 1
+# define HAVE_LITTLE_ENDIAN 0
 #else
+# define HAVE_BIG_ENDIAN 0
 # define HAVE_LITTLE_ENDIAN 1
 #endif
 
@@ -20,10 +22,13 @@
 
 #ifdef HAVE_BYTESWAP_H
 #define HAVE_BSWAP_64 1
+#else
+#define HAVE_BYTESWAP_H 0
+#define HAVE_BSWAP_64 0
 #endif
 
 #if HAVE_UNALIGNED_ACCESS
-#define alignment_ok(p, n) true
+#define alignment_ok(p, n) 1
 #else
 #define alignment_ok(p, n) ((size_t)(p) % (n) == 0)
 #endif

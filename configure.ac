@@ -171,8 +171,9 @@ if test "x$export_all" != "xyes"; then
 fi
 
 # Assume we have no unaligned access if cross-compiling
-AC_RUN_IFELSE([AC_LANG_SOURCE([int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}])],
-              [AC_DEFINE([HAVE_UNALIGNED_ACCESS], 1, [Define if we have unaligned access])],,[foo=1])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}]])],
+              have_unaligned=1, have_unaligned=0, have_unaligned=0)
+AC_DEFINE_UNQUOTED([HAVE_UNALIGNED_ACCESS], [$have_unaligned], [Define if we have unaligned access])
 
 if test "x$is_osx" != "xyes"; then
     # Assume we are using gcc (i.e. have this attribute) if cross-compiling
