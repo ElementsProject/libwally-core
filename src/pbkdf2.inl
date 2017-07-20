@@ -50,11 +50,11 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
         beint32_t block = cpu_to_be32(n + 1); /* Block number */
 
         memcpy(salt_in_out + salt_len - sizeof(block), &block, sizeof(block));
-        SHA_POST(hmac_)(&d1, pass, pass_len, salt_in_out, salt_len);
+        SHA_POST_IMPL(hmac_)(&d1, pass, pass_len, salt_in_out, salt_len);
         memcpy(sha_cp, &d1, sizeof(d1));
 
         for (c = 0; cost && c < cost - 1; ++c) {
-            SHA_POST(hmac_)(&d1, pass, pass_len, d1.u.u8, sizeof(d1));
+            SHA_POST_IMPL(hmac_)(&d1, pass, pass_len, d1.u.u8, sizeof(d1));
             for (j = 0; j < sizeof(d1.u.SHA_MEM)/sizeof(d1.u.SHA_MEM[0]); ++j)
                 sha_cp->u.SHA_MEM[j] ^= d1.u.SHA_MEM[j];
         }
