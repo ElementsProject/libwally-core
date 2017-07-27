@@ -44,12 +44,24 @@ case $CC in
     ;;
 esac
 
+if test "x$is_osx" == "xyes"; then
+    candidate_ars="libtool $candidate_ars"
+fi
+
 for candidate in $candidate_ars; do
     AC_PATH_TOOL(AR, $candidate)
     if test "x$HAVE_AR" == "xyes"; then
         break
     fi
 done
+case $AR in
+*libtool)
+    ARFLAGS="-static -o"
+    AR_FLAGS="-static -o"
+    AC_SUBST([ARFLAGS])
+    AC_SUBST([AR_FLAGS])
+    ;;
+esac
 
 for candidate in $candidate_ranlibs; do
     AC_PATH_TOOL(RANLIB, $candidate)
