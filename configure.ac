@@ -46,14 +46,24 @@ esac
 
 if test "x$is_osx" == "xyes"; then
     candidate_ars="libtool $candidate_ars"
+    CCDIR=`dirname $CC`
+    if test x"$CCDIR" != x"."; then
+        if test -x $CCDIR/libtool; then
+            # Use libtool from the same directory as our clang
+            AR=$CCDIR/libtool
+            candidate_ars=""
+        fi
+    fi
 fi
 
-for candidate in $candidate_ars; do
-    AC_PATH_TOOL(AR, $candidate)
-    if test "x$HAVE_AR" == "xyes"; then
-        break
-    fi
-done
+if test -n "$candidate_ars"; then
+    for candidate in $candidate_ars; do
+        AC_PATH_TOOL(AR, $candidate)
+        if test "x$HAVE_AR" == "xyes"; then
+            break
+        fi
+    done
+fi
 case $AR in
 *libtool)
     ARFLAGS="-static -o"
