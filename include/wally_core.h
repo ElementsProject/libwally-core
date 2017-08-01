@@ -172,6 +172,10 @@ typedef void *(*wally_malloc_t)(
 typedef void (*wally_free_t)(
     void *ptr);
 
+/** The type of an overridable function to clear memory */
+typedef void (*wally_bzero_t)(
+    void *ptr, size_t len);
+
 /** The type of an overridable function to generate an EC nonce */
 typedef int (*wally_ec_nonce_t)(
     unsigned char *nonce32,
@@ -186,6 +190,7 @@ typedef int (*wally_ec_nonce_t)(
 struct wally_operations {
     wally_malloc_t malloc_fn;
     wally_free_t free_fn;
+    wally_bzero_t bzero_fn;
     wally_ec_nonce_t ec_nonce_fn;
 };
 

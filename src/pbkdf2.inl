@@ -66,7 +66,7 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
         bytes_out += PBKDF2_HMAC_SHA_LEN;
     }
 
-    clear_n(2, &d1, sizeof(d1), &d2, sizeof(d2));
+    clear_2(&d1, sizeof(d1), &d2, sizeof(d2));
     if (tmp_salt) {
         clear(tmp_salt, salt_len);
         wally_free(tmp_salt);

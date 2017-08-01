@@ -4,7 +4,6 @@
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
-#include <stdarg.h>
 #include <stdbool.h>
 
 #undef malloc
@@ -132,54 +131,19 @@ int wally_hash160(const unsigned char *bytes_in, size_t len_in,
     return WALLY_OK;
 }
 
-#if 0
-/* This idea is taken from libressl's explicit_bzero.
- * Use a weak symbol to force the compiler to consider dest as being read,
- * since it can't know what any interposed function may read. Not ideal for
- * us in case someone includes a __clear_fn symbol in a third party library,
- * since it gets called with an address right in the middle of interesting
- * things we are clearing out (even if the actual block is zeroed).
- */
-__attribute__ ((visibility ("default"))) __attribute__((weak)) void __clear_fn(void *dest, size_t len);
-#endif
-
-/* Our implementation of secure clearing uses a variadic function.
- * This appears sufficient to prevent the compiler detecting that
- * the memory is not read after being zeroed and eliminating the
- * call.
- */
-void clear_n(unsigned int count, ...)
+static void wally_internal_bzero(void *dest, size_t len)
 {
-    va_list args;
-    unsigned int i;
-
-    va_start(args, count);
-
-    for (i = 0; i < count; ++i) {
-        void *dest = va_arg(args, void *);
-        size_t len = va_arg(args, size_t);
 #ifdef HAVE_MEMSET_S
-        memset_s(dest, len, 0, len);
+    memset_s(dest, len, 0, len);
 #else
-        memset(dest, 0, len);
-#endif
+    memset(dest, 0, len);
 #if 0
-        /* This is used by boringssl to prevent memset from being elided. It
-         * works by forcing a memory barrier and so can be slow.
-         */
-        __asm__ __volatile__ ("" : : "r" (dest) : "memory");
+    /* This is used by boringssl to prevent memset from being elided. It
+     * works by forcing a memory barrier and so can be slow.
+     */
+    __asm__ __volatile__ ("" : : "r" (dest) : "memory");
 #endif
-#if 0
-        /* Continuing libressl's implementation. The check here allows the
-         * implementation to remain undefined and thus a buggy compiler
-         * cannot see that it does nothing and elide it erroneously.
-         */
-        if (__clear_fn)
-            __clear_fn(dest, len);
 #endif
-    }
-
-    va_end(args);
 }
 
 static void *wally_internal_malloc(size_t size)
@@ -202,6 +166,7 @@ static int wally_internal_ec_nonce_fn(unsigned char *nonce32,
 static struct wally_operations _ops = {
     wally_internal_malloc,
     wally_internal_free,
+    wally_internal_bzero,
     wally_internal_ec_nonce_fn
 };
 
@@ -241,8 +206,58 @@ int wally_set_operations(const struct wally_operations *ops)
 {
     if (!ops)
         return WALLY_EINVAL;
-    memcpy(&_ops, ops, sizeof(_ops));
+#define COPY_FN_PTR(name) if (ops->name) _ops.name = ops->name
+    COPY_FN_PTR(malloc_fn);
+    COPY_FN_PTR(free_fn);
+    COPY_FN_PTR (bzero_fn);
+    COPY_FN_PTR (ec_nonce_fn);
+#undef COPY_FN_PTR
     return WALLY_OK;
+}
+
+void clear(void *p, size_t len){
+    _ops.bzero_fn(p, len);
+}
+
+void clear_2(void *p, size_t len, void *p2, size_t len2){
+    _ops.bzero_fn(p, len);
+    _ops.bzero_fn(p2, len2);
+}
+
+void clear_3(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3){
+    _ops.bzero_fn(p, len);
+    _ops.bzero_fn(p2, len2);
+    _ops.bzero_fn(p3, len3);
+}
+
+void clear_4(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3, void *p4, size_t len4){
+    _ops.bzero_fn(p, len);
+    _ops.bzero_fn(p2, len2);
+    _ops.bzero_fn(p3, len3);
+    _ops.bzero_fn(p4, len4);
+}
+
+void clear_5(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3, void *p4, size_t len4,
+             void *p5, size_t len5){
+    _ops.bzero_fn(p, len);
+    _ops.bzero_fn(p2, len2);
+    _ops.bzero_fn(p3, len3);
+    _ops.bzero_fn(p4, len4);
+    _ops.bzero_fn(p5, len5);
+}
+
+void clear_6(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3, void *p4, size_t len4,
+             void *p5, size_t len5, void *p6, size_t len6){
+    _ops.bzero_fn(p, len);
+    _ops.bzero_fn(p2, len2);
+    _ops.bzero_fn(p3, len3);
+    _ops.bzero_fn(p4, len4);
+    _ops.bzero_fn(p5, len5);
+    _ops.bzero_fn(p6, len6);
 }
 
 #ifdef __ANDROID__

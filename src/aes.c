@@ -141,7 +141,7 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
         goto finish; /* Inform caller how much space is needed */
 
     if (!bytes_out) {
-        clear_n(2, buf, sizeof(buf), &ctx, sizeof(ctx));
+        clear_2(buf, sizeof(buf), &ctx, sizeof(ctx));
         return WALLY_EINVAL;
     }
 
@@ -174,6 +174,6 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
     }
 
 finish:
-    clear_n(2, buf, sizeof(buf), &ctx, sizeof(ctx));
+    clear_2(buf, sizeof(buf), &ctx, sizeof(ctx));
     return WALLY_OK;
 }

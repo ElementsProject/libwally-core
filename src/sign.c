@@ -111,7 +111,7 @@ int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
 
     if (!ok && bytes_out)
         clear(bytes_out, len);
-    clear_n(2, &sig, sizeof(sig), &sig_low, sizeof(sig_low));
+    clear_2(&sig, sizeof(sig), &sig_low, sizeof(sig_low));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -236,7 +236,7 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
         ok = ok && secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in) &&
              secp256k1_ecdsa_verify(ctx, &sig, bytes_in, &pub);
 
-    clear_n(2, &pub, sizeof(pub), &sig, sizeof(sig));
+    clear_2(&pub, sizeof(pub), &sig, sizeof(sig));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 

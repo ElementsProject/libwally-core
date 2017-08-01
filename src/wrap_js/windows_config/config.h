@@ -1,9 +1,14 @@
 #ifndef LIBWALLYCORE_CONFIG_H
 #define LIBWALLYCORE_CONFIG_H
+#include <stddef.h>
 
 #define HAVE_ATTRIBUTE_WEAK 1
+#define HAVE_BIG_ENDIAN 0
+#define HAVE_BSWAP_64 0
+#define HAVE_BYTESWAP_H 0
 #define HAVE_DLFCN_H 1
 #define HAVE_INTTYPES_H 1
+#define HAVE_LITTLE_ENDIAN 1
 #define HAVE_MEMORY_H 1
 #define HAVE_MMAP 1
 #define HAVE_PTHREAD 1
@@ -19,10 +24,10 @@
 #define STDC_HEADERS 1
 #define VERSION "0.1"
 
-#define HAVE_LITTLE_ENDIAN 1
-/* Clear a set of memory areas passed as ptr1, len1, ptr2, len2 etc */
-void clear_n(unsigned int count, ...);
 #define alignment_ok(p, n) ((size_t)(p) % (n) == 0)
-#define CCAN_CLEAR_MEMORY(p, len) clear_n(1, p, len)
+
+void clear(void *p, size_t len);
+
+#define CCAN_CLEAR_MEMORY(p, len) clear(p, len)
 
 #endif /*LIBWALLYCORE_CONFIG_H*/

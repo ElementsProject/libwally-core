@@ -151,7 +151,7 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
     key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
     memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
     if (key_compute_pub_key(key_out) != WALLY_OK) {
-        clear_n(2, &sha, sizeof(sha), key_out, sizeof(*key_out));
+        clear_2(&sha, sizeof(sha), key_out, sizeof(*key_out));
         return WALLY_EINVAL;
     }
 
@@ -486,7 +486,7 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
     key_out->depth = key_in->depth + 1;
     key_out->child_num = child_num;
     if (flags & BIP32_FLAG_SKIP_HASH)
-        clear_n(2, &key_out->parent160, sizeof(key_out->parent160),
+        clear_2(&key_out->parent160, sizeof(key_out->parent160),
                 &key_out->hash160, sizeof(key_out->hash160));
     else {
         memcpy(key_out->parent160, key_in->hash160, sizeof(key_in->hash160));

@@ -104,7 +104,7 @@ static int address_from_private_key(const unsigned char *bytes_in,
                                       sizeof(unsigned char) + sizeof(buf.hash160),
                                       BASE58_FLAG_CHECKSUM, output);
     }
-    clear_n(4, &sha, sizeof(sha), pub_key_short, sizeof(pub_key_short),
+    clear_4(&sha, sizeof(sha), pub_key_short, sizeof(pub_key_short),
             pub_key_long, sizeof(pub_key_long), &buf, sizeof(buf));
     return ret;
 }
@@ -174,7 +174,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     memcpy(bytes_out, &buf.prefix, BIP38_SERIALIZED_LEN);
 
 finish:
-    clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
+    clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
 
@@ -294,7 +294,7 @@ static int to_private_key(const char *bip38,
     }
 
 finish:
-    clear_n(2, &derived, sizeof(derived), &buf, sizeof(buf));
+    clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
 

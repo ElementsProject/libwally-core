@@ -113,7 +113,7 @@ int wally_asset_value_commitment(uint64_t value,
     ok = secp256k1_pedersen_commit(ctx, &commit, vbf, value, &gen) &&
          secp256k1_pedersen_commitment_serialize(ctx, bytes_out, &commit);
 
-    clear_n(2, &gen, sizeof(gen), &commit, sizeof(commit));
+    clear_2(&gen, sizeof(gen), &commit, sizeof(commit));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -186,7 +186,7 @@ int wally_asset_rangeproof(uint64_t value,
     }
 
 cleanup:
-    clear_n(6, &gen, sizeof(gen), &pub, sizeof(pub),
+    clear_6(&gen, sizeof(gen), &pub, sizeof(pub),
             &commit, sizeof(commit),  nonce, sizeof(nonce),
             &nonce_sha, sizeof(nonce_sha), message, sizeof(message));
     return ret;
@@ -250,7 +250,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
     ret = WALLY_OK;
 
 cleanup:
-    clear_n(6, &gen, sizeof(gen), &pub, sizeof(pub),
+    clear_6(&gen, sizeof(gen), &pub, sizeof(pub),
             &commit, sizeof(commit),  nonce, sizeof(nonce),
             &nonce_sha, sizeof(nonce_sha), message, sizeof(message));
     return ret;
@@ -340,7 +340,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
     ret = WALLY_OK;
 
 cleanup:
-    clear_n(2, &gen, sizeof(gen), &proof, sizeof(proof));
+    clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
     if (generators)
         clear(generators, generator_len);
     wally_free(generators);

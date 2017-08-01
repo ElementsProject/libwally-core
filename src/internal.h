@@ -20,10 +20,18 @@ const secp256k1_context *secp_ctx(void);
 #define PUBKEY_UNCOMPRESSED SECP256K1_EC_UNCOMPRESSED
 
 
-inline static void clear(void *p, size_t len)
-{
-    clear_n(1, p, len);
-}
+void clear(void *p, size_t len);
+void clear_2(void *p, size_t len, void *p2, size_t len2);
+void clear_3(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3);
+void clear_4(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3, void *p4, size_t len4);
+void clear_5(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3, void *p4, size_t len4,
+             void *p5, size_t len5);
+void clear_6(void *p, size_t len, void *p2, size_t len2,
+             void *p3, size_t len3, void *p4, size_t len4,
+             void *p5, size_t len5, void *p6, size_t len6);
 
 /* Fetch our internal operations function pointers */
 const struct wally_operations *wally_ops(void);

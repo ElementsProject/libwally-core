@@ -42,7 +42,7 @@ void HMAC_FUNCTION(struct SHA_T *sha,
 
     SHA_PRE(_mix)((struct SHA_T *)ctx.buf.SHA_CTX_MEMBER, ipad, msg, msg_len);
     SHA_PRE(_mix)(sha, opad, ctx.buf.u8, sizeof(*sha));
-    clear_n(3, &ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
+    clear_3(&ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
 }
 
 int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
