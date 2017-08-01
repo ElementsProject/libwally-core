@@ -7,6 +7,9 @@
 #include <ccan/compiler/compiler.h>
 #include <include/wally_crypto.h>
 
+#ifdef SHA_T
+#undef SHA_T
+#endif
 #define SHA_T sha256
 #define SHA_ALIGN_T uint32_t
 #define SHA_MEM u32

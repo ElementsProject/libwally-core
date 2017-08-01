@@ -5,6 +5,9 @@
 #include <include/wally_crypto.h>
 #include <stdbool.h>
 
+#ifdef SHA_T
+#undef SHA_T
+#endif
 #define SHA_T sha256
 #define SHA_CTX_MEMBER u32
 #define SHA_PRE(name) sha256 ## name
