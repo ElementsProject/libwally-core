@@ -187,6 +187,7 @@ test_clear_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
+if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
@@ -220,5 +221,6 @@ if USE_JS_WRAPPERS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_hash.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 endif
+endif # SHARED_BUILD_ENABLED
 
 .PHONY: clean-swig-python clean-js-wrappers clean-swig-java cordova-wrappers

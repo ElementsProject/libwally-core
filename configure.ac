@@ -359,6 +359,8 @@ if test "x$enable_static" == "xyes"; then
 fi
 AC_SUBST([CTEST_EXTRA_STATIC])
 
+AM_CONDITIONAL([SHARED_BUILD_ENABLED], [test "x$enable_shared" == "xyes"])
+
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
