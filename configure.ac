@@ -10,6 +10,10 @@ AH_TOP([#ifndef LIBWALLYCORE_CONFIG_H
 AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
 
+# Remove any optimisation/debug flags from CFLAGS, these are controlled
+# only by --enable-debug, in order to only use tested configurations
+CFLAGS=`echo $CFLAGS | sed 's/-[Og][0-9]*[ $$]*//'`
+
 LDPATH_VAR=LD_LIBRARY_PATH
 case $host_os in
 *darwin*)
@@ -106,8 +110,6 @@ AC_ARG_ENABLE(coverage,
 AC_ARG_ENABLE(lto,
     AS_HELP_STRING([--enable-lto],[enable link time optimisation (default: yes if not debugging)]),
     [lto=$enableval], [lto=yes])
-
-CFLAGS=`echo $CFLAGS | $GNU_SED 's/-[Og][0-9]*[ $$]*//'`
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
