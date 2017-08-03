@@ -1,0 +1,28 @@
+build_tag_release:
+  image: greenaddress/wallycore:fc18366c4da94ea7fe328650709e39a1133595f4b998b9c992f700c4f392c1e7
+  artifacts:
+    name: wallycore-android-jni
+    when: on_success
+    paths:
+    - wallycore-android-jni.tar.gz
+    - wallycore-android-jni.tar.gz.sha256
+    - wallycore-0.2.0-py27-none-linux_x86_64.whl
+    - wallycore-0.2.0-py27-none-linux_x86_64.whl.sha256
+    - wallycore-0.2.0-py35-none-linux_x86_64.whl
+    - wallycore-0.2.0-py35-none-linux_x86_64.whl.sha256
+    - wallycore-linux_x86_64-python2.tar.gz
+    - wallycore-linux_x86_64-python2.tar.gz.sha256
+    - wallycore-linux_x86_64-python3.tar.gz
+    - wallycore-linux_x86_64-python3.tar.gz.sha256
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_eggs.sh
+    - ./tools/build_android_libraries.sh
+    - mv release wallycore-android-jni
+    - tar cvf wallycore-android-jni.tar wallycore-android-jni
+    - gzip -9 wallycore-android-jni.tar
+    - sha256sum wallycore-android-jni.tar.gz > wallycore-android-jni.tar.gz.sha256
+  only:
+    - tag

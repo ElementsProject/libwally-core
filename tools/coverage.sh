@@ -1,4 +1,4 @@
-#/bin/bash
+#! /usr/bin/env bash
 
 # Helper to generate coverage reports.
 # ./tools/coverage.sh clean : Sets coverage stats to 0.

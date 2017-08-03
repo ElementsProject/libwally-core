@@ -66,3 +66,4 @@ wallycore.egg-info/
 wally*.gz
 wally*.sha256
 wally*.asc
+wally*.whl

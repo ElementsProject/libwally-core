@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /usr/bin/env bash
 
 # Clean up all generated files
 make -o configure distclean >/dev/null 2>&1

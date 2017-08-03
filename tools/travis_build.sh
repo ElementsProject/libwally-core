@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /usr/bin/env bash
 
 ENABLE_SWIG_PYTHON="--enable-swig-python"
 ENABLE_SWIG_JAVA="--enable-swig-java"

@@ -80,19 +80,27 @@ is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
-running `./configure`.
+running `setup.py` or (when compiling manually) `./configure`.
 
-You can also install the binary wally releases using the released egg files
-without having to compile the library. e.g. Assuming you have untarred the
-x86_64 python3 release into the wallycore-linux-x86_64-64-python3 directory,
-you can install it using:
+You can also install the binary wally releases using the released egg or
+wheel files without having to compile the library.
+
+For wheel releases you can install directly using the released wheel files
+and pip install, e.g.:
 
 ```
-python3 wallycore-linux-x86_64-64-python3/setup.py easy_install wallycore-linux-x86_64-64-python3/*.egg
++pip install wallycore-0.3.0-py27-none-linux_x86_64.whl
 ```
 
-The script `tools/build_python_eggs.sh` contains python code to compute the
-name of the release file if you wish to fetch it dynamically.
+For egg releases, untar the tarball which will create a directory of the
+form `wallcore-<platform>-<python version>`. You can install using:
+
+```
+python3 <dir>/setup.py easy_install <dir>/*.egg
+```
+
+The script `tools/build_python_eggs.sh` builds the release files and can be
+used as an example for your own deployments.
 
 ### Android
 
