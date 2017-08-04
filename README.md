@@ -82,6 +82,18 @@ If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
 running `./configure`.
 
+You can also install the binary wally releases using the released egg files
+without having to compile the library. e.g. Assuming you have untarred the
+x86_64 python3 release into the wallycore-linux-x86_64-64-python3 directory,
+you can install it using:
+
+```
+python3 wallycore-linux-x86_64-64-python3/setup.py easy_install wallycore-linux-x86_64-64-python3/*.egg
+```
+
+The script `tools/build_python_eggs.sh` contains python code to compute the
+name of the release file if you wish to fetch it dynamically.
+
 ### Android
 
 Android builds are currently supported for all Android binary targets using
