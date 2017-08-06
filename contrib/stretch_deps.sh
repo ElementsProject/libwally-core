@@ -13,7 +13,7 @@ update-java-alternatives -s java-1.8.0-openjdk-amd64
 
 cd /opt && curl -sSO https://dl.google.com/android/repository/${NDK_FILENAME} && unzip -qq ${NDK_FILENAME} && rm ${NDK_FILENAME}
 
-apt-get remove --purge curl unzip -yqq
+apt-get remove --purge curl -yqq
 apt-get -yqq autoremove
 apt-get -yqq clean
 rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /usr/share/locale/* /usr/share/man /usr/share/doc /lib/xtables/libip6*

@@ -1,5 +1,5 @@
 build_tag_release:
-  image: greenaddress/wallycore:fc18366c4da94ea7fe328650709e39a1133595f4b998b9c992f700c4f392c1e7
+  image: greenaddress/wallycore@sha256:48a02e07aa1264a549413c2c2f765d183c53d660b450db245d2444751622cd21
   artifacts:
     name: wallycore-android-jni
     when: on_success
