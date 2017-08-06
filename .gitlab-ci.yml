@@ -1,7 +1,7 @@
 build_tag_release:
   image: greenaddress/wallycore@sha256:48a02e07aa1264a549413c2c2f765d183c53d660b450db245d2444751622cd21
   artifacts:
-    name: wallycore-android-jni
+    name: wallycore-bindings
     when: on_success
     paths:
     - wallycore-android-jni.tar.gz
@@ -31,7 +31,7 @@ build_tag_osx_release:
   tags:
     - osx
   artifacts:
-    name: wallycore-android-jni
+    name: wallycore-bindings
     when: on_success
     paths:
     - wallycore-0.3.0-cp27-cp27m-macosx_10_12_x86_64.whl
