@@ -23,6 +23,6 @@ build_tag_release:
     - mv release wallycore-android-jni
     - tar cvf wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wallycore-android-jni.tar
-    - sha256sum wallycore-android-jni.tar.gz > wallycore-android-jni.tar.gz.sha256
+    - shasum -a 256 wallycore-android-jni.tar.gz > wallycore-android-jni.tar.gz.sha256
   only:
     - tag

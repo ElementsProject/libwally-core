@@ -26,7 +26,7 @@ function build {
     cp setup.py dist
     mv dist $NAME-$1
     tar czf $NAME-$1.tar.gz $NAME-$1
-    sha256sum $NAME-$1.tar.gz >$NAME-$1.tar.gz.sha256
+    shasum -a 256 $NAME-$1.tar.gz >$NAME-$1.tar.gz.sha256
 
     # Create a wheel from the .egg
     cd $NAME-$1
@@ -34,7 +34,7 @@ function build {
     WHEEL_NAME=$(ls *whl | sed "s/-any/-$PLATFORM/")
     mv *.whl ../$WHEEL_NAME
     cd ..
-    sha256sum $WHEEL_NAME > $WHEEL_NAME.sha256
+    shasum -a 256 $WHEEL_NAME > $WHEEL_NAME.sha256
     #gpg --armor --output $NAME-$1.tar.gz.asc --detach-sign $NAME-$1.tar.gz
     #gpg --armor --output $WHEEL_NAME.asc --detach-sign $WHEEL_NAME
     rm -r $NAME-$1
