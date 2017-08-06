@@ -274,6 +274,10 @@ EOD`
 		PYTHON_EXTRA_LIBS=`$PYTHON -c "import distutils.sysconfig; \
 			conf = distutils.sysconfig.get_config_var; \
 			print (conf('LINKFORSHARED'))"`
+		if echo "$PYTHON_EXTRA_LIBS" | grep " Python.framework" >/dev/null; then
+			# On OSX we can hit https://bugs.python.org/issue3588
+			PYTHON_EXTRA_LIBS=`$PYTHON-config --ldflags`
+		fi
 	fi
 	AC_MSG_RESULT([$PYTHON_EXTRA_LIBS])
 
