@@ -31,7 +31,8 @@ function build {
     # Create a wheel from the .egg
     cd $NAME-$1
     wheel convert *.egg
-    WHEEL_NAME=$(ls *whl | sed "s/-any/-$PLATFORM/")
+    COMPAT_INFO=$(unzip -p *.whl '*/WHEEL' | grep 'Tag: ' | sed 's/Tag: //')
+    WHEEL_NAME=$(ls *whl | sed "s/-py.*/-$COMPAT_INFO.whl/")
     mv *.whl ../$WHEEL_NAME
     cd ..
     shasum -a 256 $WHEEL_NAME > $WHEEL_NAME.sha256
