@@ -21,7 +21,7 @@ class build_clib(_build_clib):
 setup(
     name='wallycore',
 
-    version='0.2.0',
+    version='0.3.0',
     description='libwally Bitcoin library',
     long_description='Python bindings for the libwally Bitcoin library',
     url='https://github.com/ElementsProject/libwally-core',
