@@ -2,6 +2,7 @@
 from setuptools import setup
 from setuptools import Distribution
 import os
+import platform
 import subprocess
 from distutils.command.build_clib import build_clib as _build_clib
 
@@ -16,6 +17,9 @@ class build_clib(_build_clib):
         for cmd in ('./tools/autogen.sh',
                     './configure --enable-swig-python',
                     'make'):
+            subprocess.check_call(cmd.split(' '), cwd=abs_path)
+        if platform.system() == 'Darwin':
+            cmd = 'cp src/.libs/libwallycore.dylib src/.libs/libwallycore.so'
             subprocess.check_call(cmd.split(' '), cwd=abs_path)
 
 setup(
