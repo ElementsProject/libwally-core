@@ -6,10 +6,10 @@ build_tag_release:
     paths:
     - wallycore-android-jni.tar.gz
     - wallycore-android-jni.tar.gz.sha256
-    - wallycore-0.3.0-cp27-cp27mu-linux_x86_64.whl
-    - wallycore-0.3.0-cp27-cp27mu-linux_x86_64.whl.sha256
-    - wallycore-0.3.0-cp35-cp35m-linux_x86_64.whl
-    - wallycore-0.3.0-cp35-cp35m-linux_x86_64.whl.sha256
+    - wallycore-0.4.0-cp27-cp27mu-linux_x86_64.whl
+    - wallycore-0.4.0-cp27-cp27mu-linux_x86_64.whl.sha256
+    - wallycore-0.4.0-cp35-cp35m-linux_x86_64.whl
+    - wallycore-0.4.0-cp35-cp35m-linux_x86_64.whl.sha256
     - wallycore-linux_x86_64-python2.tar.gz
     - wallycore-linux_x86_64-python2.tar.gz.sha256
     - wallycore-linux_x86_64-python3.tar.gz
@@ -34,10 +34,10 @@ build_tag_osx_release:
     name: wallycore-bindings
     when: on_success
     paths:
-    - wallycore-0.3.0-cp27-cp27m-macosx_10_12_x86_64.whl
-    - wallycore-0.3.0-cp27-cp27m-macosx_10_12_x86_64.whl.sha256
-    - wallycore-0.3.0-cp36-cp36m-macosx_10_12_x86_64.whl
-    - wallycore-0.3.0-cp36-cp36m-macosx_10_12_x86_64.whl.sha256
+    - wallycore-0.4.0-cp27-cp27m-macosx_10_12_x86_64.whl
+    - wallycore-0.4.0-cp27-cp27m-macosx_10_12_x86_64.whl.sha256
+    - wallycore-0.4.0-cp36-cp36m-macosx_10_12_x86_64.whl
+    - wallycore-0.4.0-cp36-cp36m-macosx_10_12_x86_64.whl.sha256
     - wallycore-macosx_10_12_intel-python2.tar.gz
     - wallycore-macosx_10_12_intel-python2.tar.gz.sha256
     - wallycore-macosx_10_12_intel-python3.tar.gz
