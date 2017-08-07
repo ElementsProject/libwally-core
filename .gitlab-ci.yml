@@ -38,10 +38,6 @@ build_tag_osx_release:
     - wallycore-0.4.0-cp27-cp27m-macosx_10_12_x86_64.whl.sha256
     - wallycore-0.4.0-cp36-cp36m-macosx_10_12_x86_64.whl
     - wallycore-0.4.0-cp36-cp36m-macosx_10_12_x86_64.whl.sha256
-    - wallycore-macosx_10_12_intel-python2.tar.gz
-    - wallycore-macosx_10_12_intel-python2.tar.gz.sha256
-    - wallycore-macosx_10_12_intel-python3.tar.gz
-    - wallycore-macosx_10_12_intel-python3.tar.gz.sha256
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
