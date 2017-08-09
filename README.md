@@ -89,23 +89,23 @@ For wheel releases you can install directly using the released wheel files
 and pip install, e.g.:
 
 ```
-+pip install wallycore-0.3.0-py27-none-linux_x86_64.whl
+pip install wallycore-0.4.0-cp27-cp27mu-linux_x86_64.whl
 ```
 
 For egg releases, untar the tarball which will create a directory of the
 form `wallcore-<platform>-<python version>`. You can install using:
 
 ```
-python3 <dir>/setup.py easy_install <dir>/*.egg
+python <dir>/setup.py easy_install <dir>/*.egg
 ```
 
 The script `tools/build_python_eggs.sh` builds the release files and can be
-used as an example for your own deployments.
+used as an example for your own python projects.
 
 ### Android
 
 Android builds are currently supported for all Android binary targets using
-a toolchain directory created with the Android SDK tool
+a toolchain directory created with the Android NDK tool
 `make_standalone_toolchain.py`. The script `tools/android_helpers.sh` can be
 sourced from the shell or scripts to make it easier to produce builds:
 
@@ -122,6 +122,9 @@ $ export WALLY_USE_GCC=1
 # See the comments in tools/android_helpers.sh for arguments
 $ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 14 "--enable-swig-java"
 ```
+
+The script `tools/build_android_libraries.sh` builds the Android release files and
+can be used as and example for your own Android projects.
 
 ## Cleaning
 
