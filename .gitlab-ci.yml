@@ -43,3 +43,41 @@ build_tag_osx_release:
     - ./tools/build_python_eggs.sh
   only:
     - tags
+
+build_tag_armv7l_release:
+  tags:
+    - armv7l
+  artifacts:
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wallycore-0.4.0-*.whl
+    - wallycore-0.4.0-*.whl.sha256
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_eggs.sh
+  only:
+    - tags
+
+build_tag_mips_release:
+  tags:
+    - mips
+  script:
+    - ./tools/build_python_eggs.sh
+  only:
+    - tags
+
+build_tag_freebsdamd64_release:
+  tags:
+    - freebsd
+  artifacts:
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wallycore-0.4.0-*.whl
+    - wallycore-0.4.0-*.whl.sha256
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_eggs.sh
+  only:
+    - tags
