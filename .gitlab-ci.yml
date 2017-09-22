@@ -59,6 +59,21 @@ build_tag_armv7l_release:
   only:
     - tags
 
+build_tag_arm64_release:
+  tags:
+    - arm64
+  artifacts:
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wallycore-0.4.0-*.whl
+    - wallycore-0.4.0-*.whl.sha256
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_eggs.sh
+  only:
+    - tags
+
 build_tag_mips_release:
   tags:
     - mips
