@@ -44,7 +44,7 @@ int wally_asset_generator_from_bytes(const unsigned char *asset, size_t asset_le
         return WALLY_ERROR; /* Invalid entropy; caller should try again */
 
     secp256k1_generator_serialize(ctx, bytes_out, &gen); /* Never fails */
-    clear(&gen, sizeof(gen));
+    wally_clear(&gen, sizeof(gen));
     return WALLY_OK;
 }
 
@@ -80,7 +80,7 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
         vbf_p[i] = vbf + i * ASSET_TAG_LEN;
     }
     vbf_p[values_len - 1] = bytes_out;
-    clear(bytes_out, len);
+    wally_clear(bytes_out, len);
 
     if (secp256k1_pedersen_blind_generator_blind_sum(ctx, values, abf_p,
                                                      (unsigned char *const *)vbf_p,
@@ -113,7 +113,7 @@ int wally_asset_value_commitment(uint64_t value,
     ok = secp256k1_pedersen_commit(ctx, &commit, vbf, value, &gen) &&
          secp256k1_pedersen_commitment_serialize(ctx, bytes_out, &commit);
 
-    clear_2(&gen, sizeof(gen), &commit, sizeof(commit));
+    wally_clear_2(&gen, sizeof(gen), &commit, sizeof(commit));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -186,9 +186,9 @@ int wally_asset_rangeproof(uint64_t value,
     }
 
 cleanup:
-    clear_6(&gen, sizeof(gen), &pub, sizeof(pub),
-            &commit, sizeof(commit),  nonce, sizeof(nonce),
-            &nonce_sha, sizeof(nonce_sha), message, sizeof(message));
+    wally_clear_6(&gen, sizeof(gen), &pub, sizeof(pub),
+                  &commit, sizeof(commit),  nonce, sizeof(nonce),
+                  &nonce_sha, sizeof(nonce_sha), message, sizeof(message));
     return ret;
 }
 
@@ -250,9 +250,9 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
     ret = WALLY_OK;
 
 cleanup:
-    clear_6(&gen, sizeof(gen), &pub, sizeof(pub),
-            &commit, sizeof(commit),  nonce, sizeof(nonce),
-            &nonce_sha, sizeof(nonce_sha), message, sizeof(message));
+    wally_clear_6(&gen, sizeof(gen), &pub, sizeof(pub),
+                  &commit, sizeof(commit),  nonce, sizeof(nonce),
+                  &nonce_sha, sizeof(nonce_sha), message, sizeof(message));
     return ret;
 }
 
@@ -340,9 +340,9 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
     ret = WALLY_OK;
 
 cleanup:
-    clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
+    wally_clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
     if (generators)
-        clear(generators, generator_len);
+        wally_clear(generators, generator_len);
     wally_free(generators);
     return ret;
 }

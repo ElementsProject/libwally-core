@@ -43,7 +43,7 @@ int wally_free_string(char *str)
 {
     if (!str)
         return WALLY_EINVAL;
-    clear(str, strlen(str));
+    wally_clear(str, strlen(str));
     wally_free(str);
     return WALLY_OK;
 }
@@ -52,7 +52,7 @@ int wally_bzero(void *bytes, size_t len)
 {
     if (!bytes)
         return WALLY_EINVAL;
-    clear(bytes, len);
+    wally_clear(bytes, len);
     return WALLY_OK;
 }
 
@@ -68,7 +68,7 @@ int wally_sha256(const unsigned char *bytes_in, size_t len_in,
     sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes_in, len_in);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
-        clear(&sha, sizeof(sha));
+        wally_clear(&sha, sizeof(sha));
     }
     return WALLY_OK;
 }
@@ -86,9 +86,9 @@ int wally_sha256d(const unsigned char *bytes_in, size_t len_in,
     sha256(aligned ? (struct sha256 *)bytes_out : &sha_2, &sha_1, sizeof(sha_1));
     if (!aligned) {
         memcpy(bytes_out, &sha_2, sizeof(sha_2));
-        clear(&sha_2, sizeof(sha_2));
+        wally_clear(&sha_2, sizeof(sha_2));
     }
-    clear(&sha_1, sizeof(sha_1));
+    wally_clear(&sha_1, sizeof(sha_1));
     return WALLY_OK;
 }
 
@@ -104,7 +104,7 @@ int wally_sha512(const unsigned char *bytes_in, size_t len_in,
     sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes_in, len_in);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
-        clear(&sha, sizeof(sha));
+        wally_clear(&sha, sizeof(sha));
     }
     return WALLY_OK;
 }
@@ -125,9 +125,9 @@ int wally_hash160(const unsigned char *bytes_in, size_t len_in,
     ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &sha, sizeof(sha));
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
-        clear(&ripemd, sizeof(ripemd));
+        wally_clear(&ripemd, sizeof(ripemd));
     }
-    clear(&sha, sizeof(sha));
+    wally_clear(&sha, sizeof(sha));
     return WALLY_OK;
 }
 
@@ -215,33 +215,33 @@ int wally_set_operations(const struct wally_operations *ops)
     return WALLY_OK;
 }
 
-void clear(void *p, size_t len){
+void wally_clear(void *p, size_t len){
     _ops.bzero_fn(p, len);
 }
 
-void clear_2(void *p, size_t len, void *p2, size_t len2){
+void wally_clear_2(void *p, size_t len, void *p2, size_t len2){
     _ops.bzero_fn(p, len);
     _ops.bzero_fn(p2, len2);
 }
 
-void clear_3(void *p, size_t len, void *p2, size_t len2,
-             void *p3, size_t len3){
+void wally_clear_3(void *p, size_t len, void *p2, size_t len2,
+                   void *p3, size_t len3){
     _ops.bzero_fn(p, len);
     _ops.bzero_fn(p2, len2);
     _ops.bzero_fn(p3, len3);
 }
 
-void clear_4(void *p, size_t len, void *p2, size_t len2,
-             void *p3, size_t len3, void *p4, size_t len4){
+void wally_clear_4(void *p, size_t len, void *p2, size_t len2,
+                   void *p3, size_t len3, void *p4, size_t len4){
     _ops.bzero_fn(p, len);
     _ops.bzero_fn(p2, len2);
     _ops.bzero_fn(p3, len3);
     _ops.bzero_fn(p4, len4);
 }
 
-void clear_5(void *p, size_t len, void *p2, size_t len2,
-             void *p3, size_t len3, void *p4, size_t len4,
-             void *p5, size_t len5){
+void wally_clear_5(void *p, size_t len, void *p2, size_t len2,
+                   void *p3, size_t len3, void *p4, size_t len4,
+                   void *p5, size_t len5){
     _ops.bzero_fn(p, len);
     _ops.bzero_fn(p2, len2);
     _ops.bzero_fn(p3, len3);
@@ -249,9 +249,9 @@ void clear_5(void *p, size_t len, void *p2, size_t len2,
     _ops.bzero_fn(p5, len5);
 }
 
-void clear_6(void *p, size_t len, void *p2, size_t len2,
-             void *p3, size_t len3, void *p4, size_t len4,
-             void *p5, size_t len5, void *p6, size_t len6){
+void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
+                   void *p3, size_t len3, void *p4, size_t len4,
+                   void *p5, size_t len5, void *p6, size_t len6){
     _ops.bzero_fn(p, len);
     _ops.bzero_fn(p2, len2);
     _ops.bzero_fn(p3, len3);

@@ -17,7 +17,7 @@
  * calling through function pointers, dummy asm contraints etc are
  * not always effective as optimisation continues to improve.
  *
- * Here we try to ensure that the clear/clear_n() functions work as advertised
+ * Here we try to ensure that the wally_clear/wally_clear_n() functions work as advertised
  * by:
  * - Setting a custom thread stack, then
  * - Calling a function that processes sensitive data, then
@@ -120,7 +120,7 @@ static void *run_tests(void *passed_stack)
         return passed_stack;
     }
 
-#define RUN(t) if (!t()) { printf(#t " clear() test failed!\n"); return gstack; }
+#define RUN(t) if (!t()) { printf(#t " wally_clear() test failed!\n"); return gstack; }
 
     RUN(test_search);
     RUN(test_bip39);

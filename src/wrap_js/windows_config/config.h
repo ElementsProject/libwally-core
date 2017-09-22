@@ -26,8 +26,8 @@
 
 #define alignment_ok(p, n) ((size_t)(p) % (n) == 0)
 
-void clear(void *p, size_t len);
+void wally_clear(void *p, size_t len);
 
-#define CCAN_CLEAR_MEMORY(p, len) clear(p, len)
+#define CCAN_CLEAR_MEMORY(p, len) wally_clear(p, len)
 
 #endif /*LIBWALLYCORE_CONFIG_H*/

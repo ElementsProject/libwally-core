@@ -143,7 +143,7 @@ static int base58_decode(const char *base58, size_t base58_len,
     ret = WALLY_OK;
 
 cleanup:
-    clear(bn, bn_words * sizeof(*bn));
+    wally_clear(bn, bn_words * sizeof(*bn));
     if (bn != bn_buf)
         wally_free(bn);
     return ret;
@@ -156,7 +156,7 @@ uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len_in)
 
     wally_sha256d(bytes_in, len_in, (unsigned char *)&sha, sizeof(sha));
     checksum = sha.u.u32[0];
-    clear(&sha, sizeof(sha));
+    wally_clear(&sha, sizeof(sha));
     return checksum;
 }
 
@@ -241,7 +241,7 @@ int wally_base58_from_bytes(const unsigned char *bytes_in, size_t len_in,
     ret = WALLY_OK;
 
 cleanup:
-    clear(bn, bn_bytes);
+    wally_clear(bn, bn_bytes);
     if (bn != bn_buf)
         wally_free(bn);
     return ret;
@@ -279,11 +279,11 @@ int wally_base58_to_bytes(const char *str_in, uint32_t flags,
         uint32_t checksum = base58_get_checksum(bytes_out, offset);
 
         if (memcmp(bytes_out + offset, &checksum, sizeof(checksum))) {
-            clear(bytes_out, len);
+            wally_clear(bytes_out, len);
             return WALLY_EINVAL; /* Checksum mismatch */
         }
 
-        clear(bytes_out + offset, BASE58_CHECKSUM_LEN);
+        wally_clear(bytes_out + offset, BASE58_CHECKSUM_LEN);
         *written -= BASE58_CHECKSUM_LEN;
     }
     return ret;

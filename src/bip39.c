@@ -94,7 +94,7 @@ static size_t bip39_checksum(const unsigned char *bytes_in, size_t len_in, size_
     size_t ret;
     sha256(&sha, bytes_in, len_in);
     ret = sha.u.u8[0] | (sha.u.u8[1] << 8);
-    clear(&sha, sizeof(sha));
+    wally_clear(&sha, sizeof(sha));
     return ret & mask;
 }
 
@@ -122,7 +122,7 @@ int bip39_mnemonic_from_bytes(const struct words *w,
     if (mask > 0xff)
         tmp_bytes[++len_in] = (checksum >> 8) & 0xff;
     *output = mnemonic_from_bytes(w, tmp_bytes, len_in + 1);
-    clear(tmp_bytes, sizeof(tmp_bytes));
+    wally_clear(tmp_bytes, sizeof(tmp_bytes));
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
@@ -184,7 +184,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
         }
     }
 
-    clear(tmp_bytes, sizeof(tmp_bytes));
+    wally_clear(tmp_bytes, sizeof(tmp_bytes));
     if (!ret && written)
         *written = tmp_len;
     return ret;
@@ -195,7 +195,7 @@ int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
     unsigned char buf[BIP39_ENTROPY_LEN_MAX];
     size_t len;
     int ret = bip39_mnemonic_to_bytes(w, mnemonic, buf, sizeof(buf), &len);
-    clear(buf, sizeof(buf));
+    wally_clear(buf, sizeof(buf));
     return ret;
 }
 
@@ -233,7 +233,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     if (!ret && written)
         *written = BIP39_SEED_LEN_512; /* Succeeded */
 
-    clear(salt, salt_len);
+    wally_clear(salt, salt_len);
     wally_free(salt);
 
     return ret;

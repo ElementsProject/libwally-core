@@ -104,8 +104,8 @@ static int address_from_private_key(const unsigned char *bytes_in,
                                       sizeof(unsigned char) + sizeof(buf.hash160),
                                       BASE58_FLAG_CHECKSUM, output);
     }
-    clear_4(&sha, sizeof(sha), pub_key_short, sizeof(pub_key_short),
-            pub_key_long, sizeof(pub_key_long), &buf, sizeof(buf));
+    wally_clear_4(&sha, sizeof(sha), pub_key_short, sizeof(pub_key_short),
+                  pub_key_long, sizeof(pub_key_long), &buf, sizeof(buf));
     return ret;
 }
 
@@ -121,7 +121,7 @@ static void aes_enc_impl(const unsigned char *src, const unsigned char *xor,
     wally_aes(key, AES_KEY_LEN_256, plaintext, AES_BLOCK_LEN,
               AES_FLAG_ENCRYPT, bytes_out, AES_BLOCK_LEN);
 
-    clear(plaintext, sizeof(plaintext));
+    wally_clear(plaintext, sizeof(plaintext));
 }
 
 int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
@@ -174,7 +174,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     memcpy(bytes_out, &buf.prefix, BIP38_SERIALIZED_LEN);
 
 finish:
-    clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
+    wally_clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
 
@@ -196,7 +196,7 @@ int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
         ret = wally_base58_from_bytes(&buf.prefix, BIP38_SERIALIZED_LEN,
                                       BASE58_FLAG_CHECKSUM, output);
 
-    clear(&buf, sizeof(buf));
+    wally_clear(&buf, sizeof(buf));
     return ret;
 }
 
@@ -294,7 +294,7 @@ static int to_private_key(const char *bip38,
     }
 
 finish:
-    clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
+    wally_clear_2(&derived, sizeof(derived), &buf, sizeof(buf));
     return ret;
 }
 

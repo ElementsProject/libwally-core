@@ -94,12 +94,12 @@ void wordlist_free(struct words *w)
 {
     if (w && w->str_len) {
         if (w->str) {
-            clear((void *)w->str,  w->str_len);
+            wally_clear((void *)w->str,  w->str_len);
             wally_free((void *)w->str);
         }
         if (w->indices)
             wally_free((void *)w->indices); /* No need to clear */
-        clear(w, sizeof(*w));
+        wally_clear(w, sizeof(*w));
         wally_free(w);
     }
 }

@@ -59,8 +59,8 @@ int wally_ec_public_key_from_private_key(const unsigned char *priv_key, size_t p
          len_in_out == EC_PUBLIC_KEY_LEN;
 
     if (!ok && bytes_out)
-        clear(bytes_out, len);
-    clear(&pub, sizeof(pub));
+        wally_clear(bytes_out, len);
+    wally_clear(&pub, sizeof(pub));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -82,8 +82,8 @@ int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_
          len_in_out == EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
 
     if (!ok && bytes_out)
-        clear(bytes_out, len);
-    clear(&pub, sizeof(pub));
+        wally_clear(bytes_out, len);
+    wally_clear(&pub, sizeof(pub));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -110,8 +110,8 @@ int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
     }
 
     if (!ok && bytes_out)
-        clear(bytes_out, len);
-    clear_2(&sig, sizeof(sig), &sig_low, sizeof(sig_low));
+        wally_clear(bytes_out, len);
+    wally_clear_2(&sig, sizeof(sig), &sig_low, sizeof(sig_low));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -136,10 +136,10 @@ int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_in_len,
                                                  &len_in_out, &sig);
 
     if (!ok && bytes_out)
-        clear(bytes_out, len);
+        wally_clear(bytes_out, len);
     if (ok)
         *written = len_in_out;
-    clear(&sig, sizeof(sig));
+    wally_clear(&sig, sizeof(sig));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -158,8 +158,8 @@ int wally_ec_sig_from_der(const unsigned char *bytes_in, size_t len_in,
          secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig);
 
     if (!ok && bytes_out)
-        clear(bytes_out, len);
-    clear(&sig, sizeof(sig));
+        wally_clear(bytes_out, len);
+    wally_clear(&sig, sizeof(sig));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -192,7 +192,7 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
         secp256k1_ecdsa_signature sig;
 
         if (!secp256k1_ecdsa_sign(ctx, &sig, bytes_in, priv_key, nonce_fn, NULL)) {
-            clear(&sig, sizeof(sig));
+            wally_clear(&sig, sizeof(sig));
             if (secp256k1_ec_seckey_verify(ctx, priv_key))
                 return WALLY_ERROR; /* Nonce function failed */
             return WALLY_EINVAL; /* invalid priv_key */
@@ -200,7 +200,7 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
 
         /* Note this function is documented as never failing */
         secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig);
-        clear(&sig, sizeof(sig));
+        wally_clear(&sig, sizeof(sig));
     }
     return WALLY_OK;
 }
@@ -236,7 +236,7 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
         ok = ok && secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in) &&
              secp256k1_ecdsa_verify(ctx, &sig, bytes_in, &pub);
 
-    clear_2(&pub, sizeof(pub), &sig, sizeof(sig));
+    wally_clear_2(&pub, sizeof(pub), &sig, sizeof(sig));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -293,7 +293,7 @@ int wally_format_bitcoin_message(const unsigned char *bytes_in, size_t len_in,
 
     if (do_hash) {
         wally_sha256d(msg_buf, msg_len, bytes_out, SHA256_LEN);
-        clear(msg_buf, msg_len);
+        wally_clear(msg_buf, msg_len);
         if (msg_buf != buf)
             wally_free(msg_buf);
     }

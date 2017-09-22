@@ -16,7 +16,7 @@ static void SHA_PRE(_mix)(struct SHA_T *sha, const unsigned char *pad,
     SHA_PRE(_update)(&ctx, pad, sizeof(ctx.buf));
     SHA_PRE(_update)(&ctx, data, data_len);
     SHA_PRE(_done)(&ctx, sha);
-    clear(&ctx, sizeof(ctx));
+    wally_clear(&ctx, sizeof(ctx));
 }
 
 void HMAC_FUNCTION(struct SHA_T *sha,
@@ -28,7 +28,7 @@ void HMAC_FUNCTION(struct SHA_T *sha,
     unsigned char opad[sizeof(ctx.buf)];
     size_t i;
 
-    clear(ctx.buf.u8, sizeof(ctx.buf));
+    wally_clear(ctx.buf.u8, sizeof(ctx.buf));
 
     if (key_len <= sizeof(ctx.buf))
         memcpy(ctx.buf.u8, key, key_len);
@@ -42,7 +42,7 @@ void HMAC_FUNCTION(struct SHA_T *sha,
 
     SHA_PRE(_mix)((struct SHA_T *)ctx.buf.SHA_CTX_MEMBER, ipad, msg, msg_len);
     SHA_PRE(_mix)(sha, opad, ctx.buf.u8, sizeof(*sha));
-    clear_3(&ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
+    wally_clear_3(&ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
 }
 
 int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
@@ -60,7 +60,7 @@ int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
     HMAC_FUNCTION(sha_p, key, key_len, bytes_in, len_in);
     if (!aligned) {
         memcpy(bytes_out, sha_p, sizeof(*sha_p));
-        clear(sha_p, sizeof(*sha_p));
+        wally_clear(sha_p, sizeof(*sha_p));
     }
     return WALLY_OK;
 }
