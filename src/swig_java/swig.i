@@ -128,8 +128,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 
 /* Raise an exception whenever a function fails */
 %exception {
-    $action
-    check_result(jenv, result);
+    if (!(*jenv)->ExceptionOccurred(jenv)) {
+        $action
+        check_result(jenv, result);
+    }
 }
 
 /* Don't use our int return value except for exception checking */
@@ -295,7 +297,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
         if (!arg ## ARRAYARG)
             skip = 1; /* Exception set by malloc_or_throw */
     }
-    if (!skip) {
+    if (!skip && !(*jenv)->ExceptionOccurred(jenv)) {
         $action
         if (check_result(jenv, result) == WALLY_OK && !jarg ## ARRAYARG)
            jresult = create_array(jenv, arg ## ARRAYARG, LEN);
