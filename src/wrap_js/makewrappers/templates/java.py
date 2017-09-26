@@ -53,7 +53,7 @@ def _generate_java(funcname, f):
             )
             args.append('input%s' % i)
         elif arg.startswith('uint32_t'):
-            args.append('args.getInt(%s)' % i)
+            args.append('args.getLong(%s)' % i)
         elif arg.startswith('string'):
             args.append('args.getString(%s)' % i)
         elif arg == 'bip32_in':
