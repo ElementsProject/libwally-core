@@ -170,7 +170,7 @@ int wally_base58_from_bytes(const unsigned char *bytes_in, size_t len_in,
     size_t bn_bytes = 0, zeros, i, orig_len = len_in;
     int ret = WALLY_EINVAL;
 
-    if (*output)
+    if (output && *output)
         *output = NULL;
 
     if (!bytes_in || !len_in || (flags & ~BASE58_ALL_DEFINED_FLAGS) || !output)
