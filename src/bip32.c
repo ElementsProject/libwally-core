@@ -605,8 +605,8 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     key_out->depth = depth;
     key_out->child_num = child_num;
 
-    if (chain_code)
-        memcpy(key_out->chain_code, chain_code, key_size(chain_code));
+    assert(chain_code);
+    memcpy(key_out->chain_code, chain_code, key_size(chain_code));
     if (priv_key && version != BIP32_VER_MAIN_PUBLIC && version != BIP32_VER_TEST_PUBLIC)
         memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
     else
