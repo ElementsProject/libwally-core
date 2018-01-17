@@ -31,7 +31,8 @@ int wally_hex_to_bytes(const char *hex,
         return WALLY_EINVAL;
 
     if (len < len_in / 2) {
-        *written = len_in / 2;
+        if (written)
+            *written = len_in / 2;
         return WALLY_OK; /* Not enough room in bytes_out, or empty string */
     }
 

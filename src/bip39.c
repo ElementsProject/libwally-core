@@ -67,7 +67,7 @@ int bip39_get_word(const struct words *w, size_t idx,
     if (!output || !(word = wordlist_lookup_index(w, idx)))
         return WALLY_EINVAL;
 
-    *output = word ? wally_strdup(word) : NULL;
+    *output = wally_strdup(word);
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
