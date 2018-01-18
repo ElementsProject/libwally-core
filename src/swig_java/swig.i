@@ -1,6 +1,7 @@
 %module wallycore
 %{
 #include "../include/wally_core.h"
+#include "../include/wally_address.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
@@ -377,6 +378,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 
 %returns_size_t(wally_push_from_bytes);
 %returns_size_t(wally_witness_program_from_bytes);
+%returns_string(wally_addr_segwit_from_bytes);
+%returns_size_t(wally_addr_segwit_to_bytes);
 
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
@@ -387,6 +390,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_uint64(wally_asset_unblind);
 
 %include "../include/wally_core.h"
+%include "../include/wally_address.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"

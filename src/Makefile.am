@@ -6,6 +6,7 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 noinst_LTLIBRARIES =
 
 include_HEADERS =
+include_HEADERS += $(top_srcdir)/include/wally_address.h
 include_HEADERS += $(top_srcdir)/include/wally_bip32.h
 include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
@@ -149,6 +150,7 @@ libwallycore_la_SOURCES = \
     bip32.c \
     bip38.c \
     bip39.c \
+    bech32.c \
     elements.c \
     hex.c \
     hmac.c \
@@ -192,6 +194,7 @@ if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_bech32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py

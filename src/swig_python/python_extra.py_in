@@ -97,6 +97,11 @@ def _push_from_bytes_len_fn(push):
 push_from_bytes = _wrap_bin(push_from_bytes, _push_from_bytes_len_fn, resize=True)
 
 def _witness_program_from_bytes_len_fn(witness_prog, flags):
-    assert flags == 0 # FIXME
+    if flags & WALLY_SCRIPT_HASH160:
+        return HASH160_LEN + 2
+    elif flags & WALLY_SCRIPT_SHA256:
+        return SHA256_LEN + 2
     return _push_from_bytes_len_fn(witness_prog) + 1
 witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, _witness_program_from_bytes_len_fn, resize=True)
+
+addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)

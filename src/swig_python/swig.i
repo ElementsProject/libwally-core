@@ -3,6 +3,7 @@
 #define SWIG_FILE_WITH_INIT
 #include <stdbool.h>
 #include "../include/wally_core.h"
+#include "../include/wally_address.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
@@ -226,6 +227,7 @@ typedef unsigned long long uint64_t;
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
+%include "../include/wally_address.h"
 %include "../include/wally_script.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"

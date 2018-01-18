@@ -122,12 +122,21 @@
   }
 
   public final static byte[] witness_program_from_bytes(byte[] jarg1, long flags) {
-      if (flags != 0)
-          throw new IllegalArgumentException("FIXME: Flags not implemented");
-      final byte[] ret = _get_push_buf(jarg1.length, 1);
+      int len = jarg1.length;
+      if ((flags & WALLY_SCRIPT_HASH160) != 0)
+        len = HASH160_LEN;
+      else if ((flags & WALLY_SCRIPT_SHA256) != 0)
+        len = SHA256_LEN;
+      final byte[] ret = _get_push_buf(len, 1);
       if (witness_program_from_bytes(jarg1, flags, ret) != ret.length)
           throw new IllegalArgumentException("Error encoding witness program");
       return ret;
+  }
+
+  public static final byte[] addr_segwit_to_bytes(String jarg1, String jarg2, long jarg3) {
+      final byte[] buf = new byte[32 + 2]; /* Largest v0 witness script possible */
+      final int len = addr_segwit_to_bytes(jarg1, jarg2, jarg3, buf);
+      return trimBuffer(buf, len);
   }
 
   public final static byte[] asset_generator_from_bytes(byte[] jarg1, byte[] jarg2) {
