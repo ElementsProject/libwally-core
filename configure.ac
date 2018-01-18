@@ -226,6 +226,27 @@ PKG_CHECK_MODULES([libsecp256k1_zkp],[libsecp256k1_zkp],[
 		LIBADD_SECP256K1="${libsecp256k1_LIBS}"
     ])
 ])
+AC_ARG_ENABLE(elements,
+    AS_HELP_STRING([--disable-elements],[disable support for Elements assets (default: if libsecp256k1 supports it)]),
+    [use_elements=$enableval], [use_elements=auto])
+if test "x$use_elements" != "xno"; then
+	libsecp256k1_supports_elements=yes
+	AC_CHECK_LIB([secp256k1],[secp256k1_ecdh],[],[libsecp256k1_supports_elements=no],[$libsecp256k1_LIBS])
+	AC_CHECK_LIB([secp256k1],[secp256k1_generator_parse],[],[libsecp256k1_supports_elements=no],[$libsecp256k1_LIBS])
+	AC_CHECK_LIB([secp256k1],[secp256k1_pedersen_commitment_parse],[],[libsecp256k1_supports_elements=no],[$libsecp256k1_LIBS])
+	AC_CHECK_LIB([secp256k1],[secp256k1_surjectionproof_serialize],[],[libsecp256k1_supports_elements=no],[$libsecp256k1_LIBS])
+	AC_MSG_CHECKING([if libsecp256k1 supports features needed for Elements assets])
+	AC_MSG_RESULT([$libsecp256k1_supports_elements])
+	if test "x$use_elements" = "xyes"; then
+		if test "x$libsecp256k1_supports_elements" = "xno"; then
+			AC_MSG_ERROR([libsecp256k1 does not support ecdh, generator, rangeproof, and surjectionproof modules; required for Elements asset support (you specified --enable-elements)])
+		fi
+	else  # auto
+		use_elements=$libsecp256k1_supports_elements
+	fi
+fi
+AM_CONDITIONAL([USE_ELEMENTS], [test "x$use_elements" == "xyes"])
+
 AC_SUBST([LIBADD_SECP256K1])
 AC_SUBST([libsecp256k1_CFLAGS])
 

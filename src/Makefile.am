@@ -6,7 +6,6 @@ include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
-include_HEADERS += $(top_srcdir)/include/wally_elements.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = wallycore.pc
@@ -144,7 +143,6 @@ libwallycore_la_SOURCES = \
     bip32.c \
     bip38.c \
     bip39.c \
-    elements.c \
     hex.c \
     hmac.c \
     internal.c \
@@ -163,13 +161,16 @@ libwallycore_la_INCLUDES = \
     include/wally_bip38.h \
     include/wally_bip39.h \
     include/wally_core.h \
-    include/wally_crypto.h \
-    include/wally_elements.h
+    include/wally_crypto.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS) $(libsecp256k1_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
-SUBDIRS = secp256k1
+if USE_ELEMENTS
+include_HEADERS += $(top_srcdir)/include/wally_elements.h
+libwallycore_la_SOURCES += elements.c
+libwallycore_la_INCLUDES += include/wally_elements.h
+endif
 
 TESTS =
 if USE_PTHREAD
