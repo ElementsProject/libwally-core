@@ -6,6 +6,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_script.h"
 #include "../include/wally_elements.h"
 #include <limits.h>
 
@@ -374,6 +375,9 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_secp_randomize);
 
+%returns_size_t(wally_push_from_bytes);
+%returns_size_t(wally_witness_program_from_bytes);
+
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
@@ -388,4 +392,5 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_script.h"
 %include "../include/wally_elements.h"

@@ -86,3 +86,17 @@ def _asset_unblind_fn(fn):
         return ret, buffers[0], buffers[1], buffers[2]
     return wrapped
 asset_unblind = _asset_unblind_fn(asset_unblind)
+
+def _push_from_bytes_len_fn(push):
+    push_len, opcode_len = len(push), 5
+    for l, op_len in [(76, 1), (256, 2), (65536, 3)]:
+        if push_len < l:
+            opcode_len = op_len
+            break
+    return push_len + opcode_len
+push_from_bytes = _wrap_bin(push_from_bytes, _push_from_bytes_len_fn, resize=True)
+
+def _witness_program_from_bytes_len_fn(witness_prog, flags):
+    assert flags == 0 # FIXME
+    return _push_from_bytes_len_fn(witness_prog) + 1
+witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, _witness_program_from_bytes_len_fn, resize=True)

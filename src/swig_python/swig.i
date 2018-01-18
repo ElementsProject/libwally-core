@@ -8,6 +8,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_script.h"
 #include "../include/wally_elements.h"
 #include "../internal.h"
 
@@ -225,6 +226,7 @@ typedef unsigned long long uint64_t;
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
+%include "../include/wally_script.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
