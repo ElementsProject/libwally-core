@@ -25,7 +25,6 @@
         </js-module> -->
     </platform>
     <platform name="ios">
-<!--        <source-file src="libsecp256k1/src/basic-config.h" target-dir="libsecp256k1" /> -->
         <source-file src="WallyCordova.swift" target-dir="Wally" />
 	<source-file src="libwally-core-ios.xcodeproj" target-dir="" />
 	<source-file src="WallyModule/module.map" target-dir="Wally" />

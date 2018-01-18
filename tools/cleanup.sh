@@ -43,7 +43,6 @@ rm -f src/wrap_js/cordovaplugin/WallyCordova.swift
 rm -rf src/wrap_js/cordovaplugin/jniLibs/
 rm -f src/wrap_js/wally.js
 rm -rf src/.libs
-rm -f src/secp256k1/build-aux/ltmain.sh-e
 rm -f tools/build-aux/compile
 rm -f tools/build-aux/config.guess
 rm -f tools/build-aux/config.sub

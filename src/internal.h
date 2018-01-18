@@ -2,7 +2,7 @@
 #define LIBWALLY_INTERNAL_H
 
 #include <include/wally_core.h>
-#include "secp256k1/include/secp256k1.h"
+#include <secp256k1.h>
 #include <config.h>
 #include <string.h>
 

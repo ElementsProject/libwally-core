@@ -173,11 +173,6 @@ if [[ "$CC" == *"clang"* ]]; then
 fi
 AC_SUBST([NOALIAS_CFLAGS])
 
-# Under OSX the compiler accepts this flag but the linker then fails.
-if test "x$is_osx" != "xyes"; then
-    AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
-fi
-
 # SWIG versions vary in generated code quality; skip warnings
 SWIG_WARN_CFLAGS="-fno-strict-aliasing"
 AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-shadow"])
@@ -223,29 +218,16 @@ if test "x$ac_have_pthread" == "xyes"; then
     AC_CHECK_HEADERS([asm/page.h])
 fi
 
-#
-# libsecp256k1
-#
-# FIXME: This is needed to force libtool to use all object files from secp.
-#        We can only build secp properly by recursively invoking
-#        configure/make, and can't include it as a noinst_ library. Libtool
-#        assumes that such libraries will be installed along with our library
-#        target and so won't force all object files in the library to be
-#        included in ours - despite the fact that we are making a shared
-#        library and linking to a static one. This is broken and we work
-#        around it by hacking the whole-archive flags into the _LDADD variable
-#        for wallycore.
-#        Because automake tries to police its users very strictly and fails
-#        hard when flags are passed in this way, we have to substitute the
-#        flags here.
-#        Because libtool both intercepts -Wl and arbitrarily re-orders its
-#        command line inputs, we have to concoct a single expression to
-#        enforce linking that cannot be split, hence the below expression.
-LIBADD_SECP256K1="secp256k1/.libs/libsecp256k1.a"
-if test "x$whole_archive" == "xyes"; then
-    LIBADD_SECP256K1="-Wl,--whole-archive,secp256k1/.libs/libsecp256k1.a,--no-whole-archive"
-fi
+PKG_CHECK_MODULES([libsecp256k1_zkp],[libsecp256k1_zkp],[
+	LIBADD_SECP256K1="${libsecp256k1_zkp_LIBS}"
+	libsecp256k1_CFLAGS="${libsecp256k1_zkp_CFLAGS}"
+],[
+    PKG_CHECK_MODULES([libsecp256k1],[libsecp256k1],[
+		LIBADD_SECP256K1="${libsecp256k1_LIBS}"
+    ])
+])
 AC_SUBST([LIBADD_SECP256K1])
+AC_SUBST([libsecp256k1_CFLAGS])
 
 #
 # Python facilities
@@ -385,7 +367,6 @@ export AR_FLAGS
 export LD
 export LDFLAGS
 ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --disable-dependency-tracking"
-AC_CONFIG_SUBDIRS([src/secp256k1])
 
 
 AC_OUTPUT

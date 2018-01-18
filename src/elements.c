@@ -1,10 +1,10 @@
 #include "internal.h"
 #include <include/wally_elements.h>
 #include <include/wally_crypto.h>
-#include "secp256k1/include/secp256k1_generator.h"
-#include "secp256k1/include/secp256k1_rangeproof.h"
-#include "src/secp256k1/include/secp256k1_surjectionproof.h"
-#include "secp256k1/include/secp256k1_ecdh.h"
+#include <secp256k1_generator.h>
+#include <secp256k1_rangeproof.h>
+#include <secp256k1_surjectionproof.h>
+#include <secp256k1_ecdh.h>
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include <stdbool.h>
 

@@ -1,8 +1,3 @@
-LIBSECP256K1=secp256k1/libsecp256k1.la
-
-$(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
-
 noinst_LTLIBRARIES =
 
 include_HEADERS =
@@ -171,7 +166,7 @@ libwallycore_la_INCLUDES = \
     include/wally_crypto.h \
     include/wally_elements.h
 
-libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
+libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS) $(libsecp256k1_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
