@@ -31,7 +31,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_PROG_CC
 
-# Prefer the compilers native ar/ranlib if available (to better handle lto)
+# Prefer the compilers native ar/ranlib if available
 # We have to manually loop to test these as autoconf inexplicably does
 # not provide an AC_PATH_TOOLS macro for this purpose.
 candidate_ars="ar"
@@ -107,9 +107,6 @@ AC_ARG_ENABLE(debug,
 AC_ARG_ENABLE(coverage,
     AS_HELP_STRING([--enable-coverage],[enable code coverage (default: no)]),
     [coverage=$enableval], [coverage=no])
-AC_ARG_ENABLE(lto,
-    AS_HELP_STRING([--enable-lto],[enable link time optimisation (default: yes if not debugging)]),
-    [lto=$enableval], [lto=yes])
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
@@ -137,10 +134,6 @@ else
     AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [AM_CFLAGS="$AM_CFLAGS -fstack-protector-strong"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [AM_CFLAGS="$AM_CFLAGS -DNDEBUG=1"])
     AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
-    if test "x$lto" == "xyes"; then
-        AX_CHECK_LINK_FLAG([-flto], [LDFLAGS="$LDFLAGS -flto"])
-        AX_CHECK_LINK_FLAG([-flto], [AM_CFLAGS="$AM_CFLAGS -flto"])
-    fi
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 
