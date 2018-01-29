@@ -67,3 +67,11 @@ wally*.gz
 wally*.sha256
 wally*.asc
 wally*.whl
+
+# Windows
+*.obj
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exp
