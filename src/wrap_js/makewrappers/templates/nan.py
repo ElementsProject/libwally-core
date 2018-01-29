@@ -362,6 +362,7 @@ NAN_METHOD(%s) {
 def generate(functions, build_type):
     nan_implementations = []
     nan_declarations = []
+    nan_declarations.append('using Nan::Export;')
     for i, (funcname, f) in enumerate(functions):
         nan_implementations.append(_generate_nan(funcname, f))
         nan_declarations.append('NAN_EXPORT(target, %s);' % funcname)
