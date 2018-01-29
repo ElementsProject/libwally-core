@@ -1,11 +1,13 @@
 %module wallycore
 %{
 #include "../include/wally_core.h"
+#include "../include/wally_address.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_script.h"
 #include "../include/wally_elements.h"
 #include <limits.h>
 
@@ -360,7 +362,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);
 %returns_void__(wally_ec_sig_verify);
-%returns_size_t(wally_format_bitcoin_message);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
 %returns_size_t(wally_format_bitcoin_message);
@@ -375,6 +376,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_secp_randomize);
 
+%returns_size_t(wally_push_from_bytes);
+%returns_size_t(wally_witness_program_from_bytes);
+%returns_string(wally_addr_segwit_from_bytes);
+%returns_size_t(wally_addr_segwit_to_bytes);
+
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
@@ -384,9 +390,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_uint64(wally_asset_unblind);
 
 %include "../include/wally_core.h"
+%include "../include/wally_address.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_script.h"
 %include "../include/wally_elements.h"

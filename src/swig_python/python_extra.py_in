@@ -86,3 +86,22 @@ def _asset_unblind_fn(fn):
         return ret, buffers[0], buffers[1], buffers[2]
     return wrapped
 asset_unblind = _asset_unblind_fn(asset_unblind)
+
+def _push_from_bytes_len_fn(push):
+    push_len, opcode_len = len(push), 5
+    for l, op_len in [(76, 1), (256, 2), (65536, 3)]:
+        if push_len < l:
+            opcode_len = op_len
+            break
+    return push_len + opcode_len
+push_from_bytes = _wrap_bin(push_from_bytes, _push_from_bytes_len_fn, resize=True)
+
+def _witness_program_from_bytes_len_fn(witness_prog, flags):
+    if flags & WALLY_SCRIPT_HASH160:
+        return HASH160_LEN + 2
+    elif flags & WALLY_SCRIPT_SHA256:
+        return SHA256_LEN + 2
+    return _push_from_bytes_len_fn(witness_prog) + 1
+witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, _witness_program_from_bytes_len_fn, resize=True)
+
+addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)
