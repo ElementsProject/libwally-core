@@ -6,6 +6,7 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 noinst_LTLIBRARIES =
 
 include_HEADERS =
+include_HEADERS += $(top_srcdir)/include/wally.hpp
 include_HEADERS += $(top_srcdir)/include/wally_address.h
 include_HEADERS += $(top_srcdir)/include/wally_bip32.h
 include_HEADERS += $(top_srcdir)/include/wally_bip38.h
@@ -13,6 +14,8 @@ include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
+include_HEADERS += $(top_srcdir)/include/wally_script.h
+include_HEADERS += $(top_srcdir)/include/wally_transaction.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = wallycore.pc
@@ -160,6 +163,7 @@ libwallycore_la_SOURCES = \
     script.c \
     scrypt.c \
     sign.c \
+    transaction.c \
     wordlist.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
@@ -167,12 +171,16 @@ libwallycore_la_SOURCES = \
     ccan/ccan/str/hex/hex.c
 
 libwallycore_la_INCLUDES = \
+    include/wally.hpp \
+    include/wally_address.h \
     include/wally_bip32.h \
     include/wally_bip38.h \
     include/wally_bip39.h \
     include/wally_core.h \
     include/wally_crypto.h \
-    include/wally_elements.h
+    include/wally_elements.h \
+    include/wally_script.h \
+    include/wally_transaction.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
@@ -180,14 +188,20 @@ libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 SUBDIRS = secp256k1
 
 TESTS =
+noinst_PROGRAMS =
 if USE_PTHREAD
 TESTS += test_clear
-noinst_PROGRAMS = test_clear
+noinst_PROGRAMS += test_clear
 test_clear_SOURCES = ctest/test_clear.c
 test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 endif
+TESTS += test_tx
+noinst_PROGRAMS += test_tx
+test_tx_SOURCES = ctest/test_tx.c
+test_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
 if SHARED_BUILD_ENABLED
@@ -210,6 +224,7 @@ if RUN_PYTHON_TESTS
 if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 endif
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS

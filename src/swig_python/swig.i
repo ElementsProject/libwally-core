@@ -10,6 +10,8 @@
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_script.h"
+#include "../include/wally_transaction.h"
+#include "transaction_int.h"
 #include "../include/wally_elements.h"
 #include "../internal.h"
 
@@ -56,15 +58,16 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
     return false;
 }
 
-#define capsule_cast(obj, name) \
-    (struct name *)PyCapsule_GetPointer(obj, "struct " #name " *")
+#define capsule_dtor(name, fn) static void destroy_##name(PyObject *obj) { \
+    struct name *p = obj == Py_None ? NULL : (struct name *)PyCapsule_GetPointer(obj, "struct " #name " *"); \
+    if (p) fn(p); }
 
+capsule_dtor(ext_key, bip32_key_free)
+capsule_dtor(wally_tx, wally_tx_free)
+capsule_dtor(wally_tx_input, wally_tx_input_free)
+capsule_dtor(wally_tx_output, wally_tx_output_free)
+capsule_dtor(wally_tx_witness_stack, wally_tx_witness_stack_free)
 static void destroy_words(PyObject *obj) { (void)obj; }
-static void destroy_ext_key(PyObject *obj) {
-    struct ext_key *contained = capsule_cast(obj, ext_key);
-    if (contained)
-        bip32_key_free(contained);
-}
 
 #define MAX_LOCAL_STACK 256u
 %}
@@ -108,7 +111,7 @@ static void destroy_ext_key(PyObject *obj) {
 %pybuffer_nullable_binary(const unsigned char *bytes_in, size_t len_in);
 %pybuffer_binary(const unsigned char *chain_code, size_t chain_code_len);
 %pybuffer_binary(const unsigned char *commitment, size_t commitment_len);
-%pybuffer_binary(const unsigned char *extra_commit, size_t extra_commit_len);
+%pybuffer_nullable_binary(const unsigned char *extra_in, size_t extra_len_in);
 %pybuffer_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
 %pybuffer_binary(const unsigned char *iv, size_t iv_len);
@@ -122,8 +125,11 @@ static void destroy_ext_key(PyObject *obj) {
 %pybuffer_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
+%pybuffer_nullable_binary(const unsigned char *script_in, size_t script_len_in);
 %pybuffer_binary(const unsigned char *sig_in, size_t sig_len_in);
+%pybuffer_binary(const unsigned char *txhash_in, size_t txhash_len_in);
 %pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
+%pybuffer_nullable_binary(const unsigned char *witness_in, size_t witness_len_in);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -175,7 +181,10 @@ static void destroy_ext_key(PyObject *obj) {
    }
 }
 %typemap (in) const struct NAME * {
-    $1 = PyCapsule_GetPointer($input, "struct NAME *");
+    $1 = $input == Py_None ? NULL : PyCapsule_GetPointer($input, "struct NAME *");
+}
+%typemap (in) struct NAME * {
+    $1 = $input == Py_None ? NULL : PyCapsule_GetPointer($input, "struct NAME *");
 }
 %enddef
 
@@ -214,6 +223,10 @@ static void destroy_ext_key(PyObject *obj) {
 
 %py_opaque_struct(words);
 %py_opaque_struct(ext_key);
+%py_opaque_struct(wally_tx_witness_stack);
+%py_opaque_struct(wally_tx_input);
+%py_opaque_struct(wally_tx_output);
+%py_opaque_struct(wally_tx);
 
 /* Tell SWIG what uint32_t/uint64_t mean */
 typedef unsigned int uint32_t;
@@ -224,14 +237,20 @@ typedef unsigned long long uint64_t;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
+%rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
+%rename("tx_input_init") wally_tx_input_init_alloc;
+%rename("tx_output_init") wally_tx_output_init_alloc;
+%rename("tx_init") wally_tx_init_alloc;
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"
-%include "../include/wally_script.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_script.h"
+%include "../include/wally_transaction.h"
+%include "transaction_int.h"
 %include "../include/wally_elements.h"

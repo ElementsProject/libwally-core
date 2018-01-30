@@ -114,9 +114,9 @@
       return new byte[len + in_buf_len + extra_bytes];
   }
 
-  public final static byte[] push_from_bytes(byte[] jarg1) {
+  public final static byte[] script_push_from_bytes(byte[] jarg1, long flags) {
       final byte[] ret = _get_push_buf(jarg1.length, 0);
-      if (push_from_bytes(jarg1, ret) != ret.length)
+      if (script_push_from_bytes(jarg1, flags, ret) != ret.length)
           throw new IllegalArgumentException("Error encoding push");
       return ret;
   }
@@ -173,13 +173,13 @@
   }
 
   public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
-                                         byte[] commitment, byte[] extra_commit,
+                                         byte[] commitment, byte[] extra_in,
                                          byte[] generator,
                                          final java.util.List<byte[]> outputs) {
       // We return asset_out, abf_out, vbf_out in the passed list
       for (int i = 0; i < 3; i++) // asset_out, abf_out, vbf_out
           outputs.add(new byte[ASSET_TAG_LEN]);
-      return asset_unblind(pub_key, priv_key, proof, commitment, extra_commit, generator,
+      return asset_unblind(pub_key, priv_key, proof, commitment, extra_in, generator,
                            outputs.get(0), outputs.get(1), outputs.get(2));
   }
 }

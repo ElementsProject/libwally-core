@@ -107,7 +107,7 @@ for f in (
     ('wally_get_operations', c_int, [POINTER(operations)]),
     ('wally_set_operations', c_int, [POINTER(operations)]),
     ('wally_format_bitcoin_message', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
-    ('wally_push_from_bytes', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_script_push_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_witness_program_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ):
 

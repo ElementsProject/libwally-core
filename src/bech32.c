@@ -215,7 +215,7 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes_in, size_t len_in,
     if (bytes_in[0] != 0)
         return WALLY_EINVAL; /* Only v0 witness programs are currently allowed */
 
-    ret = script_get_push_opcode_size_from_script(bytes_in + 1, len_in - 1, &push_size);
+    ret = script_get_push_opcode_size_from_bytes(bytes_in + 1, len_in - 1, &push_size);
     if (ret != WALLY_OK)
         return ret;
 

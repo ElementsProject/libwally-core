@@ -1,9 +1,26 @@
 #ifndef LIBWALLY_CORE_SCRIPT_H
 #define LIBWALLY_CORE_SCRIPT_H
 
+#include "wally_core.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Script types */
+#define WALLY_SCRIPT_TYPE_UNKNOWN   0x0
+#define WALLY_SCRIPT_TYPE_OP_RETURN 0x1
+#define WALLY_SCRIPT_TYPE_P2PKH     0x2
+#define WALLY_SCRIPT_TYPE_P2SH      0x4
+#define WALLY_SCRIPT_TYPE_P2WPKH    0x8
+#define WALLY_SCRIPT_TYPE_P2WSH     0x10
+#define WALLY_SCRIPT_TYPE_MULTISIG  0x20
+
+/* Standard script lengths */
+#define WALLY_SCRIPTPUBKEY_P2PKH_LEN  25 /** OP_DUP OP_HASH160 [HASH160] OP_EQUALVERIFY OP_CHECKSIG */
+#define WALLY_SCRIPTPUBKEY_P2SH_LEN   23 /** OP_HASH160 [HASH160] OP_EQUAL */
+#define WALLY_SCRIPTPUBKEY_P2WPKH_LEN 22 /** OP_0 [HASH160] */
+#define WALLY_SCRIPTPUBKEY_P2WSH_LEN  34 /** OP_0 [SHA256] */
 
 /* Script opcodes */
 #define OP_0 0x00
@@ -132,33 +149,105 @@ extern "C" {
 #define OP_NOP9 0xb8
 #define OP_NOP10 0xb9
 
-#define OP_SMALLINTEGER 0xfa
-#define OP_PUBKEYS 0xfb
-#define OP_PUBKEYHASH 0xfd
-#define OP_PUBKEY 0xfe
-
 #define OP_INVALIDOPCODE 0xff
+
+#define WALLY_SCRIPT_HASH160 0x1 /** hash160 input bytes before using them */
+#define WALLY_SCRIPT_SHA256  0x2 /** sha256 input bytes before using them */
+/* FIXME: Add a WALLY_SCRIPT_INITIAL_PUSH to make witness scriptSigs? */
+
+
+/**
+ * Determine the type of a scriptPubkey script.
+ *
+ * @bytes_in: Bytes of the scriptPubkey.
+ * @len_in: Length of @bytes_in in bytes.
+ * @written: Destination for the WALLY_SCRIPT_TYPE_ script type.
+ */
+int wally_scriptpubkey_get_type(const unsigned char *bytes_in, size_t len_in,
+                                size_t *written);
+
+/**
+ * Create a P2PKH scriptPubkey.
+ *
+ * @bytes_in: Bytes to create a scriptPubkey for.
+ * @len_in: Length of @bytes_in in bytes.
+ * @flags: @WALLY_SCRIPT_HASH160 or 0.
+ * @bytes_out: Destination for the resulting scriptPubkey.
+ * @len Size of @bytes_out in bytes. If @WALLY_SCRIPT_HASH160 given, @bytes_in
+ *     is a public key to hash160 before creating the P2PKH, and len_in must
+ *     be EC_PUBLIC_KEY_LEN or EC_PUBLIC_KEY_UNCOMPRESSED_LEN. Otherwise, len_in
+ *     must be @HASH160_LEN and @bytes_in must contain the hash160 to use.
+ * @written: Destination for the number of bytes written to @bytes_out.
+ */
+WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create a P2SH scriptPubkey.
+ *
+ * @bytes_in: Bytes to create a scriptPubkey for.
+ * @len_in: Length of @bytes_in in bytes.
+ * @flags: @WALLY_SCRIPT_HASH160 or 0.
+ * @bytes_out: Destination for the resulting scriptPubkey.
+ * @len Size of @bytes_out in bytes. If @WALLY_SCRIPT_HASH160 given, @bytes_in
+ *     is a script to hash160 before creating the P2SH. Otherwise, len_in
+ *     must be @HASH160_LEN and @bytes_in must contain the hash160 to use.
+ * @written: Destination for the number of bytes written to @bytes_out.
+ */
+WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+
+/**
+ * Create a multisig scriptPubkey.
+ *
+ * @bytes_in: Compressed public keys to create a scriptPubkey for.
+ * @len_in: Length of @pub_key in bytes. Must be a multiple of @EC_PUBLIC_KEY_LEN.
+ * @threshold: The number of signatures that must match to satisfy the script.
+ * @flags: Must be zero.
+ * @bytes_out: Destination for the resulting scriptPubkey.
+ * @len Size of @bytes_out in bytes.
+ * @written: Destination for the number of bytes written to @bytes_out.
+ */
+WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
+    const unsigned char *bytes_in,
+    size_t len_in,
+    uint32_t threshold,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
 
 /**
  * Create a bitcoin script that pushes data to the stack.
  *
  * @bytes_in: Bytes to create a push script for.
  * @len_in: Length of @bytes_in in bytes.
+ * @flags: @WALLY_SCRIPT_HASH160 or @WALLY_SCRIPT_SHA256 to hash @bytes_in
+ *     before pushing it.
  * @bytes_out: Destination for the resulting push script.
  * @len Size of @bytes_out in bytes.
  * @written: Destination for the number of bytes written to @bytes_out.
  */
-WALLY_CORE_API int wally_push_from_bytes(
+WALLY_CORE_API int wally_script_push_from_bytes(
     const unsigned char *bytes_in,
     size_t len_in,
+    uint32_t flags,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
 
-
-#define WALLY_SCRIPT_HASH160 0x1 /** hash160 input bytes before using them */
-#define WALLY_SCRIPT_SHA256  0x2 /** sha256 input bytes before using them */
-/* FIXME: Add a WALLY_SCRIPT_INITIAL_PUSH to make witness scriptSigs */
 
 /**
  * Create a segwit witness program from a script or hash.

@@ -159,7 +159,8 @@ static void *wally_internal_malloc(size_t size)
 
 static void wally_internal_free(void *ptr)
 {
-    free(ptr);
+    if (ptr)
+        free(ptr);
 }
 
 static int wally_internal_ec_nonce_fn(unsigned char *nonce32,

@@ -6,7 +6,7 @@ SCRIPT_SHA256  = 0x2
 
 class ScriptTests(unittest.TestCase):
 
-    def test_push_from_bytes(self):
+    def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""
         out, out_len = make_cbuffer('00' * 165536)
         for data, prefix in {'00' * 75: '4b',
@@ -15,13 +15,13 @@ class ScriptTests(unittest.TestCase):
                              '00' * 256: '4d0001'}.items():
 
             in_, in_len = make_cbuffer(data)
-            ret, written = wally_push_from_bytes(in_, in_len, out, out_len)
+            ret, written = wally_script_push_from_bytes(in_, in_len, 0, out, out_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(data)/2 + len(prefix)/2)
             self.assertEqual(h(out[:written]), utf8(prefix + data))
 
             # Too short out_len returns the required number of bytes
-            ret, written = wally_push_from_bytes(in_, in_len, out, 20)
+            ret, written = wally_script_push_from_bytes(in_, in_len, 0, out, 20)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(data)/2 + len(prefix)/2)
 

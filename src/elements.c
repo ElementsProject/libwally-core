@@ -124,7 +124,7 @@ int wally_asset_rangeproof(uint64_t value,
                            const unsigned char *abf, size_t abf_len,
                            const unsigned char *vbf, size_t vbf_len,
                            const unsigned char *commitment, size_t commitment_len,
-                           const unsigned char *extra_commit, size_t extra_commit_len,
+                           const unsigned char *extra_in, size_t extra_len_in,
                            const unsigned char *generator, size_t generator_len,
                            uint64_t min_value, unsigned char *bytes_out, size_t len,
                            size_t *written)
@@ -152,7 +152,7 @@ int wally_asset_rangeproof(uint64_t value,
         wally_ec_private_key_verify(priv_key, priv_key_len) != WALLY_OK ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         /* FIXME: Is there an upper size limit on the extra commitment? */
-        (extra_commit_len && !extra_commit) ||
+        (extra_len_in && !extra_in) ||
         min_value > 0x7ffffffffffffffful ||
         get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
@@ -177,7 +177,7 @@ int wally_asset_rangeproof(uint64_t value,
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, min_value, &commit,
                                   vbf, nonce_sha.u.u8, 0, 32, value,
                                   message, sizeof(message),
-                                  extra_commit, extra_commit_len,
+                                  extra_in, extra_len_in,
                                   &gen))
         ret = WALLY_OK;
     else {
@@ -196,7 +196,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                         const unsigned char *priv_key, size_t priv_key_len,
                         const unsigned char *proof, size_t proof_len,
                         const unsigned char *commitment, size_t commitment_len,
-                        const unsigned char *extra_commit, size_t extra_commit_len,
+                        const unsigned char *extra_in, size_t extra_len_in,
                         const unsigned char *generator, size_t generator_len,
                         unsigned char *asset_out, size_t asset_out_len,
                         unsigned char *abf_out, size_t abf_out_len,
@@ -221,7 +221,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
         wally_ec_private_key_verify(priv_key, priv_key_len) != WALLY_OK ||
         !proof || !proof_len ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
-        (extra_commit_len && !extra_commit) ||
+        (extra_len_in && !extra_in) ||
         get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
         !abf_out || abf_out_len != ASSET_TAG_LEN ||
@@ -238,7 +238,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                                      message, &message_len,
                                      nonce_sha.u.u8, &min_value, &max_value,
                                      &commit, proof, proof_len,
-                                     extra_commit, extra_commit_len,
+                                     extra_in, extra_len_in,
                                      &gen))
         goto cleanup;
 

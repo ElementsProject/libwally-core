@@ -209,7 +209,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra_commit, size_t extra_commit_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra_in, size_t extra_len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
@@ -382,7 +382,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_secp_randomize);
 
-%returns_size_t(wally_push_from_bytes);
+%returns_size_t(wally_script_push_from_bytes);
 %returns_size_t(wally_witness_program_from_bytes);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_to_bytes);
