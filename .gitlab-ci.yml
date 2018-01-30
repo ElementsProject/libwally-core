@@ -89,3 +89,17 @@ freebsdamd64_release:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
+
+windows10_release:
+  tags:
+    - win10
+  artifacts:
+    name: wallycore-dll
+    when: on_success
+    paths:
+    - wally.dll
+    - wally.lib
+  script:
+    - cd %CI_PROJECT_DIR%
+    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+    - tools\msvc\build.bat
