@@ -1,6 +1,7 @@
-build_tag_release:
+linux_release:
   image: greenaddress/wallycore@sha256:48a02e07aa1264a549413c2c2f765d183c53d660b450db245d2444751622cd21
   artifacts:
+    expire_in: 14 days
     name: wallycore-bindings
     when: on_success
     paths:
@@ -24,13 +25,12 @@ build_tag_release:
     - tar cvf wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wallycore-android-jni.tar
     - shasum -a 256 wallycore-android-jni.tar.gz > wallycore-android-jni.tar.gz.sha256
-  only:
-    - tags
 
-build_tag_osx_release:
+osx_release:
   tags:
     - osx
   artifacts:
+    expire_in: 14 days
     name: wallycore-bindings
     when: on_success
     paths:
@@ -41,13 +41,12 @@ build_tag_osx_release:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
-  only:
-    - tags
 
-build_tag_armv7l_release:
+armv7l_release:
   tags:
     - armv7l
   artifacts:
+    expire_in: 14 days
     name: wallycore-bindings
     when: on_success
     paths:
@@ -56,13 +55,12 @@ build_tag_armv7l_release:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
-  only:
-    - tags
 
-build_tag_arm64_release:
+arm64_release:
   tags:
     - arm64
   artifacts:
+    expire_in: 14 days
     name: wallycore-bindings
     when: on_success
     paths:
@@ -71,21 +69,18 @@ build_tag_arm64_release:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
-  only:
-    - tags
 
-build_tag_mips_release:
+mips_release:
   tags:
     - mips
   script:
     - ./tools/build_python_eggs.sh
-  only:
-    - tags
 
-build_tag_freebsdamd64_release:
+freebsdamd64_release:
   tags:
     - freebsd
   artifacts:
+    expire_in: 14 days
     name: wallycore-bindings
     when: on_success
     paths:
@@ -94,5 +89,17 @@ build_tag_freebsdamd64_release:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
-  only:
-    - tags
+
+windows10_release:
+  tags:
+    - win10
+  artifacts:
+    name: wallycore-dll
+    when: on_success
+    paths:
+    - wally.dll
+    - wally.lib
+  script:
+    - cd %CI_PROJECT_DIR%
+    - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+    - tools\msvc\build.bat
