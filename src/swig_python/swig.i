@@ -122,7 +122,7 @@ static void destroy_ext_key(PyObject *obj) {
 %pybuffer_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
 %pybuffer_binary(const unsigned char *salt, size_t salt_len);
-%pybuffer_binary(const unsigned char *sig_in, size_t sig_in_len);
+%pybuffer_binary(const unsigned char *sig_in, size_t sig_len_in);
 %pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
 
 /* Output buffers */
