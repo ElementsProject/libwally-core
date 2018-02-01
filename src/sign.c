@@ -87,7 +87,7 @@ int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
+int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_len_in,
                            unsigned char *bytes_out, size_t len)
 {
     secp256k1_ecdsa_signature sig, sig_low;
@@ -97,7 +97,7 @@ int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = sig_in && sig_in_len == EC_SIGNATURE_LEN &&
+    ok = sig_in && sig_len_in == EC_SIGNATURE_LEN &&
          bytes_out && len == EC_SIGNATURE_LEN &&
          secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in);
 
@@ -115,7 +115,7 @@ int wally_ec_sig_normalize(const unsigned char *sig_in, size_t sig_in_len,
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_in_len,
+int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_len_in,
                         unsigned char *bytes_out, size_t len, size_t *written)
 {
     secp256k1_ecdsa_signature sig;
@@ -129,7 +129,7 @@ int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_in_len,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = sig_in && sig_in_len == EC_SIGNATURE_LEN &&
+    ok = sig_in && sig_len_in == EC_SIGNATURE_LEN &&
          bytes_out && len == EC_SIGNATURE_DER_MAX_LEN && written &&
          secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in) &&
          secp256k1_ecdsa_signature_serialize_der(ctx, bytes_out,
@@ -208,7 +208,7 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
 int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
                         const unsigned char *bytes_in, size_t len_in,
                         uint32_t flags,
-                        const unsigned char *sig_in, size_t sig_in_len)
+                        const unsigned char *sig_in, size_t sig_len_in)
 {
     secp256k1_pubkey pub;
     secp256k1_ecdsa_signature sig;
@@ -218,7 +218,7 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
     if (!pub_key || pub_key_len != EC_PUBLIC_KEY_LEN ||
         !bytes_in || len_in != EC_MESSAGE_HASH_LEN ||
         !is_valid_ec_type(flags) || flags & ~EC_FLAGS_ALL ||
-        !sig_in || sig_in_len != EC_SIGNATURE_LEN)
+        !sig_in || sig_len_in != EC_SIGNATURE_LEN)
         return WALLY_EINVAL;
 
     if (!ctx)

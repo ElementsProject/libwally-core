@@ -214,7 +214,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_in_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_len_in) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };

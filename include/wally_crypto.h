@@ -356,13 +356,13 @@ WALLY_CORE_API int wally_ec_sig_from_bytes(
  * Convert a signature to low-s form.
  *
  * @sig_in: The compact signature to convert.
- * @sig_in_len: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
+ * @sig_len_in: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
  * @bytes_out: Destination for the resulting low-s signature.
  * @len: The length of @bytes_out in bytes. Must be @EC_SIGNATURE_LEN.
  */
 WALLY_CORE_API int wally_ec_sig_normalize(
     const unsigned char *sig_in,
-    size_t sig_in_len,
+    size_t sig_len_in,
     unsigned char *bytes_out,
     size_t len);
 
@@ -370,14 +370,14 @@ WALLY_CORE_API int wally_ec_sig_normalize(
  * Convert a compact signature to DER encoding.
  *
  * @sig_in: The compact signature to convert.
- * @sig_in_len: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
+ * @sig_len_in: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
  * @bytes_out: Destination for the resulting DER encoded signature.
  * @len: The length of @bytes_out in bytes. Must be @EC_SIGNATURE_DER_MAX_LEN.
  * @written: Destination for the number of bytes written to @bytes_out.
  */
 WALLY_CORE_API int wally_ec_sig_to_der(
     const unsigned char *sig_in,
-    size_t sig_in_len,
+    size_t sig_len_in,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
@@ -405,7 +405,7 @@ WALLY_CORE_API int wally_ec_sig_from_der(
  * @len_in: The length of @bytes_in in bytes. Must be @EC_MESSAGE_HASH_LEN.
  * @flags: EC_FLAG_ flag values indicating desired behaviour.
  * @sig_in: The compact signature of the message in @bytes_in.
- * @sig_in_len: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
+ * @sig_len_in: The length of @sig_in in bytes. Must be @EC_SIGNATURE_LEN.
  */
 WALLY_CORE_API int wally_ec_sig_verify(
     const unsigned char *pub_key,
@@ -414,7 +414,7 @@ WALLY_CORE_API int wally_ec_sig_verify(
     size_t len_in,
     uint32_t flags,
     const unsigned char *sig_in,
-    size_t sig_in_len);
+    size_t sig_len_in);
 
 /** The maximum size of input message that can be formatted */
 #define BITCOIN_MESSAGE_MAX_LEN (64 * 1024 - 64)
