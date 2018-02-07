@@ -278,15 +278,14 @@ if test "x$js_wrappers" == "xyes"; then
         SWIG_PYTHON
     fi
     AX_CHECK_COMPILE_FLAG([-DSWIG_JAVASCRIPT_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_JAVASCRIPT_BUILD=1"])
-    AC_CHECK_PROG(HAVE_NPM,npm,yes,no)
-    if test "x$HAVE_NPM" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable npm was found, please install npm before re-running])
+    AC_CHECK_PROG(HAVE_YARN,yarn,yes,no)
+    if test "x$HAVE_YARN" != "xyes"; then
+        AC_MSG_FAILURE([ERROR: No usable yarn was found, please install yarn before re-running])
     fi
-    npm install --prefix ./src/wrap_js node-gyp nan tape big-integer
 fi
 
 # Set node-gyp flags regardless of  JS enablement; they are used for wrapper
-# generation which can be usefully run without enabling JS/requiring npm
+# generation which can be usefully run without enabling JS/requiring yarn
 NODE_GYP_DIR="Release"
 if test "x$debug" == "xyes"; then
     NODE_GYP_FLAGS="--debug"
