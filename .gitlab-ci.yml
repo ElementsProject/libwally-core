@@ -21,6 +21,7 @@ linux_release:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_eggs.sh
     - ./tools/build_android_libraries.sh
+    - ./tools/build_js_bindings.sh
     - mv release wallycore-android-jni
     - tar cvf wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wallycore-android-jni.tar
