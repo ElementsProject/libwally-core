@@ -129,6 +129,7 @@ struct LocalUInt64 : public LocalBuffer {
     }
 
     void DerivedInit(int& ret) {
+        mValue = 0; /* Prevent invalid warnings about uninitialised use */
         if (mData || mLength) {
             if (mLength != sizeof(mValue))
                 ret = WALLY_EINVAL;

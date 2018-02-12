@@ -1,8 +1,6 @@
 #ifndef LIBWALLY_CORE_SCRIPT_H
 #define LIBWALLY_CORE_SCRIPT_H
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
