@@ -40,5 +40,6 @@ before_install:
   - ./tools/travis_install.sh
 script:
   - ./tools/travis_build.sh
+  - if [[ "$CC" == "clang" ]]; then ./tools/build_js_bindings.sh; fi
 notifications:
     email: false

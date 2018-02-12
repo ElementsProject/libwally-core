@@ -3,5 +3,5 @@
 if [ "$TRAVIS_OS_NAME" = "osx" ]; then
     brew update
     brew install gnu-sed
-    brew install swig
+    brew install swig yarn
 fi
