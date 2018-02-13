@@ -82,7 +82,7 @@ if USE_JS_WRAPPERS
 # The node wrapper is built by node-gyp
 NODE_GYP = node_modules/.bin/node-gyp
 wrap_js/build/@NODE_GYP_DIR@/wallycore.node: wrap_js/nodejs_wrap.cc wrap_js/wally.js $(lib_LTLIBRARIES)
-	cd wrap_js && LIBWALLY_DIR=../.. NODE_GYP_DIR=@NODE_GYP_DIR@ $(NODE_GYP) configure @NODE_GYP_FLAGS@ && $(NODE_GYP) build @NODE_GYP_FLAGS@
+	cd wrap_js && LIBWALLY_DIR=../.. npm_config_debug=$([ $NODE_GYP_DIR == "Debug" ] && echo 1) yarn install
 
 bin_PROGRAMS = wrap_js/build/@NODE_GYP_DIR@/wallycore.node
 

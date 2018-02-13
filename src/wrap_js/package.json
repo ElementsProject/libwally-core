@@ -4,7 +4,7 @@
   "description": "",
   "main": "wally.js",
   "scripts": {
-    "install": "node-gyp rebuild"
+    "install": "node-gyp configure && node-gyp build"
   },
   "author": "",
   "license": "MIT",
