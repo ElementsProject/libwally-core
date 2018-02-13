@@ -282,6 +282,7 @@ if test "x$js_wrappers" == "xyes"; then
     if test "x$HAVE_YARN" != "xyes"; then
         AC_MSG_FAILURE([ERROR: No usable yarn was found, please install yarn before re-running])
     fi
+    npm install --prefix ./src/wrap_js node-gyp
 fi
 
 # Set node-gyp flags regardless of  JS enablement; they are used for wrapper
