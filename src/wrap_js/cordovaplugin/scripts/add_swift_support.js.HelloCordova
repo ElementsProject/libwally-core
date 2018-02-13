@@ -14,6 +14,60 @@ module.exports = function(context) {
 
     run(projectRoot);
 
+    function loadProjectFile() {
+      var platform_ios;
+      var projectFile;
+  
+      var iosPlatformPath = path.join(projectRoot, 'platforms', 'ios');
+
+      try {
+        // try pre-5.0 cordova structure
+        platform_ios = context.requireCordovaModule('cordova-lib/src/plugman/platforms')['ios'];
+        projectFile = platform_ios.parseProjectFile(iosPlatformPath);
+      } catch (e) {
+          try {
+              // let's try cordova 5.0 structure
+              platform_ios = context.requireCordovaModule('cordova-lib/src/plugman/platforms/ios');
+              projectFile = platform_ios.parseProjectFile(iosPlatformPath);
+          } catch (e) {
+              // Then cordova 7.0
+              var project_files = context.requireCordovaModule('glob').sync(path.join(iosPlatformPath, '*.xcodeproj', 'project.pbxproj'));
+
+              if (project_files.length === 0) {
+                throw new Error('does not appear to be an xcode project (no xcode project file)');
+              }
+
+              var pbxPath = project_files[0];
+
+              var xcodeproj = context.requireCordovaModule('xcode').project(pbxPath);
+              xcodeproj.parseSync();
+
+              projectFile = {
+                  'xcode': xcodeproj,
+                  write: function () {
+                      var fs = context.requireCordovaModule('fs');
+
+                  var frameworks_file = path.join(iosPlatformPath, 'frameworks.json');
+                  var frameworks = {};
+                  try {
+                      frameworks = context.requireCordovaModule(frameworks_file);
+                  } catch (e) { }
+
+                  fs.writeFileSync(pbxPath, xcodeproj.writeSync());
+                      if (Object.keys(frameworks).length === 0){
+                          // If there is no framework references remain in the project, just remove this file
+                          context.requireCordovaModule('shelljs').rm('-rf', frameworks_file);
+                          return;
+                      }
+                      fs.writeFileSync(frameworks_file, JSON.stringify(this.frameworks, null, 4));
+                  }
+              };
+          }
+      }
+
+      return projectFile;
+    }
+
     function run(projectRoot) {
         var cordova_util = context.requireCordovaModule('cordova-lib/src/cordova/util'),
             ConfigParser = context.requireCordovaModule('cordova-lib/src/configparser/ConfigParser'),
@@ -27,22 +81,7 @@ module.exports = function(context) {
             xcodeProject,
             bridgingHeaderPath;
 
-        try {
-            // try pre-5.0 cordova structure
-            platform_ios = context.requireCordovaModule('cordova-lib/src/plugman/platforms')['ios'];
-            projectFile = platform_ios.parseProjectFile(iosPlatformPath);
-        } catch (e) {
-            console.log("Looks like we're in Cordova 5.0 and above...");
-            try {
-                // let's try cordova 5.0 structure
-                platform_ios = context.requireCordovaModule('cordova-lib/src/plugman/platforms/ios');
-                projectFile = platform_ios.parseProjectFile(iosPlatformPath);
-            } catch (e) {
-                console.log("Looks like we're in Cordova 7.0 and above...");
-                platform_ios = require('cordova-lib/src/plugman/platforms/ios');
-                projectFile = platform_ios.parseProjectFile(iosPlatformPath);
-            }
-        }
+        projectFile = loadProjectFile();
 
         // hopefully projectFile can't go null here.......
         xcodeProject = projectFile.xcode;
