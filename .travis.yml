@@ -33,6 +33,9 @@ matrix:
       - compiler: gcc
         os: linux
         env: PYTHON_VERSION=3.4
+      - compiler: clang
+        os: linux
+        env: DEBUG_WALLY=--enable-debug
 
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh

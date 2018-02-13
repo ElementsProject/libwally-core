@@ -27,6 +27,16 @@ linux_release:
     - gzip -9 wallycore-android-jni.tar
     - shasum -a 256 wallycore-android-jni.tar.gz > wallycore-android-jni.tar.gz.sha256
 
+linux_debug:
+  image: greenaddress/wallycore@sha256:4f48b07e0b7e06a978a7dabc3ac918d5bcc9a18f6475ba97207e909a01408299
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
+
 osx_release:
   tags:
     - osx
