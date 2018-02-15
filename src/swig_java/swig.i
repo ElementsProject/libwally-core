@@ -89,6 +89,14 @@ static unsigned char* malloc_or_throw(JNIEnv *jenv, size_t len) {
     return p;
 }
 
+static void clear_and_free(void *p, size_t len)
+{
+    if (p) {
+        wally_bzero(p, len);
+        free(p);
+    }
+}
+
 static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len) {
     jbyteArray ret = (*jenv)->NewByteArray(jenv, len);
     if (ret)
@@ -303,11 +311,9 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
         $action
         if (check_result(jenv, result) == WALLY_OK && !jarg ## ARRAYARG)
            jresult = create_array(jenv, arg ## ARRAYARG, LEN);
-        if (!jarg ## ARRAYARG) {
-            wally_bzero(arg ## ARRAYARG, LEN);
-            free(arg ## ARRAYARG);
-        }
     }
+    if (!jarg ## ARRAYARG)
+        clear_and_free(arg ## ARRAYARG, LEN);
 }
 %enddef
 
