@@ -15,7 +15,7 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
                                  unsigned char *bytes_out, size_t len)
 {
     unsigned char *tmp_salt = NULL;
-    struct SHA_T d1, d2, *sha_cp = &d2;
+    struct SHA_T d1, d2, *sha_cp;
     size_t n, c, j;
 
     BUILD_ASSERT(sizeof(beint32_t) == PBKDF2_HMAC_EXTRA_LEN);
@@ -45,6 +45,8 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     /* If bytes out is suitably aligned, we can work on it directly */
     if (alignment_ok(bytes_out, sizeof(SHA_ALIGN_T)))
         sha_cp = (struct SHA_T *)bytes_out;
+    else
+        sha_cp = &d2;
 
     for (n = 0; n < len / PBKDF2_HMAC_SHA_LEN; ++n) {
         beint32_t block = cpu_to_be32(n + 1); /* Block number */
