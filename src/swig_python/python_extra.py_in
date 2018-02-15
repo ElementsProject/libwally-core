@@ -4,11 +4,12 @@ from sys import version as _wally_py_version
 def _wrap_bin(fn, length, resize=False):
     """ Wrap functions that take an output buffer to create/return it """
     def wrapped(*args):
-        #assert type(args[0]) is not unicode
-        buf = bytearray(length(*args) if callable(length) else length)
+        len = length(*args) if callable(length) else length
+        buf = bytearray(len)
         ret = fn(*list(args)+[buf])
         if resize:
-            return buf[0:ret] # Truncate buf to bytes written
+            # Truncate buf to bytes written if needed
+            return buf[0:ret] if ret != len else buf
         return (ret, buf) if ret is not None else buf
     return wrapped
 
