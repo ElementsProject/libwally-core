@@ -11,7 +11,6 @@ if [ -f /proc/cpuinfo ]; then
 fi
 make -o configure clean
 make -o configure -j $num_jobs
-# test that make twice works
-make -o configure
+make -o configure check
 
 ./tools/cleanup.sh
