@@ -318,7 +318,7 @@ def _generate_nan(funcname, f):
             cur_out += 1
         elif arg == 'bip32_in':
             input_args.append((
-                'const ext_key* inkey;'
+                'ext_key* inkey;'
                 'unsigned char* inbuf = (unsigned char*) node::Buffer::Data(info[%s]->ToObject());'
                 'bip32_key_unserialize_alloc(inbuf, node::Buffer::Length(info[%s]->ToObject()), &inkey);'
             ) % (i, i))
@@ -326,7 +326,7 @@ def _generate_nan(funcname, f):
             postprocessing.append('bip32_key_free(inkey);')
         elif arg in ['bip32_pub_out', 'bip32_priv_out']:
             output_args.append(
-                'const ext_key *outkey;'
+                'ext_key *outkey;'
                 'LocalObject res = Nan::NewBuffer(BIP32_SERIALIZED_LEN).ToLocalChecked();'
                 'unsigned char *out = (unsigned char*) node::Buffer::Data(res);'
             )

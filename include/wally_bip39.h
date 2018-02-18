@@ -41,7 +41,7 @@ WALLY_CORE_API int bip39_get_languages(
  */
 WALLY_CORE_API int bip39_get_wordlist(
     const char *lang,
-    const struct words **output);
+    struct words **output);
 
 /**
  * Get the 'index'th word from a word list.

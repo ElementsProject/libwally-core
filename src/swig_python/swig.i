@@ -165,10 +165,10 @@ static void destroy_ext_key(PyObject *obj) {
 
 /* Opaque types are passed along as capsules */
 %define %py_opaque_struct(NAME)
-%typemap(in, numinputs=0) const struct NAME **output (struct NAME * w) {
+%typemap(in, numinputs=0) struct NAME **output (struct NAME * w) {
    w = 0; $1 = ($1_ltype)&w;
 }
-%typemap(argout) const struct NAME ** {
+%typemap(argout) struct NAME ** {
    if (*$1 != NULL) {
        Py_DecRef($result);
        $result = PyCapsule_New(*$1, "struct NAME *", destroy_ ## NAME);

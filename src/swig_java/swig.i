@@ -257,10 +257,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 
 /* Opaque types are converted to/from an internal object holder class */
 %define %java_opaque_struct(NAME, ID)
-%typemap(in, numinputs=0) const struct NAME **output (const struct NAME * w) {
+%typemap(in, numinputs=0) struct NAME **output (struct NAME * w) {
     w = 0; $1 = ($1_ltype)&w;
 }
-%typemap(argout) const struct NAME ** {
+%typemap(argout) struct NAME ** {
     if (*$1)
         $result = create_obj(jenv, *$1, ID);
 }

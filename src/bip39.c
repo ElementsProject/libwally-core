@@ -36,19 +36,19 @@ int bip39_get_languages(char **output)
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 
-int bip39_get_wordlist(const char *lang, const struct words **output)
+int bip39_get_wordlist(const char *lang, struct words **output)
 {
     size_t i;
 
     if (!output)
         return WALLY_EINVAL;
 
-    *output = &en_words; /* Fallback to English if not found */
+    *output = (struct words *)&en_words; /* Fallback to English if not found */
 
     if (lang)
         for (i = 0; i < sizeof(lookup) / sizeof(lookup[0]); ++i)
             if (!strcmp(lang, lookup[i].name)) {
-                *output = lookup[i].words;
+                *output = (struct words *)lookup[i].words;
                 break;
             }
     return WALLY_OK;

@@ -176,13 +176,12 @@ int bip32_key_from_seed(const unsigned char *bytes_in, size_t len_in,
 
 int bip32_key_from_seed_alloc(const unsigned char *bytes_in, size_t len_in,
                               uint32_t version, uint32_t flags,
-                              const struct ext_key **output)
+                              struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
-    ret = bip32_key_from_seed(bytes_in, len_in, version, flags,
-                              (struct ext_key *)*output);
+    ret = bip32_key_from_seed(bytes_in, len_in, version, flags, *output);
     if (ret != WALLY_OK) {
         wally_free((void *)*output);
         *output = NULL;
@@ -336,14 +335,14 @@ int bip32_key_unserialize(const unsigned char *bytes_in, size_t len_in,
 }
 
 int bip32_key_unserialize_alloc(const unsigned char *bytes_in, size_t len_in,
-                                const struct ext_key **output)
+                                struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
-    ret = bip32_key_unserialize(bytes_in, len_in, (struct ext_key *)*output);
+    ret = bip32_key_unserialize(bytes_in, len_in, *output);
     if (ret) {
-        wally_free((void *)*output);
+        wally_free(*output);
         *output = 0;
     }
     return ret;
@@ -498,14 +497,14 @@ int bip32_key_from_parent(const struct ext_key *key_in, uint32_t child_num,
 
 int bip32_key_from_parent_alloc(const struct ext_key *key_in,
                                 uint32_t child_num, uint32_t flags,
-                                const struct ext_key **output)
+                                struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
-    ret = bip32_key_from_parent(key_in, child_num, flags, (struct ext_key *)*output);
+    ret = bip32_key_from_parent(key_in, child_num, flags, *output);
     if (ret) {
-        wally_free((void *)*output);
+        wally_free(*output);
         *output = 0;
     }
     return ret;
@@ -548,15 +547,15 @@ int bip32_key_from_parent_path(const struct ext_key *key_in,
 int bip32_key_from_parent_path_alloc(const struct ext_key *key_in,
                                      const uint32_t *child_num_in, size_t child_num_len,
                                      uint32_t flags,
-                                     const struct ext_key **output)
+                                     struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
     ret = bip32_key_from_parent_path(key_in, child_num_in, child_num_len,
-                                     flags, (struct ext_key *)*output);
+                                     flags, *output);
     if (ret) {
-        wally_free((void *)*output);
+        wally_free(*output);
         *output = 0;
     }
     return ret;
@@ -568,7 +567,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
                          const unsigned char *priv_key, size_t priv_key_len,
                          const unsigned char *hash160, size_t hash160_len,
                          const unsigned char *parent160, size_t parent160_len,
-                         const struct ext_key **output)
+                         struct ext_key **output)
 {
     struct ext_key *key_out;
 
@@ -600,7 +599,7 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
 
     ALLOC_KEY();
 
-    key_out = (struct ext_key *)*output;
+    key_out = *output;
     key_out->version = version;
     key_out->depth = depth;
     key_out->child_num = child_num;

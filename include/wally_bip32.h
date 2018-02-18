@@ -84,7 +84,7 @@ WALLY_CORE_API int bip32_key_init_alloc(
     size_t hash160_len,
     const unsigned char *parent160,
     size_t parent160_len,
-    const struct ext_key **output);
+    struct ext_key **output);
 
 #ifndef SWIG
 /**
@@ -121,7 +121,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
     size_t len_in,
     uint32_t version,
     uint32_t flags,
-    const struct ext_key **output);
+    struct ext_key **output);
 
 /**
  * Serialize an extended key to memory using BIP32 format.
@@ -161,7 +161,7 @@ WALLY_CORE_API int bip32_key_unserialize(
 WALLY_CORE_API int bip32_key_unserialize_alloc(
     const unsigned char *bytes_in,
     size_t len_in,
-    const struct ext_key **output);
+    struct ext_key **output);
 
 #ifndef SWIG
 /**
@@ -193,7 +193,7 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
     const struct ext_key *key_in,
     uint32_t child_num,
     uint32_t flags,
-    const struct ext_key **output);
+    struct ext_key **output);
 
 #ifndef SWIG
 /**
@@ -223,7 +223,7 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     const uint32_t *child_num_in,
     size_t child_num_len,
     uint32_t flags,
-    const struct ext_key **output);
+    struct ext_key **output);
 
 #ifdef __cplusplus
 }
