@@ -130,7 +130,7 @@ int wally_ec_sig_to_der(const unsigned char *sig_in, size_t sig_len_in,
         return WALLY_ENOMEM;
 
     ok = sig_in && sig_len_in == EC_SIGNATURE_LEN &&
-         bytes_out && len == EC_SIGNATURE_DER_MAX_LEN && written &&
+         bytes_out && len >= EC_SIGNATURE_DER_MAX_LEN && written &&
          secp256k1_ecdsa_signature_parse_compact(ctx, &sig, sig_in) &&
          secp256k1_ecdsa_signature_serialize_der(ctx, bytes_out,
                                                  &len_in_out, &sig);
