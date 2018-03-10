@@ -29,6 +29,22 @@ extern "C" {
 #define WALLY_ENOMEM -3 /** malloc() failed */
 
 /**
+ * Free any internally allocated memory.
+ *
+ * @flags Flags controlling what to clean up. Currently must be zero.
+ */
+WALLY_CORE_API int wally_cleanup(uint32_t flags);
+
+#ifndef SWIG
+/**
+ * Fetch the wally internal secp256k1 context object.
+ *
+ * The context is created on demand.
+ */
+struct secp256k1_context_struct *wally_get_secp_context(void);
+#endif
+
+/**
  * Securely wipe memory.
  *
  * @bytes_in Memory to wipe
