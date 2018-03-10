@@ -22,6 +22,12 @@ const secp256k1_context *secp_ctx(void)
     return global_ctx;
 }
 
+#ifndef SWIG
+struct secp256k1_context_struct *wally_get_secp_context(void)
+{
+    return (struct secp256k1_context_struct *)secp_ctx();
+}
+#endif
 
 int wally_secp_randomize(const unsigned char *bytes_in, size_t len_in)
 {
@@ -259,6 +265,19 @@ void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
     _ops.bzero_fn(p5, len5);
     _ops.bzero_fn(p6, len6);
 }
+
+int wally_cleanup(uint32_t flags)
+{
+    if (flags)
+        return WALLY_EINVAL;
+    if (global_ctx) {
+#undef secp256k1_context_destroy
+        secp256k1_context_destroy(global_ctx);
+        global_ctx = NULL;
+    }
+    return WALLY_OK;
+}
+
 
 #ifdef __ANDROID__
 #define malloc(size) wally_malloc(size)
