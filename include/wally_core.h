@@ -31,7 +31,7 @@ extern "C" {
 /**
  * Free any internally allocated memory.
  *
- * @flags Flags controlling what to clean up. Currently must be zero.
+ * :param flags: Flags controlling what to clean up. Currently must be zero.
  */
 WALLY_CORE_API int wally_cleanup(uint32_t flags);
 
@@ -47,35 +47,35 @@ struct secp256k1_context_struct *wally_get_secp_context(void);
 /**
  * Securely wipe memory.
  *
- * @bytes_in Memory to wipe
- * @len_in Size of @bytes_in in bytes.
+ * :param bytes_in: Memory to wipe
+ * :param len_in: Size of ``bytes_in`` in bytes.
  */
 WALLY_CORE_API int wally_bzero(
     void *bytes,
     size_t len_in);
 
 /**
- * Securely wipe and then free a string allocted by the library.
+ * Securely wipe and then free a string allocated by the library.
  *
- * @str String to free (must be NUL terminated UTF-8).
+ * :param str: String to free (must be NUL terminated UTF-8).
  */
 WALLY_CORE_API int wally_free_string(
     char *str);
 
-/** Length of entropy required for @wally_randomize_context */
+/** Length of entropy required for ``wally_randomize_context`` */
 #define WALLY_SECP_RANDOMISE_LEN 32
 
 /**
- * Provide entropy to randomize the libraries internal secp256k1 context.
+ * Provide entropy to randomize the libraries internal libsecp256k1 context.
  *
- * @bytes_in Entropy to use.
- * @len_in Size of @bytes_in in bytes. Must be @WALLY_SECP_RANDOMISE_LEN.
- *
- * Random data is used in libsecp256k1 to blind the data being processed, to
- * make side channel attacks more difficult. libwallycore uses a single
- * internal context for secp functions that is not randomized at run time.
+ * Random data is used in libsecp256k1 to blind the data being processed,
+ * making side channel attacks more difficult. Wally uses a single
+ * internal context for secp functions that is not initially randomized.
  * The caller should call this function before using any functions that rely on
- * secp (anything using public/private keys).
+ * libsecp256k1 (i.e. Anything using public/private keys).
+ *
+ * :param bytes_in: Entropy to use.
+ * :param len_in: Size of ``bytes_in`` in bytes. Must be ``WALLY_SECP_RANDOMISE_LEN``.
  */
 WALLY_CORE_API int wally_secp_randomize(
     const unsigned char *bytes_in,
@@ -84,11 +84,10 @@ WALLY_CORE_API int wally_secp_randomize(
 /**
  * Convert bytes to a (lower-case) hexadecimal string.
  *
- * @bytes_in Bytes to convert.
- * @len_in Size of @bytes_in in bytes.
- * @output Destination for the resulting hexadecimal string.
- *
- * The string returned should be freed using @wally_free_string.
+ * :param bytes_in: Bytes to convert.
+ * :param len_in: Size of ``bytes_in`` in bytes.
+ * :param output: Destination for the resulting hexadecimal string.
+ *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_hex_from_bytes(
     const unsigned char *bytes_in,
@@ -98,10 +97,10 @@ WALLY_CORE_API int wally_hex_from_bytes(
 /**
  * Convert a hexadecimal string to bytes.
  *
- * @hex String to convert.
- * @bytes_out: Where to store the resulting bytes.
- * @len: The length of @bytes_out in bytes.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * :param hex: String to convert.
+ * :param bytes_out: Where to store the resulting bytes.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_hex_to_bytes(
     const char *hex,
@@ -109,11 +108,11 @@ WALLY_CORE_API int wally_hex_to_bytes(
     size_t len,
     size_t *written);
 
-/** For @wally_base58_from_bytes, indicates that a checksum should
- * be generated. For @wally_base58_to_bytes, indicates that the
+/* For ``wally_base58_from_bytes``, indicates that a checksum should
+ * be generated. For ``wally_base58_to_bytes``, indicates that the
  * embedded checksum should be validated and stripped off the returned
  * bytes.
- **/
+ */
 #define BASE58_FLAG_CHECKSUM 0x1
 
 /** The number of extra bytes required to hold a base58 checksum */
@@ -122,12 +121,12 @@ WALLY_CORE_API int wally_hex_to_bytes(
 /**
  * Create a base 58 encoded string representing binary data.
  *
- * @bytes_in: Binary data to convert.
- * @len_in: The length of @bytes_in in bytes.
- * @flags: Pass @BASE58_FLAG_CHECKSUM if @bytes_in should have a
- *         checksum calculated and appended before converting to base 58.
- * @output Destination for the base 58 encoded string representing @bytes_in.
- *         The string returned should be freed using @wally_free_string.
+ * :param bytes_in: Binary data to convert.
+ * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param flags: Pass ``BASE58_FLAG_CHECKSUM`` if ``bytes_in`` should have a
+ *|    checksum calculated and appended before converting to base 58.
+ * :param output: Destination for the base 58 encoded string representing ``bytes_in``.
+ *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_base58_from_bytes(
     const unsigned char *bytes_in,
@@ -138,18 +137,14 @@ WALLY_CORE_API int wally_base58_from_bytes(
 /**
  * Decode a base 58 encoded string back into into binary data.
  *
- * @str_in: Base 58 encoded string to decode.
- * @flags: Pass @BASE58_FLAG_CHECKSUM if @bytes_out should have a
- *         checksum validated and removed before returning. In this case, @len
- *         must contain an extra @BASE58_CHECKSUM_LEN bytes to calculate the
- *         checksum into. The returned length will not include the checksum.
- * @bytes_out: Destination for converted binary data.
- * @len: The length of @bytes_out in bytes.
- * @written: Destination for the length of the decoded bytes.
- *
- * If the function succeeds, you must check @written. If it is greater
- * than @len then no data has been written and the function should be retried
- * with a buffer of at least @written bytes in size.
+ * :param str_in: Base 58 encoded string to decode.
+ * :param flags: Pass ``BASE58_FLAG_CHECKSUM`` if ``bytes_out`` should have a
+ *|    checksum validated and removed before returning. In this case, ``len``
+ *|    must contain an extra ``BASE58_CHECKSUM_LEN`` bytes to calculate the
+ *|    checksum into. The returned length will not include the checksum.
+ * :param bytes_out: Destination for converted binary data.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the length of the decoded bytes.
  */
 WALLY_CORE_API int wally_base58_to_bytes(
     const char *str_in,
@@ -161,18 +156,19 @@ WALLY_CORE_API int wally_base58_to_bytes(
 /**
  * Return the length of a base58 encoded string once decoded into bytes.
  *
- * @str_in: Base 58 encoded string to find the length of.
- * @written: Destination for the length of the decoded bytes.
- *
- * Returns the exact number of bytes that would be required to store @str_in
+ * Returns the exact number of bytes that would be required to store ``str_in``
  * as decoded binary, including any embedded checksum. If the string contains
  * invalid characters then WALLY_EINVAL is returned. Note that no checksum
  * validation takes place.
  *
  * In the worst case (an all zero buffer, represented by a string of '1'
- * characters), this function will return strlen(@str_in). You can therefore
- * safely use the length of @str_in as a buffer size to avoid calling this
+ * characters), this function will return strlen(``str_in``). You can therefore
+ * safely use the length of ``str_in`` as a buffer size to avoid calling this
  * function in most cases.
+ *
+ * :param str_in: Base 58 encoded string to find the length of.
+ * :param written: Destination for the length of the decoded bytes.
+ *
  */
 WALLY_CORE_API int wally_base58_get_length(
     const char *str_in,
@@ -213,7 +209,7 @@ struct wally_operations {
 /**
  * Fetch the current overridable operations used by wally.
  *
- * @output: Destination for the overridable operations.
+ * :param output: Destination for the overridable operations.
  */
 WALLY_CORE_API int wally_get_operations(
     struct wally_operations *output);
@@ -221,7 +217,7 @@ WALLY_CORE_API int wally_get_operations(
 /**
  * Set the current overridable operations used by wally.
  *
- * @ops: The overridable operations to set.
+ * :param ops: The overridable operations to set.
  */
 WALLY_CORE_API int wally_set_operations(
     const struct wally_operations *ops);

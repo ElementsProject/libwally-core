@@ -136,7 +136,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 }
 
 #define WALLY_FN_P(F, N) template <class P1> inline int F(const P1 &p1) { \
-    return ::N(WALLYP(p1)); \
+        return ::N(WALLYP(p1)); \
 }
 
 #define WALLY_FN_P3(F, N) template <class P1> inline int F(const P1 &p1, uint32_t i321) { \

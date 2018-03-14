@@ -159,9 +159,9 @@ extern "C" {
 /**
  * Determine the type of a scriptPubkey script.
  *
- * @bytes_in: Bytes of the scriptPubkey.
- * @len_in: Length of @bytes_in in bytes.
- * @written: Destination for the WALLY_SCRIPT_TYPE_ script type.
+ * :param bytes_in: Bytes of the scriptPubkey.
+ * :param len_in: Length of ``bytes_in`` in bytes.
+ * :param written: Destination for the WALLY_SCRIPT_TYPE_ script type.
  */
 int wally_scriptpubkey_get_type(const unsigned char *bytes_in, size_t len_in,
                                 size_t *written);
@@ -169,15 +169,16 @@ int wally_scriptpubkey_get_type(const unsigned char *bytes_in, size_t len_in,
 /**
  * Create a P2PKH scriptPubkey.
  *
- * @bytes_in: Bytes to create a scriptPubkey for.
- * @len_in: Length of @bytes_in in bytes.
- * @flags: @WALLY_SCRIPT_HASH160 or 0.
- * @bytes_out: Destination for the resulting scriptPubkey.
- * @len Size of @bytes_out in bytes. If @WALLY_SCRIPT_HASH160 given, @bytes_in
- *     is a public key to hash160 before creating the P2PKH, and len_in must
- *     be EC_PUBLIC_KEY_LEN or EC_PUBLIC_KEY_UNCOMPRESSED_LEN. Otherwise, len_in
- *     must be @HASH160_LEN and @bytes_in must contain the hash160 to use.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * :param bytes_in: Bytes to create a scriptPubkey for.
+ * :param len_in: Length of ``bytes_in`` in bytes.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * :param len: Size of ``bytes_out`` in bytes. If ``WALLY_SCRIPT_HASH160``
+ *|    given, ``bytes_in`` is a public key to hash160 before creating the
+ *|    P2PKH, and len_in must ``EC_PUBLIC_KEY_LEN`` or
+ *|    ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``. Otherwise, ``len_in`` must be
+ *|    ``HASH160_LEN`` and ``bytes_in`` must contain the hash160 to use.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
     const unsigned char *bytes_in,
@@ -190,14 +191,15 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
 /**
  * Create a P2SH scriptPubkey.
  *
- * @bytes_in: Bytes to create a scriptPubkey for.
- * @len_in: Length of @bytes_in in bytes.
- * @flags: @WALLY_SCRIPT_HASH160 or 0.
- * @bytes_out: Destination for the resulting scriptPubkey.
- * @len Size of @bytes_out in bytes. If @WALLY_SCRIPT_HASH160 given, @bytes_in
- *     is a script to hash160 before creating the P2SH. Otherwise, len_in
- *     must be @HASH160_LEN and @bytes_in must contain the hash160 to use.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * :param bytes_in: Bytes to create a scriptPubkey for.
+ * :param len_in: Length of ``bytes_in`` in bytes.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * :param len: Size of ``bytes_out`` in bytes. If ``WALLY_SCRIPT_HASH160``
+ *|    is given, ``bytes_in`` is a script to hash160 before creating the P2SH.
+ *|    Otherwise, len_in must be ``HASH160_LEN`` and ``bytes_in`` must contain
+ *|    the hash160 to use.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
     const unsigned char *bytes_in,
@@ -211,13 +213,13 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
 /**
  * Create a multisig scriptPubkey.
  *
- * @bytes_in: Compressed public keys to create a scriptPubkey for.
- * @len_in: Length of @pub_key in bytes. Must be a multiple of @EC_PUBLIC_KEY_LEN.
- * @threshold: The number of signatures that must match to satisfy the script.
- * @flags: Must be zero.
- * @bytes_out: Destination for the resulting scriptPubkey.
- * @len Size of @bytes_out in bytes.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * :param bytes_in: Compressed public keys to create a scriptPubkey for.
+ * :param len_in: Length of ``pub_key`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param threshold: The number of signatures that must match to satisfy the script.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
     const unsigned char *bytes_in,
@@ -232,13 +234,13 @@ WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
 /**
  * Create a bitcoin script that pushes data to the stack.
  *
- * @bytes_in: Bytes to create a push script for.
- * @len_in: Length of @bytes_in in bytes.
- * @flags: @WALLY_SCRIPT_HASH160 or @WALLY_SCRIPT_SHA256 to hash @bytes_in
- *     before pushing it.
- * @bytes_out: Destination for the resulting push script.
- * @len Size of @bytes_out in bytes.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * :param bytes_in: Bytes to create a push script for.
+ * :param len_in: Length of ``bytes_in`` in bytes.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to
+ *|    hash ``bytes_in`` before pushing it.
+ * :param bytes_out: Destination for the resulting push script.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_script_push_from_bytes(
     const unsigned char *bytes_in,
@@ -252,14 +254,15 @@ WALLY_CORE_API int wally_script_push_from_bytes(
 /**
  * Create a segwit witness program from a script or hash.
  *
- * @bytes_in: Script or hash bytes to create a witness program from.
- * @len_in: Length of @bytes_in in bytes. Must be @HASH160_LEN or @SHA256_LEN
- *      if neither @WALLY_SCRIPT_HASH160 or @WALLY_SCRIPT_SHA256 is given.
- * @flags: @WALLY_SCRIPT_HASH160 or @WALLY_SCRIPT_SHA256 to hash the input
- *     script before using it.
- * @bytes_out: Destination for the resulting witness program.
- * @len Size of @bytes_out in bytes.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * :param bytes_in: Script or hash bytes to create a witness program from.
+ * :param len_in: Length of ``bytes_in`` in bytes. Must be ``HASH160_LEN``
+ *|     or ``SHA256_LEN`` if neither ``WALLY_SCRIPT_HASH160`` or
+ *|     ``WALLY_SCRIPT_SHA256`` is given.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to hash
+ *|    the input script before using it.
+ * :param bytes_out: Destination for the resulting witness program.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_witness_program_from_bytes(
     const unsigned char *bytes_in,

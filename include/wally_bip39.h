@@ -18,7 +18,7 @@ struct words;
 #define BIP39_ENTROPY_LEN_288 36
 #define BIP39_ENTROPY_LEN_320 40
 
-/** The required size of the output buffer for @bip39_mnemonic_to_seed */
+/** The required size of the output buffer for `bip39_mnemonic_to_seed` */
 #define BIP39_SEED_LEN_512 64
 
 /** The number of words in a BIP39 compliant wordlist */
@@ -27,17 +27,18 @@ struct words;
 /**
  * Get the list of default supported languages.
  *
- * The string returned should be freed using @wally_free_string.
+ * ..note:: The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip39_get_languages(
     char **output);
 
 /**
- * Get the default word list for language @lang.
+ * Get the default word list for a language.
  *
- * If @lang is NULL or not found the default English list is returned.
+ * :param lang: Language to use. Pass NULL to use the default English list.
+ * :param output: Destination for the resulting word list.
  *
- * The returned structure should not be freed.
+ * .. note:: The returned structure should not be freed or modified.
  */
 WALLY_CORE_API int bip39_get_wordlist(
     const char *lang,
@@ -46,11 +47,11 @@ WALLY_CORE_API int bip39_get_wordlist(
 /**
  * Get the 'index'th word from a word list.
  *
- * @w Word list to use. Pass NULL to use the default English list.
- * @index The 0-based index of the word in @w.
- * @output Destination for the resulting word.
+ * :param w: Word list to use. Pass NULL to use the default English list.
+ * :param index: The 0-based index of the word in ``w``.
+ * :param output: Destination for the resulting word.
  *
- * The string returned should be freed using @wally_free_string.
+ * The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip39_get_word(
     const struct words *w,
@@ -58,13 +59,14 @@ WALLY_CORE_API int bip39_get_word(
     char **output);
 
 /**
- * Generate a mnemonic sentence from the entropy in @bytes_in.
- * @w Word list to use. Pass NULL to use the default English list.
- * @bytes_in: Entropy to convert.
- * @len_in: The length of @bytes_in in bytes.
- * @output Destination for the resulting mnemonic sentence.
+ * Generate a mnemonic sentence from the entropy in ``bytes_in``.
  *
- * The string returned should be freed using @wally_free_string.
+ * :param w: Word list to use. Pass NULL to use the default English list.
+ * :param bytes_in: Entropy to convert.
+ * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param output: Destination for the resulting mnemonic sentence.
+ *
+ * .. note:: The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip39_mnemonic_from_bytes(
     const struct words *w,
@@ -73,12 +75,13 @@ WALLY_CORE_API int bip39_mnemonic_from_bytes(
     char **output);
 
 /**
- * Convert a mnemonic sentence into entropy at @bytes_out.
- * @w Word list to use. Pass NULL to use the default English list.
- * @mnemonic Mnemonic to convert.
- * @bytes_out: Where to store the resulting entropy.
- * @len: The length of @bytes_out in bytes.
- * @written: Destination for the number of bytes written to @bytes_out.
+ * Convert a mnemonic sentence into entropy at ``bytes_out``.
+ *
+ * :param w: Word list to use. Pass NULL to use the default English list.
+ * :param mnemonic: Mnemonic to convert.
+ * :param bytes_out: Where to store the resulting entropy.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int bip39_mnemonic_to_bytes(
     const struct words *w,
@@ -88,9 +91,10 @@ WALLY_CORE_API int bip39_mnemonic_to_bytes(
     size_t *written);
 
 /**
- * Validate the checksum embedded in the mnemonic sentence @mnemonic.
- * @w Word list to use. Pass NULL to use the default English list.
- * @mnemonic Mnemonic to validate.
+ * Validate the checksum embedded in a mnemonic sentence.
+ *
+ * :param w: Word list to use. Pass NULL to use the default English list.
+ * :param mnemonic: Mnemonic to validate.
  */
 WALLY_CORE_API int bip39_mnemonic_validate(
     const struct words *w,
@@ -98,12 +102,13 @@ WALLY_CORE_API int bip39_mnemonic_validate(
 
 /**
  * Convert a mnemonic into a binary seed.
- * @mnemonic Mnemonic to convert.
- * @password Mnemonic password or NULL if no password is needed.
- * @bytes_out The destination for the binary seed.
- * @len The length of @bytes_out in bytes. Currently This must
- *      be @BIP39_SEED_LEN_512.
- * @written: Destination for the number of bytes written to @bytes_out.
+ *
+ * :param mnemonic: Mnemonic to convert.
+ * :param password: Mnemonic password or NULL if no password is needed.
+ * :param bytes_out: The destination for the binary seed.
+ * :param len: The length of ``bytes_out`` in bytes. Currently This must
+ *|      be ``BIP39_SEED_LEN_512``.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int bip39_mnemonic_to_seed(
     const char *mnemonic,

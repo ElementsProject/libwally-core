@@ -192,8 +192,8 @@ int wally_tx_witness_stack_free(struct wally_tx_witness_stack *wit)
 }
 
 int wally_tx_witness_stack_add(
-        struct wally_tx_witness_stack *wit,
-        const unsigned char *witness_in, size_t witness_len_in)
+    struct wally_tx_witness_stack *wit,
+    const unsigned char *witness_in, size_t witness_len_in)
 {
     if (!wit)
         return WALLY_EINVAL;
@@ -202,7 +202,7 @@ int wally_tx_witness_stack_add(
 }
 
 int wally_tx_witness_stack_add_dummy(
-        struct wally_tx_witness_stack *wit, uint32_t flags)
+    struct wally_tx_witness_stack *wit, uint32_t flags)
 {
     if (!wit)
         return WALLY_EINVAL;
@@ -249,7 +249,7 @@ int wally_tx_witness_stack_set(struct wally_tx_witness_stack *wit, size_t index,
 }
 
 int wally_tx_witness_stack_set_dummy(struct wally_tx_witness_stack *wit,
-    size_t index, uint32_t flags)
+                                     size_t index, uint32_t flags)
 {
     const unsigned char *p = NULL;
     size_t len = 0;

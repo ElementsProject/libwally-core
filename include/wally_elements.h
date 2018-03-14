@@ -18,12 +18,12 @@ extern "C" {
 /**
  * Create a blinded Asset Generator from an Asset Tag and Asset Blinding Factor.
  *
- * @asset: Asset Tag to create a blinding generator for.
- * @asset_len: Length of @asset in bytes. Must be @ASSET_TAG_LEN.
- * @abf: Asset Blinding Factor (Random entropy to blind with).
- * @abf_len: Length of @abf in bytes. Must be @ASSET_TAG_LEN.
- * @bytes_out: Destination for the resulting Asset Generator.
- * @len: The length of @bytes_out in bytes. Must be @ASSET_GENERATOR_LEN.
+ * :param asset: Asset Tag to create a blinding generator for.
+ * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
+ * :param abf: Asset Blinding Factor (Random entropy to blind with).
+ * :param abf_len: Length of ``abf`` in bytes. Must be ``ASSET_TAG_LEN``.
+ * :param bytes_out: Destination for the resulting Asset Generator.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``ASSET_GENERATOR_LEN``.
  */
 WALLY_CORE_API int wally_asset_generator_from_bytes(
     const unsigned char *asset,

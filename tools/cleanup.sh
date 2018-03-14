@@ -3,8 +3,8 @@
 # Clean up all generated files
 make -o configure distclean >/dev/null 2>&1
 
-find . -name Makefile -exec rm {} \;
-find . -name Makefile.in -exec rm {} \;
+find src -name Makefile -exec rm {} \;
+find src -name Makefile.in -exec rm {} \;
 find . -name "*.class" -exec rm {} \;
 find . -name "*.gcno" -exec rm {} \;
 find . -name "*.gcda" -exec rm {} \;
@@ -56,5 +56,6 @@ rm -f tools/build-aux/missing
 rm -f tools/build-aux/m4/l*.m4
 rm -f tools/build-aux/test-driver
 rm -rf autom4te.cache/
+rm -rf docs/build docs/source/address.rst docs/source/bip32.rst docs/source/bip38.rst docs/source/bip39.rst docs/source/core.rst docs/source/crypto.rst docs/source/elements.rst docs/source/script.rst docs/source/transaction.rst
 rm -rf .venv
 exit 0
