@@ -4,12 +4,14 @@ from sys import version as _wally_py_version
 def _wrap_bin(fn, length, resize=False):
     """ Wrap functions that take an output buffer to create/return it """
     def wrapped(*args):
-        len = length(*args) if callable(length) else length
-        buf = bytearray(len)
+        n = length(*args) if callable(length) else length
+        buf = bytearray(n)
         ret = fn(*list(args)+[buf])
         if resize:
-            # Truncate buf to bytes written if needed
-            return buf[0:ret] if ret != len else buf
+            # Truncate buf to bytes written if needed. Also assert the
+            # wrapper allocated enough space for the returned value to fit.
+            assert ret <= n
+            return buf[0:ret] if ret != n else buf
         return (ret, buf) if ret is not None else buf
     return wrapped
 
@@ -106,9 +108,10 @@ def _spkmfb_len_fn(sigs, threshold, flags):
     return 3 + (len(sigs) / EC_PUBLIC_KEY_LEN) * (EC_PUBLIC_KEY_LEN + 1)
 scriptpubkey_multisig_from_bytes = _wrap_bin(scriptpubkey_multisig_from_bytes, _spkmfb_len_fn, resize=True)
 
-def _witness_program_from_bytes_len_fn(witness_prog, flags):
-    return _script_push_from_bytes_len_fn(witness_prog, flags) + 1
-witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, _witness_program_from_bytes_len_fn, resize=True)
+scriptsig_p2pkh_from_sig = _wrap_bin(scriptsig_p2pkh_from_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, resize=True)
+scriptsig_p2pkh_from_der = _wrap_bin(scriptsig_p2pkh_from_der, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, resize=True)
+
+witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
 
 addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)
 

@@ -22,9 +22,9 @@
 
 #define ALL_SCRIPT_HASH_FLAGS (WALLY_SCRIPT_HASH160 | WALLY_SCRIPT_SHA256)
 
-static bool script_flags_ok(uint32_t flags)
+static bool script_flags_ok(uint32_t flags, uint32_t extra_flags)
 {
-    if ((flags & ~ALL_SCRIPT_HASH_FLAGS) ||
+    if ((flags & ~(ALL_SCRIPT_HASH_FLAGS | extra_flags)) ||
         ((flags & ALL_SCRIPT_HASH_FLAGS) == ALL_SCRIPT_HASH_FLAGS))
         return false;
     return true;
@@ -52,13 +52,13 @@ static inline size_t v_to_op_n(uint64_t v)
     return OP_1 + v - 1;
 }
 
-static bool is_pk_push(size_t len_in) {
+static bool is_pk_len(size_t len_in) {
     return len_in == EC_PUBLIC_KEY_LEN ||
            len_in == EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
 }
 
 /* Calculate the opcode size of a push of 'len_in' bytes */
-static size_t script_calc_push_opcode_size(size_t len_in)
+static size_t calc_push_opcode_size(size_t len_in)
 {
     if (len_in < 76)
         return 1;
@@ -232,7 +232,7 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes_in, size_t len_i
         size_t n_op, n_push;
         if (get_push_size(bytes_in, len_in, false, &n_op) != WALLY_OK ||
             get_push_size(bytes_in, len_in, true, &n_push) != WALLY_OK ||
-            !is_pk_push(n_push) || len_in < n_op + n_push + 2)
+            !is_pk_len(n_push) || len_in < n_op + n_push + 2)
             return false;
         bytes_in += n_op + n_push;
         len_in -= n_op + n_push;
@@ -297,7 +297,7 @@ int wally_scriptpubkey_p2pkh_from_bytes(
     if (written)
         *written = 0;
 
-    if (!bytes_in || !len_in || !script_flags_ok(flags) ||
+    if (!bytes_in || !len_in || !script_flags_ok(flags, 0) ||
         (flags & WALLY_SCRIPT_SHA256) || !bytes_out ||
         len < WALLY_SCRIPTPUBKEY_P2PKH_LEN || !written)
         return WALLY_EINVAL;
@@ -320,6 +320,65 @@ int wally_scriptpubkey_p2pkh_from_bytes(
     return ret;
 }
 
+int wally_scriptsig_p2pkh_from_sig(const unsigned char *pub_key, size_t pub_key_len,
+                                   const unsigned char *sig_in, size_t sig_len_in,
+                                   uint32_t sighash,
+                                   unsigned char *bytes_out, size_t len, size_t *written)
+{
+    unsigned char buff[EC_SIGNATURE_DER_MAX_LEN + 1];
+    size_t der_len;
+    int ret;
+
+    if (written)
+        *written = 0;
+    if (sighash & 0xffffff00)
+        return WALLY_EINVAL;
+
+    ret = wally_ec_sig_to_der(sig_in, sig_len_in, buff, sizeof(buff), &der_len);
+    if (ret == WALLY_OK) {
+        buff[der_len++] = sighash & 0xff;
+        ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len,
+                                             buff, der_len,
+                                             bytes_out, len, written);
+        wally_clear(buff, der_len);
+    }
+    return ret;
+}
+
+int wally_scriptsig_p2pkh_from_der(
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *sig_in, size_t sig_len_in,
+    unsigned char *bytes_out, size_t len, size_t *written)
+{
+    size_t n;
+    int ret;
+
+    if (written)
+        *written = 0;
+
+    if (!pub_key || !is_pk_len(pub_key_len) ||
+        !sig_in || !sig_len_in || sig_len_in > EC_SIGNATURE_DER_MAX_LEN + 1 ||
+        !bytes_out || !written)
+        return WALLY_EINVAL;
+
+    if (len < pub_key_len + calc_push_opcode_size(pub_key_len) +
+        sig_len_in + calc_push_opcode_size(sig_len_in))
+        return WALLY_EINVAL;
+
+    ret = wally_script_push_from_bytes(sig_in, sig_len_in, 0,
+                                       bytes_out, len, written);
+    if (ret == WALLY_OK) {
+        n = *written;
+        ret = wally_script_push_from_bytes(pub_key, pub_key_len, 0,
+                                           bytes_out + n, len - n, written);
+        if (ret == WALLY_OK) {
+            *written += n;
+        } else
+            wally_clear(bytes_out, n);
+    }
+    return ret;
+}
+
 int wally_scriptpubkey_p2sh_from_bytes(
     const unsigned char *bytes_in, size_t len_in,
     uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
@@ -329,7 +388,7 @@ int wally_scriptpubkey_p2sh_from_bytes(
     if (written)
         *written = 0;
 
-    if (!bytes_in || !len_in || !script_flags_ok(flags) ||
+    if (!bytes_in || !len_in || !script_flags_ok(flags, 0) ||
         (flags & WALLY_SCRIPT_SHA256) || !bytes_out ||
         len < WALLY_SCRIPTPUBKEY_P2SH_LEN || !written)
         return WALLY_EINVAL;
@@ -402,7 +461,7 @@ int wally_script_push_from_bytes(const unsigned char *bytes_in, size_t len_in,
     if (written)
         *written = 0;
 
-    if ((len_in && !bytes_in) || !script_flags_ok(flags) ||
+    if ((len_in && !bytes_in) || !script_flags_ok(flags, 0) ||
         !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
@@ -418,7 +477,7 @@ int wally_script_push_from_bytes(const unsigned char *bytes_in, size_t len_in,
     if (ret != WALLY_OK)
         goto cleanup;
 
-    opcode_len = script_calc_push_opcode_size(len_in);
+    opcode_len = calc_push_opcode_size(len_in);
 
     *written = len_in + opcode_len;
     if (len < *written)
@@ -451,11 +510,13 @@ int wally_witness_program_from_bytes(const unsigned char *bytes_in, size_t len_i
                                      unsigned char *bytes_out, size_t len, size_t *written)
 {
     int ret;
+    unsigned char *p = bytes_out;
 
     if (written)
         *written = 0;
 
-    if ((len_in && !bytes_in) || !script_flags_ok(flags) ||
+    if ((len_in && !bytes_in) ||
+        !script_flags_ok(flags, WALLY_SCRIPT_AS_PUSH) ||
         !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
@@ -466,11 +527,23 @@ int wally_witness_program_from_bytes(const unsigned char *bytes_in, size_t len_i
         /* Only v0 witness scripts are currently supported */
         return WALLY_EINVAL;
     }
+    if (flags & WALLY_SCRIPT_AS_PUSH) {
+        if (len < 2)
+            return WALLY_EINVAL;
+        ++bytes_out;
+        --len;
+    }
 
     bytes_out[0] = 0; /* Witness version */
-    ret = wally_script_push_from_bytes(bytes_in, len_in, flags,
+    ret = wally_script_push_from_bytes(bytes_in, len_in,
+                                       flags & ~WALLY_SCRIPT_AS_PUSH,
                                        bytes_out + 1, len - 1, written);
-    if (ret == WALLY_OK)
+    if (ret == WALLY_OK) {
         *written += 1; /* For Witness version byte */
+        if (flags & WALLY_SCRIPT_AS_PUSH) {
+            *p = *written & 0xff;
+            *written += 1; /* For Witness version byte */
+        }
+    }
     return ret;
 }

@@ -99,6 +99,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYB(i1), WALLYB(i2), i321, WALLYO(out)); \
 }
 
+#define WALLY_FN_BB3_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, size_t * written, O & out, size_t offset = 0) { \
+        return ::N(WALLYB(i1), WALLYB(i2), i321, WALLYO(out), written); \
+}
+
 #define WALLY_FN_BBB3_BS(F, N) template <class I1, class I2, class I3, class O> inline int F(const I1 &i1, const I2 &i2, const I3 &i3, uint32_t i321, size_t * written, O & out, size_t offset = 0) { \
         return ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), i321, WALLYO(out), written); \
 }
@@ -110,6 +114,11 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_BP3_A(F, N) template <class I1, class P1, class O> inline int F(const I1 &i1, const P1 &p1, uint32_t i321, O **out) { \
         return ::N(WALLYB(i1), WALLYP(p1), i321, out); \
 }
+
+#define WALLY_FN_BB_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, size_t * written, O & out, size_t offset = 0) { \
+        return ::N(WALLYB(i1), WALLYB(i2), WALLYO(out), written); \
+}
+
 
 #define WALLY_FN_B_A(F, N) template <class I1, class O> inline int F(const I1 &i1, O **out) { \
         return ::N(WALLYB(i1), out); \
@@ -279,10 +288,12 @@ WALLY_FN_BB3_B(bip38_raw_from_private_key, bip38_raw_from_private_key)
 WALLY_FN_BB3_B(bip38_raw_to_private_key, bip38_raw_to_private_key)
 WALLY_FN_BB3_B(ec_sig_from_bytes, wally_ec_sig_from_bytes)
 WALLY_FN_BB3_B(ec_sig_verify, wally_ec_sig_verify)
+WALLY_FN_BB3_BS(scriptsig_p2pkh_from_sig, wally_scriptsig_p2pkh_from_sig)
 WALLY_FN_BBB3_BS(aes_cbc, wally_aes_cbc)
 WALLY_FN_BB_B(hmac_sha256, wally_hmac_sha256)
 WALLY_FN_BB_B(hmac_sha512, wally_hmac_sha512)
 WALLY_FN_BP3_A(addr_segwit_from_bytes, wally_addr_segwit_from_bytes)
+WALLY_FN_BB_BS(scriptsig_p2pkh_from_der, wally_scriptsig_p2pkh_from_der)
 WALLY_FN_B_A(bip32_key_unserialize_alloc, bip32_key_unserialize_alloc)
 WALLY_FN_B_A(hex_from_bytes, wally_hex_from_bytes)
 WALLY_FN_B_B(ec_public_key_decompress, wally_ec_public_key_decompress)
