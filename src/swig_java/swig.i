@@ -221,21 +221,17 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt_in, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_len_in) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *abf_out, size_t abf_out_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_in_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *salt_in_out, size_t salt_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) }; /* FIXME: Needed? */
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }

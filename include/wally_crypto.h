@@ -13,8 +13,8 @@ extern "C" {
  *
  * :param pass: Password to derive from.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param salt: Salt to derive from.
- * :param salt_len: Length of ``salt`` in bytes.
+ * :param salt_in: Salt to derive from.
+ * :param salt_len: Length of ``salt_in`` in bytes.
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
  * :param block_size: The size of memory blocks required.
@@ -25,7 +25,7 @@ extern "C" {
 WALLY_CORE_API int wally_scrypt(
     const unsigned char *pass,
     size_t pass_len,
-    const unsigned char *salt,
+    const unsigned char *salt_in,
     size_t salt_len,
     uint32_t cost,
     uint32_t block_size,
@@ -199,31 +199,20 @@ WALLY_CORE_API int wally_hmac_sha512(
     size_t len);
 
 
-/** Extra bytes required at the end of ``salt_in_out`` for pbkdf2 functions */
-#define PBKDF2_HMAC_EXTRA_LEN 4
-
 /** Output length for `wally_pbkdf2_hmac_sha256` */
 #define PBKDF2_HMAC_SHA256_LEN 32
 
 /** Output length for `wally_pbkdf2_hmac_sha512` */
 #define PBKDF2_HMAC_SHA512_LEN 64
 
-/* For hmac functions, indicates that ``salt_in_out`` contains
- * ``PBKDF2_HMAC_EXTRA_LEN`` extra bytes for the block number to be added into.
- */
-#define PBKDF2_HMAC_FLAG_BLOCK_RESERVED 1
-
-
 /**
  * Derive a pseudorandom key from inputs using HMAC SHA-256.
  *
  * :param pass: Password to derive from.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param salt_in_out: Salt to derive from. If ``flags`` contains the value
- *|     ``PBKDF2_HMAC_FLAG_BLOCK_RESERVED`` then this memory must
- *|     have ``PBKDF2_HMAC_EXTRA_LEN`` of spare room at the end of the salt itself.
- * :param salt_len: Length of ``salt_in_out`` in bytes, including any extra spare bytes.
- * :param flags: PBKDF2_HMAC_FLAG_ flag values indicating desired behaviour.
+ * :param salt_in: Salt to derive from.
+ * :param salt_len: Length of ``salt_in`` in bytes.
+ * :param flags: Reserved, must be 0.
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
  * :param bytes_out: Destination for the derived pseudorandom key.
@@ -233,7 +222,7 @@ WALLY_CORE_API int wally_hmac_sha512(
 WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
     const unsigned char *pass,
     size_t pass_len,
-    unsigned char *salt_in_out,
+    const unsigned char *salt_in,
     size_t salt_len,
     uint32_t flags,
     uint32_t cost,
@@ -245,11 +234,9 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
  *
  * :param pass: Password to derive from.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param salt_in_out: Salt to derive from. If ``flags`` contains the value
- *|     ``PBKDF2_HMAC_FLAG_BLOCK_RESERVED`` then this memory must
- *|     have ``PBKDF2_HMAC_EXTRA_LEN`` of spare room at the end of the salt itself.
- * :param salt_len: Length of ``salt_in_out`` in bytes, including any extra spare bytes.
- * :param flags: PBKDF2_HMAC_FLAG_ flag values indicating desired behaviour.
+ * :param salt_in: Salt to derive from.
+ * :param salt_len: Length of ``salt_in`` in bytes.
+ * :param flags: Reserved, must be 0.
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
  * :param bytes_out: Destination for the derived pseudorandom key.
@@ -259,7 +246,7 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
 WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
     const unsigned char *pass,
     size_t pass_len,
-    unsigned char *salt_in_out,
+    const unsigned char *salt_in,
     size_t salt_len,
     uint32_t flags,
     uint32_t cost,

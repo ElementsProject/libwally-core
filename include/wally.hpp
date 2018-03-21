@@ -140,7 +140,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYB(i1), written); \
 }
 
-#define WALLY_FN_Bb33_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, I2 & i2, uint32_t i321, uint32_t i322, O & out, size_t offset = 0) { \
+#define WALLY_FN_BB33_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, O & out, size_t offset = 0) { \
         return ::N(WALLYB(i1), WALLYB(i2), i321, i322, WALLYO(out)); \
 }
 
@@ -307,8 +307,8 @@ WALLY_FN_B_B(sha512, wally_sha512)
 WALLY_FN_B_BS(ec_sig_to_der, wally_ec_sig_to_der)
 WALLY_FN_B_P(bip32_key_unserialize, bip32_key_unserialize)
 WALLY_FN_B_S(scriptpubkey_get_type, wally_scriptpubkey_get_type)
-WALLY_FN_Bb33_B(pbkdf2_hmac_sha256, wally_pbkdf2_hmac_sha256)
-WALLY_FN_Bb33_B(pbkdf2_hmac_sha512, wally_pbkdf2_hmac_sha512)
+WALLY_FN_BB33_B(pbkdf2_hmac_sha256, wally_pbkdf2_hmac_sha256)
+WALLY_FN_BB33_B(pbkdf2_hmac_sha512, wally_pbkdf2_hmac_sha512)
 WALLY_FN_P(bip32_key_free, bip32_key_free)
 WALLY_FN_P(get_operations, wally_get_operations)
 WALLY_FN_P(set_operations, wally_set_operations)

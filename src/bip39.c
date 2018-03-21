@@ -207,7 +207,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
     const size_t password_len = password ? strlen(password) : 0;
-    const size_t salt_len = prefix_len + password_len + PBKDF2_HMAC_EXTRA_LEN;
+    const size_t salt_len = prefix_len + password_len;
     unsigned char *salt;
     int ret;
 
@@ -226,8 +226,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
         memcpy(salt + prefix_len, password, password_len);
 
     ret = wally_pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
-                                   salt, salt_len,
-                                   PBKDF2_HMAC_FLAG_BLOCK_RESERVED,
+                                   salt, salt_len, 0,
                                    bip9_cost, bytes_out, len);
 
     if (!ret && written)

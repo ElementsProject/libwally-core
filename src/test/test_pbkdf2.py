@@ -3,7 +3,6 @@ from util import *
 from binascii import unhexlify
 
 PBKDF2_HMAC_SHA256_LEN, PBKDF2_HMAC_SHA512_LEN = 32, 64
-FLAG_BLOCK_RESERVED = 0x1
 
 class PBKDF2Case(object):
     def __init__(self, items):
@@ -58,16 +57,12 @@ class PBKDF2Tests(unittest.TestCase):
                 # We only support output multiples of the hmac length
                 continue
 
-            # Test both providing extra bytes and having them allocated for us
-            for flags in [0, FLAG_BLOCK_RESERVED]:
-                extra_bytes = '00000000' if flags else ''
-                salt, salt_len = make_cbuffer(case.salt + extra_bytes)
+            salt, salt_len = make_cbuffer(case.salt)
+            ret = fn(case.passwd, len(case.passwd), salt, salt_len,
+                     0, case.cost, out_buf, out_len)
 
-                ret = fn(case.passwd, len(case.passwd), salt, salt_len,
-                         flags, case.cost, out_buf, out_len)
-
-                self.assertEqual(ret, 0)
-                self.assertEqual(h(out_buf), h(case.expected))
+            self.assertEqual(ret, 0)
+            self.assertEqual(h(out_buf), h(case.expected))
 
 
     def _pbkdf2_hmac_sha_malloc_fail(self, fn, len):

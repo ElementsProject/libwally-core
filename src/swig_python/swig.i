@@ -124,7 +124,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
 %pybuffer_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
-%pybuffer_binary(const unsigned char *salt, size_t salt_len);
+%pybuffer_binary(const unsigned char *salt_in, size_t salt_len);
 %pybuffer_nullable_binary(const unsigned char *script_in, size_t script_len_in);
 %pybuffer_binary(const unsigned char *sig_in, size_t sig_len_in);
 %pybuffer_binary(const unsigned char *txhash_in, size_t txhash_len_in);
@@ -136,7 +136,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_mutable_binary(unsigned char *abf_out, size_t abf_out_len);
 %pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
 %pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
-%pybuffer_mutable_binary(unsigned char *salt_in_out, size_t salt_len);
 %pybuffer_mutable_binary(unsigned char *vbf_out, size_t vbf_out_len); /* FIXME: Needed? */
 
 /* Output integer values are converted into return values. */
