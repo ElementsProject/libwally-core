@@ -19,7 +19,7 @@ linux_release:
     - ga
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_eggs.sh
+    - ./tools/build_python_wheels.sh
     - ./tools/build_android_libraries.sh
     - ./tools/build_js_bindings.sh
     - mv release wallycore-android-jni
@@ -51,7 +51,7 @@ osx_release:
     - wallycore-0.4.0-cp36-cp36m-macosx_10_12_x86_64.whl.sha256
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_eggs.sh
+    - ./tools/build_python_wheels.sh
 
 armv7l_release:
   tags:
@@ -65,7 +65,7 @@ armv7l_release:
     - wallycore-0.4.0-*.whl.sha256
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_eggs.sh
+    - ./tools/build_python_wheels.sh
 
 arm64_release:
   tags:
@@ -79,13 +79,13 @@ arm64_release:
     - wallycore-0.4.0-*.whl.sha256
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_eggs.sh
+    - ./tools/build_python_wheels.sh
 
 mips_release:
   tags:
     - mips
   script:
-    - ./tools/build_python_eggs.sh
+    - ./tools/build_python_wheels.sh
 
 freebsdamd64_release:
   tags:
@@ -99,7 +99,7 @@ freebsdamd64_release:
     - wallycore-0.4.0-*.whl.sha256
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_eggs.sh
+    - ./tools/build_python_wheels.sh
 
 windows10_release:
   tags:
