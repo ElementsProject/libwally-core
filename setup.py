@@ -3,9 +3,16 @@ from setuptools import setup
 import os
 import platform
 import subprocess
+from distutils.dist import Distribution
 from distutils.command.build_py import build_py as _build_py
 from distutils.file_util import copy_file
 from distutils.dir_util import mkpath
+
+
+# Force Distribution to have ext modules. This is necessary to generate the correct platform
+# dependent filename when generating wheels because the building of the underlying wally c libs is
+# effectively hidden from distutils - which means it assumes it is building a pure python module.
+Distribution.has_ext_modules = lambda self: True
 
 
 class build_py(_build_py):
