@@ -41,95 +41,107 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 
 #define WALLYP(var) detail::get_p(var) // Pointer, smart pointer or string
 #define WALLYB(var) var.data(), var.size() // Input array/length
-#define WALLYO(var) var.data() + offset, var.size() - offset // Output array/length
+#define WALLYO(var) var.data(), var.size() // Output array/length
 
 #define WALLY_FN_3(F, N) inline int F(uint32_t i321) { return ::N(i321); }
 
-#define WALLY_FN_333_BBBBBA(F, N) template <class I1, class I2, class I3, class I4, class I5, class O> inline int F(uint32_t i321, uint32_t i322, uint32_t i323, const I1 &i1, const I2 &i2, const I3 &i3, const I4 &i4, const I5 &i5, O **out) { \
+#define WALLY_FN_333_BBBBBA(F, N) template <class I1, class I2, class I3, class I4, class I5, class O> inline int F(uint32_t i321, uint32_t i322, uint32_t i323, const I1 &i1, const I2 &i2, const I3 &i3, const I4 &i4, const I5 &i5, O * *out) { \
         return ::N(i321, i322, i323, WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), out); \
 }
 
-#define WALLY_FN_33SS_A(F, N) template <class O> inline int F(uint32_t i321, uint32_t i322, size_t s1, size_t s2, O **out) { \
+#define WALLY_FN_33SS_A(F, N) template <class O> inline int F(uint32_t i321, uint32_t i322, size_t s1, size_t s2, O * *out) { \
         return ::N(i321, i322, s1, s2, out); \
 }
 
-#define WALLY_FN_3_A(F, N) template <class O> inline int F(uint32_t i321, O **out) { \
+#define WALLY_FN_3_A(F, N) template <class O> inline int F(uint32_t i321, O * *out) { \
         return ::N(i321, out); \
 }
 
-#define WALLY_FN_6B_A(F, N) template <class I1, class O> inline int F(uint64_t i641, const I1 &i1, O **out) { \
+#define WALLY_FN_6B_A(F, N) template <class I1, class O> inline int F(uint64_t i641, const I1 &i1, O * *out) { \
         return ::N(i641, WALLYB(i1), out); \
 }
 
 #define WALLY_FN_B(F, N) template <class I> inline int F(const I &i1) { return ::N(WALLYB(i1)); }
 
-#define WALLY_FN_B33BP_A(F, N) template <class I1, class I2, class P1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, const I2 &i2, const P1 &p1, O **out) { \
+#define WALLY_FN_B33BP_A(F, N) template <class I1, class I2, class P1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, const I2 &i2, const P1 &p1, O * *out) { \
         return ::N(WALLYB(i1), i321, i322, WALLYB(i2), WALLYP(p1), out); \
 }
 
-#define WALLY_FN_B33_A(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, O **out) { \
+#define WALLY_FN_B33_A(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, O * *out) { \
         return ::N(WALLYB(i1), i321, i322, out); \
 }
 
-#define WALLY_FN_B33_BS(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYB(i1), i321, i322, WALLYO(out), written); \
+#define WALLY_FN_B33_BS(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYB(i1), i321, i322, WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_B33_P(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, O * out) { \
         return ::N(WALLYB(i1), i321, i322, out); \
 }
 
-#define WALLY_FN_B3_A(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, O **out) { \
+#define WALLY_FN_B3_A(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, O * *out) { \
         return ::N(WALLYB(i1), i321, out); \
 }
 
-#define WALLY_FN_B3_BS(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYB(i1), i321, WALLYO(out), written); \
+#define WALLY_FN_B3_BS(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYB(i1), i321, WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
-#define WALLY_FN_BB333_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, uint32_t i323, O & out, size_t offset = 0) { \
+#define WALLY_FN_BB333_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, uint32_t i323, O & out) { \
         return ::N(WALLYB(i1), WALLYB(i2), i321, i322, i323, WALLYO(out)); \
 }
 
-#define WALLY_FN_BB3_A(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, O **out) { \
+#define WALLY_FN_BB3_A(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, O * *out) { \
         return ::N(WALLYB(i1), WALLYB(i2), i321, out); \
 }
 
-#define WALLY_FN_BB3_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, O & out, size_t offset = 0) { \
+#define WALLY_FN_BB3_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, O & out) { \
         return ::N(WALLYB(i1), WALLYB(i2), i321, WALLYO(out)); \
 }
 
-#define WALLY_FN_BB3_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYB(i1), WALLYB(i2), i321, WALLYO(out), written); \
+#define WALLY_FN_BB3_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYB(i1), WALLYB(i2), i321, WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
-#define WALLY_FN_BBB3_BS(F, N) template <class I1, class I2, class I3, class O> inline int F(const I1 &i1, const I2 &i2, const I3 &i3, uint32_t i321, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), i321, WALLYO(out), written); \
+#define WALLY_FN_BBB3_BS(F, N) template <class I1, class I2, class I3, class O> inline int F(const I1 &i1, const I2 &i2, const I3 &i3, uint32_t i321, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), i321, WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
-#define WALLY_FN_BB_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, O & out, size_t offset = 0) { \
+#define WALLY_FN_BB_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, O & out) { \
         return ::N(WALLYB(i1), WALLYB(i2), WALLYO(out)); \
 }
 
-#define WALLY_FN_BP3_A(F, N) template <class I1, class P1, class O> inline int F(const I1 &i1, const P1 &p1, uint32_t i321, O **out) { \
+#define WALLY_FN_BP3_A(F, N) template <class I1, class P1, class O> inline int F(const I1 &i1, const P1 &p1, uint32_t i321, O * *out) { \
         return ::N(WALLYB(i1), WALLYP(p1), i321, out); \
 }
 
-#define WALLY_FN_BB_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYB(i1), WALLYB(i2), WALLYO(out), written); \
+#define WALLY_FN_BB_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYB(i1), WALLYB(i2), WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
 
-#define WALLY_FN_B_A(F, N) template <class I1, class O> inline int F(const I1 &i1, O **out) { \
+#define WALLY_FN_B_A(F, N) template <class I1, class O> inline int F(const I1 &i1, O * *out) { \
         return ::N(WALLYB(i1), out); \
 }
 
-#define WALLY_FN_B_B(F, N) template <class I, class O> inline int F(const I &i1, O & out, size_t offset = 0) { \
+#define WALLY_FN_B_B(F, N) template <class I, class O> inline int F(const I &i1, O & out) { \
         return ::N(WALLYB(i1), WALLYO(out)); \
 }
 
-#define WALLY_FN_B_BS(F, N) template <class I, class O> inline int F(const I &i1, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYB(i1), WALLYO(out), written); \
+#define WALLY_FN_B_BS(F, N) template <class I, class O> inline int F(const I &i1, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYB(i1), WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_B_P(F, N) template <class I1, class O> inline int F(const I1 &i1, O * out) { \
@@ -140,7 +152,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYB(i1), written); \
 }
 
-#define WALLY_FN_BB33_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, O & out, size_t offset = 0) { \
+#define WALLY_FN_BB33_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, O & out) { \
         return ::N(WALLYB(i1), WALLYB(i2), i321, i322, WALLYO(out)); \
 }
 
@@ -160,30 +172,32 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), i321, i322, out); \
 }
 
-#define WALLY_FN_P3B(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, uint32_t i321, const I1 &i1, O & out, size_t offset = 0) { \
+#define WALLY_FN_P3B(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, uint32_t i321, const I1 &i1, O & out) { \
         return ::N(WALLYP(p1), i321, WALLYB(i1), WALLYO(out)); \
 }
 
-#define WALLY_FN_P3B633_B(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, uint32_t i321, const I1 &i1, uint64_t i641, uint32_t i322, uint32_t i323, O & out, size_t offset = 0) { \
+#define WALLY_FN_P3B633_B(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, uint32_t i321, const I1 &i1, uint64_t i641, uint32_t i322, uint32_t i323, O & out) { \
         return ::N(WALLYP(p1), i321, WALLYB(i1), i641, i322, i323, WALLYO(out)); \
 }
 
 #define WALLY_FN_P3BB36333_B(F, N) \
     template <class P1, class I1, class I2, class O> \
-    inline int F(const P1 &p1, uint32_t i321, const I1 &i1, const I2 &i2,  uint32_t i322, uint64_t i641, uint32_t i323, uint32_t i324, uint32_t i325, O & out, size_t offset = 0) { \
+    inline int F(const P1 &p1, uint32_t i321, const I1 &i1, const I2 &i2,  uint32_t i322, uint64_t i641, uint32_t i323, uint32_t i324, uint32_t i325, O & out) { \
         return ::N(WALLYP(p1), i321, WALLYB(i1), WALLYB(i2), i322, i641, i323, i324, i325, WALLYO(out)); \
     }
 
-#define WALLY_FN_P3_A(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, O **out) { \
+#define WALLY_FN_P3_A(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, O * *out) { \
         return ::N(WALLYP(p1), i321, out); \
 }
 
-#define WALLY_FN_P3_B(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, O & out, size_t offset = 0) { \
+#define WALLY_FN_P3_B(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, O & out) { \
         return ::N(WALLYP(p1), i321, WALLYO(out)); \
 }
 
-#define WALLY_FN_P3_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYP(p1), i321, WALLYO(out), written); \
+#define WALLY_FN_P3_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYP(p1), i321, WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_P3_S(F, N) template <class P1> inline int F(const P1 &p1, uint32_t i321, size_t * written) { \
@@ -202,11 +216,11 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1), i321, i322, WALLYB(i2), WALLYP(p2), i323); \
 }
 
-#define WALLY_FN_PB3_A(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, uint32_t i321, O **out) { \
+#define WALLY_FN_PB3_A(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, uint32_t i321, O * *out) { \
         return ::N(WALLYP(p1), WALLYB(i1), i321, out); \
 }
 
-#define WALLY_FN_PB3_B(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, uint32_t i321, O & out, size_t offset = 0) { \
+#define WALLY_FN_PB3_B(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, uint32_t i321, O & out) { \
         return ::N(WALLYP(p1), WALLYB(i1), i321, WALLYO(out)); \
 }
 
@@ -214,7 +228,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1), i321, out); \
 }
 
-#define WALLY_FN_PB_A(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, O **out) { \
+#define WALLY_FN_PB_A(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, O * *out) { \
         return ::N(WALLYP(p1), WALLYB(i1), out); \
 }
 
@@ -222,12 +236,16 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYP(p2)); \
 }
 
-#define WALLY_FN_PP3_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYP(p1), WALLYP(p2), WALLYO(out), written); \
+#define WALLY_FN_PP3_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYP(p1), WALLYP(p2), WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
-#define WALLY_FN_PP_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYP(p1), WALLYP(p2), WALLYO(out), written); \
+#define WALLY_FN_PP_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYP(p1), WALLYP(p2), WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_PS(F, N) template <class P1> inline int F(const P1 &p1, size_t s1) { \
@@ -242,16 +260,18 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), s1, WALLYP(p2)); \
 }
 
-#define WALLY_FN_PS_A(F, N) template <class P1, class O> inline int F(const P1 &p1, size_t s1, O **out) { \
+#define WALLY_FN_PS_A(F, N) template <class P1, class O> inline int F(const P1 &p1, size_t s1, O * *out) { \
         return ::N(WALLYP(p1), s1, out); \
 }
 
-#define WALLY_FN_P_A(F, N) template <class P1, class O> inline int F(const P1 &p1, O **out) { \
+#define WALLY_FN_P_A(F, N) template <class P1, class O> inline int F(const P1 &p1, O * *out) { \
         return ::N(WALLYP(p1), out); \
 }
 
-#define WALLY_FN_P_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, size_t * written, O & out, size_t offset = 0) { \
-        return ::N(WALLYP(p1), WALLYO(out), written); \
+#define WALLY_FN_P_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, O & out, size_t * written = 0) { \
+        size_t n; \
+        int ret = ::N(WALLYP(p1), WALLYO(out), written ? written : &n); \
+        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_P_S(F, N) template <class P1> inline int F(const P1 &p1, size_t * written) { \
