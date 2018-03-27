@@ -32,9 +32,11 @@ function build_wheel {
     deactivate
 
     # Copy the wheel into the root directory and remove the virtualenvs
-    cp .venv/*.whl .
+    cp .venv/*.whl wally_dist
     rm -rf .venv
 }
+
+mkdir -p wally_dist
 
 build_wheel python2
 build_wheel python3
