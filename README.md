@@ -83,10 +83,7 @@ If you wish to explicitly choose the python version to use, set the
 running `setup.py` or (when compiling manually) `./configure`.
 
 You can also install the binary wally releases using the released
-wheel files without having to compile the library.
-
-For wheel releases you can install directly using the released wheel files
-and pip install, e.g.:
+wheel files without having to compile the library, e.g.:
 
 ```
 pip install wallycore-0.4.0-cp27-cp27mu-linux_x86_64.whl
@@ -117,7 +114,7 @@ $ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 14 "--enable-swig-j
 ```
 
 The script `tools/build_android_libraries.sh` builds the Android release files and
-can be used as and example for your own Android projects.
+can be used as an example for your own Android projects.
 
 ## Cleaning
 
@@ -131,19 +128,6 @@ Please use pull requests on github to submit. Before producing your patch you
 should format your changes using [uncrustify](https://github.com/uncrustify/uncrustify.git)
 version 0.60 or later. The script `./tools/uncrustify` will reformat all C
 sources in the library as needed, with the currently chosen uncrustify options.
-
-The version of uncrustify in Debian is unfortunately out of date and buggy. If
-you are using Debian this means you will need to download and build uncrustify
-from source using something like:
-
-```
-$ git clone --depth 1 https://github.com/uncrustify/uncrustify.git
-$ cd uncrustify
-$ ./autogen.sh
-$ ./configure
-$ make
-$ sudo make install
-```
 
 You should also make sure the existing tests pass and if possible write tests
 covering any new functionality, following the existing style.
