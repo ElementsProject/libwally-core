@@ -127,6 +127,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_binary(const unsigned char *salt_in, size_t salt_len);
 %pybuffer_nullable_binary(const unsigned char *script_in, size_t script_len_in);
 %pybuffer_binary(const unsigned char *sig_in, size_t sig_len_in);
+%pybuffer_binary(const unsigned char *sighash_in, size_t sighash_len_in);
 %pybuffer_binary(const unsigned char *txhash_in, size_t txhash_len_in);
 %pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
 %pybuffer_nullable_binary(const unsigned char *witness_in, size_t witness_len_in);
@@ -219,6 +220,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %enddef
 %py_int_array(uint32_t, 0xffffffffull, child_num_in, child_num_len)
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
+%py_int_array(uint32_t, 0xffull, sighash_in, sighash_len_in)
 
 %py_opaque_struct(words);
 %py_opaque_struct(ext_key);

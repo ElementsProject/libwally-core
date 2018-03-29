@@ -264,8 +264,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
 /**
  * Create a multisig scriptPubkey.
  *
- * :param bytes_in: Compressed public keys to create a scriptPubkey for.
- * :param len_in: Length of ``pub_key`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param bytes_in: Compressed public keys to create a scriptPubkey from.
+ * :param len_in: Length of ``bytes_in`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
  * :param threshold: The number of signatures that must match to satisfy the script.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting scriptPubkey.
@@ -281,6 +281,31 @@ WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
     size_t len,
     size_t *written);
 
+/**
+ * Create a multisig scriptSig.
+ *
+ * :param script_in: The redeem script this scriptSig provides signatures for.
+ * :param script_len_in: Size of ``script_in`` in bytes.
+ * :param bytes_in: Compact signatures to place in the scriptSig.
+ * :param len_in: Length of ``bytes_in`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
+ * :param sighash_in: WALLY_SIGHASH_ flags for each signature in ``bytes_in``.
+ * :param sighash_len_in: The number of sighash flags in ``sighash_in``.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting scriptSig.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
+    const unsigned char *script_in,
+    size_t script_len_in,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    const uint32_t *sighash_in,
+    size_t sighash_len_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  * Create a bitcoin script that pushes data to the stack.

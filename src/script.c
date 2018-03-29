@@ -437,6 +437,78 @@ int wally_scriptpubkey_multisig_from_bytes(
     return WALLY_OK;
 }
 
+WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
+    const unsigned char *script_in,
+    size_t script_len_in,
+    const unsigned char *bytes_in,
+    size_t len_in,
+    const uint32_t *sighash_in,
+    size_t sighash_len_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written)
+{
+#define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
+    unsigned char der_buff[16 * MAX_DER], *p = bytes_out;
+    size_t der_len[16];
+    size_t i, required = 0, n_sigs = len_in / EC_SIGNATURE_LEN;
+    int ret = WALLY_OK;
+
+    if (written)
+        *written = 0;
+
+    if (!script_in || !script_len_in || !bytes_in || !len_in || len_in % EC_SIGNATURE_LEN ||
+        n_sigs < 1 || n_sigs > 16 || !sighash_in || sighash_len_in != n_sigs ||
+        flags || !bytes_out || !written)
+        return WALLY_EINVAL;
+
+    /* Create and store the DER encoded signatures with lengths */
+    for (i = 0; i < n_sigs; ++i) {
+        if (sighash_in[i] & ~0xff) {
+            ret = WALLY_EINVAL;
+            goto cleanup;
+        }
+        ret = wally_ec_sig_to_der(bytes_in + i * EC_SIGNATURE_LEN, EC_SIGNATURE_LEN,
+                                  &der_buff[i * MAX_DER], MAX_DER, &der_len[i]);
+        if (ret != WALLY_OK)
+            goto cleanup;
+        der_buff[i * MAX_DER + der_len[i]] = sighash_in[i] & 0xff;
+        ++der_len[i];
+        required += calc_push_opcode_size(der_len[i]) + der_len[i];
+    }
+
+    /* Account for the initial OP_0 and final script push */
+    required += 1 + calc_push_opcode_size(script_len_in) + script_len_in;
+
+    if (len < required) {
+        *written = required;
+        goto cleanup;
+    }
+
+    *p++ = OP_0;
+    len--;
+    for (i = 0; i < n_sigs; ++i) {
+        ret = wally_script_push_from_bytes(&der_buff[i * MAX_DER], der_len[i],
+                                           0, p, len, &der_len[i]);
+        if (ret != WALLY_OK)
+            goto cleanup;
+        p += der_len[i];
+        len -= der_len[i];
+    }
+    ret = wally_script_push_from_bytes(script_in, script_len_in,
+                                       0, p, len, &der_len[0]);
+    if (ret != WALLY_OK)
+        goto cleanup;
+    if (len < der_len[0])
+        return WALLY_ERROR; /* Required length mismatch, should not happen! */
+    *written = required;
+
+cleanup:
+    wally_clear(der_buff, sizeof(der_buff));
+    return ret;
+}
+
 int script_get_push_size_from_bytes(
     const unsigned char *bytes_in, size_t len_in, size_t *size_out)
 {
