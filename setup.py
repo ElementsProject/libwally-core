@@ -1,17 +1,23 @@
 """setuptools config for wallycore """
 from setuptools import setup
-from setuptools import Distribution
 import os
 import platform
 import subprocess
-from distutils.command.build_clib import build_clib as _build_clib
+from distutils.dist import Distribution
+from distutils.command.build_py import build_py as _build_py
+from distutils.file_util import copy_file
+from distutils.dir_util import mkpath
 
-class Distr(Distribution):
-    def has_c_libraries(self):
-        return True
 
-class build_clib(_build_clib):
-    def run(self):
+# Force Distribution to have ext modules. This is necessary to generate the correct platform
+# dependent filename when generating wheels because the building of the underlying wally c libs is
+# effectively hidden from distutils - which means it assumes it is building a pure python module.
+Distribution.has_ext_modules = lambda self: True
+
+
+class build_py(_build_py):
+
+    def build_libwallycore(self):
         abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 
         for cmd in ('./tools/autogen.sh',
@@ -21,6 +27,19 @@ class build_clib(_build_clib):
         if platform.system() == 'Darwin':
             cmd = 'cp src/.libs/libwallycore.dylib src/.libs/libwallycore.so'
             subprocess.check_call(cmd.split(' '), cwd=abs_path)
+
+        # Copy the so to the build output dir
+        mkpath(self.build_lib)
+        copy_file('src/.libs/libwallycore.so', self.build_lib)
+
+    def run(self):
+        # Need to override build_py to first build the c library, then
+        # perform the normal python build. Overriding build_clib would be
+        # more obvious but that results in setuptools trying to do build_py
+        # first, which fails because the wallycore/__init__.py is created by
+        # makeing the clib
+        self.build_libwallycore()
+        _build_py.run(self)
 
 setup(
     name='wallycore',
@@ -33,9 +52,8 @@ setup(
     author_email='jon_p_griffiths@yahoo.com',
     license='MIT',
     zip_safe=False,
-    libraries=[('wallycore',{'sources':['include/wally_core.h']})],
     cmdclass={
-        'build_clib': build_clib,
+        'build_py': build_py,
     },
 
     classifiers=[
@@ -54,5 +72,4 @@ setup(
 
     packages=['wallycore'],
     package_dir={'':'src/swig_python'},
-    data_files=[('', ['src/.libs/libwallycore.so'])] ,
 )
