@@ -1,3 +1,4 @@
+#define SECP256K1_BUILD 1
 #include "internal.c"
 #include "aes.c"
 #include "base58.c"
@@ -12,5 +13,21 @@
 #include "scrypt.c"
 #include "sign.c"
 #include "wordlist.c"
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
 #include "src/secp256k1/src/secp256k1.c"
 #include "ccan/ccan/crypto/sha256/sha256.c"
+
+void wally_silence_unused_warnings(void)
+{
+    assert_sign_assumptions();
+    assert_bip32_assumptions();
+    assert_bip38_assumptions();
+    secp256k1_ge_set_all_gej_var(NULL, NULL, 0, NULL);
+    secp256k1_gej_has_quad_y_var(NULL);
+    secp256k1_gej_is_valid_var(NULL);
+}
