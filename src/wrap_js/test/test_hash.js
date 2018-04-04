@@ -70,7 +70,10 @@ test('sha2', function(t) {
         t.equal(new Buffer(r).toString('hex'), sha2_cases[k][1].replace(/ /g, ''), 'sha512('+name+')');
       });
       wally.wally_sha256d(inbuf).then(function (r) {
-        t.equal(new Buffer(r).toString('hex'), sha2_cases[k][2].replace(/ /g, ''), 'sha256d('+name+')');
+        var expected = sha2_cases[k][2];
+        if (expected != null) {
+            t.equal(new Buffer(r).toString('hex'), expected, 'sha256d('+name+')');
+        }
       });
     })(k);
   }
