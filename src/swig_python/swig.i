@@ -136,8 +136,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
 %pybuffer_mutable_binary(unsigned char *abf_out, size_t abf_out_len);
 %pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
-%pybuffer_mutable_binary(unsigned char *bytes_in_out, size_t len);
-%pybuffer_mutable_binary(unsigned char *vbf_out, size_t vbf_out_len); /* FIXME: Needed? */
+%pybuffer_mutable_binary(unsigned char *vbf_out, size_t vbf_out_len)
 
 /* Output integer values are converted into return values. */
 %typemap(in, numinputs=0) size_t *written (size_t sz) {
@@ -219,8 +218,8 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 }
 %enddef
 %py_int_array(uint32_t, 0xffffffffull, child_num_in, child_num_len)
-%py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
 %py_int_array(uint32_t, 0xffull, sighash_in, sighash_len_in)
+%py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
 
 %py_opaque_struct(words);
 %py_opaque_struct(ext_key);

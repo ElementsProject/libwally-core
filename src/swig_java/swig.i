@@ -8,8 +8,12 @@
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_script.h"
+#include "../include/wally_transaction.h"
+#include "transaction_int.h"
 #include "../include/wally_elements.h"
+#include "../internal.h"
 #include <limits.h>
+
 
 static int check_result(JNIEnv *jenv, int result)
 {
@@ -83,7 +87,7 @@ static void* get_obj_or_throw(JNIEnv *jenv, jobject obj, int id, const char *nam
 }
 
 static unsigned char* malloc_or_throw(JNIEnv *jenv, size_t len) {
-    unsigned char *p = (unsigned char *)malloc(len);
+    unsigned char *p = (unsigned char *)wally_malloc(len);
     if (!p)
         SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "Out of memory");
     return p;
@@ -93,7 +97,7 @@ static void clear_and_free(void *p, size_t len)
 {
     if (p) {
         wally_bzero(p, len);
-        free(p);
+        wally_free(p);
     }
 }
 
@@ -208,8 +212,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *extra_in, size_t extra_len_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
@@ -222,19 +226,21 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *salt_in, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *script_in, size_t script_len_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_len_in) };
-
-/* Output buffers */
-%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *sighash_in, size_t sighash_len_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash_in, size_t txhash_in) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *witness_in, size_t witness_len_in) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *abf_out, size_t abf_out_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) }; /* FIXME: Needed? */
+%apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) };
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash_in, size_t sighash_len_in) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t values_len) }
 
 %typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
@@ -317,7 +323,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 /* Our wrapped opaque types */
 %java_opaque_struct(words, 1)
 %java_opaque_struct(ext_key, 2)
-
+%java_opaque_struct(wally_tx_witness_stack, 3);
+%java_opaque_struct(wally_tx_input, 4);
+%java_opaque_struct(wally_tx_output, 5);
+%java_opaque_struct(wally_tx, 6);
 
 /* Our wrapped functions return types */
 %returns_void__(bip32_key_free);
@@ -364,6 +373,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);
 %returns_void__(wally_ec_sig_verify);
+%returns_string(wally_tx_to_hex);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
 %returns_size_t(wally_format_bitcoin_message);
@@ -377,19 +387,57 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_secp_randomize);
-
+%returns_struct(wally_tx_init_alloc, wally_tx);
+%returns_struct(wally_tx_output_init_alloc, wally_tx_output);
+%returns_struct(wally_tx_input_init_alloc, wally_tx_input);
+%returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
+%returns_struct(wally_tx_from_bytes, wally_tx);
+%returns_struct(wally_tx_from_hex, wally_tx);
 %returns_size_t(wally_script_push_from_bytes);
 %returns_size_t(wally_witness_program_from_bytes);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_to_bytes);
-
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
 %returns_size_t(wally_asset_rangeproof);
 %returns_size_t(wally_asset_surjectionproof_size);
 %returns_size_t(wally_asset_surjectionproof);
+%returns_size_t(wally_tx_get_witness_count);
+%returns_size_t(wally_tx_get_length);
+%returns_size_t(wally_tx_get_weight);
+%returns_size_t(wally_tx_get_vsize);
+%returns_size_t(wally_tx_vsize_from_weight);
 %returns_uint64(wally_asset_unblind);
+%returns_void__(wally_tx_witness_stack_add);
+%returns_void__(wally_tx_witness_stack_add_dummy);
+%returns_void__(wally_tx_witness_stack_set);
+%returns_void__(wally_tx_witness_stack_set_dummy);
+%returns_void__(wally_tx_witness_stack_free);
+%returns_void__(wally_tx_free);
+%returns_void__(wally_tx_input_free);
+%returns_void__(wally_tx_output_free);
+%returns_void__(wally_tx_add_input);
+%returns_void__(wally_tx_add_raw_input);
+%returns_void__(wally_tx_add_output);
+%returns_void__(wally_tx_add_raw_output);
+%returns_void__(wally_tx_set_input_script);
+%returns_void__(wally_tx_set_input_witness);
+%returns_void__(wally_tx_remove_input);
+%returns_void__(wally_tx_remove_output);
+
+%returns_size_t(wally_tx_to_bytes);
+%returns_array_(wally_tx_get_btc_signature_hash, 8, 9, SHA256_LEN);
+%returns_array_(wally_tx_get_signature_hash, 12, 13, SHA256_LEN);
+%returns_size_t(wally_scriptpubkey_get_type);
+%returns_size_t(wally_scriptpubkey_p2pkh_from_bytes);
+%returns_size_t(wally_scriptsig_p2pkh_from_sig);
+%returns_size_t(wally_scriptsig_p2pkh_from_der);
+%returns_size_t(wally_scriptpubkey_p2sh_from_bytes);
+%returns_size_t(wally_scriptpubkey_multisig_from_bytes);
+%returns_size_t(wally_scriptsig_multisig_from_bytes);
+%returns_size_t(wally_script_push_from_bytes);
+%returns_size_t(wally_witness_program_from_bytes);
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"
@@ -399,4 +447,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
+%include "../include/wally_transaction.h"
+%include "transaction_int.h"
 %include "../include/wally_elements.h"
