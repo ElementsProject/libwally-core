@@ -108,10 +108,10 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 /* Input buffers with lengths are passed as python buffers */
 %pybuffer_binary(const unsigned char *abf, size_t abf_len);
 %pybuffer_binary(const unsigned char *asset, size_t asset_len);
-%pybuffer_nullable_binary(const unsigned char *bytes_in, size_t len_in);
+%pybuffer_nullable_binary(const unsigned char *bytes, size_t bytes_len);
 %pybuffer_binary(const unsigned char *chain_code, size_t chain_code_len);
 %pybuffer_binary(const unsigned char *commitment, size_t commitment_len);
-%pybuffer_nullable_binary(const unsigned char *extra_in, size_t extra_len_in);
+%pybuffer_nullable_binary(const unsigned char *extra, size_t extra_len);
 %pybuffer_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
 %pybuffer_binary(const unsigned char *iv, size_t iv_len);
@@ -124,13 +124,13 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
 %pybuffer_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
-%pybuffer_binary(const unsigned char *salt_in, size_t salt_len);
-%pybuffer_nullable_binary(const unsigned char *script_in, size_t script_len_in);
-%pybuffer_binary(const unsigned char *sig_in, size_t sig_len_in);
-%pybuffer_binary(const unsigned char *sighash_in, size_t sighash_len_in);
-%pybuffer_binary(const unsigned char *txhash_in, size_t txhash_len_in);
+%pybuffer_binary(const unsigned char *salt, size_t salt_len);
+%pybuffer_nullable_binary(const unsigned char *script, size_t script_len);
+%pybuffer_binary(const unsigned char *sig, size_t sig_len);
+%pybuffer_binary(const unsigned char *sighash, size_t sighash_len);
+%pybuffer_binary(const unsigned char *txhash, size_t txhash_len);
 %pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
-%pybuffer_nullable_binary(const unsigned char *witness_in, size_t witness_len_in);
+%pybuffer_nullable_binary(const unsigned char *witness, size_t witness_len);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -217,8 +217,8 @@ static void destroy_words(PyObject *obj) { (void)obj; }
         wally_free($1);
 }
 %enddef
-%py_int_array(uint32_t, 0xffffffffull, child_num_in, child_num_len)
-%py_int_array(uint32_t, 0xffull, sighash_in, sighash_len_in)
+%py_int_array(uint32_t, 0xffffffffull, child_path, child_path_len)
+%py_int_array(uint32_t, 0xffull, sighash, sighash_len)
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
 
 %py_opaque_struct(words);

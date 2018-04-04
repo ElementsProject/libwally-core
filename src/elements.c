@@ -124,7 +124,7 @@ int wally_asset_rangeproof(uint64_t value,
                            const unsigned char *abf, size_t abf_len,
                            const unsigned char *vbf, size_t vbf_len,
                            const unsigned char *commitment, size_t commitment_len,
-                           const unsigned char *extra_in, size_t extra_len_in,
+                           const unsigned char *extra, size_t extra_len,
                            const unsigned char *generator, size_t generator_len,
                            uint64_t min_value, unsigned char *bytes_out, size_t len,
                            size_t *written)
@@ -152,7 +152,7 @@ int wally_asset_rangeproof(uint64_t value,
         wally_ec_private_key_verify(priv_key, priv_key_len) != WALLY_OK ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         /* FIXME: Is there an upper size limit on the extra commitment? */
-        (extra_len_in && !extra_in) ||
+        (extra_len && !extra) ||
         min_value > 0x7ffffffffffffffful ||
         get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
@@ -177,7 +177,7 @@ int wally_asset_rangeproof(uint64_t value,
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, min_value, &commit,
                                   vbf, nonce_sha.u.u8, 0, 32, value,
                                   message, sizeof(message),
-                                  extra_in, extra_len_in,
+                                  extra, extra_len,
                                   &gen))
         ret = WALLY_OK;
     else {
@@ -196,7 +196,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                         const unsigned char *priv_key, size_t priv_key_len,
                         const unsigned char *proof, size_t proof_len,
                         const unsigned char *commitment, size_t commitment_len,
-                        const unsigned char *extra_in, size_t extra_len_in,
+                        const unsigned char *extra, size_t extra_len,
                         const unsigned char *generator, size_t generator_len,
                         unsigned char *asset_out, size_t asset_out_len,
                         unsigned char *abf_out, size_t abf_out_len,
@@ -221,7 +221,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
         wally_ec_private_key_verify(priv_key, priv_key_len) != WALLY_OK ||
         !proof || !proof_len ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
-        (extra_len_in && !extra_in) ||
+        (extra_len && !extra) ||
         get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
         !abf_out || abf_out_len != ASSET_TAG_LEN ||
@@ -238,7 +238,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                                      message, &message_len,
                                      nonce_sha.u.u8, &min_value, &max_value,
                                      &commit, proof, proof_len,
-                                     extra_in, extra_len_in,
+                                     extra, extra_len,
                                      &gen))
         goto cleanup;
 
@@ -270,7 +270,7 @@ int wally_asset_surjectionproof_size(size_t num_inputs, size_t *written)
 int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
                                 const unsigned char *output_abf, size_t output_abf_len,
                                 const unsigned char *output_generator, size_t output_generator_len,
-                                const unsigned char *bytes_in, size_t len_in,
+                                const unsigned char *bytes, size_t bytes_len,
                                 const unsigned char *asset, size_t asset_len,
                                 const unsigned char *abf, size_t abf_len,
                                 const unsigned char *generator, size_t generator_len,
@@ -295,7 +295,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
         !output_abf || output_abf_len != ASSET_TAG_LEN ||
         get_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
-        !bytes_in || len_in != 32u ||
+        !bytes || bytes_len != 32u ||
         !asset || !num_inputs || (asset_len % ASSET_TAG_LEN != 0) ||
         !abf || abf_len != num_inputs * ASSET_TAG_LEN ||
         !generator || generator_len != num_inputs * ASSET_GENERATOR_LEN ||
@@ -322,7 +322,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
                                               (const secp256k1_fixed_asset_tag *)asset,
                                               num_inputs, num_used,
                                               (const secp256k1_fixed_asset_tag *)output_asset,
-                                              100, bytes_in)) {
+                                              100, bytes)) {
         ret = WALLY_ERROR; /* Caller must retry with different entropy/outputs */
         goto cleanup;
     }

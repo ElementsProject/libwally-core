@@ -198,7 +198,7 @@ fail:
     return 0;
 }
 
-int wally_addr_segwit_from_bytes(const unsigned char *bytes_in, size_t len_in,
+int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                  const char *addr_family, uint32_t flags,
                                  char **output)
 {
@@ -209,18 +209,18 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes_in, size_t len_in,
     if (output)
         *output = 0;
 
-    if (!addr_family || flags || !bytes_in || !output)
+    if (!addr_family || flags || !bytes || !output)
         return WALLY_EINVAL;
 
-    if (bytes_in[0] != 0)
+    if (bytes[0] != 0)
         return WALLY_EINVAL; /* Only v0 witness programs are currently allowed */
 
-    ret = script_get_push_opcode_size_from_bytes(bytes_in + 1, len_in - 1, &push_size);
+    ret = script_get_push_opcode_size_from_bytes(bytes + 1, bytes_len - 1, &push_size);
     if (ret != WALLY_OK)
         return ret;
 
     result[0] = '\0';
-    if (!segwit_addr_encode(result, addr_family, 0, bytes_in + push_size + 1, len_in - push_size - 1))
+    if (!segwit_addr_encode(result, addr_family, 0, bytes + push_size + 1, bytes_len - push_size - 1))
         return WALLY_EINVAL;
 
     *output = wally_strdup(result);

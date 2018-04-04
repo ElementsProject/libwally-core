@@ -149,46 +149,46 @@ cleanup:
     return ret;
 }
 
-uint32_t base58_get_checksum(const unsigned char *bytes_in, size_t len_in)
+uint32_t base58_get_checksum(const unsigned char *bytes, size_t bytes_len)
 {
     struct sha256 sha;
     uint32_t checksum;
 
-    wally_sha256d(bytes_in, len_in, (unsigned char *)&sha, sizeof(sha));
+    wally_sha256d(bytes, bytes_len, (unsigned char *)&sha, sizeof(sha));
     checksum = sha.u.u32[0];
     wally_clear(&sha, sizeof(sha));
     return checksum;
 }
 
 
-int wally_base58_from_bytes(const unsigned char *bytes_in, size_t len_in,
+int wally_base58_from_bytes(const unsigned char *bytes, size_t bytes_len,
                             uint32_t flags, char **output)
 {
     uint32_t checksum, *cs_p = NULL;
     unsigned char bn_buf[BIGNUM_BYTES];
     unsigned char *bn = bn_buf, *top_byte, *bn_p;
-    size_t bn_bytes = 0, zeros, i, orig_len = len_in;
+    size_t bn_bytes = 0, zeros, i, orig_len = bytes_len;
     int ret = WALLY_EINVAL;
 
     if (output)
         *output = NULL;
 
-    if (!bytes_in || !len_in || (flags & ~BASE58_ALL_DEFINED_FLAGS) || !output)
+    if (!bytes || !bytes_len || (flags & ~BASE58_ALL_DEFINED_FLAGS) || !output)
         goto cleanup; /* Invalid argument */
 
     if (flags & BASE58_FLAG_CHECKSUM) {
-        checksum = base58_get_checksum(bytes_in, len_in);
+        checksum = base58_get_checksum(bytes, bytes_len);
         cs_p = &checksum;
-        len_in += 4;
+        bytes_len += 4;
     }
 
-#define b(n) (n < orig_len ? bytes_in[n] : ((unsigned char *)cs_p)[n - orig_len])
+#define b(n) (n < orig_len ? bytes[n] : ((unsigned char *)cs_p)[n - orig_len])
 
     /* Process leading zeros */
-    for (zeros = 0; zeros < len_in && !b(zeros); ++zeros)
+    for (zeros = 0; zeros < bytes_len && !b(zeros); ++zeros)
         ; /* no-op*/
 
-    if (zeros == len_in) {
+    if (zeros == bytes_len) {
         if (!(*output = wally_malloc(zeros + 1))) {
             ret = WALLY_ENOMEM;
             goto cleanup;
@@ -199,7 +199,7 @@ int wally_base58_from_bytes(const unsigned char *bytes_in, size_t len_in,
         return WALLY_OK; /* All 0's */
     }
 
-    bn_bytes = (len_in - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
+    bn_bytes = (bytes_len - zeros) * 138 / 100 + 1; /* log(256)/log(58) rounded up */
 
     /* Allocate our bignum buffer if it won't fit on the stack */
     if (bn_bytes > BIGNUM_BYTES)
@@ -211,7 +211,7 @@ int wally_base58_from_bytes(const unsigned char *bytes_in, size_t len_in,
     top_byte = bn + bn_bytes - 1;
     *top_byte = 0;
 
-    for (i = zeros; i < len_in; ++i) {
+    for (i = zeros; i < bytes_len; ++i) {
         uint32_t carry = b(i);
         for (bn_p = bn + bn_bytes - 1; bn_p >= top_byte; --bn_p) {
             carry = *bn_p * 256 + carry;

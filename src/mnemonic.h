@@ -7,14 +7,14 @@ struct words;
  * Return a mnemonic representation of a block of bytes.
  *
  * @w: List of words.
- * @bytes_in: Bytes to convert to a mnemonic sentence.
- * @len: The length of @bytes_in in bytes.
+ * @bytes: Bytes to convert to a mnemonic sentence.
+ * @len: The length of @bytes in bytes.
  *
- * @bytes_in must be an even multiple of the number of bits in the wordlist used.
+ * @bytes must be an even multiple of the number of bits in the wordlist used.
  */
 char *mnemonic_from_bytes(
     const struct words *w,
-    const unsigned char *bytes_in,
+    const unsigned char *bytes,
     size_t len);
 
 /**

@@ -62,10 +62,10 @@ struct ext_key {
  * Free a key allocated by `bip32_key_from_seed_alloc`
  * or `bip32_key_unserialize_alloc`.
  *
- * :param key_in: Key to free.
+ * :param hdkey: Key to free.
  */
 WALLY_CORE_API int bip32_key_free(
-    const struct ext_key *key_in);
+    const struct ext_key *hdkey);
 #endif /* SWIG_PYTHON */
 
 /**
@@ -95,8 +95,8 @@ WALLY_CORE_API int bip32_key_init_alloc(
  * WALLY_ERROR will be returned and the caller should retry with
  * new entropy.
  *
- * :param bytes_in: Entropy to use.
- * :param len_in: Size of ``bytes_in`` in bytes. Must be one of ``BIP32_ENTROPY_LEN_128``,
+ * :param bytes: Entropy to use.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be one of ``BIP32_ENTROPY_LEN_128``,
  *|     ``BIP32_ENTROPY_LEN_256`` or ``BIP32_ENTROPY_LEN_512``.
  * :param version: Either ``BIP32_VER_MAIN_PRIVATE`` or ``BIP32_VER_TEST_PRIVATE``,
  *|     indicating mainnet or testnet/regtest respectively.
@@ -104,8 +104,8 @@ WALLY_CORE_API int bip32_key_init_alloc(
  * :param output: Destination for the resulting master extended key.
  */
 WALLY_CORE_API int bip32_key_from_seed(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t version,
     uint32_t flags,
     struct ext_key *output);
@@ -117,8 +117,8 @@ WALLY_CORE_API int bip32_key_from_seed(
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_seed_alloc(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t version,
     uint32_t flags,
     struct ext_key **output);
@@ -126,14 +126,14 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
 /**
  * Serialize an extended key to memory using BIP32 format.
  *
- * :param key_in: The extended key to serialize.
+ * :param hdkey: The extended key to serialize.
  * :param flags: BIP32_FLAG_KEY_ Flags indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param bytes_out: Destination for the serialized key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
  */
 WALLY_CORE_API int bip32_key_serialize(
-    const struct ext_key *key_in,
+    const struct ext_key *hdkey,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
@@ -143,13 +143,13 @@ WALLY_CORE_API int bip32_key_serialize(
 /**
  * Un-serialize an extended key from memory.
  *
- * :param bytes_in: Storage holding the serialized key.
- * :param len_in: Size of ``bytes_in`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
+ * :param bytes: Storage holding the serialized key.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
  * :param output: Destination for the resulting extended key.
  */
 WALLY_CORE_API int bip32_key_unserialize(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     struct ext_key *output);
 #endif
 
@@ -159,15 +159,15 @@ WALLY_CORE_API int bip32_key_unserialize(
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_unserialize_alloc(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     struct ext_key **output);
 
 #ifndef SWIG
 /**
  * Create a new child extended key from a parent extended key.
  *
- * :param key_in: The parent extended key.
+ * :param hdkey: The parent extended key.
  * :param child_num: The child number to create. Numbers greater
  *|           than or equal to ``BIP32_INITIAL_HARDENED_CHILD`` represent
  *|           hardened keys that cannot be created from public parent
@@ -178,7 +178,7 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
  * :param output: Destination for the resulting child extended key.
  */
 WALLY_CORE_API int bip32_key_from_parent(
-    const struct ext_key *key_in,
+    const struct ext_key *hdkey,
     uint32_t child_num,
     uint32_t flags,
     struct ext_key *output);
@@ -190,7 +190,7 @@ WALLY_CORE_API int bip32_key_from_parent(
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_parent_alloc(
-    const struct ext_key *key_in,
+    const struct ext_key *hdkey,
     uint32_t child_num,
     uint32_t flags,
     struct ext_key **output);
@@ -199,16 +199,16 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
 /**
  * Create a new child extended key from a parent extended key and a path.
  *
- * :param key_in: The parent extended key.
- * :param child_path_in: The path of child numbers to create.
- * :param child_path_len: The number of child numbers in ``child_path_in``.
+ * :param hdkey: The parent extended key.
+ * :param child_path: The path of child numbers to create.
+ * :param child_path_len: The number of child numbers in ``child_path``.
  * :param flags: BIP32_KEY_ Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
-    const struct ext_key *key_in,
-    const uint32_t *child_num_in,
-    size_t child_num_len,
+    const struct ext_key *hdkey,
+    const uint32_t *child_path,
+    size_t child_path_len,
     uint32_t flags,
     struct ext_key *output);
 #endif
@@ -219,9 +219,9 @@ WALLY_CORE_API int bip32_key_from_parent_path(
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_parent_path_alloc(
-    const struct ext_key *key_in,
-    const uint32_t *child_num_in,
-    size_t child_num_len,
+    const struct ext_key *hdkey,
+    const uint32_t *child_path,
+    size_t child_path_len,
     uint32_t flags,
     struct ext_key **output);
 

@@ -47,12 +47,12 @@ struct secp256k1_context_struct *wally_get_secp_context(void);
 /**
  * Securely wipe memory.
  *
- * :param bytes_in: Memory to wipe
- * :param len_in: Size of ``bytes_in`` in bytes.
+ * :param bytes: Memory to wipe
+ * :param bytes_len: Size of ``bytes`` in bytes.
  */
 WALLY_CORE_API int wally_bzero(
     void *bytes,
-    size_t len_in);
+    size_t bytes_len);
 
 /**
  * Securely wipe and then free a string allocated by the library.
@@ -74,24 +74,24 @@ WALLY_CORE_API int wally_free_string(
  * The caller should call this function before using any functions that rely on
  * libsecp256k1 (i.e. Anything using public/private keys).
  *
- * :param bytes_in: Entropy to use.
- * :param len_in: Size of ``bytes_in`` in bytes. Must be ``WALLY_SECP_RANDOMISE_LEN``.
+ * :param bytes: Entropy to use.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``WALLY_SECP_RANDOMISE_LEN``.
  */
 WALLY_CORE_API int wally_secp_randomize(
-    const unsigned char *bytes_in,
-    size_t len_in);
+    const unsigned char *bytes,
+    size_t bytes_len);
 
 /**
  * Convert bytes to a (lower-case) hexadecimal string.
  *
- * :param bytes_in: Bytes to convert.
- * :param len_in: Size of ``bytes_in`` in bytes.
+ * :param bytes: Bytes to convert.
+ * :param bytes_len: Size of ``bytes`` in bytes.
  * :param output: Destination for the resulting hexadecimal string.
  *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_hex_from_bytes(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     char **output);
 
 /**
@@ -121,16 +121,16 @@ WALLY_CORE_API int wally_hex_to_bytes(
 /**
  * Create a base 58 encoded string representing binary data.
  *
- * :param bytes_in: Binary data to convert.
- * :param len_in: The length of ``bytes_in`` in bytes.
- * :param flags: Pass ``BASE58_FLAG_CHECKSUM`` if ``bytes_in`` should have a
+ * :param bytes: Binary data to convert.
+ * :param bytes_len: The length of ``bytes`` in bytes.
+ * :param flags: Pass ``BASE58_FLAG_CHECKSUM`` if ``bytes`` should have a
  *|    checksum calculated and appended before converting to base 58.
- * :param output: Destination for the base 58 encoded string representing ``bytes_in``.
+ * :param output: Destination for the base 58 encoded string representing ``bytes``.
  *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_base58_from_bytes(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t flags,
     char **output);
 

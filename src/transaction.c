@@ -54,11 +54,11 @@ static void assert_tx_assumptions(void)
 }
 /* LCOV_EXCL_END */
 
-static bool is_valid_witness_stack(const struct wally_tx_witness_stack *wit)
+static bool is_valid_witness_stack(const struct wally_tx_witness_stack *stack)
 {
-    return wit &&
-           ((wit->items != NULL) == (wit->items_allocation_len != 0)) &&
-           (wit->items != NULL || wit->num_items == 0);
+    return stack &&
+           ((stack->items != NULL) == (stack->items_allocation_len != 0)) &&
+           (stack->items != NULL || stack->num_items == 0);
 }
 
 static bool is_valid_tx(const struct wally_tx *tx)
@@ -73,15 +73,15 @@ static bool is_valid_tx(const struct wally_tx *tx)
            (tx->num_outputs == 0 || tx->outputs != NULL);
 }
 
-static bool is_valid_tx_input(const struct wally_tx_input *in)
+static bool is_valid_tx_input(const struct wally_tx_input *input)
 {
-    return in && ((in->script != NULL) == (in->script_len != 0)) &&
-           (!in->witness || is_valid_witness_stack(in->witness));
+    return input && ((input->script != NULL) == (input->script_len != 0)) &&
+           (!input->witness || is_valid_witness_stack(input->witness));
 }
 
-static bool is_valid_tx_output(const struct wally_tx_output *out)
+static bool is_valid_tx_output(const struct wally_tx_output *output)
 {
-    return out && ((out->script != NULL) == (out->script_len != 0));
+    return output && ((output->script != NULL) == (output->script_len != 0));
 }
 
 static void clear_and_free(void *p, size_t len)
@@ -103,38 +103,38 @@ static void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t s
     return p;
 }
 
-static int replace_script(const unsigned char *script_in, size_t script_len_in,
+static int replace_script(const unsigned char *script, size_t script_len,
                           unsigned char **script_out, size_t *script_len_out)
 {
     /* TODO: Avoid reallocation if new script is smaller than the existing one */
     unsigned char *new_script = NULL;
-    if (script_in) {
-        if ((new_script = wally_malloc(script_len_in)) == NULL)
+    if (script) {
+        if ((new_script = wally_malloc(script_len)) == NULL)
             return WALLY_ENOMEM;
-        memcpy(new_script, script_in, script_len_in);
+        memcpy(new_script, script, script_len);
     }
     clear_and_free(*script_out, *script_len_out);
     *script_out = new_script;
-    *script_len_out = script_len_in;
+    *script_len_out = script_len;
     return WALLY_OK;
 }
 
 
 static struct wally_tx_witness_stack *clone_witness(
-    const struct wally_tx_witness_stack *wit)
+    const struct wally_tx_witness_stack *stack)
 {
     struct wally_tx_witness_stack *result;
     size_t i;
     int ret;
 
-    ret = wally_tx_witness_stack_init_alloc(wit->items_allocation_len, &result);
+    ret = wally_tx_witness_stack_init_alloc(stack->items_allocation_len, &result);
 
     if (ret == WALLY_OK) {
-        for (i = 0; i < wit->num_items && ret == WALLY_OK; ++i) {
-            if (wit->items[i].witness) {
+        for (i = 0; i < stack->num_items && ret == WALLY_OK; ++i) {
+            if (stack->items[i].witness) {
                 ret = wally_tx_witness_stack_set(result, i,
-                                                 wit->items[i].witness,
-                                                 wit->items[i].witness_len);
+                                                 stack->items[i].witness,
+                                                 stack->items[i].witness_len);
                 if (ret != WALLY_OK)
                     wally_tx_witness_stack_free(result);
             }
@@ -165,90 +165,90 @@ int wally_tx_witness_stack_init_alloc(size_t allocation_len,
     return WALLY_OK;
 }
 
-static int tx_witness_stack_free(struct wally_tx_witness_stack *wit,
+static int tx_witness_stack_free(struct wally_tx_witness_stack *stack,
                                  bool free_parent)
 {
     size_t i;
 
-    if (wit) {
-        if (wit->items) {
-            for (i = 0; i < wit->num_items; ++i) {
-                if (wit->items[i].witness)
-                    clear_and_free(wit->items[i].witness,
-                                   wit->items[i].witness_len);
+    if (stack) {
+        if (stack->items) {
+            for (i = 0; i < stack->num_items; ++i) {
+                if (stack->items[i].witness)
+                    clear_and_free(stack->items[i].witness,
+                                   stack->items[i].witness_len);
             }
-            clear_and_free(wit->items, wit->num_items * sizeof(*wit->items));
+            clear_and_free(stack->items, stack->num_items * sizeof(*stack->items));
         }
-        wally_clear(wit, sizeof(*wit));
+        wally_clear(stack, sizeof(*stack));
         if (free_parent)
-            wally_free(wit);
+            wally_free(stack);
     }
     return WALLY_OK;
 }
 
-int wally_tx_witness_stack_free(struct wally_tx_witness_stack *wit)
+int wally_tx_witness_stack_free(struct wally_tx_witness_stack *stack)
 {
-    return tx_witness_stack_free(wit, true);
+    return tx_witness_stack_free(stack, true);
 }
 
 int wally_tx_witness_stack_add(
-    struct wally_tx_witness_stack *wit,
-    const unsigned char *witness_in, size_t witness_len_in)
+    struct wally_tx_witness_stack *stack,
+    const unsigned char *witness, size_t witness_len)
 {
-    if (!wit)
+    if (!stack)
         return WALLY_EINVAL;
-    return wally_tx_witness_stack_set(wit, wit->num_items,
-                                      witness_in, witness_len_in);
+    return wally_tx_witness_stack_set(stack, stack->num_items,
+                                      witness, witness_len);
 }
 
 int wally_tx_witness_stack_add_dummy(
-    struct wally_tx_witness_stack *wit, uint32_t flags)
+    struct wally_tx_witness_stack *stack, uint32_t flags)
 {
-    if (!wit)
+    if (!stack)
         return WALLY_EINVAL;
-    return wally_tx_witness_stack_set_dummy(wit, wit->num_items, flags);
+    return wally_tx_witness_stack_set_dummy(stack, stack->num_items, flags);
 }
 
 
-int wally_tx_witness_stack_set(struct wally_tx_witness_stack *wit, size_t index,
-                               const unsigned char *witness_in, size_t witness_len_in)
+int wally_tx_witness_stack_set(struct wally_tx_witness_stack *stack, size_t index,
+                               const unsigned char *witness, size_t witness_len)
 {
     unsigned char *new_witness = NULL;
 
-    if (!is_valid_witness_stack(wit) || (!witness_in && witness_len_in))
+    if (!is_valid_witness_stack(stack) || (!witness && witness_len))
         return WALLY_EINVAL;
 
-    if (witness_len_in) {
-        new_witness = wally_malloc(witness_len_in);
+    if (witness_len) {
+        new_witness = wally_malloc(witness_len);
         if (!new_witness)
             return WALLY_ENOMEM;
     }
 
-    if (index >= wit->num_items) {
-        if (index >= wit->items_allocation_len) {
+    if (index >= stack->num_items) {
+        if (index >= stack->items_allocation_len) {
             /* Expand the witness array */
             struct wally_tx_witness_item *p;
-            p = realloc_array(wit->items, wit->items_allocation_len,
-                              index + 1, sizeof(*wit->items));
+            p = realloc_array(stack->items, stack->items_allocation_len,
+                              index + 1, sizeof(*stack->items));
             if (!p) {
                 wally_free(new_witness);
                 return WALLY_ENOMEM;
             }
-            clear_and_free(wit->items, wit->num_items * sizeof(*wit->items));
-            wit->items = p;
-            wit->items_allocation_len = index + 1;
+            clear_and_free(stack->items, stack->num_items * sizeof(*stack->items));
+            stack->items = p;
+            stack->items_allocation_len = index + 1;
         }
-        wit->num_items = index + 1;
+        stack->num_items = index + 1;
     }
-    clear_and_free(wit->items[index].witness, wit->items[index].witness_len);
-    if (witness_len_in)
-        memcpy(new_witness, witness_in, witness_len_in);
-    wit->items[index].witness = new_witness;
-    wit->items[index].witness_len = witness_len_in;
+    clear_and_free(stack->items[index].witness, stack->items[index].witness_len);
+    if (witness_len)
+        memcpy(new_witness, witness, witness_len);
+    stack->items[index].witness = new_witness;
+    stack->items[index].witness_len = witness_len;
     return WALLY_OK;
 }
 
-int wally_tx_witness_stack_set_dummy(struct wally_tx_witness_stack *wit,
+int wally_tx_witness_stack_set_dummy(struct wally_tx_witness_stack *stack,
                                      size_t index, uint32_t flags)
 {
     const unsigned char *p = NULL;
@@ -259,7 +259,7 @@ int wally_tx_witness_stack_set_dummy(struct wally_tx_witness_stack *wit,
         len = sizeof(DUMMY_SIG);
     } else if (flags != WALLY_TX_DUMMY_NULL)
         return WALLY_EINVAL;
-    return wally_tx_witness_stack_set(wit, index, p, len);
+    return wally_tx_witness_stack_set(stack, index, p, len);
 }
 
 static bool clone_input_to(
@@ -282,23 +282,23 @@ static bool clone_input_to(
     return true;
 }
 
-int wally_tx_input_init(const unsigned char *txhash_in, size_t txhash_len_in,
+int wally_tx_input_init(const unsigned char *txhash, size_t txhash_len,
                         uint32_t index, uint32_t sequence,
-                        const unsigned char *script_in, size_t script_len_in,
-                        const struct wally_tx_witness_stack *witness_in,
+                        const unsigned char *script, size_t script_len,
+                        const struct wally_tx_witness_stack *witness,
                         struct wally_tx_input *output)
 {
-    if (!txhash_in || txhash_len_in != WALLY_TXHASH_LEN ||
-        ((script_in != NULL) != (script_len_in != 0)) || !output)
+    if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
+        ((script != NULL) != (script_len != 0)) || !output)
         return WALLY_EINVAL;
 
-    if (!script_in)
+    if (!script)
         output->script = NULL;
-    else if (!(output->script = wally_malloc(script_len_in)))
+    else if (!(output->script = wally_malloc(script_len)))
         return WALLY_ENOMEM;
 
     output->witness = NULL;
-    if (witness_in && !(output->witness = clone_witness(witness_in))) {
+    if (witness && !(output->witness = clone_witness(witness))) {
         wally_free(output->script);
         output->script = NULL;
         return WALLY_ENOMEM;
@@ -306,17 +306,17 @@ int wally_tx_input_init(const unsigned char *txhash_in, size_t txhash_len_in,
 
     output->index = index;
     output->sequence = sequence;
-    memcpy(output->txhash, txhash_in, WALLY_TXHASH_LEN);
+    memcpy(output->txhash, txhash, WALLY_TXHASH_LEN);
     if (output->script)
-        memcpy(output->script, script_in, script_len_in);
-    output->script_len = script_len_in;
+        memcpy(output->script, script, script_len);
+    output->script_len = script_len;
     return WALLY_OK;
 }
 
-int wally_tx_input_init_alloc(const unsigned char *txhash_in, size_t txhash_len_in,
+int wally_tx_input_init_alloc(const unsigned char *txhash, size_t txhash_len,
                               uint32_t index, uint32_t sequence,
-                              const unsigned char *script_in, size_t script_len_in,
-                              const struct wally_tx_witness_stack *witness_in,
+                              const unsigned char *script, size_t script_len,
+                              const struct wally_tx_witness_stack *witness,
                               struct wally_tx_input **output)
 {
     struct wally_tx_input *result;
@@ -325,8 +325,8 @@ int wally_tx_input_init_alloc(const unsigned char *txhash_in, size_t txhash_len_
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_tx_input);
 
-    ret = wally_tx_input_init(txhash_in, txhash_len_in, index, sequence,
-                              script_in, script_len_in, witness_in, result);
+    ret = wally_tx_input_init(txhash, txhash_len, index, sequence,
+                              script, script_len, witness, result);
 
     if (ret != WALLY_OK) {
         clear_and_free(result, sizeof(*result));
@@ -335,21 +335,21 @@ int wally_tx_input_init_alloc(const unsigned char *txhash_in, size_t txhash_len_
     return ret;
 }
 
-static int tx_input_free(struct wally_tx_input *in, bool free_parent)
+static int tx_input_free(struct wally_tx_input *input, bool free_parent)
 {
-    if (in) {
-        clear_and_free(in->script, in->script_len);
-        tx_witness_stack_free(in->witness, true);
-        wally_clear(in, sizeof(*in));
+    if (input) {
+        clear_and_free(input->script, input->script_len);
+        tx_witness_stack_free(input->witness, true);
+        wally_clear(input, sizeof(*input));
         if (free_parent)
-            wally_free(in);
+            wally_free(input);
     }
     return WALLY_OK;
 }
 
-int wally_tx_input_free(struct wally_tx_input *in)
+int wally_tx_input_free(struct wally_tx_input *input)
 {
-    return tx_input_free(in, true);
+    return tx_input_free(input, true);
 }
 
 static bool clone_output_to(struct wally_tx_output *dst,
@@ -367,26 +367,26 @@ static bool clone_output_to(struct wally_tx_output *dst,
 }
 
 int wally_tx_output_init(uint64_t satoshi,
-                         const unsigned char *script_in, size_t script_len_in,
+                         const unsigned char *script, size_t script_len,
                          struct wally_tx_output *output)
 {
-    if (((script_in != NULL) != (script_len_in != 0)) || !output)
+    if (((script != NULL) != (script_len != 0)) || !output)
         return WALLY_EINVAL;
 
-    if (!script_in)
+    if (!script)
         output->script = NULL;
-    else if (!(output->script = wally_malloc(script_len_in)))
+    else if (!(output->script = wally_malloc(script_len)))
         return WALLY_ENOMEM;
 
     if (output->script)
-        memcpy(output->script, script_in, script_len_in);
-    output->script_len = script_len_in;
+        memcpy(output->script, script, script_len);
+    output->script_len = script_len;
     output->satoshi = satoshi;
     return WALLY_OK;
 }
 
 int wally_tx_output_init_alloc(uint64_t satoshi,
-                               const unsigned char *script_in, size_t script_len_in,
+                               const unsigned char *script, size_t script_len,
                                struct wally_tx_output **output)
 {
     struct wally_tx_output *result;
@@ -395,7 +395,7 @@ int wally_tx_output_init_alloc(uint64_t satoshi,
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_tx_output);
 
-    ret = wally_tx_output_init(satoshi, script_in, script_len_in, result);
+    ret = wally_tx_output_init(satoshi, script, script_len, result);
 
     if (ret != WALLY_OK) {
         clear_and_free(result, sizeof(*result));
@@ -503,25 +503,25 @@ int wally_tx_add_input(struct wally_tx *tx, const struct wally_tx_input *input)
 }
 
 int wally_tx_add_raw_input(struct wally_tx *tx,
-                           const unsigned char *txhash_in, size_t txhash_len_in,
+                           const unsigned char *txhash, size_t txhash_len,
                            uint32_t index, uint32_t sequence,
-                           const unsigned char *script_in, size_t script_len_in,
-                           const struct wally_tx_witness_stack *witness_in,
+                           const unsigned char *script, size_t script_len,
+                           const struct wally_tx_witness_stack *witness,
                            uint32_t flags)
 {
     /* Add an input without allocating a temporary wally_tx_input */
     struct wally_tx_input input = {
-        { 0 }, index, sequence, (unsigned char *)script_in, script_len_in,
-        (struct wally_tx_witness_stack *) witness_in
+        { 0 }, index, sequence, (unsigned char *)script, script_len,
+        (struct wally_tx_witness_stack *) witness
     };
     int ret;
 
     if (flags)
         ret = WALLY_EINVAL; /* TODO: Allow creation of p2pkh/p2sh using flags */
-    else if (!txhash_in || txhash_len_in != WALLY_TXHASH_LEN)
+    else if (!txhash || txhash_len != WALLY_TXHASH_LEN)
         ret = WALLY_EINVAL;
     else {
-        memcpy(input.txhash, txhash_in, WALLY_TXHASH_LEN);
+        memcpy(input.txhash, txhash, WALLY_TXHASH_LEN);
         ret = wally_tx_add_input(tx, &input);
         wally_clear(&input, sizeof(input));
     }
@@ -571,11 +571,11 @@ int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *outpu
 }
 
 int wally_tx_add_raw_output(struct wally_tx *tx, uint64_t satoshi,
-                            const unsigned char *script_in, size_t script_len_in,
+                            const unsigned char *script, size_t script_len,
                             uint32_t flags)
 {
     /* Add an output without allocating a temporary wally_tx_output */
-    struct wally_tx_output output = { satoshi, (unsigned char *)script_in, script_len_in };
+    struct wally_tx_output output = { satoshi, (unsigned char *)script, script_len };
     int ret;
 
     if (flags)
@@ -713,9 +713,9 @@ static int tx_get_lengths(const struct wally_tx *tx,
             size_t num_items = input->witness ? input->witness->num_items : 0;
             n += varint_get_length(num_items);
             for (j = 0; j < num_items; ++j) {
-                const struct wally_tx_witness_item *wit;
-                wit = input->witness->items + j;
-                n += varbuff_get_length(wit->witness_len);
+                const struct wally_tx_witness_item *stack;
+                stack = input->witness->items + j;
+                n += varbuff_get_length(stack->witness_len);
             }
         }
     }
@@ -990,9 +990,9 @@ static int tx_to_bytes(const struct wally_tx *tx,
             size_t num_items = input->witness ? input->witness->num_items : 0;
             p += varint_to_bytes(num_items, p);
             for (j = 0; j < num_items; ++j) {
-                const struct wally_tx_witness_item *wit;
-                wit = input->witness->items + j;
-                p += varbuff_to_bytes(wit->witness, wit->witness_len, p);
+                const struct wally_tx_witness_item *stack;
+                stack = input->witness->items + j;
+                p += varbuff_to_bytes(stack->witness, stack->witness_len, p);
             }
         }
     }
@@ -1040,11 +1040,11 @@ int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
     return ret;
 }
 
-static int analyze_tx(const unsigned char *bytes_in, size_t len_in,
+static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
                       uint32_t flags, size_t *num_inputs, size_t *num_outputs,
                       bool *expect_witnesses)
 {
-    const unsigned char *p = bytes_in, *end = bytes_in + len_in;
+    const unsigned char *p = bytes, *end = bytes + bytes_len;
     uint64_t v;
     size_t i, j, num_witnesses;
     struct wally_tx tmp_tx;
@@ -1056,7 +1056,7 @@ static int analyze_tx(const unsigned char *bytes_in, size_t len_in,
     if (expect_witnesses)
         *expect_witnesses = false;
 
-    if (!bytes_in || len_in < sizeof(uint32_t) + 2 || flags ||
+    if (!bytes || bytes_len < sizeof(uint32_t) + 2 || flags ||
         !num_inputs || !num_outputs || !expect_witnesses)
         return WALLY_EINVAL;
 
@@ -1128,10 +1128,10 @@ static int analyze_tx(const unsigned char *bytes_in, size_t len_in,
     return WALLY_OK;
 }
 
-int wally_tx_from_bytes(const unsigned char *bytes_in, size_t len_in,
+int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                         uint32_t flags, struct wally_tx **output)
 {
-    const unsigned char *p = bytes_in;
+    const unsigned char *p = bytes;
     bool expect_witnesses;
     uint32_t analyze_flags = flags & ~WALLY_TX_FLAG_USE_WITNESS;
     size_t i, j, num_inputs, num_outputs, num_witnesses;
@@ -1140,7 +1140,7 @@ int wally_tx_from_bytes(const unsigned char *bytes_in, size_t len_in,
 
     TX_CHECK_OUTPUT;
 
-    if (analyze_tx(bytes_in, len_in, analyze_flags, &num_inputs, &num_outputs,
+    if (analyze_tx(bytes, bytes_len, analyze_flags, &num_inputs, &num_outputs,
                    &expect_witnesses) != WALLY_OK)
         return WALLY_EINVAL;
 
@@ -1249,8 +1249,8 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
 
 int wally_tx_get_signature_hash(const struct wally_tx *tx,
                                 size_t index,
-                                const unsigned char *script_in, size_t script_len_in,
-                                const unsigned char *extra_in, size_t extra_len_in,
+                                const unsigned char *script, size_t script_len,
+                                const unsigned char *extra, size_t extra_len,
                                 uint32_t extra_offset, uint64_t satoshi,
                                 uint32_t sighash, uint32_t tx_sighash, uint32_t flags,
                                 unsigned char *bytes_out, size_t len)
@@ -1259,16 +1259,16 @@ int wally_tx_get_signature_hash(const struct wally_tx *tx,
     size_t n, n2;
     int ret;
     const struct tx_serialise_opts opts = {
-        sighash, tx_sighash, index, script_in, script_len_in, satoshi,
+        sighash, tx_sighash, index, script, script_len, satoshi,
         (flags & WALLY_TX_FLAG_USE_WITNESS) ? true : false
     };
 
-    if (!is_valid_tx(tx) || ((script_in != NULL) != (script_len_in != 0)) ||
-        ((extra_in != NULL) != (extra_len_in != 0)) || (sighash & 0xffffff00) ||
+    if (!is_valid_tx(tx) || ((script != NULL) != (script_len != 0)) ||
+        ((extra != NULL) != (extra_len != 0)) || (sighash & 0xffffff00) ||
         (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || len < SHA256_LEN)
         return WALLY_EINVAL;
 
-    if (extra_in || extra_len_in || extra_offset)
+    if (extra || extra_len || extra_offset)
         return WALLY_ERROR; /* FIXME: Not implemented yet */
 
     if (index >= tx->num_inputs ||
@@ -1305,11 +1305,11 @@ fail:
 }
 
 int wally_tx_get_btc_signature_hash(const struct wally_tx *tx, size_t index,
-                                    const unsigned char *script_in, size_t script_len_in,
+                                    const unsigned char *script, size_t script_len,
                                     uint64_t satoshi, uint32_t sighash, uint32_t flags,
                                     unsigned char *bytes_out, size_t len)
 {
-    return wally_tx_get_signature_hash(tx, index, script_in, script_len_in,
+    return wally_tx_get_signature_hash(tx, index, script, script_len,
                                        NULL, 0, 0, satoshi, sighash, sighash,
                                        flags, bytes_out, len);
 }
@@ -1324,66 +1324,66 @@ static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t ind
 
 /* Getters for wally_tx_input/wally_tx_output/wally_tx values */
 
-static int tx_getb_impl(const void *in,
+static int tx_getb_impl(const void *input,
                         const unsigned char *src, size_t src_len,
                         unsigned char *bytes_out, size_t len, size_t *written)
 {
     if (written)
         *written = 0;
-    if (!in || !bytes_out || len < src_len || !written)
+    if (!input || !bytes_out || len < src_len || !written)
         return WALLY_EINVAL;
     memcpy(bytes_out, src, src_len);
     *written = src_len;
     return WALLY_OK;
 }
 
-int wally_tx_input_get_txhash(const struct wally_tx_input *in,
+int wally_tx_input_get_txhash(const struct wally_tx_input *input,
                               unsigned char *bytes_out, size_t len)
 {
     size_t written;
     if (len != WALLY_TXHASH_LEN)
         return WALLY_EINVAL;
-    return tx_getb_impl(in, in->txhash,
+    return tx_getb_impl(input, input->txhash,
                         WALLY_TXHASH_LEN, bytes_out, len, &written);
 }
 
 #define GET_TX_B(typ, name, siz) \
-    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *in, \
+    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len, size_t * written) { \
-        return tx_getb_impl(in, in->name, siz, bytes_out, len, written); \
+        return tx_getb_impl(input, input->name, siz, bytes_out, len, written); \
     }
 
 #define GET_TX_I(typ, name, outtyp) \
-    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *in, outtyp * written) { \
+    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, outtyp * written) { \
         if (written) *written = 0; \
-        if (!in || !written) return WALLY_EINVAL; \
-        *written = in->name; \
+        if (!input || !written) return WALLY_EINVAL; \
+        *written = input->name; \
         return WALLY_OK; \
     }
 
 
-GET_TX_B(tx_input, script, in->script_len)
-static bool get_witness_preamble(const struct wally_tx_input *in,
+GET_TX_B(tx_input, script, input->script_len)
+static bool get_witness_preamble(const struct wally_tx_input *input,
                                  size_t index, size_t *written)
 {
     if (written)
         *written = 0;
-    if (!is_valid_tx_input(in) || !written ||
-        !is_valid_witness_stack(in->witness) ||
-        index >= in->witness->num_items)
+    if (!is_valid_tx_input(input) || !written ||
+        !is_valid_witness_stack(input->witness) ||
+        index >= input->witness->num_items)
         return false;
     return true;
 }
 
-int wally_tx_input_get_witness(const struct wally_tx_input *in, size_t index,
+int wally_tx_input_get_witness(const struct wally_tx_input *input, size_t index,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
-    if (!bytes_out || !get_witness_preamble(in, index, written) ||
-        len < in->witness->items[index].witness_len)
+    if (!bytes_out || !get_witness_preamble(input, index, written) ||
+        len < input->witness->items[index].witness_len)
         return WALLY_EINVAL;
-    memcpy(bytes_out, in->witness->items[index].witness,
-           in->witness->items[index].witness_len);
-    *written = in->witness->items[index].witness_len;
+    memcpy(bytes_out, input->witness->items[index].witness,
+           input->witness->items[index].witness_len);
+    *written = input->witness->items[index].witness_len;
     return WALLY_OK;
 }
 
@@ -1391,16 +1391,16 @@ GET_TX_I(tx_input, index, size_t)
 GET_TX_I(tx_input, sequence, size_t)
 GET_TX_I(tx_input, script_len, size_t)
 
-int wally_tx_input_get_witness_len(const struct wally_tx_input *in,
+int wally_tx_input_get_witness_len(const struct wally_tx_input *input,
                                    size_t index, size_t *written)
 {
-    if (!get_witness_preamble(in, index, written))
+    if (!get_witness_preamble(input, index, written))
         return WALLY_EINVAL;
-    *written = in->witness->items[index].witness_len;
+    *written = input->witness->items[index].witness_len;
     return WALLY_OK;
 }
 
-GET_TX_B(tx_output, script, in->script_len)
+GET_TX_B(tx_output, script, input->script_len)
 GET_TX_I(tx_output, satoshi, uint64_t)
 GET_TX_I(tx_output, script_len, size_t)
 
@@ -1409,19 +1409,19 @@ GET_TX_I(tx, locktime, size_t)
 GET_TX_I(tx, num_inputs, size_t)
 GET_TX_I(tx, num_outputs, size_t)
 
-int wally_tx_output_set_script(struct wally_tx_output *out,
-                               const unsigned char *script_in, size_t script_len_in)
+int wally_tx_output_set_script(struct wally_tx_output *output,
+                               const unsigned char *script, size_t script_len)
 {
-    if (!is_valid_tx_output(out) || ((script_in != NULL) != (script_len_in != 0)))
+    if (!is_valid_tx_output(output) || ((script != NULL) != (script_len != 0)))
         return WALLY_EINVAL;
-    return replace_script(script_in, script_len_in, &out->script, &out->script_len);
+    return replace_script(script, script_len, &output->script, &output->script_len);
 }
 
-int wally_tx_output_set_satoshi(struct wally_tx_output *out, uint64_t satoshi)
+int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi)
 {
-    if (!is_valid_tx_output(out))
+    if (!is_valid_tx_output(output))
         return WALLY_EINVAL;
-    out->satoshi = satoshi;
+    output->satoshi = satoshi;
     return WALLY_OK;
 }
 
@@ -1484,24 +1484,24 @@ int wally_tx_get_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
 
 int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t index_in)
 {
-    struct wally_tx_input *in = tx_get_input(tx, index);
-    if (in)
-        in->index = index_in;
-    return in ? WALLY_OK : WALLY_EINVAL;
+    struct wally_tx_input *input = tx_get_input(tx, index);
+    if (input)
+        input->index = index_in;
+    return input ? WALLY_OK : WALLY_EINVAL;
 }
 
 int wally_tx_set_input_sequence(const struct wally_tx *tx, size_t index, uint32_t sequence)
 {
-    struct wally_tx_input *in = tx_get_input(tx, index);
-    if (in)
-        in->sequence = sequence;
-    return in ? WALLY_OK : WALLY_EINVAL;
+    struct wally_tx_input *input = tx_get_input(tx, index);
+    if (input)
+        input->sequence = sequence;
+    return input ? WALLY_OK : WALLY_EINVAL;
 }
 
 int wally_tx_set_output_script(const struct wally_tx *tx, size_t index,
-                               const unsigned char *script_in, size_t script_len_in)
+                               const unsigned char *script, size_t script_len)
 {
-    return wally_tx_output_set_script(tx_get_output(tx, index), script_in, script_len_in);
+    return wally_tx_output_set_script(tx_get_output(tx, index), script, script_len);
 }
 
 int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_t satoshi)
@@ -1511,28 +1511,28 @@ int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
 #endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
 
 int wally_tx_set_input_script(const struct wally_tx *tx, size_t index,
-                              const unsigned char *script_in, size_t script_len_in)
+                              const unsigned char *script, size_t script_len)
 {
-    struct wally_tx_input *in = tx_get_input(tx, index);
+    struct wally_tx_input *input = tx_get_input(tx, index);
 
-    if (!in || ((script_in != NULL) != (script_len_in != 0)))
+    if (!input || ((script != NULL) != (script_len != 0)))
         return WALLY_EINVAL;
-    return replace_script(script_in, script_len_in, &in->script, &in->script_len);
+    return replace_script(script, script_len, &input->script, &input->script_len);
 }
 
 int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
-                               const struct wally_tx_witness_stack *wit)
+                               const struct wally_tx_witness_stack *stack)
 {
-    struct wally_tx_input *in;
+    struct wally_tx_input *input;
     struct wally_tx_witness_stack *new_witness = NULL;
 
-    if (!(in = tx_get_input(tx, index)) || (wit && !is_valid_witness_stack(wit)))
+    if (!(input = tx_get_input(tx, index)) || (stack && !is_valid_witness_stack(stack)))
         return WALLY_EINVAL;
 
-    if (wit && (new_witness = clone_witness(wit)) == NULL)
+    if (stack && (new_witness = clone_witness(stack)) == NULL)
         return WALLY_ENOMEM;
 
-    tx_witness_stack_free(in->witness, true);
-    in->witness = new_witness;
+    tx_witness_stack_free(input->witness, true);
+    input->witness = new_witness;
     return WALLY_OK;
 }

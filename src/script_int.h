@@ -13,16 +13,16 @@ static inline size_t memcpy_len(void *dst, const void *src, size_t len)
 }
 
 /* Read v from bytes_out in little endian */
-static inline size_t uint8_from_le_bytes(const unsigned char *bytes_in, uint8_t *v)
+static inline size_t uint8_from_le_bytes(const unsigned char *bytes, uint8_t *v)
 {
-    *v = *bytes_in;
+    *v = *bytes;
     return sizeof(*v);
 }
 
 #define UINT_FROM_LE_BYTES(N) static inline size_t \
-    uint ## N ## _from_le_bytes(const unsigned char *bytes_in, uint ## N ## _t * v) { \
+    uint ## N ## _from_le_bytes(const unsigned char *bytes, uint ## N ## _t * v) { \
         leint ## N ## _t tmp; \
-        memcpy(&tmp, bytes_in, sizeof(tmp)); \
+        memcpy(&tmp, bytes, sizeof(tmp)); \
         *v = le ## N ## _to_cpu(tmp); \
         return sizeof(tmp); \
     }
@@ -54,21 +54,21 @@ size_t varint_get_length(uint64_t v);
 /* Write v to bytes_out as a varint */
 size_t varint_to_bytes(uint64_t v, unsigned char *bytes_out);
 
-/* Read a variant from bytes_in */
-size_t varint_from_bytes(const unsigned char *bytes_in, uint64_t *v);
+/* Read a variant from bytes */
+size_t varint_from_bytes(const unsigned char *bytes, uint64_t *v);
 
-size_t varint_length_from_bytes(const unsigned char *bytes_in);
+size_t varint_length_from_bytes(const unsigned char *bytes);
 
 /* varbuff is a buffer of data prefixed with a varint length */
 
-/* Get the number of bytes required to write len_in as a varbuff */
-static inline size_t varbuff_get_length(size_t len_in)
+/* Get the number of bytes required to write 'n' bytes as a varbuff */
+static inline size_t varbuff_get_length(size_t n)
 {
-    return varint_get_length(len_in) + len_in;
+    return varint_get_length(n) + n;
 }
 
-/* Write bytes_in to bytes_out as a varbuff */
-size_t varbuff_to_bytes(const unsigned char *bytes_in, size_t len_in,
+/* Write bytes to bytes_out as a varbuff */
+size_t varbuff_to_bytes(const unsigned char *bytes, size_t bytes_len,
                         unsigned char *bytes_out);
 
 #ifdef __cplusplus

@@ -66,8 +66,8 @@ static void assert_bip38_assumptions(void)
 /* LCOV_EXCL_STOP */
 
 /* FIXME: Export this with other address functions */
-static int address_from_private_key(const unsigned char *bytes_in,
-                                    size_t len_in,
+static int address_from_private_key(const unsigned char *bytes,
+                                    size_t bytes_len,
                                     unsigned char network,
                                     bool compressed,
                                     char **output)
@@ -89,7 +89,7 @@ static int address_from_private_key(const unsigned char *bytes_in,
     /* Network and hash160 must be contiguous */
     BUILD_ASSERT(sizeof(buf) == sizeof(struct ripemd160) + sizeof(uint32_t));
 
-    ret = wally_ec_public_key_from_private_key(bytes_in, len_in,
+    ret = wally_ec_public_key_from_private_key(bytes, bytes_len,
                                                pub_key_short, sizeof(pub_key_short));
     if (ret == WALLY_OK && !compressed) {
         ret = wally_ec_public_key_decompress(pub_key_short, sizeof(pub_key_short),
@@ -124,7 +124,7 @@ static void aes_enc_impl(const unsigned char *src, const unsigned char *xor,
     wally_clear(plaintext, sizeof(plaintext));
 }
 
-int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
+int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
                                const unsigned char *pass, size_t pass_len,
                                uint32_t flags,
                                unsigned char *bytes_out, size_t len)
@@ -134,17 +134,17 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     struct bip38_layout_t buf;
     int ret = WALLY_EINVAL;
 
-    if (!bytes_in || len_in != EC_PRIVATE_KEY_LEN ||
+    if (!bytes || bytes_len != EC_PRIVATE_KEY_LEN ||
         !bytes_out || len != BIP38_SERIALIZED_LEN ||
         flags & ~BIP38_ALL_DEFINED_FLAGS)
         goto finish;
 
     if (flags & BIP38_KEY_RAW_MODE)
-        buf.hash = base58_get_checksum(bytes_in, len_in);
+        buf.hash = base58_get_checksum(bytes, bytes_len);
     else {
         const unsigned char network = flags & 0xff;
         char *addr58 = NULL;
-        if ((ret = address_from_private_key(bytes_in, len_in,
+        if ((ret = address_from_private_key(bytes, bytes_len,
                                             network, compressed, &addr58)))
             goto finish;
 
@@ -161,8 +161,8 @@ int bip38_raw_from_private_key(const unsigned char *bytes_in, size_t len_in,
     buf.prefix = BIP38_PREFIX;
     buf.ec_type = BIP38_NO_ECMUL; /* FIXME: EC-Multiply support */
     buf.flags = BIP38_FLAG_DEFAULT | (compressed ? BIP38_FLAG_COMPRESSED : 0);
-    aes_enc_impl(bytes_in + 0, derived.half1_lo, derived.half2, buf.half1);
-    aes_enc_impl(bytes_in + 16, derived.half1_hi, derived.half2, buf.half2);
+    aes_enc_impl(bytes + 0, derived.half1_lo, derived.half2, buf.half1);
+    aes_enc_impl(bytes + 16, derived.half1_hi, derived.half2, buf.half2);
 
     if (flags & BIP38_KEY_SWAP_ORDER) {
         /* Shuffle hash from the beginning to the end */
@@ -178,7 +178,7 @@ finish:
     return ret;
 }
 
-int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
+int bip38_from_private_key(const unsigned char *bytes, size_t bytes_len,
                            const unsigned char *pass, size_t pass_len,
                            uint32_t flags, char **output)
 {
@@ -190,7 +190,7 @@ int bip38_from_private_key(const unsigned char *bytes_in, size_t len_in,
 
     *output = NULL;
 
-    ret = bip38_raw_from_private_key(bytes_in, len_in, pass, pass_len,
+    ret = bip38_raw_from_private_key(bytes, bytes_len, pass, pass_len,
                                      flags, &buf.prefix, BIP38_SERIALIZED_LEN);
     if (!ret)
         ret = wally_base58_from_bytes(&buf.prefix, BIP38_SERIALIZED_LEN,
@@ -216,7 +216,7 @@ static void aes_dec_impl(const unsigned char *cyphertext, const unsigned char *x
 }
 
 static int to_private_key(const char *bip38,
-                          const unsigned char *bytes_in, size_t len_in,
+                          const unsigned char *bytes, size_t bytes_len,
                           const unsigned char *pass, size_t pass_len,
                           uint32_t flags,
                           unsigned char *bytes_out, size_t len)
@@ -232,10 +232,10 @@ static int to_private_key(const char *bip38,
         (!bytes_out || len != EC_PRIVATE_KEY_LEN))
         goto finish;
 
-    if (bytes_in) {
-        if (len_in != BIP38_SERIALIZED_LEN)
+    if (bytes) {
+        if (bytes_len != BIP38_SERIALIZED_LEN)
             goto finish;
-        memcpy(&buf.prefix, bytes_in, BIP38_SERIALIZED_LEN);
+        memcpy(&buf.prefix, bytes, BIP38_SERIALIZED_LEN);
     } else {
         size_t written;
         if ((ret = wally_base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
@@ -298,12 +298,12 @@ finish:
     return ret;
 }
 
-int bip38_raw_to_private_key(const unsigned char *bytes_in, size_t len_in,
+int bip38_raw_to_private_key(const unsigned char *bytes, size_t bytes_len,
                              const unsigned char *pass, size_t pass_len,
                              uint32_t flags,
                              unsigned char *bytes_out, size_t len)
 {
-    return to_private_key(NULL, bytes_in, len_in, pass, pass_len,
+    return to_private_key(NULL, bytes, bytes_len, pass, pass_len,
                           flags, bytes_out, len);
 }
 

@@ -87,48 +87,48 @@ WALLY_CORE_API int wally_tx_witness_stack_init_alloc(
 /**
  * Add a witness to a witness stack.
  *
- * :param tx_witness_stack_in: The witness stack to add to.
- * :param witness_in: The witness data to add to the stack.
- * :param witness_in_len: Length of ``witness_in`` in bytes.
+ * :param stack: The witness stack to add to.
+ * :param witness: The witness data to add to the stack.
+ * :param witness_len: Length of ``witness`` in bytes.
  */
 WALLY_CORE_API int wally_tx_witness_stack_add(
-    struct wally_tx_witness_stack *tx_witness_stack_in,
-    const unsigned char *witness_in,
-    size_t witness_len_in);
+    struct wally_tx_witness_stack *stack,
+    const unsigned char *witness,
+    size_t witness_len);
 
 /**
  * Add a dummy witness item to a witness stack.
  *
- * :param tx_witness_stack_in: The witness stack to add to.
+ * :param stack: The witness stack to add to.
  * :param flags: WALLY_TX_DUMMY_ Flags indicating the type of dummy to add.
  */
 WALLY_CORE_API int wally_tx_witness_stack_add_dummy(
-    struct wally_tx_witness_stack *tx_witness_stack_in,
+    struct wally_tx_witness_stack *stack,
     uint32_t flags);
 
 /**
  * Set a witness item to a witness stack.
  *
- * :param tx_witness_stack_in: The witness stack to add to.
+ * :param stack: The witness stack to add to.
  * :param index: Index of the item to set. The stack will grow if needed to this many items.
- * :param witness_in: The witness data to add to the stack.
- * :param witness_in_len: Length of ``witness_in`` in bytes.
+ * :param witness: The witness data to add to the stack.
+ * :param witness_len: Length of ``witness`` in bytes.
  */
 WALLY_CORE_API int wally_tx_witness_stack_set(
-    struct wally_tx_witness_stack *tx_witness_stack_in,
+    struct wally_tx_witness_stack *stack,
     size_t index,
-    const unsigned char *witness_in,
-    size_t witness_len_in);
+    const unsigned char *witness,
+    size_t witness_len);
 
 /**
  * Set a dummy witness item to a witness stack.
  *
- * :param tx_witness_stack_in: The witness stack to add to.
+ * :param stack: The witness stack to add to.
  * :param index: Index of the item to set. The stack will grow if needed to this many items.
  * :param flags: WALLY_TX_DUMMY_ Flags indicating the type of dummy to set.
  */
 WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
-    struct wally_tx_witness_stack *tx_witness_stack_in,
+    struct wally_tx_witness_stack *stack,
     size_t index,
     uint32_t flags);
 
@@ -136,65 +136,65 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
 /**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.
  *
- * :param tx_witness_stack_in: The transaction witness stack to free.
+ * :param stack: The transaction witness stack to free.
  */
 WALLY_CORE_API int wally_tx_witness_stack_free(
-    struct wally_tx_witness_stack *tx_witness_stack_in);
+    struct wally_tx_witness_stack *stack);
 #endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new transaction input.
  *
- * :param txhash_in: The transaction hash of the transaction this input comes from.
- * :param txhash_len_in: Size of ``txhash_in`` in bytes. Must be ``WALLY_TXHASH_LEN``.
- * :param index: The zero-based index of the transaction output in ``txhash_in`` that
+ * :param txhash: The transaction hash of the transaction this input comes from.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
- * :param script_in: The scriptSig for the input.
- * :param script_len_in: Size of ``script_in`` in bytes.
- * :param witness_in: The witness stack for the input, or NULL if no witness is present.
+ * :param script: The scriptSig for the input.
+ * :param script_len: Size of ``script`` in bytes.
+ * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param output: Destination for the resulting transaction input.
  */
 WALLY_CORE_API int wally_tx_input_init_alloc(
-    const unsigned char *txhash_in,
-    size_t txhash_len_in,
+    const unsigned char *txhash,
+    size_t txhash_len,
     uint32_t index,
     uint32_t sequence,
-    const unsigned char *script_in,
-    size_t script_len_in,
-    const struct wally_tx_witness_stack *witness_in,
+    const unsigned char *script,
+    size_t script_len,
+    const struct wally_tx_witness_stack *witness,
     struct wally_tx_input **output);
 
 #ifndef SWIG_PYTHON
 /**
  * Free a transaction input allocated by `wally_tx_input_init_alloc`.
  *
- * :param tx_input_in: The transaction input to free.
+ * :param input: The transaction input to free.
  */
-WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *tx_input_in);
+WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *input);
 #endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new transaction output.
  *
  * :param satoshi The amount of the output in satoshi.
- * :param script_in: The scriptPubkey for the output.
- * :param script_len_in: Size of ``script_in`` in bytes.
+ * :param script: The scriptPubkey for the output.
+ * :param script_len: Size of ``script`` in bytes.
  * :param output: Destination for the resulting transaction output.
  */
 WALLY_CORE_API int wally_tx_output_init_alloc(
     uint64_t satoshi,
-    const unsigned char *script_in,
-    size_t script_len_in,
+    const unsigned char *script,
+    size_t script_len,
     struct wally_tx_output **output);
 
 #ifndef SWIG_PYTHON
 /**
  * Free a transaction output allocated by `wally_tx_output_init_alloc`.
  *
- * :param tx_output_in: The transaction output to free.
+ * :param output: The transaction output to free.
  */
-WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *tx_output_in);
+WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *output);
 #endif /* SWIG_PYTHON */
 
 /**
@@ -216,153 +216,153 @@ WALLY_CORE_API int wally_tx_init_alloc(
 /**
  * Add a transaction input to a transaction.
  *
- * :param tx_in: The transaction to add the input to.
- * :param tx_input_in: The transaction input to add to ``tx_in``.
+ * :param tx: The transaction to add the input to.
+ * :param input: The transaction input to add to ``tx``.
  */
 WALLY_CORE_API int wally_tx_add_input(
-    struct wally_tx *tx_in,
-    const struct wally_tx_input *tx_input_in);
+    struct wally_tx *tx,
+    const struct wally_tx_input *input);
 
 /**
  * Add a transaction input to a transaction.
  *
- * :param tx_in: The transaction to add the input to.
- * :param txhash_in: The transaction hash of the transaction this input comes from.
- * :param txhash_len_in: Size of ``txhash_in`` in bytes. Must be ``WALLY_TXHASH_LEN``.
- * :param index: The zero-based index of the transaction output in ``txhash_in`` that
+ * :param tx: The transaction to add the input to.
+ * :param txhash: The transaction hash of the transaction this input comes from.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
- * :param script_in: The scriptSig for the input.
- * :param script_len_in: Size of ``script_in`` in bytes.
- * :param witness_in: The witness stack for the input, or NULL if no witness is present.
+ * :param script: The scriptSig for the input.
+ * :param script_len: Size of ``script`` in bytes.
+ * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param flags: Flags controlling script creation. Must be 0.
  */
 WALLY_CORE_API int wally_tx_add_raw_input(
-    struct wally_tx *tx_in,
-    const unsigned char *txhash_in,
-    size_t txhash_len_in,
+    struct wally_tx *tx,
+    const unsigned char *txhash,
+    size_t txhash_len,
     uint32_t index,
     uint32_t sequence,
-    const unsigned char *script_in,
-    size_t script_len_in,
-    const struct wally_tx_witness_stack *witness_in,
+    const unsigned char *script,
+    size_t script_len,
+    const struct wally_tx_witness_stack *witness,
     uint32_t flags);
 
 /**
  * Remove a transaction input from a transaction.
  *
- * :param tx_in: The transaction to remove the input from.
+ * :param tx: The transaction to remove the input from.
  * :param index: The zero-based index of the input to remove.
  */
 WALLY_CORE_API int wally_tx_remove_input(
-    struct wally_tx *tx_in,
+    struct wally_tx *tx,
     size_t index);
 
 /**
  * Set the scriptsig for an input in a transaction.
  *
- * :param tx_in: The transaction to operate on.
+ * :param tx: The transaction to operate on.
  * :param index: The zero-based index of the input to set the script on.
- * :param script_in: The scriptSig for the input.
- * :param script_len_in: Size of ``script_in`` in bytes.
+ * :param script: The scriptSig for the input.
+ * :param script_len: Size of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_tx_set_input_script(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t index,
-    const unsigned char *script_in,
-    size_t script_len_in);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
  * Set the witness stack for an input in a transaction.
  *
- * :param tx_in: The transaction to operate on.
+ * :param tx: The transaction to operate on.
  * :param index: The zero-based index of the input to set the witness stack on.
- * :param tx_witness_stack_in: The transaction witness stack to set.
+ * :param stack: The transaction witness stack to set.
  */
 
 WALLY_CORE_API int wally_tx_set_input_witness(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t index,
-    const struct wally_tx_witness_stack *tx_witness_stack_in);
+    const struct wally_tx_witness_stack *stack);
 
 /**
  * Add a transaction output to a transaction.
  *
- * :param tx_in: The transaction to add the input to.
- * :param tx_output_in: The transaction output to add to ``tx_in``.
+ * :param tx: The transaction to add the input to.
+ * :param output: The transaction output to add to ``tx``.
  */
 WALLY_CORE_API int wally_tx_add_output(
-    struct wally_tx *tx_in,
-    const struct wally_tx_output *tx_output_in);
+    struct wally_tx *tx,
+    const struct wally_tx_output *output);
 
 /**
  * Add a transaction output to a transaction.
  *
- * :param tx_in: The transaction to add the input to.
+ * :param tx: The transaction to add the input to.
  * :param satoshi: The amount of the output in satoshi.
- * :param script_in: The scriptPubkey for the output.
- * :param script_len_in: Size of ``script_in`` in bytes.
+ * :param script: The scriptPubkey for the output.
+ * :param script_len: Size of ``script`` in bytes.
  * :param flags: Flags controlling script creation. Must be 0.
  */
 WALLY_CORE_API int wally_tx_add_raw_output(
-    struct wally_tx *tx_in,
+    struct wally_tx *tx,
     uint64_t satoshi,
-    const unsigned char *script_in,
-    size_t script_len_in,
+    const unsigned char *script,
+    size_t script_len,
     uint32_t flags);
 
 /**
  * Remove a transaction output from a transaction.
  *
- * :param tx_in: The transaction to remove the output from.
+ * :param tx: The transaction to remove the output from.
  * :param index: The zero-based index of the output to remove.
  */
 WALLY_CORE_API int wally_tx_remove_output(
-    struct wally_tx *tx_in,
+    struct wally_tx *tx,
     size_t index);
 
 /**
  * Get the number of inputs in a transaction that have witness data.
  *
- * :param tx_in: The transaction to remove the output from.
+ * :param tx: The transaction to remove the output from.
  * :param written: Destination for the number of witness-containing inputs.
  */
 WALLY_CORE_API int wally_tx_get_witness_count(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t *written);
 
 #ifndef SWIG_PYTHON
 /**
  * Free a transaction allocated by `wally_tx_init_alloc`.
  *
- * :param tx_in: The transaction to free.
+ * :param tx: The transaction to free.
  */
-WALLY_CORE_API int wally_tx_free(struct wally_tx *tx_in);
+WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
 #endif /* SWIG_PYTHON */
 
 /**
  * Return the length of transaction once serialized into bytes.
  *
- * :param tx_in: The transaction to find the serialized length of.
+ * :param tx: The transaction to find the serialized length of.
  * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
  * :param written: Destination for the length of the serialized bytes.
  */
 WALLY_CORE_API int wally_tx_get_length(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     uint32_t flags,
     size_t *written);
 
 /**
  * Create a transaction from its serialized bytes.
  *
- * :param bytes_in: Bytes to create the transaction from.
- * :param len_in: Length of ``bytes_in`` in bytes.
+ * :param bytes: Bytes to create the transaction from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
  * :param flags: Flags controlling serialization options. Must be 0.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_tx_from_bytes(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t flags,
     struct wally_tx **output);
 
@@ -381,14 +381,14 @@ WALLY_CORE_API int wally_tx_from_hex(
 /**
  * Serialize a transaction to bytes.
  *
- * :param tx_in: The transaction to serialize.
+ * :param tx: The transaction to serialize.
  * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
  * :param bytes_out: Destination for the serialized transaction.
  * :param len: Size of ``bytes_out`` in bytes.
  * :param written: Destination for the length of the serialized transaction.
  */
 WALLY_CORE_API int wally_tx_to_bytes(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,
@@ -397,7 +397,7 @@ WALLY_CORE_API int wally_tx_to_bytes(
 /**
  * Serialize a transaction to hex.
  *
- * :param tx_in: The transaction to serialize.
+ * :param tx: The transaction to serialize.
  * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
  * :param output: Destination for the resulting hexadecimal string.
  *
@@ -411,21 +411,21 @@ WALLY_CORE_API int wally_tx_to_hex(
 /**
  * Get the weight of a transaction.
  *
- * :param tx_in: The transaction to get the weight of.
+ * :param tx: The transaction to get the weight of.
  * :param written: Destination for the weight.
  */
 WALLY_CORE_API int wally_tx_get_weight(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t *written);
 
 /**
  * Get the virtual size of a transaction.
  *
- * :param tx_in: The transaction to get the virtual size of.
+ * :param tx: The transaction to get the virtual size of.
  * :param written: Destination for the virtual size.
  */
 WALLY_CORE_API int wally_tx_get_vsize(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t *written);
 
 /**
@@ -441,10 +441,10 @@ WALLY_CORE_API int wally_tx_vsize_from_weight(
 /**
  * Create a BTC transaction for signing and return its hash.
  *
- * :param tx_in: The transaction to generate the signature hash from.
+ * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
- * :param script_in: The scriptSig for the input represented by ``index``.
- * :param script_len_in: Size of ``script_in`` in bytes.
+ * :param script: The scriptSig for the input represented by ``index``.
+ * :param script_len: Size of ``script`` in bytes.
  * :param satoshi: The amount spent by the input being signed for. Only used if
  *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
  * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
@@ -454,10 +454,10 @@ WALLY_CORE_API int wally_tx_vsize_from_weight(
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_get_btc_signature_hash(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t index,
-    const unsigned char *script_in,
-    size_t script_len_in,
+    const unsigned char *script,
+    size_t script_len,
     uint64_t satoshi,
     uint32_t sighash,
     uint32_t flags,
@@ -467,13 +467,13 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
 /**
  * Create a transaction for signing and return its hash.
  *
- * :param tx_in: The transaction to generate the signature hash from.
+ * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
- * :param script_in: The scriptSig for the input represented by ``index``.
- * :param script_len_in: Size of ``script_in`` in bytes.
- * :param extra_in: Extra bytes to include in the transaction preimage.
- * :param extra_len_in: Size of ``extra_in`` in bytes.
- * :param extra_offset: Offset with the preimage to store ``extra_in``. To store
+ * :param script: The scriptSig for the input represented by ``index``.
+ * :param script_len: Size of ``script`` in bytes.
+ * :param extra: Extra bytes to include in the transaction preimage.
+ * :param extra_len: Size of ``extra`` in bytes.
+ * :param extra_offset: Offset with the preimage to store ``extra``. To store
  *|     it and the end of the preimage, use 0xffffffff.
  * :param satoshi: The amount spent by the input being signed for. Only used if
  *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
@@ -487,12 +487,12 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_get_signature_hash(
-    const struct wally_tx *tx_in,
+    const struct wally_tx *tx,
     size_t index,
-    const unsigned char *script_in,
-    size_t script_len_in,
-    const unsigned char *extra_in,
-    size_t extra_len_in,
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *extra,
+    size_t extra_len,
     uint32_t extra_offset,
     uint64_t satoshi,
     uint32_t sighash,

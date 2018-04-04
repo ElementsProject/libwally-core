@@ -29,17 +29,17 @@ struct secp256k1_context_struct *wally_get_secp_context(void)
 }
 #endif
 
-int wally_secp_randomize(const unsigned char *bytes_in, size_t len_in)
+int wally_secp_randomize(const unsigned char *bytes, size_t bytes_len)
 {
     secp256k1_context *ctx;
 
-    if (!bytes_in || len_in != WALLY_SECP_RANDOMISE_LEN)
+    if (!bytes || bytes_len != WALLY_SECP_RANDOMISE_LEN)
         return WALLY_EINVAL;
 
     if (!(ctx = (secp256k1_context *)secp_ctx()))
         return WALLY_ENOMEM;
 
-    if (!secp256k1_context_randomize(ctx, bytes_in))
+    if (!secp256k1_context_randomize(ctx, bytes))
         return WALLY_ERROR;
 
     return WALLY_OK;
@@ -62,16 +62,16 @@ int wally_bzero(void *bytes, size_t len)
     return WALLY_OK;
 }
 
-int wally_sha256(const unsigned char *bytes_in, size_t len_in,
+int wally_sha256(const unsigned char *bytes, size_t bytes_len,
                  unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha;
     bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
 
-    if (!bytes_in || !bytes_out || len != SHA256_LEN)
+    if (!bytes || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes_in, len_in);
+    sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -79,16 +79,16 @@ int wally_sha256(const unsigned char *bytes_in, size_t len_in,
     return WALLY_OK;
 }
 
-int wally_sha256d(const unsigned char *bytes_in, size_t len_in,
+int wally_sha256d(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha_1, sha_2;
     bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32));
 
-    if (!bytes_in || !bytes_out || len != SHA256_LEN)
+    if (!bytes || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256(&sha_1, bytes_in, len_in);
+    sha256(&sha_1, bytes, bytes_len);
     sha256(aligned ? (struct sha256 *)bytes_out : &sha_2, &sha_1, sizeof(sha_1));
     if (!aligned) {
         memcpy(bytes_out, &sha_2, sizeof(sha_2));
@@ -98,16 +98,16 @@ int wally_sha256d(const unsigned char *bytes_in, size_t len_in,
     return WALLY_OK;
 }
 
-int wally_sha512(const unsigned char *bytes_in, size_t len_in,
+int wally_sha512(const unsigned char *bytes, size_t bytes_len,
                  unsigned char *bytes_out, size_t len)
 {
     struct sha512 sha;
     bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64));
 
-    if (!bytes_in || !bytes_out || len != SHA512_LEN)
+    if (!bytes || !bytes_out || len != SHA512_LEN)
         return WALLY_EINVAL;
 
-    sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes_in, len_in);
+    sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -115,19 +115,19 @@ int wally_sha512(const unsigned char *bytes_in, size_t len_in,
     return WALLY_OK;
 }
 
-int wally_hash160(const unsigned char *bytes_in, size_t len_in,
+int wally_hash160(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha;
     struct ripemd160 ripemd;
     bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
 
-    if (!bytes_in || !bytes_out || len != HASH160_LEN)
+    if (!bytes || !bytes_out || len != HASH160_LEN)
         return WALLY_EINVAL;
 
     BUILD_ASSERT(sizeof(ripemd) == HASH160_LEN);
 
-    sha256(&sha, bytes_in, len_in);
+    sha256(&sha, bytes, bytes_len);
     ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &sha, sizeof(sha));
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));

@@ -21,7 +21,7 @@ WALLY_CORE_API int wally_tx_output_get_script(const struct wally_tx_output *tx_o
 WALLY_CORE_API int wally_tx_output_get_script_len(const struct wally_tx_output *tx_output_in, size_t *written);
 WALLY_CORE_API int wally_tx_output_get_satoshi(const struct wally_tx_output *tx_output_in, uint64_t *value_out);
 
-WALLY_CORE_API int wally_tx_output_set_script(struct wally_tx_output *tx_output_in, const unsigned char *script_in, size_t script_len_in);
+WALLY_CORE_API int wally_tx_output_set_script(struct wally_tx_output *tx_output_in, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_tx_output_set_satoshi(struct wally_tx_output *tx_output_in, uint64_t satoshi);
 
 /* Transaction */
@@ -47,7 +47,7 @@ WALLY_CORE_API int wally_tx_get_output_script(const struct wally_tx *tx_in, size
 WALLY_CORE_API int wally_tx_get_output_script_len(const struct wally_tx *tx_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_get_output_satoshi(const struct wally_tx *tx_in, size_t index, uint64_t *value_out);
 
-WALLY_CORE_API int wally_tx_set_output_script(const struct wally_tx *tx_in, size_t index, const unsigned char *script_in, size_t script_len_in);
+WALLY_CORE_API int wally_tx_set_output_script(const struct wally_tx *tx_in, size_t index, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_tx_set_output_satoshi(const struct wally_tx *tx_in, size_t index, uint64_t satoshi);
 
 #ifdef __cplusplus

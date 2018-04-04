@@ -9,11 +9,11 @@
  * copyright notice and this permission notice appear in all copies.
  */
 
-/* Extra bytes required at the end of salt_in for pbkdf2 functions */
+/* Extra bytes required at the end of salt for pbkdf2 functions */
 #define PBKDF2_HMAC_EXTRA_LEN 4
 
 int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
-                                 const unsigned char *salt_in, size_t salt_len,
+                                 const unsigned char *salt, size_t salt_len,
                                  uint32_t flags, uint32_t cost,
                                  unsigned char *bytes_out, size_t len)
 {
@@ -36,7 +36,7 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
     tmp_salt = wally_malloc(salt_len + PBKDF2_HMAC_EXTRA_LEN);
     if (!tmp_salt)
         return WALLY_ENOMEM;
-    memcpy(tmp_salt, salt_in, salt_len);
+    memcpy(tmp_salt, salt, salt_len);
     salt_len += PBKDF2_HMAC_EXTRA_LEN;
 
     /* If bytes out is suitably aligned, we can work on it directly */

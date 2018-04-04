@@ -59,19 +59,19 @@ WALLY_CORE_API int bip39_get_word(
     char **output);
 
 /**
- * Generate a mnemonic sentence from the entropy in ``bytes_in``.
+ * Generate a mnemonic sentence from the entropy in ``bytes``.
  *
  * :param w: Word list to use. Pass NULL to use the default English list.
- * :param bytes_in: Entropy to convert.
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: Entropy to convert.
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param output: Destination for the resulting mnemonic sentence.
  *
  * .. note:: The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip39_mnemonic_from_bytes(
     const struct words *w,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     char **output);
 
 /**

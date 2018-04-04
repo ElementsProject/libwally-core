@@ -11,15 +11,15 @@ extern "C" {
 /**
  * Create a segwit native address from a v0 witness program.
  *
- * :param bytes_in: Witness program bytes, including the version and data push opcode.
- * :param len_in: Length of ``bytes_in`` in bytes. Must be 20 or 32 if script_version is 0.
+ * :param bytes: Witness program bytes, including the version and data push opcode.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be 20 or 32 if script_version is 0.
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting segwit native address string.
  */
 WALLY_CORE_API int wally_addr_segwit_from_bytes(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     const char *addr_family,
     uint32_t flags,
     char **output);

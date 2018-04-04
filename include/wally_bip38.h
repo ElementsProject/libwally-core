@@ -22,8 +22,8 @@ extern "C" {
 /**
  * Encode a private key in raw BIP 38 address format.
  *
- * :param bytes_in: Private key to use.
- * :param len_in: Size of ``bytes_in`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes: Private key to use.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behaviour.
@@ -31,8 +31,8 @@ extern "C" {
  * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
  */
 WALLY_CORE_API int bip38_raw_from_private_key(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     const unsigned char *pass,
     size_t pass_len,
     uint32_t flags,
@@ -42,16 +42,16 @@ WALLY_CORE_API int bip38_raw_from_private_key(
 /**
  * Encode a private key in BIP 38 address format.
  *
- * :param bytes_in: Private key to use.
- * :param len_in: Size of ``bytes_in`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes: Private key to use.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behaviour.
  * :param output: Destination for the resulting BIP38 address.
  */
 WALLY_CORE_API int bip38_from_private_key(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     const unsigned char *pass,
     size_t pass_len,
     uint32_t flags,
@@ -60,8 +60,8 @@ WALLY_CORE_API int bip38_from_private_key(
 /**
  * Decode a raw BIP 38 address to a private key.
  *
- * :param bytes_in: Raw BIP 38 address to decode.
- * :param len_in: Size of ``bytes_in`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
+ * :param bytes: Raw BIP 38 address to decode.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behaviour.
@@ -69,8 +69,8 @@ WALLY_CORE_API int bip38_from_private_key(
  * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  */
 WALLY_CORE_API int bip38_raw_to_private_key(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     const unsigned char *pass,
     size_t pass_len,
     uint32_t flags,

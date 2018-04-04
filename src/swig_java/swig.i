@@ -209,10 +209,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 /* Input buffers with lengths are passed as arrays */
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *abf, size_t abf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *asset, size_t asset_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes_in, size_t len_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes, size_t bytes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra_in, size_t extra_len_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra, size_t extra_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
@@ -225,13 +225,13 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt_in, size_t salt_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *script_in, size_t script_len_in) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig_in, size_t sig_len_in) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sighash_in, size_t sighash_len_in) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash_in, size_t txhash_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *script, size_t script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig, size_t sig_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *sighash, size_t sighash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash, size_t txhash) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *witness_in, size_t witness_len_in) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
@@ -239,8 +239,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) };
 
-%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_num_in, size_t child_num_len) }
-%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash_in, size_t sighash_len_in) }
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t values_len) }
 
 %typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {

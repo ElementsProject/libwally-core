@@ -13,8 +13,8 @@ extern "C" {
  *
  * :param pass: Password to derive from.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param salt_in: Salt to derive from.
- * :param salt_len: Length of ``salt_in`` in bytes.
+ * :param salt: Salt to derive from.
+ * :param salt_len: Length of ``salt`` in bytes.
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
  * :param block_size: The size of memory blocks required.
@@ -25,7 +25,7 @@ extern "C" {
 WALLY_CORE_API int wally_scrypt(
     const unsigned char *pass,
     size_t pass_len,
-    const unsigned char *salt_in,
+    const unsigned char *salt,
     size_t salt_len,
     uint32_t cost,
     uint32_t block_size,
@@ -48,8 +48,8 @@ WALLY_CORE_API int wally_scrypt(
  *
  * :param key: Key material for initialisation.
  * :param key_len: Length of ``key`` in bytes. Must be an AES_KEY_LEN_ constant.
- * :param bytes_in: Bytes to encrypt/decrypt.
- * :param len_in: Length of ``bytes_in`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
+ * :param bytes: Bytes to encrypt/decrypt.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
  * :param flags: AES_FLAG_ constants indicating the desired behaviour.
  * :param bytes_out: Destination for the encrypted/decrypted data.
  * :param len: The length of ``bytes_out`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
@@ -57,8 +57,8 @@ WALLY_CORE_API int wally_scrypt(
 WALLY_CORE_API int wally_aes(
     const unsigned char *key,
     size_t key_len,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
@@ -70,8 +70,8 @@ WALLY_CORE_API int wally_aes(
  * :param key_len: Length of ``key`` in bytes. Must be an AES_KEY_LEN_ constant.
  * :param iv: Initialisation vector.
  * :param iv_len: Length of ``iv`` in bytes. Must be ``AES_BLOCK_LEN``.
- * :param bytes_in: Bytes to encrypt/decrypt.
- * :param len_in: Length of ``bytes_in`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
+ * :param bytes: Bytes to encrypt/decrypt.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
  * :param flags: AES_FLAG_ constants indicating the desired behaviour.
  * :param bytes_out: Destination for the encrypted/decrypted data.
  * :param len: The length of ``bytes_out`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
@@ -82,8 +82,8 @@ WALLY_CORE_API int wally_aes_cbc(
     size_t key_len,
     const unsigned char *iv,
     size_t iv_len,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,
@@ -99,42 +99,42 @@ WALLY_CORE_API int wally_aes_cbc(
 /**
  * SHA-256(m)
  *
- * :param bytes_in: The message to hash
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_sha256(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
 /**
  * SHA-256(SHA-256(m)) (double SHA-256)
  *
- * :param bytes_in: The message to hash
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_sha256d(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
 /**
  * SHA-512(m)
  *
- * :param bytes_in: The message to hash
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA512_LEN``.
  */
 WALLY_CORE_API int wally_sha512(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
@@ -144,14 +144,14 @@ WALLY_CORE_API int wally_sha512(
 /**
  * RIPEMD-160(SHA-256(m))
  *
- * :param bytes_in: The message to hash
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``HASH160_LEN``.
  */
 WALLY_CORE_API int wally_hash160(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
@@ -167,16 +167,16 @@ WALLY_CORE_API int wally_hash160(
  *
  * :param key: The key for the hash
  * :param key_len: The length of ``key`` in bytes.
- * :param bytes_in: The message to hash
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting HMAC.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``HMAC_SHA256_LEN``.
  */
 WALLY_CORE_API int wally_hmac_sha256(
     const unsigned char *key,
     size_t key_len,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
@@ -185,16 +185,16 @@ WALLY_CORE_API int wally_hmac_sha256(
  *
  * :param key: The key for the hash
  * :param key_len: The length of ``key`` in bytes.
- * :param bytes_in: The message to hash
- * :param len_in: The length of ``bytes_in`` in bytes.
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting HMAC.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``HMAC_SHA512_LEN``.
  */
 WALLY_CORE_API int wally_hmac_sha512(
     const unsigned char *key,
     size_t key_len,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
@@ -210,8 +210,8 @@ WALLY_CORE_API int wally_hmac_sha512(
  *
  * :param pass: Password to derive from.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param salt_in: Salt to derive from.
- * :param salt_len: Length of ``salt_in`` in bytes.
+ * :param salt: Salt to derive from.
+ * :param salt_len: Length of ``salt`` in bytes.
  * :param flags: Reserved, must be 0.
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
@@ -222,7 +222,7 @@ WALLY_CORE_API int wally_hmac_sha512(
 WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
     const unsigned char *pass,
     size_t pass_len,
-    const unsigned char *salt_in,
+    const unsigned char *salt,
     size_t salt_len,
     uint32_t flags,
     uint32_t cost,
@@ -234,8 +234,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
  *
  * :param pass: Password to derive from.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param salt_in: Salt to derive from.
- * :param salt_len: Length of ``salt_in`` in bytes.
+ * :param salt: Salt to derive from.
+ * :param salt_len: Length of ``salt`` in bytes.
  * :param flags: Reserved, must be 0.
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
@@ -246,7 +246,7 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
 WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
     const unsigned char *pass,
     size_t pass_len,
-    const unsigned char *salt_in,
+    const unsigned char *salt,
     size_t salt_len,
     uint32_t flags,
     uint32_t cost,
@@ -315,8 +315,8 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
  *
  * :param priv_key: The private key to sign with.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- * :param bytes_in: The message hash to sign.
- * :param len_in: The length of ``bytes_in`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param bytes: The message hash to sign.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
  * :param flags: EC_FLAG_ flag values indicating desired behaviour.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
@@ -324,8 +324,8 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
 WALLY_CORE_API int wally_ec_sig_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
@@ -333,29 +333,29 @@ WALLY_CORE_API int wally_ec_sig_from_bytes(
 /**
  * Convert a signature to low-s form.
  *
- * :param sig_in: The compact signature to convert.
- * :param sig_len_in: The length of ``sig_in`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sig: The compact signature to convert.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param bytes_out: Destination for the resulting low-s signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  */
 WALLY_CORE_API int wally_ec_sig_normalize(
-    const unsigned char *sig_in,
-    size_t sig_len_in,
+    const unsigned char *sig,
+    size_t sig_len,
     unsigned char *bytes_out,
     size_t len);
 
 /**
  * Convert a compact signature to DER encoding.
  *
- * :param sig_in: The compact signature to convert.
- * :param sig_len_in: The length of ``sig_in`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sig: The compact signature to convert.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param bytes_out: Destination for the resulting DER encoded signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_DER_MAX_LEN``.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_ec_sig_to_der(
-    const unsigned char *sig_in,
-    size_t sig_len_in,
+    const unsigned char *sig,
+    size_t sig_len,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
@@ -363,14 +363,14 @@ WALLY_CORE_API int wally_ec_sig_to_der(
 /**
  * Convert a DER encoded signature to a compact signature.
  *
- * :param bytes_in: The DER encoded signature to convert.
- * :param len_in: The length of ``sig_in`` in bytes.
+ * :param bytes: The DER encoded signature to convert.
+ * :param bytes_len: The length of ``sig`` in bytes.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  */
 WALLY_CORE_API int wally_ec_sig_from_der(
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len);
 
@@ -379,20 +379,20 @@ WALLY_CORE_API int wally_ec_sig_from_der(
  *
  * :param pub_key: The public key to verify with.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- * :param bytes_in: The message hash to verify.
- * :param len_in: The length of ``bytes_in`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param bytes: The message hash to verify.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
  * :param flags: EC_FLAG_ flag values indicating desired behaviour.
- * :param sig_in: The compact signature of the message in ``bytes_in``.
- * :param sig_len_in: The length of ``sig_in`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sig: The compact signature of the message in ``bytes``.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  */
 WALLY_CORE_API int wally_ec_sig_verify(
     const unsigned char *pub_key,
     size_t pub_key_len,
-    const unsigned char *bytes_in,
-    size_t len_in,
+    const unsigned char *bytes,
+    size_t bytes_len,
     uint32_t flags,
-    const unsigned char *sig_in,
-    size_t sig_len_in);
+    const unsigned char *sig,
+    size_t sig_len);
 
 /** The maximum size of input message that can be formatted */
 #define BITCOIN_MESSAGE_MAX_LEN (64 * 1024 - 64)
@@ -403,8 +403,8 @@ WALLY_CORE_API int wally_ec_sig_verify(
 /**
  * Format a message for use as a bitcoin signed message.
  *
- * :param bytes_in: The message string to sign.
- * :param len_in: The length of ``bytes_in`` in bytes. Must be less than
+ * :param bytes: The message string to sign.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be less than
  *|    or equal to BITCOIN_MESSAGE_MAX_LEN.
  * :param flags: BITCOIN_MESSAGE_FLAG_ flags indicating the desired output.
  *|    if BITCOIN_MESSAGE_FLAG_HASH is passed, the double SHA256 hash
@@ -414,8 +414,8 @@ WALLY_CORE_API int wally_ec_sig_verify(
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
-WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes_in,
-                                                size_t len_in,
+WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes,
+                                                size_t bytes_len,
                                                 uint32_t flags,
                                                 unsigned char *bytes_out,
                                                 size_t len,
