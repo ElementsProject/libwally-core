@@ -136,7 +136,7 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
 /**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.
  *
- * :param tx_witness_stack_in: Transaction input to free.
+ * :param tx_witness_stack_in: The transaction witness stack to free.
  */
 WALLY_CORE_API int wally_tx_witness_stack_free(
     struct wally_tx_witness_stack *tx_witness_stack_in);
@@ -169,7 +169,7 @@ WALLY_CORE_API int wally_tx_input_init_alloc(
 /**
  * Free a transaction input allocated by `wally_tx_input_init_alloc`.
  *
- * :param tx_input_in: Transaction input to free.
+ * :param tx_input_in: The transaction input to free.
  */
 WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *tx_input_in);
 #endif /* SWIG_PYTHON */
@@ -192,7 +192,7 @@ WALLY_CORE_API int wally_tx_output_init_alloc(
 /**
  * Free a transaction output allocated by `wally_tx_output_init_alloc`.
  *
- * :param tx_output_in: Transaction output to free.
+ * :param tx_output_in: The transaction output to free.
  */
 WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *tx_output_in);
 #endif /* SWIG_PYTHON */
@@ -258,11 +258,27 @@ WALLY_CORE_API int wally_tx_remove_input(
     struct wally_tx *tx_in,
     size_t index);
 
+/**
+ * Set the scriptsig for an input in a transaction.
+ *
+ * :param tx_in: The transaction to operate on.
+ * :param index: The zero-based index of the input to set the script on.
+ * :param script_in: The scriptSig for the input.
+ * :param script_len_in: Size of ``script_in`` in bytes.
+ */
 WALLY_CORE_API int wally_tx_set_input_script(
     const struct wally_tx *tx_in,
     size_t index,
     const unsigned char *script_in,
     size_t script_len_in);
+
+/**
+ * Set the witness stack for an input in a transaction.
+ *
+ * :param tx_in: The transaction to operate on.
+ * :param index: The zero-based index of the input to set the witness stack on.
+ * :param tx_witness_stack_in: The transaction witness stack to set.
+ */
 
 WALLY_CORE_API int wally_tx_set_input_witness(
     const struct wally_tx *tx_in,
@@ -319,7 +335,7 @@ WALLY_CORE_API int wally_tx_get_witness_count(
 /**
  * Free a transaction allocated by `wally_tx_init_alloc`.
  *
- * :param tx_in: Transaction to free.
+ * :param tx_in: The transaction to free.
  */
 WALLY_CORE_API int wally_tx_free(struct wally_tx *tx_in);
 #endif /* SWIG_PYTHON */
