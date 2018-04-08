@@ -17,7 +17,7 @@ function build_wheel {
     source .venv/bin/activate
 
     pip install wheel
-    pip wheel --wheel-dir=.venv .
+    pip wheel --wheel-dir=./wally_dist .
 
     deactivate
 
@@ -26,13 +26,10 @@ function build_wheel {
     source .venv/.smoketest/bin/activate
 
     pip install --upgrade pip
-    pip install .venv/*.whl
+    pip install --find-links=./wally_dist wallycore
     python -c "import wallycore as wally; assert wally.hex_from_bytes(wally.hex_to_bytes('ff')) == 'ff'"
 
     deactivate
-
-    # Copy the wheel into the root directory and remove the virtualenvs
-    cp .venv/*.whl wally_dist
     rm -rf .venv
 }
 
