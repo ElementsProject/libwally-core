@@ -92,12 +92,11 @@ windows10_release:
     name: wallycore-dll
     when: on_success
     paths:
-    - wally.dll
-    - wally.lib
+    - wally_dist\*
   script:
     - cd %CI_PROJECT_DIR%
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
-    - tools\msvc\build.bat
+    - tools\msvc\wheel.bat
 
 apidocs:
   image: greenaddress/wallycore@sha256:4f48b07e0b7e06a978a7dabc3ac918d5bcc9a18f6475ba97207e909a01408299
@@ -129,4 +128,5 @@ package_release:
   - armv7l_release
   - arm64_release
   - freebsdamd64_release
+  - windows10_release
   - apidocs

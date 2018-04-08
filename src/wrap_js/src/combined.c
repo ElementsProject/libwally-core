@@ -2,6 +2,7 @@
 #include "internal.c"
 #include "aes.c"
 #include "base58.c"
+#include "bech32.c"
 #include "bip32.c"
 #include "bip38.c"
 #include "bip39.c"
@@ -10,8 +11,10 @@
 #include "hmac.c"
 #include "mnemonic.c"
 #include "pbkdf2.c"
+#include "script.c"
 #include "scrypt.c"
 #include "sign.c"
+#include "transaction.c"
 #include "wordlist.c"
 #undef PACKAGE
 #undef PACKAGE_NAME

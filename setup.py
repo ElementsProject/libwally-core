@@ -1,62 +1,17 @@
 """setuptools config for wallycore """
-from setuptools import setup
-import os
-import platform
-import subprocess
-from distutils.dist import Distribution
-from distutils.command.build_py import build_py as _build_py
-from distutils.file_util import copy_file
-from distutils.dir_util import mkpath
 
+kwargs = {
+    'name': 'wallycore',
+    'version': '0.6.0',
+    'description': 'libwally Bitcoin library',
+    'long_description': 'Python bindings for the libwally Bitcoin library',
+    'url': 'https://github.com/ElementsProject/libwally-core',
+    'author': 'Jon Griffiths',
+    'author_email': 'jon_p_griffiths@yahoo.com',
+    'license': 'MIT',
+    'zip_safe': False,
 
-# Force Distribution to have ext modules. This is necessary to generate the correct platform
-# dependent filename when generating wheels because the building of the underlying wally c libs is
-# effectively hidden from distutils - which means it assumes it is building a pure python module.
-Distribution.has_ext_modules = lambda self: True
-
-
-class build_py(_build_py):
-
-    def build_libwallycore(self):
-        abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
-
-        for cmd in ('./tools/autogen.sh',
-                    './configure --enable-swig-python',
-                    'make'):
-            subprocess.check_call(cmd.split(' '), cwd=abs_path)
-        if platform.system() == 'Darwin':
-            cmd = 'cp src/.libs/libwallycore.dylib src/.libs/libwallycore.so'
-            subprocess.check_call(cmd.split(' '), cwd=abs_path)
-
-        # Copy the so to the build output dir
-        mkpath(self.build_lib)
-        copy_file('src/.libs/libwallycore.so', self.build_lib)
-
-    def run(self):
-        # Need to override build_py to first build the c library, then
-        # perform the normal python build. Overriding build_clib would be
-        # more obvious but that results in setuptools trying to do build_py
-        # first, which fails because the wallycore/__init__.py is created by
-        # making the clib
-        self.build_libwallycore()
-        _build_py.run(self)
-
-setup(
-    name='wallycore',
-
-    version='0.6.0',
-    description='libwally Bitcoin library',
-    long_description='Python bindings for the libwally Bitcoin library',
-    url='https://github.com/ElementsProject/libwally-core',
-    author='Jon Griffiths',
-    author_email='jon_p_griffiths@yahoo.com',
-    license='MIT',
-    zip_safe=False,
-    cmdclass={
-        'build_py': build_py,
-    },
-
-    classifiers=[
+    'classifiers': [
         'Development Status :: 3 - Alpha',
 
         'Intended Audience :: Developers',
@@ -68,8 +23,91 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
 
-    keywords='Bitcoin wallet BIP32 BIP38 BIP39 secp256k1',
+    'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1',
 
-    packages=['wallycore'],
-    package_dir={'':'src/swig_python'},
-)
+    'packages': ['wallycore'],
+    'package_dir': {'':'src/swig_python'},
+}
+
+import platform
+if platform.system() == "Windows":
+    # On windows wally is defined as a standard python extension
+    from distutils.core import Extension
+
+    wally_ext = Extension(
+        '_wallycore',
+        define_macros=[
+            ('SWIG_PYTHON_BUILD', None),
+            ('USE_ECMULT_STATIC_PRECOMPUTATION', None),
+            ('WALLY_CORE_BUILD', None),
+            ('HAVE_CONFIG_H', None),
+            ('SECP256K1_BUILD', None),
+            ],
+        include_dirs=[
+            # Borrowing config from wrap_js
+            # TODO: Move this to another directory
+            './src/wrap_js/windows_config',
+            './',
+            './src',
+            './include',
+            './src/ccan',
+            './src/secp256k1',
+            './src/secp256k1/src/',
+            ],
+        sources=[
+            'src/swig_python/swig_wrap.c',
+            'src/wrap_js/src/combined.c',
+            'src/wrap_js/src/combined_ccan.c',
+            'src/wrap_js/src/combined_ccan2.c',
+            ],
+    )
+    kwargs['py_modules'] = 'wallycore'
+    kwargs['ext_modules'] = [wally_ext]
+else:
+    # *nix uses a custom autotools/make build
+    import distutils
+    import distutils.command.build_py
+    import os
+    import platform
+    import subprocess
+
+    class _build_py(distutils.command.build_py.build_py):
+
+        def build_libwallycore(self):
+            abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
+
+            def call(cmd):
+                subprocess.check_call(cmd.split(' '), cwd=abs_path)
+
+            # Run the autotools/make build to generate a python extension module
+            call('./tools/autogen.sh')
+            call('./configure --enable-swig-python')
+            call('make')
+
+            # Copy the so that has just been built to the build_dir that distutils expects it to be in
+            # The extension of the built lib is dylib on osx
+            so_ext = 'dylib' if platform.system() == 'Darwin' else 'so'
+            src_so = 'src/.libs/libwallycore.{}'.format(so_ext)
+            distutils.dir_util.mkpath(self.build_lib)
+            dest_so = os.path.join(self.build_lib, 'libwallycore.so')
+            distutils.file_util.copy_file(src_so, dest_so)
+
+        def run(self):
+            # Override build_py to first build the c library, then perform the normal python build.
+            # Overriding build_clib would be more obvious but that results in setuptools trying to do
+            # build_py first, which fails because the wallycore/__init__.py is created by making the
+            # clib
+            self.build_libwallycore()
+            distutils.command.build_py.build_py.run(self)
+
+    kwargs['cmdclass'] = {'build_py': _build_py}
+
+    # Force Distribution to have ext modules. This is necessary to generate the correct platform
+    # dependent filename when generating wheels because the building of the underlying wally c libs
+    # is effectively hidden from distutils - which means it assumes it is building a pure python
+    # module.
+    from distutils.dist import Distribution
+    Distribution.has_ext_modules = lambda self: True
+
+from setuptools import setup
+setup(**kwargs)
