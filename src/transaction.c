@@ -1045,8 +1045,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
                       bool *expect_witnesses)
 {
     const unsigned char *p = bytes, *end = bytes + bytes_len;
-    uint64_t v;
-    size_t i, j, num_witnesses;
+    uint64_t v, num_witnesses;
+    size_t i, j;
     struct wally_tx tmp_tx;
 
     if (num_inputs)
@@ -1134,7 +1134,8 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
     const unsigned char *p = bytes;
     bool expect_witnesses;
     uint32_t analyze_flags = flags & ~WALLY_TX_FLAG_USE_WITNESS;
-    size_t i, j, num_inputs, num_outputs, num_witnesses;
+    size_t i, j, num_inputs, num_outputs;
+    uint64_t tmp, num_witnesses;
     int ret;
     struct wally_tx *result;
 
@@ -1152,12 +1153,12 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
     p += uint32_from_le_bytes(p, &result->version);
     if (expect_witnesses)
         p += 2; /* Skip flag bytes */
-    p += varint_from_bytes(p, &num_inputs);
+    p += varint_from_bytes(p, &tmp);
 
     for (i = 0; i < num_inputs; ++i) {
         const unsigned char *txhash = p, *script;
         uint32_t index, sequence;
-        size_t script_len;
+        uint64_t script_len;
         p += WALLY_TXHASH_LEN;
         p += uint32_from_le_bytes(p, &index);
         p += varint_from_bytes(p, &script_len);
@@ -1172,11 +1173,10 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
         result->num_inputs += 1;
     }
 
-    p += varint_from_bytes(p, &num_outputs);
+    p += varint_from_bytes(p, &tmp);
     for (i = 0; i < num_outputs; ++i) {
         const unsigned char *script;
-        uint64_t satoshi;
-        size_t script_len;
+        uint64_t satoshi, script_len;
         p += uint64_from_le_bytes(p, &satoshi);
         p += varint_from_bytes(p, &script_len);
         script = p;
@@ -1199,7 +1199,7 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                 goto fail;
 
             for (j = 0; j < num_witnesses; ++j) {
-                size_t witness_len;
+                uint64_t witness_len;
                 p += varint_from_bytes(p, &witness_len);
                 ret = wally_tx_witness_stack_set(result->inputs[i].witness, j,
                                                  p, witness_len);
