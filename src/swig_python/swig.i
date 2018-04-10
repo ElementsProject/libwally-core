@@ -230,7 +230,11 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 /* Tell SWIG what uint32_t/uint64_t mean */
 typedef unsigned int uint32_t;
+#if sizeof(long) == sizeof(int)
 typedef unsigned long long uint64_t;
+#else
+typedef unsigned long uint64_t;
+#endif
 
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
