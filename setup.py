@@ -44,7 +44,7 @@ class build_py(_build_py):
 setup(
     name='wallycore',
 
-    version='0.4.0',
+    version='0.6.0',
     description='libwally Bitcoin library',
     long_description='Python bindings for the libwally Bitcoin library',
     url='https://github.com/ElementsProject/libwally-core',
