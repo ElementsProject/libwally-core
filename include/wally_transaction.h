@@ -474,7 +474,7 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  * :param extra: Extra bytes to include in the transaction preimage.
  * :param extra_len: Size of ``extra`` in bytes.
  * :param extra_offset: Offset with the preimage to store ``extra``. To store
- *|     it and the end of the preimage, use 0xffffffff.
+ *|     it at the end of the preimage, use 0xffffffff.
  * :param satoshi: The amount spent by the input being signed for. Only used if
  *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
  * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
