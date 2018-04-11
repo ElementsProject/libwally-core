@@ -245,6 +245,7 @@ cleanup:
     if (bn != bn_buf)
         wally_free(bn);
     return ret;
+#undef b
 }
 
 
