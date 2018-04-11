@@ -324,7 +324,7 @@ WALLY_CORE_API int wally_tx_remove_output(
 /**
  * Get the number of inputs in a transaction that have witness data.
  *
- * :param tx: The transaction to remove the output from.
+ * :param tx: The transaction to get the witnesses count from.
  * :param written: Destination for the number of witness-containing inputs.
  */
 WALLY_CORE_API int wally_tx_get_witness_count(
