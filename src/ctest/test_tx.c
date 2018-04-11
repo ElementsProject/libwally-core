@@ -24,8 +24,7 @@ static bool tx_roundtrip(const char *tx_hex)
 
     /* Unserialize and serialize the tx and verify they match */
     ret = wally_tx_from_hex(tx_hex, WALLY_TX_FLAG_USE_WITNESS, &tx);
-    if (ret != WALLY_OK)
-        return false;
+    check_ret(ret);
 
     ret = wally_tx_to_hex(tx, WALLY_TX_FLAG_USE_WITNESS, &new_hex);
     if (ret != WALLY_OK || strcmp(tx_hex, new_hex))
