@@ -36,7 +36,7 @@ int wally_secp_randomize(const unsigned char *bytes, size_t bytes_len)
     if (!bytes || bytes_len != WALLY_SECP_RANDOMISE_LEN)
         return WALLY_EINVAL;
 
-    if (!(ctx = (secp256k1_context *)secp_ctx()))
+    if (!(ctx = secp_ctx()))
         return WALLY_ENOMEM;
 
     if (!secp256k1_context_randomize(ctx, bytes))
@@ -265,6 +265,21 @@ void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
     _ops.bzero_fn(p4, len4);
     _ops.bzero_fn(p5, len5);
     _ops.bzero_fn(p6, len6);
+}
+
+static bool wally_init_done = false;
+
+int wally_init(uint32_t flags)
+{
+    if (flags)
+        return WALLY_EINVAL;
+
+    if (!wally_init_done) {
+        sha256_optimize();
+        wally_init_done = true;
+    }
+
+    return WALLY_OK;
 }
 
 int wally_cleanup(uint32_t flags)

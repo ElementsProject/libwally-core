@@ -79,7 +79,7 @@ class HashTests(unittest.TestCase):
         return utf8(result)
 
 
-    def test_sha_vectors(self):
+    def _do_test_sha_vectors(self):
         for in_msg, values in sha2_cases.items():
             msg = h(utf8(in_msg))
             for i, fn in enumerate([wally_sha256, wally_sha512, wally_sha256d]):
@@ -88,6 +88,12 @@ class HashTests(unittest.TestCase):
                         result = self.do_hash(fn, msg, aligned)
                         expected = utf8(values[i].replace(' ', ''))
                         self.assertEqual(result, expected)
+
+
+    def test_sha_vectors(self):
+        self. _do_test_sha_vectors()
+        wally_init(0) # Enable optimised SHA256 and re-test
+        self. _do_test_sha_vectors()
 
 
     def test_hash160_vectors(self):

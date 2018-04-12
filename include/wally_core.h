@@ -29,6 +29,16 @@ extern "C" {
 #define WALLY_ENOMEM -3 /** malloc() failed */
 
 /**
+ * Initialize wally.
+ *
+ * As wally is not currently threadsafe, this function should be called once
+ * before threads are created by the application.
+ *
+ * :param flags: Flags controlling what to initialize. Currently must be zero.
+ */
+WALLY_CORE_API int wally_init(uint32_t flags);
+
+/**
  * Free any internally allocated memory.
  *
  * :param flags: Flags controlling what to clean up. Currently must be zero.
@@ -73,6 +83,10 @@ WALLY_CORE_API int wally_free_string(
  * internal context for secp functions that is not initially randomized.
  * The caller should call this function before using any functions that rely on
  * libsecp256k1 (i.e. Anything using public/private keys).
+ *
+ * As wally is not currently threadsafe, this function should either be
+ * called before threads are created or access to wally functions wrapped
+ * in an application level mutex.
  *
  * :param bytes: Entropy to use.
  * :param bytes_len: Size of ``bytes`` in bytes. Must be ``WALLY_SECP_RANDOMISE_LEN``.

@@ -13,25 +13,17 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
 static void invalidate_sha256(struct sha256_ctx *ctx)
 {
-#ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
 	ctx->c.md_len = 0;
-#else
-	ctx->bytes = (size_t)-1;
-#endif
 }
 
 static void check_sha256(struct sha256_ctx *ctx UNUSED)
 {
-#ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
 	assert(ctx->c.md_len != 0);
-#else
-	assert(ctx->bytes != (size_t)-1);
-#endif
 }
 
-#ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
 void sha256_init(struct sha256_ctx *ctx)
 {
 	SHA256_Init(&ctx->c);
@@ -49,6 +41,16 @@ void sha256_done(struct sha256_ctx *ctx, struct sha256 *res)
 	invalidate_sha256(ctx);
 }
 #else
+static void invalidate_sha256(struct sha256_ctx *ctx)
+{
+	ctx->bytes = (size_t)-1;
+}
+
+static void check_sha256(struct sha256_ctx *ctx UNUSED)
+{
+	assert(ctx->bytes != (size_t)-1);
+}
+
 static uint32_t Ch(uint32_t x, uint32_t y, uint32_t z)
 {
 	return z ^ (x & (y ^ z));
@@ -83,8 +85,8 @@ static void Round(uint32_t a, uint32_t b, uint32_t c, uint32_t *d, uint32_t e, u
 	*h = t1 + t2;
 }
 
-/** Perform one SHA-256 transformation, processing a 64-byte chunk. */
-static void Transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
+/** Perform a number of SHA-256 transformations, processing 64-byte chunks. */
+static void TransformDefault(uint32_t *s, const uint32_t *chunk, size_t blocks)
 {
 	while (blocks--) {
 		uint32_t a = s[0], b = s[1], c = s[2], d = s[3], e = s[4], f = s[5], g = s[6], h = s[7];
@@ -170,6 +172,25 @@ static void Transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
 	}
 }
 
+#if defined(__x86_64__) || defined(__amd64__)
+#include <cpuid.h>
+
+#include "sha256_sse4.c"
+
+static int use_optimized_transform = 0;
+#endif
+
+static inline void Transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
+{
+#if defined(__x86_64__) || defined(__amd64__)
+	if (use_optimized_transform) {
+		TransformSSE4(s, chunk, blocks);
+		return;
+	}
+#endif
+	TransformDefault(s, chunk, blocks);
+}
+
 static void add(struct sha256_ctx *ctx, const void *p, size_t len)
 {
 	const unsigned char *data = p;
@@ -207,6 +228,16 @@ static void add(struct sha256_ctx *ctx, const void *p, size_t len)
 		memcpy(ctx->buf.u8 + bufsize, data, len);
 		ctx->bytes += len;
 	}
+}
+
+void sha256_optimize(void)
+{
+#if defined(__x86_64__) || defined(__amd64__)
+	uint32_t eax, ebx, ecx, edx;
+	if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) && (ecx >> 19) & 1) {
+		use_optimized_transform = 1;
+	}
+#endif
 }
 
 void sha256_init(struct sha256_ctx *ctx)

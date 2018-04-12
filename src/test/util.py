@@ -54,6 +54,8 @@ c_ulong_p = c_ulong_p_class()
 c_uint_p = POINTER(c_uint)
 
 for f in (
+    ('wally_init', c_int, [c_uint]),
+    ('wally_cleanup', c_int, [c_uint]),
     ('wordlist_init', c_void_p, [c_char_p]),
     ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
     ('wordlist_lookup_index', c_char_p, [c_void_p, c_ulong]),
@@ -138,8 +140,8 @@ for f in (
         return [p.value, (ret, p.value)][fn.restype is not None]
 
     name, restype, argtypes = f
-    is_str_fn = type(argtypes[-1]) is c_char_p_p_class
-    is_int_fn = type(argtypes[-1]) is c_ulong_p_class
+    is_str_fn = len(argtypes) and type(argtypes[-1]) is c_char_p_p_class
+    is_int_fn = len(argtypes) and type(argtypes[-1]) is c_ulong_p_class
     if is_str_fn:
         argtypes[-1] = POINTER(c_char_p)
     elif is_int_fn:

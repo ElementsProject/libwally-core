@@ -27,6 +27,11 @@ struct sha256 {
 };
 
 /**
+ * sha256_optimize - check for and enable optimised functionality if possible.
+ */
+void sha256_optimize(void);
+
+/**
  * sha256 - return sha256 of an object.
  * @sha256: the sha256 to fill in
  * @p: pointer to memory,
