@@ -36,7 +36,7 @@ int wally_secp_randomize(const unsigned char *bytes, size_t bytes_len)
     if (!bytes || bytes_len != WALLY_SECP_RANDOMISE_LEN)
         return WALLY_EINVAL;
 
-    if (!(ctx = secp_ctx()))
+    if (!(ctx = (secp256k1_context *)secp_ctx()))
         return WALLY_ENOMEM;
 
     if (!secp256k1_context_randomize(ctx, bytes))
