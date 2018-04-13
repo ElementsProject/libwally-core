@@ -282,6 +282,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(s1, written); \
 }
 
+WALLY_FN_3(init, wally_init)
 WALLY_FN_3(cleanup, wally_cleanup)
 WALLY_FN_333_BBBBBA(bip32_key_init_alloc, bip32_key_init_alloc)
 WALLY_FN_33SS_A(tx_init_alloc, wally_tx_init_alloc)
