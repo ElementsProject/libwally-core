@@ -110,7 +110,14 @@ apidocs:
     - ga
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_apidocs.sh
+    - ./tools/cleanup.sh
+    - virtualenv -p python2 .venv
+    - source .venv/bin/activate
+    - pip install sphinx sphinx_rtd_theme
+    - sphinx-build -b html -a -c docs/source docs/source docs/build/html
+    - cd docs/build && tar czf ../../apidocs.tar.gz html/ && cd ../..
+    - deactivate
+    - ./tools/cleanup.sh
 
 package_release:
   tags:
