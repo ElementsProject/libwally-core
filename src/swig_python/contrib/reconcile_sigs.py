@@ -37,9 +37,9 @@ class TxTests(unittest.TestCase):
 
         tx = tx_init(2, locktime, 3, 3)
         tx_add_input(tx, tx_input_init(txhash, 0, seq, script, None))
-        tx_add_raw_input(tx, txhash, 1, seq-1, script+b'\x51', None)
-        tx_add_raw_input(tx, txhash, 2, seq-2, script+b'\x51\x51', None)
-        tx_add_raw_input(tx, txhash, 3, seq-3, script+b'\x51\x51\x51', None)
+        tx_add_raw_input(tx, txhash, 1, seq-1, script+b'\x51', None, 0)
+        tx_add_raw_input(tx, txhash, 2, seq-2, script+b'\x51\x51', None, 0)
+        tx_add_raw_input(tx, txhash, 3, seq-3, script+b'\x51\x51\x51', None, 0)
         tx_add_raw_output(tx, 55, out_script, 0)
         tx_add_raw_output(tx, 54, out_script+b'\x51', 0)
         tx_add_raw_output(tx, 53, out_script+b'\x51\x51', 0)
