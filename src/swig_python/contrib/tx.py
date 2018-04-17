@@ -63,6 +63,7 @@ class TxTests(unittest.TestCase):
         self.assertEqual(tx_get_num_inputs(tx), 0)
         self.assertEqual(tx_get_witness_count(tx), 0)
         self.assertEqual(tx_get_num_outputs(tx), 0)
+        self.assertEqual(tx_get_total_output_satoshi(tx), 0)
         tx_add_input(tx, tx_input_no_witness)
         self.assertEqual(tx_get_num_inputs(tx), 1)
         self.assertEqual(tx_get_witness_count(tx), 0)
@@ -79,7 +80,9 @@ class TxTests(unittest.TestCase):
 
         tx_add_input(tx, tx_input)
         tx_add_output(tx, tx_output)
+        self.assertEqual(tx_get_total_output_satoshi(tx), 10000)
         tx_add_raw_output(tx, 20000, script, 0)
+        self.assertEqual(tx_get_total_output_satoshi(tx), 30000)
         size = tx_get_length(tx, 0)
         vsize = tx_vsize_from_weight(tx_get_weight(tx))
         tx_hex = tx_to_hex(tx, FLAG_USE_WITNESS)

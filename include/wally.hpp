@@ -278,6 +278,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), written); \
 }
 
+#define WALLY_FN_P_P(F, N) template <class P1, class O> inline int F(const P1 &p1, O * written) { \
+        return ::N(WALLYP(p1), written); \
+}
+
 #define WALLY_FN_S_S(F, N) inline int F(size_t s1, size_t * written) { \
         return ::N(s1, written); \
 }
@@ -375,6 +379,7 @@ WALLY_FN_P_S(base58_get_length, wally_base58_get_length)
 WALLY_FN_P_S(tx_get_vsize, wally_tx_get_vsize)
 WALLY_FN_P_S(tx_get_weight, wally_tx_get_weight)
 WALLY_FN_P_S(tx_get_witness_count, wally_tx_get_witness_count)
+WALLY_FN_P_P(tx_get_total_output_satoshi, wally_tx_get_total_output_satoshi)
 WALLY_FN_S_S(tx_vsize_from_weight, wally_tx_vsize_from_weight)
 
 inline struct secp256k1_context_struct *get_secp_context() {

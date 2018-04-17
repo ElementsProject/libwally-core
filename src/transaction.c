@@ -1314,6 +1314,21 @@ int wally_tx_get_btc_signature_hash(const struct wally_tx *tx, size_t index,
                                        flags, bytes_out, len);
 }
 
+int wally_tx_get_total_output_satoshi(const struct wally_tx *tx, uint64_t *value_out)
+{
+    size_t i;
+    if (value_out)
+        *value_out = 0;
+
+    if (!is_valid_tx(tx) || !value_out)
+        return WALLY_EINVAL;
+
+    for (i = 0; i < tx->num_outputs; ++i)
+        *value_out += tx->outputs[i].satoshi;
+
+    return WALLY_OK;
+}
+
 static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t index)
 {
     return is_valid_tx(tx) && index < tx->num_inputs ? &tx->inputs[index] : NULL;

@@ -439,6 +439,16 @@ WALLY_CORE_API int wally_tx_vsize_from_weight(
     size_t *written);
 
 /**
+ * Compute the total sum of all outputs in a transaction.
+ *
+ * :param tx: The transaction to compute the total from.
+ * :param value_out: Destination for the output total.
+ */
+WALLY_CORE_API int wally_tx_get_total_output_satoshi(
+    const struct wally_tx *tx,
+    uint64_t *value_out);
+
+/**
  * Create a BTC transaction for signing and return its hash.
  *
  * :param tx: The transaction to generate the signature hash from.
