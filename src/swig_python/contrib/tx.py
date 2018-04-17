@@ -87,5 +87,11 @@ class TxTests(unittest.TestCase):
         vsize = tx_vsize_from_weight(tx_get_weight(tx))
         tx_hex = tx_to_hex(tx, FLAG_USE_WITNESS)
 
+        with self.assertRaises(ValueError):
+            tx_add_raw_output(tx, WALLY_SATOSHI_MAX + 1, script, 0)
+        with self.assertRaises(ValueError):
+            total_to_overflow = WALLY_SATOSHI_MAX - tx_get_total_output_satoshi(tx) + 1
+            tx_add_raw_output(tx, total_to_overflow, script, 0)
+
 if __name__ == '__main__':
     unittest.main()

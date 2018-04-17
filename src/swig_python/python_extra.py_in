@@ -141,3 +141,5 @@ def tx_witness_stack_create(witnesses):
     for witness_script in witnesses:
         tx_witness_stack_add(witness_stack, witness_script)
     return witness_stack
+
+WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

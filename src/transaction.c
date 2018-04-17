@@ -46,6 +46,8 @@ static const unsigned char EMPTY_OUTPUT[9] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
 };
 
+#define WALLY_SATOSHI_MAX ((uint64_t)WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC)
+
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
 static void assert_tx_assumptions(void)
@@ -81,7 +83,8 @@ static bool is_valid_tx_input(const struct wally_tx_input *input)
 
 static bool is_valid_tx_output(const struct wally_tx_output *output)
 {
-    return output && ((output->script != NULL) == (output->script_len != 0));
+    return output && ((output->script != NULL) == (output->script_len != 0)) &&
+           output->satoshi <= WALLY_SATOSHI_MAX;
 }
 
 static void clear_and_free(void *p, size_t len)
@@ -370,7 +373,7 @@ int wally_tx_output_init(uint64_t satoshi,
                          const unsigned char *script, size_t script_len,
                          struct wally_tx_output *output)
 {
-    if (((script != NULL) != (script_len != 0)) || !output)
+    if (((script != NULL) != (script_len != 0)) || !output || satoshi > WALLY_SATOSHI_MAX)
         return WALLY_EINVAL;
 
     if (!script)
@@ -548,7 +551,11 @@ int wally_tx_remove_input(struct wally_tx *tx, size_t index)
 
 int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *output)
 {
-    if (!is_valid_tx(tx) || !is_valid_tx_output(output))
+    uint64_t total;
+
+    if (!is_valid_tx(tx) || !is_valid_tx_output(output) ||
+        wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK ||
+        total + output->satoshi < total || total + output->satoshi > WALLY_SATOSHI_MAX)
         return WALLY_EINVAL;
 
     if (tx->num_outputs >= tx->outputs_allocation_len) {
@@ -579,7 +586,7 @@ int wally_tx_add_raw_output(struct wally_tx *tx, uint64_t satoshi,
     int ret;
 
     if (flags)
-        return WALLY_EINVAL; /* TODO: Allow creation of p2pkh/p2sh using flags */
+        return WALLY_EINVAL;
 
     ret = wally_tx_add_output(tx, &output);
     wally_clear(&output, sizeof(output));
@@ -1264,7 +1271,8 @@ int wally_tx_get_signature_hash(const struct wally_tx *tx,
     };
 
     if (!is_valid_tx(tx) || ((script != NULL) != (script_len != 0)) ||
-        ((extra != NULL) != (extra_len != 0)) || (sighash & 0xffffff00) ||
+        ((extra != NULL) != (extra_len != 0)) ||
+        satoshi > WALLY_SATOSHI_MAX || (sighash & 0xffffff00) ||
         (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || len < SHA256_LEN)
         return WALLY_EINVAL;
 
@@ -1323,8 +1331,17 @@ int wally_tx_get_total_output_satoshi(const struct wally_tx *tx, uint64_t *value
     if (!is_valid_tx(tx) || !value_out)
         return WALLY_EINVAL;
 
-    for (i = 0; i < tx->num_outputs; ++i)
-        *value_out += tx->outputs[i].satoshi;
+    for (i = 0; i < tx->num_outputs; ++i) {
+        uint64_t v = *value_out + tx->outputs[i].satoshi;
+
+        if (tx->outputs[i].satoshi > WALLY_SATOSHI_MAX ||
+            v < *value_out || v > WALLY_SATOSHI_MAX) {
+            /* Overflow or too many satoshi in outputs */
+            *value_out = 0;
+            return WALLY_EINVAL;
+        }
+        *value_out = v;
+    }
 
     return WALLY_OK;
 }
@@ -1434,7 +1451,7 @@ int wally_tx_output_set_script(struct wally_tx_output *output,
 
 int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi)
 {
-    if (!is_valid_tx_output(output))
+    if (!is_valid_tx_output(output) || satoshi > WALLY_SATOSHI_MAX)
         return WALLY_EINVAL;
     output->satoshi = satoshi;
     return WALLY_OK;
@@ -1521,6 +1538,10 @@ int wally_tx_set_output_script(const struct wally_tx *tx, size_t index,
 
 int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_t satoshi)
 {
+    uint64_t total;
+    if (wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK ||
+        total + satoshi < total || total + satoshi > WALLY_SATOSHI_MAX)
+        return WALLY_EINVAL;
     return wally_tx_output_set_satoshi(tx_get_output(tx, index), satoshi);
 }
 #endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */

@@ -8,8 +8,12 @@ extern "C" {
 #endif
 
 #define WALLY_TX_SEQUENCE_FINAL 0xffffffff
+#define WALLY_TX_VERSION_1 1
 #define WALLY_TX_VERSION_2 2
 #define WALLY_TX_MAX_VERSION 2
+
+#define WALLY_SATOSHI_PER_BTC 100000000
+#define WALLY_BTC_MAX 21000000
 
 #define WALLY_TXHASH_LEN 32 /** Size of a transaction hash in bytes */
 
