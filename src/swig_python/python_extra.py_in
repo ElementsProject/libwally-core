@@ -105,10 +105,10 @@ script_push_from_bytes = _wrap_bin(script_push_from_bytes, _script_push_from_byt
 scriptpubkey_p2pkh_from_bytes = _wrap_bin(scriptpubkey_p2pkh_from_bytes, WALLY_SCRIPTPUBKEY_P2PKH_LEN, resize=True)
 scriptpubkey_p2sh_from_bytes = _wrap_bin(scriptpubkey_p2sh_from_bytes, WALLY_SCRIPTPUBKEY_P2SH_LEN, resize=True)
 def _spkmfb_len_fn(sigs, threshold, flags):
-    return 3 + (len(sigs) / EC_PUBLIC_KEY_LEN) * (EC_PUBLIC_KEY_LEN + 1)
+    return 3 + (len(sigs) // EC_PUBLIC_KEY_LEN) * (EC_PUBLIC_KEY_LEN + 1)
 scriptpubkey_multisig_from_bytes = _wrap_bin(scriptpubkey_multisig_from_bytes, _spkmfb_len_fn, resize=True)
 def _ssmfb_len_fn(script, sigs, sighashes, flags):
-    der_len = (len(sigs) / EC_SIGNATURE_LEN) * (EC_SIGNATURE_DER_MAX_LEN + 2)
+    der_len = (len(sigs) // EC_SIGNATURE_LEN) * (EC_SIGNATURE_DER_MAX_LEN + 2)
     script_len = _script_push_from_bytes_len_fn(script, 0)
     return 1 + der_len + script_len
 scriptsig_multisig_from_bytes = _wrap_bin(scriptsig_multisig_from_bytes, _ssmfb_len_fn, resize=True)
