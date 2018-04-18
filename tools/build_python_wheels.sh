@@ -35,7 +35,13 @@ function build_wheel {
 
 mkdir -p wally_dist
 
-build_wheel python2
-build_wheel python3
+PYV_LIST="python2 python3"
+if [ -n "$1" ]; then
+    PYV_LIST="$1"
+fi
+
+for pyv in $PYV_LIST; do
+    build_wheel $pyv
+done
 
 ./tools/cleanup.sh

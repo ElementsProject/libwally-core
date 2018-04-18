@@ -1,0 +1,4 @@
+FROM ubuntu:18.04@sha256:2152a8e6c0d13634c14aef08b6cc74cbc0ad10e4293e53d2118550a52f3064d1
+COPY ubuntu_18.04_deps.sh /deps.sh
+RUN /deps.sh && rm /deps.sh
+VOLUME /wallycore

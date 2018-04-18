@@ -27,6 +27,20 @@ linux_debug:
     - DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
+ubuntu_release:
+  image: greenaddress/wallycore@sha256:c022fc3a81ed994ff7b8cd43aebca94179a1d7f3c93a84a0fe43e8835f8808d1
+  artifacts:
+    expire_in: 1 day
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wally_dist/*
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_wheels.sh python3
+
 osx_release:
   tags:
     - osx
@@ -131,6 +145,7 @@ package_release:
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
   - linux_release
+  - ubuntu_release
   - osx_release
   - armv7l_release
   - arm64_release
