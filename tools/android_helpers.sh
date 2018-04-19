@@ -2,7 +2,7 @@
 
 # List the android architectures supported by wally
 function android_get_arch_list() {
-    echo "armeabi armeabi-v7a arm64-v8a mips mips64 x86 x86_64"
+    echo "armeabi-v7a arm64-v8a x86 x86_64"
 }
 
 # Create an NDK toolchain directory to build wally for an architecture
@@ -17,7 +17,7 @@ function android_create_toolchain() {
     local arch=$1 toolsdir=$2 api=$3
     if [[ ! -d $toolsdir ]]; then
         case $arch in
-            armeabi*) arch=arm;;
+            armeabi-v7a) arch=arm;;
             arm64-v8a) arch=arm64;;
         esac
         if [[ -z "$ANDROID_NDK" ]]; then
@@ -25,13 +25,6 @@ function android_create_toolchain() {
         fi
         local cmd=$ANDROID_NDK/build/tools/make_standalone_toolchain.py
         $cmd --arch $arch --api $api --install-dir=$toolsdir
-        case $arch in
-            mips64)
-                # Work around a bug in the install
-                if [[ ! -e $toolsdir/sysroot/usr/lib ]]; then
-                   ln -s $toolsdir/sysroot/usr/lib64 $toolsdir/sysroot/usr/lib
-                fi
-        esac
     fi
 }
 
@@ -47,10 +40,8 @@ function android_get_cflags() {
     fi
     cflags="$cflags -isystem $toolsdir/sysroot/usr/include"
     case $arch in
-       armeabi) cflags="$cflags -march=armv5te -mtune=xscale -msoft-float -mthumb";;
        armeabi-v7a) cflags="$cflags -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb";;
        arm64-v8a) cflags="$cflags -flax-vector-conversions";;
-       mips) cflags="$cflags -mips32";;
     esac
     echo $cflags
 }
@@ -63,7 +54,6 @@ function android_get_ldflags() {
     local arch=$1 toolsdir=$2 api=$3
     case $arch in
        armeabi-v7a) echo "-Wl,--fix-cortex-a8";;
-       mips) echo "-mips32";;
     esac
 }
 

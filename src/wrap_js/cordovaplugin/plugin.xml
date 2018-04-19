@@ -12,10 +12,7 @@
             </feature>
         </config-file>
         <source-file src="jniLibs/arm64-v8a/libwallycore.so" target-dir="libs/arm64-v8a" />
-        <source-file src="jniLibs/armeabi/libwallycore.so" target-dir="libs/armeabi" />
         <source-file src="jniLibs/armeabi-v7a/libwallycore.so" target-dir="libs/armeabi-v7a" />
-        <source-file src="jniLibs/mips/libwallycore.so" target-dir="libs/mips" />
-        <source-file src="jniLibs/mips64/libwallycore.so" target-dir="libs/mips64" />
         <source-file src="jniLibs/x86/libwallycore.so" target-dir="libs/x86" />
         <source-file src="jniLibs/x86_64/libwallycore.so" target-dir="libs/x86_64" />
         <source-file src="WallyCordova.java" target-dir="src/com/blockstream/libwally" />

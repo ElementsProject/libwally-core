@@ -104,9 +104,9 @@ $ export ANDROID_HOME=/opt/android-sdk
 $ . ./tools/android_helpers.sh
 
 $ android_get_arch_list
-armeabi armeabi-v7a arm64-v8a mips mips64 x86 x86_64
+armeabi-v7a arm64-v8a x86 x86_64
 
-# Optional, uses gcc instead of clang (needed e.g. for NDK r15 with mips64)
+# Optional, uses gcc instead of clang
 $ export WALLY_USE_GCC=1
 
 # See the comments in tools/android_helpers.sh for arguments
