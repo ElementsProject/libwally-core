@@ -21,9 +21,15 @@ kwargs = {
 
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1',
+    'project_urls': {
+        'Documentation': 'https://wally.readthedocs.io/en/latest',
+        'Source': 'https://github.com/ElementsProject/libwally-core',
+        'Tracker': 'https://github.com/ElementsProject/libwally-core/issues',
+    },
 
     'packages': ['wallycore'],
     'package_dir': {'':'src/swig_python'},
