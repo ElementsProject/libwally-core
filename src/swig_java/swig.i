@@ -319,7 +319,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 }
 %enddef
 
-
 /* Our wrapped opaque types */
 %java_opaque_struct(words, 1)
 %java_opaque_struct(ext_key, 2)
@@ -360,8 +359,17 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
+%returns_string(wally_addr_segwit_from_bytes);
+%returns_size_t(wally_addr_segwit_to_bytes);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
+%returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
+%returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
+%returns_size_t(wally_asset_rangeproof);
+%returns_size_t(wally_asset_surjectionproof_size);
+%returns_size_t(wally_asset_surjectionproof);
+%returns_uint64(wally_asset_unblind);
+%returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
 %returns_string(wally_base58_from_bytes);
 %returns_size_t(wally_base58_to_bytes);
 %returns_size_t(wally_base58_get_length);
@@ -373,70 +381,58 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);
 %returns_void__(wally_ec_sig_verify);
-%returns_string(wally_tx_to_hex);
+%returns_size_t(wally_format_bitcoin_message);
+%returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_to_bytes);
-%returns_size_t(wally_format_bitcoin_message);
-%returns_void__(wally_scrypt);
-%returns_array_(wally_sha256, 3, 4, SHA256_LEN);
-%returns_array_(wally_sha256d, 3, 4, SHA256_LEN);
-%returns_array_(wally_sha512, 3, 4, SHA512_LEN);
-%returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_array_(wally_hmac_sha256, 5, 6, HMAC_SHA256_LEN);
 %returns_array_(wally_hmac_sha512, 5, 6, HMAC_SHA512_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
-%returns_void__(wally_secp_randomize);
-%returns_struct(wally_tx_init_alloc, wally_tx);
-%returns_struct(wally_tx_output_init_alloc, wally_tx_output);
-%returns_struct(wally_tx_input_init_alloc, wally_tx_input);
-%returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
-%returns_struct(wally_tx_from_bytes, wally_tx);
-%returns_struct(wally_tx_from_hex, wally_tx);
 %returns_size_t(wally_script_push_from_bytes);
-%returns_size_t(wally_witness_program_from_bytes);
-%returns_string(wally_addr_segwit_from_bytes);
-%returns_size_t(wally_addr_segwit_to_bytes);
-%returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
-%returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
-%returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
-%returns_size_t(wally_asset_rangeproof);
-%returns_size_t(wally_asset_surjectionproof_size);
-%returns_size_t(wally_asset_surjectionproof);
-%returns_size_t(wally_tx_get_witness_count);
-%returns_size_t(wally_tx_get_length);
-%returns_size_t(wally_tx_get_weight);
-%returns_size_t(wally_tx_get_vsize);
-%returns_size_t(wally_tx_vsize_from_weight);
-%returns_uint64(wally_asset_unblind);
-%returns_void__(wally_tx_witness_stack_add);
-%returns_void__(wally_tx_witness_stack_add_dummy);
-%returns_void__(wally_tx_witness_stack_set);
-%returns_void__(wally_tx_witness_stack_set_dummy);
-%returns_void__(wally_tx_witness_stack_free);
-%returns_void__(wally_tx_free);
-%returns_void__(wally_tx_input_free);
-%returns_void__(wally_tx_output_free);
+%returns_size_t(wally_scriptpubkey_get_type);
+%returns_size_t(wally_scriptpubkey_p2pkh_from_bytes);
+%returns_size_t(wally_scriptpubkey_p2sh_from_bytes);
+%returns_size_t(wally_scriptpubkey_multisig_from_bytes);
+%returns_size_t(wally_scriptsig_p2pkh_from_sig);
+%returns_size_t(wally_scriptsig_p2pkh_from_der);
+%returns_size_t(wally_scriptsig_multisig_from_bytes);
+%returns_void__(wally_scrypt);
+%returns_void__(wally_secp_randomize);
+%returns_array_(wally_sha256, 3, 4, SHA256_LEN);
+%returns_array_(wally_sha256d, 3, 4, SHA256_LEN);
+%returns_array_(wally_sha512, 3, 4, SHA512_LEN);
 %returns_void__(wally_tx_add_input);
 %returns_void__(wally_tx_add_raw_input);
 %returns_void__(wally_tx_add_output);
 %returns_void__(wally_tx_add_raw_output);
-%returns_void__(wally_tx_set_input_script);
-%returns_void__(wally_tx_set_input_witness);
+%returns_void__(wally_tx_free);
+%returns_struct(wally_tx_from_bytes, wally_tx);
+%returns_struct(wally_tx_from_hex, wally_tx);
+%returns_array_(wally_tx_get_btc_signature_hash, 8, 9, SHA256_LEN);
+%returns_size_t(wally_tx_get_length);
+%returns_array_(wally_tx_get_signature_hash, 12, 13, SHA256_LEN);
+%returns_size_t(wally_tx_get_vsize);
+%returns_size_t(wally_tx_get_weight);
+%returns_size_t(wally_tx_get_witness_count);
+%returns_struct(wally_tx_init_alloc, wally_tx);
+%returns_void__(wally_tx_input_free);
+%returns_struct(wally_tx_input_init_alloc, wally_tx_input);
+%returns_void__(wally_tx_output_free);
+%returns_struct(wally_tx_output_init_alloc, wally_tx_output);
 %returns_void__(wally_tx_remove_input);
 %returns_void__(wally_tx_remove_output);
-
+%returns_void__(wally_tx_set_input_script);
+%returns_void__(wally_tx_set_input_witness);
 %returns_size_t(wally_tx_to_bytes);
-%returns_array_(wally_tx_get_btc_signature_hash, 8, 9, SHA256_LEN);
-%returns_array_(wally_tx_get_signature_hash, 12, 13, SHA256_LEN);
-%returns_size_t(wally_scriptpubkey_get_type);
-%returns_size_t(wally_scriptpubkey_p2pkh_from_bytes);
-%returns_size_t(wally_scriptsig_p2pkh_from_sig);
-%returns_size_t(wally_scriptsig_p2pkh_from_der);
-%returns_size_t(wally_scriptpubkey_p2sh_from_bytes);
-%returns_size_t(wally_scriptpubkey_multisig_from_bytes);
-%returns_size_t(wally_scriptsig_multisig_from_bytes);
-%returns_size_t(wally_script_push_from_bytes);
+%returns_string(wally_tx_to_hex);
+%returns_size_t(wally_tx_vsize_from_weight);
+%returns_void__(wally_tx_witness_stack_add);
+%returns_void__(wally_tx_witness_stack_add_dummy);
+%returns_void__(wally_tx_witness_stack_free);
+%returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
+%returns_void__(wally_tx_witness_stack_set);
+%returns_void__(wally_tx_witness_stack_set_dummy);
 %returns_size_t(wally_witness_program_from_bytes);
 
 %include "../include/wally_core.h"
