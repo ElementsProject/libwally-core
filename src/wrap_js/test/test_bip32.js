@@ -7,7 +7,7 @@ test('BIP32 from seed + derivation', function(t) {
   for (var i = 0; i < 16; ++i) {
     zeroes.push(0);
   }
-  wally.bip32_key_from_seed(new Buffer(zeroes), 0x0488ADE4, 0).then(function(s) {
+  wally.bip32_key_from_seed(Buffer.from(zeroes), 0x0488ADE4, 0).then(function(s) {
     wally.wally_base58_from_bytes(s, 1).then(function (s) {
       t.equal(
         s,

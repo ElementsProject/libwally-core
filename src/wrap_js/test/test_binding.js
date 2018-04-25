@@ -3,11 +3,11 @@ var wally = require('../wally');
 var test = require('tape');
 
 var undef;
-var valid = new Buffer('00CEF022FA', 'hex');
-var h = function (h) { return new Buffer(h, 'hex'); };
+var valid = Buffer.from('00CEF022FA', 'hex');
+var h = function (h) { return Buffer.from(h, 'hex'); };
 var vbf = h("8b5d87d94b9f54dc5dd9f31df5dffedc974fc4d5bf0d2ee1297e5aba504ccc26");
 var generator = h("0ba4fd25e0e2108e55aec683810a8652f9b067242419a1f7cc0f01f92b4b078252");
-var b38pass = new Buffer('Satoshi', 'ascii');
+var b38pass = Buffer.from('Satoshi', 'ascii');
 var abfs = h("7fca161c2b849a434f49065cf590f5f1909f25e252f728dfd53669c3c8f8e37100000000000000000000000000000000000000000000000000000000000000002c89075f3c8861fea27a15682d664fb643bc08598fe36dcf817fcabc7ef5cf2efdac7bbad99a45187f863cd58686a75135f2cc0714052f809b0c1f603bcdc574");
 var vbfs = h("1c07611b193009e847e5b296f05a561c559ca84e16d1edae6cbe914b73fb6904000000000000000000000000000000000000000000000000000000000000000074e4135177cd281b332bb8fceb46da32abda5d6dc4d2eef6342a5399c9fb3c48");
 

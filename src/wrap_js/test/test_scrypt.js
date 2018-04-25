@@ -36,11 +36,11 @@ test('scrypt', function(t) {
   t.plan(cases.length);
 
   cases.forEach(function (c) {
-    c[0] = new Buffer(c[0], 'utf-8');
-    c[1] = new Buffer(c[1], 'utf-8');
+    c[0] = Buffer.from(c[0], 'utf-8');
+    c[1] = Buffer.from(c[1], 'utf-8');
     var expected = c.pop()
     wally.wally_scrypt.apply(wally, c).then(function (res) {
-      t.equal(new Buffer(res).toString('hex'), expected.replace(/ /g, ''),
+      t.equal(Buffer.from(res).toString('hex'), expected.replace(/ /g, ''),
         'scrypt('+c+')');
     });
   });

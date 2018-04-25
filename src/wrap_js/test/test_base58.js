@@ -8,8 +8,8 @@ for (var i = 1; i < 10; ++i) {
   for (var j = 0; j < i; ++j) ones += '1';
   cases.push([[new Uint8Array(i), 0], ones])
 }
-cases.push([[new Buffer('00CEF022FA', 'hex'), 0], '16Ho7Hs']);
-cases.push([[new Buffer('45046252208D', 'hex'), 1], '4stwEBjT6FYyVV']);
+cases.push([[Buffer.from('00CEF022FA', 'hex'), 0], '16Ho7Hs']);
+cases.push([[Buffer.from('45046252208D', 'hex'), 1], '4stwEBjT6FYyVV']);
 
 test('base58 from bytes', function (t) {
   t.plan(cases.length);
@@ -19,7 +19,7 @@ test('base58 from bytes', function (t) {
     ).then(function(s) {
       t.equal(s, testCase[1],
         'base58_from_bytes('+
-        new Buffer(testCase[0][0]).toString('hex')+','+testCase[0][1]+')');
+        Buffer.from(testCase[0][0]).toString('hex')+','+testCase[0][1]+')');
     });
   });
 });
@@ -85,8 +85,8 @@ test('base58 to bytes', function (t) {
     wally.wally_base58_to_bytes(
       testCase[1], testCase[0][1]
     ).then(function(d) {
-      t.equal(new Buffer(d).toString('hex'),
-      new Buffer(testCase[0][0]).toString('hex'),
+      t.equal(Buffer.from(d).toString('hex'),
+      Buffer.from(testCase[0][0]).toString('hex'),
         'base58_to_bytes('+testCase[1]+','+testCase[0][1]+')');
     });
   });

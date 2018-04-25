@@ -58,21 +58,21 @@ test('sha2', function(t) {
   t.plan(Object.keys(sha2_cases).length * 3 - 1);
   for (var k in sha2_cases) {
     (function (k) {
-      var inbuf = new Buffer(k, 'ascii');
+      var inbuf = Buffer.from(k, 'ascii');
       var name = k;
       if (k.length === 1000000) {
         name = 'a*1000000'
       }
       wally.wally_sha256(inbuf).then(function (r) {
-        t.equal(new Buffer(r).toString('hex'), sha2_cases[k][0].replace(/ /g, ''), 'sha256('+name+')');
+        t.equal(Buffer.from(r).toString('hex'), sha2_cases[k][0].replace(/ /g, ''), 'sha256('+name+')');
       });
       wally.wally_sha512(inbuf).then(function (r) {
-        t.equal(new Buffer(r).toString('hex'), sha2_cases[k][1].replace(/ /g, ''), 'sha512('+name+')');
+        t.equal(Buffer.from(r).toString('hex'), sha2_cases[k][1].replace(/ /g, ''), 'sha512('+name+')');
       });
       wally.wally_sha256d(inbuf).then(function (r) {
         var expected = sha2_cases[k][2];
         if (expected != null) {
-            t.equal(new Buffer(r).toString('hex'), expected, 'sha256d('+name+')');
+            t.equal(Buffer.from(r).toString('hex'), expected, 'sha256d('+name+')');
         }
       });
     })(k);
@@ -83,9 +83,9 @@ test('hash160', function(t) {
   t.plan(Object.keys(hash160_cases).length);
   hash160_cases.forEach(function (testCase) {
     var k = testCase[0];
-    var inbuf = new Buffer(k, 'hex');
+    var inbuf = Buffer.from(k, 'hex');
     wally.wally_hash160(inbuf).then(function (r) {
-      t.equal(new Buffer(r).toString('hex'), testCase[1].toLowerCase(), 'hash160('+k+')');
+      t.equal(Buffer.from(r).toString('hex'), testCase[1].toLowerCase(), 'hash160('+k+')');
     });
   });
 });

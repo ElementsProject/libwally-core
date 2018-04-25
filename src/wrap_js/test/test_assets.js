@@ -4,12 +4,12 @@ var bigInt = require('big-integer');
 
 var ONES = "1111111111111111111111111111111111111111111111111111111111111111";
 
-var h = function (h) { return new Buffer(h, 'hex'); };
-var b = function (b) { return new Buffer(b).toString('hex'); }
+var h = function (h) { return Buffer.from(h, 'hex'); };
+var b = function (b) { return Buffer.from(b).toString('hex'); }
 var toBigInt = function (n) {
   var s = bigInt(n).toString(16);
   while (s.length < 16) s = '0' + s;
-  return new Uint8Array(new Buffer(s, 'hex'));
+  return new Uint8Array(Buffer.from(s, 'hex'));
 }
 
 test('constants', function (t) {
