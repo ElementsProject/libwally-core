@@ -189,6 +189,7 @@ SUBDIRS = secp256k1
 
 TESTS =
 noinst_PROGRAMS =
+if RUN_TESTS
 if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear
@@ -242,5 +243,6 @@ if USE_JS_WRAPPERS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 endif
 endif # SHARED_BUILD_ENABLED
+endif # RUN_TESTS
 
 .PHONY: clean-swig-python clean-js-wrappers clean-swig-java cordova-wrappers

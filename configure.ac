@@ -107,6 +107,10 @@ AC_ARG_ENABLE(debug,
 AC_ARG_ENABLE(coverage,
     AS_HELP_STRING([--enable-coverage],[enable code coverage (default: no)]),
     [coverage=$enableval], [coverage=no])
+AC_ARG_ENABLE(tests,
+    AS_HELP_STRING([--enable-tests],[enable code tests (default: yes)]),
+    [tests=$enableval], [tests=yes])
+AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
