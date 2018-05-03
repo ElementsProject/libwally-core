@@ -29,7 +29,7 @@ linux_debug:
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 ubuntu_release:
-  image: greenaddress/wallycore@sha256:c022fc3a81ed994ff7b8cd43aebca94179a1d7f3c93a84a0fe43e8835f8808d1
+  image: greenaddress/wallycore@sha256:98530ad68264c6b50fe2ea060c275ddb2500fc459bded4df16263b464870a3e5
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
