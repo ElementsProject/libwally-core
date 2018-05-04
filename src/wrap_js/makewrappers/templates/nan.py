@@ -1,6 +1,7 @@
 TEMPLATE='''#include <nan.h>
 #include <ccan/ccan/endian/endian.h>
 
+#include "../include/wally_address.h"
 #include "../include/wally_core.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"

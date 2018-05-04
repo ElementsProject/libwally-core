@@ -20,6 +20,7 @@ HMAC_SHA256_LEN = 32
 HMAC_SHA512_LEN = 64
 PBKDF2_HMAC_SHA256_LEN = 32
 PBKDF2_HMAC_SHA512_LEN = 64
+WALLY_SCRIPTPUBKEY_P2WSH_LEN = 34
 
 
 hash_func_spec = lambda out_size: F(
@@ -57,6 +58,15 @@ FUNCS = [
     ('wally_base58_to_bytes', F([
         'string[b58]', 'uint32_t[flags]', 'out_bytes_sized'
     ], out_size='_arguments[0].length + ((_arguments[1] & 1) ? 4 : 0)')),
+
+    # address
+    ('wally_addr_segwit_from_bytes', F([
+        'const_bytes[bytes]', 'string[addr_family]', 'uint32_t[flags]', 'out_str_p'
+    ])),
+
+    ('wally_addr_segwit_to_bytes', F([
+        'string[addr]', 'string[addr_family]', 'uint32_t[flags]', 'out_bytes_sized'
+    ], out_size='WALLY_SCRIPTPUBKEY_P2WSH_LEN')),
 
     # AES:
     ('wally_aes', F([
