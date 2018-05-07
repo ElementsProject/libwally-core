@@ -29,16 +29,16 @@
                                  BIP38_FLAG_COMPRESSED |  \
                                  BIP38_FLAG_HAVE_LOT)
 
-#define BIP38_DERVIED_KEY_LEN 64u
+#define BIP38_DERIVED_KEY_LEN 64u
 
 #define BIP38_PREFIX   0x01
 #define BIP38_ECMUL    0x43
 #define BIP38_NO_ECMUL 0x42
 
 struct derived_t {
-    unsigned char half1_lo[BIP38_DERVIED_KEY_LEN / 4];
-    unsigned char half1_hi[BIP38_DERVIED_KEY_LEN / 4];
-    unsigned char half2[BIP38_DERVIED_KEY_LEN / 2];
+    unsigned char half1_lo[BIP38_DERIVED_KEY_LEN / 4];
+    unsigned char half1_hi[BIP38_DERIVED_KEY_LEN / 4];
+    unsigned char half2[BIP38_DERIVED_KEY_LEN / 2];
 };
 
 struct bip38_layout_t {
@@ -57,7 +57,7 @@ struct bip38_layout_t {
 static void assert_bip38_assumptions(void)
 {
     /* derived_t/bip38_layout_t must be contiguous */
-    BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERVIED_KEY_LEN);
+    BUILD_ASSERT(sizeof(struct derived_t) == BIP38_DERIVED_KEY_LEN);
     /* 44 -> pad1 + 39 + BASE58_CHECKSUM_LEN */
     BUILD_ASSERT(sizeof(struct bip38_layout_t) == 44u);
     BUILD_ASSERT((sizeof(struct bip38_layout_t) - BASE58_CHECKSUM_LEN - 1) ==
