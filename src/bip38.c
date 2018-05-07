@@ -168,7 +168,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
         /* Shuffle hash from the beginning to the end */
         uint32_t tmp = buf.hash;
         memmove(&buf.hash, buf.half1, AES_BLOCK_LEN * 2);
-        memcpy(buf.decode_hash - sizeof(uint32_t), &tmp, sizeof(uint32_t));
+        memcpy(buf.half2 + AES_BLOCK_LEN - sizeof(uint32_t), &tmp, sizeof(uint32_t));
     }
 
     memcpy(bytes_out, &buf.prefix, BIP38_SERIALIZED_LEN);
@@ -252,7 +252,7 @@ static int to_private_key(const char *bip38,
     if (flags & BIP38_KEY_SWAP_ORDER) {
         /* Shuffle hash from the end to the beginning */
         uint32_t tmp;
-        memcpy(&tmp, buf.decode_hash - sizeof(uint32_t), sizeof(uint32_t));
+        memcpy(&tmp, buf.half2 + AES_BLOCK_LEN - sizeof(uint32_t), sizeof(uint32_t));
         memmove(buf.half1, &buf.hash, AES_BLOCK_LEN * 2);
         buf.hash = tmp;
     }
