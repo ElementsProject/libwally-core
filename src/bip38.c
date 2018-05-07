@@ -222,7 +222,7 @@ static int to_private_key(const char *bip38,
                           unsigned char *bytes_out, size_t len)
 {
     struct derived_t derived;
-    struct bip38_layout_t buf;
+    struct bip38_layout_t buf = {};
     int ret = WALLY_EINVAL;
 
     if (flags & ~BIP38_ALL_DEFINED_FLAGS)
