@@ -181,8 +181,8 @@ static bool scriptpubkey_is_op_return(const unsigned char *bytes, size_t bytes_l
     size_t n_op, n_push;
 
     return bytes_len && bytes[0] == OP_RETURN &&
-           get_push_size(bytes + 1, bytes_len - 1, false, &n_op) == WALLY_OK &&
-           get_push_size(bytes + 1, bytes_len - 1, true, &n_push) == WALLY_OK &&
+           get_push_size(bytes + 1, bytes_len - 1, true, &n_op) == WALLY_OK &&
+           get_push_size(bytes + 1, bytes_len - 1, false, &n_push) == WALLY_OK &&
            bytes_len == 1 + n_op + n_push;
 }
 
@@ -230,8 +230,8 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     --bytes_len;
     for (i = 0; i < n_pushes; ++i) {
         size_t n_op, n_push;
-        if (get_push_size(bytes, bytes_len, false, &n_op) != WALLY_OK ||
-            get_push_size(bytes, bytes_len, true, &n_push) != WALLY_OK ||
+        if (get_push_size(bytes, bytes_len, true, &n_op) != WALLY_OK ||
+            get_push_size(bytes, bytes_len, false, &n_push) != WALLY_OK ||
             !is_pk_len(n_push) || bytes_len < n_op + n_push + 2)
             return false;
         bytes += n_op + n_push;
