@@ -51,6 +51,20 @@ class TxTests(unittest.TestCase):
         self.assertEqual(tx_output_get_script_len(tx_output), len(script))
         self.assertEqual(tx_output_get_script(tx_output), script)
 
+    def test_tx_set_output(self):
+        satoshi, script = WALLY_SATOSHI_MAX, b'0000'
+
+        # Create tx with single output value = MAX
+        tx = tx_init(2, 0, 10, 2)
+        tx_add_output(tx, tx_output_init(satoshi, script))
+        self.assertEqual(tx_get_output_satoshi(tx, 0), WALLY_SATOSHI_MAX)
+        self.assertEqual(tx_get_total_output_satoshi(tx), WALLY_SATOSHI_MAX)
+
+        # Change value of output from MAX -> 1
+        tx_set_output_satoshi(tx, 0, 1)
+        self.assertEqual(tx_get_output_satoshi(tx, 0), 1)
+        self.assertEqual(tx_get_total_output_satoshi(tx), 1)
+
     def test_tx(self):
         txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'0000', b'000000'
         witness = tx_witness_stack_init(5)

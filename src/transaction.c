@@ -1538,9 +1538,13 @@ int wally_tx_set_output_script(const struct wally_tx *tx, size_t index,
 
 int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_t satoshi)
 {
-    uint64_t total;
-    if (wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK ||
-        total + satoshi < total || total + satoshi > WALLY_SATOSHI_MAX)
+    uint64_t current, total;
+
+    if (wally_tx_get_output_satoshi(tx, index, &current) != WALLY_OK ||
+        wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK)
+        return WALLY_EINVAL;
+    total -= current;
+    if (total + satoshi < total || total + satoshi > WALLY_SATOSHI_MAX)
         return WALLY_EINVAL;
     return wally_tx_output_set_satoshi(tx_get_output(tx, index), satoshi);
 }
