@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <include/wally_address.h>
 #include <include/wally_script.h>
+#include <include/wally_crypto.h>
 #include "script.h"
 
 
@@ -209,19 +210,19 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
     if (output)
         *output = 0;
 
-    if (!addr_family || flags || !bytes || !output)
+    if (!addr_family || flags || !bytes || !bytes_len || !output)
         return WALLY_EINVAL;
 
     if (bytes[0] != 0)
         return WALLY_EINVAL; /* Only v0 witness programs are currently allowed */
 
-    ret = script_get_push_opcode_size_from_bytes(bytes + 1, bytes_len - 1, &push_size);
-    if (ret != WALLY_OK)
-        return ret;
+    ret = script_get_push_size_from_bytes(bytes + 1, bytes_len - 1, &push_size);
+    if (ret != WALLY_OK || (push_size != HASH160_LEN && push_size != SHA256_LEN))
+        return WALLY_EINVAL;
 
     result[0] = '\0';
-    if (!segwit_addr_encode(result, addr_family, 0, bytes + push_size + 1, bytes_len - push_size - 1))
-        return WALLY_EINVAL;
+    if (!segwit_addr_encode(result, addr_family, 0, bytes + 2, bytes_len - 2))
+        return WALLY_ERROR;
 
     *output = wally_strdup(result);
     wally_clear(result, sizeof(result));
