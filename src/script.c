@@ -205,14 +205,14 @@ static bool scriptpubkey_is_p2sh(const unsigned char *bytes, size_t bytes_len)
 static bool scriptpubkey_is_p2wpkh(const unsigned char *bytes, size_t bytes_len)
 {
     return bytes_len == WALLY_SCRIPTPUBKEY_P2WPKH_LEN &&
-           bytes[0] == OP_0 &&
+           bytes[0] == 0 &&
            bytes[1] == 20;
 }
 
 static bool scriptpubkey_is_p2wsh(const unsigned char *bytes, size_t bytes_len)
 {
     return bytes_len == WALLY_SCRIPTPUBKEY_P2WSH_LEN &&
-           bytes[0] == OP_0 &&
+           bytes[0] == 0 &&
            bytes[1] == 32;
 }
 
