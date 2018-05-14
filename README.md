@@ -8,6 +8,8 @@ without notice.
 
 Please report bugs and submit patches to https://github.com/ElementsProject/libwally-core.
 
+Read the API documentation at https://wally.readthedocs.io.
+
 [![Build Status](https://travis-ci.org/ElementsProject/libwally-core.svg?branch=master)](https://travis-ci.org/ElementsProject/libwally-core)
 
 ## Platforms
