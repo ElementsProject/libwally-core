@@ -36,6 +36,9 @@ AC_PROG_CC
 # not provide an AC_PATH_TOOLS macro for this purpose.
 candidate_ars="ar"
 candidate_ranlibs="ranlib"
+# gcc bugs cause memory clearing to fail randomly. clang exhibits much more
+# consistent and sane behaviour so should be preferred going forward.
+enable_clear_tests="no"
 case $CC in
 *gcc*)
     candidate_ars="gcc-ar ar"
@@ -45,6 +48,7 @@ case $CC in
     ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1,2)
     candidate_ars="llvm-ar-$ver llvm-ar ar"
     candidate_ranlibs="llvm-ranlib-$ver llvm-ranlib ranlib"
+    enable_clear_tests="yes"
     ;;
 esac
 
@@ -214,7 +218,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
-AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes"])
+AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes" -a "x$enable_clear_tests" == "xyes"])
 if test "x$ac_have_pthread" == "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], 1, [Define if we have pthread support])
     AC_CHECK_HEADERS([asm/page.h])
