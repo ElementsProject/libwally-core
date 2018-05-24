@@ -111,8 +111,12 @@ armeabi-v7a arm64-v8a x86 x86_64
 # Optional, uses gcc instead of clang
 $ export WALLY_USE_GCC=1
 
+# Prepare to build
+$ ./tools/cleanup.sh
+$ ./tools/autogen,sh
+
 # See the comments in tools/android_helpers.sh for arguments
-$ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 14 "--enable-swig-java"
+$ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 17 "--enable-swig-java"
 ```
 
 The script `tools/build_android_libraries.sh` builds the Android release files and
