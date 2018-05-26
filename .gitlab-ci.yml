@@ -53,7 +53,7 @@ osx_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python python3
 
 armv7l_release:
   tags:
