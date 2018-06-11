@@ -138,7 +138,10 @@ if test "x$debug" == "xyes"; then
 else
     # Optimise and harden if we can
     AX_CHECK_COMPILE_FLAG([-O3], [AM_CFLAGS="$AM_CFLAGS -O3"])
-    AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=1], [AM_CFLAGS="$AM_CFLAGS -D_FORTIFY_SOURCE=1"])
+    AC_CHECK_DEFINE([_FORTIFY_SOURCE], [], [
+      AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=2],
+        [CPPFLAGS="$CPPFLAGS -D_FORTIFY_SOURCE=2"])
+    ])
     AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [AM_CFLAGS="$AM_CFLAGS -fstack-protector-strong"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [AM_CFLAGS="$AM_CFLAGS -DNDEBUG=1"])
     AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
