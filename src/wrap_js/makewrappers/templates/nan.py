@@ -9,6 +9,7 @@ TEMPLATE='''#include <nan.h>
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_elements.h"
+#include "../include/wally_script.h"
 #include <vector>
 
 namespace {

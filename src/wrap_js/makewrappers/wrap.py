@@ -66,7 +66,7 @@ FUNCS = [
 
     ('wally_addr_segwit_to_bytes', F([
         'string[addr]', 'string[addr_family]', 'uint32_t[flags]', 'out_bytes_sized'
-    ], out_size='WALLY_SCRIPTPUBKEY_P2WSH_LEN')),
+    ], out_size=str(WALLY_SCRIPTPUBKEY_P2WSH_LEN))),
 
     # AES:
     ('wally_aes', F([
