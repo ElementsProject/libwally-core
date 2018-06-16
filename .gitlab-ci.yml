@@ -19,7 +19,7 @@ linux_release:
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
 linux_debug:
-  image: greenaddress/wallycore@sha256:9bbe9705c415f2bf35231df2acd731eb99f022c279e7f39ac1ed364ed3f170df
+  image: greenaddress/wallycore@sha256:af5eff8d1839189cf72e4f9cc6dfd7f13730c6837b09d9a33cc5f0d6de66aa16
   tags:
     - ga
   script:
@@ -114,7 +114,7 @@ windows10_release:
     - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:9bbe9705c415f2bf35231df2acd731eb99f022c279e7f39ac1ed364ed3f170df
+  image: greenaddress/wallycore@sha256:af5eff8d1839189cf72e4f9cc6dfd7f13730c6837b09d9a33cc5f0d6de66aa16
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
