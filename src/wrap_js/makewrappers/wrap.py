@@ -21,6 +21,7 @@ HMAC_SHA512_LEN = 64
 PBKDF2_HMAC_SHA256_LEN = 32
 PBKDF2_HMAC_SHA512_LEN = 64
 WALLY_SCRIPTPUBKEY_P2WSH_LEN = 34
+BITCOIN_MESSAGE_FLAG_HASH = 1
 
 
 hash_func_spec = lambda out_size: F(
@@ -128,6 +129,12 @@ FUNCS = [
     ('bip32_key_get_priv_key', F([
         'bip32_in', 'out_bytes_fixedsized'
     ], out_size='32')),
+
+    ('wally_format_bitcoin_message', F([
+        'const_bytes[message]', 'uint32_t[flags]',
+    'out_bytes_sized'
+    ], out_size='_arguments[1] & {} ? {} : 2 + "Bitcoin Signed Message:".length + _arguments[0].length + (_arguments[0].length < 253 ? 1 : 3)'.format(
+        BITCOIN_MESSAGE_FLAG_HASH, SHA256_LEN))),
 ]
 FUNCS_NODE = [
     # Assets:
