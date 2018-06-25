@@ -61,8 +61,6 @@ wrap_js/nodejs_wrap.cc: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/nan.py
 
 wrap_js/wally.js: $(JS_WRAP_DEPS) wrap_js/makewrappers/templates/js.py
 	PYTHONDONTWRITEBYTECODE=1 $(PYTHON) wrap_js/makewrappers/wrap.py wally @NODE_GYP_DIR@
-	grep '#define' $(top_srcdir)/include/wally_*.h | $(GNU_SED) -e 's/.*#define /_export("/' -e 's/ \/.*//' | \
-	grep ' ' | $(GNU_SED) -e 's/  */", /' -e 's/$$/);/' >>$@
 
 wrap_js/cordovaplugin/wally.js: wrap_js/wally.js
 	cp $^ $@

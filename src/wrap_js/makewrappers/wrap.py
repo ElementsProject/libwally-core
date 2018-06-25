@@ -1,4 +1,5 @@
 from templates import js, nan, java, swift
+import export_js_constants
 import sys, os
 
 class FuncSpec(object):
@@ -198,6 +199,7 @@ def main():
         # JS wrapper to choose cordova or node at run time
         with open_file(prefix, 'wally.js') as f:
             f.write(js.generate(FUNCS + FUNCS_NODE, build_type))
+            f.write(export_js_constants.generate(os.path.pardir))
     elif sys.argv[1] == 'cordova-java':
         # Java cordova plugin for Android
         with open_file(prefix + 'cordovaplugin', 'WallyCordova.java') as f:
