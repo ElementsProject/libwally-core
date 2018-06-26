@@ -6,6 +6,7 @@
 
 #include <include/wally_crypto.h>
 #include <include/wally_script.h>
+#include <include/wally_transaction.h>
 
 #include <limits.h>
 #include <stdbool.h>
@@ -147,6 +148,76 @@ size_t varint_length_from_bytes(const unsigned char *bytes)
     return sizeof(uint8_t);
 }
 
+static size_t confidential_commitment_length_from_bytes(const unsigned char *bytes,
+                                                        bool ct_value)
+{
+    if (bytes) {
+        switch (*bytes) {
+        case 1:
+            return ct_value ? WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN : WALLY_TX_ASSET_CT_LEN;
+        case WALLY_TX_ASSET_CT_VALUE_PREFIX_A:
+        case WALLY_TX_ASSET_CT_VALUE_PREFIX_B:
+        case WALLY_TX_ASSET_CT_ASSET_PREFIX_A:
+        case WALLY_TX_ASSET_CT_ASSET_PREFIX_B:
+        case WALLY_TX_ASSET_CT_NONCE_PREFIX_A:
+        case WALLY_TX_ASSET_CT_NONCE_PREFIX_B:
+            return WALLY_TX_ASSET_CT_LEN;
+        }
+    }
+    return sizeof(uint8_t);
+}
+
+static size_t confidential_commitment_varint_from_bytes(const unsigned char *bytes,
+                                                        uint64_t *v,
+                                                        bool ct_value)
+{
+    switch (*bytes) {
+    case 1:
+        *v = ct_value ? WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN : WALLY_TX_ASSET_CT_LEN;
+        return *v;
+    case WALLY_TX_ASSET_CT_VALUE_PREFIX_A:
+    case WALLY_TX_ASSET_CT_VALUE_PREFIX_B:
+    case WALLY_TX_ASSET_CT_ASSET_PREFIX_A:
+    case WALLY_TX_ASSET_CT_ASSET_PREFIX_B:
+    case WALLY_TX_ASSET_CT_NONCE_PREFIX_A:
+    case WALLY_TX_ASSET_CT_NONCE_PREFIX_B:
+        *v = WALLY_TX_ASSET_CT_LEN;
+        return *v;
+    }
+    *v = 0;
+    return sizeof(uint8_t);
+}
+
+size_t confidential_asset_length_from_bytes(const unsigned char *bytes)
+{
+    return confidential_commitment_length_from_bytes(bytes, false);
+}
+
+size_t confidential_value_length_from_bytes(const unsigned char *bytes)
+{
+    return confidential_commitment_length_from_bytes(bytes, true);
+}
+
+size_t confidential_nonce_length_from_bytes(const unsigned char *bytes)
+{
+    return confidential_commitment_length_from_bytes(bytes, false);
+}
+
+size_t confidential_asset_varint_from_bytes(const unsigned char *bytes, uint64_t *v)
+{
+    return confidential_commitment_varint_from_bytes(bytes, v, false);
+}
+
+size_t confidential_value_varint_from_bytes(const unsigned char *bytes, uint64_t *v)
+{
+    return confidential_commitment_varint_from_bytes(bytes, v, true);
+}
+
+size_t confidential_nonce_varint_from_bytes(const unsigned char *bytes, uint64_t *v)
+{
+    return confidential_commitment_varint_from_bytes(bytes, v, false);
+}
+
 size_t varint_from_bytes(const unsigned char *bytes, uint64_t *v)
 {
 #define b(n) ((uint64_t)bytes[n] << ((n - 1) * 8))
@@ -174,6 +245,16 @@ size_t varbuff_to_bytes(const unsigned char *bytes, size_t bytes_len,
     if (bytes_len)
         memcpy(bytes_out, bytes, bytes_len);
     return n + bytes_len;
+}
+
+size_t confidential_value_to_bytes(const unsigned char *bytes, size_t bytes_len,
+                                   unsigned char *bytes_out)
+{
+    if (!bytes_len)
+        *bytes_out = 0;
+    else
+        memcpy(bytes_out, bytes, bytes_len);
+    return !bytes_len ? 1 : bytes_len;
 }
 
 static bool scriptpubkey_is_op_return(const unsigned char *bytes, size_t bytes_len)

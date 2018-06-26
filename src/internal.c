@@ -4,6 +4,7 @@
 #include "ccan/ccan/crypto/ripemd160/ripemd160.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
+#include "ccan/ccan/endian/endian.h"
 #include <stdbool.h>
 
 #undef malloc
@@ -72,6 +73,37 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
         return WALLY_EINVAL;
 
     sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes, bytes_len);
+    if (!aligned) {
+        memcpy(bytes_out, &sha, sizeof(sha));
+        wally_clear(&sha, sizeof(sha));
+    }
+    return WALLY_OK;
+}
+
+static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
+{
+    size_t i;
+
+    for (i = 0; i < sizeof(ctx->s) / sizeof(ctx->s[0]); i++)
+        res->u.u32[i] = cpu_to_be32(ctx->s[i]);
+    ctx->bytes = (size_t)-1;
+}
+
+int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
+                          unsigned char *bytes_out, size_t len)
+{
+    struct sha256 sha;
+    struct sha256_ctx ctx;
+    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
+
+    if (!bytes || !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    sha256_init(&ctx);
+    sha256_update(&ctx, bytes, bytes_len);
+    sha256_midstate(&ctx, aligned ? (struct sha256 *)bytes_out : &sha);
+    wally_clear(&ctx, sizeof(ctx));
+
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -219,6 +251,18 @@ int wally_set_operations(const struct wally_operations *ops)
     COPY_FN_PTR (bzero_fn);
     COPY_FN_PTR (ec_nonce_fn);
 #undef COPY_FN_PTR
+    return WALLY_OK;
+}
+
+int wally_is_elements_build(uint64_t *value_out)
+{
+    if (!value_out)
+        return WALLY_EINVAL;
+#ifdef BUILD_ELEMENTS
+    *value_out = 1;
+#else
+    *value_out = 0;
+#endif
     return WALLY_OK;
 }
 

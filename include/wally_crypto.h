@@ -111,6 +111,20 @@ WALLY_CORE_API int wally_sha256(
     size_t len);
 
 /**
+ * SHA-256(m) midstate
+ *
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
+ * :param bytes_out: Destination for the resulting hash.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ */
+WALLY_CORE_API int wally_sha256_midstate(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * SHA-256(SHA-256(m)) (double SHA-256)
  *
  * :param bytes: The message to hash
