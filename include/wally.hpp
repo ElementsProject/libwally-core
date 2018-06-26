@@ -57,8 +57,17 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(i321, out); \
 }
 
+#define WALLY_FN_6_B(F, N) template <class O> inline int F(uint64_t i641, O & out) { \
+        return ::N(i641, WALLYO(out)); \
+}
+
 #define WALLY_FN_6B_A(F, N) template <class I1, class O> inline int F(uint64_t i641, const I1 &i1, O * *out) { \
         return ::N(i641, WALLYB(i1), out); \
+}
+
+#define WALLY_FN_6BBBBBB_A(F, N) template <class I1, class I2, class I3, class I4, class I5, class I6, class O> \
+    inline int F(uint64_t i641, const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5, const I6 &i6, O * *out) { \
+        return ::N(i641, WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), out); \
 }
 
 #define WALLY_FN_B(F, N) template <class I> inline int F(const I &i1) { return ::N(WALLYB(i1)); }
@@ -89,6 +98,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         size_t n; \
         int ret = ::N(WALLYB(i1), i321, WALLYO(out), written ? written : &n); \
         return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+}
+
+#define WALLY_FN_B3B_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, uint32_t i321, const I2 &i2, O & out) { \
+        return ::N(WALLYB(i1), i321, WALLYB(i2), WALLYO(out)); \
 }
 
 #define WALLY_FN_BB333_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, uint32_t i323, O & out) { \
@@ -128,7 +141,6 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         int ret = ::N(WALLYB(i1), WALLYB(i2), WALLYO(out), written ? written : &n); \
         return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
-
 
 #define WALLY_FN_B_A(F, N) template <class I1, class O> inline int F(const I1 &i1, O * *out) { \
         return ::N(WALLYB(i1), out); \
@@ -208,12 +220,44 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), i641, WALLYB(i1), i321); \
 }
 
+#define WALLY_FN_P6BB33_B(F, N) template <class P1, class I1, class I2, class O> \
+    inline int F(const P1 &p1, uint64_t i641, const I1 &i1, const I2 &i2, uint32_t i321, uint32_t i322, O & out) { \
+        return ::N(WALLYP(p1), i641, WALLYB(i1), WALLYB(i2), i321, i322, WALLYO(out)); \
+}
+
+#define WALLY_FN_P6BBBBBB3(F, N) template <class P1, class I1, class I2, class I3, class I4, class I5, class I6> \
+    inline int F(const P1 &p1, uint64_t i641, const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5, const I6 &i6, uint32_t i321) { \
+        return ::N(WALLYP(p1), i641, WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), i321); \
+}
+
 #define WALLY_FN_PB(F, N) template <class P1, class I1> inline int F(const P1 &p1, const I1 &i1) { \
         return ::N(WALLYP(p1), WALLYB(i1)); \
 }
 
+#define WALLY_FN_PBBBBB(F, N) template <class P1, class I1, class I2, class I3, class I4, class I5> \
+    inline int F(const P1 &p1, const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5) { \
+        return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5)); \
+}
+
+#define WALLY_FN_PBBBBBB(F, N) template <class P1, class I1, class I2, class I3, class I4, class I5, class I6> \
+    inline int F(const P1 &p1, const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5, const I6 &i6) { \
+        return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6)); \
+}
+
 #define WALLY_FN_PB33BP3(F, N) template <class P1, class I1, class I2, class P2> inline int F(const P1 &p1, const I1 &i1, uint32_t i321, uint32_t i322, const I2 &i2, const P2 &p2, uint32_t i323) { \
         return ::N(WALLYP(p1), WALLYB(i1), i321, i322, WALLYB(i2), WALLYP(p2), i323); \
+}
+
+#define WALLY_FN_B33BPBBBBBB_A(F, N) template <class I1, class I2, class P1, class I3, class I4, class I5, class I6, class I7, class I8, class O> \
+    inline int F(const I1 &i1, uint32_t i321, uint32_t i322, const I2 &i2, const P1 &p1, const I3 &i3, \
+                 const I4& i4, const I5 &i5, const I6 &i6, const I7& i7, const I8& i8, O * *out) { \
+        return ::N(WALLYB(i1), i321, i322, WALLYB(i2), WALLYP(p1), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), WALLYB(i7), WALLYB(i8), out); \
+}
+
+#define WALLY_FN_PB33BPBBBBBB3(F, N) template <class P1, class I1, class I2, class P2, class I3, class I4, class I5, class I6, class I7, class I8> \
+    inline int F(const P1 &p1, const I1 &i1, uint32_t i321, uint32_t i322, const I2 &i2, const P2 &p2, \
+                 const I3 &i3, const I4& i4, const I5 &i5, const I6 &i6, const I7& i7, const I8& i8, uint32_t i323) { \
+        return ::N(WALLYP(p1), WALLYB(i1), i321, i322, WALLYB(i2), WALLYP(p2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), WALLYB(i7), WALLYB(i8), i323); \
 }
 
 #define WALLY_FN_PB3_A(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, uint32_t i321, O * *out) { \
@@ -397,6 +441,29 @@ inline int clear(void *p, size_t n) {
 template<typename O> inline int clear(O& out) {
     return ::wally_bzero(out.data(), out.size());
 }
+
+inline bool is_elements_build()
+{
+    uint64_t ret = 0;
+    ::wally_is_elements_build(&ret);
+    return ret != 0;
+}
+
+#ifdef BUILD_ELEMENTS
+WALLY_FN_PBBBBBB(tx_elements_input_issuance_set, wally_tx_elements_input_issuance_set)
+WALLY_FN_P(tx_elements_input_issuance_free, wally_tx_elements_input_issuance_free)
+WALLY_FN_B33BPBBBBBB_A(tx_elements_input_init_alloc, wally_tx_elements_input_init_alloc)
+WALLY_FN_PBBBBB(tx_elements_output_commitment_set, wally_tx_elements_output_commitment_set)
+WALLY_FN_P(tx_elements_output_commitment_free, wally_tx_elements_output_commitment_free)
+WALLY_FN_6BBBBBB_A(tx_elements_output_init_alloc, wally_tx_elements_output_init_alloc)
+WALLY_FN_PB33BPBBBBBB3(tx_add_elements_raw_input, wally_tx_add_elements_raw_input)
+WALLY_FN_P6BBBBBB3(tx_add_elements_raw_output, wally_tx_add_elements_raw_output)
+WALLY_FN_P_S(tx_is_elements, wally_tx_is_elements)
+WALLY_FN_6_B(tx_confidential_value_from_satoshi, wally_tx_confidential_value_from_satoshi)
+WALLY_FN_P6BB33_B(tx_get_elements_signature_hash, wally_tx_get_elements_signature_hash)
+WALLY_FN_B3B_B(tx_elements_issuance_generate_entropy, wally_tx_elements_issuance_generate_entropy)
+WALLY_FN_B_B(tx_elements_issuance_calculate_asset, wally_tx_elements_issuance_calculate_asset)
+#endif /* BUILD_ELEMENTS */
 
 #undef WALLYB
 #undef WALLYO

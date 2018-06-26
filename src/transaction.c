@@ -11,6 +11,8 @@
 #include "transaction_int.h"
 #include "script_int.h"
 
+#define WALLY_TX_ALL_FLAGS (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS)
+
 /* We use the maximum DER sig length (plus a byte for the sighash) so that
  * we overestimate the size by a byte or two per tx sig. This allows using
  * e.g. the minimum fee rate/bump rate without core rejecting it for low fees.
@@ -30,6 +32,18 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
     wally_clear((void *)*output, sizeof(typ)); \
     result = (typ *) *output;
 
+#define TX_COPY_ELSE_CLEAR(dst, src, siz) \
+    if (src) \
+        memcpy(dst, src, siz); \
+    else \
+        wally_clear(dst, siz);
+
+#define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
+#define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
+#define BYTES_INVALID_N(p, len, siz) ((p != NULL) != (len == siz))
+
+#define MAX_INVALID_SATOSHI ((uint64_t) -1)
+
 /* Extra options when serialising for hashing */
 struct tx_serialise_opts
 {
@@ -40,6 +54,8 @@ struct tx_serialise_opts
     size_t script_len;               /* length of 'script' in bytes */
     uint64_t satoshi;                /* Amount of the input we are signing */
     bool bip143;                     /* Serialise for BIP143 hash */
+    const unsigned char *value;      /* Confidential value of the input we are signing */
+    size_t value_len;                /* length of 'value' in bytes */
 };
 
 static const unsigned char EMPTY_OUTPUT[9] = {
@@ -59,7 +75,7 @@ static void assert_tx_assumptions(void)
 static bool is_valid_witness_stack(const struct wally_tx_witness_stack *stack)
 {
     return stack &&
-           ((stack->items != NULL) == (stack->items_allocation_len != 0)) &&
+           BYTES_VALID(stack->items, stack->items_allocation_len) &&
            (stack->items != NULL || stack->num_items == 0);
 }
 
@@ -69,22 +85,61 @@ static bool is_valid_tx(const struct wally_tx *tx)
      *       ensures accurate static analysis from tools like clang.
      */
     return tx &&
-           ((tx->inputs != NULL) == (tx->inputs_allocation_len != 0)) &&
-           ((tx->outputs != NULL) == (tx->outputs_allocation_len != 0)) &&
+           BYTES_VALID(tx->inputs, tx->inputs_allocation_len) &&
+           BYTES_VALID(tx->outputs, tx->outputs_allocation_len) &&
            (tx->num_inputs == 0 || tx->inputs != NULL) &&
            (tx->num_outputs == 0 || tx->outputs != NULL);
 }
 
 static bool is_valid_tx_input(const struct wally_tx_input *input)
 {
-    return input && ((input->script != NULL) == (input->script_len != 0)) &&
+    return input &&
+           BYTES_VALID(input->script, input->script_len) &&
            (!input->witness || is_valid_witness_stack(input->witness));
 }
 
 static bool is_valid_tx_output(const struct wally_tx_output *output)
 {
-    return output && ((output->script != NULL) == (output->script_len != 0)) &&
+    return output &&
+           BYTES_VALID(output->script, output->script_len) &&
            output->satoshi <= WALLY_SATOSHI_MAX;
+}
+
+static bool is_valid_elements_tx_input(const struct wally_tx_input *input)
+{
+    return is_valid_tx_input(input) && (input->features & WALLY_TX_IS_ELEMENTS);
+}
+
+static bool is_valid_elements_tx_output(const struct wally_tx_output *output)
+{
+    return output &&
+           BYTES_VALID(output->script, output->script_len) &&
+           (output->features & WALLY_TX_IS_ELEMENTS);
+}
+
+static bool is_valid_elements_tx(const struct wally_tx *tx)
+{
+    size_t i;
+
+    for (i = 0; i < tx->num_inputs; ++i)
+        if (!is_valid_elements_tx_input(tx->inputs + i))
+            return false;
+
+    for (i = 0; i < tx->num_outputs; ++i)
+        if (!is_valid_elements_tx_output(tx->outputs + i))
+            return false;
+
+    return true;
+}
+
+static bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
+{
+    if (!len)
+        return true;
+    *dst = wally_malloc(len);
+    if (*dst)
+        memcpy(*dst, src, len);
+    return *dst != NULL;
 }
 
 static void clear_and_free(void *p, size_t len)
@@ -111,11 +166,9 @@ static int replace_script(const unsigned char *script, size_t script_len,
 {
     /* TODO: Avoid reallocation if new script is smaller than the existing one */
     unsigned char *new_script = NULL;
-    if (script) {
-        if ((new_script = wally_malloc(script_len)) == NULL)
-            return WALLY_ENOMEM;
-        memcpy(new_script, script, script_len);
-    }
+    if (!clone_bytes(&new_script, script, script_len))
+        return WALLY_ENOMEM;
+
     clear_and_free(*script_out, *script_len_out);
     *script_out = new_script;
     *script_len_out = script_len;
@@ -221,11 +274,8 @@ int wally_tx_witness_stack_set(struct wally_tx_witness_stack *stack, size_t inde
     if (!is_valid_witness_stack(stack) || (!witness && witness_len))
         return WALLY_EINVAL;
 
-    if (witness_len) {
-        new_witness = wally_malloc(witness_len);
-        if (!new_witness)
-            return WALLY_ENOMEM;
-    }
+    if (!clone_bytes(&new_witness, witness, witness_len))
+        return WALLY_ENOMEM;
 
     if (index >= stack->num_items) {
         if (index >= stack->items_allocation_len) {
@@ -234,7 +284,7 @@ int wally_tx_witness_stack_set(struct wally_tx_witness_stack *stack, size_t inde
             p = realloc_array(stack->items, stack->items_allocation_len,
                               index + 1, sizeof(*stack->items));
             if (!p) {
-                wally_free(new_witness);
+                clear_and_free(new_witness, witness_len);
                 return WALLY_ENOMEM;
             }
             clear_and_free(stack->items, stack->num_items * sizeof(*stack->items));
@@ -244,8 +294,6 @@ int wally_tx_witness_stack_set(struct wally_tx_witness_stack *stack, size_t inde
         stack->num_items = index + 1;
     }
     clear_and_free(stack->items[index].witness, stack->items[index].witness_len);
-    if (witness_len)
-        memcpy(new_witness, witness, witness_len);
     stack->items[index].witness = new_witness;
     stack->items[index].witness_len = witness_len;
     return WALLY_OK;
@@ -269,20 +317,312 @@ static bool clone_input_to(
     struct wally_tx_input *dst,
     const struct wally_tx_input *src)
 {
-    unsigned char *new_script = wally_malloc(src->script_len);
-    struct wally_tx_witness_stack *new_witness;
-    new_witness = new_script && src->witness ? clone_witness(src->witness) : NULL;
+    unsigned char *new_script = NULL;
+#ifdef BUILD_ELEMENTS
+    unsigned char *new_issuance_amount = NULL, *new_inflation_keys = NULL,
+                  *new_issuance_amount_rangeproof = NULL, *new_inflation_keys_rangeproof = NULL;
+#endif
 
-    if (!new_script || (src->witness && !new_witness)) {
-        wally_free(new_script);
+    struct wally_tx_witness_stack *new_witness;
+    new_witness = src->witness ? clone_witness(src->witness) : NULL;
+
+    if (!clone_bytes(&new_script, src->script, src->script_len) ||
+#ifdef BUILD_ELEMENTS
+        !clone_bytes(&new_issuance_amount, src->issuance_amount, src->issuance_amount_len) ||
+        !clone_bytes(&new_inflation_keys, src->inflation_keys, src->inflation_keys_len) ||
+        !clone_bytes(&new_issuance_amount_rangeproof, src->issuance_amount_rangeproof, src->issuance_amount_rangeproof_len) ||
+        !clone_bytes(&new_inflation_keys_rangeproof, src->inflation_keys_rangeproof, src->inflation_keys_rangeproof_len) ||
+#endif
+        (src->witness && !new_witness)) {
+        clear_and_free(new_script, src->script_len);
+#ifdef BUILD_ELEMENTS
+        clear_and_free(new_issuance_amount, src->issuance_amount_len);
+        clear_and_free(new_inflation_keys, src->inflation_keys_len);
+        clear_and_free(new_issuance_amount_rangeproof, src->issuance_amount_rangeproof_len);
+        clear_and_free(new_inflation_keys_rangeproof, src->inflation_keys_rangeproof_len);
+#endif
+        wally_tx_witness_stack_free(new_witness);
         return false;
     }
 
     memcpy(dst, src, sizeof(*src));
-    memcpy(new_script, src->script, src->script_len);
     dst->script = new_script;
+#ifdef BUILD_ELEMENTS
+    dst->issuance_amount = new_issuance_amount;
+    dst->inflation_keys = new_inflation_keys;
+    dst->issuance_amount_rangeproof = new_issuance_amount_rangeproof;
+    dst->inflation_keys_rangeproof = new_inflation_keys_rangeproof;
+#endif
     dst->witness = new_witness;
     return true;
+}
+
+static int tx_elements_input_issuance_proof_init(
+    struct wally_tx_input *input,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len)
+{
+#ifdef BUILD_ELEMENTS
+    unsigned char *new_issuance_amount_rangeproof = NULL, *new_inflation_keys_rangeproof = NULL;
+#endif
+    (void) input;
+
+    if (BYTES_INVALID(issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
+        BYTES_INVALID(inflation_keys_rangeproof, inflation_keys_rangeproof_len))
+        return WALLY_EINVAL;
+
+#ifdef BUILD_ELEMENTS
+    if (!clone_bytes(&new_issuance_amount_rangeproof, issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
+        !clone_bytes(&new_inflation_keys_rangeproof, inflation_keys_rangeproof, inflation_keys_rangeproof_len)) {
+        clear_and_free(new_issuance_amount_rangeproof, issuance_amount_rangeproof_len);
+        clear_and_free(new_inflation_keys_rangeproof, inflation_keys_rangeproof_len);
+        return WALLY_ENOMEM;
+    }
+
+    input->issuance_amount_rangeproof = new_issuance_amount_rangeproof;
+    input->issuance_amount_rangeproof_len = issuance_amount_rangeproof_len;
+    input->inflation_keys_rangeproof = new_inflation_keys_rangeproof;
+    input->inflation_keys_rangeproof_len = inflation_keys_rangeproof_len;
+#endif
+    return WALLY_OK;
+}
+
+static int tx_elements_input_issuance_init(
+    struct wally_tx_input *input,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len,
+    bool is_elements)
+{
+#ifdef BUILD_ELEMENTS
+    int ret;
+    unsigned char *new_issuance_amount = NULL, *new_inflation_keys = NULL;
+#endif
+
+    if (!input ||
+        BYTES_INVALID_N(nonce, nonce_len, WALLY_TX_ASSET_TAG_LEN) ||
+        BYTES_INVALID_N(entropy, entropy_len, WALLY_TX_ASSET_TAG_LEN) ||
+        BYTES_INVALID(issuance_amount, issuance_amount_len) ||
+        BYTES_INVALID(inflation_keys, inflation_keys_len) ||
+        BYTES_INVALID(issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
+        BYTES_INVALID(inflation_keys_rangeproof, inflation_keys_rangeproof_len))
+        return WALLY_EINVAL;
+
+#ifdef BUILD_ELEMENTS
+    if (!clone_bytes(&new_issuance_amount, issuance_amount, issuance_amount_len) ||
+        !clone_bytes(&new_inflation_keys, inflation_keys, inflation_keys_len))
+        ret = WALLY_ENOMEM;
+    else
+        ret = tx_elements_input_issuance_proof_init(input,
+                                                    issuance_amount_rangeproof,
+                                                    issuance_amount_rangeproof_len,
+                                                    inflation_keys_rangeproof,
+                                                    inflation_keys_rangeproof_len);
+
+    if (ret != WALLY_OK) {
+        clear_and_free(new_issuance_amount, issuance_amount_len);
+        clear_and_free(new_inflation_keys, inflation_keys_len);
+        return ret;
+    }
+
+    TX_COPY_ELSE_CLEAR(input->blinding_nonce, nonce, sizeof(input->blinding_nonce));
+    TX_COPY_ELSE_CLEAR(input->entropy, entropy, sizeof(input->entropy));
+    input->issuance_amount = new_issuance_amount;
+    input->issuance_amount_len = issuance_amount_len;
+    input->inflation_keys = new_inflation_keys;
+    input->inflation_keys_len = inflation_keys_len;
+#endif
+
+    if (is_elements) {
+        input->features |= WALLY_TX_IS_ELEMENTS;
+        if (nonce || entropy)
+            input->features |= WALLY_TX_IS_ISSUANCE;
+    }
+
+    return WALLY_OK;
+}
+
+int wally_tx_elements_input_issuance_set(
+    struct wally_tx_input *input,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len)
+{
+#ifdef BUILD_ELEMENTS
+    unsigned char *input_issuance_amount = input->issuance_amount;
+    size_t input_issuance_amount_len = input->issuance_amount_len;
+    unsigned char *input_inflation_keys = input->inflation_keys;
+    size_t input_inflation_keys_len = input->inflation_keys_len;
+    unsigned char *input_issuance_amount_rangeproof = input->issuance_amount_rangeproof;
+    size_t input_issuance_amount_rangeproof_len = input->issuance_amount_rangeproof_len;
+    unsigned char *input_inflation_keys_rangeproof = input->inflation_keys_rangeproof;
+    size_t input_inflation_keys_rangeproof_len = input->inflation_keys_rangeproof_len;
+#endif /* BUILD_ELEMENTS */
+    int ret = tx_elements_input_issuance_init(input,
+                                              nonce,
+                                              nonce_len,
+                                              entropy,
+                                              entropy_len,
+                                              issuance_amount,
+                                              issuance_amount_len,
+                                              inflation_keys,
+                                              inflation_keys_len,
+                                              issuance_amount_rangeproof,
+                                              issuance_amount_rangeproof_len,
+                                              inflation_keys_rangeproof,
+                                              inflation_keys_rangeproof_len,
+                                              true);
+#ifdef BUILD_ELEMENTS
+    if (ret == WALLY_OK) {
+        clear_and_free(input_issuance_amount, input_issuance_amount_len);
+        clear_and_free(input_inflation_keys, input_inflation_keys_len);
+        clear_and_free(input_issuance_amount_rangeproof, input_issuance_amount_rangeproof_len);
+        clear_and_free(input_inflation_keys_rangeproof, input_inflation_keys_rangeproof_len);
+    }
+#endif /* BUILD_ELEMENTS */
+    return ret;
+}
+
+int wally_tx_elements_input_issuance_free(
+    struct wally_tx_input *input)
+{
+    (void) input;
+#ifdef BUILD_ELEMENTS
+    if (input) {
+        input->features &= ~(WALLY_TX_IS_ELEMENTS | WALLY_TX_IS_ISSUANCE);
+        wally_clear(input->blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
+        wally_clear(input->entropy, WALLY_TX_ASSET_TAG_LEN);
+        clear_and_free(input->issuance_amount, input->issuance_amount_len);
+        clear_and_free(input->inflation_keys, input->inflation_keys_len);
+        clear_and_free(input->issuance_amount_rangeproof, input->issuance_amount_rangeproof_len);
+        clear_and_free(input->inflation_keys_rangeproof, input->inflation_keys_rangeproof_len);
+        input->issuance_amount = NULL;
+        input->inflation_keys = NULL;
+        input->issuance_amount_rangeproof = NULL;
+        input->inflation_keys_rangeproof = NULL;
+    }
+#endif /* BUILD_ELEMENTS */
+    return WALLY_OK;
+}
+
+static int tx_elements_input_init(
+    const unsigned char *txhash, size_t txhash_len,
+    uint32_t index, uint32_t sequence,
+    const unsigned char *script, size_t script_len,
+    const struct wally_tx_witness_stack *witness,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len,
+    struct wally_tx_input *output,
+    bool is_elements)
+{
+    struct wally_tx_witness_stack *new_witness = NULL;
+    unsigned char *new_script = NULL;
+    int ret, old_features;
+
+    if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
+        BYTES_INVALID(script, script_len) || !output)
+        return WALLY_EINVAL;
+
+    old_features = output->features;
+
+    if ((witness && !(new_witness = clone_witness(witness))) ||
+        !clone_bytes(&new_script, script, script_len))
+        ret = WALLY_ENOMEM;
+    else {
+        output->features = 0;
+        ret = tx_elements_input_issuance_init(output,
+                                              nonce,
+                                              nonce_len,
+                                              entropy,
+                                              entropy_len,
+                                              issuance_amount,
+                                              issuance_amount_len,
+                                              inflation_keys,
+                                              inflation_keys_len,
+                                              issuance_amount_rangeproof,
+                                              issuance_amount_rangeproof_len,
+                                              inflation_keys_rangeproof,
+                                              inflation_keys_rangeproof_len,
+                                              is_elements);
+    }
+
+    if (ret != WALLY_OK) {
+        wally_tx_witness_stack_free(new_witness);
+        clear_and_free(new_script, script_len);
+        output->features = old_features;
+    } else {
+        memcpy(output->txhash, txhash, WALLY_TXHASH_LEN);
+        output->index = index & WALLY_TX_INDEX_MASK;
+        output->sequence = sequence;
+        output->script = new_script;
+        output->script_len = script_len;
+        output->witness = new_witness;
+#ifdef BUILD_ELEMENTS
+        output->pegin_witness = NULL;
+#endif /* BUILD_ELEMENTS */
+    }
+    return ret;
+}
+
+int wally_tx_elements_input_init(
+    const unsigned char *txhash, size_t txhash_len,
+    uint32_t index, uint32_t sequence,
+    const unsigned char *script, size_t script_len,
+    const struct wally_tx_witness_stack *witness,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    uint64_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len,
+    struct wally_tx_input *output)
+{
+    return tx_elements_input_init(txhash, txhash_len,
+                                  index, sequence,
+                                  script, script_len,
+                                  witness, nonce, nonce_len,
+                                  entropy, entropy_len,
+                                  issuance_amount, issuance_amount_len,
+                                  inflation_keys, inflation_keys_len,
+                                  issuance_amount_rangeproof, issuance_amount_rangeproof_len,
+                                  inflation_keys_rangeproof, inflation_keys_rangeproof_len,
+                                  output, true);
 }
 
 int wally_tx_input_init(const unsigned char *txhash, size_t txhash_len,
@@ -291,29 +631,56 @@ int wally_tx_input_init(const unsigned char *txhash, size_t txhash_len,
                         const struct wally_tx_witness_stack *witness,
                         struct wally_tx_input *output)
 {
-    if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
-        ((script != NULL) != (script_len != 0)) || !output)
-        return WALLY_EINVAL;
+    return tx_elements_input_init(txhash, txhash_len,
+                                  index, sequence,
+                                  script, script_len,
+                                  witness, NULL, 0, NULL, 0,
+                                  NULL, 0, NULL, 0, NULL, 0, NULL, 0, output, false);
+}
 
-    if (!script)
-        output->script = NULL;
-    else if (!(output->script = wally_malloc(script_len)))
-        return WALLY_ENOMEM;
+int wally_tx_elements_input_init_alloc(
+    const unsigned char *txhash,
+    size_t txhash_len,
+    uint32_t index,
+    uint32_t sequence,
+    const unsigned char *script,
+    size_t script_len,
+    const struct wally_tx_witness_stack *witness,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len,
+    struct wally_tx_input **output)
+{
+    struct wally_tx_input *result;
+    int ret;
 
-    output->witness = NULL;
-    if (witness && !(output->witness = clone_witness(witness))) {
-        wally_free(output->script);
-        output->script = NULL;
-        return WALLY_ENOMEM;
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct wally_tx_input);
+
+    ret = tx_elements_input_init(txhash, txhash_len, index, sequence,
+                                 script, script_len, witness,
+                                 nonce, nonce_len, entropy, entropy_len,
+                                 issuance_amount, issuance_amount_len,
+                                 inflation_keys, inflation_keys_len,
+                                 issuance_amount_rangeproof,
+                                 issuance_amount_rangeproof_len,
+                                 inflation_keys_rangeproof,
+                                 inflation_keys_rangeproof_len, result, true);
+
+    if (ret != WALLY_OK) {
+        clear_and_free(result, sizeof(*result));
+        *output = NULL;
     }
-
-    output->index = index;
-    output->sequence = sequence;
-    memcpy(output->txhash, txhash, WALLY_TXHASH_LEN);
-    if (output->script)
-        memcpy(output->script, script, script_len);
-    output->script_len = script_len;
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_tx_input_init_alloc(const unsigned char *txhash, size_t txhash_len,
@@ -343,6 +710,7 @@ static int tx_input_free(struct wally_tx_input *input, bool free_parent)
     if (input) {
         clear_and_free(input->script, input->script_len);
         tx_witness_stack_free(input->witness, true);
+        wally_tx_elements_input_issuance_free(input);
         wally_clear(input, sizeof(*input));
         if (free_parent)
             wally_free(input);
@@ -358,34 +726,309 @@ int wally_tx_input_free(struct wally_tx_input *input)
 static bool clone_output_to(struct wally_tx_output *dst,
                             const struct wally_tx_output *src)
 {
-    unsigned char *new_script = wally_malloc(src->script_len);
-    if (!new_script)
+    unsigned char *new_script = NULL;
+#ifdef BUILD_ELEMENTS
+    unsigned char *new_asset = NULL, *new_value = NULL, *new_nonce = NULL,
+                  *new_surjectionproof = NULL, *new_rangeproof = NULL;
+#endif
+    if (!dst || !src)
         return false;
 
-    dst->satoshi = src->satoshi;
-    memcpy(new_script, src->script, src->script_len);
+#ifdef BUILD_ELEMENTS
+    if (!clone_bytes(&new_asset, src->asset, src->asset_len) ||
+        !clone_bytes(&new_value, src->value, src->value_len) ||
+        !clone_bytes(&new_nonce, src->nonce, src->nonce_len) ||
+        !clone_bytes(&new_surjectionproof, src->surjectionproof, src->surjectionproof_len) ||
+        !clone_bytes(&new_rangeproof, src->rangeproof, src->rangeproof_len) ||
+        !clone_bytes(&new_script, src->script, src->script_len)) {
+#else
+    if (!clone_bytes(&new_script, src->script, src->script_len)) {
+#endif
+        clear_and_free(new_script, src->script_len);
+#ifdef BUILD_ELEMENTS
+        clear_and_free(new_asset, src->asset_len);
+        clear_and_free(new_value, src->value_len);
+        clear_and_free(new_nonce, src->nonce_len);
+        clear_and_free(new_surjectionproof,  src->surjectionproof_len);
+        clear_and_free(new_rangeproof, src->rangeproof_len);
+#endif
+        return false;
+    }
+
+    memcpy(dst, src, sizeof(*src));
     dst->script = new_script;
-    dst->script_len = src->script_len;
+#ifdef BUILD_ELEMENTS
+    dst->asset = new_asset;
+    dst->value = new_value;
+    dst->nonce = new_nonce;
+    dst->surjectionproof = new_surjectionproof;
+    dst->rangeproof = new_rangeproof;
+#endif
     return true;
+}
+
+static int tx_elements_output_proof_init(
+    struct wally_tx_output *output,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len)
+{
+    (void) output;
+#ifdef BUILD_ELEMENTS
+    unsigned char *new_surjectionproof = NULL, *new_rangeproof = NULL;
+#endif
+
+    if (BYTES_INVALID(surjectionproof, surjectionproof_len) ||
+        BYTES_INVALID(rangeproof, rangeproof_len))
+        return WALLY_EINVAL;
+
+#ifdef BUILD_ELEMENTS
+    if (!clone_bytes(&new_surjectionproof, surjectionproof, surjectionproof_len) ||
+        !clone_bytes(&new_rangeproof, rangeproof, rangeproof_len)) {
+        clear_and_free(new_surjectionproof,  surjectionproof_len);
+        clear_and_free(new_rangeproof, rangeproof_len);
+        return WALLY_ENOMEM;
+    }
+
+    output->surjectionproof = new_surjectionproof;
+    output->surjectionproof_len = surjectionproof_len;
+    output->rangeproof = new_rangeproof;
+    output->rangeproof_len = rangeproof_len;
+#endif
+    return WALLY_OK;
+}
+
+static int tx_elements_output_commitment_init(
+    struct wally_tx_output *output,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    bool is_elements)
+{
+#ifdef BUILD_ELEMENTS
+    int ret;
+    unsigned char *new_asset = NULL, *new_value = NULL, *new_nonce = NULL;
+#endif
+
+    if (!output ||
+        BYTES_INVALID_N(asset, asset_len, WALLY_TX_ASSET_CT_ASSET_LEN) ||
+        ((value != NULL) != (value_len == WALLY_TX_ASSET_CT_VALUE_LEN ||
+                             value_len == WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)) ||
+        BYTES_INVALID_N(nonce, nonce_len, WALLY_TX_ASSET_CT_NONCE_LEN) ||
+        BYTES_INVALID(surjectionproof, surjectionproof_len) ||
+        BYTES_INVALID(rangeproof, rangeproof_len))
+        return WALLY_EINVAL;
+
+#ifdef BUILD_ELEMENTS
+    if (!clone_bytes(&new_asset, asset, asset_len) ||
+        !clone_bytes(&new_value, value, value_len) ||
+        !clone_bytes(&new_nonce, nonce, nonce_len))
+        ret = WALLY_ENOMEM;
+    else
+        ret = tx_elements_output_proof_init(output,
+                                            surjectionproof,
+                                            surjectionproof_len,
+                                            rangeproof,
+                                            rangeproof_len);
+    if (ret != WALLY_OK) {
+        clear_and_free(new_asset, asset_len);
+        clear_and_free(new_value, value_len);
+        clear_and_free(new_nonce, nonce_len);
+        return ret;
+    }
+
+    output->asset = new_asset;
+    output->asset_len = asset_len;
+    output->value = new_value;
+    output->value_len = value_len;
+    output->nonce = new_nonce;
+    output->nonce_len = nonce_len;
+#endif /* BUILD_ELEMENTS */
+
+    if (is_elements)
+        output->features |= WALLY_TX_IS_ELEMENTS;
+
+    return WALLY_OK;
+}
+
+int wally_tx_elements_output_commitment_set(
+    struct wally_tx_output *output,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len)
+{
+#ifdef BUILD_ELEMENTS
+    unsigned char *output_asset = output->asset;
+    size_t output_asset_len = output->asset_len;
+    unsigned char *output_value = output->value;
+    size_t output_value_len = output->value_len;
+    unsigned char *output_nonce = output->nonce;
+    size_t output_nonce_len = output->nonce_len;
+    unsigned char *output_surjectionproof = output->surjectionproof;
+    size_t output_surjectionproof_len = output->surjectionproof_len;
+    unsigned char *output_rangeproof = output->rangeproof;
+    size_t output_rangeproof_len = output->rangeproof_len;
+#endif /* BUILD_ELEMENTS */
+    int ret = tx_elements_output_commitment_init(output, asset, asset_len,
+                                                 value, value_len,
+                                                 nonce, nonce_len,
+                                                 surjectionproof, surjectionproof_len,
+                                                 rangeproof, rangeproof_len, true);
+    if (ret == WALLY_OK) {
+#ifdef BUILD_ELEMENTS
+        clear_and_free(output_asset, output_asset_len);
+        clear_and_free(output_value, output_value_len);
+        clear_and_free(output_nonce, output_nonce_len);
+        clear_and_free(output_surjectionproof, output_surjectionproof_len);
+        clear_and_free(output_rangeproof, output_rangeproof_len);
+#endif /* BUILD_ELEMENTS */
+    }
+    return ret;
+}
+
+int wally_tx_elements_output_commitment_free(
+    struct wally_tx_output *output)
+{
+    (void) output;
+#ifdef BUILD_ELEMENTS
+    if (output) {
+        output->features &= ~WALLY_TX_IS_ELEMENTS;
+        clear_and_free(output->asset, output->asset_len);
+        clear_and_free(output->value, output->value_len);
+        clear_and_free(output->nonce, output->nonce_len);
+        clear_and_free(output->surjectionproof, output->surjectionproof_len);
+        clear_and_free(output->rangeproof, output->rangeproof_len);
+    }
+#endif /* BUILD_ELEMENTS */
+    return WALLY_OK;
+}
+
+static int tx_elements_output_init(
+    uint64_t satoshi,
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    struct wally_tx_output *output,
+    bool is_elements)
+{
+    int ret, old_features;
+    unsigned char *new_script = NULL;
+
+    if (BYTES_INVALID(script, script_len) || !output ||
+        (satoshi > WALLY_SATOSHI_MAX && !is_elements))
+        return WALLY_EINVAL;
+
+    if (!clone_bytes(&new_script, script, script_len))
+        return WALLY_ENOMEM;
+
+    old_features = output->features;
+    output->features = 0;
+    if ((ret = tx_elements_output_commitment_init(output, asset, asset_len,
+                                                  value, value_len,
+                                                  nonce, nonce_len,
+                                                  surjectionproof, surjectionproof_len,
+                                                  rangeproof, rangeproof_len,
+                                                  is_elements)) != WALLY_OK) {
+        output->features = old_features;
+        clear_and_free(new_script, script_len);
+        return ret;
+    }
+
+    output->script = new_script;
+    output->script_len = script_len;
+    output->satoshi = satoshi;
+    return WALLY_OK;
+}
+
+int wally_tx_elements_output_init(
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    struct wally_tx_output *output)
+{
+    return tx_elements_output_init(MAX_INVALID_SATOSHI, script, script_len,
+                                   asset, asset_len, value, value_len,
+                                   nonce, nonce_len,
+                                   surjectionproof, surjectionproof_len,
+                                   rangeproof, rangeproof_len, output, true);
+}
+
+int wally_tx_elements_output_init_alloc(
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    struct wally_tx_output **output)
+{
+    struct wally_tx_output *result;
+    int ret;
+
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct wally_tx_output);
+
+    ret = tx_elements_output_init(-1, script, script_len,
+                                  asset, asset_len,
+                                  value, value_len,
+                                  nonce, nonce_len,
+                                  surjectionproof,
+                                  surjectionproof_len,
+                                  rangeproof, rangeproof_len,
+                                  result, true);
+    if (ret != WALLY_OK) {
+        clear_and_free(result, sizeof(*result));
+        *output = NULL;
+    }
+    return ret;
 }
 
 int wally_tx_output_init(uint64_t satoshi,
                          const unsigned char *script, size_t script_len,
                          struct wally_tx_output *output)
 {
-    if (((script != NULL) != (script_len != 0)) || !output || satoshi > WALLY_SATOSHI_MAX)
-        return WALLY_EINVAL;
-
-    if (!script)
-        output->script = NULL;
-    else if (!(output->script = wally_malloc(script_len)))
-        return WALLY_ENOMEM;
-
-    if (output->script)
-        memcpy(output->script, script, script_len);
-    output->script_len = script_len;
-    output->satoshi = satoshi;
-    return WALLY_OK;
+    return tx_elements_output_init(satoshi, script, script_len,
+                                   NULL, 0, NULL, 0, NULL, 0,
+                                   NULL, 0, NULL, 0, output, false);
 }
 
 int wally_tx_output_init_alloc(uint64_t satoshi,
@@ -411,6 +1054,7 @@ static int tx_output_free(struct wally_tx_output *output, bool free_parent)
 {
     if (output) {
         clear_and_free(output->script, output->script_len);
+        wally_tx_elements_output_commitment_free(output);
         wally_clear(output, sizeof(*output));
         if (free_parent)
             wally_free(output);
@@ -505,6 +1149,107 @@ int wally_tx_add_input(struct wally_tx *tx, const struct wally_tx_input *input)
     return WALLY_OK;
 }
 
+static int tx_add_elements_raw_input(
+    struct wally_tx *tx,
+    const unsigned char *txhash,
+    size_t txhash_len,
+    uint32_t index,
+    uint32_t sequence,
+    const unsigned char *script,
+    size_t script_len,
+    const struct wally_tx_witness_stack *witness,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len,
+    uint32_t flags,
+    bool is_elements)
+{
+    /* Add an input without allocating a temporary wally_tx_input */
+    struct wally_tx_input input = {
+        { 0 }, index & WALLY_TX_INDEX_MASK, sequence,
+        (unsigned char *)script, script_len,
+        (struct wally_tx_witness_stack *) witness,
+        is_elements ? WALLY_TX_IS_ELEMENTS : 0,
+#ifdef BUILD_ELEMENTS
+        { 0 }, { 0 }, (unsigned char *) issuance_amount,
+        issuance_amount_len,
+        (unsigned char *) inflation_keys,
+        inflation_keys_len,
+        (unsigned char *) issuance_amount_rangeproof,
+        issuance_amount_rangeproof_len,
+        (unsigned char *) inflation_keys_rangeproof,
+        inflation_keys_rangeproof_len, NULL
+#endif /* BUILD_ELEMENTS */
+    };
+    int ret;
+
+    if (flags)
+        return WALLY_EINVAL; /* TODO: Allow creation of p2pkh/p2sh using flags */
+
+    if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
+        BYTES_INVALID_N(nonce, nonce_len, WALLY_TX_ASSET_TAG_LEN) ||
+        BYTES_INVALID_N(entropy, entropy_len, WALLY_TX_ASSET_TAG_LEN) ||
+        BYTES_INVALID(issuance_amount, issuance_amount_len) ||
+        BYTES_INVALID(inflation_keys, inflation_keys_len) ||
+        BYTES_INVALID(issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
+        BYTES_INVALID(inflation_keys_rangeproof, inflation_keys_rangeproof_len))
+        return WALLY_EINVAL;
+
+    memcpy(input.txhash, txhash, WALLY_TXHASH_LEN);
+#ifdef BUILD_ELEMENTS
+    if (nonce)
+        memcpy(input.blinding_nonce, nonce, WALLY_TX_ASSET_TAG_LEN);
+    if (entropy)
+        memcpy(input.entropy, entropy, WALLY_TX_ASSET_TAG_LEN);
+#endif /* BUILD_ELEMENTS */
+    ret = wally_tx_add_input(tx, &input);
+    wally_clear(&input, sizeof(input));
+    return ret;
+}
+
+int wally_tx_add_elements_raw_input(
+    struct wally_tx *tx,
+    const unsigned char *txhash,
+    size_t txhash_len,
+    uint32_t index,
+    uint32_t sequence,
+    const unsigned char *script,
+    size_t script_len,
+    const struct wally_tx_witness_stack *witness,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len,
+    const unsigned char *inflation_keys,
+    size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len,
+    uint32_t flags)
+{
+    return tx_add_elements_raw_input(tx, txhash, txhash_len,
+                                     index, sequence, script,
+                                     script_len, witness,
+                                     nonce, nonce_len, entropy, entropy_len,
+                                     issuance_amount, issuance_amount_len,
+                                     inflation_keys, inflation_keys_len,
+                                     issuance_amount_rangeproof, issuance_amount_rangeproof_len,
+                                     inflation_keys_rangeproof, inflation_keys_rangeproof_len,
+                                     flags, true);
+}
+
 int wally_tx_add_raw_input(struct wally_tx *tx,
                            const unsigned char *txhash, size_t txhash_len,
                            uint32_t index, uint32_t sequence,
@@ -512,23 +1257,11 @@ int wally_tx_add_raw_input(struct wally_tx *tx,
                            const struct wally_tx_witness_stack *witness,
                            uint32_t flags)
 {
-    /* Add an input without allocating a temporary wally_tx_input */
-    struct wally_tx_input input = {
-        { 0 }, index, sequence, (unsigned char *)script, script_len,
-        (struct wally_tx_witness_stack *) witness
-    };
-    int ret;
-
-    if (flags)
-        ret = WALLY_EINVAL; /* TODO: Allow creation of p2pkh/p2sh using flags */
-    else if (!txhash || txhash_len != WALLY_TXHASH_LEN)
-        ret = WALLY_EINVAL;
-    else {
-        memcpy(input.txhash, txhash, WALLY_TXHASH_LEN);
-        ret = wally_tx_add_input(tx, &input);
-        wally_clear(&input, sizeof(input));
-    }
-    return ret;
+    return tx_add_elements_raw_input(tx, txhash, txhash_len,
+                                     index, sequence, script,
+                                     script_len, witness,
+                                     NULL, 0, NULL, 0, NULL, 0, NULL, 0,
+                                     NULL, 0, NULL, 0, flags, false);
 }
 
 int wally_tx_remove_input(struct wally_tx *tx, size_t index)
@@ -552,10 +1285,13 @@ int wally_tx_remove_input(struct wally_tx *tx, size_t index)
 int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *output)
 {
     uint64_t total;
-
-    if (!is_valid_tx(tx) || !is_valid_tx_output(output) ||
-        wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK ||
-        total + output->satoshi < total || total + output->satoshi > WALLY_SATOSHI_MAX)
+    const bool is_elements = output->features & WALLY_TX_IS_ELEMENTS;
+    if (!is_elements) {
+        if (!is_valid_tx(tx) || !is_valid_tx_output(output) ||
+            wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK ||
+            total + output->satoshi < total || total + output->satoshi > WALLY_SATOSHI_MAX)
+            return WALLY_EINVAL;
+    } else if (!is_valid_tx(tx) || !is_valid_elements_tx_output(output))
         return WALLY_EINVAL;
 
     if (tx->num_outputs >= tx->outputs_allocation_len) {
@@ -577,20 +1313,85 @@ int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *outpu
     return WALLY_OK;
 }
 
-int wally_tx_add_raw_output(struct wally_tx *tx, uint64_t satoshi,
-                            const unsigned char *script, size_t script_len,
-                            uint32_t flags)
+static int tx_add_elements_raw_output(
+    struct wally_tx *tx,
+    uint64_t satoshi,
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    uint32_t flags,
+    bool is_elements)
 {
     /* Add an output without allocating a temporary wally_tx_output */
-    struct wally_tx_output output = { satoshi, (unsigned char *)script, script_len };
+    struct wally_tx_output output = {
+        satoshi, (unsigned char *)script, script_len,
+        is_elements ? WALLY_TX_IS_ELEMENTS : 0,
+#ifdef BUILD_ELEMENTS
+        NULL, 0, NULL, 0, NULL, 0, (unsigned char *) surjectionproof, surjectionproof_len,
+        (unsigned char *)rangeproof, rangeproof_len,
+#endif /* BUILD_ELEMENTS */
+    };
     int ret;
 
     if (flags)
         return WALLY_EINVAL;
 
+    if (BYTES_INVALID_N(asset, asset_len, WALLY_TX_ASSET_CT_ASSET_LEN) ||
+        ((value != NULL) != (value_len == WALLY_TX_ASSET_CT_VALUE_LEN ||
+                             value_len == WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)) ||
+        BYTES_INVALID_N(nonce, nonce_len, WALLY_TX_ASSET_CT_NONCE_LEN) ||
+        BYTES_INVALID(surjectionproof, surjectionproof_len) ||
+        BYTES_INVALID(rangeproof, rangeproof_len))
+        return WALLY_EINVAL;
+
     ret = wally_tx_add_output(tx, &output);
     wally_clear(&output, sizeof(output));
     return ret;
+}
+
+int wally_tx_add_elements_raw_output(
+    struct wally_tx *tx,
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    uint32_t flags)
+{
+    return tx_add_elements_raw_output(tx, -1,
+                                      script, script_len,
+                                      asset, asset_len,
+                                      value, value_len,
+                                      nonce, nonce_len,
+                                      surjectionproof, surjectionproof_len,
+                                      rangeproof, rangeproof_len,
+                                      flags, true);
+}
+
+int wally_tx_add_raw_output(struct wally_tx *tx, uint64_t satoshi,
+                            const unsigned char *script, size_t script_len,
+                            uint32_t flags)
+{
+    return tx_add_elements_raw_output(tx, satoshi,
+                                      script, script_len,
+                                      NULL, 0, NULL, 0, NULL, 0,
+                                      NULL, 0, NULL, 0, flags, false);
 }
 
 int wally_tx_remove_output(struct wally_tx *tx, size_t index)
@@ -621,9 +1422,29 @@ int wally_tx_get_witness_count(const struct wally_tx *tx, size_t *written)
     if (!is_valid_tx(tx) || !written)
         return WALLY_EINVAL;
 
-    for (i = 0; i < tx->num_inputs; ++i)
+    for (i = 0; i < tx->num_inputs; ++i) {
         if (tx->inputs[i].witness)
             *written += 1;
+#ifdef BUILD_ELEMENTS
+        /* TODO: check the count in the presence of a mix of NULL and non-NULL witnesses */
+        if (tx->inputs[i].issuance_amount_rangeproof_len)
+            *written += 1;
+        if (tx->inputs[i].inflation_keys_rangeproof_len)
+            *written += 1;
+        if (tx->inputs[i].pegin_witness)
+            *written += 1;
+#endif
+    }
+
+#ifdef BUILD_ELEMENTS
+    /* TODO: check the count in the presence of a mix of NULL and non-NULL witnesses */
+    for (i = 0; i < tx->num_outputs; ++i) {
+        if (tx->outputs[i].surjectionproof_len)
+            *written += 1;
+        if (tx->outputs[i].rangeproof_len)
+            *written += 1;
+    }
+#endif
 
     return WALLY_OK;
 }
@@ -634,7 +1455,7 @@ int wally_tx_get_witness_count(const struct wally_tx *tx, size_t *written)
 static int tx_get_lengths(const struct wally_tx *tx,
                           const struct tx_serialise_opts *opts, uint32_t flags,
                           size_t *base_size, size_t *witness_size,
-                          size_t *witness_count)
+                          size_t *witness_count, bool is_elements)
 {
     size_t n, i, j;
     const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
@@ -653,11 +1474,18 @@ static int tx_get_lengths(const struct wally_tx *tx,
                          SHA256_LEN + /* hash sequence */
                          WALLY_TXHASH_LEN + sizeof(uint32_t) + /* outpoint + index */
                          varbuff_get_length(opts->script_len) + /* script */
-                         sizeof(uint64_t) + /* amount */
+                         (is_elements ? confidential_value_length_from_bytes(opts->value) + SHA256_LEN :
+                          sizeof(uint64_t)) + /* amount */
                          sizeof(uint32_t) + /* input sequence */
                          SHA256_LEN + /* hash outputs */
                          sizeof(uint32_t) + /* nlocktime */
                          sizeof(uint32_t); /* tx sighash */
+#ifdef BUILD_ELEMENTS
+            if (tx->inputs[opts->index].features & WALLY_TX_IS_ISSUANCE)
+                *base_size += 2 * WALLY_TX_ASSET_TAG_LEN +
+                              confidential_value_length_from_bytes(tx->inputs[opts->index].issuance_amount) +
+                              confidential_value_length_from_bytes(tx->inputs[opts->index].inflation_keys);
+#endif
             *witness_size = 0;
             return WALLY_OK;
         }
@@ -677,6 +1505,8 @@ static int tx_get_lengths(const struct wally_tx *tx,
         sizeof(tx->locktime) +
         (opts ? sizeof(leint32_t) : 0); /* Include trailing tx_sighash */
 
+    if (!opts && is_elements)
+        n += sizeof(uint8_t); /* witness flag */
     for (i = 0; i < tx->num_inputs; ++i) {
         const struct wally_tx_input *input = tx->inputs + i;
         if (anyonecanpay && i != opts->index)
@@ -685,6 +1515,15 @@ static int tx_get_lengths(const struct wally_tx *tx,
         n += sizeof(input->txhash) +
              sizeof(input->index) +
              sizeof(input->sequence);
+
+#ifdef BUILD_ELEMENTS
+        if (input->features & WALLY_TX_IS_ISSUANCE) {
+            n += sizeof(input->blinding_nonce) +
+                 sizeof(input->entropy) +
+                 confidential_value_length_from_bytes(input->issuance_amount) +
+                 confidential_value_length_from_bytes(input->inflation_keys);
+        }
+#endif
 
         if (opts) {
             if (i == opts->index)
@@ -703,9 +1542,17 @@ static int tx_get_lengths(const struct wally_tx *tx,
             const struct wally_tx_output *output = tx->outputs + i;
             if (sh_single && i != opts->index)
                 n += sizeof(EMPTY_OUTPUT);
-            else
-                n += sizeof(output->satoshi) +
-                     varbuff_get_length(output->script_len);
+            else {
+                if (is_elements && (output->features & WALLY_TX_IS_ELEMENTS)) {
+#ifdef BUILD_ELEMENTS
+                    n += confidential_asset_length_from_bytes(output->asset) +
+                         confidential_value_length_from_bytes(output->value) +
+                         confidential_nonce_length_from_bytes(output->nonce);
+#endif
+                } else
+                    n += sizeof(output->satoshi);
+                n += varbuff_get_length(output->script_len);
+            }
         }
     }
 
@@ -713,16 +1560,47 @@ static int tx_get_lengths(const struct wally_tx *tx,
 
     n = 0;
     if (flags & WALLY_TX_FLAG_USE_WITNESS) {
-        n = 2; /* For marker and flag bytes 0x00 0x01 */
+        if (is_elements) {
+#ifdef BUILD_ELEMENTS
+            for (i = 0; i < tx->num_inputs; ++i) {
+                const struct wally_tx_input *input = tx->inputs + i;
+                size_t num_items;
+                n += varbuff_get_length(input->issuance_amount_rangeproof_len);
+                n += varbuff_get_length(input->inflation_keys_rangeproof_len);
+                num_items = input->witness ? input->witness->num_items : 0;
+                n += varint_get_length(num_items);
+                for (j = 0; j < num_items; ++j) {
+                    const struct wally_tx_witness_item *stack;
+                    stack = input->witness->items + j;
+                    n += varbuff_get_length(stack->witness_len);
+                }
+                num_items = input->pegin_witness ? input->pegin_witness->num_items : 0;
+                n += varint_get_length(num_items);
+                for (j = 0; j < num_items; ++j) {
+                    const struct wally_tx_witness_item *stack;
+                    stack = input->pegin_witness->items + j;
+                    n += varbuff_get_length(stack->witness_len);
+                }
+            }
 
-        for (i = 0; i < tx->num_inputs; ++i) {
-            const struct wally_tx_input *input = tx->inputs + i;
-            size_t num_items = input->witness ? input->witness->num_items : 0;
-            n += varint_get_length(num_items);
-            for (j = 0; j < num_items; ++j) {
-                const struct wally_tx_witness_item *stack;
-                stack = input->witness->items + j;
-                n += varbuff_get_length(stack->witness_len);
+            for (i = 0; i < tx->num_outputs; ++i) {
+                const struct wally_tx_output *output = tx->outputs + i;
+                n += varbuff_get_length(output->surjectionproof_len);
+                n += varbuff_get_length(output->rangeproof_len);
+            }
+#endif /* BUILD_ELEMENTS */
+        } else {
+            n = 2; /* For marker and flag bytes 0x00 0x01 */
+
+            for (i = 0; i < tx->num_inputs; ++i) {
+                const struct wally_tx_input *input = tx->inputs + i;
+                size_t num_items = input->witness ? input->witness->num_items : 0;
+                n += varint_get_length(num_items);
+                for (j = 0; j < num_items; ++j) {
+                    const struct wally_tx_witness_item *stack;
+                    stack = input->witness->items + j;
+                    n += varbuff_get_length(stack->witness_len);
+                }
             }
         }
     }
@@ -733,7 +1611,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
 
 static int tx_get_length(const struct wally_tx *tx,
                          const struct tx_serialise_opts *opts, uint32_t flags,
-                         size_t *written)
+                         size_t *written, bool is_elements)
 {
     size_t base_size, witness_size, witness_count;
 
@@ -742,7 +1620,7 @@ static int tx_get_length(const struct wally_tx *tx,
 
     if (!written ||
         tx_get_lengths(tx, opts, flags, &base_size, &witness_size,
-                       &witness_count) != WALLY_OK)
+                       &witness_count, is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (witness_count && (flags & WALLY_TX_FLAG_USE_WITNESS))
@@ -756,7 +1634,7 @@ static int tx_get_length(const struct wally_tx *tx,
 int wally_tx_get_length(const struct wally_tx *tx, uint32_t flags,
                         size_t *written)
 {
-    return tx_get_length(tx, NULL, flags, written);
+    return tx_get_length(tx, NULL, flags, written, false);
 }
 
 int wally_tx_get_weight(const struct wally_tx *tx, size_t *written)
@@ -768,7 +1646,7 @@ int wally_tx_get_weight(const struct wally_tx *tx, size_t *written)
 
     if (!written ||
         tx_get_lengths(tx, NULL, WALLY_TX_FLAG_USE_WITNESS, &base_size,
-                       &witness_size, &witness_count) != WALLY_OK)
+                       &witness_size, &witness_count, false) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (witness_count)
@@ -800,7 +1678,8 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
                                      size_t *written)
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
-    size_t i, inputs_size, outputs_size, buff_len = sizeof(buff);
+    size_t i, inputs_size, outputs_size, issuances_size = 0, buff_len = sizeof(buff);
+    uint64_t is_elements = 0;
     const bool anyonecanpay = opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_none = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
@@ -810,25 +1689,66 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     (void)flags;
     (void)len;
 
+#ifdef BUILD_ELEMENTS
+    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
+        return ret;
+#endif
+
     /* Note we assume tx_to_bytes has already validated all inputs */
     p += uint32_to_le_bytes(tx->version, p);
 
     inputs_size = tx->num_inputs * (WALLY_TXHASH_LEN + sizeof(uint32_t));
     if (sh_none || (sh_single && opts->index >= tx->num_outputs))
         outputs_size = 0;
-    else if (sh_single)
-        outputs_size = sizeof(uint64_t) +
-                       varbuff_get_length(tx->outputs[opts->index].script_len);
-    else {
+    else if (sh_single) {
+        if (!is_elements)
+            outputs_size = sizeof(uint64_t) +
+                           varbuff_get_length(tx->outputs[opts->index].script_len);
+#ifdef BUILD_ELEMENTS
+        else
+            outputs_size = confidential_asset_length_from_bytes(tx->outputs[opts->index].asset) +
+                           confidential_value_length_from_bytes(tx->outputs[opts->index].value) +
+                           confidential_nonce_length_from_bytes(tx->outputs[opts->index].nonce) +
+                           varbuff_get_length(tx->outputs[opts->index].script_len);
+#else
+        else
+            return WALLY_EINVAL;
+#endif
+    } else {
         outputs_size = 0;
         for (i = 0; i < tx->num_outputs; ++i) {
-            outputs_size += sizeof(uint64_t) +
-                            varbuff_get_length(tx->outputs[i].script_len);
+            if (!is_elements)
+                outputs_size += sizeof(uint64_t);
+#ifdef BUILD_ELEMENTS
+            else
+                outputs_size += confidential_asset_length_from_bytes(tx->outputs[i].asset) +
+                                confidential_value_length_from_bytes(tx->outputs[i].value) +
+                                confidential_nonce_length_from_bytes(tx->outputs[i].nonce);
+#else
+            else
+                return WALLY_EINVAL;
+#endif
+            outputs_size += varbuff_get_length(tx->outputs[i].script_len);
         }
     }
 
-    if (inputs_size > buff_len || outputs_size > buff_len) {
+#ifdef BUILD_ELEMENTS
+    if (is_elements && !anyonecanpay) {
+        for (i = 0; i < tx->num_inputs; ++i) {
+            if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE)
+                issuances_size +=
+                    2 * WALLY_TX_ASSET_TAG_LEN +
+                    confidential_value_length_from_bytes(tx->inputs[i].issuance_amount) +
+                    confidential_value_length_from_bytes(tx->inputs[i].inflation_keys);
+            else
+                issuances_size += 1;
+        }
+    }
+#endif
+
+    if (inputs_size > buff_len || outputs_size > buff_len || issuances_size > buff_len) {
         buff_len = inputs_size > outputs_size ? inputs_size : outputs_size;
+        buff_len = buff_len > issuances_size ? buff_len : issuances_size;
         buff_p = wally_malloc(buff_len);
         if (buff_p == NULL)
             return WALLY_ENOMEM;
@@ -862,13 +1782,60 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     }
     p += SHA256_LEN;
 
+#ifdef BUILD_ELEMENTS
+    if (is_elements) {
+        /* Issuance */
+        if (anyonecanpay)
+            memset(p, 0, SHA256_LEN);
+        else {
+            unsigned char *tmp_p = buff_p;
+            for (i = 0; i < tx->num_inputs; ++i) {
+                if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
+                    memcpy(tmp_p, tx->inputs[i].blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
+                    tmp_p += WALLY_TX_ASSET_TAG_LEN;
+                    memcpy(tmp_p, tx->inputs[i].entropy, WALLY_TX_ASSET_TAG_LEN);
+                    tmp_p += WALLY_TX_ASSET_TAG_LEN;
+                    tmp_p += confidential_value_to_bytes(tx->inputs[i].issuance_amount,
+                                                         tx->inputs[i].issuance_amount_len, tmp_p);
+                    tmp_p += confidential_value_to_bytes(tx->inputs[i].inflation_keys,
+                                                         tx->inputs[i].inflation_keys_len, tmp_p);
+                }
+                else
+                    *tmp_p++ = 0;
+            }
+
+            if ((ret = wally_sha256d(buff_p, issuances_size, p, SHA256_LEN)) != WALLY_OK)
+                goto error;
+        }
+        p += SHA256_LEN;
+    }
+#endif /* BUILD_ELEMENTS */
+
     /* Input details */
     memcpy(p, tx->inputs[opts->index].txhash, WALLY_TXHASH_LEN);
     p += WALLY_TXHASH_LEN;
     p += uint32_to_le_bytes(tx->inputs[opts->index].index, p);
     p += varbuff_to_bytes(opts->script, opts->script_len, p);
-    p += uint64_to_le_bytes(opts->satoshi, p);
+    if (!is_elements)
+        p += uint64_to_le_bytes(opts->satoshi, p);
+#ifdef BUILD_ELEMENTS
+    else
+        p += confidential_value_to_bytes(opts->value, opts->value_len, p);
+#endif
     p += uint32_to_le_bytes(tx->inputs[opts->index].sequence, p);
+
+#ifdef BUILD_ELEMENTS
+    if (is_elements && (tx->inputs[opts->index].features & WALLY_TX_IS_ISSUANCE)) {
+        memcpy(p, tx->inputs[opts->index].blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
+        p += WALLY_TX_ASSET_TAG_LEN;
+        memcpy(p, tx->inputs[opts->index].entropy, WALLY_TX_ASSET_TAG_LEN);
+        p += WALLY_TX_ASSET_TAG_LEN;
+        p += confidential_value_to_bytes(tx->inputs[opts->index].issuance_amount,
+                                         tx->inputs[opts->index].issuance_amount_len, p);
+        p += confidential_value_to_bytes(tx->inputs[opts->index].inflation_keys,
+                                         tx->inputs[opts->index].inflation_keys_len, p);
+    }
+#endif
 
     /* Outputs */
     if (sh_none || (sh_single && opts->index >= tx->num_outputs))
@@ -878,7 +1845,18 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
         for (i = 0; i < tx->num_outputs; ++i) {
             if (sh_single && i != opts->index)
                 continue;
-            output_p += uint64_to_le_bytes(tx->outputs[i].satoshi, output_p);
+            if (!is_elements)
+                output_p += uint64_to_le_bytes(tx->outputs[i].satoshi, output_p);
+#ifdef BUILD_ELEMENTS
+            else {
+                output_p += confidential_value_to_bytes(tx->outputs[i].asset, tx->outputs[i].asset_len,
+                                                        output_p);
+                output_p += confidential_value_to_bytes(tx->outputs[i].value, tx->outputs[i].value_len,
+                                                        output_p);
+                output_p += confidential_value_to_bytes(tx->outputs[i].nonce, tx->outputs[i].nonce_len,
+                                                        output_p);
+            }
+#endif
             output_p += varbuff_to_bytes(tx->outputs[i].script,
                                          tx->outputs[i].script_len, output_p);
         }
@@ -907,7 +1885,8 @@ static int tx_to_bytes(const struct wally_tx *tx,
                        const struct tx_serialise_opts *opts,
                        uint32_t flags,
                        unsigned char *bytes_out, size_t len,
-                       size_t *written)
+                       size_t *written,
+                       bool is_elements)
 {
     size_t n, i, j, witness_count;
     const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
@@ -920,7 +1899,7 @@ static int tx_to_bytes(const struct wally_tx *tx,
 
     if (!is_valid_tx(tx) || (flags & ~WALLY_TX_FLAG_USE_WITNESS) ||
         !bytes_out || !written ||
-        tx_get_length(tx, opts, flags, &n) != WALLY_OK)
+        tx_get_length(tx, opts, flags, &n, is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (opts && (flags & WALLY_TX_FLAG_USE_WITNESS))
@@ -942,9 +1921,14 @@ static int tx_to_bytes(const struct wally_tx *tx,
     }
 
     p += uint32_to_le_bytes(tx->version, p);
-    if (flags & WALLY_TX_FLAG_USE_WITNESS) {
-        *p++ = 0; /* Write BIP 144 marker */
-        *p++ = 1; /* Write BIP 144 flag */
+    if (is_elements) {
+        if (!opts)
+            *p++ = flags & WALLY_TX_FLAG_USE_WITNESS ? 1 : 0;
+    } else {
+        if (flags & WALLY_TX_FLAG_USE_WITNESS) {
+            *p++ = 0; /* Write BIP 144 marker */
+            *p++ = 1; /* Write BIP 144 flag */
+        }
     }
     if (anyonecanpay)
         *p++ = 1;
@@ -958,7 +1942,10 @@ static int tx_to_bytes(const struct wally_tx *tx,
 
         memcpy(p, input->txhash, sizeof(input->txhash));
         p += sizeof(input->txhash);
-        p += uint32_to_le_bytes(input->index, p);
+        if (!opts && (input->features & WALLY_TX_IS_ISSUANCE))
+            p += uint32_to_le_bytes(input->index | WALLY_TX_ISSUANCE_FLAG, p);
+        else
+            p += uint32_to_le_bytes(input->index, p);
         if (opts) {
             if (i == opts->index)
                 p += varbuff_to_bytes(opts->script, opts->script_len, p);
@@ -971,6 +1958,18 @@ static int tx_to_bytes(const struct wally_tx *tx,
             p += uint32_to_le_bytes(0, p);
         else
             p += uint32_to_le_bytes(input->sequence, p);
+        if (input->features & WALLY_TX_IS_ISSUANCE) {
+            if (!is_elements)
+                return WALLY_EINVAL;
+#ifdef BUILD_ELEMENTS
+            memcpy(p, input->blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
+            p += WALLY_TX_ASSET_TAG_LEN;
+            memcpy(p, input->entropy, WALLY_TX_ASSET_TAG_LEN);
+            p += WALLY_TX_ASSET_TAG_LEN;
+            p += confidential_value_to_bytes(input->issuance_amount, input->issuance_amount_len, p);
+            p += confidential_value_to_bytes(input->inflation_keys, input->inflation_keys_len, p);
+#endif
+        }
     }
 
     if (sh_none)
@@ -985,13 +1984,23 @@ static int tx_to_bytes(const struct wally_tx *tx,
                 memcpy(p, EMPTY_OUTPUT, sizeof(EMPTY_OUTPUT));
                 p += sizeof(EMPTY_OUTPUT);
             } else {
-                p += uint64_to_le_bytes(output->satoshi, p);
+                if (output->features & WALLY_TX_IS_ELEMENTS) {
+                    if (!is_elements)
+                        return WALLY_EINVAL;
+#ifdef BUILD_ELEMENTS
+                    p += confidential_value_to_bytes(output->asset, output->asset_len, p);
+                    p += confidential_value_to_bytes(output->value, output->value_len, p);
+                    p += confidential_value_to_bytes(output->nonce, output->nonce_len, p);
+#endif
+                } else {
+                    p += uint64_to_le_bytes(output->satoshi, p);
+                }
                 p += varbuff_to_bytes(output->script, output->script_len, p);
             }
         }
     }
 
-    if (flags & WALLY_TX_FLAG_USE_WITNESS) {
+    if (!is_elements && (flags & WALLY_TX_FLAG_USE_WITNESS)) {
         for (i = 0; i < tx->num_inputs; ++i) {
             const struct wally_tx_input *input = tx->inputs + i;
             size_t num_items = input->witness ? input->witness->num_items : 0;
@@ -1007,6 +2016,36 @@ static int tx_to_bytes(const struct wally_tx *tx,
     p += uint32_to_le_bytes(tx->locktime, p);
     if (opts)
         uint32_to_le_bytes(opts->tx_sighash, p);
+
+#ifdef BUILD_ELEMENTS
+    if (is_elements && (flags & WALLY_TX_FLAG_USE_WITNESS)) {
+        for (i = 0; i < tx->num_inputs; ++i) {
+            const struct wally_tx_input *input = tx->inputs + i;
+            size_t num_items;
+            p += varbuff_to_bytes(input->issuance_amount_rangeproof, input->issuance_amount_rangeproof_len, p);
+            p += varbuff_to_bytes(input->inflation_keys_rangeproof, input->inflation_keys_rangeproof_len, p);
+            num_items = input->witness ? input->witness->num_items : 0;
+            p += varint_to_bytes(num_items, p);
+            for (j = 0; j < num_items; ++j) {
+                const struct wally_tx_witness_item *stack;
+                stack = input->witness->items + j;
+                p += varbuff_to_bytes(stack->witness, stack->witness_len, p);
+            }
+            num_items = input->pegin_witness ? input->pegin_witness->num_items : 0;
+            p += varint_to_bytes(num_items, p);
+            for (j = 0; j < num_items; ++j) {
+                const struct wally_tx_witness_item *stack;
+                stack = input->pegin_witness->items + j;
+                p += varbuff_to_bytes(stack->witness, stack->witness_len, p);
+            }
+        }
+        for (i = 0; i < tx->num_outputs; ++i) {
+            const struct wally_tx_output *output = tx->outputs + i;
+            p += varbuff_to_bytes(output->surjectionproof, output->surjectionproof_len, p);
+            p += varbuff_to_bytes(output->rangeproof, output->rangeproof_len, p);
+        }
+    }
+#endif
     *written = n;
     return WALLY_OK;
 }
@@ -1015,11 +2054,12 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
                       unsigned char *bytes_out, size_t len,
                       size_t *written)
 {
-    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written);
+    return tx_to_bytes(tx, NULL, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, bytes_out, len, written,
+                       flags & WALLY_TX_FLAG_USE_ELEMENTS);
 }
 
-int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
-                    char **output)
+static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
+                     char **output, bool is_elements)
 {
     unsigned char buff[TX_STACK_SIZE], *buff_p = buff;
     size_t n, written;
@@ -1028,12 +2068,12 @@ int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
     if (!output)
         return WALLY_EINVAL;
 
-    ret = wally_tx_to_bytes(tx, flags, buff_p, sizeof(buff), &n);
+    ret = tx_to_bytes(tx, NULL, flags, buff_p, sizeof(buff), &n, is_elements);
     if (ret == WALLY_OK) {
         if (n > sizeof(buff)) {
             if ((buff_p = wally_malloc(n)) == NULL)
                 return WALLY_ENOMEM;
-            ret = wally_tx_to_bytes(tx, flags, buff_p, n, &written);
+            ret = tx_to_bytes(tx, NULL, flags, buff_p, n, &written, is_elements);
             if (n != written)
                 ret = WALLY_ERROR; /* Length calculated incorrectly */
         }
@@ -1047,6 +2087,13 @@ int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
     return ret;
 }
 
+int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
+                    char **output)
+{
+    return tx_to_hex(tx, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, output,
+                     flags & WALLY_TX_FLAG_USE_ELEMENTS);
+}
+
 static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
                       uint32_t flags, size_t *num_inputs, size_t *num_outputs,
                       bool *expect_witnesses)
@@ -1055,6 +2102,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     uint64_t v, num_witnesses;
     size_t i, j;
     struct wally_tx tmp_tx;
+    const bool is_elements = flags & WALLY_TX_FLAG_USE_ELEMENTS;
 
     if (num_inputs)
         *num_inputs = 0;
@@ -1063,22 +2111,25 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     if (expect_witnesses)
         *expect_witnesses = false;
 
-    if (!bytes || bytes_len < sizeof(uint32_t) + 2 || flags ||
+    if (!bytes || bytes_len < sizeof(uint32_t) + 2 ||
+        (flags & ~WALLY_TX_FLAG_USE_ELEMENTS) ||
         !num_inputs || !num_outputs || !expect_witnesses)
         return WALLY_EINVAL;
-
-    *expect_witnesses = false;
 
     p += uint32_from_le_bytes(p, &tmp_tx.version);
     if (!tmp_tx.version || tmp_tx.version > WALLY_TX_MAX_VERSION)
         return WALLY_EINVAL;
 
-    if (*p == 0) {
-        /* BIP 144 extended serialization */
-        if (p[1] != 0x1)
-            return WALLY_EINVAL; /* Invalid witness flag */
-        p += 2;
-        *expect_witnesses = true;
+    if (is_elements)
+        *expect_witnesses = *p++ != 0;
+    else {
+        if (*p == 0) {
+            /* BIP 144 extended serialization */
+            if (p[1] != 0x1)
+                return WALLY_EINVAL; /* Invalid witness flag */
+            p += 2;
+            *expect_witnesses = true;
+        }
     }
 
 #define ensure_n(n) if (p > end || p + (n) > end) return WALLY_EINVAL
@@ -1089,19 +2140,57 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 #define ensure_varbuff(dst) ensure_varint((dst)); \
     ensure_n(*dst)
 
+#define ensure_commitment(dst, explicit_siz, prefix_a, prefix_b) \
+    switch (*dst) { \
+    case 0: \
+        ensure_n(sizeof(uint8_t)); \
+        p++; \
+        break; \
+    case 1: \
+        ensure_n(explicit_siz); \
+        p += explicit_siz; \
+        break; \
+    case prefix_a: \
+    case prefix_b: \
+        ensure_n(WALLY_TX_ASSET_CT_LEN); \
+        p += WALLY_TX_ASSET_CT_LEN; \
+        break; \
+    default: \
+        return WALLY_EINVAL; \
+    }
+
+#define ensure_committed_value(dst) \
+    ensure_commitment(dst, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN, WALLY_TX_ASSET_CT_VALUE_PREFIX_A, WALLY_TX_ASSET_CT_VALUE_PREFIX_B)
+
+#define ensure_committed_asset(dst) \
+    ensure_commitment(dst, WALLY_TX_ASSET_CT_ASSET_LEN, WALLY_TX_ASSET_CT_ASSET_PREFIX_A, WALLY_TX_ASSET_CT_ASSET_PREFIX_B)
+
+#define ensure_committed_nonce(dst) \
+    ensure_commitment(dst, WALLY_TX_ASSET_CT_NONCE_LEN, WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B)
+
     ensure_varint(&v);
     if (!v)
         return WALLY_EINVAL;
     *num_inputs = v;
 
     for (i = 0; i < *num_inputs; ++i) {
+        bool expect_issuance;
+        uint32_t prevout_index;
         ensure_n(WALLY_TXHASH_LEN + sizeof(uint32_t));
+        uint32_from_le_bytes(p + WALLY_TXHASH_LEN, &prevout_index);
+        expect_issuance = is_elements && (prevout_index & WALLY_TX_ISSUANCE_FLAG);
         p += WALLY_TXHASH_LEN + sizeof(uint32_t);
         ensure_varbuff(&v);
         /* FIXME: Analyse script types if required */
         p += v;
         ensure_n(sizeof(uint32_t));
         p += sizeof(uint32_t);
+        if (expect_issuance) {
+            ensure_n(2 * WALLY_TX_ASSET_TAG_LEN);
+            p += 2 * WALLY_TX_ASSET_TAG_LEN;
+            ensure_committed_value(p); /* issuance amount */
+            ensure_committed_value(p); /* inflation keys */
+        }
     }
 
     ensure_varint(&v);
@@ -1110,14 +2199,20 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     *num_outputs = v;
 
     for (i = 0; i < *num_outputs; ++i) {
-        ensure_n(sizeof(uint64_t));
-        p += sizeof(uint64_t);
+        if (is_elements) {
+            ensure_committed_asset(p);
+            ensure_committed_value(p);
+            ensure_committed_nonce(p);
+        } else {
+            ensure_n(sizeof(uint64_t));
+            p += sizeof(uint64_t);
+        }
         ensure_varbuff(&v);
         /* FIXME: Analyse script types if required */
         p += v;
     }
 
-    if (*expect_witnesses) {
+    if (*expect_witnesses && !is_elements) {
         for (i = 0; i < *num_inputs; ++i) {
             ensure_varint(&num_witnesses);
             for (j = 0; j < num_witnesses; ++j) {
@@ -1129,14 +2224,74 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
     ensure_n(sizeof(uint32_t)); /* Locktime */
 
+    if (*expect_witnesses && is_elements) {
+        p += sizeof(uint32_t);
+        for (i = 0; i < *num_inputs; ++i) {
+            ensure_varbuff(&v); /* issuance amount rangeproof */
+            p += v;
+            ensure_varbuff(&v); /* inflation keys rangeproof */
+            p += v;
+            ensure_varint(&num_witnesses); /* scriptWitness */
+            for (j = 0; j < num_witnesses; ++j) {
+                ensure_varbuff(&v);
+                p += v;
+            }
+            ensure_varint(&num_witnesses); /* peginWitness */
+            for (j = 0; j < num_witnesses; ++j) {
+                ensure_varbuff(&v);
+                p += v;
+            }
+        }
+
+        for (i = 0; i < *num_outputs; ++i) {
+            ensure_varbuff(&v); /* surjection proof */
+            p += v;
+            ensure_varbuff(&v); /* range proof */
+            p += v;
+        }
+    }
+
 #undef ensure_n
 #undef ensure_varint
 #undef ensure_varbuff
+#undef ensure_commitment
+#undef ensure_commited_value
+#undef ensure_commited_asset
+#undef ensure_commited_nonce
     return WALLY_OK;
 }
 
-int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
-                        uint32_t flags, struct wally_tx **output)
+static int witness_stack_from_bytes(const unsigned char *bytes, struct wally_tx_witness_stack **witness, size_t *offset)
+{
+    int ret = WALLY_OK;
+    size_t i;
+    uint64_t num_witnesses;
+    const unsigned char *p = bytes;
+    p += varint_from_bytes(p, &num_witnesses);
+    if (num_witnesses) {
+        ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness);
+        if (ret != WALLY_OK)
+            goto cleanup;
+
+        for (i = 0; i < num_witnesses; ++i) {
+            uint64_t witness_len;
+            p += varint_from_bytes(p, &witness_len);
+            ret = wally_tx_witness_stack_set(*witness, i, p, witness_len);
+            if (ret != WALLY_OK)
+                goto cleanup;
+            p += witness_len;
+        }
+    }
+
+    *offset = p - bytes;
+
+cleanup:
+    return ret;
+}
+
+static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                         uint32_t flags, struct wally_tx **output,
+                         bool is_elements)
 {
     const unsigned char *p = bytes;
     bool expect_witnesses;
@@ -1158,23 +2313,40 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
     result = (struct wally_tx *)*output;
 
     p += uint32_from_le_bytes(p, &result->version);
-    if (expect_witnesses)
+    if (is_elements)
+        p++; /* Skip witness flag */
+    else if (expect_witnesses)
         p += 2; /* Skip flag bytes */
     p += varint_from_bytes(p, &tmp);
 
     for (i = 0; i < num_inputs; ++i) {
-        const unsigned char *txhash = p, *script;
+        const unsigned char *txhash = p, *script, *nonce = NULL, *entropy = NULL;
+        const unsigned char *issuance_amount = NULL, *inflation_keys = NULL;
         uint32_t index, sequence;
-        uint64_t script_len;
+        uint64_t script_len, issuance_amount_len = 0, inflation_keys_len = 0;
         p += WALLY_TXHASH_LEN;
         p += uint32_from_le_bytes(p, &index);
         p += varint_from_bytes(p, &script_len);
         script = p;
         p += script_len;
         p += uint32_from_le_bytes(p, &sequence);
-        ret = wally_tx_input_init(txhash, WALLY_TXHASH_LEN, index, sequence,
-                                  script_len ? script : NULL, script_len, NULL,
-                                  &result->inputs[i]);
+        if (is_elements && !!(index & WALLY_TX_ISSUANCE_FLAG)) {
+            nonce = p;
+            p += WALLY_TX_ASSET_TAG_LEN;
+            entropy = p;
+            p += WALLY_TX_ASSET_TAG_LEN;
+            issuance_amount = p;
+            p += confidential_value_varint_from_bytes(p, &issuance_amount_len);
+            inflation_keys = p;
+            p += confidential_value_varint_from_bytes(p, &inflation_keys_len);
+        }
+        ret = tx_elements_input_init(txhash, WALLY_TXHASH_LEN, index, sequence,
+                                     script_len ? script : NULL, script_len, NULL,
+                                     nonce, nonce ? WALLY_TX_ASSET_TAG_LEN : 0,
+                                     entropy, entropy ? WALLY_TX_ASSET_TAG_LEN : 0,
+                                     issuance_amount_len ? issuance_amount : NULL, issuance_amount_len,
+                                     inflation_keys_len ? inflation_keys : NULL, inflation_keys_len,
+                                     NULL, 0, NULL, 0, &result->inputs[i], is_elements);
         if (ret != WALLY_OK)
             goto fail;
         result->num_inputs += 1;
@@ -1182,20 +2354,32 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
 
     p += varint_from_bytes(p, &tmp);
     for (i = 0; i < num_outputs; ++i) {
-        const unsigned char *script;
-        uint64_t satoshi, script_len;
-        p += uint64_from_le_bytes(p, &satoshi);
+        const unsigned char *script, *asset = NULL, *value = NULL, *nonce = NULL;
+        uint64_t satoshi = -1, script_len, asset_len = 0, value_len = 0, nonce_len = 0;
+        if (is_elements) {
+            asset = p;
+            p += confidential_asset_varint_from_bytes(p, &asset_len);
+            value = p;
+            p += confidential_value_varint_from_bytes(p, &value_len);
+            nonce = p;
+            p += confidential_nonce_varint_from_bytes(p, &nonce_len);
+        } else
+            p += uint64_from_le_bytes(p, &satoshi);
         p += varint_from_bytes(p, &script_len);
         script = p;
         p += script_len;
-        ret = wally_tx_output_init(satoshi, script, script_len,
-                                   &result->outputs[i]);
+        ret = tx_elements_output_init(satoshi, script_len ? script : NULL, script_len,
+                                      asset_len ? asset : NULL, asset_len,
+                                      value_len ? value : NULL, value_len,
+                                      nonce_len ? nonce : NULL, nonce_len,
+                                      NULL, 0, NULL, 0,
+                                      &result->outputs[i], is_elements);
         if (ret != WALLY_OK)
             goto fail;
         result->num_outputs += 1;
     }
 
-    if (expect_witnesses) {
+    if (expect_witnesses && !is_elements) {
         for (i = 0; i < num_inputs; ++i) {
             p += varint_from_bytes(p, &num_witnesses);
             if (!num_witnesses)
@@ -1218,11 +2402,68 @@ int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
     }
 
     uint32_from_le_bytes(p, &result->locktime);
+
+#ifdef BUILD_ELEMENTS
+
+#define proof_from_bytes(dst, len) \
+    p += varint_from_bytes(p, (len)); \
+    (dst) = p; \
+    p += *(len)
+
+    if (expect_witnesses && is_elements) {
+        p += sizeof(uint32_t);
+        for (i = 0; i < num_inputs; ++i) {
+            const unsigned char *issuance_amount_rangeproof, *inflation_keys_rangeproof;
+            size_t issuance_amount_rangeproof_len, inflation_keys_rangeproof_len, offset;
+            proof_from_bytes(issuance_amount_rangeproof, &issuance_amount_rangeproof_len);
+            proof_from_bytes(inflation_keys_rangeproof, &inflation_keys_rangeproof_len);
+            ret = tx_elements_input_issuance_proof_init(result->inputs + i,
+                                                        issuance_amount_rangeproof_len ? issuance_amount_rangeproof : NULL,
+                                                        issuance_amount_rangeproof_len,
+                                                        inflation_keys_rangeproof_len ? inflation_keys_rangeproof : NULL,
+                                                        inflation_keys_rangeproof_len);
+            if (ret != WALLY_OK)
+                goto fail;
+            ret = witness_stack_from_bytes(p, &result->inputs[i].witness, &offset);
+            if (ret != WALLY_OK)
+                goto fail;
+            p += offset;
+            ret = witness_stack_from_bytes(p, &result->inputs[i].pegin_witness, &offset);
+            if (ret != WALLY_OK)
+                goto fail;
+            p += offset;
+        }
+
+        for (i = 0; i < num_outputs; ++i) {
+            const unsigned char *surjectionproof, *rangeproof;
+            size_t surjectionproof_len, rangeproof_len;
+            proof_from_bytes(surjectionproof, &surjectionproof_len);
+            proof_from_bytes(rangeproof, &rangeproof_len);
+            ret = tx_elements_output_proof_init(result->outputs + i,
+                                                surjectionproof_len ? surjectionproof : NULL,
+                                                surjectionproof_len,
+                                                rangeproof_len ? rangeproof : NULL,
+                                                rangeproof_len);
+            if (ret != WALLY_OK)
+                goto fail;
+        }
+    }
+
+#undef proof_from_bytes
+
+#endif /* BUILD_ELEMENTS */
     return WALLY_OK;
 fail:
     tx_free(result, true);
     *output = NULL;
     return ret;
+}
+
+int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                        uint32_t flags, struct wally_tx **output)
+{
+    return tx_from_bytes(bytes, bytes_len, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, output,
+                         flags & WALLY_TX_FLAG_USE_ELEMENTS);
 }
 
 int wally_tx_from_hex(const char *hex, uint32_t flags,
@@ -1244,7 +2485,8 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
     }
     ret = wally_hex_to_bytes(hex, buff_p, bin_len, &written);
     if (ret == WALLY_OK)
-        ret = wally_tx_from_bytes(buff_p, bin_len, flags, output);
+        ret = tx_from_bytes(buff_p, bin_len, flags, output,
+                            flags & WALLY_TX_FLAG_USE_ELEMENTS);
 
     if (buff_p != buff)
         clear_and_free(buff_p, bin_len);
@@ -1254,24 +2496,38 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
     return ret;
 }
 
-int wally_tx_get_signature_hash(const struct wally_tx *tx,
-                                size_t index,
-                                const unsigned char *script, size_t script_len,
-                                const unsigned char *extra, size_t extra_len,
-                                uint32_t extra_offset, uint64_t satoshi,
-                                uint32_t sighash, uint32_t tx_sighash, uint32_t flags,
-                                unsigned char *bytes_out, size_t len)
+int wally_tx_is_elements(const struct wally_tx *tx, uint64_t *value_out)
+{
+    if (!tx || !value_out)
+        return WALLY_EINVAL;
+
+    *value_out = is_valid_elements_tx(tx);
+
+    return WALLY_OK;
+}
+
+static int tx_get_signature_hash(const struct wally_tx *tx,
+                                 size_t index,
+                                 const unsigned char *script, size_t script_len,
+                                 const unsigned char *extra, size_t extra_len,
+                                 uint32_t extra_offset, uint64_t satoshi,
+                                 const unsigned char *value,
+                                 size_t value_len,
+                                 uint32_t sighash, uint32_t tx_sighash, uint32_t flags,
+                                 unsigned char *bytes_out, size_t len)
 {
     unsigned char buff[TX_STACK_SIZE], *buff_p = buff;
     size_t n, n2;
+    uint64_t is_elements = 0;
     int ret;
     const struct tx_serialise_opts opts = {
         sighash, tx_sighash, index, script, script_len, satoshi,
-        (flags & WALLY_TX_FLAG_USE_WITNESS) ? true : false
+        (flags & WALLY_TX_FLAG_USE_WITNESS) ? true : false,
+        value, value_len
     };
 
-    if (!is_valid_tx(tx) || ((script != NULL) != (script_len != 0)) ||
-        ((extra != NULL) != (extra_len != 0)) ||
+    if (!is_valid_tx(tx) || BYTES_INVALID(script, script_len) ||
+        BYTES_INVALID(extra, extra_len) ||
         satoshi > WALLY_SATOSHI_MAX || (sighash & 0xffffff00) ||
         (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || len < SHA256_LEN)
         return WALLY_EINVAL;
@@ -1288,7 +2544,12 @@ int wally_tx_get_signature_hash(const struct wally_tx *tx,
         }
     }
 
-    if ((ret = tx_get_length(tx, &opts, 0, &n)) != WALLY_OK)
+#ifdef BUILD_ELEMENTS
+    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
+        goto fail;
+#endif
+
+    if ((ret = tx_get_length(tx, &opts, 0, &n, is_elements != 0)) != WALLY_OK)
         goto fail;
 
     if (n > sizeof(buff) && (buff_p = wally_malloc(n)) == NULL) {
@@ -1296,7 +2557,7 @@ int wally_tx_get_signature_hash(const struct wally_tx *tx,
         goto fail;
     }
 
-    if ((ret = tx_to_bytes(tx, &opts, 0, buff_p, n, &n2)) != WALLY_OK)
+    if ((ret = tx_to_bytes(tx, &opts, 0, buff_p, n, &n2, is_elements != 0)) != WALLY_OK)
         goto fail;
 
     if (n != n2)
@@ -1312,6 +2573,19 @@ fail:
     return ret;
 }
 
+int wally_tx_get_signature_hash(const struct wally_tx *tx,
+                                size_t index,
+                                const unsigned char *script, size_t script_len,
+                                const unsigned char *extra, size_t extra_len,
+                                uint32_t extra_offset, uint64_t satoshi,
+                                uint32_t sighash, uint32_t tx_sighash, uint32_t flags,
+                                unsigned char *bytes_out, size_t len)
+{
+    return tx_get_signature_hash(tx, index, script, script_len,
+                                 extra, extra_len, extra_offset, satoshi,
+                                 NULL, 0, sighash, tx_sighash, flags, bytes_out, len);
+}
+
 int wally_tx_get_btc_signature_hash(const struct wally_tx *tx, size_t index,
                                     const unsigned char *script, size_t script_len,
                                     uint64_t satoshi, uint32_t sighash, uint32_t flags,
@@ -1320,6 +2594,85 @@ int wally_tx_get_btc_signature_hash(const struct wally_tx *tx, size_t index,
     return wally_tx_get_signature_hash(tx, index, script, script_len,
                                        NULL, 0, 0, satoshi, sighash, sighash,
                                        flags, bytes_out, len);
+}
+
+int wally_tx_get_elements_signature_hash(const struct wally_tx *tx,
+                                         size_t index,
+                                         const unsigned char *script, size_t script_len,
+                                         const unsigned char *value, size_t value_len,
+                                         uint32_t sighash, uint32_t flags,
+                                         unsigned char *bytes_out, size_t len)
+{
+    return tx_get_signature_hash(tx, index, script, script_len,
+                                 NULL, 0, 0, 0, value, value_len,
+                                 sighash, sighash, flags, bytes_out, len);
+}
+
+int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
+                                             unsigned char *bytes_out,
+                                             size_t len)
+{
+    if (!bytes_out || len < WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
+        return WALLY_EINVAL;
+
+    *bytes_out = 0x1;
+    uint64_to_be_bytes(satoshi, &bytes_out[1]);
+
+    return WALLY_OK;
+}
+
+int wally_tx_elements_issuance_generate_entropy(const unsigned char *txhash,
+                                                size_t txhash_len,
+                                                uint32_t index,
+                                                const unsigned char *contract_hash,
+                                                size_t contract_hash_len,
+                                                unsigned char *bytes_out,
+                                                size_t len)
+{
+    unsigned char buff_1[2 * SHA256_LEN], *buff_p1 = buff_1;
+    unsigned char buff_2[WALLY_TXHASH_LEN + sizeof(uint32_t)], *buff_p2 = buff_2;
+    int ret = WALLY_OK;
+
+    if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
+        !contract_hash || contract_hash_len != SHA256_LEN ||
+        !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    memcpy(buff_p2, txhash, txhash_len);
+    buff_p2 += txhash_len;
+    buff_p2 += uint32_to_le_bytes(index, buff_p2);
+
+    if ((ret = wally_sha256d(buff_2, WALLY_TXHASH_LEN + sizeof(uint32_t), buff_p1, SHA256_LEN)) != WALLY_OK)
+        goto fail;
+
+    memcpy(buff_p1 + SHA256_LEN, contract_hash, contract_hash_len);
+
+    ret = wally_sha256_midstate(buff_p1, 2 * SHA256_LEN, bytes_out, len);
+fail:
+    wally_clear(buff_1, sizeof(buff_1));
+    wally_clear(buff_2, sizeof(buff_2));
+    return ret;
+}
+
+int wally_tx_elements_issuance_calculate_asset(const unsigned char *entropy,
+                                               size_t entropy_len,
+                                               unsigned char *bytes_out,
+                                               size_t len)
+{
+    unsigned char buff[2 * SHA256_LEN], *buff_p = buff;
+    int ret;
+
+    if (!entropy || entropy_len != SHA256_LEN ||
+        !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    memcpy(buff_p, entropy, entropy_len);
+    wally_clear(buff_p + SHA256_LEN, SHA256_LEN);
+
+    ret = wally_sha256_midstate(buff_p, 2 * SHA256_LEN, bytes_out, len);
+    wally_clear(buff, sizeof(buff));
+
+    return ret;
 }
 
 int wally_tx_get_total_output_satoshi(const struct wally_tx *tx, uint64_t *value_out)
@@ -1444,7 +2797,7 @@ GET_TX_I(tx, num_outputs, size_t)
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
-    if (!is_valid_tx_output(output) || ((script != NULL) != (script_len != 0)))
+    if (!is_valid_tx_output(output) || BYTES_INVALID(script, script_len))
         return WALLY_EINVAL;
     return replace_script(script, script_len, &output->script, &output->script_len);
 }
@@ -1555,7 +2908,7 @@ int wally_tx_set_input_script(const struct wally_tx *tx, size_t index,
 {
     struct wally_tx_input *input = tx_get_input(tx, index);
 
-    if (!input || ((script != NULL) != (script_len != 0)))
+    if (!input || BYTES_INVALID(script, script_len))
         return WALLY_EINVAL;
     return replace_script(script, script_len, &input->script, &input->script_len);
 }

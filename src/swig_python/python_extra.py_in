@@ -29,6 +29,7 @@ else:
         return buf
 
 sha256 = _wrap_bin(sha256, SHA256_LEN)
+sha256_midstate = _wrap_bin(sha256_midstate, SHA256_LEN)
 sha256d = _wrap_bin(sha256d, SHA256_LEN)
 sha512 = _wrap_bin(sha512, SHA512_LEN)
 hash160 = _wrap_bin(hash160, HASH160_LEN)
@@ -141,5 +142,11 @@ def tx_witness_stack_create(witnesses):
     for witness_script in witnesses:
         tx_witness_stack_add(witness_stack, witness_script)
     return witness_stack
+
+if is_elements_build():
+    tx_confidential_value_from_satoshi = _wrap_bin(tx_confidential_value_from_satoshi, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
+    tx_elements_issuance_generate_entropy = _wrap_bin(tx_elements_issuance_generate_entropy, SHA256_LEN)
+    tx_elements_issuance_calculate_asset = _wrap_bin(tx_elements_issuance_calculate_asset, SHA256_LEN)
+    tx_get_elements_signature_hash = _wrap_bin(tx_get_elements_signature_hash, SHA256_LEN)
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

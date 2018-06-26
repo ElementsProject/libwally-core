@@ -27,9 +27,15 @@ libswig_python_la_SOURCES = swig_python/swig_python_wrap.c
 libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
 libswig_python_la_LIBADD = $(PYTHON_LIBS)
 
+if BUILD_ELEMENTS
+SWIG_GEN_FLAGS = -DBUILD_ELEMENTS=1
+else
+SWIG_GEN_FLAGS=
+endif
+
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
-	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) -outdir swig_python -o $@ $< && \
+	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_GEN_FLAGS) -outdir swig_python -o $@ $< && \
     $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
     rm swig_python/wallycore.py
@@ -201,6 +207,13 @@ noinst_PROGRAMS += test_tx
 test_tx_SOURCES = ctest/test_tx.c
 test_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if BUILD_ELEMENTS
+TESTS += test_elements_tx
+noinst_PROGRAMS += test_elements_tx
+test_elements_tx_SOURCES = ctest/test_elements_tx.c
+test_elements_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_elements_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
 if SHARED_BUILD_ENABLED
@@ -224,6 +237,9 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
+if BUILD_ELEMENTS
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
+endif
 endif
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS

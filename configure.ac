@@ -114,7 +114,11 @@ AC_ARG_ENABLE(coverage,
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--enable-tests],[enable code tests (default: yes)]),
     [tests=$enableval], [tests=yes])
+AC_ARG_ENABLE(elements,
+    AS_HELP_STRING([--enable-elements],[enable elements tx code (default: no)]),
+    [elements=$enableval], [elements=no])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
+AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
@@ -146,6 +150,10 @@ else
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [AM_CFLAGS="$AM_CFLAGS -DNDEBUG=1"])
     AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
+fi
+
+if test "x$elements" == "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-DBUILD_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_ELEMENTS=1"])
 fi
 
 # -flax-vector-conversions is needed for our arm assembly

@@ -35,7 +35,7 @@ for arch in $ARCH_LIST; do
     toolsdir="$PWD/toolchain-$arch"
 
     # What we want built
-    useropts="--enable-swig-java"
+    useropts="--enable-swig-java $ENABLE_ELEMENTS"
 
     # Configure and build with the above options
     android_build_wally $arch $toolsdir $api $useropts
