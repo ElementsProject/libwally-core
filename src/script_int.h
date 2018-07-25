@@ -31,6 +31,19 @@ UINT_FROM_LE_BYTES(32)
 UINT_FROM_LE_BYTES(64)
 #undef UINT_FROM_LE_BYTES
 
+#define UINT_FROM_BE_BYTES(N) static inline size_t \
+    uint ## N ## _from_be_bytes(const unsigned char *bytes, uint ## N ## _t * v) { \
+        beint ## N ## _t tmp; \
+        memcpy(&tmp, bytes, sizeof(tmp)); \
+        *v = be ## N ## _to_cpu(tmp); \
+        return sizeof(tmp); \
+    }
+UINT_FROM_BE_BYTES(16)
+UINT_FROM_BE_BYTES(32)
+UINT_FROM_BE_BYTES(64)
+#undef UINT_FROM_LE_BYTES
+
+
 /* Write v to bytes_out in little endian */
 static inline size_t uint8_to_le_bytes(uint8_t v, unsigned char *bytes_out)
 {
@@ -48,6 +61,17 @@ UINT_TO_LE_BYTES(32)
 UINT_TO_LE_BYTES(64)
 #undef UINT_TO_LE_BYTES
 
+#define UINT_TO_BE_BYTES(N) static inline size_t \
+    uint ## N ## _to_be_bytes(uint ## N ## _t v, unsigned char *bytes_out) { \
+        beint ## N ## _t tmp = cpu_to_be ## N(v); \
+        return memcpy_len(bytes_out, &tmp, sizeof(tmp)); \
+    }
+UINT_TO_BE_BYTES(16)
+UINT_TO_BE_BYTES(32)
+UINT_TO_BE_BYTES(64)
+#undef UINT_TO_BE_BYTES
+
+
 /* Get the number of bytes required to encode v as a varint */
 size_t varint_get_length(uint64_t v);
 
@@ -58,6 +82,18 @@ size_t varint_to_bytes(uint64_t v, unsigned char *bytes_out);
 size_t varint_from_bytes(const unsigned char *bytes, uint64_t *v);
 
 size_t varint_length_from_bytes(const unsigned char *bytes);
+
+size_t confidential_asset_length_from_bytes(const unsigned char *bytes);
+
+size_t confidential_value_length_from_bytes(const unsigned char *bytes);
+
+size_t confidential_nonce_length_from_bytes(const unsigned char *bytes);
+
+size_t confidential_asset_varint_from_bytes(const unsigned char *bytes, uint64_t *v);
+
+size_t confidential_value_varint_from_bytes(const unsigned char *bytes, uint64_t *v);
+
+size_t confidential_nonce_varint_from_bytes(const unsigned char *bytes, uint64_t *v);
 
 /* varbuff is a buffer of data prefixed with a varint length */
 
@@ -71,6 +107,9 @@ static inline size_t varbuff_get_length(size_t n)
 size_t varbuff_to_bytes(const unsigned char *bytes, size_t bytes_len,
                         unsigned char *bytes_out);
 
+/* Write confidential value to bytes_out */
+size_t confidential_value_to_bytes(const unsigned char *bytes, size_t bytes_len,
+                                   unsigned char *bytes_out);
 #ifdef __cplusplus
 }
 #endif

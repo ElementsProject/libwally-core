@@ -14,5 +14,5 @@ if [ -n "$HOST" ]; then
    fi
 fi
 
-./configure --disable-dependency-tracking --enable-export-all $ENABLE_SWIG_PYTHON $ENABLE_SWIG_JAVA $USE_HOST $DEBUG_WALLY && make && make check
+./configure --disable-dependency-tracking --enable-export-all $ENABLE_SWIG_PYTHON $ENABLE_SWIG_JAVA $USE_HOST $DEBUG_WALLY $ENABLE_ELEMENTS && make && make check
 

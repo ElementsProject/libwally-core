@@ -41,6 +41,7 @@ src/test/Makefile.in
 src/wallycore.pc
 src/test_clear*
 src/test_tx*
+src/test_elements_tx*
 src/test-suite.log
 src/swig_java/swig_java_wrap.c
 src/swig_java/*.java

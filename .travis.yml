@@ -36,6 +36,9 @@ matrix:
       - compiler: clang
         os: linux
         env: DEBUG_WALLY=--enable-debug
+      - compiler: clang
+        os: linux
+        env: ENABLE_ELEMENTS=--enable-elements
 
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh

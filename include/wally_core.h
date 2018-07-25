@@ -238,6 +238,13 @@ WALLY_CORE_API int wally_set_operations(
 
 #endif /* SWIG */
 
+/**
+ * Determine if the library was built with elements support.
+ *
+ * :param value_out: 1 if the library supports elements, otherwise 0.
+ */
+WALLY_CORE_API int wally_is_elements_build(uint64_t *value_out);
+
 #ifdef __cplusplus
 }
 #endif
