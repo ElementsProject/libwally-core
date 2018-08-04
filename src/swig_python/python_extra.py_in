@@ -103,6 +103,15 @@ def _script_push_from_bytes_len_fn(data, flags):
             break
     return push_len + opcode_len
 script_push_from_bytes = _wrap_bin(script_push_from_bytes, _script_push_from_bytes_len_fn, resize=True)
+def _spkcsv2of2_1_len_fn(sigs, csv_blocks, flags):
+    # TODO: If we expose scriptint functions we can calc the real length here
+    # instead of hardcoding 4 (largest push for the max csv_blocks of 0xffff)
+    return 9 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 4
+scriptpubkey_csv_2of2_then_1_from_bytes = _wrap_bin(scriptpubkey_csv_2of2_then_1_from_bytes, _spkcsv2of2_1_len_fn, resize=True)
+def _spkcsv2of3_2_len_fn(sigs, csv_blocks, flags):
+    # TODO: See TODO in _spkcsv2of2_1_len_fn
+    return 13 + 3 * (EC_PUBLIC_KEY_LEN + 1) + 4
+scriptpubkey_csv_2of3_then_2_from_bytes = _wrap_bin(scriptpubkey_csv_2of3_then_2_from_bytes, _spkcsv2of3_2_len_fn, resize=True)
 scriptpubkey_p2pkh_from_bytes = _wrap_bin(scriptpubkey_p2pkh_from_bytes, WALLY_SCRIPTPUBKEY_P2PKH_LEN, resize=True)
 scriptpubkey_p2sh_from_bytes = _wrap_bin(scriptpubkey_p2sh_from_bytes, WALLY_SCRIPTPUBKEY_P2SH_LEN, resize=True)
 def _spkmfb_len_fn(sigs, threshold, flags):

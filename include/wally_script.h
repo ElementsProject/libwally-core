@@ -308,6 +308,58 @@ WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
     size_t *written);
 
 /**
+ * Create a CSV 2of2 multisig with a single key recovery scriptPubkey.
+ *
+ * The resulting output can be spent at any time with both of the two keys
+ * given, and by the last (recovery) key alone, ``csv_blocks`` after the
+ * output confirms.
+ *
+ * :param bytes: Compressed public keys to create a scriptPubkey from. The
+ *|    second key given will be used as the recovery key.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must 2 * ``EC_PUBLIC_KEY_LEN``.
+ * :param csv_blocks: The number of blocks before the recovery key can be
+ *| used. Must be non-zero and less than 65536.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t csv_blocks,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create a CSV 2of3 multisig with two key recovery scriptPubkey.
+ *
+ * The resulting output can be spent at any time with any two of the three keys
+ * given, and by either of the last two (recovery) keys alone, ``csv_blocks``
+ * after the output confirms.
+ *
+ * :param bytes: Compressed public keys to create a scriptPubkey from. The
+ *|    second and third keys given will be used as the recovery keys.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must 3 * ``EC_PUBLIC_KEY_LEN``.
+ * :param csv_blocks: The number of blocks before the recovery keys can be
+ *| used. Must be non-zero and less than 65536.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t csv_blocks,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
  * Create a bitcoin script that pushes data to the stack.
  *
  * :param bytes: Bytes to create a push script for.

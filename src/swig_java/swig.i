@@ -391,6 +391,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_size_t(wally_script_push_from_bytes);
+%returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes);
+%returns_size_t(wally_scriptpubkey_csv_2of3_then_2_from_bytes);
 %returns_size_t(wally_scriptpubkey_get_type);
 %returns_size_t(wally_scriptpubkey_p2pkh_from_bytes);
 %returns_size_t(wally_scriptpubkey_p2sh_from_bytes);
