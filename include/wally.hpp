@@ -280,9 +280,9 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYP(p2)); \
 }
 
-#define WALLY_FN_PP3_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, O & out, size_t * written = 0) { \
+#define WALLY_FN_PP3_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, uint32_t i321, O & out, size_t * written = 0) { \
         size_t n; \
-        int ret = ::N(WALLYP(p1), WALLYP(p2), WALLYO(out), written ? written : &n); \
+        int ret = ::N(WALLYP(p1), WALLYP(p2), i321, WALLYO(out), written ? written : &n); \
         return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
 }
 
