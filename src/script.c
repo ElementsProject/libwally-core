@@ -339,9 +339,9 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     const size_t min_1of1_len = 1 + 1 + 33 + 1 + 1; /* OP_1 [pubkey] OP_1 OP_CHECKMULTISIG */
     size_t i, n_pushes;
 
-    if (bytes_len < min_1of1_len || !is_op_n(bytes[0], false, &n_pushes) ||
+    if (bytes_len < min_1of1_len || !is_op_n(bytes[0], false, NULL) ||
         bytes[bytes_len - 1] != OP_CHECKMULTISIG ||
-        !is_op_n(bytes[bytes_len - 2], false, NULL))
+        !is_op_n(bytes[bytes_len - 2], false, &n_pushes))
         return false;
 
     ++bytes;
