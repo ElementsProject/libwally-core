@@ -181,7 +181,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
     $1 = uint32_cast(jenv, $input);
 }
 
-/* uint62_t input arguments are taken as longs and cast unchecked. This means
+/* uint64_t input arguments are taken as longs and cast unchecked. This means
  * callers need to take care with treating negative values correctly */
 %typemap(in) uint64_t {
     $1 = (uint64_t)($input);

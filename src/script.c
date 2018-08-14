@@ -555,17 +555,11 @@ int wally_scriptpubkey_multisig_from_bytes(
     return WALLY_OK;
 }
 
-WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
-    const unsigned char *script,
-    size_t script_len,
-    const unsigned char *bytes,
-    size_t bytes_len,
-    const uint32_t *sighash,
-    size_t sighash_len,
-    uint32_t flags,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written)
+int wally_scriptsig_multisig_from_bytes(
+    const unsigned char *script, size_t script_len,
+    const unsigned char *bytes, size_t bytes_len,
+    const uint32_t *sighash, size_t sighash_len, uint32_t flags,
+    unsigned char *bytes_out, size_t len, size_t *written)
 {
 #define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
     unsigned char der_buff[16 * MAX_DER], *p = bytes_out;
