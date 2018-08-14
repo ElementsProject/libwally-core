@@ -2,6 +2,7 @@ import unittest
 from util import *
 
 SCRIPT_TYPE_P2PKH = 0x2
+SCRIPT_TYPE_MULTISIG = 0x20
 
 SCRIPT_HASH160 = 0x1
 SCRIPT_SHA256  = 0x2
@@ -11,6 +12,9 @@ HASH160_LEN = 20
 
 PK, PK_LEN = make_cbuffer('11' * 33) # Fake compressed pubkey
 PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
+MPK_2, MPK_2_LEN = make_cbuffer('11' * 33 * 2) # Fake multiple (2) pubkeys
+MPK_3, MPK_3_LEN = make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
+MPK_17, MPK_17_LEN = make_cbuffer('11' * 33 * 17) # Fake multiple (17) pubkeys
 
 class ScriptTests(unittest.TestCase):
 
@@ -51,6 +55,42 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
+
+    def test_scriptpubkey_multisig_from_bytes(self):
+        """Tests for creating multisig scriptPubKeys"""
+        # Invalid args
+        out, out_len = make_cbuffer('00' * 33 * 3)
+        invalid_args = [
+            (None, MPK_2_LEN, 1, 0, out, out_len), # Null bytes
+            (MPK_2, 0, 1, 0, out, out_len), # Empty bytes
+            (MPK_2, MPK_2_LEN+1, 1, 0, out, out_len), # Unsupported bytes len
+            (SH, SH_LEN, 1, 0, out, out_len), # Too few pubkeys
+            (MPK_17, MPK_17_LEN, 1, 0, out, out_len), # Too many pubkeys
+            (MPK_2, MPK_2_LEN, 0, 0, out, out_len), # Too low threshold
+            (MPK_2, MPK_2_LEN, 17, 0, out, out_len), # Too high threshold
+            (MPK_2, MPK_2_LEN, 3, 0, out, out_len), # Inconsistent threshold
+            (MPK_2, MPK_2_LEN, 1, SCRIPT_HASH160, out, out_len), # Unsupported flags
+            (MPK_2, MPK_2_LEN, 1, 0, None, out_len), # Null output
+        ]
+        for args in invalid_args:
+            ret = wally_scriptpubkey_multisig_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        out, out_len = make_cbuffer('00' * 33 * 4)
+        valid_args = [
+            (MPK_2, MPK_2_LEN, 1, 0, out, out_len), # 1of2
+            (MPK_2, MPK_2_LEN, 2, 0, out, out_len), # 2of2
+            (MPK_3, MPK_3_LEN, 1, 0, out, out_len), # 1of3
+            (MPK_3, MPK_3_LEN, 2, 0, out, out_len), # 2of3
+            (MPK_3, MPK_3_LEN, 3, 0, out, out_len), # 3of3
+        ]
+        for args in valid_args:
+            script_len = 3 + (args[1] // 33 * (33 + 1))
+            ret = wally_scriptpubkey_multisig_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_OK, script_len))
+            ret = wally_scriptpubkey_get_type(out, script_len)
+            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_MULTISIG))
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""
