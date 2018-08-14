@@ -339,9 +339,9 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     const size_t min_1of1_len = 1 + 1 + 33 + 1 + 1; /* OP_1 [pubkey] OP_1 OP_CHECKMULTISIG */
     size_t i, n_pushes;
 
-    if (bytes_len < min_1of1_len || !is_op_n(bytes[0], false, &n_pushes) ||
+    if (bytes_len < min_1of1_len || !is_op_n(bytes[0], false, NULL) ||
         bytes[bytes_len - 1] != OP_CHECKMULTISIG ||
-        !is_op_n(bytes[bytes_len - 2], false, NULL))
+        !is_op_n(bytes[bytes_len - 2], false, &n_pushes))
         return false;
 
     ++bytes;
@@ -555,17 +555,11 @@ int wally_scriptpubkey_multisig_from_bytes(
     return WALLY_OK;
 }
 
-WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
-    const unsigned char *script,
-    size_t script_len,
-    const unsigned char *bytes,
-    size_t bytes_len,
-    const uint32_t *sighash,
-    size_t sighash_len,
-    uint32_t flags,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written)
+int wally_scriptsig_multisig_from_bytes(
+    const unsigned char *script, size_t script_len,
+    const unsigned char *bytes, size_t bytes_len,
+    const uint32_t *sighash, size_t sighash_len, uint32_t flags,
+    unsigned char *bytes_out, size_t len, size_t *written)
 {
 #define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
     unsigned char der_buff[16 * MAX_DER], *p = bytes_out;
