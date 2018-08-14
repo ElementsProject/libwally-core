@@ -58,13 +58,14 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            (PK, PK_LEN, SCRIPT_HASH160, out, out_len),
-            (PKU, PKU_LEN, SCRIPT_HASH160, out, out_len),
-            (PKU, HASH160_LEN, 0, out, out_len),
+            [(PK, PK_LEN, SCRIPT_HASH160, out, out_len),'76a9148ec4cf3ee160b054e0abb6f5c8177b9ee56fa51e88ac'],
+            [(PKU, PKU_LEN, SCRIPT_HASH160, out, out_len),'76a914e723a0f62396b8b03dbd9e48e9b9efe2eb704aab88ac'],
+            [(PKU, HASH160_LEN, 0, out, out_len),'76a914111111111111111111111111111111111111111188ac'],
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
+            self.assertEqual(args[3], unhexlify(exp_script))
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
 
@@ -85,12 +86,13 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            (SH, SH_LEN, SCRIPT_HASH160, out, out_len),
-            (SH, SH_LEN, 0, out, out_len),
+            [(SH, SH_LEN, SCRIPT_HASH160, out, out_len), 'a914a9592ad6e8b4b5042937a3ee0d425d17c40d04b387'],
+            [(SH, SH_LEN, 0, out, out_len), 'a914111111111111111111111111111111111111111187'],
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             ret = wally_scriptpubkey_p2sh_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2SH_LEN))
+            self.assertEqual(args[3], unhexlify(exp_script))
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2SH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2SH))
 
@@ -117,16 +119,17 @@ class ScriptTests(unittest.TestCase):
         # Valid cases
         out, out_len = make_cbuffer('00' * 33 * 4)
         valid_args = [
-            (MPK_2, MPK_2_LEN, 1, 0, out, out_len), # 1of2
-            (MPK_2, MPK_2_LEN, 2, 0, out, out_len), # 2of2
-            (MPK_3, MPK_3_LEN, 1, 0, out, out_len), # 1of3
-            (MPK_3, MPK_3_LEN, 2, 0, out, out_len), # 2of3
-            (MPK_3, MPK_3_LEN, 3, 0, out, out_len), # 3of3
+            [(MPK_2, MPK_2_LEN, 1, 0, out, out_len), '51'+('21'+'11'*33)*2+'52ae'], # 1of2
+            [(MPK_2, MPK_2_LEN, 2, 0, out, out_len), '52'+('21'+'11'*33)*2+'52ae'], # 2of2
+            [(MPK_3, MPK_3_LEN, 1, 0, out, out_len), '51'+('21'+'11'*33)*3+'53ae'], # 1of3
+            [(MPK_3, MPK_3_LEN, 2, 0, out, out_len), '52'+('21'+'11'*33)*3+'53ae'], # 2of3
+            [(MPK_3, MPK_3_LEN, 3, 0, out, out_len), '53'+('21'+'11'*33)*3+'53ae'], # 3of3
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             script_len = 3 + (args[1] // 33 * (33 + 1))
             ret = wally_scriptpubkey_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
+            self.assertEqual(args[4][:script_len], unhexlify(exp_script))
             ret = wally_scriptpubkey_get_type(out, script_len)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_MULTISIG))
 
@@ -149,14 +152,15 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            (MPK_2, MPK_2_LEN, 1, 0, out, out_len),
-            (MPK_2, MPK_2_LEN, 0x8000, 0, out, out_len),
+            [(MPK_2, MPK_2_LEN, 1, 0, out, out_len), '748c6321'+'11'*33+'ad670101b2756821'+'11'*33+'ac'],
+            [(MPK_2, MPK_2_LEN, 0x8000, 0, out, out_len), '748c6321'+'11'*33+'ad6703008000b2756821'+'11'*33+'ac'],
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             csv_len = 1 + (args[2] > 0x7f) + (args[2] > 0x7fff)
             script_len = 2 * (33 + 1) + 9 + 1 + csv_len
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
+            self.assertEqual(args[4][:script_len], unhexlify(exp_script))
 
     def test_scriptpubkey_csv_2of3_then_2_from_bytes(self):
         """Tests for creating csv 2of3 then 2 scriptPubKeys"""
@@ -177,14 +181,15 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            (MPK_3, MPK_3_LEN, 1, 0, out, out_len),
-            (MPK_3, MPK_3_LEN, 0x8000, 0, out, out_len),
+            [(MPK_3, MPK_3_LEN, 1, 0, out, out_len), '748c8c635221'+'11'*33+'670101b275510068'+('21'+'11'*33)*2+'53ae'],
+            [(MPK_3, MPK_3_LEN, 0x8000, 0, out, out_len), '748c8c635221'+'11'*33+'6703008000b275510068'+('21'+'11'*33)*2+'53ae'],
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             csv_len = 1 + (args[2] > 0x7f) + (args[2] > 0x7fff)
             script_len = 3 * (33 + 1) + 13 + 1 + csv_len
             ret = wally_scriptpubkey_csv_2of3_then_2_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
+            self.assertEqual(args[4][:script_len], unhexlify(exp_script))
 
     def test_scriptsig_p2pkh(self):
         """Tests for creating p2pkh scriptsig"""
@@ -205,12 +210,13 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            (PK, PK_LEN, SIG_DER, SIG_DER_LEN, out, out_len),
-            (PKU, PKU_LEN, SIG_DER, SIG_DER_LEN, out, out_len),
+            [(PK, PK_LEN, SIG_DER, SIG_DER_LEN, out, out_len), '4730450220'+'11'*32+'0220'+'11'*32+'0121'+'11'*33],
+            [(PKU, PKU_LEN, SIG_DER, SIG_DER_LEN, out, out_len), '4730450220'+'11'*32+'0220'+'11'*32+'0141'+'11'*65],
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             ret = wally_scriptsig_p2pkh_from_der(*args)
             self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 2))
+            self.assertEqual(args[4][:(args[1] + args[3] + 2)], unhexlify(exp_script))
 
         # From sig
         # Invalid args
@@ -226,7 +232,7 @@ class ScriptTests(unittest.TestCase):
         # Valid cases
         valid_args = [
             (PK, PK_LEN, SIG, SIG_LEN, 0x01, out, out_len),
-            (PKU, PKU_LEN, SIG, SIG_LEN, 0x01, out, out_len),
+            (PKU, PKU_LEN, SIG, SIG_LEN, 0x02, out, out_len),
         ]
         for args in valid_args:
             ret = wally_scriptsig_p2pkh_from_sig(*args)
@@ -242,7 +248,7 @@ class ScriptTests(unittest.TestCase):
             return c_sighash
 
         # Invalid args
-        out, out_len = make_cbuffer('')
+        out, out_len = make_cbuffer('00'*300)
         invalid_args = [
             (None, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len), # Null script
             (RS_1of2, 0, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len), # Empty script
@@ -261,14 +267,19 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len),
-            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x80]), 1, 0, out, out_len),
-            (RS_2of2, RS_2of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len),
-            (RS_2of2, RS_2of2_LEN, SIG_COUPLE, SIG_COUPLE_LEN, c_sighash([0x01, 0x02]), 2, 0, out, out_len),
+            [(RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len),
+             '00'+'4730440220'+'11'*32+'0220'+'11'*32+'01475121'+'11'*33+'21'+'11'*33+'52ae'],
+            [(RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x80]), 1, 0, out, out_len),
+             '00'+'4730440220'+'11'*32+'0220'+'11'*32+'80475121'+'11'*33+'21'+'11'*33+'52ae'],
+            [(RS_2of2, RS_2of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len),
+             '00'+'4730440220'+'11'*32+'0220'+'11'*32+'01475221'+'11'*33+'21'+'11'*33+'52ae'],
+            [(RS_2of2, RS_2of2_LEN, SIG_COUPLE, SIG_COUPLE_LEN, c_sighash([0x01, 0x02]), 2, 0, out, out_len),
+             '00'+'4730440220'+'11'*32+'0220'+'11'*32+'01'+'4730440220'+'11'*32+'0220'+'11'*32+'02475221'+'11'*33+'21'+'11'*33+'52ae'],
         ]
-        for args in valid_args:
+        for args, exp_script in valid_args:
             ret = wally_scriptsig_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, 73 + 72 * args[5]))
+            self.assertEqual(out[:(73 + 72 * args[5])], unhexlify(exp_script))
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""
@@ -290,16 +301,17 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(written, len(data)/2 + len(prefix)/2)
 
     def test_wally_witness_program_from_bytes(self):
-        valid_cases = [('00' * 20, 0),
-                       ('00' * 32, 0),
-                       ('00' * 50, SCRIPT_HASH160),
-                       ('00' * 50, SCRIPT_SHA256)]
+        valid_cases = [('00' * 20, 0, '0014'+'00'*20),
+                       ('00' * 32, 0, '0020'+'00'*32),
+                       ('00' * 50, SCRIPT_HASH160, '0014f71015b29ff2583558877ed16a59e4f8f451daa3'),
+                       ('00' * 50, SCRIPT_SHA256, '0020cc2786e1f9910a9d811400edcddaf7075195f7a16b216dcbefba3bc7c4f2ae51')]
 
         out, out_len = make_cbuffer('00' * 100)
-        for data, flags in valid_cases:
+        for data, flags, exp_program in valid_cases:
             in_, in_len = make_cbuffer(data)
             ret, written = wally_witness_program_from_bytes(in_, in_len, flags, out, out_len)
             self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(out[:written], unhexlify(exp_program))
 
         invalid_cases = [('00' * 50, 0), # Invalid unhashed length
                 ]
@@ -307,7 +319,6 @@ class ScriptTests(unittest.TestCase):
             in_, in_len = make_cbuffer(data)
             ret, written = wally_witness_program_from_bytes(in_, in_len, flags, out, out_len)
             self.assertEqual(ret, WALLY_EINVAL)
-
 
 if __name__ == '__main__':
     unittest.main()
