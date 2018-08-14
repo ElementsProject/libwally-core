@@ -11,6 +11,7 @@ SCRIPT_SHA256  = 0x2
 SCRIPTPUBKEY_P2PKH_LEN = 25
 SCRIPTPUBKEY_P2SH_LEN = 23
 HASH160_LEN = 20
+SCRIPTSIG_P2PKH_MAX_LEN = 140
 
 PK, PK_LEN = make_cbuffer('11' * 33) # Fake compressed pubkey
 PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
@@ -18,6 +19,9 @@ SH, SH_LEN = make_cbuffer('11' * 20)  # Fake script hash
 MPK_2, MPK_2_LEN = make_cbuffer('11' * 33 * 2) # Fake multiple (2) pubkeys
 MPK_3, MPK_3_LEN = make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
 MPK_17, MPK_17_LEN = make_cbuffer('11' * 33 * 17) # Fake multiple (17) pubkeys
+
+SIG, SIG_LEN = make_cbuffer('11' * 64) # Fake signature
+SIG_DER, SIG_DER_LEN = make_cbuffer('30450220' + '11'*32 + '0220' + '11'*32 + '01') # Fake DER encoded sig
 
 class ScriptTests(unittest.TestCase):
 
@@ -176,6 +180,52 @@ class ScriptTests(unittest.TestCase):
             script_len = 3 * (33 + 1) + 13 + 1 + csv_len
             ret = wally_scriptpubkey_csv_2of3_then_2_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
+
+    def test_scriptsig_p2pkh(self):
+        """Tests for creating p2pkh scriptsig"""
+        # From DER
+        # Invalid args
+        out, out_len = make_cbuffer('00' * SCRIPTSIG_P2PKH_MAX_LEN)
+        invalid_args = [
+            (None, PK_LEN, SIG_DER, SIG_DER_LEN, out, out_len), # Null pubkey
+            (PK, 32, SIG_DER, SIG_DER_LEN, out, out_len), # Unsupported pubkey length
+            (PK, PK_LEN, None, SIG_DER_LEN, out, out_len), # Null sig
+            (PK, PK_LEN, SIG_DER, 0, out, out_len), # Too short len sig
+            (PK, PK_LEN, SIG_DER, 74, out, out_len), # Too long len sig
+            (PK, PK_LEN, SIG_DER, SIG_DER_LEN, None, out_len), # Null output
+        ]
+        for args in invalid_args:
+            ret = wally_scriptsig_p2pkh_from_der(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        valid_args = [
+            (PK, PK_LEN, SIG_DER, SIG_DER_LEN, out, out_len),
+            (PKU, PKU_LEN, SIG_DER, SIG_DER_LEN, out, out_len),
+        ]
+        for args in valid_args:
+            ret = wally_scriptsig_p2pkh_from_der(*args)
+            self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 2))
+
+        # From sig
+        # Invalid args
+        out, out_len = make_cbuffer('00' * 140)
+        invalid_args = [
+            (PK, PK_LEN, SIG, SIG_LEN, 0x100, out, out_len),
+            (PK, PK_LEN, SIG_LARGE, SIG_LARGE_LEN, 0xff, out, out_len), # is it correct to test it here?
+        ]
+        for args in invalid_args:
+            ret = wally_scriptsig_p2pkh_from_sig(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        valid_args = [
+            (PK, PK_LEN, SIG, SIG_LEN, 0x01, out, out_len),
+            (PKU, PKU_LEN, SIG, SIG_LEN, 0x01, out, out_len),
+        ]
+        for args in valid_args:
+            ret = wally_scriptsig_p2pkh_from_sig(*args)
+            self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 9))
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""

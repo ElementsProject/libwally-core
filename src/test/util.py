@@ -116,6 +116,8 @@ for f in (
     ('wally_scriptpubkey_multisig_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_scriptpubkey_csv_2of2_then_1_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_scriptpubkey_csv_2of3_then_2_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_scriptsig_p2pkh_from_der', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_scriptsig_p2pkh_from_sig', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_witness_program_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ):
 
