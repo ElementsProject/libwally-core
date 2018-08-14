@@ -21,7 +21,12 @@ MPK_3, MPK_3_LEN = make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
 MPK_17, MPK_17_LEN = make_cbuffer('11' * 33 * 17) # Fake multiple (17) pubkeys
 
 SIG, SIG_LEN = make_cbuffer('11' * 64) # Fake signature
+SIG_LARGE, SIG_LARGE_LEN = make_cbuffer('ff' * 64) # Fake out of range signature
+SIG_COUPLE, SIG_COUPLE_LEN = make_cbuffer('11' * 64 * 2) # Fake couple of signatures
 SIG_DER, SIG_DER_LEN = make_cbuffer('30450220' + '11'*32 + '0220' + '11'*32 + '01') # Fake DER encoded sig
+
+RS_1of2, RS_1of2_LEN = make_cbuffer('5121' + '11'*33 + '21' + '11'*33 + '52ae') # Fake 1of2 redeem script
+RS_2of2, RS_2of2_LEN = make_cbuffer('5221' + '11'*33 + '21' + '11'*33 + '52ae') # Fake 2of2 redeem script
 
 class ScriptTests(unittest.TestCase):
 
@@ -226,6 +231,44 @@ class ScriptTests(unittest.TestCase):
         for args in valid_args:
             ret = wally_scriptsig_p2pkh_from_sig(*args)
             self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 9))
+
+    def test_scriptsig_multisig(self):
+        """Tests for creating multisig scriptsig"""
+
+        def c_sighash(s):
+            c_sighash = (c_uint * len(s))()
+            for i, n in enumerate(s):
+                c_sighash[i] = n
+            return c_sighash
+
+        # Invalid args
+        out, out_len = make_cbuffer('')
+        invalid_args = [
+            (None, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len), # Null script
+            (RS_1of2, 0, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len), # Empty script
+            (RS_1of2, RS_1of2_LEN, None, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len), # Null bytes
+            (RS_1of2, RS_1of2_LEN, SIG, 0, c_sighash([0x01]), 1, 0, out, out_len), # Empty bytes or too few sigs
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN+1, c_sighash([0x01]), 1, 0, out, out_len), # Unsupported bytes len
+            (RS_1of2, RS_1of2_LEN, SIG, 17, c_sighash([0x01]), 1, 0, out, out_len), # Too many sigs
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, None, 1, 0, out, out_len), # Null sighash
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 2, 0, out, out_len), # Inconsistent sighash length
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 1, out, out_len), # Unsupported flags
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, None, out_len), # Null output
+        ]
+        for args in invalid_args:
+            ret = wally_scriptsig_multisig_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        valid_args = [
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len),
+            (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x80]), 1, 0, out, out_len),
+            (RS_2of2, RS_2of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len),
+            (RS_2of2, RS_2of2_LEN, SIG_COUPLE, SIG_COUPLE_LEN, c_sighash([0x01, 0x02]), 2, 0, out, out_len),
+        ]
+        for args in valid_args:
+            ret = wally_scriptsig_multisig_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_OK, 73 + 72 * args[5]))
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""
