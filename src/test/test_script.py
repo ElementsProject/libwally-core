@@ -30,7 +30,7 @@ RS_2of2, RS_2of2_LEN = make_cbuffer('5221' + '11'*33 + '21' + '11'*33 + '52ae') 
 
 class ScriptTests(unittest.TestCase):
 
-    def test_scripttpubkey_get_type(self):
+    def test_scriptpubkey_get_type(self):
         """Tests for script analysis"""
         # Test invalid args, we test results with the functions that make scripts
         in_, in_len = make_cbuffer('00' * 16)
