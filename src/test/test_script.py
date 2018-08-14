@@ -2,16 +2,19 @@ import unittest
 from util import *
 
 SCRIPT_TYPE_P2PKH = 0x2
+SCRIPT_TYPE_P2SH = 0x4
 SCRIPT_TYPE_MULTISIG = 0x20
 
 SCRIPT_HASH160 = 0x1
 SCRIPT_SHA256  = 0x2
 
 SCRIPTPUBKEY_P2PKH_LEN = 25
+SCRIPTPUBKEY_P2SH_LEN = 23
 HASH160_LEN = 20
 
 PK, PK_LEN = make_cbuffer('11' * 33) # Fake compressed pubkey
 PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
+SH, SH_LEN = make_cbuffer('11' * 20)  # Fake script hash
 MPK_2, MPK_2_LEN = make_cbuffer('11' * 33 * 2) # Fake multiple (2) pubkeys
 MPK_3, MPK_3_LEN = make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
 MPK_17, MPK_17_LEN = make_cbuffer('11' * 33 * 17) # Fake multiple (17) pubkeys
@@ -55,6 +58,32 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
+
+    def test_scriptpubkey_p2sh_from_bytes(self):
+        """Tests for creating p2sh scriptPubKeys"""
+        # Invalid args
+        out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2SH_LEN)
+        invalid_args = [
+            (None, SH_LEN, SCRIPT_HASH160, out, out_len), # Null bytes
+            (SH, 0, SCRIPT_HASH160, out, out_len), # Empty bytes
+            (SH, SH_LEN, SCRIPT_SHA256, out, out_len), # Unsupported flags
+            (SH, SH_LEN, SCRIPT_HASH160, None, out_len), # Null output
+            (SH, SH_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2SH_LEN-1), # Short output len
+        ]
+        for args in invalid_args:
+            ret = wally_scriptpubkey_p2sh_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        valid_args = [
+            (SH, SH_LEN, SCRIPT_HASH160, out, out_len),
+            (SH, SH_LEN, 0, out, out_len),
+        ]
+        for args in valid_args:
+            ret = wally_scriptpubkey_p2sh_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2SH_LEN))
+            ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2SH_LEN)
+            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2SH))
 
     def test_scriptpubkey_multisig_from_bytes(self):
         """Tests for creating multisig scriptPubKeys"""
