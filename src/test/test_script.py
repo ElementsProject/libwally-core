@@ -14,7 +14,7 @@ PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
 
 class ScriptTests(unittest.TestCase):
 
-    def test_scripttpubkey_get_type(self):
+    def test_scriptpubkey_get_type(self):
         """Tests for script analysis"""
         # Test invalid args, we test results with the functions that make scripts
         in_, in_len = make_cbuffer('00' * 16)
