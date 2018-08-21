@@ -232,6 +232,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_sign.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_transaction.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
