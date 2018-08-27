@@ -11,8 +11,8 @@
   "gypfile": true,
   "dependencies": {
     "big-integer": "^1.6.26",
-    "nan": "^2.8.0",
-    "node-gyp": "^3.6.2",
+    "nan": "^2.11.0",
+    "node-gyp": "^3.8.0",
     "tape": "^4.8.0"
   }
 }
