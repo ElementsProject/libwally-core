@@ -512,7 +512,7 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
  * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
  * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
- * :param bytes_out: Destination for the signature.
+ * :param bytes_out: Destination for the signature hash.
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_get_btc_signature_hash(
@@ -545,7 +545,7 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  *|     the value of ``sighash`` should be given.
  * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
- * :param bytes_out: Destination for the signature.
+ * :param bytes_out: Destination for the signature hash.
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_get_signature_hash(
@@ -840,7 +840,7 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
  * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
  * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
- * :param bytes_out: Destination for the signature.
+ * :param bytes_out: Destination for the signature hash.
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_get_elements_signature_hash(

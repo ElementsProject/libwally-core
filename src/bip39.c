@@ -199,15 +199,15 @@ int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
     return ret;
 }
 
-int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
+int  bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
                             unsigned char *bytes_out, size_t len,
                             size_t *written)
 {
     const size_t bip9_cost = 2048u;
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
-    const size_t password_len = password ? strlen(password) : 0;
-    const size_t salt_len = prefix_len + password_len;
+    const size_t passphrase_len = passphrase ? strlen(passphrase) : 0;
+    const size_t salt_len = prefix_len + passphrase_len;
     unsigned char *salt;
     int ret;
 
@@ -222,8 +222,8 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *password,
         return WALLY_ENOMEM;
 
     memcpy(salt, prefix, prefix_len);
-    if (password_len)
-        memcpy(salt + prefix_len, password, password_len);
+    if (passphrase_len)
+        memcpy(salt + prefix_len, passphrase, passphrase_len);
 
     ret = wally_pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
                                    salt, salt_len, 0,
