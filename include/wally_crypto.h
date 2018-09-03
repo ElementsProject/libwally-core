@@ -284,6 +284,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_FLAG_ECDSA 0x1
 /** Indicates that a signature using EC-Schnorr-SHA256 is required */
 #define EC_FLAG_SCHNORR 0x2
+/** Indicates that the signature nonce should be incremented until the signature is low-R */
+#define EC_FLAG_GRIND_R 0x4
 
 
 /**

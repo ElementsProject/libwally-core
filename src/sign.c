@@ -1,5 +1,6 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
+#include "script_int.h"
 #if 0
 #include "secp256k1/include/secp256k1_schnorr.h"
 #endif
@@ -7,7 +8,7 @@
 #include <stdbool.h>
 
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
-#define EC_FLAGS_ALL (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
+#define EC_FLAGS_ALL (EC_FLAG_ECDSA | EC_FLAG_SCHNORR | EC_FLAG_GRIND_R)
 
 #define MSG_ALL_FLAGS (BITCOIN_MESSAGE_FLAG_HASH)
 
@@ -189,20 +190,31 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
         return WALLY_OK;
 #endif
     } else {
+        unsigned char extra_entropy[32] = {0}, *entropy_p = NULL;
+        uint32_t counter = 0;
         secp256k1_ecdsa_signature sig_secp;
 
-        if (!secp256k1_ecdsa_sign(ctx, &sig_secp, bytes, priv_key, nonce_fn, NULL)) {
-            wally_clear(&sig_secp, sizeof(sig_secp));
-            if (secp256k1_ec_seckey_verify(ctx, priv_key))
-                return WALLY_ERROR; /* Nonce function failed */
-            return WALLY_EINVAL; /* invalid priv_key */
-        }
+        while (true) {
+            if (!secp256k1_ecdsa_sign(ctx, &sig_secp, bytes, priv_key, nonce_fn, entropy_p)) {
+                wally_clear(&sig_secp, sizeof(sig_secp));
+                if (!secp256k1_ec_seckey_verify(ctx, priv_key))
+                    return WALLY_EINVAL; /* invalid priv_key */
+                return WALLY_ERROR;     /* Nonce function failed */
+            }
 
-        /* Note this function is documented as never failing */
-        secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig_secp);
-        wally_clear(&sig_secp, sizeof(sig_secp));
+            /* Note this function is documented as never failing */
+            secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig_secp);
+
+            if (!(flags & EC_FLAG_GRIND_R) || bytes_out[0] < 0x80) {
+                wally_clear(&sig_secp, sizeof(sig_secp));
+                return WALLY_OK;
+            }
+            /* Incremement nonce to grind for low-R */
+            entropy_p = extra_entropy;
+            ++counter;
+            uint32_to_le_bytes(counter, entropy_p);
+        }
     }
-    return WALLY_OK;
 }
 
 int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
@@ -217,7 +229,7 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
 
     if (!pub_key || pub_key_len != EC_PUBLIC_KEY_LEN ||
         !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
-        !is_valid_ec_type(flags) || flags & ~EC_FLAGS_ALL ||
+        !is_valid_ec_type(flags) || flags & ~EC_FLAGS_TYPES ||
         !sig || sig_len != EC_SIGNATURE_LEN)
         return WALLY_EINVAL;
 
