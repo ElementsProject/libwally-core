@@ -2,7 +2,7 @@ import unittest
 from util import *
 from hashlib import sha256
 
-FLAG_ECDSA, FLAG_SCHNORR = 1, 2
+FLAG_ECDSA, FLAG_SCHNORR, FLAG_GRIND_R = 1, 2, 4
 EX_PRIV_KEY_LEN, EC_PUBIC_KEY_LEN, EC_PUBIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
 EC_SIGNATURE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 72
 BITCOIN_MESSAGE_HASH_FLAG = 1
@@ -30,7 +30,7 @@ class SignTests(unittest.TestCase):
 
 
     def test_sign_and_verify(self):
-        sig, sig2 = self.cbufferize(['00' * EC_SIGNATURE_LEN] * 2)
+        sig, sig2, sig_low_r = self.cbufferize(['00' * EC_SIGNATURE_LEN] * 3)
         der, der_len = make_cbuffer('00' * EC_SIGNATURE_DER_MAX_LEN)
 
         for case in self.get_sign_cases():
@@ -48,6 +48,11 @@ class SignTests(unittest.TestCase):
             self.assertEqual(h(r), h(sig[0:32]))
             self.assertEqual(h(s), h(sig[32:64]))
 
+            # Also sign with low-R grinding
+            set_fake_ec_nonce(None)
+            ret = self.sign(priv_key, msg, FLAG_ECDSA|FLAG_GRIND_R, sig_low_r)
+            self.assertEqual(ret, WALLY_OK)
+
             # Check signature conversions
             ret, written = wally_ec_sig_to_der(sig, len(sig), der, der_len)
             self.assertEqual(ret, WALLY_OK)
@@ -61,10 +66,10 @@ class SignTests(unittest.TestCase):
             ret = wally_ec_public_key_from_private_key(priv_key, len(priv_key),
                                                        pub_key, len(pub_key))
             self.assertEqual(ret, WALLY_OK)
-            ret = wally_ec_sig_verify(pub_key, len(pub_key), msg, len(msg),
-                                      FLAG_ECDSA, sig, len(sig))
-            self.assertEqual(ret, WALLY_OK)
-
+            for s in [sig, sig_low_r]:
+                ret = wally_ec_sig_verify(pub_key, len(pub_key), msg, len(msg),
+                                          FLAG_ECDSA, s, len(s))
+                self.assertEqual(ret, WALLY_OK)
 
         set_fake_ec_nonce(None)
 
