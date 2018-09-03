@@ -1,6 +1,5 @@
 #include "internal.h"
 
-#include "ccan/ccan/endian/endian.h"
 #include "ccan/ccan/build_assert/build_assert.h"
 
 #include <include/wally_crypto.h>

@@ -1,6 +1,8 @@
 #ifndef LIBWALLY_CORE_SCRIPT_INT_H
 #define LIBWALLY_CORE_SCRIPT_INT_H 1
 
+#include "ccan/ccan/endian/endian.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
