@@ -77,6 +77,7 @@ else:
     import os
     import platform
     import subprocess
+    import multiprocessing
 
     class _build_py(distutils.command.build_py.build_py):
 
@@ -90,7 +91,7 @@ else:
             extra_build_options = os.getenv('ENABLE_ELEMENTS', '')
             call('./tools/autogen.sh')
             call('./configure --enable-swig-python {}'.format(extra_build_options))
-            call('make')
+            call('make -j{}'.format(multiprocessing.cpu_count()))
 
             # Copy the so that has just been built to the build_dir that distutils expects it to be in
             # The extension of the built lib is dylib on osx
