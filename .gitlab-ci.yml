@@ -18,15 +18,24 @@ linux_release:
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
-linux_debug:
+linux_py2_debug:
   image: greenaddress/wallycore@sha256:a655db9e9b378ab64e0fca9016bd29a21baf40b95fc6f7125247b55394decdc7
   tags:
     - ga
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - PYTHON_VERSION=2.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
+
+linux_py3_debug:
+  image: greenaddress/wallycore@sha256:a655db9e9b378ab64e0fca9016bd29a21baf40b95fc6f7125247b55394decdc7
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - PYTHON_VERSION=3.5 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
 ubuntu_release:
   image: greenaddress/wallycore@sha256:98530ad68264c6b50fe2ea060c275ddb2500fc459bded4df16263b464870a3e5
