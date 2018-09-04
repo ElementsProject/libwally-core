@@ -83,7 +83,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_B33_BS(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYB(i1), i321, i322, WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_B33_P(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, uint32_t i322, O * out) { \
@@ -97,7 +97,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_B3_BS(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYB(i1), i321, WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_B3B_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, uint32_t i321, const I2 &i2, O & out) { \
@@ -119,13 +119,13 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_BB3_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, uint32_t i321, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYB(i1), WALLYB(i2), i321, WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_BBB3_BS(F, N) template <class I1, class I2, class I3, class O> inline int F(const I1 &i1, const I2 &i2, const I3 &i3, uint32_t i321, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), i321, WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_BB_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, O & out) { \
@@ -139,7 +139,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_BB_BS(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, const I2 &i2, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYB(i1), WALLYB(i2), WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_B_A(F, N) template <class I1, class O> inline int F(const I1 &i1, O * *out) { \
@@ -153,7 +153,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_B_BS(F, N) template <class I, class O> inline int F(const I &i1, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYB(i1), WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_B_P(F, N) template <class I1, class O> inline int F(const I1 &i1, O * out) { \
@@ -209,7 +209,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_P3_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYP(p1), i321, WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_P3_S(F, N) template <class P1> inline int F(const P1 &p1, uint32_t i321, size_t * written) { \
@@ -283,13 +283,13 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_PP3_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, uint32_t i321, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYP(p1), WALLYP(p2), i321, WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_PP_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYP(p1), WALLYP(p2), WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_PS(F, N) template <class P1> inline int F(const P1 &p1, size_t s1) { \
@@ -315,7 +315,7 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_P_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYP(p1), WALLYO(out), written ? written : &n); \
-        return written || ret != WALLY_OK ? ret : n == out.size() ? WALLY_OK : WALLY_EINVAL; \
+        return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
 #define WALLY_FN_P_S(F, N) template <class P1> inline int F(const P1 &p1, size_t * written) { \
