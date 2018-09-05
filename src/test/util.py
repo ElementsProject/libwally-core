@@ -248,8 +248,13 @@ for f in (
         fn = mkint(fn)
     globals()[name] = fn
 
+is_python3 = int(sys.version[0]) >= 3
 def load_words(lang):
-    with open(root_dir + 'src/data/wordlists/%s.txt' % lang, 'r') as f:
+    kwargs = {'name': root_dir + 'src/data/wordlists/%s.txt' % lang, 'mode': 'r'}
+    if is_python3:
+        kwargs.update({'encoding': 'utf-8'})
+        kwargs['file'] = kwargs.pop('name')
+    with open(**kwargs) as f:
         words_list = [l.strip() for l in f.readlines()]
         return words_list, ' '.join(words_list)
 
@@ -262,7 +267,6 @@ def make_cbuffer(hex_in):
     hex_len = len(hex_in) // 2
     return unhexlify(hex_in), hex_len
 
-is_python3 = int(sys.version[0]) >= 3
 utf8 = lambda s: s
 if is_python3:
     utf8 = lambda s: s.encode('utf-8')
