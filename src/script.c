@@ -496,6 +496,27 @@ int wally_scriptsig_p2pkh_from_der(
     return ret;
 }
 
+int wally_scriptpubkey_op_return_from_bytes(
+    const unsigned char *bytes, size_t bytes_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    int ret;
+
+    if (written)
+        *written = 0;
+
+    if (bytes_len > WALLY_MAX_OP_RETURN_LEN || flags || !bytes_out || !len)
+        return WALLY_EINVAL;
+
+    ret = wally_script_push_from_bytes(bytes, bytes_len, flags,
+                                       bytes_out + 1, len - 1, written);
+    if (ret == WALLY_OK) {
+        bytes_out[0] = OP_RETURN;
+        *written += 1;
+    }
+    return ret;
+}
+
 int wally_scriptpubkey_p2sh_from_bytes(
     const unsigned char *bytes, size_t bytes_len,
     uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)

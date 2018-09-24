@@ -1,6 +1,7 @@
 import unittest
 from util import *
 
+SCRIPT_TYPE_OP_RETURN = 0x1
 SCRIPT_TYPE_P2PKH = 0x2
 SCRIPT_TYPE_P2SH = 0x4
 SCRIPT_TYPE_MULTISIG = 0x20
@@ -8,6 +9,9 @@ SCRIPT_TYPE_MULTISIG = 0x20
 SCRIPT_HASH160 = 0x1
 SCRIPT_SHA256  = 0x2
 
+MAX_OP_RETURN_LEN = 80
+
+SCRIPTSIG_OP_RETURN_MAX_LEN = 83
 SCRIPTPUBKEY_P2PKH_LEN = 25
 SCRIPTPUBKEY_P2SH_LEN = 23
 HASH160_LEN = 20
@@ -38,6 +42,34 @@ class ScriptTests(unittest.TestCase):
             ret, written = wally_scriptpubkey_get_type(b, b_len)
             self.assertEqual(ret, WALLY_EINVAL)
             self.assertEqual(written, 0)
+
+    def test_scriptpubkey_op_return_from_bytes(self):
+        """Tests for creating OP_RETURN scriptPubKeys"""
+        # Invalid args
+        DATA, DATA_LEN = make_cbuffer('00' * MAX_OP_RETURN_LEN)
+        out, out_len = make_cbuffer('00' * SCRIPTSIG_OP_RETURN_MAX_LEN)
+        invalid_args = [
+            (None, 20, 0, out, out_len), # Null bytes
+            (DATA, DATA_LEN, 0x1, out, out_len), # Unsupported flags
+            (DATA, DATA_LEN, 0, None, out_len), # Null output
+            (DATA, DATA_LEN, 0, out, 0), # Short output len
+            (DATA, DATA_LEN+1, 0, out, 0), # Long output len
+        ]
+        for args in invalid_args:
+            ret = wally_scriptpubkey_op_return_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        valid_args = [
+            [(DATA, DATA_LEN, 0, out, out_len),'6a4c50' + '00' * MAX_OP_RETURN_LEN],
+            [(DATA, 0, 0, out, out_len),'6a00'], # Note that empty bytes are allowed
+        ]
+        for args, exp_script in valid_args:
+            ret = wally_scriptpubkey_op_return_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_OK, len(exp_script) / 2))
+            self.assertEqual(args[3][:ret[1]], unhexlify(exp_script))
+            ret = wally_scriptpubkey_get_type(out, ret[1])
+            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_OP_RETURN))
 
     def test_scriptpubkey_p2pkh_from_bytes(self):
         """Tests for creating p2pkh scriptPubKeys"""

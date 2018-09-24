@@ -22,6 +22,9 @@ extern "C" {
 #define WALLY_SCRIPTPUBKEY_P2WPKH_LEN 22 /** OP_0 [HASH160] */
 #define WALLY_SCRIPTPUBKEY_P2WSH_LEN  34 /** OP_0 [SHA256] */
 
+#define WALLY_MAX_OP_RETURN_LEN 80
+
+#define WALLY_SCRIPTSIG_OP_RETURN_MAX_LEN 83 /** OP_RETURN [80 bytes of data] */
 #define WALLY_SCRIPTSIG_P2PKH_MAX_LEN 140 /** [SIG+SIGHASH] [PUBKEY] */
 #define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
 
@@ -239,6 +242,23 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_der(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Create an OP_RETURN scriptPubkey.
+ *
+ * :param bytes: Bytes to create a scriptPubkey for.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be less
+ *|    than or equal to ``WALLY_MAX_OP_RETURN_LEN``.
+ * :param flags: Currently unused, must be 0.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * :param len: The length of ``bytes_out`` in bytes. Passing
+ *|    ``WALLY_SCRIPTSIG_OP_RETURN_MAX_LEN`` will ensure there is always
+ *|    enough room for the resulting scriptPubkey.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
+    const unsigned char *bytes, size_t bytes_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written);
 
 /**
  * Create a P2SH scriptPubkey.
