@@ -26,7 +26,7 @@ extern "C" {
  * :param bytes_len: Size of ``bytes`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behaviour.
+ * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting raw BIP38 address.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
  */
@@ -46,7 +46,7 @@ WALLY_CORE_API int bip38_raw_from_private_key(
  * :param bytes_len: Size of ``bytes`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behaviour.
+ * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param output: Destination for the resulting BIP38 address.
  */
 WALLY_CORE_API int bip38_from_private_key(
@@ -64,7 +64,7 @@ WALLY_CORE_API int bip38_from_private_key(
  * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behaviour.
+ * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  */
@@ -83,7 +83,7 @@ WALLY_CORE_API int bip38_raw_to_private_key(
  * :param bip38: BIP 38 address to decode.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behaviour.
+ * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  */

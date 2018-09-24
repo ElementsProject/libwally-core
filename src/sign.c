@@ -279,7 +279,7 @@ int wally_format_bitcoin_message(const unsigned char *bytes, size_t bytes_len,
         return WALLY_OK; /* Not enough output space, return required size */
 
     if (do_hash) {
-        /* Ensure we have a suitable temporary buffer to serialise into */
+        /* Ensure we have a suitable temporary buffer to serialize into */
         msg_buf = buf;
         if (msg_len > sizeof(buf)) {
             msg_buf = wally_malloc(msg_len);
@@ -290,7 +290,7 @@ int wally_format_bitcoin_message(const unsigned char *bytes, size_t bytes_len,
         }
     }
 
-    /* Serialise the message */
+    /* Serialize the message */
     out = msg_buf;
     memcpy(out, MSG_PREFIX, sizeof(MSG_PREFIX) - 1);
     out += sizeof(MSG_PREFIX) - 1;

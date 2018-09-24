@@ -92,7 +92,7 @@ class HashTests(unittest.TestCase):
 
     def test_sha_vectors(self):
         self. _do_test_sha_vectors()
-        wally_init(0) # Enable optimised SHA256 and re-test
+        wally_init(0) # Enable optimized SHA256 and re-test
         self. _do_test_sha_vectors()
 
 

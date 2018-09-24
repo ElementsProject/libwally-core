@@ -247,7 +247,7 @@ int bip32_key_serialize(const struct ext_key *hdkey, uint32_t flags,
 
     tmp32 = hdkey->version;
     if (!serialize_private) {
-        /* Change version if serialising the public part of a private key */
+        /* Change version if serializing the public part of a private key */
         if (tmp32 == BIP32_VER_MAIN_PRIVATE)
             tmp32 = BIP32_VER_MAIN_PUBLIC;
         else if (tmp32 == BIP32_VER_TEST_PRIVATE)

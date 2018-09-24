@@ -50,7 +50,7 @@ WALLY_CORE_API int wally_scrypt(
  * :param key_len: Length of ``key`` in bytes. Must be an AES_KEY_LEN_ constant.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
- * :param flags: AES_FLAG_ constants indicating the desired behaviour.
+ * :param flags: AES_FLAG_ constants indicating the desired behavior.
  * :param bytes_out: Destination for the encrypted/decrypted data.
  * :param len: The length of ``bytes_out`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
  */
@@ -72,7 +72,7 @@ WALLY_CORE_API int wally_aes(
  * :param iv_len: Length of ``iv`` in bytes. Must be ``AES_BLOCK_LEN``.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
- * :param flags: AES_FLAG_ constants indicating the desired behaviour.
+ * :param flags: AES_FLAG_ constants indicating the desired behavior.
  * :param bytes_out: Destination for the encrypted/decrypted data.
  * :param len: The length of ``bytes_out`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -333,7 +333,7 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param bytes: The message hash to sign.
  * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
- * :param flags: EC_FLAG_ flag values indicating desired behaviour.
+ * :param flags: EC_FLAG_ flag values indicating desired behavior.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  */
@@ -397,7 +397,7 @@ WALLY_CORE_API int wally_ec_sig_from_der(
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param bytes: The message hash to verify.
  * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
- * :param flags: EC_FLAG_ flag values indicating desired behaviour.
+ * :param flags: EC_FLAG_ flag values indicating desired behavior.
  * :param sig: The compact signature of the message in ``bytes``.
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  */

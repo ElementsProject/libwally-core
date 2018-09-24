@@ -43,8 +43,8 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
 
 #define MAX_INVALID_SATOSHI ((uint64_t) -1)
 
-/* Extra options when serialising for hashing */
-struct tx_serialise_opts
+/* Extra options when serializing for hashing */
+struct tx_serialize_opts
 {
     uint32_t sighash;                /* 8 bit sighash value for sig */
     uint32_t tx_sighash;             /* 32 bit sighash value for tx */
@@ -52,7 +52,7 @@ struct tx_serialise_opts
     const unsigned char *script;     /* scriptSig of input we are signing */
     size_t script_len;               /* length of 'script' in bytes */
     uint64_t satoshi;                /* Amount of the input we are signing */
-    bool bip143;                     /* Serialise for BIP143 hash */
+    bool bip143;                     /* Serialize for BIP143 hash */
     const unsigned char *value;      /* Confidential value of the input we are signing */
     size_t value_len;                /* length of 'value' in bytes */
 };
@@ -1452,7 +1452,7 @@ int wally_tx_get_witness_count(const struct wally_tx *tx, size_t *written)
  * without iterating the transaction twice with different flags.
  */
 static int tx_get_lengths(const struct wally_tx *tx,
-                          const struct tx_serialise_opts *opts, uint32_t flags,
+                          const struct tx_serialize_opts *opts, uint32_t flags,
                           size_t *base_size, size_t *witness_size,
                           size_t *witness_count, bool is_elements)
 {
@@ -1609,7 +1609,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
 }
 
 static int tx_get_length(const struct wally_tx *tx,
-                         const struct tx_serialise_opts *opts, uint32_t flags,
+                         const struct tx_serialize_opts *opts, uint32_t flags,
                          size_t *written, bool is_elements)
 {
     size_t base_size, witness_size, witness_count;
@@ -1671,7 +1671,7 @@ int wally_tx_get_vsize(const struct wally_tx *tx, size_t *written)
 }
 
 static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
-                                     const struct tx_serialise_opts *opts,
+                                     const struct tx_serialize_opts *opts,
                                      uint32_t flags,
                                      unsigned char *bytes_out, size_t len,
                                      size_t *written)
@@ -1881,7 +1881,7 @@ error:
 }
 
 static int tx_to_bytes(const struct wally_tx *tx,
-                       const struct tx_serialise_opts *opts,
+                       const struct tx_serialize_opts *opts,
                        uint32_t flags,
                        unsigned char *bytes_out, size_t len,
                        size_t *written,
@@ -2180,7 +2180,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         expect_issuance = is_elements && (prevout_index & WALLY_TX_ISSUANCE_FLAG);
         p += WALLY_TXHASH_LEN + sizeof(uint32_t);
         ensure_varbuff(&v);
-        /* FIXME: Analyse script types if required */
+        /* FIXME: Analyze script types if required */
         p += v;
         ensure_n(sizeof(uint32_t));
         p += sizeof(uint32_t);
@@ -2207,7 +2207,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
             p += sizeof(uint64_t);
         }
         ensure_varbuff(&v);
-        /* FIXME: Analyse script types if required */
+        /* FIXME: Analyze script types if required */
         p += v;
     }
 
@@ -2254,9 +2254,9 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 #undef ensure_varint
 #undef ensure_varbuff
 #undef ensure_commitment
-#undef ensure_commited_value
-#undef ensure_commited_asset
-#undef ensure_commited_nonce
+#undef ensure_committed_value
+#undef ensure_committed_asset
+#undef ensure_committed_nonce
     return WALLY_OK;
 }
 
@@ -2519,7 +2519,7 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
     size_t n, n2;
     uint64_t is_elements = 0;
     int ret;
-    const struct tx_serialise_opts opts = {
+    const struct tx_serialize_opts opts = {
         sighash, tx_sighash, index, script, script_len, satoshi,
         (flags & WALLY_TX_FLAG_USE_WITNESS) ? true : false,
         value, value_len

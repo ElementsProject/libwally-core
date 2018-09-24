@@ -305,7 +305,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 
     /* Build the array of input generator pointers required by secp */
     /* FIXME: This is horribly painful. Since parsed representations dont
-     * currently differ from serialised, if this function took a pointer
+     * currently differ from serialized, if this function took a pointer
      * to an array, all this is actually just a very convoluted cast.
      */
     if (!(generators = wally_malloc(num_inputs * ASSET_GENERATOR_LEN))) {

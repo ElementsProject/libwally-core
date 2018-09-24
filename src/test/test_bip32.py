@@ -184,7 +184,7 @@ class BIP32Tests(unittest.TestCase):
             self.assertEqual(b32(key.parent160), b32(expected.parent160))
 
 
-    def test_serialisation(self):
+    def test_serialization(self):
 
         # Try short, correct, long lengths. Trimming 8 chars is the correct
         # length because the vector value contains 4 check bytes at the end.

@@ -73,7 +73,7 @@ WALLY_CORE_API int wally_free_string(
     char *str);
 
 /** Length of entropy required for ``wally_randomize_context`` */
-#define WALLY_SECP_RANDOMISE_LEN 32
+#define WALLY_SECP_RANDOMIZE_LEN 32
 
 /**
  * Provide entropy to randomize the libraries internal libsecp256k1 context.
@@ -89,7 +89,7 @@ WALLY_CORE_API int wally_free_string(
  * in an application level mutex.
  *
  * :param bytes: Entropy to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``WALLY_SECP_RANDOMISE_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``WALLY_SECP_RANDOMIZE_LEN``.
  */
 WALLY_CORE_API int wally_secp_randomize(
     const unsigned char *bytes,
