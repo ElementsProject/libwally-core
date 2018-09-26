@@ -1,5 +1,5 @@
 buster_release:
-  image: greenaddress/wallycore@sha256:654e5939446bfa8f33966031e768f6600e1d627b598e738e1d8f8427370786c7
+  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -25,7 +25,7 @@ buster_release:
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
 linux_py3_debug:
-  image: greenaddress/wallycore@sha256:654e5939446bfa8f33966031e768f6600e1d627b598e738e1d8f8427370786c7
+  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
   tags:
     - ga
   before_script:
@@ -168,8 +168,26 @@ windows10_release:
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
     - tools\msvc\wheel.bat
 
+webassembly_release:
+  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
+  artifacts:
+    expire_in: 1 day
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wally_dist/*
+  tags:
+    - ga
+  before_script:
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+    - source /opt/emsdk/emsdk_env.sh
+  script:
+    - cd $CI_PROJECT_DIR
+    - tools/build_wasm.sh
+
 apidocs:
-  image: greenaddress/wallycore@sha256:654e5939446bfa8f33966031e768f6600e1d627b598e738e1d8f8427370786c7
+  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs

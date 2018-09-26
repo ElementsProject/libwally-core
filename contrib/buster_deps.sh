@@ -13,13 +13,20 @@ update-java-alternatives -s java-1.11.0-openjdk-amd64
 curl -sL https://deb.nodesource.com/setup_8.x | bash -
 curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-apt-get -yqq update
-apt-get -yqq upgrade
-apt-get -yqq install nodejs yarn
+apt-get update -qq
+apt-get upgrade -qq
+apt-get install -yqq nodejs yarn
 
-cd /opt && curl -sSO https://dl.google.com/android/repository/${NDK_FILENAME} && unzip -qq ${NDK_FILENAME} && rm ${NDK_FILENAME}
+cd /opt && curl -sSO https://dl.google.com/android/repository/${NDK_FILENAME}
+unzip -qq ${NDK_FILENAME}
+rm ${NDK_FILENAME}
+git clone https://github.com/juj/emsdk.git
+cd emsdk
+./emsdk install 2.0.9
+./emsdk activate 2.0.9
+source ./emsdk_env.sh
 
-apt-get remove --purge curl -yqq
+apt-get remove --purge curl unzip apt-transport-https -yqq
 apt-get -yqq autoremove
 apt-get -yqq clean
 rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /usr/share/locale/* /usr/share/man /usr/share/doc /lib/xtables/libip6*
