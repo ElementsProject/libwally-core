@@ -107,9 +107,6 @@ $ . ./tools/android_helpers.sh
 $ android_get_arch_list
 armeabi-v7a arm64-v8a x86 x86_64
 
-# Optional, uses gcc instead of clang
-$ export WALLY_USE_GCC=1
-
 # Prepare to build
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh

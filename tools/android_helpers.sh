@@ -34,11 +34,7 @@ function android_create_toolchain() {
 # api:      The Android API level to build for (e.g. 21)
 function android_get_cflags() {
     local arch=$1 toolsdir=$2 api=$3
-    local cflags=""
-    if [[ -n "$WALLY_USE_GCC" ]]; then
-        cflags="$cflags --sysroot=$toolsdir/sysroot -D__ANDROID_API__=$api"
-    fi
-    cflags="$cflags -isystem $toolsdir/sysroot/usr/include"
+    local cflags="$cflags -isystem $toolsdir/sysroot/usr/include"
     case $arch in
        armeabi-v7a) cflags="$cflags -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb";;
        arm64-v8a) cflags="$cflags -flax-vector-conversions";;
@@ -88,10 +84,7 @@ function android_build_wally() {
     android_create_toolchain $arch $toolsdir $api
 
     # Set cross compilation options for configure
-    # TODO: Support NDK > 14 and clang when they work
-    if [[ -z "$WALLY_USE_GCC" ]]; then
-        export CC="$toolsdir/bin/clang"
-    fi
+    export CC="$toolsdir/bin/clang"
 
     export CFLAGS=$(android_get_cflags $arch $toolsdir $api)
     export LDFLAGS=$(android_get_ldflags $arch $toolsdir $api)
