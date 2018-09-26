@@ -115,7 +115,7 @@ $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
 
 # See the comments in tools/android_helpers.sh for arguments
-$ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 17 "--enable-swig-java"
+$ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 19 "--enable-swig-java"
 ```
 
 The script `tools/build_android_libraries.sh` builds the Android release files and

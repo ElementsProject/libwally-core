@@ -25,8 +25,8 @@ if [ -n "$1" ]; then
 fi
 
 for arch in $ARCH_LIST; do
-    # Use API level 14 for non-64 bit targets for better device coverage
-    api="14"
+    # Use API level 19 for non-64 bit targets for better device coverage
+    api="19"
     if [[ $arch == *"64"* ]]; then
         api="21"
     fi
