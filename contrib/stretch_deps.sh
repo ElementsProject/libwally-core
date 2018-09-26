@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -e
 
-export NDK_FILENAME=android-ndk-r17b-linux-x86_64.zip
+export NDK_FILENAME=android-ndk-r18-linux-x86_64.zip
 
 dpkg --add-architecture i386
 sed -i 's/deb.debian.org/httpredir.debian.org/g' /etc/apt/sources.list
