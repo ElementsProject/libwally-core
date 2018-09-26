@@ -66,7 +66,7 @@ function android_get_configure_flags() {
     local arch=$1 toolsdir=$2 api=$3
     shift 3
     local useropts=$*
-    local host=$(basename $toolsdir/bin/*-strip | sed 's/-strip$//')
+    local host=$(basename $toolsdir/bin/*linux*-strip | sed 's/-strip$//')
     local args="--host=$host $useropts --enable-endomorph"
     case $arch in
        arm*) args="$args --with-asm=auto";;

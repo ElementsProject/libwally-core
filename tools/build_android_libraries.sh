@@ -42,7 +42,7 @@ for arch in $ARCH_LIST; do
 
     # Copy the build result
     mkdir -p $PWD/release/lib/$arch
-    $toolsdir/bin/*-strip -o $PWD/release/lib/$arch/libwallycore.so $PWD/src/.libs/libwallycore.so
+    $toolsdir/bin/*linux*-strip -o $PWD/release/lib/$arch/libwallycore.so $PWD/src/.libs/libwallycore.so
 done
 
 mkdir -p $PWD/release/include $PWD/release/src/swig_java/src/com/blockstream/libwally
