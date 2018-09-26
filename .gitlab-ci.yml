@@ -38,7 +38,7 @@ linux_py3_debug:
     - PYTHON_VERSION=3.5 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
 ubuntu_release:
-  image: greenaddress/wallycore@sha256:98530ad68264c6b50fe2ea060c275ddb2500fc459bded4df16263b464870a3e5
+  image: greenaddress/wallycore@sha256:0cfdaf0b1f62981e3da321da003d09fe9e1fd6f0b052e64121031ff3b5263ad8
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
