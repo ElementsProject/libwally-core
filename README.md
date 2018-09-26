@@ -19,13 +19,14 @@ Wally can currently be built for:
 - macOS
 - iOS
 - Windows
+- WebAssembly
 
 And can be used from:
 - C and compatible languages which can call C interfaces
 - C++ (see include/wally.hpp for C++ container support)
 - Python 2.7+ or 3.x
 - Java
-- Javascript via node.js or Cordova
+- Javascript via node.js or Cordova or WebAssembly/Emscripten compatible
 
 ## Building
 
@@ -135,6 +136,25 @@ $ android_build_wally armeabi-v7a $ANDROID_NDK/toolchains/llvm/prebuilt/linux-x8
 
 The script `tools/build_android_libraries.sh` builds the Android release files and
 can be used as an example for your own Android projects.
+
+### WebAssembly
+
+WebAssembly is available as a preview feature. It requires following emsdk instructions for
+your [platform](https://webassembly.org/getting-started/developers-guide/) and sourcing
+the emsdk_env.sh (or equivalent).
+
+```
+# Source env file, this sets up the environment variables for the toolchain
+$ source $HOME/emsdk/emsdk_env.sh
+
+# Build
+$ ./tools/build_wasm.sh
+```
+
+The script `tools/build_wasm.sh` builds the wallycore.html example as well as the required
+wallycore.js and wallycore.wasm files and can be used as an example for your own webAssembly projects.
+
+Open wallycore.html up in a browser via a webserver like nginx or `python -m SimpleHTTPServer 8000`
 
 ## Cleaning
 

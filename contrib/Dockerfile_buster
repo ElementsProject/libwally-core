@@ -1,4 +1,4 @@
-FROM debian:buster@sha256:d986a531d62903b66e731d475988f5b2ba3a4a90078078cb0f29f9685ee36466
+FROM debian:buster@sha256:2857989334428416b1ef369d6e029e912a7fe3ee7e57adc20b494cc940198258
 COPY buster_deps.sh /deps.sh
 RUN /deps.sh && rm /deps.sh
 VOLUME /wallycore
