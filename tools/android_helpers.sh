@@ -34,7 +34,7 @@ function android_create_toolchain() {
 # api:      The Android API level to build for (e.g. 21)
 function android_get_cflags() {
     local arch=$1 toolsdir=$2 api=$3
-    local cflags="$cflags -isystem $toolsdir/sysroot/usr/include"
+    local cflags="$CFLAGS -isystem $toolsdir/sysroot/usr/include"
     case $arch in
        armeabi-v7a) cflags="$cflags -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb";;
        arm64-v8a) cflags="$cflags -flax-vector-conversions";;
@@ -48,9 +48,11 @@ function android_get_cflags() {
 # api:      The Android API level to build for (e.g. 21)
 function android_get_ldflags() {
     local arch=$1 toolsdir=$2 api=$3
+    local ldflags="$LDFLAGS"
     case $arch in
-       armeabi-v7a) echo "-Wl,--fix-cortex-a8";;
+       armeabi-v7a) ldflags="$ldflags -Wl,--fix-cortex-a8";;
     esac
+    echo $ldflags
 }
 
 # Get the configure flags needed to build for Android
