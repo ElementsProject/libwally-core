@@ -112,7 +112,7 @@ def _spkcsv2of3_2_len_fn(sigs, csv_blocks, flags):
     # TODO: See TODO in _spkcsv2of2_1_len_fn
     return 13 + 3 * (EC_PUBLIC_KEY_LEN + 1) + 4
 scriptpubkey_csv_2of3_then_2_from_bytes = _wrap_bin(scriptpubkey_csv_2of3_then_2_from_bytes, _spkcsv2of3_2_len_fn, resize=True)
-scriptpubkey_op_return_from_bytes = _wrap_bin(scriptpubkey_op_return_from_bytes, WALLY_SCRIPTSIG_OP_RETURN_MAX_LEN, resize=True)
+scriptpubkey_op_return_from_bytes = _wrap_bin(scriptpubkey_op_return_from_bytes, WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN, resize=True)
 scriptpubkey_p2pkh_from_bytes = _wrap_bin(scriptpubkey_p2pkh_from_bytes, WALLY_SCRIPTPUBKEY_P2PKH_LEN, resize=True)
 scriptpubkey_p2sh_from_bytes = _wrap_bin(scriptpubkey_p2sh_from_bytes, WALLY_SCRIPTPUBKEY_P2SH_LEN, resize=True)
 def _spkmfb_len_fn(sigs, threshold, flags):

@@ -11,7 +11,7 @@ SCRIPT_SHA256  = 0x2
 
 MAX_OP_RETURN_LEN = 80
 
-SCRIPTSIG_OP_RETURN_MAX_LEN = 83
+SCRIPTPUBKEY_OP_RETURN_MAX_LEN = 83
 SCRIPTPUBKEY_P2PKH_LEN = 25
 SCRIPTPUBKEY_P2SH_LEN = 23
 HASH160_LEN = 20
@@ -47,7 +47,7 @@ class ScriptTests(unittest.TestCase):
         """Tests for creating OP_RETURN scriptPubKeys"""
         # Invalid args
         DATA, DATA_LEN = make_cbuffer('00' * MAX_OP_RETURN_LEN)
-        out, out_len = make_cbuffer('00' * SCRIPTSIG_OP_RETURN_MAX_LEN)
+        out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_OP_RETURN_MAX_LEN)
         invalid_args = [
             (None, 20, 0, out, out_len), # Null bytes
             (DATA, DATA_LEN, 0x1, out, out_len), # Unsupported flags
