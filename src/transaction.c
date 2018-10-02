@@ -68,6 +68,8 @@ static const unsigned char EMPTY_OUTPUT[9] = {
 static void assert_tx_assumptions(void)
 {
     BUILD_ASSERT(WALLY_TXHASH_LEN == SHA256_LEN);
+    BUILD_ASSERT(sizeof(DUMMY_SIG) == EC_SIGNATURE_DER_MAX_LEN + 1);
+    BUILD_ASSERT(sizeof(DUMMY_SIG) - 1 == EC_SIGNATURE_DER_MAX_LOW_R_LEN + 1);
 }
 /* LCOV_EXCL_END */
 
@@ -307,6 +309,9 @@ int wally_tx_witness_stack_set_dummy(struct wally_tx_witness_stack *stack,
     if (flags == WALLY_TX_DUMMY_SIG) {
         p = DUMMY_SIG;
         len = sizeof(DUMMY_SIG);
+    } else if (flags == WALLY_TX_DUMMY_SIG_LOW_R) {
+        p = DUMMY_SIG;
+        len = sizeof(DUMMY_SIG) - 1; /* Low-R signatures are always at least 1 byte shorter */
     } else if (flags != WALLY_TX_DUMMY_NULL)
         return WALLY_EINVAL;
     return wally_tx_witness_stack_set(stack, index, p, len);

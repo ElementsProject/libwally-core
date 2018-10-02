@@ -279,6 +279,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_SIGNATURE_LEN 64
 /** The maximum encoded length of a DER encoded signature */
 #define EC_SIGNATURE_DER_MAX_LEN 72
+/** The maximum encoded length of a DER encoded signature created with EC_FLAG_GRIND_R */
+#define EC_SIGNATURE_DER_MAX_LOW_R_LEN 71
 
 /** Indicates that a signature using ECDSA/secp256k1 is required */
 #define EC_FLAG_ECDSA 0x1

@@ -25,6 +25,7 @@ extern "C" {
 
 #define WALLY_TX_DUMMY_NULL 0x1 /* An empty witness item */
 #define WALLY_TX_DUMMY_SIG  0x2 /* A dummy signature */
+#define WALLY_TX_DUMMY_SIG_LOW_R  0x4 /* A dummy signature created with EC_FLAG_GRIND_R */
 
 /** Sighash flags for transaction signing */
 #define WALLY_SIGHASH_ALL          0x01
