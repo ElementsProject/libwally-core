@@ -11,6 +11,8 @@ static const char *p2pkh_hex =
 
 static const char *wit_hex = "020000000001012f94ddd965758445be2dfac132c5e75c517edf5ea04b745a953d0bc04c32829901000000006aedc98002a8c500000000000022002009246bbe3beb48cf1f6f2954f90d648eb04d68570b797e104fead9e6c3c87fd40544020000000000160014c221cdfc1b867d82f19d761d4e09f3b6216d8a8304004830450221008aaa56e4f0efa1f7b7ed690944ac1b59f046a59306fcd1d09924936bd500046d02202b22e13a2ad7e16a0390d726c56dfc9f07647f7abcfac651e35e5dc9d830fc8a01483045022100e096ad0acdc9e8261d1cdad973f7f234ee84a6ee68e0b89ff0c1370896e63fe102202ec36d7554d1feac8bc297279f89830da98953664b73d38767e81ee0763b9988014752210390134e68561872313ba59e56700732483f4a43c2de24559cb8c7039f25f7faf821039eb59b267a78f1020f27a83dc5e3b1e4157e4a517774040a196e9f43f08ad17d52ae89a3b720";
 
+static const char *coinbase_hex = "020000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff4b03464d0804c97bb35b642f4254432e434f4d2ffabe6d6d1a6db4ee2dab39db5d871f8ddf5eaf687a3d3f94996a328fe67e89971f80c64e01000000000000006675aeb700000000bd920000ffffffff03aeef224e0000000016001497cfc76442fe717f2a3f0cc9c175f7561b6619970000000000000000266a24aa21a9ed742e7ee7bf189ccc148c8d4e32d39fc1d3ea1340c7473094e5f8a5077716db8200000000000000002952534b424c4f434b3afe833adaeb81adc753269cdd3e4225c199637e7921996cadd94803adbe87f79c0120000000000000000000000000000000000000000000000000000000000000000000000000";
+
 #define check_ret(r) if (r != WALLY_OK) return false
 
 static bool tx_roundtrip(const char *tx_hex)
@@ -91,10 +93,37 @@ static bool tx_roundtrip(const char *tx_hex)
     return true;
 }
 
+static bool tx_coinbase(const char *tx_hex)
+{
+    struct wally_tx *tx;
+    char *new_hex;
+    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS;
+    size_t is_coinbase;
+    int ret;
+
+    /* Unserialize and serialize the tx and verify they match */
+    ret = wally_tx_from_hex(tx_hex, flags, &tx);
+    check_ret(ret);
+
+    ret = wally_tx_to_hex(tx, flags, &new_hex);
+    if (ret != WALLY_OK || strcmp(tx_hex, new_hex))
+        return false;
+
+    ret = wally_free_string(new_hex);
+    check_ret(ret);
+
+    ret = wally_tx_is_coinbase(tx, &is_coinbase);
+    if (ret != WALLY_OK || !is_coinbase)
+        return false;
+
+    return true;
+}
+
 static bool test_tx_parse(void)
 {
     return tx_roundtrip(p2pkh_hex) &&
-           tx_roundtrip(wit_hex);
+           tx_roundtrip(wit_hex) &&
+           tx_coinbase(coinbase_hex);
 }
 
 int main(void)

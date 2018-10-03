@@ -14,6 +14,8 @@ extern "C" {
 #define WALLY_TX_MAX_VERSION 2
 #define WALLY_TX_IS_ELEMENTS 1
 #define WALLY_TX_IS_ISSUANCE 2
+#define WALLY_TX_IS_PEGIN 4
+#define WALLY_TX_IS_COINBASE 8
 
 #define WALLY_SATOSHI_PER_BTC 100000000
 #define WALLY_BTC_MAX 21000000
@@ -565,6 +567,15 @@ WALLY_CORE_API int wally_tx_get_signature_hash(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+/**
+ * Determine if a transaction is a coinbase transaction.
+ *
+ * :param tx: The transaction to check.
+ * :param written: 1 if the transaction is a coinbase transaction, otherwise 0.
+ */
+WALLY_CORE_API int wally_tx_is_coinbase(
+    const struct wally_tx *tx,
+    size_t *written);
 
 #ifdef BUILD_ELEMENTS
 /**
@@ -812,11 +823,11 @@ WALLY_CORE_API int wally_tx_add_elements_raw_output(
  * Determine if a transaction is an elements transaction.
  *
  * :param tx: The transaction to check.
- * :param value_out: 1 if the transaction is an elements transaction, otherwise 0.
+ * :param written: 1 if the transaction is an elements transaction, otherwise 0.
  */
 WALLY_CORE_API int wally_tx_is_elements(
     const struct wally_tx *tx,
-    uint64_t *value_out);
+    size_t *written);
 
 /**
  * Convert satoshi to an (explicit) confidential value representation.
@@ -893,7 +904,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
     size_t len);
 
 /**
- * Calculate a re-issuance token from an assets' entropy.
+ * Calculate a re-issuance token from an asset's entropy.
  *
  * :param entropy: The asset entropy.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.

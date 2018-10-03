@@ -111,6 +111,25 @@ static bool is_valid_elements_tx_input(const struct wally_tx_input *input)
     return is_valid_tx_input(input) && (input->features & WALLY_TX_IS_ELEMENTS);
 }
 
+static bool is_null_bytes(const unsigned char *bytes, size_t bytes_len)
+{
+    size_t i;
+    for (i = 0; i < bytes_len; ++i)
+        if (bytes[i])
+            return false;
+    return true;
+}
+
+static bool is_coinbase_bytes(const unsigned char *bytes, size_t bytes_len, uint32_t index)
+{
+    return index == 0xffffffff && is_null_bytes(bytes, bytes_len);
+}
+
+static bool is_valid_coinbase_input(const struct wally_tx_input *input)
+{
+    return input && is_coinbase_bytes(input->txhash, sizeof(input->txhash), input->index);
+}
+
 static bool is_valid_elements_tx_output(const struct wally_tx_output *output)
 {
     return output &&
@@ -585,8 +604,14 @@ static int tx_elements_input_init(
         clear_and_free(new_script, script_len);
         output->features = old_features;
     } else {
+        const bool is_coinbase = is_coinbase_bytes(txhash, WALLY_TXHASH_LEN, index);
         memcpy(output->txhash, txhash, WALLY_TXHASH_LEN);
-        output->index = index & WALLY_TX_INDEX_MASK;
+        if (is_elements && !is_coinbase)
+            output->index = index & WALLY_TX_INDEX_MASK;
+        else
+            output->index = index;
+        if (is_coinbase)
+            output->features |= WALLY_TX_IS_COINBASE;
         output->sequence = sequence;
         output->script = new_script;
         output->script_len = script_len;
@@ -2182,7 +2207,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         uint32_t prevout_index;
         ensure_n(WALLY_TXHASH_LEN + sizeof(uint32_t));
         uint32_from_le_bytes(p + WALLY_TXHASH_LEN, &prevout_index);
-        expect_issuance = is_elements && (prevout_index & WALLY_TX_ISSUANCE_FLAG);
+        expect_issuance = is_elements && (prevout_index & WALLY_TX_ISSUANCE_FLAG) && !is_coinbase_bytes(p, WALLY_TXHASH_LEN, prevout_index);
         p += WALLY_TXHASH_LEN + sizeof(uint32_t);
         ensure_varbuff(&v);
         /* FIXME: Analyze script types if required */
@@ -2334,7 +2359,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
         script = p;
         p += script_len;
         p += uint32_from_le_bytes(p, &sequence);
-        if (is_elements && !!(index & WALLY_TX_ISSUANCE_FLAG)) {
+        if (is_elements && !!(index & WALLY_TX_ISSUANCE_FLAG) && !is_coinbase_bytes(txhash, WALLY_TXHASH_LEN, index)) {
             nonce = p;
             p += WALLY_TX_ASSET_TAG_LEN;
             entropy = p;
@@ -2500,12 +2525,22 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
     return ret;
 }
 
-int wally_tx_is_elements(const struct wally_tx *tx, uint64_t *value_out)
+int wally_tx_is_elements(const struct wally_tx *tx, size_t *written)
 {
-    if (!tx || !value_out)
+    if (!tx || !written)
         return WALLY_EINVAL;
 
-    *value_out = is_valid_elements_tx(tx);
+    *written = is_valid_elements_tx(tx);
+
+    return WALLY_OK;
+}
+
+int wally_tx_is_coinbase(const struct wally_tx *tx, size_t *written)
+{
+    if (!tx || !written)
+        return WALLY_EINVAL;
+
+    *written = tx->num_inputs == 1 && is_valid_coinbase_input(tx->inputs);
 
     return WALLY_OK;
 }

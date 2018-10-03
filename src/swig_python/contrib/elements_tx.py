@@ -80,6 +80,17 @@ class ElementsTxTests(unittest.TestCase):
         vsize = tx_vsize_from_weight(tx_get_weight(tx))
         tx_hex = tx_to_hex(tx, FLAG_USE_WITNESS|FLAG_USE_ELEMENTS)
 
+    def test_coinbase(self):
+        txhash, seq, script = bytearray(b'\x00'*32), 0xffffffff, b'0000'
+        tx_input_no_witness = tx_elements_input_init(txhash, seq, seq, script, None, None, None, None, None, None, None)
+
+        ct_value = tx_confidential_value_from_satoshi(10000)
+        tx_output = tx_elements_output_init(script, None, ct_value, None, None, None)
+        tx = tx_init(2, 0, 10, 2)
+        tx_add_input(tx, tx_input_no_witness)
+        tx_add_output(tx, tx_output)
+        self.assertEqual(tx_is_coinbase(tx), 1)
+
     def test_issuance(self):
         txhash = hex_to_bytes("39453cf897e2f0c2e9563364874f4b2a85be06dd8ec10665085033eeb75016c3")[::-1]
         vout = 68
