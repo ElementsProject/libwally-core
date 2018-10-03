@@ -109,6 +109,12 @@ class Base58Tests(unittest.TestCase):
         ret, bin_len = wally_base58_to_bytes(utf8('1'), self.FLAG_CHECKSUM,
                                              buf, self.CHECKSUM_LEN)
         self.assertEqual(ret, WALLY_EINVAL)
+        # Also the input string must contain at least CHECKSUM_LEN + 1
+        # bytes worth of data
+        for i in range(self.CHECKSUM_LEN):
+            ret, bin_len = wally_base58_to_bytes(utf8('1'*i), self.FLAG_CHECKSUM,
+                                                 buf, buf_len)
+            self.assertEqual(ret, WALLY_EINVAL)
 
         # Leading ones become zeros
         for i in range(1, 10):

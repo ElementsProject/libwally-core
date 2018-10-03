@@ -276,6 +276,11 @@ int wally_base58_to_bytes(const char *str_in, uint32_t flags,
         return WALLY_OK; /* not enough space, return required amount */
 
     if (!ret && (flags & BASE58_FLAG_CHECKSUM)) {
+        if (*written <= BASE58_CHECKSUM_LEN) {
+            wally_clear(bytes_out, len);
+            return WALLY_EINVAL; /* Input not long enough to contain a checksum */
+        }
+
         size_t offset = *written - BASE58_CHECKSUM_LEN;
         uint32_t checksum = base58_get_checksum(bytes_out, offset);
 
