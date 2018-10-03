@@ -157,6 +157,7 @@ if is_elements_build():
     tx_confidential_value_from_satoshi = _wrap_bin(tx_confidential_value_from_satoshi, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
     tx_elements_issuance_generate_entropy = _wrap_bin(tx_elements_issuance_generate_entropy, SHA256_LEN)
     tx_elements_issuance_calculate_asset = _wrap_bin(tx_elements_issuance_calculate_asset, SHA256_LEN)
+    tx_elements_issuance_calculate_reissuance_token = _wrap_bin(tx_elements_issuance_calculate_reissuance_token, SHA256_LEN)
     tx_get_elements_signature_hash = _wrap_bin(tx_get_elements_signature_hash, SHA256_LEN)
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

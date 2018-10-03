@@ -89,5 +89,12 @@ class ElementsTxTests(unittest.TestCase):
         asset = tx_elements_issuance_calculate_asset(entropy)
         self.assertEqual(hex_from_bytes(asset[::-1]), "dedf795f74e8b52c6ff8a9ad390850a87b18aeb2be9d1967038308290093a893")
 
+    def test_reissuance_token(self):
+        entropy = hex_to_bytes("7746cd11098b1de0cb6f3a8eae8fe3b7c9aef69b96ea91c6feaf480f0135e7c5")
+        asset = tx_elements_issuance_calculate_asset(entropy)
+        self.assertEqual(hex_from_bytes(asset[::-1]), "eb82f87a64d7b701569a88d9b1578953038b53916ebf7f87b865beab3a3e26d2")
+        reissuance_token = tx_elements_issuance_calculate_reissuance_token(entropy, 0)
+        self.assertEqual(hex_from_bytes(reissuance_token[::-1]), "42066f5f26d72da30758487822436c61cccea78e8f9b6b9f08230f5d9003848c")
+
 if __name__ == '__main__':
     unittest.main()

@@ -2658,25 +2658,57 @@ fail:
     return ret;
 }
 
-int wally_tx_elements_issuance_calculate_asset(const unsigned char *entropy,
-                                               size_t entropy_len,
-                                               unsigned char *bytes_out,
-                                               size_t len)
+static int tx_elements_token_from_bytes(const unsigned char *entropy,
+                                        size_t entropy_len,
+                                        const unsigned char *bytes,
+                                        size_t bytes_len,
+                                        unsigned char *bytes_out,
+                                        size_t len)
 {
     unsigned char buff[2 * SHA256_LEN], *buff_p = buff;
     int ret;
 
     if (!entropy || entropy_len != SHA256_LEN ||
+        !bytes_len || bytes_len != SHA256_LEN ||
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
     memcpy(buff_p, entropy, entropy_len);
-    wally_clear(buff_p + SHA256_LEN, SHA256_LEN);
+    memcpy(buff_p + SHA256_LEN, bytes, bytes_len);
 
-    ret = wally_sha256_midstate(buff_p, 2 * SHA256_LEN, bytes_out, len);
+    ret = wally_sha256_midstate(buff_p, sizeof(buff), bytes_out, len);
     wally_clear(buff, sizeof(buff));
 
     return ret;
+}
+
+int wally_tx_elements_issuance_calculate_asset(const unsigned char *entropy,
+                                               size_t entropy_len,
+                                               unsigned char *bytes_out,
+                                               size_t len)
+{
+    unsigned char buff[SHA256_LEN] = { 0 };
+    return tx_elements_token_from_bytes(entropy, entropy_len,
+                                        buff, sizeof(buff),
+                                        bytes_out, len);
+}
+
+int wally_tx_elements_issuance_calculate_reissuance_token(const unsigned char *entropy,
+                                                          size_t entropy_len,
+                                                          uint32_t flags,
+                                                          unsigned char *bytes_out,
+                                                          size_t len)
+{
+    unsigned char buff[SHA256_LEN] = { 0 };
+
+    if ((flags & ~(WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE)))
+        return WALLY_EINVAL;
+
+    /* 32-byte '1' constant for unblinded and '2' for confidential */
+    buff[0] = flags + 1;
+    return tx_elements_token_from_bytes(entropy, entropy_len,
+                                        buff, sizeof(buff),
+                                        bytes_out, len);
 }
 
 int wally_tx_get_total_output_satoshi(const struct wally_tx *tx, uint64_t *value_out)

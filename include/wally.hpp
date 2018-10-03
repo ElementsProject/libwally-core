@@ -100,6 +100,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
 }
 
+#define WALLY_FN_B3_B(F, N) template <class I1, class O> inline int F(const I1 &i1, uint32_t i321, O & out) { \
+        return ::N(WALLYB(i1), i321, WALLYO(out)); \
+}
+
 #define WALLY_FN_B3B_B(F, N) template <class I1, class I2, class O> inline int F(const I1 &i1, uint32_t i321, const I2 &i2, O & out) { \
         return ::N(WALLYB(i1), i321, WALLYB(i2), WALLYO(out)); \
 }
@@ -465,6 +469,7 @@ WALLY_FN_6_B(tx_confidential_value_from_satoshi, wally_tx_confidential_value_fro
 WALLY_FN_P6BB33_B(tx_get_elements_signature_hash, wally_tx_get_elements_signature_hash)
 WALLY_FN_B3B_B(tx_elements_issuance_generate_entropy, wally_tx_elements_issuance_generate_entropy)
 WALLY_FN_B_B(tx_elements_issuance_calculate_asset, wally_tx_elements_issuance_calculate_asset)
+WALLY_FN_B3_B(tx_elements_issuance_calculate_reissuance_token, wally_tx_elements_issuance_calculate_reissuance_token)
 #endif /* BUILD_ELEMENTS */
 
 #undef WALLYB

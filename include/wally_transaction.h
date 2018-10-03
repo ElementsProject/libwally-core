@@ -23,6 +23,8 @@ extern "C" {
 #define WALLY_TX_FLAG_USE_WITNESS  0x1 /* Encode witness data if present */
 #define WALLY_TX_FLAG_USE_ELEMENTS 0x2 /* Encode/Decode as an elements transaction */
 
+#define WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE 0x1
+
 #define WALLY_TX_DUMMY_NULL 0x1 /* An empty witness item */
 #define WALLY_TX_DUMMY_SIG  0x2 /* A dummy signature */
 #define WALLY_TX_DUMMY_SIG_LOW_R  0x4 /* A dummy signature created with EC_FLAG_GRIND_R */
@@ -842,7 +844,7 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
  * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_get_elements_signature_hash(
     const struct wally_tx *tx,
@@ -865,7 +867,7 @@ WALLY_CORE_API int wally_tx_get_elements_signature_hash(
  * :param contract_hash: The issuer specified Ricardian contract hash.
  * :param contract_hash_len: Size of ``contract hash`` in bytes. Must be ``SHA256_LEN``.
  * :param bytes_out: Destination for the asset entropy.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
     const unsigned char *txhash,
@@ -882,11 +884,28 @@ WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
  * :param entropy: The asset entropy.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
  * :param bytes_out: Destination for the asset tag.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
     const unsigned char *entropy,
     size_t entropy_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Calculate a re-issuance token from an assets' entropy.
+ *
+ * :param entropy: The asset entropy.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
+ * :param flags: WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE if initial issuance was blinded,
+ * |     pass 0 otherwise.
+ * :param bytes_out: Destination for the re-issuance token.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ */
+WALLY_CORE_API int wally_tx_elements_issuance_calculate_reissuance_token(
+    const unsigned char *entropy,
+    size_t entropy_len,
+    uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
 
