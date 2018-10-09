@@ -21,7 +21,8 @@ Wally can currently be built for:
 - Windows
 
 And can be used from:
-- C/C++ (and compatible languages)
+- C and compatible languages which can call C interfaces
+- C++ (see include/wally.hpp for C++ container support)
 - Python 2.7+ or 3.x
 - Java
 - Javascript via node.js or Cordova
@@ -87,7 +88,7 @@ You can also install the binary wally releases using the released
 wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.6.3-cp27-cp27mu-linux_x86_64.whl
+pip install wallycore-0.6.4-cp27-cp27mu-linux_x86_64.whl
 ```
 
 The script `tools/build_python_wheels.sh` builds the release files and can be
