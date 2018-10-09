@@ -44,7 +44,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 13
+#serial 14
 
 AU_ALIAS([AC_JNI_INCLUDE_DIR], [AX_JNI_INCLUDE_DIR])
 AC_DEFUN([AX_JNI_INCLUDE_DIR],[
@@ -59,13 +59,12 @@ else
 	fi
 	AC_PATH_PROG([_ACJNI_JAVAC], [$JAVAC], [no])
 	if test "x$_ACJNI_JAVAC" = xno; then
-		AC_MSG_ERROR([cannot find JDK; try setting \$JAVAC or \$JAVA_HOME])
+		AC_MSG_WARN([cannot find JDK; try setting \$JAVAC or \$JAVA_HOME])
 	fi
 	_ACJNI_FOLLOW_SYMLINKS("$_ACJNI_JAVAC")
 	_JTOPDIR=`echo "$_ACJNI_FOLLOWED" | sed -e 's://*:/:g' -e 's:/[[^/]]*$::'`
 fi
 
-if test x$cross_compiling != xyes; then
 case "$host_os" in
         darwin*)        # Apple Java headers are inside the Xcode bundle.
             macos_version=$(sw_vers -productVersion | sed -n -e 's/^@<:@0-9@:>@*.\(@<:@0-9@:>@*\).@<:@0-9@:>@*/\1/p')
@@ -79,28 +78,26 @@ case "$host_os" in
             ;;
         *) _JINC="$_JTOPDIR/include";;
 esac
-fi
 _AS_ECHO_LOG([_JTOPDIR=$_JTOPDIR])
 _AS_ECHO_LOG([_JINC=$_JINC])
 
 # On Mac OS X 10.6.4, jni.h is a symlink:
 # /System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers/jni.h
 # -> ../../CurrentJDK/Headers/jni.h.
-
 AC_CACHE_CHECK(jni headers, ac_cv_jni_header_path,
 [
-if test -f "$_JINC/jni.h"; then
-  ac_cv_jni_header_path="$_JINC"
-  JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
-else
-  _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
-  if test -f "$_JTOPDIR/include/jni.h"; then
-    ac_cv_jni_header_path="$_JTOPDIR/include"
+  if test -f "$_JINC/jni.h"; then
+    ac_cv_jni_header_path="$_JINC"
     JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
   else
-    ac_cv_jni_header_path=none
+    _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
+    if test -f "$_JTOPDIR/include/jni.h"; then
+      ac_cv_jni_header_path="$_JTOPDIR/include"
+      JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
+    else
+      ac_cv_jni_header_path=none
+    fi
   fi
-fi
 ])
 
 # get the likely subdirectories for system specific java includes
@@ -116,13 +113,15 @@ cygwin*)	_JNI_INC_SUBDIRS="win32";;
 *)              _JNI_INC_SUBDIRS="genunix";;
 esac
 
-# add any subdirectories that are present
-for JINCSUBDIR in $_JNI_INC_SUBDIRS
-do
+if test "x$ac_cv_jni_header_path" != "xnone"; then
+  # add any subdirectories that are present
+  for JINCSUBDIR in $_JNI_INC_SUBDIRS
+  do
     if test -d "$_JTOPDIR/include/$JINCSUBDIR"; then
          JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$JINCSUBDIR"
     fi
-done
+  done
+fi
 ])
 
 # _ACJNI_FOLLOW_SYMLINKS <path>

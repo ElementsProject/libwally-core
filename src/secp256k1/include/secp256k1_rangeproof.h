@@ -14,21 +14,19 @@ extern "C" {
  *
  *  The exact representation of data inside is implementation defined and not
  *  guaranteed to be portable between different platforms or versions. It is
- *  however guaranteed to be 33 bytes in size, and can be safely copied/moved.
- *  If you need to convert to a format suitable for storage or transmission, use
- *  secp256k1_pedersen_commitment_serialize and secp256k1_pedersen_commitment_parse.
- *
- *  Furthermore, it is guaranteed to identical signatures will have identical
- *  representation, so they can be memcmp'ed.
+ *  however guaranteed to be 64 bytes in size, and can be safely copied/moved.
+ *  If you need to convert to a format suitable for storage, transmission, or
+ *  comparison, use secp256k1_pedersen_commitment_serialize and
+ *  secp256k1_pedersen_commitment_parse.
  */
 typedef struct {
-    unsigned char data[33];
+    unsigned char data[64];
 } secp256k1_pedersen_commitment;
 
 /**
  * Static constant generator 'h' maintained for historical reasons.
  */
-extern const secp256k1_generator *secp256k1_generator_h;
+SECP256K1_API extern const secp256k1_generator *secp256k1_generator_h;
 
 /** Parse a 33-byte commitment into a commitment object.
  *
@@ -61,8 +59,10 @@ SECP256K1_API int secp256k1_pedersen_commitment_serialize(
 void secp256k1_pedersen_context_initialize(secp256k1_context* ctx);
 
 /** Generate a pedersen commitment.
- *  Returns 1: commitment successfully created.
- *          0: error
+ *  Returns 1: Commitment successfully created.
+ *          0: Error. The blinding factor is larger than the group order
+ *             (probability for random 32 byte number < 2^-127) or results in the
+ *             point at infinity. Retry with a different factor.
  *  In:     ctx:        pointer to a context object, initialized for signing and Pedersen commitment (cannot be NULL)
  *          blind:      pointer to a 32-byte blinding factor (cannot be NULL)
  *          value:      unsigned 64-bit integer value to commit to.
@@ -80,8 +80,10 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_commit(
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5);
 
 /** Computes the sum of multiple positive and negative blinding factors.
- *  Returns 1: sum successfully computed.
- *          0: error
+ *  Returns 1: Sum successfully computed.
+ *          0: Error. A blinding factor is larger than the group order
+ *             (probability for random 32 byte number < 2^-127). Retry with
+ *             different factors.
  *  In:     ctx:        pointer to a context object (cannot be NULL)
  *          blinds:     pointer to pointers to 32-byte character arrays for blinding factors. (cannot be NULL)
  *          n:          number of factors pointed to by blinds.
@@ -133,7 +135,10 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_pedersen_verify_tally(
  * The function then subtracts the sum of all (vr + r') from the last element
  * of the `blinding_factor` array, setting the total sum to zero.
  *
- * Returns 1 always.
+ * Returns 1: Blinding factor successfully computed.
+ *         0: Error. A blinding_factor or generator_blind are larger than the group
+ *            order (probability for random 32 byte number < 2^-127). Retry with
+ *            different values.
  *
  * In:                 ctx: pointer to a context object
  *                   value: array of asset values, `v` in the above paragraph.

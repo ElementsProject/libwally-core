@@ -17,6 +17,65 @@
 
 #include "include/secp256k1_generator.h"
 
+void test_generator_api(void) {
+    unsigned char key[32];
+    unsigned char blind[32];
+    unsigned char sergen[33];
+    secp256k1_context *none = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+    secp256k1_context *sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    secp256k1_context *vrfy = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+    secp256k1_generator gen;
+    int32_t ecount = 0;
+
+    secp256k1_context_set_error_callback(none, counting_illegal_callback_fn, &ecount);
+    secp256k1_context_set_error_callback(sign, counting_illegal_callback_fn, &ecount);
+    secp256k1_context_set_error_callback(vrfy, counting_illegal_callback_fn, &ecount);
+    secp256k1_context_set_illegal_callback(none, counting_illegal_callback_fn, &ecount);
+    secp256k1_context_set_illegal_callback(sign, counting_illegal_callback_fn, &ecount);
+    secp256k1_context_set_illegal_callback(vrfy, counting_illegal_callback_fn, &ecount);
+    secp256k1_rand256(key);
+    secp256k1_rand256(blind);
+
+    CHECK(secp256k1_generator_generate(none, &gen, key) == 1);
+    CHECK(ecount == 0);
+    CHECK(secp256k1_generator_generate(none, NULL, key) == 0);
+    CHECK(ecount == 1);
+    CHECK(secp256k1_generator_generate(none, &gen, NULL) == 0);
+    CHECK(ecount == 2);
+
+    CHECK(secp256k1_generator_generate_blinded(sign, &gen, key, blind) == 1);
+    CHECK(ecount == 2);
+    CHECK(secp256k1_generator_generate_blinded(vrfy, &gen, key, blind) == 0);
+    CHECK(ecount == 3);
+    CHECK(secp256k1_generator_generate_blinded(none, &gen, key, blind) == 0);
+    CHECK(ecount == 4);
+    CHECK(secp256k1_generator_generate_blinded(vrfy, NULL, key, blind) == 0);
+    CHECK(ecount == 5);
+    CHECK(secp256k1_generator_generate_blinded(vrfy, &gen, NULL, blind) == 0);
+    CHECK(ecount == 6);
+    CHECK(secp256k1_generator_generate_blinded(vrfy, &gen, key, NULL) == 0);
+    CHECK(ecount == 7);
+
+    CHECK(secp256k1_generator_serialize(none, sergen, &gen) == 1);
+    CHECK(ecount == 7);
+    CHECK(secp256k1_generator_serialize(none, NULL, &gen) == 0);
+    CHECK(ecount == 8);
+    CHECK(secp256k1_generator_serialize(none, sergen, NULL) == 0);
+    CHECK(ecount == 9);
+
+    CHECK(secp256k1_generator_serialize(none, sergen, &gen) == 1);
+    CHECK(secp256k1_generator_parse(none, &gen, sergen) == 1);
+    CHECK(ecount == 9);
+    CHECK(secp256k1_generator_parse(none, NULL, sergen) == 0);
+    CHECK(ecount == 10);
+    CHECK(secp256k1_generator_parse(none, &gen, NULL) == 0);
+    CHECK(ecount == 11);
+
+    secp256k1_context_destroy(none);
+    secp256k1_context_destroy(sign);
+    secp256k1_context_destroy(vrfy);
+}
+
 void test_shallue_van_de_woestijne(void) {
     /* Matches with the output of the shallue_van_de_woestijne.sage SAGE program */
     static const secp256k1_ge_storage results[32] = {
@@ -131,8 +190,29 @@ void test_generator_generate(void) {
     }
 }
 
+void test_generator_fixed_vector(void) {
+    const unsigned char two_g[33] = {
+        0x0b,
+        0xc6, 0x04, 0x7f, 0x94, 0x41, 0xed, 0x7d, 0x6d, 0x30, 0x45, 0x40, 0x6e, 0x95, 0xc0, 0x7c, 0xd8,
+        0x5c, 0x77, 0x8e, 0x4b, 0x8c, 0xef, 0x3c, 0xa7, 0xab, 0xac, 0x09, 0xb9, 0x5c, 0x70, 0x9e, 0xe5
+    };
+    unsigned char result[33];
+    secp256k1_generator parse;
+
+    CHECK(secp256k1_generator_parse(ctx, &parse, two_g));
+    CHECK(secp256k1_generator_serialize(ctx, result, &parse));
+    CHECK(memcmp(two_g, result, 33) == 0);
+
+    result[0] = 0x0a;
+    CHECK(secp256k1_generator_parse(ctx, &parse, result));
+    result[0] = 0x08;
+    CHECK(!secp256k1_generator_parse(ctx, &parse, result));
+}
+
 void run_generator_tests(void) {
     test_shallue_van_de_woestijne();
+    test_generator_fixed_vector();
+    test_generator_api();
     test_generator_generate();
 }
 

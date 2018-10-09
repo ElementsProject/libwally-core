@@ -15,36 +15,55 @@
 #include "scalar.h"
 
 static void secp256k1_generator_load(secp256k1_ge* ge, const secp256k1_generator* gen) {
-    secp256k1_fe fe;
-    secp256k1_fe_set_b32(&fe, &gen->data[1]);
-    secp256k1_ge_set_xquad(ge, &fe);
-    if (gen->data[0] & 1) {
-        secp256k1_ge_neg(ge, ge);
-    }
+    int succeed;
+    succeed = secp256k1_fe_set_b32(&ge->x, &gen->data[0]);
+    VERIFY_CHECK(succeed != 0);
+    succeed = secp256k1_fe_set_b32(&ge->y, &gen->data[32]);
+    VERIFY_CHECK(succeed != 0);
+    ge->infinity = 0;
+    (void) succeed;
 }
 
-static void secp256k1_generator_save(secp256k1_generator* commit, secp256k1_ge* ge) {
-    secp256k1_fe_normalize(&ge->x);
-    secp256k1_fe_get_b32(&commit->data[1], &ge->x);
-    commit->data[0] = 11 ^ secp256k1_fe_is_quad_var(&ge->y);
+static void secp256k1_generator_save(secp256k1_generator *gen, secp256k1_ge* ge) {
+    VERIFY_CHECK(!secp256k1_ge_is_infinity(ge));
+    secp256k1_fe_normalize_var(&ge->x);
+    secp256k1_fe_normalize_var(&ge->y);
+    secp256k1_fe_get_b32(&gen->data[0], &ge->x);
+    secp256k1_fe_get_b32(&gen->data[32], &ge->y);
 }
 
 int secp256k1_generator_parse(const secp256k1_context* ctx, secp256k1_generator* gen, const unsigned char *input) {
+    secp256k1_fe x;
+    secp256k1_ge ge;
+
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(gen != NULL);
     ARG_CHECK(input != NULL);
-    if ((input[0] & 0xFE) != 10) {
+
+    if ((input[0] & 0xFE) != 10 ||
+        !secp256k1_fe_set_b32(&x, &input[1]) ||
+        !secp256k1_ge_set_xquad(&ge, &x)) {
         return 0;
     }
-    memcpy(gen->data, input, sizeof(gen->data));
+    if (input[0] & 1) {
+        secp256k1_ge_neg(&ge, &ge);
+    }
+    secp256k1_generator_save(gen, &ge);
     return 1;
 }
 
 int secp256k1_generator_serialize(const secp256k1_context* ctx, unsigned char *output, const secp256k1_generator* gen) {
+    secp256k1_ge ge;
+
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(output != NULL);
     ARG_CHECK(gen != NULL);
-    memcpy(output, gen->data, sizeof(gen->data));
+
+    secp256k1_generator_load(&ge, gen);
+
+    output[0] = 11 ^ secp256k1_fe_is_quad_var(&ge.y);
+    secp256k1_fe_normalize_var(&ge.x);
+    secp256k1_fe_get_b32(&output[1], &ge.x);
     return 1;
 }
 
@@ -142,13 +161,13 @@ static void shallue_van_de_woestijne(secp256k1_ge* ge, const secp256k1_fe* t) {
 }
 
 static int secp256k1_generator_generate_internal(const secp256k1_context* ctx, secp256k1_generator* gen, const unsigned char *key32, const unsigned char *blind32) {
-    static const unsigned char prefix1[16] = "1st generation: ";
-    static const unsigned char prefix2[16] = "2nd generation: ";
+    static const unsigned char prefix1[17] = "1st generation: ";
+    static const unsigned char prefix2[17] = "2nd generation: ";
     secp256k1_fe t = SECP256K1_FE_CONST(0, 0, 0, 0, 0, 0, 0, 4);
     secp256k1_ge add;
     secp256k1_gej accum;
     int overflow;
-    secp256k1_sha256_t sha256;
+    secp256k1_sha256 sha256;
     unsigned char b32[32];
     int ret = 1;
 
@@ -191,7 +210,6 @@ int secp256k1_generator_generate(const secp256k1_context* ctx, secp256k1_generat
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(gen != NULL);
     ARG_CHECK(key32 != NULL);
-    ARG_CHECK(secp256k1_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
     return secp256k1_generator_generate_internal(ctx, gen, key32, NULL);
 }
 
