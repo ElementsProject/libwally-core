@@ -308,7 +308,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
      * currently differ from serialized, if this function took a pointer
      * to an array, all this is actually just a very convoluted cast.
      */
-    if (!(generators = wally_malloc(num_inputs * ASSET_GENERATOR_LEN))) {
+    if (!(generators = wally_malloc(num_inputs * sizeof(secp256k1_generator)))) {
         ret = WALLY_ENOMEM;
         goto cleanup;
     }
@@ -342,7 +342,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 cleanup:
     wally_clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
     if (generators)
-        wally_clear(generators, generator_len);
+        wally_clear(generators, num_inputs * sizeof(secp256k1_generator));
     wally_free(generators);
     return ret;
 }
