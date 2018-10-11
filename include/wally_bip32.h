@@ -49,7 +49,7 @@ struct ext_key {
     uint32_t child_num;
     /** The Hash160 of this key */
     unsigned char hash160[20];
-    /** The child number of the parent key that this key represents */
+    /** The version code for this key indicating main/testnet and private/public */
     uint32_t version;
     unsigned char pad2[3];
     /** The public key with prefix byte 0x2 or 0x3 */
