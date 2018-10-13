@@ -23,6 +23,7 @@ rm -f src/*pyc
 rm -f src/test/*pyc
 rm -f src/config.h.in
 rm -rf src/lcov*
+rm -f src/test_bech32*
 rm -f src/test_clear*
 rm -f src/test_tx*
 rm -f src/test-suite.log

@@ -2,6 +2,11 @@
 
 ## Version 0.6.5
 
+- Invalid bech32 addresses may have caused an out of bounds read. Thanks to
+  Christian Reitter and Dr. Jochen Hoenicke for finding and reporting this
+  issue. All users are advised to upgrade as soon as possible to minimise
+  any potential impact.
+
 - BIP38_KEY_TESTNET was changed to reflect the testnet network version. BIP38 testnet keys
   created with older versions of wally were not valid for testnet.
 

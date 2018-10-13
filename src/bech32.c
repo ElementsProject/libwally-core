@@ -99,10 +99,10 @@ static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char 
     while (*data_len < input_len && input[(input_len - 1) - *data_len] != '1') {
         ++(*data_len);
     }
-    hrp_len = input_len - (1 + *data_len);
-    if (hrp_len < 1 || *data_len < 6) {
+    if (1 + *data_len >= input_len || *data_len < 6) {
         return 0;
     }
+    hrp_len = input_len - (1 + *data_len);
     *(data_len) -= 6;
     for (i = 0; i < hrp_len; ++i) {
         int ch = input[i];

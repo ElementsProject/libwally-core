@@ -194,6 +194,11 @@ SUBDIRS = secp256k1
 TESTS =
 noinst_PROGRAMS =
 if RUN_TESTS
+TESTS += test_bech32
+noinst_PROGRAMS += test_bech32
+test_bech32_SOURCES = ctest/test_bech32.c
+test_bech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_bech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear

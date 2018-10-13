@@ -39,6 +39,7 @@ src/stamp-h1
 src/test/Makefile
 src/test/Makefile.in
 src/wallycore.pc
+src/test_bech32*
 src/test_clear*
 src/test_tx*
 src/test_elements_tx*

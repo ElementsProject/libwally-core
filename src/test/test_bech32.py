@@ -66,6 +66,11 @@ class Bech32Tests(unittest.TestCase):
             ret, result_script_hex = self.decode(addr, family)
             self.assertEqual(ret, WALLY_EINVAL)
 
+        out, out_len = make_cbuffer('00' * (32 + 2))
+        bad = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg'
+        ret, written = wally_addr_segwit_to_bytes(utf8(bad), utf8('tb'), 0, out, out_len)
+        self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+
 
 if __name__ == '__main__':
     unittest.main()
