@@ -94,7 +94,7 @@ struct wally_tx_input {
     size_t issuance_amount_rangeproof_len;
     unsigned char *inflation_keys_rangeproof;
     size_t inflation_keys_rangeproof_len;
-    struct wally_tx_witness_stack *pegin_witness; /* TODO: not implemented */
+    struct wally_tx_witness_stack *pegin_witness;
 #endif /* BUILD_ELEMENTS */
 };
 
@@ -567,6 +567,7 @@ WALLY_CORE_API int wally_tx_get_signature_hash(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
 /**
  * Determine if a transaction is a coinbase transaction.
  *
@@ -643,6 +644,7 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_free(
  * :param issuance_amount_rangeproof_len: Size of ``issuance_amount_rangeproof`` in bytes.
  * :param inflation_keys_rangeproof: Inflation keys rangeproof.
  * :param inflation_keys_rangeproof_len: Size of ``inflation_keys_rangeproof`` in bytes.
+ * :param pegin_witness: The pegin witness stack for the input, or NULL if no witness is present.
  * :param output: Destination for the resulting transaction input.
  */
 WALLY_CORE_API int wally_tx_elements_input_init_alloc(
@@ -665,7 +667,18 @@ WALLY_CORE_API int wally_tx_elements_input_init_alloc(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     struct wally_tx_input **output);
+
+/**
+ * Determine if an input is a pegin.
+ *
+ * :param input: The input to check.
+ * :param written: 1 if the input is a pegin, otherwise 0.
+ */
+WALLY_CORE_API int wally_tx_elements_input_is_pegin(
+    const struct wally_tx_input *input,
+    size_t *written);
 
 /**
  * Set commitment data on an output.
@@ -761,6 +774,7 @@ WALLY_CORE_API int wally_tx_elements_output_init_alloc(
  * :param issuance_amount_rangeproof_len: Size of ``issuance_amount_rangeproof`` in bytes.
  * :param inflation_keys_rangeproof: Inflation keys rangeproof.
  * :param inflation_keys_rangeproof_len: Size of ``inflation_keys_rangeproof`` in bytes.
+ * :param pegin_witness: The pegin witness stack for the input, or NULL if no witness is present.
  * :param flags: Flags controlling input creation. Must be 0.
  */
 WALLY_CORE_API int wally_tx_add_elements_raw_input(
@@ -784,6 +798,7 @@ WALLY_CORE_API int wally_tx_add_elements_raw_input(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     uint32_t flags);
 
 /**

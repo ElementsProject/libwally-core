@@ -1,5 +1,10 @@
 # Changes
 
+## Version 0.6.5
+
+- API change of wally_tx_elements_input_init_alloc and wally_tx_add_elements_raw_input
+  to also include the pegin witness.
+
 ## Version 0.6.4
 
 - WALLY_SECP_RANDOMISE_LEN was renamed to WALLY_SECP_RANDOMIZE_LEN for

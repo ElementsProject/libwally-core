@@ -96,7 +96,11 @@ static bool is_valid_tx_input(const struct wally_tx_input *input)
 {
     return input &&
            BYTES_VALID(input->script, input->script_len) &&
-           (!input->witness || is_valid_witness_stack(input->witness));
+           (!input->witness || is_valid_witness_stack(input->witness))
+#ifdef BUILD_ELEMENTS
+            && (!input->pegin_witness || is_valid_witness_stack(input->pegin_witness))
+#endif
+           ;
 }
 
 static bool is_valid_tx_output(const struct wally_tx_output *output)
@@ -109,6 +113,11 @@ static bool is_valid_tx_output(const struct wally_tx_output *output)
 static bool is_valid_elements_tx_input(const struct wally_tx_input *input)
 {
     return is_valid_tx_input(input) && (input->features & WALLY_TX_IS_ELEMENTS);
+}
+
+static bool is_valid_elements_tx_input_pegin(const struct wally_tx_input *input)
+{
+    return is_valid_elements_tx_input(input) && (input->features & WALLY_TX_IS_PEGIN);
 }
 
 static bool is_null_bytes(const unsigned char *bytes, size_t bytes_len)
@@ -349,6 +358,11 @@ static bool clone_input_to(
     struct wally_tx_witness_stack *new_witness;
     new_witness = src->witness ? clone_witness(src->witness) : NULL;
 
+#ifdef BUILD_ELEMENTS
+    struct wally_tx_witness_stack *new_pegin_witness;
+    new_pegin_witness = src->pegin_witness ? clone_witness(src->pegin_witness) : NULL;
+#endif
+
     if (!clone_bytes(&new_script, src->script, src->script_len) ||
 #ifdef BUILD_ELEMENTS
         !clone_bytes(&new_issuance_amount, src->issuance_amount, src->issuance_amount_len) ||
@@ -363,6 +377,7 @@ static bool clone_input_to(
         clear_and_free(new_inflation_keys, src->inflation_keys_len);
         clear_and_free(new_issuance_amount_rangeproof, src->issuance_amount_rangeproof_len);
         clear_and_free(new_inflation_keys_rangeproof, src->inflation_keys_rangeproof_len);
+        wally_tx_witness_stack_free(new_pegin_witness);
 #endif
         wally_tx_witness_stack_free(new_witness);
         return false;
@@ -375,6 +390,7 @@ static bool clone_input_to(
     dst->inflation_keys = new_inflation_keys;
     dst->issuance_amount_rangeproof = new_issuance_amount_rangeproof;
     dst->inflation_keys_rangeproof = new_inflation_keys_rangeproof;
+    dst->pegin_witness = new_pegin_witness;
 #endif
     dst->witness = new_witness;
     return true;
@@ -565,10 +581,12 @@ static int tx_elements_input_init(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     struct wally_tx_input *output,
     bool is_elements)
 {
     struct wally_tx_witness_stack *new_witness = NULL;
+    struct wally_tx_witness_stack *new_pegin_witness = NULL;
     unsigned char *new_script = NULL;
     int ret, old_features;
 
@@ -579,6 +597,7 @@ static int tx_elements_input_init(
     old_features = output->features;
 
     if ((witness && !(new_witness = clone_witness(witness))) ||
+        (pegin_witness && !(new_pegin_witness = clone_witness(pegin_witness))) ||
         !clone_bytes(&new_script, script, script_len))
         ret = WALLY_ENOMEM;
     else {
@@ -601,6 +620,7 @@ static int tx_elements_input_init(
 
     if (ret != WALLY_OK) {
         wally_tx_witness_stack_free(new_witness);
+        wally_tx_witness_stack_free(new_pegin_witness);
         clear_and_free(new_script, script_len);
         output->features = old_features;
     } else {
@@ -610,6 +630,8 @@ static int tx_elements_input_init(
             output->index = index & WALLY_TX_INDEX_MASK;
         else
             output->index = index;
+        if (is_elements && !is_coinbase && (index & WALLY_TX_PEGIN_FLAG))
+            output->features |= WALLY_TX_IS_PEGIN;
         if (is_coinbase)
             output->features |= WALLY_TX_IS_COINBASE;
         output->sequence = sequence;
@@ -617,7 +639,7 @@ static int tx_elements_input_init(
         output->script_len = script_len;
         output->witness = new_witness;
 #ifdef BUILD_ELEMENTS
-        output->pegin_witness = NULL;
+        output->pegin_witness = new_pegin_witness;
 #endif /* BUILD_ELEMENTS */
     }
     return ret;
@@ -640,6 +662,7 @@ int wally_tx_elements_input_init(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     struct wally_tx_input *output)
 {
     return tx_elements_input_init(txhash, txhash_len,
@@ -651,7 +674,7 @@ int wally_tx_elements_input_init(
                                   inflation_keys, inflation_keys_len,
                                   issuance_amount_rangeproof, issuance_amount_rangeproof_len,
                                   inflation_keys_rangeproof, inflation_keys_rangeproof_len,
-                                  output, true);
+                                  pegin_witness, output, true);
 }
 
 int wally_tx_input_init(const unsigned char *txhash, size_t txhash_len,
@@ -664,7 +687,7 @@ int wally_tx_input_init(const unsigned char *txhash, size_t txhash_len,
                                   index, sequence,
                                   script, script_len,
                                   witness, NULL, 0, NULL, 0,
-                                  NULL, 0, NULL, 0, NULL, 0, NULL, 0, output, false);
+                                  NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, output, false);
 }
 
 int wally_tx_elements_input_init_alloc(
@@ -687,6 +710,7 @@ int wally_tx_elements_input_init_alloc(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     struct wally_tx_input **output)
 {
     struct wally_tx_input *result;
@@ -703,7 +727,8 @@ int wally_tx_elements_input_init_alloc(
                                  issuance_amount_rangeproof,
                                  issuance_amount_rangeproof_len,
                                  inflation_keys_rangeproof,
-                                 inflation_keys_rangeproof_len, result, true);
+                                 inflation_keys_rangeproof_len, pegin_witness,
+                                 result, true);
 
     if (ret != WALLY_OK) {
         clear_and_free(result, sizeof(*result));
@@ -1199,12 +1224,13 @@ static int tx_add_elements_raw_input(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     uint32_t flags,
     bool is_elements)
 {
     /* Add an input without allocating a temporary wally_tx_input */
     struct wally_tx_input input = {
-        { 0 }, index & WALLY_TX_INDEX_MASK, sequence,
+        { 0 }, index, sequence,
         (unsigned char *)script, script_len,
         (struct wally_tx_witness_stack *) witness,
         is_elements ? WALLY_TX_IS_ELEMENTS : 0,
@@ -1216,9 +1242,11 @@ static int tx_add_elements_raw_input(
         (unsigned char *) issuance_amount_rangeproof,
         issuance_amount_rangeproof_len,
         (unsigned char *) inflation_keys_rangeproof,
-        inflation_keys_rangeproof_len, NULL
+        inflation_keys_rangeproof_len,
+        (struct wally_tx_witness_stack *) pegin_witness
 #endif /* BUILD_ELEMENTS */
     };
+    bool is_coinbase;
     int ret;
 
     if (flags)
@@ -1232,6 +1260,20 @@ static int tx_add_elements_raw_input(
         BYTES_INVALID(issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
         BYTES_INVALID(inflation_keys_rangeproof, inflation_keys_rangeproof_len))
         return WALLY_EINVAL;
+
+    is_coinbase = is_coinbase_bytes(txhash, txhash_len, index);
+    if (is_elements && !is_coinbase)
+        input.index = index & WALLY_TX_INDEX_MASK;
+    else
+        input.index = index;
+    if (is_coinbase)
+        input.features |= WALLY_TX_IS_COINBASE;
+    else if (is_elements) {
+        if (index & WALLY_TX_ISSUANCE_FLAG)
+            input.features |= WALLY_TX_IS_ISSUANCE;
+        if (index & WALLY_TX_PEGIN_FLAG)
+            input.features |= WALLY_TX_IS_PEGIN;
+    }
 
     memcpy(input.txhash, txhash, WALLY_TXHASH_LEN);
 #ifdef BUILD_ELEMENTS
@@ -1266,6 +1308,7 @@ int wally_tx_add_elements_raw_input(
     size_t issuance_amount_rangeproof_len,
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness,
     uint32_t flags)
 {
     return tx_add_elements_raw_input(tx, txhash, txhash_len,
@@ -1276,7 +1319,7 @@ int wally_tx_add_elements_raw_input(
                                      inflation_keys, inflation_keys_len,
                                      issuance_amount_rangeproof, issuance_amount_rangeproof_len,
                                      inflation_keys_rangeproof, inflation_keys_rangeproof_len,
-                                     flags, true);
+                                     pegin_witness, flags, true);
 }
 
 int wally_tx_add_raw_input(struct wally_tx *tx,
@@ -1290,7 +1333,7 @@ int wally_tx_add_raw_input(struct wally_tx *tx,
                                      index, sequence, script,
                                      script_len, witness,
                                      NULL, 0, NULL, 0, NULL, 0, NULL, 0,
-                                     NULL, 0, NULL, 0, flags, false);
+                                     NULL, 0, NULL, 0, NULL, flags, false);
 }
 
 int wally_tx_remove_input(struct wally_tx *tx, size_t index)
@@ -1663,19 +1706,31 @@ static int tx_get_length(const struct wally_tx *tx,
 int wally_tx_get_length(const struct wally_tx *tx, uint32_t flags,
                         size_t *written)
 {
-    return tx_get_length(tx, NULL, flags, written, false);
+    size_t is_elements = 0;
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+
+    return tx_get_length(tx, NULL, flags, written, is_elements != 0);
 }
 
 int wally_tx_get_weight(const struct wally_tx *tx, size_t *written)
 {
     size_t base_size, witness_size, witness_count;
+    size_t is_elements = 0;
 
     if (written)
         *written = 0;
 
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+
     if (!written ||
         tx_get_lengths(tx, NULL, WALLY_TX_FLAG_USE_WITNESS, &base_size,
-                       &witness_size, &witness_count, false) != WALLY_OK)
+                       &witness_size, &witness_count, is_elements != 0) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (witness_count)
@@ -1973,6 +2028,8 @@ static int tx_to_bytes(const struct wally_tx *tx,
         p += sizeof(input->txhash);
         if (!opts && (input->features & WALLY_TX_IS_ISSUANCE))
             p += uint32_to_le_bytes(input->index | WALLY_TX_ISSUANCE_FLAG, p);
+        else if (!opts && (input->features & WALLY_TX_IS_PEGIN))
+            p += uint32_to_le_bytes(input->index | WALLY_TX_PEGIN_FLAG, p);
         else
             p += uint32_to_le_bytes(input->index, p);
         if (opts) {
@@ -2375,7 +2432,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                      entropy, entropy ? WALLY_TX_ASSET_TAG_LEN : 0,
                                      issuance_amount_len ? issuance_amount : NULL, issuance_amount_len,
                                      inflation_keys_len ? inflation_keys : NULL, inflation_keys_len,
-                                     NULL, 0, NULL, 0, &result->inputs[i], is_elements);
+                                     NULL, 0, NULL, 0, NULL, &result->inputs[i], is_elements);
         if (ret != WALLY_OK)
             goto fail;
         result->num_inputs += 1;
@@ -2531,6 +2588,17 @@ int wally_tx_is_elements(const struct wally_tx *tx, size_t *written)
         return WALLY_EINVAL;
 
     *written = is_valid_elements_tx(tx);
+
+    return WALLY_OK;
+}
+
+int wally_tx_elements_input_is_pegin(const struct wally_tx_input *input,
+                                     size_t *written)
+{
+    if (!input || !written)
+        return WALLY_EINVAL;
+
+    *written = is_valid_elements_tx_input_pegin(input);
 
     return WALLY_OK;
 }

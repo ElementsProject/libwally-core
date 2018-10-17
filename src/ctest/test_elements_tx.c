@@ -16,6 +16,19 @@ static const char *wit_sighash_hex = "450f330746507f7a53b805895b6026dd5947cbf65a
 
 static const char *coinbase_hex = "0200000001010000000000000000000000000000000000000000000000000000000000000000ffffffff0502b2010101ffffffff020125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000000000b1b2001976a914370b9f298b2e2a9d8751bcf1a78787148fd5372d88ac0125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000000000000000266a24aa21a9edd591f3570cdb19344a1cca79de32d6e0e8b15dac7764dd47d3b30824c7d753ef000000ff0000012010000000000000000000000000000000000000000000000000000000000000000000000000";
 
+static const char *pegin_hex = "02000000010146d1860f7d3ce3711c69a1ed3a78613321aeaf4e5b3560ab0bbc62edb1f649dd0100004000ffffffff0201e13da48cd2489551ba5c4749f0e87a6566df8c0a71f5cb5865991de1c71c6d6801000000003b9ab2f4001976a914e960f3b3149abbeed93419a8ad7c61d6dff7ea8188ac01e13da48cd2489551ba5c4749f0e87a6566df8c0a71f5cb5865991de1c71c6d6801000000000000170c00000000000000000247304402206a29b6ce97619a0ff623af2b6e1c598cb17949806288dacbc4353000b80a6a4102203728658c5bf603bf0422e2bda65bd5b0d088d149dd471c33b6442a6314aed2190121031eeece02cd7cf0991767576bccc59fc8c61fd04bd22e6c400f18a4d2b14e4175060800ca9a3b0000000020e13da48cd2489551ba5c4749f0e87a6566df8c0a71f5cb5865991de1c71c6d682006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f1600143fd9e2dd6fddb292c1756ea8a4232bdc4778fdfabc02000000019f15926099f03eb83aa9a7033ead61251134e48ea485952bdd71dc58154223ac0000000049483045022100a082acded3b4b07656b992835cb2914d23a910f8fae4fa6dfdffab72f50627b802202ae910309c257ee64cee2f72677577a6e406a110528c162f929b55dcce9b83e401fdffffff0250196bee0000000017a914032219e59890b855333f795430d6be7c2317f60d8700ca9a3b0000000017a914f0b371c2caad4dc2ab9b9d18cf8dcd5ed6399a8d8765000000970000002019012458b559e25cb28b4a7a1bbf7ed9f21aa534eaffafb95180b60915e78f297f90e5961b1e31891c20358ba59fa5f3e746cb81dc889a248f4be6fb0741d156623f625affff7f20000000000200000002e9356f452ac067d744d9bebae569c9fcfebd24a87ff391638c82037a244d3fde46d1860f7d3ce3711c69a1ed3a78613321aeaf4e5b3560ab0bbc62edb1f649dd010500000000";
+static const char *pegin_wit_hex[] =
+{
+    "00ca9a3b00000000",
+    "e13da48cd2489551ba5c4749f0e87a6566df8c0a71f5cb5865991de1c71c6d68",
+    "06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f",
+    "00143fd9e2dd6fddb292c1756ea8a4232bdc4778fdfa",
+    "02000000019f15926099f03eb83aa9a7033ead61251134e48ea485952bdd71dc58154223ac0000000049483045022100a082acded3b4b07656b992835cb2914d23a910f8fae4fa6dfdffab72f50627b802202ae910309c257ee64cee2f72677577a6e406a110528c162f929b55dcce9b83e401fdffffff0250196bee0000000017a914032219e59890b855333f795430d6be7c2317f60d8700ca9a3b0000000017a914f0b371c2caad4dc2ab9b9d18cf8dcd5ed6399a8d8765000000",
+    "0000002019012458b559e25cb28b4a7a1bbf7ed9f21aa534eaffafb95180b60915e78f297f90e5961b1e31891c20358ba59fa5f3e746cb81dc889a248f4be6fb0741d156623f625affff7f20000000000200000002e9356f452ac067d744d9bebae569c9fcfebd24a87ff391638c82037a244d3fde46d1860f7d3ce3711c69a1ed3a78613321aeaf4e5b3560ab0bbc62edb1f649dd0105"
+};
+static const size_t pegin_tx_siz = 718; // from liquidd
+static const size_t pegin_tx_vsiz = 304; // from liquidd
+
 #define check_ret(r) if (r != WALLY_OK) return false
 
 static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
@@ -75,6 +88,7 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
                                              in->issuance_amount_rangeproof_len,
                                              in->inflation_keys_rangeproof,
                                              in->inflation_keys_rangeproof_len,
+                                             in->pegin_witness,
                                              &new_in);
     check_ret(ret);
     for (i = 0; i < 5; ++i) {
@@ -94,7 +108,8 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
                                           new_in->issuance_amount_rangeproof,
                                           new_in->issuance_amount_rangeproof_len,
                                           new_in->inflation_keys_rangeproof,
-                                          new_in->inflation_keys_rangeproof_len, 0);
+                                          new_in->inflation_keys_rangeproof_len,
+                                          new_in->pegin_witness, 0);
     check_ret(ret);
     ret = wally_tx_remove_input(tx, 3); /* Remove middle */
     check_ret(ret);
@@ -177,13 +192,109 @@ static bool tx_coinbase(const char *tx_hex)
     if (ret != WALLY_OK || !is_coinbase)
         return false;
 
+    /* Clean up (for valgrind heap checking) */
+    ret = wally_tx_free(tx);
+    check_ret(ret);
+
+    return true;
+}
+
+static bool tx_pegin(const char *tx_hex, const char **tx_pegin_wit_hex, size_t num_pegin_wit)
+{
+    struct wally_tx *tx;
+    struct wally_tx_input *in;
+    struct wally_tx_witness_stack* pegin_wit;
+    struct wally_tx_witness_item *item;
+    char *new_hex;
+    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
+    size_t is_elements, is_pegin, siz, i;
+    int ret;
+
+    /* Unserialize and serialize the tx and verify they match */
+    ret = wally_tx_from_hex(tx_hex, flags, &tx);
+    check_ret(ret);
+
+    ret = wally_tx_to_hex(tx, flags, &new_hex);
+    if (ret != WALLY_OK || strcmp(tx_hex, new_hex))
+        return false;
+
+    ret = wally_free_string(new_hex);
+    check_ret(ret);
+
+    ret = wally_tx_is_elements(tx, &is_elements);
+    if (ret != WALLY_OK || !is_elements)
+        return false;
+
+    ret = wally_tx_get_length(tx, WALLY_TX_FLAG_USE_WITNESS, &siz);
+    if (ret != WALLY_OK || siz != pegin_tx_siz)
+        return false;
+
+    ret = wally_tx_get_vsize(tx, &siz);
+    if (ret != WALLY_OK || siz != pegin_tx_vsiz)
+        return false;
+
+    in = &tx->inputs[0];
+
+    ret = wally_tx_elements_input_is_pegin(in, &is_pegin);
+    if (ret != WALLY_OK || !is_pegin)
+        return false;
+
+    pegin_wit = in->pegin_witness;
+    if (!pegin_wit || pegin_wit->num_items != num_pegin_wit)
+        return false;
+
+    for (i = 0; i < pegin_wit->num_items; ++i) {
+        bool failed;
+
+        item = &pegin_wit->items[i];
+
+        ret = wally_hex_from_bytes(item->witness, item->witness_len, &new_hex);
+        failed = ret != WALLY_OK || strcmp(tx_pegin_wit_hex[i], new_hex);
+
+        ret = wally_free_string(new_hex);
+        check_ret(ret);
+
+        if (failed)
+            return false;
+    }
+
+    ret = wally_tx_add_elements_raw_input(tx, in->txhash, WALLY_TXHASH_LEN,
+                                          in->index | WALLY_TX_PEGIN_FLAG, in->sequence,
+                                          in->script, in->script_len,
+                                          in->witness,
+                                          in->blinding_nonce, WALLY_TX_ASSET_TAG_LEN,
+                                          in->entropy, WALLY_TX_ASSET_TAG_LEN,
+                                          in->issuance_amount, in->issuance_amount_len,
+                                          in->inflation_keys, in->inflation_keys_len,
+                                          in->issuance_amount_rangeproof,
+                                          in->issuance_amount_rangeproof_len,
+                                          in->inflation_keys_rangeproof,
+                                          in->inflation_keys_rangeproof_len,
+                                          in->pegin_witness, 0);
+    check_ret(ret);
+
+    ret = wally_tx_remove_input(tx, 0);
+    check_ret(ret);
+
+    ret = wally_tx_to_hex(tx, flags, &new_hex);
+    if (ret != WALLY_OK || strcmp(tx_hex, new_hex))
+        return false;
+
+    ret = wally_free_string(new_hex);
+    check_ret(ret);
+
+    /* Clean up (for valgrind heap checking) */
+    ret = wally_tx_free(tx);
+    check_ret(ret);
+
     return true;
 }
 
 static bool test_tx_parse(void)
 {
     return tx_roundtrip(asset_issuance_hex, asset_issuance_sighash_hex) &&
-           tx_roundtrip(wit_hex, wit_sighash_hex) && tx_coinbase(coinbase_hex);
+           tx_roundtrip(wit_hex, wit_sighash_hex) && tx_coinbase(coinbase_hex) &&
+           tx_pegin(pegin_hex, pegin_wit_hex, sizeof(pegin_wit_hex) / sizeof(pegin_wit_hex[0]));
 }
 
 int main(void)

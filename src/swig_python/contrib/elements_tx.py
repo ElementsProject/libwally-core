@@ -14,12 +14,12 @@ class ElementsTxTests(unittest.TestCase):
         witness = tx_witness_stack_init(5)
         tx_witness_stack_add(witness, witness_script)
         with self.assertRaises(TypeError):
-            tx_elements_input_init(None, 0, seq, script, witness, nonce, entropy, None, None, None, None) # Null txhash
+            tx_elements_input_init(None, 0, seq, script, witness, nonce, entropy) # Null txhash
         with self.assertRaises(ValueError):
-            tx_elements_input_init(bytes(), 0, seq, script, witness, nonce, entropy, None, None, None, None) # Empty txhash
+            tx_elements_input_init(bytes(), 0, seq, script, witness, nonce, entropy) # Empty txhash
 
         # Create a valid input
-        tx_input = tx_elements_input_init(txhash, 0, seq, script, witness, nonce, entropy, None, None, None, None)
+        tx_input = tx_elements_input_init(txhash, 0, seq, script, witness, nonce, entropy)
         self.assertEqual(tx_input_get_txhash(tx_input), txhash)
         self.assertEqual(tx_input_get_index(tx_input), 0)
         self.assertEqual(tx_input_get_sequence(tx_input), seq)
@@ -28,7 +28,7 @@ class ElementsTxTests(unittest.TestCase):
         self.assertEqual(tx_input_get_witness_len(tx_input, 0), len(witness_script))
         self.assertEqual(tx_input_get_witness(tx_input, 0), witness_script)
         # Witness can be null
-        tx_input = tx_elements_input_init(txhash, 0, seq, b'0000', None, None, None, None, None, None, None)
+        tx_input = tx_elements_input_init(txhash, 0, seq, b'0000')
         with self.assertRaises(ValueError):
             tx_input_get_witness(tx_input, 0) # Can't get a non-existent witness
 
@@ -38,7 +38,7 @@ class ElementsTxTests(unittest.TestCase):
 
         # Create a valid output
         ct_value = tx_confidential_value_from_satoshi(satoshi)
-        tx_output = tx_elements_output_init(script, None, ct_value, None, None, None)
+        tx_output = tx_elements_output_init(script, None, ct_value)
         self.assertEqual(tx_output_get_script_len(tx_output), len(script))
         self.assertEqual(tx_output_get_script(tx_output), script)
 
@@ -47,11 +47,11 @@ class ElementsTxTests(unittest.TestCase):
         nonce, entropy = b'0' * 32, b'0' * 32
         witness = tx_witness_stack_init(5)
         tx_witness_stack_add(witness, witness_script)
-        tx_input = tx_elements_input_init(txhash, 0, seq, script, witness, nonce, entropy, None, None, None, None)
-        tx_input_no_witness = tx_elements_input_init(txhash, 0, seq, script, None, nonce, entropy, None, None, None, None)
+        tx_input = tx_elements_input_init(txhash, 0, seq, script, witness, nonce, entropy)
+        tx_input_no_witness = tx_elements_input_init(txhash, 0, seq, script, None, nonce, entropy)
 
         ct_value = tx_confidential_value_from_satoshi(10000)
-        tx_output = tx_elements_output_init(script, None, ct_value, None, None, None)
+        tx_output = tx_elements_output_init(script, None, ct_value)
 
         tx = tx_init(2, 0, 10, 2)
         self.assertEqual(tx_get_num_inputs(tx), 0)
@@ -64,7 +64,7 @@ class ElementsTxTests(unittest.TestCase):
         tx_add_input(tx, tx_input)
         self.assertEqual(tx_get_witness_count(tx), 1)
         tx_add_input(tx, tx_input)
-        tx_add_elements_raw_input(tx, txhash, 0, seq, script, witness, nonce, entropy, None, None, None, None, 0)
+        tx_add_elements_raw_input(tx, txhash, 0, seq, script, witness, nonce, entropy, None, None, None, None, None, 0)
         with self.assertRaises(ValueError):
             tx_remove_input(tx, 4)
         tx_remove_input(tx, 2) # Remove last
@@ -82,10 +82,10 @@ class ElementsTxTests(unittest.TestCase):
 
     def test_coinbase(self):
         txhash, seq, script = bytearray(b'\x00'*32), 0xffffffff, b'0000'
-        tx_input_no_witness = tx_elements_input_init(txhash, seq, seq, script, None, None, None, None, None, None, None)
+        tx_input_no_witness = tx_elements_input_init(txhash, seq, seq, script)
 
         ct_value = tx_confidential_value_from_satoshi(10000)
-        tx_output = tx_elements_output_init(script, None, ct_value, None, None, None)
+        tx_output = tx_elements_output_init(script, None, ct_value)
         tx = tx_init(2, 0, 10, 2)
         tx_add_input(tx, tx_input_no_witness)
         tx_add_output(tx, tx_output)
