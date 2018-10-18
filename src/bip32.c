@@ -110,6 +110,7 @@ int bip32_key_free(const struct ext_key *hdkey)
 {
     if (!hdkey)
         return WALLY_EINVAL;
+    wally_clear((void *)hdkey, sizeof(*hdkey));
     wally_free((void *)hdkey);
     return WALLY_OK;
 }
