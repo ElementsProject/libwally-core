@@ -163,6 +163,11 @@ def tx_witness_stack_create(witnesses):
         tx_witness_stack_add(witness_stack, witness_script)
     return witness_stack
 
+wif_to_bytes = _wrap_bin(wif_to_bytes, EC_PRIVATE_KEY_LEN)
+def _wif_to_public_key_len(wif, prefix):
+    return EC_PUBLIC_KEY_UNCOMPRESSED_LEN if wif_is_uncompressed(wif) else EC_PUBLIC_KEY_LEN
+wif_to_public_key = _wrap_bin(wif_to_public_key, _wif_to_public_key_len, resize=True)
+
 if is_elements_build():
     tx_elements_input_init = _wrap_with_defaults(tx_elements_input_init, 4, 12)
     tx_elements_output_init = _wrap_with_defaults(tx_elements_output_init, 3, 6)

@@ -439,6 +439,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
+%returns_string(wally_wif_from_bytes);
+%returns_size_t(wally_wif_to_bytes);
+%returns_size_t(wally_wif_is_uncompressed);
+%returns_size_t(wally_wif_to_public_key);
+%returns_string(wally_wif_to_address);
 %returns_size_t(wally_witness_program_from_bytes);
 %returns_size_t(wally_tx_is_elements);
 %returns_size_t(wally_tx_is_coinbase);

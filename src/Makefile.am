@@ -168,6 +168,7 @@ libwallycore_la_SOURCES = \
     scrypt.c \
     sign.c \
     transaction.c \
+    wif.c \
     wordlist.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
@@ -238,6 +239,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_sign.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_transaction.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py

@@ -220,6 +220,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), i321, written); \
 }
 
+#define WALLY_FN_P33_A(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, uint32_t i322, O * *out) { \
+        return ::N(WALLYP(p1), i321, i322, out); \
+}
+
 #define WALLY_FN_P6B3(F, N) template <class P1, class I1> inline int F(const P1 &p1, uint64_t i641, const I1 &i1, uint32_t i321) { \
         return ::N(WALLYP(p1), i641, WALLYB(i1), i321); \
 }
@@ -345,6 +349,7 @@ WALLY_FN_B(secp_randomize, wally_secp_randomize)
 WALLY_FN_B33BP_A(tx_input_init_alloc, wally_tx_input_init_alloc)
 WALLY_FN_B33_A(bip32_key_from_parent_alloc, bip32_key_from_parent_alloc)
 WALLY_FN_B33_A(bip32_key_from_seed_alloc, bip32_key_from_seed_alloc)
+WALLY_FN_B33_A(wif_from_bytes, wally_wif_from_bytes)
 WALLY_FN_B33_BS(scriptpubkey_csv_2of2_then_1_from_bytes, wally_scriptpubkey_csv_2of2_then_1_from_bytes)
 WALLY_FN_B33_BS(scriptpubkey_csv_2of3_then_2_from_bytes, wally_scriptpubkey_csv_2of3_then_2_from_bytes)
 WALLY_FN_B33_BS(scriptpubkey_multisig_from_bytes, wally_scriptpubkey_multisig_from_bytes)
@@ -401,9 +406,12 @@ WALLY_FN_P3BB36333_B(tx_get_signature_hash, wally_tx_get_signature_hash)
 WALLY_FN_P3_A(tx_from_hex, wally_tx_from_hex)
 WALLY_FN_P3_A(tx_to_hex, wally_tx_to_hex)
 WALLY_FN_P3_B(bip32_key_serialize, bip32_key_serialize)
+WALLY_FN_P3_B(wif_to_bytes, wally_wif_to_bytes)
 WALLY_FN_P3_BS(base58_to_bytes, wally_base58_to_bytes)
 WALLY_FN_P3_BS(tx_to_bytes, wally_tx_to_bytes)
+WALLY_FN_P3_BS(wif_to_public_key, wally_wif_to_public_key)
 WALLY_FN_P3_S(tx_get_length, wally_tx_get_length)
+WALLY_FN_P33_A(wif_to_address, wally_wif_to_address)
 WALLY_FN_P6B3(tx_add_raw_output, wally_tx_add_raw_output)
 WALLY_FN_PB(tx_witness_stack_add, wally_tx_witness_stack_add)
 WALLY_FN_PB33BP3(tx_add_raw_input, wally_tx_add_raw_input)
@@ -426,6 +434,7 @@ WALLY_FN_P_A(bip39_get_languages, bip39_get_languages)
 WALLY_FN_P_A(bip39_get_wordlist, bip39_get_wordlist)
 WALLY_FN_P_BS(hex_to_bytes, wally_hex_to_bytes)
 WALLY_FN_P_S(base58_get_length, wally_base58_get_length)
+WALLY_FN_P_S(wif_is_uncompressed, wally_wif_is_uncompressed)
 WALLY_FN_P_S(tx_get_vsize, wally_tx_get_vsize)
 WALLY_FN_P_S(tx_get_weight, wally_tx_get_weight)
 WALLY_FN_P_S(tx_get_witness_count, wally_tx_get_witness_count)

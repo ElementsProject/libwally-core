@@ -209,6 +209,11 @@ for f in (
     ('wally_tx_remove_input', c_int, [POINTER(wally_tx), c_ulong]),
     ('wally_tx_set_input_script', c_int, [POINTER(wally_tx), c_ulong, c_void_p, c_ulong]),
     ('wally_tx_set_input_witness', c_int, [POINTER(wally_tx), c_ulong, POINTER(wally_tx_witness_stack)]),
+    ('wally_wif_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_char_p_p]),
+    ('wally_wif_to_address', c_int, [c_char_p, c_uint, c_uint, c_char_p_p]),
+    ('wally_wif_to_bytes', c_int, [c_char_p, c_uint, c_uint, c_void_p, c_ulong]),
+    ('wally_wif_to_public_key', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_wif_is_uncompressed', c_int, [c_char_p, c_ulong_p]),
     ):
 
     def bind_fn(name, res, args):

@@ -15,6 +15,7 @@
 #include "scrypt.c"
 #include "sign.c"
 #include "transaction.c"
+#include "wif.c"
 #include "wordlist.c"
 #undef PACKAGE
 #undef PACKAGE_NAME
