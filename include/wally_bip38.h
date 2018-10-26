@@ -9,7 +9,7 @@ extern "C" {
 
 /** Flags for BIP38 conversion. The first 8 bits are reserved for the network */
 #define BIP38_KEY_MAINNET       0  /** Address is for main network */
-#define BIP38_KEY_TESTNET       7  /** Address is for test network */
+#define BIP38_KEY_TESTNET      111 /** Address is for test network */
 #define BIP38_KEY_COMPRESSED   256 /** Public key is compressed */
 #define BIP38_KEY_EC_MULT      512 /** EC-Multiplied key (FIXME: Not implemented) */
 #define BIP38_KEY_QUICK_CHECK 1024 /** Check structure only (no password required) */
@@ -94,6 +94,28 @@ WALLY_CORE_API int bip38_to_private_key(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Get compression and/or EC mult flags.
+ *
+ * :param bytes: Raw BIP 38 address to get the flags from.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
+ * :param written: BIP38_KEY_ flags indicating behavior.
+ */
+WALLY_CORE_API int bip38_raw_get_flags(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    size_t *written);
+
+/**
+ * Get compression and/or EC mult flags.
+ *
+ * :param bip38: BIP 38 address to get the flags from.
+ * :param written: BIP38_KEY_ flags indicating behavior.
+ */
+WALLY_CORE_API int bip38_get_flags(
+    const char *bip38,
+    size_t *written);
 
 #ifdef __cplusplus
 }

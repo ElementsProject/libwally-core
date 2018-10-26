@@ -352,6 +352,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(bip38_from_private_key);
 %returns_array_(bip38_raw_to_private_key, 6, 7, 32);
 %returns_array_(bip38_to_private_key, 5, 6, 32);
+%returns_size_t(bip38_raw_get_flags);
+%returns_size_t(bip38_get_flags);
 %returns_string(bip39_get_languages);
 %returns_struct(bip39_get_wordlist, words);
 %returns_string(bip39_get_word);

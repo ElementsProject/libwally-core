@@ -336,3 +336,50 @@ int bip38_to_private_key(const char *bip38,
     return to_private_key(bip38, NULL, 0, pass, pass_len, flags,
                           bytes_out, len);
 }
+
+static int get_flags(const char *bip38,
+                     const unsigned char *bytes, size_t bytes_len,
+                     size_t *written)
+{
+    struct bip38_layout_t buf;
+
+    if (!written)
+        return WALLY_EINVAL;
+
+    *written = 0;
+
+    if (bytes) {
+        if (bytes_len != BIP38_SERIALIZED_LEN)
+            return WALLY_EINVAL;
+        memcpy(&buf.prefix, bytes, BIP38_SERIALIZED_LEN);
+    } else {
+        size_t serialized_len;
+        int ret;
+        if ((ret = wally_base58_to_bytes(bip38, BASE58_FLAG_CHECKSUM, &buf.prefix,
+                                         BIP38_SERIALIZED_LEN + BASE58_CHECKSUM_LEN,
+                                         &serialized_len)))
+            return ret;
+
+        if (serialized_len != BIP38_SERIALIZED_LEN)
+            return WALLY_EINVAL;
+    }
+
+    *written = buf.ec_type != BIP38_NO_ECMUL ? BIP38_KEY_EC_MULT : 0;
+    *written |= buf.flags & BIP38_FLAG_COMPRESSED ? BIP38_KEY_COMPRESSED : 0;
+
+    wally_clear(&buf, sizeof(buf));
+
+    return WALLY_OK;
+}
+
+int bip38_raw_get_flags(const unsigned char *bytes, size_t bytes_len,
+                        size_t *written)
+{
+    return get_flags(NULL, bytes, bytes_len, written);
+}
+
+int bip38_get_flags(const char *bip38,
+                    size_t *written)
+{
+    return get_flags(bip38, NULL, 0, written);
+}
