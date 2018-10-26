@@ -2,6 +2,9 @@
 
 ## Version 0.6.5
 
+- BIP38_KEY_TESTNET was changed to reflect the testnet network version. BIP38 testnet keys
+  created with older versions of wally were not valid for testnet.
+
 - API change of wally_tx_elements_input_init_alloc and wally_tx_add_elements_raw_input
   to also include the pegin witness.
 

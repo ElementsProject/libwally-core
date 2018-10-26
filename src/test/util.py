@@ -130,6 +130,8 @@ for f in (
     ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('bip38_raw_to_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
+    ('bip38_raw_get_flags', c_int, [c_void_p, c_ulong, c_ulong_p]),
+    ('bip38_get_flags', c_int, [c_char_p, c_ulong_p]),
     ('bip39_get_languages', c_int, [c_char_p_p]),
     ('bip39_get_wordlist', c_int, [c_char_p, POINTER(c_void_p)]),
     ('bip39_get_word', c_int, [c_void_p, c_ulong, c_char_p_p]),

@@ -92,6 +92,13 @@ class BIP38Tests(unittest.TestCase):
             ret, _ = self.from_priv(priv_key, passwd, K_MAIN + flags)
             self.assertEqual(ret, expected)
 
+    def test_bip38_flags(self):
+        priv_key = "6PYTh1Jgj3caimSrFjsfR5wJ8zUgWNDiPoNVZapSy8BwkF4NaKa1R32CaN"
+        ret, flags = bip38_get_flags(utf8(priv_key))
+        self.assertEqual(ret, WALLY_OK)
+        flags = int(flags)
+        self.assertEqual(flags & 256, 256) # BIP38_COMPRESSED
+        self.assertEqual(flags & 512, 0) # BIP38_KEY_EC_MULT
 
 if __name__ == '__main__':
     unittest.main()
