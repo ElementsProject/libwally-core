@@ -88,7 +88,7 @@ You can also install the binary wally releases using the released
 wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.6.4-cp27-cp27mu-linux_x86_64.whl
+pip install wallycore-0.6.5-cp27-cp27mu-linux_x86_64.whl
 ```
 
 The script `tools/build_python_wheels.sh` builds the release files and can be
