@@ -203,7 +203,7 @@ static bool tx_pegin(const char *tx_hex, const char **tx_pegin_wit_hex, size_t n
 {
     struct wally_tx *tx;
     struct wally_tx_input *in;
-    struct wally_tx_witness_stack* pegin_wit;
+    struct wally_tx_witness_stack *pegin_wit;
     struct wally_tx_witness_item *item;
     char *new_hex;
     const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
