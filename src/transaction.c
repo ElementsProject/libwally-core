@@ -98,9 +98,9 @@ static bool is_valid_tx_input(const struct wally_tx_input *input)
            BYTES_VALID(input->script, input->script_len) &&
            (!input->witness || is_valid_witness_stack(input->witness))
 #ifdef BUILD_ELEMENTS
-            && (!input->pegin_witness || is_valid_witness_stack(input->pegin_witness))
+           && (!input->pegin_witness || is_valid_witness_stack(input->pegin_witness))
 #endif
-           ;
+    ;
 }
 
 static bool is_valid_tx_output(const struct wally_tx_output *output)
