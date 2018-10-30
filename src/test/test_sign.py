@@ -106,17 +106,17 @@ class SignTests(unittest.TestCase):
             self.assertEqual(wally_ec_private_key_verify(pk, pk_len), WALLY_EINVAL)
 
         # wally_ec_public_key_decompress
-        sig, _ = make_cbuffer('13' * EC_SIGNATURE_LEN)
+        pub, _ = make_cbuffer('02' + '22' * 32)
         out_buf, out_len = make_cbuffer('00' * EC_PUBIC_KEY_UNCOMPRESSED_LEN)
 
-        cases = [(None, len(sig), out_buf, out_len), # Null sig
-                 (sig,  15,       out_buf, out_len), # Wrong sig len
-                 (sig,  len(sig), None, out_len),    # Null out
-                 (sig,  len(sig), out_buf, 15)]      # Wrong out len
+        cases = [(None, len(pub), out_buf, out_len), # Null pub
+                 (pub,  32,       out_buf, out_len), # Wrong pub len
+                 (pub,  len(pub), None, out_len),    # Null out
+                 (pub,  len(pub), out_buf, 64)]      # Wrong out len
 
-        for s, s_len, o, o_len in cases:
-            ret, written = wally_ec_sig_to_der(s, s_len, o, o_len)
-            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+        for p, p_len, o, o_len in cases:
+            ret = wally_ec_public_key_decompress(p, p_len, o, o_len)
+            self.assertEqual(ret, WALLY_EINVAL)
 
         # wally_ec_sig_to_der
         sig, _ = make_cbuffer('13' * EC_SIGNATURE_LEN)
