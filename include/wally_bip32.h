@@ -225,6 +225,40 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     uint32_t flags,
     struct ext_key **output);
 
+/**
+ * Convert an extended key to base58.
+ *
+ * :param hdkey: The extended key.
+ * :param flags: BIP32_FLAG_KEY_ Flags indicating which key to serialize. You can not
+ *|        serialize a private extended key from a public extended key.
+ * :param output: Destination for the resulting key in bas58.
+ */
+WALLY_CORE_API int bip32_key_to_base58(
+    const struct ext_key *hdkey,
+    uint32_t flags,
+    char **output);
+
+#ifndef SWIG
+/**
+ * Convert a base58 encoded extended key to an extended key.
+ *
+ * :param wif: The extended key in base58.
+ * :param output: Destination for the resulting extended key.
+ */
+WALLY_CORE_API int bip32_key_from_base58(
+    const char *base58,
+    struct ext_key *output);
+#endif
+
+/**
+ * As per `bip32_key_from_base58`, but allocates the key.
+ *
+ * .. note:: The returned key should be freed with `bip32_key_free`.
+ */
+WALLY_CORE_API int bip32_key_from_base58_alloc(
+    const char *base58,
+    struct ext_key **output);
+
 #ifdef __cplusplus
 }
 #endif

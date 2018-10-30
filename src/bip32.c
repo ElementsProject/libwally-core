@@ -631,6 +631,54 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     return WALLY_OK;
 }
 
+int bip32_key_to_base58(const struct ext_key *hdkey,
+		        uint32_t flags,
+		        char **output)
+{
+    int ret;
+    unsigned char bytes[BIP32_SERIALIZED_LEN];
+
+    if ((ret = bip32_key_serialize(hdkey, flags, bytes, sizeof(bytes))))
+        return ret;
+
+    ret = wally_base58_from_bytes(bytes, BIP32_SERIALIZED_LEN, BASE58_FLAG_CHECKSUM, output);
+
+    wally_clear(bytes, sizeof(bytes));
+    return ret;
+}
+
+int bip32_key_from_base58(const char *base58,
+                          struct ext_key *output)
+{
+    int ret;
+    unsigned char bytes[BIP32_SERIALIZED_LEN + BASE58_CHECKSUM_LEN];
+    size_t written;
+
+    if ((ret = wally_base58_to_bytes(base58, BASE58_FLAG_CHECKSUM, bytes, sizeof(bytes), &written)))
+        return ret;
+
+    if (written != BIP32_SERIALIZED_LEN)
+        ret = WALLY_EINVAL;
+    else
+        ret = bip32_key_unserialize(bytes, BIP32_SERIALIZED_LEN, output);
+
+    wally_clear(bytes, sizeof(bytes));
+    return ret;
+}
+
+int bip32_key_from_base58_alloc(const char *base58,
+                                struct ext_key **output)
+{
+    int ret;
+
+    ALLOC_KEY();
+    ret = bip32_key_from_base58(base58, *output);
+    if (ret) {
+        wally_free(*output);
+        *output = 0;
+    }
+    return ret;
+}
 
 #if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
 

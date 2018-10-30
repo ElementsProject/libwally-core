@@ -358,5 +358,22 @@ class BIP32Tests(unittest.TestCase):
     def test_free_invalid(self):
         self.assertEqual(WALLY_EINVAL, bip32_key_free(None))
 
+    def test_base58(self):
+        key = self.create_master_pub_priv()[2]
+        buf, buf_len = make_cbuffer('00' * 78)
+
+        for flag in [FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC]:
+            self.assertEqual(bip32_key_serialize(key, flag, buf, buf_len), WALLY_OK)
+            exp_hex = h(buf).upper()
+
+            ret, out = bip32_key_to_base58(key, flag)
+            self.assertEqual(ret, WALLY_OK)
+
+            key_out = ext_key()
+            self.assertEqual(bip32_key_from_base58(utf8(out), byref(key_out)), WALLY_OK)
+            self.assertEqual(bip32_key_serialize(key_out, flag, buf, buf_len), WALLY_OK)
+            self.assertEqual(h(buf).upper(), exp_hex)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -329,6 +329,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 
 /* Our wrapped functions return types */
 %returns_void__(bip32_key_free);
+%returns_struct(bip32_key_from_base58_alloc, ext_key);
+%rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 %returns_struct(bip32_key_from_parent_alloc, ext_key);
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %returns_struct(bip32_key_from_parent_path_alloc, ext_key);
@@ -346,6 +348,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(bip32_key_init_alloc, ext_key);
 %rename("bip32_key_init") bip32_key_init_alloc;
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);
+%returns_string(bip32_key_to_base58);
 %returns_struct(bip32_key_unserialize_alloc, ext_key);
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 %returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALIZED_LEN);
