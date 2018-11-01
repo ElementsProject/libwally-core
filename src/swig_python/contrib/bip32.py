@@ -30,7 +30,7 @@ class BIP32Tests(unittest.TestCase):
                    bip32_key_get_child_num]:
             self.assertEqual(fn(key), fn(expected))
         self.assertEqual(bip32_key_get_version(key), BIP32_VER_MAIN_PRIVATE)
-        if flags & BIP32_FLAG_KEY_PRIVATE:
+        if flags == BIP32_FLAG_KEY_PRIVATE:
             self.assertEqual(bip32_key_get_priv_key(key),
                              bip32_key_get_priv_key(expected))
 
