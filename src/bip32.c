@@ -218,9 +218,6 @@ static bool key_is_valid(const struct ext_key *hdkey)
         mem_is_zero(hdkey->priv_key + 1, sizeof(hdkey->priv_key) - 1))
         return false;
 
-    if (is_master && !is_private)
-        return false;
-
     if (is_master &&
         !mem_is_zero(hdkey->parent160, sizeof(hdkey->parent160)))
         return false;
@@ -632,8 +629,8 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
 }
 
 int bip32_key_to_base58(const struct ext_key *hdkey,
-		        uint32_t flags,
-		        char **output)
+                        uint32_t flags,
+                        char **output)
 {
     int ret;
     unsigned char bytes[BIP32_SERIALIZED_LEN];
