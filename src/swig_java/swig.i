@@ -170,7 +170,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 }
 %typemap(argout,noblock=1) (char **output) {
     $result = NULL;
-    if ($1) {
+    if ($1 && *$1) {
         if (!(*jenv)->ExceptionOccurred(jenv))
             $result = (*jenv)->NewStringUTF(jenv, *$1);
         wally_free_string(*$1);
