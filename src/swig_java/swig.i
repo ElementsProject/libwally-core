@@ -195,8 +195,13 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %typemap(javain)  (INTTYPE *STRING, size_t LENGTH) "$javainput"
 %typemap(freearg) (INTTYPE *STRING, size_t LENGTH) ""
 %typemap(in)      (INTTYPE *STRING, size_t LENGTH) {
-    $1 = $input ? (INTTYPE *) JCALL2(GETFN, jenv, $input, 0) : 0;
-    $2 = $input ? (size_t) JCALL1(GetArrayLength, jenv, $input) : 0;
+    if (!(*jenv)->ExceptionOccurred(jenv)) {
+        $1 = $input ? (INTTYPE *) JCALL2(GETFN, jenv, $input, 0) : 0;
+        $2 = $input ? (size_t) JCALL1(GetArrayLength, jenv, $input) : 0;
+    } else {
+        $1 = 0;
+        $2 = 0;
+    }
 }
 %typemap(argout)  (INTTYPE *STRING, size_t LENGTH) {
   if ($input) JCALL3(RELEASEFN, jenv, $input, (j##JTYPE *)$1, 0);
