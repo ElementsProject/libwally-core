@@ -169,11 +169,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
     $1 = &temp;
 }
 %typemap(argout,noblock=1) (char **output) {
+    $result = NULL;
     if ($1) {
-        $result = (*jenv)->NewStringUTF(jenv, *$1);
+        if (!(*jenv)->ExceptionOccurred(jenv))
+            $result = (*jenv)->NewStringUTF(jenv, *$1);
         wally_free_string(*$1);
-    } else
-        $result = NULL;
+    }
 }
 
 /* uint32_t input arguments are taken as longs and cast with range checking */
