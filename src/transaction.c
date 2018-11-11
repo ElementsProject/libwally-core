@@ -1248,6 +1248,9 @@ static int tx_add_elements_raw_input(
     };
     bool is_coinbase;
     int ret;
+#ifndef BUILD_ELEMENTS
+    (void)pegin_witness;
+#endif
 
     if (flags)
         return WALLY_EINVAL; /* TODO: Allow creation of p2pkh/p2sh using flags */
@@ -1763,7 +1766,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t i, inputs_size, outputs_size, issuances_size = 0, buff_len = sizeof(buff);
-    uint64_t is_elements = 0;
+    size_t is_elements = 0;
     const bool anyonecanpay = opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_none = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
@@ -2500,7 +2503,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
         p += sizeof(uint32_t);
         for (i = 0; i < num_inputs; ++i) {
             const unsigned char *issuance_amount_rangeproof, *inflation_keys_rangeproof;
-            size_t issuance_amount_rangeproof_len, inflation_keys_rangeproof_len, offset;
+            uint64_t issuance_amount_rangeproof_len, inflation_keys_rangeproof_len, offset;
             proof_from_bytes(issuance_amount_rangeproof, &issuance_amount_rangeproof_len);
             proof_from_bytes(inflation_keys_rangeproof, &inflation_keys_rangeproof_len);
             ret = tx_elements_input_issuance_proof_init(result->inputs + i,
@@ -2522,7 +2525,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
 
         for (i = 0; i < num_outputs; ++i) {
             const unsigned char *surjectionproof, *rangeproof;
-            size_t surjectionproof_len, rangeproof_len;
+            uint64_t surjectionproof_len, rangeproof_len;
             proof_from_bytes(surjectionproof, &surjectionproof_len);
             proof_from_bytes(rangeproof, &rangeproof_len);
             ret = tx_elements_output_proof_init(result->outputs + i,
@@ -2625,7 +2628,7 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
 {
     unsigned char buff[TX_STACK_SIZE], *buff_p = buff;
     size_t n, n2;
-    uint64_t is_elements = 0;
+    size_t is_elements = 0;
     int ret;
     const struct tx_serialize_opts opts = {
         sighash, tx_sighash, index, script, script_len, satoshi,

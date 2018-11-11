@@ -7,7 +7,7 @@
 
 static const char *invalid = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg";
 
-static bool check_segwit_to_bytes()
+static bool check_segwit_to_bytes(void)
 {
     unsigned char *mem = calloc(90, sizeof(unsigned char));
     size_t written;
