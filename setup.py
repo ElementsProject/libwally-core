@@ -89,6 +89,7 @@ else:
 
             # Run the autotools/make build to generate a python extension module
             extra_build_options = os.getenv('ENABLE_ELEMENTS', '')
+            call('./tools/cleanup.sh')
             call('./tools/autogen.sh')
             call('./configure --enable-swig-python {}'.format(extra_build_options))
             call('make -j{}'.format(multiprocessing.cpu_count()))
