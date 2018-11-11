@@ -233,9 +233,15 @@ static void add(struct sha256_ctx *ctx, const void *p, size_t len)
 void sha256_optimize(void)
 {
 #if defined(__x86_64__) || defined(__amd64__)
-	uint32_t eax, ebx, ecx, edx;
-	if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) && (ecx >> 19) & 1) {
-		use_optimized_transform = 1;
+	uint32_t leaf = 1, subleaf = 0;
+	uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+#ifdef __GNUC__
+	__cpuid_count(leaf, subleaf, eax, ebx, ecx, edx);
+#else
+	__asm__ ("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(leaf), "2"(subleaf));
+#endif
+	if ((ecx >> 19) & 1) {
+		use_optimized_transform = 1; /* SSE4 is available */
 	}
 #endif
 }
