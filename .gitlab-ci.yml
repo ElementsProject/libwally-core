@@ -90,9 +90,9 @@ arm64_release:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh
 
-mips_release:
+powerpcg4_release:
   tags:
-    - mips
+    - powerpcg4
   script:
     - ./tools/build_python_wheels.sh
 
