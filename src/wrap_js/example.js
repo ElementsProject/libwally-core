@@ -9,7 +9,11 @@ wally.wally_base58_from_bytes(Buffer.from('xyz', 'ascii'), 0).then(function(s) {
     console.log(Buffer.from(bytes_).toString('ascii'));
   });
 });
-wally.bip32_key_from_seed(Buffer.from(16), 0x0488ADE4, 0).then(function(s) {
+var zeroes = [];
+for (var i = 0; i < 16; ++i) {
+    zeroes.push(0);
+}
+wally.bip32_key_from_seed(Buffer.from(zeroes), 0x0488ADE4, 0).then(function(s) {
   wally.wally_base58_from_bytes(s, 1).then(function (s) {
     console.log('privkey:', s);
   });
