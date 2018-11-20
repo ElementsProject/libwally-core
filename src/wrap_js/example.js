@@ -1,5 +1,10 @@
 const wally = require('./wally');
 
+wally.wally_tx_from_hex('02000000000001010b000000000000000000000000000000000000000000000000000000000000000100000000053ec600001976a914e008c86ad0b8662fa2b5bd7c68f418213d1873b988ac00000000', 3)
+.then((result) => {
+  console.log(result);
+});
+
 wally.wally_sha256(Buffer.from('test', 'ascii')).then(function(uint8Array) {
   console.log(Buffer.from(uint8Array).toString('hex'))
 });

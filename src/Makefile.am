@@ -355,6 +355,7 @@ endif
 if USE_JS_WRAPPERS
 if BUILD_ELEMENTS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_assets.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_unblind.js
 endif
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_aes.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_base58.js
