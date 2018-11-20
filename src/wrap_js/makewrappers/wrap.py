@@ -153,7 +153,9 @@ FUNCS = [
     ('wally_ec_public_key_from_private_key', F([
         'const_bytes[key]', 'out_bytes_fixedsized'
     ], out_size='33')),
-
+    ('wally_tx_from_hex', F([
+        'const_char', 'uint32_t[flags]', 'tx_out'
+    ])),
     ('wally_format_bitcoin_message', F([
         'const_bytes[message]', 'uint32_t[flags]',
     'out_bytes_sized'
