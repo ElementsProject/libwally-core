@@ -11,7 +11,6 @@ extern "C" {
 #define WALLY_TX_SEQUENCE_FINAL 0xffffffff
 #define WALLY_TX_VERSION_1 1
 #define WALLY_TX_VERSION_2 2
-#define WALLY_TX_MAX_VERSION 2
 #define WALLY_TX_IS_ELEMENTS 1
 #define WALLY_TX_IS_ISSUANCE 2
 #define WALLY_TX_IS_PEGIN 4
@@ -257,7 +256,7 @@ WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *output);
 /**
  * Allocate and initialize a new transaction.
  *
- * :param version: The version of the transaction. Currently must be ``WALLY_TX_VERSION_2``.
+ * :param version: The version of the transaction.
  * :param locktime: The locktime of the transaction.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.

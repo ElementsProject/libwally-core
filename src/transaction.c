@@ -2206,8 +2206,6 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         return WALLY_EINVAL;
 
     p += uint32_from_le_bytes(p, &tmp_tx.version);
-    if (!tmp_tx.version || tmp_tx.version > WALLY_TX_MAX_VERSION)
-        return WALLY_EINVAL;
 
     if (is_elements)
         *expect_witnesses = *p++ != 0;
