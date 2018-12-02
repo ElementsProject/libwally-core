@@ -2,6 +2,7 @@
 
 #include <wally_crypto.h>
 #include <wally_transaction.h>
+#include <transaction_int.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +44,8 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
     uint64_t is_elements;
     int ret;
     const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
+    unsigned char *asset_tmp;
+    size_t asset_len, asset_tmp_len, written;
 
     /* Unserialize and serialize the tx and verify they match */
     ret = wally_tx_from_hex(tx_hex, flags, &tx);
@@ -118,8 +121,25 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
     ret = wally_tx_remove_input(tx, 0); /* Remove first */
     check_ret(ret);
 
-    /* Test adding and removing outputs */
+    /* Testing getting and setting elements tx output members */
     out = &tx->outputs[0];
+    asset_len = out->asset_len;
+    asset_tmp = (unsigned char *)malloc(asset_len);
+    ret = wally_tx_output_get_asset(out, asset_tmp, asset_len, &written);
+    check_ret(ret);
+    ret = written == asset_len ? 0 : 1;
+    check_ret(ret);
+    ret = wally_tx_output_get_asset_len(out, &asset_tmp_len);
+    ret = asset_tmp_len == asset_len ? 0 : 1;
+    check_ret(ret);
+    memset(asset_tmp, 3, asset_tmp_len);
+    ret = wally_tx_output_set_asset(out, asset_tmp, asset_tmp_len);
+    check_ret(ret);
+    ret = memcmp(asset_tmp, out->asset, asset_len);
+    check_ret(ret);
+    free(asset_tmp);
+
+    /* Test adding and removing outputs */
     ret = wally_tx_elements_output_init_alloc(out->script, out->script_len,
                                               out->asset, out->asset_len,
                                               out->value, out->value_len,

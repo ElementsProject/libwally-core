@@ -2929,10 +2929,45 @@ GET_TX_B(tx_output, script, input->script_len)
 GET_TX_I(tx_output, satoshi, uint64_t)
 GET_TX_I(tx_output, script_len, size_t)
 
+#ifdef BUILD_ELEMENTS
+GET_TX_B(tx_output, asset, input->asset_len)
+GET_TX_I(tx_output, asset_len, size_t)
+GET_TX_B(tx_output, value, input->value_len)
+GET_TX_I(tx_output, value_len, size_t)
+GET_TX_B(tx_output, nonce, input->nonce_len)
+GET_TX_I(tx_output, nonce_len, size_t)
+GET_TX_B(tx_output, surjectionproof, input->surjectionproof_len)
+GET_TX_I(tx_output, surjectionproof_len, size_t)
+GET_TX_B(tx_output, rangeproof, input->rangeproof_len)
+GET_TX_I(tx_output, rangeproof_len, size_t)
+#endif /* BUILD_ELEMENTS */
+
 GET_TX_I(tx, version, size_t)
 GET_TX_I(tx, locktime, size_t)
 GET_TX_I(tx, num_inputs, size_t)
 GET_TX_I(tx, num_outputs, size_t)
+
+static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
+                        unsigned char **bytes_out, size_t *bytes_out_len)
+{
+    /* TODO: Avoid reallocation if smaller than the existing one */
+    unsigned char *new_bytes = NULL;
+    if (!clone_bytes(&new_bytes, bytes, bytes_len))
+        return WALLY_ENOMEM;
+
+    clear_and_free(*bytes_out, *bytes_out_len);
+    *bytes_out = new_bytes;
+    *bytes_out_len = bytes_len;
+    return WALLY_OK;
+}
+
+#define SET_TX_B(typ, name, siz) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
+                                       const unsigned char *bytes, size_t siz) { \
+        if (!is_valid_elements_tx_output(output) || BYTES_INVALID(bytes, siz)) \
+            return WALLY_EINVAL; \
+        return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
+    }
 
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
@@ -2949,6 +2984,14 @@ int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi
     output->satoshi = satoshi;
     return WALLY_OK;
 }
+
+#ifdef BUILD_ELEMENTS
+SET_TX_B(tx_output, asset, siz)
+SET_TX_B(tx_output, value, siz)
+SET_TX_B(tx_output, nonce, siz)
+SET_TX_B(tx_output, surjectionproof, siz)
+SET_TX_B(tx_output, rangeproof, siz)
+#endif
 
 static struct wally_tx_output *tx_get_output(const struct wally_tx *tx, size_t index)
 {
@@ -3007,6 +3050,63 @@ int wally_tx_get_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
     return wally_tx_output_get_satoshi(tx_get_output(tx, index), value_out);
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_tx_get_output_asset(const struct wally_tx *tx, size_t index,
+                              unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_output_get_asset(tx_get_output(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_output_asset_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_asset_len(tx_get_output(tx, index), written);
+}
+
+int wally_tx_get_output_value(const struct wally_tx *tx, size_t index,
+                              unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_output_get_value(tx_get_output(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_output_value_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_value_len(tx_get_output(tx, index), written);
+}
+
+int wally_tx_get_output_nonce(const struct wally_tx *tx, size_t index,
+                              unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_output_get_nonce(tx_get_output(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_output_nonce_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_nonce_len(tx_get_output(tx, index), written);
+}
+
+int wally_tx_get_output_surjectionproof(const struct wally_tx *tx, size_t index,
+                                        unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_output_get_surjectionproof(tx_get_output(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_output_surjectionproof_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_surjectionproof_len(tx_get_output(tx, index), written);
+}
+
+int wally_tx_get_output_rangeproof(const struct wally_tx *tx, size_t index,
+                                   unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_output_get_rangeproof(tx_get_output(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_output_rangeproof_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_rangeproof_len(tx_get_output(tx, index), written);
+}
+#endif
+
 int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t index_in)
 {
     struct wally_tx_input *input = tx_get_input(tx, index);
@@ -3041,6 +3141,38 @@ int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
         return WALLY_EINVAL;
     return wally_tx_output_set_satoshi(tx_get_output(tx, index), satoshi);
 }
+
+#ifdef BUILD_ELEMENTS
+int wally_tx_set_output_asset(const struct wally_tx *tx, size_t index,
+                              const unsigned char *asset, size_t asset_len)
+{
+    return wally_tx_output_set_asset(tx_get_output(tx, index), asset, asset_len);
+}
+
+int wally_tx_set_output_value(const struct wally_tx *tx, size_t index,
+                              const unsigned char *value, size_t value_len)
+{
+    return wally_tx_output_set_value(tx_get_output(tx, index), value, value_len);
+}
+
+int wally_tx_set_output_nonce(const struct wally_tx *tx, size_t index,
+                              const unsigned char *nonce, size_t nonce_len)
+{
+    return wally_tx_output_set_nonce(tx_get_output(tx, index), nonce, nonce_len);
+}
+
+int wally_tx_set_output_surjectionproof(const struct wally_tx *tx, size_t index,
+                                        const unsigned char *surjectionproof, size_t surjectionproof_len)
+{
+    return wally_tx_output_set_surjectionproof(tx_get_output(tx, index), surjectionproof, surjectionproof_len);
+}
+
+int wally_tx_set_output_rangeproof(const struct wally_tx *tx, size_t index,
+                                   const unsigned char *rangeproof, size_t rangeproof_len)
+{
+    return wally_tx_output_set_rangeproof(tx_get_output(tx, index), rangeproof, rangeproof_len);
+}
+#endif
 #endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
 
 int wally_tx_set_input_script(const struct wally_tx *tx, size_t index,
