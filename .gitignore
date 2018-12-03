@@ -78,6 +78,7 @@ docs/source/core.rst
 docs/source/crypto.rst
 docs/source/script.rst
 docs/source/transaction.rst
+.idea/
 
 # Windows
 *.obj

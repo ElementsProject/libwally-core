@@ -34,7 +34,7 @@ static int check_result(JNIEnv *jenv, int result)
 }
 
 static int int_cast(JNIEnv *jenv, size_t value) {
-    if (value > INT_MAX)
+    if (value > UINT_MAX)
         SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Invalid length");
     return (int)value;
 }
@@ -235,7 +235,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *script, size_t script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sig, size_t sig_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sighash, size_t sighash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash, size_t txhash) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash, size_t txhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
 
@@ -279,6 +279,14 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 }
 %typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
+%typemap (in) struct NAME * {
+    $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
+    if (!$1)
+        return $null;
+}
+%typemap(jtype) struct NAME * "Object"
+%typemap(jni) struct NAME * "jobject"
+
 %enddef
 
 /* Change a functions return type to match its output type mapping */
@@ -416,6 +424,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_secp_randomize);
 %returns_array_(wally_sha256, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha256d, 3, 4, SHA256_LEN);
+%returns_array_(wally_sha256_midstate, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha512, 3, 4, SHA512_LEN);
 %returns_void__(wally_tx_add_input);
 %returns_void__(wally_tx_add_raw_input);
@@ -456,6 +465,66 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_witness_program_from_bytes);
 %returns_size_t(wally_tx_is_elements);
 %returns_size_t(wally_tx_is_coinbase);
+
+%returns_size_t(wally_tx_get_num_inputs);
+%returns_array_(wally_tx_get_input_txhash, 3, 4, SHA256_LEN);
+%returns_uint64(wally_tx_get_total_output_satoshi);
+%returns_size_t(wally_tx_get_version);
+%returns_size_t(wally_tx_get_locktime);
+%returns_size_t(wally_tx_get_num_outputs);
+%returns_size_t(wally_tx_get_input_index);
+%returns_uint64(wally_tx_get_output_satoshi);
+
+%rename("_tx_get_input_witness") wally_tx_get_input_witness;
+%returns_size_t(_tx_get_input_witness);
+%rename("_tx_get_input_witness_len") wally_tx_get_input_witness_len;
+%returns_size_t(_tx_get_input_witness_len);
+
+%rename("_tx_get_input_script") wally_tx_get_input_script;
+%returns_size_t(_tx_get_input_script);
+%rename("_tx_get_input_script_len") wally_tx_get_input_script_len;
+%returns_size_t(_tx_get_input_script_len);
+
+%returns_array_(wally_tx_input_get_txhash, 2, 3, SHA256_LEN);
+
+%rename("_tx_input_get_script") wally_tx_input_get_script;
+%returns_size_t(_tx_input_get_script);
+%rename("_tx_input_get_script_len") wally_tx_input_get_script_len;
+%returns_size_t(_tx_input_get_script_len);
+
+%rename("_tx_input_get_witness") wally_tx_input_get_witness;
+%returns_size_t(_tx_input_get_witness);
+%rename("_tx_input_get_witness_len") wally_tx_input_get_witness_len;
+%returns_size_t(_tx_input_get_witness_len);
+
+%returns_size_t(wally_tx_input_get_index);
+%rename("_tx_get_input_sequence") wally_tx_get_input_sequence;
+%returns_size_t(_tx_get_input_sequence);
+%rename("_tx_input_get_sequence") wally_tx_input_get_sequence;
+%returns_size_t(_tx_input_get_sequence);
+%returns_void__(wally_tx_set_input_index);
+%returns_void__(wally_tx_set_input_sequence);
+%rename("_is_elements_build") wally_is_elements_build;
+%returns_size_t(_is_elements_build);
+%returns_void__(wally_tx_output_set_script);
+
+%rename("_tx_get_output_script") wally_tx_get_output_script;
+%returns_size_t(_tx_get_output_script);
+%rename("_tx_get_output_script_len") wally_tx_get_output_script_len;
+%returns_size_t(_tx_get_output_script_len);
+
+%rename("_tx_output_get_script") wally_tx_output_get_script;
+%returns_size_t(_tx_output_get_script);
+%rename("_tx_output_get_script_len") wally_tx_output_get_script_len;
+%returns_size_t(_tx_output_get_script_len);
+
+%returns_uint64(wally_tx_output_get_satoshi);
+%returns_void__(wally_tx_output_set_satoshi);
+%returns_void__(wally_tx_set_output_satoshi);
+%returns_void__(wally_tx_set_output_script);
+%rename("_cleanup") wally_cleanup;
+%returns_void__(_cleanup)
+
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"

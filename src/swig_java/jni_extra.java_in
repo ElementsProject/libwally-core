@@ -120,6 +120,10 @@
       return ec_sig_from_der(jarg1, null);
   }
 
+  public final static byte[] tx_get_input_txhash(Object jarg1, long jarg2) {
+        return tx_get_input_txhash(jarg1, jarg2, null);
+    }
+
   public final static byte[] format_bitcoin_message(byte[] jarg1, long jarg2) {
       int msg_len = SHA256_LEN;
       if ((jarg2 & BITCOIN_MESSAGE_FLAG_HASH) == 0)
@@ -184,6 +188,11 @@
       return len == buf.length ? buf: java.util.Arrays.copyOf(buf, len);
   }
 
+  private final static void checkBuffer(final byte[] buf, final int len) {
+      if (len != buf.length)
+          throw new RuntimeException("Failed");
+  }
+
   public final static byte[] asset_rangeproof(long jarg1, byte[] jarg2, byte[] jarg3, byte[] jarg4,
                                               byte[] jarg5, byte[] jarg6, byte[] jarg7, byte[] jarg8,
                                               byte[] jarg9, int jarg10) {
@@ -191,6 +200,50 @@
       final int len = asset_rangeproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, jarg8,
                                        jarg9, jarg10, buf);
       return trimBuffer(buf, len);
+  }
+
+
+  public final static byte[] tx_get_input_script(Object tx, long jarg2) {
+      final byte[] buf = new byte[_tx_get_input_script_len(tx, jarg2)];
+      final int len = _tx_get_input_script(tx, jarg2, buf);
+      checkBuffer(buf,len);
+      return buf;
+  }
+
+  public final static byte[] tx_input_get_script(Object tx) {
+      final byte[] buf = new byte[_tx_input_get_script_len(tx)];
+      final int len = _tx_input_get_script(tx, buf);
+      checkBuffer(buf,len);
+      return buf;
+  }
+
+  public final static byte[] tx_get_input_witness(Object tx, long jarg2, long jarg3) {
+      final byte[] buf = new byte[_tx_get_input_witness_len(tx, jarg2, jarg3)];
+      final int len = _tx_get_input_witness(tx, jarg2, jarg3, buf);
+      checkBuffer(buf,len);
+      return buf;
+  }
+
+  public final static byte[] tx_input_get_witness(Object tx, long jarg2) {
+      final byte[] buf = new byte[_tx_input_get_witness_len(tx, jarg2)];
+      final int len = _tx_input_get_witness(tx, jarg2, buf);
+      checkBuffer(buf,len);
+      return buf;
+  }
+
+
+  public final static byte[] tx_get_output_script(Object tx, long jarg2) {
+      final byte[] buf = new byte[_tx_get_output_script_len(tx, jarg2)];
+      final int len = _tx_get_output_script(tx, jarg2, buf);
+      checkBuffer(buf,len);
+      return buf;
+  }
+
+  public final static byte[] tx_output_get_script(Object tx_out) {
+      final byte[] buf = new byte[_tx_output_get_script_len(tx_out)];
+      final int len = _tx_output_get_script(tx_out, buf);
+      checkBuffer(buf,len);
+      return buf;
   }
 
   public final static byte[] asset_surjectionproof(byte[] jarg1, byte[] jarg2, byte[] jarg3,
@@ -209,5 +262,20 @@
           outputs.add(new byte[ASSET_TAG_LEN]);
       return asset_unblind(pub_key, priv_key, proof, commitment, extra_in, generator,
                            outputs.get(0), outputs.get(1), outputs.get(2));
+  }
+ 
+  public final static long tx_get_input_sequence(final Object tx, final int index) {
+    return _tx_get_input_sequence(tx, index) & 0x00000000ffffffffL;
+  }
+
+  public final static long tx_input_get_sequence(final Object tx_input) {
+      return _tx_input_get_sequence(tx_input) & 0x00000000ffffffffL;
+    }
+
+  public final static boolean is_elements_build() {
+      return _is_elements_build() == 1;
+  }
+  public final static void cleanup() {
+      _cleanup(0);
   }
 }

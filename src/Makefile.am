@@ -143,6 +143,7 @@ all: swig_java/wallycore.jar
 SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_assets.class \
     $(sjs)/$(cbt)/test_bip32.class \
+    $(sjs)/$(cbt)/test_tx.class \
     $(sjs)/$(cbt)/test_mnemonic.class
 
 all: $(SWIG_JAVA_TEST_DEPS)
