@@ -1984,8 +1984,8 @@ static int tx_to_bytes(const struct wally_tx *tx,
     if (written)
         *written = 0;
 
-    if (!is_valid_tx(tx) || (flags & ~WALLY_TX_FLAG_USE_WITNESS) ||
-        !bytes_out || !written ||
+    if (!is_valid_tx(tx) || !tx->num_inputs || !tx->num_outputs ||
+        (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || !written ||
         tx_get_length(tx, opts, flags, &n, is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 
@@ -2256,8 +2256,6 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     ensure_commitment(dst, WALLY_TX_ASSET_CT_NONCE_LEN, WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B)
 
     ensure_varint(&v);
-    if (!v)
-        return WALLY_EINVAL;
     *num_inputs = v;
 
     for (i = 0; i < *num_inputs; ++i) {
@@ -2281,8 +2279,6 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     }
 
     ensure_varint(&v);
-    if (!v)
-        return WALLY_EINVAL;
     *num_outputs = v;
 
     for (i = 0; i < *num_outputs; ++i) {

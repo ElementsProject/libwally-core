@@ -29,11 +29,17 @@ class TransactionTests(unittest.TestCase):
             (utf8('00'*5), 0, pointer(wally_tx())), # Short hex
             (TX_FAKE_HEX, 0, None), # Empty output
             (TX_FAKE_HEX, 4, pointer(wally_tx())), # Unsupported flag
-            (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, pointer(wally_tx())), # No inputs
-            (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, pointer(wally_tx())), # No outputs
             (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, pointer(wally_tx())), # Invalid witness flag
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_from_hex(*args))
+
+        # deserialization is allowed, but the opposite is not
+        for args in [
+            (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, pointer(wally_tx())), # No inputs
+            (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, pointer(wally_tx())), # No outputs
+        ]:
+            self.assertEqual(WALLY_OK, wally_tx_from_hex(*args))
+            self.assertEqual(WALLY_EINVAL, wally_tx_to_hex(args[2][0], 0)[0])
 
         for args in [
             (TX_HEX, 0, pointer(wally_tx())),
@@ -95,11 +101,12 @@ class TransactionTests(unittest.TestCase):
 
         # Add and then remove, then test that serialization remains the same
         for args, expected in [
-            ((wally_tx(), 1, script, script_len, 0), '0000000000010100000000000000010000000000'),
+            ((self.tx_deserialize_hex(TX_FAKE_HEX), 1, script, script_len, 0), None),
             ]:
             before = self.tx_serialize_hex(args[0])
             self.assertEqual(WALLY_OK, wally_tx_add_raw_output(*args))
-            self.assertEqual(self.tx_serialize_hex(args[0]), expected)
+            if expected:
+                self.assertEqual(self.tx_serialize_hex(args[0]), expected)
             self.assertEqual(WALLY_OK, wally_tx_remove_output(byref(args[0]), args[0].num_outputs-1))
             self.assertEqual(before, self.tx_serialize_hex(args[0]))
 
@@ -129,14 +136,15 @@ class TransactionTests(unittest.TestCase):
 
         # Add and then remove, then test that serialization remains the same
         for args, expected in [
-            ((wally_tx(), txhash, txhash_len, 0, 0xffffffff, script, script_len, None, 0),
-             utf8('0000000001'+'00'*36+'0100ffffffff0000000000')),
+            ((self.tx_deserialize_hex(TX_FAKE_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wally_tx_witness_stack(), 0),
+             None),
             ((self.tx_deserialize_hex(TX_WITNESS_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wally_tx_witness_stack(), 0),
              TX_WITNESS_HEX[:13]+utf8('2')+TX_WITNESS_HEX[14:96]+utf8('00'*36)+utf8('0100ffffffff')+TX_WITNESS_HEX[96:-8]+utf8('00')+TX_WITNESS_HEX[-8:]),
             ]:
             before = self.tx_serialize_hex(args[0])
             self.assertEqual(WALLY_OK, wally_tx_add_raw_input(*args))
-            self.assertEqual(utf8(self.tx_serialize_hex(args[0])), expected)
+            if expected:
+                self.assertEqual(utf8(self.tx_serialize_hex(args[0])), expected)
             self.assertEqual(WALLY_OK, wally_tx_remove_input(byref(args[0]), args[0].num_inputs-1))
             self.assertEqual(before, self.tx_serialize_hex(args[0]))
 
