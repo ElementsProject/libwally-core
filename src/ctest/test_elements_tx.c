@@ -41,7 +41,7 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
     unsigned char signature_hash[SHA256_LEN];
     unsigned char ct_value[WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN];
     size_t i;
-    uint64_t is_elements;
+    size_t is_elements;
     int ret;
     const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
     unsigned char asset_tmp[WALLY_TX_ASSET_CT_ASSET_LEN];

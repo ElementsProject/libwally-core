@@ -2348,7 +2348,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
-static int witness_stack_from_bytes(const unsigned char *bytes, struct wally_tx_witness_stack **witness, size_t *offset)
+static int witness_stack_from_bytes(const unsigned char *bytes, struct wally_tx_witness_stack **witness, uint64_t *offset)
 {
     int ret = WALLY_OK;
     size_t i;
