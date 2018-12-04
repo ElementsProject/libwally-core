@@ -9,7 +9,7 @@ public class test_assets {
 
     public test_assets() { }
 
-    public void test() {
+    public void test_blinding() {
 
         final byte[] asset = h(ONES);
         final byte[] abf = h(ONES);
@@ -23,11 +23,30 @@ public class test_assets {
             throw new RuntimeException("Unexpected asset_final_vbf result");
     }
 
+    private void test_confidential_address() {
+        final String addr = "Q7qcjTLsYGoMA7TjUp97R6E6AM5VKqBik6";
+        final String pubkey_hex = "02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623";
+        final String addr_c = "VTpz1bNuCALgavJKgbAw9Lpp9A72rJy64XPqgqfnaLpMjRcPh5UHBqyRUE4WMZ3asjqu7YEPVAnWw2EK";
+
+        final String new_addr = Wally.confidential_addr_to_addr(addr_c, Wally.WALLY_CA_PREFIX_LIQUID);
+        if (!new_addr.equals(addr))
+            throw new RuntimeException("Failed to extract address from confidential address");
+
+        final byte[] pubkey = Wally.confidential_addr_to_ec_public_key(addr_c, Wally.WALLY_CA_PREFIX_LIQUID);
+        if (!Wally.hex_from_bytes(pubkey).equals(pubkey_hex))
+            throw new RuntimeException("Failed to extract pubkey from confidential address");
+
+        final String new_addr_c = Wally.confidential_addr_from_addr(addr, Wally.WALLY_CA_PREFIX_LIQUID, pubkey);
+        if (!new_addr_c.equals(addr_c))
+            throw new RuntimeException("Failed to create confidential address");
+    }
+
     private String h(final byte[] bytes) { return Wally.hex_from_bytes(bytes); }
     private byte[] h(final String hex) { return Wally.hex_to_bytes(hex); }
 
     public static void main(final String[] args) {
         final test_assets t = new test_assets();
-        t.test();
+        t.test_blinding();
+        t.test_confidential_address();
     }
 }

@@ -10,6 +10,8 @@ extern "C" {
 #define WALLY_WIF_FLAG_COMPRESSED 0x0   /** Corresponding public key compressed */
 #define WALLY_WIF_FLAG_UNCOMPRESSED 0x1 /** Corresponding public key uncompressed */
 
+#define WALLY_CA_PREFIX_LIQUID 0x0c /** Liquid v1 confidential address prefix */
+
 /**
  * Create a segwit native address from a v0 witness program.
  *
@@ -116,6 +118,48 @@ WALLY_CORE_API int wally_wif_to_address(
     const char *wif,
     uint32_t prefix,
     uint32_t version,
+    char **output);
+
+/**
+ * Extract the address from a confidential address.
+ *
+ * :param address: The base58 encoded confidential address to extract the address from.
+ * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param output: Destination for the resulting address string.
+ */
+WALLY_CORE_API int wally_confidential_addr_to_addr(
+    const char *address,
+    uint32_t prefix,
+    char **output);
+
+/**
+ * Extract the blinding public key from a confidential address.
+ *
+ * :param address: The base58 encoded confidential address to extract the public key from.
+ * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param bytes_out: Destination for the public key.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ */
+WALLY_CORE_API int wally_confidential_addr_to_ec_public_key(
+    const char *address,
+    uint32_t prefix,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Create a confidential address from an address and blinding public key.
+ *
+ * :param address: The base58 encoded address to make confidential.
+ * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param pub_key: The blinding public key to associate with ``address``.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param output: Destination for the resulting address string.
+ */
+WALLY_CORE_API int wally_confidential_addr_from_addr(
+    const char *address,
+    uint32_t prefix,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
     char **output);
 
 #ifdef __cplusplus

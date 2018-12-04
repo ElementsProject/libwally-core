@@ -1,4 +1,5 @@
 #include "internal.h"
+#include <include/wally_address.h>
 #include <include/wally_elements.h>
 #include <include/wally_crypto.h>
 #include "secp256k1/include/secp256k1_generator.h"
@@ -344,5 +345,102 @@ cleanup:
     if (generators)
         wally_clear(generators, num_inputs * sizeof(secp256k1_generator));
     wally_free(generators);
+    return ret;
+}
+
+int wally_confidential_addr_to_addr(
+    const char *address,
+    uint32_t prefix,
+    char **output)
+{
+    unsigned char buf[2 + EC_PUBLIC_KEY_LEN + HASH160_LEN + BASE58_CHECKSUM_LEN];
+    unsigned char *addr_bytes_p = &buf[EC_PUBLIC_KEY_LEN + 1];
+    size_t written;
+    int ret;
+
+    if (output)
+        *output = NULL;
+
+    if (!address || !output)
+        return WALLY_EINVAL;
+
+    ret = wally_base58_to_bytes(address, BASE58_FLAG_CHECKSUM, buf, sizeof(buf), &written);
+    if (ret == WALLY_OK) {
+        if (written != sizeof(buf) - BASE58_CHECKSUM_LEN || buf[0] != prefix)
+            ret = WALLY_EINVAL;
+        else {
+            /* Move the version in front of the address hash and encode it */
+            addr_bytes_p[0] = buf[1];
+            ret = wally_base58_from_bytes(addr_bytes_p, HASH160_LEN + 1,
+                                          BASE58_FLAG_CHECKSUM, output);
+        }
+    }
+
+    wally_clear(buf, sizeof(buf));
+    return ret;
+}
+
+int wally_confidential_addr_to_ec_public_key(
+    const char *address,
+    uint32_t prefix,
+    unsigned char *bytes_out,
+    size_t len)
+{
+    unsigned char buf[2 + EC_PUBLIC_KEY_LEN + HASH160_LEN + BASE58_CHECKSUM_LEN];
+    size_t written;
+    int ret;
+
+    if (!address || !bytes_out || len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+
+    ret = wally_base58_to_bytes(address, BASE58_FLAG_CHECKSUM, buf, sizeof(buf), &written);
+    if (ret == WALLY_OK) {
+        if (written != sizeof(buf) - BASE58_CHECKSUM_LEN || buf[0] != prefix)
+            ret = WALLY_EINVAL;
+        else {
+            /* Return the embedded public key */
+            memcpy(bytes_out, buf + 2, EC_PUBLIC_KEY_LEN);
+        }
+    }
+
+    wally_clear(buf, sizeof(buf));
+    return ret;
+}
+
+int wally_confidential_addr_from_addr(
+    const char *address,
+    uint32_t prefix,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    char **output)
+{
+    unsigned char buf[2 + EC_PUBLIC_KEY_LEN + HASH160_LEN + BASE58_CHECKSUM_LEN];
+    unsigned char *addr_bytes_p = &buf[EC_PUBLIC_KEY_LEN + 1];
+    size_t written;
+    int ret;
+
+    if (output)
+        *output = NULL;
+
+    if (!address || (prefix & 0xffffff00) || !pub_key || pub_key_len != EC_PUBLIC_KEY_LEN || !output)
+        return WALLY_EINVAL;
+
+    /* Decode the passed address */
+    ret = wally_base58_to_bytes(address, BASE58_FLAG_CHECKSUM,
+                                addr_bytes_p, 1 + HASH160_LEN + EC_PUBLIC_KEY_LEN, &written);
+    if (ret == WALLY_OK) {
+        if (written != HASH160_LEN + 1)
+            ret = WALLY_EINVAL;
+        else {
+            /* Copy the prefix/version/pubkey and encode the address to return */
+            buf[0] = prefix & 0xff;
+            buf[1] = addr_bytes_p[0];
+            memcpy(buf + 2, pub_key, pub_key_len);
+            ret = wally_base58_from_bytes(buf, sizeof(buf) - BASE58_CHECKSUM_LEN,
+                                          BASE58_FLAG_CHECKSUM, output);
+        }
+    }
+
+    wally_clear(buf, sizeof(buf));
     return ret;
 }

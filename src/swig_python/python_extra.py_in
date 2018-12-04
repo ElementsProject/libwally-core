@@ -188,4 +188,6 @@ if is_elements_build():
     tx_get_output_value = _wrap_bin(tx_get_output_value, WALLY_TX_ASSET_CT_VALUE_LEN, resize=True)
     tx_get_output_nonce = _wrap_bin(tx_get_output_nonce, WALLY_TX_ASSET_CT_NONCE_LEN)
 
+confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
+
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

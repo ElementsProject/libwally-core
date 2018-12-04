@@ -1,9 +1,7 @@
-"""Tests for transaction construction"""
+"""Tests for Elements/Liquid transaction construction"""
 import unittest
 from wallycore import *
 
-FLAG_USE_WITNESS =  0x1
-FLAG_USE_ELEMENTS = 0x2
 
 class ElementsTxTests(unittest.TestCase):
 
@@ -81,7 +79,7 @@ class ElementsTxTests(unittest.TestCase):
         tx_add_elements_raw_output(tx, script, None, ct_value, None, None, None, 0)
         size = tx_get_length(tx, 0)
         vsize = tx_vsize_from_weight(tx_get_weight(tx))
-        tx_hex = tx_to_hex(tx, FLAG_USE_WITNESS|FLAG_USE_ELEMENTS)
+        tx_hex = tx_to_hex(tx, WALLY_TX_FLAG_USE_WITNESS|WALLY_TX_FLAG_USE_ELEMENTS)
 
     def test_coinbase(self):
         txhash, seq, script = bytearray(b'\x00'*32), 0xffffffff, b'0000'
@@ -109,6 +107,19 @@ class ElementsTxTests(unittest.TestCase):
         self.assertEqual(hex_from_bytes(asset[::-1]), "eb82f87a64d7b701569a88d9b1578953038b53916ebf7f87b865beab3a3e26d2")
         reissuance_token = tx_elements_issuance_calculate_reissuance_token(entropy, 0)
         self.assertEqual(hex_from_bytes(reissuance_token[::-1]), "42066f5f26d72da30758487822436c61cccea78e8f9b6b9f08230f5d9003848c")
+
+    def test_confidential_address(self):
+        addr = "Q7qcjTLsYGoMA7TjUp97R6E6AM5VKqBik6"
+        pubkey_hex = "02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623"
+        addr_c = "VTpz1bNuCALgavJKgbAw9Lpp9A72rJy64XPqgqfnaLpMjRcPh5UHBqyRUE4WMZ3asjqu7YEPVAnWw2EK"
+
+        self.assertEqual(confidential_addr_to_addr(addr_c, WALLY_CA_PREFIX_LIQUID), addr)
+
+        pubkey = confidential_addr_to_ec_public_key(addr_c, WALLY_CA_PREFIX_LIQUID)
+        self.assertEqual(hex_from_bytes(pubkey), pubkey_hex)
+
+        self.assertEqual(confidential_addr_from_addr(addr, WALLY_CA_PREFIX_LIQUID, pubkey), addr_c)
+
 
 if __name__ == '__main__':
     unittest.main()

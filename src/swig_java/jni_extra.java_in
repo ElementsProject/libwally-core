@@ -270,12 +270,19 @@
 
   public final static long tx_input_get_sequence(final Object tx_input) {
       return _tx_input_get_sequence(tx_input) & 0x00000000ffffffffL;
-    }
+  }
 
   public final static boolean is_elements_build() {
       return _is_elements_build() == 1;
   }
+
   public final static void cleanup() {
       _cleanup(0);
+  }
+
+  public final static byte[] confidential_addr_to_ec_public_key(String addr, int prefix) {
+      final byte[] buf = new byte[EC_PUBLIC_KEY_LEN];
+      confidential_addr_to_ec_public_key(addr, prefix, buf);
+      return buf;
   }
 }

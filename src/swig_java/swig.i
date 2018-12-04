@@ -392,6 +392,9 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(wally_base58_from_bytes);
 %returns_size_t(wally_base58_to_bytes);
 %returns_size_t(wally_base58_get_length);
+%returns_string(wally_confidential_addr_to_addr);
+%returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_string(wally_confidential_addr_from_addr);
 %returns_void__(wally_ec_private_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
