@@ -41,6 +41,9 @@ class ElementsTxTests(unittest.TestCase):
         tx_output = tx_elements_output_init(script, None, ct_value)
         self.assertEqual(tx_output_get_script_len(tx_output), len(script))
         self.assertEqual(tx_output_get_script(tx_output), script)
+        self.assertEqual(tx_output_get_asset_len(tx_output), 0)
+        self.assertEqual(tx_output_get_value_len(tx_output), len(ct_value))
+        self.assertEqual(tx_output_get_value(tx_output), ct_value)
 
     def test_tx(self):
         txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'0000', b'000000'

@@ -2878,6 +2878,14 @@ int wally_tx_input_get_txhash(const struct wally_tx_input *input,
         return tx_getb_impl(input, input->name, siz, bytes_out, len, written); \
     }
 
+#define GET_TX_B_FIXED(typ, name, siz, n) \
+    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
+                                       unsigned char *bytes_out, size_t len) { \
+        size_t written; \
+        int ret = len != n ? WALLY_EINVAL : tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
+        return ret; \
+    }
+
 #define GET_TX_I(typ, name, outtyp) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, outtyp * written) { \
         if (written) *written = 0; \
@@ -2930,11 +2938,11 @@ GET_TX_I(tx_output, satoshi, uint64_t)
 GET_TX_I(tx_output, script_len, size_t)
 
 #ifdef BUILD_ELEMENTS
-GET_TX_B(tx_output, asset, input->asset_len)
+GET_TX_B_FIXED(tx_output, asset, input->asset_len, WALLY_TX_ASSET_CT_ASSET_LEN)
 GET_TX_I(tx_output, asset_len, size_t)
 GET_TX_B(tx_output, value, input->value_len)
 GET_TX_I(tx_output, value_len, size_t)
-GET_TX_B(tx_output, nonce, input->nonce_len)
+GET_TX_B_FIXED(tx_output, nonce, input->nonce_len, WALLY_TX_ASSET_CT_NONCE_LEN)
 GET_TX_I(tx_output, nonce_len, size_t)
 GET_TX_B(tx_output, surjectionproof, input->surjectionproof_len)
 GET_TX_I(tx_output, surjectionproof_len, size_t)
@@ -2947,6 +2955,7 @@ GET_TX_I(tx, locktime, size_t)
 GET_TX_I(tx, num_inputs, size_t)
 GET_TX_I(tx, num_outputs, size_t)
 
+#ifdef BUILD_ELEMENTS
 static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
                         unsigned char **bytes_out, size_t *bytes_out_len)
 {
@@ -2969,6 +2978,15 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
 
+#define SET_TX_B_FIXED(typ, name, siz, n) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
+                                       const unsigned char *bytes, size_t siz) { \
+        if (!is_valid_elements_tx_output(output) || (siz && siz != n) || BYTES_INVALID(bytes, siz)) \
+            return WALLY_EINVAL; \
+        return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
+    }
+#endif /* BUILD_ELEMENTS */
+
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
@@ -2986,9 +3004,16 @@ int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi
 }
 
 #ifdef BUILD_ELEMENTS
-SET_TX_B(tx_output, asset, siz)
-SET_TX_B(tx_output, value, siz)
-SET_TX_B(tx_output, nonce, siz)
+SET_TX_B_FIXED(tx_output, asset, siz, WALLY_TX_ASSET_CT_ASSET_LEN)
+int wally_tx_output_set_value(struct wally_tx_output *output, const unsigned char *value, size_t value_len)
+{
+    if (!is_valid_elements_tx_output(output) ||
+        ((value != NULL) != (value_len == WALLY_TX_ASSET_CT_VALUE_LEN ||
+                             value_len == WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)))
+        return WALLY_EINVAL;
+    return tx_setb_impl(value, value_len, &output->value, &output->value_len);
+}
+SET_TX_B_FIXED(tx_output, nonce, siz, WALLY_TX_ASSET_CT_NONCE_LEN)
 SET_TX_B(tx_output, surjectionproof, siz)
 SET_TX_B(tx_output, rangeproof, siz)
 #endif
@@ -3052,14 +3077,9 @@ int wally_tx_get_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
 
 #ifdef BUILD_ELEMENTS
 int wally_tx_get_output_asset(const struct wally_tx *tx, size_t index,
-                              unsigned char *bytes_out, size_t len, size_t *written)
+                              unsigned char *bytes_out, size_t len)
 {
-    return wally_tx_output_get_asset(tx_get_output(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_output_asset_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_asset_len(tx_get_output(tx, index), written);
+    return wally_tx_output_get_asset(tx_get_output(tx, index), bytes_out, len);
 }
 
 int wally_tx_get_output_value(const struct wally_tx *tx, size_t index,
@@ -3074,14 +3094,9 @@ int wally_tx_get_output_value_len(const struct wally_tx *tx, size_t index, size_
 }
 
 int wally_tx_get_output_nonce(const struct wally_tx *tx, size_t index,
-                              unsigned char *bytes_out, size_t len, size_t *written)
+                              unsigned char *bytes_out, size_t len)
 {
-    return wally_tx_output_get_nonce(tx_get_output(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_output_nonce_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_nonce_len(tx_get_output(tx, index), written);
+    return wally_tx_output_get_nonce(tx_get_output(tx, index), bytes_out, len);
 }
 
 int wally_tx_get_output_surjectionproof(const struct wally_tx *tx, size_t index,

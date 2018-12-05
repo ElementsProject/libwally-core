@@ -430,6 +430,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_add_raw_input);
 %returns_void__(wally_tx_add_output);
 %returns_void__(wally_tx_add_raw_output);
+%returns_struct(wally_tx_elements_input_init_alloc, wally_tx_input);
+%returns_struct(wally_tx_elements_output_init_alloc, wally_tx_output);
 %returns_void__(wally_tx_free);
 %returns_struct(wally_tx_from_bytes, wally_tx);
 %returns_struct(wally_tx_from_hex, wally_tx);

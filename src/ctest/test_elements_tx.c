@@ -44,8 +44,7 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
     uint64_t is_elements;
     int ret;
     const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
-    unsigned char *asset_tmp;
-    size_t asset_len, asset_tmp_len, written;
+    unsigned char asset_tmp[WALLY_TX_ASSET_CT_ASSET_LEN];
 
     /* Unserialize and serialize the tx and verify they match */
     ret = wally_tx_from_hex(tx_hex, flags, &tx);
@@ -121,23 +120,19 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
     ret = wally_tx_remove_input(tx, 0); /* Remove first */
     check_ret(ret);
 
-    /* Testing getting and setting elements tx output members */
+    /* Test getting and setting elements tx output members */
     out = &tx->outputs[0];
-    asset_len = out->asset_len;
-    asset_tmp = (unsigned char *)malloc(asset_len);
-    ret = wally_tx_output_get_asset(out, asset_tmp, asset_len, &written);
+    if (out->asset_len != WALLY_TX_ASSET_CT_ASSET_LEN)
+        return false;
+    ret = wally_tx_output_get_asset(out, asset_tmp, sizeof(asset_tmp));
     check_ret(ret);
-    ret = written == asset_len ? 0 : 1;
+    ret = memcmp(asset_tmp, out->asset, sizeof(asset_tmp));
     check_ret(ret);
-    ret = wally_tx_output_get_asset_len(out, &asset_tmp_len);
-    ret = asset_tmp_len == asset_len ? 0 : 1;
+    memset(asset_tmp, 3, sizeof(asset_tmp));
+    ret = wally_tx_output_set_asset(out, asset_tmp, sizeof(asset_tmp));
     check_ret(ret);
-    memset(asset_tmp, 3, asset_tmp_len);
-    ret = wally_tx_output_set_asset(out, asset_tmp, asset_tmp_len);
+    ret = memcmp(asset_tmp, out->asset, sizeof(asset_tmp));
     check_ret(ret);
-    ret = memcmp(asset_tmp, out->asset, asset_len);
-    check_ret(ret);
-    free(asset_tmp);
 
     /* Test adding and removing outputs */
     ret = wally_tx_elements_output_init_alloc(out->script, out->script_len,

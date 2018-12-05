@@ -25,11 +25,11 @@ WALLY_CORE_API int wally_tx_output_set_script(struct wally_tx_output *tx_output_
 WALLY_CORE_API int wally_tx_output_set_satoshi(struct wally_tx_output *tx_output_in, uint64_t satoshi);
 
 #ifdef BUILD_ELEMENTS
-WALLY_CORE_API int wally_tx_output_get_asset(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_tx_output_get_asset(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_output_get_asset_len(const struct wally_tx_output *tx_output_in, size_t *written);
 WALLY_CORE_API int wally_tx_output_get_value(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_output_get_value_len(const struct wally_tx_output *tx_output_in, size_t *written);
-WALLY_CORE_API int wally_tx_output_get_nonce(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_tx_output_get_nonce(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_output_get_nonce_len(const struct wally_tx_output *tx_output_in, size_t *written);
 WALLY_CORE_API int wally_tx_output_get_surjectionproof(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_output_get_surjectionproof_len(const struct wally_tx_output *tx_output_in, size_t *written);
@@ -70,12 +70,10 @@ WALLY_CORE_API int wally_tx_set_output_script(const struct wally_tx *tx_in, size
 WALLY_CORE_API int wally_tx_set_output_satoshi(const struct wally_tx *tx_in, size_t index, uint64_t satoshi);
 
 #ifdef BUILD_ELEMENTS
-WALLY_CORE_API int wally_tx_get_output_asset(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
-WALLY_CORE_API int wally_tx_get_output_asset_len(const struct wally_tx *tx_in, size_t index, size_t *written);
+WALLY_CORE_API int wally_tx_get_output_asset(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_get_output_value(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_get_output_value_len(const struct wally_tx *tx_in, size_t index, size_t *written);
-WALLY_CORE_API int wally_tx_get_output_nonce(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
-WALLY_CORE_API int wally_tx_get_output_nonce_len(const struct wally_tx *tx_in, size_t index, size_t *written);
+WALLY_CORE_API int wally_tx_get_output_nonce(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_get_output_surjectionproof(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_get_output_surjectionproof_len(const struct wally_tx *tx_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_get_output_rangeproof(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
