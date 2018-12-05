@@ -28,7 +28,7 @@ class TransactionTests(unittest.TestCase):
             (utf8(''), 0, pointer(wally_tx())), # Empty hex
             (utf8('00'*5), 0, pointer(wally_tx())), # Short hex
             (TX_FAKE_HEX, 0, None), # Empty output
-            (TX_FAKE_HEX, 2, pointer(wally_tx())), # Unsupported flag
+            (TX_FAKE_HEX, 4, pointer(wally_tx())), # Unsupported flag
             (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, pointer(wally_tx())), # No inputs
             (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, pointer(wally_tx())), # No outputs
             (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, pointer(wally_tx())), # Invalid witness flag
