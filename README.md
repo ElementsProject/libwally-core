@@ -50,6 +50,8 @@ $ make check
 - `--enable-swig-java`. Enable the [SWIG](http://www.swig.org/) Java (JNI)
    interface. After building, see `src/swig_java/src/com/blockstream/libwally/Wally.java`
    for the Java interface definition (default: no).
+- `--enable-elements`. Enables support for [Elements](https://elementsproject.org/)
+   features, including [Liquid](https://blockstream.com/liquid/) support.
 - `--enable-js-wrappers`. Enable the Node.js and Cordova Javascript wrappers.
    This currently requires python to be available at build time (default: no).
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
@@ -83,6 +85,14 @@ is under heavy development.
 If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
 running `setup.py` or (when compiling manually) `./configure`.
+
+To build with Elements/Liquid support, set:
+
+```
+ENABLE_ELEMENTS="--enable-elements"
+```
+
+Before running pip.
 
 You can also install the binary wally releases using the released
 wheel files without having to compile the library, e.g.:
