@@ -88,14 +88,15 @@ cordova-wrappers: $(cordova_wrap_files)
 if USE_JS_WRAPPERS
 # The node wrapper is built by node-gyp
 NODE_GYP = node_modules/.bin/node-gyp
-wrap_js/build/@NODE_GYP_DIR@/wallycore.node: wrap_js/nodejs_wrap.cc wrap_js/wally.js $(lib_LTLIBRARIES) binding.gyp
+wrap_js/build/@NODE_GYP_DIR@/wallycore.node: wrap_js/nodejs_wrap.cc wrap_js/wally.js $(lib_LTLIBRARIES) wrap_js/binding.gyp
 	cd wrap_js && LIBWALLY_DIR=../.. npm_config_debug=$(shell [ @NODE_GYP_DIR@ == "Debug" ] && echo 1) yarn install
 
-binding.gyp: binding.gyp
 if BUILD_ELEMENTS
-	cd wrap_js && sed -e 's/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H" \]/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H","BUILD_ELEMENTS" \]/g' ./binding.gyp.tmpl > ./binding.gyp
+wrap_js/binding.gyp: wrap_js/binding.gyp.tmpl
+	sed -e 's/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H" \]/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H","BUILD_ELEMENTS" \]/g' $< > $@
 else
-	cd wrap_js && cp ./binding.gyp.tmpl ./binding.gyp
+wrap_js/binding.gyp: wrap_js/binding.gyp.tmpl
+	cp $< $@
 endif
 
 bin_PROGRAMS = wrap_js/build/@NODE_GYP_DIR@/wallycore.node

@@ -50,6 +50,7 @@ src/swig_java/*.jar
 src/swig_java/src/com/blockstream/libwally
 WallyCordova.java
 WallyCordova.swift
+src/wrap_js/binding.gyp
 src/wrap_js/node_modules/
 src/wrap_js/nodejs_wrap.cc
 src/wrap_js/wally.js

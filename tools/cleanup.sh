@@ -34,6 +34,7 @@ rm -rf src/swig_java/src/com/blockstream/libwally
 rm -f src/swig_python/wallycore.py
 rm -f src/swig_python/wallycore/__init__.py
 rm -f src/swig_python/swig_python_wrap.c
+rm -f src/wrap_js/binding.gyp
 rm -rf src/wrap_js/build
 rm -rf src/wrap_js/node_modules/
 rm -f src/wrap_js/nodejs_wrap.cc
