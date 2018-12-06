@@ -350,8 +350,6 @@ cleanup:
     return ret;
 }
 
-#endif /* BUILD_ELEMENTS */
-
 int wally_confidential_addr_to_addr(
     const char *address,
     uint32_t prefix,
@@ -448,3 +446,5 @@ int wally_confidential_addr_from_addr(
     wally_clear(buf, sizeof(buf));
     return ret;
 }
+
+#endif /* BUILD_ELEMENTS */

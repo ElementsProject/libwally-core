@@ -242,8 +242,4 @@
       _cleanup(0);
   }
 
-  public final static byte[] confidential_addr_to_ec_public_key(String addr, int prefix) {
-      final byte[] buf = new byte[EC_PUBLIC_KEY_LEN];
-      confidential_addr_to_ec_public_key(addr, prefix, buf);
-      return buf;
-  }
+

@@ -40,6 +40,12 @@
                            outputs.get(0), outputs.get(1), outputs.get(2));
   }
 
+  public final static byte[] confidential_addr_to_ec_public_key(String addr, int prefix) {
+      final byte[] buf = new byte[EC_PUBLIC_KEY_LEN];
+      confidential_addr_to_ec_public_key(addr, prefix, buf);
+      return buf;
+  }
+
   public final static boolean tx_elements_input_is_pegin(final Object tx_input) {
       return _tx_elements_input_is_pegin(tx_input) != 0;
   }

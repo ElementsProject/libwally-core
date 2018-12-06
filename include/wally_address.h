@@ -120,6 +120,7 @@ WALLY_CORE_API int wally_wif_to_address(
     uint32_t version,
     char **output);
 
+#ifdef BUILD_ELEMENTS
 /**
  * Extract the address from a confidential address.
  *
@@ -161,6 +162,7 @@ WALLY_CORE_API int wally_confidential_addr_from_addr(
     const unsigned char *pub_key,
     size_t pub_key_len,
     char **output);
+#endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
 }

@@ -205,6 +205,6 @@ if is_elements_build():
     tx_get_output_surjectionproof = _wrap_bin(tx_get_output_surjectionproof, tx_get_output_surjectionproof_len, resize=True)
     tx_get_output_rangeproof = _wrap_bin(tx_get_output_rangeproof, tx_get_output_rangeproof_len, resize=True)
 
-confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
+    confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC
