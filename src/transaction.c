@@ -2858,15 +2858,21 @@ static int tx_getb_impl(const void *input,
     return WALLY_OK;
 }
 
-int wally_tx_input_get_txhash(const struct wally_tx_input *input,
-                              unsigned char *bytes_out, size_t len)
-{
-    size_t written;
-    if (len != WALLY_TXHASH_LEN)
-        return WALLY_EINVAL;
-    return tx_getb_impl(input, input->txhash,
-                        WALLY_TXHASH_LEN, bytes_out, len, &written);
-}
+#define GET_TX_ARRAY(typ, name, siz) \
+    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
+                                       unsigned char *bytes_out, size_t len) { \
+        size_t written; \
+        if (len != siz) \
+            return WALLY_EINVAL; \
+        return tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
+    }
+
+GET_TX_ARRAY(tx_input, txhash, WALLY_TXHASH_LEN)
+#ifdef BUILD_ELEMENTS
+GET_TX_ARRAY(tx_input, blinding_nonce, SHA256_LEN)
+GET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
+#endif /* BUILD_ELEMENTS */
+
 
 #define GET_TX_B(typ, name, siz) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
@@ -2928,6 +2934,16 @@ int wally_tx_input_get_witness_len(const struct wally_tx_input *input,
     *written = input->witness->items[index].witness_len;
     return WALLY_OK;
 }
+#ifdef BUILD_ELEMENTS
+GET_TX_B(tx_input, issuance_amount, input->issuance_amount_len)
+GET_TX_I(tx_input, issuance_amount_len, size_t)
+GET_TX_B(tx_input, inflation_keys, input->inflation_keys_len)
+GET_TX_I(tx_input, inflation_keys_len, size_t)
+GET_TX_B(tx_input, issuance_amount_rangeproof, input->issuance_amount_rangeproof_len)
+GET_TX_I(tx_input, issuance_amount_rangeproof_len, size_t)
+GET_TX_B(tx_input, inflation_keys_rangeproof, input->inflation_keys_rangeproof_len)
+GET_TX_I(tx_input, inflation_keys_rangeproof_len, size_t)
+#endif /* BUILD_ELEMENTS */
 
 GET_TX_B(tx_output, script, input->script_len)
 GET_TX_I(tx_output, satoshi, uint64_t)
@@ -3055,6 +3071,58 @@ int wally_tx_get_input_sequence(const struct wally_tx *tx, size_t index, size_t 
     return wally_tx_input_get_sequence(tx_get_input(tx, index), written);
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_tx_get_input_blinding_nonce(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len)
+{
+    return wally_tx_input_get_blinding_nonce(tx_get_input(tx, index), bytes_out, len);
+}
+
+int wally_tx_get_input_entropy(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len)
+{
+    return wally_tx_input_get_entropy(tx_get_input(tx, index), bytes_out, len);
+}
+
+int wally_tx_get_input_issuance_amount(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_input_get_issuance_amount(tx_get_input(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_input_issuance_amount_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_get_issuance_amount_len(tx_get_input(tx, index), written);
+}
+
+int wally_tx_get_input_inflation_keys(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_input_get_inflation_keys(tx_get_input(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_input_inflation_keys_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_get_inflation_keys_len(tx_get_input(tx, index), written);
+}
+
+int wally_tx_get_input_issuance_amount_rangeproof(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_input_get_issuance_amount_rangeproof(tx_get_input(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_input_issuance_amount_rangeproof_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_get_issuance_amount_rangeproof_len(tx_get_input(tx, index), written);
+}
+
+int wally_tx_get_input_inflation_keys_rangeproof(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_tx_input_get_inflation_keys_rangeproof(tx_get_input(tx, index), bytes_out, len, written);
+}
+
+int wally_tx_get_input_inflation_keys_rangeproof_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_get_inflation_keys_rangeproof_len(tx_get_input(tx, index), written);
+}
+#endif /* BUILD_ELEMENTS */
+
 int wally_tx_get_output_script(const struct wally_tx *tx, size_t index,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
@@ -3116,7 +3184,7 @@ int wally_tx_get_output_rangeproof_len(const struct wally_tx *tx, size_t index, 
 {
     return wally_tx_output_get_rangeproof_len(tx_get_output(tx, index), written);
 }
-#endif
+#endif /* BUILD_ELEMENTS */
 
 int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t index_in)
 {

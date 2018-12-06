@@ -863,7 +863,7 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
  * :param script: The scriptSig for the input represented by ``index``.
  * :param script_len: Size of ``script`` in bytes.
  * :param value: The (confidential) value spent by the input being signed for. Only used if
- *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
+ *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass NULL otherwise.
  * :param value_len: Size of ``value`` in bytes.
  * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
  * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0

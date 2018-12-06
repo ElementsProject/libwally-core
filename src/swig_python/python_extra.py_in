@@ -170,12 +170,20 @@ wif_to_public_key = _wrap_bin(wif_to_public_key, _wif_to_public_key_len, resize=
 
 if is_elements_build():
     tx_elements_input_init = _wrap_with_defaults(tx_elements_input_init, 4, 12)
+    tx_input_get_blinding_nonce = _wrap_bin(tx_input_get_blinding_nonce, SHA256_LEN)
+    tx_input_get_entropy = _wrap_bin(tx_input_get_entropy, SHA256_LEN)
+    tx_input_get_issuance_amount = _wrap_bin(tx_input_get_issuance_amount, tx_input_get_issuance_amount_len, resize=True)
+    tx_input_get_inflation_keys = _wrap_bin(tx_input_get_inflation_keys, tx_input_get_inflation_keys_len, resize=True)
+    tx_input_get_issuance_amount_rangeproof = _wrap_bin(tx_input_get_issuance_amount_rangeproof, tx_input_get_issuance_amount_rangeproof_len, resize=True)
+    tx_input_get_inflation_keys_rangeproof = _wrap_bin(tx_input_get_inflation_keys_rangeproof, tx_input_get_inflation_keys_rangeproof_len, resize=True)
 
     tx_elements_output_init = _wrap_with_defaults(tx_elements_output_init, 3, 6)
     tx_output_get_asset = _wrap_bin(tx_output_get_asset, WALLY_TX_ASSET_CT_ASSET_LEN)
     # The returned value may be unblinded (of length WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
     tx_output_get_value = _wrap_bin(tx_output_get_value, WALLY_TX_ASSET_CT_ASSET_LEN, resize=True)
     tx_output_get_nonce = _wrap_bin(tx_output_get_nonce, WALLY_TX_ASSET_CT_ASSET_LEN)
+    tx_output_get_surjectionproof = _wrap_bin(tx_output_get_surjectionproof, tx_output_get_surjectionproof_len, resize=True)
+    tx_output_get_rangeproof = _wrap_bin(tx_output_get_surjectionproof, tx_output_get_surjectionproof_len, resize=True)
 
     tx_confidential_value_from_satoshi = _wrap_bin(tx_confidential_value_from_satoshi, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
     tx_elements_issuance_generate_entropy = _wrap_bin(tx_elements_issuance_generate_entropy, SHA256_LEN)
@@ -183,10 +191,19 @@ if is_elements_build():
     tx_elements_issuance_calculate_reissuance_token = _wrap_bin(tx_elements_issuance_calculate_reissuance_token, SHA256_LEN)
     tx_get_elements_signature_hash = _wrap_bin(tx_get_elements_signature_hash, SHA256_LEN)
 
+    tx_get_input_blinding_nonce = _wrap_bin(tx_get_input_blinding_nonce, SHA256_LEN)
+    tx_get_input_entropy = _wrap_bin(tx_get_input_entropy, SHA256_LEN)
+    tx_get_input_issuance_amount = _wrap_bin(tx_get_input_issuance_amount, tx_get_input_issuance_amount_len, resize=True)
+    tx_get_input_inflation_keys = _wrap_bin(tx_get_input_inflation_keys, tx_get_input_inflation_keys_len, resize=True)
+    tx_get_input_issuance_amount_rangeproof = _wrap_bin(tx_get_input_issuance_amount_rangeproof, tx_get_input_issuance_amount_rangeproof_len, resize=True)
+    tx_get_input_inflation_keys_rangeproof = _wrap_bin(tx_get_input_inflation_keys_rangeproof, tx_get_input_inflation_keys_rangeproof_len, resize=True)
+
     tx_get_output_asset = _wrap_bin(tx_get_output_asset, WALLY_TX_ASSET_CT_ASSET_LEN)
     # The returned value may be unblinded (of length WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
     tx_get_output_value = _wrap_bin(tx_get_output_value, WALLY_TX_ASSET_CT_VALUE_LEN, resize=True)
     tx_get_output_nonce = _wrap_bin(tx_get_output_nonce, WALLY_TX_ASSET_CT_NONCE_LEN)
+    tx_get_output_surjectionproof = _wrap_bin(tx_get_output_surjectionproof, tx_get_output_surjectionproof_len, resize=True)
+    tx_get_output_rangeproof = _wrap_bin(tx_get_output_rangeproof, tx_get_output_rangeproof_len, resize=True)
 
 confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
 
