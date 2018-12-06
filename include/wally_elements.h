@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#ifdef BUILD_ELEMENTS
+
 #define ASSET_TAG_LEN 32 /** Length of an Asset Tag */
 
 #define ASSET_GENERATOR_LEN 33 /** Length of an Asset Generator */
@@ -119,6 +121,8 @@ WALLY_CORE_API int wally_asset_unblind(
     unsigned char *vbf_out,
     size_t vbf_out_len,
     uint64_t *value_out);
+
+#endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,8 @@
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include <stdbool.h>
 
+#ifdef BUILD_ELEMENTS
+
 static int get_generator(const secp256k1_context *ctx,
                          const unsigned char *generator, size_t generator_len,
                          secp256k1_generator *dest) {
@@ -347,6 +349,8 @@ cleanup:
     wally_free(generators);
     return ret;
 }
+
+#endif /* BUILD_ELEMENTS */
 
 int wally_confidential_addr_to_addr(
     const char *address,

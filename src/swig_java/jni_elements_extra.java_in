@@ -1,0 +1,176 @@
+
+  // Support methods for the JNI class (Elements functionality)
+
+  public final static byte[] asset_generator_from_bytes(byte[] jarg1, byte[] jarg2) {
+      return asset_generator_from_bytes(jarg1, jarg2, null);
+  }
+
+  public final static byte[] asset_final_vbf(long[] jarg1, long jarg2, byte[] jarg3, byte[] jarg4) {
+      return asset_final_vbf(jarg1, jarg2, jarg3, jarg4, null);
+  }
+
+  public final static byte[] asset_value_commitment(long jarg1, byte[] jarg2, byte[] jarg3) {
+      return asset_value_commitment(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] asset_rangeproof(long jarg1, byte[] jarg2, byte[] jarg3, byte[] jarg4,
+                                              byte[] jarg5, byte[] jarg6, byte[] jarg7, byte[] jarg8,
+                                              byte[] jarg9, int jarg10) {
+      final byte[] buf = new byte[ASSET_RANGEPROOF_MAX_LEN];
+      final int len = asset_rangeproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, jarg8,
+                                       jarg9, jarg10, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] asset_surjectionproof(byte[] jarg1, byte[] jarg2, byte[] jarg3,
+                                                   byte[] jarg4, byte[] jarg5, byte[] jarg6, byte[] jarg7) {
+      final byte[] buf = new byte[asset_surjectionproof_size(jarg5.length / ASSET_TAG_LEN)];
+      final int len = asset_surjectionproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
+                                         byte[] commitment, byte[] extra_in,
+                                         byte[] generator,
+                                         final java.util.List<byte[]> outputs) {
+      // We return asset_out, abf_out, vbf_out in the passed list
+      for (int i = 0; i < 3; i++) // asset_out, abf_out, vbf_out
+          outputs.add(new byte[ASSET_TAG_LEN]);
+      return asset_unblind(pub_key, priv_key, proof, commitment, extra_in, generator,
+                           outputs.get(0), outputs.get(1), outputs.get(2));
+  }
+
+  public final static boolean tx_elements_input_is_pegin(final Object tx_input) {
+      return _tx_elements_input_is_pegin(tx_input) != 0;
+  }
+
+  public final static byte[] tx_input_get_blinding_nonce(Object tx_input) {
+      return tx_input_get_blinding_nonce(tx_input, null);
+  }
+
+  public final static byte[] tx_input_get_entropy(Object tx_input) {
+      return tx_input_get_entropy(tx_input, null);
+  }
+
+  public final static byte[] tx_input_get_issuance_amount(Object tx_input) {
+      final byte[] buf = new byte[tx_input_get_issuance_amount_len(tx_input)];
+      final int len = _tx_input_get_issuance_amount(tx_input, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_input_get_inflation_keys(Object tx_input) {
+      final byte[] buf = new byte[tx_input_get_inflation_keys_len(tx_input)];
+      final int len = _tx_input_get_inflation_keys(tx_input, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_input_get_issuance_amount_rangeproof(Object tx_input) {
+      final byte[] buf = new byte[tx_input_get_issuance_amount_rangeproof_len(tx_input)];
+      final int len = _tx_input_get_issuance_amount_rangeproof(tx_input, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_input_get_inflation_keys_rangeproof(Object tx_input) {
+      final byte[] buf = new byte[tx_input_get_inflation_keys_rangeproof_len(tx_input)];
+      final int len = _tx_input_get_inflation_keys_rangeproof(tx_input, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_output_get_asset(Object tx_out) {
+      final byte[] buf = new byte[tx_output_get_asset_len(tx_out)];
+      final int len = _tx_output_get_asset(tx_out, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_output_get_value(Object tx_out) {
+      final byte[] buf = new byte[tx_output_get_value_len(tx_out)];
+      final int len = _tx_output_get_value(tx_out, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_output_get_nonce(Object tx_out) {
+      final byte[] buf = new byte[tx_output_get_nonce_len(tx_out)];
+      final int len = _tx_output_get_nonce(tx_out, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_output_get_surjectionproof(Object tx_out) {
+      final byte[] buf = new byte[tx_output_get_surjectionproof_len(tx_out)];
+      final int len = _tx_output_get_surjectionproof(tx_out, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_output_get_rangeproof(Object tx_out) {
+      final byte[] buf = new byte[tx_output_get_rangeproof_len(tx_out)];
+      final int len = _tx_output_get_rangeproof(tx_out, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static boolean tx_is_elements(final Object tx) {
+      return _tx_is_elements(tx) != 0;
+  }
+
+  public final static byte[] tx_get_input_blinding_nonce(Object tx, final int index) {
+      return tx_get_input_blinding_nonce(tx, index, null);
+  }
+
+  public final static byte[] tx_get_input_entropy(Object tx, final int index) {
+      return tx_get_input_entropy(tx, index, null);
+  }
+
+  public final static byte[] tx_get_input_issuance_amount(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_input_issuance_amount_len(tx, index)];
+      final int len = _tx_get_input_issuance_amount(tx, index, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_input_inflation_keys(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_input_inflation_keys_len(tx, index)];
+      final int len = _tx_get_input_inflation_keys(tx, index, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_input_issuance_amount_rangeproof(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_input_issuance_amount_rangeproof_len(tx, index)];
+      final int len = _tx_get_input_issuance_amount_rangeproof(tx, index, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_input_inflation_keys_rangeproof(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_input_inflation_keys_rangeproof_len(tx, index)];
+      final int len = _tx_get_input_inflation_keys_rangeproof(tx, index, buf);
+      return checkBuffer(buf, len);
+  }
+
+
+  public final static byte[] tx_get_output_asset(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_output_asset_len(tx, index)];
+      final int len = _tx_get_output_asset(tx, index, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_output_value(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_output_value_len(tx, index)];
+      final int len = _tx_get_output_value(tx, index, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_output_nonce(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_output_nonce_len(tx, index)];
+      final int len = _tx_get_output_nonce(tx, index, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_output_surjectionproof(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_output_surjectionproof_len(tx, index)];
+      final int len = _tx_get_output_surjectionproof(tx, index, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] tx_get_output_rangeproof(Object tx, final int index) {
+      final byte[] buf = new byte[tx_get_output_rangeproof_len(tx, index)];
+      final int len = _tx_get_output_rangeproof(tx, index, buf);
+      return trimBuffer(buf, len);
+  }
+
+

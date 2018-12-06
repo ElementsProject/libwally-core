@@ -1,6 +1,17 @@
 
   // Support methods for the JNI class
 
+  private final static byte[] trimBuffer(final byte[] buf, final int len) {
+      if (len > buf.length) throw new IllegalArgumentException();
+      return len == buf.length ? buf: java.util.Arrays.copyOf(buf, len);
+  }
+
+  private final static byte[] checkBuffer(final byte[] buf, final int len) {
+      if (len != buf.length)
+          throw new RuntimeException("Failed");
+      return buf;
+  }
+
   public final static byte[] aes(byte[] jarg1, byte[] jarg2, long jarg3) {
       return aes(jarg1, jarg2, jarg3, null);
   }
@@ -171,99 +182,50 @@
       return trimBuffer(buf, len);
   }
 
-  public final static byte[] asset_generator_from_bytes(byte[] jarg1, byte[] jarg2) {
-      return asset_generator_from_bytes(jarg1, jarg2, null);
+  public final static boolean wif_is_uncompressed(final String wif) {
+      return _wif_is_uncompressed(wif) != 0;
   }
 
-  public final static byte[] asset_final_vbf(long[] jarg1, long jarg2, byte[] jarg3, byte[] jarg4) {
-      return asset_final_vbf(jarg1, jarg2, jarg3, jarg4, null);
+  public final static boolean tx_is_coinbase(final Object tx) {
+      return _tx_is_coinbase(tx) != 0;
   }
-
-  public final static byte[] asset_value_commitment(long jarg1, byte[] jarg2, byte[] jarg3) {
-      return asset_value_commitment(jarg1, jarg2, jarg3, null);
-  }
-
-  private final static byte[] trimBuffer(final byte[] buf, final int len) {
-      if (len > buf.length) throw new IllegalArgumentException();
-      return len == buf.length ? buf: java.util.Arrays.copyOf(buf, len);
-  }
-
-  private final static void checkBuffer(final byte[] buf, final int len) {
-      if (len != buf.length)
-          throw new RuntimeException("Failed");
-  }
-
-  public final static byte[] asset_rangeproof(long jarg1, byte[] jarg2, byte[] jarg3, byte[] jarg4,
-                                              byte[] jarg5, byte[] jarg6, byte[] jarg7, byte[] jarg8,
-                                              byte[] jarg9, int jarg10) {
-      final byte[] buf = new byte[ASSET_RANGEPROOF_MAX_LEN];
-      final int len = asset_rangeproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, jarg8,
-                                       jarg9, jarg10, buf);
-      return trimBuffer(buf, len);
-  }
-
 
   public final static byte[] tx_get_input_script(Object tx, long jarg2) {
-      final byte[] buf = new byte[_tx_get_input_script_len(tx, jarg2)];
+      final byte[] buf = new byte[tx_get_input_script_len(tx, jarg2)];
       final int len = _tx_get_input_script(tx, jarg2, buf);
-      checkBuffer(buf,len);
-      return buf;
+      return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_script(Object tx) {
-      final byte[] buf = new byte[_tx_input_get_script_len(tx)];
+      final byte[] buf = new byte[tx_input_get_script_len(tx)];
       final int len = _tx_input_get_script(tx, buf);
-      checkBuffer(buf,len);
-      return buf;
+      return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_input_witness(Object tx, long jarg2, long jarg3) {
-      final byte[] buf = new byte[_tx_get_input_witness_len(tx, jarg2, jarg3)];
+      final byte[] buf = new byte[tx_get_input_witness_len(tx, jarg2, jarg3)];
       final int len = _tx_get_input_witness(tx, jarg2, jarg3, buf);
-      checkBuffer(buf,len);
-      return buf;
+      return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_input_get_witness(Object tx, long jarg2) {
-      final byte[] buf = new byte[_tx_input_get_witness_len(tx, jarg2)];
+      final byte[] buf = new byte[tx_input_get_witness_len(tx, jarg2)];
       final int len = _tx_input_get_witness(tx, jarg2, buf);
-      checkBuffer(buf,len);
-      return buf;
+      return checkBuffer(buf, len);
   }
 
-
   public final static byte[] tx_get_output_script(Object tx, long jarg2) {
-      final byte[] buf = new byte[_tx_get_output_script_len(tx, jarg2)];
+      final byte[] buf = new byte[tx_get_output_script_len(tx, jarg2)];
       final int len = _tx_get_output_script(tx, jarg2, buf);
-      checkBuffer(buf,len);
-      return buf;
+      return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_output_get_script(Object tx_out) {
-      final byte[] buf = new byte[_tx_output_get_script_len(tx_out)];
+      final byte[] buf = new byte[tx_output_get_script_len(tx_out)];
       final int len = _tx_output_get_script(tx_out, buf);
-      checkBuffer(buf,len);
-      return buf;
+      return checkBuffer(buf, len);
   }
 
-  public final static byte[] asset_surjectionproof(byte[] jarg1, byte[] jarg2, byte[] jarg3,
-                                                   byte[] jarg4, byte[] jarg5, byte[] jarg6, byte[] jarg7) {
-      final byte[] buf = new byte[asset_surjectionproof_size(jarg5.length / ASSET_TAG_LEN)];
-      final int len = asset_surjectionproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, buf);
-      return trimBuffer(buf, len);
-  }
-
-  public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
-                                         byte[] commitment, byte[] extra_in,
-                                         byte[] generator,
-                                         final java.util.List<byte[]> outputs) {
-      // We return asset_out, abf_out, vbf_out in the passed list
-      for (int i = 0; i < 3; i++) // asset_out, abf_out, vbf_out
-          outputs.add(new byte[ASSET_TAG_LEN]);
-      return asset_unblind(pub_key, priv_key, proof, commitment, extra_in, generator,
-                           outputs.get(0), outputs.get(1), outputs.get(2));
-  }
- 
   public final static long tx_get_input_sequence(final Object tx, final int index) {
     return _tx_get_input_sequence(tx, index) & 0x00000000ffffffffL;
   }
@@ -273,7 +235,7 @@
   }
 
   public final static boolean is_elements_build() {
-      return _is_elements_build() == 1;
+      return _is_elements_build() != 0;
   }
 
   public final static void cleanup() {
@@ -285,4 +247,3 @@
       confidential_addr_to_ec_public_key(addr, prefix, buf);
       return buf;
   }
-}

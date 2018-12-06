@@ -3146,6 +3146,11 @@ int wally_tx_get_output_asset(const struct wally_tx *tx, size_t index,
     return wally_tx_output_get_asset(tx_get_output(tx, index), bytes_out, len);
 }
 
+int wally_tx_get_output_asset_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_asset_len(tx_get_output(tx, index), written);
+}
+
 int wally_tx_get_output_value(const struct wally_tx *tx, size_t index,
                               unsigned char *bytes_out, size_t len, size_t *written)
 {
@@ -3161,6 +3166,11 @@ int wally_tx_get_output_nonce(const struct wally_tx *tx, size_t index,
                               unsigned char *bytes_out, size_t len)
 {
     return wally_tx_output_get_nonce(tx_get_output(tx, index), bytes_out, len);
+}
+
+int wally_tx_get_output_nonce_len(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_output_get_nonce_len(tx_get_output(tx, index), written);
 }
 
 int wally_tx_get_output_surjectionproof(const struct wally_tx *tx, size_t index,

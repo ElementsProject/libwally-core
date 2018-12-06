@@ -190,15 +190,23 @@ def open_file(prefix, name):
 def main():
     prefix = 'wrap_js/'
     build_type = sys.argv[2]
+    try:
+        extra_args = sys.argv[3]
+    except IndexError:
+        extra_args = ''
+
+    node_funcs = FUNCS
+    if 'elements' in extra_args:
+        node_funcs += FUNCS_NODE
 
     if sys.argv[1] == 'nodejs':
         # Node.js wrapper using Native Abstractions for Node.js
         with open_file(prefix, 'nodejs_wrap.cc') as f:
-            f.write(nan.generate(FUNCS + FUNCS_NODE, build_type))
+            f.write(nan.generate(node_funcs, build_type))
     elif sys.argv[1] == 'wally':
         # JS wrapper to choose cordova or node at run time
         with open_file(prefix, 'wally.js') as f:
-            f.write(js.generate(FUNCS + FUNCS_NODE, build_type))
+            f.write(js.generate(node_funcs, build_type))
             f.write(export_js_constants.generate(os.path.pardir))
     elif sys.argv[1] == 'cordova-java':
         # Java cordova plugin for Android
