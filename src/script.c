@@ -558,7 +558,7 @@ int wally_scriptpubkey_multisig_from_bytes(
         return WALLY_EINVAL;
 
     if (len < script_len) {
-        *written = len;
+        *written = script_len;
         return WALLY_OK;
     }
 
@@ -656,7 +656,7 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
         return WALLY_EINVAL;
 
     if (len < script_len) {
-        *written = len;
+        *written = script_len;
         return WALLY_OK;
     }
 
@@ -711,7 +711,7 @@ int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
         return WALLY_EINVAL;
 
     if (len < script_len) {
-        *written = len;
+        *written = script_len;
         return WALLY_OK;
     }
 
