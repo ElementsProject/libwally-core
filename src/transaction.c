@@ -2545,8 +2545,7 @@ fail:
 int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                         uint32_t flags, struct wally_tx **output)
 {
-    return tx_from_bytes(bytes, bytes_len, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, output,
-                         flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    return tx_from_bytes(bytes, bytes_len, flags, output, flags & WALLY_TX_FLAG_USE_ELEMENTS);
 }
 
 int wally_tx_from_hex(const char *hex, uint32_t flags,
