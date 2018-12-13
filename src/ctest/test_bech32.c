@@ -21,6 +21,8 @@ static bool check_segwit_to_bytes(void)
     if (ret != WALLY_EINVAL)
         return false;
 
+    free(mem);
+
     return true;
 }
 

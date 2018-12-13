@@ -116,6 +116,10 @@ static bool tx_coinbase(const char *tx_hex)
     if (ret != WALLY_OK || !is_coinbase)
         return false;
 
+    /* Clean up (for valgrind heap checking) */
+    ret = wally_tx_free(tx);
+    check_ret(ret);
+
     return true;
 }
 
