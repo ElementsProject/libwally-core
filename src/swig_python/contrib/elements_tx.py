@@ -31,15 +31,18 @@ class ElementsTxTests(unittest.TestCase):
             tx_input_get_witness(tx_input, 0) # Can't get a non-existent witness
 
     def test_tx_output(self):
-        # Test invalid outputs
-        satoshi, script = 10000, b'0000'
+        # Test outputs
+        satoshi, script, asset, asset2 = 10000, b'0000', b'0' * 33, b'1' * 33
 
         # Create a valid output
         ct_value = tx_confidential_value_from_satoshi(satoshi)
-        tx_output = tx_elements_output_init(script, None, ct_value)
+        tx_output = tx_elements_output_init(script, asset, ct_value)
         self.assertEqual(tx_output_get_script_len(tx_output), len(script))
         self.assertEqual(tx_output_get_script(tx_output), script)
-        self.assertEqual(tx_output_get_asset_len(tx_output), 0)
+        self.assertEqual(tx_output_get_asset(tx_output), asset)
+        self.assertEqual(tx_output_get_asset_len(tx_output), len(asset))
+        tx_output_set_asset(tx_output, asset2)
+        self.assertEqual(tx_output_get_asset(tx_output), asset2)
         self.assertEqual(tx_output_get_value_len(tx_output), len(ct_value))
         self.assertEqual(tx_output_get_value(tx_output), ct_value)
 
