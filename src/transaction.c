@@ -549,16 +549,20 @@ int wally_tx_elements_input_issuance_free(
 #ifdef BUILD_ELEMENTS
     if (input) {
         input->features &= ~(WALLY_TX_IS_ELEMENTS | WALLY_TX_IS_ISSUANCE);
-        wally_clear(input->blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
-        wally_clear(input->entropy, WALLY_TX_ASSET_TAG_LEN);
-        clear_and_free(input->issuance_amount, input->issuance_amount_len);
-        clear_and_free(input->inflation_keys, input->inflation_keys_len);
-        clear_and_free(input->issuance_amount_rangeproof, input->issuance_amount_rangeproof_len);
-        clear_and_free(input->inflation_keys_rangeproof, input->inflation_keys_rangeproof_len);
-        input->issuance_amount = NULL;
-        input->inflation_keys = NULL;
-        input->issuance_amount_rangeproof = NULL;
-        input->inflation_keys_rangeproof = NULL;
+        wally_clear(input->blinding_nonce, sizeof(input->blinding_nonce));
+        wally_clear(input->entropy, sizeof(input->entropy));
+
+#define FREE_PTR_AND_LEN(name) clear_and_free(input->name, input->name ## _len); \
+    input->name = NULL; input->name ## _len = 0
+
+        FREE_PTR_AND_LEN(issuance_amount);
+        FREE_PTR_AND_LEN(inflation_keys);
+        FREE_PTR_AND_LEN(issuance_amount_rangeproof);
+        FREE_PTR_AND_LEN(inflation_keys_rangeproof);
+#undef FREE_PTR_AND_LEN
+
+        tx_witness_stack_free(input->pegin_witness, true);
+        input->pegin_witness = NULL;
     }
 #endif /* BUILD_ELEMENTS */
     return WALLY_OK;
