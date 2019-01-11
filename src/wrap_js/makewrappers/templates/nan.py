@@ -324,7 +324,7 @@ def _generate_nan(funcname, f):
                 'unsigned char* inbuf = (unsigned char*) node::Buffer::Data(info[%s]->ToObject());'
                 'bip32_key_unserialize_alloc(inbuf, node::Buffer::Length(info[%s]->ToObject()), &inkey);'
             ) % (i, i))
-            args.append('inkey');
+            args.append('inkey')
             postprocessing.append('bip32_key_free(inkey);')
         elif arg in ['bip32_pub_out', 'bip32_priv_out']:
             output_args.append(
@@ -337,6 +337,13 @@ def _generate_nan(funcname, f):
                     'bip32_priv_out': 'BIP32_FLAG_KEY_PRIVATE'}[arg]
             postprocessing.append('bip32_key_serialize(outkey, %s, out, BIP32_SERIALIZED_LEN);' % flag)
             postprocessing.append('bip32_key_free(outkey);')
+        elif arg in ['bip39_words_lang_in']:
+            input_args.append((
+                'struct words *wordlist;'
+                'if (ret == WALLY_OK)'
+                '    ret = bip39_get_wordlist(*Nan::Utf8String(info[%s]), &wordlist);'
+            ) % (i))
+            args.append('wordlist')
         else:
             assert False, 'unknown argument type'
 

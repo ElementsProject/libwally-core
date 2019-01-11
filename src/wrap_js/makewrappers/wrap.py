@@ -105,6 +105,16 @@ FUNCS = [
         'out_bytes_fixedsized'
     ], out_size='32')),
 
+    # BIP39:
+    ('bip39_get_languages', F([
+        'out_str_p'])),
+    ('bip39_mnemonic_from_bytes', F([
+        'bip39_words_lang_in', 'const_bytes[entropy]',
+        'out_str_p'])),
+    ('bip39_mnemonic_to_seed', F([
+        'string[mnemonic]', 'string[pass]', 'out_bytes_sized'
+    ], out_size='64')),
+
     # signing:
     ('wally_ec_sig_from_bytes', F([
         'const_bytes[key]', 'const_bytes[bytes]', 'uint32_t[flags]',
