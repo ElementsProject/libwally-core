@@ -65,6 +65,7 @@ else
 	_JTOPDIR=`echo "$_ACJNI_FOLLOWED" | sed -e 's://*:/:g' -e 's:/[[^/]]*$::'`
 fi
 
+if test x$cross_compiling != xyes; then
 case "$host_os" in
         darwin*)        # Apple Java headers are inside the Xcode bundle.
             macos_version=$(sw_vers -productVersion | sed -n -e 's/^@<:@0-9@:>@*.\(@<:@0-9@:>@*\).@<:@0-9@:>@*/\1/p')
@@ -78,6 +79,7 @@ case "$host_os" in
             ;;
         *) _JINC="$_JTOPDIR/include";;
 esac
+fi
 _AS_ECHO_LOG([_JTOPDIR=$_JTOPDIR])
 _AS_ECHO_LOG([_JINC=$_JINC])
 
