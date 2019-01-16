@@ -444,7 +444,7 @@ WALLY_FN_P_P(bip32_key_from_base58, bip32_key_from_base58)
 WALLY_FN_P_P(tx_get_total_output_satoshi, wally_tx_get_total_output_satoshi)
 WALLY_FN_S_S(tx_vsize_from_weight, wally_tx_vsize_from_weight)
 
-inline struct secp256k1_context_struct *get_secp_context() {
+inline struct secp256k1_context *get_secp_context() {
     return ::wally_get_secp_context();
 }
 

@@ -24,9 +24,9 @@ const secp256k1_context *secp_ctx(void)
 }
 
 #ifndef SWIG
-struct secp256k1_context_struct *wally_get_secp_context(void)
+struct secp256k1_context *wally_get_secp_context(void)
 {
-    return (struct secp256k1_context_struct *)secp_ctx();
+    return (struct secp256k1_context *)secp_ctx();
 }
 #endif
 
