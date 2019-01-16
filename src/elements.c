@@ -161,7 +161,7 @@ int wally_asset_rangeproof(uint64_t value,
         goto cleanup;
 
     /* Create the rangeproof nonce */
-    if (!secp256k1_ecdh(ctx, nonce, &pub, priv_key)) {
+    if (!secp256k1_ecdh(ctx, nonce, &pub, priv_key, NULL, NULL)) {
         /* FIXME: Only return WALLY_ERROR if this can fail while priv_key
          * passes wally_ec_private_key_verify(), otherwise return WALLY_EINVAL
          */
@@ -232,7 +232,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
         goto cleanup;
 
     /* Create the rangeproof nonce */
-    if (!secp256k1_ecdh(ctx, nonce, &pub, priv_key))
+    if (!secp256k1_ecdh(ctx, nonce, &pub, priv_key, NULL, NULL))
         goto cleanup;
     wally_sha256(nonce, sizeof(nonce), nonce_sha.u.u8, sizeof(nonce_sha));
 
