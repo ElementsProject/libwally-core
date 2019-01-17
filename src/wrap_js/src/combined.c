@@ -32,7 +32,7 @@ void wally_silence_unused_warnings(void)
     assert_bip32_assumptions();
     assert_bip38_assumptions();
     assert_tx_assumptions();
-    secp256k1_ge_set_all_gej_var(NULL, NULL, 0, NULL);
+    secp256k1_ge_set_all_gej_var(NULL, NULL, 0);
     secp256k1_gej_has_quad_y_var(NULL);
     secp256k1_gej_is_valid_var(NULL);
     secp256k1_ge_set_infinity(NULL);
