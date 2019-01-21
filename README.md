@@ -107,9 +107,8 @@ used as an example for your own python projects.
 ### Android
 
 Android builds are currently supported for all Android binary targets using
-a toolchain directory created with the Android NDK tool
-`make_standalone_toolchain.py`. The script `tools/android_helpers.sh` can be
-sourced from the shell or scripts to make it easier to produce builds:
+the Android NDK. The script `tools/android_helpers.sh` can be sourced from
+the shell or scripts to make it easier to produce builds:
 
 ```
 $ export ANDROID_HOME=/opt/android-sdk
@@ -123,7 +122,7 @@ $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
 
 # See the comments in tools/android_helpers.sh for arguments
-$ android_build_wally armeabi-v7a $PWD/toolchain-armeabi-v7a 19 "--enable-swig-java"
+$ android_build_wally armeabi-v7a $ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64 19 "--enable-swig-java"
 ```
 
 The script `tools/build_android_libraries.sh` builds the Android release files and

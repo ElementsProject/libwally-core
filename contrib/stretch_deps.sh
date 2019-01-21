@@ -1,10 +1,9 @@
 #! /usr/bin/env bash
 set -e
 
-export NDK_FILENAME=android-ndk-r18b-linux-x86_64.zip
+export NDK_FILENAME=android-ndk-r19-linux-x86_64.zip
 
 dpkg --add-architecture i386
-sed -i 's/deb.debian.org/httpredir.debian.org/g' /etc/apt/sources.list
 
 apt-get update -qq
 apt-get upgrade -yqq

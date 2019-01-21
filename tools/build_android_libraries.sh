@@ -32,7 +32,10 @@ for arch in $ARCH_LIST; do
     fi
 
     # Location of the NDK tools to build with
-    toolsdir="$PWD/toolchain-$arch"
+    toolsdir=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
+    if [ "$(uname)" == "Darwin" ]; then
+        toolsdir=$ANDROID_NDK/toolchains/llvm/prebuilt/darwin-x86_64
+    fi
 
     # What we want built
     useropts="--enable-swig-java $ENABLE_ELEMENTS"
@@ -42,7 +45,13 @@ for arch in $ARCH_LIST; do
 
     # Copy the build result
     mkdir -p $PWD/release/lib/$arch
-    $toolsdir/bin/*linux*-strip -o $PWD/release/lib/$arch/libwallycore.so $PWD/src/.libs/libwallycore.so
+    archfilename=$arch
+    case $arch in
+        armeabi-v7a) archfilename=arm;;
+        arm64-v8a) archfilename=aarch64;;
+        x86) archfilename=i686;;
+    esac
+    $toolsdir/bin/$archfilename-linux-android*-strip -o $PWD/release/lib/$arch/libwallycore.so $PWD/src/.libs/libwallycore.so
 done
 
 mkdir -p $PWD/release/include $PWD/release/src/swig_java/src/com/blockstream/libwally
