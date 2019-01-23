@@ -202,6 +202,8 @@ if test x"$use_ecmult_static_precomputation" != x"no"; then
   CFLAGS="$CFLAGS_FOR_BUILD"
   SAVE_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS_FOR_BUILD"
+  SAVE_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS_FOR_BUILD"
 
   warn_CFLAGS_FOR_BUILD="-Wall -Wextra -Wno-unused-function"
   saved_CFLAGS="$CFLAGS"
@@ -222,6 +224,7 @@ if test x"$use_ecmult_static_precomputation" != x"no"; then
   CFLAGS_FOR_BUILD="$CFLAGS"
   CPPFLAGS="$SAVE_CPPFLAGS"
   CFLAGS="$SAVE_CFLAGS"
+  LDFLAGS="$SAVE_LDFLAGS"
   CC="$SAVE_CC"
   cross_compiling=$save_cross_compiling
 
