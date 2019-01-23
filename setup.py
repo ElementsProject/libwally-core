@@ -91,7 +91,7 @@ else:
             extra_build_options = os.getenv('ENABLE_ELEMENTS', '')
             call('./tools/cleanup.sh')
             call('./tools/autogen.sh')
-            call('./configure --enable-swig-python {}'.format(extra_build_options))
+            call('./configure --enable-swig-python --enable-ecmult-static-precomputation {}'.format(extra_build_options))
             call('make -j{}'.format(multiprocessing.cpu_count()))
 
             # Copy the so that has just been built to the build_dir that distutils expects it to be in
