@@ -80,6 +80,12 @@ FUNCS = [
         'uint32_t[flags]', 'out_bytes_sized'
     ], out_size='Math.ceil(_arguments[2].length / 16) * 16 + 16')),
 
+    # Script:
+    ('wally_scriptpubkey_multisig_from_bytes', F([
+        'const_bytes[bytes]', 'uint32_t[threshold]', 'uint32_t[flags]', 
+        'out_bytes_sized' 
+    ], out_size='Math.ceil(_arguments[0].length / 33) * 34 + 3')),
+
     # Scrypt:
     ('wally_scrypt', F([
         'const_bytes[passwd]', 'const_bytes[salt]',
@@ -140,6 +146,10 @@ FUNCS = [
     ('bip32_key_get_priv_key', F([
         'bip32_in', 'out_bytes_fixedsized'
     ], out_size='32')),
+
+    ('wally_ec_public_key_from_private_key', F([
+        'const_bytes[key]', 'out_bytes_fixedsized'
+    ], out_size='33')),
 
     ('wally_format_bitcoin_message', F([
         'const_bytes[message]', 'uint32_t[flags]',
