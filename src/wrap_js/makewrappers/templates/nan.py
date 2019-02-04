@@ -274,23 +274,11 @@ def _generate_nan(funcname, f):
                 '}',
             ])
             result_wrap = 'str_res'
-        elif arg == 'out_bytes_sized':
+        elif arg.startswith('out_bytes_sized'):
             output_args.extend([
                 'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
                 'unsigned char *res_ptr = Allocate(res_size, ret);',
                 'size_t out_size;'
-            ])
-            args.append('res_ptr')
-            args.append('res_size')
-            args.append('&out_size')
-            postprocessing.extend([
-                'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);'
-            ])
-        elif arg == 'out_bytes_sized_script':
-            output_args.extend([
-                'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
-                'unsigned char *res_ptr = Allocate(res_size, ret);',
-                'size_t out_size;',
             ])
             args.append('res_ptr')
             args.append('res_size')
