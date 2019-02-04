@@ -82,8 +82,8 @@ FUNCS = [
 
     # Script:
     ('wally_scriptpubkey_multisig_from_bytes', F([
-        'const_bytes[bytes]', 'uint32_t[threshold]', 'uint32_t[flags]', 
-        'out_bytes_sized' 
+        'const_bytes[bytes]', 'uint32_t[threshold]', 'uint32_t[flags]',
+        'out_bytes_sized'
     ], out_size='Math.ceil(_arguments[0].length / 33) * 34 + 3')),
 
     # Scrypt:

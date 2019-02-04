@@ -58,7 +58,7 @@ wally.bip32_key_from_seed(Buffer.from('00000000000000000000000000000000', 'hex')
   var _pubkey2 = wally.bip32_pubkey_from_parent(s, 2, 0);
 
   return Promise.all([_pubkey1, _pubkey2]);
-  
+
 }).then((xpubkeys) => {
   const pubkey1 = xpubkeys[0].slice(45, 78);
   const pubkey2 = xpubkeys[1].slice(45, 78);
@@ -81,7 +81,7 @@ wally.bip32_key_from_seed(Buffer.from('00000000000000000000000000000000', 'hex')
 
   // base58 encode with adding checksum
   return wally.wally_base58_from_bytes(Buffer.concat([prefix, script_hash]), 1);
-  
+
 }).then((addr) => {
   console.log('multisig addr: ', addr);
 });
@@ -90,10 +90,10 @@ wally.bip32_key_from_seed(Buffer.from('00000000000000000000000000000000', 'hex')
 .then(function(s) {
 
   return wally.bip32_pubkey_from_parent(s, 0, 1);
-  
+
 }).then((xpubkey) => {
   const pubkey = xpubkey.slice(45, 78);
- 
+
   return wally.wally_hash160(pubkey);
 
 }).then((script) => {
