@@ -11,7 +11,6 @@ TEMPLATE='''#include <nan.h>
 #include "../include/wally_elements.h"
 #include "../include/wally_script.h"
 #include <vector>
-#include <iostream>
 namespace {
 
 static struct wally_operations w_ops;
