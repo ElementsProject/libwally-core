@@ -1,6 +1,6 @@
 const wally = require('./wally');
 const EC_PUBLIC_KEY_LEN = 33;
-const VERSION_PREFIX_LIQUID = '4b'
+const VERSION_PREFIX_LIQUID = '4b';
 var seed = Buffer.from('00000000000000000000000000000000', 'hex');
 
 wally.wally_sha256(Buffer.from('test', 'ascii')).then(function(uint8Array) {
