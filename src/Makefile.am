@@ -283,6 +283,7 @@ endif
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip39.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_hash.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_script.js
 endif
 endif # SHARED_BUILD_ENABLED
 endif # RUN_TESTS
