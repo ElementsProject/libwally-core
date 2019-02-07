@@ -4,7 +4,7 @@ const EC_PUBLIC_KEY_LEN = 33;
 var seed = Buffer.from('00000000000000000000000000000000', 'hex');
 
 test('BIP32 from seed + derivation', function(t) {
-  t.plan(7);
+  t.plan(6);
   wally.bip32_key_from_seed(Buffer.from(seed), 0x0488ADE4, 0).then(function(s) {
     wally.wally_base58_from_bytes(s, 1).then(function (s) {
       t.equal(
@@ -59,17 +59,6 @@ test('BIP32 from seed + derivation', function(t) {
             base58_xpub,
             'xpub6An6e2ai6kSDnnxJ3876JwfeigdQu9YNudcP7ayT828xDFzFQkP9oBoBNdvj7xDrDQd9TQDpzkLhM5L71rFDTmxMuzSvXwZKnLx56Es6MEg',
             'xpub M/0/0/1'
-          );
-        });
-
-        var version = Buffer.from('0014', 'hex');
-        wally.wally_hash160(xpub_0_0_1.slice(45, 78)).then((hash160) => {
-          return wally.wally_addr_segwit_from_bytes(Buffer.concat([version, Buffer.from(hash160)]),'tb',0);
-        }).then((addr) => {
-          t.equal(
-            addr,
-            'tb1q6pqwl5tyaluz8qtqky7x2cmxzqdr6gsyld4hrn',
-            'bech32: addr'
           );
         });
       });
