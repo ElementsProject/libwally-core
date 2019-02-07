@@ -1,12 +1,12 @@
-var wally = require('../wally');
-var test = require('tape');
-const EC_PUBLIC_KEY_LEN = 33;
-var seed = Buffer.from('00000000000000000000000000000000', 'hex');
+const wally = require('../wally');
+const test = require('tape');
+const seed = Buffer.from('00000000000000000000000000000000', 'hex');
 
 test('BIP32 from seed + derivation', function(t) {
   t.plan(6);
-  wally.bip32_key_from_seed(Buffer.from(seed), 0x0488ADE4, 0).then(function(s) {
-    wally.wally_base58_from_bytes(s, 1).then(function (s) {
+
+  wally.bip32_key_from_seed(Buffer.from(seed), wally.BIP32_VER_MAIN_PRIVATE, wally.BIP32_FLAG_KEY_PRIVATE).then(function(s) {
+    wally.wally_base58_from_bytes(s, wally.BASE58_FLAG_CHECKSUM).then(function (s) {
       t.equal(
         s,
         ('xprv9s21ZrQH143K2JbpEjGU94NcdKSASB7LuXvJCTsxuENcGN1nVG7Q'+
@@ -15,8 +15,8 @@ test('BIP32 from seed + derivation', function(t) {
       );
     });
 
-    wally.bip32_pubkey_from_parent(s, 1, 0).then(function (pub) {
-      wally.wally_base58_from_bytes(pub, 1).then(function (s) {
+    wally.bip32_pubkey_from_parent(s, 1, wally.BIP32_FLAG_KEY_PRIVATE).then(function (pub) {
+      wally.wally_base58_from_bytes(pub, wally.BASE58_FLAG_CHECKSUM).then(function (s) {
         t.equal(
           s,
           ('xpub683nVy7Tt7baCKuqho7X5C7TGuskZAa4wQ5YEue2BxtYB6upN4Yg'+
@@ -36,8 +36,8 @@ test('BIP32 from seed + derivation', function(t) {
       });
     })
 
-    wally.bip32_privkey_from_parent(s, 0, 0).then(function (xpriv_0_0) {
-      wally.wally_base58_from_bytes(xpriv_0_0, 1).then(function (base58_xpriv) {
+    wally.bip32_privkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PRIVATE).then(function (xpriv_0_0) {
+      wally.wally_base58_from_bytes(xpriv_0_0, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpriv) {
         t.equal(
           base58_xpriv,
           'xprv9u4S6Taa3k3GxnaHfWzboKwLPPPHpDyDHdLGqDArBejguBuv6GkerLy6MtAeFfo9RDfZy22FWEc1ExEShuRGZJpgVgeVu5KZ5obWbV2R3D2',
@@ -46,8 +46,8 @@ test('BIP32 from seed + derivation', function(t) {
       });
     });
 
-    wally.bip32_pubkey_from_parent(s, 0, 0).then(function (xpub_0_0) {
-      wally.wally_base58_from_bytes(xpub_0_0, 1).then(function (base58_xpub) {
+    wally.bip32_pubkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PRIVATE).then(function (xpub_0_0) {
+      wally.wally_base58_from_bytes(xpub_0_0, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpub) {
         t.equal(
           base58_xpub,
           'xpub683nVy7Tt7baBGekmYXcATt4wRDnDgh4erFsdbaTjzGfmzF4dp4uQ9HaDCdvSqctrsbxZey5wozKyyy2J3zhDDHU3UhW4uCFQp6bESv8ewQ',
@@ -55,8 +55,8 @@ test('BIP32 from seed + derivation', function(t) {
         );
       });
 
-      wally.bip32_pubkey_from_parent(xpub_0_0, 1, 1).then(function (xpub_0_0_1) {
-        wally.wally_base58_from_bytes(xpub_0_0_1, 1).then(function (base58_xpub) {
+      wally.bip32_pubkey_from_parent(xpub_0_0, 1, wally.BIP32_FLAG_KEY_PUBLIC).then(function (xpub_0_0_1) {
+        wally.wally_base58_from_bytes(xpub_0_0_1, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpub) {
           t.equal(
             base58_xpub,
             'xpub6An6e2ai6kSDnnxJ3876JwfeigdQu9YNudcP7ayT828xDFzFQkP9oBoBNdvj7xDrDQd9TQDpzkLhM5L71rFDTmxMuzSvXwZKnLx56Es6MEg',
@@ -71,15 +71,15 @@ test('BIP32 from seed + derivation', function(t) {
 test('BIP32 from seed to address', function(t) {
   t.plan(1);
 
-  wally.bip32_key_from_seed(seed, 0x0488ADE4, 0).then(function(s) {
-    return wally.bip32_pubkey_from_parent(s, 0, 1);
+  wally.bip32_key_from_seed(seed, wally.BIP32_VER_MAIN_PRIVATE, wally.BIP32_FLAG_KEY_PRIVATE).then(function(s) {
+    return wally.bip32_pubkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PUBLIC);
   }).then((xpubkey) => {
     return wally.bip32_key_get_pub_key(xpubkey);
   }).then((pubkey) => {
     return wally.wally_hash160(pubkey);
   }).then((script) => {
     const prefix = Buffer.from('eb', 'hex');
-    return wally.wally_base58_from_bytes(Buffer.concat([prefix, script]), 1);
+    return wally.wally_base58_from_bytes(Buffer.concat([prefix, script]), wally.BASE58_FLAG_CHECKSUM);
   }).then((address) => {
     t.equal(
       address,
