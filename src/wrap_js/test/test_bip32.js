@@ -31,36 +31,36 @@ test('BIP32 from seed + derivation', function(t) {
         t.equal(
           Buffer.from(master_pubkey).toString('hex'),
           '02be99138b48b430a8ee40bf8b56c8ebc584c363774010a9bfe549a87126e61746',
-          'M/0'
+          'm->pub'
         );
       });
     })
 
-    wally.bip32_privkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PRIVATE).then(function (xpriv_0_0) {
-      wally.wally_base58_from_bytes(xpriv_0_0, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpriv) {
+    wally.bip32_privkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PRIVATE).then(function (xpriv_0) {
+      wally.wally_base58_from_bytes(xpriv_0, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpriv) {
         t.equal(
           base58_xpriv,
           'xprv9u4S6Taa3k3GxnaHfWzboKwLPPPHpDyDHdLGqDArBejguBuv6GkerLy6MtAeFfo9RDfZy22FWEc1ExEShuRGZJpgVgeVu5KZ5obWbV2R3D2',
-          'xpriv m/0/0'
+          'm/0'
         );
       });
     });
 
-    wally.bip32_pubkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PRIVATE).then(function (xpub_0_0) {
-      wally.wally_base58_from_bytes(xpub_0_0, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpub) {
+    wally.bip32_pubkey_from_parent(s, 0, wally.BIP32_FLAG_KEY_PRIVATE).then(function (xpub_0) {
+      wally.wally_base58_from_bytes(xpub_0, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpub) {
         t.equal(
           base58_xpub,
           'xpub683nVy7Tt7baBGekmYXcATt4wRDnDgh4erFsdbaTjzGfmzF4dp4uQ9HaDCdvSqctrsbxZey5wozKyyy2J3zhDDHU3UhW4uCFQp6bESv8ewQ',
-          'xpub M/0/0'
+          'M/0'
         );
       });
 
-      wally.bip32_pubkey_from_parent(xpub_0_0, 1, wally.BIP32_FLAG_KEY_PUBLIC).then(function (xpub_0_0_1) {
-        wally.wally_base58_from_bytes(xpub_0_0_1, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpub) {
+      wally.bip32_pubkey_from_parent(xpub_0, 1, wally.BIP32_FLAG_KEY_PUBLIC).then(function (xpub_0_1) {
+        wally.wally_base58_from_bytes(xpub_0_1, wally.BASE58_FLAG_CHECKSUM).then(function (base58_xpub) {
           t.equal(
             base58_xpub,
             'xpub6An6e2ai6kSDnnxJ3876JwfeigdQu9YNudcP7ayT828xDFzFQkP9oBoBNdvj7xDrDQd9TQDpzkLhM5L71rFDTmxMuzSvXwZKnLx56Es6MEg',
-            'xpub M/0/0/1'
+            'M/0/1'
           );
         });
       });
