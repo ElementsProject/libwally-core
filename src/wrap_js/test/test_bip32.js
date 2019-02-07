@@ -26,13 +26,15 @@ test('BIP32 from seed + derivation', function(t) {
       });
     });
 
-    wally.wally_ec_public_key_from_private_key(s.slice(46, 78)).then(function(master_pubkey) {
-      t.equal(
-        Buffer.from(master_pubkey).toString('hex'),
-        '02be99138b48b430a8ee40bf8b56c8ebc584c363774010a9bfe549a87126e61746',
-        'M/0'
-      );
-    });
+    wally.bip32_key_get_priv_key(s).then(function(privkey) {
+      wally.wally_ec_public_key_from_private_key(privkey).then(function(master_pubkey) {
+        t.equal(
+          Buffer.from(master_pubkey).toString('hex'),
+          '02be99138b48b430a8ee40bf8b56c8ebc584c363774010a9bfe549a87126e61746',
+          'M/0'
+        );
+      });
+    })
 
     wally.bip32_privkey_from_parent(s, 0, 0).then(function (xpriv_0_0) {
       wally.wally_base58_from_bytes(xpriv_0_0, 1).then(function (base58_xpriv) {
@@ -72,7 +74,8 @@ test('BIP32 from seed to address', function(t) {
   wally.bip32_key_from_seed(seed, 0x0488ADE4, 0).then(function(s) {
     return wally.bip32_pubkey_from_parent(s, 0, 1);
   }).then((xpubkey) => {
-    const pubkey = xpubkey.slice(45, 78);
+    return wally.bip32_key_get_pub_key(xpubkey);
+  }).then((pubkey) => {
     return wally.wally_hash160(pubkey);
   }).then((script) => {
     const prefix = Buffer.from('eb', 'hex');

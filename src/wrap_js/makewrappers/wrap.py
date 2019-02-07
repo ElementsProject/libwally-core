@@ -146,6 +146,9 @@ FUNCS = [
     ('bip32_key_get_priv_key', F([
         'bip32_in', 'out_bytes_fixedsized'
     ], out_size='32')),
+    ('bip32_key_get_pub_key', F([
+        'bip32_in', 'out_bytes_fixedsized'
+    ], out_size='33')),
 
     ('wally_ec_public_key_from_private_key', F([
         'const_bytes[key]', 'out_bytes_fixedsized'
