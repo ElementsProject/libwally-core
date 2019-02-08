@@ -78,7 +78,7 @@ test('BIP32 from seed to address', function(t) {
   }).then((pubkey) => {
     return wally.wally_hash160(pubkey);
   }).then((script) => {
-    const prefix = Buffer.from('eb', 'hex');
+    const prefix = new Uint8Array([0xeb]);
     return wally.wally_base58_from_bytes(Buffer.concat([prefix, script]), wally.BASE58_FLAG_CHECKSUM);
   }).then((address) => {
     t.equal(
