@@ -1415,7 +1415,8 @@ static int tx_add_elements_raw_output(
         satoshi, (unsigned char *)script, script_len,
         is_elements ? WALLY_TX_IS_ELEMENTS : 0,
 #ifdef BUILD_ELEMENTS
-        NULL, 0, NULL, 0, NULL, 0, (unsigned char *) surjectionproof, surjectionproof_len,
+        (unsigned char *)asset, asset_len, (unsigned char *)value, value_len,
+        (unsigned char *)nonce, nonce_len, (unsigned char *)surjectionproof, surjectionproof_len,
         (unsigned char *)rangeproof, rangeproof_len,
 #endif /* BUILD_ELEMENTS */
     };
