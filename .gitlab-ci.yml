@@ -6,6 +6,8 @@ linux_release:
     when: on_success
     paths:
     - wally_dist/*
+  tags:
+    - ga
   script:
     - cd $CI_PROJECT_DIR
     - ENABLE_ELEMENTS=--enable-elements ./tools/build_python_wheels.sh
@@ -18,6 +20,8 @@ linux_release:
 
 linux_py2_debug:
   image: greenaddress/wallycore@sha256:ab55c35391af5e762a22db9f532b995b908a12c1bcbce911c528514b0f7295a1
+  tags:
+    - ga
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
@@ -26,6 +30,8 @@ linux_py2_debug:
 
 linux_py3_debug:
   image: greenaddress/wallycore@sha256:ab55c35391af5e762a22db9f532b995b908a12c1bcbce911c528514b0f7295a1
+  tags:
+    - ga
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
@@ -39,6 +45,8 @@ ubuntu_release:
     when: on_success
     paths:
     - wally_dist/*
+  tags:
+    - ga
   script:
     - cd $CI_PROJECT_DIR
     - ENABLE_ELEMENTS=--enable-elements ./tools/build_python_wheels.sh python3
@@ -123,6 +131,8 @@ apidocs:
     when: on_success
     paths:
     - apidocs.tar.gz
+  tags:
+    - ga
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh
