@@ -1,5 +1,5 @@
 linux_release:
-  image: greenaddress/wallycore@sha256:ab55c35391af5e762a22db9f532b995b908a12c1bcbce911c528514b0f7295a1
+  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -19,7 +19,7 @@ linux_release:
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
 linux_py2_debug:
-  image: greenaddress/wallycore@sha256:ab55c35391af5e762a22db9f532b995b908a12c1bcbce911c528514b0f7295a1
+  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
   tags:
     - ga
   script:
@@ -29,7 +29,7 @@ linux_py2_debug:
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 linux_py3_debug:
-  image: greenaddress/wallycore@sha256:ab55c35391af5e762a22db9f532b995b908a12c1bcbce911c528514b0f7295a1
+  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
   tags:
     - ga
   script:
@@ -124,7 +124,7 @@ windows10_release:
     - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:ab55c35391af5e762a22db9f532b995b908a12c1bcbce911c528514b0f7295a1
+  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs

@@ -18,17 +18,6 @@ function android_get_cflags() {
     echo $cflags
 }
 
-# Get the linker flags needed to build for Android
-# arch:     An architecture from android_get_arch_list()
-function android_get_ldflags() {
-    local arch=$1
-    local ldflags="$LDFLAGS"
-    case $arch in
-       armeabi-v7a) ldflags="$ldflags -Wl,--fix-cortex-a8";;
-    esac
-    echo $ldflags
-}
-
 # Get the configure flags needed to build for Android
 # arch:     An architecture from android_get_arch_list()
 # toolsdir: The directory for the NDK toolchain
@@ -70,7 +59,6 @@ function android_build_wally() {
     export CC=$(ls $toolsdir/bin/$clangarchname-linux-android*$api-clang)
 
     export CFLAGS=$(android_get_cflags $arch $toolsdir)
-    export LDFLAGS=$(android_get_ldflags $arch)
 
     PATH="$toolsdir/bin:$PATH" ./configure $(android_get_configure_flags $arch $toolsdir $useropts)
     local num_jobs=4
