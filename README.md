@@ -86,12 +86,6 @@ If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
 running `setup.py` or (when compiling manually) `./configure`.
 
-To build with Elements/Liquid support, set:
-
-```
-ENABLE_ELEMENTS="--enable-elements"
-```
-
 Before running pip.
 
 You can also install the binary wally releases using the released
