@@ -11,6 +11,7 @@ extern "C" {
 #define WALLY_WIF_FLAG_UNCOMPRESSED 0x1 /** Corresponding public key uncompressed */
 
 #define WALLY_CA_PREFIX_LIQUID 0x0c /** Liquid v1 confidential address prefix */
+#define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
 
 /**
  * Create a segwit native address from a v0 witness program.
