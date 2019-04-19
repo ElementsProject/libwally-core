@@ -45,6 +45,7 @@ if platform.system() == "Windows":
         define_macros=[
             ('SWIG_PYTHON_BUILD', None),
             ('USE_ECMULT_STATIC_PRECOMPUTATION', None),
+            ('ECMULT_WINDOW_SIZE', 16),
             ('WALLY_CORE_BUILD', None),
             ('HAVE_CONFIG_H', None),
             ('SECP256K1_BUILD', None),
