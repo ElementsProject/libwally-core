@@ -37,8 +37,22 @@ linux_py3_debug:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - PYTHON_VERSION=3.5 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
-ubuntu_release:
+ubuntu_18.04_release:
   image: greenaddress/wallycore@sha256:059eeaa5c61df5403fd28d6ea556c317d5809f7274e27901d0f09288a316bb53
+  artifacts:
+    expire_in: 1 day
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wally_dist/*
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_wheels.sh python3
+
+ubuntu_19.04_release:
+  image: greenaddress/wallycore@sha256:dd66cf18815756de37238c5fdfafc38c80076ce93d9ce644e517143894f24350
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -155,7 +169,8 @@ package_release:
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
   - linux_release
-  - ubuntu_release
+  - ubuntu_18.04_release
+  - ubuntu_19.04_release
   - osx_release
   - armv7l_release
   - arm64_release
