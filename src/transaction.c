@@ -2720,11 +2720,23 @@ int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
                                              unsigned char *bytes_out,
                                              size_t len)
 {
-    if (!bytes_out || len < WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
+    if (!bytes_out || len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
         return WALLY_EINVAL;
 
     *bytes_out = 0x1;
     uint64_to_be_bytes(satoshi, &bytes_out[1]);
+
+    return WALLY_OK;
+}
+
+int wally_tx_confidential_value_to_satoshi(const unsigned char *value,
+                                           size_t value_len,
+                                           uint64_t* value_out)
+{
+    if (!value || value_len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN || !value_out || value[0] != 0x1)
+        return WALLY_EINVAL;
+
+    uint64_from_be_bytes(&value[1], value_out);
 
     return WALLY_OK;
 }

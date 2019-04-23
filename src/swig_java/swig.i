@@ -448,6 +448,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_add_output);
 %returns_void__(wally_tx_add_raw_output);
 %returns_array_(wally_tx_confidential_value_from_satoshi, 2, 3, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
+%returns_uint64(wally_tx_confidential_value_to_satoshi);
 %returns_struct(wally_tx_elements_input_init_alloc, wally_tx_input);
 %rename("_tx_elements_input_is_pegin") wally_tx_elements_input_is_pegin;
 %returns_size_t(_tx_elements_input_is_pegin);
