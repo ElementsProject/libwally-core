@@ -15,10 +15,10 @@
 
   public final static byte[] asset_rangeproof(long jarg1, byte[] jarg2, byte[] jarg3, byte[] jarg4,
                                               byte[] jarg5, byte[] jarg6, byte[] jarg7, byte[] jarg8,
-                                              byte[] jarg9, int jarg10) {
+                                              byte[] jarg9, int jarg10, int jarg11, int jarg12) {
       final byte[] buf = new byte[ASSET_RANGEPROOF_MAX_LEN];
       final int len = asset_rangeproof(jarg1, jarg2, jarg3, jarg4, jarg5, jarg6, jarg7, jarg8,
-                                       jarg9, jarg10, buf);
+                                       jarg9, jarg10, jarg11, jarg12, buf);
       return trimBuffer(buf, len);
   }
 

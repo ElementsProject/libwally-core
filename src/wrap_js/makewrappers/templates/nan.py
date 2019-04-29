@@ -115,6 +115,23 @@ static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
     return value;
 }
 
+static int32_t GetInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
+{
+    int value = 0;
+    if (ret == WALLY_OK) {
+        if (!IsValid(info[n]) || !info[n]->IsInt32())
+            ret = WALLY_EINVAL;
+        else {
+            Nan::Maybe<int32_t> m = Nan::To<int32_t>(info[n]);
+            if (IsValid(m))
+                value = m.FromJust();
+            else
+                ret = WALLY_EINVAL;
+        }
+    }
+    return value;
+}
+
 // uint64_t values are expected as an 8 byte buffer of big endian bytes
 struct LocalUInt64 : public LocalBuffer {
     LocalUInt64(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
@@ -238,6 +255,9 @@ def _generate_nan(funcname, f):
             args.append('arg%s.mLength' % i)
         elif arg.startswith('uint32_t'):
             input_args.append('uint32_t arg%s = GetUInt32(info, %s, ret);' % (i, i))
+            args.append('arg%s' % i)
+        elif arg.startswith('int'):
+            input_args.append('int32_t arg%s = GetInt32(info, %s, ret);' % (i, i))
             args.append('arg%s' % i)
         elif arg.startswith('string'):
             args.append('*Nan::Utf8String(info[%s])' % i)
