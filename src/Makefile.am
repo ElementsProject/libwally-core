@@ -201,6 +201,14 @@ libwallycore_la_INCLUDES = \
     include/wally_script.h \
     include/wally_transaction.h
 
+if SHARED_BUILD_ENABLED
+if IS_MINGW
+libwallycore_la_LDFLAGS = -no-undefined
+else
+libwallycore_la_LDFLAGS = 
+endif
+endif # SHARED_BUILD_ENABLED
+
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 

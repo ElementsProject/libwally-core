@@ -24,6 +24,13 @@ esac
 AM_CONDITIONAL([IS_OSX], [test "x$is_osx" == "xyes"])
 AC_SUBST([LDPATH_VAR])
 
+case $host in
+*mingw*)
+    is_mingw="yes"
+    ;;
+esac
+AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" == "xyes"])
+
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT([disable-static])
 
@@ -264,7 +271,6 @@ AC_SUBST([LIBADD_SECP256K1])
 #
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
-AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes"])
 
 #
 # SWIG
@@ -275,6 +281,8 @@ AC_ARG_ENABLE(swig-python,
     AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
+
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes" -a "x$swig_python" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
