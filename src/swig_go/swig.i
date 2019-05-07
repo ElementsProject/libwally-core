@@ -230,8 +230,7 @@ func Bip32KeyFromParent(extKey *ExtKey, childNum uint32, flags uint32) (childExt
  * :param flags: BIP32_KEY_ Flags indicating the type of derivation wanted.
  */
 func Bip32KeyFromParentPath(extKey *ExtKey, childPath []uint8, flags uint32) (childExtKey *ExtKey, ret int){
-	child_path := binary.BigEndian.Uint32(childPath)
-	wally_child_path := SwigcptrUint32_t(uintptr(unsafe.Pointer(&child_path)))
+	wally_child_path := SwigcptrUint32_t(uintptr(unsafe.Pointer(&childPath[0])))
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 	var tmp uintptr
 	extKeyOut := SwigcptrExt_key(unsafe.Pointer(&tmp))

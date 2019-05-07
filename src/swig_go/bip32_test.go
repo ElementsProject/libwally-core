@@ -1,13 +1,15 @@
 package wallycore
+
 /**
 test vectors
 @refer https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#test-vector-1
 */
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"encoding/hex"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBip32KeyToBase58(t *testing.T) {
@@ -19,7 +21,7 @@ func TestBip32KeyToBase58(t *testing.T) {
 
 	xprivbase58 := Bip32KeyToBase58(mXPrivKey, uint32(BIP32_FLAG_KEY_PRIVATE))
 	assert.Equal(t, expectedXPriv, xprivbase58)
-    xpubbase58 := Bip32KeyToBase58(mXPrivKey, uint32(BIP32_FLAG_KEY_PUBLIC))
+	xpubbase58 := Bip32KeyToBase58(mXPrivKey, uint32(BIP32_FLAG_KEY_PUBLIC))
 	assert.Equal(t, expectedXPub, xpubbase58)
 }
 
@@ -43,18 +45,18 @@ func TestBip32KeyFromParent(t *testing.T) {
 	expectedXPrivKeyBase58 := "xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7"
 	seedByte, _ := hex.DecodeString(seed)
 	mXPrivKey, _ := Bip32KeyFromSeed(seedByte, uint32(BIP32_VER_MAIN_PRIVATE), 0)
-    xPriv_0h, _ := Bip32KeyFromParent(mXPrivKey, uint32(BIP32_INITIAL_HARDENED_CHILD), uint32(BIP32_FLAG_KEY_PRIVATE))
-    xpriv_0h_base58 := Bip32KeyToBase58(xPriv_0h, uint32(BIP32_FLAG_KEY_PRIVATE))
+	xPriv_0h, _ := Bip32KeyFromParent(mXPrivKey, uint32(BIP32_INITIAL_HARDENED_CHILD), uint32(BIP32_FLAG_KEY_PRIVATE))
+	xpriv_0h_base58 := Bip32KeyToBase58(xPriv_0h, uint32(BIP32_FLAG_KEY_PRIVATE))
 	assert.Equal(t, expectedXPrivKeyBase58, xpriv_0h_base58)
 }
 
 func TestBip32KeyFromParentPath(t *testing.T) {
 	seed := "000102030405060708090a0b0c0d0e0f"
-	expectedPubKeyBase58 := "xpub6E7Cmt6yquwnWdDgsxJPcm9x5s2JREsirsGLqZ1E1Sap4iJTo4LsMPDmNDrEB56Eh1bKzzQyu83rgWgraCnKrLwGpGPZjSaMSkmauHSEJ1Z"
+	expectedPubKeyBase58 := "xpub6G86xqCTPg2jVgvQWoeFqTwr1Tf4DEoE4Dg7YLVUjL3KEjSc7CJ6EiXdWKzKtYYGzrhvb5ydRt3zvzJmvfAPBHgpMYkkfccLst6aZvf7jnU"
 	seedByte, _ := hex.DecodeString(seed)
 	mXPrivKey, _ := Bip32KeyFromSeed(seedByte, uint32(BIP32_VER_MAIN_PRIVATE), 0)
-	path := []uint8{1,2,1,2} // M/1/2/1/2
-    xPub, _ := Bip32KeyFromParentPath(mXPrivKey, path, uint32(BIP32_FLAG_KEY_PUBLIC))
-    xPubBase58 := Bip32KeyToBase58(xPub, uint32(BIP32_FLAG_KEY_PUBLIC))
+	path := []uint32{1, 2, 1, 2, 1} // M/1/2/1/2
+	xPub, _ := Bip32KeyFromParentPath(mXPrivKey, path, uint32(BIP32_FLAG_KEY_PUBLIC))
+	xPubBase58 := Bip32KeyToBase58(xPub, uint32(BIP32_FLAG_KEY_PUBLIC))
 	assert.Equal(t, expectedPubKeyBase58, xPubBase58)
 }
