@@ -2,14 +2,14 @@
 %{
 #include <iostream>
 #define BUILD_ELEMENTS 1
-#include "../../include/wally_core.h"
-#include "../../include/wally_crypto.h"
-#include "../../include/wally_address.h"
-#include "../../include/wally_bip32.h"
-#include "../../include/wally_bip39.h"
-#include "../../include/wally_transaction.h"
-#include "../../include/wally_elements.h"
-#include "../../include/wally_script.h"
+#include "include/wally_core.h"
+#include "include/wally_crypto.h"
+#include "include/wally_address.h"
+#include "include/wally_bip32.h"
+#include "include/wally_bip39.h"
+#include "include/wally_transaction.h"
+#include "include/wally_elements.h"
+#include "include/wally_script.h"
 %}
 
 %typemap(argout) (char **output) {
@@ -24,7 +24,7 @@
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 
 %insert(cgo_comment_typedefs) %{
-#cgo LDFLAGS: -L${SRCDIR}/../.libs -lwallycore
+#cgo LDFLAGS: -L${SRCDIR}/src/.libs -lwallycore
 %}
 #include <iostream>
 %include "../../include/wally_core.h"
@@ -273,7 +273,7 @@ type WallyTxWitnessStack struct {
     ItemsAllocationLen uint64
 }
 func (txws WallyTxWitnessStack)Swigcptr() uintptr {
-	return uintptr(unsafe.Pointer(&tx))
+	return uintptr(unsafe.Pointer(&txws))
 }
 func (txws WallyTxWitnessStack)ListItems() (items []*WallyTxWitnessItem) {
 	structSize := unsafe.Sizeof(WallyTxWitnessItem{})
