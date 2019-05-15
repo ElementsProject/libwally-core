@@ -59,8 +59,9 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
     return str;
 }
 
-int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
-                      unsigned char *bytes_out, size_t len, size_t *written)
+int mnemonic_to_bytes_internal(const struct words *w, const char *mnemonic,
+                               size_t(*lookup_fn)(const struct words *, const char *),
+                               unsigned char *bytes_out, size_t len, size_t *written)
 {
     struct words *mnemonic_w = wordlist_init(mnemonic);
     size_t i;
@@ -80,7 +81,7 @@ int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     wally_clear(bytes_out, len);
 
     for (i = 0; i < mnemonic_w->len; ++i) {
-        size_t idx = wordlist_lookup_word(w, mnemonic_w->indices[i]);
+        size_t idx = lookup_fn(w, mnemonic_w->indices[i]);
         if (!idx) {
             wordlist_free(mnemonic_w);
             wally_clear(bytes_out, len);
@@ -94,4 +95,14 @@ cleanup:
         *written = (mnemonic_w->len * w->bits + 7u) / 8u;
     wordlist_free(mnemonic_w);
     return WALLY_OK;
+}
+
+int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
+                      unsigned char *bytes_out, size_t len, size_t *written) {
+    return mnemonic_to_bytes_internal(w, mnemonic, wordlist_lookup_word, bytes_out, len, written);
+}
+
+int mnemonic_prefix_to_bytes(const struct words *w, const char *mnemonic,
+                             unsigned char *bytes_out, size_t len, size_t *written) {
+    return mnemonic_to_bytes_internal(w, mnemonic, wordlist_lookup_prefix, bytes_out, len, written);
 }
