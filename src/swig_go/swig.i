@@ -36,10 +36,9 @@
 * :param flags: Pass ``BASE58_FLAG_CHECKSUM`` if ``bytes`` should have a
 *|    checksum calculated and appended before converting to base 58.
  */
-func WallyBase58FromBytes(bytes []uint8, flags uint32) (base58 string, ret int) {
-	tmpBytes := ([]byte)(bytes)
+func WallyBase58FromBytes(bytes []byte, flags uint32) (base58 string, ret int) {
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
-	ret = Wally_base58_from_bytes(&tmpBytes[0], int64(len(bytes)), wally_flags, &base58)
+	ret = Wally_base58_from_bytes(&bytes[0], int64(len(bytes)), wally_flags, &base58)
 	return
 }
 
@@ -97,11 +96,21 @@ func WallyEcSigFromBytes(privkey [EC_PRIVATE_KEY_LEN]byte, message []byte, flags
 }
 
 /**
+ * Convert a signature to low-s form.
+ *
+ * :param sig: The compact signature to convert.
+ */
+func WallyEcSigNormalize(signature [EC_SIGNATURE_LEN]byte) (lowS [EC_SIGNATURE_LEN]byte, ret int) {
+	ret = Wally_ec_sig_normalize(&signature[0], int64(len(signature)), &lowS[0], int64(len(lowS)))
+	return
+}
+
+/**
  * Convert a compact signature to DER encoding.
  *
  * :param sig: The compact signature to convert.
  */
-func WallyEcSigToDer(signature []byte) (der [EC_SIGNATURE_DER_MAX_LEN]byte, ret int) {
+func WallyEcSigToDer(signature [EC_SIGNATURE_LEN]byte) (der [EC_SIGNATURE_DER_MAX_LEN]byte, ret int) {
 	written := int64(0)
 	ret = Wally_ec_sig_to_der(&signature[0], int64(len(signature)), &der[0], int64(len(der)), &written)
 	return
@@ -166,7 +175,7 @@ func WallyConfidentialAddrToECPublicKey(confidentialAddress string, prefix uint3
  * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
  * :param pub_key: The blinding public key to associate with ``address``.
  */
-func WallyConfidentialAddrFromAddr(addrBase58 string, prefix uint32, blindPubKey []byte) (confidentialAddress string, ret int) {
+func WallyConfidentialAddrFromAddr(addrBase58 string, prefix uint32, blindPubKey [EC_PUBLIC_KEY_LEN]byte) (confidentialAddress string, ret int) {
 	wally_prefix := SwigcptrUint32_t(uintptr(unsafe.Pointer(&prefix)))
 	ret = Wally_confidential_addr_from_addr(addrBase58, wally_prefix, &blindPubKey[0], int64(len(blindPubKey)), &confidentialAddress)
 	return
@@ -722,7 +731,7 @@ func WallyScriptpubkeyP2pkhFromBytes(pubKey []byte, flags uint32) (scriptBytes  
  * :param sig: The compact signature to create a scriptSig with.
  * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
  */
-func WallyScriptsigP2pkhFromSig(pubkey []byte, sig []byte, sighash uint32) (scriptSig []byte, ret int) {
+func WallyScriptsigP2pkhFromSig(pubkey []byte, sig [EC_SIGNATURE_LEN]byte, sighash uint32) (scriptSig []byte, ret int) {
 	wally_sighash := SwigcptrUint32_t(uintptr(unsafe.Pointer(&sighash)))
 	var scriptSigBuf [256]byte
 	written := int64(0)
@@ -783,10 +792,10 @@ func WallyScriptpubkeyMultisigFromBytes(pubKeys []byte, threshold uint32, flags 
  * :param sighash: WALLY_SIGHASH_ flags for each signature in ``bytes``.
  * :param flags: Must be zero.
  */
-func WallyScriptsigMultisigFromBytes(redeemScript []byte, signatures [][]byte, sighashes []uint32, flags uint32) (scriptSig []byte, ret int) {
+func WallyScriptsigMultisigFromBytes(redeemScript []byte, signatures [][EC_SIGNATURE_LEN]byte, sighashes []uint32, flags uint32) (scriptSig []byte, ret int) {
 	var signature []byte
 	for i := 0; i < len(signatures); i++ {
-		signature = append(signature, signatures[i]...)
+		signature = append(signature, signatures[i][:]...)
 	}
 	wally_sighashes := SwigcptrUint32_t(uintptr(unsafe.Pointer(&sighashes[0])))
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
