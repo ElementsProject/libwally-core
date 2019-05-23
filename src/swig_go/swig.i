@@ -526,6 +526,16 @@ func WallyTxFromHex(hex string, flags uint32) (wallyTx *WallyTx, ret int) {
 }
 
 /**
+ * Get the virtual size of a transaction.
+ *
+ * :param tx: The transaction to get the virtual size of.
+ */
+func WallyTxGetVsize(wallyTx *WallyTx) (vsize int64, ret int) {
+	ret = Wally_tx_get_vsize(wallyTx, &vsize)
+	return
+}
+
+/**
  * Serialize a transaction to bytes.
  *
  * :param tx: The transaction to serialize.

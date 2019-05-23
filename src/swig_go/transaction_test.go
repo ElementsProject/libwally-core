@@ -1,9 +1,10 @@
 package wallycore
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"encoding/hex"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var tx string = "0200000000012e4c6db69a4b99dee5a17a430fb57f84d45a6bb36abd0d1008bae22727a5c9e00000000000ffffffff0201f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f01000000025408d6c0001976a9147f06a3ce008dbee41566aeb7cad70472e097cd9888ac01f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f010000000000030d40000000000000"
@@ -23,7 +24,7 @@ func TestTxGetElementsSignatureHash(t *testing.T) {
 		0x22, 0xf2, 0x1b, 0x99, 0x4a, 0xf9, 0xa2, 0x78}
 	scriptByte, _ := hex.DecodeString(script)
 	wallyTx, _ := WallyTxFromHex(tx, txFlags)
-	
+
 	signatureHash, ret := WallyTxGetElementsSignatureHash(
 		wallyTx,
 		index,
@@ -33,4 +34,14 @@ func TestTxGetElementsSignatureHash(t *testing.T) {
 		signatureHashFlags)
 	assert.Equal(t, 0, ret)
 	assert.Equal(t, expected, signatureHash)
+}
+
+func TestTxGetVsize(t *testing.T) {
+	txFlags := uint32(WALLY_TX_FLAG_USE_WITNESS + WALLY_TX_FLAG_USE_ELEMENTS)
+	tx, ret := WallyTxFromHex(tx, txFlags)
+	assert.Equal(t, 0, ret)
+
+	vsize, ret := WallyTxGetVsize(tx)
+	assert.Equal(t, 0, ret)
+	assert.Equal(t, 165, vsize)
 }
