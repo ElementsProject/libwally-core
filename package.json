@@ -1,0 +1,17 @@
+{
+  "name": "wallyjs",
+  "version": "0.0.0",
+  "description": "",
+  "main": "wally.js",
+  "scripts": {
+    "install": "cmake-js compile"
+  },
+  "author": "",
+  "license": "MIT",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "*",
+    "cmake-js": "^5.2.0",
+    "nan": "^2.14.0"
+  }
+}
