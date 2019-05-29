@@ -23,7 +23,7 @@ set(WINDOWS_CONFIG_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/windows_con
 # secp256k1/gen_context
 set(GEN_CONTEXT_NAME gen_context)
 
-set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/ecmult_static_context.h)
+set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_BINARY_DIR}/ecmult_static_context.h)
 add_executable(${GEN_CONTEXT_NAME}
     src/secp256k1/src/gen_context.c
     ${WINDOWS_CONFIG_DIRECTORY}/config.h
@@ -81,11 +81,7 @@ add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
 
 #set(GEN_CONTEXT_NAME gen_context)
 
-# libwally
-#set(WALLY_NAME wally)
-add_library(${PROJECT_NAME} SHARED)
-target_sources(${PROJECT_NAME}
-  PRIVATE
+set(LIBWALLY_FILES
     ${WINDOWS_CONFIG_DIRECTORY}/config.h
     ${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h
     src/aes.c
@@ -126,6 +122,18 @@ target_sources(${PROJECT_NAME}
 )
 #    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}/config.h>
 #    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h>
+
+# libwally
+#set(WALLY_NAME wally)
+if(ENABLE_SHARED)
+add_library(${PROJECT_NAME} SHARED)
+else()
+add_library(${PROJECT_NAME} STATIC)
+endif()
+target_sources(${PROJECT_NAME}
+  PRIVATE
+    ${LIBWALLY_FILES}
+)
 
 #add_dependencies(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/ecmult_static_context.h)
 
@@ -177,20 +185,17 @@ message(STATUS "[CMAKE_JS_LIB]=${CMAKE_JS_LIB}")
 
 set(ELEMENT_OPT "elements")
 set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
-set(COPY_CMD $<IF:$<PLATFORM_ID:Windows>,copy /Y,cp -f>)
-#set(COPY_OPT $<IF:$<PLATFORM_ID:Windows>,/Y,-f>)
 
-add_custom_command(OUTPUT  ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc
+add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
     COMMAND set PYTHONDONTWRITEBYTECODE=1
     COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
     COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENT_OPT}
     COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENT_OPT}
-    COMMAND echo ${COPY_CMD} "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js" ${CMAKE_CURRENT_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js" ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js" ${WORK_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
     VERBATIM
 )
-#    COMMAND ${COPY_CMD} "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js" ${CMAKE_CURRENT_BINARY_DIR}
 
 set(NODE_LIBRARY_NAME wallycore)
 project(wallycore CXX)
@@ -234,7 +239,7 @@ target_sources(${NODE_LIBRARY_NAME}
     include/wally_script.h
     include/wally_transaction.h
     src/secp256k1/include/secp256k1.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc
+    ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
     ${ECMULT_STATIC_CONTEXT_H}
 )
 
@@ -295,5 +300,47 @@ target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
   pthread rt
 )
 endif()
+
+else()	# CMAKE_JS_INC
+
+# libwally shared library
+set(WALLYCORE_NAME wallycore)
+add_library(${WALLYCORE_NAME} SHARED)
+if(WIN32)
+set_target_properties(${WALLYCORE_NAME} PROPERTIES PREFIX "lib" SUFFIX ".dll")
+endif()
+target_sources(${WALLYCORE_NAME}
+  PRIVATE
+    ${LIBWALLY_FILES}
+)
+
+#add_dependencies(${WALLYCORE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/ecmult_static_context.h)
+
+#    src/secp256k1/src/ecmult_static_context.h
+target_compile_options(${WALLYCORE_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /LD /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DBUILD_ELEMENTS /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16,
+      -Wall -Wextra -Wno-unused-function
+    >
+)
+target_compile_definitions(${WALLYCORE_NAME}
+  PUBLIC
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DBUILD_ELEMENTS /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16,
+      -DWALLY_CORE_BUILD=1 -DBUILD_ELEMENTS=1 -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
+    >
+)
+target_include_directories(${WALLYCORE_NAME}
+  PUBLIC
+    ${WINDOWS_CONFIG_DIRECTORY}
+    include
+  PRIVATE
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+)
 
 endif()		# CMAKE_JS_INC
