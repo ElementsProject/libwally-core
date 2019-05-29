@@ -556,6 +556,13 @@ func WallyTxToBytes(wallyTx *WallyTx, flags uint32) (txbytes []byte, ret int) {
 	return
 }
 
+func WallyTxToHex(wallyTx *WallyTx, flags uint32) (hex string, ret int) {
+	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
+
+	ret = Wally_tx_to_hex(wallyTx, wally_flags, &hex)
+	return
+}
+
 /**
  * Set the scriptsig for an input in a transaction.
  *
