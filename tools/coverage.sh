@@ -7,7 +7,7 @@
 
 lcov="lcov --directory=src/ --base-directory src/"
 
-if [ $1 = "clean" ]; then
+if [ "$1" = "clean" ]; then
     $lcov --zerocounters
     $lcov --output-file src/lcov_base --capture --initial
 else
