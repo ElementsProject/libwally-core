@@ -140,7 +140,7 @@ covering any new functionality, following the existing style.
 
 ## Generating a coverage report
 
-To generate an HTML coverage report, use:
+To generate an HTML coverage report, install `lcov` and use:
 
 ```
 $ ./tools/cleanup.sh
