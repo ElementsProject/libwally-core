@@ -264,11 +264,13 @@ target_include_directories(${NODE_LIBRARY_NAME}
 #    $<$<CXX_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}>
 
 # You should add this line in every CMake.js based project
-#set(NODE_LINK_LIBRARY1 $<IF:$<PLATFORM_ID:Windows>,winmm.lib ws2_32.lib,pthread rt>)
-#set(NODE_LINK_LIBRARY2 $<IF:$<PLATFORM_ID:Windows>,winmm.lib ws2_32.lib,pthread rt>)
 if(WIN32)
 target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
   winmm.lib ws2_32.lib
+)
+elseif(APPLE)
+target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
+  pthread
 )
 else()
 target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
