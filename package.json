@@ -12,6 +12,9 @@
   "dependencies": {
     "bindings": "*",
     "cmake-js": "^5.2.0",
-    "nan": "^2.14.0"
+    "big-integer": "^1.6.26",
+    "nan": "^2.11.0",
+    "node-gyp": "^3.8.0",
+    "tape": "^4.8.0"
   }
 }

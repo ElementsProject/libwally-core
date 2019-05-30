@@ -67,8 +67,12 @@ add_custom_target(${SECP256K1_GEN_CONTEXT_NAME}
 set(WORK_WINDOWS_BINARY_DIR_NAME
   $<IF:$<CONFIG:Debug>,Debug,Release>
 )
+if(BTCLIB_ROOT_BINARY_DIR)
+set(WORK_BINARY_DIR  ${BTCLIB_ROOT_BINARY_DIR})
+else()		# BTCLIB_ROOT_BINARY_DIR
 set(WORK_BINARY_DIR
   $<IF:$<PLATFORM_ID:Windows>,${CMAKE_CURRENT_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME},${CMAKE_CURRENT_BINARY_DIR}>)
+endif()		# BTCLIB_ROOT_BINARY_DIR
 
 add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
   COMMAND echo "[gen_context]" ${WORK_BINARY_DIR}/${GEN_CONTEXT_NAME}
@@ -203,44 +207,8 @@ project(wallycore CXX)
 add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}/config.h
-    ${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h
-    src/aes.c
-    src/base58.c
-    src/bip32.c
-    src/bip38.c
-    src/bip39.c
-    src/bech32.c
-    src/elements.c
-    src/hex.c
-    src/hmac.c
-    src/internal.c
-    src/mnemonic.c
-    src/pbkdf2.c
-    src/script.c
-    src/scrypt.c
-    src/sign.c
-    src/transaction.c
-    src/wif.c
-    src/wordlist.c
-    src/ccan/ccan/crypto/ripemd160/ripemd160.c
-    src/ccan/ccan/crypto/sha256/sha256.c
-    src/ccan/ccan/crypto/sha512/sha512.c
-    src/ccan/ccan/str/hex/hex.c
-    src/secp256k1/src/secp256k1.c
-    include/wally.hpp
-    include/wally_address.h
-    include/wally_bip32.h
-    include/wally_bip38.h
-    include/wally_bip39.h
-    include/wally_core.h
-    include/wally_crypto.h
-    include/wally_elements.h
-    include/wally_script.h
-    include/wally_transaction.h
-    src/secp256k1/include/secp256k1.h
+    ${LIBWALLY_FILES}
     ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-    ${ECMULT_STATIC_CONTEXT_H}
 )
 
 target_compile_options(${NODE_LIBRARY_NAME}
