@@ -247,7 +247,7 @@ SECP256K1_API void secp256k1_context_destroy(
  *  to cause a crash, though its return value and output arguments are
  *  undefined.
  *
- *  When this function has not been called (or called with fn=NULL), then the
+ *  When this function has not been called (or called with fn==NULL), then the
  *  default handler will be used. The library provides a default handler which
  *  writes the message to stderr and calls abort. This default handler can be
  *  replaced at link time if the preprocessor macro
@@ -257,7 +257,7 @@ SECP256K1_API void secp256k1_context_destroy(
  *   - void secp256k1_default_illegal_callback_fn(const char* message, void* data);
  *   - void secp256k1_default_error_callback_fn(const char* message, void* data);
  *  The library can call these default handlers even before a proper callback data
- *  pointer could have been using secp256k1_context_set_illegal_callback or
+ *  pointer could have been set using secp256k1_context_set_illegal_callback or
  *  secp256k1_context_set_illegal_callback, e.g., when the creation of a context
  *  fails. In this case, the corresponding default handler will be called with
  *  the data pointer argument set to NULL.
@@ -305,21 +305,24 @@ SECP256K1_API void secp256k1_context_set_error_callback(
  *
  *  Returns: a newly created scratch space.
  *  Args: ctx:  an existing context object (cannot be NULL)
- *  In:   max_size: maximum amount of memory to allocate
+ *  In:   size: amount of memory to be available as scratch space. Some extra
+ *              (<100 bytes) will be allocated for extra accounting.
  */
 SECP256K1_API SECP256K1_WARN_UNUSED_RESULT secp256k1_scratch_space* secp256k1_scratch_space_create(
     const secp256k1_context* ctx,
-    size_t max_size
+    size_t size
 ) SECP256K1_ARG_NONNULL(1);
 
 /** Destroy a secp256k1 scratch space.
  *
  *  The pointer may not be used afterwards.
- *  Args:   scratch: space to destroy
+ *  Args:       ctx: a secp256k1 context object.
+ *          scratch: space to destroy
  */
 SECP256K1_API void secp256k1_scratch_space_destroy(
+    const secp256k1_context* ctx,
     secp256k1_scratch_space* scratch
-);
+) SECP256K1_ARG_NONNULL(1);
 
 /** Parse a variable-length public key into the pubkey object.
  *
