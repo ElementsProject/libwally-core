@@ -265,15 +265,15 @@ target_include_directories(${NODE_LIBRARY_NAME}
 
 # You should add this line in every CMake.js based project
 if(WIN32)
-target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
+target_link_libraries(${NODE_LIBRARY_NAME} "${CMAKE_JS_LIB}"
   winmm.lib ws2_32.lib
 )
 elseif(APPLE)
-target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
+target_link_libraries(${NODE_LIBRARY_NAME} "${CMAKE_JS_LIB}"
   pthread
 )
 else()
-target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB}
+target_link_libraries(${NODE_LIBRARY_NAME} "${CMAKE_JS_LIB}"
   pthread rt
 )
 endif()
