@@ -259,7 +259,7 @@ target_include_directories(${NODE_LIBRARY_NAME}
     src/secp256k1
     src/secp256k1/src
     node_modules/nan
-  PRIVATE ${CMAKE_JS_INC}
+  PRIVATE "${CMAKE_JS_INC}"
 )
 #    $<$<CXX_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}>
 
