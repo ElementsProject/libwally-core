@@ -544,6 +544,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(_tx_input_get_witness);
 %returns_size_t(wally_tx_input_get_witness_len);
 %returns_struct(wally_tx_input_init_alloc, wally_tx_input);
+%returns_void__(wally_tx_input_set_index);
+%returns_void__(wally_tx_input_set_sequence);
+%returns_void__(wally_tx_input_set_script);
+%returns_void__(wally_tx_input_set_txhash);
+%returns_void__(wally_tx_input_set_witness);
 %rename("_tx_is_coinbase") wally_tx_is_coinbase;
 %returns_size_t(_tx_is_coinbase);
 %rename("_tx_is_elements") wally_tx_is_elements;

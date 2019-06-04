@@ -3013,6 +3013,55 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
     }
 #endif /* BUILD_ELEMENTS */
 
+int wally_tx_input_set_index(struct wally_tx_input *input, uint32_t index)
+{
+    if (!is_valid_tx_input(input))
+        return WALLY_EINVAL;
+    input->index = index;
+    return WALLY_OK;
+}
+
+int wally_tx_input_set_sequence(struct wally_tx_input *input, uint32_t sequence)
+{
+    if (!is_valid_tx_input(input))
+        return WALLY_EINVAL;
+    input->sequence = sequence;
+    return WALLY_OK;
+}
+
+int wally_tx_input_set_txhash(struct wally_tx_input *input,
+                              const unsigned char *txhash, size_t len)
+{
+    if (!is_valid_tx_input(input) || !txhash || (len != WALLY_TXHASH_LEN))
+        return WALLY_EINVAL;
+    memcpy(input->txhash, txhash, WALLY_TXHASH_LEN);
+    return WALLY_OK;
+}
+
+int wally_tx_input_set_script(struct wally_tx_input *input,
+                              const unsigned char *script, size_t script_len)
+{
+    if (!is_valid_tx_input(input) || BYTES_INVALID(script, script_len))
+        return WALLY_EINVAL;
+    return replace_script(script, script_len, &input->script, &input->script_len);
+}
+
+int wally_tx_input_set_witness(struct wally_tx_input *input,
+                               const struct wally_tx_witness_stack *stack)
+{
+    struct wally_tx_witness_stack *new_witness = NULL;
+
+    if (!is_valid_tx_input(input) || (stack && !is_valid_witness_stack(stack)))
+        return WALLY_EINVAL;
+
+    if (stack && (new_witness = clone_witness(stack)) == NULL)
+        return WALLY_ENOMEM;
+
+    tx_witness_stack_free(input->witness, true);
+    input->witness = new_witness;
+    return WALLY_OK;
+}
+
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
