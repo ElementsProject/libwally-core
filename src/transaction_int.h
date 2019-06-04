@@ -15,6 +15,13 @@ WALLY_CORE_API int wally_tx_input_get_witness(const struct wally_tx_input *tx_in
 WALLY_CORE_API int wally_tx_input_get_witness_len(const struct wally_tx_input *tx_input_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_index(const struct wally_tx_input *tx_input_in, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_sequence(const struct wally_tx_input *tx_input_in, size_t *written);
+
+WALLY_CORE_API int wally_tx_input_set_txhash(struct wally_tx_input *tx_input, const unsigned char *txhash, size_t len);
+WALLY_CORE_API int wally_tx_input_set_script(struct wally_tx_input *tx_input, const unsigned char *script, size_t script_len);
+WALLY_CORE_API int wally_tx_input_set_witness(struct wally_tx_input *tx_input, const struct wally_tx_witness_stack *witness);
+WALLY_CORE_API int wally_tx_input_set_index(struct wally_tx_input *tx_input, uint32_t index);
+WALLY_CORE_API int wally_tx_input_set_sequence(struct wally_tx_input *tx_input, uint32_t sequence);
+
 #ifdef BUILD_ELEMENTS
 WALLY_CORE_API int wally_tx_input_get_blinding_nonce(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_input_get_entropy(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len);
