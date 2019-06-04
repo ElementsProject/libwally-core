@@ -2999,7 +2999,7 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
 #define SET_TX_B(typ, name, siz) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
-        if (!is_valid_elements_tx_output(output) || BYTES_INVALID(bytes, siz)) \
+        if (!is_valid_elements_ ## typ(output) || BYTES_INVALID(bytes, siz)) \
             return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
@@ -3007,7 +3007,7 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
 #define SET_TX_B_FIXED(typ, name, siz, n) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
-        if (!is_valid_elements_tx_output(output) || (siz && siz != n) || BYTES_INVALID(bytes, siz)) \
+        if (!is_valid_elements_ ## typ(output) || (siz && siz != n) || BYTES_INVALID(bytes, siz)) \
             return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
