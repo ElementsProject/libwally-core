@@ -51,7 +51,7 @@ WALLY_CORE_API int wally_cleanup(uint32_t flags);
  *
  * The context is created on demand.
  */
-struct secp256k1_context_struct *wally_get_secp_context(void);
+WALLY_CORE_API struct secp256k1_context_struct *wally_get_secp_context(void);
 #endif
 
 /**
