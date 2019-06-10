@@ -323,6 +323,25 @@ func Bip32KeyFromParentPath(extKey *ExtKey, childPath []uint8, flags uint32) (ch
 	}
 	return
 }
+
+/**
+ * Create a new child extended key from a parent extended key and a uint32 slice path.
+ *
+ * :param extKey: The parent extended key.
+ * :param childPath: The path of child numbers to create.
+ * :param flags: BIP32_KEY_ Flags indicating the type of derivation wanted.
+ */
+func Bip32KeyFromUint32ParentPath(extKey *ExtKey, childPath []uint32, flags uint32) (childExtKey *ExtKey, ret int){
+	wally_child_path := SwigcptrUint32_t(uintptr(unsafe.Pointer(&childPath[0])))
+	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
+	var tmp uintptr
+	extKeyOut := SwigcptrExt_key(unsafe.Pointer(&tmp))
+	ret = Bip32_key_from_parent_path(extKey, wally_child_path, int64(len(childPath)), wally_flags, extKeyOut)
+	if ret == 0 {
+		childExtKey = (*ExtKey)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(extKeyOut))))
+	}
+	return
+}
 %}
 
 %include "../../include/wally_bip39.h"
@@ -665,7 +684,7 @@ func WallyTxGetElementsSignatureHash(
  */
 func WallyAssetUnblind(
 	nonce []byte,
-	blindPrivKey []byte, 
+	blindPrivKey []byte,
 	proof []byte,
 	valueCommitment []byte,
 	extra []byte,
