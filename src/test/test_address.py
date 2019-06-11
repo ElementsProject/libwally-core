@@ -74,5 +74,10 @@ class AddressTests(unittest.TestCase):
         ret, out = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2WPKH, VERSION_P2SH)
         self.assertEqual(ret, WALLY_EINVAL)
 
+        # Obtain native SegWit address (P2WPKH)
+        ret, out = wally_bip32_key_to_addr_segwit(key, utf8('bc'), 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(out, vec[path]['address_segwit'])
+
 if __name__ == '__main__':
     unittest.main()

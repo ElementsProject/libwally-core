@@ -130,6 +130,20 @@ WALLY_CORE_API int wally_bip32_key_to_address(
     char **output);
 
 /**
+ * Create a native SegWit address corresponding to a BIP32 key.
+ *
+ * :param hdkey: The extended key to use.
+ * :param addr_family: Address family to generate, e.g. "bc" or "tb".
+ * :param flags: For future use. Must be 0.
+ * :param output: Destination for the resulting segwit native address string.
+ */
+WALLY_CORE_API int wally_bip32_key_to_addr_segwit(
+    const struct ext_key *hdkey,
+    const char *addr_family,
+    uint32_t flags,
+    char **output);
+
+/**
  * Create a P2PKH address corresponding to a private key in Wallet Import Format.
  *
  * :param wif: Private key in Wallet Import Format.

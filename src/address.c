@@ -54,3 +54,20 @@ int wally_bip32_key_to_address(const struct ext_key *hdkey, uint32_t flags,
     wally_clear(address, sizeof(address));
     return ret;
 }
+
+int wally_bip32_key_to_addr_segwit(const struct ext_key *hdkey, const char *addr_family,
+                                   uint32_t flags, char **output)
+{
+    int ret;
+
+    // Witness program bytes, including the version and data push opcode.
+    unsigned char witness_program_bytes[HASH160_LEN + 2];
+    witness_program_bytes[0] = OP_0;
+    witness_program_bytes[1] = HASH160_LEN;
+
+    if (wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), witness_program_bytes + 2, HASH160_LEN) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    ret = wally_addr_segwit_from_bytes(witness_program_bytes, HASH160_LEN + 2, addr_family, flags, output);
+    return ret;
+}
