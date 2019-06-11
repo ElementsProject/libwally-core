@@ -52,12 +52,12 @@ WALLY_CORE_API int wally_addr_segwit_from_bytes(
     char **output);
 
 /**
- * Get a witness program from a segwit native address.
+ * Get a scriptPubKey containing the witness program from a segwit native address.
  *
  * :param addr: Address to fetch the witness program from.
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
- * :param bytes_out: Destination for the resulting witness program bytes.
+ * :param bytes_out: Destination for the resulting scriptPubKey (including the version and data push opcode)
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
