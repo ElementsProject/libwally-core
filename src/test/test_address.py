@@ -35,6 +35,9 @@ vec = {
         "address_p2sh_segwit": '3DymAvEWH38HuzHZ3VwLus673bNZnYwNXu',
 
         "address_segwit": 'bc1qhm6697d9d2224vfyt8mj4kw03ncec7a7fdafvt',
+
+        ## OP_0 [pub_key_hash]
+        'scriptpubkey_segwit': '0014bef5a2f9a56a94aab12459f72ad9cf8cf19c7bbe',
     },
 
     'm/1H/1': {
@@ -53,6 +56,8 @@ vec = {
 
         "address_segwit": 'tb1qhm6697d9d2224vfyt8mj4kw03ncec7a7rtx6hc',
 
+        ## OP_0 [pub_key_hash]
+        'scriptpubkey_segwit': '0014bef5a2f9a56a94aab12459f72ad9cf8cf19c7bbe',
     }
 
 }
@@ -105,6 +110,12 @@ class AddressTests(unittest.TestCase):
         ret, out = wally_bip32_key_to_addr_segwit(key, utf8(bech32_prefix), 0)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(out, vec[path]['address_segwit'])
+
+        # Parse native SegWit address (P2WPKH):
+        out, out_len = make_cbuffer('00' * (100))
+        ret, written = wally_addr_segwit_to_bytes(utf8(vec[path]['address_segwit']), utf8(bech32_prefix), 0, out, out_len)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
 
 if __name__ == '__main__':
     unittest.main()
