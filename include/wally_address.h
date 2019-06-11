@@ -7,11 +7,17 @@
 extern "C" {
 #endif
 
+struct ext_key;
+
 #define WALLY_WIF_FLAG_COMPRESSED 0x0   /** Corresponding public key compressed */
 #define WALLY_WIF_FLAG_UNCOMPRESSED 0x1 /** Corresponding public key uncompressed */
 
 #define WALLY_CA_PREFIX_LIQUID 0x0c /** Liquid v1 confidential address prefix */
 #define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
+
+#define WALLY_ADDRESS_TYPE_P2PKH 0x01       /** P2PKH address ("1...") */
+#define WALLY_ADDRESS_TYPE_P2SH_P2WPKH 0x02 /** P2SH-P2WPKH wrapped SegWit address ("3...") */
+#define WALLY_ADDRESS_TYPE_P2WPKH 0x04      /** P2WPKH native SegWit address ("bc1...)" */
 
 /**
  * Create a segwit native address from a v0 witness program.
@@ -106,6 +112,22 @@ WALLY_CORE_API int wally_wif_to_public_key(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Create a legacy or wrapped SegWit address corresponding to a BIP32 key.
+ *
+ * :param hdkey: The extended key to use.
+ * :param flags: ``WALLY_ADDRESS_TYPE_P2PKH`` for a legacy address, ``WALLY_ADDRESS_TYPE_P2SH_P2WPKH``
+ *| for P2SH-wrapped SegWit.
+ * :param version: Version byte to generate address, e.g. with Bitcoin: 0x00 for P2PKH,
+ *| 0x05 for P2SH_P2WPKH (0x6F and 0xC4 respectively for Testnet).
+ * :param output: Destination for the resulting address string.
+ */
+WALLY_CORE_API int wally_bip32_key_to_address(
+    const struct ext_key *hdkey,
+    uint32_t flags,
+    uint32_t version,
+    char **output);
 
 /**
  * Create a P2PKH address corresponding to a private key in Wallet Import Format.
