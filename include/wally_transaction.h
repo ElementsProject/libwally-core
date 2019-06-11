@@ -865,7 +865,7 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
 WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
     const unsigned char *value,
     size_t value_len,
-    uint64_t* value_out);
+    uint64_t *value_out);
 
 /**
  * Create a Elements transaction for signing and return its hash.

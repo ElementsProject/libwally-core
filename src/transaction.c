@@ -24,7 +24,7 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
 /* Bytes of stack space to use to avoid allocations for tx serializing */
 #define TX_STACK_SIZE 2048
 
-#define TX_CHECK_OUTPUT if (!output) return WALLY_EINVAL; else *output = NULL
+#define TX_CHECK_OUTPUT if (!output) return WALLY_EINVAL; else * output = NULL
 #define TX_OUTPUT_ALLOC(typ) \
     *output = wally_malloc(sizeof(typ)); \
     if (!*output) return WALLY_ENOMEM; \
@@ -33,9 +33,9 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
 
 #define TX_COPY_ELSE_CLEAR(dst, src, siz) \
     if (src) \
-        memcpy(dst, src, siz); \
+    memcpy(dst, src, siz); \
     else \
-        wally_clear(dst, siz);
+    wally_clear(dst, siz);
 
 #define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
 #define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
@@ -2731,7 +2731,7 @@ int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
 
 int wally_tx_confidential_value_to_satoshi(const unsigned char *value,
                                            size_t value_len,
-                                           uint64_t* value_out)
+                                           uint64_t *value_out)
 {
     if (!value || value_len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN || !value_out || value[0] != 0x1)
         return WALLY_EINVAL;
@@ -2879,7 +2879,7 @@ static int tx_getb_impl(const void *input,
                                        unsigned char *bytes_out, size_t len) { \
         size_t written; \
         if (len != siz) \
-            return WALLY_EINVAL; \
+        return WALLY_EINVAL; \
         return tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
     }
 
@@ -2906,7 +2906,7 @@ GET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
 
 #define GET_TX_I(typ, name, outtyp) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, outtyp * written) { \
-        if (written) *written = 0; \
+        if (written) * written = 0; \
         if (!input || !written) return WALLY_EINVAL; \
         *written = input->name; \
         return WALLY_OK; \
@@ -3002,7 +3002,7 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
         if (!is_valid_elements_tx_output(output) || BYTES_INVALID(bytes, siz)) \
-            return WALLY_EINVAL; \
+        return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
 
@@ -3010,7 +3010,7 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
         if (!is_valid_elements_tx_output(output) || (siz && siz != n) || BYTES_INVALID(bytes, siz)) \
-            return WALLY_EINVAL; \
+        return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
 #endif /* BUILD_ELEMENTS */
