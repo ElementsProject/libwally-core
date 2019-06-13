@@ -549,6 +549,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_input_set_script);
 %returns_void__(wally_tx_input_set_txhash);
 %returns_void__(wally_tx_input_set_witness);
+%returns_void__(wally_tx_input_set_blinding_nonce);
+%returns_void__(wally_tx_input_set_entropy);
+%returns_void__(wally_tx_input_set_inflation_keys);
+%returns_void__(wally_tx_input_set_inflation_keys_rangeproof);
+%returns_void__(wally_tx_input_set_issuance_amount);
+%returns_void__(wally_tx_input_set_issuance_amount_rangeproof);
 %rename("_tx_is_coinbase") wally_tx_is_coinbase;
 %returns_size_t(_tx_is_coinbase);
 %rename("_tx_is_elements") wally_tx_is_elements;
@@ -590,6 +596,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_set_input_script);
 %returns_void__(wally_tx_set_input_txhash);
 %returns_void__(wally_tx_set_input_witness);
+%returns_void__(wally_tx_set_input_blinding_nonce);
+%returns_void__(wally_tx_set_input_entropy);
+%returns_void__(wally_tx_set_input_inflation_keys);
+%returns_void__(wally_tx_set_input_inflation_keys_rangeproof);
+%returns_void__(wally_tx_set_input_issuance_amount);
+%returns_void__(wally_tx_set_input_issuance_amount_rangeproof);
 %returns_void__(wally_tx_set_output_satoshi);
 %returns_void__(wally_tx_set_output_script);
 %returns_size_t(wally_tx_to_bytes);

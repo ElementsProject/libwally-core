@@ -3079,6 +3079,22 @@ int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi
 }
 
 #ifdef BUILD_ELEMENTS
+#define SET_TX_ARRAY(typ, name, siz) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *input, \
+                                       const unsigned char *name, size_t name ## _len) { \
+        if (!is_valid_elements_ ## typ(input) || !name || name ## _len != siz) \
+            return WALLY_EINVAL; \
+        memcpy(input->name, name, siz); \
+        return WALLY_OK; \
+    }
+
+SET_TX_ARRAY(tx_input, blinding_nonce, SHA256_LEN)
+SET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
+SET_TX_B(tx_input, inflation_keys, siz)
+SET_TX_B(tx_input, inflation_keys_rangeproof, siz)
+SET_TX_B(tx_input, issuance_amount, siz)
+SET_TX_B(tx_input, issuance_amount_rangeproof, siz)
+
 SET_TX_B_FIXED(tx_output, asset, siz, WALLY_TX_ASSET_CT_ASSET_LEN)
 int wally_tx_output_set_value(struct wally_tx_output *output, const unsigned char *value, size_t value_len)
 {
@@ -3307,6 +3323,19 @@ int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
 }
 
 #ifdef BUILD_ELEMENTS
+#define TX_SET_B(typ, name) \
+    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
+                                          const unsigned char *name, size_t name ## _len) { \
+        return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
+    }
+
+TX_SET_B(input, blinding_nonce)
+TX_SET_B(input, entropy)
+TX_SET_B(input, inflation_keys)
+TX_SET_B(input, inflation_keys_rangeproof)
+TX_SET_B(input, issuance_amount)
+TX_SET_B(input, issuance_amount_rangeproof)
+
 int wally_tx_set_output_asset(const struct wally_tx *tx, size_t index,
                               const unsigned char *asset, size_t asset_len)
 {
