@@ -3263,18 +3263,30 @@ int wally_tx_get_output_rangeproof_len(const struct wally_tx *tx, size_t index, 
 
 int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t index_in)
 {
-    struct wally_tx_input *input = tx_get_input(tx, index);
-    if (input)
-        input->index = index_in;
-    return input ? WALLY_OK : WALLY_EINVAL;
+    return wally_tx_input_set_index(tx_get_input(tx, index), index_in);
 }
 
 int wally_tx_set_input_sequence(const struct wally_tx *tx, size_t index, uint32_t sequence)
 {
-    struct wally_tx_input *input = tx_get_input(tx, index);
-    if (input)
-        input->sequence = sequence;
-    return input ? WALLY_OK : WALLY_EINVAL;
+    return wally_tx_input_set_sequence(tx_get_input(tx, index), sequence);
+}
+
+int wally_tx_set_input_script(const struct wally_tx *tx, size_t index,
+                              const unsigned char *script, size_t script_len)
+{
+    return wally_tx_input_set_script(tx_get_input(tx, index), script, script_len);
+}
+
+int wally_tx_set_input_txhash(const struct wally_tx *tx, size_t index,
+                              const unsigned char *txhash, size_t len)
+{
+    return wally_tx_input_set_txhash(tx_get_input(tx, index), txhash, len);
+}
+
+int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
+                               const struct wally_tx_witness_stack *stack)
+{
+    return wally_tx_input_set_witness(tx_get_input(tx, index), stack);
 }
 
 int wally_tx_set_output_script(const struct wally_tx *tx, size_t index,
@@ -3328,30 +3340,3 @@ int wally_tx_set_output_rangeproof(const struct wally_tx *tx, size_t index,
 }
 #endif
 #endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
-
-int wally_tx_set_input_script(const struct wally_tx *tx, size_t index,
-                              const unsigned char *script, size_t script_len)
-{
-    struct wally_tx_input *input = tx_get_input(tx, index);
-
-    if (!input || BYTES_INVALID(script, script_len))
-        return WALLY_EINVAL;
-    return replace_script(script, script_len, &input->script, &input->script_len);
-}
-
-int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
-                               const struct wally_tx_witness_stack *stack)
-{
-    struct wally_tx_input *input;
-    struct wally_tx_witness_stack *new_witness = NULL;
-
-    if (!(input = tx_get_input(tx, index)) || (stack && !is_valid_witness_stack(stack)))
-        return WALLY_EINVAL;
-
-    if (stack && (new_witness = clone_witness(stack)) == NULL)
-        return WALLY_ENOMEM;
-
-    tx_witness_stack_free(input->witness, true);
-    input->witness = new_witness;
-    return WALLY_OK;
-}

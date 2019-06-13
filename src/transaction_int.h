@@ -92,6 +92,7 @@ WALLY_CORE_API int wally_tx_get_input_inflation_keys_rangeproof_len(const struct
 
 WALLY_CORE_API int wally_tx_set_input_index(const struct wally_tx *tx_in, size_t index, uint32_t index_in);
 WALLY_CORE_API int wally_tx_set_input_sequence(const struct wally_tx *tx_in, size_t index, uint32_t sequence);
+WALLY_CORE_API int wally_tx_set_input_txhash(const struct wally_tx *tx_in, size_t index, const unsigned char *txhash, size_t len);
 
 /* Transaction Outputs */
 WALLY_CORE_API int wally_tx_get_output_script(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);

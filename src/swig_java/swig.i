@@ -588,6 +588,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_set_input_index);
 %returns_void__(wally_tx_set_input_sequence);
 %returns_void__(wally_tx_set_input_script);
+%returns_void__(wally_tx_set_input_txhash);
 %returns_void__(wally_tx_set_input_witness);
 %returns_void__(wally_tx_set_output_satoshi);
 %returns_void__(wally_tx_set_output_script);
