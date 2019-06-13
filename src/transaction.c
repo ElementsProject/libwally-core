@@ -216,13 +216,11 @@ static struct wally_tx_witness_stack *clone_witness(
 
     if (ret == WALLY_OK) {
         for (i = 0; i < stack->num_items && ret == WALLY_OK; ++i) {
-            if (stack->items[i].witness) {
-                ret = wally_tx_witness_stack_set(result, i,
-                                                 stack->items[i].witness,
-                                                 stack->items[i].witness_len);
-                if (ret != WALLY_OK)
-                    wally_tx_witness_stack_free(result);
-            }
+            ret = wally_tx_witness_stack_set(result, i,
+                                             stack->items[i].witness,
+                                             stack->items[i].witness_len);
+            if (ret != WALLY_OK)
+                wally_tx_witness_stack_free(result);
         }
     }
     return ret == WALLY_OK ? result : NULL;
