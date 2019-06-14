@@ -406,6 +406,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_string(wally_confidential_addr_from_addr);
 %returns_void__(wally_ec_private_key_verify);
+%returns_void__(wally_ec_public_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_sig_from_bytes, 6, 7, EC_SIGNATURE_LEN);

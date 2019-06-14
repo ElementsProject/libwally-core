@@ -151,6 +151,48 @@ static size_t secp256k1_surjectionproof_csprng_next(secp256k1_surjectionproof_cs
     }
 }
 
+/* While '_allocate_initialized' may be a wordy suffix for this function, and '_create'
+ * may have been more appropriate, '_create' could be confused with '_generate',
+ * as the meanings for the words are close. Therefore, more wordy, but less
+ * ambiguous suffix was chosen. */
+int secp256k1_surjectionproof_allocate_initialized(const secp256k1_context* ctx, secp256k1_surjectionproof** proof_out_p, size_t *input_index, const secp256k1_fixed_asset_tag* fixed_input_tags, const size_t n_input_tags, const size_t n_input_tags_to_use, const secp256k1_fixed_asset_tag* fixed_output_tag, const size_t n_max_iterations, const unsigned char *random_seed32) {
+    int ret = 0;
+    secp256k1_surjectionproof* proof;
+
+    VERIFY_CHECK(ctx != NULL);
+
+    ARG_CHECK(proof_out_p != NULL);
+    *proof_out_p = 0;
+
+    proof = (secp256k1_surjectionproof*)checked_malloc(&ctx->error_callback, sizeof(secp256k1_surjectionproof));
+    if (proof != NULL) {
+        ret = secp256k1_surjectionproof_initialize(ctx, proof, input_index, fixed_input_tags, n_input_tags, n_input_tags_to_use, fixed_output_tag, n_max_iterations, random_seed32);
+        if (ret) {
+            *proof_out_p = proof;
+        }
+        else {
+            free(proof);
+        }
+    }
+    return ret;
+}
+
+/* secp256k1_surjectionproof structure may also be allocated on the stack,
+ * and initialized explicitly via secp256k1_surjectionproof_initialize().
+ * Supplying stack-allocated struct to _destroy() will result in calling
+ * free() with the pointer that points at the stack, with disasterous
+ * consequences. Thus, it is not advised to mix heap- and stack-allocating
+ * approaches to working with this struct. It is possible to detect this
+ * situation by using additional field in the struct that can be set to
+ * special value depending on the allocation path, and check it here.
+ * But currently, it is not seen as big enough concern to warrant this extra code .*/
+void secp256k1_surjectionproof_destroy(secp256k1_surjectionproof* proof) {
+    if (proof != NULL) {
+        VERIFY_CHECK(proof->n_inputs <= SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS);
+        free(proof);
+    }
+}
+
 int secp256k1_surjectionproof_initialize(const secp256k1_context* ctx, secp256k1_surjectionproof* proof, size_t *input_index, const secp256k1_fixed_asset_tag* fixed_input_tags, const size_t n_input_tags, const size_t n_input_tags_to_use, const secp256k1_fixed_asset_tag* fixed_output_tag, const size_t n_max_iterations, const unsigned char *random_seed32) {
     secp256k1_surjectionproof_csprng csprng;
     size_t n_iterations = 0;

@@ -42,6 +42,22 @@ int wally_ec_private_key_verify(const unsigned char *priv_key, size_t priv_key_l
     return secp256k1_ec_seckey_verify(ctx, priv_key) ? WALLY_OK : WALLY_EINVAL;
 }
 
+int wally_ec_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
+{
+    secp256k1_pubkey pub;
+    const secp256k1_context *ctx = secp_ctx();
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+
+    if (!pub_key ||
+        !(pub_key_len == EC_PUBLIC_KEY_LEN || pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) ||
+        !pubkey_parse(ctx, &pub, pub_key, pub_key_len))
+        return WALLY_EINVAL;
+
+    return WALLY_OK;
+}
+
 int wally_ec_public_key_from_private_key(const unsigned char *priv_key, size_t priv_key_len,
                                          unsigned char *bytes_out, size_t len)
 {

@@ -71,6 +71,13 @@ class SignTests(unittest.TestCase):
                                           FLAG_ECDSA, s, len(s))
                 self.assertEqual(ret, WALLY_OK)
 
+            # Validate public key
+            pub_unc, _ = make_cbuffer('00' * 65)
+            ret = wally_ec_public_key_decompress(pub_key, len(pub_key), pub_unc, len(pub_unc))
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(wally_ec_public_key_verify(pub_key, len(pub_key)), WALLY_OK)
+            self.assertEqual(wally_ec_public_key_verify(pub_unc, len(pub_unc)), WALLY_OK)
+
         set_fake_ec_nonce(None)
 
 
@@ -104,6 +111,14 @@ class SignTests(unittest.TestCase):
                             (priv_key, 10),             # Wrong priv_key len
                             (priv_bad, len(priv_key))]: # Bad private key
             self.assertEqual(wally_ec_private_key_verify(pk, pk_len), WALLY_EINVAL)
+
+        # wally_ec_public_key_verify
+        pub_key, _ = make_cbuffer('02' + '22' * 32)
+        pub_bad, _ = make_cbuffer('02' + '00' * 32)
+        for pub, pub_len in [(None, len(pub_key)),     # Null pub_key
+                             (pub_key, 32),            # Wrong pub_key len
+                             (pub_bad, len(pub_key))]: # Bad public key
+            self.assertEqual(wally_ec_public_key_verify(pub, pub_len), WALLY_EINVAL)
 
         # wally_ec_public_key_decompress
         pub, _ = make_cbuffer('02' + '22' * 32)

@@ -220,8 +220,9 @@ secp256k1_scratch_space* secp256k1_scratch_space_create(const secp256k1_context*
     return secp256k1_scratch_create(&ctx->error_callback, max_size);
 }
 
-void secp256k1_scratch_space_destroy(secp256k1_scratch_space* scratch) {
-    secp256k1_scratch_destroy(scratch);
+void secp256k1_scratch_space_destroy(const secp256k1_context *ctx, secp256k1_scratch_space* scratch) {
+    VERIFY_CHECK(ctx != NULL);
+    secp256k1_scratch_destroy(&ctx->error_callback, scratch);
 }
 
 static int secp256k1_pubkey_load(const secp256k1_context* ctx, secp256k1_ge* ge, const secp256k1_pubkey* pubkey) {
@@ -548,7 +549,7 @@ int secp256k1_ec_pubkey_create(const secp256k1_context* ctx, secp256k1_pubkey *p
     ARG_CHECK(seckey != NULL);
 
     secp256k1_scalar_set_b32(&sec, seckey, &overflow);
-    ret = (!overflow) & (!secp256k1_scalar_is_zero(&sec));
+    ret = !overflow && !secp256k1_scalar_is_zero(&sec);
     if (ret) {
         secp256k1_ecmult_gen(&ctx->ecmult_gen_ctx, &pj, &sec);
         secp256k1_ge_set_gej(&p, &pj);
@@ -567,6 +568,7 @@ int secp256k1_ec_privkey_negate(const secp256k1_context* ctx, unsigned char *sec
     secp256k1_scalar_negate(&sec, &sec);
     secp256k1_scalar_get_b32(seckey, &sec);
 
+    secp256k1_scalar_clear(&sec);
     return 1;
 }
 

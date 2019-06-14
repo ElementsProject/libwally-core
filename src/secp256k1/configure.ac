@@ -186,28 +186,21 @@ AC_ARG_WITH([scalar], [AS_HELP_STRING([--with-scalar=64bit|32bit|auto],
 AC_ARG_WITH([asm], [AS_HELP_STRING([--with-asm=x86_64|arm|no|auto],
 [assembly optimizations to use (experimental: arm) [default=auto]])],[req_asm=$withval], [req_asm=auto])
 
-# Default is window size 16 (or window size 15 with endomorphism) which needs 1.375 MiB. */
 AC_ARG_WITH([ecmult-window], [AS_HELP_STRING([--with-ecmult-window=SIZE|auto],
-[window size for ecmult precomputation for verification, specified as integer in range [3..24].]
+[window size for ecmult precomputation for verification, specified as integer in range [2..24].]
 [Larger values result in possibly better performance at the cost of an exponentially larger precomputed table.]
-[The table will store 2^(SIZE-2) * 64 bytes of data but can be larger in memory due]
-[to platform-specific padding and alignment. "auto" is a reasonable setting for desktop machines]
-[(currently 15 if the endomorphism optimization is disabled and 16 if it is enabled). [default=auto]]
+[The table will store 2^(SIZE-2) * 64 bytes of data but can be larger in memory due to platform-specific padding and alignment.]
+[If the endomorphism optimization is enabled, two tables of this size are used instead of only one.]
+["auto" is a reasonable setting for desktop machines (currently 15). [default=auto]]
 )],
 [req_ecmult_window=$withval], [req_ecmult_window=auto])
 
 AC_CHECK_TYPES([__int128])
 
-AC_MSG_CHECKING([for __builtin_expect])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[void myfunc() {__builtin_expect(0,0);}]])],
-    [ AC_MSG_RESULT([yes]);AC_DEFINE(HAVE_BUILTIN_EXPECT,1,[Define this symbol if __builtin_expect is available]) ],
-    [ AC_MSG_RESULT([no])
-    ])
-
 if test x"$enable_coverage" = x"yes"; then
     AC_DEFINE(COVERAGE, 1, [Define this symbol to compile out all VERIFY code])
     CFLAGS="$CFLAGS -O0 --coverage"
-    LDFLAGS="--coverage"
+    LDFLAGS="$LDFLAGS --coverage"
 else
     CFLAGS="$CFLAGS -O3"
 fi
@@ -452,23 +445,19 @@ esac
 
 #set ecmult window size
 if test x"$req_ecmult_window" = x"auto"; then
-    if test x"$use_endomorphism" = x"yes"; then
-        set_ecmult_window=16
-    else
-        set_ecmult_window=15
-    fi
+  set_ecmult_window=15
 else
   set_ecmult_window=$req_ecmult_window
 fi
 
-error_window_size=['window size for ecmult precomputation not an integer in range [3..24] or "auto"']
+error_window_size=['window size for ecmult precomputation not an integer in range [2..24] or "auto"']
 case $set_ecmult_window in
 ''|*[[!0-9]]*)
   # no valid integer
   AC_MSG_ERROR($error_window_size)
   ;;
 *)
-  if test "$set_ecmult_window" -lt 3 -o "$set_ecmult_window" -gt 24 ; then
+  if test "$set_ecmult_window" -lt 2 -o "$set_ecmult_window" -gt 24 ; then
     # not in range
     AC_MSG_ERROR($error_window_size)
   fi
@@ -662,7 +651,7 @@ AM_CONDITIONAL([ENABLE_MODULE_RECOVERY], [test x"$enable_module_recovery" = x"ye
 AM_CONDITIONAL([ENABLE_MODULE_GENERATOR], [test x"$enable_module_generator" = x"yes"])
 AM_CONDITIONAL([ENABLE_MODULE_RANGEPROOF], [test x"$enable_module_rangeproof" = x"yes"])
 AM_CONDITIONAL([ENABLE_MODULE_WHITELIST], [test x"$enable_module_whitelist" = x"yes"])
-AM_CONDITIONAL([USE_JNI], [test x"$use_jni" == x"yes"])
+AM_CONDITIONAL([USE_JNI], [test x"$use_jni" = x"yes"])
 AM_CONDITIONAL([USE_EXTERNAL_ASM], [test x"$use_external_asm" = x"yes"])
 AM_CONDITIONAL([USE_ASM_ARM], [test x"$set_asm" = x"arm"])
 AM_CONDITIONAL([ENABLE_MODULE_SURJECTIONPROOF], [test x"$enable_module_surjectionproof" = x"yes"])

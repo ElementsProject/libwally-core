@@ -108,7 +108,7 @@ static int secp256k1_ecmult_gen_context_is_built(const secp256k1_ecmult_gen_cont
 static void secp256k1_ecmult_gen_context_finalize_memcpy(secp256k1_ecmult_gen_context *dst, const secp256k1_ecmult_gen_context *src) {
 #ifndef USE_ECMULT_STATIC_PRECOMPUTATION
     if (src->prec != NULL) {
-        /* We cast to void* first to suppress a -Wcast-align warning in clang. */
+        /* We cast to void* first to suppress a -Wcast-align warning. */
         dst->prec = (secp256k1_ge_storage (*)[64][16])(void*)((unsigned char*)dst + ((unsigned char*)src->prec - (unsigned char*)src));
     }
 #else
@@ -187,7 +187,7 @@ static void secp256k1_ecmult_gen_blind(secp256k1_ecmult_gen_context *ctx, const 
     do {
         secp256k1_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
         retry = !secp256k1_fe_set_b32(&s, nonce32);
-        retry |= secp256k1_fe_is_zero(&s);
+        retry = retry || secp256k1_fe_is_zero(&s);
     } while (retry); /* This branch true is cryptographically unreachable. Requires sha256_hmac output > Fp. */
     /* Randomize the projection to defend against multiplier sidechannels. */
     secp256k1_gej_rescale(&ctx->initial, &s);
@@ -196,7 +196,7 @@ static void secp256k1_ecmult_gen_blind(secp256k1_ecmult_gen_context *ctx, const 
         secp256k1_rfc6979_hmac_sha256_generate(&rng, nonce32, 32);
         secp256k1_scalar_set_b32(&b, nonce32, &retry);
         /* A blinding value of 0 works, but would undermine the projection hardening. */
-        retry |= secp256k1_scalar_is_zero(&b);
+        retry = retry || secp256k1_scalar_is_zero(&b);
     } while (retry); /* This branch true is cryptographically unreachable. Requires sha256_hmac output > order. */
     secp256k1_rfc6979_hmac_sha256_finalize(&rng);
     memset(nonce32, 0, 32);
