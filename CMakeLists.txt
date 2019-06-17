@@ -1,36 +1,52 @@
 cmake_minimum_required(VERSION 3.13)
 
-# 書き方が良くないらしいので、以下を参考に書き直す。
-# https://qiita.com/shohirose/items/5b406f060cd5557814e9
-
-# libwally layout memo
-# - CMakeLists.txt
-#   package.json
-#   src - wrap_js - nodejs_wrap.cc
-# node V12での変更事項：(v8のバージョンアップに伴う影響。何れ修正必要)
-#    obj->ToObject()
-#     -> Nan::To<v8::Object>(obj).ToLocalChecked() に差し替え。objがinfo[0]でも同様。
-
-# プロジェクト名
+# wally project
 project(wally C)
-# 絶対パス->相対パス変換
 cmake_policy(SET CMP0076 NEW)
-
-# memo：Generator Expressionsにはスペース入れないこと。後方はtrimされないのでスペースも文字認識される
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
+
+# options
+if(CMAKE_JS_INC)
+option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
+else()
+option(ENABLE_SHARED "enable shared library (ON or OFF. default:OFF)" OFF)
+endif()
+option(ENABLE_DEBUG "enable debugging (ON or OFF. default:OFF)" OFF)
+option(ENABLE_COVERAGE "enable code coverage (ON or OFF. default:OFF)" OFF)
+option(ENABLE_TESTS "enable code tests (ON or OFF. default:ON)" ON)
+option(ENABLE_ELEMENTS "enable elements tx code (ON or OFF. default:OFF)" OFF)
+option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:OFF)" OFF)
+option(ENABLE_SWIG_JAVA "enable the SWIG java (JNI) interface (ON or OFF. default:OFF)" OFF)
+
+if(CMAKE_JS_INC)
+option(ENABLE_JS_WRAPPER "enable the Javascript interface wrappers (ON or OFF. default:ON)" ON)
+endif()
+
+if(NOT WIN32)
+option(ENABLE_EXPORT_ALL "enable export all functions (for testing) (ON or OFF. default:OFF)" OFF)
+endif()
+
+if(ENABLE_DEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEBUGBUILD>)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+if(ENABLE_COVERAGE)
+set(COLLECT_COVERAGE ON)
+endif()
+endif()
+
+# common setting
 set(WINDOWS_CONFIG_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/windows_config)
 
 # secp256k1/gen_context
 set(GEN_CONTEXT_NAME gen_context)
 
-set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_BINARY_DIR}/ecmult_static_context.h)
+set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_BINARY_DIR}/ecmult_static_context.h)
 add_executable(${GEN_CONTEXT_NAME}
     src/secp256k1/src/gen_context.c
     ${WINDOWS_CONFIG_DIRECTORY}/config.h
     ${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h
 )
-#    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}/config.h>
-#    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h>
 
 target_compile_options(${GEN_CONTEXT_NAME}
   PRIVATE
@@ -46,8 +62,6 @@ target_compile_definitions(${GEN_CONTEXT_NAME}
       -DWALLY_CORE_BUILD=1 -DSECP256K1_BUILD -DHAVE_CONFIG_H
     >
 )
-#    $<$<NOT:$<C_COMPILER_ID:MSVC>>:-DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H>
-#    $<$<C_COMPILER_ID:MSVC>:/DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD>
 target_include_directories(${GEN_CONTEXT_NAME}
   PUBLIC
     ${WINDOWS_CONFIG_DIRECTORY}
@@ -57,7 +71,6 @@ target_include_directories(${GEN_CONTEXT_NAME}
     src/secp256k1/src
     src/secp256k1/contrib
 )
-#    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}>
 
 set(SECP256K1_GEN_CONTEXT_NAME secp256k1_gen_context)
 add_custom_target(${SECP256K1_GEN_CONTEXT_NAME}
@@ -72,7 +85,7 @@ if(BTCLIB_ROOT_BINARY_DIR AND WIN32)
 set(WORK_BINARY_DIR  ${BTCLIB_ROOT_BINARY_DIR})
 else()		# BTCLIB_ROOT_BINARY_DIR
 set(WORK_BINARY_DIR
-  $<IF:$<PLATFORM_ID:Windows>,${CMAKE_CURRENT_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME},${CMAKE_CURRENT_BINARY_DIR}>)
+  $<IF:$<PLATFORM_ID:Windows>,${CMAKE_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME},${CMAKE_BINARY_DIR}>)
 endif()		# BTCLIB_ROOT_BINARY_DIR
 
 if(BTCLIB_ROOT_BINARY_DIR)
@@ -90,8 +103,7 @@ add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
 )
 
 
-#set(GEN_CONTEXT_NAME gen_context)
-
+# libwally sources
 set(LIBWALLY_FILES
     ${WINDOWS_CONFIG_DIRECTORY}/config.h
     ${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h
@@ -131,11 +143,8 @@ set(LIBWALLY_FILES
     src/secp256k1/include/secp256k1.h
     ${ECMULT_STATIC_CONTEXT_H}
 )
-#    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}/config.h>
-#    $<$<C_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h>
 
 # libwally
-#set(WALLY_NAME wally)
 if(ENABLE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
 else()
@@ -152,15 +161,20 @@ target_sources(${PROJECT_NAME}
 target_compile_options(${PROJECT_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DBUILD_ELEMENTS /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16,
+      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:/DBUILD_ELEMENTS>,
       -Wall -Wextra -Wno-unused-function
+      $<$<BOOL:$<TARGET_PROPERTY:COLLECT_COVERAGE>>:-fprofile-arcs>
+      $<$<BOOL:$<TARGET_PROPERTY:COLLECT_COVERAGE>>:-ftest-coverage>
+      $<$<BOOL:$<TARGET_PROPERTY:ENABLE_EXPORT_ALL>>:-fvisibility=hidden>
     >
 )
 target_compile_definitions(${PROJECT_NAME}
   PUBLIC
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DBUILD_ELEMENTS /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16,
-      -DWALLY_CORE_BUILD=1 -DBUILD_ELEMENTS=1 -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
+      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16 $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:/DBUILD_ELEMENTS>,
+      -DWALLY_CORE_BUILD=1
+      -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
+      $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:-DBUILD_ELEMENTS>
     >
 )
 target_include_directories(${PROJECT_NAME}
@@ -174,35 +188,30 @@ target_include_directories(${PROJECT_NAME}
     src/secp256k1
     src/secp256k1/src
 )
-#    $<$<CXX_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}>
 
-#    src/secp256k1/include
-#    src/secp256k1/contrib
+if(COLLECT_COVERAGE)
+target_link_libraries(${PROJECT_NAME} lcov)
+endif()
 
 
-# node build
-if(CMAKE_JS_INC)
+# node.js build
+if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
 message(STATUS "[CMAKE_JS_INC]=${CMAKE_JS_INC}")
 message(STATUS "[CMAKE_JS_LIB]=${CMAKE_JS_LIB}")
-# CMAKE_JS_LIBは無くても動くが、環境依存の可能性からそのままにする。
 
-# command
-# npm install cmake-js nan --save
-# [win] npm config set cmake_js_G "Visual Studio 16 2019"
-# [linux] npm config set cmake_js_G "Unix Makefiles"
-# node_modules\.bin\cmake-js configure -O build
-# node_modules\.bin\cmake-js build -O build
-# 
-
-set(ELEMENT_OPT "elements")
+if(ENABLE_ELEMENTS)
+set(ELEMENTS_OPT "elements")
+else()
+set(ELEMENTS_OPT "")
+endif()
 set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
 
-add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+add_custom_command(OUTPUT  ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
     COMMAND set PYTHONDONTWRITEBYTECODE=1
     COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENT_OPT}
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENT_OPT}
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_BINARY_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js" ${WORK_BINARY_DIR2}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
     VERBATIM
@@ -215,32 +224,30 @@ add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
     ${LIBWALLY_FILES}
-    ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+    ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
 )
 
 target_compile_options(${NODE_LIBRARY_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DBUILD_ELEMENTS /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DSWIG_JAVASCRIPT_BUILD,
+      /LD /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DSWIG_JAVASCRIPT_BUILD $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:/DBUILD_ELEMENTS>,
       -Wall -Wextra -Wno-unused-function
+      $<$<BOOL:$<TARGET_PROPERTY:COLLECT_COVERAGE>>:-fprofile-arcs>
+      $<$<BOOL:$<TARGET_PROPERTY:COLLECT_COVERAGE>>:-ftest-coverage>
+      $<$<BOOL:$<TARGET_PROPERTY:ENABLE_EXPORT_ALL>>:-fvisibility=hidden>
     >
 )
 target_compile_definitions(${NODE_LIBRARY_NAME}
   PUBLIC
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DBUILD_ELEMENTS /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DSWIG_JAVASCRIPT_BUILD,
-      -DBUILD_ELEMENTS=1 -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DSWIG_JAVASCRIPT_BUILD -DECMULT_WINDOW_SIZE=16
+      /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DSWIG_JAVASCRIPT_BUILD $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:/DBUILD_ELEMENTS>,
+      -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DSWIG_JAVASCRIPT_BUILD -DECMULT_WINDOW_SIZE=16
+      $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:-DBUILD_ELEMENTS>
     >
 )
 
-#if(WIN32)
-#  target_link_libraries(${NODE_LIBRARY_NAME} "winmm.lib" "ws2_32.lib")
-#elseif(UNIX)
-#  target_link_libraries(${NODE_LIBRARY_NAME} pthread rt)
-#endif()
-
-# ライブラリフォルダの指定
 set_target_properties(${NODE_LIBRARY_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
+
 # Include N-API wrappers
 #execute_process(COMMAND node -p "require('node-addon-api').include"
 #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -259,30 +266,26 @@ target_include_directories(${NODE_LIBRARY_NAME}
     src/secp256k1
     src/secp256k1/src
     node_modules/nan
-  PRIVATE "${CMAKE_JS_INC}"
+    ${CMAKE_JS_INC}
 )
-#    $<$<CXX_COMPILER_ID:MSVC>:${WINDOWS_CONFIG_DIRECTORY}>
 
-# You should add this line in every CMake.js based project
 if(WIN32)
-target_link_libraries(${NODE_LIBRARY_NAME} "${CMAKE_JS_LIB}"
-  winmm.lib ws2_32.lib
-)
+target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB} winmm.lib ws2_32.lib)
 elseif(APPLE)
-target_link_libraries(${NODE_LIBRARY_NAME} "${CMAKE_JS_LIB}"
-  pthread
-)
+target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB} pthread)
 else()
-target_link_libraries(${NODE_LIBRARY_NAME} "${CMAKE_JS_LIB}"
-  pthread rt
-)
+target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB} pthread rt)
 endif()
 
-else()	# CMAKE_JS_INC
+else()	# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
 
-# libwally shared library
+# libwally library
 set(WALLYCORE_NAME wallycore)
+if(ENABLE_SHARED)
 add_library(${WALLYCORE_NAME} SHARED)
+else()
+add_library(${WALLYCORE_NAME} STATIC)
+endif()
 if(WIN32)
 set_target_properties(${WALLYCORE_NAME} PROPERTIES PREFIX "lib" SUFFIX ".dll")
 endif()
@@ -297,15 +300,20 @@ target_sources(${WALLYCORE_NAME}
 target_compile_options(${WALLYCORE_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DBUILD_ELEMENTS /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16,
+      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:/DBUILD_ELEMENTS>,
       -Wall -Wextra -Wno-unused-function
+      $<$<BOOL:$<TARGET_PROPERTY:COLLECT_COVERAGE>>:-fprofile-arcs>
+      $<$<BOOL:$<TARGET_PROPERTY:COLLECT_COVERAGE>>:-ftest-coverage>
+      $<$<BOOL:$<TARGET_PROPERTY:ENABLE_EXPORT_ALL>>:-fvisibility=hidden>
     >
 )
 target_compile_definitions(${WALLYCORE_NAME}
   PUBLIC
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DBUILD_ELEMENTS /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16,
-      -DWALLY_CORE_BUILD=1 -DBUILD_ELEMENTS=1 -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
+      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16 $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:/DBUILD_ELEMENTS>,
+      -DWALLY_CORE_BUILD=1
+      -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
+      $<$<BOOL:$<TARGET_PROPERTY:ENABLE_ELEMENTS>>:-DBUILD_ELEMENTS>
     >
 )
 target_include_directories(${WALLYCORE_NAME}
@@ -320,4 +328,8 @@ target_include_directories(${WALLYCORE_NAME}
     src/secp256k1/src
 )
 
-endif()		# CMAKE_JS_INC
+if(COLLECT_COVERAGE)
+target_link_libraries(${WALLYCORE_NAME} lcov)
+endif()
+
+endif()		# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
