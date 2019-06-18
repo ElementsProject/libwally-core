@@ -314,13 +314,16 @@ target_include_directories(${NODE_LIBRARY_NAME}
     ${CMAKE_JS_INC}
 )
 
-if(WIN32)
-target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB} winmm.lib ws2_32.lib)
-elseif(APPLE)
-target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB} pthread)
-else()
-target_link_libraries(${NODE_LIBRARY_NAME} ${CMAKE_JS_LIB} pthread rt)
-endif()
+target_link_libraries(${NODE_LIBRARY_NAME}
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE
+    ${CMAKE_JS_LIB}
+)
 
 else()	# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
 
