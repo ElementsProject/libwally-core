@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 
+# AC_INIT([libwallycore],[0.7.1])
+set(PACKAGE_VERSION   0.7.1)
+
 # wally project
 project(wally C)
 cmake_policy(SET CMP0076 NEW)
@@ -188,6 +191,7 @@ set(LIBWALLY_FILES
 ####################
 # libwally
 ####################
+set(WALLY_PROJECT_NAME wally)
 if(ENABLE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
 else()
@@ -327,8 +331,11 @@ target_link_libraries(${NODE_LIBRARY_NAME}
 
 else()	# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
 
+####################
 # libwally library
+####################
 set(WALLYCORE_NAME wallycore)
+set(WALLY_PROJECT_NAME ${WALLYCORE_NAME})
 if(ENABLE_SHARED)
 add_library(${WALLYCORE_NAME} SHARED)
 else()
@@ -394,8 +401,8 @@ if(ENABLE_SWIG_PYTHON)
 # set(ENV{PYTHONDONTWRITEBYTECODE} 1)
 # set(ENV{PYTHONPATH} ".libs:swig_python")
 
-set(WALLY_SWIG_PYTHON_NAME swig_python)
-project(swig_python C)
+set(WALLY_SWIG_PYTHON_NAME wallycore_swig_python)
+project(wallycore_swig_python C)
 set(PYTHON_WALLY_FILE ${CMAKE_BINARY_DIR}/wallycore.py)
 set(PYTHON_WALLY_INIT_FILE ${CMAKE_BINARY_DIR}/__init__.py)
 
@@ -511,3 +518,33 @@ add_custom_target(swig_python_cmd  ALL
 
 endif()		# USE_SWIG_PYTHON
 
+
+####################
+# install & export
+####################
+set(prefix            ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix       ${prefix})
+set(libdir            ${exec_prefix}/lib)
+set(includedir        ${prefix}/include)
+include(GNUInstallDirs)
+
+configure_file(src/wallycore.pc.in  wallycore.pc  @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wallycore.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+install(TARGETS       ${WALLY_PROJECT_NAME}
+        EXPORT        wallycore-export
+        ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+export(TARGETS ${WALLY_PROJECT_NAME}
+       APPEND FILE ${PROJECT_BINARY_DIR}/${WALLY_PROJECT_NAME}-export.cmake
+       EXPORT_LINK_INTERFACE_LIBRARIES)
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        FILES_MATCHING REGEX "/[^/]*\\.(h|hpp)$")
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        FILES_MATCHING PATTERN "*.h")
