@@ -206,7 +206,7 @@ libwallycore_la_INCLUDES = \
     include/wally_symmetric.h \
     include/wally_transaction.h
 
-libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
+libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
