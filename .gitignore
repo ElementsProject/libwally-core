@@ -93,3 +93,8 @@ docs/source/transaction.rst
 *.pdb
 *.ilk
 *.exp
+
+node_modules
+package-lock.json
+Testing
+build

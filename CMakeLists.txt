@@ -25,9 +25,9 @@ option(ENABLE_SWIG_JAVA "enable the SWIG java (JNI) interface (ON or OFF. defaul
 if(CMAKE_JS_INC)
 option(ENABLE_JS_WRAPPER "enable the Javascript interface wrappers (ON or OFF. default:ON)" ON)
 endif()
+option(ENABLE_TESTS "enable code tests for CTest (ON or OFF. default:ON)" ON)
 
 if(NOT WIN32)
-option(ENABLE_TESTS "enable code tests (ON or OFF. default:ON)" ON)
 option(ENABLE_COVERAGE "enable code coverage (ON or OFF. default:OFF)" OFF)
 option(ENABLE_EXPORT_ALL "enable export all functions (for testing) (ON or OFF. default:OFF)" OFF)
 set(ENABLE_EXPORT_ALL_OPT "")
@@ -517,6 +517,199 @@ add_custom_target(swig_python_cmd  ALL
 # libswig_python_la_LIBADD = $(PYTHON_LIBS)
 
 endif()		# USE_SWIG_PYTHON
+
+
+####################
+# test
+####################
+if(ENABLE_TESTS)
+enable_testing()
+project(wally_test C)
+include(CTest)
+# add_subdirectory(src/ctest)
+
+####################
+# test for C
+####################
+set(TEST_BECH32_NAME test_bech32)
+add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
+target_compile_options(${TEST_BECH32_NAME}
+  PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+)
+target_compile_definitions(${TEST_BECH32_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+)
+target_include_directories(${TEST_BECH32_NAME}
+  PRIVATE
+    ${WINDOWS_CONFIG_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${CMAKE_BINARY_DIR}
+)
+target_link_directories(${TEST_BECH32_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_BECH32_NAME}
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    wally
+)
+add_test(
+  NAME ${TEST_BECH32_NAME}
+  COMMAND ${TEST_BECH32_NAME}
+  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+)
+
+if(NOT WIN32) # use pthread
+set(TEST_CLEAR_NAME test_clear)
+add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
+target_compile_options(${TEST_CLEAR_NAME}
+  PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+)
+target_compile_definitions(${TEST_CLEAR_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+)
+target_include_directories(${TEST_CLEAR_NAME}
+  PRIVATE
+    ${WINDOWS_CONFIG_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${CMAKE_BINARY_DIR}
+)
+target_link_directories(${TEST_CLEAR_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_CLEAR_NAME}
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    wally
+)
+add_test(
+  NAME ${TEST_CLEAR_NAME}
+  COMMAND $<TARGET_FILE:${TEST_CLEAR_NAME}>
+  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+)
+endif()
+
+set(TEST_TX_NAME test_tx)
+add_executable(${TEST_TX_NAME} src/ctest/test_tx.c)
+target_compile_options(${TEST_TX_NAME}
+  PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+)
+target_compile_definitions(${TEST_TX_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+)
+target_include_directories(${TEST_TX_NAME}
+  PRIVATE
+    ${WINDOWS_CONFIG_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${CMAKE_BINARY_DIR}
+)
+target_link_directories(${TEST_TX_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_TX_NAME}
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    wally
+)
+add_test(
+  NAME ${TEST_TX_NAME}
+  COMMAND $<TARGET_FILE:${TEST_TX_NAME}>
+  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+)
+
+
+####################
+# test for C(Elements)
+####################
+if(ENABLE_ELEMENTS)
+set(TEST_ELEMENTS_TX_NAME test_elements_tx)
+add_executable(${TEST_ELEMENTS_TX_NAME} src/ctest/test_elements_tx.c)
+target_compile_options(${TEST_ELEMENTS_TX_NAME}
+  PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+)
+target_compile_definitions(${TEST_ELEMENTS_TX_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+)
+target_include_directories(${TEST_ELEMENTS_TX_NAME}
+  PRIVATE
+    ${WINDOWS_CONFIG_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${CMAKE_BINARY_DIR}
+)
+target_link_directories(${TEST_ELEMENTS_TX_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_ELEMENTS_TX_NAME}
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    wally
+)
+add_test(
+  NAME ${TEST_ELEMENTS_TX_NAME}
+  COMMAND $<TARGET_FILE:${TEST_ELEMENTS_TX_NAME}>
+  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+)
+endif()
+
+####################
+# test for Python
+####################
+if(ENABLE_SWIG_PYTHON)
+endif()
+
+####################
+# test for Java
+####################
+if(ENABLE_SWIG_JAVA)
+endif()
+
+####################
+# test for node.js
+####################
+if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
+endif()
+
+endif()
 
 
 ####################
