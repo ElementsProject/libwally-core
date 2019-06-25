@@ -174,6 +174,11 @@ AC_ARG_ENABLE(module_surjectionproof,
     [enable_module_surjectionproof=$enableval],
     [enable_module_surjectionproof=no])
 
+AC_ARG_ENABLE(reduced_surjection_proof_size,
+    AS_HELP_STRING([--enable-reduced-surjection-proof-size],[use reduced surjection proof size (disabling parsing and verification) [default=no]]),
+    [use_reduced_surjection_proof_size=$enableval],
+    [use_reduced_surjection_proof_size=no])
+
 AC_ARG_WITH([field], [AS_HELP_STRING([--with-field=64bit|32bit|auto],
 [finite field implementation to use [default=auto]])],[req_field=$withval], [req_field=auto])
 
@@ -500,9 +505,6 @@ if test x"$use_jni" != x"no"; then
     have_jni_dependencies=no
   fi
   if test "x$have_jni_dependencies" = "xno"; then
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <jni.h>]])], [have_jni_dependencies=yes])
-  fi
-  if test "x$have_jni_dependencies" = "xno"; then
     if test x"$use_jni" = x"yes"; then
       AC_MSG_ERROR([jni support explicitly requested but headers/dependencies were not found. Enable ECDH and try again.])
     fi
@@ -569,6 +571,10 @@ fi
 
 if test x"$use_external_default_callbacks" = x"yes"; then
   AC_DEFINE(USE_EXTERNAL_DEFAULT_CALLBACKS, 1, [Define this symbol if an external implementation of the default callbacks is used])
+fi
+
+if test x"$use_reduced_surjection_proof_size" = x"yes"; then
+  AC_DEFINE(USE_REDUCED_SURJECTION_PROOF_SIZE, 1, [Define this symbol to reduce SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS to 16, disabling parsing and verification])
 fi
 
 if test x"$enable_experimental" = x"yes"; then
@@ -655,6 +661,7 @@ AM_CONDITIONAL([USE_JNI], [test x"$use_jni" = x"yes"])
 AM_CONDITIONAL([USE_EXTERNAL_ASM], [test x"$use_external_asm" = x"yes"])
 AM_CONDITIONAL([USE_ASM_ARM], [test x"$set_asm" = x"arm"])
 AM_CONDITIONAL([ENABLE_MODULE_SURJECTIONPROOF], [test x"$enable_module_surjectionproof" = x"yes"])
+AM_CONDITIONAL([USE_REDUCED_SURJECTION_PROOF_SIZE], [test x"$use_reduced_surjection_proof_size" = x"yes"])
 
 dnl make sure nothing new is exported so that we don't break the cache
 PKGCONFIG_PATH_TEMP="$PKG_CONFIG_PATH"
@@ -673,6 +680,7 @@ echo "  with benchmarks         = $use_benchmark"
 echo "  with coverage           = $enable_coverage"
 echo "  module ecdh             = $enable_module_ecdh"
 echo "  module recovery         = $enable_module_recovery"
+echo "  module schnorrsig       = $enable_module_schnorrsig"
 echo
 echo "  asm                     = $set_asm"
 echo "  bignum                  = $set_bignum"
