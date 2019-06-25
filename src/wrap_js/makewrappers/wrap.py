@@ -207,6 +207,20 @@ FUNCS_NODE = [
         'const_bytes[input_abfs]', 'const_bytes[input_ags]',
         'out_bytes_sized',
     ], out_size='(2 + Math.floor((_arguments[5].length/32 + 7)/8) + 32 * (1 + (_arguments[5].length/32 > 3 ? 3 : _arguments[5].length/32)))')),
+    ('wally_confidential_addr_from_addr', F([
+        'string[address]',
+        'uint32_t[prefix]',
+        'const_bytes[pub_key]',
+        'out_str_p'
+     ])),
+    ('wally_confidential_addr_to_addr', F([
+        'string[address]',
+        'uint32_t[prefix]',
+        'out_str_p'
+     ])),
+    ('wally_confidential_addr_to_ec_public_key', F([
+        'string[address]', 'uint32_t[prefix]', 'out_bytes_fixedsized'
+    ], out_size='33')),
 ]
 
 def open_file(prefix, name):
