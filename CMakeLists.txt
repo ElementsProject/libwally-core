@@ -737,7 +737,7 @@ set(NODE_TEST_BIN  node)
 # endif()
 
 # copy testfile on pre-test (for load on wallycore.node)
-add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_OUTPUT_DIR} ${NODE_TEST_RELEASE_DIR} )
+add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy ${BTCLIB_OBJ_BINARY_DIR}/wallycore.node ${NODE_TEST_RELEASE_DIR} )
 add_test(NAME js_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_SRC_DIR} ${NODE_TEST_FILE_DIR} )
 
 if(ENABLE_ELEMENTS)
