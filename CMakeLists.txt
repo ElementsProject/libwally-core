@@ -589,7 +589,7 @@ add_test(
   WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
 )
 
-if(NOT WIN32) # use pthread
+if(Clang) # use pthread and LLVM Clang
 set(TEST_CLEAR_NAME test_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
