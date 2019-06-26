@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -e
 
-export NDK_FILENAME=android-ndk-r19c-linux-x86_64.zip
+export NDK_FILENAME=android-ndk-r20-linux-x86_64.zip
 
 dpkg --add-architecture i386
 
