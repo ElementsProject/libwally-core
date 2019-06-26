@@ -256,13 +256,33 @@ set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
 set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
 add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_BINARY_DIR}/nodejs_wrap.cc)
 
+set(NODE_TEST_SRC_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/test)
+set(NODE_TEST_DATA_SRC_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/data)
+set(NODE_TEST_BASE_DIR      ${CMAKE_BINARY_DIR}/wrap_js_test)
+set(NODE_TEST_JS_DIR        ${NODE_TEST_BASE_DIR}/wrap_js)
+set(NODE_TEST_DATA_DIR      ${NODE_TEST_BASE_DIR}/data)
+set(NODE_TEST_FILE_DIR      ${NODE_TEST_JS_DIR}/test)
+set(NODE_TEST_BUILD_DIR     ${NODE_TEST_JS_DIR}/build)
+set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/Release)
+
+# generate source files, and create test directories
 add_custom_command(OUTPUT  ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
     COMMAND set PYTHONDONTWRITEBYTECODE=1
     COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
     COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
     COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js" ${BINARY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${BINARY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_DATA_SRC_DIR} ${NODE_TEST_DATA_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${BINARY_OUTPUT_DIR}/wally.js ${NODE_TEST_JS_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
     VERBATIM
 )
@@ -707,7 +727,31 @@ endif()
 # test for node.js
 ####################
 if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
-endif()
+# 'tape' is notfound on Windows, So it's call to 'node'.
+# (testfile is direct require to 'tape'.)
+set(NODE_TEST_BIN  node)
+
+# set(NODE_BIN_TAPE  ${CMAKE_CURRENT_SOURCE_DIR}/node_modules/.bin/tape)
+# if(WIN32)
+# set(CMAKE_MSVCIDE_RUN_PATH ${NODE_BIN_TAPE})
+# endif()
+
+# copy testfile on pre-test (for load on wallycore.node)
+add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_OUTPUT_DIR} ${NODE_TEST_RELEASE_DIR} )
+add_test(NAME js_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_SRC_DIR} ${NODE_TEST_FILE_DIR} )
+
+if(ENABLE_ELEMENTS)
+add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
+endif() # ENABLE_ELEMENTS
+add_test(NAME js_test_aes      COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_aes.js )
+add_test(NAME js_test_base58   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_base58.js )
+add_test(NAME js_test_bip32    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip32.js )
+add_test(NAME js_test_bip38    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip38.js )
+add_test(NAME js_test_bip39    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip39.js )
+add_test(NAME js_test_hash     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_hash.js )
+add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_scrypt.js )
+add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
+endif() # ENABLE_JS_WRAPPER
 
 endif()
 
