@@ -4,17 +4,29 @@
   "description": "",
   "main": "wally.js",
   "scripts": {
-    "install": "cmake-js compile"
+    "cmake-all": "run-s cmake-configure cmake-build",
+    "cmake-configure": "run-script-os",
+    "cmake-configure:win32": "cmake-js configure -O build --CDENABLE_SHARED=1 --CDENABLE_ELEMENTS=1",
+    "cmake-configure:linux": "cmake-js configure -O build --CDENABLE_SHARED=1 --CDENABLE_ELEMENTS=1 -g",
+    "cmake-configure:darwin": "cmake-js configure -O build --CDENABLE_SHARED=1 --CDENABLE_ELEMENTS=1 -g",
+    "cmake-build": "cmake-js build -O build",
+    "cmake-clean": "cmake-js clean -O build",
+    "ctest": "cd build && ctest -C Release"
   },
   "author": "",
   "license": "MIT",
   "gypfile": true,
   "dependencies": {
+    "big-integer": "^1.6.26",
     "bindings": "*",
     "cmake-js": "^5.2.0",
-    "big-integer": "^1.6.26",
     "nan": "^2.11.0",
     "node-gyp": "^3.8.0",
     "tape": "^4.8.0"
+  },
+  "devDependencies": {
+    "node-addon-api": "^1.6.3",
+    "npm-run-all": "^4.1.5",
+    "run-script-os": "^1.0.5"
   }
 }
