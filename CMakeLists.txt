@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.13)
 
 # AC_INIT([libwallycore],[0.7.1])
 set(PACKAGE_VERSION   0.7.1)
+# AC_INIT([libsecp256k1],[0.1])
+set(WALLY_PACKAGE_VERSION   \"${PACKAGE_VERSION}\")
+set(SECP256K1_PACKAGE_VERSION   \"0.1\")
 
 # wally project
 project(wally C)
@@ -69,12 +72,14 @@ endif()
 ####################
 # wally common setting
 ####################
-set(WINDOWS_CONFIG_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/windows_config)
+# set(CONFIG_HEADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/windows_config)
+set(CONFIG_HEADER_DIRECTORY ${CMAKE_BINARY_DIR})
 
 if(ENABLE_DEBUG AND ENABLE_COVERAGE)
 set(COLLECT_COVERAGE ON)
 set(PROFILE_ARCS_OPT -fprofile-arcs)
 set(TEST_COVERAGE_OPT -ftest-coverage)
+set(COVERAGE 1)
 else()
 set(PROFILE_ARCS_OPT  "")
 set(TEST_COVERAGE_OPT "")
@@ -86,6 +91,141 @@ else()
 set(INCLUDE_PYTHONHOME  "")
 endif()
 
+
+####################
+# config.h & libsecp256k1-config.h
+####################
+# incomplete
+include(CheckFunctionExists)
+include(CheckSymbolExists)
+include(CheckIncludeFile)
+include(TestBigEndian)
+include(CheckCSourceCompiles)
+
+if(APPLE)
+set(AC_APPLE_UNIVERSAL_BUILD "1")
+endif()
+
+if(MSVC)  # force active
+set(HAVE_MMAP     "1")
+set(HAVE_UNISTD_H "1")
+set(HAVE_PTHREAD "1")
+set(HAVE_PTHREAD_PRIO_INHERIT "1")
+set(HAVE_LIBCRYPTO "1")
+
+else()
+# not windows
+check_function_exists(memset_s HAVE_MEMSET_S)
+check_function_exists(mmap HAVE_MMAP)
+check_function_exists(__builtin_clzll HAVE_BUILTIN_CLZLL)
+set(HAVE___INT128  "1")
+check_include_file("unistd.h" HAVE_UNISTD_H)
+
+find_package(LIBCRYPTO QUIET)
+if(LIBCRYPTO_FOUND)
+set(HAVE_LIBCRYPTO "1")
+endif()
+
+find_package(PTHREAD QUIET)
+if(PTHREAD_FOUND)
+set(HAVE_PTHREAD "1")
+set(HAVE_PTHREAD_PRIO_INHERIT "1")
+endif()
+
+endif()
+# PTHREAD_CREATE_JOINABLE
+
+find_package(PythonLibs QUIET)
+if(PythonLibs_FOUND)
+set(HAVE_PYTHON \"${PythonLibs_VERSION}\")
+endif()
+
+CHECK_SYMBOL_EXISTS(posix_memalign stdlib.h HAVE_POSIX_MEMALIGN)
+check_c_source_compiles("__attribute__((weak));"  HAVE_ATTRIBUTE_WEAK)
+check_c_source_compiles("int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}"
+  HAVE_UNALIGNED_ACCESS)
+
+set(STDC_HEADERS  "1")
+check_include_file("asm/page.h" HAVE_ASM_PAGE_H)
+check_include_file("byteswap.h" HAVE_BYTESWAP_H_)
+check_include_file("memory.h" HAVE_MEMORY_H)
+check_include_file("stdint.h" HAVE_STDINT_H)
+check_include_file("stdlib.h" HAVE_STDLIB_H)
+check_include_file("strings.h" HAVE_STRINGS_H)
+check_include_file("string.h" HAVE_STRING_H)
+check_include_file("sys/mman.h" HAVE_SYS_MMAN_H)
+check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
+check_include_file("sys/types.h" HAVE_SYS_TYPES_H)
+check_include_file("dlfcn.h" HAVE_DLFCN_H)
+check_include_file("inttypes.h" HAVE_INTTYPES_H)
+
+if(NOT WIN32)
+TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
+endif()
+
+foreach(inline_keyword "inline" "__inline__" "__inline")
+  if(NOT DEFINED C_INLINE)
+    set(CMAKE_REQUIRED_DEFINITIONS_SAVE ${CMAKE_REQUIRED_DEFINITIONS})
+    set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS}
+        "-Dinline=${inline_keyword}")
+    check_c_source_compiles("
+        typedef int foo_t;
+        static inline foo_t static_foo() {return 0;}
+        foo_t foo(){return 0;}
+        int main(int argc, char *argv[]) {return 0;}"
+      C_HAS_${inline_keyword})
+  endif()
+endforeach()
+
+# secp256k1 configure options
+# ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
+
+# USE_ENDOMORPHISM (option only)
+set(ECMULT_WINDOW_SIZE "15")
+set(ENABLE_MODULE_ECDH "1")
+set(ENABLE_MODULE_RANGEPROOF "1")
+set(ENABLE_MODULE_SURJECTIONPROOF "1")
+set(ENABLE_MODULE_WHITELIST "1")
+set(ENABLE_MODULE_GENERATOR "1")
+check_function_exists(__builtin_popcount HAVE_BUILTIN_POPCOUNT)
+
+if(ARMCC)
+set(USE_EXTERNAL_ASM "1")
+else()
+set(USE_ASM_X86_64 "1")
+endif()
+set(USE_ECMULT_STATIC_PRECOMPUTATION "1")
+
+find_package(GMP QUIET)
+if(GMP_FOUND)
+set(USE_NUM_GMP "1")
+set(USE_FIELD_INV_NUM  "1")
+set(USE_SCALAR_INV_NUM "1")
+set(HAVE_LIBGMP "1")
+else()
+set(USE_NUM_NONE "1")
+set(USE_FIELD_INV_BUILTIN  "1")
+set(USE_SCALAR_INV_BUILTIN "1")
+endif()
+
+if(WIN32)
+set(USE_FIELD_10X26 "1")
+set(USE_SCALAR_8X32 "1")
+elseif("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
+# x86
+set(USE_FIELD_10X26 "1")
+set(USE_SCALAR_8X32 "1")
+else()
+# x64
+set(USE_FIELD_5X52  "1")
+set(USE_SCALAR_4X64 "1")
+endif()
+
+set(VERSION   WALLY_PACKAGE_VERSION)
+configure_file(cmake/config.h.in              "${CMAKE_BINARY_DIR}/config.h")
+configure_file(cmake/libsecp256k1-config.h.in "${CMAKE_BINARY_DIR}/libsecp256k1-config.h")
+
+
 ####################
 # secp256k1/gen_context
 ####################
@@ -95,29 +235,27 @@ set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_BINARY_DIR}/ecmult_static_context.h)
 set(SRC_ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/ecmult_static_context.h)
 add_executable(${GEN_CONTEXT_NAME}
     src/secp256k1/src/gen_context.c
-    ${WINDOWS_CONFIG_DIRECTORY}/config.h
-    ${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h
+    ${CONFIG_HEADER_DIRECTORY}/config.h
+    ${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h
 )
 
 target_compile_options(${GEN_CONTEXT_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD,
+      /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DSECP256K1_BUILD,
       -Wall -Wextra -Wno-unused-function
     >
 )
 target_compile_definitions(${GEN_CONTEXT_NAME}
   PRIVATE
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD,
-      -DWALLY_CORE_BUILD=1 -DSECP256K1_BUILD -DHAVE_CONFIG_H
-    >
+    WALLY_CORE_BUILD  SECP256K1_BUILD
+    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 >
 )
 target_include_directories(${GEN_CONTEXT_NAME}
   PUBLIC
     src/secp256k1/include
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     src/secp256k1
     src/secp256k1/src
     src/secp256k1/contrib
@@ -148,8 +286,8 @@ add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
 # libwally sources
 ####################
 set(LIBWALLY_FILES
-    ${WINDOWS_CONFIG_DIRECTORY}/config.h
-    ${WINDOWS_CONFIG_DIRECTORY}/libsecp256k1-config.h
+    ${CONFIG_HEADER_DIRECTORY}/config.h
+    ${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h
     src/aes.c
     src/base58.c
     src/bip32.c
@@ -208,7 +346,7 @@ target_sources(${PROJECT_NAME}
 target_compile_options(${PROJECT_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DSECP256K1_BUILD ${ELEMENTS_COMP_OPT},
       -Wall -Wextra -Wno-unused-function
       ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT} ${ENABLE_EXPORT_ALL_OPT}
     >
@@ -216,18 +354,16 @@ target_compile_options(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16,
-      -DWALLY_CORE_BUILD=1
-      -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
-    >
+    WALLY_CORE_BUILD  SECP256K1_BUILD  HAVE_CONFIG_H
+    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4244 >
 )
+# -DECMULT_WINDOW_SIZE=16 -DUSE_ECMULT_STATIC_PRECOMPUTATION
 target_include_directories(${PROJECT_NAME}
   PUBLIC
     include
     src/secp256k1/include
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan
@@ -301,7 +437,7 @@ target_sources(${NODE_LIBRARY_NAME}
 target_compile_options(${NODE_LIBRARY_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DSWIG_JAVASCRIPT_BUILD ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DSWIG_JAVASCRIPT_BUILD ${ELEMENTS_COMP_OPT},
       -Wall -Wextra -Wno-unused-function
       ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT} ${ENABLE_EXPORT_ALL_OPT}
     >
@@ -309,10 +445,8 @@ target_compile_options(${NODE_LIBRARY_NAME}
 target_compile_definitions(${NODE_LIBRARY_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DSWIG_JAVASCRIPT_BUILD,
-      -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DSWIG_JAVASCRIPT_BUILD -DECMULT_WINDOW_SIZE=16
-    >
+    DWALLY_CORE_BUILD  HAVE_CONFIG_H  SECP256K1_BUILD  SWIG_JAVASCRIPT_BUILD
+    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 /wd4251 >
 )
 
 set_target_properties(${NODE_LIBRARY_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
@@ -328,7 +462,7 @@ target_include_directories(${NODE_LIBRARY_NAME}
   PRIVATE
     include
     src/secp256k1/include
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan
@@ -376,7 +510,7 @@ target_sources(${WALLYCORE_NAME}
 target_compile_options(${WALLYCORE_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD ${ELEMENTS_COMP_OPT},
       -Wall -Wextra -Wno-unused-function
       ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT} ${ENABLE_EXPORT_ALL_OPT}
     >
@@ -384,17 +518,14 @@ target_compile_options(${WALLYCORE_NAME}
 target_compile_definitions(${WALLYCORE_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16,
-      -DWALLY_CORE_BUILD=1
-      -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
-    >
+    WALLY_CORE_BUILD  SECP256K1_BUILD  HAVE_CONFIG_H
+    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 >
 )
 target_include_directories(${WALLYCORE_NAME}
   PRIVATE
     include
     src/secp256k1/include
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan
@@ -453,7 +584,7 @@ include_directories(
 endif()
 # set full path.
 set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_INCLUDE_DIRECTORIES 
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -467,7 +598,7 @@ set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_INCLUDE_DIRECTORIES
 )
 target_include_directories(${WALLY_SWIG_PYTHON_NAME}
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     include
     .
     src
@@ -485,7 +616,7 @@ set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS
     SWIG_PYTHON_BUILD USE_SWIG_PYTHON WALLY_CORE_BUILD SECP256K1_BUILD USE_ECMULT_STATIC_PRECOMPUTATION HAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
 )
 set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_COMPILE_OPTIONS 
-    -DECMULT_WINDOW_SIZE=16 -DSWIG_PYTHON_BUILD -DUSE_SWIG_PYTHON -DWALLY_CORE_BUILD -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
+    -DSWIG_PYTHON_BUILD -DUSE_SWIG_PYTHON -DWALLY_CORE_BUILD -DSECP256K1_BUILD -DHAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
 )
 # swig_link_libraries(${WALLY_SWIG_PYTHON_NAME} ${PYTHON_LIBRARIES} wally)
 target_link_libraries(${WALLY_SWIG_PYTHON_NAME}
@@ -495,17 +626,16 @@ target_link_libraries(${WALLY_SWIG_PYTHON_NAME}
 target_compile_options(${WALLY_SWIG_PYTHON_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=16 /DUSE_SWIG_PYTHON /DSWIG_PYTHON_BUILD /I"${INCLUDE_PYTHONHOME}" ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_SWIG_PYTHON /DSWIG_PYTHON_BUILD /I"${INCLUDE_PYTHONHOME}" ${ELEMENTS_COMP_OPT},
       -Wall -Wextra -Wno-unused-function
     >
 )
 target_compile_definitions(${WALLY_SWIG_PYTHON_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DECMULT_WINDOW_SIZE=16 /DUSE_SWIG_PYTHON /DSWIG_PYTHON_BUILD /I"${INCLUDE_PYTHONHOME}",
-      -DWALLY_CORE_BUILD=1 -DSECP256K1_BUILD -DUSE_ECMULT_STATIC_PRECOMPUTATION -DHAVE_CONFIG_H -DECMULT_WINDOW_SIZE=16
-    >
+    WALLY_CORE_BUILD  SECP256K1_BUILD  HAVE_CONFIG_H
+    USE_SWIG_PYTHON  SWIG_PYTHON_BUILD
+    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 /I"${INCLUDE_PYTHONHOME}" >
 )
 
 # %SWIG_PATH%\swig -python -Isrc -I%SWIG_PATH%\Lib\python -DBUILD_ELEMENTS=1 src\swig_python\swig.i
@@ -565,7 +695,7 @@ target_compile_definitions(${TEST_BECH32_NAME}
 )
 target_include_directories(${TEST_BECH32_NAME}
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan
@@ -604,7 +734,7 @@ target_compile_definitions(${TEST_CLEAR_NAME}
 )
 target_include_directories(${TEST_CLEAR_NAME}
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan
@@ -643,7 +773,7 @@ target_compile_definitions(${TEST_TX_NAME}
 )
 target_include_directories(${TEST_TX_NAME}
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan
@@ -686,7 +816,7 @@ target_compile_definitions(${TEST_ELEMENTS_TX_NAME}
 )
 target_include_directories(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
-    ${WINDOWS_CONFIG_DIRECTORY}
+    ${CONFIG_HEADER_DIRECTORY}
     .
     src
     src/ccan

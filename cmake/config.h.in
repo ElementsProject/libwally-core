@@ -1,107 +1,105 @@
-/* src/config.h.in.  Generated from configure.ac by autoheader.  */
-
 #ifndef LIBWALLYCORE_CONFIG_H
 #define LIBWALLYCORE_CONFIG_H
 
 /* Define if building universal (internal helper macro) */
-#undef AC_APPLE_UNIVERSAL_BUILD
+#cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 
 /* Define to 1 if you have the <asm/page.h> header file. */
-#undef HAVE_ASM_PAGE_H
+#cmakedefine HAVE_ASM_PAGE_H @HAVE_ASM_PAGE_H@
 
 /* Define if we have __attribute__((weak)) */
-#undef HAVE_ATTRIBUTE_WEAK
+#cmakedefine HAVE_ATTRIBUTE_WEAK @HAVE_ATTRIBUTE_WEAK@
 
 /* Define to 1 if you have the <byteswap.h,> header file. */
-#undef HAVE_BYTESWAP_H_
+#cmakedefine HAVE_BYTESWAP_H_ @HAVE_BYTESWAP_H_@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
+#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+#cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
 /* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+#cmakedefine HAVE_MEMORY_H @HAVE_MEMORY_H@
 
 /* Define if we have memset_s */
-#undef HAVE_MEMSET_S
+#cmakedefine HAVE_MEMSET_S @HAVE_MEMSET_S@
 
 /* Define if we have mmap */
-#undef HAVE_MMAP
+#cmakedefine HAVE_MMAP @HAVE_MMAP@
 
 /* Define if we have posix_memalign */
-#undef HAVE_POSIX_MEMALIGN
+#cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
 
 /* Define if we have pthread support */
-#undef HAVE_PTHREAD
+#cmakedefine HAVE_PTHREAD @HAVE_PTHREAD@
 
 /* Have PTHREAD_PRIO_INHERIT. */
-#undef HAVE_PTHREAD_PRIO_INHERIT
+#cmakedefine HAVE_PTHREAD_PRIO_INHERIT @HAVE_PTHREAD_PRIO_INHERIT@
 
 /* If available, contains the Python version number currently in use. */
-#undef HAVE_PYTHON
+#cmakedefine HAVE_PYTHON @HAVE_PYTHON@
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H @HAVE_STDINT_H@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
+#cmakedefine HAVE_STDLIB_H @HAVE_STDLIB_H@
 
 /* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
+#cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
 
 /* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
+#cmakedefine HAVE_STRING_H @HAVE_STRING_H@
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
-#undef HAVE_SYS_MMAN_H
+#cmakedefine HAVE_SYS_MMAN_H @HAVE_SYS_MMAN_H@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
+#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
 
 /* Define if we have unaligned access */
-#undef HAVE_UNALIGNED_ACCESS
+#cmakedefine HAVE_UNALIGNED_ACCESS @HAVE_UNALIGNED_ACCESS@
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
-#undef LT_OBJDIR
+#cmakedefine LT_OBJDIR @LT_OBJDIR@
 
 /* Name of package */
-#undef PACKAGE
+#cmakedefine PACKAGE @PACKAGE@
 
 /* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
+#cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME
+#cmakedefine PACKAGE_NAME @PACKAGE_NAME@
 
 /* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
+#cmakedefine PACKAGE_STRING @PACKAGE_STRING@
 
 /* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
+#cmakedefine PACKAGE_TARNAME @PACKAGE_TARNAME@
 
 /* Define to the home page for this package. */
-#undef PACKAGE_URL
+#cmakedefine PACKAGE_URL @PACKAGE_URL@
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#cmakedefine PACKAGE_VERSION @WALLY_PACKAGE_VERSION@
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
-#undef PTHREAD_CREATE_JOINABLE
+#cmakedefine PTHREAD_CREATE_JOINABLE @PTHREAD_CREATE_JOINABLE@
 
 /* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+#cmakedefine STDC_HEADERS @STDC_HEADERS@
 
 /* Version number of package */
-#undef VERSION
+#cmakedefine VERSION @WALLY_PACKAGE_VERSION@
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -111,49 +109,49 @@
 # endif
 #else
 # ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
+#cmakedefine WORDS_BIGENDIAN @WORDS_BIGENDIAN@
 # endif
 #endif
 
 /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#undef _UINT32_T
+#cmakedefine _UINT32_T @cmake_uint32_t@
 
 /* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#undef _UINT64_T
+#cmakedefine _UINT64_T @cmake_uint64_t@
 
 /* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#undef _UINT8_T
+#cmakedefine _UINT8_T @cmake_uint8_t@
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#undef inline
+#cmakedefine inline @cmake_inline@
 #endif
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
-#undef size_t
+#cmakedefine size_t @cmake_size_t@
 
 /* Define to the type of an unsigned integer type of width exactly 16 bits if
    such a type exists and the standard includes do not define it. */
-#undef uint16_t
+#cmakedefine uint16_t @cmake_uint16_t@
 
 /* Define to the type of an unsigned integer type of width exactly 32 bits if
    such a type exists and the standard includes do not define it. */
-#undef uint32_t
+#cmakedefine uint32_t @cmake_uint32_t@
 
 /* Define to the type of an unsigned integer type of width exactly 64 bits if
    such a type exists and the standard includes do not define it. */
-#undef uint64_t
+#cmakedefine uint64_t @cmake_uint64_t@
 
 /* Define to the type of an unsigned integer type of width exactly 8 bits if
    such a type exists and the standard includes do not define it. */
-#undef uint8_t
+#cmakedefine uint8_t @cmake_uint8_t@
 
 #include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/

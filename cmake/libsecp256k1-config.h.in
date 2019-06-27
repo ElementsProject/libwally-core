@@ -1,167 +1,165 @@
-/* src/libsecp256k1-config.h.in.  Generated from configure.ac by autoheader.  */
-
 #ifndef LIBSECP256K1_CONFIG_H
 
 #define LIBSECP256K1_CONFIG_H
 
 /* Define if building universal (internal helper macro) */
-#undef AC_APPLE_UNIVERSAL_BUILD
+#cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
 
 /* Define this symbol to compile out all VERIFY code */
-#undef COVERAGE
+#cmakedefine COVERAGE @COVERAGE@
 
 /* Set window size for ecmult precomputation */
-#undef ECMULT_WINDOW_SIZE
+#cmakedefine ECMULT_WINDOW_SIZE @ECMULT_WINDOW_SIZE@
 
 /* Define this symbol to enable the ECDH module */
-#undef ENABLE_MODULE_ECDH
+#cmakedefine ENABLE_MODULE_ECDH @ENABLE_MODULE_ECDH@
 
 /* Define this symbol to enable the NUMS generator module */
-#undef ENABLE_MODULE_GENERATOR
+#cmakedefine ENABLE_MODULE_GENERATOR @ENABLE_MODULE_GENERATOR@
 
 /* Define this symbol to enable the MuSig module */
-#undef ENABLE_MODULE_MUSIG
+#cmakedefine ENABLE_MODULE_MUSIG @ENABLE_MODULE_MUSIG@
 
 /* Define this symbol to enable the Pedersen / zero knowledge range proof
    module */
-#undef ENABLE_MODULE_RANGEPROOF
+#cmakedefine ENABLE_MODULE_RANGEPROOF @ENABLE_MODULE_RANGEPROOF@
 
 /* Define this symbol to enable the ECDSA pubkey recovery module */
-#undef ENABLE_MODULE_RECOVERY
+#cmakedefine ENABLE_MODULE_RECOVERY @ENABLE_MODULE_RECOVERY@
 
 /* Define this symbol to enable the schnorrsig module */
-#undef ENABLE_MODULE_SCHNORRSIG
+#cmakedefine ENABLE_MODULE_SCHNORRSIG @ENABLE_MODULE_SCHNORRSIG@
 
 /* Define this symbol to enable the surjection proof module */
-#undef ENABLE_MODULE_SURJECTIONPROOF
+#cmakedefine ENABLE_MODULE_SURJECTIONPROOF @ENABLE_MODULE_SURJECTIONPROOF@
 
 /* Define this symbol to enable the key whitelisting module */
-#undef ENABLE_MODULE_WHITELIST
+#cmakedefine ENABLE_MODULE_WHITELIST @ENABLE_MODULE_WHITELIST@
 
 /* Define this symbol if OpenSSL EC functions are available */
-#undef ENABLE_OPENSSL_TESTS
+#cmakedefine ENABLE_OPENSSL_TESTS @ENABLE_OPENSSL_TESTS@
 
 /* Define this symbol if __builtin_clzll is available */
-#undef HAVE_BUILTIN_CLZLL
+#cmakedefine HAVE_BUILTIN_CLZLL @HAVE_BUILTIN_CLZLL@
 
 /* Define this symbol if __builtin_popcount is available */
-#undef HAVE_BUILTIN_POPCOUNT
+#cmakedefine HAVE_BUILTIN_POPCOUNT @HAVE_BUILTIN_POPCOUNT@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
+#cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+#cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
 /* Define this symbol if libcrypto is installed */
-#undef HAVE_LIBCRYPTO
+#cmakedefine HAVE_LIBCRYPTO @HAVE_LIBCRYPTO@
 
 /* Define this symbol if libgmp is installed */
-#undef HAVE_LIBGMP
+#cmakedefine HAVE_LIBGMP @HAVE_LIBGMP@
 
 /* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+#cmakedefine HAVE_MEMORY_H @HAVE_MEMORY_H@
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H @HAVE_STDINT_H@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
+#cmakedefine HAVE_STDLIB_H @HAVE_STDLIB_H@
 
 /* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
+#cmakedefine HAVE_STRINGS_H @HAVE_STRINGS_H@
 
 /* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
+#cmakedefine HAVE_STRING_H @HAVE_STRING_H@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
+#cmakedefine HAVE_SYS_STAT_H @HAVE_SYS_STAT_H@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
 /* Define to 1 if the system has the type `__int128'. */
-#undef HAVE___INT128
+#cmakedefine HAVE___INT128 @HAVE___INT128@
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
-#undef LT_OBJDIR
+#cmakedefine LT_OBJDIR @LT_OBJDIR@
 
 /* Name of package */
-#undef PACKAGE
+#cmakedefine PACKAGE @PACKAGE@
 
 /* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
+#cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME
+#cmakedefine PACKAGE_NAME @PACKAGE_NAME@
 
 /* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
+#cmakedefine PACKAGE_STRING @PACKAGE_STRING@
 
 /* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
+#cmakedefine PACKAGE_TARNAME @PACKAGE_TARNAME@
 
 /* Define to the home page for this package. */
-#undef PACKAGE_URL
+#cmakedefine PACKAGE_URL @PACKAGE_URL@
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#cmakedefine PACKAGE_VERSION @SECP256K1_PACKAGE_VERSION@
 
 /* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
+#cmakedefine STDC_HEADERS @STDC_HEADERS@
 
 /* Define this symbol to enable x86_64 assembly optimizations */
-#undef USE_ASM_X86_64
+#cmakedefine USE_ASM_X86_64 @USE_ASM_X86_64@
 
 /* Define this symbol to use a statically generated ecmult table */
-#undef USE_ECMULT_STATIC_PRECOMPUTATION
+#cmakedefine USE_ECMULT_STATIC_PRECOMPUTATION @USE_ECMULT_STATIC_PRECOMPUTATION@
 
 /* Define this symbol to use endomorphism optimization */
-#undef USE_ENDOMORPHISM
+#cmakedefine USE_ENDOMORPHISM @USE_ENDOMORPHISM@
 
 /* Define this symbol if an external (non-inline) assembly implementation is
    used */
-#undef USE_EXTERNAL_ASM
+#cmakedefine USE_EXTERNAL_ASM @USE_EXTERNAL_ASM@
 
 /* Define this symbol if an external implementation of the default callbacks
    is used */
-#undef USE_EXTERNAL_DEFAULT_CALLBACKS
+#cmakedefine USE_EXTERNAL_DEFAULT_CALLBACKS @USE_EXTERNAL_DEFAULT_CALLBACKS@
 
 /* Define this symbol to use the FIELD_10X26 implementation */
-#undef USE_FIELD_10X26
+#cmakedefine USE_FIELD_10X26 @USE_FIELD_10X26@
 
 /* Define this symbol to use the FIELD_5X52 implementation */
-#undef USE_FIELD_5X52
+#cmakedefine USE_FIELD_5X52 @USE_FIELD_5X52@
 
 /* Define this symbol to use the native field inverse implementation */
-#undef USE_FIELD_INV_BUILTIN
+#cmakedefine USE_FIELD_INV_BUILTIN @USE_FIELD_INV_BUILTIN@
 
 /* Define this symbol to use the num-based field inverse implementation */
-#undef USE_FIELD_INV_NUM
+#cmakedefine USE_FIELD_INV_NUM @USE_FIELD_INV_NUM@
 
 /* Define this symbol to use the gmp implementation for num */
-#undef USE_NUM_GMP
+#cmakedefine USE_NUM_GMP @USE_NUM_GMP@
 
 /* Define this symbol to use no num implementation */
-#undef USE_NUM_NONE
+#cmakedefine USE_NUM_NONE @USE_NUM_NONE@
 
 /* Define this symbol to use the 4x64 scalar implementation */
-#undef USE_SCALAR_4X64
+#cmakedefine USE_SCALAR_4X64 @USE_SCALAR_4X64@
 
 /* Define this symbol to use the 8x32 scalar implementation */
-#undef USE_SCALAR_8X32
+#cmakedefine USE_SCALAR_8X32 @USE_SCALAR_8X32@
 
 /* Define this symbol to use the native scalar inverse implementation */
-#undef USE_SCALAR_INV_BUILTIN
+#cmakedefine USE_SCALAR_INV_BUILTIN @USE_SCALAR_INV_BUILTIN@
 
 /* Define this symbol to use the num-based scalar inverse implementation */
-#undef USE_SCALAR_INV_NUM
+#cmakedefine USE_SCALAR_INV_NUM @USE_SCALAR_INV_NUM@
 
 /* Version number of package */
-#undef VERSION
+#cmakedefine VERSION @SECP256K1_PACKAGE_VERSION@
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -171,7 +169,7 @@
 # endif
 #else
 # ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
+#cmakedefine WORDS_BIGENDIAN @WORDS_BIGENDIAN@
 # endif
 #endif
 
