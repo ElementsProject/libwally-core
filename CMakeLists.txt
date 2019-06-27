@@ -7,7 +7,6 @@ set(WALLY_PACKAGE_VERSION   \"${PACKAGE_VERSION}\")
 set(SECP256K1_PACKAGE_VERSION   \"0.1\")
 
 # wally project
-project(wally C)
 cmake_policy(SET CMP0076 NEW)
 cmake_policy(SET CMP0086 NEW)
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
@@ -95,12 +94,15 @@ endif()
 ####################
 # config.h & libsecp256k1-config.h
 ####################
+project(wally_config C CXX)
+
 # incomplete
 include(CheckFunctionExists)
 include(CheckSymbolExists)
 include(CheckIncludeFile)
 include(TestBigEndian)
 include(CheckCSourceCompiles)
+include(CheckCXXSourceCompiles)
 
 if(APPLE)
 set(AC_APPLE_UNIVERSAL_BUILD "1")
@@ -117,7 +119,9 @@ else()
 # not windows
 check_function_exists(memset_s HAVE_MEMSET_S)
 check_function_exists(mmap HAVE_MMAP)
-check_function_exists(__builtin_clzll HAVE_BUILTIN_CLZLL)
+check_cxx_source_compiles("int main() { __builtin_clzll(0); return 0; }"
+  HAVE_BUILTIN_CLZLL)
+
 set(HAVE___INT128  "1")
 check_include_file("unistd.h" HAVE_UNISTD_H)
 
@@ -126,8 +130,8 @@ if(LIBCRYPTO_FOUND)
 set(HAVE_LIBCRYPTO "1")
 endif()
 
-find_package(PTHREAD QUIET)
-if(PTHREAD_FOUND)
+find_package(Threads QUIET)
+if(Threads_FOUND)
 set(HAVE_PTHREAD "1")
 set(HAVE_PTHREAD_PRIO_INHERIT "1")
 endif()
@@ -135,13 +139,13 @@ endif()
 endif()
 # PTHREAD_CREATE_JOINABLE
 
-find_package(PythonLibs QUIET)
-if(PythonLibs_FOUND)
-set(HAVE_PYTHON \"${PythonLibs_VERSION}\")
+if(${PYTHON})
+set(HAVE_PYTHON \"${PYTHON}\")
 endif()
 
 CHECK_SYMBOL_EXISTS(posix_memalign stdlib.h HAVE_POSIX_MEMALIGN)
-check_c_source_compiles("__attribute__((weak));"  HAVE_ATTRIBUTE_WEAK)
+check_c_source_compiles("extern int foo(int) __attribute__((weak)); int main(void){return foo(0);}"
+  HAVE_ATTRIBUTE_WEAK)
 check_c_source_compiles("int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}"
   HAVE_UNALIGNED_ACCESS)
 
@@ -187,7 +191,8 @@ set(ENABLE_MODULE_RANGEPROOF "1")
 set(ENABLE_MODULE_SURJECTIONPROOF "1")
 set(ENABLE_MODULE_WHITELIST "1")
 set(ENABLE_MODULE_GENERATOR "1")
-check_function_exists(__builtin_popcount HAVE_BUILTIN_POPCOUNT)
+check_cxx_source_compiles("int main() { __builtin_popcount(0); return 0;}"
+  HAVE_BUILTIN_POPCOUNT)
 
 if(ARMCC)
 set(USE_EXTERNAL_ASM "1")
@@ -229,6 +234,7 @@ configure_file(cmake/libsecp256k1-config.h.in "${CMAKE_BINARY_DIR}/libsecp256k1-
 ####################
 # secp256k1/gen_context
 ####################
+project(secp256k1 C)
 set(GEN_CONTEXT_NAME gen_context)
 
 set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_BINARY_DIR}/ecmult_static_context.h)
@@ -330,6 +336,7 @@ set(LIBWALLY_FILES
 ####################
 # libwally
 ####################
+project(wally C)
 set(WALLY_PROJECT_NAME wally)
 if(ENABLE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
