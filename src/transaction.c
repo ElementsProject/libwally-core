@@ -2729,7 +2729,7 @@ int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
 
 int wally_tx_confidential_value_to_satoshi(const unsigned char *value,
                                            size_t value_len,
-                                           uint64_t* value_out)
+                                           uint64_t *value_out)
 {
     if (!value || value_len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN || !value_out || value[0] != 0x1)
         return WALLY_EINVAL;
