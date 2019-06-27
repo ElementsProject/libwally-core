@@ -30,6 +30,7 @@ endif()
 option(ENABLE_TESTS "enable code tests for CTest (ON or OFF. default:ON)" ON)
 
 if(NOT WIN32)
+option(TARGET_RPATH "target rpath list (separator is ';') (default:@rpath;./;./build/Release)" OFF)
 option(ENABLE_COVERAGE "enable code coverage (ON or OFF. default:OFF)" OFF)
 option(ENABLE_EXPORT_ALL "enable export all functions (for testing) (ON or OFF. default:OFF)" OFF)
 set(ENABLE_EXPORT_ALL_OPT "")
@@ -47,6 +48,14 @@ set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O0 -ggdb")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
 endif()
 endif()
+
+if(NOT WIN32)
+SET(CMAKE_INSTALL_RPATH "@rpath" "./" "./build/Release")
+if(TARGET_RPATH)
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}" "${TARGET_RPATH}")
+endif()
+endif()
+
 
 ####################
 # common setting

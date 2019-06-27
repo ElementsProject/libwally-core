@@ -202,10 +202,11 @@ libwallycore_la_INCLUDES = \
     include/wally_transaction.h
 
 if SHARED_BUILD_ENABLED
+WALLYCORE_LDFLAGS = -Wl,-rpath=@rpath -Wl,-rpath=./ -Wl,-rpath=./build/Release
 if IS_MINGW
-libwallycore_la_LDFLAGS = -no-undefined
+libwallycore_la_LDFLAGS = -no-undefined $(WALLYCORE_LDFLAGS)
 else
-libwallycore_la_LDFLAGS = 
+libwallycore_la_LDFLAGS = $(WALLYCORE_LDFLAGS)
 endif
 endif # SHARED_BUILD_ENABLED
 
