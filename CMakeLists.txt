@@ -49,14 +49,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
 endif()
 endif()
 
-if(NOT WIN32)
-SET(CMAKE_INSTALL_RPATH "@rpath" "./" "./build/Release")
-if(TARGET_RPATH)
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}" "${TARGET_RPATH}")
-endif()
-endif()
-
-
 ####################
 # common setting
 ####################
@@ -76,6 +68,22 @@ set(ELEMENTS_COMP_OPT "")
 else()
 set(ELEMENTS_COMP_OPT  $<IF:$<C_COMPILER_ID:MSVC>,/DBUILD_ELEMENTS,BUILD_ELEMENTS>)
 endif()
+
+if(NOT WIN32)
+if(APPLE)
+set(CMAKE_MACOSX_RPATH 1)
+endif()
+set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+if(TARGET_RPATH)
+set(CMAKE_INSTALL_RPATH "${TARGET_RPATH};./;./build/Release;@rpath")
+else()
+set(CMAKE_INSTALL_RPATH "./;./build/Release;@rpath")
+endif()
+endif()
+
 
 ####################
 # wally common setting
