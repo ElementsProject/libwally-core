@@ -2,6 +2,7 @@
 #include <include/wally_address.h>
 #include <include/wally_elements.h>
 #include <include/wally_crypto.h>
+#include <include/wally_symmetric.h>
 #include "secp256k1/include/secp256k1_generator.h"
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
@@ -10,6 +11,10 @@
 #include <stdbool.h>
 
 #ifdef BUILD_ELEMENTS
+
+static const unsigned char LABEL_STR[] = {
+    'S', 'L', 'I', 'P', '-', '0', '0', '7', '7'
+};
 
 static int get_generator(const secp256k1_context *ctx,
                          const unsigned char *generator, size_t generator_len,
@@ -446,6 +451,50 @@ int wally_confidential_addr_from_addr(
 
     wally_clear(buf, sizeof(buf));
     return ret;
+}
+
+int wally_asset_blinding_key_from_seed(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    unsigned char *bytes_out,
+    size_t len)
+{
+    unsigned char root[HMAC_SHA512_LEN];
+    int ret = WALLY_OK;
+
+    if (!bytes || !bytes_out || len != HMAC_SHA512_LEN)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_symmetric_key_from_seed(bytes, bytes_len, root, sizeof(root))) != WALLY_OK)
+        return ret;
+
+    if ((ret = wally_symmetric_key_from_parent(root, sizeof(root), 0, LABEL_STR, sizeof(LABEL_STR),
+                                               bytes_out, len)) != WALLY_OK)
+        goto cleanup;
+
+cleanup:
+    wally_clear(root, sizeof(root));
+
+    return ret;
+}
+
+int wally_asset_blinding_key_to_ec_private_key(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *script,
+    size_t script_len,
+    unsigned char *bytes_out,
+    size_t len)
+{
+    int ret = WALLY_OK;
+
+    if (!bytes || bytes_len != HMAC_SHA512_LEN || !script || !script_len || !bytes_out || len != EC_PRIVATE_KEY_LEN)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_hmac_sha256(bytes + SYMMETRIC_KEY_LEN, SYMMETRIC_KEY_LEN, script, script_len, bytes_out, len)) != WALLY_OK)
+        return ret;
+
+    return wally_ec_private_key_verify(bytes_out, EC_PRIVATE_KEY_LEN);
 }
 
 #endif /* BUILD_ELEMENTS */

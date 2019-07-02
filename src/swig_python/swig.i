@@ -10,6 +10,7 @@
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_script.h"
+#include "../include/wally_symmetric.h"
 #include "../include/wally_transaction.h"
 #include "transaction_int.h"
 #include "../include/wally_elements.h"
@@ -144,6 +145,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char *inflation_keys, size_t inflation_keys_len);
 %pybuffer_nullable_binary(const unsigned char *surjectionproof, size_t surjectionproof_len);
 %pybuffer_nullable_binary(const unsigned char *rangeproof, size_t rangeproof_len);
+%pybuffer_binary(const unsigned char *label, size_t label_len);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -271,6 +273,7 @@ typedef unsigned long uint64_t;
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
+%include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
 %include "transaction_int.h"
 %include "../include/wally_elements.h"

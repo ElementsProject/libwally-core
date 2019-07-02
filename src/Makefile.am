@@ -181,6 +181,7 @@ libwallycore_la_SOURCES = \
     script.c \
     scrypt.c \
     sign.c \
+    symmetric.c \
     transaction.c \
     wif.c \
     wordlist.c \
@@ -199,6 +200,7 @@ libwallycore_la_INCLUDES = \
     include/wally_crypto.h \
     include/wally_elements.h \
     include/wally_script.h \
+    include/wally_symmetric.h \
     include/wally_transaction.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)

@@ -8,6 +8,7 @@
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_script.h"
+#include "../include/wally_symmetric.h"
 #include "../include/wally_transaction.h"
 #include "transaction_int.h"
 #include "../include/wally_elements.h"
@@ -248,6 +249,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *value, size_t value_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *label, size_t label_len) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
@@ -398,6 +400,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_asset_surjectionproof_size);
 %returns_size_t(wally_asset_surjectionproof);
 %returns_uint64(wally_asset_unblind);
+%returns_array_(wally_asset_blinding_key_from_seed, 3, 4, HMAC_SHA512_LEN);
+%returns_array_(wally_asset_blinding_key_to_ec_private_key, 5, 6, EC_PRIVATE_KEY_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
 %returns_string(wally_base58_from_bytes);
 %returns_size_t(wally_base58_to_bytes);
@@ -620,6 +624,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_wif_to_public_key);
 %returns_string(wally_wif_to_address);
 %returns_size_t(wally_witness_program_from_bytes);
+%returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
+%returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
 
 %rename("_cleanup") wally_cleanup;
 %returns_void__(_cleanup)
@@ -632,6 +638,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
+%include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
 %include "transaction_int.h"
 %include "../include/wally_elements.h"

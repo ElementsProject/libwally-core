@@ -124,6 +124,20 @@ WALLY_CORE_API int wally_asset_unblind(
     size_t vbf_out_len,
     uint64_t *value_out);
 
+WALLY_CORE_API int wally_asset_blinding_key_from_seed(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *script,
+    size_t script_len,
+    unsigned char *bytes_out,
+    size_t len);
+
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus

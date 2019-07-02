@@ -14,6 +14,7 @@
 #include "script.c"
 #include "scrypt.c"
 #include "sign.c"
+#include "symmetric.c"
 #include "transaction.c"
 #include "wif.c"
 #include "wordlist.c"
