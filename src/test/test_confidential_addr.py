@@ -4,6 +4,7 @@ import hashlib
 from util import *
 
 CA_PREFIX_LIQUID = 0x0c
+CA_PREFIX_LIQUID_REGTEST = 0x04
 EC_PUBLIC_KEY_LEN = 33
 
 class CATests(unittest.TestCase):
@@ -31,7 +32,6 @@ class CATests(unittest.TestCase):
         bip39_mnemonic_to_seed(b' '.join([b'all'] * 12), b'', seed, 64)
         root = Slip21Node(seed = seed)
         self.assertEqual(root.key(), unhexlify('dbf12b44133eaab506a740f6565cc117228cbf1dd70635cfa8ddfdc9af734756'))
-
         root.derive_path([b'SLIP-0077'])
         master_blinding_key = root.key()
 
@@ -40,6 +40,18 @@ class CATests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK)
         _, out_hex = wally_hex_from_bytes(out[32:], 32)
         self.assertEqual(hexlify(master_blinding_key), utf8(out_hex))
+
+        unconfidential_addr = '2dpWh6jbhAowNsQ5agtFzi7j6nKscj6UnEr'
+        script, _ = make_cbuffer('76a914a579388225827d9f2fe9014add644487808c695d88ac')
+        private_blinding_key, _ = make_cbuffer('00' * 32)
+        ret = wally_asset_blinding_key_to_ec_private_key(root.data, len(root.data), script, len(script), private_blinding_key, len(private_blinding_key))
+        self.assertEqual(ret, WALLY_OK)
+        public_blinding_key, _ = make_cbuffer('00' * 33)
+        ret = wally_ec_public_key_from_private_key(private_blinding_key, len(private_blinding_key), public_blinding_key, len(public_blinding_key))
+        self.assertEqual(ret, WALLY_OK)
+
+        ret, address = wally_confidential_addr_from_addr(utf8(unconfidential_addr), CA_PREFIX_LIQUID_REGTEST, public_blinding_key, len(public_blinding_key))
+        self.assertEqual(address, "CTEkf75DFff5ReB7juTg2oehrj41aMj21kvvJaQdWsEAQohz1EDhu7Ayh6goxpz3GZRVKidTtaXaXYEJ")
 
 
     def test_confidential_addr(self):

@@ -148,6 +148,7 @@ for f in (
     ('wally_confidential_addr_to_addr', c_int, [c_char_p, c_uint, c_char_p_p]),
     ('wally_confidential_addr_to_ec_public_key', c_int, [c_char_p, c_uint, c_void_p, c_ulong]),
     ('wally_asset_blinding_key_from_seed', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_asset_blinding_key_to_ec_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha256d', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
