@@ -49,7 +49,7 @@ struct tx_serialize_opts
     uint32_t sighash;                /* 8 bit sighash value for sig */
     uint32_t tx_sighash;             /* 32 bit sighash value for tx */
     size_t index;                    /* index of input we are signing */
-    const unsigned char *script;     /* scriptSig of input we are signing */
+    const unsigned char *script;     /* scriptPubkey spent by the input we are signing */
     size_t script_len;               /* length of 'script' in bytes */
     uint64_t satoshi;                /* Amount of the input we are signing */
     bool bip143;                     /* Serialize for BIP143 hash */
