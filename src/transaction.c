@@ -2146,8 +2146,13 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
                       unsigned char *bytes_out, size_t len,
                       size_t *written)
 {
-    return tx_to_bytes(tx, NULL, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, bytes_out, len, written,
-                       flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements);
 }
 
 static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
@@ -2182,8 +2187,13 @@ static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
 int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
                     char **output)
 {
-    return tx_to_hex(tx, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, output,
-                     flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_hex(tx, flags, output, is_elements);
 }
 
 static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
