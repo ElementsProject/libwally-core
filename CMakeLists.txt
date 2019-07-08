@@ -397,7 +397,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 if(COLLECT_COVERAGE)
-target_link_libraries(${PROJECT_NAME} lcov)
+target_link_libraries(${PROJECT_NAME} gcov)
 endif()
 
 
@@ -463,7 +463,7 @@ target_compile_options(${NODE_LIBRARY_NAME}
     $<IF:$<C_COMPILER_ID:MSVC>,
       /LD /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DSWIG_JAVASCRIPT_BUILD ${ELEMENTS_COMP_OPT},
       -Wall -Wextra -Wno-unused-function
-      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT} ${ENABLE_EXPORT_ALL_OPT}
+      ${ENABLE_EXPORT_ALL_OPT}
     >
 )
 target_compile_definitions(${NODE_LIBRARY_NAME}
@@ -559,7 +559,7 @@ target_include_directories(${WALLYCORE_NAME}
 )
 
 if(COLLECT_COVERAGE)
-target_link_libraries(${WALLYCORE_NAME} lcov)
+target_link_libraries(${WALLYCORE_NAME} gcov)
 endif()
 
 endif()		# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
