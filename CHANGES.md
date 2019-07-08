@@ -1,5 +1,11 @@
 # Changes
 
+## Version 0.7.2
+
+- API change of wally_tx_to_bytes and wally_tx_to_hex to not accept
+  WALLY_TX_FLAG_USE_ELEMENTS bit set in flags. You should remove such flag when
+  upgrading. This change affects elements transactions only.
+
 ## Version 0.6.5
 
 - Invalid bech32 addresses may have caused an out of bounds read. Thanks to
