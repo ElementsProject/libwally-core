@@ -242,7 +242,7 @@ WALLY_CORE_API int bip32_key_to_base58(
 /**
  * Convert a base58 encoded extended key to an extended key.
  *
- * :param wif: The extended key in base58.
+ * :param base58: The extended key in base58.
  * :param output: Destination for the resulting extended key.
  */
 WALLY_CORE_API int bip32_key_from_base58(
