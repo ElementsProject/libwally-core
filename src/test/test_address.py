@@ -11,10 +11,10 @@ ADDRESS_TYPE_P2PKH       = 0x01
 ADDRESS_TYPE_P2SH_P2WPKH = 0x02
 ADDRESS_TYPE_P2WPKH      = 0x04
 
-VERSION_P2PKH_MAINNET = 0x00
-VERSION_P2PKH_TESTNET = 0x6F
-VERSION_P2SH_MAINNET = 0x05
-VERSION_P2SH_TESTNET = 0xC4
+ADDRESS_VERSION_P2PKH_MAINNET = 0x00
+ADDRESS_VERSION_P2PKH_TESTNET = 0x6F
+ADDRESS_VERSION_P2SH_MAINNET = 0x05
+ADDRESS_VERSION_P2SH_TESTNET = 0xC4
 
 NETWORK_BITCOIN_MAINNET = 0x01
 NETWORK_BITCOIN_TESTNET = 0x02
@@ -81,7 +81,7 @@ class AddressTests(unittest.TestCase):
         key = self.get_test_key(vec, path)
 
         # Address type flag is mandatory
-        version = VERSION_P2PKH_MAINNET if network == NETWORK_BITCOIN_MAINNET else VERSION_P2PKH_TESTNET
+        version = ADDRESS_VERSION_P2PKH_MAINNET if network == NETWORK_BITCOIN_MAINNET else ADDRESS_VERSION_P2PKH_TESTNET
         ret, out = wally_bip32_key_to_address(key, 0, version)
         self.assertEqual(ret, WALLY_EINVAL)
 
@@ -91,7 +91,7 @@ class AddressTests(unittest.TestCase):
         self.assertEqual(out, vec[path]['address_legacy'])
 
         # Obtain wrapped SegWit address (P2SH_P2WPKH)
-        version = VERSION_P2SH_MAINNET if network == NETWORK_BITCOIN_MAINNET else VERSION_P2SH_TESTNET
+        version = ADDRESS_VERSION_P2SH_MAINNET if network == NETWORK_BITCOIN_MAINNET else ADDRESS_VERSION_P2SH_TESTNET
         ret, out = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2SH_P2WPKH, version)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(out, vec[path]['address_p2sh_segwit'])

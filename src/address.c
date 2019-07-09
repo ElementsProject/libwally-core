@@ -22,10 +22,10 @@ int wally_bip32_key_to_address(const struct ext_key *hdkey, uint32_t flags,
         return WALLY_EINVAL;
 
     // Catch known incorrect combinations of address type and version:
-    if ((flags & WALLY_ADDRESS_TYPE_P2PKH && version == 0x05) ||
-        (flags & WALLY_ADDRESS_TYPE_P2SH_P2WPKH && version == 0x00) ||
-        (flags & WALLY_ADDRESS_TYPE_P2PKH && version == 0xC4) ||
-        (flags & WALLY_ADDRESS_TYPE_P2SH_P2WPKH && version == 0x6F))
+    if ((flags & WALLY_ADDRESS_TYPE_P2PKH && version == WALLY_ADDRESS_VERSION_P2SH_MAINNET) ||
+        (flags & WALLY_ADDRESS_TYPE_P2SH_P2WPKH && version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET) ||
+        (flags & WALLY_ADDRESS_TYPE_P2PKH && version == WALLY_ADDRESS_VERSION_P2SH_TESTNET) ||
+        (flags & WALLY_ADDRESS_TYPE_P2SH_P2WPKH && version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET))
         return WALLY_EINVAL;
 
     if (flags == WALLY_ADDRESS_TYPE_P2PKH) {

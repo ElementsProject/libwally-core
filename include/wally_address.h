@@ -19,6 +19,11 @@ struct ext_key;
 #define WALLY_ADDRESS_TYPE_P2SH_P2WPKH 0x02 /** P2SH-P2WPKH wrapped SegWit address ("3...") */
 #define WALLY_ADDRESS_TYPE_P2WPKH 0x04      /** P2WPKH native SegWit address ("bc1...)" */
 
+#define WALLY_ADDRESS_VERSION_P2PKH_MAINNET 0x00 /** P2PKH address on mainnet */
+#define WALLY_ADDRESS_VERSION_P2PKH_TESTNET 0x6F /** P2PKH address on testnet */
+#define WALLY_ADDRESS_VERSION_P2SH_MAINNET 0x05 /** P2SH address on mainnet */
+#define WALLY_ADDRESS_VERSION_P2SH_TESTNET 0xC4 /** P2SH address on testnet */
+
 /**
  * Create a segwit native address from a v0 witness program.
  *
@@ -119,8 +124,8 @@ WALLY_CORE_API int wally_wif_to_public_key(
  * :param hdkey: The extended key to use.
  * :param flags: ``WALLY_ADDRESS_TYPE_P2PKH`` for a legacy address, ``WALLY_ADDRESS_TYPE_P2SH_P2WPKH``
  *| for P2SH-wrapped SegWit.
- * :param version: Version byte to generate address, e.g. with Bitcoin: 0x00 for P2PKH,
- *| 0x05 for P2SH_P2WPKH (0x6F and 0xC4 respectively for Testnet).
+ * :param version: Version byte to generate address, e.g. with Bitcoin: WALLY_ADDRESS_VERSION_P2PKH_MAINNET,
+ *| WALLY_ADDRESS_VERSION_P2PKH_TESTNET, WALLY_ADDRESS_VERSION_P2SH_MAINNET and WALLY_ADDRESS_VERSION_P2SH_TESTNET.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_bip32_key_to_address(
@@ -148,7 +153,7 @@ WALLY_CORE_API int wally_bip32_key_to_addr_segwit(
  *
  * :param wif: Private key in Wallet Import Format.
  * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
- * :param version: Version byte to generate address, e.g. 0x00, 0x6f.
+ * :param version: Version byte to generate address, e.g. WALLY_ADDRESS_VERSION_P2PKH_MAINNET, WALLY_ADDRESS_VERSION_P2PKH_TESTNET.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_wif_to_address(
