@@ -52,21 +52,23 @@ endif()
 ####################
 # common setting
 ####################
+# WALLY_BINARY_DIR_ROOT
 set(WORK_WINDOWS_BINARY_DIR_NAME  $<IF:$<CONFIG:Debug>,Debug,Release>)
-if(NOT BTCLIB_OBJ_BINARY_DIR)
-set(BTCLIB_OBJ_BINARY_DIR   ${CMAKE_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME})
-set(BTCLIB_ROOT_BINARY_DIR
-  $<IF:$<PLATFORM_ID:Windows>,${BTCLIB_OBJ_BINARY_DIR},${CMAKE_BINARY_DIR}>)
+if(NOT WALLY_OBJ_BINARY_DIR)
+set(WALLY_BINARY_DIR_ROOT   ${CMAKE_BINARY_DIR})
+set(WALLY_OBJ_BINARY_DIR    ${CMAKE_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME})
+set(WALLY_ROOT_BINARY_DIR
+  $<IF:$<PLATFORM_ID:Windows>,${WALLY_OBJ_BINARY_DIR},${CMAKE_BINARY_DIR}>)
 endif()
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${BTCLIB_OBJ_BINARY_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${BTCLIB_ROOT_BINARY_DIR})
-set(WORK_BINARY_DIR  ${BTCLIB_ROOT_BINARY_DIR})
-set(BINARY_OUTPUT_DIR  ${BTCLIB_ROOT_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${WALLY_OBJ_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${WALLY_ROOT_BINARY_DIR})
+set(WORK_BINARY_DIR  ${WALLY_ROOT_BINARY_DIR})
+set(BINARY_OUTPUT_DIR  ${WALLY_ROOT_BINARY_DIR})
 
 if(NOT ENABLE_ELEMENTS)
 set(ELEMENTS_COMP_OPT "")
 else()
-set(ELEMENTS_COMP_OPT  $<IF:$<C_COMPILER_ID:MSVC>,/DBUILD_ELEMENTS,BUILD_ELEMENTS>)
+set(ELEMENTS_COMP_OPT  BUILD_ELEMENTS)
 endif()
 
 if(NOT WIN32)
@@ -265,14 +267,14 @@ add_executable(${GEN_CONTEXT_NAME}
 target_compile_options(${GEN_CONTEXT_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DSECP256K1_BUILD,
+      /source-charset:utf-8 /wd4244,
       -Wall -Wextra -Wno-unused-function
     >
 )
 target_compile_definitions(${GEN_CONTEXT_NAME}
   PRIVATE
-    WALLY_CORE_BUILD  SECP256K1_BUILD
-    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 >
+    WALLY_CORE_BUILD
+    SECP256K1_BUILD
 )
 target_include_directories(${GEN_CONTEXT_NAME}
   PUBLIC
@@ -370,7 +372,7 @@ target_sources(${PROJECT_NAME}
 target_compile_options(${PROJECT_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DSECP256K1_BUILD ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244,
       -Wall -Wextra -Wno-unused-function
       ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT} ${ENABLE_EXPORT_ALL_OPT}
     >
@@ -378,8 +380,9 @@ target_compile_options(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    WALLY_CORE_BUILD  SECP256K1_BUILD  HAVE_CONFIG_H
-    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4244 >
+    WALLY_CORE_BUILD
+    SECP256K1_BUILD
+    HAVE_CONFIG_H
 )
 # -DECMULT_WINDOW_SIZE=16 -DUSE_ECMULT_STATIC_PRECOMPUTATION
 target_include_directories(${PROJECT_NAME}
@@ -461,7 +464,7 @@ target_sources(${NODE_LIBRARY_NAME}
 target_compile_options(${NODE_LIBRARY_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /wd4251 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DSWIG_JAVASCRIPT_BUILD ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244 /wd4251,
       -Wall -Wextra -Wno-unused-function
       ${ENABLE_EXPORT_ALL_OPT}
     >
@@ -469,8 +472,10 @@ target_compile_options(${NODE_LIBRARY_NAME}
 target_compile_definitions(${NODE_LIBRARY_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    DWALLY_CORE_BUILD  HAVE_CONFIG_H  SECP256K1_BUILD  SWIG_JAVASCRIPT_BUILD
-    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 /wd4251 >
+    DWALLY_CORE_BUILD
+    HAVE_CONFIG_H
+    SECP256K1_BUILD
+    SWIG_JAVASCRIPT_BUILD
 )
 
 set_target_properties(${NODE_LIBRARY_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
@@ -501,7 +506,8 @@ target_link_libraries(${NODE_LIBRARY_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE
@@ -534,7 +540,7 @@ target_sources(${WALLYCORE_NAME}
 target_compile_options(${WALLYCORE_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD ${ELEMENTS_COMP_OPT},
+      /LD /source-charset:utf-8 /wd4244,
       -Wall -Wextra -Wno-unused-function
       ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT} ${ENABLE_EXPORT_ALL_OPT}
     >
@@ -542,8 +548,9 @@ target_compile_options(${WALLYCORE_NAME}
 target_compile_definitions(${WALLYCORE_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    WALLY_CORE_BUILD  SECP256K1_BUILD  HAVE_CONFIG_H
-    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 >
+    WALLY_CORE_BUILD
+    SECP256K1_BUILD
+    HAVE_CONFIG_H
 )
 target_include_directories(${WALLYCORE_NAME}
   PRIVATE
@@ -650,16 +657,18 @@ target_link_libraries(${WALLY_SWIG_PYTHON_NAME}
 target_compile_options(${WALLY_SWIG_PYTHON_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DUSE_SWIG_PYTHON /DSWIG_PYTHON_BUILD /I"${INCLUDE_PYTHONHOME}" ${ELEMENTS_COMP_OPT},
-      -Wall -Wextra -Wno-unused-function
+      /LD /source-charset:utf-8 /wd4244 /I"${INCLUDE_PYTHONHOME}",
+      -Wall -Wextra -Wno-unused-function -I"${INCLUDE_PYTHONHOME}"
     >
 )
 target_compile_definitions(${WALLY_SWIG_PYTHON_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    WALLY_CORE_BUILD  SECP256K1_BUILD  HAVE_CONFIG_H
-    USE_SWIG_PYTHON  SWIG_PYTHON_BUILD
-    $<$<C_COMPILER_ID:MSVC>: /source-charset:utf-8 /wd4244 /I"${INCLUDE_PYTHONHOME}" >
+    WALLY_CORE_BUILD
+    SECP256K1_BUILD
+    HAVE_CONFIG_H
+    USE_SWIG_PYTHON
+    SWIG_PYTHON_BUILD
 )
 
 # %SWIG_PATH%\swig -python -Isrc -I%SWIG_PATH%\Lib\python -DBUILD_ELEMENTS=1 src\swig_python\swig.i
@@ -710,12 +719,11 @@ set(TEST_BECH32_NAME test_bech32)
 add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
 target_compile_options(${TEST_BECH32_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_BECH32_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_include_directories(${TEST_BECH32_NAME}
   PRIVATE
@@ -733,7 +741,8 @@ target_link_libraries(${TEST_BECH32_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -741,7 +750,7 @@ target_link_libraries(${TEST_BECH32_NAME}
 add_test(
   NAME ${TEST_BECH32_NAME}
   COMMAND ${TEST_BECH32_NAME}
-  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
 if(Clang) # use pthread and LLVM Clang
@@ -749,12 +758,11 @@ set(TEST_CLEAR_NAME test_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_CLEAR_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_include_directories(${TEST_CLEAR_NAME}
   PRIVATE
@@ -772,7 +780,8 @@ target_link_libraries(${TEST_CLEAR_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -780,7 +789,7 @@ target_link_libraries(${TEST_CLEAR_NAME}
 add_test(
   NAME ${TEST_CLEAR_NAME}
   COMMAND $<TARGET_FILE:${TEST_CLEAR_NAME}>
-  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 endif()
 
@@ -788,12 +797,11 @@ set(TEST_TX_NAME test_tx)
 add_executable(${TEST_TX_NAME} src/ctest/test_tx.c)
 target_compile_options(${TEST_TX_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_TX_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_include_directories(${TEST_TX_NAME}
   PRIVATE
@@ -811,7 +819,8 @@ target_link_libraries(${TEST_TX_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -819,7 +828,7 @@ target_link_libraries(${TEST_TX_NAME}
 add_test(
   NAME ${TEST_TX_NAME}
   COMMAND $<TARGET_FILE:${TEST_TX_NAME}>
-  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
 
@@ -831,12 +840,11 @@ set(TEST_ELEMENTS_TX_NAME test_elements_tx)
 add_executable(${TEST_ELEMENTS_TX_NAME} src/ctest/test_elements_tx.c)
 target_compile_options(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251 ${ELEMENTS_COMP_OPT}>
+    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
     ${ELEMENTS_COMP_OPT}
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_include_directories(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
@@ -854,7 +862,8 @@ target_link_libraries(${TEST_ELEMENTS_TX_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -862,7 +871,7 @@ target_link_libraries(${TEST_ELEMENTS_TX_NAME}
 add_test(
   NAME ${TEST_ELEMENTS_TX_NAME}
   COMMAND $<TARGET_FILE:${TEST_ELEMENTS_TX_NAME}>
-  WORKING_DIRECTORY ${BTCLIB_OBJ_BINARY_DIR}
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 endif()
 
@@ -892,7 +901,7 @@ set(NODE_TEST_BIN  node)
 # endif()
 
 # copy testfile on pre-test (for load on wallycore.node)
-add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy ${BTCLIB_OBJ_BINARY_DIR}/wallycore.node ${NODE_TEST_RELEASE_DIR} )
+add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/wallycore.node ${NODE_TEST_RELEASE_DIR} )
 add_test(NAME js_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_SRC_DIR} ${NODE_TEST_FILE_DIR} )
 
 if(ENABLE_ELEMENTS)
