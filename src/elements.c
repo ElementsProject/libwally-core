@@ -435,7 +435,7 @@ int wally_confidential_addr_from_addr(
 
     /* Decode the passed address */
     ret = wally_base58_to_bytes(address, BASE58_FLAG_CHECKSUM,
-                                addr_bytes_p, 1 + HASH160_LEN + EC_PUBLIC_KEY_LEN, &written);
+                                addr_bytes_p, 1 + HASH160_LEN + BASE58_CHECKSUM_LEN, &written);
     if (ret == WALLY_OK) {
         if (written != HASH160_LEN + 1)
             ret = WALLY_EINVAL;
