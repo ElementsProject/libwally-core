@@ -55,15 +55,12 @@ endif()
 # WALLY_BINARY_DIR_ROOT
 set(WORK_WINDOWS_BINARY_DIR_NAME  $<IF:$<CONFIG:Debug>,Debug,Release>)
 if(NOT WALLY_OBJ_BINARY_DIR)
-set(WALLY_BINARY_DIR_ROOT   ${CMAKE_BINARY_DIR})
 set(WALLY_OBJ_BINARY_DIR    ${CMAKE_BINARY_DIR}/${WORK_WINDOWS_BINARY_DIR_NAME})
-set(WALLY_ROOT_BINARY_DIR
-  $<IF:$<PLATFORM_ID:Windows>,${WALLY_OBJ_BINARY_DIR},${CMAKE_BINARY_DIR}>)
+set(WALLY_ROOT_BINARY_DIR   ${CMAKE_BINARY_DIR})
 endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${WALLY_OBJ_BINARY_DIR})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${WALLY_ROOT_BINARY_DIR})
-set(WORK_BINARY_DIR  ${WALLY_ROOT_BINARY_DIR})
-set(BINARY_OUTPUT_DIR  ${WALLY_ROOT_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${WALLY_OBJ_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${WALLY_OBJ_BINARY_DIR}) # for linux
 
 if(NOT ENABLE_ELEMENTS)
 set(ELEMENTS_COMP_OPT "")
@@ -90,9 +87,6 @@ endif()
 ####################
 # wally common setting
 ####################
-# set(CONFIG_HEADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/windows_config)
-set(CONFIG_HEADER_DIRECTORY ${CMAKE_BINARY_DIR})
-
 if(ENABLE_DEBUG AND ENABLE_COVERAGE)
 set(COLLECT_COVERAGE ON)
 set(PROFILE_ARCS_OPT -fprofile-arcs)
@@ -114,6 +108,7 @@ endif()
 # config.h & libsecp256k1-config.h
 ####################
 project(wally_config C CXX)
+set(CONFIG_HEADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # incomplete
 include(CheckFunctionExists)
@@ -246,8 +241,8 @@ set(USE_SCALAR_4X64 "1")
 endif()
 
 set(VERSION   WALLY_PACKAGE_VERSION)
-configure_file(cmake/config.h.in              "${CMAKE_BINARY_DIR}/config.h")
-configure_file(cmake/libsecp256k1-config.h.in "${CMAKE_BINARY_DIR}/libsecp256k1-config.h")
+configure_file(cmake/config.h.in              "${CONFIG_HEADER_DIRECTORY}/config.h")
+configure_file(cmake/libsecp256k1-config.h.in "${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h")
 
 
 ####################
@@ -255,8 +250,10 @@ configure_file(cmake/libsecp256k1-config.h.in "${CMAKE_BINARY_DIR}/libsecp256k1-
 ####################
 project(secp256k1 C)
 set(GEN_CONTEXT_NAME gen_context)
+set(SECP256K_OUTPUT_PATH  ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR})
 
-set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_BINARY_DIR}/ecmult_static_context.h)
+set(ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_BINARY_DIR}/ecmult_static_context.h)
 set(SRC_ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/ecmult_static_context.h)
 add_executable(${GEN_CONTEXT_NAME}
     src/secp256k1/src/gen_context.c
@@ -296,8 +293,8 @@ set(WORK_WINDOWS_BINARY_DIR_NAME
 )
 
 add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
-  COMMAND echo "[gen_context]" ${WORK_BINARY_DIR}/${GEN_CONTEXT_NAME}
-  COMMAND ${WORK_BINARY_DIR}/${GEN_CONTEXT_NAME}
+  COMMAND echo "[gen_context]" ${SECP256K_OUTPUT_PATH}/${GEN_CONTEXT_NAME}
+  COMMAND ${SECP256K_OUTPUT_PATH}/${GEN_CONTEXT_NAME}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SRC_ECMULT_STATIC_CONTEXT_H} ${ECMULT_STATIC_CONTEXT_H}
   COMMAND ${CMAKE_COMMAND} -E compare_files ${SRC_ECMULT_STATIC_CONTEXT_H} ${ECMULT_STATIC_CONTEXT_H}
   COMMAND ${CMAKE_COMMAND} -E remove -f ${SRC_ECMULT_STATIC_CONTEXT_H}
@@ -396,7 +393,7 @@ target_include_directories(${PROJECT_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
 )
 
 if(COLLECT_COVERAGE)
@@ -410,6 +407,9 @@ endif()
 if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
 message(STATUS "[CMAKE_JS_INC]=${CMAKE_JS_INC}")
 
+set(NODE_LIBRARY_NAME wallycore)
+project(wallycore CXX)
+
 if(ENABLE_ELEMENTS)
 set(ELEMENTS_OPT "elements")
 else()
@@ -418,11 +418,11 @@ endif()
 set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
 
 set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
-add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_BINARY_DIR}/nodejs_wrap.cc)
+add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc)
 
 set(NODE_TEST_SRC_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/test)
 set(NODE_TEST_DATA_SRC_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/data)
-set(NODE_TEST_BASE_DIR      ${CMAKE_BINARY_DIR}/wrap_js_test)
+set(NODE_TEST_BASE_DIR      ${CMAKE_CURRENT_BINARY_DIR}/test_wrap_js)
 set(NODE_TEST_JS_DIR        ${NODE_TEST_BASE_DIR}/wrap_js)
 set(NODE_TEST_DATA_DIR      ${NODE_TEST_BASE_DIR}/data)
 set(NODE_TEST_FILE_DIR      ${NODE_TEST_JS_DIR}/test)
@@ -430,35 +430,21 @@ set(NODE_TEST_BUILD_DIR     ${NODE_TEST_JS_DIR}/build)
 set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/Release)
 
 # generate source files, and create test directories
-add_custom_command(OUTPUT  ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
+add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
     COMMAND set PYTHONDONTWRITEBYTECODE=1
     COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
     COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${BINARY_OUTPUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_DATA_SRC_DIR} ${NODE_TEST_DATA_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${BINARY_OUTPUT_DIR}/wally.js ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+    COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
     VERBATIM
 )
-
-set(NODE_LIBRARY_NAME wallycore)
-project(wallycore CXX)
 
 add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
     ${LIBWALLY_FILES}
-    ${CMAKE_BINARY_DIR}/nodejs_wrap.cc
+    ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
 )
 
 target_compile_options(${NODE_LIBRARY_NAME}
@@ -497,7 +483,7 @@ target_include_directories(${NODE_LIBRARY_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
     node_modules/nan
     ${CMAKE_JS_INC}
 )
@@ -505,14 +491,35 @@ target_include_directories(${NODE_LIBRARY_NAME}
 target_link_libraries(${NODE_LIBRARY_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE
     ${CMAKE_JS_LIB}
 )
+
+add_custom_command(
+    TARGET ${NODE_LIBRARY_NAME}
+    POST_BUILD
+    COMMAND set PYTHONDONTWRITEBYTECODE=1
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_CURRENT_BINARY_DIR}/wally.js
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${WALLY_OBJ_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_DATA_SRC_DIR} ${NODE_TEST_DATA_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 
 else()	# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
 
@@ -562,7 +569,7 @@ target_include_directories(${WALLYCORE_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
 )
 
 if(COLLECT_COVERAGE)
@@ -586,8 +593,8 @@ if(ENABLE_SWIG_PYTHON)
 
 set(WALLY_SWIG_PYTHON_NAME wallycore_swig_python)
 project(wallycore_swig_python C)
-set(PYTHON_WALLY_FILE ${CMAKE_BINARY_DIR}/wallycore.py)
-set(PYTHON_WALLY_INIT_FILE ${CMAKE_BINARY_DIR}/__init__.py)
+set(PYTHON_WALLY_FILE ${CMAKE_CURRENT_BINARY_DIR}/wallycore.py)
+set(PYTHON_WALLY_INIT_FILE ${CMAKE_CURRENT_BINARY_DIR}/__init__.py)
 
 set_property(SOURCE src/swig_python/swig.i PROPERTY SWIG_MODULE_NAME wallycore)
 set(INTERFACE_FILES  src/swig_python/swig.i)
@@ -601,7 +608,7 @@ include(GenerateExportHeader)
 # swig_python_wrap.c
 swig_add_library(${WALLY_SWIG_PYTHON_NAME}
     LANGUAGE python
-    OUTFILE_DIR ${CMAKE_BINARY_DIR}
+    OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${INTERFACE_FILES} ${LIBWALLY_FILES}
 )
 
@@ -622,7 +629,7 @@ set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ccan
     ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1
     ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
     ${SWIG_PATH}/Lib/python
     ${CMAKE_CURRENT_SOURCE_DIR}/src/swig_python
     ${INCLUDE_PYTHONHOME}
@@ -636,7 +643,7 @@ target_include_directories(${WALLY_SWIG_PYTHON_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
     ${SWIG_PATH}/Lib/python
     src/swig_python
     ${INCLUDE_PYTHONHOME}
@@ -711,6 +718,7 @@ enable_testing()
 project(wally_test C)
 include(CTest)
 # add_subdirectory(src/ctest)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${WALLY_OBJ_BINARY_DIR})
 
 ####################
 # test for C
@@ -733,16 +741,15 @@ target_include_directories(${TEST_BECH32_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
 )
 target_link_directories(${TEST_BECH32_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_BECH32_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -772,16 +779,15 @@ target_include_directories(${TEST_CLEAR_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
 )
 target_link_directories(${TEST_CLEAR_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_CLEAR_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -811,16 +817,15 @@ target_include_directories(${TEST_TX_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
 )
 target_link_directories(${TEST_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_TX_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -854,16 +859,15 @@ target_include_directories(${TEST_ELEMENTS_TX_NAME}
     src/ccan
     src/secp256k1
     src/secp256k1/src
-    ${CMAKE_BINARY_DIR}
+    ${SECP256K_OUTPUT_PATH}
 )
 target_link_directories(${TEST_ELEMENTS_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_ELEMENTS_TX_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:Clang>>:-static-stdlib>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
     wally
@@ -917,6 +921,29 @@ add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/te
 add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
 endif() # ENABLE_JS_WRAPPER
 
+endif()
+
+
+####################
+# coverage
+####################
+if(ENABLE_DEBUG AND ENABLE_COVERAGE)
+# lcov="lcov --directory=src/ --base-directory src/"
+# add_custom_target(
+#   lcov_libwally_initdir ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/lcov_total
+#   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/lcov
+#   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
+# )
+# add_custom_target(
+#   lcov_libwally_collect lcov --output-file src/lcov_result --capture --ignore-errors=gcov
+#   COMMAND lcov --output-file src/lcov_total --add-tracefile src/lcov_base --add-tracefile src/lcov_result --ignore-errors=gcov
+#   WORKING_DIRECTORY ${BTCLIB_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
+# )
+# add_custom_target(
+#   coverage_libwally  genhtml --demangle-cpp -o src/lcov/ src/lcov_total
+#   DEPENDS lcov_libwally_initdir lcov_libwally_collect
+#   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
+# )
 endif()
 
 
