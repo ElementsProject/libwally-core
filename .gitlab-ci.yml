@@ -12,8 +12,23 @@ linux_release:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh
     - python setup.py sdist --dist-dir ./wally_core
-    - ./tools/build_android_libraries.sh
-    - ./tools/build_js_bindings.sh
+
+buster_release:
+  image: greenaddress/wallycore@sha256:fb775125c186cf2f78ecf8edc71ce59db67ba4b17d658847f95248dda793d176
+  artifacts:
+    expire_in: 1 day
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wally_dist/*
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./tools/build_python_wheels.sh python3
+    - python3 setup.py sdist --dist-dir ./wally_core
+    - PYTHON_VERSION=3 ./tools/build_android_libraries.sh
+    - PYTHON_VERSION=3 ./tools/build_js_bindings.sh
     - mv release wallycore-android-jni
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wally_dist/wallycore-android-jni.tar
@@ -76,7 +91,7 @@ osx_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh "python python3"
+    - ./tools/build_python_wheels.sh python3
 
 armv7l_release:
   tags:
@@ -89,7 +104,7 @@ armv7l_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 arm64_release:
   tags:
@@ -102,7 +117,7 @@ arm64_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 powerpcg4_release:
   tags:
@@ -121,7 +136,7 @@ freebsdamd64_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 windows10_release:
   tags:
@@ -169,6 +184,7 @@ package_release:
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
   - linux_release
+  - buster_release
   - ubuntu_18.04_release
   - ubuntu_19.04_release
   - osx_release
