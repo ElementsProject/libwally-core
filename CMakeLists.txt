@@ -19,7 +19,8 @@ option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
 else()
 option(ENABLE_SHARED "enable shared library (ON or OFF. default:OFF)" OFF)
 endif()
-option(ENABLE_DEBUG "enable debugging (ON or OFF. default:OFF)" OFF)
+# use "cmake -DCMAKE_BUILD_TYPE=Debug" or "cmake-js -D"
+# option(ENABLE_DEBUG "enable debugging (ON or OFF. default:OFF)" OFF)
 option(ENABLE_ELEMENTS "enable elements tx code (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SWIG_JAVA "enable the SWIG java (JNI) interface (ON or OFF. default:OFF)" OFF)
@@ -30,24 +31,28 @@ endif()
 option(ENABLE_TESTS "enable code tests for CTest (ON or OFF. default:ON)" ON)
 
 if(NOT WIN32)
-option(TARGET_RPATH "target rpath list (separator is ';') (default:@rpath;./;./build/Release)" OFF)
+#option(TARGET_RPATH "target rpath list (separator is ';') (default:)" "")
+set(TARGET_RPATH "" CACHE STRING "target rpath list (separator is ';') (default:)")
 option(ENABLE_COVERAGE "enable code coverage (ON or OFF. default:OFF)" OFF)
 option(ENABLE_EXPORT_ALL "enable export all functions (for testing) (ON or OFF. default:OFF)" OFF)
 set(ENABLE_EXPORT_ALL_OPT "")
 else()
 set(ENABLE_EXPORT_ALL_OPT -fvisibility=hidden)
+set(TARGET_RPATH "")
+set(ENABLE_COVERAGE FALSE)
 endif()
 
-if(ENABLE_DEBUG)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+set(ENABLE_DEBUG  TRUE)
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEBUGBUILD>)
 if(MSVC)
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} /Od /Zi")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Od /Zi")
+set(CMAKE_C_FLAGS_DEBUG "/Zi")
 else()
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -O0 -ggdb")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+set(CMAKE_C_FLAGS_DEBUG "-ggdb")
 endif()
-endif()
+else()
+set(ENABLE_DEBUG  FALSE)
+endif() # CMAKE_BUILD_TYPE
 
 ####################
 # common setting
@@ -900,6 +905,8 @@ endif()
 ####################
 # test for node.js
 ####################
+if(NOT ENABLE_DEBUG)
+# Currently, wally.js only supports release builds.
 if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
 # 'tape' is notfound on Windows, So it's call to 'node'.
 # (testfile is direct require to 'tape'.)
@@ -926,6 +933,7 @@ add_test(NAME js_test_hash     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/te
 add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_scrypt.js )
 add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
 endif() # ENABLE_JS_WRAPPER
+endif() # ENABLE_DEBUG
 
 endif()
 

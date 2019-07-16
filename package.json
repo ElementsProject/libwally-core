@@ -6,9 +6,9 @@
   "scripts": {
     "cmake-all": "run-s cmake-configure cmake-build",
     "cmake-configure": "run-script-os",
-    "cmake-configure:win32": "cmake-js configure -O build --CDENABLE_SHARED=1 --CDENABLE_ELEMENTS=1",
-    "cmake-configure:linux": "cmake-js configure -O build --CDENABLE_SHARED=1 --CDENABLE_ELEMENTS=1 -g",
-    "cmake-configure:darwin": "cmake-js configure -O build --CDENABLE_SHARED=1 --CDENABLE_ELEMENTS=1 -g",
+    "cmake-configure:win32": "cmake-js configure -O build --CDENABLE_SHARED=on --CDENABLE_ELEMENTS=on",
+    "cmake-configure:linux": "cmake-js configure -O build --CDENABLE_SHARED=on --CDENABLE_ELEMENTS=on -g",
+    "cmake-configure:darwin": "cmake-js configure -O build --CDENABLE_SHARED=on --CDENABLE_ELEMENTS=on -g",
     "cmake-build": "cmake-js build -O build",
     "cmake-clean": "cmake-js clean -O build",
     "ctest": "cd build && ctest -C Release"
