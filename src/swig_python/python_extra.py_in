@@ -67,6 +67,7 @@ ec_sig_from_bytes = _wrap_bin(ec_sig_from_bytes, EC_SIGNATURE_LEN)
 ec_sig_from_der = _wrap_bin(ec_sig_from_der, EC_SIGNATURE_LEN)
 ec_sig_normalize = _wrap_bin(ec_sig_normalize, EC_SIGNATURE_LEN)
 ec_sig_to_der = _wrap_bin(ec_sig_to_der, EC_SIGNATURE_DER_MAX_LEN, resize=True)
+ecdh = _wrap_bin(ecdh, SHA256_LEN)
 
 def base58check_from_bytes(buf):
     return base58_from_bytes(buf, BASE58_FLAG_CHECKSUM)
