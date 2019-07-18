@@ -1,5 +1,10 @@
 # Changes
 
+## Version 0.7.3
+
+- Exposed ECDH, added py3.7 x86_64 linux wheels to released artifacts, updated
+  JS bindings to support latest nodejs, doc typos and bug fixing.
+
 ## Version 0.7.2
 
 - API change of wally_tx_to_bytes and wally_tx_to_hex to not accept
