@@ -3,6 +3,7 @@
 
 #include <include/wally_core.h>
 #include "secp256k1/include/secp256k1.h"
+#include "secp256k1/include/secp256k1_recovery.h"
 #include <config.h>
 #include <string.h>
 

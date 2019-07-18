@@ -277,6 +277,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_MESSAGE_HASH_LEN 32
 /** The length of a compact signature produced by EC signing */
 #define EC_SIGNATURE_LEN 64
+/** The length of a compact recoverable signature produced by EC signing */
+#define EC_SIGNATURE_RECOVERABLE_LEN 65
 /** The maximum encoded length of a DER encoded signature */
 #define EC_SIGNATURE_DER_MAX_LEN 72
 /** The maximum encoded length of a DER encoded signature created with EC_FLAG_GRIND_R */
@@ -288,6 +290,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_FLAG_SCHNORR 0x2
 /** Indicates that the signature nonce should be incremented until the signature is low-R */
 #define EC_FLAG_GRIND_R 0x4
+/** Indicates that the signature is recoverable */
+#define EC_FLAG_RECOVERABLE 0x8
 
 
 /**
@@ -348,7 +352,9 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
  * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
  * :param flags: EC_FLAG_ flag values indicating desired behavior.
  * :param bytes_out: Destination for the resulting compact signature.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param len: The length of ``bytes_out`` in bytes. Must be
+ *|    ``EC_SIGNATURE_LEN`` if EC_FLAG_RECOVERABLE is not set, otherwise must
+ *|    be ``EC_SIGNATURE_RECOVERABLE_LEN``.
  */
 WALLY_CORE_API int wally_ec_sig_from_bytes(
     const unsigned char *priv_key,
@@ -422,6 +428,26 @@ WALLY_CORE_API int wally_ec_sig_verify(
     uint32_t flags,
     const unsigned char *sig,
     size_t sig_len);
+
+/**
+ * Recover compressed public key from a recoverable signature.
+ *
+ * :param bytes: The message hash signed.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param sig: The recoverable compact signature of the message in ``bytes``.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_RECOVERABLE_LEN``.
+ * :param bytes_out: Destination for recovered public key.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ *
+ * note:: The successful recovery of the public key guarantees the correctness of the signature.
+ */
+WALLY_CORE_API int wally_ec_sig_to_public_key(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    unsigned char *bytes_out,
+    size_t len);
 
 /** The maximum size of input message that can be formatted */
 #define BITCOIN_MESSAGE_MAX_LEN (64 * 1024 - 64)

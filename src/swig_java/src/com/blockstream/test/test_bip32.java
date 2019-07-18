@@ -1,8 +1,12 @@
 package com.blockstream.test;
 
+import java.util.Arrays;
+
 import com.blockstream.libwally.Wally;
 import static com.blockstream.libwally.Wally.BIP32_FLAG_KEY_PRIVATE;
 import static com.blockstream.libwally.Wally.BIP32_VER_MAIN_PRIVATE;
+import static com.blockstream.libwally.Wally.EC_FLAG_ECDSA;
+import static com.blockstream.libwally.Wally.EC_FLAG_RECOVERABLE;
 
 public class test_bip32 {
 
@@ -45,6 +49,24 @@ public class test_bip32 {
 
         if (!h(initSerialized).equals(h(derivedSerialized)))
             throw new RuntimeException("BIP32 initialisation by member failed");
+
+        final byte[] message = Wally.bip32_key_get_chain_code(derivedKey);
+        final byte[] signature = Wally.ec_sig_from_bytes(Wally.bip32_key_get_priv_key(derivedKey),
+                                                         message,
+                                                         EC_FLAG_ECDSA);
+
+        final byte[] signatureRecoverable = Wally.ec_sig_from_bytes(Wally.bip32_key_get_priv_key(derivedKey),
+                                                                    message,
+                                                                    EC_FLAG_ECDSA | EC_FLAG_RECOVERABLE);
+
+        Arrays.equals(signature, Arrays.copyOfRange(signatureRecoverable, 1, 65));
+
+        final byte[] pubkey = Wally.bip32_key_get_pub_key(derivedKey);
+        Wally.ec_sig_verify(pubkey, message, EC_FLAG_ECDSA, signature);
+        Wally.ec_sig_verify(pubkey, message, EC_FLAG_ECDSA, Arrays.copyOfRange(signatureRecoverable, 1, 65));
+
+        final byte[] pubkey_recovered = Wally.ec_sig_to_public_key(message, signatureRecoverable);
+        Arrays.equals(pubkey, pubkey_recovered);
 
         Wally.bip32_key_free(initKey);
         Wally.bip32_key_free(derivedKey);

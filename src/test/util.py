@@ -171,6 +171,7 @@ for f in (
     ('wally_ec_sig_from_der', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_ec_sig_normalize', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_ec_sig_to_der', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_ec_sig_to_public_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p]),
     ('wally_ec_sig_verify', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('wally_ecdh', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p]),
     ('wally_get_operations', c_int, [POINTER(operations)]),
