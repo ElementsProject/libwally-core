@@ -1,5 +1,5 @@
-linux_release:
-  image: greenaddress/wallycore@sha256:90d2cfad068798da2877cf90bec1f2bb62809f6c5b2bdf3be28d7be60a17d470
+buster_release:
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -12,29 +12,14 @@ linux_release:
     - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh
     - python setup.py sdist --dist-dir ./wally_core
-
-buster_release:
-  image: greenaddress/wallycore@sha256:fb775125c186cf2f78ecf8edc71ce59db67ba4b17d658847f95248dda793d176
-  artifacts:
-    expire_in: 1 day
-    name: wallycore-bindings
-    when: on_success
-    paths:
-    - wally_dist/*
-  tags:
-    - ga
-  script:
-    - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh python3
-    - python3 setup.py sdist --dist-dir ./wally_core
-    - PYTHON_VERSION=3 ./tools/build_android_libraries.sh
-    - PYTHON_VERSION=3 ./tools/build_js_bindings.sh
+    - ./tools/build_android_libraries.sh
+    - ./tools/build_js_bindings.sh
     - mv release wallycore-android-jni
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
 linux_py2_debug:
-  image: greenaddress/wallycore@sha256:90d2cfad068798da2877cf90bec1f2bb62809f6c5b2bdf3be28d7be60a17d470
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   tags:
     - ga
   script:
@@ -44,13 +29,13 @@ linux_py2_debug:
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 linux_py3_debug:
-  image: greenaddress/wallycore@sha256:90d2cfad068798da2877cf90bec1f2bb62809f6c5b2bdf3be28d7be60a17d470
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   tags:
     - ga
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - PYTHON_VERSION=3.5 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
 ubuntu_18.04_release:
   image: greenaddress/wallycore@sha256:059eeaa5c61df5403fd28d6ea556c317d5809f7274e27901d0f09288a316bb53
@@ -152,7 +137,7 @@ windows10_release:
     - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:90d2cfad068798da2877cf90bec1f2bb62809f6c5b2bdf3be28d7be60a17d470
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
@@ -183,7 +168,6 @@ package_release:
     when: on_success
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
-  - linux_release
   - buster_release
   - ubuntu_18.04_release
   - ubuntu_19.04_release
