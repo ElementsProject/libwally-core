@@ -201,6 +201,23 @@ foreach(inline_keyword "inline" "__inline__" "__inline")
   endif()
 endforeach()
 
+if((NOT C_HAS_inline) AND (C_HAS___inline__ OR C_HAS___inline))
+if(C_HAS___inline__)
+set(cmake_inline  ${C_HAS___inline__})
+else()
+set(cmake_inline  ${C_HAS___inline})
+endif()
+endif()
+
+check_type_size(size_t SIZE_T)
+if(NOT HAVE_SIZE_T)
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+set(cmake_size_t "uint64_t")
+else()
+set(cmake_size_t "uint32_t")
+endif()
+endif() # NOT HAVE_SIZE_T
+
 # secp256k1 configure options
 # ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
 
