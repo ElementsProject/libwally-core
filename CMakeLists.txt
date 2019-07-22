@@ -118,7 +118,6 @@ else()
 set(INCLUDE_PYTHONHOME  "")
 endif()
 
-set(CMAKE_CXX_STANDARD, 11)
 
 ####################
 # config.h & libsecp256k1-config.h
@@ -501,7 +500,7 @@ add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
   VERBATIM
 )
 
-set(CMAKE_CXX_STANDARD, 11)
+set(CMAKE_CXX_STANDARD 11)
 add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
