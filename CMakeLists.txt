@@ -23,35 +23,42 @@ endif()
 # option(ENABLE_DEBUG "enable debugging (ON or OFF. default:OFF)" OFF)
 option(ENABLE_ELEMENTS "enable elements tx code (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:OFF)" OFF)
-option(ENABLE_SWIG_JAVA "enable the SWIG java (JNI) interface (ON or OFF. default:OFF)" OFF)
+option(ENABLE_SWIG_GO "enable the SWIG Go interface (ON or OFF. default:OFF)" OFF)
+option(GENERATE_WALLY "generate the wally.xxx library (ON or OFF. default:ON)" ON)
 
 if(CMAKE_JS_INC)
 option(ENABLE_JS_WRAPPER "enable the Javascript interface wrappers (ON or OFF. default:ON)" ON)
+else()
+set(ENABLE_JS_WRAPPER off)
 endif()
 option(ENABLE_TESTS "enable code tests for CTest (ON or OFF. default:ON)" ON)
 
 if(NOT WIN32)
+option(ENABLE_SWIG_JAVA "enable the SWIG java (JNI) interface (ON or OFF. default:OFF)" OFF)
 #option(TARGET_RPATH "target rpath list (separator is ';') (default:)" "")
 set(TARGET_RPATH "" CACHE STRING "target rpath list (separator is ';') (default:)")
 option(ENABLE_COVERAGE "enable code coverage (ON or OFF. default:OFF)" OFF)
 option(ENABLE_EXPORT_ALL "enable export all functions (for testing) (ON or OFF. default:OFF)" OFF)
-set(ENABLE_EXPORT_ALL_OPT "")
 else()
+set(ENABLE_SWIG_JAVA off)
+set(TARGET_RPATH off)
+set(ENABLE_COVERAGE off)
+set(ENABLE_EXPORT_ALL off)
+endif()
+
+if(ENABLE_EXPORT_ALL)
 set(ENABLE_EXPORT_ALL_OPT -fvisibility=hidden)
-set(TARGET_RPATH "")
-set(ENABLE_COVERAGE FALSE)
+else()
+set(ENABLE_EXPORT_ALL_OPT "")
 endif()
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 set(ENABLE_DEBUG  TRUE)
+set(RPATH_TARGET  "Debug")
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEBUGBUILD>)
-if(MSVC)
-set(CMAKE_C_FLAGS_DEBUG "/Zi")
-else()
-set(CMAKE_C_FLAGS_DEBUG "-ggdb")
-endif()
 else()
 set(ENABLE_DEBUG  FALSE)
+set(RPATH_TARGET  "Release")
 endif() # CMAKE_BUILD_TYPE
 
 ####################
@@ -70,8 +77,10 @@ endif()
 
 if(NOT ENABLE_ELEMENTS)
 set(ELEMENTS_COMP_OPT "")
+set(ELEMENTS_SWIG_DEFINE "")
 else()
 set(ELEMENTS_COMP_OPT  BUILD_ELEMENTS)
+set(ELEMENTS_SWIG_DEFINE -DBUILD_ELEMENTS)
 endif()
 
 if(NOT WIN32)
@@ -83,9 +92,9 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if(TARGET_RPATH)
-set(CMAKE_INSTALL_RPATH "${TARGET_RPATH};./;./build/Release;@rpath")
+set(CMAKE_INSTALL_RPATH "${TARGET_RPATH};./;./build/${RPATH_TARGET};./wallycore;@rpath")
 else()
-set(CMAKE_INSTALL_RPATH "./;./build/Release;@rpath")
+set(CMAKE_INSTALL_RPATH "./;./build/${RPATH_TARGET};./wallycore;@rpath")
 endif()
 endif()
 
@@ -109,12 +118,21 @@ else()
 set(INCLUDE_PYTHONHOME  "")
 endif()
 
+set(CMAKE_CXX_STANDARD, 11)
 
 ####################
 # config.h & libsecp256k1-config.h
 ####################
 project(wally_config C CXX)
 set(CONFIG_HEADER_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+if(MSVC)
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /Od /Zi")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /Zi")
+else()
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
+endif()
 
 # incomplete
 include(CheckFunctionExists)
@@ -237,6 +255,7 @@ else()
 set(USE_ASM_X86_64 "1")
 endif()
 set(USE_ECMULT_STATIC_PRECOMPUTATION "1")
+# set(USE_REDUCED_SURJECTION_PROOF_SIZE "1")
 
 find_package(GMP QUIET)
 if(GMP_FOUND)
@@ -276,7 +295,7 @@ set(GEN_CONTEXT_NAME gen_context)
 
 set(SECP256K_OUTPUT_PATH  ${CMAKE_CURRENT_BINARY_DIR})
 
-if(WIN32)
+if(WIN32 OR XCODE)
 set(GEN_CONTEXT_PATH ${WALLY_OBJ_BINARY_DIR}/${GEN_CONTEXT_NAME})
 else()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_BINARY_DIR})
@@ -354,6 +373,7 @@ set(LIBWALLY_FILES
     src/transaction.c
     src/wif.c
     src/wordlist.c
+#    src/symmetric.c
     src/ccan/ccan/crypto/ripemd160/ripemd160.c
     src/ccan/ccan/crypto/sha256/sha256.c
     src/ccan/ccan/crypto/sha512/sha512.c
@@ -369,6 +389,7 @@ set(LIBWALLY_FILES
     include/wally_elements.h
     include/wally_script.h
     include/wally_transaction.h
+#    include/wally_symmetric.h
     src/secp256k1/include/secp256k1.h
     src/bip32_int.h
     src/transaction_int.h
@@ -378,8 +399,21 @@ set(LIBWALLY_FILES
 ####################
 # libwally
 ####################
+if((GENERATE_WALLY) AND (NOT ${GENERATE_WALLY} STREQUAL "0"))
+set(GENERATE_WALLY_LIB TRUE)
+elseif(ENABLE_SWIG_JAVA)
+set(GENERATE_WALLY_LIB FALSE)
+elseif(ENABLE_JS_WRAPPER)
+set(GENERATE_WALLY_LIB TRUE)
+else()
+set(GENERATE_WALLY_LIB FALSE)
+endif()
+
+if(GENERATE_WALLY_LIB)
 project(wally C)
 set(WALLY_PROJECT_NAME wally)
+set(WALLYCORE_NAME wally)
+
 if(ENABLE_SHARED)
 add_library(${PROJECT_NAME} SHARED)
 else()
@@ -426,12 +460,13 @@ if(COLLECT_COVERAGE)
 target_link_libraries(${PROJECT_NAME} gcov)
 endif()
 
+endif() # GENERATE_WALLY OR (ENABLE_JS_WRAPPER)
+
 
 ####################
 # node.js build
 ####################
-if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
-message(STATUS "[CMAKE_JS_INC]=${CMAKE_JS_INC}")
+if(ENABLE_JS_WRAPPER)
 
 set(NODE_LIBRARY_NAME wallycore)
 project(wallycore CXX)
@@ -457,15 +492,16 @@ set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/Release)
 
 # generate source files, and create test directories
 add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-    COMMAND set PYTHONDONTWRITEBYTECODE=1
-    COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-    COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
-    VERBATIM
+  COMMAND set PYTHONDONTWRITEBYTECODE=1
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
+  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+  COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+  VERBATIM
 )
 
+set(CMAKE_CXX_STANDARD, 11)
 add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
@@ -547,7 +583,11 @@ add_custom_command(
 )
 
 
-else()	# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
+elseif(ENABLE_SWIG_JAVA)
+# after build
+set(WALLYCORE_NAME wallycore)
+
+else()	# ENABLE_JS_WRAPPER
 
 ####################
 # libwally library
@@ -586,9 +626,10 @@ target_compile_definitions(${WALLYCORE_NAME}
     HAVE_CONFIG_H
 )
 target_include_directories(${WALLYCORE_NAME}
-  PRIVATE
+  PUBLIC
     include
     src/secp256k1/include
+  PRIVATE
     ${CONFIG_HEADER_DIRECTORY}
     .
     src
@@ -602,7 +643,7 @@ if(COLLECT_COVERAGE)
 target_link_libraries(${WALLYCORE_NAME} gcov)
 endif()
 
-endif()		# CMAKE_JS_INC AND ENABLE_JS_WRAPPER
+endif()		# ENABLE_JS_WRAPPER
 
 
 ####################
@@ -618,24 +659,31 @@ if(ENABLE_SWIG_PYTHON)
 # set(ENV{PYTHONPATH} ".libs:swig_python")
 
 set(WALLY_SWIG_PYTHON_NAME wallycore_swig_python)
-project(wallycore_swig_python C)
+set(WALLY_SWIG_PYTHON_OUTPUT_NAME wallycore)
+project(${WALLY_SWIG_PYTHON_NAME} C)
 set(PYTHON_WALLY_FILE ${CMAKE_CURRENT_BINARY_DIR}/wallycore.py)
-set(PYTHON_WALLY_INIT_FILE ${CMAKE_CURRENT_BINARY_DIR}/__init__.py)
 
 set_property(SOURCE src/swig_python/swig.i PROPERTY SWIG_MODULE_NAME wallycore)
-set(INTERFACE_FILES  src/swig_python/swig.i)
+set(PY_INTERFACE_FILE  src/swig_python/swig.i)
 
 find_package(PythonLibs REQUIRED)
 find_package(SWIG REQUIRED)
 
 include(${SWIG_USE_FILE})
 include(GenerateExportHeader)
+include_directories(${PYTHON_INCLUDE_DIRS})
+message(STATUS "[PythonLibs version] ${PYTHONLIBS_VERSION_STRING}")
+
+if(NOT INCLUDE_PYTHONHOME)
+set(INCLUDE_PYTHONHOME  ${PYTHON_INCLUDE_DIRS})
+endif()
 
 # swig_python_wrap.c
 swig_add_library(${WALLY_SWIG_PYTHON_NAME}
+    TYPE SHARED
     LANGUAGE python
     OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${INTERFACE_FILES} ${LIBWALLY_FILES}
+    SOURCES ${PY_INTERFACE_FILE} ${LIBWALLY_FILES}
 )
 
 if(PYTHONHOME)
@@ -677,21 +725,20 @@ target_include_directories(${WALLY_SWIG_PYTHON_NAME}
 
 # SWIG_INCLUDE_DIRECTORIES
 set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS 
-    SWIG_PYTHON_BUILD USE_SWIG_PYTHON WALLY_CORE_BUILD SECP256K1_BUILD USE_ECMULT_STATIC_PRECOMPUTATION HAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
+    SWIG_PYTHON_BUILD WALLY_CORE_BUILD SECP256K1_BUILD USE_ECMULT_STATIC_PRECOMPUTATION HAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
 )
 set_property(TARGET ${WALLY_SWIG_PYTHON_NAME} PROPERTY SWIG_COMPILE_OPTIONS 
-    -DSWIG_PYTHON_BUILD -DUSE_SWIG_PYTHON -DWALLY_CORE_BUILD -DSECP256K1_BUILD -DHAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
+    -DSWIG_PYTHON_BUILD -DWALLY_CORE_BUILD -DSECP256K1_BUILD -DHAVE_CONFIG_H ${ELEMENTS_SWIG_DEFINE}
 )
 # swig_link_libraries(${WALLY_SWIG_PYTHON_NAME} ${PYTHON_LIBRARIES} wally)
 target_link_libraries(${WALLY_SWIG_PYTHON_NAME}
-  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:-static-libgcc> ${PYTHON_LIBRARIES}
-  INTERFACE wally)
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc> ${PYTHON_LIBRARIES})
 
 target_compile_options(${WALLY_SWIG_PYTHON_NAME}
   PRIVATE
     $<IF:$<C_COMPILER_ID:MSVC>,
       /LD /source-charset:utf-8 /wd4244 /I"${INCLUDE_PYTHONHOME}",
-      -Wall -Wextra -Wno-unused-function -I"${INCLUDE_PYTHONHOME}"
+      -Wall -Wextra -Wno-unused-function
     >
 )
 target_compile_definitions(${WALLY_SWIG_PYTHON_NAME}
@@ -700,9 +747,9 @@ target_compile_definitions(${WALLY_SWIG_PYTHON_NAME}
     WALLY_CORE_BUILD
     SECP256K1_BUILD
     HAVE_CONFIG_H
-    USE_SWIG_PYTHON
     SWIG_PYTHON_BUILD
 )
+set_target_properties(${WALLY_SWIG_PYTHON_NAME} PROPERTIES OUTPUT_NAME ${WALLY_SWIG_PYTHON_OUTPUT_NAME})
 
 # %SWIG_PATH%\swig -python -Isrc -I%SWIG_PATH%\Lib\python -DBUILD_ELEMENTS=1 src\swig_python\swig.i
 # copy src\swig_python\wallycore.py + src\swig_python\python_extra.py_in src\swig_python\wallycore\__init__.py /B
@@ -711,16 +758,57 @@ target_compile_definitions(${WALLY_SWIG_PYTHON_NAME}
 #     $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
 #     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
 
-set(GEN_PYTHON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/swig_python/python_extra.py_in)
+set(SWIG_PY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/swig_python)
+set(SWIG_PY_OUTPUT_DIR ${WALLY_ROOT_BINARY_DIR}/swig_python)
+set(GEN_PYTHON_FILE    ${SWIG_PY_SOURCE_DIR}/python_extra.py_in)
 
+if(WIN32)
 add_custom_target(swig_python_cmd  ALL
     COMMAND echo "[generate python file]"
-    COMMAND echo "copy /Y /B ${PYTHON_WALLY_FILE} + ${GEN_PYTHON_FILE} ${PYTHON_WALLY_INIT_FILE} /B"
-    COMMAND COPY /Y /B "${PYTHON_WALLY_FILE}" + "${GEN_PYTHON_FILE}" "${PYTHON_WALLY_INIT_FILE}" /B
+    COMMAND ${CMAKE_COMMAND} -E copy ${PYTHON_WALLY_FILE} wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${GEN_PYTHON_FILE} python_extra.py_in
+    COMMAND echo "copy /Y /B ${PYTHON_WALLY_FILE} + ${GEN_PYTHON_FILE}  __init__.py /B"
+    COMMAND COPY /Y /B wallycore.py + python_extra.py_in __init__.py /B
+    COMMAND ${CMAKE_COMMAND} -E remove -f wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E remove -f python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}/wallycore
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR} ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${SWIG_PY_OUTPUT_DIR}/swig.i
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${SWIG_PY_OUTPUT_DIR}/python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E copy __init__.py ${SWIG_PY_OUTPUT_DIR}/wallycore/__init__.py
+    COMMAND ${CMAKE_COMMAND} -E remove -f __init__.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/_${WALLY_SWIG_PYTHON_OUTPUT_NAME}.pyd ${SWIG_PY_OUTPUT_DIR}/wallycore/_${WALLY_SWIG_PYTHON_OUTPUT_NAME}.pyd
     DEPENDS ${WALLY_SWIG_PYTHON_NAME}
     VERBATIM
     USES_TERMINAL
 )
+else()
+set(SWIG_PY_OUTPUT_FILE  _${WALLY_SWIG_PYTHON_OUTPUT_NAME}.so)
+add_custom_target(swig_python_cmd  ALL
+    COMMAND echo "[generate python file]"
+    COMMAND ${CMAKE_COMMAND} -E copy ${PYTHON_WALLY_FILE} wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${GEN_PYTHON_FILE} python_extra.py_in
+    COMMAND echo "cat wallycore.py > __init__.py && cat python_extra.py_in >> __init__.py"
+    COMMAND cat wallycore.py > __init__.py
+    COMMAND cat python_extra.py_in >> __init__.py
+    COMMAND ${CMAKE_COMMAND} -E remove -f wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E remove -f python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}/wallycore
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR} ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${SWIG_PY_OUTPUT_DIR}/swig.i
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${SWIG_PY_OUTPUT_DIR}/python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E copy __init__.py ${SWIG_PY_OUTPUT_DIR}/wallycore/__init__.py
+    COMMAND ${CMAKE_COMMAND} -E remove -f __init__.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/${SWIG_PY_OUTPUT_FILE} ${SWIG_PY_OUTPUT_DIR}/wallycore/${SWIG_PY_OUTPUT_FILE}
+    # for test
+    COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/${SWIG_PY_OUTPUT_FILE} ${SWIG_PY_OUTPUT_DIR}/contrib/${SWIG_PY_OUTPUT_FILE}
+    DEPENDS ${WALLY_SWIG_PYTHON_NAME}
+    VERBATIM
+    USES_TERMINAL
+)
+endif()
 
 # if IS_OSX
 # # Python requires the shared library have a .so extension for 'import'
@@ -733,7 +821,181 @@ add_custom_target(swig_python_cmd  ALL
 # libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
 # libswig_python_la_LIBADD = $(PYTHON_LIBS)
 
-endif()		# USE_SWIG_PYTHON
+endif()		# ENABLE_SWIG_PYTHON
+
+
+####################
+# swig java
+####################
+if(ENABLE_SWIG_JAVA)
+
+find_package(JNI REQUIRED)
+find_package(Java REQUIRED)
+find_package(SWIG REQUIRED)
+
+include(${SWIG_USE_FILE})
+include(UseJava)
+include(GenerateExportHeader)
+set(JAVAC_TARGET  1.8)
+
+set(SECP256K1_JNI_FILES
+    src/secp256k1/src/java/org_bitcoin_NativeSecp256k1.c
+    src/secp256k1/src/java/org_bitcoin_Secp256k1Context.c
+    src/secp256k1/src/java/org_bitcoin_NativeSecp256k1.h
+    src/secp256k1/src/java/org_bitcoin_Secp256k1Context.h
+    src/secp256k1/include/secp256k1_ecdh.h
+    src/secp256k1/include/secp256k1_recovery.h
+)
+
+set(WALLY_SWIG_JAVA_NAME wallycore_swig_java)
+set(WALLY_PROJECT_NAME ${WALLY_SWIG_JAVA_NAME})
+set(WALLY_SWIG_JAVA_OUTPUT_NAME wallycore)
+set(WALLYCORE_NAME wallycore)
+project(${WALLY_SWIG_JAVA_NAME} C)
+
+set_property(SOURCE src/swig_java/swig.i PROPERTY SWIG_MODULE_NAME wallycore)
+set(SWIG_JAVA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/swig_java)
+set(SWIG_JAVA_OUTPUT_DIR ${WALLY_ROOT_BINARY_DIR}/swig_java)
+set(SWIG_JAVA_PACKAGE_DIR ${SWIG_JAVA_OUTPUT_DIR}/src/com/blockstream/libwally)
+set(GEN_JAVA_FILE    ${SWIG_JAVA_SOURCE_DIR}/jni_extra.java_in)
+set(OUT_JAVA_FILE    ${CMAKE_CURRENT_BINARY_DIR}/swigJAVA_wrap.c)
+set(JAVA_INTERFACE_FILE  ${SWIG_JAVA_SOURCE_DIR}/swig_gen.i)
+
+# change to "%module (jniclassname="name") modulename"
+add_custom_command(OUTPUT ${JAVA_INTERFACE_FILE}
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_JAVA_SOURCE_DIR}/swig.i ${JAVA_INTERFACE_FILE}
+  # https://www.linuxquestions.org/questions/linux-newbie-8/sed-gives-sed-e-expression-1-char-1-unknown-command-%60%27%27-947056/
+  COMMAND sed -i "s/ wallycore/ (jniclassname=\"Wally\") wallycore/" ${JAVA_INTERFACE_FILE}
+#  COMMAND sed -i 's/ = (char \*) (\*jenv)\->Get/ = (unsigned char \*) (\*jenv)\->Get/g' ${JAVA_INTERFACE_FILE}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+  VERBATIM
+)
+
+set(CMAKE_SWIG_FLAGS  -package com.blockstream.libwally)
+if(ENABLE_SHARED)
+swig_add_library(${WALLY_SWIG_JAVA_NAME}
+    TYPE SHARED
+    LANGUAGE java
+    NO_PROXY
+    OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${JAVA_INTERFACE_FILE} ${LIBWALLY_FILES} ${SECP256K1_JNI_FILES})
+else()
+swig_add_library(${WALLY_SWIG_JAVA_NAME}
+    TYPE STATIC
+    LANGUAGE java
+    NO_PROXY
+    OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    SOURCES ${JAVA_INTERFACE_FILE} ${LIBWALLY_FILES} ${SECP256K1_JNI_FILES})
+endif()
+
+# message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
+# message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
+include_directories(${JNI_INCLUDE_DIRS})
+set_property(TARGET ${WALLY_SWIG_JAVA_NAME} PROPERTY SWIG_INCLUDE_DIRECTORIES 
+    ${JNI_INCLUDE_DIRS}
+)
+# set full path.
+set_property(TARGET ${WALLY_SWIG_JAVA_NAME} PROPERTY SWIG_INCLUDE_DIRECTORIES 
+    ${CONFIG_HEADER_DIRECTORY}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ccan
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/java
+    ${SECP256K_OUTPUT_PATH}
+    ${SWIG_PATH}/Lib/java
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/swig_java
+    ${JNI_INCLUDE_DIRS}
+)
+target_include_directories(${WALLY_SWIG_JAVA_NAME}
+  PUBLIC
+    include
+    src/secp256k1/include
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    src/secp256k1/src/java
+    ${SECP256K_OUTPUT_PATH}
+    src/swig_java
+    ${JNI_INCLUDE_DIRS}
+)
+
+# SWIG_INCLUDE_DIRECTORIES
+set_property(TARGET ${WALLY_SWIG_JAVA_NAME} PROPERTY SWIG_COMPILE_DEFINITIONS 
+    SWIG_JAVA_BUILD WALLY_CORE_BUILD SECP256K1_BUILD USE_ECMULT_STATIC_PRECOMPUTATION HAVE_CONFIG_H ${ELEMENTS_COMP_OPT}
+)
+set_property(TARGET ${WALLY_SWIG_JAVA_NAME} PROPERTY SWIG_COMPILE_OPTIONS 
+    -DSWIG_JAVA_BUILD -DWALLY_CORE_BUILD -DSECP256K1_BUILD -DHAVE_CONFIG_H ${ELEMENTS_SWIG_DEFINE}
+)
+# swig_link_libraries(${WALLY_SWIG_JAVA_NAME} ${JNI_LIBRARIES} wally)
+target_link_libraries(${WALLY_SWIG_JAVA_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc> ${JNI_LIBRARIES})
+
+target_compile_options(${WALLY_SWIG_JAVA_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /LD /source-charset:utf-8 /wd4244 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /DSWIG_JAVA_BUILD /I"${JNI_INCLUDE_DIRS}" ${ELEMENTS_COMP_OPT},
+      -Wall -Wextra -Wno-unused-function
+    >
+)
+target_compile_definitions(${WALLY_SWIG_JAVA_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+    WALLY_CORE_BUILD
+    SECP256K1_BUILD
+    HAVE_CONFIG_H
+    SWIG_JAVA_BUILD
+)
+set_target_properties(${WALLY_SWIG_JAVA_NAME} PROPERTIES OUTPUT_NAME ${WALLY_SWIG_JAVA_OUTPUT_NAME})
+add_custom_command(
+    TARGET ${WALLY_SWIG_JAVA_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${JAVA_INTERFACE_FILE}
+    COMMAND ${CMAKE_COMMAND} -E copy  ${CMAKE_CURRENT_BINARY_DIR}/Wally.java ${SWIG_JAVA_SOURCE_DIR}/wallycoreJNI.java
+    COMMAND ${CMAKE_COMMAND} -E copy  ${CMAKE_CURRENT_BINARY_DIR}/wallycoreConstants.java ${SWIG_JAVA_SOURCE_DIR}/wallycoreConstants.java
+#    COMMAND sed -i 's/ = (char \*) (\*jenv)\->Get/ = (unsigned char \*) (\*jenv)\->Get/g' ${OUT_JAVA_FILE}
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/swigjavapost.sh sed ${ELEMENTS_COMP_OPT}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_JAVA_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_JAVA_SOURCE_DIR}/src ${SWIG_JAVA_OUTPUT_DIR}/src
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${SWIG_JAVA_SOURCE_DIR}/src/com/blockstream/libwally/Wally.java
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+set(SWIG_JAVA_JAR_NAME wallycore_swig_java_jar)
+
+project (${SWIG_JAVA_JAR_NAME} NONE)
+set(CMAKE_JAVA_COMPILE_FLAGS "-source" "${JAVAC_TARGET}" "-target" "${JAVAC_TARGET}")
+set(SWIG_JAVA_WALLY_FILE  ${SWIG_JAVA_PACKAGE_DIR}/Wally.java)
+set(OUT_JAR_FILE    ${SWIG_JAVA_OUTPUT_DIR}/wallycore.jar)
+add_jar(${SWIG_JAVA_JAR_NAME}
+    SOURCES ${SWIG_JAVA_WALLY_FILE}
+    OUTPUT_NAME wallycore
+    OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${SWIG_JAVA_JAR_NAME} ${WALLY_SWIG_JAVA_NAME})
+
+if(ENABLE_SHARED)
+add_custom_command(
+    TARGET ${SWIG_JAVA_JAR_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy  ${OUT_JAR_FILE} ${WALLY_OBJ_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy  ${WALLY_OBJ_BINARY_DIR}/libwallycore.so ${SWIG_JAVA_OUTPUT_DIR}
+)
+else()
+add_custom_command(
+    TARGET ${SWIG_JAVA_JAR_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy  ${OUT_JAR_FILE} ${WALLY_OBJ_BINARY_DIR}
+)
+endif()
+
+endif()		# ENABLE_SWIG_JAVA
 
 
 ####################
@@ -751,6 +1013,9 @@ endif()
 ####################
 # test for C
 ####################
+set(TEST_WALY_LIB  ${WALLY_PROJECT_NAME})
+# set(TEST_WALY_LIB  ${WALLYCORE_NAME})
+
 set(TEST_BECH32_NAME test_bech32)
 add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
 target_compile_options(${TEST_BECH32_NAME}
@@ -773,14 +1038,13 @@ target_include_directories(${TEST_BECH32_NAME}
 )
 target_link_directories(${TEST_BECH32_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_BECH32_NAME}
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
-    wally
+    ${TEST_WALY_LIB}
 )
 add_test(
   NAME ${TEST_BECH32_NAME}
@@ -811,21 +1075,20 @@ target_include_directories(${TEST_CLEAR_NAME}
 )
 target_link_directories(${TEST_CLEAR_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_CLEAR_NAME}
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
-    wally
+    ${TEST_WALY_LIB}
 )
 add_test(
   NAME ${TEST_CLEAR_NAME}
   COMMAND $<TARGET_FILE:${TEST_CLEAR_NAME}>
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
-endif()
+endif() # Clang
 
 set(TEST_TX_NAME test_tx)
 add_executable(${TEST_TX_NAME} src/ctest/test_tx.c)
@@ -849,14 +1112,13 @@ target_include_directories(${TEST_TX_NAME}
 )
 target_link_directories(${TEST_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_TX_NAME}
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
-    wally
+    ${TEST_WALY_LIB}
 )
 add_test(
   NAME ${TEST_TX_NAME}
@@ -891,14 +1153,13 @@ target_include_directories(${TEST_ELEMENTS_TX_NAME}
 )
 target_link_directories(${TEST_ELEMENTS_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_ELEMENTS_TX_NAME}
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
-    wally
+    ${TEST_WALY_LIB}
 )
 add_test(
   NAME ${TEST_ELEMENTS_TX_NAME}
@@ -911,12 +1172,121 @@ endif()
 # test for Python
 ####################
 if(ENABLE_SWIG_PYTHON)
+set(SWIG_PY_TEST_DIR ${SWIG_PY_OUTPUT_DIR}/contrib)
+find_package(Python3 COMPONENTS Interpreter)
+find_package(PythonInterp REQUIRED)
+if(WIN32)
+# windows for environment path
+set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
+elseif('${PYTHONLIBS_VERSION_STRING}' STREQUAL '${PYTHON_VERSION_STRING}')
+set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
+message(STATUS "python version is ${PYTHONLIBS_VERSION_STRING}")
+elseif('${PYTHONLIBS_VERSION_STRING}' VERSION_GREATER '3.0' AND Python3_Interpreter_FOUND)
+set(PYTHON_BIN  ${Python3_EXECUTABLE})
+message(STATUS "python is 3(${Python3_VERSION})")
+else()
+set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
+message(STATUS "python version is ${PYTHON_VERSION_STRING}")
+endif()
+
+# copy testfile
+add_test(NAME py_test_init1 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR}/contrib ${SWIG_PY_OUTPUT_DIR}/contrib )
+add_test(NAME py_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_OUTPUT_DIR}/wallycore ${SWIG_PY_TEST_DIR}/wallycore )
+
+add_test(NAME py_test_bip32           COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/bip32.py )
+add_test(NAME py_test_mnemonic        COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/mnemonic.py )
+add_test(NAME py_test_reconcile_sigs  COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/reconcile_sigs.py )
+## error occurred on windows
+add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/tx.py )
+
+if(ENABLE_ELEMENTS)
+add_test(NAME py_test_elements_tx     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/elements_tx.py )
+endif() # ENABLE_ELEMENTS
+
 endif()
 
 ####################
 # test for Java
 ####################
-if(ENABLE_SWIG_JAVA)
+if(${ENABLE_SWIG_JAVA} AND ${ENABLE_SHARED})
+project (swig_java_test NONE)
+set(SWIG_JAVA_TEST_PACKAGE_DIR ${SWIG_JAVA_OUTPUT_DIR}/src/com/blockstream/test)
+set(CMAKE_JAVA_COMPILE_FLAGS "-source" "${JAVAC_TARGET}" "-target" "${JAVAC_TARGET}")
+
+set(TEST_JAVA_BIP32 java_test_bip32)
+add_jar(${TEST_JAVA_BIP32}
+  SOURCES
+    ${SWIG_JAVA_TEST_PACKAGE_DIR}/test_bip32.java
+    ${SWIG_JAVA_WALLY_FILE}
+  ENTRY_POINT com/blockstream/test/test_bip32
+  OUTPUT_NAME ${TEST_JAVA_BIP32}
+  OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${TEST_JAVA_BIP32} ${SWIG_JAVA_JAR_NAME})
+add_test(
+  NAME ${TEST_JAVA_BIP32}
+  COMMAND
+    ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
+    java -jar ${TEST_JAVA_BIP32}.jar
+  WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
+)
+
+set(TEST_JAVA_NEMONIC java_test_nemonic)
+add_jar(${TEST_JAVA_NEMONIC}
+  SOURCES
+    ${SWIG_JAVA_TEST_PACKAGE_DIR}/test_mnemonic.java
+    ${SWIG_JAVA_WALLY_FILE}
+  ENTRY_POINT com/blockstream/test/test_mnemonic
+  OUTPUT_NAME ${TEST_JAVA_NEMONIC}
+  OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${TEST_JAVA_NEMONIC} ${SWIG_JAVA_JAR_NAME})
+add_test(
+  NAME ${TEST_JAVA_NEMONIC}
+  COMMAND
+    ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
+    java -jar ${TEST_JAVA_NEMONIC}.jar
+  WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
+)
+
+set(TEST_JAVA_TX java_test_tx)
+add_jar(${TEST_JAVA_TX}
+  SOURCES
+    ${SWIG_JAVA_TEST_PACKAGE_DIR}/test_tx.java
+    ${SWIG_JAVA_WALLY_FILE}
+  ENTRY_POINT com/blockstream/test/test_tx
+  OUTPUT_NAME ${TEST_JAVA_TX}
+  OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${TEST_JAVA_TX} ${SWIG_JAVA_JAR_NAME})
+add_test(
+  NAME ${TEST_JAVA_TX}
+  COMMAND
+    ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
+    java -jar ${TEST_JAVA_TX}.jar
+  WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
+)
+
+if(ENABLE_ELEMENTS)
+set(TEST_JAVA_ASSETS java_test_assets)
+add_jar(${TEST_JAVA_ASSETS}
+  SOURCES
+    ${SWIG_JAVA_TEST_PACKAGE_DIR}/test_assets.java
+    ${SWIG_JAVA_WALLY_FILE}
+  ENTRY_POINT com/blockstream/test/test_assets
+  OUTPUT_NAME ${TEST_JAVA_ASSETS}
+  OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${TEST_JAVA_ASSETS} ${SWIG_JAVA_JAR_NAME})
+add_test(
+  NAME ${TEST_JAVA_ASSETS}
+  COMMAND
+    ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
+    java -jar ${TEST_JAVA_ASSETS}.jar
+  WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
+)
+endif() # ENABLE_ELEMENTS
+
 endif()
 
 ####################
@@ -924,7 +1294,7 @@ endif()
 ####################
 if(NOT ENABLE_DEBUG)
 # Currently, wally.js only supports release builds.
-if(CMAKE_JS_INC AND ENABLE_JS_WRAPPER)
+if(ENABLE_JS_WRAPPER)
 # 'tape' is notfound on Windows, So it's call to 'node'.
 # (testfile is direct require to 'tape'.)
 set(NODE_TEST_BIN  node)
@@ -938,9 +1308,6 @@ set(NODE_TEST_BIN  node)
 add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/wallycore.node ${NODE_TEST_RELEASE_DIR} )
 add_test(NAME js_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_SRC_DIR} ${NODE_TEST_FILE_DIR} )
 
-if(ENABLE_ELEMENTS)
-add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
-endif() # ENABLE_ELEMENTS
 add_test(NAME js_test_aes      COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_aes.js )
 add_test(NAME js_test_base58   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_base58.js )
 add_test(NAME js_test_bip32    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip32.js )
@@ -949,10 +1316,15 @@ add_test(NAME js_test_bip39    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/te
 add_test(NAME js_test_hash     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_hash.js )
 add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_scrypt.js )
 add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
+if(ENABLE_ELEMENTS)
+add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
+# add_test(NAME js_test_confidential_address
+#     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
+endif() # ENABLE_ELEMENTS
 endif() # ENABLE_JS_WRAPPER
 endif() # ENABLE_DEBUG
 
-endif()
+endif() # ENABLE_TESTS
 
 
 ####################
