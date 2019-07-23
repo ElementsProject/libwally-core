@@ -111,6 +111,7 @@ class wally_tx(Structure):
 for f in (
     ('wally_init', c_int, [c_uint]),
     ('wally_cleanup', c_int, [c_uint]),
+    ('wally_is_elements_build', c_int, [c_ulong_p]),
     ('wordlist_init', c_void_p, [c_char_p]),
     ('wordlist_lookup_word', c_ulong, [c_void_p, c_char_p]),
     ('wordlist_lookup_index', c_char_p, [c_void_p, c_ulong]),
@@ -149,6 +150,8 @@ for f in (
     ('wally_confidential_addr_to_ec_public_key', c_int, [c_char_p, c_uint, c_void_p, c_ulong]),
     ('wally_asset_blinding_key_from_seed', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_asset_blinding_key_to_ec_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_asset_unblind', c_int, [c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_asset_unblind_with_nonce', c_int, [c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
     ('wally_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha256d', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
