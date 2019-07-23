@@ -173,7 +173,7 @@ if is_elements_build():
 
     def _asset_unblind_fn(fn):
         def wrapped(*args):
-            buffers = [bytearray(ASSET_TAG_LEN) for _ in xrange(3)]
+            buffers = [bytearray(ASSET_TAG_LEN) for _ in range(3)]
             ret = fn(*list(args) + buffers)
             return ret, buffers[0], buffers[1], buffers[2]
         return wrapped
