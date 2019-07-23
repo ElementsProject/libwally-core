@@ -133,6 +133,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
 %pybuffer_nullable_binary(const unsigned char *witness, size_t witness_len);
 %pybuffer_binary(const unsigned char *nonce, size_t nonce_len);
+%pybuffer_binary(const unsigned char *nonce_hash, size_t nonce_hash_len);
 %pybuffer_binary(const unsigned char *entropy, size_t entropy_len);
 %pybuffer_binary(const unsigned char *contract_hash, size_t contract_hash_len);
 %pybuffer_nullable_binary(const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);

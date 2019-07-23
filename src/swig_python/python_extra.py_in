@@ -163,6 +163,7 @@ if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)
     asset_value_commitment = _wrap_bin(asset_value_commitment, ASSET_COMMITMENT_LEN)
+    asset_rangeproof_with_nonce = _wrap_bin(asset_rangeproof_with_nonce, ASSET_RANGEPROOF_MAX_LEN, resize=True)
     asset_rangeproof = _wrap_bin(asset_rangeproof, ASSET_RANGEPROOF_MAX_LEN, resize=True)
     def _asset_surjectionproof_len_fn(aid, ag, gen, r, in_aid, in_abf, in_ags):
         return asset_surjectionproof_size(len(in_aid) // ASSET_TAG_LEN)
@@ -176,6 +177,7 @@ if is_elements_build():
             ret = fn(*list(args) + buffers)
             return ret, buffers[0], buffers[1], buffers[2]
         return wrapped
+    asset_unblind_with_nonce = _asset_unblind_fn(asset_unblind_with_nonce)
     asset_unblind = _asset_unblind_fn(asset_unblind)
 
     tx_elements_input_init = _wrap_with_defaults(tx_elements_input_init, 4, 12)

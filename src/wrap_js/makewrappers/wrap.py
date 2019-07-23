@@ -172,6 +172,17 @@ FUNCS_NODE = [
         'const_uint64s[values]', 'uint32_t[num_inputs]',
         'const_bytes[abf]', 'const_bytes[vbf]', 'out_bytes_fixedsized'
     ], out_size='32')),
+    ('wally_asset_unblind_with_nonce', F([
+        'const_bytes[nonce_hash]',
+        'const_bytes[rangeproof]',
+        'const_bytes[commitment]',
+        'const_bytes[extra_in]',
+        'const_bytes[generator]',
+        'out_bytes_fixedsized',
+        'out_bytes_fixedsized',
+        'out_bytes_fixedsized',
+        'out_uint64_t'
+    ], out_sizes=['32', '32', '32'])),
     ('wally_asset_unblind', F([
         'const_bytes[pubkey]',
         'const_bytes[privkey]',
@@ -188,6 +199,20 @@ FUNCS_NODE = [
         'uint64_t[value]', 'const_bytes[vbf]', 'const_bytes[generator]',
         'out_bytes_fixedsized'
     ], out_size='33')),
+    ('wally_asset_rangeproof_with_nonce', F([
+        'uint64_t[value]',
+        'const_bytes[nonce_hash]',
+        'const_bytes[asset]',
+        'const_bytes[abf]',
+        'const_bytes[vbf]',
+        'const_bytes[commitment]',
+        'const_bytes[extra_in]',
+        'const_bytes[generator]',
+        'uint64_t[min_value]',
+        'int[exp]',
+        'int[min_bits]',
+        'out_bytes_sized',
+    ], out_size='5134')),
     ('wally_asset_rangeproof', F([
         'uint64_t[value]',
         'const_bytes[pub_key]',

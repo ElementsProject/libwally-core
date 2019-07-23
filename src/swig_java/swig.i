@@ -399,9 +399,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_aes_cbc);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
+%returns_size_t(wally_asset_rangeproof_with_nonce);
 %returns_size_t(wally_asset_rangeproof);
 %returns_size_t(wally_asset_surjectionproof_size);
 %returns_size_t(wally_asset_surjectionproof);
+%returns_uint64(wally_asset_unblind_with_nonce);
 %returns_uint64(wally_asset_unblind);
 %returns_array_(wally_asset_blinding_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_asset_blinding_key_to_ec_private_key, 5, 6, EC_PRIVATE_KEY_LEN);
