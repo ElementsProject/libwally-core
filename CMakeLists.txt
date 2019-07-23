@@ -1019,7 +1019,7 @@ set(TEST_BECH32_NAME test_bech32)
 add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
 target_compile_options(${TEST_BECH32_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_BECH32_NAME}
   PRIVATE
@@ -1039,7 +1039,7 @@ target_link_directories(${TEST_BECH32_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_BECH32_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1056,7 +1056,7 @@ set(TEST_CLEAR_NAME test_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_CLEAR_NAME}
   PRIVATE
@@ -1076,7 +1076,7 @@ target_link_directories(${TEST_CLEAR_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_CLEAR_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1093,7 +1093,7 @@ set(TEST_TX_NAME test_tx)
 add_executable(${TEST_TX_NAME} src/ctest/test_tx.c)
 target_compile_options(${TEST_TX_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_TX_NAME}
   PRIVATE
@@ -1113,7 +1113,7 @@ target_link_directories(${TEST_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_TX_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1134,7 +1134,7 @@ set(TEST_ELEMENTS_TX_NAME test_elements_tx)
 add_executable(${TEST_ELEMENTS_TX_NAME} src/ctest/test_elements_tx.c)
 target_compile_options(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
 )
 target_compile_definitions(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
@@ -1154,7 +1154,7 @@ target_link_directories(${TEST_ELEMENTS_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_ELEMENTS_TX_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
