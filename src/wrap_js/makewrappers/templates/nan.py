@@ -189,13 +189,18 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
     if (ret == WALLY_OK) {
         void *hint = reinterpret_cast<void*>(allocated_size);
         Nan::MaybeLocal<v8::Object> buff;
-        buff = Nan::NewBuffer(reinterpret_cast<char*>(ptr),
-                              size);  // , FreeMemoryCB, hint
-        if (buff.IsEmpty()) {
-            ret = WALLY_ENOMEM;
-            // FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
-        } else
-            res = buff.ToLocalChecked();
+        void *addr = malloc(allocated_size);
+        if (addr) {
+            memcpy(addr, ptr, size);
+            buff = Nan::NewBuffer(reinterpret_cast<char*>(addr),
+                                  size);  // , FreeMemoryCB, hint
+            if (buff.IsEmpty()) {
+                ret = WALLY_ENOMEM;
+                // FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
+                free(addr);
+            } else
+                res = buff.ToLocalChecked();
+        }
     }
     return res;
 }
@@ -440,6 +445,7 @@ def _generate_nan(funcname, f):
             args.append('&out_size')
             postprocessing.extend([
                 'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);'
+                'FreeMemoryCB(reinterpret_cast<char *>(res_ptr), (void *)res_size);',
             ])
         elif arg == 'out_bytes_fixedsized':
             output_args.extend([
@@ -451,6 +457,7 @@ def _generate_nan(funcname, f):
             if num_outs > 1:
                 postprocessing.extend([
                     'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
+                    'FreeMemoryCB(reinterpret_cast<char *>(res_ptr%s), (void *)(res_size%s));'% (i, i),
                     'if (ret == WALLY_OK)',
                     '    res->Set(%s, res%s);' % (cur_out, i),
                 ])
@@ -458,6 +465,7 @@ def _generate_nan(funcname, f):
             else:
                 postprocessing.extend([
                     'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
+                    'FreeMemoryCB(reinterpret_cast<char *>(res_ptr%s), (void *)(res_size%s));'% (i, i),
                 ])
                 result_wrap = 'res%s' % i
         elif arg == 'out_uint64_t':
@@ -468,9 +476,12 @@ def _generate_nan(funcname, f):
             ])
             args.append('be64%s' % i)
             postprocessing.extend([
-                'LocalObject res%s = AllocateBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
                 'if (ret == WALLY_OK) {',
                 '    *be64%s = cpu_to_be64(*be64%s);' % (i, i),
+                '}',
+                'LocalObject res%s = AllocateBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
+                'FreeMemoryCB(reinterpret_cast<char *>(res_ptr%s), (void *)(sizeof(uint64_t)));'% (i),
+                'if (ret == WALLY_OK) {',
                 '    res->Set(%s, res%s);' % (cur_out, i),
                 '}',
             ])
