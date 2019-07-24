@@ -190,10 +190,10 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
         void *hint = reinterpret_cast<void*>(allocated_size);
         Nan::MaybeLocal<v8::Object> buff;
         buff = Nan::NewBuffer(reinterpret_cast<char*>(ptr),
-                              size, FreeMemoryCB, hint);
+                              size);  // , FreeMemoryCB, hint
         if (buff.IsEmpty()) {
             ret = WALLY_ENOMEM;
-            FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
+            // FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
         } else
             res = buff.ToLocalChecked();
     }
@@ -445,27 +445,30 @@ def _generate_nan(funcname, f):
             output_args.extend([
                 'const uint32_t res_size%s = GetUInt32(info, %s, ret);' % (i, i),
                 'unsigned char *res_ptr%s = Allocate(res_size%s, ret);' % (i, i),
-                'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
             ])
             args.append('res_ptr%s' % i)
             args.append('res_size%s' % i)
             if num_outs > 1:
                 postprocessing.extend([
+                    'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
                     'if (ret == WALLY_OK)',
                     '    res->Set(%s, res%s);' % (cur_out, i),
                 ])
                 cur_out += 1
             else:
+                postprocessing.extend([
+                    'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
+                ])
                 result_wrap = 'res%s' % i
         elif arg == 'out_uint64_t':
             assert num_outs > 1  # wally_asset_unblind is the only func using this type
             output_args.extend([
                 'unsigned char *res_ptr%s = Allocate(sizeof(uint64_t), ret);' % i,
-                'LocalObject res%s = AllocateBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
                 'uint64_t *be64%s = reinterpret_cast<uint64_t *>(res_ptr%s);' % (i, i),
             ])
             args.append('be64%s' % i)
             postprocessing.extend([
+                'LocalObject res%s = AllocateBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
                 'if (ret == WALLY_OK) {',
                 '    *be64%s = cpu_to_be64(*be64%s);' % (i, i),
                 '    res->Set(%s, res%s);' % (cur_out, i),
