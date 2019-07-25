@@ -187,20 +187,12 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
 {
     LocalObject res;
     if (ret == WALLY_OK) {
-        void *hint = reinterpret_cast<void*>(allocated_size);
-        Nan::MaybeLocal<v8::Object> buff;
-        void *addr = malloc(allocated_size);
-        if (addr) {
-            memcpy(addr, ptr, size);
-            buff = Nan::NewBuffer(reinterpret_cast<char*>(addr),
-                                  size);  // , FreeMemoryCB, hint
-            if (buff.IsEmpty()) {
-                ret = WALLY_ENOMEM;
-                // FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
-                free(addr);
-            } else
-                res = buff.ToLocalChecked();
-        }
+    Nan::MaybeLocal<v8::Object> buff;
+    buff = Nan::CopyBuffer(reinterpret_cast<char*>(ptr), size);
+    if (buff.IsEmpty()) {
+        ret = WALLY_ENOMEM;
+    } else
+        res = buff.ToLocalChecked();
     }
     return res;
 }
