@@ -187,12 +187,12 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
 {
     LocalObject res;
     if (ret == WALLY_OK) {
-    Nan::MaybeLocal<v8::Object> buff;
-    buff = Nan::CopyBuffer(reinterpret_cast<char*>(ptr), size);
-    if (buff.IsEmpty()) {
-        ret = WALLY_ENOMEM;
-    } else
-        res = buff.ToLocalChecked();
+        Nan::MaybeLocal<v8::Object> buff;
+        buff = Nan::CopyBuffer(reinterpret_cast<char*>(ptr), size);
+        if (buff.IsEmpty()) {
+            ret = WALLY_ENOMEM;
+        } else
+            res = buff.ToLocalChecked();
     }
     return res;
 }
@@ -301,9 +301,9 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
         outputs->Set(i, output);
 
         if(tx->outputs[i].satoshi > 0) {
-            Nan::Set(output, Nan::New("satoshi").ToLocalChecked(), Nan::New<v8::String>(ToString<uint64_t>(tx->outputs[i].satoshi)).ToLocalChecked());
+            Nan::Set(output, Nan::New("satoshi").ToLocalChecked(), Nan::New<v8::String>(std::to_string(tx->outputs[i].satoshi)).ToLocalChecked());
         } else {
-            Nan::Set(output, Nan::New("satoshi").ToLocalChecked(), Nan::New<v8::String>(ToString<uint64_t>(0)).ToLocalChecked());
+            Nan::Set(output, Nan::New("satoshi").ToLocalChecked(), Nan::New<v8::String>(std::to_string(0)).ToLocalChecked());
         }
 
         if(tx->outputs[i].script_len > 0) {
@@ -391,6 +391,10 @@ def _generate_nan(funcname, f):
                 'std::char_traits<char>::copy(char%s, info%s.c_str(), info%s.size() + 1);' % (i, i, i),
             ])
             args.append('char%s' % i)
+            postprocessing.extend([
+                'if (char%s)' % i,
+                '    delete[] char%s;' % i,
+            ])
         elif arg.startswith('string'):
             args.append('*Nan::Utf8String(info[%s])' % i)
         elif arg.startswith('const_uint64s'):
@@ -436,7 +440,7 @@ def _generate_nan(funcname, f):
             args.append('res_size')
             args.append('&out_size')
             postprocessing.extend([
-                'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);'
+                'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);',
                 'FreeMemoryCB(reinterpret_cast<char *>(res_ptr), (void *)res_size);',
             ])
         elif arg == 'out_bytes_fixedsized':
@@ -505,10 +509,14 @@ def _generate_nan(funcname, f):
             ) % (i))
             args.append('wordlist')
         elif arg == 'tx_out':
-            input_args.append('struct wally_tx *tx_out%s;' % i)
+            input_args.append('struct wally_tx *tx_out%s = NULL;' % i)
             args.append('&tx_out%s' % i)
             postprocessing.extend([
-                'v8::Local<v8::Object> res = TransactionToObject(tx_out%s, ret);' % i
+                'v8::Local<v8::Object> res;',
+                'if (ret == WALLY_OK) {',
+                '    res = TransactionToObject(tx_out%s, ret);' % i,
+                '    wally_tx_free(tx_out%s);'% i,
+                '}',
             ])
         else:
             assert False, 'unknown argument type'
