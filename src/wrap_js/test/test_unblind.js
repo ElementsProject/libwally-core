@@ -6,11 +6,13 @@ var blinded_tx_hex = "02000000010146eb362c8094de24c1bee6bd9b30d890f093950d06a6d8
 var target_idx = 0;
 
 test('unblind', function(t) {
-	t.plan(4);
+	t.plan(6);
     wally.wally_tx_from_hex(
         blinded_tx_hex, wally.WALLY_TX_FLAG_USE_WITNESS + wally.WALLY_TX_FLAG_USE_ELEMENTS
     
     ).then((tx) => {
+        t.equal(8478, tx.weight);
+        t.equal(2120, tx.vsize);
         let output = tx.outputs[target_idx];
         console.log(output);
         return wally.wally_asset_unblind(

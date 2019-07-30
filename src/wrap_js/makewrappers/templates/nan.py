@@ -338,6 +338,17 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
 
     Nan::Set(obj, Nan::New("lock_time").ToLocalChecked(), Nan::New<v8::Uint32>(tx->locktime));
 
+    int wally_ret;
+    size_t weight = 0;
+    wally_ret = wally_tx_get_weight(tx, &weight);
+    if (wally_ret == WALLY_OK)
+        Nan::Set(obj, Nan::New("weight").ToLocalChecked(), Nan::New<v8::Uint32>(static_cast<uint32_t>(weight)));
+
+    size_t vsize = 0;
+    wally_ret = wally_tx_get_vsize(tx, &vsize);
+    if (wally_ret == WALLY_OK)
+        Nan::Set(obj, Nan::New("vsize").ToLocalChecked(), Nan::New<v8::Uint32>(static_cast<uint32_t>(vsize)));
+
     return obj;
 }
 
