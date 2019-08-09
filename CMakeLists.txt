@@ -1317,6 +1317,7 @@ add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/te
 add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
 if(ENABLE_ELEMENTS)
 add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
+add_test(NAME js_test_unblind   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_unblind.js )
 # add_test(NAME js_test_confidential_address
 #     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
 endif() # ENABLE_ELEMENTS

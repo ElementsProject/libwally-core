@@ -201,7 +201,7 @@ static unsigned char* Allocate(uint32_t size, int& ret)
     return res;
 }
 
-static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t allocated_size, int& ret)
+static LocalObject CopyBuffer(unsigned char* ptr, uint32_t size, uint32_t allocated_size, int& ret)
 {
     LocalObject res;
     if (ret == WALLY_OK) {
@@ -209,6 +209,23 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
         buff = Nan::CopyBuffer(reinterpret_cast<char*>(ptr), size);
         if (buff.IsEmpty()) {
             ret = WALLY_ENOMEM;
+        } else
+            res = buff.ToLocalChecked();
+    }
+    return res;
+}
+
+static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t allocated_size, int& ret)
+{
+    LocalObject res;
+    if (ret == WALLY_OK) {
+        void *hint = reinterpret_cast<void*>(allocated_size);
+        Nan::MaybeLocal<v8::Object> buff;
+        buff = Nan::NewBuffer(reinterpret_cast<char*>(ptr),
+                              size, FreeMemoryCB, hint);
+        if (buff.IsEmpty()) {
+            ret = WALLY_ENOMEM;
+            FreeMemoryCB(reinterpret_cast<char*>(ptr), hint);
         } else
             res = buff.ToLocalChecked();
     }
@@ -230,8 +247,8 @@ static v8::Local<v8::Object> CreateWallyTxWitnessStack(wally_tx_witness_stack *w
 
     Nan::Set(res, Nan::New("items").ToLocalChecked(), items);
     for(size_t i = 0; i < witness_stack->num_items; i++) {
-        LocalObject item = AllocateBuffer(witness_stack->items[i].witness, witness_stack->items[i].witness_len, witness_stack->items[i].witness_len, ret);
-        items->Set(i, item);        
+        LocalObject item = CopyBuffer(witness_stack->items[i].witness, witness_stack->items[i].witness_len, witness_stack->items[i].witness_len, ret);
+        items->Set(i, item);
     }
 
     Nan::Set(res, Nan::New("items_allocation_len").ToLocalChecked(), Nan::New<v8::Number>(witness_stack->items_allocation_len));
@@ -258,7 +275,7 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
         inputs->Set(i, input);
 
         if(sizeof(tx->inputs[i].txhash) > 0) {
-            LocalObject tx_hash = AllocateBuffer(tx->inputs[i].txhash, WALLY_TXHASH_LEN, WALLY_TXHASH_LEN, ret);
+            LocalObject tx_hash = CopyBuffer(tx->inputs[i].txhash, WALLY_TXHASH_LEN, WALLY_TXHASH_LEN, ret);
             Nan::Set(input, Nan::New("tx_hash").ToLocalChecked(), tx_hash);
         }
 
@@ -266,7 +283,7 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
         Nan::Set(input, Nan::New("sequence").ToLocalChecked(), Nan::New<v8::Uint32>(tx->inputs[i].sequence));
         
         if(tx->inputs[i].script_len > 0) {
-            LocalObject script_pub = AllocateBuffer(tx->inputs[i].script, tx->inputs[i].script_len, tx->inputs[i].script_len, ret);
+            LocalObject script_pub = CopyBuffer(tx->inputs[i].script, tx->inputs[i].script_len, tx->inputs[i].script_len, ret);
             Nan::Set(input, Nan::New("script_pub").ToLocalChecked(), script_pub);
         }
         
@@ -277,27 +294,27 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
         Nan::Set(input, Nan::New("feature").ToLocalChecked(), Nan::New<v8::Number>(tx->inputs[i].features));
 #ifdef BUILD_ELEMENTS
         if(sizeof(tx->inputs[i].blinding_nonce) > 0) {
-            LocalObject blinding_nonce = AllocateBuffer(tx->inputs[i].blinding_nonce, SHA256_LEN, SHA256_LEN, ret);
+            LocalObject blinding_nonce = CopyBuffer(tx->inputs[i].blinding_nonce, SHA256_LEN, SHA256_LEN, ret);
             Nan::Set(input, Nan::New("blinding_nonce").ToLocalChecked(), blinding_nonce);
         }
         if(sizeof(tx->inputs[i].entropy) > 0) {
-            LocalObject entropy = AllocateBuffer(tx->inputs[i].entropy, SHA256_LEN, SHA256_LEN, ret);
+            LocalObject entropy = CopyBuffer(tx->inputs[i].entropy, SHA256_LEN, SHA256_LEN, ret);
             Nan::Set(input, Nan::New("entropy").ToLocalChecked(), entropy);
         }
         if(tx->inputs[i].issuance_amount_len > 0) {
-            LocalObject issuance_amount = AllocateBuffer(tx->inputs[i].issuance_amount, tx->inputs[i].issuance_amount_len, tx->inputs[i].issuance_amount_len, ret);
+            LocalObject issuance_amount = CopyBuffer(tx->inputs[i].issuance_amount, tx->inputs[i].issuance_amount_len, tx->inputs[i].issuance_amount_len, ret);
             Nan::Set(input, Nan::New("issuance_amount").ToLocalChecked(), issuance_amount);
         }
         if(tx->inputs[i].inflation_keys_len > 0) {
-            LocalObject inflation_keys = AllocateBuffer(tx->inputs[i].inflation_keys, tx->inputs[i].inflation_keys_len, tx->inputs[i].inflation_keys_len, ret);
+            LocalObject inflation_keys = CopyBuffer(tx->inputs[i].inflation_keys, tx->inputs[i].inflation_keys_len, tx->inputs[i].inflation_keys_len, ret);
             Nan::Set(input, Nan::New("inflation_keys").ToLocalChecked(), inflation_keys);
         }
         if(tx->inputs[i].issuance_amount_rangeproof_len > 0) {
-            LocalObject issuance_amount_rangeproof = AllocateBuffer(tx->inputs[i].issuance_amount_rangeproof, tx->inputs[i].issuance_amount_rangeproof_len, tx->inputs[i].issuance_amount_rangeproof_len, ret);
+            LocalObject issuance_amount_rangeproof = CopyBuffer(tx->inputs[i].issuance_amount_rangeproof, tx->inputs[i].issuance_amount_rangeproof_len, tx->inputs[i].issuance_amount_rangeproof_len, ret);
             Nan::Set(input, Nan::New("issuance_amount_rangeproof").ToLocalChecked(), issuance_amount_rangeproof);
         }
         if(tx->inputs[i].inflation_keys_rangeproof_len > 0) {
-            LocalObject inflation_keys_rangeproof = AllocateBuffer(tx->inputs[i].inflation_keys_rangeproof, tx->inputs[i].inflation_keys_rangeproof_len, tx->inputs[i].inflation_keys_rangeproof_len, ret);
+            LocalObject inflation_keys_rangeproof = CopyBuffer(tx->inputs[i].inflation_keys_rangeproof, tx->inputs[i].inflation_keys_rangeproof_len, tx->inputs[i].inflation_keys_rangeproof_len, ret);
             Nan::Set(input, Nan::New("inflation_keys_rangeproof").ToLocalChecked(), inflation_keys_rangeproof);
         }
 
@@ -325,30 +342,30 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
         }
 
         if(tx->outputs[i].script_len > 0) {
-            LocalObject scriptPubKey = AllocateBuffer(tx->outputs[i].script, (uint32_t)tx->outputs[i].script_len, (uint32_t)tx->outputs[i].script_len, ret);
+            LocalObject scriptPubKey = CopyBuffer(tx->outputs[i].script, (uint32_t)tx->outputs[i].script_len, (uint32_t)tx->outputs[i].script_len, ret);
             Nan::Set(output, Nan::New("scriptPubKey").ToLocalChecked(), scriptPubKey);
         }
 
         Nan::Set(output, Nan::New("feature").ToLocalChecked(), Nan::New<v8::Number>(tx->outputs[i].features));
 #ifdef BUILD_ELEMENTS
         if(tx->outputs[i].asset_len > 0) {
-            LocalObject asset = AllocateBuffer(tx->outputs[i].asset, (uint32_t)tx->outputs[i].asset_len, (uint32_t)tx->outputs[i].asset_len, ret);
+            LocalObject asset = CopyBuffer(tx->outputs[i].asset, (uint32_t)tx->outputs[i].asset_len, (uint32_t)tx->outputs[i].asset_len, ret);
             Nan::Set(output, Nan::New("asset").ToLocalChecked(), asset);
         }
         if(tx->outputs[i].value_len > 0) {
-            LocalObject value = AllocateBuffer(tx->outputs[i].value, (uint32_t)tx->outputs[i].value_len, (uint32_t)tx->outputs[i].value_len, ret);
+            LocalObject value = CopyBuffer(tx->outputs[i].value, (uint32_t)tx->outputs[i].value_len, (uint32_t)tx->outputs[i].value_len, ret);
             Nan::Set(output, Nan::New("value").ToLocalChecked(), value);
         }
         if(tx->outputs[i].nonce_len > 0) {
-            LocalObject nonce = AllocateBuffer(tx->outputs[i].nonce, (uint32_t)tx->outputs[i].nonce_len, (uint32_t)tx->outputs[i].nonce_len, ret);
+            LocalObject nonce = CopyBuffer(tx->outputs[i].nonce, (uint32_t)tx->outputs[i].nonce_len, (uint32_t)tx->outputs[i].nonce_len, ret);
             Nan::Set(output, Nan::New("nonce").ToLocalChecked(), nonce);
         }
         if(tx->outputs[i].surjectionproof_len > 0) {
-            LocalObject surjectionproof = AllocateBuffer(tx->outputs[i].surjectionproof, (uint32_t)tx->outputs[i].surjectionproof_len, (uint32_t)tx->outputs[i].surjectionproof_len, ret);
+            LocalObject surjectionproof = CopyBuffer(tx->outputs[i].surjectionproof, (uint32_t)tx->outputs[i].surjectionproof_len, (uint32_t)tx->outputs[i].surjectionproof_len, ret);
             Nan::Set(output, Nan::New("surjectionproof").ToLocalChecked(), surjectionproof);
         }
         if(tx->outputs[i].rangeproof_len > 0) {
-            LocalObject rangeproof = AllocateBuffer(tx->outputs[i].rangeproof, (uint32_t)tx->outputs[i].rangeproof_len, (uint32_t)tx->outputs[i].rangeproof_len, ret);
+            LocalObject rangeproof = CopyBuffer(tx->outputs[i].rangeproof, (uint32_t)tx->outputs[i].rangeproof_len, (uint32_t)tx->outputs[i].rangeproof_len, ret);
             Nan::Set(output, Nan::New("rangeproof").ToLocalChecked(), rangeproof);
         }
 #endif /* BUILD_ELEMENTS */
@@ -466,35 +483,31 @@ def _generate_nan(funcname, f):
             output_args.extend([
                 'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
                 'unsigned char *res_ptr = Allocate(res_size, ret);',
-                'size_t out_size;'
+                'size_t out_size = 0;'
             ])
             args.append('res_ptr')
             args.append('res_size')
             args.append('&out_size')
             postprocessing.extend([
+                'if (ret != WALLY_OK)',
+                '    FreeMemoryCB(reinterpret_cast<char *>(res_ptr), (void *)(res_size));',
                 'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);',
-                'FreeMemoryCB(reinterpret_cast<char *>(res_ptr), (void *)res_size);',
             ])
         elif arg == 'out_bytes_fixedsized':
             output_args.extend([
                 'const uint32_t res_size%s = GetUInt32(info, %s, ret);' % (i, i),
                 'unsigned char *res_ptr%s = Allocate(res_size%s, ret);' % (i, i),
+                'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
             ])
             args.append('res_ptr%s' % i)
             args.append('res_size%s' % i)
             if num_outs > 1:
                 postprocessing.extend([
-                    'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
-                    'FreeMemoryCB(reinterpret_cast<char *>(res_ptr%s), (void *)(res_size%s));'% (i, i),
                     'if (ret == WALLY_OK)',
                     '    res->Set(%s, res%s);' % (cur_out, i),
                 ])
                 cur_out += 1
             else:
-                postprocessing.extend([
-                    'LocalObject res%s = AllocateBuffer(res_ptr%s, res_size%s, res_size%s, ret);' % (i, i, i, i),
-                    'FreeMemoryCB(reinterpret_cast<char *>(res_ptr%s), (void *)(res_size%s));'% (i, i),
-                ])
                 result_wrap = 'res%s' % i
         elif arg == 'out_uint64_t':
             assert num_outs > 1  # wally_asset_unblind is the only func using this type
@@ -507,7 +520,7 @@ def _generate_nan(funcname, f):
                 'if (ret == WALLY_OK) {',
                 '    *be64%s = cpu_to_be64(*be64%s);' % (i, i),
                 '}',
-                'LocalObject res%s = AllocateBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
+                'LocalObject res%s = CopyBuffer(res_ptr%s, sizeof(uint64_t), sizeof(uint64_t), ret);' % (i, i),
                 'FreeMemoryCB(reinterpret_cast<char *>(res_ptr%s), (void *)(sizeof(uint64_t)));'% (i),
                 'if (ret == WALLY_OK) {',
                 '    res->Set(%s, res%s);' % (cur_out, i),
