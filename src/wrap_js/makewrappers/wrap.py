@@ -153,7 +153,9 @@ FUNCS = [
     ('wally_ec_public_key_from_private_key', F([
         'const_bytes[key]', 'out_bytes_fixedsized'
     ], out_size='33')),
-
+    ('wally_tx_from_hex', F([
+        'const_char', 'uint32_t[flags]', 'tx_out'
+    ])),
     ('wally_format_bitcoin_message', F([
         'const_bytes[message]', 'uint32_t[flags]',
     'out_bytes_sized'
@@ -162,6 +164,10 @@ FUNCS = [
 ]
 FUNCS_NODE = [
     # Assets:
+    ('wally_confidential_addr_from_addr', F([
+        'string[addr]', 'uint32_t[prefix]', 'const_bytes[pubkey]', 
+        'out_str_p'
+    ])),
     ('wally_asset_generator_from_bytes', F([
         'const_bytes[asset]', 'const_bytes[abf]', 'out_bytes_fixedsized'
     ], out_size='33')),
