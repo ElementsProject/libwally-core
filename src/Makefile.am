@@ -276,6 +276,7 @@ if BUILD_ELEMENTS
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
+	$(AM_V_at)$(JAVA_TEST)test_tx
 endif
 if USE_JS_WRAPPERS
 if BUILD_ELEMENTS
