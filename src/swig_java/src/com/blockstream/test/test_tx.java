@@ -26,8 +26,8 @@ public class test_tx {
         final byte[] tx_get_input_txhash = Wally.tx_get_input_txhash(tx, 0);
         final byte[] tx_get_input_script = Wally.tx_get_input_script(tx, 0);
         final byte[] tx_get_output_script = Wally.tx_get_output_script(tx, 0);
-        final Object tx_input = Wally.tx_input_init_alloc(tx_get_input_txhash, 0, 4294967295L, tx_get_input_script, Wally.tx_witness_stack_init_alloc(0L));
-        final Object tx_out = Wally.tx_output_init_alloc(100, tx_get_output_script);
+        final Object tx_input = Wally.tx_input_init(tx_get_input_txhash, 0, 4294967295L, tx_get_input_script, Wally.tx_witness_stack_init(0L));
+        final Object tx_out = Wally.tx_output_init(100, tx_get_output_script);
         final byte[] tx_input_get_script = Wally.tx_input_get_script(tx_input);
 
         assert_eq(p2pkh_hex, tx_string, "hex ser/der doesn't match original");

@@ -46,6 +46,10 @@
       return buf;
   }
 
+  public final static Object tx_elements_input_init(byte[] jarg1, long jarg2, long jarg3, byte[] jarg4) {
+      return tx_elements_input_init(jarg1, jarg2, jarg3, jarg4, null, null, null, null, null, null, null, null);
+  }
+
   public final static boolean tx_elements_input_is_pegin(final Object tx_input) {
       return _tx_elements_input_is_pegin(tx_input) != 0;
   }
