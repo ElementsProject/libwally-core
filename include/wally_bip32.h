@@ -232,6 +232,7 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param flags: BIP32_FLAG_KEY_ Flags indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param output: Destination for the resulting key in base58.
+ *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip32_key_to_base58(
     const struct ext_key *hdkey,
