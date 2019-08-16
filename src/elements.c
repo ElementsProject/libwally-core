@@ -100,6 +100,7 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
         return WALLY_ENOMEM;
 
     if (!values || values_len < 2u ||
+        num_inputs >= values_len ||
         !abf || abf_len != (values_len * ASSET_TAG_LEN) ||
         !vbf || vbf_len != ((values_len - 1) * ASSET_TAG_LEN) ||
         !bytes_out || len != ASSET_TAG_LEN)
