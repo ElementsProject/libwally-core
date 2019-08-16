@@ -567,6 +567,7 @@ add_custom_command(
     COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_CURRENT_BINARY_DIR}/wally.js
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${WALLY_OBJ_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_BINARY_DIR}/..
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}

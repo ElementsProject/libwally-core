@@ -427,6 +427,11 @@ def _generate_nan(funcname, f):
             input_args.append('LocalBuffer arg%s(info, %s, ret);' % (i, i))
             args.append('arg%s.mData' % i)
             args.append('arg%s.mLength' % i)
+        elif arg.startswith('out_is_success'):
+            postprocessing.extend([
+                'bool is_success = (ret == WALLY_OK) ? true : false;',
+                'v8::Local<v8::Boolean> res = Nan::New(is_success);'
+            ])
         elif arg.startswith('uint32_t'):
             input_args.append('uint32_t arg%s = GetUInt32(info, %s, ret);' % (i, i))
             args.append('arg%s' % i)
