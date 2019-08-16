@@ -27,6 +27,7 @@ public class test_tx {
         final byte[] tx_get_input_script = Wally.tx_get_input_script(tx, 0);
         final byte[] tx_get_output_script = Wally.tx_get_output_script(tx, 0);
         final Object tx_input = Wally.tx_input_init(tx_get_input_txhash, 0, 4294967295L, tx_get_input_script, Wally.tx_witness_stack_init(0L));
+        final Object tx_input_wit_null = Wally.tx_input_init(tx_get_input_txhash, 0, 4294967295L, tx_get_input_script, null);
         final Object tx_out = Wally.tx_output_init(100, tx_get_output_script);
         final byte[] tx_input_get_script = Wally.tx_input_get_script(tx_input);
 
@@ -58,7 +59,7 @@ public class test_tx {
         assert_eq(0, Wally.tx_get_input_index(tx,1), "wrong input index");
         Wally.tx_set_input_index(tx,1,1);
         assert_eq(1, Wally.tx_get_input_index(tx,1), "wrong input index");
-        Wally.tx_add_input(tx, tx_input);
+        Wally.tx_add_input(tx, tx_input_wit_null);
         Wally.tx_set_input_index(tx,2,2);
         assert_eq(2, Wally.tx_get_input_index(tx,2), "wrong input index");
         assert_eq(3, Wally.tx_get_num_inputs(tx), "after adding number of inputs is not 3");

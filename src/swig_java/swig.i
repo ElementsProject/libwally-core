@@ -287,10 +287,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %typemap (in) const struct NAME * {
     if (strcmp("NAME", "wally_tx_witness_stack") == 0)
         $1 = (struct NAME *)get_obj(jenv, $input, ID);
-    else
+    else {
         $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
-    if (!$1)
-        return $null;
+        if (!$1)
+          return $null;
+    }
 }
 %typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
