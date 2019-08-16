@@ -430,7 +430,17 @@ def _generate_nan(funcname, f):
         elif arg.startswith('out_is_success'):
             postprocessing.extend([
                 'bool is_success = (ret == WALLY_OK) ? true : false;',
-                'v8::Local<v8::Boolean> res = Nan::New(is_success);'
+                'v8::Local<v8::Boolean> res = Nan::New(is_success);',
+                'ret = WALLY_OK;  // reset '
+            ])
+        elif arg.startswith('out_bool_by_size_t'):
+            input_args.extend([
+                'size_t out_size%s = 0;' % (i),
+            ])
+            args.append('&out_size%s' % i)
+            postprocessing.extend([
+                'bool is_checked%s = (out_size%s == 0) ? false : true;' % (i, i),
+                'v8::Local<v8::Boolean> res = Nan::New(is_checked%s);' % (i),
             ])
         elif arg.startswith('uint32_t'):
             input_args.append('uint32_t arg%s = GetUInt32(info, %s, ret);' % (i, i))

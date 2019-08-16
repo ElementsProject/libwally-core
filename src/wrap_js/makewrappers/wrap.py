@@ -70,6 +70,13 @@ FUNCS = [
         'string[addr]', 'string[addr_family]', 'uint32_t[flags]', 'out_bytes_sized'
     ], out_size=str(WALLY_SCRIPTPUBKEY_P2WSH_LEN))),
 
+    ('wally_wif_to_bytes', F([
+        'const_char[wif]', 'uint32_t[prefix]', 'uint32_t[flags]', 'out_bytes_fixedsized'
+    ], out_size='32')),
+    ('wally_wif_is_uncompressed', F([
+        'const_char[wif]', 'out_bool_by_size_t'
+    ])),
+
     # AES:
     ('wally_aes', F([
         'const_bytes[key]', 'const_bytes[bytes]', 'uint32_t[flags]',
