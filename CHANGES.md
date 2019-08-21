@@ -1,5 +1,12 @@
 # Changes
 
+## Version 0.7.4
+
+- Add support for recoverable signatures
+- Generalize Elements function to use external nonces
+- Expose blinding key functions to js wrapper
+- doc improvement and bugs fixing
+
 ## Version 0.7.3
 
 - Exposed ECDH, added py3.7 x86_64 linux wheels to released artifacts, updated
