@@ -3238,3 +3238,35 @@ int wally_tx_input_set_script(struct wally_tx_input *input,
 }
 
 TX_SET_B(input, script)
+
+int clone_tx(struct wally_tx *tx, struct wally_tx **output)
+{
+    int ret = WALLY_OK;
+    size_t i;
+    struct wally_tx *result = NULL;
+
+    TX_CHECK_OUTPUT;
+
+    if ((ret = wally_tx_init_alloc(tx->version, tx->locktime, tx->num_inputs, tx->num_outputs, &result)) != WALLY_OK) {
+        goto fail;
+    }
+    for (i = 0; i < tx->num_inputs; ++i) {
+        if ((ret = wally_tx_add_input(result, &tx->inputs[i])) != WALLY_OK) {
+            goto fail;
+        }
+    }
+    for (i = 0; i < tx->num_outputs; ++i) {
+        if ((ret = wally_tx_add_output(result, &tx->outputs[i])) != WALLY_OK) {
+            goto fail;
+        }
+    }
+    *output = result;
+
+    return WALLY_OK;
+
+fail:
+    if (result) {
+        wally_tx_free(result);
+    }
+    return ret;
+}

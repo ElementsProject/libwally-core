@@ -19,6 +19,7 @@ int analyze_tx(const unsigned char *bytes, size_t bytes_len,
                bool *expect_witnesses);
 struct wally_tx_witness_stack *clone_witness(
     const struct wally_tx_witness_stack *stack);
+int clone_tx(struct wally_tx *tx, struct wally_tx **output);
 
 #ifdef __cplusplus
 }

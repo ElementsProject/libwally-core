@@ -227,6 +227,155 @@ WALLY_CORE_API int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
                                    unsigned char *value,
                                    size_t value_len);
 
+/**
+ * Allocate and initialize a new psbt input.
+ *
+ * :param non_witness_utxo: The non witness utxo for this input if it exists.
+ * :param witness_utxo: The witness utxo for this input if it exists.
+ * :param redeem_script: The redeem script for this input
+ * :param redeem_script_len: The length of the redeem script.
+ * :param witness_script: The witness script for this input
+ * :param witness_script_len: The length of the witness script.
+ * :param final_script_sig: The scriptSig for this input
+ * :param final_script_sig_len: Size of ``final_script_sig`` in bytes.
+ * :param final_witness: The witness stack for the input, or NULL if no witness is present.
+ * :param keypaths: The HD keypaths for this input.
+ * :param partial_sigs: The partial signatures for this input.
+ * :param unknowns: The unknown key value pairs for this input.
+ * :param sighash_type: The sighash type for this input
+ * :param output: Destination for the resulting psbt input.
+ */
+WALLY_CORE_API int wally_psbt_input_init_alloc(
+    struct wally_tx *non_witness_utxo,
+    struct wally_tx_output *witness_utxo,
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    unsigned char *final_script_sig,
+    size_t final_script_sig_len,
+    struct wally_tx_witness_stack *final_witness,
+    struct wally_keypath_map *keypaths,
+    struct wally_partial_sigs_map *partial_sigs,
+    struct wally_unknowns_map *unknowns,
+    uint32_t sighash_type,
+    struct wally_psbt_input **output);
+
+/**
+ * Set the non_witness_utxo in an input
+ *
+ * :param input: The input to update.
+ * :param non_witness_utxo: The non witness utxo for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_input_set_non_witness_utxo(
+    struct wally_psbt_input *input,
+    struct wally_tx *non_witness_utxo);
+
+/**
+ * Set the witness_utxo in an input
+ *
+ * :param input: The input to update.
+ * :param witness_utxo: The witness utxo for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_input_set_witness_utxo(
+    struct wally_psbt_input *input,
+    struct wally_tx_output *witness_utxo);
+
+/**
+ * Set the redeem_script in an input
+ *
+ * :param input: The input to update.
+ * :param redeem_script: The redeem script for this input
+ * :param redeem_script_len: The length of the redeem script.
+ */
+WALLY_CORE_API int wally_psbt_input_set_redeem_script(
+    struct wally_psbt_input *input,
+    unsigned char *redeem_script,
+    size_t redeem_script_len);
+
+/**
+ * Set the witness_script in an input
+ *
+ * :param input: The input to update.
+ * :param witness_script: The witness script for this input
+ * :param witness_script_len: The length of the witness script.
+ */
+WALLY_CORE_API int wally_psbt_input_set_witness_script(
+    struct wally_psbt_input *input,
+    unsigned char *witness_script,
+    size_t witness_script_len);
+
+/**
+ * Set the final_script_sig in an input
+ *
+ * :param input: The input to update.
+ * :param final_script_sig: The scriptSig for this input
+ * :param final_script_sig_len: Size of ``final_script_sig`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_final_script_sig(
+    struct wally_psbt_input *input,
+    unsigned char *final_script_sig,
+    size_t final_script_sig_len);
+
+/**
+ * Set the final_witness in an input
+ *
+ * :param input: The input to update.
+ * :param final_witness: The witness stack for the input, or NULL if no witness is present.
+ */
+WALLY_CORE_API int wally_psbt_input_set_final_witness(
+    struct wally_psbt_input *input,
+    struct wally_tx_witness_stack *final_witness);
+
+/**
+ * Set the keypaths in an input
+ *
+ * :param input: The input to update.
+ * :param keypaths: The HD keypaths for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_keypaths(
+    struct wally_psbt_input *input,
+    struct wally_keypath_map *keypaths);
+
+/**
+ * Set the partial_sigs in an input
+ *
+ * :param input: The input to update.
+ * :param partial_sigs: The partial signatures for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
+    struct wally_psbt_input *input,
+    struct wally_partial_sigs_map *partial_sigs);
+
+/**
+ * Set the partial_sigs in an input
+ *
+ * :param input: The input to update.
+ * :param unknowns: The unknown key value pairs for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_unknowns(
+    struct wally_psbt_input *input,
+    struct wally_unknowns_map *unknowns);
+
+/**
+ * Set the partial_sigs in an input
+ *
+ * :param input: The input to update.
+ * :param sighash_type: The sighash type for this input
+ */
+WALLY_CORE_API int wally_psbt_input_set_sighash_type(
+    struct wally_psbt_input *input,
+    uint32_t sighash_type);
+
+#ifndef SWIG_PYTHON
+/**
+ * Free a psbt input allocated by `wally_psbt_input_init_alloc`.
+ *
+ * :param input: The psbt input to free.
+ */
+WALLY_CORE_API int wally_psbt_input_free(struct wally_psbt_input *input);
+#endif /* SWIG_PYTHON */
+
 #ifdef __cplusplus
 }
 #endif
