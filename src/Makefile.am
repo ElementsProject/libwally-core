@@ -190,6 +190,7 @@ libwallycore_la_SOURCES = \
     transaction.c \
     wif.c \
     wordlist.c \
+    ccan/ccan/base64/base64.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
     ccan/ccan/crypto/sha512/sha512.c \
