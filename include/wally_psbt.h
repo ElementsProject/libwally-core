@@ -163,6 +163,38 @@ WALLY_CORE_API int wally_add_new_keypath(struct wally_keypath_map *keypaths,
                                    uint32_t *path,
                                    size_t path_len);
 
+/**
+ * Allocate and initialize a new partial sigs map.
+ *
+ * :param alloc_len: The number of items to allocate.
+ * :param output: Destination for the new partial sigs map
+ */
+WALLY_CORE_API int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output);
+
+#ifndef SWIG_PYTHON
+/**
+ * Free a partial sigs map allocated by `wally_partial_sigs_map_init_alloc`.
+ *
+ * :param sigs: The partial sigs map to free.
+ */
+WALLY_CORE_API int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs);
+#endif /* SWIG_PYTHON */
+
+/**
+ * Add an item to a partial sigs map
+ *
+ * :param sigs: The partial sigs map to add to
+ * :param pubkey: The pubkey to add
+ * :param pubkey_len: Length of the public key. Must be EC_PUBLIC_KEY_LEN or EC_PUBLIC_KEY_UNCOMPRESSED_LEN
+ * :param sig: The signature to add
+ * :param sig_len: The length of sig
+ */
+WALLY_CORE_API int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
+                                       unsigned char *pubkey,
+                                       size_t pubkey_len,
+                                       unsigned char *sig,
+                                       size_t sig_len);
+
 #ifdef __cplusplus
 }
 #endif
