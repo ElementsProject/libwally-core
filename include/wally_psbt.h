@@ -495,6 +495,18 @@ WALLY_CORE_API int wally_psbt_from_bytes(
     size_t bytes_len,
     struct wally_psbt **output);
 
+/**
+ * Serialize a psbt to bytes.
+ *
+ * :param bytes_out: Bytes to create the transaction from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param bytes_written: number of bytes written to bytes_out
+ */
+WALLY_CORE_API int wally_psbt_to_bytes(
+    const struct wally_psbt *psbt,
+    unsigned char *bytes_out, size_t bytes_len,
+    size_t *bytes_written);
+
 #ifdef __cplusplus
 }
 #endif
