@@ -36,9 +36,11 @@ struct wally_psbt_output;
 struct wally_psbt;
 #else
 
+#define FINGERPRINT_LEN 4
+
 /** Key origin data. Contains a BIP 32 fingerprint and the derivation path */
 struct wally_key_origin_info {
-    unsigned char fingerprint[4];
+    unsigned char fingerprint[FINGERPRINT_LEN];
     uint32_t *path;
     size_t path_len;
 };
@@ -124,6 +126,42 @@ struct wally_psbt {
     struct wally_unknowns_map *unknowns;
 };
 #endif /* SWIG */
+
+/**
+ * Allocate and initialize a new keypath map.
+ *
+ * :param alloc_len: The number of items to allocate.
+ * :param output: Destination for the new keypath map
+ */
+WALLY_CORE_API int wally_keypath_map_init_alloc(size_t alloc_len, struct wally_keypath_map **output);
+
+#ifndef SWIG_PYTHON
+/**
+ * Free a keypath map allocated by `wally_keypath_map_init_alloc`.
+ *
+ * :param keypaths: The keypath map to free.
+ */
+WALLY_CORE_API int wally_keypath_map_free(struct wally_keypath_map *keypaths);
+#endif /* SWIG_PYTHON */
+
+/**
+ * Add an item to a keypath map
+ *
+ * :param keypaths: The keypath map to add to
+ * :param pubkey: The pubkey to add
+ * :param pubkey_len: The length of the pubkey. Must be EC_PUBLIC_KEY_UNCOMPRESSED_LEN or EC_PUBLIC_KEY_LEN
+ * :param fingerprint: The master key fingerprint for the pubkey
+ * :param fingerprint_len: The length of the fingerprint. Must be FINGERPRINT_LEN
+ * :param path: The BIP32 derivation path for the pubkey
+ * :param path_len: The number of items in path
+ */
+WALLY_CORE_API int wally_add_new_keypath(struct wally_keypath_map *keypaths,
+                                   unsigned char *pubkey,
+                                   size_t pubkey_len,
+                                   unsigned char *fingerprint,
+                                   size_t fingerprint_len,
+                                   uint32_t *path,
+                                   size_t path_len);
 
 #ifdef __cplusplus
 }
