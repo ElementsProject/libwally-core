@@ -586,3 +586,110 @@ int wally_psbt_input_free(struct wally_psbt_input *input)
     }
     return WALLY_OK;
 }
+
+int wally_psbt_output_init_alloc(
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    struct wally_keypath_map *keypaths,
+    struct wally_unknowns_map *unknowns,
+    struct wally_psbt_output **output)
+{
+    struct wally_psbt_output *result;
+    int ret = WALLY_OK;
+
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct wally_psbt_output);
+
+    if (redeem_script && (ret = wally_psbt_output_set_redeem_script(result, redeem_script, redeem_script_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (witness_script && (ret = wally_psbt_output_set_witness_script(result, witness_script, witness_script_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (keypaths && (ret = wally_psbt_output_set_keypaths(result, keypaths)) != WALLY_OK) {
+        goto fail;
+    }
+    if (unknowns && (ret = wally_psbt_output_set_unknowns(result, unknowns)) != WALLY_OK) {
+        goto fail;
+    }
+
+    return ret;
+
+fail:
+    wally_psbt_output_free(result);
+    *output = NULL;
+    return ret;
+}
+
+int wally_psbt_output_set_redeem_script(
+    struct wally_psbt_output *output,
+    unsigned char *redeem_script,
+    size_t redeem_script_len)
+{
+    unsigned char *result_redeem_script;
+
+    if (!clone_bytes(&result_redeem_script, redeem_script, redeem_script_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->redeem_script);
+    output->redeem_script = result_redeem_script;
+    output->redeem_script_len = redeem_script_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_output_set_witness_script(
+    struct wally_psbt_output *output,
+    unsigned char *witness_script,
+    size_t witness_script_len)
+{
+    unsigned char *result_witness_script;
+
+    if (!clone_bytes(&result_witness_script, witness_script, witness_script_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->witness_script);
+    output->witness_script = result_witness_script;
+    output->witness_script_len = witness_script_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_output_set_keypaths(
+    struct wally_psbt_output *output,
+    struct wally_keypath_map *keypaths)
+{
+    struct wally_keypath_map *result_keypaths;
+
+    if (!(result_keypaths = clone_keypath_map(keypaths))) {
+        return WALLY_ENOMEM;
+    }
+    wally_keypath_map_free(output->keypaths);
+    output->keypaths = result_keypaths;
+    return WALLY_OK;
+}
+
+int wally_psbt_output_set_unknowns(
+    struct wally_psbt_output *output,
+    struct wally_unknowns_map *unknowns)
+{
+    struct wally_unknowns_map *result_unknowns;
+
+    if (!(result_unknowns = clone_unknowns_map(unknowns))) {
+        return WALLY_ENOMEM;
+    }
+    wally_unknowns_map_free(output->unknowns);
+    output->unknowns = result_unknowns;
+    return WALLY_OK;
+}
+
+int wally_psbt_output_free(struct wally_psbt_output *output)
+{
+    if (output) {
+        clear_and_free(output->redeem_script, output->redeem_script_len);
+        clear_and_free(output->witness_script, output->witness_script_len);
+        wally_keypath_map_free(output->keypaths);
+        wally_unknowns_map_free(output->unknowns);
+    }
+    return WALLY_OK;
+}
