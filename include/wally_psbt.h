@@ -195,6 +195,38 @@ WALLY_CORE_API int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs
                                        unsigned char *sig,
                                        size_t sig_len);
 
+/**
+ * Allocate and initialize a new unknowns map
+ *
+ * :param alloc_len: The number of items to allocate.
+ * :param output: Destination for the new unknowns map
+ */
+WALLY_CORE_API int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output);
+
+#ifndef SWIG_PYTHON
+/**
+ * Free an unknowns map allocated by `wally_unknowns_map_init_alloc`.
+ *
+ * :param unknowns: The unknowns map map to free.
+ */
+WALLY_CORE_API int wally_unknowns_map_free(struct wally_unknowns_map *unknowns);
+#endif /* SWIG_PYTHON */
+
+/**
+ * Add an item to an unknowns map
+ *
+ * :param unknowns: The unknowns map to add to
+ * :param key: The key to add
+ * :param key_len: The length of the key
+ * :param value: The value to add
+ * :param value_len: The length of value
+ */
+WALLY_CORE_API int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
+                                   unsigned char *key,
+                                   size_t key_len,
+                                   unsigned char *value,
+                                   size_t value_len);
+
 #ifdef __cplusplus
 }
 #endif

@@ -248,3 +248,124 @@ static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, struct wall
                                item->sig,
                                item->sig_len);
 }
+
+int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output)
+{
+    struct wally_unknowns_map *result;
+
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct wally_unknowns_map);
+
+    if (alloc_len) {
+        result->items = wally_malloc(alloc_len * sizeof(*result->items));
+        if (!result->items) {
+            wally_free(result);
+            *output = NULL;
+            return WALLY_ENOMEM;
+        }
+        wally_clear(result->items, alloc_len * sizeof(*result->items));
+    }
+    result->items_allocation_len = alloc_len;
+    result->num_items = 0;
+    return WALLY_OK;
+}
+
+int wally_unknowns_map_free(struct wally_unknowns_map *unknowns)
+{
+    size_t i;
+
+    if (unknowns) {
+        for (i = 0; i < unknowns->num_items; ++i) {
+            if (unknowns->items[i].key) {
+                wally_clear(unknowns->items[i].key, unknowns->items[i].key_len);
+            }
+            if (unknowns->items[i].value) {
+                wally_clear(unknowns->items[i].value, unknowns->items[i].value_len);
+            }
+        }
+        clear_and_free(unknowns->items, unknowns->num_items * sizeof(*unknowns->items));
+        clear_and_free(unknowns, sizeof(*unknowns));
+    }
+    return WALLY_OK;
+}
+
+static struct wally_unknowns_map *clone_unknowns_map(const struct wally_unknowns_map *unknowns)
+{
+    struct wally_unknowns_map *result;
+    size_t i;
+
+    if (wally_unknowns_map_init_alloc(unknowns->items_allocation_len, &result) != WALLY_OK) {
+        return NULL;
+    }
+
+    for (i = 0; i < unknowns->num_items; ++i) {
+        if (unknowns->items[i].key) {
+            if (!clone_bytes(&result->items[i].key, unknowns->items[i].key, unknowns->items[i].key_len)) {
+                goto fail;
+            }
+            result->items[i].key_len = unknowns->items[i].key_len;
+        }
+        if (unknowns->items[i].value) {
+            if (!clone_bytes(&result->items[i].value, unknowns->items[i].value, unknowns->items[i].value_len)) {
+                goto fail;
+            }
+            result->items[i].value_len = unknowns->items[i].value_len;
+        }
+    }
+    result->num_items = unknowns->num_items;
+    return result;
+fail:
+    wally_unknowns_map_free(result);
+    return NULL;
+}
+
+int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
+                    unsigned char *key,
+                    size_t key_len,
+                    unsigned char *value,
+                    size_t value_len)
+{
+    size_t latest;
+
+    if (unknowns->num_items == unknowns->items_allocation_len) {
+        size_t new_alloc_len = 1;
+        size_t orig_num_items = unknowns->num_items;
+        if (unknowns->items_allocation_len != 0) {
+            new_alloc_len = unknowns->items_allocation_len * 2;
+        }
+        struct wally_unknowns_item *new_items = wally_malloc(new_alloc_len * sizeof(struct wally_unknowns_item));
+        if (!new_items) {
+            return WALLY_ENOMEM;
+        }
+        wally_bzero(new_items, new_alloc_len * sizeof(*new_items));
+        memcpy(new_items, unknowns->items, unknowns->items_allocation_len * sizeof(*unknowns->items));
+
+        clear_and_free(unknowns->items, unknowns->items_allocation_len * sizeof(*unknowns->items));
+        unknowns->items = new_items;
+        unknowns->num_items = orig_num_items;
+        unknowns->items_allocation_len = new_alloc_len;
+    }
+
+    latest = unknowns->num_items;
+
+    if (key) {
+        if (!clone_bytes(&unknowns->items[latest].key, key, key_len)) {
+            return WALLY_ENOMEM;
+        }
+        unknowns->items[latest].key_len = key_len;
+    }
+    if (value) {
+        if (!clone_bytes(&unknowns->items[latest].value, value, value_len)) {
+            return WALLY_ENOMEM;
+        }
+        unknowns->items[latest].value_len = value_len;
+    }
+    unknowns->num_items++;
+
+    return WALLY_OK;
+}
+
+static int add_unknowns_item(struct wally_unknowns_map *unknowns, struct wally_unknowns_item *item)
+{
+    return wally_add_new_unknown(unknowns, item->key, item->key_len, item->value, item->value_len);
+}
