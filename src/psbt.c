@@ -818,3 +818,215 @@ fail:
     }
     return ret;
 }
+
+struct psbt_input_counts {
+    size_t num_unknowns;
+    size_t num_keypaths;
+    size_t num_partial_sigs;
+};
+
+struct psbt_output_counts {
+    size_t num_unknowns;
+    size_t num_keypaths;
+};
+
+struct psbt_counts {
+    size_t num_global_unknowns;
+    struct psbt_input_counts *input_counts;
+    size_t num_inputs;
+    struct psbt_output_counts *output_counts;
+    size_t num_outputs;
+};
+
+static void free_psbt_count(struct psbt_counts *counts)
+{
+    if (counts) {
+        clear_and_free(counts->input_counts, counts->num_inputs * sizeof(*counts->input_counts));
+        clear_and_free(counts->output_counts, counts->num_outputs * sizeof(*counts->output_counts));
+        clear_and_free(counts, sizeof(*counts));
+    }
+}
+
+// Check that the bytes already read + bytes to be read < total len
+#define CHECK_BUF_BOUNDS(p, i, begin, tl) if ((p - begin) + i > tl) { \
+                            ret = WALLY_EINVAL; \
+                            goto fail; \
+                        }
+
+static int count_psbt_parts(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    struct psbt_counts **output)
+{
+    struct psbt_counts *result;
+    size_t i, vl;
+    const unsigned char *key;
+    uint64_t key_len, value_len;
+    uint8_t type;
+    int ret = WALLY_OK;
+
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct psbt_counts);
+
+    const unsigned char *p = bytes, *end = bytes + bytes_len;
+
+    result->num_global_unknowns = 0;
+    result->num_inputs = 0;
+    result->num_outputs = 0;
+
+    // Skip the magic
+    CHECK_BUF_BOUNDS(p, (size_t)5, bytes, bytes_len)
+    p += 5;
+
+    // Go through globals and count
+    while (p < end) {
+        // Read the key length
+        vl = varint_from_bytes(p, &key_len);
+        CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
+        p += vl;
+
+        if (key_len == 0) {
+            break;
+        }
+
+        // Read the key itself
+        key = p;
+        type = key[0];
+        p += key_len;
+
+        // Read value length
+        vl = varint_from_bytes(p, &value_len);
+        CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
+        p += vl;
+
+        // Process based on type
+        switch (type) {
+        case WALLY_PSBT_GLOBAL_UNSIGNED_TX: {
+            bool expect_wit;
+            if (analyze_tx(p, value_len, 0, &result->num_inputs, &result->num_outputs, &expect_wit) != WALLY_OK) {
+                ret = WALLY_EINVAL;
+                goto fail;
+            }
+            if ((result->input_counts = wally_malloc(result->num_inputs * sizeof(struct psbt_input_counts))) == NULL ||
+                (result->output_counts = wally_malloc(result->num_outputs * sizeof(struct psbt_output_counts))) == NULL) {
+                ret = WALLY_ENOMEM;
+                goto fail;
+            }
+            break;
+        }
+        // Unknowns
+        default:
+            result->num_global_unknowns++;
+        }
+
+        // Increment past value length
+        p += value_len;
+    }
+
+    // Go through each input
+    for (i = 0; i < result->num_inputs && p < end; ++i) {
+        struct psbt_input_counts *input = &result->input_counts[i];
+        input->num_keypaths = 0;
+        input->num_partial_sigs = 0;
+        input->num_unknowns = 0;
+        while (p < end) {
+            // Read the key length
+            vl = varint_from_bytes(p, &key_len);
+            CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
+            p += vl;
+
+            if (key_len == 0) {
+                break;
+            }
+
+            // Read the key itself
+            key = p;
+            type = key[0];
+            p += key_len;
+
+            // Read value length
+            vl = varint_from_bytes(p, &value_len);
+            CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
+            p += vl;
+
+            // Process based on type
+            switch (type) {
+            case WALLY_PSBT_IN_NON_WITNESS_UTXO:
+            case WALLY_PSBT_IN_WITNESS_UTXO:
+            case WALLY_PSBT_IN_SIGHASH_TYPE:
+            case WALLY_PSBT_IN_REDEEM_SCRIPT:
+            case WALLY_PSBT_IN_WITNESS_SCRIPT:
+            case WALLY_PSBT_IN_FINAL_SCRIPTSIG:
+            case WALLY_PSBT_IN_FINAL_SCRIPTWITNESS:
+                break;
+            case WALLY_PSBT_IN_PARTIAL_SIG:
+                input->num_partial_sigs++;
+                break;
+            case WALLY_PSBT_IN_BIP32_DERIVATION:
+                input->num_keypaths++;
+                break;
+            // Unknowns
+            default:
+                input->num_unknowns++;
+            }
+
+            // Increment past value length
+            p += value_len;
+        }
+    }
+
+    // Go through each output
+    for (i = 0; i < result->num_outputs && p < end; ++i) {
+        struct psbt_output_counts *psbt_output = &result->output_counts[i];
+        psbt_output->num_keypaths = 0;
+        psbt_output->num_unknowns = 0;
+        while (p < end) {
+            // Read the key length
+            vl = varint_from_bytes(p, &key_len);
+            CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
+            p += vl;
+
+            if (key_len == 0) {
+                break;
+            }
+
+            // Read the key itself
+            key = p;
+            type = key[0];
+            p += key_len;
+
+            // Read value length
+            vl = varint_from_bytes(p, &value_len);
+            CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
+            p += vl;
+
+            // Process based on type
+            switch (type) {
+            case WALLY_PSBT_OUT_REDEEM_SCRIPT:
+            case WALLY_PSBT_OUT_WITNESS_SCRIPT:
+                break;
+            case WALLY_PSBT_OUT_BIP32_DERIVATION:
+                psbt_output->num_keypaths++;
+                break;
+            // Unknowns
+            default:
+                psbt_output->num_unknowns++;
+            }
+
+            // Increment past value length
+            p += value_len;
+        }
+    }
+
+    if (p != end) {
+        ret = WALLY_EINVAL;
+        goto fail;
+    }
+
+    return WALLY_OK;
+
+fail:
+    free_psbt_count(result);
+    *output = NULL;
+    return ret;
+}
