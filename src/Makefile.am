@@ -259,6 +259,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
