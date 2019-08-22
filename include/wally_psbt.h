@@ -449,6 +449,40 @@ WALLY_CORE_API int wally_psbt_output_set_unknowns(
 WALLY_CORE_API int wally_psbt_output_free(struct wally_psbt_output *output);
 #endif /* SWIG_PYTHON */
 
+/**
+ * Allocate and initialize a new psbt.
+ *
+ * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
+ * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
+ * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
+ * :param output: Destination for the resulting psbt output.
+ */
+WALLY_CORE_API int wally_psbt_init_alloc(
+    size_t inputs_allocation_len,
+    size_t outputs_allocation_len,
+    size_t global_unknowns_allocation_len,
+    struct wally_psbt **output);
+
+#ifndef SWIG_PYTHON
+/**
+ * Free a psbt allocated by `wally_psbt_init_alloc`.
+ *
+ * :param psbt: The psbt to free.
+ */
+WALLY_CORE_API int wally_psbt_free(struct wally_psbt *psbt);
+#endif /* SWIG_PYTHON */
+
+/**
+ * Set the global transaction for a psbt.
+ * Also initializes all of the wally_psbt_input and wally_psbt_outputs necessary
+ *
+ * :param tx: The transaction to set.
+ * :param psbt: The psbt to set the transaction for
+ */
+WALLY_CORE_API int wally_psbt_set_global_tx(
+    struct wally_psbt *psbt,
+    struct wally_tx *tx);
+
 #ifdef __cplusplus
 }
 #endif
