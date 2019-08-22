@@ -527,6 +527,18 @@ WALLY_CORE_API int wally_psbt_to_base64(
     struct wally_psbt *psbt,
     char **output);
 
+/**
+ * Combine the metadata from multiple PSBTs into one
+ *
+ * :param psbts: Array of PSBTs to combine
+ * :param psbts_len: Number of PSBTs in psbts
+ * :param output: Destination for resulting psbt
+ */
+WALLY_CORE_API int wally_combine_psbts(
+    const struct wally_psbt *psbts,
+    size_t psbts_len,
+    struct wally_psbt **output);
+
 #ifdef __cplusplus
 }
 #endif
