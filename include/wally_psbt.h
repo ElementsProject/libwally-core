@@ -376,6 +376,79 @@ WALLY_CORE_API int wally_psbt_input_set_sighash_type(
 WALLY_CORE_API int wally_psbt_input_free(struct wally_psbt_input *input);
 #endif /* SWIG_PYTHON */
 
+/**
+ * Allocate and initialize a new psbt output.
+ *
+ * :param redeem_script: The redeem script needed for spending this output
+ * :param redeem_script_len: The length of the redeem script.
+ * :param witness_script: The witness script needed for spending for this output
+ * :param witness_script_len: The length of the witness script.
+ * :param keypaths: The HD keypaths for the keys needed for spending this output
+ * :param unknowns: The unknown key value pairs for this output.
+ * :param output: Destination for the resulting psbt output.
+ */
+WALLY_CORE_API int wally_psbt_output_init_alloc(
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    struct wally_keypath_map *keypaths,
+    struct wally_unknowns_map *unknowns,
+    struct wally_psbt_output **output);
+
+/**
+ * Set the redeem_script in an output
+ *
+ * :param output: The input to update.
+ * :param redeem_script: The redeem script for this output
+ * :param redeem_script_len: The length of the redeem script.
+ */
+WALLY_CORE_API int wally_psbt_output_set_redeem_script(
+    struct wally_psbt_output *output,
+    unsigned char *redeem_script,
+    size_t redeem_script_len);
+
+/**
+ * Set the witness_script in an output
+ *
+ * :param output: The output to update.
+ * :param witness_script: The witness script for this output
+ * :param witness_script_len: The length of the witness script.
+ */
+WALLY_CORE_API int wally_psbt_output_set_witness_script(
+    struct wally_psbt_output *output,
+    unsigned char *witness_script,
+    size_t witness_script_len);
+
+/**
+ * Set the keypaths in an output
+ *
+ * :param output: The output to update.
+ * :param keypaths: The HD keypaths for this output.
+ */
+WALLY_CORE_API int wally_psbt_output_set_keypaths(
+    struct wally_psbt_output *output,
+    struct wally_keypath_map *keypaths);
+
+/**
+ * Set the partial_sigs in an output
+ *
+ * :param output: The output to update.
+ * :param unknowns: The unknown key value pairs for this output.
+ */
+WALLY_CORE_API int wally_psbt_output_set_unknowns(
+    struct wally_psbt_output*output,
+    struct wally_unknowns_map *unknowns);
+
+#ifndef SWIG_PYTHON
+/**
+ * Free a psbt output allocated by `wally_psbt_output_init_alloc`.
+ *
+ * :param output: The psbt output to free.
+ */
+WALLY_CORE_API int wally_psbt_output_free(struct wally_psbt_output *output);
+#endif /* SWIG_PYTHON */
+
 #ifdef __cplusplus
 }
 #endif
