@@ -693,3 +693,128 @@ int wally_psbt_output_free(struct wally_psbt_output *output)
     }
     return WALLY_OK;
 }
+
+int wally_psbt_init_alloc(
+    size_t inputs_allocation_len,
+    size_t outputs_allocation_len,
+    size_t global_unknowns_allocation_len,
+    struct wally_psbt **output)
+{
+    struct wally_psbt_input *new_inputs = NULL;
+    struct wally_psbt_output *new_outputs = NULL;
+    struct wally_psbt *result;
+
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct wally_psbt);
+
+    if (inputs_allocation_len) {
+        new_inputs = wally_malloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
+        wally_bzero(new_inputs, inputs_allocation_len * sizeof(*new_inputs));
+    }
+    if (outputs_allocation_len) {
+        new_outputs = wally_malloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
+        wally_bzero(new_outputs, outputs_allocation_len * sizeof(*new_outputs));
+    }
+    wally_unknowns_map_init_alloc(global_unknowns_allocation_len, &result->unknowns);
+    if ((inputs_allocation_len && !new_inputs) ||
+        (outputs_allocation_len && !new_outputs) ||
+        (global_unknowns_allocation_len && !result->unknowns)) {
+        wally_free(new_inputs);
+        wally_free(new_outputs);
+        wally_free(result->unknowns);
+        wally_free(result);
+        *output = NULL;
+        return WALLY_ENOMEM;
+    }
+
+    result->inputs = new_inputs;
+    result->num_inputs = 0;
+    result->inputs_allocation_len = inputs_allocation_len;
+    result->outputs = new_outputs;
+    result->num_outputs = 0;
+    result->outputs_allocation_len = outputs_allocation_len;
+    result->tx = NULL;
+    return WALLY_OK;
+}
+
+int wally_psbt_free(struct wally_psbt *psbt)
+{
+    size_t i;
+    if (psbt) {
+        wally_tx_free(psbt->tx);
+        for (i = 0; i < psbt->num_inputs; ++i) {
+            wally_psbt_input_free(&psbt->inputs[i]);
+        }
+        wally_free(psbt->inputs);
+        for (i = 0; i < psbt->num_outputs; ++i) {
+            wally_psbt_output_free(&psbt->outputs[i]);
+        }
+        wally_free(psbt->outputs);
+        wally_unknowns_map_free(psbt->unknowns);
+        wally_free(psbt);
+    }
+    return WALLY_OK;
+}
+
+int wally_psbt_set_global_tx(
+    struct wally_psbt *psbt,
+    struct wally_tx *tx)
+{
+    size_t i;
+    int ret = WALLY_OK;
+
+    // Needs a psbt that is completely empty, i.e. no tx, no inputs, and no outputs.
+    if (!tx || !psbt || psbt->tx || psbt->num_inputs != 0 || psbt->num_outputs != 0) {
+        return WALLY_EINVAL;
+    }
+
+    // tx cannot have any scriptSigs or witnesses
+    for (i = 0; i < tx->num_inputs; ++i) {
+        if (tx->inputs[i].script || tx->inputs[i].witness) {
+            return WALLY_EINVAL;
+        }
+    }
+
+    if ((ret = clone_tx(tx, &psbt->tx)) != WALLY_OK) {
+        goto fail;
+    }
+
+    if (psbt->inputs_allocation_len < tx->num_inputs) {
+        if (psbt->inputs) {
+            wally_free(psbt->inputs);
+        }
+        psbt->inputs_allocation_len = 0;
+        psbt->inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
+        if (!psbt->inputs) {
+            ret = WALLY_ENOMEM;
+            goto fail;
+        }
+        psbt->inputs_allocation_len = tx->num_inputs;
+    }
+    wally_bzero(psbt->inputs, psbt->inputs_allocation_len * sizeof(*psbt->inputs));
+    psbt->num_inputs = tx->num_inputs;
+
+    if (psbt->outputs_allocation_len < tx->num_outputs) {
+        if (psbt->outputs) {
+            wally_free(psbt->outputs);
+        }
+        psbt->outputs_allocation_len = 0;
+        psbt->outputs = wally_malloc(tx->num_outputs * sizeof(struct wally_psbt_output));
+        psbt->outputs_allocation_len = tx->num_outputs;
+        if (!psbt->outputs) {
+            ret = WALLY_ENOMEM;
+            goto fail;
+        }
+    }
+    wally_bzero(psbt->outputs, psbt->outputs_allocation_len * sizeof(*psbt->outputs));
+    psbt->num_outputs = tx->num_outputs;
+
+    return ret;
+
+fail:
+    if (psbt->tx) {
+        wally_tx_free(psbt->tx);
+        psbt->tx = NULL;
+    }
+    return ret;
+}
