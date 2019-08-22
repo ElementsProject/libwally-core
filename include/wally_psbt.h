@@ -483,6 +483,18 @@ WALLY_CORE_API int wally_psbt_set_global_tx(
     struct wally_psbt *psbt,
     struct wally_tx *tx);
 
+/**
+ * Create a psbt from its serialized bytes.
+ *
+ * :param bytes: Bytes to create the psbt from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param output: Destination for the resulting psbt.
+ */
+WALLY_CORE_API int wally_psbt_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    struct wally_psbt **output);
+
 #ifdef __cplusplus
 }
 #endif
