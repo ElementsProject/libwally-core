@@ -109,6 +109,74 @@ class wally_tx(Structure):
                 ('num_outputs', c_ulong),
                 ('outputs_allocation_len', c_ulong),]
 
+class key_origin_info(Structure):
+    _fields_ = [('fingerprint', c_ubyte * 4),
+                ('items', POINTER(c_ulong)),
+                ('path_len', c_ulong)]
+
+class keypath_item(Structure):
+    _fields_ = [('pubkey', c_ubyte * 65),
+                ('origin', key_origin_info)]
+
+class keypath_map(Structure):
+    _fields_ = [('items', POINTER(keypath_item)),
+                ('num_items', c_ulong),
+                ('items_allocation_len', c_ulong)]
+
+class partial_sigs_item(Structure):
+    _fields_ = [('pubkey', c_ubyte * 65),
+                ('sig', c_void_p),
+                ('sig_len', c_ulong)]
+
+class partial_sigs_map(Structure):
+    _fields_ = [('items', POINTER(partial_sigs_item)),
+                ('num_items', c_ulong),
+                ('items_allocation_len', c_ulong)]
+
+class unknowns_item(Structure):
+    _fields_ = [('key', c_void_p),
+                ('key_len', c_ulong),
+                ('value', c_void_p),
+                ('value_len', c_ulong)]
+
+class unknowns_map(Structure):
+    _fields_ = [('items', POINTER(unknowns_item)),
+                ('num_items', c_ulong),
+                ('items_allocation_len', c_ulong)]
+
+class wally_psbt_input(Structure):
+    _fields_ = [('non_witness_utxo', POINTER(wally_tx)),
+                ('witness_utxo', POINTER(wally_tx_output)),
+                ('redeem_script', c_void_p),
+                ('redeem_script_len', c_ulong),
+                ('witness_script', c_void_p),
+                ('witness_script_len', c_ulong),
+                ('final_script_sig', c_void_p),
+                ('final_script_sig_len', c_ulong),
+                ('final_witness', POINTER(wally_tx_witness_stack)),
+                ('keypaths', POINTER(keypath_map)),
+                ('partial_sigs', POINTER(partial_sigs_map)),
+                ('unknowns', POINTER(unknowns_map)),
+                ('sighash_type', c_ulong)]
+
+class wally_psbt_output(Structure):
+    _fields_ = [('redeem_script', c_void_p),
+                ('redeem_script_len', c_ulong),
+                ('witness_script', c_void_p),
+                ('witness_script_len', c_ulong),
+                ('keypaths', POINTER(keypath_map)),
+                ('unknowns', POINTER(unknowns_map))]
+
+class wally_psbt(Structure):
+    _fields_ = [('tx', POINTER(wally_tx)),
+                ('inputs', POINTER(wally_psbt_input)),
+                ('num_inputs', c_ulong),
+                ('inputs_allocation_len', c_ulong),
+                ('outputs', POINTER(wally_psbt_output)),
+                ('num_outputs', c_ulong),
+                ('outputs_allocation_len', c_ulong),
+                ('unknowns', POINTER(unknowns_map))]
+
 for f in (
     ('wally_init', c_int, [c_uint]),
     ('wally_cleanup', c_int, [c_uint]),
@@ -241,6 +309,16 @@ for f in (
     ('wally_wif_to_bytes', c_int, [c_char_p, c_uint, c_uint, c_void_p, c_ulong]),
     ('wally_wif_to_public_key', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_wif_is_uncompressed', c_int, [c_char_p, c_ulong_p]),
+    ('wally_psbt_input_init_alloc', c_int, [POINTER(wally_tx), POINTER(wally_tx_output), c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), POINTER(keypath_map), POINTER(partial_sigs_map), POINTER(unknowns_map), c_ulong, POINTER(POINTER(wally_psbt_input))]),
+    ('wally_psbt_input_free', c_int, [POINTER(wally_psbt_input)]),
+    ('wally_psbt_output_init_alloc', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, POINTER(keypath_map), POINTER(unknowns_map), c_ulong, POINTER(POINTER(wally_psbt_output))]),
+    ('wally_psbt_output_free', c_int, [POINTER(wally_psbt_output)]),
+    ('wally_psbt_init_alloc', c_int, [c_ulong, c_ulong, c_ulong, POINTER(POINTER(wally_psbt))]),
+    ('wally_psbt_free', c_int, [POINTER(wally_psbt)]),
+    ('wally_psbt_from_bytes', c_int, [c_void_p, c_ulong, POINTER(POINTER(wally_psbt))]),
+    ('wally_psbt_to_bytes', c_int, [POINTER(wally_psbt), c_void_p, c_ulong, c_ulong_p]),
+    ('wally_psbt_from_base64', c_int, [c_char_p, POINTER(POINTER(wally_psbt))]),
+    ('wally_psbt_to_base64', c_int, [POINTER(wally_psbt), c_char_p_p])
     ):
 
     def bind_fn(name, res, args):
