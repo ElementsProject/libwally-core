@@ -14,6 +14,7 @@ include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
+include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
 include_HEADERS += $(top_srcdir)/include/wally_transaction.h
 
@@ -180,6 +181,7 @@ libwallycore_la_SOURCES = \
     internal.c \
     mnemonic.c \
     pbkdf2.c \
+    psbt.c \
     script.c \
     scrypt.c \
     sign.c \
@@ -201,6 +203,7 @@ libwallycore_la_INCLUDES = \
     include/wally_core.h \
     include/wally_crypto.h \
     include/wally_elements.h \
+    include/wally_psbt.h \
     include/wally_script.h \
     include/wally_symmetric.h \
     include/wally_transaction.h
