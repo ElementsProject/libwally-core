@@ -2201,3 +2201,309 @@ done:
     }
     return ret;
 }
+
+static int get_txid(
+    struct wally_tx *tx,
+    unsigned char *txid,
+    size_t txid_len)
+{
+    unsigned char *bytes = NULL;
+    size_t calc, written;
+    int ret = WALLY_OK;
+
+    if (!tx || !txid || txid_len != SHA256_LEN) {
+        return WALLY_EINVAL;
+    }
+
+    if ((ret = wally_tx_get_length(tx, 0, &calc)) != WALLY_OK) {
+        return ret;
+    }
+    if ((bytes = wally_malloc(calc)) == NULL) {
+        return WALLY_ENOMEM;
+    }
+    if ((ret = wally_tx_to_bytes(tx, 0, bytes, calc, &written)) == WALLY_OK) {
+        ret = wally_sha256d(bytes, written, txid, SHA256_LEN);
+    }
+
+    wally_free(bytes);
+    return ret;
+}
+
+static int merge_unknowns_into(
+    struct wally_unknowns_map *dst,
+    const struct wally_unknowns_map *src)
+{
+    int ret = WALLY_OK;
+    size_t i, j;
+
+    if (!src || !dst) {
+        return WALLY_EINVAL;
+    }
+
+    for (i = 0; i < src->num_items; ++i) {
+        bool found = false;
+        for (j = 0; j < dst->num_items; ++j) {
+            if (src->items[i].key_len == dst->items[j].key_len &&
+                memcmp((char *)dst->items[j].key, (char *)src->items[i].key, src->items[i].key_len) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            continue;
+        }
+        if ((ret = add_unknowns_item(dst, &src->items[i])) != WALLY_OK) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+static int merge_keypaths_into(
+    struct wally_keypath_map *dst,
+    const struct wally_keypath_map *src)
+{
+    int ret = WALLY_OK;
+    size_t i, j;
+
+    if (!src || !dst) {
+        return WALLY_EINVAL;
+    }
+
+    for (i = 0; i < src->num_items; ++i) {
+        bool found = false;
+        for (j = 0; j < dst->num_items; ++j) {
+            if (memcmp((char *)dst->items[j].pubkey, (char *)src->items[i].pubkey, 65) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            continue;
+        }
+        if ((ret = add_keypath_item(dst, &src->items[i])) != WALLY_OK) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+static int merge_input_into(
+    struct wally_psbt_input *dst,
+    const struct wally_psbt_input *src)
+{
+    int ret = WALLY_OK;
+    size_t i, j;
+
+    if (!dst->non_witness_utxo && src->non_witness_utxo && (ret = clone_tx(src->non_witness_utxo, &dst->non_witness_utxo)) != WALLY_OK) {
+        return ret;
+    }
+    if (!dst->witness_utxo && src->witness_utxo && (ret = wally_tx_output_init_alloc(src->witness_utxo->satoshi, src->witness_utxo->script, src->witness_utxo->script_len, &dst->witness_utxo)) != WALLY_OK) {
+        return ret;
+    }
+
+    if (src->partial_sigs) {
+        if (!dst->partial_sigs) {
+            if ((ret = wally_partial_sigs_map_init_alloc(src->partial_sigs->items_allocation_len, &dst->partial_sigs)) != WALLY_OK) {
+                return ret;
+            }
+        }
+
+        for (i = 0; i < src->partial_sigs->num_items; ++i) {
+            bool found = false;
+            for (j = 0; j < dst->partial_sigs->num_items; ++j) {
+                if (memcmp((char *)dst->partial_sigs->items[j].pubkey, (char *)src->partial_sigs->items[i].pubkey, 65) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                continue;
+            }
+            if ((ret = add_partial_sig_item(dst->partial_sigs, &src->partial_sigs->items[i])) != WALLY_OK) {
+                return ret;
+            }
+        }
+    }
+
+    if (src->keypaths) {
+        if (!dst->keypaths) {
+            if ((ret = wally_keypath_map_init_alloc(src->keypaths->items_allocation_len, &dst->keypaths)) != WALLY_OK) {
+                return ret;
+            }
+        }
+
+        if ((ret = merge_keypaths_into(dst->keypaths, src->keypaths)) != WALLY_OK) {
+            return ret;
+        }
+    }
+
+    if (src->unknowns) {
+        if (!dst->unknowns) {
+            if ((ret = wally_unknowns_map_init_alloc(src->unknowns->items_allocation_len, &dst->unknowns)) != WALLY_OK) {
+                return ret;
+            }
+        }
+
+        if ((ret = merge_unknowns_into(dst->unknowns, src->unknowns)) != WALLY_OK) {
+            return ret;
+        }
+    }
+
+    if (dst->redeem_script_len == 0 && src->redeem_script_len > 0) {
+        if (!clone_bytes(&dst->redeem_script, src->redeem_script, src->redeem_script_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->redeem_script_len = src->redeem_script_len;
+    }
+
+    if (dst->witness_script_len == 0 && src->witness_script_len > 0) {
+        if (!clone_bytes(&dst->witness_script, src->witness_script, src->witness_script_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->witness_script_len = src->witness_script_len;
+    }
+
+    if (dst->final_script_sig_len == 0 && src->final_script_sig_len > 0) {
+        if (!clone_bytes(&dst->final_script_sig, src->final_script_sig, src->final_script_sig_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->final_script_sig_len = src->final_script_sig_len;
+    }
+
+    if (!dst->final_witness && src->final_witness) {
+        dst->final_witness = clone_witness(src->final_witness);
+        if (!dst->final_witness) {
+            return WALLY_ENOMEM;
+        }
+    }
+
+    if (src->sighash_type > dst->sighash_type) {
+        dst->sighash_type = src->sighash_type;
+    }
+
+    return WALLY_OK;
+}
+
+static int merge_output_into(
+    struct wally_psbt_output *dst,
+    const struct wally_psbt_output *src)
+{
+    int ret = WALLY_OK;
+
+    if (src->keypaths) {
+        if (!dst->keypaths) {
+            if ((ret = wally_keypath_map_init_alloc(src->keypaths->items_allocation_len, &dst->keypaths)) != WALLY_OK) {
+                return ret;
+            }
+        }
+
+        if ((ret = merge_keypaths_into(dst->keypaths, src->keypaths)) != WALLY_OK) {
+            return ret;
+        }
+    }
+
+    if (src->unknowns) {
+        if (!dst->unknowns) {
+            if ((ret = wally_unknowns_map_init_alloc(src->unknowns->items_allocation_len, &dst->unknowns)) != WALLY_OK) {
+                return ret;
+            }
+        }
+
+        if ((ret = merge_unknowns_into(dst->unknowns, src->unknowns)) != WALLY_OK) {
+            return ret;
+        }
+    }
+
+    if (dst->redeem_script_len == 0 && src->redeem_script_len > 0) {
+        if (!clone_bytes(&dst->redeem_script, src->redeem_script, src->redeem_script_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->redeem_script_len = src->redeem_script_len;
+    }
+
+    if (dst->witness_script_len == 0 && src->witness_script_len > 0) {
+        if (!clone_bytes(&dst->witness_script, src->witness_script, src->witness_script_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->witness_script_len = src->witness_script_len;
+    }
+
+    return WALLY_OK;
+}
+
+int wally_combine_psbts(
+    const struct wally_psbt *psbts,
+    size_t psbts_len,
+    struct wally_psbt **output)
+{
+    struct wally_psbt *result;
+    unsigned char global_txid[SHA256_LEN];
+    size_t i, j, k;
+    int ret = WALLY_OK;
+
+    TX_CHECK_OUTPUT;
+
+    if (!psbts) {
+        return WALLY_EINVAL;
+    }
+
+    // Get info from the first psbt and use it as the template
+    if ((ret = get_txid(psbts->tx, global_txid, SHA256_LEN)) != WALLY_OK) {
+        return ret;
+    }
+
+    if ((ret = wally_psbt_init_alloc(psbts[0].inputs_allocation_len, psbts[0].outputs_allocation_len, psbts[0].unknowns->items_allocation_len, &result)) != WALLY_OK) {
+        return ret;
+    }
+
+    if ((ret = clone_tx(psbts[0].tx, &result->tx)) != WALLY_OK) {
+        goto fail;
+    }
+    result->num_inputs = psbts[0].num_inputs;
+    result->num_outputs = psbts[0].num_outputs;
+
+    for (i = 0; i < psbts_len; ++i) {
+        unsigned char txid[SHA256_LEN];
+
+        // Compare the txids
+        if ((ret = get_txid(psbts[i].tx, txid, SHA256_LEN)) != WALLY_OK) {
+            goto fail;
+        }
+        if (memcmp(global_txid, txid, SHA256_LEN) != 0) {
+            ret = WALLY_EINVAL;
+            goto fail;
+        }
+
+        // Now start merging
+        for (j = 0; j < result->num_inputs; ++j) {
+            if ((ret = merge_input_into(&result->inputs[j], &psbts[i].inputs[j])) != WALLY_OK) {
+                goto fail;
+            }
+        }
+        for (j = 0; j < result->num_outputs; ++j) {
+            if ((ret = merge_output_into(&result->outputs[j], &psbts[i].outputs[j])) != WALLY_OK) {
+                goto fail;
+            }
+        }
+
+        if (psbts[i].unknowns) {
+            if (!result->unknowns) {
+                if ((ret = wally_unknowns_map_init_alloc(psbts[i].unknowns->items_allocation_len, &result->unknowns)) != WALLY_OK) {
+                    goto fail;
+                }
+            }
+
+            if ((ret = merge_unknowns_into(result->unknowns, psbts[i].unknowns)) != WALLY_OK) {
+                return ret;
+            }
+        }
+    }
+
+    *output = result;
+    return WALLY_OK;
+
+fail:
+    wally_psbt_free(result);
+    return ret;
+}
