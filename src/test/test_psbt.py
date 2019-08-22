@@ -55,5 +55,16 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(creator['result'], ser)
 
+        for combiner in combiners:
+            to_combine = []
+            for comb in combiner['combine']:
+                psbt = pointer(wally_psbt())
+                self.assertEqual(WALLY_OK, wally_psbt_from_base64(comb.encode('utf-8'), psbt))
+                to_combine.append(psbt.contents)
+            combined = pointer(wally_psbt())
+            self.assertEqual(WALLY_OK, wally_combine_psbts((wally_psbt * len(to_combine))(*to_combine), len(to_combine), combined))
+            ret, comb_ser = wally_psbt_to_base64(combined)
+            self.assertEqual(combiner['result'], comb_ser)
+
 if __name__ == '__main__':
     unittest.main()
