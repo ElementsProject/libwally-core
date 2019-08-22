@@ -1,5 +1,6 @@
 #include "internal.h"
 
+#include "ccan/ccan/base64/base64.h"
 #include "ccan/ccan/build_assert/build_assert.h"
 
 #include <include/wally_crypto.h>
@@ -2112,4 +2113,91 @@ int wally_psbt_to_bytes(
     }
     *bytes_written = p - bytes_out;
     return WALLY_OK;
+}
+
+int wally_psbt_from_base64(
+    const char *string,
+    struct wally_psbt **output)
+{
+    char *decoded;
+    size_t safe_len, string_len;
+    ssize_t decoded_len;
+    int ret;
+
+    if (!string) {
+        return WALLY_EINVAL;
+    }
+
+    string_len = strlen(string);
+    // Allocate the decoded buffer
+    safe_len = base64_decoded_length(string_len);
+    if ((decoded = wally_malloc(safe_len)) == NULL) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+
+    // Decode the base64 psbt
+    decoded_len = base64_decode(decoded, safe_len, string, string_len);
+    if (decoded_len <= 5) { // Make sure we also have enough bytes for the magic
+        ret = WALLY_EINVAL;
+        goto done;
+    }
+
+    // Now decode the psbt
+    ret = wally_psbt_from_bytes((unsigned char *)decoded, decoded_len, output);
+
+done:
+    if (decoded) {
+        wally_free(decoded);
+    }
+    return ret;
+}
+
+int wally_psbt_to_base64(
+    struct wally_psbt *psbt,
+    char **output)
+{
+    unsigned char *buff;
+    char *result = NULL;
+    size_t len, written, b64_safe_len;
+    ssize_t b64_len;
+    int ret = WALLY_OK;
+
+    if (!output || !psbt) {
+        return WALLY_EINVAL;
+    }
+
+    if ((ret = psbt_get_length(psbt, &len)) != WALLY_OK) {
+        return ret;
+    }
+    if ((buff = wally_malloc(len)) == NULL) {
+        return WALLY_ENOMEM;
+    }
+
+    // Get psbt bytes
+    if ((ret = wally_psbt_to_bytes(psbt, buff, len, &written)) != WALLY_OK) {
+        goto done;
+    }
+
+    // Base64 encode
+    b64_safe_len = base64_encoded_length(written) + 1; // + 1 for null termination
+    if ((result = wally_malloc(b64_safe_len)) == NULL) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+    if ((b64_len = base64_encode(result, b64_safe_len, (char *)buff, written)) <= 0) {
+        ret = WALLY_EINVAL;
+        goto done;
+    }
+    *output = result;
+    result = NULL;
+
+done:
+    if (result) {
+        clear_and_free(result, b64_safe_len);
+    }
+    if (buff) {
+        clear_and_free(buff, len);
+    }
+    return ret;
 }

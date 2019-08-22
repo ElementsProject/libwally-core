@@ -507,6 +507,26 @@ WALLY_CORE_API int wally_psbt_to_bytes(
     unsigned char *bytes_out, size_t bytes_len,
     size_t *bytes_written);
 
+/**
+ * Create a psbt from the base64 string.
+ *
+ * :param string: Base64 string to create the psbt from.
+ * :param output: Destination for the resulting psbt.
+ */
+WALLY_CORE_API int wally_psbt_from_base64(
+    const char *string,
+    struct wally_psbt **output);
+
+/**
+ * Create a base64 string for a psbt
+ *
+ * :param string: Base64 string to create the psbt from.
+ * :param output: Destination for the resulting psbt.
+ */
+WALLY_CORE_API int wally_psbt_to_base64(
+    struct wally_psbt *psbt,
+    char **output);
+
 #ifdef __cplusplus
 }
 #endif
