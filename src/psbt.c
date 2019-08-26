@@ -4,6 +4,7 @@
 #include "ccan/ccan/build_assert/build_assert.h"
 
 #include <include/wally_crypto.h>
+#include <include/wally_script.h>
 #include <include/wally_transaction.h>
 #include <include/wally_psbt.h>
 
@@ -2506,4 +2507,167 @@ int wally_combine_psbts(
 fail:
     wally_psbt_free(result);
     return ret;
+}
+
+int wally_sign_psbt(
+    struct wally_psbt *psbt,
+    const unsigned char *key,
+    size_t key_len)
+{
+    unsigned char pubkey[EC_PUBLIC_KEY_LEN], uncomp_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
+    size_t i, j, der_sig_len;
+    int ret;
+
+    if (!psbt || !psbt->tx || !key || key_len != EC_PRIVATE_KEY_LEN) {
+        return WALLY_EINVAL;
+    }
+
+    // Get the pubkey
+    if ((ret = wally_ec_public_key_from_private_key(key, key_len, pubkey, EC_PUBLIC_KEY_LEN)) != WALLY_OK) {
+        return ret;
+    }
+    if ((ret = wally_ec_public_key_decompress(pubkey, EC_PUBLIC_KEY_LEN, uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)) != WALLY_OK) {
+        return ret;
+    }
+
+    // Go through each of the inputs
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        struct wally_psbt_input *input = &psbt->inputs[i];
+        struct wally_tx_input *txin = &psbt->tx->inputs[i];
+        unsigned char sighash[SHA256_LEN], *scriptcode, wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+        size_t scriptcode_len;
+        bool match = false, comp = false;
+        uint32_t sighash_type = WALLY_SIGHASH_ALL;
+
+        if (!input->keypaths) {
+            // Can't do anything without the keypaths
+            continue;
+        }
+
+        // Go through each listed pubkey and see if it matches.
+        for (j = 0; j < input->keypaths->num_items; ++j) {
+            struct wally_keypath_item *item = &input->keypaths->items[j];
+            if (item->pubkey[0] == 0x04 && memcmp((char *)item->pubkey, (char *)uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0) {
+                match = true;
+                break;
+            } else if (memcmp((char *)item->pubkey, (char *)pubkey, EC_PUBLIC_KEY_LEN) == 0) {
+                match = true;
+                comp = true;
+                break;
+            }
+        }
+
+        // Did not find pubkey, skip
+        if (!match) {
+            continue;
+        }
+
+        // Sighash type
+        if (input->sighash_type > 0) {
+            sighash_type = input->sighash_type;
+        }
+
+        // Get scriptcode and sighash
+        if (input->redeem_script) {
+            unsigned char sh[WALLY_SCRIPTPUBKEY_P2SH_LEN];
+            size_t written;
+
+            if ((ret = wally_scriptpubkey_p2sh_from_bytes(input->redeem_script, input->redeem_script_len, WALLY_SCRIPT_HASH160, sh, WALLY_SCRIPTPUBKEY_P2SH_LEN, &written)) != WALLY_OK) {
+                return ret;
+            }
+            if (input->non_witness_utxo) {
+                if (input->non_witness_utxo->outputs[txin->index].script_len != WALLY_SCRIPTPUBKEY_P2SH_LEN ||
+                    memcmp(sh, input->non_witness_utxo->outputs[txin->index].script, WALLY_SCRIPTPUBKEY_P2SH_LEN) != 0) {
+                    return WALLY_EINVAL;
+                }
+            } else if (input->witness_utxo) {
+                if (input->witness_utxo->script_len != WALLY_SCRIPTPUBKEY_P2SH_LEN ||
+                    memcmp(sh, input->witness_utxo->script, WALLY_SCRIPTPUBKEY_P2SH_LEN) != 0) {
+                    return WALLY_EINVAL;
+                }
+            } else {
+                continue;
+            }
+            scriptcode = input->redeem_script;
+            scriptcode_len = input->redeem_script_len;
+        } else {
+            scriptcode = psbt->tx->outputs[txin->index].script;
+            scriptcode_len = psbt->tx->outputs[txin->index].script_len;
+        }
+
+        if (input->non_witness_utxo) {
+            unsigned char txid[SHA256_LEN];
+
+            if ((ret = get_txid(input->non_witness_utxo, txid, SHA256_LEN)) != WALLY_OK) {
+                return ret;
+            }
+            if (memcmp((char *)txid, (char *)txin->txhash, SHA256_LEN) != 0) {
+                return WALLY_EINVAL;
+            }
+
+            if ((ret = wally_tx_get_btc_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, 0, sighash_type, 0, sighash, SHA256_LEN)) != WALLY_OK) {
+                return ret;
+            }
+        } else if (input->witness_utxo) {
+            size_t type;
+            if ((ret = wally_scriptpubkey_get_type(scriptcode, scriptcode_len, &type)) != WALLY_OK) {
+                return ret;
+            }
+            if (type == WALLY_SCRIPT_TYPE_P2WPKH) {
+                size_t written;
+                if ((ret = wally_scriptpubkey_p2pkh_from_bytes(&scriptcode[2], HASH160_LEN, 0, wpkh_sc, WALLY_SCRIPTPUBKEY_P2PKH_LEN, &written)) != WALLY_OK) {
+                    return ret;
+                }
+                scriptcode = wpkh_sc;
+                scriptcode_len = WALLY_SCRIPTPUBKEY_P2PKH_LEN;
+            } else if (type == WALLY_SCRIPT_TYPE_P2WSH && input->witness_script) {
+                unsigned char wsh[WALLY_SCRIPTPUBKEY_P2WSH_LEN];
+                size_t written;
+
+                if ((ret = wally_witness_program_from_bytes(input->witness_script, input->witness_script_len, WALLY_SCRIPT_SHA256, wsh, WALLY_SCRIPTPUBKEY_P2WSH_LEN, &written)) != WALLY_OK) {
+                    return ret;
+                }
+                if (scriptcode_len != WALLY_SCRIPTPUBKEY_P2WSH_LEN ||
+                    memcmp((char *)wsh, (char *)scriptcode, WALLY_SCRIPTPUBKEY_P2WSH_LEN) != 0) {
+                    return WALLY_EINVAL;
+                }
+                scriptcode = input->witness_script;
+                scriptcode_len = input->witness_script_len;
+            } else {
+                // Not a recognized scriptPubKey type or not enough information
+                continue;
+            }
+
+            if ((ret = wally_tx_get_btc_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, input->witness_utxo->satoshi, sighash_type, WALLY_TX_FLAG_USE_WITNESS, sighash, SHA256_LEN)) != WALLY_OK) {
+                return ret;
+            }
+        }
+
+        // Sign the sighash
+        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, EC_FLAG_ECDSA | EC_FLAG_GRIND_R, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
+            return ret;
+        }
+        if ((ret = wally_ec_sig_normalize(sig, EC_SIGNATURE_LEN, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
+            return ret;
+        }
+        if ((ret = wally_ec_sig_to_der(sig, EC_SIGNATURE_LEN, der_sig, EC_SIGNATURE_DER_MAX_LEN, &der_sig_len)) != WALLY_OK) {
+            return ret;
+        }
+
+        // Add the sighash type to the end of the sig
+        der_sig[der_sig_len] = (unsigned char)sighash_type;
+        der_sig_len++;
+
+        // Copy the DER sig into the psbt
+        if (!input->partial_sigs) {
+            if ((ret = wally_partial_sigs_map_init_alloc(1, &input->partial_sigs)) != WALLY_OK) {
+                return ret;
+            }
+        }
+        if ((ret = wally_add_new_partial_sig(input->partial_sigs, comp ? pubkey : uncomp_pubkey, comp ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN, der_sig, der_sig_len)) != WALLY_OK) {
+            return ret;
+        }
+    }
+
+    return WALLY_OK;
 }
