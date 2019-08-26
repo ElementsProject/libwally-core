@@ -539,6 +539,18 @@ WALLY_CORE_API int wally_combine_psbts(
     size_t psbts_len,
     struct wally_psbt **output);
 
+/**
+ * Sign a PSBT using the simple signer algorithm: https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
+ *
+ * :param psbt: PSBT to sign. Directly modifies this PSBT
+ * :param key: Private key to sign PSBT with
+ * :param key_len: Length of key in bytes. Must be EC_PRIVATE_KEY_LEN
+ */
+WALLY_CORE_API int wally_sign_psbt(
+    struct wally_psbt *psbt,
+    const unsigned char *key,
+    size_t key_len);
+
 #ifdef __cplusplus
 }
 #endif
