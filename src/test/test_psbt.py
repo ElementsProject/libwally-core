@@ -15,6 +15,7 @@ class PSBTTests(unittest.TestCase):
             valids = d['valid']
             creators = d['creator']
             signers = d['signer']
+            inval_signers = d['inval_signer']
             combiners = d['combiner']
             finalizers = d['finalizer']
             extractors = d['extractor']
@@ -65,6 +66,26 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(WALLY_OK, wally_combine_psbts((wally_psbt * len(to_combine))(*to_combine), len(to_combine), combined))
             ret, comb_ser = wally_psbt_to_base64(combined)
             self.assertEqual(combiner['result'], comb_ser)
+
+        for signer in signers:
+            psbt = pointer(wally_psbt())
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(signer['psbt'].encode('utf-8'), psbt))
+            for priv in signer['privkeys']:
+                buf, buf_len = make_cbuffer('00'*32)
+                self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
+                self.assertEqual(WALLY_OK, wally_sign_psbt(psbt, buf, buf_len))
+
+            ret, reser = wally_psbt_to_base64(psbt)
+            self.assertEqual(WALLY_OK, ret)
+            self.assertEqual(signer['result'], reser)
+
+        for inval_signer in inval_signers:
+            psbt = pointer(wally_psbt())
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(inval_signer['psbt'].encode('utf-8'), psbt))
+            for priv in inval_signer['privkeys']:
+                buf, buf_len = make_cbuffer('00'*32)
+                self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
+                self.assertEqual(WALLY_EINVAL, wally_sign_psbt(psbt, buf, buf_len))
 
 if __name__ == '__main__':
     unittest.main()
