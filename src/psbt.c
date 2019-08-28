@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include "transaction_shared.h"
 #include "script_int.h"
+#include "script.h"
 
 const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 
@@ -2669,5 +2670,207 @@ int wally_sign_psbt(
         }
     }
 
+    return WALLY_OK;
+}
+
+int wally_finalize_psbt(struct wally_psbt *psbt)
+{
+    size_t i;
+    int ret;
+
+    if (!psbt) {
+        return WALLY_EINVAL;
+    }
+
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        struct wally_psbt_input *input = &psbt->inputs[i];
+        struct wally_tx_input *txin = &psbt->tx->inputs[i];
+        unsigned char *out_script; // Script that determines how we should finalize this input, typically output script
+        size_t out_script_len;
+        bool witness = false, p2sh = false;;
+
+        if (input->final_script_sig || input->final_witness) {
+            // Already finalized
+            continue;
+        }
+
+        if (input->redeem_script) {
+            out_script = input->redeem_script;
+            out_script_len = input->redeem_script_len;
+            p2sh = true;
+        } else {
+            out_script = psbt->tx->outputs[txin->index].script;
+            out_script_len = psbt->tx->outputs[txin->index].script_len;
+        }
+        if (input->witness_script) {
+            out_script = input->witness_script;
+            out_script_len = input->witness_script_len;
+            witness = true;
+        }
+
+        size_t type;
+        if ((ret = wally_scriptpubkey_get_type(out_script, out_script_len, &type)) != WALLY_OK) {
+            return ret;
+        }
+
+        switch(type) {
+        case WALLY_SCRIPT_TYPE_P2PKH:
+        case WALLY_SCRIPT_TYPE_P2WPKH: {
+            struct wally_partial_sigs_item *partial_sig;
+            unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+            size_t script_sig_len, pubkey_len = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+
+            if (!input->partial_sigs || input->partial_sigs->num_items != 1) {
+                // Must be single key, single sig
+                continue;
+            }
+            partial_sig = &input->partial_sigs->items[0];
+            if (pubkey_is_compressed(partial_sig->pubkey)) {
+                pubkey_len = EC_PUBLIC_KEY_LEN;
+            }
+
+            if (type == WALLY_SCRIPT_TYPE_P2PKH) {
+                if ((ret = wally_scriptsig_p2pkh_from_der(partial_sig->pubkey, pubkey_len, partial_sig->sig, partial_sig->sig_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
+                    return ret;
+                }
+                if (!clone_bytes(&input->final_script_sig, script_sig, script_sig_len)) {
+                    return WALLY_ENOMEM;
+                }
+            } else {
+                if ((ret = wally_witness_p2wpkh_from_der(partial_sig->pubkey, pubkey_len, partial_sig->sig, partial_sig->sig_len, &input->final_witness)) != WALLY_OK) {
+                    return ret;
+                }
+            }
+            break;
+        }
+        case WALLY_SCRIPT_TYPE_MULTISIG: {
+            unsigned char *script_sig, *sigs, *p = out_script, *end = p + out_script_len;
+            uint32_t *sighashes;
+            size_t n_sigs, n_pks, sig_i = 0, j, k, sigs_len, script_sig_len, written;
+
+            if (!script_is_op_n(out_script[0], false, &n_sigs)) {
+                // How did this happen?
+                return WALLY_ERROR;
+            }
+
+            if (!input->partial_sigs || input->partial_sigs->num_items < n_sigs) {
+                continue;
+            }
+
+            if (!script_is_op_n(out_script[out_script_len - 2], false, &n_pks)) {
+                // How did this happen?
+                return WALLY_ERROR;
+            }
+
+            sigs_len = EC_SIGNATURE_LEN * n_sigs;
+            if (!(sigs = wally_malloc(sigs_len)) || !(sighashes = wally_malloc(n_sigs * sizeof(uint32_t)))) {
+                return WALLY_ENOMEM;
+            }
+
+            // Go through the multisig script and figure out the order of pubkeys
+            p++; // Skip the n_sig item
+            for (j = 0; j < n_pks && p < end; ++j) {
+                size_t push_size, push_opcode_size, sig_len;
+                unsigned char *pubkey, *sig, compact_sig[EC_SIGNATURE_LEN];
+                bool found = false;
+
+                if ((ret = script_get_push_size_from_bytes(p, end - p, &push_size)) != WALLY_OK) {
+                    wally_free(sigs);
+                    wally_free(sighashes);
+                    return ret;
+                }
+                if ((ret = script_get_push_opcode_size_from_bytes(p, end - p, &push_opcode_size)) != WALLY_OK) {
+                    wally_free(sigs);
+                    wally_free(sighashes);
+                    return ret;
+                }
+                p += push_opcode_size;
+
+                pubkey = p;
+                p += push_size;
+
+                for (k = 0; k < input->partial_sigs->num_items; ++k) {
+                    if (memcmp(input->partial_sigs->items[k].pubkey, pubkey, push_size) == 0) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    continue;
+                }
+
+                // Get the signature and sighash separately
+                sig = input->partial_sigs->items[k].sig;
+                sig_len = input->partial_sigs->items[k].sig_len; // Has sighash byte at end
+                if ((ret = wally_ec_sig_from_der(sig, sig_len - 1, compact_sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
+                    wally_free(sigs);
+                    wally_free(sighashes);
+                    return ret;
+                }
+                memcpy(sigs + sig_i * EC_SIGNATURE_LEN, compact_sig, EC_SIGNATURE_LEN);
+                sighashes[sig_i] = (uint32_t)sig[sig_len - 1];
+                sig_i++;
+            }
+
+            if (witness) {
+                if ((ret = wally_witness_multisig_from_bytes(out_script, out_script_len, sigs, sigs_len, sighashes, n_sigs, 0, &input->final_witness)) != WALLY_OK) {
+                    wally_free(sigs);
+                    wally_free(sighashes);
+                    return ret;
+                }
+            } else {
+                script_sig_len = n_sigs * (EC_SIGNATURE_DER_MAX_LEN + 2) + out_script_len;
+                if (!(script_sig = wally_malloc(script_sig_len))) {
+                    wally_free(sigs);
+                    wally_free(sighashes);
+                    return WALLY_ENOMEM;
+                }
+
+                if ((ret = wally_scriptsig_multisig_from_bytes(out_script, out_script_len, sigs, sigs_len, sighashes, n_sigs, 0, script_sig, script_sig_len, &written)) != WALLY_OK) {
+                    wally_free(sigs);
+                    wally_free(sighashes);
+                    wally_free(script_sig);
+                    return ret;
+                }
+                input->final_script_sig = script_sig;
+                input->final_script_sig_len = written;
+            }
+
+            wally_free(sigs);
+            wally_free(sighashes);
+
+            if (witness && p2sh) {
+                // P2SH wrapped witness requires final scriptsig of pushing the redeemScript
+                script_sig_len = varint_get_length(input->redeem_script_len) + input->redeem_script_len;
+                input->final_script_sig = wally_malloc(script_sig_len);
+                if ((ret = wally_script_push_from_bytes(input->redeem_script, input->redeem_script_len, 0, input->final_script_sig, script_sig_len, &written)) != WALLY_OK) {
+                    wally_free(input->final_script_sig);
+                    return ret;
+                }
+                input->final_script_sig_len = written;
+            }
+
+            break;
+        }
+        default: {
+            // Skip this because we can't finalize it
+            continue;
+        }
+        }
+
+        // Clear non-final things
+        wally_free(input->redeem_script);
+        input->redeem_script_len = 0;
+        input->redeem_script = NULL;
+        wally_free(input->witness_script);
+        input->witness_script_len = 0;
+        input->witness_script = NULL;
+        wally_keypath_map_free(input->keypaths);
+        input->keypaths = NULL;
+        wally_partial_sigs_map_free(input->partial_sigs);
+        input->partial_sigs = NULL;
+        input->sighash_type = 0;
+    }
     return WALLY_OK;
 }
