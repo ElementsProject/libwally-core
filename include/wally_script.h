@@ -2,6 +2,7 @@
 #define LIBWALLY_CORE_SCRIPT_H
 
 #include "wally_core.h"
+#include "wally_transaction.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,6 +224,25 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
     size_t *written);
 
 /**
+ * Create a P2WPKH witness from a pubkey and compact signature.
+ *
+ * :param pub_key: The public key to create a witness with.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
+ *|    or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ * :param sig: The compact signature to create a witness with.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
+ * :param witness: Destination for the newly created witness.
+ */
+WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    uint32_t sighash,
+    struct wally_tx_witness_stack **witness);
+
+/**
  * Create a P2PKH scriptSig from a pubkey and DER signature plus sighash.
  *
  * :param pub_key: The public key to create a scriptSig with.
@@ -243,6 +263,24 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_der(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Create a P2WPKH witness from a pubkey and DER signature plus sighash.
+ *
+ * :param pub_key: The public key to create a witness with.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be
+ *|    ``EC_PUBLIC_KEY_LEN`` ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ * :param sig: The DER encoded signature to create a witness,
+ *|    with the sighash byte appended to it.
+ * :param sig_len: The length of ``sig`` in bytes.
+ * :param witness: Destination for the newly created witness.
+ */
+WALLY_CORE_API int wally_witness_p2wpkh_from_der(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    struct wally_tx_witness_stack **witness);
 
 /**
  * Create an OP_RETURN scriptPubkey.
