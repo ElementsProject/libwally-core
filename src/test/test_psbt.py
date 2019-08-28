@@ -87,5 +87,13 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
                 self.assertEqual(WALLY_EINVAL, wally_sign_psbt(psbt, buf, buf_len))
 
+        for finalizer in finalizers:
+            psbt = pointer(wally_psbt())
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(finalizer['finalize'].encode('utf-8'), psbt))
+            self.assertEqual(WALLY_OK, wally_finalize_psbt(psbt))
+            ret, reser = wally_psbt_to_base64(psbt)
+            self.assertEqual(WALLY_OK, ret)
+            self.assertEqual(finalizer['result'], reser)
+
 if __name__ == '__main__':
     unittest.main()
