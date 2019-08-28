@@ -1009,3 +1009,88 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
 
     return WALLY_OK;
 }
+
+// Converts a push only scriptsig to a newly allocated witness stack
+static int scriptsig_to_witness(unsigned char *bytes, size_t bytes_len, struct wally_tx_witness_stack **output)
+{
+    unsigned char *p = bytes, *end = p + bytes_len;
+    struct wally_tx_witness_stack *result = NULL;
+    int ret = WALLY_OK;
+
+    if (!bytes || !output || !bytes_len) {
+        return WALLY_EINVAL;
+    }
+
+    if ((ret = wally_tx_witness_stack_init_alloc(2, &result)) != WALLY_OK) {
+        return ret;
+    }
+
+    while (p < end) {
+        size_t push_size, push_opcode_size;
+
+        if ((ret = script_get_push_size_from_bytes(p, end - p, &push_size)) != WALLY_OK) {
+            goto fail;
+        }
+        if ((ret = script_get_push_opcode_size_from_bytes(p, end - p, &push_opcode_size)) != WALLY_OK) {
+            goto fail;
+        }
+        p += push_opcode_size;
+
+        if ((ret = wally_tx_witness_stack_add(result, p, push_size)) != WALLY_OK) {
+            goto fail;
+        }
+        p += push_size;
+    }
+
+    *output = result;
+    return WALLY_OK;
+
+fail:
+    wally_tx_witness_stack_free(result);
+    return ret;
+}
+
+int wally_witness_p2wpkh_from_der(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    struct wally_tx_witness_stack **witness)
+{
+    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    int ret;
+    size_t script_sig_len;
+
+    if ((ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
+        return ret;
+    }
+
+    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
+        return ret;
+    }
+
+    return WALLY_OK;
+}
+
+int wally_witness_p2wpkh_from_sig(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    uint32_t sighash,
+    struct wally_tx_witness_stack **witness)
+{
+    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    int ret;
+    size_t script_sig_len;
+
+    if ((ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
+        return ret;
+    }
+
+    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
+        return ret;
+    }
+
+    return WALLY_OK;
+}
