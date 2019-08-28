@@ -367,6 +367,28 @@ WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
     size_t *written);
 
 /**
+ * Create a multisig scriptWitness.
+ *
+ * :param script: The witness script this scriptWitness provides signatures for.
+ * :param script_len: The length of ``script`` in bytes.
+ * :param bytes: Compact signatures to place in the scriptWitness.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
+ * :param sighash: WALLY_SIGHASH_ flags for each signature in ``bytes``.
+ * :param sighash_len: The number of sighash flags in ``sighash``.
+ * :param flags: Must be zero.
+ * :param witness: Destination for newly allocated witness.
+ */
+WALLY_CORE_API int wally_witness_multisig_from_bytes(
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const uint32_t *sighash,
+    size_t sighash_len,
+    uint32_t flags,
+    struct wally_tx_witness_stack **witness);
+
+/**
  * Create a CSV 2of2 multisig with a single key recovery scriptPubkey.
  *
  * The resulting output can be spent at any time with both of the two keys
