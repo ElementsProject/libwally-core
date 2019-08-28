@@ -114,7 +114,7 @@ struct wally_psbt_output {
     struct wally_unknowns_map *unknowns;
 };
 
-/** A parsed bitcoin transaction */
+/** A partially signed bitcoin transaction */
 struct wally_psbt {
     struct wally_tx *tx;
     struct wally_psbt_input *inputs;
@@ -550,6 +550,14 @@ WALLY_CORE_API int wally_sign_psbt(
     struct wally_psbt *psbt,
     const unsigned char *key,
     size_t key_len);
+
+/**
+ * Finalize a PSBT
+ *
+ * :param psbt: PSBT to finalize. Directly modifies this PSBT
+ */
+WALLY_CORE_API int wally_finalize_psbt(
+    struct wally_psbt *psbt);
 
 #ifdef __cplusplus
 }
