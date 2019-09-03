@@ -1350,7 +1350,7 @@ if(ENABLE_DEBUG AND ENABLE_COVERAGE)
 # add_custom_target(
 #   lcov_libwally_collect lcov --output-file src/lcov_result --capture --ignore-errors=gcov
 #   COMMAND lcov --output-file src/lcov_total --add-tracefile src/lcov_base --add-tracefile src/lcov_result --ignore-errors=gcov
-#   WORKING_DIRECTORY ${BTCLIB_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
+#   WORKING_DIRECTORY ${CFD_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
 # )
 # add_custom_target(
 #   coverage_libwally  genhtml --demangle-cpp -o src/lcov/ src/lcov_total
