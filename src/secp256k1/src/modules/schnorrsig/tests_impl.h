@@ -119,7 +119,7 @@ void test_schnorrsig_api(secp256k1_scratch_space *scratch) {
     CHECK(ecount == 5);
     CHECK(secp256k1_schnorrsig_verify_batch(vrfy, scratch, &sigptr, &msgptr, &pkptr, (size_t)1 << (sizeof(size_t)*8-1)) == 0);
     CHECK(ecount == 6);
-    CHECK(secp256k1_schnorrsig_verify_batch(vrfy, scratch, &sigptr, &msgptr, &pkptr, 1 << 31) == 0);
+    CHECK(secp256k1_schnorrsig_verify_batch(vrfy, scratch, &sigptr, &msgptr, &pkptr, (uint32_t)1 << 31) == 0);
     CHECK(ecount == 7);
 
     secp256k1_context_destroy(none);
@@ -720,7 +720,7 @@ void run_schnorrsig_tests(void) {
     test_schnorrsig_sign();
     test_schnorrsig_sign_verify(scratch);
 
-    secp256k1_scratch_space_destroy(scratch);
+    secp256k1_scratch_space_destroy(ctx, scratch);
 }
 
 #endif

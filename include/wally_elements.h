@@ -55,6 +55,29 @@ WALLY_CORE_API int wally_asset_value_commitment(
     unsigned char *bytes_out,
     size_t len);
 
+WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
+    uint64_t value,
+    const unsigned char *nonce_hash,
+    size_t nonce_hash_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *abf,
+    size_t abf_len,
+    const unsigned char *vbf,
+    size_t vbf_len,
+    const unsigned char *commitment,
+    size_t commitment_len,
+    const unsigned char *extra,
+    size_t extra_len,
+    const unsigned char *generator,
+    size_t generator_len,
+    uint64_t min_value,
+    int exp,
+    int min_bits,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
 WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t value,
     const unsigned char *pub_key,
@@ -103,6 +126,25 @@ WALLY_CORE_API int wally_asset_surjectionproof(
     size_t len,
     size_t *written);
 
+WALLY_CORE_API int wally_asset_unblind_with_nonce(
+    const unsigned char *nonce_hash,
+    size_t nonce_hash_len,
+    const unsigned char *proof,
+    size_t proof_len,
+    const unsigned char *commitment,
+    size_t commitment_len,
+    const unsigned char *extra,
+    size_t extra_len,
+    const unsigned char *generator,
+    size_t generator_len,
+    unsigned char *asset_out,
+    size_t asset_out_len,
+    unsigned char *abf_out,
+    size_t abf_out_len,
+    unsigned char *vbf_out,
+    size_t vbf_out_len,
+    uint64_t *value_out);
+
 WALLY_CORE_API int wally_asset_unblind(
     const unsigned char *pub_key,
     size_t pub_key_len,
@@ -123,6 +165,20 @@ WALLY_CORE_API int wally_asset_unblind(
     unsigned char *vbf_out,
     size_t vbf_out_len,
     uint64_t *value_out);
+
+WALLY_CORE_API int wally_asset_blinding_key_from_seed(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *script,
+    size_t script_len,
+    unsigned char *bytes_out,
+    size_t len);
 
 #endif /* BUILD_ELEMENTS */
 

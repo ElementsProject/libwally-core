@@ -37,6 +37,7 @@ class TransactionTests(unittest.TestCase):
         for args in [
             (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, pointer(wally_tx())), # No inputs
             (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, pointer(wally_tx())), # No outputs
+            (TX_FAKE_HEX, 2, pointer(wally_tx())), # Elements flag must not be set for serialization
         ]:
             self.assertEqual(WALLY_OK, wally_tx_from_hex(*args))
             self.assertEqual(WALLY_EINVAL, wally_tx_to_hex(args[2][0], 0)[0])

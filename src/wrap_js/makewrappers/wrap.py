@@ -132,12 +132,15 @@ FUNCS = [
     ('wally_ec_sig_from_bytes', F([
         'const_bytes[key]', 'const_bytes[bytes]', 'uint32_t[flags]',
         'out_bytes_fixedsized'
-    ], out_size='64')),
+    ], out_size='64 + ((_arguments[2] & 8) ? 1 : 0)')),
 
     # signatures:
     ('wally_ec_sig_to_der', F([
         'const_bytes[sig]', 'out_bytes_sized'
     ], out_size='72')),
+    ('wally_ec_sig_to_public_key', F([
+        'const_bytes[bytes]', 'const_bytes[sig]', 'out_bytes_fixedsized'
+    ], out_size='33')),
 
     # BIP32:
     ('bip32_key_from_seed', F([
@@ -188,6 +191,17 @@ FUNCS_NODE = [
         'const_uint64s[values]', 'uint32_t[num_inputs]',
         'const_bytes[abf]', 'const_bytes[vbf]', 'out_bytes_fixedsized'
     ], out_size='32')),
+    ('wally_asset_unblind_with_nonce', F([
+        'const_bytes[nonce_hash]',
+        'const_bytes[rangeproof]',
+        'const_bytes[commitment]',
+        'const_bytes[extra_in]',
+        'const_bytes[generator]',
+        'out_bytes_fixedsized',
+        'out_bytes_fixedsized',
+        'out_bytes_fixedsized',
+        'out_uint64_t'
+    ], out_sizes=['32', '32', '32'])),
     ('wally_asset_unblind', F([
         'const_bytes[pubkey]',
         'const_bytes[privkey]',
@@ -204,6 +218,20 @@ FUNCS_NODE = [
         'uint64_t[value]', 'const_bytes[vbf]', 'const_bytes[generator]',
         'out_bytes_fixedsized'
     ], out_size='33')),
+    ('wally_asset_rangeproof_with_nonce', F([
+        'uint64_t[value]',
+        'const_bytes[nonce_hash]',
+        'const_bytes[asset]',
+        'const_bytes[abf]',
+        'const_bytes[vbf]',
+        'const_bytes[commitment]',
+        'const_bytes[extra_in]',
+        'const_bytes[generator]',
+        'uint64_t[min_value]',
+        'int[exp]',
+        'int[min_bits]',
+        'out_bytes_sized',
+    ], out_size='5134')),
     ('wally_asset_rangeproof', F([
         'uint64_t[value]',
         'const_bytes[pub_key]',
@@ -226,6 +254,29 @@ FUNCS_NODE = [
         'const_bytes[input_abfs]', 'const_bytes[input_ags]',
         'out_bytes_sized',
     ], out_size='(2 + Math.floor((_arguments[5].length/32 + 7)/8) + 32 * (1 + (_arguments[5].length/32 > 3 ? 3 : _arguments[5].length/32)))')),
+    ('wally_asset_blinding_key_from_seed', F([
+        'const_bytes[bytes]',
+        'out_bytes_fixedsized',
+    ], out_size='64')),
+    ('wally_asset_blinding_key_to_ec_private_key', F([
+        'const_bytes[bytes]',
+        'const_bytes[script]',
+        'out_bytes_fixedsized',
+    ], out_size='32')),
+    ('wally_confidential_addr_from_addr', F([
+        'string[address]',
+        'uint32_t[prefix]',
+        'const_bytes[pub_key]',
+        'out_str_p'
+     ])),
+    ('wally_confidential_addr_to_addr', F([
+        'string[address]',
+        'uint32_t[prefix]',
+        'out_str_p'
+     ])),
+    ('wally_confidential_addr_to_ec_public_key', F([
+        'string[address]', 'uint32_t[prefix]', 'out_bytes_fixedsized'
+    ], out_size='33')),
 ]
 
 def open_file(prefix, name):

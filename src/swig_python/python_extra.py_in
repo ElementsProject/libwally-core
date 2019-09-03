@@ -63,10 +63,14 @@ pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
 
 ec_public_key_decompress = _wrap_bin(ec_public_key_decompress, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
 ec_public_key_from_private_key = _wrap_bin(ec_public_key_from_private_key, EC_PUBLIC_KEY_LEN)
-ec_sig_from_bytes = _wrap_bin(ec_sig_from_bytes, EC_SIGNATURE_LEN)
+def _sig_len(priv_key, bytes, flags):
+    return EC_SIGNATURE_RECOVERABLE_LEN if EC_FLAG_RECOVERABLE & flags else EC_SIGNATURE_LEN
+ec_sig_from_bytes = _wrap_bin(ec_sig_from_bytes, _sig_len)
 ec_sig_from_der = _wrap_bin(ec_sig_from_der, EC_SIGNATURE_LEN)
 ec_sig_normalize = _wrap_bin(ec_sig_normalize, EC_SIGNATURE_LEN)
 ec_sig_to_der = _wrap_bin(ec_sig_to_der, EC_SIGNATURE_DER_MAX_LEN, resize=True)
+ec_sig_to_public_key = _wrap_bin(ec_sig_to_public_key, EC_PUBLIC_KEY_LEN)
+ecdh = _wrap_bin(ecdh, SHA256_LEN)
 
 def base58check_from_bytes(buf):
     return base58_from_bytes(buf, BASE58_FLAG_CHECKSUM)
@@ -152,21 +156,28 @@ def _wif_to_public_key_len(wif, prefix):
     return EC_PUBLIC_KEY_UNCOMPRESSED_LEN if wif_is_uncompressed(wif) else EC_PUBLIC_KEY_LEN
 wif_to_public_key = _wrap_bin(wif_to_public_key, _wif_to_public_key_len, resize=True)
 
+symmetric_key_from_seed = _wrap_bin(symmetric_key_from_seed, HMAC_SHA512_LEN)
+symmetric_key_from_parent = _wrap_bin(symmetric_key_from_parent, HMAC_SHA512_LEN)
+
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)
     asset_value_commitment = _wrap_bin(asset_value_commitment, ASSET_COMMITMENT_LEN)
+    asset_rangeproof_with_nonce = _wrap_bin(asset_rangeproof_with_nonce, ASSET_RANGEPROOF_MAX_LEN, resize=True)
     asset_rangeproof = _wrap_bin(asset_rangeproof, ASSET_RANGEPROOF_MAX_LEN, resize=True)
     def _asset_surjectionproof_len_fn(aid, ag, gen, r, in_aid, in_abf, in_ags):
         return asset_surjectionproof_size(len(in_aid) // ASSET_TAG_LEN)
     asset_surjectionproof = _wrap_bin(asset_surjectionproof, _asset_surjectionproof_len_fn, resize=True)
+    asset_blinding_key_from_seed = _wrap_bin(asset_blinding_key_from_seed, HMAC_SHA512_LEN)
+    asset_blinding_key_to_ec_private_key = _wrap_bin(asset_blinding_key_to_ec_private_key, EC_PRIVATE_KEY_LEN)
 
     def _asset_unblind_fn(fn):
         def wrapped(*args):
-            buffers = [bytearray(ASSET_TAG_LEN) for _ in xrange(3)]
+            buffers = [bytearray(ASSET_TAG_LEN) for _ in range(3)]
             ret = fn(*list(args) + buffers)
             return ret, buffers[0], buffers[1], buffers[2]
         return wrapped
+    asset_unblind_with_nonce = _asset_unblind_fn(asset_unblind_with_nonce)
     asset_unblind = _asset_unblind_fn(asset_unblind)
 
     tx_elements_input_init = _wrap_with_defaults(tx_elements_input_init, 4, 12)

@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.7.1])
+AC_INIT([libwallycore],[0.7.2])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -230,8 +230,19 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/mman.h>]],[[mmap(0,0,0,0,0,0)]])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],[[return posix_memalign(NULL,0,0)]])],
                [AC_DEFINE(HAVE_POSIX_MEMALIGN, 1, [Define if we have posix_memalign])])
 
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]],[[int x[1]; memset_s(x, 1, 0, 1)]])],
-               [AC_DEFINE(HAVE_MEMSET_S, 1, [Define if we have memset_s])])
+AC_CHECK_FUNCS([memset_s explicit_bzero explicit_memset])
+
+AC_MSG_CHECKING(whether we can use inline asm code)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+int a = 42;
+int *pnt = &a;
+__asm__ __volatile__ ("" : : "r"(pnt) : "memory");
+]])],
+  [AC_MSG_RESULT(yes)
+   AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])]
+  [AC_MSG_RESULT(no)]
+)
 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
@@ -403,7 +414,7 @@ export ARFLAGS
 export AR_FLAGS
 export LD
 export LDFLAGS
-ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
+ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 

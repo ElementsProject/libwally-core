@@ -15,6 +15,13 @@ WALLY_CORE_API int wally_tx_input_get_witness(const struct wally_tx_input *tx_in
 WALLY_CORE_API int wally_tx_input_get_witness_len(const struct wally_tx_input *tx_input_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_index(const struct wally_tx_input *tx_input_in, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_sequence(const struct wally_tx_input *tx_input_in, size_t *written);
+
+WALLY_CORE_API int wally_tx_input_set_txhash(struct wally_tx_input *tx_input, const unsigned char *txhash, size_t len);
+WALLY_CORE_API int wally_tx_input_set_script(struct wally_tx_input *tx_input, const unsigned char *script, size_t script_len);
+WALLY_CORE_API int wally_tx_input_set_witness(struct wally_tx_input *tx_input, const struct wally_tx_witness_stack *witness);
+WALLY_CORE_API int wally_tx_input_set_index(struct wally_tx_input *tx_input, uint32_t index);
+WALLY_CORE_API int wally_tx_input_set_sequence(struct wally_tx_input *tx_input, uint32_t sequence);
+
 #ifdef BUILD_ELEMENTS
 WALLY_CORE_API int wally_tx_input_get_blinding_nonce(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_input_get_entropy(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len);
@@ -26,6 +33,13 @@ WALLY_CORE_API int wally_tx_input_get_issuance_amount_rangeproof(const struct wa
 WALLY_CORE_API int wally_tx_input_get_issuance_amount_rangeproof_len(const struct wally_tx_input *tx_input_in, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_inflation_keys_rangeproof(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_inflation_keys_rangeproof_len(const struct wally_tx_input *tx_input_in, size_t *written);
+
+WALLY_CORE_API int wally_tx_input_set_blinding_nonce(struct wally_tx_input *tx_input_in, const unsigned char *blinding_nonce, size_t blinding_nonce_len);
+WALLY_CORE_API int wally_tx_input_set_entropy(struct wally_tx_input *tx_input_in, const unsigned char *entropy, size_t entropy_len);
+WALLY_CORE_API int wally_tx_input_set_inflation_keys(struct wally_tx_input *tx_input_in, const unsigned char *inflation_keys, size_t inflation_keys_len);
+WALLY_CORE_API int wally_tx_input_set_inflation_keys_rangeproof(struct wally_tx_input *tx_input_in, const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
+WALLY_CORE_API int wally_tx_input_set_issuance_amount(struct wally_tx_input *tx_input_in, const unsigned char *issuance_amount, size_t issuance_amount_len);
+WALLY_CORE_API int wally_tx_input_set_issuance_amount_rangeproof(struct wally_tx_input *tx_input_in, const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
 #endif /* BUILD_ELEMENTS */
 
 /* Output */
@@ -70,6 +84,10 @@ WALLY_CORE_API int wally_tx_get_input_witness_len(const struct wally_tx *tx_in, 
 WALLY_CORE_API int wally_tx_get_input_index(const struct wally_tx *tx_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_sequence(const struct wally_tx *tx_in, size_t index, size_t *written);
 
+WALLY_CORE_API int wally_tx_set_input_index(const struct wally_tx *tx_in, size_t index, uint32_t index_in);
+WALLY_CORE_API int wally_tx_set_input_sequence(const struct wally_tx *tx_in, size_t index, uint32_t sequence);
+WALLY_CORE_API int wally_tx_set_input_txhash(const struct wally_tx *tx_in, size_t index, const unsigned char *txhash, size_t len);
+
 #ifdef BUILD_ELEMENTS
 WALLY_CORE_API int wally_tx_get_input_blinding_nonce(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_get_input_entropy(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
@@ -81,10 +99,14 @@ WALLY_CORE_API int wally_tx_get_input_issuance_amount_rangeproof(const struct wa
 WALLY_CORE_API int wally_tx_get_input_issuance_amount_rangeproof_len(const struct wally_tx *tx_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_inflation_keys_rangeproof(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_inflation_keys_rangeproof_len(const struct wally_tx *tx_in, size_t index, size_t *written);
-#endif /* BUILD_ELEMENTS */
 
-WALLY_CORE_API int wally_tx_set_input_index(const struct wally_tx *tx_in, size_t index, uint32_t index_in);
-WALLY_CORE_API int wally_tx_set_input_sequence(const struct wally_tx *tx_in, size_t index, uint32_t sequence);
+WALLY_CORE_API int wally_tx_set_input_blinding_nonce(const struct wally_tx *tx_in, size_t index, const unsigned char *blinding_nonce, size_t blinding_nonce_len);
+WALLY_CORE_API int wally_tx_set_input_entropy(const struct wally_tx *tx_in, size_t index, const unsigned char *entropy, size_t entropy_len);
+WALLY_CORE_API int wally_tx_set_input_inflation_keys(const struct wally_tx *tx_in, size_t index, const unsigned char *inflation_keys, size_t inflation_keys_len);
+WALLY_CORE_API int wally_tx_set_input_inflation_keys_rangeproof(const struct wally_tx *tx_in, size_t index, const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
+WALLY_CORE_API int wally_tx_set_input_issuance_amount(const struct wally_tx *tx_in, size_t index, const unsigned char *issuance_amount, size_t issuance_amount_len);
+WALLY_CORE_API int wally_tx_set_input_issuance_amount_rangeproof(const struct wally_tx *tx_in, size_t index, const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
+#endif /* BUILD_ELEMENTS */
 
 /* Transaction Outputs */
 WALLY_CORE_API int wally_tx_get_output_script(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);

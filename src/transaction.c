@@ -49,7 +49,7 @@ struct tx_serialize_opts
     uint32_t sighash;                /* 8 bit sighash value for sig */
     uint32_t tx_sighash;             /* 32 bit sighash value for tx */
     size_t index;                    /* index of input we are signing */
-    const unsigned char *script;     /* scriptSig of input we are signing */
+    const unsigned char *script;     /* scriptPubkey spent by the input we are signing */
     size_t script_len;               /* length of 'script' in bytes */
     uint64_t satoshi;                /* Amount of the input we are signing */
     bool bip143;                     /* Serialize for BIP143 hash */
@@ -2146,8 +2146,13 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
                       unsigned char *bytes_out, size_t len,
                       size_t *written)
 {
-    return tx_to_bytes(tx, NULL, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, bytes_out, len, written,
-                       flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements);
 }
 
 static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
@@ -2182,8 +2187,13 @@ static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
 int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
                     char **output)
 {
-    return tx_to_hex(tx, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, output,
-                     flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_hex(tx, flags, output, is_elements);
 }
 
 static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
@@ -2729,7 +2739,7 @@ int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
 
 int wally_tx_confidential_value_to_satoshi(const unsigned char *value,
                                            size_t value_len,
-                                           uint64_t* value_out)
+                                           uint64_t *value_out)
 {
     if (!value || value_len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN || !value_out || value[0] != 0x1)
         return WALLY_EINVAL;
@@ -2854,6 +2864,11 @@ static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t ind
     return is_valid_tx(tx) && index < tx->num_inputs ? &tx->inputs[index] : NULL;
 }
 
+#define TX_SET_B(typ, name) \
+    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
+                                          const unsigned char *name, size_t name ## _len) { \
+        return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
+    }
 
 #if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
 
@@ -2999,7 +3014,7 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
 #define SET_TX_B(typ, name, siz) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
-        if (!is_valid_elements_tx_output(output) || BYTES_INVALID(bytes, siz)) \
+        if (!is_valid_elements_ ## typ(output) || BYTES_INVALID(bytes, siz)) \
             return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
@@ -3007,11 +3022,36 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
 #define SET_TX_B_FIXED(typ, name, siz, n) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
-        if (!is_valid_elements_tx_output(output) || (siz && siz != n) || BYTES_INVALID(bytes, siz)) \
+        if (!is_valid_elements_ ## typ(output) || (siz && siz != n) || BYTES_INVALID(bytes, siz)) \
             return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
 #endif /* BUILD_ELEMENTS */
+
+int wally_tx_input_set_index(struct wally_tx_input *input, uint32_t index)
+{
+    if (!is_valid_tx_input(input))
+        return WALLY_EINVAL;
+    input->index = index;
+    return WALLY_OK;
+}
+
+int wally_tx_input_set_sequence(struct wally_tx_input *input, uint32_t sequence)
+{
+    if (!is_valid_tx_input(input))
+        return WALLY_EINVAL;
+    input->sequence = sequence;
+    return WALLY_OK;
+}
+
+int wally_tx_input_set_txhash(struct wally_tx_input *input,
+                              const unsigned char *txhash, size_t len)
+{
+    if (!is_valid_tx_input(input) || !txhash || (len != WALLY_TXHASH_LEN))
+        return WALLY_EINVAL;
+    memcpy(input->txhash, txhash, WALLY_TXHASH_LEN);
+    return WALLY_OK;
+}
 
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
@@ -3030,6 +3070,22 @@ int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi
 }
 
 #ifdef BUILD_ELEMENTS
+#define SET_TX_ARRAY(typ, name, siz) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *input, \
+                                       const unsigned char *name, size_t name ## _len) { \
+        if (!is_valid_elements_ ## typ(input) || !name || name ## _len != siz) \
+            return WALLY_EINVAL; \
+        memcpy(input->name, name, siz); \
+        return WALLY_OK; \
+    }
+
+SET_TX_ARRAY(tx_input, blinding_nonce, SHA256_LEN)
+SET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
+SET_TX_B(tx_input, inflation_keys, siz)
+SET_TX_B(tx_input, inflation_keys_rangeproof, siz)
+SET_TX_B(tx_input, issuance_amount, siz)
+SET_TX_B(tx_input, issuance_amount_rangeproof, siz)
+
 SET_TX_B_FIXED(tx_output, asset, siz, WALLY_TX_ASSET_CT_ASSET_LEN)
 int wally_tx_output_set_value(struct wally_tx_output *output, const unsigned char *value, size_t value_len)
 {
@@ -3049,16 +3105,26 @@ static struct wally_tx_output *tx_get_output(const struct wally_tx *tx, size_t i
     return is_valid_tx(tx) && index < tx->num_outputs ? &tx->outputs[index] : NULL;
 }
 
-int wally_tx_get_input_script(const struct wally_tx *tx, size_t index,
-                              unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_input_get_script(tx_get_input(tx, index), bytes_out, len, written);
-}
+#define TX_GET_B(typ, name) \
+    int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written) { \
+        return wally_tx_ ## typ ## _get_ ## name(tx_get_ ## typ(tx, index), bytes_out, len, written); \
+    }
 
-int wally_tx_get_input_script_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_script_len(tx_get_input(tx, index), written);
-}
+#define TX_GET_B_FIXED(typ, name) \
+    int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len) { \
+        return wally_tx_ ## typ ## _get_ ## name(tx_get_ ## typ(tx, index), bytes_out, len); \
+    }
+
+#define TX_GET_I(typ, name) \
+    int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, size_t *written) { \
+        return wally_tx_ ## typ ## _get_ ## name(tx_get_ ## typ(tx, index), written); \
+    }
+
+TX_GET_B(input, script)
+TX_GET_I(input, script_len)
+TX_GET_B_FIXED(input, txhash)
+TX_GET_I(input, index)
+TX_GET_I(input, sequence)
 
 int wally_tx_get_input_witness(const struct wally_tx *tx, size_t index, size_t wit_index, unsigned char *bytes_out, size_t len, size_t *written)
 {
@@ -3070,83 +3136,20 @@ int wally_tx_get_input_witness_len(const struct wally_tx *tx, size_t index, size
     return wally_tx_input_get_witness_len(tx_get_input(tx, index), wit_index, written);
 }
 
-int wally_tx_get_input_txhash(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len)
-{
-    return wally_tx_input_get_txhash(tx_get_input(tx, index), bytes_out, len);
-}
-
-int wally_tx_get_input_index(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_index(tx_get_input(tx, index), written);
-}
-
-int wally_tx_get_input_sequence(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_sequence(tx_get_input(tx, index), written);
-}
-
 #ifdef BUILD_ELEMENTS
-int wally_tx_get_input_blinding_nonce(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len)
-{
-    return wally_tx_input_get_blinding_nonce(tx_get_input(tx, index), bytes_out, len);
-}
-
-int wally_tx_get_input_entropy(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len)
-{
-    return wally_tx_input_get_entropy(tx_get_input(tx, index), bytes_out, len);
-}
-
-int wally_tx_get_input_issuance_amount(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_input_get_issuance_amount(tx_get_input(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_input_issuance_amount_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_issuance_amount_len(tx_get_input(tx, index), written);
-}
-
-int wally_tx_get_input_inflation_keys(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_input_get_inflation_keys(tx_get_input(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_input_inflation_keys_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_inflation_keys_len(tx_get_input(tx, index), written);
-}
-
-int wally_tx_get_input_issuance_amount_rangeproof(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_input_get_issuance_amount_rangeproof(tx_get_input(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_input_issuance_amount_rangeproof_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_issuance_amount_rangeproof_len(tx_get_input(tx, index), written);
-}
-
-int wally_tx_get_input_inflation_keys_rangeproof(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_input_get_inflation_keys_rangeproof(tx_get_input(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_input_inflation_keys_rangeproof_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_input_get_inflation_keys_rangeproof_len(tx_get_input(tx, index), written);
-}
+TX_GET_B_FIXED(input, blinding_nonce)
+TX_GET_B_FIXED(input, entropy)
+TX_GET_B(input, inflation_keys)
+TX_GET_B(input, inflation_keys_rangeproof)
+TX_GET_B(input, issuance_amount)
+TX_GET_B(input, issuance_amount_rangeproof)
+TX_GET_I(input, inflation_keys_len)
+TX_GET_I(input, inflation_keys_rangeproof_len)
+TX_GET_I(input, issuance_amount_len)
+TX_GET_I(input, issuance_amount_rangeproof_len)
 #endif /* BUILD_ELEMENTS */
-
-int wally_tx_get_output_script(const struct wally_tx *tx, size_t index,
-                               unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_output_get_script(tx_get_output(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_output_script_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_script_len(tx_get_output(tx, index), written);
-}
+TX_GET_B(output, script)
+TX_GET_I(output, script_len)
 
 int wally_tx_get_output_satoshi(const struct wally_tx *tx, size_t index, uint64_t *value_out)
 {
@@ -3154,83 +3157,31 @@ int wally_tx_get_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_tx_get_output_asset(const struct wally_tx *tx, size_t index,
-                              unsigned char *bytes_out, size_t len)
-{
-    return wally_tx_output_get_asset(tx_get_output(tx, index), bytes_out, len);
-}
-
-int wally_tx_get_output_asset_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_asset_len(tx_get_output(tx, index), written);
-}
-
-int wally_tx_get_output_value(const struct wally_tx *tx, size_t index,
-                              unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_output_get_value(tx_get_output(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_output_value_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_value_len(tx_get_output(tx, index), written);
-}
-
-int wally_tx_get_output_nonce(const struct wally_tx *tx, size_t index,
-                              unsigned char *bytes_out, size_t len)
-{
-    return wally_tx_output_get_nonce(tx_get_output(tx, index), bytes_out, len);
-}
-
-int wally_tx_get_output_nonce_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_nonce_len(tx_get_output(tx, index), written);
-}
-
-int wally_tx_get_output_surjectionproof(const struct wally_tx *tx, size_t index,
-                                        unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_output_get_surjectionproof(tx_get_output(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_output_surjectionproof_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_surjectionproof_len(tx_get_output(tx, index), written);
-}
-
-int wally_tx_get_output_rangeproof(const struct wally_tx *tx, size_t index,
-                                   unsigned char *bytes_out, size_t len, size_t *written)
-{
-    return wally_tx_output_get_rangeproof(tx_get_output(tx, index), bytes_out, len, written);
-}
-
-int wally_tx_get_output_rangeproof_len(const struct wally_tx *tx, size_t index, size_t *written)
-{
-    return wally_tx_output_get_rangeproof_len(tx_get_output(tx, index), written);
-}
+TX_GET_B_FIXED(output, asset)
+TX_GET_B(output, value)
+TX_GET_B_FIXED(output, nonce)
+TX_GET_B(output, surjectionproof)
+TX_GET_B(output, rangeproof)
+TX_GET_I(output, asset_len)
+TX_GET_I(output, value_len)
+TX_GET_I(output, nonce_len)
+TX_GET_I(output, surjectionproof_len)
+TX_GET_I(output, rangeproof_len)
 #endif /* BUILD_ELEMENTS */
+
+TX_SET_B(input, txhash)
 
 int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t index_in)
 {
-    struct wally_tx_input *input = tx_get_input(tx, index);
-    if (input)
-        input->index = index_in;
-    return input ? WALLY_OK : WALLY_EINVAL;
+    return wally_tx_input_set_index(tx_get_input(tx, index), index_in);
 }
 
 int wally_tx_set_input_sequence(const struct wally_tx *tx, size_t index, uint32_t sequence)
 {
-    struct wally_tx_input *input = tx_get_input(tx, index);
-    if (input)
-        input->sequence = sequence;
-    return input ? WALLY_OK : WALLY_EINVAL;
+    return wally_tx_input_set_sequence(tx_get_input(tx, index), sequence);
 }
 
-int wally_tx_set_output_script(const struct wally_tx *tx, size_t index,
-                               const unsigned char *script, size_t script_len)
-{
-    return wally_tx_output_set_script(tx_get_output(tx, index), script, script_len);
-}
+TX_SET_B(output, script)
 
 int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_t satoshi)
 {
@@ -3246,55 +3197,27 @@ int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_tx_set_output_asset(const struct wally_tx *tx, size_t index,
-                              const unsigned char *asset, size_t asset_len)
-{
-    return wally_tx_output_set_asset(tx_get_output(tx, index), asset, asset_len);
-}
+TX_SET_B(input, blinding_nonce)
+TX_SET_B(input, entropy)
+TX_SET_B(input, inflation_keys)
+TX_SET_B(input, inflation_keys_rangeproof)
+TX_SET_B(input, issuance_amount)
+TX_SET_B(input, issuance_amount_rangeproof)
 
-int wally_tx_set_output_value(const struct wally_tx *tx, size_t index,
-                              const unsigned char *value, size_t value_len)
-{
-    return wally_tx_output_set_value(tx_get_output(tx, index), value, value_len);
-}
-
-int wally_tx_set_output_nonce(const struct wally_tx *tx, size_t index,
-                              const unsigned char *nonce, size_t nonce_len)
-{
-    return wally_tx_output_set_nonce(tx_get_output(tx, index), nonce, nonce_len);
-}
-
-int wally_tx_set_output_surjectionproof(const struct wally_tx *tx, size_t index,
-                                        const unsigned char *surjectionproof, size_t surjectionproof_len)
-{
-    return wally_tx_output_set_surjectionproof(tx_get_output(tx, index), surjectionproof, surjectionproof_len);
-}
-
-int wally_tx_set_output_rangeproof(const struct wally_tx *tx, size_t index,
-                                   const unsigned char *rangeproof, size_t rangeproof_len)
-{
-    return wally_tx_output_set_rangeproof(tx_get_output(tx, index), rangeproof, rangeproof_len);
-}
+TX_SET_B(output, asset)
+TX_SET_B(output, value)
+TX_SET_B(output, nonce)
+TX_SET_B(output, surjectionproof)
+TX_SET_B(output, rangeproof)
 #endif
 #endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
 
-int wally_tx_set_input_script(const struct wally_tx *tx, size_t index,
-                              const unsigned char *script, size_t script_len)
-{
-    struct wally_tx_input *input = tx_get_input(tx, index);
-
-    if (!input || BYTES_INVALID(script, script_len))
-        return WALLY_EINVAL;
-    return replace_script(script, script_len, &input->script, &input->script_len);
-}
-
-int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
+int wally_tx_input_set_witness(struct wally_tx_input *input,
                                const struct wally_tx_witness_stack *stack)
 {
-    struct wally_tx_input *input;
     struct wally_tx_witness_stack *new_witness = NULL;
 
-    if (!(input = tx_get_input(tx, index)) || (stack && !is_valid_witness_stack(stack)))
+    if (!is_valid_tx_input(input) || (stack && !is_valid_witness_stack(stack)))
         return WALLY_EINVAL;
 
     if (stack && (new_witness = clone_witness(stack)) == NULL)
@@ -3304,3 +3227,20 @@ int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
     input->witness = new_witness;
     return WALLY_OK;
 }
+
+int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
+                               const struct wally_tx_witness_stack *stack)
+{
+    return wally_tx_input_set_witness(tx_get_input(tx, index), stack);
+}
+
+
+int wally_tx_input_set_script(struct wally_tx_input *input,
+                              const unsigned char *script, size_t script_len)
+{
+    if (!is_valid_tx_input(input) || BYTES_INVALID(script, script_len))
+        return WALLY_EINVAL;
+    return replace_script(script, script_len, &input->script, &input->script_len);
+}
+
+TX_SET_B(input, script)

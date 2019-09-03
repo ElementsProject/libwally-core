@@ -63,3 +63,22 @@ test('unblind', function (t) {
     t.equal(bigInt.fromArray(Array.from(res[3]), 256).toString(), expectedVal, 'value');
   })
 });
+
+test('blinding key', function (t) {
+    t.plan(2)
+
+    var seed = 'c76c4ac4f4e4a00d6b274d5c39c700bb4a7ddc04fbc6f78e85ca75007b5b495f74a9043eeb77bdd53aa6fc3a0e31462270316fa04b8c19114c8798706cd02ac8';
+    var script = '76a914a579388225827d9f2fe9014add644487808c695d88ac';
+
+    var expectedMasterBlindingKey = '95290521883b24f28b5d8a4bdc3004b52162d21fcf78e9c4ea5fd9939794593f6c2de18eabeff3f7822bc724ad482bef0557f3e1c1e1c75b7a393a5ced4de616';
+    var expectedBlindingKey = '4e6e94df28448c7bb159271fe546da464ea863b3887d2eec6afd841184b70592';
+
+    wally.wally_asset_blinding_key_from_seed(h(seed)).then(function (key) {
+        t.equal(b(key), expectedMasterBlindingKey, 'master_blinding_key');
+    })
+
+    wally.wally_asset_blinding_key_to_ec_private_key(h(expectedMasterBlindingKey), h(script)).then(function (key) {
+        t.equal(b(key), expectedBlindingKey, 'blinding_key');
+    })
+
+});

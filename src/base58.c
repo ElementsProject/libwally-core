@@ -143,9 +143,11 @@ static int base58_decode(const char *base58, size_t base58_len,
     ret = WALLY_OK;
 
 cleanup:
-    wally_clear(bn, bn_words * sizeof(*bn));
-    if (bn != bn_buf)
-        wally_free(bn);
+    if (bn) {
+        wally_clear(bn, bn_words * sizeof(*bn));
+        if (bn != bn_buf)
+            wally_free(bn);
+    }
     return ret;
 }
 
@@ -241,9 +243,11 @@ int wally_base58_from_bytes(const unsigned char *bytes, size_t bytes_len,
     ret = WALLY_OK;
 
 cleanup:
-    wally_clear(bn, bn_bytes);
-    if (bn != bn_buf)
-        wally_free(bn);
+    if (bn) {
+        wally_clear(bn, bn_bytes);
+        if (bn != bn_buf)
+            wally_free(bn);
+    }
     return ret;
 #undef b
 }
