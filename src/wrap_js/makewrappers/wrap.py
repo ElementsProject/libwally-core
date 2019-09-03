@@ -180,10 +180,6 @@ FUNCS = [
 ]
 FUNCS_NODE = [
     # Assets:
-    ('wally_confidential_addr_from_addr', F([
-        'string[addr]', 'uint32_t[prefix]', 'const_bytes[pubkey]', 
-        'out_str_p'
-    ])),
     ('wally_asset_generator_from_bytes', F([
         'const_bytes[asset]', 'const_bytes[abf]', 'out_bytes_fixedsized'
     ], out_size='33')),

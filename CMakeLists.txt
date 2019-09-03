@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
-# AC_INIT([libwallycore],[0.7.1])
-set(PACKAGE_VERSION   0.7.1)
+# AC_INIT([libwallycore],[0.7.4])
+set(PACKAGE_VERSION   0.7.4)
 # AC_INIT([libsecp256k1],[0.1])
 set(WALLY_PACKAGE_VERSION   \"${PACKAGE_VERSION}\")
 set(SECP256K1_PACKAGE_VERSION   \"0.1\")
@@ -155,6 +155,9 @@ set(HAVE_LIBCRYPTO "1")
 else()
 # not windows
 check_function_exists(memset_s HAVE_MEMSET_S)
+check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
+check_function_exists(explicit_memset HAVE_EXPLICIT_MEMSET)
+check_function_exists(memset_s HAVE_MEMSET_S)
 check_function_exists(mmap HAVE_MMAP)
 check_cxx_source_compiles("int main() { __builtin_clzll(0); return 0; }"
   HAVE_BUILTIN_CLZLL)
@@ -185,6 +188,8 @@ check_c_source_compiles("extern int foo(int) __attribute__((weak)); int main(voi
   HAVE_ATTRIBUTE_WEAK)
 check_c_source_compiles("int main(void){static int a[2];return *((int*)(((char*)a)+1)) != 0;}"
   HAVE_UNALIGNED_ACCESS)
+check_c_source_compiles("int main(void){int a = 42; int *pnt = &a; __asm__ __volatile__ (\"\" : : \"r\"(pnt) : \"memory\"); return 0;}"
+  HAVE_INLINE_ASM)
 
 set(STDC_HEADERS  "1")
 check_include_file("asm/page.h" HAVE_ASM_PAGE_H)
@@ -236,15 +241,17 @@ endif()
 endif() # NOT HAVE_SIZE_T
 
 # secp256k1 configure options
-# ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
+# ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
 
 # USE_ENDOMORPHISM (option only)
 set(ECMULT_WINDOW_SIZE "15")
 set(ENABLE_MODULE_ECDH "1")
+set(ENABLE_MODULE_RECOVERY "1")
 set(ENABLE_MODULE_RANGEPROOF "1")
 set(ENABLE_MODULE_SURJECTIONPROOF "1")
 set(ENABLE_MODULE_WHITELIST "1")
 set(ENABLE_MODULE_GENERATOR "1")
+
 check_cxx_source_compiles("int main() { __builtin_popcount(0); return 0;}"
   HAVE_BUILTIN_POPCOUNT)
 
@@ -361,6 +368,7 @@ set(LIBWALLY_FILES
     src/bip39.c
     src/bech32.c
     src/elements.c
+    src/ecdh.c
     src/hex.c
     src/hmac.c
     src/internal.c
@@ -372,7 +380,7 @@ set(LIBWALLY_FILES
     src/transaction.c
     src/wif.c
     src/wordlist.c
-#    src/symmetric.c
+    src/symmetric.c
     src/ccan/ccan/crypto/ripemd160/ripemd160.c
     src/ccan/ccan/crypto/sha256/sha256.c
     src/ccan/ccan/crypto/sha512/sha512.c
@@ -388,8 +396,9 @@ set(LIBWALLY_FILES
     include/wally_elements.h
     include/wally_script.h
     include/wally_transaction.h
-#    include/wally_symmetric.h
+    include/wally_symmetric.h
     src/secp256k1/include/secp256k1.h
+    src/secp256k1/include/secp256k1_recovery.h
     src/bip32_int.h
     src/transaction_int.h
     ${ECMULT_STATIC_CONTEXT_H}
@@ -1173,15 +1182,11 @@ endif()
 ####################
 if(ENABLE_SWIG_PYTHON)
 set(SWIG_PY_TEST_DIR ${SWIG_PY_OUTPUT_DIR}/contrib)
+
+set(PY_TEST_DIR ${SWIG_PY_OUTPUT_DIR}/contrib)
 find_package(Python3 COMPONENTS Interpreter)
 find_package(PythonInterp REQUIRED)
-if(WIN32)
-# windows for environment path
-set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
-elseif('${PYTHONLIBS_VERSION_STRING}' STREQUAL '${PYTHON_VERSION_STRING}')
-set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
-message(STATUS "python version is ${PYTHONLIBS_VERSION_STRING}")
-elseif('${PYTHONLIBS_VERSION_STRING}' VERSION_GREATER '3.0' AND Python3_Interpreter_FOUND)
+if(Python3_Interpreter_FOUND)
 set(PYTHON_BIN  ${Python3_EXECUTABLE})
 message(STATUS "python is 3(${Python3_VERSION})")
 else()
@@ -1192,10 +1197,14 @@ endif()
 # copy testfile
 add_test(NAME py_test_init1 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR}/contrib ${SWIG_PY_OUTPUT_DIR}/contrib )
 add_test(NAME py_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_OUTPUT_DIR}/wallycore ${SWIG_PY_TEST_DIR}/wallycore )
+if(MSVC)
+add_test(NAME py_test_init3 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_OUTPUT_DIR}/wallycore ${SWIG_PY_TEST_DIR} )
+endif()
 
 add_test(NAME py_test_bip32           COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/bip32.py )
 add_test(NAME py_test_mnemonic        COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/mnemonic.py )
 add_test(NAME py_test_reconcile_sigs  COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/reconcile_sigs.py )
+add_test(NAME py_test_signmessage     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/signmessage.py )
 ## error occurred on windows
 add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/tx.py )
 
