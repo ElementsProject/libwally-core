@@ -10,6 +10,12 @@
 #undef malloc
 #undef free
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#endif
+
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
 
@@ -171,11 +177,17 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
 
 static void wally_internal_bzero(void *dest, size_t len)
 {
-#ifdef HAVE_MEMSET_S
+#ifdef _WIN32
+    SecureZeroMemory(dest, len);
+#elif defined(HAVE_MEMSET_S)
     memset_s(dest, len, 0, len);
+#elif defined(HAVE_EXPLICIT_BZERO)
+    explicit_bzero(dest, len);
+#elif defined(HAVE_EXPLICIT_MEMSET)
+    explicit_memset(dest, 0, len);
 #else
     memset(dest, 0, len);
-#if 0
+#if defined(HAVE_INLINE_ASM)
     /* This is used by boringssl to prevent memset from being elided. It
      * works by forcing a memory barrier and so can be slow.
      */

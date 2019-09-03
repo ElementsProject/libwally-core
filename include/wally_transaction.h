@@ -509,7 +509,7 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
- * :param script: The scriptSig for the input represented by ``index``.
+ * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param satoshi: The amount spent by the input being signed for. Only used if
  *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
@@ -535,7 +535,7 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
- * :param script: The scriptSig for the input represented by ``index``.
+ * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param extra: Extra bytes to include in the transaction preimage.
  * :param extra_len: Size of ``extra`` in bytes.
@@ -865,14 +865,14 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
 WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
     const unsigned char *value,
     size_t value_len,
-    uint64_t* value_out);
+    uint64_t *value_out);
 
 /**
  * Create a Elements transaction for signing and return its hash.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
- * :param script: The scriptSig for the input represented by ``index``.
+ * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param value: The (confidential) value spent by the input being signed for. Only used if
  *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass NULL otherwise.

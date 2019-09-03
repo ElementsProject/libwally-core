@@ -8,7 +8,7 @@
 #include <stdbool.h>
 
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
-#define EC_FLAGS_ALL (EC_FLAG_ECDSA | EC_FLAG_SCHNORR | EC_FLAG_GRIND_R)
+#define EC_FLAGS_ALL (EC_FLAG_ECDSA | EC_FLAG_SCHNORR | EC_FLAG_GRIND_R | EC_FLAG_RECOVERABLE)
 
 #define MSG_ALL_FLAGS (BITCOIN_MESSAGE_FLAG_HASH)
 
@@ -191,7 +191,11 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
     if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
         !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
         !is_valid_ec_type(flags) || flags & ~EC_FLAGS_ALL ||
-        !bytes_out || len != EC_SIGNATURE_LEN)
+        (flags & EC_FLAG_SCHNORR && flags & EC_FLAG_RECOVERABLE) ||
+        !bytes_out ||
+        (len != EC_SIGNATURE_LEN && len != EC_SIGNATURE_RECOVERABLE_LEN) ||
+        (len == EC_SIGNATURE_LEN && flags & EC_FLAG_RECOVERABLE) ||
+        (len == EC_SIGNATURE_RECOVERABLE_LEN && ~flags & EC_FLAG_RECOVERABLE))
         return WALLY_EINVAL;
 
     if (!ctx)
@@ -208,10 +212,11 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
     } else {
         unsigned char extra_entropy[32] = {0}, *entropy_p = NULL;
         uint32_t counter = 0;
-        secp256k1_ecdsa_signature sig_secp;
+        secp256k1_ecdsa_recoverable_signature sig_secp;
+        int recid;
 
         while (true) {
-            if (!secp256k1_ecdsa_sign(ctx, &sig_secp, bytes, priv_key, nonce_fn, entropy_p)) {
+            if (!secp256k1_ecdsa_sign_recoverable(ctx, &sig_secp, bytes, priv_key, nonce_fn, entropy_p)) {
                 wally_clear(&sig_secp, sizeof(sig_secp));
                 if (!secp256k1_ec_seckey_verify(ctx, priv_key))
                     return WALLY_EINVAL; /* invalid priv_key */
@@ -219,10 +224,16 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
             }
 
             /* Note this function is documented as never failing */
-            secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig_secp);
+            secp256k1_ecdsa_recoverable_signature_serialize_compact(ctx, bytes_out, &recid, &sig_secp);
 
             if (!(flags & EC_FLAG_GRIND_R) || bytes_out[0] < 0x80) {
                 wally_clear(&sig_secp, sizeof(sig_secp));
+                /* Note the following assumes the key is compressed */
+                if (flags & EC_FLAG_RECOVERABLE) {
+                    memmove(&bytes_out[1], &bytes_out[0], EC_SIGNATURE_LEN);
+                    bytes_out[0] = 27 + recid + 4;
+                }
+
                 return WALLY_OK;
             }
             /* Incremement nonce to grind for low-R */
@@ -263,6 +274,33 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
     else
         ok = ok && secp256k1_ecdsa_signature_parse_compact(ctx, &sig_secp, sig) &&
              secp256k1_ecdsa_verify(ctx, &sig_secp, bytes, &pub);
+
+    wally_clear_2(&pub, sizeof(pub), &sig_secp, sizeof(sig_secp));
+    return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+int wally_ec_sig_to_public_key(const unsigned char *bytes, size_t bytes_len,
+                               const unsigned char *sig, size_t sig_len,
+                               unsigned char *bytes_out, size_t len)
+{
+    secp256k1_pubkey pub;
+    secp256k1_ecdsa_recoverable_signature sig_secp;
+    const secp256k1_context *ctx = secp_ctx();
+    size_t len_in_out = EC_PUBLIC_KEY_LEN;
+    bool ok;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+
+    if (!bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
+        !sig || sig_len != EC_SIGNATURE_RECOVERABLE_LEN ||
+        !bytes_out || len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+
+    int recid = (sig[0] - 27) & 3;
+    ok = secp256k1_ecdsa_recoverable_signature_parse_compact(ctx, &sig_secp, &sig[1], recid) &&
+         secp256k1_ecdsa_recover(ctx, &pub, &sig_secp, bytes) &&
+         pubkey_serialize(ctx, bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED);
 
     wally_clear_2(&pub, sizeof(pub), &sig_secp, sizeof(sig_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;

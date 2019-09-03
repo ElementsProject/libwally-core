@@ -43,10 +43,10 @@ static bool tx_roundtrip(const char *tx_hex, const char *sighash_hex)
     size_t i;
     size_t is_elements;
     int ret;
-    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
+    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS;
 
     /* Unserialize and serialize the tx and verify they match */
-    ret = wally_tx_from_hex(tx_hex, flags, &tx);
+    ret = wally_tx_from_hex(tx_hex, flags | WALLY_TX_FLAG_USE_ELEMENTS, &tx);
     check_ret(ret);
 
     ret = wally_tx_to_hex(tx, flags, &new_hex);
@@ -170,12 +170,12 @@ static bool tx_coinbase(const char *tx_hex)
 {
     struct wally_tx *tx;
     char *new_hex;
-    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
+    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS;
     size_t is_elements, is_coinbase;
     int ret;
 
     /* Unserialize and serialize the tx and verify they match */
-    ret = wally_tx_from_hex(tx_hex, flags, &tx);
+    ret = wally_tx_from_hex(tx_hex, flags | WALLY_TX_FLAG_USE_ELEMENTS, &tx);
     check_ret(ret);
 
     ret = wally_tx_to_hex(tx, flags, &new_hex);
@@ -207,12 +207,12 @@ static bool tx_pegin(const char *tx_hex, const char **tx_pegin_wit_hex, size_t n
     struct wally_tx_witness_stack *pegin_wit;
     struct wally_tx_witness_item *item;
     char *new_hex;
-    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS;
+    const uint32_t flags = WALLY_TX_FLAG_USE_WITNESS;
     size_t is_elements, is_pegin, siz, i;
     int ret;
 
     /* Unserialize and serialize the tx and verify they match */
-    ret = wally_tx_from_hex(tx_hex, flags, &tx);
+    ret = wally_tx_from_hex(tx_hex, flags | WALLY_TX_FLAG_USE_ELEMENTS, &tx);
     check_ret(ret);
 
     ret = wally_tx_to_hex(tx, flags, &new_hex);

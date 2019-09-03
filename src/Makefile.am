@@ -172,6 +172,7 @@ libwallycore_la_SOURCES = \
     bip38.c \
     bip39.c \
     bech32.c \
+    ecdh.c \
     elements.c \
     hex.c \
     hmac.c \
@@ -181,6 +182,7 @@ libwallycore_la_SOURCES = \
     script.c \
     scrypt.c \
     sign.c \
+    symmetric.c \
     transaction.c \
     wif.c \
     wordlist.c \
@@ -199,6 +201,7 @@ libwallycore_la_INCLUDES = \
     include/wally_crypto.h \
     include/wally_elements.h \
     include/wally_script.h \
+    include/wally_symmetric.h \
     include/wally_transaction.h
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
@@ -244,6 +247,8 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_ecdh.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_elements.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
@@ -271,6 +276,7 @@ if BUILD_ELEMENTS
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
+	$(AM_V_at)$(JAVA_TEST)test_tx
 endif
 if USE_JS_WRAPPERS
 if BUILD_ELEMENTS

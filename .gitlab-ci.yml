@@ -1,5 +1,5 @@
-linux_release:
-  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
+buster_release:
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -19,7 +19,7 @@ linux_release:
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
 linux_py2_debug:
-  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   tags:
     - ga
   script:
@@ -29,13 +29,13 @@ linux_py2_debug:
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 linux_py3_debug:
-  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   tags:
     - ga
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - PYTHON_VERSION=3.5 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
 ubuntu_18.04_release:
   image: greenaddress/wallycore@sha256:059eeaa5c61df5403fd28d6ea556c317d5809f7274e27901d0f09288a316bb53
@@ -76,7 +76,7 @@ osx_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh "python python3"
+    - ./tools/build_python_wheels.sh python3
 
 armv7l_release:
   tags:
@@ -89,7 +89,7 @@ armv7l_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 arm64_release:
   tags:
@@ -102,7 +102,7 @@ arm64_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 powerpcg4_release:
   tags:
@@ -121,7 +121,7 @@ freebsdamd64_release:
     - wally_dist/*
   script:
     - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 windows10_release:
   tags:
@@ -137,7 +137,7 @@ windows10_release:
     - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:c6a2a3546b3ebe8db6ab0e78188c92d4cfc1f710c4b3334555dc45dfbf28faaa
+  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
@@ -168,7 +168,7 @@ package_release:
     when: on_success
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
-  - linux_release
+  - buster_release
   - ubuntu_18.04_release
   - ubuntu_19.04_release
   - osx_release

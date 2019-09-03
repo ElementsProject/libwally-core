@@ -49,7 +49,7 @@ struct tx_serialize_opts
     uint32_t sighash;                /* 8 bit sighash value for sig */
     uint32_t tx_sighash;             /* 32 bit sighash value for tx */
     size_t index;                    /* index of input we are signing */
-    const unsigned char *script;     /* scriptSig of input we are signing */
+    const unsigned char *script;     /* scriptPubkey spent by the input we are signing */
     size_t script_len;               /* length of 'script' in bytes */
     uint64_t satoshi;                /* Amount of the input we are signing */
     bool bip143;                     /* Serialize for BIP143 hash */
@@ -2146,8 +2146,13 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
                       unsigned char *bytes_out, size_t len,
                       size_t *written)
 {
-    return tx_to_bytes(tx, NULL, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, bytes_out, len, written,
-                       flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements);
 }
 
 static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
@@ -2182,8 +2187,13 @@ static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
 int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
                     char **output)
 {
-    return tx_to_hex(tx, flags & ~WALLY_TX_FLAG_USE_ELEMENTS, output,
-                     flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_hex(tx, flags, output, is_elements);
 }
 
 static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
@@ -2729,7 +2739,7 @@ int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
 
 int wally_tx_confidential_value_to_satoshi(const unsigned char *value,
                                            size_t value_len,
-                                           uint64_t* value_out)
+                                           uint64_t *value_out)
 {
     if (!value || value_len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN || !value_out || value[0] != 0x1)
         return WALLY_EINVAL;
@@ -2854,6 +2864,11 @@ static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t ind
     return is_valid_tx(tx) && index < tx->num_inputs ? &tx->inputs[index] : NULL;
 }
 
+#define TX_SET_B(typ, name) \
+    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
+                                          const unsigned char *name, size_t name ## _len) { \
+        return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
+    }
 
 #if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
 
@@ -3038,30 +3053,6 @@ int wally_tx_input_set_txhash(struct wally_tx_input *input,
     return WALLY_OK;
 }
 
-int wally_tx_input_set_script(struct wally_tx_input *input,
-                              const unsigned char *script, size_t script_len)
-{
-    if (!is_valid_tx_input(input) || BYTES_INVALID(script, script_len))
-        return WALLY_EINVAL;
-    return replace_script(script, script_len, &input->script, &input->script_len);
-}
-
-int wally_tx_input_set_witness(struct wally_tx_input *input,
-                               const struct wally_tx_witness_stack *stack)
-{
-    struct wally_tx_witness_stack *new_witness = NULL;
-
-    if (!is_valid_tx_input(input) || (stack && !is_valid_witness_stack(stack)))
-        return WALLY_EINVAL;
-
-    if (stack && (new_witness = clone_witness(stack)) == NULL)
-        return WALLY_ENOMEM;
-
-    tx_witness_stack_free(input->witness, true);
-    input->witness = new_witness;
-    return WALLY_OK;
-}
-
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
@@ -3178,13 +3169,6 @@ TX_GET_I(output, surjectionproof_len)
 TX_GET_I(output, rangeproof_len)
 #endif /* BUILD_ELEMENTS */
 
-#define TX_SET_B(typ, name) \
-    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
-                                          const unsigned char *name, size_t name ## _len) { \
-        return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
-    }
-
-TX_SET_B(input, script)
 TX_SET_B(input, txhash)
 
 int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t index_in)
@@ -3195,12 +3179,6 @@ int wally_tx_set_input_index(const struct wally_tx *tx, size_t index, uint32_t i
 int wally_tx_set_input_sequence(const struct wally_tx *tx, size_t index, uint32_t sequence)
 {
     return wally_tx_input_set_sequence(tx_get_input(tx, index), sequence);
-}
-
-int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
-                               const struct wally_tx_witness_stack *stack)
-{
-    return wally_tx_input_set_witness(tx_get_input(tx, index), stack);
 }
 
 TX_SET_B(output, script)
@@ -3233,3 +3211,36 @@ TX_SET_B(output, surjectionproof)
 TX_SET_B(output, rangeproof)
 #endif
 #endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
+
+int wally_tx_input_set_witness(struct wally_tx_input *input,
+                               const struct wally_tx_witness_stack *stack)
+{
+    struct wally_tx_witness_stack *new_witness = NULL;
+
+    if (!is_valid_tx_input(input) || (stack && !is_valid_witness_stack(stack)))
+        return WALLY_EINVAL;
+
+    if (stack && (new_witness = clone_witness(stack)) == NULL)
+        return WALLY_ENOMEM;
+
+    tx_witness_stack_free(input->witness, true);
+    input->witness = new_witness;
+    return WALLY_OK;
+}
+
+int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
+                               const struct wally_tx_witness_stack *stack)
+{
+    return wally_tx_input_set_witness(tx_get_input(tx, index), stack);
+}
+
+
+int wally_tx_input_set_script(struct wally_tx_input *input,
+                              const unsigned char *script, size_t script_len)
+{
+    if (!is_valid_tx_input(input) || BYTES_INVALID(script, script_len))
+        return WALLY_EINVAL;
+    return replace_script(script, script_len, &input->script, &input->script_len);
+}
+
+TX_SET_B(input, script)

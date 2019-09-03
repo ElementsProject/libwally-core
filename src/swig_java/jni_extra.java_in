@@ -131,6 +131,10 @@
       return ec_sig_from_der(jarg1, null);
   }
 
+  public final static byte[] ec_sig_to_public_key(byte[] jarg1, byte[] jarg2) {
+      return ec_sig_to_public_key(jarg1, jarg2, null);
+  }
+
   public final static byte[] tx_get_input_txhash(Object jarg1, long jarg2) {
         return tx_get_input_txhash(jarg1, jarg2, null);
     }

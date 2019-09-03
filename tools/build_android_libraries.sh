@@ -38,7 +38,7 @@ for arch in $ARCH_LIST; do
     fi
 
     # What we want built
-    useropts="--enable-swig-java --enable-elements --enable-ecmult-static-precomputation"
+    useropts="--enable-swig-java --disable-swig-python --enable-elements --enable-ecmult-static-precomputation"
 
     # Configure and build with the above options
     android_build_wally $arch $toolsdir $api $useropts
