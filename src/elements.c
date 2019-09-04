@@ -25,6 +25,15 @@ static int get_generator(const secp256k1_context *ctx,
     return WALLY_OK;
 }
 
+static int generate_generator(const secp256k1_context *ctx,
+                         const unsigned char *generator, size_t generator_len,
+                         secp256k1_generator *dest) {
+    if (!generator || generator_len != ASSET_TAG_LEN ||
+        !secp256k1_generator_generate(ctx, dest, generator))
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
 static int get_commitment(const secp256k1_context *ctx,
                           const unsigned char *commitment, size_t commitment_len,
                           secp256k1_pedersen_commitment *dest) {
@@ -282,10 +291,19 @@ int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce
         !proof || !proof_len ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         (extra_len && !extra) ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
         !abf_out || abf_out_len != ASSET_TAG_LEN ||
         !vbf_out || vbf_out_len != ASSET_TAG_LEN || !value_out)
+        goto cleanup;
+
+    // unblinded asset for issuance
+    if (generator_len == ASSET_TAG_LEN &&
+        generate_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        goto cleanup;
+
+    // blinded asset
+    if (generator_len != ASSET_TAG_LEN &&
+        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
 
     /* Extract the value blinding factor, value and message from the rangeproof */
