@@ -559,6 +559,16 @@ WALLY_CORE_API int wally_sign_psbt(
 WALLY_CORE_API int wally_finalize_psbt(
     struct wally_psbt *psbt);
 
+/**
+ * Convert a finalized PSBT to a network transaction, i.e. extract
+ *
+ * :param psbt: PSBT to extract. Directly modifies this PSBT
+ * :param output: Resulting transaction
+ */
+WALLY_CORE_API int wally_extract_psbt(
+    struct wally_psbt *psbt,
+    struct wally_tx **output);
+
 #ifdef __cplusplus
 }
 #endif
