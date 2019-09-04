@@ -2874,3 +2874,62 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
     }
     return WALLY_OK;
 }
+
+int wally_extract_psbt(
+    struct wally_psbt *psbt,
+    struct wally_tx **output)
+{
+    struct wally_tx *result = NULL;
+    size_t i;
+    int ret = WALLY_OK;
+
+    TX_CHECK_OUTPUT;
+
+    if (!psbt || !psbt->tx || psbt->num_inputs == 0 || psbt->num_outputs == 0) {
+        return WALLY_EINVAL;
+    }
+
+    clone_tx(psbt->tx, &result);
+
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        struct wally_psbt_input *input = &psbt->inputs[i];
+        struct wally_tx_input *vin = &result->inputs[i];
+        if (!input->final_script_sig && !input->final_witness) {
+            ret = WALLY_EINVAL;
+            goto fail;
+        }
+
+        if (input->final_script_sig) {
+            if (vin->script) {
+                // Our global tx shouldn't have a scriptSig
+                ret = WALLY_EINVAL;
+                goto fail;
+            }
+            if (!clone_bytes(&vin->script, input->final_script_sig, input->final_script_sig_len)) {
+                ret = WALLY_ENOMEM;
+                goto fail;
+            }
+            vin->script_len = input->final_script_sig_len;
+        }
+        if (input->final_witness) {
+            if (vin->witness) {
+                // Our global tx shouldn't have a witness
+                ret = WALLY_EINVAL;
+                goto fail;
+            }
+            if (!(vin->witness = clone_witness(input->final_witness))) {
+                ret = WALLY_ENOMEM;
+                goto fail;
+            }
+        }
+    }
+
+    *output = result;
+    return ret;
+
+fail:
+    if (result) {
+        wally_tx_free(result);
+    }
+    return ret;
+}
