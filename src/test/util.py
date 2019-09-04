@@ -322,7 +322,8 @@ for f in (
     ('wally_psbt_set_global_tx', c_int, [POINTER(wally_psbt), POINTER(wally_tx)]),
     ('wally_combine_psbts', c_int, [POINTER(wally_psbt), c_ulong, POINTER(POINTER(wally_psbt))]),
     ('wally_sign_psbt', c_int, [POINTER(wally_psbt), c_void_p, c_ulong]),
-    ('wally_finalize_psbt', c_int, [POINTER(wally_psbt)])
+    ('wally_finalize_psbt', c_int, [POINTER(wally_psbt)]),
+    ('wally_extract_psbt', c_int, [POINTER(wally_psbt), POINTER(POINTER(wally_tx))])
     ):
 
     def bind_fn(name, res, args):
