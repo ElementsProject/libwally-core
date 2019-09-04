@@ -95,5 +95,14 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(finalizer['result'], reser)
 
+        for extractor in extractors:
+            psbt = pointer(wally_psbt())
+            tx = pointer(wally_tx())
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(extractor['extract'].encode('utf-8'), psbt))
+            self.assertEqual(WALLY_OK, wally_extract_psbt(psbt, tx))
+            ret, reser = wally_tx_to_hex(tx, 1)
+            self.assertEqual(WALLY_OK, ret)
+            self.assertEqual(extractor['result'], reser)
+
 if __name__ == '__main__':
     unittest.main()
