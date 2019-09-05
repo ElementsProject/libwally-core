@@ -401,7 +401,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 
     if (!ctx)
         return WALLY_ENOMEM;
-
+ 
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
         !output_abf || output_abf_len != ASSET_TAG_LEN ||
         get_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
@@ -422,10 +422,20 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
         ret = WALLY_ENOMEM;
         goto cleanup;
     }
+
+    char empty_abf[ASSET_TAG_LEN];
+    memset(empty_abf, 0, sizeof(empty_abf));
     for (i = 0; i < num_inputs; ++i) {
         const unsigned char *src = generator + i * ASSET_GENERATOR_LEN;
-        if (get_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK)
-            goto cleanup;
+        const unsigned char *abf_src = abf + i * ASSET_TAG_LEN;
+        const unsigned char *asset_src = asset + i * ASSET_TAG_LEN;
+        if (get_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK) {
+            if (memcmp(abf_src, empty_abf, ASSET_TAG_LEN) != 0)
+                goto cleanup;
+            else if (generate_generator(ctx, asset_src, ASSET_TAG_LEN, &generators[i]) != WALLY_OK ||
+                     memcmp(src, generators[i].data, ASSET_GENERATOR_LEN) != 0)
+                goto cleanup;  // for issue
+        }
     }
 
     if (!secp256k1_surjectionproof_initialize(ctx, &proof, &actual_index,
