@@ -488,6 +488,7 @@ set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
 
 set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
 add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc)
+add_dependencies(${NODEJS_WRAP_CC_NAME} ${WALLY_PROJECT_NAME})
 
 set(NODE_TEST_SRC_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/test)
 set(NODE_TEST_DATA_SRC_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/data)
@@ -516,6 +517,7 @@ target_sources(${NODE_LIBRARY_NAME}
     ${LIBWALLY_FILES}
     ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
 )
+add_dependencies(${NODE_LIBRARY_NAME} ${WALLY_PROJECT_NAME})
 
 target_compile_options(${NODE_LIBRARY_NAME}
   PRIVATE

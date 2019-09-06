@@ -98,3 +98,4 @@ node_modules
 package-lock.json
 Testing
 build
+/wally.js
