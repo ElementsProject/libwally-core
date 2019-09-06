@@ -477,7 +477,10 @@ endif() # GENERATE_WALLY OR (ENABLE_JS_WRAPPER)
 if(ENABLE_JS_WRAPPER)
 
 set(NODE_LIBRARY_NAME wallycore)
-project(wallycore CXX)
+
+set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
+
+project(wallycore_node CXX)
 
 if(ENABLE_ELEMENTS)
 set(ELEMENTS_OPT "elements")
@@ -485,10 +488,6 @@ else()
 set(ELEMENTS_OPT "")
 endif()
 set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
-
-set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
-add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc)
-add_dependencies(${NODEJS_WRAP_CC_NAME} ${WALLY_PROJECT_NAME})
 
 set(NODE_TEST_SRC_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/test)
 set(NODE_TEST_DATA_SRC_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/data)
@@ -500,6 +499,7 @@ set(NODE_TEST_BUILD_DIR     ${NODE_TEST_JS_DIR}/build)
 set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/Release)
 
 # generate source files, and create test directories
+add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc)
 add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
   COMMAND set PYTHONDONTWRITEBYTECODE=1
   COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -518,6 +518,18 @@ target_sources(${NODE_LIBRARY_NAME}
     ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
 )
 add_dependencies(${NODE_LIBRARY_NAME} ${WALLY_PROJECT_NAME})
+
+add_custom_command(
+  TARGET ${NODE_LIBRARY_NAME}
+  PRE_BUILD
+  COMMAND set PYTHONDONTWRITEBYTECODE=1
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
+  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+  COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+  VERBATIM
+)
 
 target_compile_options(${NODE_LIBRARY_NAME}
   PRIVATE
