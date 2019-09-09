@@ -25,15 +25,6 @@ static int get_generator(const secp256k1_context *ctx,
     return WALLY_OK;
 }
 
-static int generate_generator(const secp256k1_context *ctx,
-                         const unsigned char *generator, size_t generator_len,
-                         secp256k1_generator *dest) {
-    if (!generator || generator_len != ASSET_TAG_LEN ||
-        !secp256k1_generator_generate(ctx, dest, generator))
-        return WALLY_EINVAL;
-    return WALLY_OK;
-}
-
 static int get_commitment(const secp256k1_context *ctx,
                           const unsigned char *commitment, size_t commitment_len,
                           secp256k1_pedersen_commitment *dest) {
@@ -291,19 +282,10 @@ int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce
         !proof || !proof_len ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         (extra_len && !extra) ||
+        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
         !abf_out || abf_out_len != ASSET_TAG_LEN ||
         !vbf_out || vbf_out_len != ASSET_TAG_LEN || !value_out)
-        goto cleanup;
-
-    // unblinded asset for issuance
-    if (generator_len == ASSET_TAG_LEN &&
-        generate_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
-        goto cleanup;
-
-    // blinded asset
-    if (generator_len != ASSET_TAG_LEN &&
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
 
     /* Extract the value blinding factor, value and message from the rangeproof */
@@ -401,7 +383,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 
     if (!ctx)
         return WALLY_ENOMEM;
- 
+
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
         !output_abf || output_abf_len != ASSET_TAG_LEN ||
         get_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
@@ -422,20 +404,10 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
         ret = WALLY_ENOMEM;
         goto cleanup;
     }
-
-    char empty_abf[ASSET_TAG_LEN];
-    memset(empty_abf, 0, sizeof(empty_abf));
     for (i = 0; i < num_inputs; ++i) {
         const unsigned char *src = generator + i * ASSET_GENERATOR_LEN;
-        const unsigned char *abf_src = abf + i * ASSET_TAG_LEN;
-        const unsigned char *asset_src = asset + i * ASSET_TAG_LEN;
-        if (get_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK) {
-            if (memcmp(abf_src, empty_abf, ASSET_TAG_LEN) != 0)
-                goto cleanup;
-            else if (generate_generator(ctx, asset_src, ASSET_TAG_LEN, &generators[i]) != WALLY_OK ||
-                     memcmp(src, generators[i].data, ASSET_GENERATOR_LEN) != 0)
-                goto cleanup;  // for issue
-        }
+        if (get_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK)
+            goto cleanup;
     }
 
     if (!secp256k1_surjectionproof_initialize(ctx, &proof, &actual_index,
