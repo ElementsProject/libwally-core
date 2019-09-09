@@ -218,4 +218,8 @@ if is_elements_build():
 
     confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
 
-WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC
+# WALLY_SATOSHI_MAX =  0x7_75F0_5A07_4000  2_100_000_000_000_000
+if int(_wally_py_version[0]) >= 3:
+    WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC
+else:
+    WALLY_SATOSHI_MAX = long(WALLY_BTC_MAX) * long(WALLY_SATOSHI_PER_BTC)

@@ -41,7 +41,8 @@ static int check_result(int result)
 
 static bool ulonglong_cast(PyObject *item, unsigned long long *val)
 {
-#if PY_MAJOR_VERSION < 3
+#if (PY_MAJOR_VERSION < 3)
+    // Python 2.x supports long(BigNum) and int(32bit).
     if (PyInt_Check(item)) {
         *val = PyInt_AsUnsignedLongMask(item);
         if (!PyErr_Occurred())
@@ -50,6 +51,7 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
         return false;
     }
 #endif
+    // Python 3.x supports int(BigNum) only. long was deprecated.
     if (PyLong_Check(item)) {
         *val = PyLong_AsUnsignedLongLong(item);
         if (!PyErr_Occurred())
@@ -246,11 +248,17 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 /* Tell SWIG what uint32_t/uint64_t mean */
 typedef unsigned int uint32_t;
-#if sizeof(long) == sizeof(int)
+/*
+    +-------------------------------+--------+-------+-----+------+-----------+---------+
+    | OS type                       | OS bit | model | int | long | long long | int64_t |
+    +-------------------------------+--------+-------+-----+------+-----------+---------+
+    | Most Unix (Linux, macOS, ...) | 32bit  | ILP32 |  32 |   32 |        64 |      64 |
+    | Most Unix (Linux, macOS, ...) | 64bit  |  LP64 |  32 |   64 |        64 |      64 |
+    | Windows                       | 32bit  | ILP32 |  32 |   32 |        64 |      64 |
+    | Windows                       | 64bit  | LLP64 |  32 |   32 |        64 |      64 |
+    +-------------------------------+--------+-------+-----+------+-----------+---------+
+*/
 typedef unsigned long long uint64_t;
-#else
-typedef unsigned long uint64_t;
-#endif
 
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
