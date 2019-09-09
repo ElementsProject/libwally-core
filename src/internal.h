@@ -16,6 +16,7 @@ const secp256k1_context *secp_ctx(void);
 #define pubkey_tweak_add  secp256k1_ec_pubkey_tweak_add
 #define pubkey_serialize  secp256k1_ec_pubkey_serialize
 #define privkey_tweak_add secp256k1_ec_privkey_tweak_add
+#define pubkey_negate      secp256k1_ec_pubkey_negate
 
 #define PUBKEY_COMPRESSED   SECP256K1_EC_COMPRESSED
 #define PUBKEY_UNCOMPRESSED SECP256K1_EC_UNCOMPRESSED

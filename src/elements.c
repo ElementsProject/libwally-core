@@ -1,11 +1,13 @@
 #include "internal.h"
 #include <include/wally_address.h>
+#include <include/wally_bip32.h>
 #include <include/wally_elements.h>
 #include <include/wally_crypto.h>
 #include <include/wally_symmetric.h>
 #include "secp256k1/include/secp256k1_generator.h"
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
+#include "src/secp256k1/include/secp256k1_whitelist.h"
 #include "secp256k1/include/secp256k1_ecdh.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include <stdbool.h>
@@ -578,6 +580,69 @@ int wally_asset_blinding_key_to_ec_private_key(
         return ret;
 
     return wally_ec_private_key_verify(bytes_out, EC_PRIVATE_KEY_LEN);
+}
+
+int wally_asset_pak_whitelistproof_size(
+    size_t num_keys,
+    size_t *written)
+{
+    if (!written)
+        return WALLY_EINVAL;
+
+    *written = 1 + 32 * (1 + num_keys);
+
+    return WALLY_OK;
+}
+
+int wally_asset_pak_whitelistproof(
+    const unsigned char *online_keys,
+    size_t online_keys_len,
+    const unsigned char *offline_keys,
+    size_t offline_keys_len,
+    size_t key_index,
+    const unsigned char *sub_pubkey,
+    size_t sub_pubkey_len,
+    const unsigned char *online_priv_key,
+    size_t online_priv_key_len,
+    const unsigned char *summed_key,
+    size_t summed_key_len,
+    unsigned char *bytes_out,
+    size_t len)
+{
+    secp256k1_pubkey online_secp_keys[SECP256K1_WHITELIST_MAX_N_KEYS];
+    secp256k1_pubkey offline_secp_keys[SECP256K1_WHITELIST_MAX_N_KEYS];
+    const secp256k1_context *ctx = secp_ctx();
+    secp256k1_pubkey pubkey;
+    secp256k1_whitelist_signature sig;
+    const size_t num_keys = offline_keys_len / EC_PUBLIC_KEY_LEN;
+    size_t expected_sig_size = (1 + 32 * (1 + num_keys));
+
+    if (!online_keys || online_keys_len != offline_keys_len || !offline_keys || !offline_keys_len ||
+        offline_keys_len % EC_PUBLIC_KEY_LEN || key_index >= num_keys || num_keys > SECP256K1_WHITELIST_MAX_N_KEYS ||
+        !sub_pubkey || sub_pubkey_len != EC_PUBLIC_KEY_LEN ||
+        !online_priv_key || online_priv_key_len != EC_PRIVATE_KEY_LEN ||
+        !summed_key || summed_key_len != EC_PRIVATE_KEY_LEN ||
+        !pubkey_parse(ctx, &pubkey, sub_pubkey, sub_pubkey_len) ||
+        len < expected_sig_size)
+        return WALLY_EINVAL;
+
+    for (size_t i = 0; i < num_keys; ++i) {
+        if (!pubkey_parse(ctx, &online_secp_keys[i], online_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN) ||
+            !pubkey_parse(ctx, &offline_secp_keys[i], offline_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN))
+            return WALLY_ERROR;
+    }
+
+    if (!secp256k1_whitelist_sign(ctx, &sig, online_secp_keys, offline_secp_keys, num_keys,
+                                  &pubkey, online_priv_key, summed_key, key_index, NULL, NULL))
+        return WALLY_ERROR;
+
+    if (!secp256k1_whitelist_verify(ctx, &sig, online_secp_keys, offline_secp_keys, num_keys, &pubkey))
+        return WALLY_ERROR;
+
+    if (!secp256k1_whitelist_signature_serialize(ctx, bytes_out, &expected_sig_size, &sig))
+        return WALLY_ERROR;
+
+    return WALLY_OK;
 }
 
 #endif /* BUILD_ELEMENTS */

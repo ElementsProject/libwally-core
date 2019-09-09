@@ -62,6 +62,7 @@ pbkdf2_hmac_sha256 = _wrap_bin(pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
 pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
 
 ec_public_key_decompress = _wrap_bin(ec_public_key_decompress, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+ec_public_key_negate = _wrap_bin(ec_public_key_negate, EC_PUBLIC_KEY_LEN)
 ec_public_key_from_private_key = _wrap_bin(ec_public_key_from_private_key, EC_PUBLIC_KEY_LEN)
 def _sig_len(priv_key, bytes, flags):
     return EC_SIGNATURE_RECOVERABLE_LEN if EC_FLAG_RECOVERABLE & flags else EC_SIGNATURE_LEN
@@ -170,6 +171,9 @@ if is_elements_build():
     asset_surjectionproof = _wrap_bin(asset_surjectionproof, _asset_surjectionproof_len_fn, resize=True)
     asset_blinding_key_from_seed = _wrap_bin(asset_blinding_key_from_seed, HMAC_SHA512_LEN)
     asset_blinding_key_to_ec_private_key = _wrap_bin(asset_blinding_key_to_ec_private_key, EC_PRIVATE_KEY_LEN)
+    def _asset_pak_whitelistproof_len_fn(on_keys, off_keys, idx, sub_pubkey, priv_key, summed_key):
+        return asset_pak_whitelistproof_size(len(off_keys) // EC_PUBLIC_KEY_LEN)
+    asset_pak_whitelistproof = _wrap_bin(asset_pak_whitelistproof, _asset_pak_whitelistproof_len_fn)
 
     def _asset_unblind_fn(fn):
         def wrapped(*args):
@@ -217,5 +221,12 @@ if is_elements_build():
     tx_get_output_rangeproof = _wrap_bin(tx_get_output_rangeproof, tx_get_output_rangeproof_len, resize=True)
 
     confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
+
+    bip32_key_get_pub_key_tweak_sum = _wrap_bin(bip32_key_get_pub_key_tweak_sum, 32)
+
+    def _epsfb_len_fn(bh, mcs, pk, whl):
+        return len(bh) + len(mcs) + len(pk) + len(whl) + 1
+    elements_pegout_script_from_bytes = _wrap_bin(elements_pegout_script_from_bytes, _epsfb_len_fn, resize=True)
+
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

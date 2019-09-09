@@ -147,6 +147,14 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char *surjectionproof, size_t surjectionproof_len);
 %pybuffer_nullable_binary(const unsigned char *rangeproof, size_t rangeproof_len);
 %pybuffer_binary(const unsigned char *label, size_t label_len);
+%pybuffer_binary(const unsigned char *online_keys, size_t online_keys_len);
+%pybuffer_binary(const unsigned char *offline_keys, size_t keys_len);
+%pybuffer_binary(const unsigned char *sub_pubkey, size_t sub_pubkey_len);
+%pybuffer_binary(const unsigned char *online_priv_key, size_t online_priv_key_len);
+%pybuffer_binary(const unsigned char *summed_key, size_t summed_key_len);
+%pybuffer_binary(const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len);
+%pybuffer_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
+%pybuffer_binary(const unsigned char *whitelist_proof, size_t whitelist_proof_len);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -254,6 +262,7 @@ typedef unsigned long uint64_t;
 
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
+%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;

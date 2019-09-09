@@ -12,6 +12,9 @@ WALLY_CORE_API int bip32_key_get_parent160(const struct ext_key *hdkey, unsigned
 WALLY_CORE_API int bip32_key_get_priv_key(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int bip32_key_get_hash160(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int bip32_key_get_pub_key(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+#ifdef BUILD_ELEMENTS
+WALLY_CORE_API int bip32_key_get_pub_key_tweak_sum(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+#endif /* BUILD_ELEMENTS */
 
 WALLY_CORE_API int bip32_key_get_depth(const struct ext_key *hdkey, size_t *written);
 WALLY_CORE_API int bip32_key_get_child_num(const struct ext_key *hdkey, size_t *written);
