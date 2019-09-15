@@ -20,6 +20,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "plugman": "2.0.0"
+    "plugman": "3.0.1"
   }
 }

@@ -10,9 +10,9 @@
   "license": "MIT",
   "gypfile": true,
   "dependencies": {
-    "big-integer": "^1.6.44",
-    "nan": "^2.14.0",
-    "node-gyp": "^5.0.2",
-    "tape": "^4.11.0"
+    "big-integer": "1.6.45",
+    "nan": "2.14.0",
+    "node-gyp": "5.0.3",
+    "tape": "4.11.0"
   }
 }
