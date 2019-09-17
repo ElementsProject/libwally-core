@@ -24,7 +24,7 @@
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 
 %insert(cgo_comment_typedefs) %{
-#cgo LDFLAGS: -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs/ -lwallycore -lsecp256k1
+#cgo LDFLAGS: -L${SRCDIR}/src/.libs -lwallycore
 %}
 #include <iostream>
 %include "../../include/wally_core.h"
@@ -247,7 +247,8 @@ func Bip32KeySerialize(extKey *ExtKey, flags uint32) (extKeyBytes [BIP32_SERIALI
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 	extKeyOut := CCharArray{&extKeyBytes[0], int64(BIP32_SERIALIZED_LEN)}
 
-	Bip32_key_serialize(extKey, wally_flags, extKeyOut.P, extKeyOut.Length)
+	p_ext_key := SwigcptrExt_key(unsafe.Pointer(extKey))
+	Bip32_key_serialize(p_ext_key, wally_flags, extKeyOut.P, extKeyOut.Length)
 	return
 }
 
@@ -261,7 +262,8 @@ func Bip32KeySerialize(extKey *ExtKey, flags uint32) (extKeyBytes [BIP32_SERIALI
 func Bip32KeyToBase58(extKey *ExtKey, flags uint32) (xKeyBase58 string){
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 
-	Bip32_key_to_base58(extKey, wally_flags, &xKeyBase58)
+	p_ext_key := SwigcptrExt_key(unsafe.Pointer(extKey))
+	Bip32_key_to_base58(p_ext_key, wally_flags, &xKeyBase58)
 	return
 }
 
@@ -298,7 +300,8 @@ func Bip32KeyFromParent(extKey *ExtKey, childNum uint32, flags uint32) (childExt
 	var tmp uintptr
 	extKeyOut := SwigcptrExt_key(unsafe.Pointer(&tmp))
 
-	ret = Bip32_key_from_parent(extKey, wally_childNum, wally_flags, extKeyOut)
+	p_ext_key := SwigcptrExt_key(unsafe.Pointer(extKey))
+	ret = Bip32_key_from_parent(p_ext_key, wally_childNum, wally_flags, extKeyOut)
 	if ret == 0 {
 		childExtKey = (*ExtKey)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(extKeyOut))))
 	}
@@ -317,7 +320,8 @@ func Bip32KeyFromParentPath(extKey *ExtKey, childPath []uint8, flags uint32) (ch
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 	var tmp uintptr
 	extKeyOut := SwigcptrExt_key(unsafe.Pointer(&tmp))
-	ret = Bip32_key_from_parent_path(extKey, wally_child_path, int64(len(childPath)), wally_flags, extKeyOut)
+	p_ext_key := SwigcptrExt_key(unsafe.Pointer(extKey))
+	ret = Bip32_key_from_parent_path(p_ext_key, wally_child_path, int64(len(childPath)), wally_flags, extKeyOut)
 	if ret == 0 {
 		childExtKey = (*ExtKey)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(extKeyOut))))
 	}
@@ -336,7 +340,8 @@ func Bip32KeyFromUint32ParentPath(extKey *ExtKey, childPath []uint32, flags uint
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 	var tmp uintptr
 	extKeyOut := SwigcptrExt_key(unsafe.Pointer(&tmp))
-	ret = Bip32_key_from_parent_path(extKey, wally_child_path, int64(len(childPath)), wally_flags, extKeyOut)
+	p_ext_key := SwigcptrExt_key(unsafe.Pointer(extKey))
+	ret = Bip32_key_from_parent_path(p_ext_key, wally_child_path, int64(len(childPath)), wally_flags, extKeyOut)
 	if ret == 0 {
 		childExtKey = (*ExtKey)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(extKeyOut))))
 	}
@@ -550,7 +555,9 @@ func WallyTxFromHex(hex string, flags uint32) (wallyTx *WallyTx, ret int) {
  * :param tx: The transaction to get the virtual size of.
  */
 func WallyTxGetVsize(wallyTx *WallyTx) (vsize int64, ret int) {
-	ret = Wally_tx_get_vsize(wallyTx, &vsize)
+	var p_wally_tx WallyTxArgOutput
+	p_wally_tx = (WallyTxArgOutput)(unsafe.Pointer(wallyTx))
+	ret = Wally_tx_get_vsize(p_wally_tx, &vsize)
 	return
 }
 
@@ -568,7 +575,9 @@ func WallyTxToBytes(wallyTx *WallyTx, flags uint32) (txbytes []byte, ret int) {
 	txbytesBuf := make([]byte, 16048)
 	written := int64(0)
 
-	ret = Wally_tx_to_bytes(wallyTx, wally_flags, &txbytesBuf[0], int64(len(txbytesBuf)), &written)
+	var p_wally_tx WallyTxArgOutput
+	p_wally_tx = (WallyTxArgOutput)(unsafe.Pointer(wallyTx))
+	ret = Wally_tx_to_bytes(p_wally_tx, wally_flags, &txbytesBuf[0], int64(len(txbytesBuf)), &written)
 	if ret == WALLY_OK {
 		txbytes = txbytesBuf[:written]
 	}
@@ -578,7 +587,9 @@ func WallyTxToBytes(wallyTx *WallyTx, flags uint32) (txbytes []byte, ret int) {
 func WallyTxToHex(wallyTx *WallyTx, flags uint32) (hex string, ret int) {
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 
-	ret = Wally_tx_to_hex(wallyTx, wally_flags, &hex)
+	var p_wally_tx WallyTxArgOutput
+	p_wally_tx = (WallyTxArgOutput)(unsafe.Pointer(wallyTx))
+	ret = Wally_tx_to_hex(p_wally_tx, wally_flags, &hex)
 	return
 }
 
@@ -591,7 +602,9 @@ func WallyTxToHex(wallyTx *WallyTx, flags uint32) (hex string, ret int) {
  * :param script_len: Size of ``script`` in bytes.
  */
 func WallyTxSetInputScript(wallyTx *WallyTx, index int64, script []byte) (ret int) {
-	ret = Wally_tx_set_input_script(wallyTx, index, &script[0], int64(len(script)))
+	var p_wally_tx WallyTxArgOutput
+	p_wally_tx = (WallyTxArgOutput)(unsafe.Pointer(wallyTx))
+	ret = Wally_tx_set_input_script(p_wally_tx, index, &script[0], int64(len(script)))
 	return
 }
 
@@ -620,8 +633,10 @@ func WallyTxAddRawInput(
 	wally_seq := SwigcptrUint32_t(uintptr(unsafe.Pointer(&seq)))
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 
+	var p_wally_tx WallyTxArgOutput
+	p_wally_tx = (WallyTxArgOutput)(unsafe.Pointer(wallyTx))
 	ret = Wally_tx_add_raw_input(
-		wallyTx,
+		p_wally_tx,
 		&txhash[0],
 		int64(len(txhash)),
 		wally_index,
@@ -662,8 +677,10 @@ func WallyTxGetElementsSignatureHash(
 	wally_sighash := SwigcptrUint32_t(uintptr(unsafe.Pointer(&sighash)))
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 
+	var p_wally_tx WallyTxArgOutput
+	p_wally_tx = (WallyTxArgOutput)(unsafe.Pointer(tx))
 	ret = Wally_tx_get_elements_signature_hash(
-		tx,
+		p_wally_tx,
 		index,
 		&scriptSig[0],
 		int64(len(scriptSig)),
