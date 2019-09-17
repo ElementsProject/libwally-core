@@ -8,6 +8,7 @@ else
 JNI_LIB =
 endif
 include_HEADERS = include/secp256k1.h
+include_HEADERS += include/secp256k1_preallocated.h
 noinst_HEADERS =
 noinst_HEADERS += src/scalar.h
 noinst_HEADERS += src/scalar_4x64.h
@@ -158,7 +159,7 @@ gen_%.o: src/gen_%.c
 	$(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) -c $< -o $@
 
 $(gen_context_BIN): $(gen_context_OBJECTS)
-	$(CC_FOR_BUILD) $^ -o $@
+	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $^ -o $@
 
 $(libsecp256k1_la_OBJECTS): src/ecmult_static_context.h
 $(tests_OBJECTS): src/ecmult_static_context.h
@@ -175,6 +176,14 @@ EXTRA_DIST = autogen.sh src/gen_context.c src/basic-config.h $(JAVA_FILES)
 
 if ENABLE_MODULE_ECDH
 include src/modules/ecdh/Makefile.am.include
+endif
+
+if ENABLE_MODULE_SCHNORRSIG
+include src/modules/schnorrsig/Makefile.am.include
+endif
+
+if ENABLE_MODULE_MUSIG
+include src/modules/musig/Makefile.am.include
 endif
 
 if ENABLE_MODULE_RECOVERY

@@ -129,7 +129,8 @@ int wally_asset_rangeproof(uint64_t value,
                            const unsigned char *commitment, size_t commitment_len,
                            const unsigned char *extra, size_t extra_len,
                            const unsigned char *generator, size_t generator_len,
-                           uint64_t min_value, unsigned char *bytes_out, size_t len,
+                           uint64_t min_value, int exp, int min_bits,
+                           unsigned char *bytes_out, size_t len,
                            size_t *written)
 {
     const secp256k1_context *ctx = secp_ctx();
@@ -157,6 +158,8 @@ int wally_asset_rangeproof(uint64_t value,
         /* FIXME: Is there an upper size limit on the extra commitment? */
         (extra_len && !extra) ||
         min_value > 0x7ffffffffffffffful ||
+        exp < -1 || exp > 18 ||
+        min_bits < 0 || min_bits > 64 ||
         get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
 
@@ -175,10 +178,8 @@ int wally_asset_rangeproof(uint64_t value,
     memcpy(message + ASSET_TAG_LEN, abf, ASSET_TAG_LEN);
 
     *written = ASSET_RANGEPROOF_MAX_LEN;
-    /* FIXME: This only allows 32 bit values. The caller should be able to
-     * pass in the maximum value allowed */
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, min_value, &commit,
-                                  vbf, nonce_sha.u.u8, 0, 32, value,
+                                  vbf, nonce_sha.u.u8, exp, min_bits, value,
                                   message, sizeof(message),
                                   extra, extra_len,
                                   &gen))

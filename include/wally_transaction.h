@@ -844,7 +844,7 @@ WALLY_CORE_API int wally_tx_is_elements(
     size_t *written);
 
 /**
- * Convert satoshi to an (explicit) confidential value representation.
+ * Convert satoshi to an explicit confidential value representation.
  *
  * :param satoshi: The value in satoshi to convert.
  * :param bytes_out: Destination for the confidential value bytes.
@@ -854,6 +854,18 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
     uint64_t satoshi,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Convert an explicit confidential value representation to satoshi.
+ *
+ * :param value: The confidential value bytes.
+ * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_out: The converted value in satoshi.
+ */
+WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
+    const unsigned char *value,
+    size_t value_len,
+    uint64_t* value_out);
 
 /**
  * Create a Elements transaction for signing and return its hash.

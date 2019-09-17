@@ -202,6 +202,8 @@ FUNCS_NODE = [
         'const_bytes[extra_in]',
         'const_bytes[generator]',
         'uint64_t[min_value]',
+        'int[exp]',
+        'int[min_bits]',
         'out_bytes_sized',
     ], out_size='5134')),
     ('wally_asset_surjectionproof', F([
