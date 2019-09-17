@@ -496,7 +496,7 @@ set(NODE_TEST_JS_DIR        ${NODE_TEST_BASE_DIR}/wrap_js)
 set(NODE_TEST_DATA_DIR      ${NODE_TEST_BASE_DIR}/data)
 set(NODE_TEST_FILE_DIR      ${NODE_TEST_JS_DIR}/test)
 set(NODE_TEST_BUILD_DIR     ${NODE_TEST_JS_DIR}/build)
-set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/Release)
+set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/${WORK_WINDOWS_BINARY_DIR_NAME})
 
 # generate source files, and create test directories
 add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
@@ -1302,7 +1302,6 @@ endif()
 ####################
 # test for node.js
 ####################
-if(NOT ENABLE_DEBUG)
 # Currently, wally.js only supports release builds.
 if(ENABLE_JS_WRAPPER)
 # 'tape' is notfound on Windows, So it's call to 'node'.
@@ -1328,12 +1327,11 @@ add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/te
 add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
 if(ENABLE_ELEMENTS)
 add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
-add_test(NAME js_test_unblind   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_unblind.js )
-# add_test(NAME js_test_confidential_address
-#     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
+add_test(NAME js_test_unblind  COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_unblind.js )
+add_test(NAME js_test_confidential_address
+    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
 endif() # ENABLE_ELEMENTS
 endif() # ENABLE_JS_WRAPPER
-endif() # ENABLE_DEBUG
 
 endif() # ENABLE_TESTS
 
