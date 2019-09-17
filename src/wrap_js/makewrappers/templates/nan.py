@@ -417,7 +417,7 @@ def _generate_nan(funcname, f):
         input_args.extend([
             'v8::Local<v8::Array> res;',
             'if (ret == WALLY_OK) {',
-            '    res = v8::Array::New(v8::Isolate::GetCurrent(), %s);' % num_outs,
+            '    res = Nan::New<v8::Array>(%s);' % num_outs,
             '    if (!IsValid(res))',
             '       ret = WALLY_ENOMEM;',
             '}',
@@ -457,7 +457,7 @@ def _generate_nan(funcname, f):
             args.append('arg%s' % i)
         elif arg.startswith('const_char'):
             input_args.extend([
-                'std::string info%s = *v8::String::Utf8Value(info[%s]->ToString());' % (i, i),
+                'std::string info%s = *Nan::Utf8String(info[%s]);' % (i, i),
                 'char* char%s = new char[info%s.size() + 1];' % (i, i),
                 'std::char_traits<char>::copy(char%s, info%s.c_str(), info%s.size() + 1);' % (i, i, i),
             ])
@@ -494,7 +494,7 @@ def _generate_nan(funcname, f):
             postprocessing.extend([
                 'v8::Local<v8::String> str_res;',
                 'if (ret == WALLY_OK) {',
-                '    str_res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr, v8::NewStringType::kNormal).ToLocalChecked();',
+                '    str_res = Nan::NewOneByteString(reinterpret_cast<uint8_t *>(result_ptr)).ToLocalChecked();',
                 '    wally_free_string(result_ptr);',
                 '    if (!IsValid(str_res))',
                 '        ret = WALLY_ENOMEM;',
