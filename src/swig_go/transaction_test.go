@@ -43,5 +43,5 @@ func TestTxGetVsize(t *testing.T) {
 
 	vsize, ret := WallyTxGetVsize(tx)
 	assert.Equal(t, 0, ret)
-	assert.Equal(t, 165, vsize)
+	assert.Equal(t, int64(165), vsize)
 }
