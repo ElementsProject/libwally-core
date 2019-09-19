@@ -24,7 +24,7 @@
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 
 %insert(cgo_comment_typedefs) %{
-#cgo LDFLAGS: -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs/ -lwallycore -lsecp256k1
+#cgo LDFLAGS: -L${SRCDIR}/src/.libs -lwallycore
 %}
 #include <iostream>
 %include "../../include/wally_core.h"
@@ -200,8 +200,8 @@ type ExtKey struct {
 	Pad2 [3]byte
 	PubKey [33]byte
 }
-func (k ExtKey)Swigcptr() uintptr {
-	return uintptr(unsafe.Pointer(&k))
+func (k *ExtKey) Swigcptr() uintptr {
+	return uintptr(unsafe.Pointer(k))
 }
 
 /**
@@ -312,7 +312,7 @@ func Bip32KeyFromParent(extKey *ExtKey, childNum uint32, flags uint32) (childExt
  * :param childPath: The path of child numbers to create.
  * :param flags: BIP32_KEY_ Flags indicating the type of derivation wanted.
  */
-func Bip32KeyFromParentPath(extKey *ExtKey, childPath []uint8, flags uint32) (childExtKey *ExtKey, ret int){
+func Bip32KeyFromParentPath(extKey *ExtKey, childPath []uint32, flags uint32) (childExtKey *ExtKey, ret int){
 	wally_child_path := SwigcptrUint32_t(uintptr(unsafe.Pointer(&childPath[0])))
 	wally_flags := SwigcptrUint32_t(uintptr(unsafe.Pointer(&flags)))
 	var tmp uintptr
@@ -375,8 +375,8 @@ type WallyTxWitnessStack struct {
 	ItemsAllocationLen uint64
 }
 
-func (txws WallyTxWitnessStack) Swigcptr() uintptr {
-	return uintptr(unsafe.Pointer(&txws))
+func (txws *WallyTxWitnessStack) Swigcptr() uintptr {
+	return uintptr(unsafe.Pointer(txws))
 }
 func (txws WallyTxWitnessStack) ListItems() (items []*WallyTxWitnessItem) {
 	structSize := unsafe.Sizeof(WallyTxWitnessItem{})
@@ -489,8 +489,8 @@ type WallyTx struct {
 	OutputsAllocationLen uint64
 }
 
-func (tx WallyTx) Swigcptr() uintptr {
-	return uintptr(unsafe.Pointer(&tx))
+func (tx *WallyTx) Swigcptr() uintptr {
+	return uintptr(unsafe.Pointer(tx))
 }
 func (tx WallyTx) ListInputs() (txInputs []*WallyTxInput) {
 	structSize := unsafe.Sizeof(WallyTxInput{})

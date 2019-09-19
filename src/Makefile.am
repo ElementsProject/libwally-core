@@ -163,6 +163,20 @@ clean-swig-java:
 clean-local: clean-swig-java
 endif # USE_SWIG_JAVA
 
+if USE_SWIG_GO
+# We must sed the wrapper to workaround SWIGs odd library naming conventions
+SWIG_INT_GO_SIZE=32
+swig_go/wallycore.cxx :
+	cd .. && $(SWIG) -go -c++ $(SWIG_GEN_FLAGS) -outdir . -o wallycore.cxx -cgo -intgosize $(SWIG_INT_GO_SIZE) src/swig_go/swig.i
+
+all: swig_go/wallycore.cxx
+
+# clean-swig-go:
+# 	$(AM_V_at)rm -f swig_go/wallycore.cxx
+# clean-local: clean-swig-go
+
+endif # USE_SWIG_GO
+
 lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \

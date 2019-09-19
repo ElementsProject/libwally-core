@@ -30,7 +30,8 @@ func TestBip32KeyFromBase58(t *testing.T) {
 	//xPubBase58 := "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"
 	xPubBase58 := "xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw"
 	expectedPrivKeyHex := "e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35"
-	expectedPubKeyHex := "0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2"
+	//expectedPubKeyHex := "0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2"
+	expectedPubKeyHex := "035a784662a4a20a65bf6aab9ae98a6c068a81c52e4b032c0fb5400c706cfccc56"
 	xPriv, _ := Bip32KeyFromBase58(xPrivBase58)
 	xPub, _ := Bip32KeyFromBase58(xPubBase58)
 	fmt.Println(xPub)

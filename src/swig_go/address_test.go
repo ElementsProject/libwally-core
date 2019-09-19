@@ -50,9 +50,11 @@ func TestConfidentialAddrFromAddr(t *testing.T) {
 	expected := "CTEsmtyKic5ZWFTwyesnLM4SV3KEF6HjtUGyieeM5EUzaaQMC9fuUKxEjGBmrHPNaxfuSLpUPe9ioP6r"
 	hash160, _ := WallyHash160(pubKey)
 	bytes := []byte{byte(PREFIX_PUBKEY_ADDRESS_LIQUID_REGTEST)}
+	blindPubKeyCopy := [EC_PUBLIC_KEY_LEN]byte{byte(EC_PUBLIC_KEY_LEN)}
+	copy(blindPubKeyCopy[:], blindPubKey)
 	bytes = append(bytes, hash160[:]...)
 	P2PKHAddress, _ := WallyBase58FromBytes(bytes, uint32(BASE58_FLAG_CHECKSUM))
-	confidential, _ := WallyConfidentialAddrFromAddr(P2PKHAddress, uint32(PREFIX_BLINDED_ADDRESS_LIQUID_REGTEST), blindPubKey)
+	confidential, _ := WallyConfidentialAddrFromAddr(P2PKHAddress, uint32(PREFIX_BLINDED_ADDRESS_LIQUID_REGTEST), blindPubKeyCopy)
 	assert.Equal(t, expected, confidential)
 }
 

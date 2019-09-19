@@ -494,7 +494,7 @@ def _generate_nan(funcname, f):
             postprocessing.extend([
                 'v8::Local<v8::String> str_res;',
                 'if (ret == WALLY_OK) {',
-                '    str_res = Nan::NewOneByteString(reinterpret_cast<uint8_t *>(result_ptr)).ToLocalChecked();',
+                '    str_res = Nan::New<v8::String>(std::string(result_ptr)).ToLocalChecked();',
                 '    wally_free_string(result_ptr);',
                 '    if (!IsValid(str_res))',
                 '        ret = WALLY_ENOMEM;',

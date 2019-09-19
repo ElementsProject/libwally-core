@@ -382,6 +382,11 @@ AM_CONDITIONAL([RUN_JAVA_TESTS], [test "x$run_java_tests" != "x"])
 JAVAC_TARGET=1.7
 AC_SUBST([JAVAC_TARGET])
 
+AC_ARG_ENABLE(swig-go,
+    AS_HELP_STRING([--enable-swig-go],[enable the SWIG go interface (default: no)]),
+    [swig_go=$enableval], [swig_go=no])
+AM_CONDITIONAL([USE_SWIG_GO], [test "x$swig_go" == "xyes"])
+
 AC_SUBST([AM_CFLAGS])
 
 if test "x$enable_static" == "xyes"; then
