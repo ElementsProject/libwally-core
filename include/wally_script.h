@@ -452,6 +452,28 @@ WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Create a script for P2CH pegin transactions.
+ *
+ * :param redeem_script: The federation redeem script.
+ * :param redeem_script_len: Length of ``redeem_script`` in bytes.
+ * :param script: The claim script.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting script.
+ * :param len: Length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
+    const unsigned char *redeem_script,
+    size_t redeem_script_len,
+    const unsigned char *script,
+    size_t script_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 #endif
 
 #ifdef __cplusplus

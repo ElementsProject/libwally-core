@@ -207,6 +207,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len);
 %pybuffer_nonnull_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
 %pybuffer_nonnull_binary(const unsigned char *whitelist_proof, size_t whitelist_proof_len);
+%pybuffer_nonnull_binary(const unsigned char *redeem_script, size_t redeem_script_len);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);

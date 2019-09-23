@@ -224,9 +224,13 @@ if is_elements_build():
 
     bip32_key_get_pub_key_tweak_sum = _wrap_bin(bip32_key_get_pub_key_tweak_sum, 32)
 
-    def _epsfb_len_fn(bh, mcs, pk, whl):
+    def _epsfb_len_fn(bh, mcs, pk, whl, flag):
         return len(bh) + len(mcs) + len(pk) + len(whl) + 1
     elements_pegout_script_from_bytes = _wrap_bin(elements_pegout_script_from_bytes, _epsfb_len_fn, resize=True)
+
+    def _epcsfb_len_fn(rs, cs, flag):
+        return len(rs)
+    elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, _epcsfb_len_fn, resize=True)
 
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC
