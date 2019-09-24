@@ -173,6 +173,7 @@ libwallycore_la_SOURCES = \
     bip39.c \
     bech32.c \
     elements.c \
+    blech32.c \
     hex.c \
     hmac.c \
     internal.c \
@@ -233,6 +234,11 @@ noinst_PROGRAMS += test_elements_tx
 test_elements_tx_SOURCES = ctest/test_elements_tx.c
 test_elements_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_elements_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+TESTS += test_blech32
+noinst_PROGRAMS += test_blech32
+test_blech32_SOURCES = ctest/test_blech32.c
+test_blech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_blech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
