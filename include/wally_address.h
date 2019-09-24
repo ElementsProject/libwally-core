@@ -204,6 +204,54 @@ WALLY_CORE_API int wally_confidential_addr_from_addr(
     const unsigned char *pub_key,
     size_t pub_key_len,
     char **output);
+
+/**
+ * Extract the segwit native address from a confidential address.
+ *
+ * :param address: The blech32 encoded confidential address to extract the address from.
+ * :param confidential_addr_family: The confidential address family to generate.
+ * :param addr_family: The address family to generate.
+ * :param output: Destination for the resulting address string.
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_confidential_addr_to_addr_segwit(
+    const char *address,
+    const char *confidential_addr_family,
+    const char *addr_family,
+    char **output);
+
+/**
+ * Extract the blinding public key from a segwit confidential address.
+ *
+ * :param address: The blech32 encoded confidential address to extract the public key from.
+ * :param confidential_addr_family: The confidential address prefix byte.
+ * :param bytes_out: Destination for the public key.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ */
+WALLY_CORE_API int wally_confidential_addr_segwit_to_ec_public_key(
+    const char *address,
+    const char *confidential_addr_family,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Create a confidential address from an segwit native and blinding public key.
+ *
+ * :param address: The bech32 encoded address to make confidential.
+ * :param addr_family: The address family to generate.
+ * :param confidential_addr_family: The confidential address family to generate.
+ * :param pub_key: The blinding public key to associate with ``address``.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param output: Destination for the resulting address string.
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_confidential_addr_from_addr_segwit(
+    const char *address,
+    const char *addr_family,
+    const char *confidential_addr_family,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    char **output);
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
