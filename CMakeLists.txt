@@ -367,6 +367,7 @@ set(LIBWALLY_FILES
     src/bip38.c
     src/bip39.c
     src/bech32.c
+    src/blech32.c
     src/elements.c
     src/ecdh.c
     src/hex.c
@@ -1174,6 +1175,43 @@ target_link_libraries(${TEST_ELEMENTS_TX_NAME}
 add_test(
   NAME ${TEST_ELEMENTS_TX_NAME}
   COMMAND $<TARGET_FILE:${TEST_ELEMENTS_TX_NAME}>
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
+)
+
+
+set(TEST_BLECH32_NAME test_blech32)
+add_executable(${TEST_BLECH32_NAME} src/ctest/test_blech32.c)
+target_compile_options(${TEST_BLECH32_NAME}
+  PRIVATE
+    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+)
+target_compile_definitions(${TEST_BLECH32_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+)
+target_include_directories(${TEST_BLECH32_NAME}
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${SECP256K_OUTPUT_PATH}
+)
+target_link_directories(${TEST_BLECH32_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_BLECH32_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
+)
+add_test(
+  NAME ${TEST_BLECH32_NAME}
+  COMMAND $<TARGET_FILE:${TEST_BLECH32_NAME}>
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 endif()

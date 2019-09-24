@@ -856,3 +856,6 @@ func WallyScriptsigMultisigFromBytes(redeemScript []byte, signatures [][EC_SIGNA
 	return
 }
 %}
+
+%include "include_go/wally_symmetric.h"
+
