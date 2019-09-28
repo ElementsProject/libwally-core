@@ -28,6 +28,11 @@ class PegoutTests(unittest.TestCase):
         offline_counter = 8
         pak_list = '030781ae6f87c0b3af83b7350eb38bbd22322f525046d0320f1cb45a97c05cbeb7:031f26676db48716aff0f6ac477db463715d3280e2c706b55556425831620fdcce'
         master_online_key, master_online_key_len = make_cbuffer('06def06500e5efae3addf7e0ed1178074405587a95c49a3ef31367eec782319f')
+
+        pub_key, pub_key_len = make_cbuffer('00'*33)
+        self.assertEqual(wally_ec_public_key_from_private_key(master_online_key, master_online_key_len, pub_key, pub_key_len), WALLY_OK)
+        self.assertEqual(h(pub_key), '031f26676db48716aff0f6ac477db463715d3280e2c706b55556425831620fdcce')
+
         whitelist_index = 0
 
         keys = pak_list.split(':')
