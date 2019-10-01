@@ -4,6 +4,7 @@
 #include "aes.c"
 #include "base58.c"
 #include "bech32.c"
+#include "blech32.c"
 #include "bip32.c"
 #include "bip38.c"
 #include "bip39.c"
