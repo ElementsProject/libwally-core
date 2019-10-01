@@ -6,8 +6,9 @@ branches:
 language: c
 sudo: required
 os:
-  - linux
-  - osx
+  #  - linux
+  # - osx
+  - windows
 dist: trusty
 compiler:
   - clang
@@ -39,6 +40,13 @@ matrix:
       - compiler: clang
         os: linux
         env: ENABLE_ELEMENTS=--enable-elements
+      - os: windows
+        script:
+          - choco install swig
+          - dir /c/ProgramData/chocolatey/lib/swig/tools/install/swigwin-4.0.0
+          - export SWIG_PATH=/c/ProgramData/chocolatey/lib/swig/tools/install/swigwin-4.0.0
+          - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" -host_arch=amd64 -arch=amd64
+          - tools/msvc/wheel.bat
 
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
