@@ -8,6 +8,7 @@ sudo: required
 os:
   - linux
   - osx
+  - windows
 dist: trusty
 compiler:
   - clang
@@ -39,6 +40,17 @@ matrix:
       - compiler: clang
         os: linux
         env: ENABLE_ELEMENTS=--enable-elements
+      - os: windows
+        env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/ProgramData/chocolatey/lib/swig/tools/install/swigwin-4.0.0
+        before_script:
+        script:
+          - tools/msvc/wheel.bat
+    exclude:
+      - os: windows
+        compiler: gcc
+      - os: windows
+        compiler: clang
+
 
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
