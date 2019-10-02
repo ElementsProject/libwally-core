@@ -34,14 +34,16 @@ func TestTxGetElementsSignatureHash(t *testing.T) {
 		signatureHashFlags)
 	assert.Equal(t, 0, ret)
 	assert.Equal(t, expected, signatureHash)
+	Wally_tx_free(wallyTx)
 }
 
 func TestTxGetVsize(t *testing.T) {
 	txFlags := uint32(WALLY_TX_FLAG_USE_WITNESS + WALLY_TX_FLAG_USE_ELEMENTS)
-	tx, ret := WallyTxFromHex(tx, txFlags)
+	wallyTx, ret := WallyTxFromHex(tx, txFlags)
 	assert.Equal(t, 0, ret)
 
-	vsize, ret := WallyTxGetVsize(tx)
+	vsize, ret := WallyTxGetVsize(wallyTx)
 	assert.Equal(t, 0, ret)
 	assert.Equal(t, int64(165), vsize)
+	Wally_tx_free(wallyTx)
 }
