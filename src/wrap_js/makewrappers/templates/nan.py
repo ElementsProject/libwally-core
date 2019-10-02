@@ -255,7 +255,7 @@ static v8::Local<v8::Object> CreateWallyTxWitnessStack(wally_tx_witness_stack *w
     Nan::Set(res, Nan::New("items").ToLocalChecked(), items);
     for(size_t i = 0; i < witness_stack->num_items; i++) {
         LocalObject item = CopyBuffer(witness_stack->items[i].witness,  witness_stack->items[i].witness_len, ret);
-        items->Set(i, item);
+        Nan::Set(items, i, item);
     }
 
     Nan::Set(res, Nan::New("items_allocation_len").ToLocalChecked(), Nan::New<v8::Number>(witness_stack->items_allocation_len));
@@ -279,7 +279,7 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
     
     for(i = 0; i < tx->num_inputs; i++) {
         input = Nan::New<v8::Object>();
-        inputs->Set(i, input);
+        Nan::Set(inputs, i, input);
 
         if(sizeof(tx->inputs[i].txhash) > 0) {
             LocalObject tx_hash = CopyBuffer(tx->inputs[i].txhash, WALLY_TXHASH_LEN, ret);
@@ -340,7 +340,7 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
 
     for(i = 0; i < tx->num_outputs; i++) {
         output = Nan::New<v8::Object>();
-        outputs->Set(i, output);
+        Nan::Set(outputs, i, output);
 
         if(tx->outputs[i].satoshi > 0) {
             Nan::Set(output, Nan::New("satoshi").ToLocalChecked(), Nan::New<v8::String>(std::to_string(tx->outputs[i].satoshi)).ToLocalChecked());
@@ -526,7 +526,7 @@ def _generate_nan(funcname, f):
             if num_outs > 1:
                 postprocessing.extend([
                     'if (ret == WALLY_OK)',
-                    '    if (!res->Set(Nan::GetCurrentContext(), %s, res%s).FromMaybe(false))' % (cur_out, i),
+                    '    if (!Nan::Set(res, %s, res%s).FromMaybe(false))' % (cur_out, i),
                     '        ret = WALLY_ERROR;',
                 ])
                 cur_out += 1
@@ -546,7 +546,7 @@ def _generate_nan(funcname, f):
                 'LocalObject res%s = CopyBuffer(res_ptr%s, sizeof(uint64_t), ret);' % (i, i),
                 'FreeMemory(reinterpret_cast<char *>(res_ptr%s), sizeof(uint64_t));'% (i),
                 'if (ret == WALLY_OK) {',
-                '    if (!res->Set(Nan::GetCurrentContext(), %s, res%s).FromMaybe(false)) ' % (cur_out, i),
+                '    if (!Nan::Set(res, %s, res%s).FromMaybe(false)) ' % (cur_out, i),
                 '        ret = WALLY_ERROR;',
                 '}',
             ])
