@@ -31,12 +31,12 @@
   "license": "MIT",
   "gypfile": true,
   "dependencies": {
-    "big-integer": "^1.6.26",
+    "big-integer": "^1.6.44",
     "bindings": "*",
     "cmake-js": "^5.2.0",
-    "nan": "^2.11.0",
-    "node-gyp": "^3.8.0",
-    "tape": "^4.8.0"
+    "nan": "^2.14.0",
+    "node-gyp": "^5.0.2",
+    "tape": "^4.11.0"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5",
