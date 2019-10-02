@@ -1,5 +1,6 @@
 #define SECP256K1_BUILD 1
 #include "internal.c"
+#include "address.c"
 #include "aes.c"
 #include "base58.c"
 #include "bech32.c"

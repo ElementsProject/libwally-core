@@ -872,3 +872,51 @@ int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_le
     }
     return ret;
 }
+
+int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_blockhash,
+                                            size_t parent_genesis_blockhash_len,
+                                            const unsigned char *mainchain_script,
+                                            size_t mainchain_script_len,
+                                            const unsigned char *sub_pubkey,
+                                            size_t sub_pubkey_len,
+                                            const unsigned char *whitelist_proof,
+                                            size_t whitelist_proof_len,
+                                            uint32_t flags,
+                                            unsigned char *bytes_out,
+                                            size_t len,
+                                            size_t *written)
+{
+#define pegout_script_push(bytes, bytes_len) \
+    if (len < bytes_written) \
+        return WALLY_OK; \
+    bytes_out += bytes_written; \
+    len -= bytes_written; \
+    if ((ret = wally_script_push_from_bytes(bytes, bytes_len, 0, bytes_out, len, &bytes_written)) != WALLY_OK) \
+        return ret; \
+    if (written) \
+        *written += bytes_written;
+
+    size_t bytes_written = 1; /* OP_RETURN */
+    int ret;
+
+    if (written)
+        *written = 0;
+
+    if (!parent_genesis_blockhash || parent_genesis_blockhash_len != 32 ||
+        !mainchain_script || !mainchain_script_len || !sub_pubkey || sub_pubkey_len != EC_PUBLIC_KEY_LEN ||
+        !whitelist_proof || !whitelist_proof_len || flags || !bytes_out || !len)
+        return WALLY_EINVAL;
+
+    *bytes_out = OP_RETURN;
+    if (written)
+        *written += bytes_written;
+
+    pegout_script_push(parent_genesis_blockhash, parent_genesis_blockhash_len);
+    pegout_script_push(mainchain_script, mainchain_script_len);
+    pegout_script_push(sub_pubkey, sub_pubkey_len);
+    pegout_script_push(whitelist_proof, whitelist_proof_len);
+
+    return WALLY_OK;
+
+#undef pegout_script_push
+}

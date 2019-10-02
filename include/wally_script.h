@@ -422,6 +422,38 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
     size_t len,
     size_t *written);
 
+#ifdef BUILD_ELEMENTS
+/**
+ * Create a pegout script.
+ *
+ * :param parent_genesis_blockhash: The genesis blockhash of the parent chain.
+ * :param parent_genesis_blockhash_len: Length of ``parent_genesis_blockhash`` in bytes. Must be 32.
+ * :param mainchain_script: The parent chain script.
+ * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
+ * :param sub_pubkey: The whitelisted public key.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param whitelist_proof: The whitelist proof.
+ * :param whitelist_proof_len: The length of ``whitelist_proof`` in bytes.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting pegout script.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
+    const unsigned char *parent_genesis_blockhash,
+    size_t parent_genesis_blockhash_len,
+    const unsigned char *mainchain_script,
+    size_t mainchain_script_len,
+    const unsigned char *sub_pubkey,
+    size_t sub_pubkey_len,
+    const unsigned char *whitelist_proof,
+    size_t whitelist_proof_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

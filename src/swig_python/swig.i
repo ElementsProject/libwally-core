@@ -1,4 +1,23 @@
-%module wallycore
+/*
+  The automatic module importing varies between Swig3 and Swig4.
+  Make explicit so should work for both versions.
+  (Basically the swig3 version).
+*/
+%define MODULEIMPORT
+"
+def swig_import_helper():
+    import importlib
+    pkg = __name__.rpartition('.')[0]
+    mname = '.'.join((pkg, '$module')).lstrip('.')
+    try:
+        return importlib.import_module(mname)
+    except ImportError:
+        return importlib.import_module('$module')
+$module = swig_import_helper()
+del swig_import_helper
+"
+%enddef
+%module(moduleimport=MODULEIMPORT) wallycore
 %{
 #define SWIG_FILE_WITH_INIT
 #include <stdbool.h>
@@ -89,14 +108,25 @@ static void destroy_words(PyObject *obj) { (void)obj; }
     $result = Py_None;
 %}
 
+/*
+  The behaviour of pybuffer_binary varies wrt a Py_None argument between Swig3
+  (raises TypeError) and Swig4 (passes through as NULL) - so make explicit
+  'nullable' and 'nonnull' macros for consistent behaviour across versions.
+  NOTE: the code in the 'else' branch is essentially taken from swig4's
+  pybuffer_binary macro implementation.
+*/
 %define %pybuffer_nullable_binary(TYPEMAP, SIZE)
-%typemap(in) (TYPEMAP, SIZE)
-  (int res, Py_ssize_t size = 0, const void *buf = 0) {
+%typemap(in) (TYPEMAP, SIZE) {
+  int res; Py_ssize_t size = 0; const void *buf = 0;
+  Py_buffer view;
   if ($input == Py_None)
     $2 = 0;
   else {
-    res = PyObject_AsReadBuffer($input, &buf, &size);
-    if (res<0) {
+    res = PyObject_GetBuffer($input, &view, PyBUF_CONTIG_RO);
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
+    if (res < 0) {
       PyErr_Clear();
       %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
     }
@@ -106,36 +136,58 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 }
 %enddef
 
+%define %pybuffer_nonnull_binary(TYPEMAP, SIZE)
+%typemap(in) (TYPEMAP, SIZE) {
+  int res; Py_ssize_t size = 0; const void *buf = 0;
+  Py_buffer view;
+  if ($input == Py_None)
+    %argument_fail(SWIG_TypeError, "(TYPEMAP, SIZE)", $symname, $argnum);
+  else {
+    res = PyObject_GetBuffer($input, &view, PyBUF_CONTIG_RO);
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
+    if (res < 0) {
+      PyErr_Clear();
+      %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
+    }
+    $1 = ($1_ltype) buf;
+    $2 = ($2_ltype) (size / sizeof($*1_type));
+  }
+}
+%enddef
+
+
 /* Input buffers with lengths are passed as python buffers */
-%pybuffer_binary(const unsigned char *abf, size_t abf_len);
-%pybuffer_binary(const unsigned char *asset, size_t asset_len);
+%pybuffer_nonnull_binary(const unsigned char *abf, size_t abf_len);
+%pybuffer_nonnull_binary(const unsigned char *asset, size_t asset_len);
 %pybuffer_nullable_binary(const unsigned char *bytes, size_t bytes_len);
-%pybuffer_binary(const unsigned char *chain_code, size_t chain_code_len);
-%pybuffer_binary(const unsigned char *commitment, size_t commitment_len);
+%pybuffer_nonnull_binary(const unsigned char *chain_code, size_t chain_code_len);
+%pybuffer_nonnull_binary(const unsigned char *commitment, size_t commitment_len);
 %pybuffer_nullable_binary(const unsigned char *extra, size_t extra_len);
-%pybuffer_binary(const unsigned char *generator, size_t generator_len);
+%pybuffer_nonnull_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
-%pybuffer_binary(const unsigned char *iv, size_t iv_len);
-%pybuffer_binary(const unsigned char *key, size_t key_len);
-%pybuffer_binary(const unsigned char *output_abf, size_t output_abf_len);
-%pybuffer_binary(const unsigned char *output_asset, size_t output_asset_len);
-%pybuffer_binary(const unsigned char *output_generator, size_t output_generator_len);
-%pybuffer_binary(const unsigned char *pass, size_t pass_len);
+%pybuffer_nonnull_binary(const unsigned char *iv, size_t iv_len);
+%pybuffer_nonnull_binary(const unsigned char *key, size_t key_len);
+%pybuffer_nonnull_binary(const unsigned char *output_abf, size_t output_abf_len);
+%pybuffer_nonnull_binary(const unsigned char *output_asset, size_t output_asset_len);
+%pybuffer_nonnull_binary(const unsigned char *output_generator, size_t output_generator_len);
+%pybuffer_nonnull_binary(const unsigned char *pass, size_t pass_len);
 %pybuffer_nullable_binary(const unsigned char *parent160, size_t parent160_len);
 %pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
-%pybuffer_binary(const unsigned char *proof, size_t proof_len);
+%pybuffer_nonnull_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
-%pybuffer_binary(const unsigned char *salt, size_t salt_len);
+%pybuffer_nonnull_binary(const unsigned char *salt, size_t salt_len);
 %pybuffer_nullable_binary(const unsigned char *script, size_t script_len);
-%pybuffer_binary(const unsigned char *sig, size_t sig_len);
-%pybuffer_binary(const unsigned char *sighash, size_t sighash_len);
-%pybuffer_binary(const unsigned char *txhash, size_t txhash_len);
-%pybuffer_binary(const unsigned char *vbf, size_t vbf_len);
+%pybuffer_nonnull_binary(const unsigned char *sig, size_t sig_len);
+%pybuffer_nonnull_binary(const unsigned char *sighash, size_t sighash_len);
+%pybuffer_nonnull_binary(const unsigned char *txhash, size_t txhash_len);
+%pybuffer_nonnull_binary(const unsigned char *vbf, size_t vbf_len);
 %pybuffer_nullable_binary(const unsigned char *witness, size_t witness_len);
-%pybuffer_binary(const unsigned char *nonce, size_t nonce_len);
-%pybuffer_binary(const unsigned char *nonce_hash, size_t nonce_hash_len);
-%pybuffer_binary(const unsigned char *entropy, size_t entropy_len);
-%pybuffer_binary(const unsigned char *contract_hash, size_t contract_hash_len);
+%pybuffer_nonnull_binary(const unsigned char *nonce, size_t nonce_len);
+%pybuffer_nonnull_binary(const unsigned char *nonce_hash, size_t nonce_hash_len);
+%pybuffer_nonnull_binary(const unsigned char *entropy, size_t entropy_len);
+%pybuffer_nonnull_binary(const unsigned char *contract_hash, size_t contract_hash_len);
 %pybuffer_nullable_binary(const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char *asset, size_t asset_len);
@@ -146,7 +198,15 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char *inflation_keys, size_t inflation_keys_len);
 %pybuffer_nullable_binary(const unsigned char *surjectionproof, size_t surjectionproof_len);
 %pybuffer_nullable_binary(const unsigned char *rangeproof, size_t rangeproof_len);
-%pybuffer_binary(const unsigned char *label, size_t label_len);
+%pybuffer_nonnull_binary(const unsigned char *label, size_t label_len);
+%pybuffer_nonnull_binary(const unsigned char *online_keys, size_t online_keys_len);
+%pybuffer_nonnull_binary(const unsigned char *offline_keys, size_t keys_len);
+%pybuffer_nonnull_binary(const unsigned char *sub_pubkey, size_t sub_pubkey_len);
+%pybuffer_nonnull_binary(const unsigned char *online_priv_key, size_t online_priv_key_len);
+%pybuffer_nonnull_binary(const unsigned char *summed_key, size_t summed_key_len);
+%pybuffer_nonnull_binary(const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len);
+%pybuffer_nonnull_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
+%pybuffer_nonnull_binary(const unsigned char *whitelist_proof, size_t whitelist_proof_len);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -254,6 +314,7 @@ typedef unsigned long uint64_t;
 
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
+%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
