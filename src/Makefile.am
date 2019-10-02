@@ -166,6 +166,7 @@ endif # USE_SWIG_JAVA
 lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
+    address.c \
     aes.c \
     base58.c \
     bip32.c \
@@ -241,6 +242,7 @@ endif
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
 if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
+	$(AM_V_at)$(PYTHON_TEST) test/test_address.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bech32.py
@@ -266,6 +268,7 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 endif
 endif

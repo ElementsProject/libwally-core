@@ -24,6 +24,9 @@ extern "C" {
 #define BIP32_FLAG_KEY_PUBLIC  0x1
 /** Indicate that we want to skip hash calculation when deriving a key in `bip32_key_from_parent` */
 #define BIP32_FLAG_SKIP_HASH 0x2
+/** Indicate that we want the pub tweak to be added to the calculation when deriving a key in `bip32_key_from_parent` */
+/** Only used with elements */
+#define BIP32_FLAG_KEY_TWEAK_SUM 0x4
 
 /** Version codes for extended keys */
 #define BIP32_VER_MAIN_PUBLIC  0x0488B21E
@@ -54,6 +57,9 @@ struct ext_key {
     unsigned char pad2[3];
     /** The public key with prefix byte 0x2 or 0x3 */
     unsigned char pub_key[33];
+#ifdef BUILD_ELEMENTS
+    unsigned char pub_key_tweak_sum[32];
+#endif /* BUILD_ELEMENTS */
 };
 #endif /* SWIG */
 
@@ -224,6 +230,38 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     size_t child_path_len,
     uint32_t flags,
     struct ext_key **output);
+
+#ifdef BUILD_ELEMENTS
+#ifndef SWIG
+/**
+ * Derive the pub tweak from a parent extended key and a path.
+ *
+ * :param hdkey: The parent extended key.
+ * :param child_path: The path of child numbers to create.
+ * :param child_path_len: The number of child numbers in ``child_path``.
+ * :param bytes_out: Destination for the resulting pub tweak.
+ * :param len: Length of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ */
+WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
+    const struct ext_key *hdkey,
+    const uint32_t *child_path,
+    size_t child_path_len,
+    uint32_t flags,
+    struct ext_key *output);
+#endif
+
+/**
+ * As per `bip32_key_with_tweak_from_parent_path`, but allocates the key.
+ *
+ * .. note:: The returned key should be freed with `bip32_key_free`.
+ */
+WALLY_CORE_API int bip32_key_with_tweak_from_parent_path_alloc(
+    const struct ext_key *hdkey,
+    const uint32_t *child_path,
+    size_t child_path_len,
+    uint32_t flags,
+    struct ext_key **output);
+#endif /* BUILD_ELEMENTS */
 
 /**
  * Convert an extended key to base58.

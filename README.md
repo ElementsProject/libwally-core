@@ -154,3 +154,22 @@ $ ./tools/coverage.sh
 
 The coverage report can then be viewed at `src/lcov/index.html`. Patches to
 increase the test coverage are welcome.
+
+## Users of libwally-core
+
+Projects and products that are known to depend on or use `libwally`:
+* [Blockstream Green Command Line Wallet](https://github.com/Blockstream/green_cli)
+* [Blockstream Green Development Kit](https://github.com/Blockstream/gdk)
+* [Blockstream Green Wallet for Android](https://github.com/Blockstream/green_android)
+* [Blockstream Green Wallet for iOS](https://github.com/Blockstream/green_ios)
+* [Blockstream/liquid-melt](https://github.com/Blockstream/liquid-melt)
+* [Blockstream/liquid_multisig_issuance](https://github.com/Blockstream/liquid_multisig_issuance)
+* [c-lightning](https://github.com/ElementsProject/lightning)
+* [gdk_rpc for bitcoind/liquidd](https://github.com/Blockstream/gdk_rpc)
+* [GreenAddress Recovery Tool](https://github.com/greenaddress/garecovery)
+* [GreenAddress Wallet for Windows/Mac/Linux](https://github.com/greenaddress/WalletElectron)
+* [GreenAddress Web Files](https://github.com/greenaddress/GreenAddressWebFiles)
+* [LibWally Swift](https://github.com/blockchain/libwally-swift)
+* [Multy-Core](https://github.com/Multy-io/Multy-Core)
+
+Please note that some of listed projects may be experimental or superseded.

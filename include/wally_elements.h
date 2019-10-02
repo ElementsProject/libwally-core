@@ -180,6 +180,47 @@ WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
     unsigned char *bytes_out,
     size_t len);
 
+/*
+ * Calculate the size in bytes of the whitelist proof.
+ *
+ * :param num_keys: The number of offline/online keys.
+ * :param written: Destination for the number of bytes needed for the proof.
+ */
+WALLY_CORE_API int wally_asset_pak_whitelistproof_size(
+    size_t num_keys,
+    size_t *written);
+
+/*
+ * Generate the whitelist proof for the pegout script.
+ *
+ * :param online_keys: The list of online keys.
+ * :param online_keys_len: Length of ``online_keys_len`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param offline_keys: The list of offline keys.
+ * :param offline_keys_len: Length of ``offline_keys_len`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param sub_pubkey: The key to be whitelisted.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param online_priv_key: The secret key to the signer's online pubkey.
+ * :param online_priv_key_len: Length of ``online_priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param summed_key: The secret key to the sum of (whitelisted key, signer's offline pubkey).
+ * :param summed_key_len: Length of ``summed_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes_out: Destination for the resulting whitelist proof.
+ * :param len: Length of ``bytes_out`` in bytes.
+ */
+WALLY_CORE_API int wally_asset_pak_whitelistproof(
+    const unsigned char *online_keys,
+    size_t online_keys_len,
+    const unsigned char *offline_keys,
+    size_t offline_keys_len,
+    size_t key_index,
+    const unsigned char *sub_pubkey,
+    size_t sub_pubkey_len,
+    const unsigned char *online_priv_key,
+    size_t online_priv_key_len,
+    const unsigned char *summed_key,
+    size_t summed_key_len,
+    unsigned char *bytes_out,
+    size_t len);
+
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
