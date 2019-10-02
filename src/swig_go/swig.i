@@ -342,17 +342,6 @@ func Bip32KeyFromUint32ParentPath(extKey *ExtKey, childPath []uint32, flags uint
 	}
 	return
 }
-
-/**
- * Free a key allocated by `bip32_key_from_seed_alloc`
- * or `bip32_key_unserialize_alloc`.
- *
- * :param hdkey: Key to free.
- */
-func Bip32KeyFree(extKey *ExtKey) (ret int){
-	ret = Bip32_key_free(extKey)
-	return
-}
 %}
 
 %include "../../include/wally_bip39.h"
@@ -684,16 +673,6 @@ func WallyTxGetElementsSignatureHash(
 		wally_flags,
 		&signatureHash[0],
 		int64(len(signatureHash)))
-	return
-}
-
-/**
- * Free a transaction allocated by `wally_tx_init_alloc`.
- *
- * :param tx: The transaction to free.
- */
-func WallyTxFree(wallyTx *WallyTx) (ret int) {
-	ret = Wally_tx_free(wallyTx)
 	return
 }
 %}

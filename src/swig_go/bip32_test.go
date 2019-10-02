@@ -23,7 +23,7 @@ func TestBip32KeyToBase58(t *testing.T) {
 	assert.Equal(t, expectedXPriv, xprivbase58)
 	xpubbase58 := Bip32KeyToBase58(mXPrivKey, uint32(BIP32_FLAG_KEY_PUBLIC))
 	assert.Equal(t, expectedXPub, xpubbase58)
-	Bip32KeyFree(mXPrivKey)
+	Bip32_key_free(mXPrivKey)
 }
 
 func TestBip32KeyFromBase58(t *testing.T) {
@@ -40,6 +40,8 @@ func TestBip32KeyFromBase58(t *testing.T) {
 	xPubHex := hex.EncodeToString(xPub.PubKey[:])
 	assert.Equal(t, expectedPrivKeyHex, xPrivHex)
 	assert.Equal(t, expectedPubKeyHex, xPubHex)
+	Bip32_key_free(xPriv)
+	Bip32_key_free(xPub)
 }
 
 func TestBip32KeyFromParent(t *testing.T) {

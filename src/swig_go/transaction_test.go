@@ -34,7 +34,7 @@ func TestTxGetElementsSignatureHash(t *testing.T) {
 		signatureHashFlags)
 	assert.Equal(t, 0, ret)
 	assert.Equal(t, expected, signatureHash)
-	WallyTxFree(wallyTx)
+	Wally_tx_free(wallyTx)
 }
 
 func TestTxGetVsize(t *testing.T) {
@@ -45,5 +45,5 @@ func TestTxGetVsize(t *testing.T) {
 	vsize, ret := WallyTxGetVsize(wallyTx)
 	assert.Equal(t, 0, ret)
 	assert.Equal(t, int64(165), vsize)
-	WallyTxFree(wallyTx)
+	Wally_tx_free(wallyTx)
 }
