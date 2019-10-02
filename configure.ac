@@ -45,7 +45,7 @@ case $CC in
     candidate_ranlibs="gcc-ranlib ranlib"
     ;;
 *clang*)
-    ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1,2)
+    ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1)
     candidate_ars="llvm-ar-$ver llvm-ar ar"
     candidate_ranlibs="llvm-ranlib-$ver llvm-ranlib ranlib"
     enable_clear_tests="yes"
@@ -117,6 +117,9 @@ AC_ARG_ENABLE(tests,
 AC_ARG_ENABLE(elements,
     AS_HELP_STRING([--enable-elements],[enable elements tx code (default: no)]),
     [elements=$enableval], [elements=no])
+AC_ARG_ENABLE(builtin-memset,
+    AS_HELP_STRING([--enable-builtin-memset],[disable to add -fno-builtin-memset to compiler flags. helps with explicit_bzero/memset being elided on Linux clang 7.0.1 and up (default: yes)]),
+    [builtin_memset=$enableval], [builtin_memset=yes])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
 
@@ -154,6 +157,10 @@ fi
 
 if test "x$elements" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DBUILD_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_ELEMENTS=1"])
+fi
+
+if test "x$builtin_memset" == "xno"; then
+    AX_CHECK_COMPILE_FLAG([-fno-builtin-memset], [AM_CFLAGS="$AM_CFLAGS -fno-builtin"])
 fi
 
 # -flax-vector-conversions is needed for our arm assembly
@@ -233,7 +240,7 @@ int *pnt = &a;
 __asm__ __volatile__ ("" : : "r"(pnt) : "memory");
 ]])],
   [AC_MSG_RESULT(yes)
-   AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])]
+   AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])],
   [AC_MSG_RESULT(no)]
 )
 

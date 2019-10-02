@@ -175,6 +175,11 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
+/*
+ * For clang 7.0.1 and up it may be useful to disable the memset builtin for this code to not be elided when on -O3.
+ * The following program can be used to check what your compiler is doing.
+ * printf "#include <string.h> \n int main() { unsigned char s[10]; memset(s, 0, sizeof(s)); }" | clang -O3 -fno-builtin-memset -o memset.ll -S -emit-llvm -x c -
+ */
 static void wally_internal_bzero(void *dest, size_t len)
 {
 #ifdef _WIN32
