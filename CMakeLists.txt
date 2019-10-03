@@ -568,8 +568,8 @@ target_include_directories(${NODE_LIBRARY_NAME}
 target_link_libraries(${NODE_LIBRARY_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GCC>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-static-libstdc++>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
+  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
   PRIVATE
