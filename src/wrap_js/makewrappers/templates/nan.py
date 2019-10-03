@@ -1,4 +1,5 @@
-TEMPLATE='''#include <nan.h>
+TEMPLATE='''#include <string>
+#include <nan.h>
 #include <ccan/ccan/endian/endian.h>
 
 #include "config.h"
