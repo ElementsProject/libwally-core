@@ -38,10 +38,10 @@
     "cmake-js": "^5.3.2",
     "nan": "^2.14.0",
     "node-gyp": "^5.0.2",
-    "tape": "^4.11.0"
-  },
-  "devDependencies": {
     "npm-run-all": "^4.1.5",
     "run-script-os": "^1.0.5"
+  },
+  "devDependencies": {
+    "tape": "^4.11.0"
   }
 }
