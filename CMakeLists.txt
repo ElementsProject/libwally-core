@@ -487,6 +487,10 @@ set(ELEMENTS_OPT "")
 endif()
 set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
 
+message(STATUS "[libwally] NODE_RUNTIME=${NODE_RUNTIME}")
+message(STATUS "[libwally] NODE_RUNTIMEVERSION=${NODE_RUNTIMEVERSION}")
+message(STATUS "[libwally] CMAKE_JS_LIB=${CMAKE_JS_LIB}")
+message(STATUS "[libwally] CMAKE_JS_SRC=${CMAKE_JS_SRC}")
 set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
 add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc)
 
@@ -516,6 +520,7 @@ target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
     ${LIBWALLY_FILES}
     ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+    ${CMAKE_JS_SRC}
 )
 add_dependencies(${WALLY_PROJECT_NAME} ${NODE_LIBRARY_NAME})
 
