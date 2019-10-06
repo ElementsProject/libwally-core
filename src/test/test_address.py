@@ -32,7 +32,13 @@ vec = {
 
         "address_legacy": '1JQheacLPdM5ySCkrZkV66G2ApAXe1mqLj',
 
+        # OP_DUP OP_HASH160 [pub_key_hash] OP_EQUALVERIFY OP_CHECKSIG
+        'scriptpubkey_legacy': '76a914bef5a2f9a56a94aab12459f72ad9cf8cf19c7bbe88ac',
+
         "address_p2sh_segwit": '3DymAvEWH38HuzHZ3VwLus673bNZnYwNXu',
+
+        # OP_HASH160 [script_hash] OP_EQUAL
+        'scriptpubkey_p2sh_segwit': 'a91486cc442a97817c245ce90ed0d31d6dbcde3841f987',
 
         "address_segwit": 'bc1qhm6697d9d2224vfyt8mj4kw03ncec7a7fdafvt',
 
@@ -50,9 +56,13 @@ vec = {
 
         "address_legacy": 'mxvewdhKCenLkYgNa8irv1UM2omEWPMdEE',
 
+        # OP_DUP OP_HASH160 [pub_key_hash] OP_EQUALVERIFY OP_CHECKSIG
+        'scriptpubkey_legacy': '76a914bef5a2f9a56a94aab12459f72ad9cf8cf19c7bbe88ac',
 
         "address_p2sh_segwit": '2N5XyEfAXtVde7mv6idZDXp5NFwajYEj9TD',
 
+        # OP_HASH160 [script_hash] OP_EQUAL
+        'scriptpubkey_p2sh_segwit': 'a91486cc442a97817c245ce90ed0d31d6dbcde3841f987',
 
         "address_segwit": 'tb1qhm6697d9d2224vfyt8mj4kw03ncec7a7rtx6hc',
 
@@ -110,6 +120,20 @@ class AddressTests(unittest.TestCase):
         ret, out = wally_bip32_key_to_addr_segwit(key, utf8(bech32_prefix), 0)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(out, vec[path]['address_segwit'])
+
+        # Parse legacy address (P2PKH):
+        out, out_len = make_cbuffer('00' * (25))
+        ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_legacy']), network, out, out_len)
+
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
+
+        # Parse wrapped SegWit address (P2SH_P2WPKH):
+        out, out_len = make_cbuffer('00' * (25))
+        ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_p2sh_segwit']), network, out, out_len)
+
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
 
         # Parse native SegWit address (P2WPKH):
         out, out_len = make_cbuffer('00' * (100))

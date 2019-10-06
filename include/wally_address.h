@@ -15,6 +15,9 @@ struct ext_key;
 #define WALLY_CA_PREFIX_LIQUID 0x0c /** Liquid v1 confidential address prefix */
 #define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
 
+#define WALLY_NETWORK_BITCOIN_MAINNET 0x01 /** Bitcoin mainnet */
+#define WALLY_NETWORK_BITCOIN_TESTNET 0x02 /** Bitcoin testnet */
+
 #define WALLY_ADDRESS_TYPE_P2PKH 0x01       /** P2PKH address ("1...") */
 #define WALLY_ADDRESS_TYPE_P2SH_P2WPKH 0x02 /** P2SH-P2WPKH wrapped SegWit address ("3...") */
 #define WALLY_ADDRESS_TYPE_P2WPKH 0x04      /** P2WPKH native SegWit address ("bc1...)" */
@@ -53,6 +56,22 @@ WALLY_CORE_API int wally_addr_segwit_from_bytes(
 WALLY_CORE_API int wally_addr_segwit_to_bytes(
     const char *addr,
     const char *addr_family,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Infer a scriptPubKey from an address.
+ *
+ * :param addr: Address to infer the scriptPubKey from.
+ * :param flags: Pass ``WALLY_NETWORK_BITCOIN_MAINNET`` or ``WALLY_NETWORK_BITCOIN_TESTNET``.
+ * :param bytes_out: Destination for the resulting scriptPubKey
+ * :param len: Length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_address_to_scriptpubkey(
+    const char *addr,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,
