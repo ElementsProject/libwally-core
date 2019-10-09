@@ -936,6 +936,9 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
     unsigned char *q = bytes_out;
     size_t bytes_len = redeem_script_len;
     size_t ser_len = EC_PUBLIC_KEY_LEN;
+    // For liquidv1 initial watchman template, don't tweak emergency keys. in the future, use flags to change watchmen template
+    bool op_else_found = false;
+
     int ret;
 
     if (written)
@@ -959,7 +962,7 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
             if (bytes_len < offset_siz)
                 return WALLY_EINVAL;
 
-            if (opcode_size == 1 && size_out == EC_PUBLIC_KEY_LEN) {
+            if (opcode_size == 1 && size_out == EC_PUBLIC_KEY_LEN && !op_else_found) {
                 unsigned char tweak[HMAC_SHA256_LEN];
                 secp256k1_pubkey pub_key;
                 secp256k1_pubkey pub_key_from_tweak;
@@ -997,6 +1000,10 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
             q += offset_siz;
             bytes_len -= offset_siz;
         } else {
+            if (*p == OP_ELSE && flags == 0) {
+                op_else_found = true;
+            }
+
             *q++ = *p++;
             --bytes_len;
         }

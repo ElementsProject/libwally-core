@@ -6,6 +6,8 @@ SCRIPT_HASH160 = 0x1
 SCRIPT_SHA256 = 0x2
 FLAG_CHECKSUM = 0x1
 
+# liquidv1 fedpegscript
+federation_script, federation_script_len = make_cbuffer('745c87635b21020e0338c96a8870479f2396c373cc7696ba124e8635d41b0ea581112b678172612102675333a4e4b8fb51d9d4e22fa5a8eaced3fdac8a8cbf9be8c030f75712e6af992102896807d54bc55c24981f24a453c60ad3e8993d693732288068a23df3d9f50d4821029e51a5ef5db3137051de8323b001749932f2ff0d34c82e96a2c2461de96ae56c2102a4e1a9638d46923272c266631d94d36bdb03a64ee0e14c7518e49d2f29bc40102102f8a00b269f8c5e59c67d36db3cdc11b11b21f64b4bffb2815e9100d9aa8daf072103079e252e85abffd3c401a69b087e590a9b86f33f574f08129ccbd3521ecf516b2103111cf405b627e22135b3b3733a4a34aa5723fb0f58379a16d32861bf576b0ec2210318f331b3e5d38156da6633b31929c5b220349859cc9ca3d33fb4e68aa08401742103230dae6b4ac93480aeab26d000841298e3b8f6157028e47b0897c1e025165de121035abff4281ff00660f99ab27bb53e6b33689c2cd8dcd364bc3c90ca5aea0d71a62103bd45cddfacf2083b14310ae4a84e25de61e451637346325222747b157446614c2103cc297026b06c71cbfa52089149157b5ff23de027ac5ab781800a578192d175462103d3bde5d63bdb3a6379b461be64dad45eabff42f758543a9645afd42f6d4248282103ed1e8d5109c9ed66f7941bc53cc71137baa76d50d274bda8d5e8ffbd6e61fe9a5f6702c00fb275522103aab896d53a8e7d6433137bbba940f9c521e085dd07e60994579b64a6d992cf79210291b7d0b1b692f8f524516ed950872e5da10fb1b808b5a526dedc6fed1cf29807210386aa9372fbab374593466bc5451dc59954e90787f08060964d95c87ef34ca5bb5368ae')
 
 class PeginTests(unittest.TestCase):
 
@@ -34,6 +36,32 @@ class PeginTests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK)
 
         return mainchain_address, claim_script
+
+
+    def test_liquidv1_pegin_address(self):
+        """ uses same strategy as elementsd 0.18 to generate the mainchain address and claim script """
+
+        pk, pk_len = make_cbuffer('02daec8c199e33d5626032c8af7d1da274571089393d64ac7a44e02e7935d10cbf')
+        expected_claim_script, _ = make_cbuffer('0014ec3b20acfc151fd117f76598acdc5be08af160e6')
+
+        claim_script, claim_script_len = make_cbuffer('00'*22)
+        self.assertEqual(wally_witness_program_from_bytes(pk, pk_len, SCRIPT_HASH160, claim_script, claim_script_len)[0], WALLY_OK)
+
+        contract_script, contract_script_len = make_cbuffer('00'*federation_script_len)
+        self.assertEqual(wally_elements_pegin_contract_script_from_bytes(federation_script, federation_script_len,
+                                                                         claim_script, claim_script_len,
+                                                                         0, contract_script, contract_script_len)[0], WALLY_OK)
+        mainchain_script, mainchain_script_len = make_cbuffer('00'*34)
+        self.assertEqual(wally_witness_program_from_bytes(contract_script, contract_script_len, SCRIPT_SHA256, mainchain_script, mainchain_script_len)[0], WALLY_OK)
+
+        script, script_len = make_cbuffer('00'*20)
+        self.assertEqual(wally_hash160(mainchain_script, mainchain_script_len, script, script_len), WALLY_OK)
+
+        ret, mainchain_address = wally_base58_from_bytes(chr(5)+script, script_len+1, FLAG_CHECKSUM)
+        self.assertEqual(ret, WALLY_OK)
+
+        self.assertEqual(mainchain_address, '3EoHwZ1tcQZGvwGSYinMSxGXtvYY8sg6G5')
+        self.assertEqual(claim_script, expected_claim_script)
 
 
     def test_pegin_tx(self):
@@ -145,10 +173,11 @@ class PeginTests(unittest.TestCase):
 
 
     def test_contract_script(self):
-        expected, expected_len = make_cbuffer('745c87635b2102fead757b12cd8b6503e573482adb0e49cc30222266c361b12e9957e66d7f4afd2102e0c7622b8b17023dc1ed704a0d563e3502eba25c43d66528089a19e0484eb4b1210225bf3e0732cb8c5906fcaac0fc524801c7252a65e21cf430812e4d22b2a46a4e2102fa695d61cdaf931ba743982a495e6f817329024f6ba2539a69b97743b24160ef210260011f030acd4a67f9996479a4982b119e05d049e66d295b0a122cd07c54d9a121030d3e5e6dd06477bb583e75acec88064a3a640d375529638bad8450fb6b23cd0b2102ae90d6157e88a1f7809894e4b9df5feafe84429ddae3fdc3ee98926c1c011f1d2103a952059c9a64cc222bd7c585ab911baedf180f11a47b1fdf520907d8d06c800221026eb5edb29a418faa29f04a50b0235a68fc203b6293535836e19742fd684bf81921034eeca9726f274403e848a644be1fa723fe60747df620bb66c8bb9d516285dd272103d136384a759663e3e4dccb246105278ede9cd8fe19a4f0fc72354d4ba3a5c9bb21028364739ebfbde304781f406a5fe4969faebcb22ccb0bfd68bb0e8a6b96b1612a21039d7c466c2d13fdfafb6a1ad66e25b086bf917cf7d7aab0b17c5e35d1f43382ed210313a87fd6b4f9da2a8f14c4309ce4403fbf948013e0b5ce851ad410c9ffb2817d2102b9acbd3d2300c8e6dffbb325be9e750263bcaa874a79f409a4c9c082afa522b85f6702c00fb275522103cd84a7f1df9b8173b9cb36bbdfc33029e3d36c1e20772149b9735674548e983521029ea41e4e831a30c76ec76eab529f126f8ed5dc0aef6e0eacb4c423191acec58a2102a09eac35c1e879d60d83b7e684c3d13552287aa82253c61cb7df38ceb8694b935368ae')
-        federation_script, federation_script_len = make_cbuffer('745c87635b21020e0338c96a8870479f2396c373cc7696ba124e8635d41b0ea581112b678172612102675333a4e4b8fb51d9d4e22fa5a8eaced3fdac8a8cbf9be8c030f75712e6af992102896807d54bc55c24981f24a453c60ad3e8993d693732288068a23df3d9f50d4821029e51a5ef5db3137051de8323b001749932f2ff0d34c82e96a2c2461de96ae56c2102a4e1a9638d46923272c266631d94d36bdb03a64ee0e14c7518e49d2f29bc40102102f8a00b269f8c5e59c67d36db3cdc11b11b21f64b4bffb2815e9100d9aa8daf072103079e252e85abffd3c401a69b087e590a9b86f33f574f08129ccbd3521ecf516b2103111cf405b627e22135b3b3733a4a34aa5723fb0f58379a16d32861bf576b0ec2210318f331b3e5d38156da6633b31929c5b220349859cc9ca3d33fb4e68aa08401742103230dae6b4ac93480aeab26d000841298e3b8f6157028e47b0897c1e025165de121035abff4281ff00660f99ab27bb53e6b33689c2cd8dcd364bc3c90ca5aea0d71a62103bd45cddfacf2083b14310ae4a84e25de61e451637346325222747b157446614c2103cc297026b06c71cbfa52089149157b5ff23de027ac5ab781800a578192d175462103d3bde5d63bdb3a6379b461be64dad45eabff42f758543a9645afd42f6d4248282103ed1e8d5109c9ed66f7941bc53cc71137baa76d50d274bda8d5e8ffbd6e61fe9a5f6702c00fb275522103aab896d53a8e7d6433137bbba940f9c521e085dd07e60994579b64a6d992cf79210291b7d0b1b692f8f524516ed950872e5da10fb1b808b5a526dedc6fed1cf29807210386aa9372fbab374593466bc5451dc59954e90787f08060964d95c87ef34ca5bb5368ae')
+        expected, expected_len = make_cbuffer('745c87635b21039e7dc52351b81d97dde2b369f692d89b5cf938534ad503094bc89f830473796321030508eb92dccb704ac7511eb55369f2259485b50f56671ff5bf1dfd8cdf5c6c662102140052a92c55c5a0c2f960b438bba966974cdfa2c872a4702645ff6028f6b0f2210209aa6d8ab038fd00088355324c9c3fea336b2cf650d951b23c2b20ad47386daa2102328940da1f59bc214757a8fdedd86887fc48a952e0fa19c1f1959ffa826c88b42102188281e1055fb81f642a7f2ca994a8f6abaa8bbcc2720aff35c0fd263188ef7c2103ae97faefcdba436269cc36c31db7956ade6c1977b174b87174173ea92c112d332103f4a2d090f03684a65f74f5ee031d6d9bf5fd02d4e643693701f86d4e4f721ae82102d5ee27530bc9075c310e53b308a127a3ed7a90c6039355d00d2d1ea72874add72103960c1740e6ac39c15fc8fd048789fdd480b68331a49e6e557fcbec192d0b3a252103e33ae6c4b978523ff81e8f2fb2e2c0174f9483de86c186e228753715fa2228392103003d2490f282d7628a2a8efa08366f317efa6473579bb5c34b4c409e36e7b2df2102da66e69bd08a68d4c8fabefd797786bb6de16d553acab4ee85e3aceda8e48d8c2103d46bd2ba127f1666650de1e0d85f438978c28399a9ac866ea84db30cc77446c3210257fdfffaf0a360f7ee1d0c2588d931a5b51302ab5a100cd9fa54ebe1d63adbdb5f6702c00fb275522103aab896d53a8e7d6433137bbba940f9c521e085dd07e60994579b64a6d992cf79210291b7d0b1b692f8f524516ed950872e5da10fb1b808b5a526dedc6fed1cf29807210386aa9372fbab374593466bc5451dc59954e90787f08060964d95c87ef34ca5bb5368ae')
 
-        script, script_len = make_cbuffer('001425c3a6fcf3bc212b99f4a087e079c4d018c4a8a8')
+        # https://blockstream.info/liquid/tx/871f1611bbf723412e95dc40b6d7ec0a8ffc917b045f1bb31fd1bb81d9fcb456
+        # https://blockstream.info/tx/4bc722b63aa619afc9676d0cdba0baefe7db1e5f6c1e460f00c31010f03815e6?output:0
+        script, script_len = make_cbuffer('0014d712bcaf8f9384fd388efca86d77e033d5cfffd9')
         contract_script, contract_script_len = make_cbuffer('00'*federation_script_len)
         self.assertEqual(wally_elements_pegin_contract_script_from_bytes(federation_script, federation_script_len,
                                                                          script, script_len,
