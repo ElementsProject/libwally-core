@@ -30,7 +30,7 @@ static bool script_flags_ok(uint32_t flags, uint32_t extra_flags)
     return true;
 }
 
-static bool is_op_n(unsigned char op, bool allow_zero, size_t *n) {
+bool script_is_op_n(unsigned char op, bool allow_zero, size_t *n) {
     if (allow_zero && op == OP_0) {
         if (n)
             *n = 0;
@@ -338,9 +338,9 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     const size_t min_1of1_len = 1 + 1 + 33 + 1 + 1; /* OP_1 [pubkey] OP_1 OP_CHECKMULTISIG */
     size_t i, n_pushes;
 
-    if (bytes_len < min_1of1_len || !is_op_n(bytes[0], false, NULL) ||
+    if (bytes_len < min_1of1_len || !script_is_op_n(bytes[0], false, NULL) ||
         bytes[bytes_len - 1] != OP_CHECKMULTISIG ||
-        !is_op_n(bytes[bytes_len - 2], false, &n_pushes))
+        !script_is_op_n(bytes[bytes_len - 2], false, &n_pushes))
         return false;
 
     ++bytes;
@@ -1116,7 +1116,7 @@ int wally_witness_multisig_from_bytes(
     int ret = WALLY_OK;
     size_t script_sig_len, n_sigs, buf_len;
 
-    if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len || !witness || !is_op_n(script[0], false, &n_sigs)) {
+    if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len || !witness || !script_is_op_n(script[0], false, &n_sigs)) {
         return WALLY_EINVAL;
     }
 
