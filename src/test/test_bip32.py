@@ -374,6 +374,19 @@ class BIP32Tests(unittest.TestCase):
             self.assertEqual(bip32_key_serialize(key_out, flag, buf, buf_len), WALLY_OK)
             self.assertEqual(h(buf).upper(), exp_hex)
 
+    def test_strip_private_key(self):
+        self.assertEqual(bip32_key_strip_private_key(None), WALLY_EINVAL)
+
+        _, pub, priv = self.create_master_pub_priv()
+
+        self.assertEqual(priv.priv_key[0], FLAG_KEY_PRIVATE)
+        self.assertEqual(bip32_key_strip_private_key(priv), WALLY_OK)
+        self.assertEqual(priv.priv_key[0], FLAG_KEY_PUBLIC)
+        self.assertEqual(priv.priv_key[1:], [0] * 32)
+
+        self.assertEqual(bip32_key_strip_private_key(pub), WALLY_OK)
+        self.assertEqual(pub.priv_key[0], FLAG_KEY_PUBLIC)
+        self.assertEqual(pub.priv_key[1:], [0] * 32)
 
 if __name__ == '__main__':
     unittest.main()

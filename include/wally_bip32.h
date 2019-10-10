@@ -298,6 +298,16 @@ WALLY_CORE_API int bip32_key_from_base58_alloc(
     const char *base58,
     struct ext_key **output);
 
+/**
+ * Converts a private extended key to a public extended key. Afterwards, only public child extended
+ * keys can be derived, and only the public serialization can be created.
+ * If the provided key is already public, nothing will be done.
+ *
+ * :param hdkey: The extended key to covert.
+ */
+WALLY_CORE_API int bip32_key_strip_private_key(
+    struct ext_key *hdkey);
+
 #ifdef __cplusplus
 }
 #endif
