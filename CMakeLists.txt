@@ -480,6 +480,16 @@ if(ENABLE_JS_WRAPPER)
 set(NODE_LIBRARY_NAME wallycore)
 project(wallycore CXX)
 
+find_package(Python3 COMPONENTS Interpreter)
+find_package(PythonInterp REQUIRED)
+if(Python3_Interpreter_FOUND)
+set(PYTHON_BIN  ${Python3_EXECUTABLE})
+message(STATUS "python is 3(${Python3_VERSION})")
+else()
+set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
+message(STATUS "python version is ${PYTHON_VERSION_STRING}")
+endif()
+
 if(ENABLE_ELEMENTS)
 set(ELEMENTS_OPT "elements")
 else()
@@ -507,7 +517,7 @@ set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/${WORK_WINDOWS_BINARY_DIR_
 add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
   COMMAND set PYTHONDONTWRITEBYTECODE=1
   COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
-  COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+  COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
   COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -580,7 +590,7 @@ add_custom_command(
     TARGET ${NODE_LIBRARY_NAME}
     POST_BUILD
     COMMAND set PYTHONDONTWRITEBYTECODE=1
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+    COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_CURRENT_BINARY_DIR}/wally.js
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${WALLY_OBJ_BINARY_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_BINARY_DIR}/..
