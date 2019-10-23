@@ -198,7 +198,7 @@ if is_elements_build():
     tx_output_get_value = _wrap_bin(tx_output_get_value, WALLY_TX_ASSET_CT_ASSET_LEN, resize=True)
     tx_output_get_nonce = _wrap_bin(tx_output_get_nonce, WALLY_TX_ASSET_CT_ASSET_LEN)
     tx_output_get_surjectionproof = _wrap_bin(tx_output_get_surjectionproof, tx_output_get_surjectionproof_len, resize=True)
-    tx_output_get_rangeproof = _wrap_bin(tx_output_get_surjectionproof, tx_output_get_surjectionproof_len, resize=True)
+    tx_output_get_rangeproof = _wrap_bin(tx_output_get_rangeproof, tx_output_get_rangeproof_len, resize=True)
 
     tx_confidential_value_from_satoshi = _wrap_bin(tx_confidential_value_from_satoshi, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
     tx_elements_issuance_generate_entropy = _wrap_bin(tx_elements_issuance_generate_entropy, SHA256_LEN)
