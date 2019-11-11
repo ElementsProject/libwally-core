@@ -2441,7 +2441,7 @@ int wally_combine_psbts(
 {
     struct wally_psbt *result;
     unsigned char global_txid[SHA256_LEN];
-    size_t i, j, k;
+    size_t i, j;
     int ret = WALLY_OK;
 
     TX_CHECK_OUTPUT;
