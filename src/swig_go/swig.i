@@ -24,7 +24,7 @@
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 
 %insert(cgo_comment_typedefs) %{
-#cgo LDFLAGS: -L${SRCDIR}/src/.libs -lwallycore
+#cgo LDFLAGS: -L/usr/local/lib -L${SRCDIR}/src/.libs -lwallycore
 %}
 #include <iostream>
 %include "../../include/wally_core.h"
