@@ -529,12 +529,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_get_locktime);
 %returns_size_t(wally_tx_get_num_inputs);
 %returns_size_t(wally_tx_get_num_outputs);
-%rename("_tx_get_output_asset") wally_tx_get_output_asset;
-%returns_size_t(_tx_get_output_asset);
-%returns_size_t(wally_tx_get_output_asset_len);
-%rename("_tx_get_output_nonce") wally_tx_get_output_nonce;
-%returns_size_t(_tx_get_output_nonce);
-%returns_size_t(wally_tx_get_output_nonce_len);
+%returns_array_(wally_tx_get_output_asset, 3, 4, WALLY_TX_ASSET_CT_ASSET_LEN);
+%returns_array_(wally_tx_get_output_nonce, 3, 4, WALLY_TX_ASSET_CT_NONCE_LEN);
 %rename("_tx_get_output_rangeproof") wally_tx_get_output_rangeproof;
 %returns_size_t(_tx_get_output_rangeproof);
 %returns_size_t(wally_tx_get_output_rangeproof_len);
