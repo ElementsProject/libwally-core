@@ -176,7 +176,7 @@ swig_go/wallycore.cxx :
 	cp swig_go/swig.i swig_go/temp_swig.i && \
 	$(GNU_SED) -i 's/-lwallycore/-lwallycore $(LOAD_SSP)/g' swig_go/temp_swig.i && \
 	cd .. && \
-	$(SWIG) -go -c++ $(SWIG_GEN_FLAGS) -outdir . -o wallycore.cxx -cgo -intgosize $(SWIG_INT_GO_SIZE) src/swig_go/temp_swig.i \
+	$(SWIG) -go -c++ $(SWIG_GEN_FLAGS) -outdir . -o wallycore.cxx -cgo -intgosize $(SWIG_INT_GO_SIZE) src/swig_go/temp_swig.i && \
 	rm src/swig_go/temp_swig.i
 else
 swig_go/wallycore.cxx :
