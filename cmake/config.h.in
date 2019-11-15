@@ -116,42 +116,45 @@
 /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#cmakedefine _UINT32_T @cmake_uint32_t@
+#cmakedefine _UINT32_T @_UINT32_T@
 
 /* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#cmakedefine _UINT64_T @cmake_uint64_t@
+#cmakedefine _UINT64_T @_UINT64_T@
 
 /* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#cmakedefine _UINT8_T @cmake_uint8_t@
+#cmakedefine _UINT8_T @_UINT8_T@
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#cmakedefine inline @cmake_inline@
+#cmakedefine inline @inline@
 #endif
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
-#cmakedefine size_t @cmake_size_t@
+#cmakedefine size_t @size_t@
+
+/* Define to `signed int' if <sys/types.h> does not define. */
+#cmakedefine ssize_t @ssize_t@
 
 /* Define to the type of an unsigned integer type of width exactly 16 bits if
    such a type exists and the standard includes do not define it. */
-#cmakedefine uint16_t @cmake_uint16_t@
+#cmakedefine uint16_t @uint16_t@
 
 /* Define to the type of an unsigned integer type of width exactly 32 bits if
    such a type exists and the standard includes do not define it. */
-#cmakedefine uint32_t @cmake_uint32_t@
+#cmakedefine uint32_t @uint32_t@
 
 /* Define to the type of an unsigned integer type of width exactly 64 bits if
    such a type exists and the standard includes do not define it. */
-#cmakedefine uint64_t @cmake_uint64_t@
+#cmakedefine uint64_t @uint64_t@
 
 /* Define to the type of an unsigned integer type of width exactly 8 bits if
    such a type exists and the standard includes do not define it. */
-#cmakedefine uint8_t @cmake_uint8_t@
+#cmakedefine uint8_t @uint8_t@
 
 #include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/

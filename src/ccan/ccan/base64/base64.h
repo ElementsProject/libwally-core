@@ -2,6 +2,8 @@
 #ifndef CCAN_BASE64_H
 #define CCAN_BASE64_H
 
+#include "config.h"
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <sys/types.h>

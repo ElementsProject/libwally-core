@@ -225,20 +225,29 @@ endforeach()
 
 if((NOT C_HAS_inline) AND (C_HAS___inline__ OR C_HAS___inline))
 if(C_HAS___inline__)
-set(cmake_inline  ${C_HAS___inline__})
+set(inline  ${C_HAS___inline__})
 else()
-set(cmake_inline  ${C_HAS___inline})
+set(inline  ${C_HAS___inline})
 endif()
 endif()
 
-check_type_size(size_t SIZE_T)
-if(NOT HAVE_SIZE_T)
+check_type_size(size_t SIZEOF_SIZE_T BUILTIN_TYPES_ONLY LANGUAGE C)
+if(NOT HAVE_SIZEOF_SIZE_T)
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-set(cmake_size_t "uint64_t")
+set(size_t "uint64_t")
 else()
-set(cmake_size_t "uint32_t")
+set(size_t "uint32_t")
 endif()
-endif() # NOT HAVE_SIZE_T
+endif()
+
+check_type_size(ssize_t SIZEOF_SSIZE_T BUILTIN_TYPES_ONLY LANGUAGE C)
+if(NOT HAVE_SIZEOF_SSIZE_T)
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+set(ssize_t "int64_t")
+else()
+set(ssize_t "int32_t")
+endif()
+endif()
 
 # secp256k1 configure options
 # ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
@@ -386,6 +395,8 @@ set(LIBWALLY_FILES
     src/ccan/ccan/crypto/sha256/sha256.c
     src/ccan/ccan/crypto/sha512/sha512.c
     src/ccan/ccan/str/hex/hex.c
+    src/ccan/ccan/base64/base64.c
+    src/ccan/ccan/base64/base64.h
     src/secp256k1/src/secp256k1.c
     include/wally.hpp
     include/wally_address.h
@@ -398,10 +409,13 @@ set(LIBWALLY_FILES
     include/wally_script.h
     include/wally_transaction.h
     include/wally_symmetric.h
+    include/wally_psbt.h
     src/secp256k1/include/secp256k1.h
     src/secp256k1/include/secp256k1_recovery.h
     src/bip32_int.h
     src/transaction_int.h
+    src/transaction_shared.h
+    src/psbt.c
     ${ECMULT_STATIC_CONTEXT_H}
 )
 
