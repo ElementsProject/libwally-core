@@ -198,7 +198,7 @@ if is_elements_build():
     tx_output_get_value = _wrap_bin(tx_output_get_value, WALLY_TX_ASSET_CT_ASSET_LEN, resize=True)
     tx_output_get_nonce = _wrap_bin(tx_output_get_nonce, WALLY_TX_ASSET_CT_ASSET_LEN)
     tx_output_get_surjectionproof = _wrap_bin(tx_output_get_surjectionproof, tx_output_get_surjectionproof_len, resize=True)
-    tx_output_get_rangeproof = _wrap_bin(tx_output_get_surjectionproof, tx_output_get_surjectionproof_len, resize=True)
+    tx_output_get_rangeproof = _wrap_bin(tx_output_get_rangeproof, tx_output_get_rangeproof_len, resize=True)
 
     tx_confidential_value_from_satoshi = _wrap_bin(tx_confidential_value_from_satoshi, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
     tx_elements_issuance_generate_entropy = _wrap_bin(tx_elements_issuance_generate_entropy, SHA256_LEN)
@@ -224,9 +224,13 @@ if is_elements_build():
 
     bip32_key_get_pub_key_tweak_sum = _wrap_bin(bip32_key_get_pub_key_tweak_sum, 32)
 
-    def _epsfb_len_fn(bh, mcs, pk, whl):
+    def _epsfb_len_fn(bh, mcs, pk, whl, flag):
         return len(bh) + len(mcs) + len(pk) + len(whl) + 1
     elements_pegout_script_from_bytes = _wrap_bin(elements_pegout_script_from_bytes, _epsfb_len_fn, resize=True)
+
+    def _epcsfb_len_fn(rs, cs, flag):
+        return len(rs)
+    elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, _epcsfb_len_fn, resize=True)
 
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

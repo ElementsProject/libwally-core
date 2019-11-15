@@ -30,7 +30,7 @@ static bool script_flags_ok(uint32_t flags, uint32_t extra_flags)
     return true;
 }
 
-static bool is_op_n(unsigned char op, bool allow_zero, size_t *n) {
+bool script_is_op_n(unsigned char op, bool allow_zero, size_t *n) {
     if (allow_zero && op == OP_0) {
         if (n)
             *n = 0;
@@ -338,9 +338,9 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     const size_t min_1of1_len = 1 + 1 + 33 + 1 + 1; /* OP_1 [pubkey] OP_1 OP_CHECKMULTISIG */
     size_t i, n_pushes;
 
-    if (bytes_len < min_1of1_len || !is_op_n(bytes[0], false, NULL) ||
+    if (bytes_len < min_1of1_len || !script_is_op_n(bytes[0], false, NULL) ||
         bytes[bytes_len - 1] != OP_CHECKMULTISIG ||
-        !is_op_n(bytes[bytes_len - 2], false, &n_pushes))
+        !script_is_op_n(bytes[bytes_len - 2], false, &n_pushes))
         return false;
 
     ++bytes;
@@ -919,4 +919,216 @@ int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_
     return WALLY_OK;
 
 #undef pegout_script_push
+}
+
+int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_script,
+                                                    size_t redeem_script_len,
+                                                    const unsigned char *script,
+                                                    size_t script_len,
+                                                    uint32_t flags,
+                                                    unsigned char *bytes_out,
+                                                    size_t len,
+                                                    size_t *written)
+{
+    unsigned char ser_pub_key[EC_PUBLIC_KEY_LEN];
+    const secp256k1_context *ctx = secp_ctx();
+    const unsigned char *p = redeem_script;
+    unsigned char *q = bytes_out;
+    size_t bytes_len = redeem_script_len;
+    size_t ser_len = EC_PUBLIC_KEY_LEN;
+    // For liquidv1 initial watchman template, don't tweak emergency keys. in the future, use flags to change watchmen template
+    bool op_else_found = false;
+
+    int ret;
+
+    if (written)
+        *written = 0;
+
+    if (!redeem_script || !redeem_script_len || !script ||
+        !script_len || flags || !bytes_out || len != redeem_script_len)
+        return WALLY_EINVAL;
+
+    for (;;) {
+        size_t size_out;
+        ret = script_get_push_size_from_bytes(p, bytes_len, &size_out);
+        if (ret == WALLY_OK) {
+            size_t offset_siz;
+            size_t opcode_size;
+
+            if ((ret = script_get_push_opcode_size_from_bytes(p, bytes_len, &opcode_size)) != WALLY_OK)
+                return ret;
+
+            offset_siz = size_out + opcode_size;
+            if (bytes_len < offset_siz)
+                return WALLY_EINVAL;
+
+            if (opcode_size == 1 && size_out == EC_PUBLIC_KEY_LEN && !op_else_found) {
+                unsigned char tweak[HMAC_SHA256_LEN];
+                secp256k1_pubkey pub_key;
+                secp256k1_pubkey pub_key_from_tweak;
+                secp256k1_pubkey pub_key_tweaked;
+                const secp256k1_pubkey *pub_key_combination[2];
+                secp256k1_pubkey pub_key_combined;
+                if (!pubkey_parse(ctx, &pub_key, p + 1, EC_PUBLIC_KEY_LEN))
+                    return WALLY_ERROR;
+                memcpy(&pub_key_tweaked, &pub_key, sizeof(pub_key));
+                if ((ret = wally_hmac_sha256(p + 1, EC_PUBLIC_KEY_LEN, script, script_len, tweak, HMAC_SHA256_LEN)) != WALLY_OK)
+                    return ret;
+                if (!pubkey_tweak_add(ctx, &pub_key_tweaked, tweak))
+                    return WALLY_ERROR;
+                if (!pubkey_serialize(ctx, ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
+                    return WALLY_ERROR;
+                if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, written)) != WALLY_OK)
+                    return ret;
+
+                /* sanity checks as per elementsd */
+                if (!pubkey_create(ctx, &pub_key_from_tweak, tweak))
+                    return WALLY_ERROR;
+                if (!pubkey_negate(ctx, &pub_key))
+                    return WALLY_ERROR;
+
+                pub_key_combination[0] = &pub_key;
+                pub_key_combination[1] = &pub_key_tweaked;
+                if (!pubkey_combine(ctx, &pub_key_combined, pub_key_combination, 2))
+                    return WALLY_ERROR;
+                if (memcmp(&pub_key_combined, &pub_key_from_tweak, sizeof(secp256k1_pubkey)) != 0)
+                    return WALLY_ERROR;
+            }
+            else
+                memcpy(q, p, offset_siz);
+            p += offset_siz;
+            q += offset_siz;
+            bytes_len -= offset_siz;
+        } else {
+            if (*p == OP_ELSE && flags == 0) {
+                op_else_found = true;
+            }
+
+            *q++ = *p++;
+            --bytes_len;
+        }
+        if (bytes_len == 0)
+            break;
+    }
+
+    if (written)
+        *written = redeem_script_len;
+
+    return WALLY_OK;
+}
+
+// Converts a push only scriptsig to a newly allocated witness stack
+static int scriptsig_to_witness(unsigned char *bytes, size_t bytes_len, struct wally_tx_witness_stack **output)
+{
+    unsigned char *p = bytes, *end = p + bytes_len;
+    struct wally_tx_witness_stack *result = NULL;
+    int ret = WALLY_OK;
+
+    if (!bytes || !output || !bytes_len) {
+        return WALLY_EINVAL;
+    }
+
+    if ((ret = wally_tx_witness_stack_init_alloc(2, &result)) != WALLY_OK) {
+        return ret;
+    }
+
+    while (p < end) {
+        size_t push_size, push_opcode_size;
+
+        if ((ret = script_get_push_size_from_bytes(p, end - p, &push_size)) != WALLY_OK) {
+            goto fail;
+        }
+        if ((ret = script_get_push_opcode_size_from_bytes(p, end - p, &push_opcode_size)) != WALLY_OK) {
+            goto fail;
+        }
+        p += push_opcode_size;
+
+        if ((ret = wally_tx_witness_stack_add(result, p, push_size)) != WALLY_OK) {
+            goto fail;
+        }
+        p += push_size;
+    }
+
+    *output = result;
+    return WALLY_OK;
+
+fail:
+    wally_tx_witness_stack_free(result);
+    return ret;
+}
+
+int wally_witness_p2wpkh_from_der(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    struct wally_tx_witness_stack **witness)
+{
+    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    int ret;
+    size_t script_sig_len;
+
+    if ((ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
+        return ret;
+    }
+
+    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
+        return ret;
+    }
+
+    return WALLY_OK;
+}
+
+int wally_witness_p2wpkh_from_sig(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    uint32_t sighash,
+    struct wally_tx_witness_stack **witness)
+{
+    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    int ret;
+    size_t script_sig_len;
+
+    if ((ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
+        return ret;
+    }
+
+    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
+        return ret;
+    }
+
+    return WALLY_OK;
+}
+
+int wally_witness_multisig_from_bytes(
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const uint32_t *sighash,
+    size_t sighash_len,
+    uint32_t flags,
+    struct wally_tx_witness_stack **witness)
+{
+    unsigned char *script_sig = NULL;
+    int ret = WALLY_OK;
+    size_t script_sig_len, n_sigs, buf_len;
+
+    if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len || !witness || !script_is_op_n(script[0], false, &n_sigs)) {
+        return WALLY_EINVAL;
+    }
+
+    buf_len = n_sigs * (EC_SIGNATURE_DER_MAX_LEN + 2) + script_len;
+    if (!(script_sig = wally_malloc(buf_len))) {
+        return WALLY_ENOMEM;
+    }
+
+    if ((ret = wally_scriptsig_multisig_from_bytes(script, script_len, bytes, bytes_len, sighash, sighash_len, flags, script_sig, buf_len, &script_sig_len)) == WALLY_OK) {
+        ret = scriptsig_to_witness(script_sig, script_sig_len, witness);
+    }
+
+    wally_free(script_sig);
+    return ret;
 }

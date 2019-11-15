@@ -22,12 +22,12 @@ static bool check_confidential_addr_from_addr_segwit_pubkey(void)
 {
     size_t written = 0;
     unsigned char pub_key[EC_PUBLIC_KEY_LEN];
-    char* blech32 = NULL;
+    char *blech32 = NULL;
     int ret;
     bool is_success = false;
 
     ret = wally_hex_to_bytes(elements_confidential_key,
-        pub_key, EC_PUBLIC_KEY_LEN, &written);
+                             pub_key, EC_PUBLIC_KEY_LEN, &written);
     if (ret != WALLY_OK)
         return false;
 
@@ -35,7 +35,7 @@ static bool check_confidential_addr_from_addr_segwit_pubkey(void)
         return false;
 
     ret = wally_confidential_addr_from_addr_segwit(elements_bech32,
-            "ert", "el", pub_key, EC_PUBLIC_KEY_LEN, &blech32);
+                                                   "ert", "el", pub_key, EC_PUBLIC_KEY_LEN, &blech32);
     if (ret != WALLY_OK)
         return false;
 
@@ -52,13 +52,13 @@ static bool check_confidential_addr_from_addr_segwit_script(void)
     unsigned char pub_key[EC_PUBLIC_KEY_LEN];
     unsigned char witness_script[SHA256_LEN + 2];
     char bech32_address[91];
-    char* blech32 = NULL;
-    char* bech32 = NULL;
+    char *blech32 = NULL;
+    char *bech32 = NULL;
     int ret;
     bool is_success = false;
 
     ret = wally_hex_to_bytes(elements_confidential_key,
-        pub_key, EC_PUBLIC_KEY_LEN, &written);
+                             pub_key, EC_PUBLIC_KEY_LEN, &written);
     if (ret != WALLY_OK)
         return false;
 
@@ -66,7 +66,7 @@ static bool check_confidential_addr_from_addr_segwit_script(void)
         return false;
 
     ret = wally_hex_to_bytes(elements_witness_script,
-                    witness_script, SHA256_LEN + 2, &written);
+                             witness_script, SHA256_LEN + 2, &written);
     if (ret != WALLY_OK)
         return false;
 
@@ -85,7 +85,7 @@ static bool check_confidential_addr_from_addr_segwit_script(void)
         return false;
 
     ret = wally_confidential_addr_from_addr_segwit(bech32_address,
-            "ert", "el", pub_key, EC_PUBLIC_KEY_LEN, &blech32);
+                                                   "ert", "el", pub_key, EC_PUBLIC_KEY_LEN, &blech32);
     if (ret != WALLY_OK)
         return false;
 
@@ -98,7 +98,7 @@ static bool check_confidential_addr_from_addr_segwit_script(void)
 
 static bool check_confidential_addr_to_addr_segwit_pubkey(void)
 {
-    char* bech32 = NULL;
+    char *bech32 = NULL;
     int ret;
     bool is_success = false;
 
@@ -116,7 +116,7 @@ static bool check_confidential_addr_to_addr_segwit_pubkey(void)
 
 static bool check_confidential_addr_to_addr_segwit_script(void)
 {
-    char* bech32 = NULL;
+    char *bech32 = NULL;
     int ret;
     bool is_success = false;
 
@@ -134,13 +134,13 @@ static bool check_confidential_addr_to_addr_segwit_script(void)
 
 static bool check_confidential_addr_segwit_to_ec_public_key_pubkey(void)
 {
-    char* pub_key_str = NULL;
+    char *pub_key_str = NULL;
     unsigned char pub_key[EC_PUBLIC_KEY_LEN];
     int ret;
     bool is_success = false;
 
     ret = wally_confidential_addr_segwit_to_ec_public_key(
-                elements_blech32, "el", pub_key, EC_PUBLIC_KEY_LEN);
+        elements_blech32, "el", pub_key, EC_PUBLIC_KEY_LEN);
     if (ret != WALLY_OK)
         return false;
 
@@ -157,13 +157,13 @@ static bool check_confidential_addr_segwit_to_ec_public_key_pubkey(void)
 
 static bool check_confidential_addr_segwit_to_ec_public_key_script(void)
 {
-    char* pub_key_str = NULL;
+    char *pub_key_str = NULL;
     unsigned char pub_key[EC_PUBLIC_KEY_LEN];
     int ret;
     bool is_success = false;
 
     ret = wally_confidential_addr_segwit_to_ec_public_key(
-                elements_script_blech32, "el", pub_key, EC_PUBLIC_KEY_LEN);
+        elements_script_blech32, "el", pub_key, EC_PUBLIC_KEY_LEN);
     if (ret != WALLY_OK)
         return false;
 
@@ -178,7 +178,7 @@ static bool check_confidential_addr_segwit_to_ec_public_key_script(void)
     return is_success;
 }
 
-    
+
 
 int main(void)
 {

@@ -11,6 +11,20 @@
 #include <string.h>
 #include <stdbool.h>
 
+/* From ASAN wiki */
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+extern void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+#define ASAN_POISON_MEMORY_REGION(addr, size) \
+  __asan_poison_memory_region((addr), (size))
+#define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
+  __asan_unpoison_memory_region((addr), (size))
+#else
+#define ASAN_POISON_MEMORY_REGION(addr, size) \
+  ((void)(addr), (void)(size))
+#define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
+  ((void)(addr), (void)(size))
+#endif
+
 /* Many compilers these days will elide calls to memset when they
  * determine that the memory is not read afterwards. There are reports
  * that tricks designed to work around this including making data volatile,
@@ -122,8 +136,14 @@ static void *run_tests(void *passed_stack)
 
 #define RUN(t) if (!t()) { printf(#t " wally_clear() test failed!\n"); return gstack; }
 
+    /* Due to the nature of the test reading poisoned bytes off the custom stack will trigger ASAN */
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_search);
+
+    /* Due to the nature of the test reading poisoned bytes off the custom stack will trigger ASAN */
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_bip39);
+
     return NULL;
 }
 

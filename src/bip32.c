@@ -735,6 +735,14 @@ int bip32_key_from_base58_alloc(const char *base58,
     return ret;
 }
 
+int bip32_key_strip_private_key(struct ext_key *hdkey)
+{
+    if (!hdkey)
+        return WALLY_EINVAL;
+    key_strip_private_key(hdkey);
+    return WALLY_OK;
+}
+
 #if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
 
 /* Getters for ext_key values */

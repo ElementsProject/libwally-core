@@ -14,6 +14,7 @@ include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
+include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
 include_HEADERS += $(top_srcdir)/include/wally_transaction.h
 
@@ -213,6 +214,7 @@ libwallycore_la_SOURCES = \
     internal.c \
     mnemonic.c \
     pbkdf2.c \
+    psbt.c \
     script.c \
     scrypt.c \
     sign.c \
@@ -220,6 +222,7 @@ libwallycore_la_SOURCES = \
     transaction.c \
     wif.c \
     wordlist.c \
+    ccan/ccan/base64/base64.c \
     ccan/ccan/crypto/ripemd160/ripemd160.c \
     ccan/ccan/crypto/sha256/sha256.c \
     ccan/ccan/crypto/sha512/sha512.c \
@@ -234,6 +237,7 @@ libwallycore_la_INCLUDES = \
     include/wally_core.h \
     include/wally_crypto.h \
     include/wally_elements.h \
+    include/wally_psbt.h \
     include/wally_script.h \
     include/wally_symmetric.h \
     include/wally_transaction.h
@@ -247,7 +251,7 @@ libwallycore_la_LDFLAGS = $(WALLYCORE_LDFLAGS)
 endif
 endif # SHARED_BUILD_ENABLED
 
-libwallycore_la_CFLAGS = -I$(top_srcdir) -Iccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
+libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
@@ -302,6 +306,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
@@ -315,6 +320,7 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 endif

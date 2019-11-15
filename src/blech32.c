@@ -38,9 +38,9 @@ static uint64_t blech32_polymod_step(uint64_t pre) {
            (-((b >> 4) & 1) & 0x7093e5a608865bULL);
 }
 
-static const char *charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+static const char *blech32_charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 
-static const int8_t charset_rev[128] = {
+static const int8_t blech32_charset_rev[128] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -76,14 +76,14 @@ static int blech32_encode(char *output, const char *hrp, const uint8_t *data, si
     for (i = 0; i < data_len; ++i) {
         if (*data >> 5) return 0;
         chk = blech32_polymod_step(chk) ^ (*data);
-        *(output++) = charset[*(data++)];
+        *(output++) = blech32_charset[*(data++)];
     }
     for (i = 0; i < 12; ++i) {
         chk = blech32_polymod_step(chk);
     }
     chk ^= 1;
     for (i = 0; i < 12; ++i) {
-        *(output++) = charset[(chk >> ((11 - i) * 5)) & 0x1f];
+        *(output++) = blech32_charset[(chk >> ((11 - i) * 5)) & 0x1f];
     }
     *output = 0;
     return 1;
@@ -128,7 +128,7 @@ static int blech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char
     }
     ++i;
     while (i < input_len) {
-        int v = (input[i] & 0x80) ? -1 : charset_rev[(int)input[i]];
+        int v = (input[i] & 0x80) ? -1 : blech32_charset_rev[(int)input[i]];
         if (input[i] >= 'a' && input[i] <= 'z') have_lower = 1;
         if (input[i] >= 'A' && input[i] <= 'Z') have_upper = 1;
         if (v == -1) {
@@ -146,7 +146,7 @@ static int blech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char
     return chk == 1;
 }
 
-static int convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits, int pad) {
+static int blech32_convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits, int pad) {
     uint32_t val = 0;
     int bits = 0;
     uint32_t maxv = (((uint32_t)1) << outbits) - 1;
@@ -175,7 +175,7 @@ static int blech32_addr_encode(char *output, const char *hrp, int witver, const 
     if (witver == 0 && witprog_len != 53 && witprog_len != 65) goto fail;
     if (witprog_len < 2 || witprog_len > 65) goto fail;
     data[0] = witver;
-    convert_bits(data + 1, &datalen, 5, witprog, witprog_len, 8, 1);
+    blech32_convert_bits(data + 1, &datalen, 5, witprog, witprog_len, 8, 1);
     ++datalen;
     return blech32_encode(output, hrp, data, datalen, WALLY_BLECH32_MAXLEN);
 fail:
@@ -192,7 +192,7 @@ static int blech32_addr_decode(int *witver, uint8_t *witdata, size_t *witdata_le
     if (strncmp(hrp, hrp_actual, WALLY_BLECH32_MAXLEN - 5) != 0) goto fail;
     if (data[0] > 16) goto fail;
     *witdata_len = 0;
-    if (!convert_bits(witdata, witdata_len, 8, data + 1, data_len - 1, 5, 0)) goto fail;
+    if (!blech32_convert_bits(witdata, witdata_len, 8, data + 1, data_len - 1, 5, 0)) goto fail;
     if (*witdata_len < 2 || *witdata_len > 65) goto fail;
     if (data[0] == 0 && *witdata_len != 53 && *witdata_len != 65) goto fail;
     *witver = data[0];
@@ -280,15 +280,15 @@ int wally_confidential_addr_from_addr_segwit(
         *output = NULL;
 
     if (!address || !addr_family || !confidential_addr_family || !pub_key
-            || pub_key_len != EC_PUBLIC_KEY_LEN || !output
-            || strlen(confidential_addr_family) >= WALLY_BLECH32_MAXLEN)
+        || pub_key_len != EC_PUBLIC_KEY_LEN || !output
+        || strlen(confidential_addr_family) >= WALLY_BLECH32_MAXLEN)
         return WALLY_EINVAL;
 
     /* get v0 witness programs script */
     ret = wally_addr_segwit_to_bytes(address, addr_family, 0,
                                      hash_bytes_p, written, &written);
     if (ret == WALLY_OK) {
-        if ((written != (HASH160_LEN + 2)) && (written != (SHA256_LEN + 2))) 
+        if ((written != (HASH160_LEN + 2)) && (written != (SHA256_LEN + 2)))
             ret = WALLY_EINVAL;
         else {
             /* Copy the confidentialKey / v0 witness programs */

@@ -62,7 +62,7 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
 {
 #if PY_MAJOR_VERSION < 3
     if (PyInt_Check(item)) {
-        *val = PyInt_AsUnsignedLongMask(item);
+        *val = PyInt_AsUnsignedLongLongMask(item);
         if (!PyErr_Occurred())
           return true;
         PyErr_Clear();
@@ -94,6 +94,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 %include pybuffer.i
 %include exception.i
+%include stdint.i
 
 /* Raise an exception whenever a function fails */
 %exception{
@@ -207,6 +208,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len);
 %pybuffer_nonnull_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
 %pybuffer_nonnull_binary(const unsigned char *whitelist_proof, size_t whitelist_proof_len);
+%pybuffer_nonnull_binary(const unsigned char *redeem_script, size_t redeem_script_len);
 
 /* Output buffers */
 %pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -303,14 +305,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_opaque_struct(wally_tx_input);
 %py_opaque_struct(wally_tx_output);
 %py_opaque_struct(wally_tx);
-
-/* Tell SWIG what uint32_t/uint64_t mean */
-typedef unsigned int uint32_t;
-#if sizeof(long) == sizeof(int)
-typedef unsigned long long uint64_t;
-#else
-typedef unsigned long uint64_t;
-#endif
 
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;

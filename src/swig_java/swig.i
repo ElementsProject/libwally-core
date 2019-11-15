@@ -258,6 +258,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *offline_keys, size_t offline_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *online_priv_key, size_t online_priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *summed_key, size_t summed_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *redeem_script, size_t redeem_script_len) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
@@ -431,6 +432,9 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(wally_confidential_addr_to_addr);
 %returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_string(wally_confidential_addr_from_addr);
+%returns_string(wally_confidential_addr_to_addr_segwit);
+%returns_array_(wally_confidential_addr_segwit_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_string(wally_confidential_addr_from_addr_segwit);
 %returns_void__(wally_ec_private_key_verify);
 %returns_void__(wally_ec_public_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
@@ -466,6 +470,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_scriptsig_p2pkh_from_der);
 %returns_size_t(wally_scriptsig_multisig_from_bytes);
 %returns_size_t(wally_elements_pegout_script_from_bytes);
+%returns_size_t(wally_elements_pegin_contract_script_from_bytes);
 %returns_void__(wally_scrypt);
 %returns_void__(wally_secp_randomize);
 %returns_array_(wally_sha256, 3, 4, SHA256_LEN);

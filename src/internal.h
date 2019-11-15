@@ -11,6 +11,7 @@
 const secp256k1_context *secp_ctx(void);
 #define secp256k1_context_destroy(c) _do_not_destroy_shared_ctx_pointers(c)
 
+#define pubkey_combine    secp256k1_ec_pubkey_combine
 #define pubkey_create     secp256k1_ec_pubkey_create
 #define pubkey_parse      secp256k1_ec_pubkey_parse
 #define pubkey_tweak_add  secp256k1_ec_pubkey_tweak_add

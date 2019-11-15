@@ -1,5 +1,14 @@
 # Changes
 
+## Version 0.7.5
+
+- Add support for P2PKH, P2SH-P2WPKH, P2WPKH address derivation from BIP32 key
+- Add support for P2KH and P2SH address parsing
+- Add support for PSBT
+- Add support for blech32
+- Add support for pegin and pegout
+- Bug fixing, build updates and improvements
+
 ## Version 0.7.4
 
 - Add support for recoverable signatures

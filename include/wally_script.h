@@ -2,6 +2,7 @@
 #define LIBWALLY_CORE_SCRIPT_H
 
 #include "wally_core.h"
+#include "wally_transaction.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,6 +224,25 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
     size_t *written);
 
 /**
+ * Create a P2WPKH witness from a pubkey and compact signature.
+ *
+ * :param pub_key: The public key to create a witness with.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
+ *|    or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ * :param sig: The compact signature to create a witness with.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
+ * :param witness: Destination for the newly created witness.
+ */
+WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    uint32_t sighash,
+    struct wally_tx_witness_stack **witness);
+
+/**
  * Create a P2PKH scriptSig from a pubkey and DER signature plus sighash.
  *
  * :param pub_key: The public key to create a scriptSig with.
@@ -243,6 +263,24 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_der(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Create a P2WPKH witness from a pubkey and DER signature plus sighash.
+ *
+ * :param pub_key: The public key to create a witness with.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be
+ *|    ``EC_PUBLIC_KEY_LEN`` ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ * :param sig: The DER encoded signature to create a witness,
+ *|    with the sighash byte appended to it.
+ * :param sig_len: The length of ``sig`` in bytes.
+ * :param witness: Destination for the newly created witness.
+ */
+WALLY_CORE_API int wally_witness_p2wpkh_from_der(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len,
+    struct wally_tx_witness_stack **witness);
 
 /**
  * Create an OP_RETURN scriptPubkey.
@@ -327,6 +365,28 @@ WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Create a multisig scriptWitness.
+ *
+ * :param script: The witness script this scriptWitness provides signatures for.
+ * :param script_len: The length of ``script`` in bytes.
+ * :param bytes: Compact signatures to place in the scriptWitness.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
+ * :param sighash: WALLY_SIGHASH_ flags for each signature in ``bytes``.
+ * :param sighash_len: The number of sighash flags in ``sighash``.
+ * :param flags: Must be zero.
+ * :param witness: Destination for newly allocated witness.
+ */
+WALLY_CORE_API int wally_witness_multisig_from_bytes(
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const uint32_t *sighash,
+    size_t sighash_len,
+    uint32_t flags,
+    struct wally_tx_witness_stack **witness);
 
 /**
  * Create a CSV 2of2 multisig with a single key recovery scriptPubkey.
@@ -448,6 +508,28 @@ WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
     size_t sub_pubkey_len,
     const unsigned char *whitelist_proof,
     size_t whitelist_proof_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create a script for P2CH pegin transactions.
+ *
+ * :param redeem_script: The federation redeem script.
+ * :param redeem_script_len: Length of ``redeem_script`` in bytes.
+ * :param script: The claim script.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param flags: Must be zero.
+ * :param bytes_out: Destination for the resulting script.
+ * :param len: Length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
+    const unsigned char *redeem_script,
+    size_t redeem_script_len,
+    const unsigned char *script,
+    size_t script_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,

@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include "transaction_int.h"
+#include "transaction_shared.h"
 #include "script_int.h"
 
 #define WALLY_TX_ALL_FLAGS (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS)
@@ -23,13 +24,6 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
 
 /* Bytes of stack space to use to avoid allocations for tx serializing */
 #define TX_STACK_SIZE 2048
-
-#define TX_CHECK_OUTPUT if (!output) return WALLY_EINVAL; else *output = NULL
-#define TX_OUTPUT_ALLOC(typ) \
-    *output = wally_malloc(sizeof(typ)); \
-    if (!*output) return WALLY_ENOMEM; \
-    wally_clear((void *)*output, sizeof(typ)); \
-    result = (typ *) *output;
 
 #define TX_COPY_ELSE_CLEAR(dst, src, siz) \
     if (src) \
@@ -161,7 +155,7 @@ static bool is_valid_elements_tx(const struct wally_tx *tx)
     return true;
 }
 
-static bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
+bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
 {
     if (!len)
         return true;
@@ -171,7 +165,7 @@ static bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t le
     return *dst != NULL;
 }
 
-static void clear_and_free(void *p, size_t len)
+void clear_and_free(void *p, size_t len)
 {
     if (p) {
         wally_clear(p, len);
@@ -205,7 +199,7 @@ static int replace_script(const unsigned char *script, size_t script_len,
 }
 
 
-static struct wally_tx_witness_stack *clone_witness(
+struct wally_tx_witness_stack *clone_witness(
     const struct wally_tx_witness_stack *stack)
 {
     struct wally_tx_witness_stack *result;
@@ -2196,9 +2190,9 @@ int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
     return tx_to_hex(tx, flags, output, is_elements);
 }
 
-static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
-                      uint32_t flags, size_t *num_inputs, size_t *num_outputs,
-                      bool *expect_witnesses)
+int analyze_tx(const unsigned char *bytes, size_t bytes_len,
+               uint32_t flags, size_t *num_inputs, size_t *num_outputs,
+               bool *expect_witnesses)
 {
     const unsigned char *p = bytes, *end = bytes + bytes_len;
     uint64_t v, num_witnesses;
@@ -3244,3 +3238,35 @@ int wally_tx_input_set_script(struct wally_tx_input *input,
 }
 
 TX_SET_B(input, script)
+
+int clone_tx(struct wally_tx *tx, struct wally_tx **output)
+{
+    int ret = WALLY_OK;
+    size_t i;
+    struct wally_tx *result = NULL;
+
+    TX_CHECK_OUTPUT;
+
+    if ((ret = wally_tx_init_alloc(tx->version, tx->locktime, tx->num_inputs, tx->num_outputs, &result)) != WALLY_OK) {
+        goto fail;
+    }
+    for (i = 0; i < tx->num_inputs; ++i) {
+        if ((ret = wally_tx_add_input(result, &tx->inputs[i])) != WALLY_OK) {
+            goto fail;
+        }
+    }
+    for (i = 0; i < tx->num_outputs; ++i) {
+        if ((ret = wally_tx_add_output(result, &tx->outputs[i])) != WALLY_OK) {
+            goto fail;
+        }
+    }
+    *output = result;
+
+    return WALLY_OK;
+
+fail:
+    if (result) {
+        wally_tx_free(result);
+    }
+    return ret;
+}
