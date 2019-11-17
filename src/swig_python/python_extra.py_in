@@ -129,6 +129,7 @@ scriptsig_p2pkh_from_der = _wrap_bin(scriptsig_p2pkh_from_der, WALLY_SCRIPTSIG_P
 witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
 
 addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)
+address_to_scriptpubkey = _wrap_bin(address_to_scriptpubkey, 21 + 4, resize=True)
 
 tx_to_bytes = _wrap_bin(tx_to_bytes, tx_get_length, resize=True)
 tx_get_btc_signature_hash = _wrap_bin(tx_get_btc_signature_hash, SHA256_LEN)
