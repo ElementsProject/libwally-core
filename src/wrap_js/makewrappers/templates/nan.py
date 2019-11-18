@@ -1,6 +1,8 @@
-TEMPLATE='''#include <nan.h>
+TEMPLATE='''#include <string>
+#include <nan.h>
 #include <ccan/ccan/endian/endian.h>
 
+#include "config.h"
 #include "../include/wally_address.h"
 #include "../include/wally_core.h"
 #include "../include/wally_bip32.h"
@@ -10,6 +12,7 @@ TEMPLATE='''#include <nan.h>
 #include "../include/wally_crypto.h"
 #include "../include/wally_elements.h"
 #include "../include/wally_script.h"
+#include "../include/wally_transaction.h"
 #include <vector>
 namespace {
 
@@ -236,7 +239,7 @@ def _generate_nan(funcname, f):
         input_args.extend([
             'v8::Local<v8::Array> res;',
             'if (ret == WALLY_OK) {',
-            '    res = v8::Array::New(v8::Isolate::GetCurrent(), %s);' % num_outs,
+            '    res = Nan::New<v8::Array>(%s);' % num_outs,
             '    if (!IsValid(res))',
             '       ret = WALLY_ENOMEM;',
             '}',
@@ -287,7 +290,7 @@ def _generate_nan(funcname, f):
             postprocessing.extend([
                 'v8::Local<v8::String> str_res;',
                 'if (ret == WALLY_OK) {',
-                '    str_res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), result_ptr, v8::NewStringType::kNormal).ToLocalChecked();',
+                '    str_res = Nan::New<v8::String>(std::string(result_ptr)).ToLocalChecked();',
                 '    wally_free_string(result_ptr);',
                 '    if (!IsValid(str_res))',
                 '        ret = WALLY_ENOMEM;',
@@ -317,7 +320,7 @@ def _generate_nan(funcname, f):
             if num_outs > 1:
                 postprocessing.extend([
                     'if (ret == WALLY_OK)',
-                    '    if (!res->Set(Nan::GetCurrentContext(), %s, res%s).FromMaybe(false))' % (cur_out, i),
+                    '    if (!Nan::Set(res, %s, res%s).FromMaybe(false))' % (cur_out, i),
                     '        ret = WALLY_ERROR;',
                 ])
                 cur_out += 1
@@ -334,7 +337,7 @@ def _generate_nan(funcname, f):
             postprocessing.extend([
                 'if (ret == WALLY_OK) {',
                 '    *be64%s = cpu_to_be64(*be64%s);' % (i, i),
-                '    if (!res->Set(Nan::GetCurrentContext(), %s, res%s).FromMaybe(false)) ' % (cur_out, i),
+                '    if (!Nan::Set(res, %s, res%s).FromMaybe(false)) ' % (cur_out, i),
                 '        ret = WALLY_ERROR;',
                 '}',
             ])
