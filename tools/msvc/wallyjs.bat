@@ -8,9 +8,15 @@ set LIBWALLY_DIR=%cd%
 call "%~dp0\gen_ecmult_static_context.bat" || echo ERRORGENCONTEXT && exit /b 1
 
 REM Create wrappers for wallyjs node module
+REM Elements build is 'set ELEMENTS_BUILD="elements"'.
 cd src
-python wrap_js/makewrappers/wrap.py wally Release
-python wrap_js/makewrappers/wrap.py nodejs Release
+python wrap_js/makewrappers/wrap.py wally Release %ELEMENTS_BUILD%
+python wrap_js/makewrappers/wrap.py nodejs Release %ELEMENTS_BUILD%
+if %ELEMENTS_BUILD% == "elements" (
+  copy /Y /B wrap_js\windows_config\binding.gyp.elements_tmpl wrap_js\binding.gyp /B
+) else (
+  copy /Y /B wrap_js\windows_config\binding.gyp.tmpl wrap_js\binding.gyp /B
+)
 
 REM Install wallyjs
 cd wrap_js
