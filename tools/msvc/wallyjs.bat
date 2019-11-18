@@ -12,7 +12,7 @@ REM Elements build is 'set ELEMENTS_BUILD="elements"'.
 cd src
 python wrap_js/makewrappers/wrap.py wally Release %ELEMENTS_BUILD%
 python wrap_js/makewrappers/wrap.py nodejs Release %ELEMENTS_BUILD%
-if %ELEMENTS_BUILD% == "elements" (
+if "%ELEMENTS_BUILD%" == "elements" (
   copy /Y /B wrap_js\windows_config\binding.gyp.elements_tmpl wrap_js\binding.gyp /B
 ) else (
   copy /Y /B wrap_js\windows_config\binding.gyp.tmpl wrap_js\binding.gyp /B

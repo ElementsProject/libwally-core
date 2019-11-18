@@ -23,7 +23,9 @@
 #define HAVE_UNISTD_H 1
 #define STDC_HEADERS 1
 #define VERSION "0.6"
+#if (!defined(_SSIZE_T_DECLARED)) && (!defined(_ssize_t)) && (!defined(ssize_t))
 #define ssize_t long long
+#endif
 
 #define alignment_ok(p, n) ((size_t)(p) % (n) == 0)
 
