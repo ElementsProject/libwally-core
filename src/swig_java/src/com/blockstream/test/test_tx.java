@@ -22,6 +22,7 @@ public class test_tx {
     public void test() {
         final Object tx = Wally.tx_from_hex(p2pkh_hex, Wally.WALLY_TX_FLAG_USE_WITNESS);
         final String tx_string = Wally.tx_to_hex(tx, Wally.WALLY_TX_FLAG_USE_WITNESS);
+        final byte[] tx_bytes = Wally.tx_to_bytes(tx, Wally.WALLY_TX_FLAG_USE_WITNESS);
         final Object tx_wit = Wally.tx_from_hex(wit_hex, Wally.WALLY_TX_FLAG_USE_WITNESS);
         final byte[] tx_get_input_txhash = Wally.tx_get_input_txhash(tx, 0);
         final byte[] tx_get_input_script = Wally.tx_get_input_script(tx, 0);
@@ -32,6 +33,7 @@ public class test_tx {
         final byte[] tx_input_get_script = Wally.tx_input_get_script(tx_input);
 
         assert_eq(p2pkh_hex, tx_string, "hex ser/der doesn't match original");
+        assert_eq(p2pkh_hex, h(tx_bytes), "hex(bytes) doesn't match original");
         assert_eq(1, Wally.tx_get_num_inputs(tx), "number of inputs is not 1");
         assert_eq(118307L, Wally.tx_get_total_output_satoshi(tx), "total output mismatch");
         assert_eq(1, Wally.tx_get_version(tx), "tx version mismatch");
@@ -79,12 +81,25 @@ public class test_tx {
         Wally.cleanup();
     }
 
+    public void test_dersigs() {
+        // random values
+        final String sigs[] = { "67efef0d968862524308632be6e724db29bd33e5a373fa98e4c726b753b459c33fd98e793a7926c0281423c64dd555eb6aa43db8ada5dba86a21c5121298b87e",
+                                "eb6ef01ce422cda7f58e1768ba60192f1714c4af26535657fcfa058359db3446633eba147b88ba8cb52f6b2ca26f083d6c0f7e744d1f1113eb33b1c3c3c83f60" };
+        final String ders[] = { "3044022067efef0d968862524308632be6e724db29bd33e5a373fa98e4c726b753b459c302203fd98e793a7926c0281423c64dd555eb6aa43db8ada5dba86a21c5121298b87e",
+                                "3045022100eb6ef01ce422cda7f58e1768ba60192f1714c4af26535657fcfa058359db34460220633eba147b88ba8cb52f6b2ca26f083d6c0f7e744d1f1113eb33b1c3c3c83f60" };
+        for ( int i = 0 ; i < sigs.length; ++i ) {
+            //assert_eq(sigs[i], h(Wally.ec_sig_from_der(h(ders[i]))), "Unexpected ec_sig_from_der() result.");
+            assert_eq(ders[i], h(Wally.ec_sig_to_der(h(sigs[i]))), "Unexpected ec_sig_to_der() result.");
+        }
+    }
+
     private String h(final byte[] bytes) { return Wally.hex_from_bytes(bytes); }
     private byte[] h(final String hex) { return Wally.hex_to_bytes(hex); }
 
     public static void main(final String[] args) {
         final test_tx t = new test_tx();
         t.test();
+        t.test_dersigs();
     }
 
 }

@@ -29,6 +29,15 @@
       return trimBuffer(buf, len);
   }
 
+  public final static byte[] asset_blinding_key_from_seed(byte[] seed) {
+      return asset_blinding_key_from_seed(seed, null);
+  }
+
+  public final static byte[] asset_blinding_key_to_ec_private_key(byte[] asset_blinding_key,
+                                                                  byte[] script_pub_key) {
+      return asset_blinding_key_to_ec_private_key(asset_blinding_key, script_pub_key, null);
+  }
+
   public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
                                          byte[] commitment, byte[] extra_in,
                                          byte[] generator,
@@ -44,6 +53,10 @@
       final byte[] buf = new byte[EC_PUBLIC_KEY_LEN];
       confidential_addr_to_ec_public_key(addr, prefix, buf);
       return buf;
+  }
+
+  public final static byte[] tx_confidential_value_from_satoshi(long satoshi) {
+      return tx_confidential_value_from_satoshi(satoshi, null);
   }
 
   public final static Object tx_elements_input_init(byte[] jarg1, long jarg2, long jarg3, byte[] jarg4) {
@@ -108,6 +121,10 @@
       return _tx_is_elements(tx) != 0;
   }
 
+  public final static byte[] tx_get_elements_signature_hash(Object tx, long index, byte[] script, byte[] value, long sighash, long flags) {
+      return tx_get_elements_signature_hash(tx, index, script, value, sighash, flags, null);
+  }
+
   public final static byte[] tx_get_input_blinding_nonce(Object tx, final int index) {
       return tx_get_input_blinding_nonce(tx, index, null);
   }
@@ -169,5 +186,3 @@
   public final static byte[] bip32_key_get_pub_key_tweak_sum(Object jarg1) {
       return bip32_key_get_pub_key_tweak_sum(jarg1, null);
   }
-
-

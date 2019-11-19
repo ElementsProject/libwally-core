@@ -10,7 +10,7 @@ public class test_assets {
     public test_assets() { }
 
     public void test_blinding() {
-
+        // hexes from local regtest testing
         final byte[] asset = h(ONES);
         final byte[] abf = h(ONES);
         final byte[] generator = Wally.asset_generator_from_bytes(asset, abf);
@@ -23,7 +23,25 @@ public class test_assets {
             throw new RuntimeException("Unexpected asset_final_vbf result");
     }
 
+    public void test_blinding_keys() {
+        // hexes from local regtest testing
+        final byte[] seed = h("fecd7938b912091cdedb47f70d4f3742f59f77e3bac780c0c498e2aaf6f9f4ab");
+        final byte[] master_blinding_key = Wally.asset_blinding_key_from_seed(seed);
+        if (!h(master_blinding_key).equals("624d15c603de16a92081fece31b9f21ac53ff6cb00f4180b0021adf754b161c9aa44ecaa161502f3b9a84122179a4320524ab1807578ee291360c2133f445233"))
+            throw new RuntimeException("Unexpected master_blinding_key result");
+
+        final byte[] scriptpubkey = h("a914822866d2b6a573a313e124bb1881a2f7ac4954ec87");
+        final byte[] private_blinding_key = Wally.asset_blinding_key_to_ec_private_key(master_blinding_key, scriptpubkey);
+        if (!h(private_blinding_key).equals("358876bdb32f60b8cdb811e922600b36b4d2b752d1869cccd9d79c566f45d87a"))
+            throw new RuntimeException("Unexpected private_blinding_key result");
+
+        final byte[] public_blinding_key = Wally.ec_public_key_from_private_key(private_blinding_key);
+        if (!h(public_blinding_key).equals("03df03058b2d4032471b0937c2401aa728e1403f4bce0fa62d917cff874c87bd45"))
+            throw new RuntimeException("Unexpected public_blinding_key result");
+    }
+
     private void test_confidential_address() {
+        // hexes from local regtest testing
         final String addr = "Q7qcjTLsYGoMA7TjUp97R6E6AM5VKqBik6";
         final String pubkey_hex = "02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623";
         final String addr_c = "VTpz1bNuCALgavJKgbAw9Lpp9A72rJy64XPqgqfnaLpMjRcPh5UHBqyRUE4WMZ3asjqu7YEPVAnWw2EK";
@@ -41,12 +59,27 @@ public class test_assets {
             throw new RuntimeException("Failed to create confidential address");
     }
 
+    private void test_confidential_values() {
+        final String hex_values[] = {"010000000002faf080", "010000000002fa2d30", "01000000000000c350"};
+        final long long_values[] = {50000000, 49950000, 50000};
+
+        for (int i = 0; i < long_values.length; ++i) {
+          if (!hex_values[i].equals(h(Wally.tx_confidential_value_from_satoshi(long_values[i]))))
+              throw new RuntimeException("Unexpected confidential value");
+
+          if (long_values[i] != Wally.tx_confidential_value_to_satoshi(h(hex_values[i])))
+              throw new RuntimeException("Unexpected long satoshi value");
+        }
+    }
+
     private String h(final byte[] bytes) { return Wally.hex_from_bytes(bytes); }
     private byte[] h(final String hex) { return Wally.hex_to_bytes(hex); }
 
     public static void main(final String[] args) {
         final test_assets t = new test_assets();
         t.test_blinding();
+        t.test_blinding_keys();
         t.test_confidential_address();
+        t.test_confidential_values();
     }
 }

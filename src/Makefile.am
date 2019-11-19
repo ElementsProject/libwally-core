@@ -147,6 +147,7 @@ all: swig_java/wallycore.jar
 SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_bip32.class \
     $(sjs)/$(cbt)/test_tx.class \
+    $(sjs)/$(cbt)/test_scripts.class \
     $(sjs)/$(cbt)/test_mnemonic.class
 
 if BUILD_ELEMENTS
@@ -292,6 +293,7 @@ if BUILD_ELEMENTS
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
+	$(AM_V_at)$(JAVA_TEST)test_scripts
 	$(AM_V_at)$(JAVA_TEST)test_tx
 endif
 if USE_JS_WRAPPERS

@@ -469,6 +469,9 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_scriptsig_p2pkh_from_sig);
 %returns_size_t(wally_scriptsig_p2pkh_from_der);
 %returns_size_t(wally_scriptsig_multisig_from_bytes);
+%returns_struct(wally_witness_p2wpkh_from_sig, wally_tx_witness_stack);
+%returns_struct(wally_witness_p2wpkh_from_der, wally_tx_witness_stack);
+%returns_struct(wally_witness_multisig_from_bytes, wally_tx_witness_stack);
 %returns_size_t(wally_elements_pegout_script_from_bytes);
 %returns_size_t(wally_elements_pegin_contract_script_from_bytes);
 %returns_void__(wally_scrypt);
@@ -640,6 +643,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_set_input_issuance_amount_rangeproof);
 %returns_void__(wally_tx_set_output_satoshi);
 %returns_void__(wally_tx_set_output_script);
+%returns_void__(wally_tx_set_output_value);
+%returns_void__(wally_tx_set_output_asset);
+%returns_void__(wally_tx_set_output_nonce);
+%returns_void__(wally_tx_set_output_surjectionproof);
+%returns_void__(wally_tx_set_output_rangeproof);
 %returns_size_t(wally_tx_to_bytes);
 %returns_string(wally_tx_to_hex);
 %returns_size_t(wally_tx_vsize_from_weight);
