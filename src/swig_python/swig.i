@@ -124,13 +124,13 @@ static void destroy_words(PyObject *obj) { (void)obj; }
     $2 = 0;
   else {
     res = PyObject_GetBuffer($input, &view, PyBUF_CONTIG_RO);
-    size = view.len;
-    buf = view.buf;
-    PyBuffer_Release(&view);
     if (res < 0) {
       PyErr_Clear();
       %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
     }
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
     $1 = ($1_ltype) buf;
     $2 = ($2_ltype) (size / sizeof($*1_type));
   }
@@ -145,16 +145,41 @@ static void destroy_words(PyObject *obj) { (void)obj; }
     %argument_fail(SWIG_TypeError, "(TYPEMAP, SIZE)", $symname, $argnum);
   else {
     res = PyObject_GetBuffer($input, &view, PyBUF_CONTIG_RO);
-    size = view.len;
-    buf = view.buf;
-    PyBuffer_Release(&view);
     if (res < 0) {
       PyErr_Clear();
       %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
     }
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
     $1 = ($1_ltype) buf;
     $2 = ($2_ltype) (size / sizeof($*1_type));
   }
+}
+%enddef
+
+/*
+ * This is a copy of swig4's 'pybuffer_mutable_binary' but with the
+ * call to PyBuffer_Release() only made if the call to PyObject_GetBuffer()
+ * returned 0 (ie. succeeded).
+ * FIXME: Remove in favour of pybuffer_mutable_binary when:
+ * a) we move to swig4
+ * b) the call to Release() is fixed upstream
+ */
+%define %pybuffer_output_binary(TYPEMAP, SIZE)
+%typemap(in) (TYPEMAP, SIZE) {
+  int res; Py_ssize_t size = 0; void *buf = 0;
+  Py_buffer view;
+  res = PyObject_GetBuffer($input, &view, PyBUF_WRITABLE);
+  if (res < 0) {
+    PyErr_Clear();
+    %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
+  }
+  size = view.len;
+  buf = view.buf;
+  PyBuffer_Release(&view);
+  $1 = ($1_ltype) buf;
+  $2 = ($2_ltype) (size/sizeof($*1_type));
 }
 %enddef
 
@@ -211,10 +236,10 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *redeem_script, size_t redeem_script_len);
 
 /* Output buffers */
-%pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
-%pybuffer_mutable_binary(unsigned char *abf_out, size_t abf_out_len);
-%pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
-%pybuffer_mutable_binary(unsigned char *vbf_out, size_t vbf_out_len)
+%pybuffer_output_binary(unsigned char *asset_out, size_t asset_out_len);
+%pybuffer_output_binary(unsigned char *abf_out, size_t abf_out_len);
+%pybuffer_output_binary(unsigned char *bytes_out, size_t len);
+%pybuffer_output_binary(unsigned char *vbf_out, size_t vbf_out_len)
 
 /* Output integer values are converted into return values. */
 %typemap(in, numinputs=0) size_t *written (size_t sz) {

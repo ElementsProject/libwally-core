@@ -275,10 +275,11 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if USE_SWIG_PYTHON
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/address.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/address.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
