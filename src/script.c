@@ -873,6 +873,20 @@ int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_le
     return ret;
 }
 
+int wally_elements_pegout_script_size(size_t parent_genesis_blockhash_len,
+                                      size_t mainchain_script_len,
+                                      size_t sub_pubkey_len,
+                                      size_t whitelist_proof_len,
+                                      size_t *written)
+{
+    *written = 1
+              + parent_genesis_blockhash_len + calc_push_opcode_size(parent_genesis_blockhash_len)
+              + mainchain_script_len + calc_push_opcode_size(mainchain_script_len)
+              + sub_pubkey_len + calc_push_opcode_size(sub_pubkey_len)
+              + whitelist_proof_len + calc_push_opcode_size(whitelist_proof_len);
+    return WALLY_OK;
+}
+
 int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_blockhash,
                                             size_t parent_genesis_blockhash_len,
                                             const unsigned char *mainchain_script,

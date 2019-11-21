@@ -472,6 +472,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(wally_witness_p2wpkh_from_sig, wally_tx_witness_stack);
 %returns_struct(wally_witness_p2wpkh_from_der, wally_tx_witness_stack);
 %returns_struct(wally_witness_multisig_from_bytes, wally_tx_witness_stack);
+%returns_size_t(wally_elements_pegout_script_size);
 %returns_size_t(wally_elements_pegout_script_from_bytes);
 %returns_size_t(wally_elements_pegin_contract_script_from_bytes);
 %returns_void__(wally_scrypt);
@@ -668,7 +669,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
 %returns_size_t(wally_asset_pak_whitelistproof_size);
-%returns_size_t(wally_asset_pak_whitelistproof);
+%returns_void__(wally_asset_pak_whitelistproof);
 
 %rename("_cleanup") wally_cleanup;
 %returns_void__(_cleanup)

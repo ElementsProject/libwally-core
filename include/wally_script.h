@@ -484,6 +484,22 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
 
 #ifdef BUILD_ELEMENTS
 /**
+ * Get the pegout script size.
+ *
+ * :param parent_genesis_blockhash_len: Length of ``parent_genesis_blockhash`` in bytes. Must be 32.
+ * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param whitelist_proof_len: The length of ``whitelist_proof`` in bytes.
+ * :param written: Destination for the number of bytes required to hold the pegout script.
+ */
+WALLY_CORE_API int wally_elements_pegout_script_size(
+    size_t parent_genesis_blockhash_len,
+    size_t mainchain_script_len,
+    size_t sub_pubkey_len,
+    size_t whitelist_proof_len,
+    size_t *written);
+
+/**
  * Create a pegout script.
  *
  * :param parent_genesis_blockhash: The genesis blockhash of the parent chain.
@@ -541,4 +557,3 @@ WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
 #endif
 
 #endif /* LIBWALLY_CORE_SCRIPT_H */
-

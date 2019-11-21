@@ -88,7 +88,7 @@ public class test_tx {
         final String ders[] = { "3044022067efef0d968862524308632be6e724db29bd33e5a373fa98e4c726b753b459c302203fd98e793a7926c0281423c64dd555eb6aa43db8ada5dba86a21c5121298b87e",
                                 "3045022100eb6ef01ce422cda7f58e1768ba60192f1714c4af26535657fcfa058359db34460220633eba147b88ba8cb52f6b2ca26f083d6c0f7e744d1f1113eb33b1c3c3c83f60" };
         for ( int i = 0 ; i < sigs.length; ++i ) {
-            //assert_eq(sigs[i], h(Wally.ec_sig_from_der(h(ders[i]))), "Unexpected ec_sig_from_der() result.");
+            assert_eq(sigs[i], h(Wally.ec_sig_from_der(h(ders[i]))), "Unexpected ec_sig_from_der() result.");
             assert_eq(ders[i], h(Wally.ec_sig_to_der(h(sigs[i]))), "Unexpected ec_sig_to_der() result.");
         }
     }

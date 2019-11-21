@@ -151,7 +151,8 @@ SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_mnemonic.class
 
 if BUILD_ELEMENTS
-SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class
+SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class \
+    $(sjs)/$(cbt)/test_pegs.class
 endif
 
 all: $(SWIG_JAVA_TEST_DEPS)
@@ -291,6 +292,7 @@ endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS
 if BUILD_ELEMENTS
 	$(AM_V_at)$(JAVA_TEST)test_assets
+	$(AM_V_at)$(JAVA_TEST)test_pegs
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
