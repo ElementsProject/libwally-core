@@ -86,7 +86,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'libwally-core'
-copyright = u'2018, Jon Griffiths'
+copyright = u'2019, Jon Griffiths'
 author = u'Jon Griffiths'
 
 # The version info for the project you're documenting, acts as replacement for
