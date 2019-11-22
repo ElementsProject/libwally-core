@@ -14,6 +14,7 @@ libwally-core documentation
    psbt
    script
    transaction
+   elements
 
 
 Indices and tables

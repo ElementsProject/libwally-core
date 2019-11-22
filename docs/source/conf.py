@@ -52,9 +52,9 @@ def extract_docs(infile, outfile):
         f.write('\n'.join(output))
 
 # Generate the documentation source files
-# FIXME: elements
 for m in [
-    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt', 'transaction'
+    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt', 'transaction',
+    'elements'
     ]:
     extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
