@@ -16,6 +16,11 @@ libwally-core documentation
    transaction
    elements
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Guides
+
+   Liquid <Liquid.rst>
 
 Indices and tables
 ==================

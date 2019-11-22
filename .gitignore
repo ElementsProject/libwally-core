@@ -83,6 +83,7 @@ docs/source/crypto.rst
 docs/source/psbt.rst
 docs/source/script.rst
 docs/source/transaction.rst
+docs/source/elements.rst
 .idea/
 
 # MacOS

@@ -286,6 +286,7 @@ if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
 endif
 endif
 endif # RUN_PYTHON_TESTS
