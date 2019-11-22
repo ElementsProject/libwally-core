@@ -129,6 +129,16 @@ class ElementsTxTests(unittest.TestCase):
 
         self.assertEqual(confidential_addr_from_addr(addr, WALLY_CA_PREFIX_LIQUID, pubkey), addr_c)
 
+        addr_segwit = "ex1qhmhvfukrduq38q84v9gxctl97h8dny4u7p8r3v"
+        pubkey_hex_segwit = "03c280c377e428069606af6c7d8c152b39b0c9103473a6e0f27b06733dfecf6a6e"
+        addr_c_segwit = "lq1qq0pgpsmhus5qd9sx4ak8mrq49vumpjgsx3e6dc8j0vr8x007ea4xa0hwcnevxmcpzwq02c2sdsh7tawwmxftcu9pkfd2q68dp"
+
+        self.assertEqual(confidential_addr_to_addr_segwit(addr_c_segwit, "lq", "ex"), addr_segwit)
+
+        pubkey = confidential_addr_segwit_to_ec_public_key(addr_c_segwit, "lq")
+        self.assertEqual(hex_from_bytes(pubkey), pubkey_hex_segwit)
+
+        self.assertEqual(confidential_addr_from_addr_segwit(addr_segwit, "ex", "lq", pubkey), addr_c_segwit)
 
 if __name__ == '__main__':
     unittest.main()

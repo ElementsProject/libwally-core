@@ -222,6 +222,7 @@ if is_elements_build():
     tx_get_output_rangeproof = _wrap_bin(tx_get_output_rangeproof, tx_get_output_rangeproof_len, resize=True)
 
     confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
+    confidential_addr_segwit_to_ec_public_key = _wrap_bin(confidential_addr_segwit_to_ec_public_key, EC_PUBLIC_KEY_LEN)
 
     bip32_key_get_pub_key_tweak_sum = _wrap_bin(bip32_key_get_pub_key_tweak_sum, 32)
 
