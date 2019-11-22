@@ -20,3 +20,6 @@ class AddressTests(unittest.TestCase):
                 'testnet': WALLY_NETWORK_BITCOIN_TESTNET,
             }[network]
             self.assertEqual(address_to_scriptpubkey(address, flags), scriptpubkey)
+
+if __name__ == '__main__':
+    unittest.main()
