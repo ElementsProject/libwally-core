@@ -149,9 +149,9 @@ WALLY_CORE_API int wally_keypath_map_free(struct wally_keypath_map *keypaths);
  *
  * :param keypaths: The keypath map to add to
  * :param pubkey: The pubkey to add
- * :param pubkey_len: The length of the pubkey. Must be EC_PUBLIC_KEY_UNCOMPRESSED_LEN or EC_PUBLIC_KEY_LEN
+ * :param pubkey_len: The length of the pubkey. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``
  * :param fingerprint: The master key fingerprint for the pubkey
- * :param fingerprint_len: The length of the fingerprint. Must be FINGERPRINT_LEN
+ * :param fingerprint_len: The length of the fingerprint. Must be ``FINGERPRINT_LEN``
  * :param path: The BIP32 derivation path for the pubkey
  * :param path_len: The number of items in path
  */
@@ -185,7 +185,7 @@ WALLY_CORE_API int wally_partial_sigs_map_free(struct wally_partial_sigs_map *si
  *
  * :param sigs: The partial sigs map to add to
  * :param pubkey: The pubkey to add
- * :param pubkey_len: Length of the public key. Must be EC_PUBLIC_KEY_LEN or EC_PUBLIC_KEY_UNCOMPRESSED_LEN
+ * :param pubkey_len: Length of the public key. Must be ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
  * :param sig: The signature to add
  * :param sig_len: The length of sig
  */
@@ -544,7 +544,7 @@ WALLY_CORE_API int wally_combine_psbts(
  *
  * :param psbt: PSBT to sign. Directly modifies this PSBT
  * :param key: Private key to sign PSBT with
- * :param key_len: Length of key in bytes. Must be EC_PRIVATE_KEY_LEN
+ * :param key_len: Length of key in bytes. Must be ``EC_PRIVATE_KEY_LEN``
  */
 WALLY_CORE_API int wally_sign_psbt(
     struct wally_psbt *psbt,

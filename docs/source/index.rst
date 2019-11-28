@@ -11,6 +11,7 @@ libwally-core documentation
    bip32
    bip38
    bip39
+   psbt
    script
    transaction
 

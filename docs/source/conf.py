@@ -54,7 +54,7 @@ def extract_docs(infile, outfile):
 # Generate the documentation source files
 # FIXME: elements
 for m in [
-    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'transaction'
+    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt', 'transaction'
     ]:
     extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
@@ -191,6 +191,3 @@ texinfo_documents = [
      author, project, 'The libwally Bitcoin library.',
      'Miscellaneous'),
 ]
-
-
-
