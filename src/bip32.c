@@ -257,7 +257,7 @@ int bip32_key_serialize(const struct ext_key *hdkey, uint32_t flags,
     *out++ = hdkey->depth;
 
     /* Save the first 32 bits of the parent key (aka fingerprint) only */
-    out = copy_out(out, hdkey->parent160, sizeof(uint32_t));
+    out = copy_out(out, hdkey->parent160, FINGERPRINT_LEN);
 
     tmp32_be = cpu_to_be32(hdkey->child_num);
     out = copy_out(out, &tmp32_be, sizeof(tmp32_be));
@@ -305,7 +305,7 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
      * user will need to call bip32_key_set_parent() (FIXME: Implement)
      * later if they want it to be fully populated.
      */
-    bytes = copy_in(key_out->parent160, bytes, sizeof(uint32_t));
+    bytes = copy_in(key_out->parent160, bytes, FINGERPRINT_LEN);
     bytes = copy_in(&key_out->child_num, bytes, sizeof(key_out->child_num));
     key_out->child_num = be32_to_cpu(key_out->child_num);
     bytes = copy_in(key_out->chain_code, bytes, sizeof(key_out->chain_code));

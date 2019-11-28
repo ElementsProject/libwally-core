@@ -36,8 +36,6 @@ struct wally_psbt_output;
 struct wally_psbt;
 #else
 
-#define FINGERPRINT_LEN 4
-
 /** Key origin data. Contains a BIP 32 fingerprint and the derivation path */
 struct wally_key_origin_info {
     unsigned char fingerprint[FINGERPRINT_LEN];
