@@ -133,7 +133,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
  * Serialize an extended key to memory using BIP32 format.
  *
  * :param hdkey: The extended key to serialize.
- * :param flags: BIP32_FLAG_KEY_ Flags indicating which key to serialize. You can not
+ * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param bytes_out: Destination for the serialized key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
@@ -178,7 +178,7 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
  *|           than or equal to ``BIP32_INITIAL_HARDENED_CHILD`` represent
  *|           hardened keys that cannot be created from public parent
  *|           extended keys.
- * :param flags: BIP32_FLAG_KEY_ Flags indicating the type of derivation wanted.
+ * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating the type of derivation wanted.
  *|       You can not derive a private child extended key from a public
  *|       parent extended key.
  * :param output: Destination for the resulting child extended key.
@@ -208,7 +208,7 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  * :param hdkey: The parent extended key.
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
- * :param flags: BIP32_KEY_ Flags indicating the type of derivation wanted.
+ * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
@@ -267,7 +267,7 @@ WALLY_CORE_API int bip32_key_with_tweak_from_parent_path_alloc(
  * Convert an extended key to base58.
  *
  * :param hdkey: The extended key.
- * :param flags: BIP32_FLAG_KEY_ Flags indicating which key to serialize. You can not
+ * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param output: Destination for the resulting key in base58.
  *|    The string returned should be freed using `wally_free_string`.

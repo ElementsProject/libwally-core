@@ -151,8 +151,8 @@ WALLY_CORE_API int wally_wif_to_public_key(
  * :param hdkey: The extended key to use.
  * :param flags: ``WALLY_ADDRESS_TYPE_P2PKH`` for a legacy address, ``WALLY_ADDRESS_TYPE_P2SH_P2WPKH``
  *| for P2SH-wrapped SegWit.
- * :param version: Version byte to generate address, e.g. with Bitcoin: WALLY_ADDRESS_VERSION_P2PKH_MAINNET,
- *| WALLY_ADDRESS_VERSION_P2PKH_TESTNET, WALLY_ADDRESS_VERSION_P2SH_MAINNET and WALLY_ADDRESS_VERSION_P2SH_TESTNET.
+ * :param version: Version byte to generate address, e.g. with Bitcoin: ``WALLY_ADDRESS_VERSION_P2PKH_MAINNET``,
+ *| ``WALLY_ADDRESS_VERSION_P2PKH_TESTNET``, ``WALLY_ADDRESS_VERSION_P2SH_MAINNET`` and ``WALLY_ADDRESS_VERSION_P2SH_TESTNET``.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_bip32_key_to_address(
@@ -180,7 +180,7 @@ WALLY_CORE_API int wally_bip32_key_to_addr_segwit(
  *
  * :param wif: Private key in Wallet Import Format.
  * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
- * :param version: Version byte to generate address, e.g. WALLY_ADDRESS_VERSION_P2PKH_MAINNET, WALLY_ADDRESS_VERSION_P2PKH_TESTNET.
+ * :param version: Version byte to generate address, e.g. ``WALLY_ADDRESS_VERSION_P2PKH_MAINNET``, ``WALLY_ADDRESS_VERSION_P2PKH_TESTNET``.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_wif_to_address(
@@ -194,7 +194,7 @@ WALLY_CORE_API int wally_wif_to_address(
  * Extract the address from a confidential address.
  *
  * :param address: The base58 encoded confidential address to extract the address from.
- * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_confidential_addr_to_addr(
@@ -206,7 +206,7 @@ WALLY_CORE_API int wally_confidential_addr_to_addr(
  * Extract the blinding public key from a confidential address.
  *
  * :param address: The base58 encoded confidential address to extract the public key from.
- * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param bytes_out: Destination for the public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  */
@@ -220,7 +220,7 @@ WALLY_CORE_API int wally_confidential_addr_to_ec_public_key(
  * Create a confidential address from an address and blinding public key.
  *
  * :param address: The base58 encoded address to make confidential.
- * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param pub_key: The blinding public key to associate with ``address``.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param output: Destination for the resulting address string.
