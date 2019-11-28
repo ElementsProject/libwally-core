@@ -201,6 +201,7 @@ for f in (
     ('bip32_key_from_base58', c_int, [c_char_p, POINTER(ext_key)]),
     ('bip32_key_from_base58_alloc', c_int, [c_char_p, POINTER(POINTER(ext_key))]),
     ('bip32_key_strip_private_key', c_int, [POINTER(ext_key)]),
+    ('bip32_key_get_fingerprint', c_int, [POINTER(ext_key), c_void_p, c_ulong]),
     ('bip38_raw_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),

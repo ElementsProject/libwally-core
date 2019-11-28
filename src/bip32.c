@@ -743,6 +743,25 @@ int bip32_key_strip_private_key(struct ext_key *hdkey)
     return WALLY_OK;
 }
 
+int bip32_key_get_fingerprint(struct ext_key *hdkey,
+                              unsigned char *bytes_out, size_t len)
+{
+    /* Validate our arguments and then the input key */
+    if (!hdkey ||
+        !key_is_valid(hdkey) ||
+        !bytes_out || len != FINGERPRINT_LEN)
+        return WALLY_EINVAL;
+
+    /* Derive hash160 if needed. */
+    if (mem_is_zero(hdkey->hash160, sizeof(hdkey->hash160))) {
+        key_compute_hash160(hdkey);
+    }
+
+    /* Fingerprint is first 32 bits of the key hash. */
+    memcpy(bytes_out, hdkey->hash160, FINGERPRINT_LEN);
+    return WALLY_OK;
+}
+
 #if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
 
 /* Getters for ext_key values */

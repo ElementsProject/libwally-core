@@ -308,6 +308,19 @@ WALLY_CORE_API int bip32_key_from_base58_alloc(
 WALLY_CORE_API int bip32_key_strip_private_key(
     struct ext_key *hdkey);
 
+/**
+ * Get the BIP32 fingerprint for an extended key. Performs hash160 calculation
+ * if previously skipped with ``BIP32_FLAG_SKIP_HASH``.
+ *
+ * :param hdkey: The extended key.
+ * :param bytes_out: Destination for the fingerprint.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``FINGERPRINT_LEN``.
+ */
+WALLY_CORE_API int bip32_key_get_fingerprint(
+    struct ext_key *hdkey,
+    unsigned char *bytes_out,
+    size_t len);
+
 #ifdef __cplusplus
 }
 #endif
