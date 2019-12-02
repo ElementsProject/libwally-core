@@ -32,6 +32,8 @@ struct ext_key;
 #define WALLY_ADDRESS_VERSION_P2SH_TESTNET 0xC4 /** P2SH address on testnet */
 #define WALLY_ADDRESS_VERSION_P2SH_LIQUID 0x27 /** P2SH address on liquid v1 */
 #define WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST 0x4B /** P2SH address on liquid v1 regtest */
+#define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
+#define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 
 /**
  * Create a segwit native address from a v0 witness program.
@@ -90,7 +92,7 @@ WALLY_CORE_API int wally_address_to_scriptpubkey(
  *
  * :param priv_key: Private key bytes.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
+ * :param prefix: Expected prefix byte, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``, ``WALLY_ADDRESS_VERSION_TESTNET``.
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param output: Destination for the resulting Wallet Import Format string.
@@ -106,7 +108,7 @@ WALLY_CORE_API int wally_wif_from_bytes(
  * Convert a Wallet Import Format string to a private key.
  *
  * :param wif: Private key in Wallet Import Format.
- * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
+ * :param prefix: Prefix byte to use, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``, ``WALLY_ADDRESS_VERSION_TESTNET``.
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param bytes_out: Destination for the private key.
