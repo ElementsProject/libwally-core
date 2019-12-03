@@ -31,9 +31,10 @@ extern "C" {
 #define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
 
 /* Script creation flags */
-#define WALLY_SCRIPT_HASH160  0x1 /** hash160 input bytes before using them */
-#define WALLY_SCRIPT_SHA256   0x2 /** sha256 input bytes before using them */
-#define WALLY_SCRIPT_AS_PUSH  0x4 /** Return a push of the generated script */
+#define WALLY_SCRIPT_HASH160          0x1 /** hash160 input bytes before using them */
+#define WALLY_SCRIPT_SHA256           0x2 /** sha256 input bytes before using them */
+#define WALLY_SCRIPT_AS_PUSH          0x4 /** Return a push of the generated script */
+#define WALLY_SCRIPT_MULTISIG_SORTED  0x8 /** Sort public keys (BIP67) */
 
 /* Script opcodes */
 #define OP_0 0x00
@@ -326,7 +327,7 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
  * :param bytes: Compressed public keys to create a scriptPubkey from.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
  * :param threshold: The number of signatures that must match to satisfy the script.
- * :param flags: Must be zero.
+ * :param flags: Must be ``WALLY_SCRIPT_MULTISIG_SORTED`` for BIP67 sorting or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
