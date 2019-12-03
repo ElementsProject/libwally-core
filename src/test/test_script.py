@@ -6,6 +6,8 @@ SCRIPT_TYPE_P2PKH = 0x2
 SCRIPT_TYPE_P2SH = 0x4
 SCRIPT_TYPE_MULTISIG = 0x20
 
+WALLY_SCRIPT_MULTISIG_SORTED = 0x8
+
 SCRIPT_HASH160 = 0x1
 SCRIPT_SHA256  = 0x2
 
@@ -21,7 +23,10 @@ PK, PK_LEN = make_cbuffer('11' * 33) # Fake compressed pubkey
 PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
 SH, SH_LEN = make_cbuffer('11' * 20)  # Fake script hash
 MPK_2, MPK_2_LEN = make_cbuffer('11' * 33 * 2) # Fake multiple (2) pubkeys
-MPK_3, MPK_3_LEN = make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
+MPK_3, MPK_3_LEN =  make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
+MPK_3_SORTED, MPK_3_SORTED_LEN =  make_cbuffer('01'*33 + '10'*33 + '11'*33) # Fake multiple (3) sorted pubkeys
+MPK_3_SORTED_REVERSE, MPK_3_SORTED_LEN =  make_cbuffer('11'*33 + '10'*33 + '01'*33) # Fake multiple (3) sorted pubkeys, in reverse order
+MPK_3_SORTED_KEY_PUSH = '21'+'01'*33 + '21'+'10'*33 + '21'+'11'*33
 MPK_17, MPK_17_LEN = make_cbuffer('11' * 33 * 17) # Fake multiple (17) pubkeys
 
 SIG, SIG_LEN = make_cbuffer('11' * 64) # Fake signature
@@ -156,6 +161,9 @@ class ScriptTests(unittest.TestCase):
             [(MPK_3, MPK_3_LEN, 1, 0, out, out_len), '51'+('21'+'11'*33)*3+'53ae'], # 1of3
             [(MPK_3, MPK_3_LEN, 2, 0, out, out_len), '52'+('21'+'11'*33)*3+'53ae'], # 2of3
             [(MPK_3, MPK_3_LEN, 3, 0, out, out_len), '53'+('21'+'11'*33)*3+'53ae'], # 3of3
+            [(MPK_3_SORTED, MPK_3_SORTED_LEN, 1, 0, out, out_len), '51'+ MPK_3_SORTED_KEY_PUSH + '53ae'], # 1of3 sorted
+            [(MPK_3_SORTED, MPK_3_SORTED_LEN, 1, WALLY_SCRIPT_MULTISIG_SORTED, out, out_len), '51'+ MPK_3_SORTED_KEY_PUSH + '53ae'], # 1of3 sorted (WALLY_SCRIPT_MULTISIG_SORTED should have no effect)
+            [(MPK_3_SORTED_REVERSE, MPK_3_SORTED_LEN, 1, WALLY_SCRIPT_MULTISIG_SORTED, out, out_len), '51'+ MPK_3_SORTED_KEY_PUSH + '53ae'], # 1of3 sorted reverse (BIP67)
         ]
         for args, exp_script in valid_args:
             script_len = 3 + (args[1] // 33 * (33 + 1))

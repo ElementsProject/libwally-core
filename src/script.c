@@ -541,6 +541,11 @@ int wally_scriptpubkey_p2sh_from_bytes(
     return ret;
 }
 
+static int pubkey_compare(const void *a, const void *b)
+{
+    return memcmp(a, b, EC_PUBLIC_KEY_LEN);
+}
+
 int wally_scriptpubkey_multisig_from_bytes(
     const unsigned char *bytes, size_t bytes_len, uint32_t threshold,
     uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
@@ -548,13 +553,15 @@ int wally_scriptpubkey_multisig_from_bytes(
     size_t n_pubkeys = bytes_len / EC_PUBLIC_KEY_LEN;
     size_t script_len = 3 + (n_pubkeys * (EC_PUBLIC_KEY_LEN + 1));
     size_t i;
+    unsigned char pubkey_bytes[16 * EC_PUBLIC_KEY_LEN];
 
     if (written)
         *written = 0;
 
     if (!bytes || !bytes_len || bytes_len % EC_PUBLIC_KEY_LEN ||
         n_pubkeys < 1 || n_pubkeys > 16 || threshold < 1 || threshold > 16 ||
-        threshold > n_pubkeys || flags || !bytes_out || !written)
+        threshold > n_pubkeys || (flags & ~WALLY_SCRIPT_MULTISIG_SORTED) ||
+        !bytes_out || !written)
         return WALLY_EINVAL;
 
     if (len < script_len) {
@@ -562,13 +569,18 @@ int wally_scriptpubkey_multisig_from_bytes(
         return WALLY_OK;
     }
 
+    memcpy(pubkey_bytes, bytes, bytes_len);
+    if (flags & WALLY_SCRIPT_MULTISIG_SORTED) {
+        qsort(pubkey_bytes, n_pubkeys, EC_PUBLIC_KEY_LEN, pubkey_compare);
+    }
+
     *bytes_out++ = v_to_op_n(threshold);
     for (i = 0; i < n_pubkeys; ++i) {
         *bytes_out++ = EC_PUBLIC_KEY_LEN;
-        memcpy(bytes_out, bytes, EC_PUBLIC_KEY_LEN);
+        memcpy(bytes_out, pubkey_bytes + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN);
         bytes_out += EC_PUBLIC_KEY_LEN;
-        bytes += EC_PUBLIC_KEY_LEN;
     }
+    wally_clear(pubkey_bytes, sizeof(pubkey_bytes));
     *bytes_out++ = v_to_op_n(n_pubkeys);
     *bytes_out = OP_CHECKMULTISIG;
     *written = script_len;
