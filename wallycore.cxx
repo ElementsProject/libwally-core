@@ -255,7 +255,7 @@ static void* Swig_malloc(int c) {
 extern "C" {
 #endif
 
-void _wrap_Swig_free_wallycore_c3a15c02b26f7e73(void *_swig_go_0) {
+void _wrap_Swig_free_wallycore_982945dfd8db849f(void *_swig_go_0) {
   void *arg1 = (void *) 0 ;
   
   arg1 = *(void **)&_swig_go_0; 
@@ -265,7 +265,7 @@ void _wrap_Swig_free_wallycore_c3a15c02b26f7e73(void *_swig_go_0) {
 }
 
 
-void *_wrap_Swig_malloc_wallycore_c3a15c02b26f7e73(intgo _swig_go_0) {
+void *_wrap_Swig_malloc_wallycore_982945dfd8db849f(intgo _swig_go_0) {
   int arg1 ;
   void *result = 0 ;
   void *_swig_go_result;
@@ -278,7 +278,7 @@ void *_wrap_Swig_malloc_wallycore_c3a15c02b26f7e73(intgo _swig_go_0) {
 }
 
 
-intgo _wrap_wally_init_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0) {
+intgo _wrap_wally_init_wallycore_982945dfd8db849f(uint32_t *_swig_go_0) {
   uint32_t arg1 ;
   uint32_t *argp1 ;
   int result;
@@ -298,7 +298,7 @@ intgo _wrap_wally_init_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0) {
 }
 
 
-intgo _wrap_wally_cleanup_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0) {
+intgo _wrap_wally_cleanup_wallycore_982945dfd8db849f(uint32_t *_swig_go_0) {
   uint32_t arg1 ;
   uint32_t *argp1 ;
   int result;
@@ -318,7 +318,7 @@ intgo _wrap_wally_cleanup_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0) {
 }
 
 
-intgo _wrap_wally_bzero_wallycore_c3a15c02b26f7e73(void *_swig_go_0, long long _swig_go_1) {
+intgo _wrap_wally_bzero_wallycore_982945dfd8db849f(void *_swig_go_0, long long _swig_go_1) {
   void *arg1 = (void *) 0 ;
   size_t arg2 ;
   int result;
@@ -333,7 +333,7 @@ intgo _wrap_wally_bzero_wallycore_c3a15c02b26f7e73(void *_swig_go_0, long long _
 }
 
 
-intgo _wrap_wally_free_string_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0) {
+intgo _wrap_wally_free_string_wallycore_982945dfd8db849f(_gostring_ _swig_go_0) {
   char *arg1 = (char *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -351,7 +351,7 @@ intgo _wrap_wally_free_string_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0) 
 }
 
 
-intgo _wrap_wally_secp_randomize_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1) {
+intgo _wrap_wally_secp_randomize_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   int result;
@@ -366,7 +366,7 @@ intgo _wrap_wally_secp_randomize_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lo
 }
 
 
-intgo _wrap_wally_hex_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, _gostring_* _swig_go_2) {
+intgo _wrap_wally_hex_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, _gostring_* _swig_go_2) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   char **arg3 = (char **) 0 ;
@@ -388,7 +388,7 @@ intgo _wrap_wally_hex_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lo
 }
 
 
-intgo _wrap_wally_hex_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, char *_swig_go_1, long long _swig_go_2, long long *_swig_go_3) {
+intgo _wrap_wally_hex_to_bytes_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, char *_swig_go_1, long long _swig_go_2, long long *_swig_go_3) {
   char *arg1 = (char *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -412,7 +412,7 @@ intgo _wrap_wally_hex_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0,
 }
 
 
-intgo _wrap_wally_base58_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, _gostring_* _swig_go_3) {
+intgo _wrap_wally_base58_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, _gostring_* _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -443,7 +443,7 @@ intgo _wrap_wally_base58_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0,
 }
 
 
-intgo _wrap_wally_base58_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+intgo _wrap_wally_base58_to_bytes_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -476,7 +476,7 @@ intgo _wrap_wally_base58_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go
 }
 
 
-intgo _wrap_wally_base58_get_length_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_base58_get_length_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, long long *_swig_go_1) {
   char *arg1 = (char *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -496,7 +496,7 @@ intgo _wrap_wally_base58_get_length_wallycore_c3a15c02b26f7e73(_gostring_ _swig_
 }
 
 
-intgo _wrap_wally_is_elements_build_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_0) {
+intgo _wrap_wally_is_elements_build_wallycore_982945dfd8db849f(uint64_t *_swig_go_0) {
   uint64_t *arg1 = (uint64_t *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -509,7 +509,7 @@ intgo _wrap_wally_is_elements_build_wallycore_c3a15c02b26f7e73(uint64_t *_swig_g
 }
 
 
-intgo _wrap_wally_scrypt_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, uint32_t *_swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8) {
+intgo _wrap_wally_scrypt_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, uint32_t *_swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -559,7 +559,7 @@ intgo _wrap_wally_scrypt_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long 
 }
 
 
-intgo _wrap_wally_aes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6) {
+intgo _wrap_wally_aes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -591,7 +591,7 @@ intgo _wrap_wally_aes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _sw
 }
 
 
-intgo _wrap_wally_aes_cbc_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8, long long *_swig_go_9) {
+intgo _wrap_wally_aes_cbc_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8, long long *_swig_go_9) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -629,7 +629,7 @@ intgo _wrap_wally_aes_cbc_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long
 }
 
 
-intgo _wrap_wally_sha256_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_sha256_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -648,7 +648,7 @@ intgo _wrap_wally_sha256_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long 
 }
 
 
-intgo _wrap_wally_sha256_midstate_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_sha256_midstate_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -667,7 +667,7 @@ intgo _wrap_wally_sha256_midstate_wallycore_c3a15c02b26f7e73(char *_swig_go_0, l
 }
 
 
-intgo _wrap_wally_sha256d_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_sha256d_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -686,7 +686,7 @@ intgo _wrap_wally_sha256d_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long
 }
 
 
-intgo _wrap_wally_sha512_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_sha512_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -705,7 +705,7 @@ intgo _wrap_wally_sha512_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long 
 }
 
 
-intgo _wrap_wally_hash160_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_hash160_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -724,7 +724,7 @@ intgo _wrap_wally_hash160_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long
 }
 
 
-intgo _wrap_wally_hmac_sha256_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
+intgo _wrap_wally_hmac_sha256_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -747,7 +747,7 @@ intgo _wrap_wally_hmac_sha256_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long 
 }
 
 
-intgo _wrap_wally_hmac_sha512_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
+intgo _wrap_wally_hmac_sha512_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -770,7 +770,7 @@ intgo _wrap_wally_hmac_sha512_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long 
 }
 
 
-intgo _wrap_wally_pbkdf2_hmac_sha256_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, uint32_t *_swig_go_5, char *_swig_go_6, long long _swig_go_7) {
+intgo _wrap_wally_pbkdf2_hmac_sha256_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, uint32_t *_swig_go_5, char *_swig_go_6, long long _swig_go_7) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -811,7 +811,7 @@ intgo _wrap_wally_pbkdf2_hmac_sha256_wallycore_c3a15c02b26f7e73(char *_swig_go_0
 }
 
 
-intgo _wrap_wally_pbkdf2_hmac_sha512_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, uint32_t *_swig_go_5, char *_swig_go_6, long long _swig_go_7) {
+intgo _wrap_wally_pbkdf2_hmac_sha512_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, uint32_t *_swig_go_5, char *_swig_go_6, long long _swig_go_7) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -852,7 +852,7 @@ intgo _wrap_wally_pbkdf2_hmac_sha512_wallycore_c3a15c02b26f7e73(char *_swig_go_0
 }
 
 
-intgo _wrap_wally_ec_private_key_verify_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1) {
+intgo _wrap_wally_ec_private_key_verify_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   int result;
@@ -867,7 +867,22 @@ intgo _wrap_wally_ec_private_key_verify_wallycore_c3a15c02b26f7e73(char *_swig_g
 }
 
 
-intgo _wrap_wally_ec_public_key_from_private_key_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_ec_public_key_verify_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  
+  result = (int)wally_ec_public_key_verify((unsigned char const *)arg1,arg2);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_ec_public_key_from_private_key_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -886,7 +901,7 @@ intgo _wrap_wally_ec_public_key_from_private_key_wallycore_c3a15c02b26f7e73(char
 }
 
 
-intgo _wrap_wally_ec_public_key_decompress_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_ec_public_key_decompress_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -905,7 +920,26 @@ intgo _wrap_wally_ec_public_key_decompress_wallycore_c3a15c02b26f7e73(char *_swi
 }
 
 
-intgo _wrap_wally_ec_sig_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6) {
+intgo _wrap_wally_ec_public_key_negate_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  
+  result = (int)wally_ec_public_key_negate((unsigned char const *)arg1,arg2,arg3,arg4);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_ec_sig_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -937,7 +971,7 @@ intgo _wrap_wally_ec_sig_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0,
 }
 
 
-intgo _wrap_wally_ec_sig_normalize_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_ec_sig_normalize_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -956,7 +990,7 @@ intgo _wrap_wally_ec_sig_normalize_wallycore_c3a15c02b26f7e73(char *_swig_go_0, 
 }
 
 
-intgo _wrap_wally_ec_sig_to_der_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+intgo _wrap_wally_ec_sig_to_der_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -977,7 +1011,7 @@ intgo _wrap_wally_ec_sig_to_der_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lon
 }
 
 
-intgo _wrap_wally_ec_sig_from_der_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_ec_sig_from_der_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -996,7 +1030,7 @@ intgo _wrap_wally_ec_sig_from_der_wallycore_c3a15c02b26f7e73(char *_swig_go_0, l
 }
 
 
-intgo _wrap_wally_ec_sig_verify_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6) {
+intgo _wrap_wally_ec_sig_verify_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1028,7 +1062,30 @@ intgo _wrap_wally_ec_sig_verify_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lon
 }
 
 
-intgo _wrap_BITCOIN_MESSAGE_MAX_LEN_wallycore_c3a15c02b26f7e73() {
+intgo _wrap_wally_ec_sig_to_public_key_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  unsigned char *arg5 = (unsigned char *) 0 ;
+  size_t arg6 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(unsigned char **)&_swig_go_4; 
+  arg6 = (size_t)_swig_go_5; 
+  
+  result = (int)wally_ec_sig_to_public_key((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5,arg6);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_BITCOIN_MESSAGE_MAX_LEN_wallycore_982945dfd8db849f() {
   int result;
   intgo _swig_go_result;
   
@@ -1040,7 +1097,7 @@ intgo _wrap_BITCOIN_MESSAGE_MAX_LEN_wallycore_c3a15c02b26f7e73() {
 }
 
 
-intgo _wrap_wally_format_bitcoin_message_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_format_bitcoin_message_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -1070,7 +1127,30 @@ intgo _wrap_wally_format_bitcoin_message_wallycore_c3a15c02b26f7e73(char *_swig_
 }
 
 
-intgo _wrap_wally_addr_segwit_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, _gostring_ _swig_go_2, uint32_t *_swig_go_3, _gostring_* _swig_go_4) {
+intgo _wrap_wally_ecdh_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  unsigned char *arg5 = (unsigned char *) 0 ;
+  size_t arg6 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(unsigned char **)&_swig_go_4; 
+  arg6 = (size_t)_swig_go_5; 
+  
+  result = (int)wally_ecdh((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5,arg6);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_addr_segwit_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, _gostring_ _swig_go_2, uint32_t *_swig_go_3, _gostring_* _swig_go_4) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   char *arg3 = (char *) 0 ;
@@ -1108,7 +1188,7 @@ intgo _wrap_wally_addr_segwit_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_
 }
 
 
-intgo _wrap_wally_addr_segwit_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, _gostring_ _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_addr_segwit_to_bytes_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, _gostring_ _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   uint32_t arg3 ;
@@ -1148,7 +1228,40 @@ intgo _wrap_wally_addr_segwit_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _sw
 }
 
 
-intgo _wrap_wally_wif_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, _gostring_* _swig_go_4) {
+intgo _wrap_wally_address_to_scriptpubkey_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+  char *arg1 = (char *) 0 ;
+  uint32_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  size_t *arg5 = (size_t *) 0 ;
+  uint32_t *argp2 ;
+  int result;
+  intgo _swig_go_result;
+  
+  
+  arg1 = (char *)malloc(_swig_go_0.n + 1);
+  memcpy(arg1, _swig_go_0.p, _swig_go_0.n);
+  arg1[_swig_go_0.n] = '\0';
+  
+  
+  argp2 = (uint32_t *)_swig_go_1;
+  if (argp2 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg2 = (uint32_t)*argp2;
+  
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(size_t **)&_swig_go_4; 
+  
+  result = (int)wally_address_to_scriptpubkey((char const *)arg1,arg2,arg3,arg4,arg5);
+  _swig_go_result = result; 
+  free(arg1); 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_wif_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, _gostring_* _swig_go_4) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -1188,7 +1301,7 @@ intgo _wrap_wally_wif_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lo
 }
 
 
-intgo _wrap_wally_wif_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4) {
+intgo _wrap_wally_wif_to_bytes_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   uint32_t arg3 ;
@@ -1228,7 +1341,7 @@ intgo _wrap_wally_wif_to_bytes_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0,
 }
 
 
-intgo _wrap_wally_wif_is_uncompressed_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_wif_is_uncompressed_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, long long *_swig_go_1) {
   char *arg1 = (char *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -1248,7 +1361,7 @@ intgo _wrap_wally_wif_is_uncompressed_wallycore_c3a15c02b26f7e73(_gostring_ _swi
 }
 
 
-intgo _wrap_wally_wif_to_public_key_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+intgo _wrap_wally_wif_to_public_key_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1281,7 +1394,81 @@ intgo _wrap_wally_wif_to_public_key_wallycore_c3a15c02b26f7e73(_gostring_ _swig_
 }
 
 
-intgo _wrap_wally_wif_to_address_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, _gostring_* _swig_go_3) {
+intgo _wrap_wally_bip32_key_to_address_wallycore_982945dfd8db849f(ext_key *_swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, _gostring_* _swig_go_3) {
+  ext_key *arg1 = (ext_key *) 0 ;
+  uint32_t arg2 ;
+  uint32_t arg3 ;
+  char **arg4 = (char **) 0 ;
+  uint32_t *argp2 ;
+  uint32_t *argp3 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(ext_key **)&_swig_go_0; 
+  
+  argp2 = (uint32_t *)_swig_go_1;
+  if (argp2 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg2 = (uint32_t)*argp2;
+  
+  
+  argp3 = (uint32_t *)_swig_go_2;
+  if (argp3 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg3 = (uint32_t)*argp3;
+  
+  arg4 = *(char ***)&_swig_go_3; 
+  
+  result = (int)wally_bip32_key_to_address((ext_key const *)arg1,arg2,arg3,arg4);
+  _swig_go_result = result; 
+  {
+    if (arg4 && *arg4) {
+      _swig_go_3->n = strlen(*arg4);
+    }
+  }
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_bip32_key_to_addr_segwit_wallycore_982945dfd8db849f(ext_key *_swig_go_0, _gostring_ _swig_go_1, uint32_t *_swig_go_2, _gostring_* _swig_go_3) {
+  ext_key *arg1 = (ext_key *) 0 ;
+  char *arg2 = (char *) 0 ;
+  uint32_t arg3 ;
+  char **arg4 = (char **) 0 ;
+  uint32_t *argp3 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(ext_key **)&_swig_go_0; 
+  
+  arg2 = (char *)malloc(_swig_go_1.n + 1);
+  memcpy(arg2, _swig_go_1.p, _swig_go_1.n);
+  arg2[_swig_go_1.n] = '\0';
+  
+  
+  argp3 = (uint32_t *)_swig_go_2;
+  if (argp3 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg3 = (uint32_t)*argp3;
+  
+  arg4 = *(char ***)&_swig_go_3; 
+  
+  result = (int)wally_bip32_key_to_addr_segwit((ext_key const *)arg1,(char const *)arg2,arg3,arg4);
+  _swig_go_result = result; 
+  {
+    if (arg4 && *arg4) {
+      _swig_go_3->n = strlen(*arg4);
+    }
+  }
+  free(arg2); 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_wif_to_address_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, _gostring_* _swig_go_3) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   uint32_t arg3 ;
@@ -1324,7 +1511,7 @@ intgo _wrap_wally_wif_to_address_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_
 }
 
 
-intgo _wrap_wally_confidential_addr_to_addr_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, _gostring_* _swig_go_2) {
+intgo _wrap_wally_confidential_addr_to_addr_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, _gostring_* _swig_go_2) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   char **arg3 = (char **) 0 ;
@@ -1358,7 +1545,7 @@ intgo _wrap_wally_confidential_addr_to_addr_wallycore_c3a15c02b26f7e73(_gostring
 }
 
 
-intgo _wrap_wally_confidential_addr_to_ec_public_key_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_confidential_addr_to_ec_public_key_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1389,7 +1576,7 @@ intgo _wrap_wally_confidential_addr_to_ec_public_key_wallycore_c3a15c02b26f7e73(
 }
 
 
-intgo _wrap_wally_confidential_addr_from_addr_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, _gostring_* _swig_go_4) {
+intgo _wrap_wally_confidential_addr_from_addr_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, _gostring_* _swig_go_4) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1427,7 +1614,118 @@ intgo _wrap_wally_confidential_addr_from_addr_wallycore_c3a15c02b26f7e73(_gostri
 }
 
 
-intgo _wrap_bip32_key_free_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0) {
+intgo _wrap_wally_confidential_addr_to_addr_segwit_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, _gostring_ _swig_go_1, _gostring_ _swig_go_2, _gostring_* _swig_go_3) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char **arg4 = (char **) 0 ;
+  int result;
+  intgo _swig_go_result;
+  
+  
+  arg1 = (char *)malloc(_swig_go_0.n + 1);
+  memcpy(arg1, _swig_go_0.p, _swig_go_0.n);
+  arg1[_swig_go_0.n] = '\0';
+  
+  
+  arg2 = (char *)malloc(_swig_go_1.n + 1);
+  memcpy(arg2, _swig_go_1.p, _swig_go_1.n);
+  arg2[_swig_go_1.n] = '\0';
+  
+  
+  arg3 = (char *)malloc(_swig_go_2.n + 1);
+  memcpy(arg3, _swig_go_2.p, _swig_go_2.n);
+  arg3[_swig_go_2.n] = '\0';
+  
+  arg4 = *(char ***)&_swig_go_3; 
+  
+  result = (int)wally_confidential_addr_to_addr_segwit((char const *)arg1,(char const *)arg2,(char const *)arg3,arg4);
+  _swig_go_result = result; 
+  {
+    if (arg4 && *arg4) {
+      _swig_go_3->n = strlen(*arg4);
+    }
+  }
+  free(arg1); 
+  free(arg2); 
+  free(arg3); 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_confidential_addr_segwit_to_ec_public_key_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, _gostring_ _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  int result;
+  intgo _swig_go_result;
+  
+  
+  arg1 = (char *)malloc(_swig_go_0.n + 1);
+  memcpy(arg1, _swig_go_0.p, _swig_go_0.n);
+  arg1[_swig_go_0.n] = '\0';
+  
+  
+  arg2 = (char *)malloc(_swig_go_1.n + 1);
+  memcpy(arg2, _swig_go_1.p, _swig_go_1.n);
+  arg2[_swig_go_1.n] = '\0';
+  
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  
+  result = (int)wally_confidential_addr_segwit_to_ec_public_key((char const *)arg1,(char const *)arg2,arg3,arg4);
+  _swig_go_result = result; 
+  free(arg1); 
+  free(arg2); 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_confidential_addr_from_addr_segwit_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, _gostring_ _swig_go_1, _gostring_ _swig_go_2, char *_swig_go_3, long long _swig_go_4, _gostring_* _swig_go_5) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  unsigned char *arg4 = (unsigned char *) 0 ;
+  size_t arg5 ;
+  char **arg6 = (char **) 0 ;
+  int result;
+  intgo _swig_go_result;
+  
+  
+  arg1 = (char *)malloc(_swig_go_0.n + 1);
+  memcpy(arg1, _swig_go_0.p, _swig_go_0.n);
+  arg1[_swig_go_0.n] = '\0';
+  
+  
+  arg2 = (char *)malloc(_swig_go_1.n + 1);
+  memcpy(arg2, _swig_go_1.p, _swig_go_1.n);
+  arg2[_swig_go_1.n] = '\0';
+  
+  
+  arg3 = (char *)malloc(_swig_go_2.n + 1);
+  memcpy(arg3, _swig_go_2.p, _swig_go_2.n);
+  arg3[_swig_go_2.n] = '\0';
+  
+  arg4 = *(unsigned char **)&_swig_go_3; 
+  arg5 = (size_t)_swig_go_4; 
+  arg6 = *(char ***)&_swig_go_5; 
+  
+  result = (int)wally_confidential_addr_from_addr_segwit((char const *)arg1,(char const *)arg2,(char const *)arg3,(unsigned char const *)arg4,arg5,arg6);
+  _swig_go_result = result; 
+  {
+    if (arg6 && *arg6) {
+      _swig_go_5->n = strlen(*arg6);
+    }
+  }
+  free(arg1); 
+  free(arg2); 
+  free(arg3); 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_bip32_key_free_wallycore_982945dfd8db849f(ext_key *_swig_go_0) {
   ext_key *arg1 = (ext_key *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -1440,7 +1738,7 @@ intgo _wrap_bip32_key_free_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0) {
 }
 
 
-intgo _wrap_bip32_key_init_alloc_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, ext_key **_swig_go_13) {
+intgo _wrap_bip32_key_init_alloc_wallycore_982945dfd8db849f(uint32_t *_swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, ext_key **_swig_go_13) {
   uint32_t arg1 ;
   uint32_t arg2 ;
   uint32_t arg3 ;
@@ -1500,7 +1798,7 @@ intgo _wrap_bip32_key_init_alloc_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0
 }
 
 
-intgo _wrap_bip32_key_from_seed_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, ext_key **_swig_go_4) {
+intgo _wrap_bip32_key_from_seed_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, ext_key **_swig_go_4) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -1535,7 +1833,7 @@ intgo _wrap_bip32_key_from_seed_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lon
 }
 
 
-intgo _wrap_bip32_key_serialize_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_bip32_key_serialize_wallycore_982945dfd8db849f(ext_key *_swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   ext_key *arg1 = (ext_key *) 0 ;
   uint32_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1561,7 +1859,7 @@ intgo _wrap_bip32_key_serialize_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0, 
 }
 
 
-intgo _wrap_bip32_key_unserialize_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, ext_key **_swig_go_2) {
+intgo _wrap_bip32_key_unserialize_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, ext_key **_swig_go_2) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   ext_key **arg3 = (ext_key **) 0 ;
@@ -1578,7 +1876,7 @@ intgo _wrap_bip32_key_unserialize_wallycore_c3a15c02b26f7e73(char *_swig_go_0, l
 }
 
 
-intgo _wrap_bip32_key_from_parent_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, ext_key **_swig_go_3) {
+intgo _wrap_bip32_key_from_parent_wallycore_982945dfd8db849f(ext_key *_swig_go_0, uint32_t *_swig_go_1, uint32_t *_swig_go_2, ext_key **_swig_go_3) {
   ext_key *arg1 = (ext_key *) 0 ;
   uint32_t arg2 ;
   uint32_t arg3 ;
@@ -1611,7 +1909,7 @@ intgo _wrap_bip32_key_from_parent_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0
 }
 
 
-intgo _wrap_bip32_key_from_parent_path_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0, uint32_t *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, ext_key **_swig_go_4) {
+intgo _wrap_bip32_key_from_parent_path_wallycore_982945dfd8db849f(ext_key *_swig_go_0, uint32_t *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, ext_key **_swig_go_4) {
   ext_key *arg1 = (ext_key *) 0 ;
   uint32_t *arg2 = (uint32_t *) 0 ;
   size_t arg3 ;
@@ -1639,7 +1937,35 @@ intgo _wrap_bip32_key_from_parent_path_wallycore_c3a15c02b26f7e73(ext_key *_swig
 }
 
 
-intgo _wrap_bip32_key_to_base58_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0, uint32_t *_swig_go_1, _gostring_* _swig_go_2) {
+intgo _wrap_bip32_key_with_tweak_from_parent_path_alloc_wallycore_982945dfd8db849f(ext_key *_swig_go_0, uint32_t *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, ext_key **_swig_go_4) {
+  ext_key *arg1 = (ext_key *) 0 ;
+  uint32_t *arg2 = (uint32_t *) 0 ;
+  size_t arg3 ;
+  uint32_t arg4 ;
+  ext_key **arg5 = (ext_key **) 0 ;
+  uint32_t *argp4 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(ext_key **)&_swig_go_0; 
+  arg2 = *(uint32_t **)&_swig_go_1; 
+  arg3 = (size_t)_swig_go_2; 
+  
+  argp4 = (uint32_t *)_swig_go_3;
+  if (argp4 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg4 = (uint32_t)*argp4;
+  
+  arg5 = *(ext_key ***)&_swig_go_4; 
+  
+  result = (int)bip32_key_with_tweak_from_parent_path_alloc((ext_key const *)arg1,(uint32_t const *)arg2,arg3,arg4,arg5);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_bip32_key_to_base58_wallycore_982945dfd8db849f(ext_key *_swig_go_0, uint32_t *_swig_go_1, _gostring_* _swig_go_2) {
   ext_key *arg1 = (ext_key *) 0 ;
   uint32_t arg2 ;
   char **arg3 = (char **) 0 ;
@@ -1668,7 +1994,7 @@ intgo _wrap_bip32_key_to_base58_wallycore_c3a15c02b26f7e73(ext_key *_swig_go_0, 
 }
 
 
-intgo _wrap_bip32_key_from_base58_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, ext_key **_swig_go_1) {
+intgo _wrap_bip32_key_from_base58_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, ext_key **_swig_go_1) {
   char *arg1 = (char *) 0 ;
   ext_key **arg2 = (ext_key **) 0 ;
   int result;
@@ -1688,7 +2014,20 @@ intgo _wrap_bip32_key_from_base58_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go
 }
 
 
-intgo _wrap_bip39_get_languages_wallycore_c3a15c02b26f7e73(_gostring_* _swig_go_0) {
+intgo _wrap_bip32_key_strip_private_key_wallycore_982945dfd8db849f(ext_key *_swig_go_0) {
+  ext_key *arg1 = (ext_key *) 0 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(ext_key **)&_swig_go_0; 
+  
+  result = (int)bip32_key_strip_private_key(arg1);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_bip39_get_languages_wallycore_982945dfd8db849f(_gostring_* _swig_go_0) {
   char **arg1 = (char **) 0 ;
   int result;
   intgo _swig_go_result;
@@ -1706,7 +2045,7 @@ intgo _wrap_bip39_get_languages_wallycore_c3a15c02b26f7e73(_gostring_* _swig_go_
 }
 
 
-intgo _wrap_bip39_get_wordlist_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, words **_swig_go_1) {
+intgo _wrap_bip39_get_wordlist_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, words **_swig_go_1) {
   char *arg1 = (char *) 0 ;
   words **arg2 = (words **) 0 ;
   int result;
@@ -1726,7 +2065,7 @@ intgo _wrap_bip39_get_wordlist_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0,
 }
 
 
-intgo _wrap_bip39_get_word_wallycore_c3a15c02b26f7e73(words *_swig_go_0, long long _swig_go_1, _gostring_* _swig_go_2) {
+intgo _wrap_bip39_get_word_wallycore_982945dfd8db849f(words *_swig_go_0, long long _swig_go_1, _gostring_* _swig_go_2) {
   words *arg1 = (words *) 0 ;
   size_t arg2 ;
   char **arg3 = (char **) 0 ;
@@ -1748,7 +2087,7 @@ intgo _wrap_bip39_get_word_wallycore_c3a15c02b26f7e73(words *_swig_go_0, long lo
 }
 
 
-intgo _wrap_bip39_mnemonic_from_bytes_wallycore_c3a15c02b26f7e73(words *_swig_go_0, char *_swig_go_1, long long _swig_go_2, _gostring_* _swig_go_3) {
+intgo _wrap_bip39_mnemonic_from_bytes_wallycore_982945dfd8db849f(words *_swig_go_0, char *_swig_go_1, long long _swig_go_2, _gostring_* _swig_go_3) {
   words *arg1 = (words *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -1772,7 +2111,7 @@ intgo _wrap_bip39_mnemonic_from_bytes_wallycore_c3a15c02b26f7e73(words *_swig_go
 }
 
 
-intgo _wrap_bip39_mnemonic_to_bytes_wallycore_c3a15c02b26f7e73(words *_swig_go_0, _gostring_ _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+intgo _wrap_bip39_mnemonic_to_bytes_wallycore_982945dfd8db849f(words *_swig_go_0, _gostring_ _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
   words *arg1 = (words *) 0 ;
   char *arg2 = (char *) 0 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1798,7 +2137,7 @@ intgo _wrap_bip39_mnemonic_to_bytes_wallycore_c3a15c02b26f7e73(words *_swig_go_0
 }
 
 
-intgo _wrap_bip39_mnemonic_validate_wallycore_c3a15c02b26f7e73(words *_swig_go_0, _gostring_ _swig_go_1) {
+intgo _wrap_bip39_mnemonic_validate_wallycore_982945dfd8db849f(words *_swig_go_0, _gostring_ _swig_go_1) {
   words *arg1 = (words *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
@@ -1818,7 +2157,7 @@ intgo _wrap_bip39_mnemonic_validate_wallycore_c3a15c02b26f7e73(words *_swig_go_0
 }
 
 
-intgo _wrap_bip39_mnemonic_to_seed_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, _gostring_ _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+intgo _wrap_bip39_mnemonic_to_seed_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, _gostring_ _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1849,7 +2188,7 @@ intgo _wrap_bip39_mnemonic_to_seed_wallycore_c3a15c02b26f7e73(_gostring_ _swig_g
 }
 
 
-intgo _wrap_WALLY_TX_ISSUANCE_FLAG_wallycore_c3a15c02b26f7e73() {
+intgo _wrap_WALLY_TX_ISSUANCE_FLAG_wallycore_982945dfd8db849f() {
   int result;
   intgo _swig_go_result;
   
@@ -1861,7 +2200,7 @@ intgo _wrap_WALLY_TX_ISSUANCE_FLAG_wallycore_c3a15c02b26f7e73() {
 }
 
 
-intgo _wrap_WALLY_TX_PEGIN_FLAG_wallycore_c3a15c02b26f7e73() {
+intgo _wrap_WALLY_TX_PEGIN_FLAG_wallycore_982945dfd8db849f() {
   int result;
   intgo _swig_go_result;
   
@@ -1873,7 +2212,7 @@ intgo _wrap_WALLY_TX_PEGIN_FLAG_wallycore_c3a15c02b26f7e73() {
 }
 
 
-intgo _wrap_wally_tx_witness_stack_init_alloc_wallycore_c3a15c02b26f7e73(long long _swig_go_0, wally_tx_witness_stack **_swig_go_1) {
+intgo _wrap_wally_tx_witness_stack_init_alloc_wallycore_982945dfd8db849f(long long _swig_go_0, wally_tx_witness_stack **_swig_go_1) {
   size_t arg1 ;
   wally_tx_witness_stack **arg2 = (wally_tx_witness_stack **) 0 ;
   int result;
@@ -1888,7 +2227,7 @@ intgo _wrap_wally_tx_witness_stack_init_alloc_wallycore_c3a15c02b26f7e73(long lo
 }
 
 
-intgo _wrap_wally_tx_witness_stack_add_wallycore_c3a15c02b26f7e73(wally_tx_witness_stack *_swig_go_0, char *_swig_go_1, long long _swig_go_2) {
+intgo _wrap_wally_tx_witness_stack_add_wallycore_982945dfd8db849f(wally_tx_witness_stack *_swig_go_0, char *_swig_go_1, long long _swig_go_2) {
   wally_tx_witness_stack *arg1 = (wally_tx_witness_stack *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -1905,7 +2244,7 @@ intgo _wrap_wally_tx_witness_stack_add_wallycore_c3a15c02b26f7e73(wally_tx_witne
 }
 
 
-intgo _wrap_wally_tx_witness_stack_add_dummy_wallycore_c3a15c02b26f7e73(wally_tx_witness_stack *_swig_go_0, uint32_t *_swig_go_1) {
+intgo _wrap_wally_tx_witness_stack_add_dummy_wallycore_982945dfd8db849f(wally_tx_witness_stack *_swig_go_0, uint32_t *_swig_go_1) {
   wally_tx_witness_stack *arg1 = (wally_tx_witness_stack *) 0 ;
   uint32_t arg2 ;
   uint32_t *argp2 ;
@@ -1927,7 +2266,7 @@ intgo _wrap_wally_tx_witness_stack_add_dummy_wallycore_c3a15c02b26f7e73(wally_tx
 }
 
 
-intgo _wrap_wally_tx_witness_stack_set_wallycore_c3a15c02b26f7e73(wally_tx_witness_stack *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_tx_witness_stack_set_wallycore_982945dfd8db849f(wally_tx_witness_stack *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   wally_tx_witness_stack *arg1 = (wally_tx_witness_stack *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -1946,7 +2285,7 @@ intgo _wrap_wally_tx_witness_stack_set_wallycore_c3a15c02b26f7e73(wally_tx_witne
 }
 
 
-intgo _wrap_wally_tx_witness_stack_set_dummy_wallycore_c3a15c02b26f7e73(wally_tx_witness_stack *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2) {
+intgo _wrap_wally_tx_witness_stack_set_dummy_wallycore_982945dfd8db849f(wally_tx_witness_stack *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2) {
   wally_tx_witness_stack *arg1 = (wally_tx_witness_stack *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -1970,7 +2309,7 @@ intgo _wrap_wally_tx_witness_stack_set_dummy_wallycore_c3a15c02b26f7e73(wally_tx
 }
 
 
-intgo _wrap_wally_tx_witness_stack_free_wallycore_c3a15c02b26f7e73(wally_tx_witness_stack *_swig_go_0) {
+intgo _wrap_wally_tx_witness_stack_free_wallycore_982945dfd8db849f(wally_tx_witness_stack *_swig_go_0) {
   wally_tx_witness_stack *arg1 = (wally_tx_witness_stack *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -1983,7 +2322,7 @@ intgo _wrap_wally_tx_witness_stack_free_wallycore_c3a15c02b26f7e73(wally_tx_witn
 }
 
 
-intgo _wrap_wally_tx_input_init_alloc_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, wally_tx_witness_stack *_swig_go_6, wally_tx_input **_swig_go_7) {
+intgo _wrap_wally_tx_input_init_alloc_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, wally_tx_witness_stack *_swig_go_6, wally_tx_input **_swig_go_7) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -2024,7 +2363,7 @@ intgo _wrap_wally_tx_input_init_alloc_wallycore_c3a15c02b26f7e73(char *_swig_go_
 }
 
 
-intgo _wrap_wally_tx_input_free_wallycore_c3a15c02b26f7e73(wally_tx_input *_swig_go_0) {
+intgo _wrap_wally_tx_input_free_wallycore_982945dfd8db849f(wally_tx_input *_swig_go_0) {
   wally_tx_input *arg1 = (wally_tx_input *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -2037,7 +2376,7 @@ intgo _wrap_wally_tx_input_free_wallycore_c3a15c02b26f7e73(wally_tx_input *_swig
 }
 
 
-intgo _wrap_wally_tx_output_init_alloc_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, wally_tx_output **_swig_go_3) {
+intgo _wrap_wally_tx_output_init_alloc_wallycore_982945dfd8db849f(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, wally_tx_output **_swig_go_3) {
   uint64_t arg1 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -2063,7 +2402,7 @@ intgo _wrap_wally_tx_output_init_alloc_wallycore_c3a15c02b26f7e73(uint64_t *_swi
 }
 
 
-intgo _wrap_wally_tx_output_free_wallycore_c3a15c02b26f7e73(wally_tx_output *_swig_go_0) {
+intgo _wrap_wally_tx_output_free_wallycore_982945dfd8db849f(wally_tx_output *_swig_go_0) {
   wally_tx_output *arg1 = (wally_tx_output *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -2076,7 +2415,7 @@ intgo _wrap_wally_tx_output_free_wallycore_c3a15c02b26f7e73(wally_tx_output *_sw
 }
 
 
-intgo _wrap_wally_tx_init_alloc_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0, uint32_t *_swig_go_1, long long _swig_go_2, long long _swig_go_3, wally_tx **_swig_go_4) {
+intgo _wrap_wally_tx_init_alloc_wallycore_982945dfd8db849f(uint32_t *_swig_go_0, uint32_t *_swig_go_1, long long _swig_go_2, long long _swig_go_3, wally_tx **_swig_go_4) {
   uint32_t arg1 ;
   uint32_t arg2 ;
   size_t arg3 ;
@@ -2111,7 +2450,7 @@ intgo _wrap_wally_tx_init_alloc_wallycore_c3a15c02b26f7e73(uint32_t *_swig_go_0,
 }
 
 
-intgo _wrap_wally_tx_add_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, wally_tx_input *_swig_go_1) {
+intgo _wrap_wally_tx_add_input_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, wally_tx_input *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   wally_tx_input *arg2 = (wally_tx_input *) 0 ;
   int result;
@@ -2126,7 +2465,7 @@ intgo _wrap_wally_tx_add_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, 
 }
 
 
-intgo _wrap_wally_tx_add_raw_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, char *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, wally_tx_witness_stack *_swig_go_7, uint32_t *_swig_go_8) {
+intgo _wrap_wally_tx_add_raw_input_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, char *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, wally_tx_witness_stack *_swig_go_7, uint32_t *_swig_go_8) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -2176,7 +2515,7 @@ intgo _wrap_wally_tx_add_raw_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go
 }
 
 
-intgo _wrap_wally_tx_remove_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1) {
+intgo _wrap_wally_tx_remove_input_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   int result;
@@ -2191,7 +2530,7 @@ intgo _wrap_wally_tx_remove_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_
 }
 
 
-intgo _wrap_wally_tx_set_input_script_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_tx_set_input_script_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -2210,7 +2549,7 @@ intgo _wrap_wally_tx_set_input_script_wallycore_c3a15c02b26f7e73(wally_tx *_swig
 }
 
 
-intgo _wrap_wally_tx_set_input_witness_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1, wally_tx_witness_stack *_swig_go_2) {
+intgo _wrap_wally_tx_set_input_witness_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1, wally_tx_witness_stack *_swig_go_2) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   wally_tx_witness_stack *arg3 = (wally_tx_witness_stack *) 0 ;
@@ -2227,7 +2566,7 @@ intgo _wrap_wally_tx_set_input_witness_wallycore_c3a15c02b26f7e73(wally_tx *_swi
 }
 
 
-intgo _wrap_wally_tx_add_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, wally_tx_output *_swig_go_1) {
+intgo _wrap_wally_tx_add_output_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, wally_tx_output *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   wally_tx_output *arg2 = (wally_tx_output *) 0 ;
   int result;
@@ -2242,7 +2581,7 @@ intgo _wrap_wally_tx_add_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0,
 }
 
 
-intgo _wrap_wally_tx_add_raw_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, uint64_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4) {
+intgo _wrap_wally_tx_add_raw_output_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, uint64_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   uint64_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -2277,7 +2616,7 @@ intgo _wrap_wally_tx_add_raw_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_g
 }
 
 
-intgo _wrap_wally_tx_remove_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1) {
+intgo _wrap_wally_tx_remove_output_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   int result;
@@ -2292,7 +2631,7 @@ intgo _wrap_wally_tx_remove_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go
 }
 
 
-intgo _wrap_wally_tx_get_witness_count_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_get_witness_count_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -2307,7 +2646,7 @@ intgo _wrap_wally_tx_get_witness_count_wallycore_c3a15c02b26f7e73(wally_tx *_swi
 }
 
 
-intgo _wrap_wally_tx_free_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0) {
+intgo _wrap_wally_tx_free_wallycore_982945dfd8db849f(wally_tx *_swig_go_0) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -2320,7 +2659,7 @@ intgo _wrap_wally_tx_free_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0) {
 }
 
 
-intgo _wrap_wally_tx_get_length_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, uint32_t *_swig_go_1, long long *_swig_go_2) {
+intgo _wrap_wally_tx_get_length_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, uint32_t *_swig_go_1, long long *_swig_go_2) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   uint32_t arg2 ;
   size_t *arg3 = (size_t *) 0 ;
@@ -2344,7 +2683,7 @@ intgo _wrap_wally_tx_get_length_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0,
 }
 
 
-intgo _wrap_wally_tx_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, wally_tx **_swig_go_3) {
+intgo _wrap_wally_tx_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, wally_tx **_swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -2370,7 +2709,7 @@ intgo _wrap_wally_tx_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lon
 }
 
 
-intgo _wrap_wally_tx_from_hex_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, uint32_t *_swig_go_1, wally_tx **_swig_go_2) {
+intgo _wrap_wally_tx_from_hex_wallycore_982945dfd8db849f(_gostring_ _swig_go_0, uint32_t *_swig_go_1, wally_tx **_swig_go_2) {
   char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   wally_tx **arg3 = (wally_tx **) 0 ;
@@ -2399,7 +2738,7 @@ intgo _wrap_wally_tx_from_hex_wallycore_c3a15c02b26f7e73(_gostring_ _swig_go_0, 
 }
 
 
-intgo _wrap_wally_tx_to_bytes_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
+intgo _wrap_wally_tx_to_bytes_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, uint32_t *_swig_go_1, char *_swig_go_2, long long _swig_go_3, long long *_swig_go_4) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   uint32_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -2427,7 +2766,7 @@ intgo _wrap_wally_tx_to_bytes_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, u
 }
 
 
-intgo _wrap_wally_tx_to_hex_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, uint32_t *_swig_go_1, _gostring_* _swig_go_2) {
+intgo _wrap_wally_tx_to_hex_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, uint32_t *_swig_go_1, _gostring_* _swig_go_2) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   uint32_t arg2 ;
   char **arg3 = (char **) 0 ;
@@ -2456,7 +2795,7 @@ intgo _wrap_wally_tx_to_hex_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, uin
 }
 
 
-intgo _wrap_wally_tx_get_weight_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_get_weight_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -2471,7 +2810,7 @@ intgo _wrap_wally_tx_get_weight_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0,
 }
 
 
-intgo _wrap_wally_tx_get_vsize_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_get_vsize_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -2486,7 +2825,7 @@ intgo _wrap_wally_tx_get_vsize_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, 
 }
 
 
-intgo _wrap_wally_tx_vsize_from_weight_wallycore_c3a15c02b26f7e73(long long _swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_vsize_from_weight_wallycore_982945dfd8db849f(long long _swig_go_0, long long *_swig_go_1) {
   size_t arg1 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -2501,7 +2840,7 @@ intgo _wrap_wally_tx_vsize_from_weight_wallycore_c3a15c02b26f7e73(long long _swi
 }
 
 
-intgo _wrap_wally_tx_get_total_output_satoshi_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, uint64_t *_swig_go_1) {
+intgo _wrap_wally_tx_get_total_output_satoshi_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, uint64_t *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   uint64_t *arg2 = (uint64_t *) 0 ;
   int result;
@@ -2516,7 +2855,7 @@ intgo _wrap_wally_tx_get_total_output_satoshi_wallycore_c3a15c02b26f7e73(wally_t
 }
 
 
-intgo _wrap_wally_tx_get_btc_signature_hash_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint64_t *_swig_go_4, uint32_t *_swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8) {
+intgo _wrap_wally_tx_get_btc_signature_hash_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint64_t *_swig_go_4, uint32_t *_swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -2566,7 +2905,7 @@ intgo _wrap_wally_tx_get_btc_signature_hash_wallycore_c3a15c02b26f7e73(wally_tx 
 }
 
 
-intgo _wrap_wally_tx_get_signature_hash_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, uint64_t *_swig_go_7, uint32_t *_swig_go_8, uint32_t *_swig_go_9, uint32_t *_swig_go_10, char *_swig_go_11, long long _swig_go_12) {
+intgo _wrap_wally_tx_get_signature_hash_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, uint64_t *_swig_go_7, uint32_t *_swig_go_8, uint32_t *_swig_go_9, uint32_t *_swig_go_10, char *_swig_go_11, long long _swig_go_12) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -2638,7 +2977,7 @@ intgo _wrap_wally_tx_get_signature_hash_wallycore_c3a15c02b26f7e73(wally_tx *_sw
 }
 
 
-intgo _wrap_wally_tx_is_coinbase_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_is_coinbase_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -2653,7 +2992,7 @@ intgo _wrap_wally_tx_is_coinbase_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0
 }
 
 
-intgo _wrap_wally_tx_elements_input_issuance_set_wallycore_c3a15c02b26f7e73(wally_tx_input *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12) {
+intgo _wrap_wally_tx_elements_input_issuance_set_wallycore_982945dfd8db849f(wally_tx_input *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12) {
   wally_tx_input *arg1 = (wally_tx_input *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -2690,7 +3029,7 @@ intgo _wrap_wally_tx_elements_input_issuance_set_wallycore_c3a15c02b26f7e73(wall
 }
 
 
-intgo _wrap_wally_tx_elements_input_issuance_free_wallycore_c3a15c02b26f7e73(wally_tx_input *_swig_go_0) {
+intgo _wrap_wally_tx_elements_input_issuance_free_wallycore_982945dfd8db849f(wally_tx_input *_swig_go_0) {
   wally_tx_input *arg1 = (wally_tx_input *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -2703,7 +3042,7 @@ intgo _wrap_wally_tx_elements_input_issuance_free_wallycore_c3a15c02b26f7e73(wal
 }
 
 
-intgo _wrap_wally_tx_elements_input_init_alloc_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, wally_tx_witness_stack *_swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, char *_swig_go_13, long long _swig_go_14, char *_swig_go_15, long long _swig_go_16, char *_swig_go_17, long long _swig_go_18, wally_tx_witness_stack *_swig_go_19, wally_tx_input **_swig_go_20) {
+intgo _wrap_wally_tx_elements_input_init_alloc_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, wally_tx_witness_stack *_swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, char *_swig_go_13, long long _swig_go_14, char *_swig_go_15, long long _swig_go_16, char *_swig_go_17, long long _swig_go_18, wally_tx_witness_stack *_swig_go_19, wally_tx_input **_swig_go_20) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -2770,7 +3109,7 @@ intgo _wrap_wally_tx_elements_input_init_alloc_wallycore_c3a15c02b26f7e73(char *
 }
 
 
-intgo _wrap_wally_tx_elements_input_is_pegin_wallycore_c3a15c02b26f7e73(wally_tx_input *_swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_elements_input_is_pegin_wallycore_982945dfd8db849f(wally_tx_input *_swig_go_0, long long *_swig_go_1) {
   wally_tx_input *arg1 = (wally_tx_input *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -2785,7 +3124,7 @@ intgo _wrap_wally_tx_elements_input_is_pegin_wallycore_c3a15c02b26f7e73(wally_tx
 }
 
 
-intgo _wrap_wally_tx_elements_output_commitment_set_wallycore_c3a15c02b26f7e73(wally_tx_output *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10) {
+intgo _wrap_wally_tx_elements_output_commitment_set_wallycore_982945dfd8db849f(wally_tx_output *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10) {
   wally_tx_output *arg1 = (wally_tx_output *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -2818,7 +3157,7 @@ intgo _wrap_wally_tx_elements_output_commitment_set_wallycore_c3a15c02b26f7e73(w
 }
 
 
-intgo _wrap_wally_tx_elements_output_commitment_free_wallycore_c3a15c02b26f7e73(wally_tx_output *_swig_go_0) {
+intgo _wrap_wally_tx_elements_output_commitment_free_wallycore_982945dfd8db849f(wally_tx_output *_swig_go_0) {
   wally_tx_output *arg1 = (wally_tx_output *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -2831,7 +3170,7 @@ intgo _wrap_wally_tx_elements_output_commitment_free_wallycore_c3a15c02b26f7e73(
 }
 
 
-intgo _wrap_wally_tx_elements_output_init_alloc_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, wally_tx_output **_swig_go_12) {
+intgo _wrap_wally_tx_elements_output_init_alloc_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, wally_tx_output **_swig_go_12) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -2868,7 +3207,7 @@ intgo _wrap_wally_tx_elements_output_init_alloc_wallycore_c3a15c02b26f7e73(char 
 }
 
 
-intgo _wrap_wally_tx_add_elements_raw_input_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, char *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, wally_tx_witness_stack *_swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, char *_swig_go_16, long long _swig_go_17, char *_swig_go_18, long long _swig_go_19, wally_tx_witness_stack *_swig_go_20, uint32_t *_swig_go_21) {
+intgo _wrap_wally_tx_add_elements_raw_input_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, char *_swig_go_1, long long _swig_go_2, uint32_t *_swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, wally_tx_witness_stack *_swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, char *_swig_go_16, long long _swig_go_17, char *_swig_go_18, long long _swig_go_19, wally_tx_witness_stack *_swig_go_20, uint32_t *_swig_go_21) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -2944,7 +3283,7 @@ intgo _wrap_wally_tx_add_elements_raw_input_wallycore_c3a15c02b26f7e73(wally_tx 
 }
 
 
-intgo _wrap_wally_tx_add_elements_raw_output_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, uint32_t *_swig_go_13) {
+intgo _wrap_wally_tx_add_elements_raw_output_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, uint32_t *_swig_go_13) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -2990,7 +3329,7 @@ intgo _wrap_wally_tx_add_elements_raw_output_wallycore_c3a15c02b26f7e73(wally_tx
 }
 
 
-intgo _wrap_wally_tx_is_elements_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_tx_is_elements_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long *_swig_go_1) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -3005,7 +3344,7 @@ intgo _wrap_wally_tx_is_elements_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0
 }
 
 
-intgo _wrap_wally_tx_confidential_value_from_satoshi_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2) {
+intgo _wrap_wally_tx_confidential_value_from_satoshi_wallycore_982945dfd8db849f(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2) {
   uint64_t arg1 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -3029,7 +3368,7 @@ intgo _wrap_wally_tx_confidential_value_from_satoshi_wallycore_c3a15c02b26f7e73(
 }
 
 
-intgo _wrap_wally_tx_confidential_value_to_satoshi_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint64_t *_swig_go_2) {
+intgo _wrap_wally_tx_confidential_value_to_satoshi_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint64_t *_swig_go_2) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint64_t *arg3 = (uint64_t *) 0 ;
@@ -3046,7 +3385,7 @@ intgo _wrap_wally_tx_confidential_value_to_satoshi_wallycore_c3a15c02b26f7e73(ch
 }
 
 
-intgo _wrap_wally_tx_get_elements_signature_hash_wallycore_c3a15c02b26f7e73(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, uint32_t *_swig_go_7, char *_swig_go_8, long long _swig_go_9) {
+intgo _wrap_wally_tx_get_elements_signature_hash_wallycore_982945dfd8db849f(wally_tx *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, uint32_t *_swig_go_7, char *_swig_go_8, long long _swig_go_9) {
   wally_tx *arg1 = (wally_tx *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3091,7 +3430,7 @@ intgo _wrap_wally_tx_get_elements_signature_hash_wallycore_c3a15c02b26f7e73(wall
 }
 
 
-intgo _wrap_wally_tx_elements_issuance_generate_entropy_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6) {
+intgo _wrap_wally_tx_elements_issuance_generate_entropy_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3123,7 +3462,7 @@ intgo _wrap_wally_tx_elements_issuance_generate_entropy_wallycore_c3a15c02b26f7e
 }
 
 
-intgo _wrap_wally_tx_elements_issuance_calculate_asset_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+intgo _wrap_wally_tx_elements_issuance_calculate_asset_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3142,7 +3481,7 @@ intgo _wrap_wally_tx_elements_issuance_calculate_asset_wallycore_c3a15c02b26f7e7
 }
 
 
-intgo _wrap_wally_tx_elements_issuance_calculate_reissuance_token_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4) {
+intgo _wrap_wally_tx_elements_issuance_calculate_reissuance_token_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3170,7 +3509,7 @@ intgo _wrap_wally_tx_elements_issuance_calculate_reissuance_token_wallycore_c3a1
 }
 
 
-intgo _wrap_wally_asset_generator_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
+intgo _wrap_wally_asset_generator_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3193,7 +3532,7 @@ intgo _wrap_wally_asset_generator_from_bytes_wallycore_c3a15c02b26f7e73(char *_s
 }
 
 
-intgo _wrap_wally_asset_final_vbf_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_0, long long _swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8) {
+intgo _wrap_wally_asset_final_vbf_wallycore_982945dfd8db849f(uint64_t *_swig_go_0, long long _swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8) {
   uint64_t *arg1 = (uint64_t *) 0 ;
   size_t arg2 ;
   size_t arg3 ;
@@ -3222,7 +3561,7 @@ intgo _wrap_wally_asset_final_vbf_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_
 }
 
 
-intgo _wrap_wally_asset_value_commitment_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6) {
+intgo _wrap_wally_asset_value_commitment_wallycore_982945dfd8db849f(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6) {
   uint64_t arg1 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -3254,7 +3593,74 @@ intgo _wrap_wally_asset_value_commitment_wallycore_c3a15c02b26f7e73(uint64_t *_s
 }
 
 
-intgo _wrap_wally_asset_rangeproof_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, char *_swig_go_13, long long _swig_go_14, char *_swig_go_15, long long _swig_go_16, uint64_t *_swig_go_17, intgo _swig_go_18, intgo _swig_go_19, char *_swig_go_20, long long _swig_go_21, long long *_swig_go_22) {
+intgo _wrap_wally_asset_rangeproof_with_nonce_wallycore_982945dfd8db849f(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, char *_swig_go_13, long long _swig_go_14, uint64_t *_swig_go_15, intgo _swig_go_16, intgo _swig_go_17, char *_swig_go_18, long long _swig_go_19, long long *_swig_go_20) {
+  uint64_t arg1 ;
+  unsigned char *arg2 = (unsigned char *) 0 ;
+  size_t arg3 ;
+  unsigned char *arg4 = (unsigned char *) 0 ;
+  size_t arg5 ;
+  unsigned char *arg6 = (unsigned char *) 0 ;
+  size_t arg7 ;
+  unsigned char *arg8 = (unsigned char *) 0 ;
+  size_t arg9 ;
+  unsigned char *arg10 = (unsigned char *) 0 ;
+  size_t arg11 ;
+  unsigned char *arg12 = (unsigned char *) 0 ;
+  size_t arg13 ;
+  unsigned char *arg14 = (unsigned char *) 0 ;
+  size_t arg15 ;
+  uint64_t arg16 ;
+  int arg17 ;
+  int arg18 ;
+  unsigned char *arg19 = (unsigned char *) 0 ;
+  size_t arg20 ;
+  size_t *arg21 = (size_t *) 0 ;
+  uint64_t *argp1 ;
+  uint64_t *argp16 ;
+  int result;
+  intgo _swig_go_result;
+  
+  
+  argp1 = (uint64_t *)_swig_go_0;
+  if (argp1 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint64_t");
+  }
+  arg1 = (uint64_t)*argp1;
+  
+  arg2 = *(unsigned char **)&_swig_go_1; 
+  arg3 = (size_t)_swig_go_2; 
+  arg4 = *(unsigned char **)&_swig_go_3; 
+  arg5 = (size_t)_swig_go_4; 
+  arg6 = *(unsigned char **)&_swig_go_5; 
+  arg7 = (size_t)_swig_go_6; 
+  arg8 = *(unsigned char **)&_swig_go_7; 
+  arg9 = (size_t)_swig_go_8; 
+  arg10 = *(unsigned char **)&_swig_go_9; 
+  arg11 = (size_t)_swig_go_10; 
+  arg12 = *(unsigned char **)&_swig_go_11; 
+  arg13 = (size_t)_swig_go_12; 
+  arg14 = *(unsigned char **)&_swig_go_13; 
+  arg15 = (size_t)_swig_go_14; 
+  
+  argp16 = (uint64_t *)_swig_go_15;
+  if (argp16 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint64_t");
+  }
+  arg16 = (uint64_t)*argp16;
+  
+  arg17 = (int)_swig_go_16; 
+  arg18 = (int)_swig_go_17; 
+  arg19 = *(unsigned char **)&_swig_go_18; 
+  arg20 = (size_t)_swig_go_19; 
+  arg21 = *(size_t **)&_swig_go_20; 
+  
+  result = (int)wally_asset_rangeproof_with_nonce(arg1,(unsigned char const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7,(unsigned char const *)arg8,arg9,(unsigned char const *)arg10,arg11,(unsigned char const *)arg12,arg13,(unsigned char const *)arg14,arg15,arg16,arg17,arg18,arg19,arg20,arg21);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_asset_rangeproof_wallycore_982945dfd8db849f(uint64_t *_swig_go_0, char *_swig_go_1, long long _swig_go_2, char *_swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12, char *_swig_go_13, long long _swig_go_14, char *_swig_go_15, long long _swig_go_16, uint64_t *_swig_go_17, intgo _swig_go_18, intgo _swig_go_19, char *_swig_go_20, long long _swig_go_21, long long *_swig_go_22) {
   uint64_t arg1 ;
   unsigned char *arg2 = (unsigned char *) 0 ;
   size_t arg3 ;
@@ -3325,7 +3731,7 @@ intgo _wrap_wally_asset_rangeproof_wallycore_c3a15c02b26f7e73(uint64_t *_swig_go
 }
 
 
-intgo _wrap_wally_asset_surjectionproof_size_wallycore_c3a15c02b26f7e73(long long _swig_go_0, long long *_swig_go_1) {
+intgo _wrap_wally_asset_surjectionproof_size_wallycore_982945dfd8db849f(long long _swig_go_0, long long *_swig_go_1) {
   size_t arg1 ;
   size_t *arg2 = (size_t *) 0 ;
   int result;
@@ -3340,7 +3746,7 @@ intgo _wrap_wally_asset_surjectionproof_size_wallycore_c3a15c02b26f7e73(long lon
 }
 
 
-intgo _wrap_wally_asset_surjectionproof_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, long long *_swig_go_16) {
+intgo _wrap_wally_asset_surjectionproof_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, long long *_swig_go_16) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3385,7 +3791,52 @@ intgo _wrap_wally_asset_surjectionproof_wallycore_c3a15c02b26f7e73(char *_swig_g
 }
 
 
-intgo _wrap_wally_asset_unblind_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, char *_swig_go_16, long long _swig_go_17, uint64_t *_swig_go_18) {
+intgo _wrap_wally_asset_unblind_with_nonce_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, uint64_t *_swig_go_16) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  unsigned char *arg5 = (unsigned char *) 0 ;
+  size_t arg6 ;
+  unsigned char *arg7 = (unsigned char *) 0 ;
+  size_t arg8 ;
+  unsigned char *arg9 = (unsigned char *) 0 ;
+  size_t arg10 ;
+  unsigned char *arg11 = (unsigned char *) 0 ;
+  size_t arg12 ;
+  unsigned char *arg13 = (unsigned char *) 0 ;
+  size_t arg14 ;
+  unsigned char *arg15 = (unsigned char *) 0 ;
+  size_t arg16 ;
+  uint64_t *arg17 = (uint64_t *) 0 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(unsigned char **)&_swig_go_4; 
+  arg6 = (size_t)_swig_go_5; 
+  arg7 = *(unsigned char **)&_swig_go_6; 
+  arg8 = (size_t)_swig_go_7; 
+  arg9 = *(unsigned char **)&_swig_go_8; 
+  arg10 = (size_t)_swig_go_9; 
+  arg11 = *(unsigned char **)&_swig_go_10; 
+  arg12 = (size_t)_swig_go_11; 
+  arg13 = *(unsigned char **)&_swig_go_12; 
+  arg14 = (size_t)_swig_go_13; 
+  arg15 = *(unsigned char **)&_swig_go_14; 
+  arg16 = (size_t)_swig_go_15; 
+  arg17 = *(uint64_t **)&_swig_go_16; 
+  
+  result = (int)wally_asset_unblind_with_nonce((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,(unsigned char const *)arg5,arg6,(unsigned char const *)arg7,arg8,(unsigned char const *)arg9,arg10,arg11,arg12,arg13,arg14,arg15,arg16,arg17);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_asset_unblind_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, char *_swig_go_8, long long _swig_go_9, char *_swig_go_10, long long _swig_go_11, char *_swig_go_12, long long _swig_go_13, char *_swig_go_14, long long _swig_go_15, char *_swig_go_16, long long _swig_go_17, uint64_t *_swig_go_18) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3434,7 +3885,101 @@ intgo _wrap_wally_asset_unblind_wallycore_c3a15c02b26f7e73(char *_swig_go_0, lon
 }
 
 
-intgo _wrap_wally_scriptpubkey_get_type_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, long long *_swig_go_2) {
+intgo _wrap_wally_asset_blinding_key_from_seed_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  
+  result = (int)wally_asset_blinding_key_from_seed((unsigned char const *)arg1,arg2,arg3,arg4);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_asset_blinding_key_to_ec_private_key_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  unsigned char *arg5 = (unsigned char *) 0 ;
+  size_t arg6 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(unsigned char **)&_swig_go_4; 
+  arg6 = (size_t)_swig_go_5; 
+  
+  result = (int)wally_asset_blinding_key_to_ec_private_key((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5,arg6);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_asset_pak_whitelistproof_size_wallycore_982945dfd8db849f(long long _swig_go_0, long long *_swig_go_1) {
+  size_t arg1 ;
+  size_t *arg2 = (size_t *) 0 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = (size_t)_swig_go_0; 
+  arg2 = *(size_t **)&_swig_go_1; 
+  
+  result = (int)wally_asset_pak_whitelistproof_size(arg1,arg2);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_asset_pak_whitelistproof_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, long long _swig_go_4, char *_swig_go_5, long long _swig_go_6, char *_swig_go_7, long long _swig_go_8, char *_swig_go_9, long long _swig_go_10, char *_swig_go_11, long long _swig_go_12) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  size_t arg5 ;
+  unsigned char *arg6 = (unsigned char *) 0 ;
+  size_t arg7 ;
+  unsigned char *arg8 = (unsigned char *) 0 ;
+  size_t arg9 ;
+  unsigned char *arg10 = (unsigned char *) 0 ;
+  size_t arg11 ;
+  unsigned char *arg12 = (unsigned char *) 0 ;
+  size_t arg13 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = (size_t)_swig_go_4; 
+  arg6 = *(unsigned char **)&_swig_go_5; 
+  arg7 = (size_t)_swig_go_6; 
+  arg8 = *(unsigned char **)&_swig_go_7; 
+  arg9 = (size_t)_swig_go_8; 
+  arg10 = *(unsigned char **)&_swig_go_9; 
+  arg11 = (size_t)_swig_go_10; 
+  arg12 = *(unsigned char **)&_swig_go_11; 
+  arg13 = (size_t)_swig_go_12; 
+  
+  result = (int)wally_asset_pak_whitelistproof((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5,(unsigned char const *)arg6,arg7,(unsigned char const *)arg8,arg9,(unsigned char const *)arg10,arg11,arg12,arg13);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_scriptpubkey_get_type_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, long long *_swig_go_2) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   size_t *arg3 = (size_t *) 0 ;
@@ -3451,7 +3996,7 @@ intgo _wrap_wally_scriptpubkey_get_type_wallycore_c3a15c02b26f7e73(char *_swig_g
 }
 
 
-intgo _wrap_wally_scriptpubkey_p2pkh_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_scriptpubkey_p2pkh_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3481,7 +4026,7 @@ intgo _wrap_wally_scriptpubkey_p2pkh_from_bytes_wallycore_c3a15c02b26f7e73(char 
 }
 
 
-intgo _wrap_wally_scriptsig_p2pkh_from_sig_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, long long *_swig_go_7) {
+intgo _wrap_wally_scriptsig_p2pkh_from_sig_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, long long *_swig_go_7) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3515,7 +4060,37 @@ intgo _wrap_wally_scriptsig_p2pkh_from_sig_wallycore_c3a15c02b26f7e73(char *_swi
 }
 
 
-intgo _wrap_wally_scriptsig_p2pkh_from_der_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
+intgo _wrap_wally_witness_p2wpkh_from_sig_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, wally_tx_witness_stack **_swig_go_5) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  uint32_t arg5 ;
+  wally_tx_witness_stack **arg6 = (wally_tx_witness_stack **) 0 ;
+  uint32_t *argp5 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  
+  argp5 = (uint32_t *)_swig_go_4;
+  if (argp5 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg5 = (uint32_t)*argp5;
+  
+  arg6 = *(wally_tx_witness_stack ***)&_swig_go_5; 
+  
+  result = (int)wally_witness_p2wpkh_from_sig((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5,arg6);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_scriptsig_p2pkh_from_der_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3540,7 +4115,28 @@ intgo _wrap_wally_scriptsig_p2pkh_from_der_wallycore_c3a15c02b26f7e73(char *_swi
 }
 
 
-intgo _wrap_wally_scriptpubkey_op_return_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_witness_p2wpkh_from_der_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, wally_tx_witness_stack **_swig_go_4) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  wally_tx_witness_stack **arg5 = (wally_tx_witness_stack **) 0 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(wally_tx_witness_stack ***)&_swig_go_4; 
+  
+  result = (int)wally_witness_p2wpkh_from_der((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_scriptpubkey_op_return_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3570,7 +4166,7 @@ intgo _wrap_wally_scriptpubkey_op_return_from_bytes_wallycore_c3a15c02b26f7e73(c
 }
 
 
-intgo _wrap_wally_scriptpubkey_p2sh_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_scriptpubkey_p2sh_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3600,7 +4196,7 @@ intgo _wrap_wally_scriptpubkey_p2sh_from_bytes_wallycore_c3a15c02b26f7e73(char *
 }
 
 
-intgo _wrap_wally_scriptpubkey_multisig_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
+intgo _wrap_wally_scriptpubkey_multisig_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3639,7 +4235,7 @@ intgo _wrap_wally_scriptpubkey_multisig_from_bytes_wallycore_c3a15c02b26f7e73(ch
 }
 
 
-intgo _wrap_wally_scriptsig_multisig_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8, long long *_swig_go_9) {
+intgo _wrap_wally_scriptsig_multisig_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, char *_swig_go_7, long long _swig_go_8, long long *_swig_go_9) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   unsigned char *arg3 = (unsigned char *) 0 ;
@@ -3677,7 +4273,41 @@ intgo _wrap_wally_scriptsig_multisig_from_bytes_wallycore_c3a15c02b26f7e73(char 
 }
 
 
-intgo _wrap_wally_scriptpubkey_csv_2of2_then_1_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
+intgo _wrap_wally_witness_multisig_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, long long _swig_go_5, uint32_t *_swig_go_6, wally_tx_witness_stack **_swig_go_7) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  uint32_t *arg5 = (uint32_t *) 0 ;
+  size_t arg6 ;
+  uint32_t arg7 ;
+  wally_tx_witness_stack **arg8 = (wally_tx_witness_stack **) 0 ;
+  uint32_t *argp7 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(uint32_t **)&_swig_go_4; 
+  arg6 = (size_t)_swig_go_5; 
+  
+  argp7 = (uint32_t *)_swig_go_6;
+  if (argp7 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg7 = (uint32_t)*argp7;
+  
+  arg8 = *(wally_tx_witness_stack ***)&_swig_go_7; 
+  
+  result = (int)wally_witness_multisig_from_bytes((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,(uint32_t const *)arg5,arg6,arg7,arg8);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_scriptpubkey_csv_2of2_then_1_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3716,7 +4346,7 @@ intgo _wrap_wally_scriptpubkey_csv_2of2_then_1_from_bytes_wallycore_c3a15c02b26f
 }
 
 
-intgo _wrap_wally_scriptpubkey_csv_2of3_then_2_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
+intgo _wrap_wally_scriptpubkey_csv_2of3_then_2_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, uint32_t *_swig_go_3, char *_swig_go_4, long long _swig_go_5, long long *_swig_go_6) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3755,7 +4385,7 @@ intgo _wrap_wally_scriptpubkey_csv_2of3_then_2_from_bytes_wallycore_c3a15c02b26f
 }
 
 
-intgo _wrap_wally_script_push_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_script_push_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3785,7 +4415,7 @@ intgo _wrap_wally_script_push_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_
 }
 
 
-intgo _wrap_wally_witness_program_from_bytes_wallycore_c3a15c02b26f7e73(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
+intgo _wrap_wally_witness_program_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, uint32_t *_swig_go_2, char *_swig_go_3, long long _swig_go_4, long long *_swig_go_5) {
   unsigned char *arg1 = (unsigned char *) 0 ;
   size_t arg2 ;
   uint32_t arg3 ;
@@ -3810,6 +4440,82 @@ intgo _wrap_wally_witness_program_from_bytes_wallycore_c3a15c02b26f7e73(char *_s
   arg6 = *(size_t **)&_swig_go_5; 
   
   result = (int)wally_witness_program_from_bytes((unsigned char const *)arg1,arg2,arg3,arg4,arg5,arg6);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_elements_pegout_script_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, char *_swig_go_4, long long _swig_go_5, char *_swig_go_6, long long _swig_go_7, uint32_t *_swig_go_8, char *_swig_go_9, long long _swig_go_10, long long *_swig_go_11) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  unsigned char *arg5 = (unsigned char *) 0 ;
+  size_t arg6 ;
+  unsigned char *arg7 = (unsigned char *) 0 ;
+  size_t arg8 ;
+  uint32_t arg9 ;
+  unsigned char *arg10 = (unsigned char *) 0 ;
+  size_t arg11 ;
+  size_t *arg12 = (size_t *) 0 ;
+  uint32_t *argp9 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  arg5 = *(unsigned char **)&_swig_go_4; 
+  arg6 = (size_t)_swig_go_5; 
+  arg7 = *(unsigned char **)&_swig_go_6; 
+  arg8 = (size_t)_swig_go_7; 
+  
+  argp9 = (uint32_t *)_swig_go_8;
+  if (argp9 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg9 = (uint32_t)*argp9;
+  
+  arg10 = *(unsigned char **)&_swig_go_9; 
+  arg11 = (size_t)_swig_go_10; 
+  arg12 = *(size_t **)&_swig_go_11; 
+  
+  result = (int)wally_elements_pegout_script_from_bytes((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,(unsigned char const *)arg5,arg6,(unsigned char const *)arg7,arg8,arg9,arg10,arg11,arg12);
+  _swig_go_result = result; 
+  return _swig_go_result;
+}
+
+
+intgo _wrap_wally_elements_pegin_contract_script_from_bytes_wallycore_982945dfd8db849f(char *_swig_go_0, long long _swig_go_1, char *_swig_go_2, long long _swig_go_3, uint32_t *_swig_go_4, char *_swig_go_5, long long _swig_go_6, long long *_swig_go_7) {
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  size_t arg2 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  size_t arg4 ;
+  uint32_t arg5 ;
+  unsigned char *arg6 = (unsigned char *) 0 ;
+  size_t arg7 ;
+  size_t *arg8 = (size_t *) 0 ;
+  uint32_t *argp5 ;
+  int result;
+  intgo _swig_go_result;
+  
+  arg1 = *(unsigned char **)&_swig_go_0; 
+  arg2 = (size_t)_swig_go_1; 
+  arg3 = *(unsigned char **)&_swig_go_2; 
+  arg4 = (size_t)_swig_go_3; 
+  
+  argp5 = (uint32_t *)_swig_go_4;
+  if (argp5 == NULL) {
+    _swig_gopanic("Attempt to dereference null uint32_t");
+  }
+  arg5 = (uint32_t)*argp5;
+  
+  arg6 = *(unsigned char **)&_swig_go_5; 
+  arg7 = (size_t)_swig_go_6; 
+  arg8 = *(size_t **)&_swig_go_7; 
+  
+  result = (int)wally_elements_pegin_contract_script_from_bytes((unsigned char const *)arg1,arg2,(unsigned char const *)arg3,arg4,arg5,arg6,arg7,arg8);
   _swig_go_result = result; 
   return _swig_go_result;
 }
