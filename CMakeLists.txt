@@ -595,7 +595,7 @@ target_link_libraries(${NODE_LIBRARY_NAME}
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
   PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
   PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<CXX_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE
     ${CMAKE_JS_LIB}
 )
@@ -1080,7 +1080,7 @@ target_link_directories(${TEST_BECH32_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_BECH32_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1117,7 +1117,7 @@ target_link_directories(${TEST_CLEAR_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_CLEAR_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1154,7 +1154,7 @@ target_link_directories(${TEST_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_TX_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1195,7 +1195,7 @@ target_link_directories(${TEST_ELEMENTS_TX_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_ELEMENTS_TX_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
@@ -1232,7 +1232,7 @@ target_link_directories(${TEST_BLECH32_NAME}  PRIVATE ./ )
 target_link_libraries(${TEST_BLECH32_NAME}
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<C_COMPILER_ID:MSVC>>,,rt>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
   PRIVATE
