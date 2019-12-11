@@ -31,9 +31,10 @@ extern "C" {
 #define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
 
 /* Script creation flags */
-#define WALLY_SCRIPT_HASH160  0x1 /** hash160 input bytes before using them */
-#define WALLY_SCRIPT_SHA256   0x2 /** sha256 input bytes before using them */
-#define WALLY_SCRIPT_AS_PUSH  0x4 /** Return a push of the generated script */
+#define WALLY_SCRIPT_HASH160          0x1 /** hash160 input bytes before using them */
+#define WALLY_SCRIPT_SHA256           0x2 /** sha256 input bytes before using them */
+#define WALLY_SCRIPT_AS_PUSH          0x4 /** Return a push of the generated script */
+#define WALLY_SCRIPT_MULTISIG_SORTED  0x8 /** Sort public keys (BIP67) */
 
 /* Script opcodes */
 #define OP_0 0x00
@@ -169,7 +170,7 @@ extern "C" {
  *
  * :param bytes: Bytes of the scriptPubkey.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param written: Destination for the WALLY_SCRIPT_TYPE_ script type.
+ * :param written: Destination for the ``WALLY_SCRIPT_TYPE_`` script type.
  */
 WALLY_CORE_API int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
                                                size_t *written);
@@ -208,7 +209,7 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
  *|    or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
  * :param sig: The compact signature to create a scriptSig with.
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param bytes_out: Destination for the resulting scriptSig.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -231,7 +232,7 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
  *|    or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
  * :param sig: The compact signature to create a witness with.
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param witness: Destination for the newly created witness.
  */
 WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
@@ -326,7 +327,7 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
  * :param bytes: Compressed public keys to create a scriptPubkey from.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
  * :param threshold: The number of signatures that must match to satisfy the script.
- * :param flags: Must be zero.
+ * :param flags: Must be ``WALLY_SCRIPT_MULTISIG_SORTED`` for BIP67 sorting or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -347,7 +348,7 @@ WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
  * :param script_len: The length of ``script`` in bytes.
  * :param bytes: Compact signatures to place in the scriptSig.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
- * :param sighash: WALLY_SIGHASH_ flags for each signature in ``bytes``.
+ * :param sighash: ``WALLY_SIGHASH_`` flags for each signature in ``bytes``.
  * :param sighash_len: The number of sighash flags in ``sighash``.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting scriptSig.
@@ -373,7 +374,7 @@ WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
  * :param script_len: The length of ``script`` in bytes.
  * :param bytes: Compact signatures to place in the scriptWitness.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
- * :param sighash: WALLY_SIGHASH_ flags for each signature in ``bytes``.
+ * :param sighash: ``WALLY_SIGHASH_`` flags for each signature in ``bytes``.
  * :param sighash_len: The number of sighash flags in ``sighash``.
  * :param flags: Must be zero.
  * :param witness: Destination for newly allocated witness.
@@ -484,6 +485,22 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
 
 #ifdef BUILD_ELEMENTS
 /**
+ * Get the pegout script size.
+ *
+ * :param parent_genesis_blockhash_len: Length of ``parent_genesis_blockhash`` in bytes. Must be 32.
+ * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param whitelist_proof_len: The length of ``whitelist_proof`` in bytes.
+ * :param written: Destination for the number of bytes required to hold the pegout script.
+ */
+WALLY_CORE_API int wally_elements_pegout_script_size(
+    size_t parent_genesis_blockhash_len,
+    size_t mainchain_script_len,
+    size_t sub_pubkey_len,
+    size_t whitelist_proof_len,
+    size_t *written);
+
+/**
  * Create a pegout script.
  *
  * :param parent_genesis_blockhash: The genesis blockhash of the parent chain.
@@ -541,4 +558,3 @@ WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
 #endif
 
 #endif /* LIBWALLY_CORE_SCRIPT_H */
-

@@ -1,5 +1,12 @@
 # Changes
 
+## Version 0.7.6
+
+- Add flag to sort multisig keys (BIP67)
+- Add bip32_key_get_fingerprint
+- Add Liquid developer guide
+- Add liquid support to address_to_scriptpubkey
+
 ## Version 0.7.5
 
 - Add support for P2PKH, P2SH-P2WPKH, P2WPKH address derivation from BIP32 key

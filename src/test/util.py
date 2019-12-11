@@ -201,6 +201,7 @@ for f in (
     ('bip32_key_from_base58', c_int, [c_char_p, POINTER(ext_key)]),
     ('bip32_key_from_base58_alloc', c_int, [c_char_p, POINTER(POINTER(ext_key))]),
     ('bip32_key_strip_private_key', c_int, [POINTER(ext_key)]),
+    ('bip32_key_get_fingerprint', c_int, [POINTER(ext_key), c_void_p, c_ulong]),
     ('bip38_raw_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
     ('bip38_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('bip38_to_private_key', c_int, [c_char_p, c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),
@@ -336,6 +337,13 @@ for f in (
             # Internal function and 'configure --enable-export-all' not used
             return None
 
+    def in_string_fn_wrapper(fn, pos, *args):
+        if isinstance(args[pos], str):
+            new_args = [a for a in args]
+            new_args[pos] = utf8(new_args[pos])
+            return fn(*new_args)
+        return fn(*args)
+
     def string_fn_wrapper(fn, *args):
         # Return output string parameters directly without leaking
         p = c_char_p()
@@ -354,6 +362,7 @@ for f in (
     name, restype, argtypes = f
     is_str_fn = len(argtypes) and type(argtypes[-1]) is c_char_p_p_class
     is_int_fn = len(argtypes) and type(argtypes[-1]) is c_ulong_p_class
+    in_str_pos = [i for (i, t) in enumerate(argtypes) if t == c_char_p]
     if is_str_fn:
         argtypes[-1] = POINTER(c_char_p)
     elif is_int_fn:
@@ -361,10 +370,14 @@ for f in (
     fn = bind_fn(name, restype, argtypes)
     def mkstr(f): return lambda *args: string_fn_wrapper(f, *args)
     def mkint(f): return lambda *args: int_fn_wrapper(f, *args)
+    def mkinstr(f, pos): return lambda *args: in_string_fn_wrapper(f, pos, *args)
     if is_str_fn:
         fn = mkstr(fn)
     elif is_int_fn:
         fn = mkint(fn)
+    if len(in_str_pos) > 0 and fn:
+        for pos in in_str_pos:
+            fn = mkinstr(fn, pos)
     globals()[name] = fn
 
 is_python3 = int(sys.version[0]) >= 3

@@ -31,7 +31,9 @@ class PegoutTests(unittest.TestCase):
 
         pub_key, pub_key_len = make_cbuffer('00'*33)
         self.assertEqual(wally_ec_public_key_from_private_key(master_online_key, master_online_key_len, pub_key, pub_key_len), WALLY_OK)
-        self.assertEqual(h(pub_key), '031f26676db48716aff0f6ac477db463715d3280e2c706b55556425831620fdcce')
+        buf, buf_len = make_cbuffer('00'*33)
+        ret, written = wally_hex_to_bytes(utf8('031f26676db48716aff0f6ac477db463715d3280e2c706b55556425831620fdcce'), buf, buf_len)
+        self.assertEqual(pub_key, buf)
 
         whitelist_index = 0
 
@@ -43,7 +45,9 @@ class PegoutTests(unittest.TestCase):
         self.assertEqual(bip32_key_from_base58(utf8(offline_xpub), byref(key_out)), WALLY_OK)
         negated_master_pubkey, negated_master_pubkey_len = make_cbuffer('00'*EC_PUBLIC_KEY_LEN)
         self.assertEqual(wally_ec_public_key_negate(key_out.pub_key, EC_PUBLIC_KEY_LEN, negated_master_pubkey, EC_PUBLIC_KEY_LEN), WALLY_OK)
-        self.assertEqual(h(negated_master_pubkey), keys[0])
+        buf, buf_len = make_cbuffer('00'*int(len(keys[0])/2))
+        ret, written = wally_hex_to_bytes(utf8(keys[0]), buf, buf_len)
+        self.assertEqual(negated_master_pubkey, buf)
         pub_key, pub_tweak = self.derive_pub_tweak(key_out, [0, offline_counter])
 
         whitelistproof, whitelistproof_len = make_cbuffer('00'*65)
@@ -54,9 +58,11 @@ class PegoutTests(unittest.TestCase):
         return whitelistproof, whitelistproof_len, pub_key, len(pub_key)
 
     def generate_pegout_script(self):
-        wl_proof = '013996e9eca65e06b3deda77fdc19b3476cd83af3ae8f543647a52b097558c33878752c52536c493ea00d446159009ce484795287aca1de8aaa52d6064b5960caa'
         gen_wlproof, gen_wlproof_len, pub_key, pub_key_len = self.generate_pegout_whitelistproof()
-        self.assertEqual(wl_proof, h(gen_wlproof))
+        wl_proof = '013996e9eca65e06b3deda77fdc19b3476cd83af3ae8f543647a52b097558c33878752c52536c493ea00d446159009ce484795287aca1de8aaa52d6064b5960caa'
+        buf, buf_len = make_cbuffer('00'*int(len(wl_proof)/2))
+        ret, written = wally_hex_to_bytes(utf8(wl_proof), buf, buf_len)
+        self.assertEqual(buf, gen_wlproof)
 
         genesis_block_hash, genesis_block_hash_len = make_cbuffer('0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206')
 
@@ -74,7 +80,9 @@ class PegoutTests(unittest.TestCase):
 
     def test_pegout(self):
         op_return_data = '6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f1976a91420f2d8c7514c601984fffee90f988f33bd87f96f88ac2103c58ebf2840c9321e42e1859a387d42cc78241048f81ce9c911bd57b240139e9741013996e9eca65e06b3deda77fdc19b3476cd83af3ae8f543647a52b097558c33878752c52536c493ea00d446159009ce484795287aca1de8aaa52d6064b5960caa'
-        self.assertEqual(op_return_data, h(self.generate_pegout_script()[0]))
+        buf, buf_len = make_cbuffer('00'*int(len(op_return_data)/2))
+        ret, written = wally_hex_to_bytes(utf8(op_return_data), buf, buf_len)
+        self.assertEqual(buf, self.generate_pegout_script()[0])
 
     def test_pegout_tx(self):
         tx_hex = "02000000010111b13a9bc2833fcfddb53086fffb3cf7ff1c13948c876d9bd15df872f5fdefca0000000017160014355347fd5b11a57cddd5e1576fb38280a0627cf7fdffffff030125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000174876e80000a06a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f1976a91420f2d8c7514c601984fffee90f988f33bd87f96f88ac2103c58ebf2840c9321e42e1859a387d42cc78241048f81ce9c911bd57b240139e9741013996e9eca65e06b3deda77fdc19b3476cd83af3ae8f543647a52b097558c33878752c52536c493ea00d446159009ce484795287aca1de8aaa52d6064b5960caa0125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a010007751ecdd907a20017a9140fbb8e55216381f7c4e7124eaa9070d8e8dc92c7870125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000000000105e0000000000000000024730440220029550293885a772c04c2a462b0afc7d9dd03d0286d37e1273d60a64b333875e0220626baf165c2ba70d5ce202bf6d2212a0bab83b457188a52db67d5ce396601d5001210324a1cbd388173f0c72616a0c8fe363daf9c016a157b14aa1dabf6d19b85df95c00000000000000"
@@ -95,16 +103,16 @@ class PegoutTests(unittest.TestCase):
         unconfidential_satoshi, unconfidential_satoshi_len = make_cbuffer('00'*9)
         self.assertEqual(wally_tx_confidential_value_from_satoshi(1000*10**8, unconfidential_satoshi, unconfidential_satoshi_len), WALLY_OK)
         pegout_script, pegout_script_len = self.generate_pegout_script()
-        self.assertEqual(wally_tx_add_elements_raw_output(tx, pegout_script, pegout_script_len, chr(0x1)+asset[::-1], asset_len+1,
+        self.assertEqual(wally_tx_add_elements_raw_output(tx, pegout_script, pegout_script_len, b'\x01'+asset[::-1], asset_len+1,
                                                           unconfidential_satoshi, unconfidential_satoshi_len, None, 0, None, 0, None, 0, 0), WALLY_OK)
 
         self.assertEqual(wally_tx_confidential_value_from_satoshi(2099099999995810, unconfidential_satoshi, unconfidential_satoshi_len), WALLY_OK)
         script, script_len = make_cbuffer('a9140fbb8e55216381f7c4e7124eaa9070d8e8dc92c787')
-        self.assertEqual(wally_tx_add_elements_raw_output(tx, script, script_len, chr(0x1)+asset[::-1], asset_len+1,
+        self.assertEqual(wally_tx_add_elements_raw_output(tx, script, script_len, b'\x01'+asset[::-1], asset_len+1,
                                                           unconfidential_satoshi, unconfidential_satoshi_len, None, 0, None, 0, None, 0, 0), WALLY_OK)
 
         self.assertEqual(wally_tx_confidential_value_from_satoshi(4190, unconfidential_satoshi, unconfidential_satoshi_len), WALLY_OK)
-        self.assertEqual(wally_tx_add_elements_raw_output(tx, None, 0, chr(0x1)+asset[::-1], asset_len+1,
+        self.assertEqual(wally_tx_add_elements_raw_output(tx, None, 0, b'\x01'+asset[::-1], asset_len+1,
                                                           unconfidential_satoshi, unconfidential_satoshi_len, None, 0, None, 0, None, 0, 0), WALLY_OK)
 
         ret, pegout_tx_hex = wally_tx_to_hex(tx, 1)

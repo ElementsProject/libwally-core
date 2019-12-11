@@ -137,7 +137,13 @@
 
   public final static byte[] tx_get_input_txhash(Object jarg1, long jarg2) {
         return tx_get_input_txhash(jarg1, jarg2, null);
-    }
+  }
+
+  public final static byte[] ec_sig_to_der(byte[] sig) {
+      final byte[] buf = new byte[EC_SIGNATURE_DER_MAX_LEN];
+      final int len = ec_sig_to_der(sig, buf);
+      return trimBuffer(buf, len);
+  }
 
   public final static byte[] format_bitcoin_message(byte[] jarg1, long jarg2) {
       int msg_len = SHA256_LEN;
@@ -168,6 +174,25 @@
       return ret;
   }
 
+  public static final byte[] scriptpubkey_p2pkh_from_bytes(byte[] bytes, long flags) {
+      final byte[] buf = new byte[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+      final int len = scriptpubkey_p2pkh_from_bytes(bytes, flags, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public static final byte[] scriptpubkey_p2sh_from_bytes(byte[] bytes, long flags) {
+      final byte[] buf = new byte[WALLY_SCRIPTPUBKEY_P2SH_LEN];
+      final int len = scriptpubkey_p2sh_from_bytes(bytes, flags, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public static final byte[] scriptpubkey_multisig_from_bytes(byte[] bytes, long threshold, long flags, int num_sigs) {
+      final int required_len = 3 + num_sigs * (Wally.EC_PUBLIC_KEY_LEN + 1);
+      final byte[] buf = new byte[required_len];
+      final int len = scriptpubkey_multisig_from_bytes(bytes, threshold, flags, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static byte[] witness_program_from_bytes(byte[] jarg1, long flags) {
       int len = jarg1.length;
       if ((flags & WALLY_SCRIPT_HASH160) != 0)
@@ -188,6 +213,13 @@
 
   public final static boolean wif_is_uncompressed(final String wif) {
       return _wif_is_uncompressed(wif) != 0;
+  }
+
+  public static final byte[] tx_to_bytes(final Object tx, long flags) {
+      final int txlength = Wally.tx_get_length(tx, flags);
+      final byte[] buf = new byte[txlength];
+      final int len = Wally.tx_to_bytes(tx, flags, buf);
+      return checkBuffer(buf, len);
   }
 
   public final static boolean tx_is_coinbase(final Object tx) {
@@ -245,5 +277,3 @@
   public final static void cleanup() {
       _cleanup(0);
   }
-
-

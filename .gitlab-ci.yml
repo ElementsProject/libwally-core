@@ -25,7 +25,7 @@ linux_py2_debug:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - PYTHON_VERSION=2.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=2.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 linux_py3_debug:
@@ -35,7 +35,7 @@ linux_py3_debug:
   script:
     - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
 ubuntu_18.04_release:
   image: greenaddress/wallycore@sha256:059eeaa5c61df5403fd28d6ea556c317d5809f7274e27901d0f09288a316bb53

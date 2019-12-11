@@ -16,10 +16,14 @@ compiler:
 addons:
     apt:
         sources:
-          - ubuntu-toolchain-r-test
-          - llvm-toolchain-bionic-8
+          - sourceline: 'ppa:ubuntu-toolchain-r/test'
+          - sourceline: 'deb http://apt.llvm.org/bionic llvm-toolchain-bionic-8 main'
+            key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          - sourceline: 'deb http://apt.llvm.org/bionic llvm-toolchain-bionic-9 main'
+            key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
         packages:
           - llvm-8-dev
+          - llvm-9-dev
           - python
           - python-dev
           - python3
@@ -27,11 +31,12 @@ addons:
           - swig
           - gcc-multilib
           - clang-8
+          - clang-9
 matrix:
     include:
       - os: linux
         compiler: clang
-        env: CC=clang-8 CXX=clang++-8 ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
+        env: CC=clang-9 CXX=clang++-9 ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
       - os: linux
         compiler: clang
         env: CC=clang-8 CXX=clang++-8 HOST=i686-linux-gnu ENABLE_BUILTIN_MEMSET=--disable-builtin-memset

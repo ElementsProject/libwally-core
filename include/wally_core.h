@@ -28,6 +28,9 @@ extern "C" {
 #define WALLY_EINVAL -2 /** Invalid argument */
 #define WALLY_ENOMEM -3 /** malloc() failed */
 
+/** BIP32 fingerprint length */
+#define FINGERPRINT_LEN 4
+
 /**
  * Initialize wally.
  *

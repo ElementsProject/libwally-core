@@ -129,6 +129,7 @@ scriptsig_p2pkh_from_der = _wrap_bin(scriptsig_p2pkh_from_der, WALLY_SCRIPTSIG_P
 witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
 
 addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)
+address_to_scriptpubkey = _wrap_bin(address_to_scriptpubkey, 21 + 4, resize=True)
 
 tx_to_bytes = _wrap_bin(tx_to_bytes, tx_get_length, resize=True)
 tx_get_btc_signature_hash = _wrap_bin(tx_get_btc_signature_hash, SHA256_LEN)
@@ -221,11 +222,12 @@ if is_elements_build():
     tx_get_output_rangeproof = _wrap_bin(tx_get_output_rangeproof, tx_get_output_rangeproof_len, resize=True)
 
     confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
+    confidential_addr_segwit_to_ec_public_key = _wrap_bin(confidential_addr_segwit_to_ec_public_key, EC_PUBLIC_KEY_LEN)
 
     bip32_key_get_pub_key_tweak_sum = _wrap_bin(bip32_key_get_pub_key_tweak_sum, 32)
 
     def _epsfb_len_fn(bh, mcs, pk, whl, flag):
-        return len(bh) + len(mcs) + len(pk) + len(whl) + 1
+        return elements_pegout_script_size(len(bh), len(mcs), len(pk), len(whl))
     elements_pegout_script_from_bytes = _wrap_bin(elements_pegout_script_from_bytes, _epsfb_len_fn, resize=True)
 
     def _epcsfb_len_fn(rs, cs, flag):

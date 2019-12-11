@@ -1,8 +1,8 @@
 /*
-  The automatic module importing varies between Swig3 and Swig4.
-  Make explicit so should work for both versions.
-  (Basically the swig3 version).
-*/
+ * The automatic module importing varies between Swig3 and Swig4.
+ * Make explicit so should work for both versions.
+ * (Basically the swig3 version).
+ */
 %define MODULEIMPORT
 "
 def swig_import_helper():
@@ -110,12 +110,13 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %}
 
 /*
-  The behaviour of pybuffer_binary varies wrt a Py_None argument between Swig3
-  (raises TypeError) and Swig4 (passes through as NULL) - so make explicit
-  'nullable' and 'nonnull' macros for consistent behaviour across versions.
-  NOTE: the code in the 'else' branch is essentially taken from swig4's
-  pybuffer_binary macro implementation.
-*/
+ * The behaviour of pybuffer_binary varies wrt a Py_None argument between Swig3
+ * (raises TypeError) and Swig4 (passes through as NULL) - so make explicit
+ * 'nullable' and 'nonnull' macros for consistent behaviour across versions.
+ * NOTE: the code in the 'else' branch is essentially taken from swig4's
+ * pybuffer_binary macro implementation.
+ * Note local fix for: https://github.com/swig/swig/issues/1640
+ */
 %define %pybuffer_nullable_binary(TYPEMAP, SIZE)
 %typemap(in) (TYPEMAP, SIZE) {
   int res; Py_ssize_t size = 0; const void *buf = 0;
@@ -124,13 +125,13 @@ static void destroy_words(PyObject *obj) { (void)obj; }
     $2 = 0;
   else {
     res = PyObject_GetBuffer($input, &view, PyBUF_CONTIG_RO);
-    size = view.len;
-    buf = view.buf;
-    PyBuffer_Release(&view);
     if (res < 0) {
       PyErr_Clear();
       %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
     }
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
     $1 = ($1_ltype) buf;
     $2 = ($2_ltype) (size / sizeof($*1_type));
   }
@@ -145,16 +146,42 @@ static void destroy_words(PyObject *obj) { (void)obj; }
     %argument_fail(SWIG_TypeError, "(TYPEMAP, SIZE)", $symname, $argnum);
   else {
     res = PyObject_GetBuffer($input, &view, PyBUF_CONTIG_RO);
-    size = view.len;
-    buf = view.buf;
-    PyBuffer_Release(&view);
     if (res < 0) {
       PyErr_Clear();
       %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
     }
+    size = view.len;
+    buf = view.buf;
+    PyBuffer_Release(&view);
     $1 = ($1_ltype) buf;
     $2 = ($2_ltype) (size / sizeof($*1_type));
   }
+}
+%enddef
+
+/*
+ * This is a copy of swig4's 'pybuffer_mutable_binary' but with the
+ * call to PyBuffer_Release() only made if the call to PyObject_GetBuffer()
+ * returned 0 (ie. succeeded).
+ * FIXME: Remove in favour of pybuffer_mutable_binary when:
+ * a) we move to swig4
+ * b) the call to Release() is fixed upstream
+ * see: https://github.com/swig/swig/issues/1640
+ */
+%define %pybuffer_output_binary(TYPEMAP, SIZE)
+%typemap(in) (TYPEMAP, SIZE) {
+  int res; Py_ssize_t size = 0; void *buf = 0;
+  Py_buffer view;
+  res = PyObject_GetBuffer($input, &view, PyBUF_WRITABLE);
+  if (res < 0) {
+    PyErr_Clear();
+    %argument_fail(res, "(TYPEMAP, SIZE)", $symname, $argnum);
+  }
+  size = view.len;
+  buf = view.buf;
+  PyBuffer_Release(&view);
+  $1 = ($1_ltype) buf;
+  $2 = ($2_ltype) (size/sizeof($*1_type));
 }
 %enddef
 
@@ -211,10 +238,10 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *redeem_script, size_t redeem_script_len);
 
 /* Output buffers */
-%pybuffer_mutable_binary(unsigned char *asset_out, size_t asset_out_len);
-%pybuffer_mutable_binary(unsigned char *abf_out, size_t abf_out_len);
-%pybuffer_mutable_binary(unsigned char *bytes_out, size_t len);
-%pybuffer_mutable_binary(unsigned char *vbf_out, size_t vbf_out_len)
+%pybuffer_output_binary(unsigned char *asset_out, size_t asset_out_len);
+%pybuffer_output_binary(unsigned char *abf_out, size_t abf_out_len);
+%pybuffer_output_binary(unsigned char *bytes_out, size_t len);
+%pybuffer_output_binary(unsigned char *vbf_out, size_t vbf_out_len)
 
 /* Output integer values are converted into return values. */
 %typemap(in, numinputs=0) size_t *written (size_t sz) {

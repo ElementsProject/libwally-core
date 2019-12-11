@@ -32,7 +32,7 @@ class PeginTests(unittest.TestCase):
         script, script_len = make_cbuffer('00'*20)
         self.assertEqual(wally_hash160(mainchain_script, mainchain_script_len, script, script_len), WALLY_OK)
 
-        ret, mainchain_address = wally_base58_from_bytes(chr(196)+script, script_len+1, FLAG_CHECKSUM)
+        ret, mainchain_address = wally_base58_from_bytes(b'\xc4'+script, script_len+1, FLAG_CHECKSUM)
         self.assertEqual(ret, WALLY_OK)
 
         return mainchain_address, claim_script
@@ -57,7 +57,7 @@ class PeginTests(unittest.TestCase):
         script, script_len = make_cbuffer('00'*20)
         self.assertEqual(wally_hash160(mainchain_script, mainchain_script_len, script, script_len), WALLY_OK)
 
-        ret, mainchain_address = wally_base58_from_bytes(chr(5)+script, script_len+1, FLAG_CHECKSUM)
+        ret, mainchain_address = wally_base58_from_bytes(b'\x05'+script, script_len+1, FLAG_CHECKSUM)
         self.assertEqual(ret, WALLY_OK)
 
         self.assertEqual(mainchain_address, '3EoHwZ1tcQZGvwGSYinMSxGXtvYY8sg6G5')
@@ -119,11 +119,11 @@ class PeginTests(unittest.TestCase):
         # witness_v0_keyhash as usually done by elementsd
         script, script_len = make_cbuffer('00149ce668ef355bb7bbb4dc532d6253b1dc620c864d')
 
-        self.assertEqual(wally_tx_add_elements_raw_output(tx, script, script_len, chr(0x1)+asset[::-1], asset_len+1,
+        self.assertEqual(wally_tx_add_elements_raw_output(tx, script, script_len, b'\x01'+asset[::-1], asset_len+1,
                                                           unconfidential_satoshi, unconfidential_satoshi_len, None, 0, None, 0, None, 0, 0), WALLY_OK)
 
         self.assertEqual(wally_tx_confidential_value_from_satoshi(3450, unconfidential_satoshi, unconfidential_satoshi_len), WALLY_OK)
-        self.assertEqual(wally_tx_add_elements_raw_output(tx, None, 0, chr(0x1)+asset[::-1], asset_len+1,
+        self.assertEqual(wally_tx_add_elements_raw_output(tx, None, 0, b'\x01'+asset[::-1], asset_len+1,
                                                           unconfidential_satoshi, unconfidential_satoshi_len, None, 0, None, 0, None, 0, 0), WALLY_OK)
 
         # signing key
@@ -150,7 +150,7 @@ class PeginTests(unittest.TestCase):
         der, der_len = make_cbuffer('00'*72)
         ret, der_len = wally_ec_sig_to_der(sig, sig_len, der, der_len)
         self.assertEqual(ret, WALLY_OK)
-        der = der[:der_len] + chr(0x1)
+        der = der[:der_len] + b'\x01'
         der_len += 1
 
         # check transaction matches the createrawpegin generated one

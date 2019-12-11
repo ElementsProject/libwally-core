@@ -17,6 +17,8 @@ struct ext_key;
 
 #define WALLY_NETWORK_BITCOIN_MAINNET 0x01 /** Bitcoin mainnet */
 #define WALLY_NETWORK_BITCOIN_TESTNET 0x02 /** Bitcoin testnet */
+#define WALLY_NETWORK_LIQUID 0x03 /** Liquid v1 */
+#define WALLY_NETWORK_LIQUID_REGTEST 0x04 /** Liquid v1 regtest */
 
 #define WALLY_ADDRESS_TYPE_P2PKH 0x01       /** P2PKH address ("1...") */
 #define WALLY_ADDRESS_TYPE_P2SH_P2WPKH 0x02 /** P2SH-P2WPKH wrapped SegWit address ("3...") */
@@ -24,8 +26,14 @@ struct ext_key;
 
 #define WALLY_ADDRESS_VERSION_P2PKH_MAINNET 0x00 /** P2PKH address on mainnet */
 #define WALLY_ADDRESS_VERSION_P2PKH_TESTNET 0x6F /** P2PKH address on testnet */
+#define WALLY_ADDRESS_VERSION_P2PKH_LIQUID 0x39 /** P2PKH address on liquid v1 */
+#define WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST 0xEB /** P2PKH address on liquid v1 regtest */
 #define WALLY_ADDRESS_VERSION_P2SH_MAINNET 0x05 /** P2SH address on mainnet */
 #define WALLY_ADDRESS_VERSION_P2SH_TESTNET 0xC4 /** P2SH address on testnet */
+#define WALLY_ADDRESS_VERSION_P2SH_LIQUID 0x27 /** P2SH address on liquid v1 */
+#define WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST 0x4B /** P2SH address on liquid v1 regtest */
+#define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
+#define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 
 /**
  * Create a segwit native address from a v0 witness program.
@@ -44,12 +52,12 @@ WALLY_CORE_API int wally_addr_segwit_from_bytes(
     char **output);
 
 /**
- * Get a witness program from a segwit native address.
+ * Get a scriptPubKey containing the witness program from a segwit native address.
  *
  * :param addr: Address to fetch the witness program from.
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
- * :param bytes_out: Destination for the resulting witness program bytes.
+ * :param bytes_out: Destination for the resulting scriptPubKey (including the version and data push opcode)
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
@@ -64,15 +72,17 @@ WALLY_CORE_API int wally_addr_segwit_to_bytes(
 /**
  * Infer a scriptPubKey from an address.
  *
- * :param addr: Address to infer the scriptPubKey from.
- * :param flags: Pass ``WALLY_NETWORK_BITCOIN_MAINNET`` or ``WALLY_NETWORK_BITCOIN_TESTNET``.
+ * :param addr: Base58 encoded address to infer the scriptPubKey from.
+ *|    For confidential Liquid addresses first call :c:func:`wally_confidential_addr_to_addr`
+ * :param network: One of ``WALLY_NETWORK_BITCOIN_MAINNET``, ``WALLY_NETWORK_BITCOIN_TESTNET``,
+ *|    ``WALLY_NETWORK_LIQUID``, ``WALLY_NETWORK_LIQUID_REGTEST``.
  * :param bytes_out: Destination for the resulting scriptPubKey
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_address_to_scriptpubkey(
     const char *addr,
-    uint32_t flags,
+    uint32_t network,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
@@ -82,7 +92,7 @@ WALLY_CORE_API int wally_address_to_scriptpubkey(
  *
  * :param priv_key: Private key bytes.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
+ * :param prefix: Expected prefix byte, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``, ``WALLY_ADDRESS_VERSION_TESTNET``.
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param output: Destination for the resulting Wallet Import Format string.
@@ -98,7 +108,7 @@ WALLY_CORE_API int wally_wif_from_bytes(
  * Convert a Wallet Import Format string to a private key.
  *
  * :param wif: Private key in Wallet Import Format.
- * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
+ * :param prefix: Prefix byte to use, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``, ``WALLY_ADDRESS_VERSION_TESTNET``.
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param bytes_out: Destination for the private key.
@@ -143,8 +153,8 @@ WALLY_CORE_API int wally_wif_to_public_key(
  * :param hdkey: The extended key to use.
  * :param flags: ``WALLY_ADDRESS_TYPE_P2PKH`` for a legacy address, ``WALLY_ADDRESS_TYPE_P2SH_P2WPKH``
  *| for P2SH-wrapped SegWit.
- * :param version: Version byte to generate address, e.g. with Bitcoin: WALLY_ADDRESS_VERSION_P2PKH_MAINNET,
- *| WALLY_ADDRESS_VERSION_P2PKH_TESTNET, WALLY_ADDRESS_VERSION_P2SH_MAINNET and WALLY_ADDRESS_VERSION_P2SH_TESTNET.
+ * :param version: Version byte to generate address, e.g. with Bitcoin: ``WALLY_ADDRESS_VERSION_P2PKH_MAINNET``,
+ *| ``WALLY_ADDRESS_VERSION_P2PKH_TESTNET``, ``WALLY_ADDRESS_VERSION_P2SH_MAINNET`` and ``WALLY_ADDRESS_VERSION_P2SH_TESTNET``.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_bip32_key_to_address(
@@ -172,7 +182,7 @@ WALLY_CORE_API int wally_bip32_key_to_addr_segwit(
  *
  * :param wif: Private key in Wallet Import Format.
  * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
- * :param version: Version byte to generate address, e.g. WALLY_ADDRESS_VERSION_P2PKH_MAINNET, WALLY_ADDRESS_VERSION_P2PKH_TESTNET.
+ * :param version: Version byte to generate address, e.g. ``WALLY_ADDRESS_VERSION_P2PKH_MAINNET``, ``WALLY_ADDRESS_VERSION_P2PKH_TESTNET``.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_wif_to_address(
@@ -186,7 +196,7 @@ WALLY_CORE_API int wally_wif_to_address(
  * Extract the address from a confidential address.
  *
  * :param address: The base58 encoded confidential address to extract the address from.
- * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param output: Destination for the resulting address string.
  */
 WALLY_CORE_API int wally_confidential_addr_to_addr(
@@ -198,7 +208,7 @@ WALLY_CORE_API int wally_confidential_addr_to_addr(
  * Extract the blinding public key from a confidential address.
  *
  * :param address: The base58 encoded confidential address to extract the public key from.
- * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param bytes_out: Destination for the public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  */
@@ -212,7 +222,7 @@ WALLY_CORE_API int wally_confidential_addr_to_ec_public_key(
  * Create a confidential address from an address and blinding public key.
  *
  * :param address: The base58 encoded address to make confidential.
- * :param prefix: The confidential address prefix byte, e.g. WALLY_CA_PREFIX_LIQUID.
+ * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param pub_key: The blinding public key to associate with ``address``.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param output: Destination for the resulting address string.

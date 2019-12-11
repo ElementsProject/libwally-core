@@ -156,7 +156,7 @@ WALLY_CORE_API int wally_tx_witness_stack_add(
  * Add a dummy witness item to a witness stack.
  *
  * :param stack: The witness stack to add to.
- * :param flags: WALLY_TX_DUMMY_ Flags indicating the type of dummy to add.
+ * :param flags: ``WALLY_TX_DUMMY_`` Flags indicating the type of dummy to add.
  */
 WALLY_CORE_API int wally_tx_witness_stack_add_dummy(
     struct wally_tx_witness_stack *stack,
@@ -181,7 +181,7 @@ WALLY_CORE_API int wally_tx_witness_stack_set(
  *
  * :param stack: The witness stack to add to.
  * :param index: Index of the item to set. The stack will grow if needed to this many items.
- * :param flags: WALLY_TX_DUMMY_ Flags indicating the type of dummy to set.
+ * :param flags: ``WALLY_TX_DUMMY_`` Flags indicating the type of dummy to set.
  */
 WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
     struct wally_tx_witness_stack *stack,
@@ -400,7 +400,7 @@ WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
  * Return the length of transaction once serialized into bytes.
  *
  * :param tx: The transaction to find the serialized length of.
- * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
+ * :param flags: ``WALLY_TX_FLAG_`` Flags controlling serialization options.
  * :param written: Destination for the length of the serialized bytes.
  */
 WALLY_CORE_API int wally_tx_get_length(
@@ -413,7 +413,7 @@ WALLY_CORE_API int wally_tx_get_length(
  *
  * :param bytes: Bytes to create the transaction from.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
+ * :param flags: ``WALLY_TX_FLAG_`` Flags controlling serialization options.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_tx_from_bytes(
@@ -426,7 +426,7 @@ WALLY_CORE_API int wally_tx_from_bytes(
  * Create a transaction from its serialized bytes in hexadecimal.
  *
  * :param hex: Hexadecimal string containing the transaction.
- * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
+ * :param flags: ``WALLY_TX_FLAG_`` Flags controlling serialization options.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_tx_from_hex(
@@ -438,7 +438,7 @@ WALLY_CORE_API int wally_tx_from_hex(
  * Serialize a transaction to bytes.
  *
  * :param tx: The transaction to serialize.
- * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
+ * :param flags: ``WALLY_TX_FLAG_`` Flags controlling serialization options.
  * :param bytes_out: Destination for the serialized transaction.
  * :param len: Size of ``bytes_out`` in bytes.
  * :param written: Destination for the length of the serialized transaction.
@@ -454,7 +454,7 @@ WALLY_CORE_API int wally_tx_to_bytes(
  * Serialize a transaction to hex.
  *
  * :param tx: The transaction to serialize.
- * :param flags: WALLY_TX_FLAG_ Flags controlling serialization options.
+ * :param flags: ``WALLY_TX_FLAG_`` Flags controlling serialization options.
  * :param output: Destination for the resulting hexadecimal string.
  *
  * .. note:: The string returned should be freed using `wally_free_string`.
@@ -512,9 +512,9 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
  * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param satoshi: The amount spent by the input being signed for. Only used if
- *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
- * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
- * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
+ *|     flags includes ``WALLY_TX_FLAG_USE_WITNESS``, pass 0 otherwise.
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
+ * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
@@ -542,12 +542,12 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  * :param extra_offset: Offset with the preimage to store ``extra``. To store
  *|     it at the end of the preimage, use 0xffffffff.
  * :param satoshi: The amount spent by the input being signed for. Only used if
- *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass 0 otherwise.
- * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
+ *|     flags includes ``WALLY_TX_FLAG_USE_WITNESS``, pass 0 otherwise.
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param tx_sighash: The 32bit sighash value to include in the preimage to hash.
  *|     This must be given in host CPU endianess; For normal Bitcoin signing
  *|     the value of ``sighash`` should be given.
- * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
+ * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
  * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
@@ -875,10 +875,10 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
  * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param value: The (confidential) value spent by the input being signed for. Only used if
- *|     flags includes WALLY_TX_FLAG_USE_WITNESS, pass NULL otherwise.
+ *|     flags includes ``WALLY_TX_FLAG_USE_WITNESS``, pass NULL otherwise.
  * :param value_len: Size of ``value`` in bytes.
- * :param sighash: WALLY_SIGHASH_ flags specifying the type of signature desired.
- * :param flags: WALLY_TX_FLAG_USE_WITNESS to generate a BIP 143 signature, or 0
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
+ * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
@@ -934,7 +934,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
  *
  * :param entropy: The asset entropy.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
- * :param flags: WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE if initial issuance was blinded,
+ * :param flags: ``WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE`` if initial issuance was blinded,
  * |     pass 0 otherwise.
  * :param bytes_out: Destination for the re-issuance token.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.

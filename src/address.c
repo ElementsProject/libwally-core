@@ -75,31 +75,54 @@ int wally_bip32_key_to_addr_segwit(const struct ext_key *hdkey, const char *addr
 
 static bool is_p2pkh(unsigned char version)
 {
-   return version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET || version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET;
+   return version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET ||
+          version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET ||
+          version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID ||
+          version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST;
 }
 
 static bool is_p2sh(unsigned char version)
 {
-   return version == WALLY_ADDRESS_VERSION_P2SH_MAINNET || version == WALLY_ADDRESS_VERSION_P2SH_TESTNET;
+   return version == WALLY_ADDRESS_VERSION_P2SH_MAINNET ||
+          version == WALLY_ADDRESS_VERSION_P2SH_TESTNET ||
+          version == WALLY_ADDRESS_VERSION_P2SH_LIQUID ||
+          version == WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST;
 }
 
-static bool is_mainnet(unsigned char version)
+static int network_from_addr_version(uint32_t version, uint32_t* network)
 {
-   return version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET  || version == WALLY_ADDRESS_VERSION_P2SH_MAINNET;
+    switch (version) {
+    case WALLY_ADDRESS_VERSION_P2PKH_MAINNET:
+    case WALLY_ADDRESS_VERSION_P2SH_MAINNET:
+        *network = WALLY_NETWORK_BITCOIN_MAINNET;
+        break;
+    case WALLY_ADDRESS_VERSION_P2PKH_TESTNET:
+    case WALLY_ADDRESS_VERSION_P2SH_TESTNET:
+        *network = WALLY_NETWORK_BITCOIN_TESTNET;
+        break;
+    case WALLY_ADDRESS_VERSION_P2PKH_LIQUID:
+    case WALLY_ADDRESS_VERSION_P2SH_LIQUID:
+        *network = WALLY_NETWORK_LIQUID;
+        break;
+    case WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST:
+    case WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST:
+        *network = WALLY_NETWORK_LIQUID_REGTEST;
+        break;
+    default:
+        return WALLY_EINVAL;
+    }
+    return WALLY_OK;
 }
 
-int wally_address_to_scriptpubkey(const char *addr, uint32_t flags, unsigned char *bytes_out,
+int wally_address_to_scriptpubkey(const char *addr, uint32_t network, unsigned char *bytes_out,
                                   size_t len, size_t *written)
 {
-    uint32_t version;
+    uint32_t version, addr_network;
     unsigned char bytes_base58_decode[1 + HASH160_LEN + BASE58_CHECKSUM_LEN];
     size_t written_base58_decode;
 
     if (written)
         *written = 0;
-
-    if (!(flags == WALLY_NETWORK_BITCOIN_MAINNET || flags == WALLY_NETWORK_BITCOIN_TESTNET))
-        return WALLY_EINVAL;
 
     // This returns WALLY_OK even if addr is too long for bytes_base58_decode
     if (wally_base58_to_bytes(addr, BASE58_FLAG_CHECKSUM, bytes_base58_decode, sizeof(bytes_base58_decode), &written_base58_decode) != WALLY_OK)
@@ -109,7 +132,9 @@ int wally_address_to_scriptpubkey(const char *addr, uint32_t flags, unsigned cha
         return WALLY_EINVAL;
 
     version = bytes_base58_decode[0];
-    if ((is_mainnet(version) && flags & WALLY_NETWORK_BITCOIN_TESTNET) || (!is_mainnet(version) && flags & WALLY_NETWORK_BITCOIN_MAINNET))
+    if (network_from_addr_version(version, &addr_network) != WALLY_OK)
+        return WALLY_EINVAL;
+    if (network != addr_network)
         return WALLY_EINVAL;
 
     if (is_p2pkh(version)) {

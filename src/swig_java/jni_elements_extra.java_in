@@ -29,6 +29,15 @@
       return trimBuffer(buf, len);
   }
 
+  public final static byte[] asset_blinding_key_from_seed(byte[] seed) {
+      return asset_blinding_key_from_seed(seed, null);
+  }
+
+  public final static byte[] asset_blinding_key_to_ec_private_key(byte[] asset_blinding_key,
+                                                                  byte[] script_pub_key) {
+      return asset_blinding_key_to_ec_private_key(asset_blinding_key, script_pub_key, null);
+  }
+
   public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
                                          byte[] commitment, byte[] extra_in,
                                          byte[] generator,
@@ -44,6 +53,10 @@
       final byte[] buf = new byte[EC_PUBLIC_KEY_LEN];
       confidential_addr_to_ec_public_key(addr, prefix, buf);
       return buf;
+  }
+
+  public final static byte[] tx_confidential_value_from_satoshi(long satoshi) {
+      return tx_confidential_value_from_satoshi(satoshi, null);
   }
 
   public final static Object tx_elements_input_init(byte[] jarg1, long jarg2, long jarg3, byte[] jarg4) {
@@ -86,21 +99,9 @@
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] tx_output_get_asset(Object tx_out) {
-      final byte[] buf = new byte[tx_output_get_asset_len(tx_out)];
-      final int len = _tx_output_get_asset(tx_out, buf);
-      return trimBuffer(buf, len);
-  }
-
   public final static byte[] tx_output_get_value(Object tx_out) {
       final byte[] buf = new byte[tx_output_get_value_len(tx_out)];
       final int len = _tx_output_get_value(tx_out, buf);
-      return trimBuffer(buf, len);
-  }
-
-  public final static byte[] tx_output_get_nonce(Object tx_out) {
-      final byte[] buf = new byte[tx_output_get_nonce_len(tx_out)];
-      final int len = _tx_output_get_nonce(tx_out, buf);
       return trimBuffer(buf, len);
   }
 
@@ -118,6 +119,30 @@
 
   public final static boolean tx_is_elements(final Object tx) {
       return _tx_is_elements(tx) != 0;
+  }
+
+  public final static byte[] tx_get_elements_signature_hash(Object tx, long index, byte[] script, byte[] value, long sighash, long flags) {
+      return tx_get_elements_signature_hash(tx, index, script, value, sighash, flags, null);
+  }
+
+  public final static byte[] asset_pak_whitelistproof(byte[] on_keys, byte[] off_keys, long idx, byte[] sub_pubkey, byte[] priv_key, byte[] summed_key) {
+      final int required_len = asset_pak_whitelistproof_size(off_keys.length / Wally.EC_PUBLIC_KEY_LEN);
+      final byte[] buf = new byte[required_len];
+      asset_pak_whitelistproof(on_keys, off_keys, idx, sub_pubkey, priv_key, summed_key, buf);
+      return buf;
+  }
+
+  public final static byte[] elements_pegout_script_from_bytes(byte[] bh, byte[] mcs, byte[] pk, byte[] whl, long flags) {
+      final int required_len = elements_pegout_script_size(bh.length, mcs.length, pk.length, whl.length);
+      final byte[] buf = new byte[required_len];
+      final int len = elements_pegout_script_from_bytes(bh, mcs, pk, whl, flags, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] elements_pegin_contract_script_from_bytes(byte[] rs, byte[] cs, long flags) {
+      final byte[] buf = new byte[rs.length];
+      final int len = elements_pegin_contract_script_from_bytes(rs, cs, flags, buf);
+      return checkBuffer(buf, len);
   }
 
   public final static byte[] tx_get_input_blinding_nonce(Object tx, final int index) {
@@ -152,11 +177,8 @@
       return checkBuffer(buf, len);
   }
 
-
-  public final static byte[] tx_get_output_asset(Object tx, final int index) {
-      final byte[] buf = new byte[tx_get_output_asset_len(tx, index)];
-      final int len = _tx_get_output_asset(tx, index, buf);
-      return trimBuffer(buf, len);
+  public final static byte[] tx_get_output_asset(Object jarg1, int jarg2) {
+      return tx_get_output_asset(jarg1, jarg2, null);
   }
 
   public final static byte[] tx_get_output_value(Object tx, final int index) {
@@ -165,10 +187,8 @@
       return trimBuffer(buf, len);
   }
 
-  public final static byte[] tx_get_output_nonce(Object tx, final int index) {
-      final byte[] buf = new byte[tx_get_output_nonce_len(tx, index)];
-      final int len = _tx_get_output_nonce(tx, index, buf);
-      return trimBuffer(buf, len);
+  public final static byte[] tx_get_output_nonce(Object jarg1, int jarg2) {
+      return tx_get_output_nonce(jarg1, jarg2, null);
   }
 
   public final static byte[] tx_get_output_surjectionproof(Object tx, final int index) {
@@ -186,5 +206,3 @@
   public final static byte[] bip32_key_get_pub_key_tweak_sum(Object jarg1) {
       return bip32_key_get_pub_key_tweak_sum(jarg1, null);
   }
-
-

@@ -147,10 +147,12 @@ all: swig_java/wallycore.jar
 SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_bip32.class \
     $(sjs)/$(cbt)/test_tx.class \
+    $(sjs)/$(cbt)/test_scripts.class \
     $(sjs)/$(cbt)/test_mnemonic.class
 
 if BUILD_ELEMENTS
-SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class
+SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class \
+    $(sjs)/$(cbt)/test_pegs.class
 endif
 
 all: $(SWIG_JAVA_TEST_DEPS)
@@ -315,23 +317,28 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if USE_SWIG_PYTHON
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/address.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
 endif
 endif
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS
 if BUILD_ELEMENTS
 	$(AM_V_at)$(JAVA_TEST)test_assets
+	$(AM_V_at)$(JAVA_TEST)test_pegs
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
+	$(AM_V_at)$(JAVA_TEST)test_scripts
 	$(AM_V_at)$(JAVA_TEST)test_tx
 endif
 if USE_JS_WRAPPERS

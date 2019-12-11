@@ -52,9 +52,9 @@ def extract_docs(infile, outfile):
         f.write('\n'.join(output))
 
 # Generate the documentation source files
-# FIXME: elements
 for m in [
-    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'transaction'
+    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt', 'transaction',
+    'elements'
     ]:
     extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
@@ -86,7 +86,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'libwally-core'
-copyright = u'2018, Jon Griffiths'
+copyright = u'2019, Jon Griffiths'
 author = u'Jon Griffiths'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -94,7 +94,7 @@ author = u'Jon Griffiths'
 # built documents.
 #
 # The short X.Y version.
-version = u'0.7.5'
+version = u'0.7.6'
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -191,6 +191,3 @@ texinfo_documents = [
      author, project, 'The libwally Bitcoin library.',
      'Miscellaneous'),
 ]
-
-
-
