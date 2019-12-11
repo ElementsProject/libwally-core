@@ -370,6 +370,7 @@ add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
 set(LIBWALLY_FILES
     ${CONFIG_HEADER_DIRECTORY}/config.h
     ${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h
+    src/address.c
     src/aes.c
     src/base58.c
     src/bip32.c
@@ -384,6 +385,7 @@ set(LIBWALLY_FILES
     src/internal.c
     src/mnemonic.c
     src/pbkdf2.c
+    src/psbt.c
     src/script.c
     src/scrypt.c
     src/sign.c
@@ -413,9 +415,9 @@ set(LIBWALLY_FILES
     src/secp256k1/include/secp256k1.h
     src/secp256k1/include/secp256k1_recovery.h
     src/bip32_int.h
+    src/script_int.h
     src/transaction_int.h
     src/transaction_shared.h
-    src/psbt.c
     ${ECMULT_STATIC_CONTEXT_H}
 )
 
