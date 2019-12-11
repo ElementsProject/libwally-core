@@ -1275,6 +1275,8 @@ add_test(NAME py_test_reconcile_sigs  COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/
 add_test(NAME py_test_signmessage     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/signmessage.py )
 ## error occurred on windows
 add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/tx.py )
+add_test(NAME py_test_address         COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/address.py )
+add_test(NAME py_test_sha             COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/sha.py )
 
 if(ENABLE_ELEMENTS)
 add_test(NAME py_test_elements_tx     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/elements_tx.py )
@@ -1344,6 +1346,24 @@ add_test(
   WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
 )
 
+set(TEST_JAVA_SCRIPTS java_test_scripts)
+add_jar(${TEST_JAVA_SCRIPTS}
+  SOURCES
+    ${SWIG_JAVA_TEST_PACKAGE_DIR}/test_scripts.java
+    ${SWIG_JAVA_WALLY_FILE}
+  ENTRY_POINT com/blockstream/test/test_scripts
+  OUTPUT_NAME ${TEST_JAVA_SCRIPTS}
+  OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${TEST_JAVA_SCRIPTS} ${SWIG_JAVA_JAR_NAME})
+add_test(
+  NAME ${TEST_JAVA_SCRIPTS}
+  COMMAND
+    ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
+    java -jar ${TEST_JAVA_SCRIPTS}.jar
+  WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
+)
+
 if(ENABLE_ELEMENTS)
 set(TEST_JAVA_ASSETS java_test_assets)
 add_jar(${TEST_JAVA_ASSETS}
@@ -1360,6 +1380,24 @@ add_test(
   COMMAND
     ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
     java -jar ${TEST_JAVA_ASSETS}.jar
+  WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
+)
+
+set(TEST_JAVA_PEGS java_test_pegs)
+add_jar(${TEST_JAVA_PEGS}
+  SOURCES
+    ${SWIG_JAVA_TEST_PACKAGE_DIR}/test_pegs.java
+    ${SWIG_JAVA_WALLY_FILE}
+  ENTRY_POINT com/blockstream/test/test_pegs
+  OUTPUT_NAME ${TEST_JAVA_PEGS}
+  OUTPUT_DIR ${SWIG_JAVA_OUTPUT_DIR}
+)
+add_dependencies(${TEST_JAVA_PEGS} ${SWIG_JAVA_JAR_NAME})
+add_test(
+  NAME ${TEST_JAVA_PEGS}
+  COMMAND
+    ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=.
+    java -jar ${TEST_JAVA_PEGS}.jar
   WORKING_DIRECTORY ${SWIG_JAVA_OUTPUT_DIR}
 )
 endif() # ENABLE_ELEMENTS
