@@ -1,0 +1,148 @@
+name: push check
+
+on: 
+  push:
+    branches:
+    - cmake_build
+    - feature/*
+
+env:
+  CMAKE_VERSION: 3.15.5
+
+jobs:
+  cmake-js-build:
+    name: cmake-js build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        node: [8, 12]
+
+    steps:
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - uses: actions/checkout@v1
+    - name: cmake-useCache-ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: cache/cmake
+        key: ${{ runner.os }}-cmake-3.15.5-x64
+    - name: cmake-download-ubuntu
+      if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p cache/cmake
+        cd cache/cmake
+        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
+        cd ../..
+    - name: cmake-setting-ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
+        cd cache/cmake
+        tar zxvf $cmake_file_name.tar.gz
+        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
+        export CURRENT_DIR=$(pwd)
+        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
+        cd ../..
+    - name: npm_install
+      run: npm install
+    - name: test
+      run: npm run ctest
+    - name: ubuntu-after
+      if: matrix.os == 'ubuntu-latest'
+      run: rm -rf cache/cmake/cmake-3.15.5-Linux-x86_64
+
+  cmake-build:
+    name: cmake build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        target: [cpp, python, java]
+        java: [8.0.x, 11.0.x, 13]
+        exclude:
+          - target: python
+            java: 11.0.x
+          - target: python
+            java: 13
+          - target: cpp
+            java: 11.0.x
+          - target: cpp
+            java: 13
+          - os: macos-latest
+            target: python
+          - os: macos-latest
+            target: java
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: setup python
+      if: matrix.target == 'python'
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+        architecture: x64
+    - name: setup java
+      if: matrix.target == 'java'
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+        architecture: x64
+    - name: cmake-useCache-ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: cache/cmake
+        key: ${{ runner.os }}-cmake-3.15.5-x64
+    - name: cmake-download-ubuntu
+      if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p cache/cmake
+        cd cache/cmake
+        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
+        cd ../..
+    - name: cmake-setting-ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
+        cd cache/cmake
+        tar zxvf $cmake_file_name.tar.gz
+        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
+        export CURRENT_DIR=$(pwd)
+        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
+        cd ../..
+    - name: ubuntu-install-swig
+      if: matrix.os == 'ubuntu-latest' && matrix.target != 'cpp'
+      run: sudo apt install swig
+    - name: cmake-generate
+      if: matrix.os != 'windows-latest'
+      run: |
+        cmake -S . -B build -G "Unix Makefiles"
+    - name: cmake-generate-windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        cmake -S . -B build -G "Visual Studio 16 2019"
+    - name: cmake-normal-config
+      if: matrix.target == 'cpp'
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release" --build build
+    - name: cmake-python-config
+      if: matrix.target == 'python'
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release" --build build
+    - name: cmake-java-config
+      if: matrix.target == 'java'
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release" --build build
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake --build build --config Release
+    - name: test
+      run: |
+        cd build
+        ctest -C Release
+    - name: ubuntu-after
+      if: matrix.os == 'ubuntu-latest'
+      run: rm -rf cache/cmake/cmake-3.15.5-Linux-x86_64
