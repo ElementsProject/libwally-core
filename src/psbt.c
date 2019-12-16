@@ -1607,9 +1607,11 @@ static int psbt_input_get_length(
     }
     // Witness utxo
     if (input->witness_utxo) {
+        size_t wit_size = 0;
         out += 2; // Key len and one byte type
-        out += sizeof(input->witness_utxo->satoshi);
-        out += varbuff_get_length(input->witness_utxo->script_len);
+        wit_size += sizeof(input->witness_utxo->satoshi);
+        wit_size += varbuff_get_length(input->witness_utxo->script_len);
+        out += varbuff_get_length(wit_size);
     }
     // Partial sigs
     if (input->partial_sigs) {
