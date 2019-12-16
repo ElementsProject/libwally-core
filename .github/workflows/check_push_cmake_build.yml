@@ -17,6 +17,9 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
         node: [8, 12]
+        exclude:
+          - os: macos-latest
+            node: 8
 
     steps:
     - uses: actions/setup-node@v1
@@ -72,6 +75,10 @@ jobs:
             java: 11.0.x
           - target: cpp
             java: 13
+          - os: windows-latest
+            target: python
+          - os: windows-latest
+            target: java
           - os: macos-latest
             target: python
           - os: macos-latest
