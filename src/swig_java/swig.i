@@ -669,7 +669,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
 %returns_size_t(wally_asset_pak_whitelistproof_size);
-%returns_void__(wally_asset_pak_whitelistproof);
+%returns_size_t(wally_asset_pak_whitelistproof);
 
 %rename("_cleanup") wally_cleanup;
 %returns_void__(_cleanup)

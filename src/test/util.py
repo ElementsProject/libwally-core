@@ -227,7 +227,7 @@ for f in (
     ('wally_asset_blinding_key_to_ec_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_asset_unblind', c_int, [c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
     ('wally_asset_unblind_with_nonce', c_int, [c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_char_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
-    ('wally_asset_pak_whitelistproof', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_asset_pak_whitelistproof', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_ulong_p]),
     ('wally_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha256d', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),

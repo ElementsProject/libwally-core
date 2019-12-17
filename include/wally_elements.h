@@ -323,6 +323,7 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof_size(
  * :param online_keys_len: Length of ``online_keys_len`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
  * :param offline_keys: The list of offline keys.
  * :param offline_keys_len: Length of ``offline_keys_len`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param key_index: The index in the PAK list of the key signing this whitelist proof
  * :param sub_pubkey: The key to be whitelisted.
  * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param online_priv_key: The secret key to the signer's online pubkey.
@@ -331,6 +332,7 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof_size(
  * :param summed_key_len: Length of ``summed_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param bytes_out: Destination for the resulting whitelist proof.
  * :param len: Length of ``bytes_out`` in bytes.
+ * :param written: Number of bytes actually written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_asset_pak_whitelistproof(
     const unsigned char *online_keys,
@@ -345,7 +347,8 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof(
     const unsigned char *summed_key,
     size_t summed_key_len,
     unsigned char *bytes_out,
-    size_t len);
+    size_t len,
+    size_t *written);
 
 #endif /* BUILD_ELEMENTS */
 
