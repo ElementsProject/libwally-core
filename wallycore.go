@@ -29,7 +29,7 @@ typedef struct { void* array; intgo len; intgo cap; } _goslice_;
 
 
 
-#cgo LDFLAGS: -L/usr/local/lib -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
+#cgo LDFLAGS: -L/usr/local/lib -L/usr/local/lib64 -L${SRCDIR}/build/Release -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
 
 typedef long long swig_type_1;
 typedef _gostring_ swig_type_2;
