@@ -53,12 +53,12 @@ matrix:
         os: linux
         env: CC=clang-8 CXX=clang++-8 ENABLE_ELEMENTS=--enable-elements ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
       - os: windows
-        env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig NODE_VERSION=node/10.16.3
+        env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig
         before_script:
         script:
           - tools/msvc/wheel.bat
       - os: windows
-        env: PATH=/c/Python37:/c/Python37/Scripts:$PATH NODE_VERSION=node/10.16.3
+        env: PATH=/c/Python37:/c/Python37/Scripts:$PATH NODE_VERSION=node/12.14.0
         before_script:
         script:
           - source $ProgramData/nvs/nvs.sh
