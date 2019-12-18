@@ -2,14 +2,14 @@
 %{
 #include <iostream>
 #define BUILD_ELEMENTS 1
-#include "include/wally_core.h"
-#include "include/wally_crypto.h"
-#include "include/wally_address.h"
-#include "include/wally_bip32.h"
-#include "include/wally_bip39.h"
-#include "include/wally_transaction.h"
-#include "include/wally_elements.h"
-#include "include/wally_script.h"
+#include "wally_core.h"
+#include "wally_crypto.h"
+#include "wally_address.h"
+#include "wally_bip32.h"
+#include "wally_bip39.h"
+#include "wally_transaction.h"
+#include "wally_elements.h"
+#include "wally_script.h"
 %}
 
 %typemap(argout) (char **output) {
@@ -24,6 +24,8 @@
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 
 %insert(cgo_comment_typedefs) %{
+
+#cgo CXXFLAGS: -I./include -I/usr/local/include
 #cgo LDFLAGS: -L/usr/local/lib -L/usr/local/lib64 -L${SRCDIR}/build/Release -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
 %}
 #include <iostream>
