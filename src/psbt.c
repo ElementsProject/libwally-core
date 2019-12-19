@@ -2594,8 +2594,15 @@ int wally_sign_psbt(
             scriptcode = input->redeem_script;
             scriptcode_len = input->redeem_script_len;
         } else {
-            scriptcode = psbt->tx->outputs[txin->index].script;
-            scriptcode_len = psbt->tx->outputs[txin->index].script_len;
+            if (input->non_witness_utxo) {
+                scriptcode = input->non_witness_utxo->outputs[txin->index].script;
+                scriptcode_len = input->non_witness_utxo->outputs[txin->index].script_len;
+            } else if (input->witness_utxo) {
+                scriptcode = input->witness_utxo->script;
+                scriptcode_len = input->witness_utxo->script_len;
+            } else {
+                continue;
+            }
         }
 
         if (input->non_witness_utxo) {
