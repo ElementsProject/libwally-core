@@ -36,7 +36,7 @@ matrix:
     include:
       - os: linux
         compiler: clang
-        env: CC=clang-9 CXX=clang++-9 ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
+        env: CC=clang-9 CXX=clang++-9 LDFLAGS=-Wl,-z,now ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
       - os: linux
         compiler: clang
         env: CC=clang-8 CXX=clang++-8 HOST=i686-linux-gnu ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
@@ -51,7 +51,7 @@ matrix:
         env: DEBUG_WALLY=--enable-debug
       - compiler: clang
         os: linux
-        env: CC=clang-8 CXX=clang++-8 ENABLE_ELEMENTS=--enable-elements ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
+        env: CC=clang-8 CXX=clang++-8 LDFLAGS=-Wl,-z,now ENABLE_ELEMENTS=--enable-elements ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
       - os: windows
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig
         before_script:
