@@ -34,6 +34,9 @@ addons:
           - clang-9
 matrix:
     include:
+      - services:
+          - docker
+        script: docker run -v $PWD:/wally debian:buster /bin/sh -c "apt-get update -yqq && apt-get install -yqq --no-install-recommends git uncrustify && cd /wally && (tools/uncrustify || true) && git diff --exit-code"
       - os: linux
         compiler: clang
         env: CC=clang-9 CXX=clang++-9 LDFLAGS=-Wl,-z,now ENABLE_BUILTIN_MEMSET=--disable-builtin-memset

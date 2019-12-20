@@ -8,8 +8,12 @@ buster_release:
     - wally_dist/*
   tags:
     - ga
+  before_script:
+    - apt-get update -yqq
+    - apt-get install -yqq --no-install-recommends git uncrustify
+    - tools/uncrustify || true
+    - git diff --exit-code
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh
     - python setup.py sdist --dist-dir ./wally_core
     - ./tools/build_android_libraries.sh
@@ -23,7 +27,6 @@ linux_py2_debug:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=2.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
@@ -33,7 +36,6 @@ linux_py3_debug:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
 
@@ -48,7 +50,6 @@ ubuntu_18.04_release:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 ubuntu_19.04_release:
@@ -62,7 +63,6 @@ ubuntu_19.04_release:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 osx_release:
@@ -75,7 +75,6 @@ osx_release:
     paths:
     - wally_dist/*
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 armv7l_release:
@@ -88,7 +87,6 @@ armv7l_release:
     paths:
     - wally_dist/*
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 arm64_release:
@@ -101,7 +99,6 @@ arm64_release:
     paths:
     - wally_dist/*
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 powerpcg4_release:
@@ -147,7 +144,6 @@ apidocs:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh
     - virtualenv -p python2 .venv
     - source .venv/bin/activate
