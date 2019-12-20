@@ -75,21 +75,21 @@ int wally_bip32_key_to_addr_segwit(const struct ext_key *hdkey, const char *addr
 
 static bool is_p2pkh(unsigned char version)
 {
-   return version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET ||
-          version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET ||
-          version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID ||
-          version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST;
+    return version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET ||
+           version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET ||
+           version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID ||
+           version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST;
 }
 
 static bool is_p2sh(unsigned char version)
 {
-   return version == WALLY_ADDRESS_VERSION_P2SH_MAINNET ||
-          version == WALLY_ADDRESS_VERSION_P2SH_TESTNET ||
-          version == WALLY_ADDRESS_VERSION_P2SH_LIQUID ||
-          version == WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST;
+    return version == WALLY_ADDRESS_VERSION_P2SH_MAINNET ||
+           version == WALLY_ADDRESS_VERSION_P2SH_TESTNET ||
+           version == WALLY_ADDRESS_VERSION_P2SH_LIQUID ||
+           version == WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST;
 }
 
-static int network_from_addr_version(uint32_t version, uint32_t* network)
+static int network_from_addr_version(uint32_t version, uint32_t *network)
 {
     switch (version) {
     case WALLY_ADDRESS_VERSION_P2PKH_MAINNET:

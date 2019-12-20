@@ -895,10 +895,10 @@ int wally_elements_pegout_script_size(size_t parent_genesis_blockhash_len,
         return WALLY_EINVAL;
 
     *written = 1
-              + parent_genesis_blockhash_len + calc_push_opcode_size(parent_genesis_blockhash_len)
-              + mainchain_script_len + calc_push_opcode_size(mainchain_script_len)
-              + sub_pubkey_len + calc_push_opcode_size(sub_pubkey_len)
-              + whitelist_proof_len + calc_push_opcode_size(whitelist_proof_len);
+               + parent_genesis_blockhash_len + calc_push_opcode_size(parent_genesis_blockhash_len)
+               + mainchain_script_len + calc_push_opcode_size(mainchain_script_len)
+               + sub_pubkey_len + calc_push_opcode_size(sub_pubkey_len)
+               + whitelist_proof_len + calc_push_opcode_size(whitelist_proof_len);
     return WALLY_OK;
 }
 

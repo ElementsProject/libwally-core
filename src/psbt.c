@@ -86,12 +86,12 @@ fail:
 }
 
 int wally_add_new_keypath(struct wally_keypath_map *keypaths,
-                                   unsigned char *pubkey,
-                                   size_t pubkey_len,
-                                   unsigned char *fingerprint,
-                                   size_t fingerprint_len,
-                                   uint32_t *path,
-                                   size_t path_len)
+                          unsigned char *pubkey,
+                          size_t pubkey_len,
+                          unsigned char *fingerprint,
+                          size_t fingerprint_len,
+                          uint32_t *path,
+                          size_t path_len)
 {
     size_t latest;
 
@@ -136,11 +136,11 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
 static int add_keypath_item(struct wally_keypath_map *keypaths, struct wally_keypath_item *item)
 {
     return wally_add_new_keypath(keypaths, item->pubkey,
-                           EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
-                           item->origin.fingerprint,
-                           FINGERPRINT_LEN,
-                           item->origin.path,
-                           item->origin.path_len);
+                                 EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+                                 item->origin.fingerprint,
+                                 FINGERPRINT_LEN,
+                                 item->origin.path,
+                                 item->origin.path_len);
 }
 
 int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output)
@@ -207,10 +207,10 @@ fail:
 }
 
 int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
-                        unsigned char *pubkey,
-                        size_t pubkey_len,
-                        unsigned char *sig,
-                        size_t sig_len)
+                              unsigned char *pubkey,
+                              size_t pubkey_len,
+                              unsigned char *sig,
+                              size_t sig_len)
 {
     size_t latest;
     if (pubkey_len != EC_PUBLIC_KEY_LEN && pubkey_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
@@ -253,9 +253,9 @@ int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
 static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, struct wally_partial_sigs_item *item)
 {
     return wally_add_new_partial_sig(sigs, item->pubkey,
-                               EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
-                               item->sig,
-                               item->sig_len);
+                                     EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+                                     item->sig,
+                                     item->sig_len);
 }
 
 int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output)
@@ -329,10 +329,10 @@ fail:
 }
 
 int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
-                    unsigned char *key,
-                    size_t key_len,
-                    unsigned char *value,
-                    size_t value_len)
+                          unsigned char *key,
+                          size_t key_len,
+                          unsigned char *value,
+                          size_t value_len)
 {
     size_t latest;
 
@@ -858,9 +858,9 @@ static void free_psbt_count(struct psbt_counts *counts)
 
 // Check that the bytes already read + bytes to be read < total len
 #define CHECK_BUF_BOUNDS(p, i, begin, tl) if ((p - begin) + i > tl) { \
-                            ret = WALLY_EINVAL; \
-                            goto fail; \
-                        }
+        ret = WALLY_EINVAL; \
+        goto fail; \
+}
 
 static int count_psbt_parts(
     const unsigned char *bytes,
