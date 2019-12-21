@@ -1754,7 +1754,7 @@ static int psbt_output_get_length(
     return WALLY_OK;
 }
 
-static int psbt_get_length(
+int wally_psbt_get_length(
     const struct wally_psbt *psbt,
     size_t *len)
 {
@@ -2053,7 +2053,7 @@ int wally_psbt_to_bytes(
         *bytes_written = 0;
     }
 
-    ret = psbt_get_length(psbt, &calc_len);
+    ret = wally_psbt_get_length(psbt, &calc_len);
     if (ret != WALLY_OK) {
         return ret;
     }
@@ -2171,7 +2171,7 @@ int wally_psbt_to_base64(
         return WALLY_EINVAL;
     }
 
-    if ((ret = psbt_get_length(psbt, &len)) != WALLY_OK) {
+    if ((ret = wally_psbt_get_length(psbt, &len)) != WALLY_OK) {
         return ret;
     }
     if ((buff = wally_malloc(len)) == NULL) {

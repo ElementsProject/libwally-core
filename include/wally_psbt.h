@@ -494,10 +494,21 @@ WALLY_CORE_API int wally_psbt_from_bytes(
     struct wally_psbt **output);
 
 /**
+ * Get length of psbt when serialized to bytes.
+ *
+ * :param psbt: the PSBT.
+ * :param len: Length in bytes when serialized.
+ */
+WALLY_CORE_API int wally_psbt_get_length(
+    const struct wally_psbt *psbt,
+    size_t *len);
+
+/**
  * Serialize a psbt to bytes.
  *
+ * :param psbt: the PSBT to serialize.
  * :param bytes_out: Bytes to create the transaction from.
- * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param bytes_len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
  * :param bytes_written: number of bytes written to bytes_out
  */
 WALLY_CORE_API int wally_psbt_to_bytes(
@@ -518,7 +529,7 @@ WALLY_CORE_API int wally_psbt_from_base64(
 /**
  * Create a base64 string for a psbt
  *
- * :param string: Base64 string to create the psbt from.
+ * :param psbt: the PSBT to serialize.
  * :param output: Destination for the resulting psbt.
  */
 WALLY_CORE_API int wally_psbt_to_base64(
