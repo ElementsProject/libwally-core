@@ -146,3 +146,60 @@ int wally_address_to_scriptpubkey(const char *addr, uint32_t network, unsigned c
     }
 
 }
+
+int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scriptpubkey_len,
+                                  uint32_t network, char **output)
+{
+    int ret;
+    size_t type;
+    unsigned char bytes[1 + HASH160_LEN];
+    if ((ret = wally_scriptpubkey_get_type(scriptpubkey, scriptpubkey_len, &type)) != WALLY_OK) {
+        return ret;
+    }
+    switch (type) {
+    case WALLY_SCRIPT_TYPE_P2PKH:
+        switch (network) {
+        case WALLY_NETWORK_BITCOIN_MAINNET:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_MAINNET;
+            break;
+        case WALLY_NETWORK_BITCOIN_TESTNET:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_TESTNET;
+            break;
+        case WALLY_NETWORK_LIQUID:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_LIQUID;
+            break;
+        case WALLY_NETWORK_LIQUID_REGTEST:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST;
+            break;
+        default:
+            return WALLY_EINVAL;
+        }
+        memcpy(bytes + 1, scriptpubkey + 3, HASH160_LEN);
+        break;
+    case WALLY_SCRIPT_TYPE_P2SH:
+        switch (network) {
+        case WALLY_NETWORK_BITCOIN_MAINNET:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2SH_MAINNET;
+            break;
+        case WALLY_NETWORK_BITCOIN_TESTNET:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2SH_TESTNET;
+            break;
+        case WALLY_NETWORK_LIQUID:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2SH_LIQUID;
+            break;
+        case WALLY_NETWORK_LIQUID_REGTEST:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST;
+            break;
+        default:
+            return WALLY_EINVAL;
+        }
+        memcpy(bytes + 1, scriptpubkey + 2, HASH160_LEN);
+        break;
+    default:
+        return WALLY_EINVAL;
+    }
+    ret = wally_base58_from_bytes(bytes, sizeof(bytes), BASE58_FLAG_CHECKSUM, output);
+    wally_clear(bytes, sizeof(bytes));
+    return WALLY_OK;
+
+}

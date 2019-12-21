@@ -218,6 +218,7 @@ for f in (
     ('wally_addr_segwit_from_bytes', c_int, [c_void_p, c_ulong, c_char_p, c_uint, c_char_p_p]),
     ('wally_addr_segwit_to_bytes', c_int, [c_void_p, c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_address_to_scriptpubkey', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_scriptpubkey_to_address', c_int, [c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('wally_bip32_key_to_address', c_int, [POINTER(ext_key), c_uint, c_uint, c_char_p_p]),
     ('wally_bip32_key_to_addr_segwit', c_int, [POINTER(ext_key), c_char_p, c_uint, c_char_p_p]),
     ('wally_confidential_addr_from_addr', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_char_p_p]),
