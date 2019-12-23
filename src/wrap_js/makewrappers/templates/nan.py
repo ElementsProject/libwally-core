@@ -58,11 +58,11 @@ struct LocalBuffer {
                 if (IsValid(mBuffer)) {
                     mData = (unsigned char*) node::Buffer::Data(mBuffer);
                     mLength = node::Buffer::Length(mBuffer);
+                    if (mData == 0 && mLength == 0)
+                        mData = &mDummyData;  // Set a dummy if the buffer is empty
                 }
             }
         }
-        if (mData == 0 && mLength == 0)
-            mData = &mDummyData;  // Set a dummy if the buffer is empty
     }
 
     LocalBuffer(size_t len, int& ret)
@@ -74,9 +74,9 @@ struct LocalBuffer {
         if (local.ToLocal(&mBuffer)) {
             mData = (unsigned char*) node::Buffer::Data(mBuffer);
             mLength = len;
+            if (mData == 0 && mLength == 0)
+                mData = &mDummyData;  // Set a dummy if the buffer is empty
         }
-        if (mData == 0 && mLength == 0)
-            mData = &mDummyData;  // Set a dummy if the buffer is empty
     }
 
     LocalObject mBuffer;
