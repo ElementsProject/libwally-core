@@ -340,9 +340,8 @@ target_compile_definitions(${GEN_CONTEXT_NAME}
     SECP256K1_BUILD
 )
 target_include_directories(${GEN_CONTEXT_NAME}
-  PUBLIC
-    src/secp256k1/include
   PRIVATE
+    src/secp256k1/include
     ${CONFIG_HEADER_DIRECTORY}
     src/secp256k1
     src/secp256k1/src
@@ -473,8 +472,10 @@ target_compile_definitions(${PROJECT_NAME}
 # -DECMULT_WINDOW_SIZE=16 -DUSE_ECMULT_STATIC_PRECOMPUTATION
 target_include_directories(${PROJECT_NAME}
   PUBLIC
-    include
-    src/secp256k1/include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include>
+    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:src/secp256k1/include>
   PRIVATE
     ${CONFIG_HEADER_DIRECTORY}
     .
@@ -497,6 +498,7 @@ endif() # GENERATE_WALLY OR (ENABLE_JS_WRAPPER)
 ####################
 if(ENABLE_JS_WRAPPER)
 
+set(INSTALL_WALLYCORE  FALSE)
 set(NODE_LIBRARY_NAME wallycore)
 project(wallycore CXX)
 
@@ -632,6 +634,7 @@ add_custom_command(
 elseif(ENABLE_SWIG_JAVA)
 # after build
 set(WALLYCORE_NAME wallycore)
+set(INSTALL_WALLYCORE  FALSE)
 
 else()	# ENABLE_JS_WRAPPER
 
@@ -640,6 +643,8 @@ else()	# ENABLE_JS_WRAPPER
 ####################
 set(WALLYCORE_NAME wallycore)
 set(WALLY_PROJECT_NAME ${WALLYCORE_NAME})
+set(INSTALL_WALLYCORE  TRUE)
+
 if(ENABLE_SHARED)
 add_library(${WALLYCORE_NAME} SHARED)
 else()
@@ -673,8 +678,10 @@ target_compile_definitions(${WALLYCORE_NAME}
 )
 target_include_directories(${WALLYCORE_NAME}
   PUBLIC
-    include
-    src/secp256k1/include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include>
+    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:src/secp256k1/include>
   PRIVATE
     ${CONFIG_HEADER_DIRECTORY}
     .
@@ -1478,7 +1485,9 @@ set(exec_prefix       ${prefix})
 set(libdir            ${exec_prefix}/lib)
 set(includedir        ${prefix}/include)
 include(GNUInstallDirs)
+set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON) 
 
+if(INSTALL_WALLYCORE)
 configure_file(src/wallycore.pc.in  wallycore.pc  @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wallycore.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
@@ -1487,11 +1496,43 @@ install(TARGETS       ${WALLY_PROJECT_NAME}
         EXPORT        wallycore-export
         ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        OBJECTS       DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-export(TARGETS ${WALLY_PROJECT_NAME}
-       APPEND FILE ${PROJECT_BINARY_DIR}/${WALLY_PROJECT_NAME}-export.cmake
-       EXPORT_LINK_INTERFACE_LIBRARIES)
+install(EXPORT ${WALLY_PROJECT_NAME}-export
+        FILE ${WALLY_PROJECT_NAME}-config.cmake
+        DESTINATION "cmake/"
+        EXPORT_LINK_INTERFACE_LIBRARIES)
+if(MSVC)
+install(DIRECTORY "${WALLY_OBJ_BINARY_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        FILES_MATCHING PATTERN "wallycore.exp")
+endif()
+endif()
+
+if(GENERATE_WALLY_LIB)
+configure_file(cmake/wally.pc.in  wally.pc  @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wally.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(TARGETS       wally
+        EXPORT        wally-export
+        ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        OBJECTS       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(EXPORT wally-export
+        FILE wally-config.cmake
+        DESTINATION "cmake/"
+        EXPORT_LINK_INTERFACE_LIBRARIES)
+if(MSVC)
+install(DIRECTORY "${WALLY_OBJ_BINARY_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        FILES_MATCHING PATTERN "wally.exp")
+endif()
+endif()
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
@@ -1499,14 +1540,3 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         FILES_MATCHING PATTERN "*.h")
-
-if(GENERATE_WALLY_LIB)
-configure_file(cmake/wally.pc.in  wally.pc  @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wally.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-install(TARGETS       wally
-        ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-endif()
