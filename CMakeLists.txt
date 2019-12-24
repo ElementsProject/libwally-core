@@ -696,6 +696,10 @@ if(COLLECT_COVERAGE)
 target_link_libraries(${WALLYCORE_NAME} gcov)
 endif()
 
+if(GENERATE_WALLY_LIB)
+add_dependencies(${PROJECT_NAME} ${WALLYCORE_NAME})
+endif()
+
 endif()		# ENABLE_JS_WRAPPER
 
 
