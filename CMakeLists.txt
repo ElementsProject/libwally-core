@@ -432,7 +432,11 @@ set(GENERATE_WALLY_LIB TRUE)
 elseif(ENABLE_SWIG_JAVA)
 set(GENERATE_WALLY_LIB FALSE)
 elseif(ENABLE_JS_WRAPPER)
+if((NOT GENERATE_WALLY) OR (NOT ${GENERATE_WALLY}))
+set(GENERATE_WALLY_LIB FALSE)
+else()
 set(GENERATE_WALLY_LIB TRUE)
+endif()
 else()
 set(GENERATE_WALLY_LIB FALSE)
 endif()
@@ -554,7 +558,9 @@ target_sources(${NODE_LIBRARY_NAME}
     ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
     ${CMAKE_JS_SRC}
 )
+if(GENERATE_WALLY_LIB)
 add_dependencies(${WALLY_PROJECT_NAME} ${NODE_LIBRARY_NAME})
+endif()
 
 target_compile_options(${NODE_LIBRARY_NAME}
   PRIVATE
@@ -1073,6 +1079,9 @@ endif()
 set(TEST_WALY_LIB  ${WALLY_PROJECT_NAME})
 # set(TEST_WALY_LIB  ${WALLYCORE_NAME})
 
+if((ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
+message(STATUS "skip c test.")
+else()
 set(TEST_BECH32_NAME test_bech32)
 add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
 target_compile_options(${TEST_BECH32_NAME}
@@ -1261,6 +1270,7 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 endif()
+endif((ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
 
 ####################
 # test for Python
@@ -1538,9 +1548,11 @@ install(DIRECTORY "${WALLY_OBJ_BINARY_DIR}/"
 endif()
 endif()
 
+if(INSTALL_WALLYCORE OR GENERATE_WALLY_LIB)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         FILES_MATCHING REGEX "/[^/]*\\.(h|hpp)$")
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         FILES_MATCHING PATTERN "*.h")
+endif()
