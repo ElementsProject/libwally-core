@@ -26,6 +26,10 @@ option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:
 option(ENABLE_SWIG_GO "enable the SWIG Go interface (ON or OFF. default:OFF)" OFF)
 option(GENERATE_WALLY "generate the wally.xxx library (ON or OFF. default:ON)" ON)
 
+if(NOT EXCLUDE_GENERATE_WALLY)
+set(EXCLUDE_GENERATE_WALLY  FALSE)
+endif()
+
 if(CMAKE_JS_INC)
 option(ENABLE_JS_WRAPPER "enable the Javascript interface wrappers (ON or OFF. default:ON)" ON)
 else()
@@ -427,7 +431,9 @@ set(LIBWALLY_FILES
 ####################
 # libwally
 ####################
-if((NOT GENERATE_WALLY) OR (NOT ${GENERATE_WALLY}))
+if(EXCLUDE_GENERATE_WALLY)
+set(GENERATE_WALLY_LIB FALSE)
+elseif((NOT GENERATE_WALLY) OR (NOT ${GENERATE_WALLY}))
 set(GENERATE_WALLY_LIB FALSE)
 elseif(ENABLE_SWIG_JAVA)
 set(GENERATE_WALLY_LIB FALSE)
