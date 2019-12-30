@@ -50,11 +50,11 @@ class SHA_tests(unittest.TestCase):
             # Python3 raises TypeError
             self._test_wrong_types_py3()
 
+
     def test_pass_none(self):
-        for shaX in [sha256, sha256d, sha512]:
-            with self.assertRaises(ValueError) as cm:
-                shaX(None)
-            self.assertEqual(str(cm.exception), "Invalid argument")
+        self.assertEquals(b2h(sha256(None)), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+        self.assertEquals(b2h(sha256d(None)), "5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456")
+        self.assertEquals(b2h(sha512(None)), "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e")
 
 
 if __name__ == '__main__':
