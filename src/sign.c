@@ -248,13 +248,12 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
             }
 
             /* Note this function is documented as never failing */
-            secp256k1_ecdsa_recoverable_signature_serialize_compact(ctx, bytes_out, &recid, &sig_secp);
+            secp256k1_ecdsa_recoverable_signature_serialize_compact(ctx, flags & EC_FLAG_RECOVERABLE ? bytes_out + 1 : bytes_out, &recid, &sig_secp);
 
             if (!(flags & EC_FLAG_GRIND_R) || bytes_out[0] < 0x80) {
                 wally_clear(&sig_secp, sizeof(sig_secp));
                 /* Note the following assumes the key is compressed */
                 if (flags & EC_FLAG_RECOVERABLE) {
-                    memmove(&bytes_out[1], &bytes_out[0], EC_SIGNATURE_LEN);
                     bytes_out[0] = 27 + recid + 4;
                 }
 
