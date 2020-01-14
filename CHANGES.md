@@ -1,5 +1,12 @@
 # Changes
 
+## Version 0.7.7
+
+- Expose wally_psbt_get_length
+- Add wally_scriptpubkey_to_address
+- Return written bytes in asset_pak_whitelistproof
+- Elements bug fixes
+
 ## Version 0.7.6
 
 - Add flag to sort multisig keys (BIP67)
