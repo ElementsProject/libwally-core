@@ -259,6 +259,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *online_priv_key, size_t online_priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *redeem_script, size_t redeem_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *scriptpubkey, size_t scriptpubkey_len) };
 
 /* Output buffers */
 %apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
@@ -665,6 +666,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(_wif_is_uncompressed);
 %returns_size_t(wally_wif_to_public_key);
 %returns_string(wally_wif_to_address);
+%returns_string(wally_scriptpubkey_to_address);
 %returns_size_t(wally_witness_program_from_bytes);
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
