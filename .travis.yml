@@ -4,12 +4,13 @@ branches:
     only:
       - master
 language: c
-sudo: required
 os:
   - linux
   - osx
   - windows
 dist: bionic
+env:
+  - CI=travis
 compiler:
   - clang
   - gcc
@@ -32,17 +33,19 @@ addons:
           - gcc-multilib
           - clang-8
           - clang-9
-matrix:
+jobs:
     include:
       - services:
           - docker
         script: docker run -v $PWD:/wally debian:buster /bin/sh -c "apt-get update -yqq && apt-get install -yqq --no-install-recommends git uncrustify && cd /wally && (tools/uncrustify || true) && git diff --exit-code"
       - os: linux
-        compiler: clang
-        env: CC=clang-9 CXX=clang++-9 LDFLAGS=-Wl,-z,now ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
+        compiler: gcc
       - os: linux
         compiler: clang
-        env: CC=clang-8 CXX=clang++-8 HOST=i686-linux-gnu ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
+        env: CC=clang-9 CXX=clang++-9 LDFLAGS=-Wl,-z,now
+      - os: linux
+        compiler: clang
+        env: CC=clang-8 CXX=clang++-8 HOST=i686-linux-gnu
       - os: linux
         compiler: gcc
         env: HOST=i686-linux-gnu
@@ -54,7 +57,7 @@ matrix:
         env: DEBUG_WALLY=--enable-debug
       - compiler: clang
         os: linux
-        env: CC=clang-8 CXX=clang++-8 LDFLAGS=-Wl,-z,now ENABLE_ELEMENTS=--enable-elements ENABLE_BUILTIN_MEMSET=--disable-builtin-memset
+        env: CC=clang-8 CXX=clang++-8 LDFLAGS=-Wl,-z,now ENABLE_ELEMENTS=--enable-elements
       - os: windows
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig
         before_script:
@@ -67,13 +70,14 @@ matrix:
           - source $ProgramData/nvs/nvs.sh
           - nvs use $NODE_VERSION
           - tools/msvc/wallyjs.bat
+
     exclude:
       - os: windows
         compiler: gcc
       - os: windows
         compiler: clang
       - os: linux
-        compiler: clang
+        env: CI=travis
 
 
 before_script:
