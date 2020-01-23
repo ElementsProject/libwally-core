@@ -322,7 +322,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
     size_t *written);
 
 /**
- * Create a multisig scriptPubkey.
+ * Create a multisig scriptSig. After calling this function, you must check that ``written <= len``,
+ * otherwise the ``bytes_out`` buffer was too short.
  *
  * :param bytes: Compressed public keys to create a scriptPubkey from.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
@@ -330,7 +331,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
  * :param flags: Must be ``WALLY_SCRIPT_MULTISIG_SORTED`` for BIP67 sorting or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
- * :param written: Destination for the number of bytes written to ``bytes_out``.
+ * :param written: Destination for the number of bytes written to ``bytes_out``. If ``len`` was too
+ * small, `written` will be the required ``bytes_out`` size and WALLY_OK will be returned.
  */
 WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
     const unsigned char *bytes,
