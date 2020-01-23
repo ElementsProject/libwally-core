@@ -561,13 +561,8 @@ int wally_scriptpubkey_multisig_from_bytes(
     if (!bytes || !bytes_len || bytes_len % EC_PUBLIC_KEY_LEN ||
         n_pubkeys < 1 || n_pubkeys > 16 || threshold < 1 || threshold > 16 ||
         threshold > n_pubkeys || (flags & ~WALLY_SCRIPT_MULTISIG_SORTED) ||
-        !bytes_out || !written)
+        !bytes_out || len < script_len || !written)
         return WALLY_EINVAL;
-
-    if (len < script_len) {
-        *written = script_len;
-        return WALLY_OK;
-    }
 
     memcpy(pubkey_bytes, bytes, bytes_len);
     if (flags & WALLY_SCRIPT_MULTISIG_SORTED) {
