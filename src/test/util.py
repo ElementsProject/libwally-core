@@ -1,6 +1,6 @@
 from ctypes import *
 from binascii import hexlify, unhexlify
-from os.path import isfile
+from os.path import isfile, abspath
 from os import urandom
 import platform
 import sys
@@ -11,6 +11,9 @@ for depth in [0, 1, 2]:
     root_dir = '../' * depth
     if isfile(root_dir + 'src/.libs/libwallycore.' + SO_EXT):
         break
+
+if platform.system() == 'Darwin':
+    root_dir = abspath(root_dir) + '/'
 
 libwally = CDLL(root_dir + 'src/.libs/libwallycore.' + SO_EXT)
 
