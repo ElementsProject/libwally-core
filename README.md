@@ -16,7 +16,7 @@ Please report bugs and submit patches to https://github.com/ElementsProject/libw
 Wally can currently be built for:
 - Linux
 - Android
-- OS X
+- macOS
 - iOS
 - Windows
 
@@ -34,6 +34,20 @@ $ ./tools/autogen.sh
 $ ./configure <options - see below>
 $ make
 $ make check
+```
+
+### Building on macOS
+
+Using homebrew,
+```
+$ brew install gnu-sed
+```
+
+If you wish to enable the SWIG interface, you
+will need install the Java JDK 8 or newer, and install SWIG:
+
+```
+$ brew install swig
 ```
 
 ### configure options
