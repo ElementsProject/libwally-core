@@ -14,6 +14,8 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 ####################
 # options
 ####################
+include(./cmake/EnableCcache.cmake)
+
 if(CMAKE_JS_INC)
 option(ENABLE_SHARED "enable shared library (ON or OFF. default:ON)" ON)
 else()
