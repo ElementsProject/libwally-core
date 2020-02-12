@@ -266,6 +266,8 @@ set(ENABLE_MODULE_RANGEPROOF "1")
 set(ENABLE_MODULE_SURJECTIONPROOF "1")
 set(ENABLE_MODULE_WHITELIST "1")
 set(ENABLE_MODULE_GENERATOR "1")
+set(ENABLE_MODULE_SCHNORRSIG "1")
+set(ENABLE_MODULE_MUSIG "1")
 
 check_cxx_source_compiles("int main() { __builtin_popcount(0); return 0;}"
   HAVE_BUILTIN_POPCOUNT)
