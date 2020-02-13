@@ -107,6 +107,23 @@ SECP256K1_API int secp256k1_schnorrsig_sign_dlc(
     void *ndata
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5);
 
+/** Computes the signature times the generator from a pre-committed R value.
+ *
+ * Returns 1 on success, 0 on failure.
+ *  Args:    ctx: pointer to a context object, initialized for signing (cannot be NULL)
+ *  Out:     sp: pointer to the returned signature pubkey (cannot be NULL)
+ *  In:       r: the pre-committed R value for the signature (cannot be NULL)
+ *         msg32: the 32-byte message being signed (cannot be NULL)
+ *            pk: pointer to a public key of the signer (cannot be NULL)
+ */
+SECP256K1_API int secp256k1_schnorrsig_sig_pubkey(
+    const secp256k1_context* ctx,
+    secp256k1_pubkey *sp,
+    secp256k1_pubkey *r,
+    const unsigned char *msg32,
+    const secp256k1_pubkey *pk
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5);
+
 /** Verify a Schnorr signature.
  *
  *  Returns: 1: correct signature
