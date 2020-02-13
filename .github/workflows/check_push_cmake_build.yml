@@ -5,6 +5,10 @@ on:
     branches:
     - cmake_build
     - feature/*
+  pull_request:
+    branches:
+    - cmake_build
+    - feature/*
 
 env:
   CMAKE_VERSION: 3.15.5
