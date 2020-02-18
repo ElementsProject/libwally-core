@@ -310,6 +310,7 @@ int wally_ec_sig_to_public_key(const unsigned char *bytes, size_t bytes_len,
     secp256k1_ecdsa_recoverable_signature sig_secp;
     const secp256k1_context *ctx = secp_ctx();
     size_t len_in_out = EC_PUBLIC_KEY_LEN;
+    int recid;
     bool ok;
 
     if (!ctx)
@@ -320,7 +321,7 @@ int wally_ec_sig_to_public_key(const unsigned char *bytes, size_t bytes_len,
         !bytes_out || len != EC_PUBLIC_KEY_LEN)
         return WALLY_EINVAL;
 
-    int recid = (sig[0] - 27) & 3;
+    recid = (sig[0] - 27) & 3;
     ok = secp256k1_ecdsa_recoverable_signature_parse_compact(ctx, &sig_secp, &sig[1], recid) &&
          secp256k1_ecdsa_recover(ctx, &pub, &sig_secp, bytes) &&
          pubkey_serialize(ctx, bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED);

@@ -967,7 +967,7 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
     unsigned char *q = bytes_out;
     size_t bytes_len = redeem_script_len;
     size_t ser_len = EC_PUBLIC_KEY_LEN;
-    // For liquidv1 initial watchman template, don't tweak emergency keys. in the future, use flags to change watchmen template
+    /* For liquidv1 initial watchman template, don't tweak emergency keys. in the future, use flags to change watchmen template */
     bool op_else_found = false;
 
     int ret;
@@ -1048,7 +1048,7 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
     return WALLY_OK;
 }
 
-// Converts a push only scriptsig to a newly allocated witness stack
+/* Converts a push only scriptsig to a newly allocated witness stack */
 static int scriptsig_to_witness(unsigned char *bytes, size_t bytes_len, struct wally_tx_witness_stack **output)
 {
     unsigned char *p = bytes, *end = p + bytes_len;

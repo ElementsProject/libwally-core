@@ -10,7 +10,7 @@ static const unsigned char DOMAIN_STR[] = {
     'S', 'y', 'm', 'm', 'e', 't', 'r', 'i', 'c', ' ', 'k', 'e', 'y', ' ', 's', 'e', 'e', 'd'
 };
 
-// TODO: move to a common header
+/* TODO: move to a common header */
 static bool is_valid_seed_length(size_t len) {
     return len == BIP32_ENTROPY_LEN_512 || len == BIP32_ENTROPY_LEN_256 ||
            len == BIP32_ENTROPY_LEN_128;
