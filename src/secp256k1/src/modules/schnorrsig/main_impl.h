@@ -29,6 +29,35 @@ int secp256k1_schnorrsig_parse(const secp256k1_context* ctx, secp256k1_schnorrsi
     return 1;
 }
 
+int secp256k1_schnorrsig_get_public_nonce(const secp256k1_context* ctx, secp256k1_pubkey* r, const secp256k1_schnorrnonce* k) {
+    secp256k1_scalar k_scalar;
+    secp256k1_gej r_gej;
+    secp256k1_ge r_ge;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(r != NULL);
+    ARG_CHECK(k != NULL);
+
+    secp256k1_scalar_set_b32(&k_scalar, k->data, NULL);
+
+    if (secp256k1_scalar_is_zero(&k_scalar)) {
+        return 0;
+    }
+
+    secp256k1_ecmult_gen(&ctx->ecmult_gen_ctx, &r_gej, &k_scalar);
+    secp256k1_ge_set_gej(&r_ge, &r_gej);
+
+    if (!secp256k1_fe_is_quad_var(&r_ge.y)) {
+        secp256k1_scalar_negate(&k_scalar, &k_scalar);
+        secp256k1_ecmult_gen(&ctx->ecmult_gen_ctx, &r_gej, &k_scalar);
+        secp256k1_ge_set_gej(&r_ge, &r_gej);
+    }
+
+    secp256k1_pubkey_save(r, &r_ge);
+
+    return 1;
+}
+
 int secp256k1_schnorrsig_sign(const secp256k1_context* ctx, secp256k1_schnorrsig *sig, int *nonce_is_negated, const unsigned char *msg32, const unsigned char *seckey, secp256k1_nonce_function noncefp, void *ndata) {
     secp256k1_scalar x;
     secp256k1_scalar e;

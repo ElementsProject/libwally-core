@@ -25,6 +25,12 @@ typedef struct {
     unsigned char data[64];
 } secp256k1_schnorrsig;
 
+/** Opaque data structure that holds a nonce to be used in a Schnorr signature.
+ */
+typedef struct {
+    unsigned char data[32];
+} secp256k1_schnorrnonce;
+
 /** Serialize a Schnorr signature.
  *
  *  Returns: 1
@@ -60,6 +66,19 @@ SECP256K1_API int secp256k1_schnorrsig_parse(
     const secp256k1_context* ctx,
     secp256k1_schnorrsig* sig,
     const unsigned char *in64
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
+
+/** Computes the public key, associated with either the nonce or its inverse, that will be used in the signature
+ *
+ *  Returns: 1 when nonce is nonzero, 0 otherwise.
+ *  Args:    ctx: a secp256k1 context object
+ *  Out:       r: pointer to the nonce's public key (either k*G or -k*G)
+ *  In:        k: pointer to the nonce
+ */
+SECP256K1_API int secp256k1_schnorrsig_get_public_nonce(
+    const secp256k1_context* ctx,
+    secp256k1_pubkey* r,
+    const secp256k1_schnorrnonce* k
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
 /** Create a Schnorr signature.
