@@ -1311,7 +1311,6 @@ add_test(NAME py_test_bip32           COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/
 add_test(NAME py_test_mnemonic        COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/mnemonic.py )
 add_test(NAME py_test_reconcile_sigs  COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/reconcile_sigs.py )
 add_test(NAME py_test_signmessage     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/signmessage.py )
-## error occurred on windows
 add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/tx.py )
 add_test(NAME py_test_address         COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/address.py )
 add_test(NAME py_test_sha             COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/sha.py )
@@ -1328,7 +1327,13 @@ endif()
 ####################
 # test with Python
 ####################
-if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT WIN32))
+## error occurred on windows
+if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE})
+if(WIN32)
+set(PY_TEST_IGNORE  TRUE)
+else()
+set(PY_TEST_IGNORE  FALSE)
+endif()
 set(PY_TEST_DIR ${WALLY_ROOT_BINARY_DIR}/wally_test/src/.libs)
 set(PY_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/test)
 
@@ -1374,30 +1379,34 @@ add_test(NAME test_hmac         COMMAND ${PYTHON_BIN} test/test_hmac.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_mnemonic     COMMAND ${PYTHON_BIN} test/test_mnemonic.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
-add_test(NAME test_psbt         COMMAND ${PYTHON_BIN} test/test_psbt.py
-                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_pbkdf2       COMMAND ${PYTHON_BIN} test/test_pbkdf2.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_script       COMMAND ${PYTHON_BIN} test/test_script.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_scrypt       COMMAND ${PYTHON_BIN} test/test_scrypt.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
-add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
-                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_wif          COMMAND ${PYTHON_BIN} test/test_wif.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_wordlist     COMMAND ${PYTHON_BIN} test/test_wordlist.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+if(NOT PY_TEST_IGNORE)
+add_test(NAME test_psbt         COMMAND ${PYTHON_BIN} test/test_psbt.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+endif(NOT PY_TEST_IGNORE)
 
 if(ENABLE_ELEMENTS)
 add_test(NAME test_elements           COMMAND ${PYTHON_BIN} test/test_elements.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_confidential_addr  COMMAND ${PYTHON_BIN} test/test_confidential_addr.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
+if(NOT PY_TEST_IGNORE)
 add_test(NAME test_pegin              COMMAND ${PYTHON_BIN} test/test_pegin.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_pegout             COMMAND ${PYTHON_BIN} test/test_pegout.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
+endif(NOT PY_TEST_IGNORE)
 endif() # ENABLE_ELEMENTS
 endif() # ${ENABLE_SHARED} AND ${INSTALL_WALLYCORE}
 
