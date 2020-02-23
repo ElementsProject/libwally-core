@@ -1088,7 +1088,7 @@ set(TEST_WALY_LIB  ${WALLY_PROJECT_NAME})
 if((ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
 message(STATUS "skip c test.")
 else()
-set(TEST_BECH32_NAME test_bech32)
+set(TEST_BECH32_NAME ctest_bech32)
 add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
 target_compile_options(${TEST_BECH32_NAME}
   PRIVATE
@@ -1125,7 +1125,7 @@ add_test(
 )
 
 if(Clang) # use pthread and LLVM Clang
-set(TEST_CLEAR_NAME test_clear)
+set(TEST_CLEAR_NAME ctest_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
   PRIVATE
@@ -1162,7 +1162,7 @@ add_test(
 )
 endif() # Clang
 
-set(TEST_TX_NAME test_tx)
+set(TEST_TX_NAME ctest_tx)
 add_executable(${TEST_TX_NAME} src/ctest/test_tx.c)
 target_compile_options(${TEST_TX_NAME}
   PRIVATE
@@ -1203,7 +1203,7 @@ add_test(
 # test for C(Elements)
 ####################
 if(ENABLE_ELEMENTS)
-set(TEST_ELEMENTS_TX_NAME test_elements_tx)
+set(TEST_ELEMENTS_TX_NAME ctest_elements_tx)
 add_executable(${TEST_ELEMENTS_TX_NAME} src/ctest/test_elements_tx.c)
 target_compile_options(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
@@ -1240,7 +1240,7 @@ add_test(
 )
 
 
-set(TEST_BLECH32_NAME test_blech32)
+set(TEST_BLECH32_NAME ctest_blech32)
 add_executable(${TEST_BLECH32_NAME} src/ctest/test_blech32.c)
 target_compile_options(${TEST_BLECH32_NAME}
   PRIVATE
@@ -1302,6 +1302,11 @@ if(MSVC)
 add_test(NAME py_test_init3 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_OUTPUT_DIR}/wallycore ${SWIG_PY_TEST_DIR} )
 endif()
 
+if(ENABLE_ELEMENTS)
+set(SWIG_PY_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/pyexample)
+add_test(NAME py_test_init4 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_EXAMPLE_DIR}/liquid ${SWIG_PY_OUTPUT_DIR}/contrib )
+endif()
+
 add_test(NAME py_test_bip32           COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/bip32.py )
 add_test(NAME py_test_mnemonic        COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/mnemonic.py )
 add_test(NAME py_test_reconcile_sigs  COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/reconcile_sigs.py )
@@ -1313,9 +1318,88 @@ add_test(NAME py_test_sha             COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/
 
 if(ENABLE_ELEMENTS)
 add_test(NAME py_test_elements_tx     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/elements_tx.py )
+
+add_test(NAME py_test_liquid          COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/receive-send.py )
 endif() # ENABLE_ELEMENTS
 
 endif()
+
+
+####################
+# test with Python
+####################
+if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT WIN32))
+set(PY_TEST_DIR ${WALLY_ROOT_BINARY_DIR}/wally_test/src/.libs)
+set(PY_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/test)
+
+find_package(Python3 COMPONENTS Interpreter)
+find_package(PythonInterp REQUIRED)
+if(Python3_Interpreter_FOUND)
+set(PYTHON_BIN  ${Python3_EXECUTABLE})
+message(STATUS "python is 3(${Python3_VERSION})")
+else()
+set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
+message(STATUS "python version is ${PYTHON_VERSION_STRING}")
+endif()
+
+message(STATUS "[test] copy libwallycore${CMAKE_SHARED_LIBRARY_SUFFIX}")
+# copy testfile
+add_test(NAME test_init1 COMMAND ${CMAKE_COMMAND} -E make_directory ${PY_TEST_DIR} )
+add_test(NAME test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${PY_TEST_SOURCE_DIR} ${PY_TEST_DIR}/test )
+add_test(NAME test_init3 COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/libwallycore${CMAKE_SHARED_LIBRARY_SUFFIX} ${PY_TEST_DIR} )
+add_test(NAME test_init4 COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/src/data ${WALLY_ROOT_BINARY_DIR}/wally_test/src/data )
+
+
+add_test(NAME test_address      COMMAND ${PYTHON_BIN} test/test_address.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_aes          COMMAND ${PYTHON_BIN} test/test_aes.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_base58       COMMAND ${PYTHON_BIN} test/test_base58.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_bech32       COMMAND ${PYTHON_BIN} test/test_bech32.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_bip32        COMMAND ${PYTHON_BIN} test/test_bip32.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_bip38        COMMAND ${PYTHON_BIN} test/test_bip38.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_bip39        COMMAND ${PYTHON_BIN} test/test_bip39.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_ecdh         COMMAND ${PYTHON_BIN} test/test_ecdh.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_hash         COMMAND ${PYTHON_BIN} test/test_hash.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_hex          COMMAND ${PYTHON_BIN} test/test_hex.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_hmac         COMMAND ${PYTHON_BIN} test/test_hmac.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_mnemonic     COMMAND ${PYTHON_BIN} test/test_mnemonic.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_psbt         COMMAND ${PYTHON_BIN} test/test_psbt.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_pbkdf2       COMMAND ${PYTHON_BIN} test/test_pbkdf2.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_script       COMMAND ${PYTHON_BIN} test/test_script.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_scrypt       COMMAND ${PYTHON_BIN} test/test_scrypt.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_wif          COMMAND ${PYTHON_BIN} test/test_wif.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_wordlist     COMMAND ${PYTHON_BIN} test/test_wordlist.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+
+if(ENABLE_ELEMENTS)
+add_test(NAME test_elements           COMMAND ${PYTHON_BIN} test/test_elements.py
+                                      WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_confidential_addr  COMMAND ${PYTHON_BIN} test/test_confidential_addr.py
+                                      WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_pegin              COMMAND ${PYTHON_BIN} test/test_pegin.py
+                                      WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_pegout             COMMAND ${PYTHON_BIN} test/test_pegout.py
+                                      WORKING_DIRECTORY ${PY_TEST_DIR})
+endif() # ENABLE_ELEMENTS
+endif() # ${ENABLE_SHARED} AND ${INSTALL_WALLYCORE}
 
 ####################
 # test for Java
