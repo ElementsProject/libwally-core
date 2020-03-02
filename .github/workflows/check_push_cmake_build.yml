@@ -18,6 +18,7 @@ jobs:
     name: cmake-js build
     runs-on: ${{ matrix.os }}
     strategy:
+      max-parallel: 2
       matrix:
         os: [macos-latest, ubuntu-latest]
         node: [8, 12, 13]
@@ -28,10 +29,21 @@ jobs:
             node: 13
 
     steps:
-    - uses: actions/setup-node@v1
+    - uses: actions/checkout@v2
+    - name: setup-node
+      uses: actions/setup-node@v1
+      continue-on-error: true
       with:
         node-version: ${{ matrix.node }}
-    - uses: actions/checkout@v1
+    - name: setup-node retry
+      uses: actions/setup-node@v1
+      continue-on-error: true
+      with:
+        node-version: ${{ matrix.node }}
+    - name: setup-node third-try
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
     - name: cmake-useCache-ubuntu
       if: matrix.os == 'ubuntu-latest'
       uses: actions/cache@v1
@@ -91,7 +103,7 @@ jobs:
             target: java
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: setup python
       if: matrix.target == 'python'
       uses: actions/setup-python@v1
