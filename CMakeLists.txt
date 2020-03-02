@@ -70,6 +70,8 @@ endif() # CMAKE_BUILD_TYPE
 ####################
 # common setting
 ####################
+include(./cmake/WallyCoverage.cmake)
+
 # WALLY_BINARY_DIR_ROOT
 set(WORK_WINDOWS_BINARY_DIR_NAME  $<IF:$<CONFIG:Debug>,Debug,Release>)
 if(NOT WALLY_OBJ_BINARY_DIR)
@@ -108,16 +110,6 @@ endif()
 ####################
 # wally common setting
 ####################
-if(ENABLE_DEBUG AND ENABLE_COVERAGE)
-set(COLLECT_COVERAGE ON)
-set(PROFILE_ARCS_OPT -fprofile-arcs)
-set(TEST_COVERAGE_OPT -ftest-coverage)
-set(COVERAGE 1)
-else()
-set(PROFILE_ARCS_OPT  "")
-set(TEST_COVERAGE_OPT "")
-endif()
-
 if(PYTHONHOME)
 set(INCLUDE_PYTHONHOME  ${PYTHONHOME}/include)
 else()
@@ -497,7 +489,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 if(COLLECT_COVERAGE)
-target_link_libraries(${PROJECT_NAME} gcov)
+target_link_libraries(${PROJECT_NAME} ${GCOV_LIBRARY})
 endif()
 
 endif() # GENERATE_WALLY OR (ENABLE_JS_WRAPPER)
@@ -705,7 +697,7 @@ target_include_directories(${WALLYCORE_NAME}
 )
 
 if(COLLECT_COVERAGE)
-target_link_libraries(${WALLYCORE_NAME} gcov)
+target_link_libraries(${WALLYCORE_NAME} ${GCOV_LIBRARY})
 endif()
 
 if(GENERATE_WALLY_LIB)
@@ -1092,7 +1084,11 @@ set(TEST_BECH32_NAME ctest_bech32)
 add_executable(${TEST_BECH32_NAME} src/ctest/test_bech32.c)
 target_compile_options(${TEST_BECH32_NAME}
   PRIVATE
-    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
 )
 target_compile_definitions(${TEST_BECH32_NAME}
   PRIVATE
@@ -1129,7 +1125,11 @@ set(TEST_CLEAR_NAME ctest_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
   PRIVATE
-    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
 )
 target_compile_definitions(${TEST_CLEAR_NAME}
   PRIVATE
@@ -1166,7 +1166,11 @@ set(TEST_TX_NAME ctest_tx)
 add_executable(${TEST_TX_NAME} src/ctest/test_tx.c)
 target_compile_options(${TEST_TX_NAME}
   PRIVATE
-    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
 )
 target_compile_definitions(${TEST_TX_NAME}
   PRIVATE
@@ -1207,7 +1211,11 @@ set(TEST_ELEMENTS_TX_NAME ctest_elements_tx)
 add_executable(${TEST_ELEMENTS_TX_NAME} src/ctest/test_elements_tx.c)
 target_compile_options(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
-    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
 )
 target_compile_definitions(${TEST_ELEMENTS_TX_NAME}
   PRIVATE
@@ -1239,12 +1247,15 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
-
 set(TEST_BLECH32_NAME ctest_blech32)
 add_executable(${TEST_BLECH32_NAME} src/ctest/test_blech32.c)
 target_compile_options(${TEST_BLECH32_NAME}
   PRIVATE
-    $<$<C_COMPILER_ID:MSVC>:/source-charset:utf-8 /wd4251>
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
 )
 target_compile_definitions(${TEST_BLECH32_NAME}
   PRIVATE
@@ -1571,22 +1582,29 @@ endif() # ENABLE_TESTS
 # coverage
 ####################
 if(ENABLE_DEBUG AND ENABLE_COVERAGE)
-# lcov="lcov --directory=src/ --base-directory src/"
-# add_custom_target(
-#   lcov_libwally_initdir ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/lcov_total
-#   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/lcov
-#   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
-# )
-# add_custom_target(
-#   lcov_libwally_collect lcov --output-file src/lcov_result --capture --ignore-errors=gcov
-#   COMMAND lcov --output-file src/lcov_total --add-tracefile src/lcov_base --add-tracefile src/lcov_result --ignore-errors=gcov
-#   WORKING_DIRECTORY ${CFD_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
-# )
-# add_custom_target(
-#   coverage_libwally  genhtml --demangle-cpp -o src/lcov/ src/lcov_total
-#   DEPENDS lcov_libwally_initdir lcov_libwally_collect
-#   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/libwally.dir/src
-# )
+if(${WALLY_PROJECT_NAME} STREQUAL "wally")
+set(WALLY_COVERAGE_DIR  ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/wally.dir)
+else()
+set(WALLY_COVERAGE_DIR  ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/wallycore.dir)
+endif()
+
+add_custom_target(
+  lcov_libwally_init ${CMAKE_COMMAND} -E make_directory ${WALLY_ROOT_BINARY_DIR}/lcov_wally_output
+  WORKING_DIRECTORY ${WALLY_COVERAGE_DIR}
+)
+
+add_custom_target(
+  lcov_libwally_collect_src
+  lcov --directory=src/ --base-directory src/ --output-file wally.info --capture --ignore-errors=gcov
+  DEPENDS lcov_libwally_init
+  WORKING_DIRECTORY ${WALLY_COVERAGE_DIR}
+)
+
+add_custom_target(
+  coverage_libwally  genhtml -o ${WALLY_ROOT_BINARY_DIR}/lcov_wally_output wally.info
+  DEPENDS lcov_libwally_init lcov_libwally_collect_src
+  WORKING_DIRECTORY ${WALLY_COVERAGE_DIR}
+)
 endif()
 
 
