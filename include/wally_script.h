@@ -37,6 +37,7 @@ extern "C" {
 #define WALLY_SCRIPT_MULTISIG_SORTED  0x8 /** Sort public keys (BIP67) */
 
 /* Script opcodes */
+#ifndef WALLY_DISABLE_OP_CODE
 #define OP_0 0x00
 #define OP_FALSE 0x00
 #define OP_PUSHDATA1 0x4c
@@ -164,6 +165,7 @@ extern "C" {
 #define OP_NOP10 0xb9
 
 #define OP_INVALIDOPCODE 0xff
+#endif  /* WALLY_DISABLE_OP_CODE */
 
 /**
  * Determine the type of a scriptPubkey script.
