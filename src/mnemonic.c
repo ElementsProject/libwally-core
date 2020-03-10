@@ -62,17 +62,19 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
 int mnemonic_to_bytes(const struct words *w, const char *mnemonic,
                       unsigned char *bytes_out, size_t len, size_t *written)
 {
-    struct words *mnemonic_w = wordlist_init(mnemonic);
+    struct words *mnemonic_w = NULL;
     size_t i;
 
     if (written)
         *written = 0;
 
-    if (!mnemonic_w)
-        return WALLY_ENOMEM;
-
     if (!w || !bytes_out || !len)
         return WALLY_EINVAL;
+
+    mnemonic_w = wordlist_init(mnemonic);
+
+    if (!mnemonic_w)
+        return WALLY_ENOMEM;
 
     if ((mnemonic_w->len * w->bits + 7u) / 8u > len)
         goto cleanup; /* Return the length we would have written */

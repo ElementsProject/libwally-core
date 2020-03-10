@@ -20,6 +20,7 @@ static struct words *wordlist_alloc(const char *words, size_t len)
 {
     struct words *w = wally_malloc(sizeof(struct words));
     if (w) {
+        wally_clear(w, sizeof(*w));
         w->str = wally_strdup(words);
         if (w->str) {
             w->str_len = strlen(w->str);
@@ -29,7 +30,6 @@ static struct words *wordlist_alloc(const char *words, size_t len)
             if (w->indices)
                 return w;
         }
-        w->str_len = 0;
         wordlist_free(w);
     }
     return NULL;
@@ -92,9 +92,10 @@ const char *wordlist_lookup_index(const struct words *w, size_t idx)
 
 void wordlist_free(struct words *w)
 {
-    if (w && w->str_len) {
+    if (w) {
         if (w->str) {
-            wally_clear((void *)w->str,  w->str_len);
+            if (w->str_len)
+                wally_clear((void *)w->str,  w->str_len);
             wally_free((void *)w->str);
         }
         if (w->indices)
