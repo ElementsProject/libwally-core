@@ -1120,7 +1120,7 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") # use pthread and LLVM Clang
+if(Clang) # use pthread and LLVM Clang
 set(TEST_CLEAR_NAME ctest_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
@@ -1338,19 +1338,8 @@ endif()
 ####################
 # test with Python
 ####################
-## error occurred on mingw
-if(WIN32)
-if(MSVC)
-set(WIN_MINGW  FALSE)
-else()
-set(WIN_MINGW  TRUE)
-endif()
-else()
-set(WIN_MINGW  FALSE)
-endif()
-
 ## error occurred on windows
-if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT ${WIN_MINGW}))
+if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE})
 if(WIN32)
 set(PY_TEST_IGNORE  TRUE)
 else()
