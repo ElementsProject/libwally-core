@@ -1120,7 +1120,7 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
-if(Clang) # use pthread and LLVM Clang
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") # use pthread and LLVM Clang
 set(TEST_CLEAR_NAME ctest_clear)
 add_executable(${TEST_CLEAR_NAME} src/ctest/test_clear.c)
 target_compile_options(${TEST_CLEAR_NAME}
