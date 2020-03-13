@@ -1338,8 +1338,19 @@ endif()
 ####################
 # test with Python
 ####################
+## error occurred on mingw
+if(WIN32)
+if(MSVC)
+set(WIN_MINGW  FALSE)
+else()
+set(WIN_MINGW  TRUE)
+endif()
+else()
+set(WIN_MINGW  FALSE)
+endif()
+
 ## error occurred on windows
-if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE})
+if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT ${WIN_MINGW}))
 if(WIN32)
 set(PY_TEST_IGNORE  TRUE)
 else()
