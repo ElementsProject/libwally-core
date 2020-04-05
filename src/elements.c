@@ -607,8 +607,7 @@ int wally_asset_pak_whitelistproof(
     const unsigned char *summed_key,
     size_t summed_key_len,
     unsigned char *bytes_out,
-    size_t len,
-    size_t *written)
+    size_t len)
 {
     secp256k1_pubkey online_secp_keys[SECP256K1_WHITELIST_MAX_N_KEYS];
     secp256k1_pubkey offline_secp_keys[SECP256K1_WHITELIST_MAX_N_KEYS];
@@ -625,7 +624,7 @@ int wally_asset_pak_whitelistproof(
         !online_priv_key || online_priv_key_len != EC_PRIVATE_KEY_LEN ||
         !summed_key || summed_key_len != EC_PRIVATE_KEY_LEN ||
         !pubkey_parse(ctx, &pubkey, sub_pubkey, sub_pubkey_len) ||
-        len < expected_sig_size || !written)
+        len < expected_sig_size)
         return WALLY_EINVAL;
 
     for (i = 0; i < num_keys; ++i) {
@@ -643,8 +642,6 @@ int wally_asset_pak_whitelistproof(
 
     if (!secp256k1_whitelist_signature_serialize(ctx, bytes_out, &expected_sig_size, &sig))
         return WALLY_ERROR;
-
-    *written = expected_sig_size;
 
     return WALLY_OK;
 }
