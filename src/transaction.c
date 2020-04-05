@@ -2885,7 +2885,7 @@ static int tx_getb_impl(const void *input,
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len) { \
         size_t written; \
-        if (len != siz) \
+        if (!input || len != siz) \
             return WALLY_EINVAL; \
         return tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
     }
@@ -2900,6 +2900,8 @@ GET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
 #define GET_TX_B(typ, name, siz) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len, size_t * written) { \
+        if (!input) \
+            return WALLY_EINVAL; \
         return tx_getb_impl(input, input->name, siz, bytes_out, len, written); \
     }
 
@@ -2907,6 +2909,8 @@ GET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len) { \
         size_t written; \
+        if (!input) \
+            return WALLY_EINVAL; \
         int ret = len != n ? WALLY_EINVAL : tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
         return ret; \
     }

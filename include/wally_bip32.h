@@ -74,6 +74,24 @@ WALLY_CORE_API int bip32_key_free(
     const struct ext_key *hdkey);
 #endif /* SWIG_PYTHON */
 
+#ifndef SWIG
+WALLY_CORE_API int bip32_key_init(
+    uint32_t version,
+    uint32_t depth,
+    uint32_t child_num,
+    const unsigned char *chain_code,
+    size_t chain_code_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *hash160,
+    size_t hash160_len,
+    const unsigned char *parent160,
+    size_t parent160_len,
+    struct ext_key *output);
+#endif
+
 /**
  */
 WALLY_CORE_API int bip32_key_init_alloc(

@@ -15,14 +15,14 @@
 #if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 extern void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
-  __asan_poison_memory_region((addr), (size))
+    __asan_poison_memory_region((addr), (size))
 #define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
-  __asan_unpoison_memory_region((addr), (size))
+    __asan_unpoison_memory_region((addr), (size))
 #else
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
-  ((void)(addr), (void)(size))
+    ((void)(addr), (void)(size))
 #define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
-  ((void)(addr), (void)(size))
+    ((void)(addr), (void)(size))
 #endif
 
 /* Many compilers these days will elide calls to memset when they
@@ -86,7 +86,7 @@ static bool in_stack(const char *caller, const void *search, size_t len)
     for (i = 0; i < PTHREAD_STACK_MIN - len - 1; ++i)
         if (!memcmp(gstack + i, search, len)) {
             if (caller) {
-                printf("Found %s secret at stack position %ld\n", caller, (long)i);
+                printf("Found %s secret at stack position %ld and base %p\n", caller, (long)i, gstack);
                 dump_mem(search, len);
             }
             return true; /* Found */

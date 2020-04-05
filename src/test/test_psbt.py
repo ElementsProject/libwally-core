@@ -25,10 +25,13 @@ class PSBTTests(unittest.TestCase):
 
         for valid in valids:
             psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(valid.encode('utf-8'), psbt))
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(valid['psbt'].encode('utf-8'), psbt))
             ret, reser = wally_psbt_to_base64(psbt)
             self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(valid, reser)
+            self.assertEqual(valid['psbt'], reser)
+            ret, length = wally_psbt_get_length(psbt)
+            self.assertEqual(WALLY_OK, ret)
+            self.assertEqual(length, valid['len'])
 
         for creator in creators:
             psbt = pointer(wally_psbt())

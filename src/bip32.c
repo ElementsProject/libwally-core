@@ -610,7 +610,7 @@ int bip32_key_with_tweak_from_parent_path_alloc(const struct ext_key *hdkey,
                                                 flags, *output);
     if (ret) {
         wally_free(*output);
-        *output = 0;
+        *output = NULL;
     }
     return ret;
 }
@@ -624,11 +624,29 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
                          const unsigned char *parent160, size_t parent160_len,
                          struct ext_key **output)
 {
-    struct ext_key *key_out;
+    int ret;
 
-    if (!output)
+    ALLOC_KEY();
+    ret = bip32_key_init(version, depth, child_num, chain_code, chain_code_len,
+                         pub_key, pub_key_len, priv_key, priv_key_len,
+                         hash160, hash160_len, parent160, parent160_len, *output);
+    if (ret != WALLY_OK) {
+        wally_free((void *)*output);
+        *output = NULL;
+    }
+    return ret;
+}
+
+int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
+                   const unsigned char *chain_code, size_t chain_code_len,
+                   const unsigned char *pub_key, size_t pub_key_len,
+                   const unsigned char *priv_key, size_t priv_key_len,
+                   const unsigned char *hash160, size_t hash160_len,
+                   const unsigned char *parent160, size_t parent160_len,
+                   struct ext_key *key_out)
+{
+    if (!key_out)
         return WALLY_EINVAL;
-    *output = NULL;
 
     switch (version) {
     case BIP32_VER_MAIN_PRIVATE:
@@ -649,12 +667,10 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
     if ((priv_key && priv_key_len != key_size(priv_key) - 1) || (!priv_key && priv_key_len) ||
         (pub_key && pub_key_len != key_size(pub_key)) || (!pub_key && pub_key_len) ||
         (hash160 && hash160_len != key_size(hash160)) || (!hash160 && hash160_len) ||
-        (parent160 && parent160_len != key_size(parent160)))
+        (parent160 && parent160_len != key_size(parent160)) || depth > 0xff)
         return WALLY_EINVAL;
 
-    ALLOC_KEY();
-
-    key_out = *output;
+    wally_clear(key_out, sizeof(*key_out));
     key_out->version = version;
     key_out->depth = depth;
     key_out->child_num = child_num;
@@ -671,8 +687,6 @@ int bip32_key_init_alloc(uint32_t version, uint32_t depth, uint32_t child_num,
         int ret = key_compute_pub_key(key_out);
         if (ret != WALLY_OK) {
             wally_clear(key_out, sizeof(*key_out));
-            wally_free(key_out);
-            *output = 0;
             return ret;
         }
     }

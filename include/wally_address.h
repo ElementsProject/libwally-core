@@ -88,6 +88,22 @@ WALLY_CORE_API int wally_address_to_scriptpubkey(
     size_t *written);
 
 /**
+ * Infer address from a scriptPubKey. For SegWit addresses, use `wally_addr_segwit_from_bytes`
+ * instead. To find out if an address is SegWit, use `wally_scriptpubkey_get_type`.
+ *
+ * :param scriptpubkey: scriptPubKey bytes.
+ * :param scriptpubkey_len: Length of ``scriptpubkey`` in bytes.
+ * :param network: One of ``WALLY_NETWORK_BITCOIN_MAINNET``, ``WALLY_NETWORK_BITCOIN_TESTNET``,
+ *|    ``WALLY_NETWORK_LIQUID``, ``WALLY_NETWORK_LIQUID_REGTEST``.
+ * :param output: Destination for the resulting Base58 encoded address string.
+ */
+WALLY_CORE_API int wally_scriptpubkey_to_address(
+    const unsigned char *scriptpubkey,
+    size_t scriptpubkey_len,
+    uint32_t network,
+    char **output);
+
+/**
  * Convert a private key to Wallet Import Format.
  *
  * :param priv_key: Private key bytes.

@@ -1,5 +1,5 @@
 buster_release:
-  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
+  image: greenaddress/wallycore@sha256:654e5939446bfa8f33966031e768f6600e1d627b598e738e1d8f8427370786c7
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -8,9 +8,13 @@ buster_release:
     - wally_dist/*
   tags:
     - ga
+  before_script:
+    - apt-get update -yqq
+    - apt-get install -yqq --no-install-recommends git uncrustify
+    - tools/uncrustify || true
+    - git diff --exit-code
   script:
-    - cd $CI_PROJECT_DIR
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
     - python setup.py sdist --dist-dir ./wally_core
     - ./tools/build_android_libraries.sh
     - ./tools/build_js_bindings.sh
@@ -18,24 +22,14 @@ buster_release:
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wally_dist/wallycore-android-jni.tar
 
-linux_py2_debug:
-  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
-  tags:
-    - ga
-  script:
-    - cd $CI_PROJECT_DIR
-    - ./tools/cleanup.sh && ./tools/autogen.sh
-    - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=2.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
-    - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
-
 linux_py3_debug:
-  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
+  image: greenaddress/wallycore@sha256:654e5939446bfa8f33966031e768f6600e1d627b598e738e1d8f8427370786c7
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
+    - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 ubuntu_18.04_release:
   image: greenaddress/wallycore@sha256:059eeaa5c61df5403fd28d6ea556c317d5809f7274e27901d0f09288a316bb53
@@ -48,7 +42,6 @@ ubuntu_18.04_release:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 ubuntu_19.04_release:
@@ -62,7 +55,6 @@ ubuntu_19.04_release:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 osx_release:
@@ -75,7 +67,6 @@ osx_release:
     paths:
     - wally_dist/*
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 armv7l_release:
@@ -88,7 +79,6 @@ armv7l_release:
     paths:
     - wally_dist/*
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 arm64_release:
@@ -101,7 +91,6 @@ arm64_release:
     paths:
     - wally_dist/*
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/build_python_wheels.sh python3
 
 powerpcg4_release:
@@ -137,7 +126,7 @@ windows10_release:
     - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:d76dbd6c02de1a20a096dccc3c846dc3121c964852292c6c918eb068838d934c
+  image: greenaddress/wallycore@sha256:654e5939446bfa8f33966031e768f6600e1d627b598e738e1d8f8427370786c7
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
@@ -147,7 +136,6 @@ apidocs:
   tags:
     - ga
   script:
-    - cd $CI_PROJECT_DIR
     - ./tools/cleanup.sh
     - virtualenv -p python2 .venv
     - source .venv/bin/activate
