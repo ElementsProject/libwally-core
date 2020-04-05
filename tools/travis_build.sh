@@ -1,5 +1,22 @@
 #! /usr/bin/env bash
 
+function show_err()
+{
+    if [ -f $1 ]; then
+        cat $1
+    fi
+}
+
+function show_test_err()
+{
+    tests="test_bech32 test_clear test_tx test_elements_tx test_blech32"
+    for i in $tests; do
+        show_err src/$i.log
+    done
+}
+
+trap "show_test_err" ERR
+
 ENABLE_SWIG_PYTHON="--enable-swig-python"
 ENABLE_SWIG_JAVA="--enable-swig-java"
 
@@ -15,4 +32,3 @@ if [ -n "$HOST" ]; then
 fi
 
 ./configure --disable-dependency-tracking --enable-export-all $ENABLE_SWIG_PYTHON $ENABLE_SWIG_JAVA $USE_HOST $DEBUG_WALLY $ENABLE_ELEMENTS $ENABLE_BUILTIN_MEMSET && make && make check
-

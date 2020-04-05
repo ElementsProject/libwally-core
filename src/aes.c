@@ -14,9 +14,10 @@ static bool is_valid_key_len(size_t key_len)
 }
 
 static bool are_valid_args(const unsigned char *key, size_t key_len,
-                           const unsigned char *bytes, uint32_t flags)
+                           const unsigned char *bytes, size_t bytes_len, uint32_t flags)
 {
-    return key && is_valid_key_len(key_len) && bytes &&
+    return key && is_valid_key_len(key_len) &&
+           (bytes != NULL || (bytes == NULL && bytes_len == 0 && (flags & AES_FLAG_ENCRYPT))) &&
            (flags & ALL_OPS) != ALL_OPS;
 }
 
@@ -77,7 +78,7 @@ int wally_aes(const unsigned char *key, size_t key_len,
 {
     AES256_ctx ctx;
 
-    if (!are_valid_args(key, key_len, bytes, flags) ||
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
         len % AES_BLOCK_LEN || !bytes_len || bytes_len % AES_BLOCK_LEN ||
         flags & ~ALL_OPS || !bytes_out || !len)
         return WALLY_EINVAL;
@@ -106,7 +107,7 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
     if (written)
         *written = 0;
 
-    if (!are_valid_args(key, key_len, bytes, flags) ||
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
         ((flags & AES_FLAG_ENCRYPT) && (len % AES_BLOCK_LEN)) ||
         ((flags & AES_FLAG_DECRYPT) && (bytes_len % AES_BLOCK_LEN)) ||
         !iv || iv_len != AES_BLOCK_LEN || flags & ~ALL_OPS || !written)

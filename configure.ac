@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.7.6])
+AC_INIT([libwallycore],[0.7.8])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -9,10 +9,6 @@ AH_TOP([#ifndef LIBWALLYCORE_CONFIG_H
 #define LIBWALLYCORE_CONFIG_H])
 AH_BOTTOM([#include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/])
-
-# Remove any optimisation/debug flags from CFLAGS, these are controlled
-# only by --enable-debug, in order to only use tested configurations
-CFLAGS=`echo $CFLAGS | sed 's/-[Og][0-9]*[ $$]*//'`
 
 LDPATH_VAR=LD_LIBRARY_PATH
 case $host_os in
@@ -151,14 +147,14 @@ if test "x$debug" == "xyes"; then
     fi
 else
     # Optimise and harden if we can
-    AX_CHECK_COMPILE_FLAG([-O3], [AM_CFLAGS="$AM_CFLAGS -O3"])
+    AX_CHECK_COMPILE_FLAG([-O2], [AM_CFLAGS="-O2 $AM_CFLAGS"])
     AC_CHECK_DEFINE([_FORTIFY_SOURCE], [], [
       AX_CHECK_COMPILE_FLAG([-D_FORTIFY_SOURCE=2],
         [CPPFLAGS="$CPPFLAGS -D_FORTIFY_SOURCE=2"])
     ])
     AX_CHECK_COMPILE_FLAG([-fstack-protector-strong], [AM_CFLAGS="$AM_CFLAGS -fstack-protector-strong"])
     AX_CHECK_COMPILE_FLAG([-DNDEBUG=1], [AM_CFLAGS="$AM_CFLAGS -DNDEBUG=1"])
-    AX_CHECK_LINK_FLAG([-O3], [LDFLAGS="$LDFLAGS -O3"])
+    AX_CHECK_LINK_FLAG([-O2], [LDFLAGS="-O2 $LDFLAGS"])
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 

@@ -128,12 +128,22 @@ class AddressTests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
 
+        # Get address for P2PKH scriptPubKey
+        ret, out = wally_scriptpubkey_to_address(out, written, network)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(out, vec[path]['address_legacy'])
+
         # Parse wrapped SegWit address (P2SH_P2WPKH):
         out, out_len = make_cbuffer('00' * (25))
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_p2sh_segwit']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
+
+        # Get address for P2SH scriptPubKey
+        ret, out = wally_scriptpubkey_to_address(out, written, network)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(out, vec[path]['address_p2sh_segwit'])
 
         # Parse native SegWit address (P2WPKH):
         out, out_len = make_cbuffer('00' * (100))

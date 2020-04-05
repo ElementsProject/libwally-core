@@ -616,6 +616,7 @@ int wally_asset_pak_whitelistproof(
     secp256k1_whitelist_signature sig;
     const size_t num_keys = offline_keys_len / EC_PUBLIC_KEY_LEN;
     size_t expected_sig_size = (1 + 32 * (1 + num_keys));
+    size_t i;
 
     if (!online_keys || online_keys_len != offline_keys_len || !offline_keys || !offline_keys_len ||
         offline_keys_len % EC_PUBLIC_KEY_LEN || key_index >= num_keys || num_keys > SECP256K1_WHITELIST_MAX_N_KEYS ||
@@ -626,7 +627,7 @@ int wally_asset_pak_whitelistproof(
         len < expected_sig_size)
         return WALLY_EINVAL;
 
-    for (size_t i = 0; i < num_keys; ++i) {
+    for (i = 0; i < num_keys; ++i) {
         if (!pubkey_parse(ctx, &online_secp_keys[i], online_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN) ||
             !pubkey_parse(ctx, &offline_secp_keys[i], offline_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN))
             return WALLY_ERROR;

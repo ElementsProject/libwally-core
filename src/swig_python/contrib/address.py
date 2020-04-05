@@ -18,6 +18,7 @@ class AddressTests(unittest.TestCase):
             ('H5nswXhfo8AMt159sgA5FWT35De34hVR4o', h2b('a914f80278b2011573a2ac59c83fadf929b0fc57ad0187'), WALLY_NETWORK_LIQUID),
         ]:
             self.assertEqual(address_to_scriptpubkey(address, network), scriptpubkey)
+            self.assertEqual(scriptpubkey_to_address(scriptpubkey, network), address)
 
 if __name__ == '__main__':
     unittest.main()

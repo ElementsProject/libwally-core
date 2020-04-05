@@ -154,12 +154,12 @@ WALLY_CORE_API int wally_keypath_map_free(struct wally_keypath_map *keypaths);
  * :param path_len: The number of items in path
  */
 WALLY_CORE_API int wally_add_new_keypath(struct wally_keypath_map *keypaths,
-                                   unsigned char *pubkey,
-                                   size_t pubkey_len,
-                                   unsigned char *fingerprint,
-                                   size_t fingerprint_len,
-                                   uint32_t *path,
-                                   size_t path_len);
+                                         unsigned char *pubkey,
+                                         size_t pubkey_len,
+                                         unsigned char *fingerprint,
+                                         size_t fingerprint_len,
+                                         uint32_t *path,
+                                         size_t path_len);
 
 /**
  * Allocate and initialize a new partial sigs map.
@@ -188,10 +188,10 @@ WALLY_CORE_API int wally_partial_sigs_map_free(struct wally_partial_sigs_map *si
  * :param sig_len: The length of sig
  */
 WALLY_CORE_API int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
-                                       unsigned char *pubkey,
-                                       size_t pubkey_len,
-                                       unsigned char *sig,
-                                       size_t sig_len);
+                                             unsigned char *pubkey,
+                                             size_t pubkey_len,
+                                             unsigned char *sig,
+                                             size_t sig_len);
 
 /**
  * Allocate and initialize a new unknowns map
@@ -220,10 +220,10 @@ WALLY_CORE_API int wally_unknowns_map_free(struct wally_unknowns_map *unknowns);
  * :param value_len: The length of value
  */
 WALLY_CORE_API int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
-                                   unsigned char *key,
-                                   size_t key_len,
-                                   unsigned char *value,
-                                   size_t value_len);
+                                         unsigned char *key,
+                                         size_t key_len,
+                                         unsigned char *value,
+                                         size_t value_len);
 
 /**
  * Allocate and initialize a new psbt input.
@@ -435,7 +435,7 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
  * :param unknowns: The unknown key value pairs for this output.
  */
 WALLY_CORE_API int wally_psbt_output_set_unknowns(
-    struct wally_psbt_output*output,
+    struct wally_psbt_output *output,
     struct wally_unknowns_map *unknowns);
 
 #ifndef SWIG_PYTHON
@@ -494,10 +494,21 @@ WALLY_CORE_API int wally_psbt_from_bytes(
     struct wally_psbt **output);
 
 /**
+ * Get length of psbt when serialized to bytes.
+ *
+ * :param psbt: the PSBT.
+ * :param len: Length in bytes when serialized.
+ */
+WALLY_CORE_API int wally_psbt_get_length(
+    const struct wally_psbt *psbt,
+    size_t *len);
+
+/**
  * Serialize a psbt to bytes.
  *
+ * :param psbt: the PSBT to serialize.
  * :param bytes_out: Bytes to create the transaction from.
- * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param bytes_len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
  * :param bytes_written: number of bytes written to bytes_out
  */
 WALLY_CORE_API int wally_psbt_to_bytes(
@@ -518,7 +529,7 @@ WALLY_CORE_API int wally_psbt_from_base64(
 /**
  * Create a base64 string for a psbt
  *
- * :param string: Base64 string to create the psbt from.
+ * :param psbt: the PSBT to serialize.
  * :param output: Destination for the resulting psbt.
  */
 WALLY_CORE_API int wally_psbt_to_base64(

@@ -207,7 +207,7 @@ if test x"$enable_coverage" = x"yes"; then
     CFLAGS="$CFLAGS -O0 --coverage"
     LDFLAGS="$LDFLAGS --coverage"
 else
-    CFLAGS="$CFLAGS -O3"
+    CFLAGS="-O2 $CFLAGS"
 fi
 
 AC_MSG_CHECKING([for __builtin_popcount])
