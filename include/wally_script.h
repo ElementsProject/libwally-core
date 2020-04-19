@@ -30,6 +30,8 @@ extern "C" {
 #define WALLY_SCRIPTSIG_P2PKH_MAX_LEN 140 /** [SIG+SIGHASH] [PUBKEY] */
 #define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
 
+#define WALLY_SCRIPT_VARINT_MAX_SIZE 9
+
 /* Script creation flags */
 #define WALLY_SCRIPT_HASH160          0x1 /** hash160 input bytes before using them */
 #define WALLY_SCRIPT_SHA256           0x2 /** sha256 input bytes before using them */
@@ -459,6 +461,30 @@ WALLY_CORE_API int wally_script_push_from_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Serializes ``v`` to bytes_out as varint.
+ *
+ * :param v: value to be serialized as varint.
+ * :param bytes_out: Destination for the resulting varint. Must have space for
+ * `WALLY_SCRIPT_VARINT_MAX_SIZE` bytes.
+ */
+WALLY_CORE_API size_t wally_varint_to_bytes(
+    uint64_t v,
+    unsigned char *bytes_out);
+
+/**
+ * Serializes bytes to bytes_out as varbuff: size as varint, followed by the actual bytes.
+ *
+ * :param bytes: bytes to be written
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param bytes_out: Destination for the resulting varbuff. Must have space for
+ * `WALLY_SCRIPT_VARINT_MAX_SIZE + bytes_len` bytes.
+ */
+WALLY_CORE_API size_t wally_varbuff_to_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    unsigned char *bytes_out);
 
 /**
  * Create a segwit witness program from a script or hash.

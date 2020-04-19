@@ -842,6 +842,19 @@ cleanup:
     return ret;
 }
 
+size_t wally_varbuff_to_bytes(const unsigned char *bytes, size_t bytes_len,
+                              unsigned char *bytes_out)
+{
+    return varbuff_to_bytes(bytes, bytes_len, bytes_out);
+}
+
+size_t wally_varint_to_bytes(
+    uint64_t v,
+    unsigned char *bytes_out)
+{
+    return varint_to_bytes(v, bytes_out);
+}
+
 int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                      uint32_t flags,
                                      unsigned char *bytes_out, size_t len, size_t *written)

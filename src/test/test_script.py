@@ -356,6 +356,30 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(data)/2 + len(prefix)/2)
 
+    def test_varint_to_bytes(self):
+        out, out_len = make_cbuffer('00' * 9)
+
+        for (inp, expected) in (
+            (0, "00"),
+            (1, "01"),
+            (252, "fc"),
+            (253, "fdfd00"),
+            ((2**16-1) + 10, "fe09000100"),
+            ((2**32-1) + 10, "ff0900000001000000"),
+            (2**64-1, "ffffffffffffffffff"),
+        ):
+            written = wally_varint_to_bytes(inp, out)
+            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(out[:written], unhexlify(expected))
+
+    def test_varbuff_to_bytes(self):
+        varint_size = 3
+        in_, in_len = make_cbuffer('aa' * 253)
+        out, out_len = make_cbuffer('00' * (in_len + varint_size))
+        written = wally_varbuff_to_bytes(in_, in_len, out)
+        self.assertEqual(written, varint_size + in_len)
+        self.assertEqual(out[:written], unhexlify("fdfd00aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+
     def test_wally_witness_program_from_bytes(self):
         valid_cases = [('00' * 20, 0, '0014'+'00'*20),
                        ('00' * 32, 0, '0020'+'00'*32),
