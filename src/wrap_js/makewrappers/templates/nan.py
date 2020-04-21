@@ -38,13 +38,13 @@ static bool IsValid(const typename Nan::Maybe<T>& maybe)
 // Binary data is expected as objects supporting the JS Buffer interface
 struct LocalBuffer {
     LocalBuffer(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
-        : mData(0), mLength(0), mDummyData(0)
+        : mData(0), mLength(0)
     {
         Init(info[n], ret);
     }
 
     LocalBuffer(const v8::Local<v8::Value>& obj, int& ret)
-        : mData(0), mLength(0), mDummyData(0)
+        : mData(0), mLength(0)
     {
         Init(obj, ret);
     }
@@ -58,15 +58,13 @@ struct LocalBuffer {
                 if (IsValid(mBuffer)) {
                     mData = (unsigned char*) node::Buffer::Data(mBuffer);
                     mLength = node::Buffer::Length(mBuffer);
-                    if (mData == 0 && mLength == 0)
-                        mData = &mDummyData;  // Set a dummy if the buffer is empty
                 }
             }
         }
     }
 
     LocalBuffer(size_t len, int& ret)
-        : mData(0), mLength(0), mDummyData(0)
+        : mData(0), mLength(0)
     {
         if (ret != WALLY_OK)
             return; // Do nothing, caller will already throw
@@ -74,15 +72,12 @@ struct LocalBuffer {
         if (local.ToLocal(&mBuffer)) {
             mData = (unsigned char*) node::Buffer::Data(mBuffer);
             mLength = len;
-            if (mData == 0 && mLength == 0)
-                mData = &mDummyData;  // Set a dummy if the buffer is empty
         }
     }
 
     LocalObject mBuffer;
     unsigned char *mData;
     size_t mLength;
-    unsigned char mDummyData;
 };
 
 struct LocalArray {
