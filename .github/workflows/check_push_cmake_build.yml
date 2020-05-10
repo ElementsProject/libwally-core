@@ -11,7 +11,7 @@ on:
     - feature/*
 
 env:
-  CMAKE_VERSION: 3.15.5
+  CMAKE_VERSION: 3.17.2
 
 jobs:
   cmake-js-build:
@@ -21,12 +21,12 @@ jobs:
       max-parallel: 2
       matrix:
         os: [macos-latest, ubuntu-latest]
-        node: [8, 12, 13]
+        node: [8, 12, 14]
         exclude:
           - os: macos-latest
             node: 8
           - os: macos-latest
-            node: 13
+            node: 14
 
     steps:
     - uses: actions/checkout@v2
@@ -50,7 +50,7 @@ jobs:
       id: cache
       with:
         path: cache/cmake
-        key: ${{ runner.os }}-cmake-3.15.5-x64
+        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64
     - name: cmake-download-ubuntu
       if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -74,7 +74,7 @@ jobs:
       run: npm run ctest
     - name: ubuntu-after
       if: matrix.os == 'ubuntu-latest'
-      run: rm -rf cache/cmake/cmake-3.15.5-Linux-x86_64
+      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   cmake-build:
     name: cmake build
@@ -122,7 +122,7 @@ jobs:
       id: cache
       with:
         path: cache/cmake
-        key: ${{ runner.os }}-cmake-3.15.5-x64
+        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64
     - name: cmake-download-ubuntu
       if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
       run: |
@@ -170,4 +170,4 @@ jobs:
         ctest -C Release --output-on-failure
     - name: ubuntu-after
       if: matrix.os == 'ubuntu-latest'
-      run: rm -rf cache/cmake/cmake-3.15.5-Linux-x86_64
+      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
