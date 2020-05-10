@@ -353,6 +353,7 @@ add_custom_target(${SECP256K1_GEN_CONTEXT_NAME}
   SOURCES ${ECMULT_STATIC_CONTEXT_H}
 )
 
+if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
   COMMAND echo "[gen_context]" ${GEN_CONTEXT_PATH}
   COMMAND ${GEN_CONTEXT_PATH}
@@ -365,6 +366,20 @@ add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1
   VERBATIM
 )
+else()
+add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND echo "[gen_context]" ${GEN_CONTEXT_PATH}
+  COMMAND ${GEN_CONTEXT_PATH}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SRC_ECMULT_STATIC_CONTEXT_H} ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E compare_files ${SRC_ECMULT_STATIC_CONTEXT_H} ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${SRC_ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${SRC_SECP256K1_CONFIG_H}
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${SRC_WALLY_CONFIG_H}
+  DEPENDS ${GEN_CONTEXT_NAME}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1
+  VERBATIM
+)
+endif()
 
 
 ####################
@@ -538,6 +553,7 @@ set(NODE_TEST_BUILD_DIR     ${NODE_TEST_JS_DIR}/build)
 set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/${WORK_WINDOWS_BINARY_DIR_NAME})
 
 # generate source files, and create test directories
+if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
   COMMAND set PYTHONDONTWRITEBYTECODE=1
   COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -547,6 +563,17 @@ add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
   VERBATIM
 )
+else()
+add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+  COMMAND set PYTHONDONTWRITEBYTECODE=1
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
+  COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
+  COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+  VERBATIM
+)
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 add_library(${NODE_LIBRARY_NAME} SHARED)
@@ -612,6 +639,7 @@ target_link_libraries(${NODE_LIBRARY_NAME}
     ${CMAKE_JS_LIB}
 )
 
+if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 add_custom_command(
     TARGET ${NODE_LIBRARY_NAME}
     POST_BUILD
@@ -633,7 +661,29 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-
+else()
+add_custom_command(
+    TARGET ${NODE_LIBRARY_NAME}
+    POST_BUILD
+    COMMAND set PYTHONDONTWRITEBYTECODE=1
+    COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_CURRENT_BINARY_DIR}/wally.js
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${WALLY_OBJ_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_BINARY_DIR}/..
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_DATA_SRC_DIR} ${NODE_TEST_DATA_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${NODE_TEST_JS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+endif()
 
 elseif(ENABLE_SWIG_JAVA)
 # after build
@@ -823,6 +873,7 @@ set(SWIG_PY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/swig_python)
 set(SWIG_PY_OUTPUT_DIR ${WALLY_ROOT_BINARY_DIR}/swig_python)
 set(GEN_PYTHON_FILE    ${SWIG_PY_SOURCE_DIR}/python_extra.py_in)
 
+if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 if(WIN32)
 add_custom_target(swig_python_cmd  ALL
     COMMAND echo "[generate python file]"
@@ -870,6 +921,55 @@ add_custom_target(swig_python_cmd  ALL
     USES_TERMINAL
 )
 endif()
+else(${CMAKE_VERSION} VERSION_LESS "3.17.0")
+if(WIN32)
+add_custom_target(swig_python_cmd  ALL
+    COMMAND echo "[generate python file]"
+    COMMAND ${CMAKE_COMMAND} -E copy ${PYTHON_WALLY_FILE} wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${GEN_PYTHON_FILE} python_extra.py_in
+    COMMAND echo "copy /Y /B ${PYTHON_WALLY_FILE} + ${GEN_PYTHON_FILE}  __init__.py /B"
+    COMMAND COPY /Y /B wallycore.py + python_extra.py_in __init__.py /B
+    COMMAND ${CMAKE_COMMAND} -E rm -f wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E rm -f python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}/wallycore
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR} ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${SWIG_PY_OUTPUT_DIR}/swig.i
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${SWIG_PY_OUTPUT_DIR}/python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E copy __init__.py ${SWIG_PY_OUTPUT_DIR}/wallycore/__init__.py
+    COMMAND ${CMAKE_COMMAND} -E rm -f __init__.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/_${WALLY_SWIG_PYTHON_OUTPUT_NAME}.pyd ${SWIG_PY_OUTPUT_DIR}/wallycore/_${WALLY_SWIG_PYTHON_OUTPUT_NAME}.pyd
+    DEPENDS ${WALLY_SWIG_PYTHON_NAME}
+    VERBATIM
+    USES_TERMINAL
+)
+else()
+set(SWIG_PY_OUTPUT_FILE  _${WALLY_SWIG_PYTHON_OUTPUT_NAME}.so)
+add_custom_target(swig_python_cmd  ALL
+    COMMAND echo "[generate python file]"
+    COMMAND ${CMAKE_COMMAND} -E copy ${PYTHON_WALLY_FILE} wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${GEN_PYTHON_FILE} python_extra.py_in
+    COMMAND echo "cat wallycore.py > __init__.py && cat python_extra.py_in >> __init__.py"
+    COMMAND cat wallycore.py > __init__.py
+    COMMAND cat python_extra.py_in >> __init__.py
+    COMMAND ${CMAKE_COMMAND} -E rm -f wallycore.py
+    COMMAND ${CMAKE_COMMAND} -E rm -f python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_PY_OUTPUT_DIR}/wallycore
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR} ${SWIG_PY_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${SWIG_PY_OUTPUT_DIR}/swig.i
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${SWIG_PY_OUTPUT_DIR}/python_extra.py_in
+    COMMAND ${CMAKE_COMMAND} -E copy __init__.py ${SWIG_PY_OUTPUT_DIR}/wallycore/__init__.py
+    COMMAND ${CMAKE_COMMAND} -E rm -f __init__.py
+    COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/${SWIG_PY_OUTPUT_FILE} ${SWIG_PY_OUTPUT_DIR}/wallycore/${SWIG_PY_OUTPUT_FILE}
+    # for test
+    COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/${SWIG_PY_OUTPUT_FILE} ${SWIG_PY_OUTPUT_DIR}/contrib/${SWIG_PY_OUTPUT_FILE}
+    DEPENDS ${WALLY_SWIG_PYTHON_NAME}
+    VERBATIM
+    USES_TERMINAL
+)
+endif()
+endif(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 
 # if IS_OSX
 # # Python requires the shared library have a .so extension for 'import'
@@ -1014,6 +1114,7 @@ target_compile_definitions(${WALLY_SWIG_JAVA_NAME}
     SWIG_JAVA_BUILD
 )
 set_target_properties(${WALLY_SWIG_JAVA_NAME} PROPERTIES OUTPUT_NAME ${WALLY_SWIG_JAVA_OUTPUT_NAME})
+if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 add_custom_command(
     TARGET ${WALLY_SWIG_JAVA_NAME}
     POST_BUILD
@@ -1027,6 +1128,21 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E remove -f ${SWIG_JAVA_SOURCE_DIR}/src/com/blockstream/libwally/Wally.java
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+else(${CMAKE_VERSION} VERSION_LESS "3.17.0")
+add_custom_command(
+    TARGET ${WALLY_SWIG_JAVA_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${JAVA_INTERFACE_FILE}
+    COMMAND ${CMAKE_COMMAND} -E copy  ${CMAKE_CURRENT_BINARY_DIR}/Wally.java ${SWIG_JAVA_SOURCE_DIR}/wallycoreJNI.java
+    COMMAND ${CMAKE_COMMAND} -E copy  ${CMAKE_CURRENT_BINARY_DIR}/wallycoreConstants.java ${SWIG_JAVA_SOURCE_DIR}/wallycoreConstants.java
+#    COMMAND sed -i 's/ = (char \*) (\*jenv)\->Get/ = (unsigned char \*) (\*jenv)\->Get/g' ${OUT_JAVA_FILE}
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/swigjavapost.sh sed ${ELEMENTS_COMP_OPT}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SWIG_JAVA_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_JAVA_SOURCE_DIR}/src ${SWIG_JAVA_OUTPUT_DIR}/src
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${SWIG_JAVA_SOURCE_DIR}/src/com/blockstream/libwally/Wally.java
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+endif(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 
 set(SWIG_JAVA_JAR_NAME wallycore_swig_java_jar)
 
