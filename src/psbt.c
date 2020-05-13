@@ -873,8 +873,7 @@ static int count_psbt_parts(
     struct psbt_counts *result;
     size_t i, vl;
     const unsigned char *key;
-    uint64_t key_len, value_len;
-    uint8_t type;
+    uint64_t type, key_len, value_len;
     int ret = WALLY_OK;
     const unsigned char *p = bytes, *end = bytes + bytes_len;
 
@@ -902,7 +901,7 @@ static int count_psbt_parts(
 
         /* Read the key itself */
         key = p;
-        type = key[0];
+        varint_from_bytes(key, &type);
         p += key_len;
 
         /* Read value length */
@@ -952,7 +951,7 @@ static int count_psbt_parts(
 
             /* Read the key itself */
             key = p;
-            type = key[0];
+            varint_from_bytes(key, &type);
             p += key_len;
 
             /* Read value length */
@@ -1003,7 +1002,7 @@ static int count_psbt_parts(
 
             /* Read the key itself */
             key = p;
-            type = key[0];
+            varint_from_bytes(key, &type);
             p += key_len;
 
             /* Read value length */
@@ -1050,8 +1049,7 @@ static int psbt_input_from_bytes(
     struct wally_psbt_input *result)
 {
     const unsigned char *p = bytes, *end = bytes + bytes_len, *key, *value;
-    uint64_t key_len, value_len;
-    uint8_t type;
+    uint64_t type, key_len, value_len;
     int ret = WALLY_OK;
     size_t i, vl;
     bool found_sep = false;
@@ -1087,7 +1085,7 @@ static int psbt_input_from_bytes(
 
         /* Read the key itself */
         key = p;
-        type = key[0];
+        varint_from_bytes(key, &type);
         p += key_len;
 
         /* Pre-read the value length but don't increment for a sanity check */
@@ -1298,8 +1296,7 @@ static int psbt_output_from_bytes(
     struct wally_psbt_output *result)
 {
     const unsigned char *p = bytes, *end = bytes + bytes_len, *key, *value;
-    uint64_t key_len, value_len;
-    uint8_t type;
+    uint64_t type, key_len, value_len;
     size_t i, vl;
     bool found_sep = false;
     int ret = WALLY_OK;
@@ -1326,7 +1323,7 @@ static int psbt_output_from_bytes(
 
         /* Read the key itself */
         key = p;
-        type = key[0];
+        varint_from_bytes(key, &type);
         p += key_len;
 
         /* Pre-read the value length but don't increment for a sanity check */
@@ -1430,8 +1427,7 @@ int wally_psbt_from_bytes(
     struct wally_psbt **output)
 {
     const unsigned char *p = bytes, *end = bytes + bytes_len, *key, *value;
-    uint64_t key_len, value_len;
-    uint8_t type;
+    uint64_t type, key_len, value_len;
     size_t i, vl;
     int ret = WALLY_OK;
     struct psbt_counts *counts = NULL;
@@ -1479,7 +1475,7 @@ int wally_psbt_from_bytes(
 
         /* Read the key itself */
         key = p;
-        type = key[0];
+        varint_from_bytes(key, &type);
         p += key_len;
 
         /* Pre-read the value length but don't increment for a sanity check */
