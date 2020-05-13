@@ -739,6 +739,9 @@ int wally_psbt_init_alloc(
         return WALLY_ENOMEM;
     }
 
+    // Version is always 0
+    result->version = 0;
+
     result->inputs = new_inputs;
     result->num_inputs = 0;
     result->inputs_allocation_len = inputs_allocation_len;
@@ -746,6 +749,7 @@ int wally_psbt_init_alloc(
     result->num_outputs = 0;
     result->outputs_allocation_len = outputs_allocation_len;
     result->tx = NULL;
+
     return WALLY_OK;
 }
 
@@ -924,6 +928,8 @@ static int count_psbt_parts(
             }
             break;
         }
+        case WALLY_PSBT_GLOBAL_VERSION:
+            break;
         /* Unknowns */
         default:
             result->num_global_unknowns++;
@@ -1528,6 +1534,20 @@ int wally_psbt_from_bytes(
             }
             break;
         }
+        case WALLY_PSBT_GLOBAL_VERSION: {
+            if (result->version > 0) {
+                return WALLY_EINVAL;     /* Version already provided */
+            } else if (key_len != 1) {
+                return WALLY_EINVAL;     /* Type is more than one byte */
+            }
+            p += varint_from_bytes(p, &value_len);
+            p += uint32_from_le_bytes(p, &result->version);
+            if (result->version > WALLY_PSBT_HIGHEST_VERSION) {
+                ret = WALLY_EINVAL;     /* Unsupported version number */
+                goto fail;
+            }
+            break;
+        }
         /* Unknowns */
         default: {
             struct wally_unknowns_map *unknowns = result->unknowns;
@@ -1793,6 +1813,10 @@ int wally_psbt_get_length(
         return ret;
     }
     out += varbuff_get_length(tx_len);
+
+    if (psbt->version > 0) {
+        out += 7; // 2 bytes key, 5 bytes value
+    }
 
     /* Global unknowns */
     if (psbt->unknowns) {
@@ -2097,6 +2121,14 @@ int wally_psbt_to_bytes(
         return ret;
     }
     p += tx_len;
+
+    /* version */
+    if (psbt->version > 0) {
+        type = WALLY_PSBT_GLOBAL_VERSION;
+        p += varbuff_to_bytes(&type, 1, p);
+        p += varint_to_bytes(sizeof(uint32_t), p);
+        p += uint32_to_le_bytes(psbt->version, p);
+    }
 
     /* Unknowns */
     if (psbt->unknowns) {
