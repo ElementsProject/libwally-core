@@ -1163,26 +1163,34 @@ static int psbt_input_from_bytes(
             break;
         }
         case WALLY_PSBT_IN_REDEEM_SCRIPT: {
-            if (result->redeem_script_len != 0) {
+            if (result->redeem_script) {
                 return WALLY_EINVAL;     /* Already have a redeem script */
             } else if (key_len != 1) {
                 return WALLY_EINVAL;     /* Type is more than one byte */
             }
             p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->redeem_script, p, value_len);
+            if (value_len == 0) {
+                result->redeem_script = wally_malloc(1);
+            } else {
+                clone_bytes(&result->redeem_script, p, value_len);
+            }
             result->redeem_script_len = value_len;
 
             p += value_len;
             break;
         }
         case WALLY_PSBT_IN_WITNESS_SCRIPT: {
-            if (result->witness_script_len != 0) {
+            if (result->witness_script) {
                 return WALLY_EINVAL;     /* Already have a witness script */
             } else if (key_len != 1) {
                 return WALLY_EINVAL;     /* Type is more than one byte */
             }
             p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->witness_script, p, value_len);
+            if (value_len == 0) {
+                result->witness_script = wally_malloc(1);
+            } else {
+                clone_bytes(&result->witness_script, p, value_len);
+            }
             result->witness_script_len = value_len;
 
             p += value_len;
@@ -1225,13 +1233,17 @@ static int psbt_input_from_bytes(
             break;
         }
         case WALLY_PSBT_IN_FINAL_SCRIPTSIG: {
-            if (result->final_script_sig_len != 0) {
+            if (result->final_script_sig) {
                 return WALLY_EINVAL;     /* Already have a scriptSig */
             } else if (key_len != 1) {
                 return WALLY_EINVAL;     /* Type is more than one byte */
             }
             p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->final_script_sig, p, value_len);
+            if (value_len == 0) {
+                result->final_script_sig = wally_malloc(1);
+            } else {
+                clone_bytes(&result->final_script_sig, p, value_len);
+            }
             result->final_script_sig_len = value_len;
 
             p += value_len;
@@ -1333,26 +1345,34 @@ static int psbt_output_from_bytes(
         /* Process based on type */
         switch (type) {
         case WALLY_PSBT_OUT_REDEEM_SCRIPT: {
-            if (result->redeem_script_len != 0) {
+            if (result->redeem_script) {
                 return WALLY_EINVAL;     /* Already have a redeem script */
             } else if (key_len != 1) {
                 return WALLY_EINVAL;     /* Type is more than one byte */
             }
             p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->redeem_script, p, value_len);
+            if (value_len == 0) {
+                result->redeem_script = wally_malloc(1);
+            } else {
+                clone_bytes(&result->redeem_script, p, value_len);
+            }
             result->redeem_script_len = value_len;
 
             p += value_len;
             break;
         }
         case WALLY_PSBT_OUT_WITNESS_SCRIPT: {
-            if (result->witness_script_len != 0) {
+            if (result->witness_script) {
                 return WALLY_EINVAL;     /* Already have a witness script */
             } else if (key_len != 1) {
                 return WALLY_EINVAL;     /* Type is more than one byte */
             }
             p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->witness_script, p, value_len);
+            if (value_len == 0) {
+                result->witness_script = wally_malloc(1);
+            } else {
+                clone_bytes(&result->witness_script, p, value_len);
+            }
             result->witness_script_len = value_len;
 
             p += value_len;
@@ -1501,7 +1521,7 @@ int wally_psbt_from_bytes(
             p += value_len;
             /* Make sure there are no scriptSigs and scriptWitnesses */
             for (j = 0; j < result->tx->num_inputs; ++j) {
-                if (result->tx->inputs[j].script_len != 0 || (result->tx->inputs[j].witness && result->tx->inputs[j].witness->num_items != 0)) {
+                if (result->tx->inputs[j].script || (result->tx->inputs[j].witness && result->tx->inputs[j].witness->num_items != 0)) {
                     ret = WALLY_EINVAL;     /* Unsigned tx needs empty scriptSigs and scriptWtinesses */
                     goto fail;
                 }
