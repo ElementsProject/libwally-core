@@ -157,7 +157,22 @@ class wally_psbt_input(Structure):
                 ('keypaths', POINTER(keypath_map)),
                 ('partial_sigs', POINTER(partial_sigs_map)),
                 ('unknowns', POINTER(unknowns_map)),
-                ('sighash_type', c_ulong)]
+                ('sighash_type', c_ulong),
+                ('value', c_ulonglong),
+                ('has_value', c_ulong),
+                ('value_blinder', c_void_p),
+                ('value_blinder_len', c_ulong),
+                ('asset', c_void_p),
+                ('asset_len', c_ulong),
+                ('asset_blinder', c_void_p),
+                ('asset_blinder_len', c_ulong),
+                ('peg_in_tx', POINTER(wally_tx)),
+                ('txout_proof', c_void_p),
+                ('txout_proof_len', c_ulong),
+                ('genesis_hash', c_void_p),
+                ('genesis_hash_len', c_ulong),
+                ('claim_script', c_void_p),
+                ('claim_script_len', c_ulong)]
 
 class wally_psbt_output(Structure):
     _fields_ = [('redeem_script', c_void_p),
