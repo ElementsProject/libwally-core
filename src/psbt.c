@@ -18,9 +18,11 @@ const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 
 #ifdef BUILD_ELEMENTS
 const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
+const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 's'};
+const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
-static bool pubkey_is_compressed(unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
+static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
     return pubkey[0] == 0x02 || pubkey[0] == 0x03;
 }
 
@@ -1429,6 +1431,40 @@ static int count_psbt_parts(
             case WALLY_PSBT_IN_BIP32_DERIVATION:
                 input->num_keypaths++;
                 break;
+            case WALLY_PSBT_IN_PROPRIETARY: {
+#ifdef BUILD_ELEMENTS
+                uint64_t id_len, subtype, type_len;
+                bool valid_type = false;
+
+                type_len = varint_from_bytes(key, &type);
+                key += type_len;
+                key += varint_from_bytes(key, &id_len);
+
+                if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                    key += id_len;
+                    key += varint_from_bytes(key, &subtype);
+
+                    switch (subtype) {
+                    case WALLY_PSBT_IN_ELEMENTS_VALUE:
+                    case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER:
+                    case WALLY_PSBT_IN_ELEMENTS_ASSET:
+                    case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER:
+                    case WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX:
+                    case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF:
+                    case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH:
+                    case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT:
+                        valid_type = true;
+                        break;
+                    default:
+                        valid_type = false;
+                    }
+                }
+                if (valid_type) {
+                    break;
+                }
+#endif /* BUILD_ELEMENTS */
+                /* Falls through to unknown case without elements or with unknown proprietary id string */
+            }
             /* Unknowns */
             default:
                 input->num_unknowns++;
@@ -1472,6 +1508,40 @@ static int count_psbt_parts(
             case WALLY_PSBT_OUT_BIP32_DERIVATION:
                 psbt_output->num_keypaths++;
                 break;
+            case WALLY_PSBT_OUT_PROPRIETARY: {
+#ifdef BUILD_ELEMENTS
+                uint64_t id_len, subtype, type_len;
+                bool valid_type = false;
+
+                type_len = varint_from_bytes(key, &type);
+                key += type_len;
+                key += varint_from_bytes(key, &id_len);
+
+                if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                    key += id_len;
+                    key += varint_from_bytes(key, &subtype);
+
+                    switch (subtype) {
+                    case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT:
+                    case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER:
+                    case WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT:
+                    case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER:
+                    case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF:
+                    case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF:
+                    case WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY:
+                    case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT:
+                        valid_type = true;
+                        break;
+                    default:
+                        valid_type = false;
+                    }
+                }
+                if (valid_type) {
+                    break;
+                }
+#endif /* BUILD_ELEMENTS */
+                /* Falls through to unknown case without elements or with unknown proprietary string */
+            }
             /* Unknowns */
             default:
                 psbt_output->num_unknowns++;
@@ -1727,6 +1797,165 @@ static int psbt_input_from_bytes(
             }
             break;
         }
+        case WALLY_PSBT_IN_PROPRIETARY: {
+#ifdef BUILD_ELEMENTS
+            uint64_t id_len, subtype, type_len;
+            size_t subkey_len;
+            bool valid_type = false;
+
+            type_len = varint_from_bytes(key, &type);
+            key += type_len;
+            key += varint_from_bytes(key, &id_len);
+
+            if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                key += id_len;
+                key += varint_from_bytes(key, &subtype);
+                subkey_len = key_len - type_len - id_len;
+
+                switch (subtype) {
+                case WALLY_PSBT_IN_ELEMENTS_VALUE: {
+                    valid_type = true;
+                    if (result->has_value) {
+                        return WALLY_EINVAL;    /* Already have value */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    p += uint64_from_le_bytes(key, &result->value);
+                    result->has_value = true;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER: {
+                    valid_type = true;
+                    if (result->value_blinder) {
+                        return WALLY_EINVAL;    /* Already have value blinding factor */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->value_blinder = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->value_blinder, p, value_len);
+                    }
+                    result->value_blinder_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_ASSET: {
+                    valid_type = true;
+                    if (result->asset) {
+                        return WALLY_EINVAL;    /* Already have asset */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->asset = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->asset, p, value_len);
+                    }
+                    result->asset_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER: {
+                    valid_type = true;
+                    if (result->asset_blinder) {
+                        return WALLY_EINVAL;    /* Already have asset blinding factor */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->asset_blinder = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->asset_blinder, p, value_len);
+                    }
+                    result->asset_blinder_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX: {
+                    valid_type = true;
+                    if (result->asset) {
+                        return WALLY_EINVAL;    /* Already have asset */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    value = p;
+                    wally_tx_from_bytes(value, value_len, 0, &result->peg_in_tx);
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF: {
+                    valid_type = true;
+                    if (result->txout_proof) {
+                        return WALLY_EINVAL;    /* Already have txout proof */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->txout_proof = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->txout_proof, p, value_len);
+                    }
+                    result->txout_proof_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH: {
+                    valid_type = true;
+                    if (result->genesis_hash) {
+                        return WALLY_EINVAL;    /* Already have genesis hash */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->genesis_hash = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->genesis_hash, p, value_len);
+                    }
+                    result->genesis_hash_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT: {
+                    valid_type = true;
+                    if (result->claim_script) {
+                        return WALLY_EINVAL;    /* Already have asset */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->claim_script = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->claim_script, p, value_len);
+                    }
+                    result->claim_script_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                default:
+                    valid_type = false;
+                }
+            }
+            if (valid_type) {
+                break;
+            }
+#endif /* BUILD_ELEMENTS */
+            /* Fall through to unknown case without elements or unknown proprietary type */
+        }
         /* Unknowns */
         default: {
             struct wally_unknowns_map *unknowns = result->unknowns;
@@ -1867,6 +2096,175 @@ static int psbt_output_from_bytes(
 
             keypaths->num_items++;
             break;
+        }
+        case WALLY_PSBT_OUT_PROPRIETARY: {
+#ifdef BUILD_ELEMENTS
+            uint64_t id_len, subtype, type_len;
+            size_t subkey_len;
+            bool valid_type = false;
+
+            type_len = varint_from_bytes(key, &type);
+            key += type_len;
+            key += varint_from_bytes(key, &id_len);
+
+            if (id_len < WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                key += id_len;
+                key += varint_from_bytes(key, &subtype);
+                subkey_len = key_len - type_len - id_len;
+
+                switch (subtype) {
+                case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT: {
+                    valid_type = true;
+                    if (result->value_commitment) {
+                        return WALLY_EINVAL;    /* Already have value commitment */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->value_commitment = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->value_commitment, p, value_len);
+                    }
+                    result->value_commitment_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER: {
+                    valid_type = true;
+                    if (result->value_blinder) {
+                        return WALLY_EINVAL;    /* Already have value blinder */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->value_blinder = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->value_blinder, p, value_len);
+                    }
+                    result->value_blinder_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT: {
+                    valid_type = true;
+                    if (result->asset_commitment) {
+                        return WALLY_EINVAL;    /* Already have asset commitment */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->asset_commitment = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->asset_commitment, p, value_len);
+                    }
+                    result->asset_commitment_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER: {
+                    valid_type = true;
+                    if (result->asset_blinder) {
+                        return WALLY_EINVAL;    /* Already have asset blinder */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->asset_blinder = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->asset_blinder, p, value_len);
+                    }
+                    result->asset_blinder_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF: {
+                    valid_type = true;
+                    if (result->range_proof) {
+                        return WALLY_EINVAL;    /* Already have range proof */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->range_proof = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->range_proof, p, value_len);
+                    }
+                    result->range_proof_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF: {
+                    valid_type = true;
+                    if (result->surjection_proof) {
+                        return WALLY_EINVAL;    /* Already have surjection proof */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->surjection_proof = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->surjection_proof, p, value_len);
+                    }
+                    result->surjection_proof_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY: {
+                    valid_type = true;
+                    if (result->has_blinding_pubkey) {
+                        return WALLY_EINVAL;    /* Already have blinding pubkey */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len != EC_PUBLIC_KEY_LEN || value_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+                        return WALLY_EINVAL;    /* Blinding pubkey is the wrong length */
+                    } else {
+                        memcpy(result->blinding_pubkey, p, value_len);
+                    }
+                    result->has_blinding_pubkey = true;
+                    p += value_len;
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT: {
+                    valid_type = true;
+                    if (result->nonce_commitment) {
+                        return WALLY_EINVAL;    /* Already have nonce commitment */
+                    } else if (subkey_len != 1) {
+                        return WALLY_EINVAL;    /* Type is more than one byte */
+                    }
+                    p += varint_from_bytes(p, &value_len);
+                    if (value_len == 0) {
+                        result->nonce_commitment = wally_malloc(1);
+                    } else {
+                        clone_bytes(&result->nonce_commitment, p, value_len);
+                    }
+                    result->nonce_commitment_len = value_len;
+
+                    p += value_len;
+                    break;
+                }
+                default:
+                    valid_type = false;
+                }
+            }
+            if (valid_type) {
+                break;
+            }
+#endif /* BUILD_ELEMENTS */
+            /* Falls through to unknown case without elements or for unknown proprietary types */
         }
         /* Unknowns */
         default: {
@@ -2174,6 +2572,46 @@ static int psbt_input_get_length(
         }
         out += varint_get_length(wit_len);
     }
+#ifdef BUILD_ELEMENTS
+    /* Confidential Assets blinding data */
+    if (input->has_value) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(sizeof(input->value));
+    }
+    if (input->value_blinder) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(input->value_blinder_len);
+    }
+    if (input->asset) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(input->asset_len);
+    }
+    if (input->asset_blinder) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(input->asset_blinder_len);
+    }
+    /* Peg ins */
+    if (input->peg_in_tx) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        ret = wally_tx_get_length(input->non_witness_utxo, WALLY_TX_FLAG_USE_WITNESS, &tx_len);
+        if (ret != WALLY_OK) {
+            return ret;
+        }
+        out += varbuff_get_length(tx_len);
+    }
+    if (input->txout_proof) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(input->txout_proof_len);
+    }
+    if (input->genesis_hash) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(input->genesis_hash_len);
+    }
+    if (input->claim_script) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(input->claim_script_len);
+    }
+#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     if (input->unknowns) {
         for (i = 0; i < input->unknowns->num_items; ++i) {
@@ -2232,6 +2670,45 @@ static int psbt_output_get_length(
             out += origin_len;
         }
     }
+#ifdef BUILD_ELEMENTS
+    /* Confidential Assets blinding data */
+    if (output->value_commitment) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->value_commitment_len);
+    }
+    if (output->value_blinder) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->value_blinder_len);
+    }
+    if (output->asset_commitment) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->asset_commitment_len);
+    }
+    if (output->asset_blinder) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->asset_blinder_len);
+    }
+    if (output->range_proof) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->range_proof_len);
+    }
+    if (output->surjection_proof) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->surjection_proof_len);
+    }
+    if (output->has_blinding_pubkey) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        if (pubkey_is_compressed(output->blinding_pubkey)) {
+            out += varbuff_get_length(EC_PUBLIC_KEY_LEN);
+        } else {
+            out += varbuff_get_length(EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+        }
+    }
+    if (output->nonce_commitment) {
+        out += 12; /* key len, proprietary type byte, elements id length, elements id, and proprietary type byte */
+        out += varbuff_get_length(output->nonce_commitment_len);
+    }
+#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     if (output->unknowns) {
         for (i = 0; i < output->unknowns->num_items; ++i) {
@@ -2442,6 +2919,84 @@ static int psbt_input_to_bytes(
             p += varbuff_to_bytes(stack->witness, stack->witness_len, p);
         }
     }
+#ifdef BUILD_ELEMENTS
+    /* Confidential Assets blinding data */
+    if (input->has_value) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_VALUE;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varint_to_bytes(sizeof(uint64_t), p);
+        p += uint64_to_le_bytes(input->value, p);
+    }
+    if (input->value_blinder) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(input->value_blinder, input->value_blinder_len, p);
+    }
+    if (input->asset) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_ASSET;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(input->asset, input->asset_len, p);
+    }
+    if (input->asset_blinder) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(input->asset_blinder, input->asset_blinder_len, p);
+    }
+    /* Peg ins */
+    if (input->peg_in_tx) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX;
+        p += varbuff_to_bytes(key, 12, p);
+        ret = wally_tx_get_length(input->peg_in_tx, WALLY_TX_FLAG_USE_WITNESS, &tx_len);
+        if (ret != WALLY_OK) {
+            return ret;
+        }
+        p += varint_to_bytes(tx_len, p);
+        ret = wally_tx_to_bytes(input->peg_in_tx, WALLY_TX_FLAG_USE_WITNESS, p, end - p, &tx_len);
+        if (ret != WALLY_OK) {
+            return ret;
+        }
+        p += tx_len;
+    }
+    if (input->txout_proof) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(input->txout_proof, input->txout_proof_len, p);
+    }
+    if (input->genesis_hash) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(input->genesis_hash, input->genesis_hash_len, p);
+    }
+    if (input->claim_script) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(input->claim_script, input->claim_script_len, p);
+    }
+#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     if (input->unknowns) {
         for (i = 0; i < input->unknowns->num_items; ++i) {
@@ -2516,6 +3071,77 @@ static int psbt_output_to_bytes(
             }
         }
     }
+#ifdef BUILD_ELEMENTS
+    /* Confidential Assets blinding data */
+    if (output->value_commitment) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->value_commitment, output->value_commitment_len, p);
+    }
+    if (output->value_blinder) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->value_blinder, output->value_blinder_len, p);
+    }
+    if (output->asset_commitment) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->asset_commitment, output->asset_commitment_len, p);
+    }
+    if (output->asset_blinder) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->asset_blinder, output->asset_blinder_len, p);
+    }
+    if (output->range_proof) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->range_proof, output->range_proof_len, p);
+    }
+    if (output->surjection_proof) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->surjection_proof, output->surjection_proof_len, p);
+    }
+    if (output->has_blinding_pubkey) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY;
+        p += varbuff_to_bytes(key, 12, p);
+        if (pubkey_is_compressed(output->blinding_pubkey)) {
+            p += varbuff_to_bytes(output->blinding_pubkey, EC_PUBLIC_KEY_LEN, p);
+        } else {
+            p += varbuff_to_bytes(output->blinding_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN, p);
+        }
+    }
+    if (output->nonce_commitment) {
+        unsigned char key[12];
+        key[0] = WALLY_PSBT_IN_PROPRIETARY;
+        varbuff_to_bytes(WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN, &key[1]);
+        key[11] = WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY;
+        p += varbuff_to_bytes(key, 12, p);
+        p += varbuff_to_bytes(output->nonce_commitment, output->nonce_commitment_len, p);
+    }
+#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     if (output->unknowns) {
         for (i = 0; i < output->unknowns->num_items; ++i) {
