@@ -104,6 +104,24 @@ struct wally_psbt_input {
     struct wally_partial_sigs_map *partial_sigs;
     struct wally_unknowns_map *unknowns;
     uint32_t sighash_type;
+
+#ifdef BUILD_ELEMENTS
+    uint64_t value;
+    bool has_value;
+    unsigned char *value_blinder;
+    size_t value_blinder_len;
+    unsigned char *asset;
+    size_t asset_len;
+    unsigned char *asset_blinder;
+    size_t asset_blinder_len;
+    struct wally_tx *peg_in_tx;
+    unsigned char *txout_proof;
+    size_t txout_proof_len;
+    unsigned char *genesis_hash;
+    size_t genesis_hash_len;
+    unsigned char *claim_script;
+    size_t claim_script_len;
+#endif /* BUILD_ELEMENTS */
 };
 
 /** A psbt output map */
@@ -585,6 +603,178 @@ WALLY_CORE_API int wally_finalize_psbt(
 WALLY_CORE_API int wally_extract_psbt(
     struct wally_psbt *psbt,
     struct wally_tx **output);
+
+#ifdef BUILD_ELEMENTS
+/**
+ * Allocate and initialize a new elements psbt.
+ *
+ * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
+ * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
+ * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
+ * :param output: Destination for the resulting psbt output.
+ */
+WALLY_CORE_API int wally_psbt_elements_init_alloc(
+    size_t inputs_allocation_len,
+    size_t outputs_allocation_len,
+    size_t global_unknowns_allocation_len,
+    struct wally_psbt **output);
+
+/**
+ * Allocate and initialize a new psbt elements input.
+ *
+ * :param non_witness_utxo: The non witness utxo for this input if it exists.
+ * :param witness_utxo: The witness utxo for this input if it exists.
+ * :param redeem_script: The redeem script for this input
+ * :param redeem_script_len: The length of the redeem script.
+ * :param witness_script: The witness script for this input
+ * :param witness_script_len: The length of the witness script.
+ * :param final_script_sig: The scriptSig for this input
+ * :param final_script_sig_len: Size of ``final_script_sig`` in bytes.
+ * :param final_witness: The witness stack for the input, or NULL if no witness is present.
+ * :param keypaths: The HD keypaths for this input.
+ * :param partial_sigs: The partial signatures for this input.
+ * :param unknowns: The unknown key value pairs for this input.
+ * :param sighash_type: The sighash type for this input
+ * :param value: The value for this input
+ * :param value_blinder: The value blinder for ths input
+ * :param value_blinder_len: The length of the value_blinder.
+ * :param asset: The witness script for this input
+ * :param asset_len: The length of the witness script.
+ * :param asset_blinder: The witness script for this input
+ * :param asset_blinder__len: The length of the witness script.
+ * :param peg_in_tx: The witness script for this input
+ * :param txout_proof: The witness script for this input
+ * :param txout_proof_len: The length of the witness script.
+ * :param genesis_hash: The witness script for this input
+ * :param genesis_hash_len: The length of the witness script.
+ * :param claim_script: The witness script for this input
+ * :param claim_script_len: The length of the witness script.
+ * :param output: Destination for the resulting psbt input.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_init_alloc(
+    struct wally_tx *non_witness_utxo,
+    struct wally_tx_output *witness_utxo,
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    unsigned char *final_script_sig,
+    size_t final_script_sig_len,
+    struct wally_tx_witness_stack *final_witness,
+    struct wally_keypath_map *keypaths,
+    struct wally_partial_sigs_map *partial_sigs,
+    struct wally_unknowns_map *unknowns,
+    uint32_t sighash_type,
+    uint64_t value,
+    bool has_value,
+    unsigned char *value_blinder,
+    size_t value_blinder_len,
+    unsigned char *asset,
+    size_t asset_len,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len,
+    struct wally_tx *peg_in_tx,
+    unsigned char *txout_proof,
+    size_t txout_proof_len,
+    unsigned char *genesis_hash,
+    size_t genesis_hash_len,
+    unsigned char *claim_script,
+    size_t claim_script_len,
+    struct wally_psbt_input **output);
+
+/**
+ * Set the value in an elements input
+ *
+ * :param input: The input to update.
+ * :param value: The value for this input
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_value(
+    struct wally_psbt_input *input,
+    uint64_t value);
+
+/**
+ * Set the value blinder in an elements input
+ *
+ * :param input: The input to update.
+ * :param value_blinder: The value blinder for this input
+ * :param value_blinder_len: The length of the value blinder.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_value_blinder(
+    struct wally_psbt_input *input,
+    unsigned char *value_blinder,
+    size_t value_blinder_len);
+
+/**
+ * Set the asset in an elements input
+ *
+ * :param input: The input to update.
+ * :param asset: The asset for this input
+ * :param asset_len: The length of the asset
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_asset(
+    struct wally_psbt_input *input,
+    unsigned char *asset,
+    size_t asset_len);
+
+/**
+ * Set the asset blinder in an elements input
+ *
+ * :param input: The input to update.
+ * :param asset_blinder: The asset blinder for this input
+ * :param asset_blinder_len: The length of the asset blinder.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_asset_blinder(
+    struct wally_psbt_input *input,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len);
+
+/**
+ * Set the peg in tx in an input
+ *
+ * :param input: The input to update.
+ * :param peg_in_tx: The peg in tx for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_peg_in_tx(
+    struct wally_psbt_input *input,
+    struct wally_tx *peg_in_tx);
+
+/**
+ * Set the txout proof in an elements input
+ *
+ * :param input: The input to update.
+ * :param txout_proof: The txout proof for this input
+ * :param txout_proof_len: The length of the txout proof.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_txout_proof(
+    struct wally_psbt_input *input,
+    unsigned char *txout_proof,
+    size_t txout_proof_len);
+
+/**
+ * Set the genesis hash in an elements input
+ *
+ * :param input: The input to update.
+ * :param genesis_hash: The genesis hash for this input
+ * :param genesis_hash_len: The length of the genesis hash.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_genesis_hash(
+    struct wally_psbt_input *input,
+    unsigned char *genesis_hash,
+    size_t genesis_hash_len);
+
+/**
+ * Set the claim script in an elements input
+ *
+ * :param input: The input to update.
+ * :param claim_script: The claim script for this input
+ * :param claim_script_len: The length of the claim_script.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_set_claim_script(
+    struct wally_psbt_input *input,
+    unsigned char *claim_script,
+    size_t claim_script_len);
+
+#endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
 }

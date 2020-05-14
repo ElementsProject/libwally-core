@@ -443,6 +443,94 @@ fail:
     return ret;
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_psbt_elements_input_init_alloc(
+    struct wally_tx *non_witness_utxo,
+    struct wally_tx_output *witness_utxo,
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    unsigned char *final_script_sig,
+    size_t final_script_sig_len,
+    struct wally_tx_witness_stack *final_witness,
+    struct wally_keypath_map *keypaths,
+    struct wally_partial_sigs_map *partial_sigs,
+    struct wally_unknowns_map *unknowns,
+    uint32_t sighash_type,
+    uint64_t value,
+    bool has_value,
+    unsigned char *value_blinder,
+    size_t value_blinder_len,
+    unsigned char *asset,
+    size_t asset_len,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len,
+    struct wally_tx *peg_in_tx,
+    unsigned char *txout_proof,
+    size_t txout_proof_len,
+    unsigned char *genesis_hash,
+    size_t genesis_hash_len,
+    unsigned char *claim_script,
+    size_t claim_script_len,
+    struct wally_psbt_input **output)
+{
+    struct wally_psbt_input *result;
+    int ret = wally_psbt_input_init_alloc(non_witness_utxo,
+                                          witness_utxo,
+                                          redeem_script,
+                                          redeem_script_len,
+                                          witness_script,
+                                          witness_script_len,
+                                          final_script_sig,
+                                          final_script_sig_len,
+                                          final_witness,
+                                          keypaths,
+                                          partial_sigs,
+                                          unknowns,
+                                          sighash_type,
+                                          output);
+    if (ret != WALLY_OK) {
+        return ret;
+    }
+
+    /* wally_psbt_input_init_alloc will allocate and initialize the input */
+    result = *output;
+
+    if (has_value && (ret = wally_psbt_elements_input_set_value(result, value)) != WALLY_OK) {
+        goto fail;
+    }
+    if (value_blinder && (ret = wally_psbt_elements_input_set_value_blinder(result, value_blinder, value_blinder_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (asset && (ret = wally_psbt_elements_input_set_asset(result, asset, asset_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (asset_blinder && (ret = wally_psbt_elements_input_set_asset_blinder(result, asset_blinder, asset_blinder_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (peg_in_tx && (ret = wally_psbt_elements_input_set_peg_in_tx(result, peg_in_tx)) != WALLY_OK) {
+        goto fail;
+    }
+    if (txout_proof && (ret = wally_psbt_elements_input_set_txout_proof(result, txout_proof, txout_proof_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (genesis_hash && (ret = wally_psbt_elements_input_set_genesis_hash(result, genesis_hash, genesis_hash_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (claim_script && (ret = wally_psbt_elements_input_set_claim_script(result, claim_script, claim_script_len)) != WALLY_OK) {
+        goto fail;
+    }
+
+    return ret;
+
+fail:
+    wally_psbt_input_free(result);
+    *output = NULL;
+    return ret;
+}
+#endif /* BUILD_ELEMENTS */
+
 int wally_psbt_input_set_non_witness_utxo(
     struct wally_psbt_input *input,
     struct wally_tx *non_witness_utxo)
@@ -585,6 +673,129 @@ int wally_psbt_input_set_sighash_type(
     return WALLY_OK;
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_psbt_elements_input_set_value(
+    struct wally_psbt_input *input,
+    uint64_t value)
+{
+    input->value = value;
+    input->has_value = true;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_input_set_value_blinder(
+    struct wally_psbt_input *input,
+    unsigned char *value_blinder,
+    size_t value_blinder_len)
+{
+    unsigned char *result_value_blinder;
+
+    if (!clone_bytes(&result_value_blinder, value_blinder, value_blinder_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(input->value_blinder);
+    input->value_blinder = value_blinder;
+    input->value_blinder_len = value_blinder_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_input_set_asset(
+    struct wally_psbt_input *input,
+    unsigned char *asset,
+    size_t asset_len)
+{
+    unsigned char *result_asset;
+
+    if (!clone_bytes(&result_asset, asset, asset_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(input->asset);
+    input->asset = asset;
+    input->asset_len = asset_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_input_set_asset_blinder(
+    struct wally_psbt_input *input,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len)
+{
+    unsigned char *result_asset_blinder;
+
+    if (!clone_bytes(&result_asset_blinder, asset_blinder, asset_blinder_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(input->asset_blinder);
+    input->asset_blinder = asset_blinder;
+    input->asset_blinder_len = asset_blinder_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_input_set_peg_in_tx(
+    struct wally_psbt_input *input,
+    struct wally_tx *peg_in_tx)
+{
+    int ret = WALLY_OK;
+    struct wally_tx *result_peg_in_tx;
+
+    if ((ret = clone_tx(peg_in_tx, &result_peg_in_tx)) != WALLY_OK) {
+        return ret;
+    }
+    wally_tx_free(input->peg_in_tx);
+    input->peg_in_tx = peg_in_tx;
+    return ret;
+}
+
+
+int wally_psbt_elements_input_set_txout_proof(
+    struct wally_psbt_input *input,
+    unsigned char *txout_proof,
+    size_t txout_proof_len)
+{
+    unsigned char *result_txout_proof;
+
+    if (!clone_bytes(&result_txout_proof, txout_proof, txout_proof_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(input->txout_proof);
+    input->txout_proof = txout_proof;
+    input->txout_proof_len = txout_proof_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_input_set_genesis_hash(
+    struct wally_psbt_input *input,
+    unsigned char *genesis_hash,
+    size_t genesis_hash_len)
+{
+    unsigned char *result_genesis_hash;
+
+    if (!clone_bytes(&result_genesis_hash, genesis_hash, genesis_hash_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(input->genesis_hash);
+    input->genesis_hash = genesis_hash;
+    input->genesis_hash_len = genesis_hash_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_input_set_claim_script(
+    struct wally_psbt_input *input,
+    unsigned char *claim_script,
+    size_t claim_script_len)
+{
+    unsigned char *result_claim_script;
+
+    if (!clone_bytes(&result_claim_script, claim_script, claim_script_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(input->claim_script);
+    input->claim_script = claim_script;
+    input->claim_script_len = claim_script_len;
+    return WALLY_OK;
+}
+#endif /* BUILD_ELEMENTS */
+
 int wally_psbt_input_free(struct wally_psbt_input *input)
 {
     if (input) {
@@ -597,6 +808,15 @@ int wally_psbt_input_free(struct wally_psbt_input *input)
         wally_keypath_map_free(input->keypaths);
         wally_partial_sigs_map_free(input->partial_sigs);
         wally_unknowns_map_free(input->unknowns);
+#ifdef BUILD_ELEMENTS
+        clear_and_free(input->value_blinder, input->value_blinder_len);
+        clear_and_free(input->asset, input->asset_len);
+        clear_and_free(input->asset_blinder, input->asset_blinder_len);
+        wally_tx_free(input->peg_in_tx);
+        clear_and_free(input->txout_proof, input->txout_proof_len);
+        clear_and_free(input->genesis_hash, input->genesis_hash_len);
+        clear_and_free(input->claim_script, input->claim_script_len);
+#endif /* BUILD_ELEMENTS */
     }
     return WALLY_OK;
 }
