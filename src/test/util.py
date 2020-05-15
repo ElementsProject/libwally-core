@@ -180,7 +180,23 @@ class wally_psbt_output(Structure):
                 ('witness_script', c_void_p),
                 ('witness_script_len', c_ulong),
                 ('keypaths', POINTER(keypath_map)),
-                ('unknowns', POINTER(unknowns_map))]
+                ('unknowns', POINTER(unknowns_map)),
+                ('blinding_pubkey', c_ubyte * 65),
+                ('has_blinding_pubkey', c_ulong),
+                ('value_commitment', c_void_p),
+                ('value_commitment_len', c_ulong),
+                ('value_blinder', c_void_p),
+                ('value_blinder_len', c_ulong),
+                ('asset_commitment', c_void_p),
+                ('asset_commitment_len', c_ulong),
+                ('asset_blinder', c_void_p),
+                ('asset_blinder_len', c_ulong),
+                ('nonce_commitment', c_void_p),
+                ('nonce_commitment_len', c_ulong),
+                ('range_proof', c_void_p),
+                ('range_proof_len', c_ulong),
+                ('surjection_proof', c_void_p),
+                ('surjection_proof_len', c_ulong)]
 
 class wally_psbt(Structure):
     _fields_ = [('tx', POINTER(wally_tx)),
