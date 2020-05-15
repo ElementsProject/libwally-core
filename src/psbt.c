@@ -855,6 +855,81 @@ fail:
     return ret;
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_psbt_elements_output_init_alloc(
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    struct wally_keypath_map *keypaths,
+    struct wally_unknowns_map *unknowns,
+    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN],
+    bool has_blinding_pubkey,
+    unsigned char *value_commitment,
+    size_t value_commitment_len,
+    unsigned char *value_blinder,
+    size_t value_blinder_len,
+    unsigned char *asset_commitment,
+    size_t asset_commitment_len,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len,
+    unsigned char *nonce_commitment,
+    size_t nonce_commitment_len,
+    unsigned char *range_proof,
+    size_t range_proof_len,
+    unsigned char *surjection_proof,
+    size_t surjection_proof_len,
+    struct wally_psbt_output **output)
+{
+    struct wally_psbt_output *result;
+    int ret = wally_psbt_output_init_alloc(redeem_script,
+                                           redeem_script_len,
+                                           witness_script,
+                                           witness_script_len,
+                                           keypaths,
+                                           unknowns,
+                                           output);
+    if (ret != WALLY_OK) {
+        return ret;
+    }
+
+    /* wally_psbt_output_init_alloc allocates for us */
+    result = *output;
+
+    if (has_blinding_pubkey && (ret = wally_psbt_elements_output_set_blinding_pubkey(result, blinding_pubkey)) != WALLY_OK) {
+        goto fail;
+    }
+    if (value_commitment && (ret = wally_psbt_elements_output_set_value_commitment(result, value_commitment, value_commitment_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (value_blinder && (ret = wally_psbt_elements_output_set_value_blinder(result, value_blinder, value_blinder_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (asset_commitment && (ret = wally_psbt_elements_output_set_asset_commitment(result, asset_commitment, asset_commitment_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (asset_blinder && (ret = wally_psbt_elements_output_set_asset_blinder(result, asset_blinder, asset_blinder_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (nonce_commitment && (ret = wally_psbt_elements_output_set_nonce_commitment(result, nonce_commitment, nonce_commitment_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (range_proof && (ret = wally_psbt_elements_output_set_range_proof(result, range_proof, range_proof_len)) != WALLY_OK) {
+        goto fail;
+    }
+    if (surjection_proof && (ret = wally_psbt_elements_output_set_surjection_proof(result, surjection_proof, surjection_proof_len)) != WALLY_OK) {
+        goto fail;
+    }
+
+    return ret;
+
+fail:
+    wally_psbt_output_free(result);
+    *output = NULL;
+    return ret;
+}
+#endif /* BUILD_ELEMENTS */
+
 int wally_psbt_output_set_redeem_script(
     struct wally_psbt_output *output,
     unsigned char *redeem_script,
@@ -915,6 +990,129 @@ int wally_psbt_output_set_unknowns(
     return WALLY_OK;
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_psbt_elements_output_set_blinding_pubkey(
+    struct wally_psbt_output *output,
+    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN])
+{
+    memcpy(output->blinding_pubkey, blinding_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    output->has_blinding_pubkey = true;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_value_commitment(
+    struct wally_psbt_output *output,
+    unsigned char *value_commitment,
+    size_t value_commitment_len)
+{
+    unsigned char *result_value_commitment;
+
+    if (!clone_bytes(&result_value_commitment, value_commitment, value_commitment_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->value_commitment);
+    output->value_commitment = value_commitment;
+    output->value_commitment_len = value_commitment_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_value_blinder(
+    struct wally_psbt_output *output,
+    unsigned char *value_blinder,
+    size_t value_blinder_len)
+{
+    unsigned char *result_value_blinder;
+
+    if (!clone_bytes(&result_value_blinder, value_blinder, value_blinder_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->value_blinder);
+    output->value_blinder = value_blinder;
+    output->value_blinder_len = value_blinder_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_asset_commitment(
+    struct wally_psbt_output *output,
+    unsigned char *asset_commitment,
+    size_t asset_commitment_len)
+{
+    unsigned char *result_asset_commitment;
+
+    if (!clone_bytes(&result_asset_commitment, asset_commitment, asset_commitment_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->asset_commitment);
+    output->asset_commitment = asset_commitment;
+    output->asset_commitment_len = asset_commitment_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_asset_blinder(
+    struct wally_psbt_output *output,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len)
+{
+    unsigned char *result_asset_blinder;
+
+    if (!clone_bytes(&result_asset_blinder, asset_blinder, asset_blinder_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->asset_blinder);
+    output->asset_blinder = asset_blinder;
+    output->asset_blinder_len = asset_blinder_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_nonce_commitment(
+    struct wally_psbt_output *output,
+    unsigned char *nonce_commitment,
+    size_t nonce_commitment_len)
+{
+    unsigned char *result_nonce_commitment;
+
+    if (!clone_bytes(&result_nonce_commitment, nonce_commitment, nonce_commitment_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->nonce_commitment);
+    output->nonce_commitment = nonce_commitment;
+    output->nonce_commitment_len = nonce_commitment_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_range_proof(
+    struct wally_psbt_output *output,
+    unsigned char *range_proof,
+    size_t range_proof_len)
+{
+    unsigned char *result_range_proof;
+
+    if (!clone_bytes(&result_range_proof, range_proof, range_proof_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->range_proof);
+    output->range_proof = range_proof;
+    output->range_proof_len = range_proof_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_elements_output_set_surjection_proof(
+    struct wally_psbt_output *output,
+    unsigned char *surjection_proof,
+    size_t surjection_proof_len)
+{
+    unsigned char *result_surjection_proof;
+
+    if (!clone_bytes(&result_surjection_proof, surjection_proof, surjection_proof_len)) {
+        return WALLY_ENOMEM;
+    }
+    wally_free(output->surjection_proof);
+    output->surjection_proof = surjection_proof;
+    output->surjection_proof_len = surjection_proof_len;
+    return WALLY_OK;
+}
+#endif/* BUILD_ELEMENTS */
+
 int wally_psbt_output_free(struct wally_psbt_output *output)
 {
     if (output) {
@@ -922,6 +1120,15 @@ int wally_psbt_output_free(struct wally_psbt_output *output)
         clear_and_free(output->witness_script, output->witness_script_len);
         wally_keypath_map_free(output->keypaths);
         wally_unknowns_map_free(output->unknowns);
+#ifdef BUILD_ELEMENTS
+        clear_and_free(output->value_commitment, output->value_commitment_len);
+        clear_and_free(output->value_blinder, output->value_blinder_len);
+        clear_and_free(output->asset_commitment, output->asset_commitment_len);
+        clear_and_free(output->asset_blinder, output->asset_blinder_len);
+        clear_and_free(output->nonce_commitment, output->nonce_commitment_len);
+        clear_and_free(output->range_proof, output->range_proof_len);
+        clear_and_free(output->surjection_proof, output->surjection_proof_len);
+#endif /* BUILD_ELEMENTS */
     }
     return WALLY_OK;
 }

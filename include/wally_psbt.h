@@ -132,6 +132,24 @@ struct wally_psbt_output {
     size_t witness_script_len;
     struct wally_keypath_map *keypaths;
     struct wally_unknowns_map *unknowns;
+#ifdef BUILD_ELEMENTS
+    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    bool has_blinding_pubkey;
+    unsigned char *value_commitment;
+    size_t value_commitment_len;
+    unsigned char *value_blinder;
+    size_t value_blinder_len;
+    unsigned char *asset_commitment;
+    size_t asset_commitment_len;
+    unsigned char *asset_blinder;
+    size_t asset_blinder_len;
+    unsigned char *nonce_commitment;
+    size_t nonce_commitment_len;
+    unsigned char *range_proof;
+    size_t range_proof_len;
+    unsigned char *surjection_proof;
+    size_t surjection_proof_len;
+#endif /* BUILD_ELEMENTS */
 };
 
 /** A partially signed bitcoin transaction */
@@ -770,6 +788,151 @@ WALLY_CORE_API int wally_psbt_elements_input_set_claim_script(
     struct wally_psbt_input *input,
     unsigned char *claim_script,
     size_t claim_script_len);
+
+/**
+ * Allocate and initialize a new psbt elements output.
+ *
+ * :param redeem_script: The redeem script needed for spending this output
+ * :param redeem_script_len: The length of the redeem script.
+ * :param witness_script: The witness script needed for spending for this output
+ * :param witness_script_len: The length of the witness script.
+ * :param keypaths: The HD keypaths for the keys needed for spending this output
+ * :param unknowns: The unknown key value pairs for this output.
+ * :param blinding_pubkey: The blinding pubkey for this output
+ * :param value_commitment: The value commitment for this output
+ * :param value_commitment_len: The length of the witness script.
+ * :param value_blinder: The value blinder for this output
+ * :param value_blinder_len: The length of the value blinder.
+ * :param asset_commitment: The asset commitment for this output
+ * :param asset_commitment_len: The length of the asset commitment.
+ * :param asset_blinder: The asset blinder for this output
+ * :param asset_blinder_len: The length of the asset blinder.
+ * :param nonce_commitment: The nonce commitment for this output
+ * :param nonce_commitment_len: The length of the nonce commitment.
+ * :param range_proof: The range proof for this output
+ * :param range_proof_len: The length of the range proof.
+ * :param surjection_proof: The surjection proof for this output
+ * :param surjection_proof_len: The length of the surjection proof.
+ * :param output: Destination for the resulting psbt output.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_init_alloc(
+    unsigned char *redeem_script,
+    size_t redeem_script_len,
+    unsigned char *witness_script,
+    size_t witness_script_len,
+    struct wally_keypath_map *keypaths,
+    struct wally_unknowns_map *unknowns,
+    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN],
+    bool has_blinding_pubkey,
+    unsigned char *value_commitment,
+    size_t value_commitment_len,
+    unsigned char *value_blinder,
+    size_t value_blinder_len,
+    unsigned char *asset_commitment,
+    size_t asset_commitment_len,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len,
+    unsigned char *nonce_commitment,
+    size_t nonce_commitment_len,
+    unsigned char *range_proof,
+    size_t range_proof_len,
+    unsigned char *surjection_proof,
+    size_t surjection_proof_len,
+    struct wally_psbt_output **output);
+
+/**
+ * Set the blinding pubkey in an elements output
+ *
+ * :param output: The output to update.
+ * :param blinding_pubkey: The blinding pubkey for this output
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_blinding_pubkey(
+    struct wally_psbt_output *output,
+    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]);
+
+/**
+ * Set the value commitment in an elements output
+ *
+ * :param output: The output to update.
+ * :param value_commitment: The value commitment for this output
+ * :param value_commitment_len: The length of the value commitment.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_value_commitment(
+    struct wally_psbt_output *output,
+    unsigned char *value_commitment,
+    size_t value_commitment_len);
+
+/**
+ * Set the value blinder in an elements output
+ *
+ * :param output: The output to update.
+ * :param value_blinder: The value blinder for this output
+ * :param value_blinder_len: The length of the value blinder.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_value_blinder(
+    struct wally_psbt_output *output,
+    unsigned char *value_blinder,
+    size_t value_blinder_len);
+
+/**
+ * Set the asset commitment in an elements output
+ *
+ * :param output: The output to update.
+ * :param asset_commitment: The asset commitment for this output
+ * :param asset_commitment_len: The length of the asset commitment.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_asset_commitment(
+    struct wally_psbt_output *output,
+    unsigned char *asset_commitment,
+    size_t asset_commitment_len);
+
+/**
+ * Set the asset blinder in an elements output
+ *
+ * :param output: The output to update.
+ * :param asset_blinder: The asset blinder for this output
+ * :param asset_blinder_len: The length of the asset blinder.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_asset_blinder(
+    struct wally_psbt_output *output,
+    unsigned char *asset_blinder,
+    size_t asset_blinder_len);
+
+/**
+ * Set the nonce commitment in an elements output
+ *
+ * :param output: The output to update.
+ * :param nonce_commitment: The nonce commitment for this output
+ * :param nonce_commitment_len: The length of the nonce commitment.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_nonce_commitment(
+    struct wally_psbt_output *output,
+    unsigned char *nonce_commitment,
+    size_t nonce_commitment_len);
+
+/**
+ * Set the range proof in an elements output
+ *
+ * :param output: The output to update.
+ * :param range_proof: The range_proof for this output
+ * :param range_proof_len: The length of the raange proof.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_range_proof(
+    struct wally_psbt_output *output,
+    unsigned char *range_proof,
+    size_t range_proof_len);
+
+/**
+ * Set the surjection proof in an elements output
+ *
+ * :param output: The output to update.
+ * :param surjection_proof: The surjection proof for this output
+ * :param surjection_proof: The length of the surjection proof.
+ */
+WALLY_CORE_API int wally_psbt_elements_output_set_surjection_proof(
+    struct wally_psbt_output *output,
+    unsigned char *surjection_proof,
+    size_t surjection_proof_len);
 
 #endif /* BUILD_ELEMENTS */
 
