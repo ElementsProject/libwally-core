@@ -16,6 +16,9 @@
 
 const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 
+#ifdef BUILD_ELEMENTS
+const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
+#endif /* BUILD_ELEMENTS */
 
 static bool pubkey_is_compressed(unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
     return pubkey[0] == 0x02 || pubkey[0] == 0x03;
@@ -1169,6 +1172,8 @@ int wally_psbt_init_alloc(
     // Version is always 0
     result->version = 0;
 
+    memcpy(result->magic, WALLY_PSBT_MAGIC, 5);
+
     result->inputs = new_inputs;
     result->num_inputs = 0;
     result->inputs_allocation_len = inputs_allocation_len;
@@ -1179,6 +1184,22 @@ int wally_psbt_init_alloc(
 
     return WALLY_OK;
 }
+
+#ifdef BUILD_ELEMENTS
+int wally_psbt_elements_init_alloc(
+    size_t inputs_allocation_len,
+    size_t outputs_allocation_len,
+    size_t global_unknowns_allocation_len,
+    struct wally_psbt **output)
+{
+    int ret;
+
+    ret = wally_psbt_init_alloc(inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, output);
+    memcpy((*output)->magic, WALLY_ELEMENTS_PSBT_MAGIC, 5);
+
+    return ret;
+}
+#endif /* BUILD_ELEMENTS */
 
 int wally_psbt_free(struct wally_psbt *psbt)
 {
@@ -1894,11 +1915,14 @@ int wally_psbt_from_bytes(
         ret = WALLY_EINVAL;  /* Not enough bytes */
         goto fail;
     }
-    if (memcmp(p, WALLY_PSBT_MAGIC, 5) != 0 ) {
-        ret = WALLY_EINVAL;  /* Invalid Magic */
-        goto fail;
+    if (memcmp(p, WALLY_PSBT_MAGIC, 5) != 0) {
+#ifdef BUILD_ELEMENTS
+        if (memcmp(p, WALLY_ELEMENTS_PSBT_MAGIC, 5) != 0) {
+            ret = WALLY_EINVAL;  /* Invalid Magic */
+            goto fail;
+        }
+#endif /* BUILD_ELEMENTS */
     }
-    p += 5;
 
     /* Get a count of the psbt parts */
     if (count_psbt_parts(bytes, bytes_len, &counts) != WALLY_OK) {
@@ -1912,6 +1936,10 @@ int wally_psbt_from_bytes(
         goto fail;
     }
     *output = result;
+
+    /* Set the magic */
+    memcpy(result->magic, p, 5);
+    p += 5;
 
     /* Read globals first */
     found_sep = false;
@@ -2532,7 +2560,7 @@ int wally_psbt_to_bytes(
     }
 
     /* Magic */
-    memcpy(p, WALLY_PSBT_MAGIC, 5);
+    memcpy(p, psbt->magic, 5);
     p += 5;
 
     /* Global tx */
@@ -3418,4 +3446,20 @@ fail:
         wally_tx_free(result);
     }
     return ret;
+}
+
+int wally_psbt_is_elements(
+    const struct wally_psbt *psbt,
+    size_t *written)
+{
+    if (!psbt || !written)
+        return WALLY_EINVAL;
+
+    *written = 0;
+#ifdef BUILD_ELEMENTS
+    if (memcmp(psbt->magic, WALLY_ELEMENTS_PSBT_MAGIC, 5) == 0) {
+        *written = 1;
+    }
+#endif /* BUILD_ELEMENTS */
+    return WALLY_OK;
 }

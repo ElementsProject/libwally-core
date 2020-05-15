@@ -202,7 +202,8 @@ class wally_psbt_output(Structure):
                 ('surjection_proof_len', c_ulong)]
 
 class wally_psbt(Structure):
-    _fields_ = [('tx', POINTER(wally_tx)),
+    _fields_ = [('magic', c_ubyte * 5),
+                ('tx', POINTER(wally_tx)),
                 ('inputs', POINTER(wally_psbt_input)),
                 ('num_inputs', c_ulong),
                 ('inputs_allocation_len', c_ulong),
