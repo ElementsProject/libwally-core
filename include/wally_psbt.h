@@ -154,6 +154,7 @@ struct wally_psbt_output {
 
 /** A partially signed bitcoin transaction */
 struct wally_psbt {
+    unsigned char magic[5];
     struct wally_tx *tx;
     struct wally_psbt_input *inputs;
     size_t num_inputs;
@@ -621,6 +622,16 @@ WALLY_CORE_API int wally_finalize_psbt(
 WALLY_CORE_API int wally_extract_psbt(
     struct wally_psbt *psbt,
     struct wally_tx **output);
+
+/**
+ * Determine if a psbt is an elements psbt.
+ *
+ * :param psbt: The psbt to check.
+ * :param written: 1 if the transaction is an elements psbt, otherwise 0.
+ */
+WALLY_CORE_API int wally_psbt_is_elements(
+    const struct wally_psbt *psbt,
+    size_t *written);
 
 #ifdef BUILD_ELEMENTS
 /**
