@@ -3517,6 +3517,57 @@ static int merge_input_into(
     if (src->sighash_type > dst->sighash_type) {
         dst->sighash_type = src->sighash_type;
     }
+#ifdef BUILD_ELEMENTS
+    if (!dst->has_value && src->has_value) {
+        dst->value = src->value;
+    }
+
+    if (dst->value_blinder_len == 0 && src->value_blinder_len > 0) {
+        if (!clone_bytes(&dst->value_blinder, src->value_blinder, src->value_blinder_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->value_blinder_len = src->value_blinder_len;
+    }
+
+    if (dst->asset_len == 0 && src->asset_len > 0) {
+        if (!clone_bytes(&dst->asset, src->asset, src->asset_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->asset_len = src->asset_len;
+    }
+
+    if (dst->asset_blinder_len == 0 && src->asset_blinder_len > 0) {
+        if (!clone_bytes(&dst->asset_blinder, src->asset_blinder, src->asset_blinder_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->asset_blinder_len = src->asset_blinder_len;
+    }
+
+    if (!dst->peg_in_tx && src->peg_in_tx && (ret = clone_tx(src->peg_in_tx, &dst->peg_in_tx)) != WALLY_OK) {
+        return ret;
+    }
+
+    if (dst->txout_proof_len == 0 && src->txout_proof_len > 0) {
+        if (!clone_bytes(&dst->txout_proof, src->txout_proof, src->txout_proof_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->txout_proof_len = src->txout_proof_len;
+    }
+
+    if (dst->genesis_hash_len == 0 && src->genesis_hash_len > 0) {
+        if (!clone_bytes(&dst->genesis_hash, src->genesis_hash, src->genesis_hash_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->genesis_hash_len = src->genesis_hash_len;
+    }
+
+    if (dst->claim_script_len == 0 && src->claim_script_len > 0) {
+        if (!clone_bytes(&dst->claim_script, src->claim_script, src->claim_script_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->claim_script_len = src->claim_script_len;
+    }
+#endif /* BUILD_ELEMENTS */
 
     return WALLY_OK;
 }
@@ -3565,6 +3616,60 @@ static int merge_output_into(
         dst->witness_script_len = src->witness_script_len;
     }
 
+#ifdef BUILD_ELEMENTS
+    if (!dst->has_blinding_pubkey && src->has_blinding_pubkey) {
+        memcpy(dst->blinding_pubkey, src->blinding_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    }
+
+    if (dst->value_commitment_len == 0 && src->value_commitment_len > 0) {
+        if (!clone_bytes(&dst->value_commitment, src->value_commitment, src->value_commitment_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->value_commitment_len = src->value_commitment_len;
+    }
+
+    if (dst->value_blinder_len == 0 && src->value_blinder_len > 0) {
+        if (!clone_bytes(&dst->value_blinder, src->value_blinder, src->value_blinder_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->value_blinder_len = src->value_blinder_len;
+    }
+
+    if (dst->asset_commitment_len == 0 && src->asset_commitment_len > 0) {
+        if (!clone_bytes(&dst->asset_commitment, src->asset_commitment, src->asset_commitment_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->asset_commitment_len = src->asset_commitment_len;
+    }
+
+    if (dst->asset_blinder_len == 0 && src->asset_blinder_len > 0) {
+        if (!clone_bytes(&dst->asset_blinder, src->asset_blinder, src->asset_blinder_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->asset_blinder_len = src->asset_blinder_len;
+    }
+
+    if (dst->nonce_commitment_len == 0 && src->nonce_commitment_len > 0) {
+        if (!clone_bytes(&dst->nonce_commitment, src->nonce_commitment, src->nonce_commitment_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->nonce_commitment_len = src->nonce_commitment_len;
+    }
+
+    if (dst->range_proof_len == 0 && src->range_proof_len > 0) {
+        if (!clone_bytes(&dst->range_proof, src->range_proof, src->range_proof_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->range_proof_len = src->range_proof_len;
+    }
+
+    if (dst->surjection_proof_len == 0 && src->surjection_proof_len > 0) {
+        if (!clone_bytes(&dst->surjection_proof, src->surjection_proof, src->surjection_proof_len)) {
+            return WALLY_ENOMEM;
+        }
+        dst->surjection_proof_len = src->surjection_proof_len;
+    }
+#endif /* BUILD_ELEMENTS */
     return WALLY_OK;
 }
 
@@ -3577,6 +3682,7 @@ int wally_combine_psbts(
     unsigned char global_txid[SHA256_LEN];
     size_t i, j;
     int ret = WALLY_OK;
+    size_t is_elements;
 
     TX_CHECK_OUTPUT;
 
@@ -3589,7 +3695,19 @@ int wally_combine_psbts(
         return ret;
     }
 
-    if ((ret = wally_psbt_init_alloc(psbts[0].inputs_allocation_len, psbts[0].outputs_allocation_len, psbts[0].unknowns->items_allocation_len, &result)) != WALLY_OK) {
+    /* Determine whether we should use elements based on the first psbt */
+    if ((ret = wally_psbt_is_elements(psbts, &is_elements)) != WALLY_OK) {
+        return ret;
+    }
+
+    if (is_elements) {
+#ifdef BUILD_ELEMENTS
+        ret = wally_psbt_elements_init_alloc(psbts[0].inputs_allocation_len, psbts[0].outputs_allocation_len, psbts[0].unknowns->items_allocation_len, &result);
+#endif /* BUILD_ELEMENTS */
+    } else {
+        ret = wally_psbt_init_alloc(psbts[0].inputs_allocation_len, psbts[0].outputs_allocation_len, psbts[0].unknowns->items_allocation_len, &result);
+    }
+    if (ret != WALLY_OK) {
         return ret;
     }
 
@@ -3601,6 +3719,15 @@ int wally_combine_psbts(
 
     for (i = 0; i < psbts_len; ++i) {
         unsigned char txid[SHA256_LEN];
+        size_t psbt_is_elements;
+
+        /* Check that psbt types match */
+        if ((ret = wally_psbt_is_elements(&psbts[i], &psbt_is_elements)) != WALLY_OK) {
+            goto fail;
+        }
+        if (is_elements != psbt_is_elements) {
+            ret = WALLY_EINVAL;
+        }
 
         /* Compare the txids */
         if ((ret = get_txid(psbts[i].tx, txid, SHA256_LEN)) != WALLY_OK) {
