@@ -29,8 +29,8 @@ typedef struct { void* array; intgo len; intgo cap; } _goslice_;
 
 
 
-#cgo CXXFLAGS: -I./include -I/usr/local/include
-#cgo LDFLAGS: -L/usr/local/lib -L/usr/local/lib64 -L${SRCDIR}/build/Release -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
+#cgo CXXFLAGS: -I./include -I/usr/local/include -I/c/usr/local/include -IC:/usr/local/include
+#cgo LDFLAGS: -L/usr/local/lib -L/usr/local/lib64 -L/c/usr/local/lib -LC:/usr/local/lib -L${SRCDIR}/build/Release -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
 
 typedef long long swig_type_1;
 typedef _gostring_ swig_type_2;
