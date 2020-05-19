@@ -25,8 +25,8 @@
 
 %insert(cgo_comment_typedefs) %{
 
-#cgo CXXFLAGS: -I./include -I/usr/local/include
-#cgo LDFLAGS: -L/usr/local/lib -L/usr/local/lib64 -L${SRCDIR}/build/Release -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
+#cgo CXXFLAGS: -I./include -I/usr/local/include -I/c/usr/local/include -IC:/usr/local/include
+#cgo LDFLAGS: -L/usr/local/lib -L/usr/local/lib64 -L/c/usr/local/lib -LC:/usr/local/lib -L${SRCDIR}/build/Release -L${SRCDIR}/src/.libs -L${SRCDIR}/src/secp256k1/.libs -lwallycore
 %}
 #include <iostream>
 %include "../../include/wally_core.h"

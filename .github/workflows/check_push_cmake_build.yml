@@ -175,3 +175,82 @@ jobs:
     - name: ubuntu-after
       if: matrix.os == 'ubuntu-latest'
       run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
+
+  go-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        go-version: [1.13.x, 1.14.x]
+
+    steps:
+    - name: setup go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-version }}
+    - uses: actions/checkout@v1
+    - name: cmake-useCache-ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: cache/cmake
+        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
+        restore-keys: |
+          ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
+    - name: cmake-download-ubuntu
+      if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p cache/cmake
+        cd cache/cmake
+        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
+        cd ../..
+    - name: cmake-setting-ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
+        cd cache/cmake
+        tar zxvf $cmake_file_name.tar.gz
+        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
+        export CURRENT_DIR=$(pwd)
+        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
+        cd ../..
+    - name: cmake-generate
+      if: matrix.os != 'windows-latest'
+      run: |
+        cmake -S . -B build -G "Unix Makefiles"
+        cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on -DTARGET_RPATH="/usr/local/lib;/usr/local/lib64;./build/Release" --build build
+    - name: cmake-generate-windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        cmake -S . -B build -G "MSYS Makefiles"
+        cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on --build build
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake --build build --config Release --parallel 2
+        cp ./src/swig_go/*_test.go .
+        go mod init github.com/cryptogarageinc/libwally-core
+        go build
+    - name: go_test-windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        dir
+        echo ::add-path::$GITHUB_WORKSPACE/build/Release
+        cp ./src/swig_go/*_test.go .
+        go test
+      shell: bash
+    - name: go_test-mac
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd build
+        sudo make install
+        cd ..
+        LD_LIBRARY_PATH=/usr/local/lib go test
+    - name: go_test
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        LD_LIBRARY_PATH=./build/Release go test
+    - name: ubuntu-after
+      if: matrix.os == 'ubuntu-latest'
+      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
