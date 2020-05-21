@@ -1120,7 +1120,7 @@ static int psbt_input_from_bytes(
             p += uint64_from_le_bytes(p, &amount);
             script_len_len = varint_from_bytes(p, &script_len);
             p += script_len_len;
-            ret = wally_tx_output_init_alloc(amount, p, script_len, &result->witness_utxo);
+            ret = wally_tx_output_init_alloc(amount, script_len ? p : NULL, script_len, &result->witness_utxo);
             if (ret != WALLY_OK) {
                 return ret;
             }
