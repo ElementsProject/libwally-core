@@ -269,6 +269,15 @@ WALLY_CORE_API int wally_tx_init_alloc(
     size_t outputs_allocation_len,
     struct wally_tx **output);
 
+/* Clone a wally_tx
+ *
+ * :param tx: The transaction to clone.
+ * :param output: The destination to clone the transaction to.
+ */
+WALLY_CORE_API int wally_tx_clone(
+    struct wally_tx *tx,
+    struct wally_tx **output);
+
 /**
  * Add a transaction input to a transaction.
  *

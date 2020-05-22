@@ -3276,3 +3276,11 @@ fail:
     }
     return ret;
 }
+
+int wally_tx_clone(struct wally_tx *tx, struct wally_tx **output)
+{
+    if (!is_valid_tx(tx)) {
+        return WALLY_EINVAL;
+    }
+    return clone_tx(tx, output);
+}
