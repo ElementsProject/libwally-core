@@ -1991,7 +1991,7 @@ static int tx_to_bytes(const struct wally_tx *tx,
 
     if (n > len) {
         *written = n;
-        return WALLY_OK;
+        return WALLY_ENOMEM;
     }
 
     if (opts && opts->bip143)
@@ -2160,16 +2160,13 @@ static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
         return WALLY_EINVAL;
 
     ret = tx_to_bytes(tx, NULL, flags, buff_p, sizeof(buff), &n, is_elements);
+    if (ret == WALLY_ENOMEM && n > sizeof(buff)) {
+        if ((buff_p = wally_malloc(n)) == NULL)
+            return WALLY_ENOMEM;
+        ret = tx_to_bytes(tx, NULL, flags, buff_p, n, &n, is_elements);
+    }
     if (ret == WALLY_OK) {
-        if (n > sizeof(buff)) {
-            if ((buff_p = wally_malloc(n)) == NULL)
-                return WALLY_ENOMEM;
-            ret = tx_to_bytes(tx, NULL, flags, buff_p, n, &written, is_elements);
-            if (n != written)
-                ret = WALLY_ERROR; /* Length calculated incorrectly */
-        }
-        if (ret == WALLY_OK)
-            ret = wally_hex_from_bytes(buff_p, n, output);
+        ret = wally_hex_from_bytes(buff_p, n, output);
         if (buff_p != buff)
             clear_and_free(buff_p, n);
         else

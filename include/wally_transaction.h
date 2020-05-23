@@ -442,6 +442,9 @@ WALLY_CORE_API int wally_tx_from_hex(
  * :param bytes_out: Destination for the serialized transaction.
  * :param len: Size of ``bytes_out`` in bytes.
  * :param written: Destination for the length of the serialized transaction.
+ *
+ * If len is not sufficient, WALLY_ENOMEM is returned and written will be
+ * set to the number of bytes required.
  */
 WALLY_CORE_API int wally_tx_to_bytes(
     const struct wally_tx *tx,
