@@ -2041,75 +2041,54 @@ int wally_psbt_to_bytes(
     unsigned char *bytes_out, size_t len,
     size_t *bytes_written)
 {
-    unsigned char type, *p = bytes_out, *end = bytes_out + len;
-    size_t calc_len, tx_len, i;
+    unsigned char *cursor = bytes_out;
+    size_t max = len, i;
     int ret;
 
-    if (bytes_written) {
-        *bytes_written = 0;
-    }
+    *bytes_written = 0;
 
-    ret = wally_psbt_get_length(psbt, &calc_len);
-    if (ret != WALLY_OK) {
-        return ret;
-    }
-    if (calc_len > len) {
-        return WALLY_EINVAL; /* Buffer is not big enough */
-    }
-
-    /* Magic */
-    memcpy(p, WALLY_PSBT_MAGIC, 5);
-    p += 5;
+    push_bytes(&cursor, &max, WALLY_PSBT_MAGIC, sizeof(WALLY_PSBT_MAGIC));
 
     /* Global tx */
-    type = WALLY_PSBT_GLOBAL_UNSIGNED_TX;
-    p += varbuff_to_bytes(&type, 1, p);
-    ret = wally_tx_get_length(psbt->tx, 0, &tx_len);
-    if (ret != WALLY_OK) {
-        return ret;
-    }
-    p += varint_to_bytes(tx_len, p);
-    ret = wally_tx_to_bytes(psbt->tx, 0, p, end - p, &tx_len);
-    if (ret != WALLY_OK) {
-        return ret;
-    }
-    p += tx_len;
+    push_psbt_key(&cursor, &max, WALLY_PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
+    push_length_and_tx(&cursor, &max, psbt->tx, 0);
 
     /* Unknowns */
     if (psbt->unknowns) {
         for (i = 0; i < psbt->unknowns->num_items; ++i) {
             struct wally_unknowns_item *unknown = &psbt->unknowns->items[i];
-            p += varint_to_bytes(unknown->key_len, p);
-            memcpy(p, unknown->key, unknown->key_len);
-            p += unknown->key_len;
-            p += varint_to_bytes(unknown->value_len, p);
-            memcpy(p, unknown->value, unknown->value_len);
-            p += unknown->value_len;
+            push_varbuff(&cursor, &max, unknown->key, unknown->key_len);
+            push_varbuff(&cursor, &max, unknown->value, unknown->value_len);
         }
     }
 
     /* Separator */
-    *p = WALLY_PSBT_SEPARATOR;
-    p++;
+    push_u8(&cursor, &max, WALLY_PSBT_SEPARATOR);
 
-    /* Get lengths of each input and output */
+    /* Push each input and output */
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
-        size_t max = end - p;
-        ret = push_psbt_input(&p, &max, input);
+        ret = push_psbt_input(&cursor, &max, input);
         if (ret != WALLY_OK) {
             return ret;
         }
     }
     for (i = 0; i < psbt->num_outputs; ++i) {
         struct wally_psbt_output *output = &psbt->outputs[i];
-        size_t max = end - p;
-        ret = push_psbt_output(&p, &max, output);
+        ret = push_psbt_output(&cursor, &max, output);
         if (ret != WALLY_OK) {
             return ret;
         }
     }
-    *bytes_written = p - bytes_out;
+
+    if (cursor == NULL) {
+        /* Once cursor was NULL, max accumulates hm bytes we needed */
+        *bytes_written = len + max;
+        return WALLY_EINVAL;
+    } else {
+        *bytes_written = len - max;
+    }
+
     return WALLY_OK;
 }
 
