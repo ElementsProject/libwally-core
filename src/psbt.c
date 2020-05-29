@@ -17,7 +17,7 @@
 const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 
 
-static bool pubkey_is_compressed(unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
+static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
     return pubkey[0] == 0x02 || pubkey[0] == 0x03;
 }
 
