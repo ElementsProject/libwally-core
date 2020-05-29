@@ -231,6 +231,11 @@ noinst_PROGRAMS += test_psbt
 test_psbt_SOURCES = ctest/test_psbt.c ccan/ccan/str/hex/hex.c
 test_psbt_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
 test_psbt_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+TESTS += test_psbt_limits
+noinst_PROGRAMS += test_psbt_limits
+test_psbt_limits_SOURCES = ctest/test_psbt_limits.c ccan/ccan/str/hex/hex.c
+test_psbt_limits_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
+test_psbt_limits_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear
