@@ -282,10 +282,10 @@ int wally_unknowns_map_free(struct wally_unknowns_map *unknowns)
     if (unknowns) {
         for (i = 0; i < unknowns->num_items; ++i) {
             if (unknowns->items[i].key) {
-                wally_clear(unknowns->items[i].key, unknowns->items[i].key_len);
+                clear_and_free(unknowns->items[i].key, unknowns->items[i].key_len);
             }
             if (unknowns->items[i].value) {
-                wally_clear(unknowns->items[i].value, unknowns->items[i].value_len);
+                clear_and_free(unknowns->items[i].value, unknowns->items[i].value_len);
             }
         }
         clear_and_free(unknowns->items, unknowns->num_items * sizeof(*unknowns->items));
