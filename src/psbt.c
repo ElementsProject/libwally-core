@@ -2697,7 +2697,7 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *txin = &psbt->tx->inputs[i];
-        unsigned char *out_script; /* Script that determines how we should finalize this input, typically output script */
+        unsigned char *out_script = NULL; /* Script that determines how we should finalize this input, typically output script */
         size_t out_script_len, type;
         bool witness = false, p2sh = false;;
 
@@ -2710,14 +2710,20 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
             out_script = input->redeem_script;
             out_script_len = input->redeem_script_len;
             p2sh = true;
-        } else {
-            out_script = psbt->tx->outputs[txin->index].script;
-            out_script_len = psbt->tx->outputs[txin->index].script_len;
+        } else if (input->non_witness_utxo && input->non_witness_utxo->num_outputs > txin->index) {
+            struct wally_tx_output out = input->non_witness_utxo->outputs[txin->index];
+            out_script = out.script;
+            out_script_len = out.script_len;
         }
         if (input->witness_script) {
             out_script = input->witness_script;
             out_script_len = input->witness_script_len;
             witness = true;
+        }
+
+        /* We need an outscript to do anything */
+        if (!out_script) {
+            continue;
         }
 
         if ((ret = wally_scriptpubkey_get_type(out_script, out_script_len, &type)) != WALLY_OK) {
