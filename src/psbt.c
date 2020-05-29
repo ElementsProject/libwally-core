@@ -1248,7 +1248,7 @@ static int pull_psbt_input(
             break;
         }
         case WALLY_PSBT_IN_REDEEM_SCRIPT: {
-            if (result->redeem_script_len != 0) {
+            if (result->redeem_script) {
                 return WALLY_EINVAL;     /* Already have a redeem script */
             }
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1258,10 +1258,13 @@ static int pull_psbt_input(
                                  cursor, max)) {
                 return WALLY_ENOMEM;
             }
+            if (result->redeem_script_len == 0) {
+                result->redeem_script = wally_malloc(1);
+            }
             break;
         }
         case WALLY_PSBT_IN_WITNESS_SCRIPT: {
-            if (result->witness_script_len != 0) {
+            if (result->witness_script) {
                 return WALLY_EINVAL;     /* Already have a witness script */
             }
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1270,6 +1273,9 @@ static int pull_psbt_input(
                                  &result->witness_script_len,
                                  cursor, max)) {
                 return WALLY_ENOMEM;
+            }
+            if (result->witness_script_len == 0) {
+                result->witness_script = wally_malloc(1);
             }
             break;
         }
@@ -1281,7 +1287,7 @@ static int pull_psbt_input(
             break;
         }
         case WALLY_PSBT_IN_FINAL_SCRIPTSIG: {
-            if (result->final_script_sig_len != 0) {
+            if (result->final_script_sig) {
                 return WALLY_EINVAL;     /* Already have a scriptSig */
             }
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1290,6 +1296,9 @@ static int pull_psbt_input(
                                  &result->final_script_sig_len,
                                  cursor, max)) {
                 return WALLY_ENOMEM;
+            }
+            if (result->final_script_sig_len == 0) {
+                result->final_script_sig = wally_malloc(1);
             }
             break;
         }
@@ -1368,7 +1377,7 @@ static int pull_psbt_output(
         /* Process based on type */
         switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_OUT_REDEEM_SCRIPT: {
-            if (result->redeem_script_len != 0) {
+            if (result->redeem_script) {
                 return WALLY_EINVAL;     /* Already have a redeem script */
             }
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1378,10 +1387,13 @@ static int pull_psbt_output(
                                  cursor, max)) {
                 return WALLY_ENOMEM;
             }
+            if (result->redeem_script_len == 0) {
+                result->redeem_script = wally_malloc(1);
+            }
             break;
         }
         case WALLY_PSBT_OUT_WITNESS_SCRIPT: {
-            if (result->witness_script_len != 0) {
+            if (result->witness_script) {
                 return WALLY_EINVAL;     /* Already have a witness script */
             }
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1390,6 +1402,9 @@ static int pull_psbt_output(
                                  &result->witness_script_len,
                                  cursor, max)) {
                 return WALLY_ENOMEM;
+            }
+            if (result->witness_script_len == 0) {
+                result->witness_script = wally_malloc(1);
             }
             break;
         }
