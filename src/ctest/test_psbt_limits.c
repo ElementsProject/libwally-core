@@ -17,6 +17,25 @@
 
 #include "psbts.h"
 
+static size_t mallocs, frees;
+
+static void *test_malloc(size_t size)
+{
+    mallocs++;
+    return malloc(size);
+}
+
+static void test_free(void *ptr)
+{
+    if (ptr != NULL)
+        frees++;
+    free(ptr);
+}
+
+static const struct wally_operations test_ops = {
+    test_malloc, test_free, NULL, NULL
+};
+
 /* Create a cliff: any access past the end will SEGV */
 static unsigned char *cliff(size_t *size)
 {
@@ -55,14 +74,24 @@ static void test_psbt_read(const struct psbt_test *test,
             abort();
 
         /* Try it raw: probably will fail. */
+        mallocs = frees = 0;
         if (wally_psbt_from_bytes(p + plen - i, i, &psbt) == WALLY_OK)
             wally_psbt_free(psbt);
+        if (mallocs != frees) {
+            errx(1, "psbt %s length %zu: mallocs = %zu, frees = %zu",
+                 test->base64, i, mallocs, frees);
+        }
 
         /* Now try flipping each bit in last byte. */
         for (bit = 0; bit < 8; bit++) {
             p[plen - 1] ^= (1 << bit);
+            mallocs = frees = 0;
             if (wally_psbt_from_bytes(p + plen - i, i, &psbt) == WALLY_OK)
                 wally_psbt_free(psbt);
+            if (mallocs != frees) {
+                errx(1, "psbt %s length %zu bitfplip %zu: mallocs = %zu, frees = %zu",
+                     test->base64, i, bit, mallocs, frees);
+            }
             p[plen - 1] ^= (1 << bit);
         }
     }
@@ -75,6 +104,7 @@ static void test_psbt_write(const struct psbt_test *test,
     size_t i, written;
     struct wally_psbt *psbt;
 
+    mallocs = frees = 0;
     if (wally_psbt_from_base64(test->base64, &psbt) != WALLY_OK)
         abort();
 
@@ -87,6 +117,10 @@ static void test_psbt_write(const struct psbt_test *test,
         errx(1, "wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
              test->base64, written, i);
     wally_psbt_free(psbt);
+    if (mallocs != frees) {
+        errx(1, "psbt write %s: mallocs = %zu, frees = %zu",
+             test->base64, mallocs, frees);
+    }
 }
 
 int main(void)
@@ -94,6 +128,8 @@ int main(void)
     size_t i;
     size_t plen;
     unsigned char *p = cliff(&plen);
+
+    wally_set_operations(&test_ops);
 
     for (i = 0; i < sizeof(invalid_psbts) / sizeof(invalid_psbts[0]); i++) {
         test_psbt_read(invalid_psbts + i, p, plen);

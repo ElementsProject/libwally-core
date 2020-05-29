@@ -10,15 +10,42 @@
 
 #include "psbts.h"
 
+static size_t mallocs, frees;
+
+static void *test_malloc(size_t size)
+{
+    mallocs++;
+    return malloc(size);
+}
+
+static void test_free(void *ptr)
+{
+    if (ptr != NULL)
+        frees++;
+    free(ptr);
+}
+
+static const struct wally_operations test_ops = {
+    test_malloc, test_free, NULL, NULL
+};
+
 int main(void)
 {
     size_t i;
 
+    wally_set_operations(&test_ops);
+
     for (i = 0; i < sizeof(invalid_psbts) / sizeof(invalid_psbts[0]); i++) {
         struct wally_psbt *psbt;
 
-        if (wally_psbt_from_base64(invalid_psbts[i].base64, &psbt) != WALLY_OK)
+        mallocs = frees = 0;
+        if (wally_psbt_from_base64(invalid_psbts[i].base64, &psbt) != WALLY_OK) {
+            if (mallocs != frees) {
+                errx(1, "Memleak failing parse psbt %s: %zu mallocs, %zu frees",
+                     invalid_psbts[i].base64, mallocs, frees);
+            }
             continue;
+        }
         errx(1, "Should have failed to parse psbt %s", invalid_psbts[i].base64);
     }
 
@@ -28,6 +55,7 @@ int main(void)
         unsigned char *bytes;
         size_t len, actual_len;
 
+        mallocs = frees = 0;
         if (wally_psbt_from_base64(valid_psbts[i].base64, &psbt) != WALLY_OK) {
             errx(1, "Failed to parse psbt %s", valid_psbts[i].base64);
         }
@@ -37,8 +65,7 @@ int main(void)
         if (strcmp(output, valid_psbts[i].base64) != 0) {
             errx(1, "psbt %s turned into %s?", valid_psbts[i].base64, output);
         }
-        free(output);
-
+        test_free(output);
         if (wally_psbt_get_length(psbt, &len) != WALLY_OK) {
             errx(1, "Failed to get pbst %s len", valid_psbts[i].base64);
         }
@@ -58,6 +85,11 @@ int main(void)
         free(bytes);
         free(output);
         wally_psbt_free(psbt);
+
+        if (mallocs != frees) {
+            errx(1, "Memleak parsing psbt %s: %zu mallocs, %zu frees",
+                 valid_psbts[i].base64, mallocs, frees);
+        }
     }
 
     return 0;
