@@ -981,12 +981,6 @@ static void free_psbt_count(struct psbt_counts *counts)
     }
 }
 
-/* Check that the bytes already read + bytes to be read < total len */
-#define CHECK_BUF_BOUNDS(p, i, begin, tl) if ((p - begin) + i > tl) { \
-        ret = WALLY_EINVAL; \
-        goto fail; \
-}
-
 static int count_psbt_parts(
     const unsigned char *bytes,
     size_t bytes_len,
@@ -1002,9 +996,6 @@ static int count_psbt_parts(
     result->num_global_unknowns = 0;
     result->num_inputs = 0;
     result->num_outputs = 0;
-
-    /* Skip the magic */
-    pull_skip(&bytes, &bytes_len, sizeof(WALLY_PSBT_MAGIC));
 
     /* Go through globals and count */
     while ((key_len = pull_varlength(&bytes, &bytes_len)) != 0) {
@@ -1428,27 +1419,23 @@ int wally_psbt_from_bytes(
     size_t bytes_len,
     struct wally_psbt **output)
 {
-    const unsigned char *p = bytes, *end = bytes + bytes_len, *key, *value;
-    uint64_t key_len, value_len;
-    uint8_t type;
-    size_t i, vl;
-    int ret = WALLY_OK;
+    const unsigned char *magic, *pre_key;
+    int ret;
+    size_t i, key_len;
     struct psbt_counts *counts = NULL;
     struct wally_psbt *result = NULL;
-    bool found_sep;
 
     TX_CHECK_OUTPUT;
 
-    /* Check the magic */
-    if (bytes_len <= 5) {
+    magic = pull_skip(&bytes, &bytes_len, sizeof(WALLY_PSBT_MAGIC));
+    if (!magic) {
         ret = WALLY_EINVAL;  /* Not enough bytes */
         goto fail;
     }
-    if (memcmp(p, WALLY_PSBT_MAGIC, 5) != 0 ) {
+    if (memcmp(magic, WALLY_PSBT_MAGIC, sizeof(WALLY_PSBT_MAGIC)) != 0 ) {
         ret = WALLY_EINVAL;  /* Invalid Magic */
         goto fail;
     }
-    p += 5;
 
     /* Get a count of the psbt parts */
     if (count_psbt_parts(bytes, bytes_len, &counts) != WALLY_OK) {
@@ -1464,47 +1451,36 @@ int wally_psbt_from_bytes(
     *output = result;
 
     /* Read globals first */
-    found_sep = false;
-    while (p < end) {
-        /* Read the key length */
-        vl = varint_from_bytes(p, &key_len);
-        CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
-        p += vl;
+    pre_key = bytes;
+    while ((key_len = pull_varlength(&bytes, &bytes_len)) != 0) {
+        const unsigned char *key, *val;
+        size_t val_max;
 
-        if (key_len == 0) {
-            found_sep = true;
-            break;
-        }
-
-        /* Read the key itself */
-        key = p;
-        type = key[0];
-        p += key_len;
-
-        /* Pre-read the value length but don't increment for a sanity check */
-        vl = varint_from_bytes(p, &value_len);
-        CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
+        /* Start parsing key */
+        pull_subfield_start(&bytes, &bytes_len, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (type) {
+        switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_GLOBAL_UNSIGNED_TX: {
-            size_t j;
             if (result->tx) {
                 ret = WALLY_EINVAL;     /* We already have a global tx */
                 goto fail;
-            } else if (key_len != 1) {
-                ret = WALLY_EINVAL;     /* Global tx key is one byte type */
+            }
+            subfield_nomore_end(&bytes, &bytes_len, key, key_len);
+
+            /* Start parsing the value field. */
+            pull_subfield_start(&bytes, &bytes_len,
+                                pull_varint(&bytes, &bytes_len),
+                                &val, &val_max);
+            ret = wally_tx_from_bytes(val, val_max, 0, &result->tx);
+            if (ret != WALLY_OK) {
                 goto fail;
             }
-            p += varint_from_bytes(p, &value_len);
-            value = p;
-            if ((ret = wally_tx_from_bytes(value, value_len, 0, &result->tx)) != WALLY_OK) {
-                goto fail;
-            }
-            p += value_len;
+            pull_subfield_end(&bytes, &bytes_len, val, val_max);
+
             /* Make sure there are no scriptSigs and scriptWitnesses */
-            for (j = 0; j < result->tx->num_inputs; ++j) {
-                if (result->tx->inputs[j].script_len != 0 || (result->tx->inputs[j].witness && result->tx->inputs[j].witness->num_items != 0)) {
+            for (i = 0; i < result->tx->num_inputs; ++i) {
+                if (result->tx->inputs[i].script_len != 0 || (result->tx->inputs[i].witness && result->tx->inputs[i].witness->num_items != 0)) {
                     ret = WALLY_EINVAL;     /* Unsigned tx needs empty scriptSigs and scriptWtinesses */
                     goto fail;
                 }
@@ -1513,23 +1489,19 @@ int wally_psbt_from_bytes(
         }
         /* Unknowns */
         default: {
-            struct wally_unknowns_map *unknowns = result->unknowns;
-            clone_bytes(&unknowns->items[unknowns->num_items].key, key, key_len);
-            unknowns->items[unknowns->num_items].key_len = key_len;
-
-            p += varint_from_bytes(p, &value_len);
-            value = p;
-            clone_bytes(&unknowns->items[unknowns->num_items].value, value, value_len);
-            unknowns->items[unknowns->num_items].value_len = value_len;
-
-            unknowns->num_items++;
-            p += value_len;
+            ret = pull_unknown_key_value(&bytes, &bytes_len, pre_key,
+                                         result->unknowns);
+            if (ret != WALLY_OK) {
+                return ret;
+            }
             break;
         }
         }
+        pre_key = bytes;
     }
 
-    if (!found_sep) {
+    /* We don't technically need to test here, but it's a minor optimization */
+    if (!bytes) {
         ret = WALLY_EINVAL; /* Missing global separator */
         goto fail;
     }
@@ -1541,16 +1513,11 @@ int wally_psbt_from_bytes(
 
     /* Read inputs */
     for (i = 0; i < counts->num_inputs; ++i) {
-        size_t max = end - p;
-        ret = pull_psbt_input(&p, &max, counts->input_counts[i],
+        ret = pull_psbt_input(&bytes, &bytes_len, counts->input_counts[i],
                               &result->inputs[i]);
         /* Increment this now, might be partially initialized! */
         result->num_inputs++;
         if (ret != WALLY_OK) {
-            goto fail;
-        }
-        if (p == NULL) {
-            ret = WALLY_EINVAL;
             goto fail;
         }
     }
@@ -1563,21 +1530,16 @@ int wally_psbt_from_bytes(
 
     /* Read outputs */
     for (i = 0; i < counts->num_outputs; ++i) {
-        size_t max = end - p;
-        ret = pull_psbt_output(&p, &max, counts->output_counts[i],
+        ret = pull_psbt_output(&bytes, &bytes_len, counts->output_counts[i],
                                &result->outputs[i]);
         result->num_outputs++;
         if (ret != WALLY_OK) {
             goto fail;
         }
-        if (p == NULL) {
-            ret = WALLY_EINVAL;
-            goto fail;
-        }
     }
 
-    /* Make sure that the number of outputs matches the number ot outputs in the transaction */
-    if (result->num_outputs != result->tx->num_outputs) {
+    /* If we ran out of data anywhere, fail. */
+    if (bytes == NULL) {
         ret = WALLY_EINVAL;
         goto fail;
     }
