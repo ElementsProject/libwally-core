@@ -523,11 +523,12 @@ int wally_psbt_input_set_final_witness(
     struct wally_psbt_input *input,
     struct wally_tx_witness_stack *final_witness)
 {
-    struct wally_tx_witness_stack *result_final_witness;
+    struct wally_tx_witness_stack *result_final_witness = NULL;
 
-    if (!(result_final_witness = clone_witness(final_witness))) {
+    if (final_witness && (result_final_witness = clone_witness(final_witness)) == NULL) {
         return WALLY_ENOMEM;
     }
+
     wally_tx_witness_stack_free(input->final_witness);
     input->final_witness = result_final_witness;
     return WALLY_OK;
