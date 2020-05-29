@@ -185,6 +185,7 @@ libwallycore_la_SOURCES = \
     mnemonic.c \
     pbkdf2.c \
     psbt.c \
+    pullpush.c \
     script.c \
     scrypt.c \
     sign.c \
