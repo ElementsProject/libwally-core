@@ -741,6 +741,9 @@ int wally_psbt_init_alloc(
         return WALLY_ENOMEM;
     }
 
+    /* Version is always 0 */
+    result->version = 0;
+
     result->inputs = new_inputs;
     result->num_inputs = 0;
     result->inputs_allocation_len = inputs_allocation_len;
@@ -1030,6 +1033,11 @@ static int count_psbt_parts(
             }
             break;
         }
+        case WALLY_PSBT_GLOBAL_VERSION:
+            pull_subfield_end(&bytes, &bytes_len, key, key_len);
+            /* Skip over value */
+            pull_skip(&bytes, &bytes_len, pull_varint(&bytes, &bytes_len));
+            break;
         /* Unknowns */
         default:
             result->num_global_unknowns++;
@@ -1502,6 +1510,25 @@ int wally_psbt_from_bytes(
             }
             break;
         }
+        case WALLY_PSBT_GLOBAL_VERSION: {
+            if (result->version > 0) {
+                ret = WALLY_EINVAL;    /* Version already provided */
+                goto fail;
+            }
+            subfield_nomore_end(&bytes, &bytes_len, key, key_len);
+
+            /* Start parsing the value field. */
+            pull_subfield_start(&bytes, &bytes_len,
+                                pull_varint(&bytes, &bytes_len),
+                                &val, &val_max);
+            result->version = pull_le32(&val, &val_max);
+            subfield_nomore_end(&bytes, &bytes_len, val, val_max);
+            if (result->version > WALLY_PSBT_HIGHEST_VERSION) {
+                ret = WALLY_EINVAL;    /* Unsupported version number */
+                goto fail;
+            }
+            break;
+        }
         /* Unknowns */
         default: {
             ret = pull_unknown_key_value(&bytes, &bytes_len, pre_key,
@@ -1825,6 +1852,13 @@ int wally_psbt_to_bytes(
     /* Global tx */
     push_psbt_key(&cursor, &max, WALLY_PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
     push_length_and_tx(&cursor, &max, psbt->tx, 0);
+
+    /* version */
+    if (psbt->version > 0) {
+        push_psbt_key(&cursor, &max, WALLY_PSBT_GLOBAL_VERSION, NULL, 0);
+        push_varint(&cursor, &max, sizeof(uint32_t));
+        push_le32(&cursor, &max, psbt->version);
+    }
 
     /* Unknowns */
     if (psbt->unknowns) {
