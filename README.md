@@ -149,8 +149,22 @@ should format your changes using [uncrustify](https://github.com/uncrustify/uncr
 version 0.60 or later. The script `./tools/uncrustify` will reformat all C
 sources in the library as needed, with the currently chosen uncrustify options.
 
+To reformat a single source file, use e.g.:
+```
+$ ./tools/uncrustify src/transaction.c
+```
+
+Or to reformat all source files, pass no arguments:
+```
+$ ./tools/uncrustify
+```
+
 You should also make sure the existing tests pass and if possible write tests
-covering any new functionality, following the existing style.
+covering any new functionality, following the existing style. You can run the
+tests via:
+```
+$ make check
+```
 
 ## Generating a coverage report
 
