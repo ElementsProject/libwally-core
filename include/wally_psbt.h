@@ -11,6 +11,7 @@ extern "C" {
 #define WALLY_PSBT_SEPARATOR 0x00
 
 #define WALLY_PSBT_GLOBAL_UNSIGNED_TX 0x00
+#define WALLY_PSBT_GLOBAL_VERSION 0xFB
 
 #define WALLY_PSBT_IN_NON_WITNESS_UTXO 0x00
 #define WALLY_PSBT_IN_WITNESS_UTXO 0x01
@@ -25,6 +26,9 @@ extern "C" {
 #define WALLY_PSBT_OUT_REDEEM_SCRIPT 0x00
 #define WALLY_PSBT_OUT_WITNESS_SCRIPT 0x01
 #define WALLY_PSBT_OUT_BIP32_DERIVATION 0x02
+
+/* PSBT Version number */
+#define WALLY_PSBT_HIGHEST_VERSION 0
 
 #ifdef SWIG
 struct wally_key_origin_info;
@@ -122,6 +126,7 @@ struct wally_psbt {
     size_t num_outputs;
     size_t outputs_allocation_len;
     struct wally_unknowns_map *unknowns;
+    uint32_t version;
 };
 #endif /* SWIG */
 
