@@ -175,7 +175,8 @@ class wally_psbt(Structure):
                 ('outputs', POINTER(wally_psbt_output)),
                 ('num_outputs', c_ulong),
                 ('outputs_allocation_len', c_ulong),
-                ('unknowns', POINTER(unknowns_map))]
+                ('unknowns', POINTER(unknowns_map)),
+                ('version', c_ulong)]
 
 for f in (
     ('wally_init', c_int, [c_uint]),
