@@ -37,8 +37,9 @@ static unsigned char *cliff(size_t *size)
     return p;
 }
 
-static void test_psbt(const struct psbt_test *test,
-                      unsigned char *p, size_t plen)
+/* Test that we don't read past end of buffer when unmarshalling */
+static void test_psbt_read(const struct psbt_test *test,
+                           unsigned char *p, size_t plen)
 {
     size_t i;
 
@@ -67,6 +68,27 @@ static void test_psbt(const struct psbt_test *test,
     }
 }
 
+/* Test that we don't write past end of buffer when marshaling */
+static void test_psbt_write(const struct psbt_test *test,
+                            unsigned char *p, size_t plen)
+{
+    size_t i, written;
+    struct wally_psbt *psbt;
+
+    if (wally_psbt_from_base64(test->base64, &psbt) != WALLY_OK)
+        abort();
+
+    for (i = 0;; i++) {
+        if (wally_psbt_to_bytes(psbt, p + plen - i, i, &written) == WALLY_OK)
+            break;
+    }
+    /* Should have fit exactly */
+    if (written != i)
+        errx(1, "wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
+             test->base64, written, i);
+    wally_psbt_free(psbt);
+}
+
 int main(void)
 {
     size_t i;
@@ -74,11 +96,12 @@ int main(void)
     unsigned char *p = cliff(&plen);
 
     for (i = 0; i < sizeof(invalid_psbts) / sizeof(invalid_psbts[0]); i++) {
-        test_psbt(invalid_psbts + i, p, plen);
+        test_psbt_read(invalid_psbts + i, p, plen);
     }
 
     for (i = 0; i < sizeof(valid_psbts) / sizeof(valid_psbts[0]); i++) {
-        test_psbt(valid_psbts + i, p, plen);
+        test_psbt_read(valid_psbts + i, p, plen);
+        test_psbt_write(valid_psbts + i, p, plen);
     }
 
     return 0;
