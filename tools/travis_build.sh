@@ -1,21 +1,6 @@
 #! /usr/bin/env bash
 
-function show_err()
-{
-    if [ -f $1 ]; then
-        cat $1
-    fi
-}
-
-function show_test_err()
-{
-    tests="test_bech32 test_clear test_tx test_elements_tx test_blech32"
-    for i in $tests; do
-        show_err src/$i.log
-    done
-}
-
-trap "show_test_err" ERR
+trap "cat src/test_*.log" ERR
 
 ENABLE_SWIG_PYTHON="--enable-swig-python"
 ENABLE_SWIG_JAVA="--enable-swig-java"
