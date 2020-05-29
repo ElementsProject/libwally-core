@@ -992,13 +992,9 @@ static int count_psbt_parts(
     size_t bytes_len,
     struct psbt_counts **output)
 {
+    int ret;
+    size_t i, key_len;
     struct psbt_counts *result;
-    size_t i, vl;
-    const unsigned char *key;
-    uint64_t key_len, value_len;
-    uint8_t type;
-    int ret = WALLY_OK;
-    const unsigned char *p = bytes, *end = bytes + bytes_len;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct psbt_counts);
@@ -1008,36 +1004,32 @@ static int count_psbt_parts(
     result->num_outputs = 0;
 
     /* Skip the magic */
-    CHECK_BUF_BOUNDS(p, (size_t)5, bytes, bytes_len)
-    p += 5;
+    pull_skip(&bytes, &bytes_len, sizeof(WALLY_PSBT_MAGIC));
 
     /* Go through globals and count */
-    while (p < end) {
-        /* Read the key length */
-        vl = varint_from_bytes(p, &key_len);
-        CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
-        p += vl;
+    while ((key_len = pull_varlength(&bytes, &bytes_len)) != 0) {
+        const unsigned char *key;
 
-        if (key_len == 0) {
-            break;
-        }
-
-        /* Read the key itself */
-        key = p;
-        type = key[0];
-        p += key_len;
-
-        /* Read value length */
-        vl = varint_from_bytes(p, &value_len);
-        CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
-        p += vl;
+        /* Start parsing key */
+        pull_subfield_start(&bytes, &bytes_len, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (type) {
+        switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_GLOBAL_UNSIGNED_TX: {
             bool expect_wit;
-            if (analyze_tx(p, value_len, 0, &result->num_inputs, &result->num_outputs, &expect_wit) != WALLY_OK) {
+            const unsigned char *val;
+            size_t val_max;
+            subfield_nomore_end(&bytes, &bytes_len, key, key_len);
+
+            /* Value should be a tx */
+            val_max = pull_varint(&bytes, &bytes_len);
+            val = pull_skip(&bytes, &bytes_len, val_max);
+            if (!val) {
                 ret = WALLY_EINVAL;
+                goto fail;
+            }
+            ret = analyze_tx(val, val_max, 0, &result->num_inputs, &result->num_outputs, &expect_wit);
+            if (ret != WALLY_OK) {
                 goto fail;
             }
             if ((result->input_counts = wally_malloc(result->num_inputs * sizeof(struct psbt_input_counts))) == NULL ||
@@ -1050,40 +1042,27 @@ static int count_psbt_parts(
         /* Unknowns */
         default:
             result->num_global_unknowns++;
+            pull_subfield_end(&bytes, &bytes_len, key, key_len);
+            /* Skip over value */
+            pull_skip(&bytes, &bytes_len, pull_varint(&bytes, &bytes_len));
         }
-
-        /* Increment past value length */
-        p += value_len;
     }
 
     /* Go through each input */
-    for (i = 0; i < result->num_inputs && p < end; ++i) {
+    for (i = 0; i < result->num_inputs; ++i) {
         struct psbt_input_counts *input = &result->input_counts[i];
         input->num_keypaths = 0;
         input->num_partial_sigs = 0;
         input->num_unknowns = 0;
-        while (p < end) {
-            /* Read the key length */
-            vl = varint_from_bytes(p, &key_len);
-            CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
-            p += vl;
 
-            if (key_len == 0) {
-                break;
-            }
+        while ((key_len = pull_varlength(&bytes, &bytes_len)) != 0) {
+            const unsigned char *key;
 
-            /* Read the key itself */
-            key = p;
-            type = key[0];
-            p += key_len;
-
-            /* Read value length */
-            vl = varint_from_bytes(p, &value_len);
-            CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
-            p += vl;
+            /* Start parsing key */
+            pull_subfield_start(&bytes, &bytes_len, key_len, &key, &key_len);
 
             /* Process based on type */
-            switch (type) {
+            switch (pull_varint(&key, &key_len)) {
             case WALLY_PSBT_IN_NON_WITNESS_UTXO:
             case WALLY_PSBT_IN_WITNESS_UTXO:
             case WALLY_PSBT_IN_SIGHASH_TYPE:
@@ -1102,39 +1081,26 @@ static int count_psbt_parts(
             default:
                 input->num_unknowns++;
             }
-
-            /* Increment past value length */
-            p += value_len;
+            pull_subfield_end(&bytes, &bytes_len, key, key_len);
+            /* Skip over value */
+            pull_skip(&bytes, &bytes_len, pull_varint(&bytes, &bytes_len));
         }
     }
 
     /* Go through each output */
-    for (i = 0; i < result->num_outputs && p < end; ++i) {
+    for (i = 0; i < result->num_outputs; ++i) {
         struct psbt_output_counts *psbt_output = &result->output_counts[i];
         psbt_output->num_keypaths = 0;
         psbt_output->num_unknowns = 0;
-        while (p < end) {
-            /* Read the key length */
-            vl = varint_from_bytes(p, &key_len);
-            CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
-            p += vl;
 
-            if (key_len == 0) {
-                break;
-            }
+        while ((key_len = pull_varlength(&bytes, &bytes_len)) != 0) {
+            const unsigned char *key;
 
-            /* Read the key itself */
-            key = p;
-            type = key[0];
-            p += key_len;
-
-            /* Read value length */
-            vl = varint_from_bytes(p, &value_len);
-            CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
-            p += vl;
+            /* Start parsing key */
+            pull_subfield_start(&bytes, &bytes_len, key_len, &key, &key_len);
 
             /* Process based on type */
-            switch (type) {
+            switch (pull_varint(&key, &key_len)) {
             case WALLY_PSBT_OUT_REDEEM_SCRIPT:
             case WALLY_PSBT_OUT_WITNESS_SCRIPT:
                 break;
@@ -1146,12 +1112,14 @@ static int count_psbt_parts(
                 psbt_output->num_unknowns++;
             }
 
-            /* Increment past value length */
-            p += value_len;
+            pull_subfield_end(&bytes, &bytes_len, key, key_len);
+            /* Skip over value */
+            pull_skip(&bytes, &bytes_len, pull_varint(&bytes, &bytes_len));
         }
     }
 
-    if (p != end) {
+    /* Either we ran short, or had too much? */
+    if (bytes == NULL || bytes_len != 0) {
         ret = WALLY_EINVAL;
         goto fail;
     }
