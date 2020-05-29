@@ -1380,19 +1380,15 @@ static int pull_psbt_input(
     return WALLY_OK;
 }
 
-static int psbt_output_from_bytes(
-    const unsigned char *bytes,
-    size_t bytes_len,
+static int pull_psbt_output(
+    const unsigned char **cursor,
+    size_t *max,
     struct psbt_output_counts counts,
-    size_t *bytes_read,
     struct wally_psbt_output *result)
 {
-    const unsigned char *p = bytes, *end = bytes + bytes_len, *key, *value;
-    uint64_t key_len, value_len;
-    uint8_t type;
-    size_t i, vl;
-    bool found_sep = false;
-    int ret = WALLY_OK;
+    int ret;
+    size_t key_len;
+    const unsigned char *pre_key;
 
     /* Init and alloc the maps */
     if (counts.num_keypaths > 0) {
@@ -1402,119 +1398,62 @@ static int psbt_output_from_bytes(
         wally_unknowns_map_init_alloc(counts.num_unknowns, &result->unknowns);
     }
 
-    /* Read key value pairs */
-    while (p < end) {
-        /* Read the key length */
-        vl = varint_from_bytes(p, &key_len);
-        CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
-        p += vl;
+    /* Read key value */
+    pre_key = *cursor;
+    while ((key_len = pull_varlength(cursor, max)) != 0) {
+        const unsigned char *key;
 
-        if (key_len == 0) {
-            found_sep = true;
-            break;
-        }
-
-        /* Read the key itself */
-        key = p;
-        type = key[0];
-        p += key_len;
-
-        /* Pre-read the value length but don't increment for a sanity check */
-        vl = varint_from_bytes(p, &value_len);
-        CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
+        /* Start parsing key */
+        pull_subfield_start(cursor, max, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (type) {
+        switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_OUT_REDEEM_SCRIPT: {
             if (result->redeem_script_len != 0) {
                 return WALLY_EINVAL;     /* Already have a redeem script */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->redeem_script, p, value_len);
-            result->redeem_script_len = value_len;
+            subfield_nomore_end(cursor, max, key, key_len);
 
-            p += value_len;
+            if (!clone_varlength(&result->redeem_script,
+                                 &result->redeem_script_len,
+                                 cursor, max)) {
+                return WALLY_ENOMEM;
+            }
             break;
         }
         case WALLY_PSBT_OUT_WITNESS_SCRIPT: {
             if (result->witness_script_len != 0) {
                 return WALLY_EINVAL;     /* Already have a witness script */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->witness_script, p, value_len);
-            result->witness_script_len = value_len;
+            subfield_nomore_end(cursor, max, key, key_len);
 
-            p += value_len;
+            if (!clone_varlength(&result->witness_script,
+                                 &result->witness_script_len,
+                                 cursor, max)) {
+                return WALLY_ENOMEM;
+            }
             break;
         }
         case WALLY_PSBT_OUT_BIP32_DERIVATION: {
-            struct wally_keypath_map *keypaths = result->keypaths;
-            size_t path_len;
-            if (key_len != 66 && key_len != 34) {
-                return WALLY_EINVAL;     /* Size of key is unexpected */
+            ret = pull_keypath(cursor, max, key, key_len, result->keypaths);
+            if (ret != WALLY_OK) {
+                return ret;
             }
-            /* Check for duplicates */
-            for (i = 0; i < keypaths->num_items; ++i) {
-                if (memcmp(keypaths->items[i].pubkey, &key[1], key_len - 1) == 0) {
-                    return WALLY_EINVAL;     /* Duplicate key */
-                }
-            }
-
-            memcpy(keypaths->items[keypaths->num_items].pubkey, &key[1], key_len - 1);
-
-            /* Read the path length */
-            p += varint_from_bytes(p, &value_len);
-            if (value_len % 4 != 0 || value_len == 0) {
-                return WALLY_EINVAL;     /* Invalid length for keypaths */
-            }
-            path_len = (value_len / 4) - 1;
-
-            /* Read the fingerprint */
-            memcpy(keypaths->items[keypaths->num_items].origin.fingerprint, p, 4);
-            p += 4;
-
-            /* Read the path itself */
-            keypaths->items[keypaths->num_items].origin.path = wally_malloc(path_len * sizeof(uint32_t));
-            if (!keypaths->items[keypaths->num_items].origin.path) {
-                return WALLY_ENOMEM;
-            }
-            for (i = 0; i < path_len; ++i) {
-                p += uint32_from_le_bytes(p, &keypaths->items[keypaths->num_items].origin.path[i]);
-            }
-            keypaths->items[keypaths->num_items].origin.path_len = path_len;
-
-            keypaths->num_items++;
             break;
         }
         /* Unknowns */
         default: {
-            struct wally_unknowns_map *unknowns = result->unknowns;
-            clone_bytes(&unknowns->items[unknowns->num_items].key, key, key_len);
-            unknowns->items[unknowns->num_items].key_len = key_len;
-
-            p += varint_from_bytes(p, &value_len);
-            value = p;
-            clone_bytes(&unknowns->items[unknowns->num_items].value, value, value_len);
-            unknowns->items[unknowns->num_items].value_len = value_len;
-
-            unknowns->num_items++;
-            p += value_len;
+            ret = pull_unknown_key_value(cursor, max, pre_key, result->unknowns);
+            if (ret != WALLY_OK) {
+                return ret;
+            }
             break;
         }
         }
+        pre_key = *cursor;
     }
 
-    if (!found_sep) {
-        return WALLY_EINVAL;
-    }
-
-    *bytes_read = p - bytes;
-fail:
-    return ret;
+    return WALLY_OK;
 }
 
 int wally_psbt_from_bytes(
@@ -1656,15 +1595,18 @@ int wally_psbt_from_bytes(
     }
 
     /* Read outputs */
-    for (i = 0; i < counts->num_outputs && p < end; ++i) {
-        size_t bytes_read;
-
-        ret = psbt_output_from_bytes(p, end - p, counts->output_counts[i], &bytes_read, &result->outputs[i]);
+    for (i = 0; i < counts->num_outputs; ++i) {
+        size_t max = end - p;
+        ret = pull_psbt_output(&p, &max, counts->output_counts[i],
+                               &result->outputs[i]);
+        result->num_outputs++;
         if (ret != WALLY_OK) {
             goto fail;
         }
-        p += bytes_read;
-        result->num_outputs++;
+        if (p == NULL) {
+            ret = WALLY_EINVAL;
+            goto fail;
+        }
     }
 
     /* Make sure that the number of outputs matches the number ot outputs in the transaction */
