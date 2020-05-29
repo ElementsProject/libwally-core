@@ -11,6 +11,7 @@
 #include "transaction_shared.h"
 #include "script_int.h"
 #include "script.h"
+#include "pullpush.h"
 
 const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 
@@ -1815,164 +1816,189 @@ int wally_psbt_get_length(
     return WALLY_OK;
 }
 
-static int psbt_input_to_bytes(
-    const struct wally_psbt_input *input,
-    unsigned char *bytes_out, size_t len,
-    size_t *bytes_written)
+/* Literally a varbuff containing only type as a varint, then optional data */
+static void push_psbt_key(
+    unsigned char **cursor, size_t *max,
+    uint64_t type, const void *extra, size_t extra_len)
 {
-    unsigned char type, *p = bytes_out, *end = bytes_out + len;
+    push_varint(cursor, max, varint_get_length(type) + extra_len);
+    push_varint(cursor, max, type);
+    push_bytes(cursor, max, extra, extra_len);
+}
+
+/* Common case of pushing a type whose key is a pubkey */
+static void push_psbt_key_with_pubkey(
+    unsigned char **cursor, size_t *max,
+    uint64_t type,
+    const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN])
+{
+    if (pubkey_is_compressed(pubkey)) {
+        push_psbt_key(cursor, max, type, pubkey, EC_PUBLIC_KEY_LEN);
+    } else {
+        push_psbt_key(cursor, max, type, pubkey,
+                      EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    }
+}
+
+static int push_length_and_tx(
+    unsigned char **cursor, size_t *max,
+    const struct wally_tx *tx, uint32_t flags)
+{
     int ret;
-    size_t i, tx_len;
+    size_t txlen;
+    unsigned char *p;
+
+    ret = wally_tx_get_length(tx, flags, &txlen);
+    if (ret != WALLY_OK) {
+        return ret;
+    }
+
+    push_varint(cursor, max, txlen);
+
+    /* FIXME: convert wally_tx to use push  */
+    p = push_bytes(cursor, max, NULL, txlen);
+    if (!p) {
+        /* We catch this in caller. */
+        return WALLY_OK;
+    }
+
+    return wally_tx_to_bytes(tx, flags, p, txlen, &txlen);
+}
+
+static void push_witness_stack(
+    unsigned char **cursor, size_t *max,
+    const struct wally_tx_witness_stack *witness)
+{
+    size_t i;
+
+    push_varint(cursor, max, witness->num_items);
+    for (i = 0; i < witness->num_items; ++i) {
+        push_varbuff(cursor, max, witness->items[i].witness,
+                     witness->items[i].witness_len);
+    }
+}
+
+static void push_keypath_item(
+    unsigned char **cursor, size_t *max,
+    uint64_t type,
+    const struct wally_keypath_item *item)
+{
+    size_t origin_len, i;
+
+    push_psbt_key_with_pubkey(cursor, max, type,  item->pubkey);
+
+    origin_len = 4;     /* Start with 4 bytes for fingerprint */
+    origin_len += item->origin.path_len * sizeof(uint32_t);
+    push_varint(cursor, max, origin_len);
+
+    push_bytes(cursor, max, item->origin.fingerprint, 4);
+    for (i = 0; i < item->origin.path_len; ++i) {
+        push_bytes(cursor, max,
+                   &item->origin.path[i], sizeof(uint32_t));
+    }
+}
+
+static int push_psbt_input(
+    unsigned char **cursor, size_t *max,
+    const struct wally_psbt_input *input)
+{
+    int ret;
+    size_t i;
 
     /* Non witness utxo */
     if (input->non_witness_utxo) {
-        type = WALLY_PSBT_IN_NON_WITNESS_UTXO;
-        p += varbuff_to_bytes(&type, 1, p);
-        ret = wally_tx_get_length(input->non_witness_utxo, WALLY_TX_FLAG_USE_WITNESS, &tx_len);
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_NON_WITNESS_UTXO, NULL, 0);
+        ret = push_length_and_tx(cursor, max,
+                                 input->non_witness_utxo,
+                                 WALLY_TX_FLAG_USE_WITNESS);
         if (ret != WALLY_OK) {
             return ret;
         }
-        p += varint_to_bytes(tx_len, p);
-        ret = wally_tx_to_bytes(input->non_witness_utxo, WALLY_TX_FLAG_USE_WITNESS, p, end - p, &tx_len);
-        if (ret != WALLY_OK) {
-            return ret;
-        }
-        p += tx_len;
     }
+
     /* Witness utxo */
     if (input->witness_utxo) {
         unsigned char wit_bytes[50], *w = wit_bytes; /* Witness outputs can be no larger than 50 bytes as specified in BIP 141 */
-        size_t wit_len;
-        type = WALLY_PSBT_IN_WITNESS_UTXO;
-        p += varbuff_to_bytes(&type, 1, p);
+        size_t wit_max = sizeof(wit_bytes);
 
-        /* Serialize the output to the temp buffer; */
-        w += uint64_to_le_bytes(input->witness_utxo->satoshi, w);
-        w += varbuff_to_bytes(input->witness_utxo->script, input->witness_utxo->script_len, w);
-        wit_len = w - wit_bytes;
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_WITNESS_UTXO, NULL, 0);
+        push_le64(&w, &wit_max, input->witness_utxo->satoshi);
+        push_varbuff(&w, &wit_max,
+                     input->witness_utxo->script,
+                     input->witness_utxo->script_len);
 
-        p += varint_to_bytes(wit_len, p);
-        memcpy(p, wit_bytes, wit_len);
-        p += wit_len;
+        if (!w) {
+            return WALLY_EINVAL;
+        }
+        push_varbuff(cursor, max, wit_bytes, w - wit_bytes);
     }
     /* Partial sigs */
     if (input->partial_sigs) {
         struct wally_partial_sigs_map *partial_sigs = input->partial_sigs;
         for (i = 0; i < partial_sigs->num_items; ++i) {
             struct wally_partial_sigs_item *item = &partial_sigs->items[i];
-            if (pubkey_is_compressed(item->pubkey)) {
-                p += varint_to_bytes(34, p);
-                *p = WALLY_PSBT_IN_PARTIAL_SIG;
-                p++;
-                memcpy(p, item->pubkey, EC_PUBLIC_KEY_LEN);
-                p += EC_PUBLIC_KEY_LEN;
-            } else {
-                p += varint_to_bytes(66, p);
-                *p = WALLY_PSBT_IN_PARTIAL_SIG;
-                p++;
-                memcpy(p, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-                p += EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-            }
-            p += varbuff_to_bytes(item->sig, item->sig_len, p);
+            push_psbt_key_with_pubkey(cursor, max, WALLY_PSBT_IN_PARTIAL_SIG,
+                                      item->pubkey);
+            push_varbuff(cursor, max, item->sig, item->sig_len);
         }
     }
     /* Sighash type */
     if (input->sighash_type > 0) {
-        type = WALLY_PSBT_IN_SIGHASH_TYPE;
-        p += varbuff_to_bytes(&type, 1, p);
-        p += varint_to_bytes(sizeof(uint32_t), p);
-        p += uint32_to_le_bytes(input->sighash_type, p);
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_SIGHASH_TYPE, NULL, 0);
+        push_varint(cursor, max, sizeof(uint32_t));
+        push_le32(cursor, max, input->sighash_type);
     }
     /* Redeem script */
     if (input->redeem_script) {
-        type = WALLY_PSBT_IN_REDEEM_SCRIPT;
-        p += varbuff_to_bytes(&type, 1, p);
-        p += varbuff_to_bytes(input->redeem_script, input->redeem_script_len, p);
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_REDEEM_SCRIPT, NULL, 0);
+        push_varbuff(cursor, max,
+                     input->redeem_script, input->redeem_script_len);
     }
     /* Witness script */
     if (input->witness_script) {
-        type = WALLY_PSBT_IN_WITNESS_SCRIPT;
-        p += varbuff_to_bytes(&type, 1, p);
-        p += varbuff_to_bytes(input->witness_script, input->witness_script_len, p);
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_WITNESS_SCRIPT, NULL, 0);
+        push_varbuff(cursor, max,
+                     input->witness_script, input->witness_script_len);
     }
     /* Keypaths */
     if (input->keypaths) {
         struct wally_keypath_map *keypaths = input->keypaths;
         for (i = 0; i < keypaths->num_items; ++i) {
-            size_t origin_len, j;
-            struct wally_keypath_item *item = &keypaths->items[i];
-            if (pubkey_is_compressed(item->pubkey)) {
-                p += varint_to_bytes(34, p);
-                *p = WALLY_PSBT_IN_BIP32_DERIVATION;
-                p++;
-                memcpy(p, item->pubkey, EC_PUBLIC_KEY_LEN);
-                p += EC_PUBLIC_KEY_LEN;
-            } else {
-                p += varint_to_bytes(66, p);
-                *p = WALLY_PSBT_IN_BIP32_DERIVATION;
-                p++;
-                memcpy(p, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-                p += EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-            }
-
-            origin_len = 4; /* Start with 4 bytes for fingerprint */
-            origin_len += item->origin.path_len * sizeof(uint32_t);
-            p += varint_to_bytes(origin_len, p);
-
-            memcpy(p, item->origin.fingerprint, 4);
-            p += 4;
-            for (j = 0; j < item->origin.path_len; ++j) {
-                memcpy(p, &item->origin.path[j], sizeof(uint32_t));
-                p += 4;
-            }
+            push_keypath_item(cursor, max,
+                              WALLY_PSBT_IN_BIP32_DERIVATION,
+                              &keypaths->items[i]);
         }
     }
     /* Final scriptSig */
     if (input->final_script_sig) {
-        type = WALLY_PSBT_IN_FINAL_SCRIPTSIG;
-        p += varbuff_to_bytes(&type, 1, p);
-        p += varbuff_to_bytes(input->final_script_sig, input->final_script_sig_len, p);
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_FINAL_SCRIPTSIG, NULL, 0);
+        push_varbuff(cursor, max,
+                     input->final_script_sig, input->final_script_sig_len);
     }
     /* Final scriptWitness */
     if (input->final_witness) {
-        struct wally_tx_witness_stack *witness = input->final_witness;
-        size_t wit_len = varint_get_length(witness->num_items);
-        type = WALLY_PSBT_IN_FINAL_SCRIPTWITNESS;
-        p += varbuff_to_bytes(&type, 1, p);
-        for (i = 0; i < witness->num_items; ++i) {
-            const struct wally_tx_witness_item *stack;
-            stack = witness->items + i;
-            wit_len += varint_get_length(stack->witness_len);
-            wit_len += stack->witness_len;
-        }
+        size_t wit_len;
 
-        p += varint_to_bytes(wit_len, p);
-        p += varint_to_bytes(witness->num_items, p);
-        for (i = 0; i < witness->num_items; ++i) {
-            const struct wally_tx_witness_item *stack;
-            stack = witness->items + i;
-            p += varbuff_to_bytes(stack->witness, stack->witness_len, p);
-        }
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_FINAL_SCRIPTWITNESS, NULL, 0);
+
+        /* First pass simply calculates length */
+        wit_len = 0;
+        push_witness_stack(NULL, &wit_len, input->final_witness);
+
+        push_varint(cursor, max, wit_len);
+        push_witness_stack(cursor, max, input->final_witness);
     }
     /* Unknowns */
     if (input->unknowns) {
         for (i = 0; i < input->unknowns->num_items; ++i) {
             struct wally_unknowns_item *unknown = &input->unknowns->items[i];
-            p += varint_to_bytes(unknown->key_len, p);
-            memcpy(p, unknown->key, unknown->key_len);
-            p += unknown->key_len;
-            p += varint_to_bytes(unknown->value_len, p);
-            memcpy(p, unknown->value, unknown->value_len);
-            p += unknown->value_len;
+            push_varbuff(cursor, max, unknown->key, unknown->key_len);
+            push_varbuff(cursor, max, unknown->value, unknown->value_len);
         }
     }
 
     /* Separator */
-    *p = WALLY_PSBT_SEPARATOR;
-    p++;
-
-    *bytes_written = p - bytes_out;
-
+    push_u8(cursor, max, WALLY_PSBT_SEPARATOR);
     return WALLY_OK;
 }
 
@@ -2109,12 +2135,11 @@ int wally_psbt_to_bytes(
     /* Get lengths of each input and output */
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
-        size_t input_len;
-        ret = psbt_input_to_bytes(input, p, end - p, &input_len);
+        size_t max = end - p;
+        ret = push_psbt_input(&p, &max, input);
         if (ret != WALLY_OK) {
             return ret;
         }
-        p += input_len;
     }
     for (i = 0; i < psbt->num_outputs; ++i) {
         struct wally_psbt_output *output = &psbt->outputs[i];
