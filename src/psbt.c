@@ -8,6 +8,7 @@
 
 #include <limits.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "transaction_shared.h"
 #include "script_int.h"
 #include "script.h"
@@ -833,6 +834,126 @@ fail:
     return ret;
 }
 
+/* Returns false if it hits a zero length "key" (i.e. separator) or EOF.
+ *
+ * Otherwise, starts the subfield (extra, extra_len), so caller should
+ * call pull_subfield_end(cursor, max, extra, extra_len) if this
+ * returns true.
+ */
+static bool pull_psbt_key_start(
+    const unsigned char **cursor, size_t *max,
+    uint64_t *type,
+    const unsigned char **extra, size_t *extra_len)
+{
+    size_t key_len;
+
+    key_len = pull_varlength(cursor, max);
+    /* This incidentally covers the case where *cursor is NULL */
+    if (key_len == 0) {
+        return false;
+    }
+    pull_subfield_start(cursor, max, key_len, extra, extra_len);
+    *type = pull_varint(cursor, max);
+    return true;
+}
+
+/* clones varlength field entirely. */
+static bool clone_varlength(unsigned char **dst,
+                            size_t *len,
+                            const unsigned char **cursor, size_t *max)
+{
+    *len = pull_varlength(cursor, max);
+    return clone_bytes(dst, pull_skip(cursor, max, *len), *len);
+}
+
+/* Stricter version of pull_subfield_end which insists there's nothing left. */
+static void subfield_nomore_end(const unsigned char **cursor, size_t *max,
+                                const unsigned char *subcursor,
+                                const size_t submax)
+{
+    if (submax) {
+        pull_failed(cursor, max);
+    } else {
+        pull_subfield_end(cursor, max, subcursor, submax);
+    }
+}
+
+/* The remainder of the key is a public key, the value is a keypath */
+static int pull_keypath(const unsigned char **cursor, size_t *max,
+                        const unsigned char *key, size_t key_len,
+                        struct wally_keypath_map *keypaths)
+{
+    const unsigned char *val;
+    size_t i, val_max;
+    struct wally_keypath_item *kpitem;
+
+    if (key_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN
+        && key_len != EC_PUBLIC_KEY_LEN) {
+        return WALLY_EINVAL;     /* Size of key is unexpected */
+    }
+
+    /* Check for duplicates */
+    for (i = 0; i < keypaths->num_items; ++i) {
+        if (memcmp(keypaths->items[i].pubkey, key, key_len) == 0) {
+            return WALLY_EINVAL;     /* Duplicate key */
+        }
+    }
+
+    assert(keypaths->num_items < keypaths->items_allocation_len);
+    kpitem = &keypaths->items[keypaths->num_items++];
+
+    memcpy(kpitem->pubkey, key, key_len);
+    pull_subfield_end(cursor, max, key, key_len);
+
+    /* Start parsing the value field. */
+    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
+
+    /* Read the fingerprint */
+    pull_bytes(kpitem->origin.fingerprint, sizeof(kpitem->origin.fingerprint),
+               &val, &val_max);
+
+    /* Remainder is the path */
+    kpitem->origin.path_len = val_max / sizeof(uint32_t);
+    kpitem->origin.path = wally_malloc(val_max);
+    if (kpitem->origin.path == NULL) {
+        return WALLY_ENOMEM;
+    }
+    for (i = 0; val_max >= sizeof(uint32_t); ++i) {
+        kpitem->origin.path[i] = pull_le32(&val, &val_max);
+    }
+    subfield_nomore_end(cursor, max, val, val_max);
+    return WALLY_OK;
+}
+
+/* Rewind cursor to prekey, and append unknown key/value to unknowns */
+static int pull_unknown_key_value(const unsigned char **cursor,
+                                  size_t *max,
+                                  const unsigned char *pre_key,
+                                  struct wally_unknowns_map *unknowns)
+{
+    struct wally_unknowns_item *item;
+
+    /* If we've already failed, it's invalid */
+    if (!*cursor) {
+        return WALLY_EINVAL;
+    }
+
+    /* We have to unwind a bit, to get entire key again. */
+    *max += (*cursor - pre_key);
+    *cursor = pre_key;
+
+    assert(unknowns->num_items < unknowns->items_allocation_len);
+    item = &unknowns->items[unknowns->num_items++];
+
+    if (!clone_varlength(&item->key, &item->key_len, cursor, max)) {
+        return WALLY_ENOMEM;
+    }
+    if (!clone_varlength(&item->value, &item->value_len, cursor, max)) {
+        return WALLY_ENOMEM;
+    }
+    return WALLY_OK;
+}
+
 struct psbt_input_counts {
     size_t num_unknowns;
     size_t num_keypaths;
@@ -1044,19 +1165,15 @@ fail:
     return ret;
 }
 
-static int psbt_input_from_bytes(
-    const unsigned char *bytes,
-    size_t bytes_len,
+static int pull_psbt_input(
+    const unsigned char **cursor,
+    size_t *max,
     struct psbt_input_counts counts,
-    size_t *bytes_read,
     struct wally_psbt_input *result)
 {
-    const unsigned char *p = bytes, *end = bytes + bytes_len, *key, *value;
-    uint64_t key_len, value_len;
-    uint8_t type;
-    int ret = WALLY_OK;
-    size_t i, vl;
-    bool found_sep = false;
+    int ret;
+    size_t key_len;
+    const unsigned char *pre_key;
 
     /* Init and alloc the maps */
     if (counts.num_keypaths > 0) {
@@ -1076,223 +1193,191 @@ static int psbt_input_from_bytes(
     }
 
     /* Read key value pairs */
-    while (p < end) {
-        /* Read the key length */
-        vl = varint_from_bytes(p, &key_len);
-        CHECK_BUF_BOUNDS(p, key_len + vl, bytes, bytes_len)
-        p += vl;
+    pre_key = *cursor;
+    while ((key_len = pull_varlength(cursor, max)) != 0) {
+        const unsigned char *key, *val;
+        size_t val_max;
 
-        if (key_len == 0) {
-            found_sep = true;
-            break;
-        }
-
-        /* Read the key itself */
-        key = p;
-        type = key[0];
-        p += key_len;
-
-        /* Pre-read the value length but don't increment for a sanity check */
-        vl = varint_from_bytes(p, &value_len);
-        CHECK_BUF_BOUNDS(p, value_len + vl, bytes, bytes_len)
+        /* Start parsing key */
+        pull_subfield_start(cursor, max, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (type) {
+        switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_IN_NON_WITNESS_UTXO: {
             if (result->non_witness_utxo) {
                 return WALLY_EINVAL;     /* We already have a non witness utxo */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Global tx key is one byte type */
             }
-            p += varint_from_bytes(p, &value_len);
-            value = p;
-            wally_tx_from_bytes(value, value_len, 0, &result->non_witness_utxo);
-            p += value_len;
-            break;
-        }
-        case WALLY_PSBT_IN_WITNESS_UTXO: {
-            uint64_t amount = -1, script_len;
-            size_t script_len_len;
-            if (result->witness_utxo) {
-                return WALLY_EINVAL;     /* We already have a witness utxo */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Global tx key is one byte type */
-            }
-            p += varint_from_bytes(p, &value_len);
-            p += uint64_from_le_bytes(p, &amount);
-            script_len_len = varint_from_bytes(p, &script_len);
-            p += script_len_len;
-            ret = wally_tx_output_init_alloc(amount, p, script_len, &result->witness_utxo);
+            subfield_nomore_end(cursor, max, key, key_len);
+
+            /* Start parsing the value field. */
+            pull_subfield_start(cursor, max,
+                                pull_varint(cursor, max),
+                                &val, &val_max);
+
+            ret = wally_tx_from_bytes(val, val_max, 0,
+                                      &result->non_witness_utxo);
             if (ret != WALLY_OK) {
                 return ret;
             }
-            p += script_len;
-            /* amount length (8 bytes) + script CSUint + script length = value length */
-            if (8 + script_len_len + script_len != value_len) {
+            pull_subfield_end(cursor, max, val, val_max);
+            break;
+        }
+        case WALLY_PSBT_IN_WITNESS_UTXO: {
+            uint64_t amount, script_len;
+            const unsigned char *script;
+            if (result->witness_utxo) {
+                return WALLY_EINVAL;     /* We already have a witness utxo */
+            }
+            subfield_nomore_end(cursor, max, key, key_len);
+
+            /* Start parsing the value field. */
+            pull_subfield_start(cursor, max,
+                                pull_varint(cursor, max),
+                                &val, &val_max);
+            amount = pull_le64(&val, &val_max);
+            script_len = pull_varint(&val, &val_max);
+            script = pull_skip(&val, &val_max, script_len);
+            if (!script) {
                 return WALLY_EINVAL;
             }
+            ret = wally_tx_output_init_alloc(amount, script, script_len,
+                                             &result->witness_utxo);
+            if (ret != WALLY_OK) {
+                return ret;
+            }
+            subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
         case WALLY_PSBT_IN_PARTIAL_SIG: {
+            size_t i;
+            struct wally_partial_sigs_item *sigitem;
             struct wally_partial_sigs_map *partial_sigs = result->partial_sigs;
-            if (key_len != 66 && key_len != 34) {
+            if (key_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN
+                && key_len != EC_PUBLIC_KEY_LEN) {
                 return WALLY_EINVAL;     /* Size of key is unexpected */
             }
             /* Check for duplicates */
             for (i = 0; i < partial_sigs->num_items; ++i) {
-                if (memcmp(partial_sigs->items[i].pubkey, &key[1], key_len - 1) == 0) {
+                if (memcmp(partial_sigs->items[i].pubkey, key, key_len) == 0) {
                     return WALLY_EINVAL;     /* Duplicate key */
                 }
             }
 
-            memcpy(partial_sigs->items[partial_sigs->num_items].pubkey, &key[1], key_len - 1);
+            sigitem = &partial_sigs->items[partial_sigs->num_items];
+            memcpy(sigitem->pubkey, key, key_len);
+            pull_subfield_end(cursor, max, key, key_len);
 
-            /* Read the signature */
-            p += varint_from_bytes(p, &value_len);
-            clone_bytes(&partial_sigs->items[partial_sigs->num_items].sig, p, value_len);
-            partial_sigs->items[partial_sigs->num_items].sig_len = value_len;
-
+            if (!clone_varlength(&sigitem->sig, &sigitem->sig_len,
+                                 cursor, max)) {
+                return WALLY_ENOMEM;
+            }
             partial_sigs->num_items++;
-            p += value_len;
             break;
         }
         case WALLY_PSBT_IN_SIGHASH_TYPE: {
             if (result->sighash_type > 0) {
                 return WALLY_EINVAL;     /* Sighash already provided */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            p += uint32_from_le_bytes(p, &result->sighash_type);
+            subfield_nomore_end(cursor, max, key, key_len);
+
+            /* Start parsing the value field. */
+            pull_subfield_start(cursor, max,
+                                pull_varint(cursor, max),
+                                &val, &val_max);
+            result->sighash_type = pull_le32(&val, &val_max);
+            subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
         case WALLY_PSBT_IN_REDEEM_SCRIPT: {
             if (result->redeem_script_len != 0) {
                 return WALLY_EINVAL;     /* Already have a redeem script */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->redeem_script, p, value_len);
-            result->redeem_script_len = value_len;
+            subfield_nomore_end(cursor, max, key, key_len);
 
-            p += value_len;
+            if (!clone_varlength(&result->redeem_script,
+                                 &result->redeem_script_len,
+                                 cursor, max)) {
+                return WALLY_ENOMEM;
+            }
             break;
         }
         case WALLY_PSBT_IN_WITNESS_SCRIPT: {
             if (result->witness_script_len != 0) {
                 return WALLY_EINVAL;     /* Already have a witness script */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->witness_script, p, value_len);
-            result->witness_script_len = value_len;
+            subfield_nomore_end(cursor, max, key, key_len);
 
-            p += value_len;
+            if (!clone_varlength(&result->witness_script,
+                                 &result->witness_script_len,
+                                 cursor, max)) {
+                return WALLY_ENOMEM;
+            }
             break;
         }
         case WALLY_PSBT_IN_BIP32_DERIVATION: {
-            struct wally_keypath_map *keypaths = result->keypaths;
-            size_t path_len;
-            if (key_len != 66 && key_len != 34) {
-                return WALLY_EINVAL;     /* Size of key is unexpected */
+            ret = pull_keypath(cursor, max, key, key_len, result->keypaths);
+            if (ret != WALLY_OK) {
+                return ret;
             }
-            /* Check for duplicates */
-            for (i = 0; i < keypaths->num_items; ++i) {
-                if (memcmp(keypaths->items[i].pubkey, &key[1], key_len - 1) == 0) {
-                    return WALLY_EINVAL;     /* Duplicate key */
-                }
-            }
-
-            memcpy(keypaths->items[keypaths->num_items].pubkey, &key[1], key_len - 1);
-
-            /* Read the path length */
-            p += varint_from_bytes(p, &value_len);
-            if (value_len % 4 != 0 || value_len == 0) {
-                return WALLY_EINVAL;     /* Invalid length for keypaths */
-            }
-            path_len = (value_len / 4) - 1;
-
-            /* Read the fingerprint */
-            memcpy(keypaths->items[keypaths->num_items].origin.fingerprint, p, 4);
-            p += 4;
-
-            /* Read the path itself */
-            keypaths->items[keypaths->num_items].origin.path = wally_malloc(path_len * sizeof(uint32_t));
-            if (!keypaths->items[keypaths->num_items].origin.path) {
-                return WALLY_ENOMEM;
-            }
-            for (i = 0; i < path_len; ++i) {
-                p += uint32_from_le_bytes(p, &keypaths->items[keypaths->num_items].origin.path[i]);
-            }
-            keypaths->items[keypaths->num_items].origin.path_len = path_len;
-
-            keypaths->num_items++;
             break;
         }
         case WALLY_PSBT_IN_FINAL_SCRIPTSIG: {
             if (result->final_script_sig_len != 0) {
                 return WALLY_EINVAL;     /* Already have a scriptSig */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            clone_bytes(&result->final_script_sig, p, value_len);
-            result->final_script_sig_len = value_len;
+            subfield_nomore_end(cursor, max, key, key_len);
 
-            p += value_len;
+            if (!clone_varlength(&result->final_script_sig,
+                                 &result->final_script_sig_len,
+                                 cursor, max)) {
+                return WALLY_ENOMEM;
+            }
             break;
         }
         case WALLY_PSBT_IN_FINAL_SCRIPTWITNESS: {
             uint64_t num_witnesses;
+            size_t i;
             if (result->final_witness) {
                 return WALLY_EINVAL;     /* Already have a scriptWitness */
-            } else if (key_len != 1) {
-                return WALLY_EINVAL;     /* Type is more than one byte */
             }
-            p += varint_from_bytes(p, &value_len);
-            p += varint_from_bytes(p, &num_witnesses);
+            subfield_nomore_end(cursor, max, key, key_len);
+
+            /* Start parsing the value field. */
+            pull_subfield_start(cursor, max,
+                                pull_varint(cursor, max),
+                                &val, &val_max);
+            num_witnesses = pull_varint(&val, &val_max);
             ret = wally_tx_witness_stack_init_alloc(num_witnesses, &result->final_witness);
             if (ret != WALLY_OK) {
                 return ret;
             }
 
             for (i = 0; i < num_witnesses; ++i) {
-                uint64_t witness_len;
-                p += varint_from_bytes(p, &witness_len);
-                ret = wally_tx_witness_stack_set(result->final_witness, i, p, witness_len);
-                if (ret != WALLY_OK)
+                uint64_t witness_len = pull_varint(&val, &val_max);
+                ret = wally_tx_witness_stack_set(result->final_witness, i,
+                                                 pull_skip(&val, &val_max, witness_len),
+                                                 witness_len);
+                if (ret != WALLY_OK) {
                     return ret;
-                p += witness_len;
+                }
             }
+            subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
         /* Unknowns */
         default: {
-            struct wally_unknowns_map *unknowns = result->unknowns;
-            clone_bytes(&unknowns->items[unknowns->num_items].key, key, key_len);
-            unknowns->items[unknowns->num_items].key_len = key_len;
-
-            p += varint_from_bytes(p, &value_len);
-            value = p;
-            clone_bytes(&unknowns->items[unknowns->num_items].value, value, value_len);
-            unknowns->items[unknowns->num_items].value_len = value_len;
-
-            unknowns->num_items++;
-            p += value_len;
+            ret = pull_unknown_key_value(cursor, max, pre_key, result->unknowns);
+            if (ret != WALLY_OK) {
+                return ret;
+            }
             break;
         }
         }
+        pre_key = *cursor;
+
     }
 
-    if (!found_sep) {
-        return WALLY_EINVAL;
-    }
-
-    *bytes_read = p - bytes;
-fail:
-    return ret;
+    return WALLY_OK;
 }
 
 static int psbt_output_from_bytes(
@@ -1549,15 +1634,19 @@ int wally_psbt_from_bytes(
     }
 
     /* Read inputs */
-    for (i = 0; i < counts->num_inputs && p < end; ++i) {
-        size_t bytes_read;
-
-        ret = psbt_input_from_bytes(p, end - p, counts->input_counts[i], &bytes_read, &result->inputs[i]);
+    for (i = 0; i < counts->num_inputs; ++i) {
+        size_t max = end - p;
+        ret = pull_psbt_input(&p, &max, counts->input_counts[i],
+                              &result->inputs[i]);
+        /* Increment this now, might be partially initialized! */
+        result->num_inputs++;
         if (ret != WALLY_OK) {
             goto fail;
         }
-        p += bytes_read;
-        result->num_inputs++;
+        if (p == NULL) {
+            ret = WALLY_EINVAL;
+            goto fail;
+        }
     }
 
     /* Make sure that the number of inputs matches the number of inputs in the transaction */
