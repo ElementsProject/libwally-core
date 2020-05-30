@@ -20,6 +20,8 @@ const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 
 #ifdef BUILD_ELEMENTS
 const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
+const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 's'};
+const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
 static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
@@ -1524,6 +1526,37 @@ static int count_psbt_parts(
             case WALLY_PSBT_IN_BIP32_DERIVATION:
                 input->num_keypaths++;
                 break;
+            case WALLY_PSBT_PROPRIETARY_TYPE: {
+#ifdef BUILD_ELEMENTS
+                uint64_t id_len;
+                bool valid_type = false;
+
+                id_len = pull_varlength(&key, &key_len);
+                if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                    pull_skip(&key, &key_len, id_len);
+
+                    switch (pull_varint(&key, &key_len)) {
+                    case WALLY_PSBT_IN_ELEMENTS_VALUE:
+                    case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER:
+                    case WALLY_PSBT_IN_ELEMENTS_ASSET:
+                    case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER:
+                    case WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX:
+                    case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF:
+                    case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH:
+                    case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT:
+                        valid_type = true;
+                        break;
+                    default:
+                        valid_type = false;
+                    }
+                }
+                if (valid_type) {
+                    break;
+                }
+#endif /* BUILD_ELEMENTS */
+            }
+            /* For unknown case without elements or for unknown proprietary types */
+            /* fall through */
             /* Unknowns */
             default:
                 input->num_unknowns++;
@@ -1554,6 +1587,37 @@ static int count_psbt_parts(
             case WALLY_PSBT_OUT_BIP32_DERIVATION:
                 psbt_output->num_keypaths++;
                 break;
+            case WALLY_PSBT_PROPRIETARY_TYPE: {
+#ifdef BUILD_ELEMENTS
+                uint64_t id_len;
+                bool valid_type = false;
+
+                id_len = pull_varlength(&key, &key_len);
+                if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                    pull_skip(&key, &key_len, id_len);
+
+                    switch (pull_varint(&key, &key_len)) {
+                    case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT:
+                    case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER:
+                    case WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT:
+                    case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER:
+                    case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF:
+                    case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF:
+                    case WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY:
+                    case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT:
+                        valid_type = true;
+                        break;
+                    default:
+                        valid_type = false;
+                    }
+                }
+                if (valid_type) {
+                    break;
+                }
+#endif /* BUILD_ELEMENTS */
+            }
+            /* For unknown case without elements or for unknown proprietary types */
+            /* fall through */
             /* Unknowns */
             default:
                 psbt_output->num_unknowns++;
@@ -1787,6 +1851,169 @@ static int pull_psbt_input(
             subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
+        case WALLY_PSBT_PROPRIETARY_TYPE: {
+#ifdef BUILD_ELEMENTS
+            uint64_t id_len;
+            bool valid_type = false;
+
+            id_len = pull_varlength(&key, &key_len);
+            if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                size_t subkey_len;
+                const unsigned char *subkey;
+
+                /* Start parsing subkey */
+                pull_subfield_start(&key, &key_len, id_len, &subkey, &subkey_len);
+
+                switch (pull_varint(&subkey, &subkey_len)) {
+                case WALLY_PSBT_IN_ELEMENTS_VALUE: {
+                    valid_type = true;
+                    if (result->has_value) {
+                        return WALLY_EINVAL;    /* Already have value */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    /* Start parsing the value field. */
+                    pull_subfield_start(cursor, max,
+                                        pull_varint(cursor, max),
+                                        &val, &val_max);
+                    result->value = pull_le64(&val, &val_max);
+                    subfield_nomore_end(cursor, max, val, val_max);
+                    result->has_value = true;
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER: {
+                    valid_type = true;
+                    if (result->value_blinder) {
+                        return WALLY_EINVAL;    /* Already have value blinding factor */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->value_blinder,
+                                         &result->value_blinder_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->value_blinder_len == 0) {
+                        result->value_blinder = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_ASSET: {
+                    valid_type = true;
+                    if (result->asset) {
+                        return WALLY_EINVAL;    /* Already have asset */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->asset,
+                                         &result->asset_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->asset_len == 0) {
+                        result->asset = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER: {
+                    valid_type = true;
+                    if (result->asset_blinder) {
+                        return WALLY_EINVAL;    /* Already have asset blinding factor */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->asset_blinder,
+                                         &result->asset_blinder_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->asset_blinder_len == 0) {
+                        result->asset_blinder = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX: {
+                    valid_type = true;
+                    if (result->peg_in_tx) {
+                        return WALLY_EINVAL;    /* Already have asset */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    /* Start parsing the value field. */
+                    pull_subfield_start(cursor, max,
+                                        pull_varint(cursor, max),
+                                        &val, &val_max);
+
+                    ret = wally_tx_from_bytes(val, val_max, 0,
+                                              &result->peg_in_tx);
+                    if (ret != WALLY_OK) {
+                        return ret;
+                    }
+                    pull_subfield_end(cursor, max, val, val_max);
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF: {
+                    valid_type = true;
+                    if (result->txout_proof) {
+                        return WALLY_EINVAL;    /* Already have txout proof */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->txout_proof,
+                                         &result->txout_proof_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->txout_proof_len == 0) {
+                        result->txout_proof = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH: {
+                    valid_type = true;
+                    if (result->genesis_hash) {
+                        return WALLY_EINVAL;    /* Already have genesis hash */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->genesis_hash,
+                                         &result->genesis_hash_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->genesis_hash_len == 0) {
+                        result->genesis_hash = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT: {
+                    valid_type = true;
+                    if (result->claim_script) {
+                        return WALLY_EINVAL;    /* Already have asset */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->claim_script,
+                                         &result->claim_script_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->claim_script_len == 0) {
+                        result->claim_script = wally_malloc(1);
+                    }
+                    break;
+                }
+                default:
+                    valid_type = false;
+                }
+            }
+            if (valid_type) {
+                break;
+            }
+#endif /* BUILD_ELEMENTS */
+        }
+        /* For unknown case without elements or for unknown proprietary types */
+        /* fall through */
         /* Unknowns */
         default: {
             ret = pull_unknown_key_value(cursor, max, pre_key, result->unknowns);
@@ -1870,6 +2097,172 @@ static int pull_psbt_output(
             }
             break;
         }
+        case WALLY_PSBT_PROPRIETARY_TYPE: {
+#ifdef BUILD_ELEMENTS
+            uint64_t id_len;
+            bool valid_type = false;
+
+            id_len = pull_varlength(&key, &key_len);
+            if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
+                size_t subkey_len;
+                const unsigned char *subkey;
+
+                /* Start parsing subkey */
+                pull_subfield_start(&key, &key_len, id_len, &subkey, &subkey_len);
+
+                switch (pull_varint(&subkey, &subkey_len)) {
+                case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT: {
+                    valid_type = true;
+                    if (result->value_commitment) {
+                        return WALLY_EINVAL;    /* Already have value commitment */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->value_commitment,
+                                         &result->value_commitment_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->value_commitment_len == 0) {
+                        result->value_commitment = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER: {
+                    valid_type = true;
+                    if (result->value_blinder) {
+                        return WALLY_EINVAL;    /* Already have value blinder */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->value_blinder,
+                                         &result->value_blinder_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->value_blinder_len == 0) {
+                        result->value_blinder = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT: {
+                    valid_type = true;
+                    if (result->asset_commitment) {
+                        return WALLY_EINVAL;    /* Already have asset commitment */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->asset_commitment,
+                                         &result->asset_commitment_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->asset_commitment_len == 0) {
+                        result->asset_commitment = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER: {
+                    valid_type = true;
+                    if (result->asset_blinder) {
+                        return WALLY_EINVAL;    /* Already have asset blinder */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->asset_blinder,
+                                         &result->asset_blinder_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->asset_blinder_len == 0) {
+                        result->asset_blinder = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF: {
+                    valid_type = true;
+                    if (result->range_proof) {
+                        return WALLY_EINVAL;    /* Already have range proof */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->range_proof,
+                                         &result->range_proof_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->range_proof_len == 0) {
+                        result->range_proof = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF: {
+                    valid_type = true;
+                    if (result->surjection_proof) {
+                        return WALLY_EINVAL;    /* Already have surjection proof */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->surjection_proof,
+                                         &result->surjection_proof_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->surjection_proof_len == 0) {
+                        result->surjection_proof = wally_malloc(1);
+                    }
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY: {
+                    const unsigned char *val;
+                    size_t val_max;
+                    valid_type = true;
+                    if (result->has_blinding_pubkey) {
+                        return WALLY_EINVAL;    /* Already have blinding pubkey */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    /* Start parsing the value field. */
+                    pull_subfield_start(cursor, max,
+                                        pull_varint(cursor, max),
+                                        &val, &val_max);
+                    if (val_max != EC_PUBLIC_KEY_UNCOMPRESSED_LEN && val_max != EC_PUBLIC_KEY_LEN) {
+                        return WALLY_EINVAL;    /* Size of key is unexpected */
+                    }
+                    memcpy(result->blinding_pubkey, val, val_max);
+                    result->has_blinding_pubkey = true;
+
+                    pull_subfield_end(cursor, max, val, val_max);
+                    break;
+                }
+                case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT: {
+                    valid_type = true;
+                    if (result->nonce_commitment) {
+                        return WALLY_EINVAL;    /* Already have nonce commitment */
+                    }
+                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+
+                    if (!clone_varlength(&result->nonce_commitment,
+                                         &result->nonce_commitment_len,
+                                         cursor, max)) {
+                        return WALLY_ENOMEM;
+                    }
+                    if (result->nonce_commitment_len == 0) {
+                        result->nonce_commitment = wally_malloc(1);
+                    }
+                    break;
+                }
+                default:
+                    valid_type = false;
+                }
+            }
+            if (valid_type) {
+                break;
+            }
+#endif /* BUILD_ELEMENTS */
+        }
+        /* For unknown case without elements or for unknown proprietary types */
+        /* fall through */
         /* Unknowns */
         default: {
             ret = pull_unknown_key_value(cursor, max, pre_key, result->unknowns);
@@ -2091,6 +2484,21 @@ static void push_psbt_key_with_pubkey(
     }
 }
 
+#ifdef BUILD_ELEMENTS
+/* Common case of pushing elements proprietary type keys */
+static void push_psbt_elements_key(
+    unsigned char **cursor, size_t *max,
+    uint64_t type, const void *extra, size_t extra_len)
+{
+    push_varint(cursor, max, varint_get_length(WALLY_PSBT_PROPRIETARY_TYPE)
+            + varint_get_length(WALLY_ELEMENTS_ID_LEN)
+            + WALLY_ELEMENTS_ID_LEN + varint_get_length(type) + extra_len);
+    push_varint(cursor, max, WALLY_PSBT_PROPRIETARY_TYPE);
+    push_varbuff(cursor, max, WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN);
+    push_bytes(cursor, max, extra, extra_len);
+}
+#endif /* BUILD_ELEMENTS */
+
 static int push_length_and_tx(
     unsigned char **cursor, size_t *max,
     const struct wally_tx *tx, uint32_t flags)
@@ -2239,6 +2647,47 @@ static int push_psbt_input(
         push_varint(cursor, max, wit_len);
         push_witness_stack(cursor, max, input->final_witness);
     }
+#ifdef BUILD_ELEMENTS
+    /* Confidential Assets blinding data */
+    if (input->has_value) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE, NULL, 0);
+        push_le64(cursor, max, input->value);
+    }
+    if (input->value_blinder) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER, NULL, 0);
+        push_varbuff(cursor, max, input->value_blinder, input->value_blinder_len);
+    }
+    if (input->asset) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET, NULL, 0);
+        push_varbuff(cursor, max, input->asset, input->asset_len);
+    }
+    if (input->asset_blinder) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER, NULL, 0);
+        push_varbuff(cursor, max, input->asset_blinder, input->asset_blinder_len);
+    }
+    /* Peg ins */
+    if (input->peg_in_tx) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX, NULL, 0);
+        ret = push_length_and_tx(cursor, max,
+                                 input->peg_in_tx,
+                                 WALLY_TX_FLAG_USE_WITNESS);
+        if (ret != WALLY_OK) {
+            return ret;
+        }
+    }
+    if (input->txout_proof) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF, NULL, 0);
+        push_varbuff(cursor, max, input->txout_proof, input->txout_proof_len);
+    }
+    if (input->genesis_hash) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH, NULL, 0);
+        push_varbuff(cursor, max, input->genesis_hash, input->genesis_hash_len);
+    }
+    if (input->claim_script) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT, NULL, 0);
+        push_varbuff(cursor, max, input->claim_script, input->claim_script_len);
+    }
+#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     if (input->unknowns) {
         for (i = 0; i < input->unknowns->num_items; ++i) {
@@ -2280,6 +2729,45 @@ static int push_psbt_output(
                               &keypaths->items[i]);
         }
     }
+#ifdef BUILD_ELEMENTS
+    if (output->value_commitment) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT, NULL, 0);
+        push_varbuff(cursor, max, output->value_commitment, output->value_commitment_len);
+    }
+    if (output->value_blinder) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER, NULL, 0);
+        push_varbuff(cursor, max, output->value_blinder, output->value_blinder_len);
+    }
+    if (output->asset_commitment) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT, NULL, 0);
+        push_varbuff(cursor, max, output->asset_commitment, output->asset_commitment_len);
+    }
+    if (output->asset_blinder) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER, NULL, 0);
+        push_varbuff(cursor, max, output->asset_blinder, output->asset_blinder_len);
+    }
+    if (output->range_proof) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF, NULL, 0);
+        push_varbuff(cursor, max, output->range_proof, output->range_proof_len);
+    }
+    if (output->surjection_proof) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF, NULL, 0);
+        push_varbuff(cursor, max, output->surjection_proof, output->surjection_proof_len);
+    }
+    if (output->has_blinding_pubkey) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY, NULL, 0);
+        if (pubkey_is_compressed(output->blinding_pubkey)) {
+            push_varbuff(cursor, max, output->blinding_pubkey, EC_PUBLIC_KEY_LEN);
+        }
+        else {
+            push_varbuff(cursor, max, output->blinding_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+        }
+    }
+    if (output->nonce_commitment) {
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT, NULL, 0);
+        push_varbuff(cursor, max, output->nonce_commitment, output->nonce_commitment_len);
+    }
+#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     if (output->unknowns) {
         for (i = 0; i < output->unknowns->num_items; ++i) {
