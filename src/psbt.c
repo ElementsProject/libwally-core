@@ -2542,7 +2542,7 @@ int wally_sign_psbt(
         struct wally_tx_input *txin = &psbt->tx->inputs[i];
         unsigned char sighash[SHA256_LEN], *scriptcode, wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
         size_t scriptcode_len;
-        bool match = false, comp = false;
+        bool match = false, comp = false, already_signed = false;
         uint32_t sighash_type = WALLY_SIGHASH_ALL;
 
         if (!input->keypaths) {
@@ -2565,6 +2565,23 @@ int wally_sign_psbt(
 
         /* Did not find pubkey, skip */
         if (!match) {
+            continue;
+        }
+
+        /* Make sure we don't already have a sig for this input ?! */
+        if (input->partial_sigs) {
+            for (j = 0; j < input->partial_sigs->num_items; j++) {
+                struct wally_partial_sigs_item *item = &input->partial_sigs->items[j];
+                if (memcmp((char *)item->pubkey, (char *)uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0
+                    || memcmp((char *)item->pubkey, (char *)pubkey, EC_PUBLIC_KEY_LEN) == 0) {
+                    already_signed = true;
+                    break;
+                }
+            }
+        }
+
+        /* We've already got a partial sig for this pubkey on this input */
+        if (already_signed) {
             continue;
         }
 

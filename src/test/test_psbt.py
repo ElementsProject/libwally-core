@@ -80,11 +80,14 @@ class PSBTTests(unittest.TestCase):
 
             ret, reser = wally_psbt_to_base64(psbt)
             self.assertEqual(WALLY_OK, ret)
+            # Check that we can *demarshal* the signed PSBT (some bugs only appear here)
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(reser, psbt))
             self.assertEqual(signer['result'], reser)
 
         for inval_signer in inval_signers:
             psbt = pointer(wally_psbt())
             self.assertEqual(WALLY_OK, wally_psbt_from_base64(inval_signer['psbt'].encode('utf-8'), psbt))
+
             for priv in inval_signer['privkeys']:
                 buf, buf_len = make_cbuffer('00'*32)
                 self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
