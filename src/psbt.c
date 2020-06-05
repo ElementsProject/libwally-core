@@ -2761,7 +2761,7 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
         case WALLY_SCRIPT_TYPE_P2WPKH: {
             struct wally_partial_sigs_item *partial_sig;
             unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
-            size_t script_sig_len, pubkey_len = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+            size_t written, script_sig_len, pubkey_len = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
 
             if (!input->partial_sigs || input->partial_sigs->num_items != 1) {
                 /* Must be single key, single sig */
@@ -2782,6 +2782,16 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
             } else {
                 if ((ret = wally_witness_p2wpkh_from_der(partial_sig->pubkey, pubkey_len, partial_sig->sig, partial_sig->sig_len, &input->final_witness)) != WALLY_OK) {
                     return ret;
+                }
+                if (input->redeem_script) {
+                    /* P2SH wrapped witness requires final scriptsig of pushing the redeemScript */
+                    script_sig_len = varint_get_length(input->redeem_script_len) + input->redeem_script_len;
+                    input->final_script_sig = wally_malloc(script_sig_len);
+                    if ((ret = wally_script_push_from_bytes(input->redeem_script, input->redeem_script_len, 0, input->final_script_sig, script_sig_len, &written)) != WALLY_OK) {
+                        wally_free(input->final_script_sig);
+                        return ret;
+                    }
+                    input->final_script_sig_len = written;
                 }
             }
             break;
