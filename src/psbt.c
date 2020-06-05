@@ -2714,7 +2714,9 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *txin = &psbt->tx->inputs[i];
-        unsigned char *out_script = NULL; /* Script that determines how we should finalize this input, typically output script */
+        /* Script for this input. originally set to the input's scriptPubKey, but in the case of a p2sh/p2wsh
+         * input, it will be eventually be set to the unhashed script, if known */
+        unsigned char *out_script = NULL;
         size_t out_script_len, type;
         bool witness = false, p2sh = false;;
 
@@ -2723,14 +2725,21 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
             continue;
         }
 
-        if (input->redeem_script) {
-            out_script = input->redeem_script;
-            out_script_len = input->redeem_script_len;
-            p2sh = true;
+        /* Note that if we patch libwally to supply the non-witness utxo tx field (tx) for
+        * witness inputs also, we'll need a different way to signal p2sh-p2wpkh scripts */
+        if (input->witness_utxo && input->witness_utxo->script_len > 0) {
+            out_script = input->witness_utxo->script;
+            out_script_len = input->witness_utxo->script_len;
+            witness = true;
         } else if (input->non_witness_utxo && input->non_witness_utxo->num_outputs > txin->index) {
             struct wally_tx_output out = input->non_witness_utxo->outputs[txin->index];
             out_script = out.script;
             out_script_len = out.script_len;
+        }
+        if (input->redeem_script) {
+            out_script = input->redeem_script;
+            out_script_len = input->redeem_script_len;
+            p2sh = true;
         }
         if (input->witness_script) {
             out_script = input->witness_script;
