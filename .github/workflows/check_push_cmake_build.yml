@@ -4,10 +4,12 @@ on:
   push:
     branches:
     - cmake_build
+    - cfd-develop
     - feature/*
   pull_request:
     branches:
     - cmake_build
+    - cfd-develop
     - feature/*
 
 env:
