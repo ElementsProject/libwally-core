@@ -396,6 +396,7 @@ set(LIBWALLY_FILES
     src/bip39.c
     src/bech32.c
     src/blech32.c
+    src/descriptor.c
     src/elements.c
     src/ecdh.c
     src/hex.c
@@ -425,6 +426,7 @@ set(LIBWALLY_FILES
     include/wally_bip39.h
     include/wally_core.h
     include/wally_crypto.h
+    include/wally_descriptor.h
     include/wally_elements.h
     include/wally_script.h
     include/wally_transaction.h
@@ -1318,6 +1320,45 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
+set(TEST_DESCRIPTOR_NAME ctest_descriptor)
+add_executable(${TEST_DESCRIPTOR_NAME} src/ctest/test_descriptor.c)
+target_compile_options(${TEST_DESCRIPTOR_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
+)
+target_compile_definitions(${TEST_DESCRIPTOR_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+)
+target_include_directories(${TEST_DESCRIPTOR_NAME}
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${SECP256K_OUTPUT_PATH}
+)
+target_link_directories(${TEST_DESCRIPTOR_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_DESCRIPTOR_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
+)
+add_test(
+  NAME ${TEST_DESCRIPTOR_NAME}
+  COMMAND $<TARGET_FILE:${TEST_DESCRIPTOR_NAME}>
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
+)
 
 ####################
 # test for C(Elements)
@@ -1526,6 +1567,8 @@ add_test(NAME test_scrypt       COMMAND ${PYTHON_BIN} test/test_scrypt.py
 add_test(NAME test_wif          COMMAND ${PYTHON_BIN} test/test_wif.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_wordlist     COMMAND ${PYTHON_BIN} test/test_wordlist.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_descriptor   COMMAND ${PYTHON_BIN} test/test_descriptor.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 if(NOT PY_TEST_IGNORE)
 add_test(NAME test_psbt         COMMAND ${PYTHON_BIN} test/test_psbt.py

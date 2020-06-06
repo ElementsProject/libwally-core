@@ -18,6 +18,7 @@
     "cmake_configure:darwin": "cmake-js configure -O build --CDENABLE_SHARED=on --CDENABLE_ELEMENTS=on -C",
     "cmake_build": "cmake-js build -O build",
     "cmake_clean": "cmake-js clean -O build",
+    "cmake_build_parallel": "cmake --build build --parallel --config Release",
     "cmake_all_package": "run-s cmake_all_configure cmake_build",
     "cmake_all_repackage": "run-s cmake_clean cmake_all_configure cmake_build",
     "cmake_all_configure": "run-script-os",
