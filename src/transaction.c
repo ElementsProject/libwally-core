@@ -157,8 +157,10 @@ static bool is_valid_elements_tx(const struct wally_tx *tx)
 
 bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
 {
-    if (!len)
+    if (!len) {
+        *dst = NULL;
         return true;
+    }
     *dst = wally_malloc(len);
     if (*dst)
         memcpy(*dst, src, len);

@@ -4,16 +4,7 @@ branches:
     only:
       - master
 language: c
-os:
-  - linux
-  - osx
-  - windows
 dist: bionic
-env:
-  - CI=travis
-compiler:
-  - clang
-  - gcc
 addons:
     apt:
         sources:
@@ -37,48 +28,56 @@ jobs:
     include:
       - services:
           - docker
+        name: Docker Service
         script: docker run -v $PWD:/wally debian:buster /bin/sh -c "apt-get update -yqq && apt-get install -yqq --no-install-recommends git uncrustify && cd /wally && (tools/uncrustify || true) && git diff --exit-code"
       - os: linux
+        name: Linux - GCC
         compiler: gcc
       - os: linux
+        name: Linux - Clang 9
         compiler: clang
         env: CC=clang-9 CXX=clang++-9 LDFLAGS=-Wl,-z,now
       - os: linux
+        name: Linux - Clang 8
         compiler: clang
         env: CC=clang-8 CXX=clang++-8 HOST=i686-linux-gnu
       - os: linux
+        name: Linux - GCC - 32 bit
         compiler: gcc
         env: HOST=i686-linux-gnu
-      - compiler: gcc
-        os: linux
+      - os: linux
+        name: Linux - GCC - Python 3
+        compiler: gcc
         env: PYTHON_VERSION=3
-      - compiler: clang
-        os: linux
-        env: DEBUG_WALLY=--enable-debug
-      - compiler: clang
-        os: linux
+      - os: linux
+        name: Linux - Clang - Debug
+        compiler: clang
+        env: DEBUG_WALLY=--enable-debug LDFLAGS=-Wl,-z,now
+      - os: linux
+        name: Linux - GCC - Elements
+        compiler: gcc
+        env: ENABLE_ELEMENTS=--enable-elements
+      - os: linux
+        name: Linux - Clang 8 - Elements
+        compiler: clang
         env: CC=clang-8 CXX=clang++-8 LDFLAGS=-Wl,-z,now ENABLE_ELEMENTS=--enable-elements
       - os: windows
+        name: Windows - Python 3
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig
         before_script:
         script:
           - tools/msvc/wheel.bat
       - os: windows
+        name: Windows - JS bindings
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH NODE_VERSION=node/12.14.0
         before_script:
         script:
           - source $ProgramData/nvs/nvs.sh
           - nvs use $NODE_VERSION
           - tools/msvc/wallyjs.bat
-
-    exclude:
-      - os: windows
-        compiler: gcc
-      - os: windows
+      - os: osx
+        name: OSX - Clang
         compiler: clang
-      - os: linux
-        env: CI=travis
-
 
 before_script:
   - ./tools/cleanup.sh && ./tools/autogen.sh
