@@ -2201,11 +2201,6 @@ static const struct miniscript_item_t miniscript_info_table[] = {
         "thresh", DESCRIPTOR_KIND_MINISCRIPT_THRESH,
         MINISCRIPT_TYPE_B | MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_U,
         -1, verify_miniscript_thresh, generate_by_miniscript_thresh
-    },
-    {
-        "thresh_m", DESCRIPTOR_KIND_MINISCRIPT_MULTI,
-        MINISCRIPT_TYPE_B | MINISCRIPT_PROPERTY_N | MINISCRIPT_PROPERTY_U | MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_E | MINISCRIPT_PROPERTY_M | MINISCRIPT_PROPERTY_S,
-        -1, verify_descriptor_multi, generate_by_descriptor_multi
     }
 };
 
