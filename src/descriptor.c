@@ -3533,7 +3533,7 @@ int wally_descriptor_to_scriptpubkey(
         addr_item = &g_network_address_table[2];  /* bitcoin regtest */
     else
         for (index = 0; index < addr_tbl_max; ++index) {
-            if (network == (int)g_network_address_table[index].network) {
+            if (network == (uint32_t)g_network_address_table[index].network) {
                 addr_item = &g_network_address_table[index];
                 break;
             }
@@ -3589,7 +3589,7 @@ int wally_descriptor_to_address(
         addr_item = &g_network_address_table[2];  /* bitcoin regtest */
     else
         for (index = 0; index < addr_tbl_max; ++index) {
-            if (network == (int)g_network_address_table[index].network) {
+            if (network == (uint32_t)g_network_address_table[index].network) {
                 addr_item = &g_network_address_table[index];
                 break;
             }
@@ -3655,7 +3655,7 @@ int wally_descriptor_to_addresses(
         addr_item = &g_network_address_table[2];
     else
         for (index = 0; index < addr_tbl_max; ++index) {
-            if (network == (int)g_network_address_table[index].network) {
+            if (network == (uint32_t)g_network_address_table[index].network) {
                 addr_item = &g_network_address_table[index];
                 break;
             }
