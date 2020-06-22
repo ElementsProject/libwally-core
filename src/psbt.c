@@ -719,10 +719,16 @@ int wally_psbt_init_alloc(
 
     if (inputs_allocation_len) {
         new_inputs = wally_malloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
+        if (!new_inputs) {
+            return WALLY_ENOMEM;
+        }
         wally_bzero(new_inputs, inputs_allocation_len * sizeof(*new_inputs));
     }
     if (outputs_allocation_len) {
         new_outputs = wally_malloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
+        if (!new_outputs) {
+            return WALLY_ENOMEM;
+        }
         wally_bzero(new_outputs, outputs_allocation_len * sizeof(*new_outputs));
     }
     wally_unknowns_map_init_alloc(global_unknowns_allocation_len, &result->unknowns);
@@ -1216,6 +1222,9 @@ static int psbt_input_from_bytes(
 
             /* Read the path itself */
             keypaths->items[keypaths->num_items].origin.path = wally_malloc(path_len * sizeof(uint32_t));
+            if (!keypaths->items[keypaths->num_items].origin.path) {
+                return WALLY_ENOMEM;
+            }
             for (i = 0; i < path_len; ++i) {
                 p += uint32_from_le_bytes(p, &keypaths->items[keypaths->num_items].origin.path[i]);
             }
@@ -1387,6 +1396,9 @@ static int psbt_output_from_bytes(
 
             /* Read the path itself */
             keypaths->items[keypaths->num_items].origin.path = wally_malloc(path_len * sizeof(uint32_t));
+            if (!keypaths->items[keypaths->num_items].origin.path) {
+                return WALLY_ENOMEM;
+            }
             for (i = 0; i < path_len; ++i) {
                 p += uint32_from_le_bytes(p, &keypaths->items[keypaths->num_items].origin.path[i]);
             }
@@ -2785,6 +2797,9 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
                     /* P2SH wrapped witness requires final scriptsig of pushing the redeemScript */
                     script_sig_len = varint_get_length(input->redeem_script_len) + input->redeem_script_len;
                     input->final_script_sig = wally_malloc(script_sig_len);
+                    if (!input->final_script_sig) {
+                        return WALLY_ENOMEM;
+                    }
                     if ((ret = wally_script_push_from_bytes(input->redeem_script, input->redeem_script_len, 0, input->final_script_sig, script_sig_len, &written)) != WALLY_OK) {
                         wally_free(input->final_script_sig);
                         return ret;
@@ -2895,6 +2910,9 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
                 /* P2SH wrapped witness requires final scriptsig of pushing the redeemScript */
                 script_sig_len = varint_get_length(input->redeem_script_len) + input->redeem_script_len;
                 input->final_script_sig = wally_malloc(script_sig_len);
+                if (!input->final_script_sig) {
+                    return WALLY_ENOMEM;
+                }
                 if ((ret = wally_script_push_from_bytes(input->redeem_script, input->redeem_script_len, 0, input->final_script_sig, script_sig_len, &written)) != WALLY_OK) {
                     wally_free(input->final_script_sig);
                     return ret;
