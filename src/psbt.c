@@ -9,7 +9,6 @@
 #include <include/wally_psbt.h>
 
 #include <limits.h>
-#include <stdbool.h>
 #include <assert.h>
 #include "transaction_shared.h"
 #include "script_int.h"

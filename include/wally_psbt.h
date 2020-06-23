@@ -3,6 +3,7 @@
 
 #include "wally_transaction.h"
 #include "wally_core.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
