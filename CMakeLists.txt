@@ -27,6 +27,7 @@ option(ENABLE_ELEMENTS "enable elements tx code (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SWIG_GO "enable the SWIG Go interface (ON or OFF. default:OFF)" OFF)
 option(GENERATE_WALLY "generate the wally.xxx library (ON or OFF. default:ON)" ON)
+option(ENABLE_EMSCRIPTEN "enable EMSCRIPTEN (ON or OFF. default:OFF)" OFF)
 
 if(NOT EXCLUDE_GENERATE_WALLY)
 set(EXCLUDE_GENERATE_WALLY  FALSE)
@@ -106,6 +107,11 @@ set(CMAKE_INSTALL_RPATH "./;./build/${RPATH_TARGET};./wallycore;@rpath")
 endif()
 endif()
 
+if(ENABLE_EMSCRIPTEN)
+set(WALLY_EMSCRIPTEN "WALLY_EMSCRIPTEN")
+else()
+set(WALLY_EMSCRIPTEN "")
+endif()
 
 ####################
 # wally common setting
@@ -229,6 +235,7 @@ set(inline  ${C_HAS___inline})
 endif()
 endif()
 
+if(NOT ENABLE_EMSCRIPTEN)
 check_type_size(size_t SIZEOF_SIZE_T LANGUAGE C)
 if(NOT HAVE_SIZEOF_SIZE_T)
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
@@ -246,6 +253,7 @@ else()
 set(ssize_t "int32_t")
 endif()
 endif()
+endif(NOT ENABLE_EMSCRIPTEN)
 
 # secp256k1 configure options
 # ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
@@ -353,6 +361,33 @@ add_custom_target(${SECP256K1_GEN_CONTEXT_NAME}
   SOURCES ${ECMULT_STATIC_CONTEXT_H}
 )
 
+if(ENABLE_EMSCRIPTEN)
+set(CMAKE_ECMULT_STATIC_CONTEXT_H  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecmult_static_context.h)
+
+if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
+add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND echo "[gen_context] copy from " ${CMAKE_ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_ECMULT_STATIC_CONTEXT_H} ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E remove -f ${SRC_SECP256K1_CONFIG_H}
+  COMMAND ${CMAKE_COMMAND} -E remove -f ${SRC_WALLY_CONFIG_H}
+  DEPENDS ${GEN_CONTEXT_NAME}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1
+  VERBATIM
+)
+else()
+add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND echo "[gen_context] copy from " ${CMAKE_ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_ECMULT_STATIC_CONTEXT_H} ${ECMULT_STATIC_CONTEXT_H}
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${SRC_SECP256K1_CONFIG_H}
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${SRC_WALLY_CONFIG_H}
+  DEPENDS ${GEN_CONTEXT_NAME}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1
+  VERBATIM
+)
+endif()
+
+else(ENABLE_EMSCRIPTEN)
+
 if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
 add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
   COMMAND echo "[gen_context]" ${GEN_CONTEXT_PATH}
@@ -380,6 +415,7 @@ add_custom_command(OUTPUT  ${ECMULT_STATIC_CONTEXT_H}
   VERBATIM
 )
 endif()
+endif(ENABLE_EMSCRIPTEN)
 
 
 ####################
@@ -487,6 +523,7 @@ target_compile_definitions(${PROJECT_NAME}
     WALLY_CORE_BUILD
     SECP256K1_BUILD
     HAVE_CONFIG_H
+    ${WALLY_EMSCRIPTEN}
 )
 # -DECMULT_WINDOW_SIZE=16 -DUSE_ECMULT_STATIC_PRECOMPUTATION
 target_include_directories(${PROJECT_NAME}
@@ -731,6 +768,7 @@ target_compile_definitions(${WALLYCORE_NAME}
     WALLY_CORE_BUILD
     SECP256K1_BUILD
     HAVE_CONFIG_H
+    ${WALLY_EMSCRIPTEN}
 )
 target_include_directories(${WALLYCORE_NAME}
   PUBLIC
