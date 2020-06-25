@@ -178,7 +178,7 @@ int secp256k1_schnorrsig_sig_pubkey(const secp256k1_context *ctx, secp256k1_pubk
   summands[1] = r;
 
   /* r + e*pk */
-  return secp256k1_ec_pubkey_combine(ctx, sp, summands, 2);
+  return secp256k1_ec_pubkey_combine(ctx, sp, (const secp256k1_pubkey * const *)&summands[0], 2);
 }
 
 /* Helper function for verification and batch verification.
