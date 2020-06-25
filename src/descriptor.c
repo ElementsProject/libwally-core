@@ -2201,11 +2201,6 @@ static const struct miniscript_item_t miniscript_info_table[] = {
         "thresh", DESCRIPTOR_KIND_MINISCRIPT_THRESH,
         MINISCRIPT_TYPE_B | MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_U,
         -1, verify_miniscript_thresh, generate_by_miniscript_thresh
-    },
-    {
-        "thresh_m", DESCRIPTOR_KIND_MINISCRIPT_MULTI,
-        MINISCRIPT_TYPE_B | MINISCRIPT_PROPERTY_N | MINISCRIPT_PROPERTY_U | MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_E | MINISCRIPT_PROPERTY_M | MINISCRIPT_PROPERTY_S,
-        -1, verify_descriptor_multi, generate_by_descriptor_multi
     }
 };
 
@@ -3538,7 +3533,7 @@ int wally_descriptor_to_scriptpubkey(
         addr_item = &g_network_address_table[2];  /* bitcoin regtest */
     else
         for (index = 0; index < addr_tbl_max; ++index) {
-            if (network == (int)g_network_address_table[index].network) {
+            if (network == (uint32_t)g_network_address_table[index].network) {
                 addr_item = &g_network_address_table[index];
                 break;
             }
@@ -3594,7 +3589,7 @@ int wally_descriptor_to_address(
         addr_item = &g_network_address_table[2];  /* bitcoin regtest */
     else
         for (index = 0; index < addr_tbl_max; ++index) {
-            if (network == (int)g_network_address_table[index].network) {
+            if (network == (uint32_t)g_network_address_table[index].network) {
                 addr_item = &g_network_address_table[index];
                 break;
             }
@@ -3660,7 +3655,7 @@ int wally_descriptor_to_addresses(
         addr_item = &g_network_address_table[2];
     else
         for (index = 0; index < addr_tbl_max; ++index) {
-            if (network == (int)g_network_address_table[index].network) {
+            if (network == (uint32_t)g_network_address_table[index].network) {
                 addr_item = &g_network_address_table[index];
                 break;
             }
