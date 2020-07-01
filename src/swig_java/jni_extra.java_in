@@ -76,6 +76,10 @@
       return bip38_to_private_key(jarg1, jarg2, jarg3, null);
   }
 
+  public final static byte[] ecdh(byte[] jarg1, byte[] jarg2) {
+      return ecdh(jarg1, jarg2, null);
+  }
+
   public final static byte[] sha256(byte[] jarg1) {
       return sha256(jarg1, null);
   }

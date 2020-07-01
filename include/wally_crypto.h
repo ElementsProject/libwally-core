@@ -495,16 +495,16 @@ WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes,
  * Compute an EC Diffie-Hellman secret in constant time
  *
  * :param pub_key: The public key.
- * :param pub_key_len: The length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- * :param bytes: The private key.
- * :param bytes_len: The length of ``privkey`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- * :param output: Destination for the shared secret.
- * :param output_len: The length of ``output`` in bytes. Must be ``SHA256_LEN``.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param priv_key: The private key.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes_out: Destination for the shared secret.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
 WALLY_CORE_API int wally_ecdh(const unsigned char *pub_key,
                               size_t pub_key_len,
-                              const unsigned char *bytes,
-                              size_t bytes_len,
+                              const unsigned char *priv_key,
+                              size_t priv_key_len,
                               unsigned char *bytes_out,
                               size_t len);
 
