@@ -182,9 +182,9 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_signature_hash(*args))
 
         def sha256d(hex_):
-            input, input_len = make_cbuffer(hex_)
+            bin_input, bin_input_len = make_cbuffer(hex_)
             buf, buf_len = make_cbuffer('00'*32)
-            self.assertEqual(WALLY_OK, wally_sha256d(input, input_len, buf, buf_len))
+            self.assertEqual(WALLY_OK, wally_sha256d(bin_input, bin_input_len, buf, buf_len))
             return h(buf)
 
         script, script_len = make_cbuffer('00')

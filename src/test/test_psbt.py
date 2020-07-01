@@ -40,10 +40,10 @@ class PSBTTests(unittest.TestCase):
             tx = pointer(wally_tx())
             self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))
             for txin in creator['inputs']:
-                input = pointer(wally_tx_input())
+                tx_in = pointer(wally_tx_input())
                 txid = binascii.unhexlify(txin['txid'])[::-1]
-                self.assertEqual(WALLY_OK, wally_tx_input_init_alloc(txid, len(txid), txin['vout'], 0xffffffff, None, 0, None, input))
-                self.assertEqual(WALLY_OK, wally_tx_add_input(tx, input))
+                self.assertEqual(WALLY_OK, wally_tx_input_init_alloc(txid, len(txid), txin['vout'], 0xffffffff, None, 0, None, tx_in))
+                self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
             for txout in creator['outputs']:
                 addr = txout['addr']
                 amt = txout['amt']
