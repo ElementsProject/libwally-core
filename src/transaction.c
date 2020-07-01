@@ -2883,19 +2883,20 @@ static int tx_getb_impl(const void *input,
     return WALLY_OK;
 }
 
-#define GET_TX_ARRAY(typ, name, siz) \
+#define GET_TX_B_FIXED(typ, name, siz, n) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len) { \
         size_t written; \
-        if (!input || len != siz) \
+        if (!input || len != n) \
             return WALLY_EINVAL; \
         return tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
     }
 
-GET_TX_ARRAY(tx_input, txhash, WALLY_TXHASH_LEN)
+
+GET_TX_B_FIXED(tx_input, txhash, WALLY_TXHASH_LEN, WALLY_TXHASH_LEN)
 #ifdef BUILD_ELEMENTS
-GET_TX_ARRAY(tx_input, blinding_nonce, SHA256_LEN)
-GET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
+GET_TX_B_FIXED(tx_input, blinding_nonce, SHA256_LEN, SHA256_LEN)
+GET_TX_B_FIXED(tx_input, entropy, SHA256_LEN, SHA256_LEN)
 #endif /* BUILD_ELEMENTS */
 
 
@@ -2905,16 +2906,6 @@ GET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
         if (!input) \
             return WALLY_EINVAL; \
         return tx_getb_impl(input, input->name, siz, bytes_out, len, written); \
-    }
-
-#define GET_TX_B_FIXED(typ, name, siz, n) \
-    int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
-                                       unsigned char *bytes_out, size_t len) { \
-        size_t written; \
-        if (!input) \
-            return WALLY_EINVAL; \
-        int ret = len != n ? WALLY_EINVAL : tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
-        return ret; \
     }
 
 #define GET_TX_I(typ, name, outtyp) \
