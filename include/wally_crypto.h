@@ -347,7 +347,7 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
  * Negates a public key.
  *
  * :param pub_key: The public key to negate.
- * :param pub_key_len:: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param bytes_out: Destination for the resulting public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  */
