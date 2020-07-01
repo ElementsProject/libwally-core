@@ -935,7 +935,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
  * :param entropy: The asset entropy.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
  * :param flags: ``WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE`` if initial issuance was blinded,
- * |     pass 0 otherwise.
+ *|     pass 0 otherwise.
  * :param bytes_out: Destination for the re-issuance token.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
