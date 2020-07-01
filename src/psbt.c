@@ -2076,7 +2076,7 @@ int wally_psbt_to_bytes(
         return ret;
     }
     p += varint_to_bytes(tx_len, p);
-    ret = wally_tx_to_bytes(psbt->tx, 0, p, end - p, &tx_len);
+    ret = wally_partial_tx_to_bytes(psbt->tx, 0, p, end - p, true, &tx_len);
     if (ret != WALLY_OK) {
         return ret;
     }
