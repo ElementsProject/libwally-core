@@ -568,15 +568,16 @@ int wally_asset_blinding_key_to_ec_private_key(
     unsigned char *bytes_out,
     size_t len)
 {
-    int ret = WALLY_OK;
+    int ret;
 
     if (!bytes || bytes_len != HMAC_SHA512_LEN || !script || !script_len || !bytes_out || len != EC_PRIVATE_KEY_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = wally_hmac_sha256(bytes + SYMMETRIC_KEY_LEN, SYMMETRIC_KEY_LEN, script, script_len, bytes_out, len)) != WALLY_OK)
-        return ret;
+    ret = wally_hmac_sha256(bytes + SYMMETRIC_KEY_LEN, SYMMETRIC_KEY_LEN, script, script_len, bytes_out, len);
+    if (ret == WALLY_OK)
+        ret = wally_ec_private_key_verify(bytes_out, EC_PRIVATE_KEY_LEN);
 
-    return wally_ec_private_key_verify(bytes_out, EC_PRIVATE_KEY_LEN);
+    return ret;
 }
 
 int wally_asset_pak_whitelistproof_size(
