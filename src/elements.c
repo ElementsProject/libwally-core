@@ -545,20 +545,17 @@ int wally_asset_blinding_key_from_seed(
     size_t len)
 {
     unsigned char root[HMAC_SHA512_LEN];
-    int ret = WALLY_OK;
+    int ret;
 
     if (!bytes || !bytes_out || len != HMAC_SHA512_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = wally_symmetric_key_from_seed(bytes, bytes_len, root, sizeof(root))) != WALLY_OK)
-        return ret;
-
-    if ((ret = wally_symmetric_key_from_parent(root, sizeof(root), 0, LABEL_STR, sizeof(LABEL_STR),
-                                               bytes_out, len)) != WALLY_OK)
-        goto cleanup;
-
-cleanup:
-    wally_clear(root, sizeof(root));
+    ret = wally_symmetric_key_from_seed(bytes, bytes_len, root, sizeof(root));
+    if (ret == WALLY_OK) {
+        ret = wally_symmetric_key_from_parent(root, sizeof(root), 0, LABEL_STR, sizeof(LABEL_STR),
+                                              bytes_out, len);
+        wally_clear(root, sizeof(root));
+    }
 
     return ret;
 }
