@@ -2641,7 +2641,8 @@ static void push_psbt_elements_key(
 
 static int push_length_and_tx(
     unsigned char **cursor, size_t *max,
-    const struct wally_tx *tx, uint32_t flags)
+    const struct wally_tx *tx, uint32_t flags,
+    bool partial_ok)
 {
     int ret;
     size_t txlen;
@@ -2661,7 +2662,7 @@ static int push_length_and_tx(
         return WALLY_OK;
     }
 
-    return wally_tx_to_bytes(tx, flags, p, txlen, &txlen);
+    return wally_partial_tx_to_bytes(tx, flags, p, txlen, partial_ok, &txlen);
 }
 
 static void push_witness_stack(
@@ -2710,7 +2711,7 @@ static int push_psbt_input(
         push_psbt_key(cursor, max, WALLY_PSBT_IN_NON_WITNESS_UTXO, NULL, 0);
         ret = push_length_and_tx(cursor, max,
                                  input->non_witness_utxo,
-                                 WALLY_TX_FLAG_USE_WITNESS);
+                                 WALLY_TX_FLAG_USE_WITNESS, false);
         if (ret != WALLY_OK) {
             return ret;
         }
@@ -2842,7 +2843,7 @@ static int push_psbt_input(
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX, NULL, 0);
         ret = push_length_and_tx(cursor, max,
                                  input->peg_in_tx,
-                                 WALLY_TX_FLAG_USE_WITNESS);
+                                 WALLY_TX_FLAG_USE_WITNESS, false);
         if (ret != WALLY_OK) {
             return ret;
         }
@@ -2969,7 +2970,7 @@ int wally_psbt_to_bytes(
 
     /* Global tx */
     push_psbt_key(&cursor, &max, WALLY_PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
-    push_length_and_tx(&cursor, &max, psbt->tx, 0);
+    push_length_and_tx(&cursor, &max, psbt->tx, 0, true);
 
     /* version */
     if (psbt->version > 0) {

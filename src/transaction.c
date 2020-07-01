@@ -1972,7 +1972,8 @@ static int tx_to_bytes(const struct wally_tx *tx,
                        uint32_t flags,
                        unsigned char *bytes_out, size_t len,
                        size_t *written,
-                       bool is_elements)
+                       bool is_elements,
+                       bool partial_ok)
 {
     size_t n, i, j, witness_count;
     const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
@@ -1983,9 +1984,12 @@ static int tx_to_bytes(const struct wally_tx *tx,
     if (written)
         *written = 0;
 
-    if (!is_valid_tx(tx) || !tx->num_inputs || !tx->num_outputs ||
+    if (!is_valid_tx(tx) ||
         (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || !written ||
         tx_get_length(tx, opts, flags, &n, is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    if (!partial_ok && (!tx->num_inputs || !tx->num_outputs))
         return WALLY_EINVAL;
 
     if (opts && (flags & WALLY_TX_FLAG_USE_WITNESS))
@@ -2138,9 +2142,10 @@ static int tx_to_bytes(const struct wally_tx *tx,
     return WALLY_OK;
 }
 
-int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
-                      unsigned char *bytes_out, size_t len,
-                      size_t *written)
+int wally_partial_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
+                              unsigned char *bytes_out, size_t len,
+                              bool partial_ok,
+                              size_t *written)
 {
     size_t is_elements = 0;
 
@@ -2148,7 +2153,16 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 #endif
-    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements);
+    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements,
+                       partial_ok);
+}
+
+
+int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
+                      unsigned char *bytes_out, size_t len,
+                      size_t *written)
+{
+    return wally_partial_tx_to_bytes(tx, flags, bytes_out, len, false, written);
 }
 
 static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
@@ -2161,12 +2175,12 @@ static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
     if (!output)
         return WALLY_EINVAL;
 
-    ret = tx_to_bytes(tx, NULL, flags, buff_p, sizeof(buff), &n, is_elements);
+    ret = tx_to_bytes(tx, NULL, flags, buff_p, sizeof(buff), &n, is_elements, false);
     if (ret == WALLY_OK) {
         if (n > sizeof(buff)) {
             if ((buff_p = wally_malloc(n)) == NULL)
                 return WALLY_ENOMEM;
-            ret = tx_to_bytes(tx, NULL, flags, buff_p, n, &written, is_elements);
+            ret = tx_to_bytes(tx, NULL, flags, buff_p, n, &written, is_elements, false);
             if (n != written)
                 ret = WALLY_ERROR; /* Length calculated incorrectly */
         }
@@ -2669,7 +2683,7 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
         goto fail;
     }
 
-    if ((ret = tx_to_bytes(tx, &opts, 0, buff_p, n, &n2, is_elements != 0)) != WALLY_OK)
+    if ((ret = tx_to_bytes(tx, &opts, 0, buff_p, n, &n2, is_elements != 0, false)) != WALLY_OK)
         goto fail;
 
     if (n != n2)

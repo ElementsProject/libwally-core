@@ -20,6 +20,10 @@ int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 struct wally_tx_witness_stack *clone_witness(
     const struct wally_tx_witness_stack *stack);
 int clone_tx(struct wally_tx *tx, struct wally_tx **output);
+int wally_partial_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
+                              unsigned char *bytes_out, size_t len,
+                              bool partial_ok,
+                              size_t *written);
 
 #ifdef __cplusplus
 }
