@@ -59,14 +59,18 @@ public class test_bip32 {
                                                                     message,
                                                                     EC_FLAG_ECDSA | EC_FLAG_RECOVERABLE);
 
-        Arrays.equals(signature, Arrays.copyOfRange(signatureRecoverable, 1, 65));
+        if (!Arrays.equals(signature, Arrays.copyOfRange(signatureRecoverable, 1, 65))) {
+            throw new RuntimeException("Recoverable signature does not match");
+        }
 
         final byte[] pubkey = Wally.bip32_key_get_pub_key(derivedKey);
         Wally.ec_sig_verify(pubkey, message, EC_FLAG_ECDSA, signature);
         Wally.ec_sig_verify(pubkey, message, EC_FLAG_ECDSA, Arrays.copyOfRange(signatureRecoverable, 1, 65));
 
         final byte[] pubkey_recovered = Wally.ec_sig_to_public_key(message, signatureRecoverable);
-        Arrays.equals(pubkey, pubkey_recovered);
+        if (!Arrays.equals(pubkey, pubkey_recovered)) {
+            throw new RuntimeException("Failed to recover pubkey from signature");
+        }
 
         Wally.bip32_key_free(initKey);
         Wally.bip32_key_free(derivedKey);
