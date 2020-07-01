@@ -278,6 +278,14 @@
       return _is_elements_build() != 0;
   }
 
+  public final static byte[] symmetric_key_from_seed(byte[] jarg1) {
+      return symmetric_key_from_seed(jarg1, null);
+  }
+
+  public final static byte[] symmetric_key_from_parent(byte[] jarg1, long jarg2, byte[] jarg3) {
+      return symmetric_key_from_parent(jarg1, jarg2, jarg3, null);
+  }
+
   public final static void cleanup() {
       _cleanup(0);
   }

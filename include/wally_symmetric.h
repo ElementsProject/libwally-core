@@ -41,7 +41,7 @@ WALLY_CORE_API int wally_symmetric_key_from_seed(
 WALLY_CORE_API int wally_symmetric_key_from_parent(
     const unsigned char *bytes,
     size_t bytes_len,
-    unsigned char version,
+    uint32_t version,
     const unsigned char *label,
     size_t label_len,
     unsigned char *bytes_out,
