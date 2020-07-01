@@ -234,6 +234,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *output_asset, size_t output_asset_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *output_generator, size_t output_generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce, size_t nonce_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce_hash, size_t nonce_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *parent160, size_t parent160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
