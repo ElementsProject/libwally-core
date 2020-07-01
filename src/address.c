@@ -1,7 +1,5 @@
 #include "internal.h"
-#include "base58.h"
 #include <stdbool.h>
-#include "ccan/ccan/build_assert/build_assert.h"
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
