@@ -139,6 +139,10 @@
         return tx_get_input_txhash(jarg1, jarg2, null);
   }
 
+  public final static byte[] tx_input_get_txhash(Object jarg1) {
+        return tx_input_get_txhash(jarg1, null);
+  }
+
   public final static byte[] ec_sig_to_der(byte[] sig) {
       final byte[] buf = new byte[EC_SIGNATURE_DER_MAX_LEN];
       final int len = ec_sig_to_der(sig, buf);

@@ -46,7 +46,7 @@ public class test_tx {
         assert_eq(25, tx_get_output_script.length, "output script length mismatch");
         assert_eq("76a9142bc89c2702e0e618db7d59eb5ce2f0f147b4075488ac", h(tx_get_output_script), "output script mismatch");
         assert_eq( 0, Wally.tx_get_witness_count(tx), "witness count mismatch");
-        assert_eq(p2pkh_hex_first_input_hash, h(Wally.tx_input_get_txhash(tx_input, null)), "hash of prevout 0 from tx_input does not match");
+        assert_eq(p2pkh_hex_first_input_hash, h(Wally.tx_input_get_txhash(tx_input)), "hash of prevout 0 from tx_input does not match");
         assert_eq(p2pkh_hex_first_input_script, h(tx_input_get_script), "script hex mismatch");
         assert_eq(4294967295L, Wally.tx_input_get_sequence(tx_input), "sequence mismatch from tx_input");
         assert_eq(118307L, Wally.tx_get_output_satoshi(tx,0), "output 0, satoshi mismatch");
