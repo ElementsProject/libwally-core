@@ -233,29 +233,25 @@ int wally_asset_rangeproof(uint64_t value,
 {
     const secp256k1_context *ctx = secp_ctx();
     struct sha256 nonce_hash;
-    int ret = WALLY_EINVAL;
+    int ret;
 
     if (!ctx)
         return WALLY_ENOMEM;
 
     ret = get_nonce_hash(ctx, pub_key, pub_key_len, priv_key, priv_key_len, &nonce_hash);
-    if (ret != WALLY_OK)
-        goto cleanup;
+    if (ret == WALLY_OK)
+        ret = wally_asset_rangeproof_with_nonce(value,
+                                                nonce_hash.u.u8, SHA256_LEN,
+                                                asset, asset_len,
+                                                abf, abf_len,
+                                                vbf, vbf_len,
+                                                commitment, commitment_len,
+                                                extra, extra_len,
+                                                generator, generator_len,
+                                                min_value, exp, min_bits,
+                                                bytes_out, len, written);
 
-    ret = wally_asset_rangeproof_with_nonce(value,
-                                            nonce_hash.u.u8, SHA256_LEN,
-                                            asset, asset_len,
-                                            abf, abf_len,
-                                            vbf, vbf_len,
-                                            commitment, commitment_len,
-                                            extra, extra_len,
-                                            generator, generator_len,
-                                            min_value, exp, min_bits,
-                                            bytes_out, len, written);
-
-cleanup:
     wally_clear(&nonce_hash, sizeof(nonce_hash));
-
     return ret;
 }
 
@@ -331,22 +327,18 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
         return WALLY_ENOMEM;
 
     ret = get_nonce_hash(ctx, pub_key, pub_key_len, priv_key, priv_key_len, &nonce_hash);
-    if (ret != WALLY_OK)
-        goto cleanup;
+    if (ret == WALLY_OK)
+        ret = wally_asset_unblind_with_nonce(nonce_hash.u.u8, SHA256_LEN,
+                                             proof, proof_len,
+                                             commitment, commitment_len,
+                                             extra, extra_len,
+                                             generator, generator_len,
+                                             asset_out, asset_out_len,
+                                             abf_out, abf_out_len,
+                                             vbf_out, vbf_out_len,
+                                             value_out);
 
-    ret = wally_asset_unblind_with_nonce(nonce_hash.u.u8, SHA256_LEN,
-                                         proof, proof_len,
-                                         commitment, commitment_len,
-                                         extra, extra_len,
-                                         generator, generator_len,
-                                         asset_out, asset_out_len,
-                                         abf_out, abf_out_len,
-                                         vbf_out, vbf_out_len,
-                                         value_out);
-
-cleanup:
     wally_clear(&nonce_hash, sizeof(nonce_hash));
-
     return ret;
 }
 
