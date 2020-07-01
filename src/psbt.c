@@ -2218,7 +2218,7 @@ static int get_txid(
     size_t calc, written;
     int ret = WALLY_OK;
 
-    if (!tx || !txid || txid_len != SHA256_LEN) {
+    if (!tx || !txid || txid_len != WALLY_TXHASH_LEN) {
         return WALLY_EINVAL;
     }
 
@@ -2229,7 +2229,7 @@ static int get_txid(
         return WALLY_ENOMEM;
     }
     if ((ret = wally_tx_to_bytes(tx, 0, bytes, calc, &written)) == WALLY_OK) {
-        ret = wally_sha256d(bytes, written, txid, SHA256_LEN);
+        ret = wally_sha256d(bytes, written, txid, txid_len);
     }
 
     wally_free(bytes);
@@ -2445,7 +2445,7 @@ int wally_combine_psbts(
     struct wally_psbt **output)
 {
     struct wally_psbt *result;
-    unsigned char global_txid[SHA256_LEN];
+    unsigned char global_txid[WALLY_TXHASH_LEN];
     size_t i, j;
     int ret = WALLY_OK;
 
@@ -2456,7 +2456,7 @@ int wally_combine_psbts(
     }
 
     /* Get info from the first psbt and use it as the template */
-    if ((ret = get_txid(psbts->tx, global_txid, SHA256_LEN)) != WALLY_OK) {
+    if ((ret = get_txid(psbts->tx, global_txid, sizeof(global_txid))) != WALLY_OK) {
         return ret;
     }
 
@@ -2471,13 +2471,13 @@ int wally_combine_psbts(
     result->num_outputs = psbts[0].num_outputs;
 
     for (i = 0; i < psbts_len; ++i) {
-        unsigned char txid[SHA256_LEN];
+        unsigned char txid[sizeof(global_txid)];
 
         /* Compare the txids */
-        if ((ret = get_txid(psbts[i].tx, txid, SHA256_LEN)) != WALLY_OK) {
+        if ((ret = get_txid(psbts[i].tx, txid, sizeof(txid))) != WALLY_OK) {
             goto fail;
         }
-        if (memcmp(global_txid, txid, SHA256_LEN) != 0) {
+        if (memcmp(global_txid, txid, sizeof(txid)) != 0) {
             ret = WALLY_EINVAL;
             goto fail;
         }
@@ -2626,12 +2626,12 @@ int wally_sign_psbt(
         }
 
         if (input->non_witness_utxo) {
-            unsigned char txid[SHA256_LEN];
+            unsigned char txid[WALLY_TXHASH_LEN];
 
-            if ((ret = get_txid(input->non_witness_utxo, txid, SHA256_LEN)) != WALLY_OK) {
+            if ((ret = get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK) {
                 return ret;
             }
-            if (memcmp((char *)txid, (char *)txin->txhash, SHA256_LEN) != 0) {
+            if (memcmp((char *)txid, (char *)txin->txhash, sizeof(txid)) != 0) {
                 return WALLY_EINVAL;
             }
 

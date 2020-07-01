@@ -578,7 +578,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_input_get_script_len);
 %rename("_tx_input_get_sequence") wally_tx_input_get_sequence;
 %returns_size_t(_tx_input_get_sequence);
-%returns_array_(wally_tx_input_get_txhash, 2, 3, SHA256_LEN);
+%returns_array_(wally_tx_input_get_txhash, 2, 3, WALLY_TXHASH_LEN);
 %rename("_tx_input_get_witness") wally_tx_input_get_witness;
 %returns_size_t(_tx_input_get_witness);
 %returns_size_t(wally_tx_input_get_witness_len);

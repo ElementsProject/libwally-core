@@ -899,7 +899,7 @@ WALLY_CORE_API int wally_tx_get_elements_signature_hash(
  * Calculate the asset entropy from a prevout and the Ricardian contract hash.
  *
  * :param txhash: The prevout transaction hash.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``SHA256_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
  * :param index: The prevout index.
  * :param contract_hash: The issuer specified Ricardian contract hash.
  * :param contract_hash_len: Size of ``contract hash`` in bytes. Must be ``SHA256_LEN``.
