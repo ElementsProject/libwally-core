@@ -9,7 +9,6 @@
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
 #include "src/secp256k1/include/secp256k1_whitelist.h"
 #include "secp256k1/include/secp256k1_ecdh.h"
-#include "ccan/ccan/crypto/sha256/sha256.h"
 #include <stdbool.h>
 
 #ifdef BUILD_ELEMENTS
@@ -39,29 +38,23 @@ static int get_commitment(const secp256k1_context *ctx,
 static int get_nonce_hash(const secp256k1_context *ctx,
                           const unsigned char *pub_key, size_t pub_key_len,
                           const unsigned char *priv_key, size_t priv_key_len,
-                          struct sha256 *dest) {
+                          unsigned char *bytes_out, size_t len) {
     secp256k1_pubkey pub;
     unsigned char nonce[32];
     int ret = WALLY_EINVAL;
 
-    if (!pub_key || pub_key_len != EC_PUBLIC_KEY_LEN ||
-        !pubkey_parse(ctx, &pub, pub_key, pub_key_len) ||
-        wally_ec_private_key_verify(priv_key, priv_key_len) != WALLY_OK ||
-        !dest)
-        goto cleanup;
-
-    /* Create the nonce */
-    if (!secp256k1_ecdh(ctx, nonce, &pub, priv_key, NULL, NULL)) {
-        ret = WALLY_ERROR;
-        goto cleanup;
+    /* Note that only compressed public keys are supported */
+    if (pub_key && pub_key_len == EC_PUBLIC_KEY_LEN &&
+        pubkey_parse(ctx, &pub, pub_key, pub_key_len) &&
+        wally_ec_private_key_verify(priv_key, priv_key_len) == WALLY_OK &&
+        bytes_out && len == SHA256_LEN) {
+        /* Create the nonce */
+        if (secp256k1_ecdh(ctx, nonce, &pub, priv_key, NULL, NULL))
+            ret = wally_sha256(nonce, sizeof(nonce), bytes_out, len);
+        else
+            ret = WALLY_ERROR;
     }
-    wally_sha256(nonce, sizeof(nonce), dest->u.u8, sizeof(*dest));
-
-    ret = WALLY_OK;
-
-cleanup:
     wally_clear_2(&pub, sizeof(pub), nonce, sizeof(nonce));
-
     return ret;
 }
 
@@ -232,16 +225,17 @@ int wally_asset_rangeproof(uint64_t value,
                            size_t *written)
 {
     const secp256k1_context *ctx = secp_ctx();
-    struct sha256 nonce_hash;
+    unsigned char nonce_hash[SHA256_LEN];
     int ret;
 
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ret = get_nonce_hash(ctx, pub_key, pub_key_len, priv_key, priv_key_len, &nonce_hash);
+    ret = get_nonce_hash(ctx, pub_key, pub_key_len, priv_key, priv_key_len,
+                         nonce_hash, sizeof(nonce_hash));
     if (ret == WALLY_OK)
         ret = wally_asset_rangeproof_with_nonce(value,
-                                                nonce_hash.u.u8, SHA256_LEN,
+                                                nonce_hash, sizeof(nonce_hash),
                                                 asset, asset_len,
                                                 abf, abf_len,
                                                 vbf, vbf_len,
@@ -251,7 +245,7 @@ int wally_asset_rangeproof(uint64_t value,
                                                 min_value, exp, min_bits,
                                                 bytes_out, len, written);
 
-    wally_clear(&nonce_hash, sizeof(nonce_hash));
+    wally_clear(nonce_hash, sizeof(nonce_hash));
     return ret;
 }
 
@@ -320,15 +314,16 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                         uint64_t *value_out)
 {
     const secp256k1_context *ctx = secp_ctx();
-    struct sha256 nonce_hash;
-    int ret = WALLY_EINVAL;
+    unsigned char nonce_hash[SHA256_LEN];
+    int ret;
 
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ret = get_nonce_hash(ctx, pub_key, pub_key_len, priv_key, priv_key_len, &nonce_hash);
+    ret = get_nonce_hash(ctx, pub_key, pub_key_len, priv_key, priv_key_len,
+                         nonce_hash, sizeof(nonce_hash));
     if (ret == WALLY_OK)
-        ret = wally_asset_unblind_with_nonce(nonce_hash.u.u8, SHA256_LEN,
+        ret = wally_asset_unblind_with_nonce(nonce_hash, sizeof(nonce_hash),
                                              proof, proof_len,
                                              commitment, commitment_len,
                                              extra, extra_len,
@@ -338,7 +333,7 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
                                              vbf_out, vbf_out_len,
                                              value_out);
 
-    wally_clear(&nonce_hash, sizeof(nonce_hash));
+    wally_clear(nonce_hash, sizeof(nonce_hash));
     return ret;
 }
 
