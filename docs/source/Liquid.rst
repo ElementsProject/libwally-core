@@ -39,7 +39,7 @@ network version.
     :start-after: start-create_conf_address
     :end-before: end-create_conf_address
 
-The confidential address can now be passed to liquid-cli to received
+The confidential address can now be passed to liquid-cli to receive
 funds. We'll send 1.1 BTC to our confidential address and save the raw
 hex transaction for further processing.
 

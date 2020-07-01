@@ -49,7 +49,7 @@ WALLY_CORE_API int wally_asset_generator_from_bytes(
  * :param abf_len: Length of ``abf`` in bytes. Must be ``values_len`` * ``BLINDING_FACTOR_LEN``.
  * :param vbf: Array of bytes representing (``values_len`` - 1) value blinding factors.
  * :param vbf_len: Length of ``vbf`` in bytes. Must be (``values_len`` - 1) * ``BLINDING_FACTOR_LEN``.
- * :param bytes_out: Buffer to received the final value blinding factor.
+ * :param bytes_out: Buffer to receive the final value blinding factor.
  * :param len: Length of ``bytes_out``. Must be ``BLINDING_FACTOR_LEN``.
  */
 WALLY_CORE_API int wally_asset_final_vbf(
