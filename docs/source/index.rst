@@ -13,6 +13,7 @@ libwally-core documentation
    bip39
    psbt
    script
+   symmetric
    transaction
    elements
 

@@ -31,7 +31,7 @@ WALLY_CORE_API int wally_symmetric_key_from_seed(
  * Create a new child symmetric key from a parent key.
  *
  * :param bytes: Parent key to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be one of ``HMAC_SHA512_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be ``HMAC_SHA512_LEN``.
  * :param version: Version byte to prepend to ``label``. Must be zero.
  * :param label: Label to use for the child.
  * :param label_len: Size of ``label`` in bytes.
@@ -51,4 +51,4 @@ WALLY_CORE_API int wally_symmetric_key_from_parent(
 }
 #endif
 
-#endif /* LIBWALLY_CORE_ELEMENTS_H */
+#endif /* LIBWALLY_CORE_SYMMETRIC_H */
