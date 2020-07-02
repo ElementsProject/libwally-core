@@ -68,6 +68,8 @@ int wally_bip32_key_to_addr_segwit(const struct ext_key *hdkey, const char *addr
         return WALLY_EINVAL;
 
     ret = wally_addr_segwit_from_bytes(witness_program_bytes, HASH160_LEN + 2, addr_family, flags, output);
+
+    wally_clear(witness_program_bytes, sizeof(witness_program_bytes));
     return ret;
 }
 
