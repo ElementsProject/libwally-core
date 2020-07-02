@@ -199,6 +199,6 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
     }
     ret = wally_base58_from_bytes(bytes, sizeof(bytes), BASE58_FLAG_CHECKSUM, output);
     wally_clear(bytes, sizeof(bytes));
-    return WALLY_OK;
+    return ret;
 
 }
