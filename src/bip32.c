@@ -85,12 +85,6 @@ static bool key_is_private(const struct ext_key *hdkey)
     return hdkey->priv_key[0] == BIP32_FLAG_KEY_PRIVATE;
 }
 
-static void key_strip_private_key(struct ext_key *key_out)
-{
-    key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
-    wally_clear(key_out->priv_key + 1, sizeof(key_out->priv_key) - 1);
-}
-
 /* Compute a public key from a private key */
 static int key_compute_pub_key(struct ext_key *key_out)
 {
@@ -324,7 +318,7 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
             return wipe_key_fail(key_out); /* Public key data in private key */
 
         copy_in(key_out->pub_key, bytes, sizeof(key_out->pub_key));
-        key_strip_private_key(key_out);
+        bip32_key_strip_private_key(key_out);
     }
 
     key_compute_hash160(key_out);
@@ -481,7 +475,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
         else
             key_out->version = BIP32_VER_TEST_PUBLIC;
 
-        key_strip_private_key(key_out);
+        bip32_key_strip_private_key(key_out);
     }
 
     key_out->depth = hdkey->depth + 1;
@@ -749,11 +743,12 @@ int bip32_key_from_base58_alloc(const char *base58,
     return ret;
 }
 
-int bip32_key_strip_private_key(struct ext_key *hdkey)
+int bip32_key_strip_private_key(struct ext_key *key_out)
 {
-    if (!hdkey)
+    if (!key_out)
         return WALLY_EINVAL;
-    key_strip_private_key(hdkey);
+    key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
+    wally_clear(key_out->priv_key + 1, sizeof(key_out->priv_key) - 1);
     return WALLY_OK;
 }
 

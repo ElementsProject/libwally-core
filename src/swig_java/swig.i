@@ -380,8 +380,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(bip32_key_from_parent_path_alloc, ext_key);
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
-%returns_struct(bip32_key_with_tweak_from_parent_path_alloc, ext_key);
-%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
 %returns_size_t(bip32_key_get_child_num);
@@ -395,9 +393,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(bip32_key_init_alloc, ext_key);
 %rename("bip32_key_init") bip32_key_init_alloc;
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);
+%returns_void__(bip32_key_strip_private_key);
 %returns_string(bip32_key_to_base58);
 %returns_struct(bip32_key_unserialize_alloc, ext_key);
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
+%returns_struct(bip32_key_with_tweak_from_parent_path_alloc, ext_key);
+%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALIZED_LEN);
 %returns_string(bip38_from_private_key);
 %returns_array_(bip38_raw_to_private_key, 6, 7, 32);
