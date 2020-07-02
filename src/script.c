@@ -1000,6 +1000,8 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
                 secp256k1_pubkey pub_key_tweaked;
                 const secp256k1_pubkey *pub_key_combination[2];
                 secp256k1_pubkey pub_key_combined;
+                size_t push_size;
+
                 if (!pubkey_parse(ctx, &pub_key, p + 1, EC_PUBLIC_KEY_LEN))
                     return WALLY_ERROR;
                 memcpy(&pub_key_tweaked, &pub_key, sizeof(pub_key));
@@ -1009,9 +1011,8 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
                     return WALLY_ERROR;
                 if (!pubkey_serialize(ctx, ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
                     return WALLY_ERROR;
-                if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, written)) != WALLY_OK)
+                if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, &push_size)) != WALLY_OK)
                     return ret;
-
                 /* sanity checks as per elementsd */
                 if (!pubkey_create(ctx, &pub_key_from_tweak, tweak))
                     return WALLY_ERROR;
