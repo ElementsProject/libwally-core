@@ -72,6 +72,17 @@ public class test_bip32 {
             throw new RuntimeException("Failed to recover pubkey from signature");
         }
 
+        // Test pubkey negation
+        final byte[] pubkey_negated = Wally.ec_public_key_negate(pubkey_recovered);
+        if (Arrays.equals(pubkey_recovered, pubkey_negated)) {
+            throw new RuntimeException("Failed to negate pubkey");
+        }
+
+        final byte[] pubkey_unnegated = Wally.ec_public_key_negate(pubkey_negated);
+        if (!Arrays.equals(pubkey_recovered, pubkey_unnegated)) {
+            throw new RuntimeException("Double negation did not return original pubkey");
+        }
+
         Wally.bip32_key_free(initKey);
         Wally.bip32_key_free(derivedKey);
         Wally.bip32_key_free(unserialized);

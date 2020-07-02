@@ -123,6 +123,10 @@
       return ec_public_key_from_private_key(jarg1, null);
   }
 
+  public final static byte[] ec_public_key_negate(byte[] jarg1) {
+      return ec_public_key_negate(jarg1, null);
+  }
+
   public final static byte[] ec_sig_from_bytes(byte[] jarg1, byte[] jarg2, long jarg3) {
       return ec_sig_from_bytes(jarg1, jarg2, jarg3, null);
   }
