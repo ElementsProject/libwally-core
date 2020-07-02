@@ -171,7 +171,7 @@ static int blech32_convert_bits(uint8_t *out, size_t *outlen, int outbits, const
 static int blech32_addr_encode(char *output, const char *hrp, int witver, const uint8_t *witprog, size_t witprog_len) {
     uint8_t data[WALLY_BLECH32_MAXLEN];
     size_t datalen = 0;
-    if (witver > 16) goto fail;
+    if (witver < 0 || witver > 16) goto fail;
     if (witver == 0 && witprog_len != 53 && witprog_len != 65) goto fail;
     if (witprog_len < 2 || witprog_len > 65) goto fail;
     data[0] = witver;
