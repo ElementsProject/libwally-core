@@ -174,6 +174,9 @@ AX_CHECK_COMPILE_FLAG([-Wpedantic], [AM_CFLAGS="-Wpedantic $AM_CFLAGS"])
 AX_CHECK_COMPILE_FLAG([-Wextra], [AM_CFLAGS="-Wextra $AM_CFLAGS"])
 AX_CHECK_COMPILE_FLAG([-Wall], [AM_CFLAGS="-Wall $AM_CFLAGS"])
 
+# Needed for Ubuntu 20.04LTS when compiling as a library
+AX_CHECK_COMPILE_FLAG([-D_DEFAULT_SOURCE=1], [AM_CFLAGS="-D_DEFAULT_SOURCE=1 $AM_CFLAGS"])
+
 # Disable some unhelpful errors from those enabled above
 AX_CHECK_COMPILE_FLAG([-Wno-unused-function], [AM_CFLAGS="$AM_CFLAGS -Wno-unused-function"])
 AX_CHECK_COMPILE_FLAG([-Wno-long-long], [AM_CFLAGS="$AM_CFLAGS -Wno-long-long"])
