@@ -557,6 +557,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_get_weight);
 %returns_size_t(wally_tx_get_witness_count);
 %returns_struct(wally_tx_init_alloc, wally_tx);
+%returns_struct(wally_tx_clone, wally_tx);
 %rename("tx_init") wally_tx_init_alloc;
 %returns_void__(wally_tx_input_free);
 %returns_array_(wally_tx_input_get_blinding_nonce, 2, 3, SHA256_LEN);

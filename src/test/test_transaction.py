@@ -24,33 +24,41 @@ class TransactionTests(unittest.TestCase):
 
     def test_serialization(self):
         """Testing serialization and deserialization"""
+        tx_out = pointer(wally_tx())
+        tx_copy = pointer(wally_tx())
         for args in [
-            (utf8(''), 0, pointer(wally_tx())), # Empty hex
-            (utf8('00'*5), 0, pointer(wally_tx())), # Short hex
+            (utf8(''), 0, tx_out), # Empty hex
+            (utf8('00'*5), 0, tx_out), # Short hex
             (TX_FAKE_HEX, 0, None), # Empty output
-            (TX_FAKE_HEX, 4, pointer(wally_tx())), # Unsupported flag
-            (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, pointer(wally_tx())), # Invalid witness flag
+            (TX_FAKE_HEX, 4, tx_out), # Unsupported flag
+            (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, tx_out), # Invalid witness flag
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_from_hex(*args))
 
         # deserialization is allowed, but the opposite is not
         for args in [
-            (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, pointer(wally_tx())), # No inputs
-            (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, pointer(wally_tx())), # No outputs
-            (TX_FAKE_HEX, 2, pointer(wally_tx())), # Elements flag must not be set for serialization
+            (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, tx_out), # No inputs
+            (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, tx_out), # No outputs
+            (TX_FAKE_HEX, 2, tx_out), # Elements flag must not be set for serialization
         ]:
             self.assertEqual(WALLY_OK, wally_tx_from_hex(*args))
             self.assertEqual(WALLY_EINVAL, wally_tx_to_hex(args[2][0], 0)[0])
+            # Check the partial transaction can be cloned
+            self.assertEqual(WALLY_OK, wally_tx_clone(tx_out, 0, tx_copy))
 
         for args in [
-            (TX_HEX, 0, pointer(wally_tx())),
-            (utf8('00')+TX_HEX[2:], 0, pointer(wally_tx())),
-            (utf8('ff')+TX_FAKE_HEX[2:], 0, pointer(wally_tx())),
-            (TX_FAKE_HEX, 0, pointer(wally_tx())),
-            (TX_WITNESS_HEX, 0, pointer(wally_tx())),
+            (TX_HEX, 0, tx_out),
+            (utf8('00')+TX_HEX[2:], 0, tx_out),
+            (utf8('ff')+TX_FAKE_HEX[2:], 0, tx_out),
+            (TX_FAKE_HEX, 0, tx_out),
+            (TX_WITNESS_HEX, 0, tx_out),
             ]:
             self.assertEqual(WALLY_OK, wally_tx_from_hex(*args))
-            self.assertEqual(args[0], utf8(self.tx_serialize_hex(args[2][0])))
+            tx_hex = utf8(self.tx_serialize_hex(args[2][0]))
+            self.assertEqual(args[0], tx_hex)
+            # Check the transaction can be cloned and serializes to the same hex
+            self.assertEqual(WALLY_OK, wally_tx_clone(tx_out, 0, tx_copy))
+            self.assertEqual(tx_hex, utf8(self.tx_serialize_hex(tx_copy)))
 
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""

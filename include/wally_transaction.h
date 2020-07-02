@@ -270,6 +270,18 @@ WALLY_CORE_API int wally_tx_init_alloc(
     struct wally_tx **output);
 
 /**
+ * Create a new copy of a transaction.
+ *
+ * :param tx: The transaction to clone.
+ * :param flags: Flags controlling script creation. Must be 0.
+ * :param output: Destination for the resulting transaction copy.
+ */
+WALLY_CORE_API int wally_tx_clone(
+    const struct wally_tx *tx,
+    uint32_t flags,
+    struct wally_tx **output);
+
+/**
  * Add a transaction input to a transaction.
  *
  * :param tx: The transaction to add the input to.

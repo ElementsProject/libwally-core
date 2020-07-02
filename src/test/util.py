@@ -280,6 +280,7 @@ for f in (
     ('wally_tx_to_bytes', c_int, [POINTER(wally_tx), c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_tx_from_bytes', c_int, [c_void_p, c_ulong, c_uint, POINTER(POINTER(wally_tx))]),
     ('wally_tx_init_alloc', c_int, [c_uint, c_uint, c_ulong, c_ulong, POINTER(POINTER(wally_tx))]),
+    ('wally_tx_clone', c_int, [POINTER(wally_tx), c_uint, POINTER(POINTER(wally_tx))]),
     ('wally_tx_free', c_int, [POINTER(wally_tx)]),
     ('wally_tx_get_length', c_int, [POINTER(wally_tx), c_uint, c_ulong_p]),
     ('wally_tx_get_vsize', c_int, [POINTER(wally_tx), c_ulong_p]),

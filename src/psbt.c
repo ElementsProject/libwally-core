@@ -448,7 +448,7 @@ int wally_psbt_input_set_non_witness_utxo(
     int ret = WALLY_OK;
     struct wally_tx *result_non_witness_utxo;
 
-    if ((ret = clone_tx(non_witness_utxo, &result_non_witness_utxo)) != WALLY_OK) {
+    if ((ret = wally_tx_clone(non_witness_utxo, 0, &result_non_witness_utxo)) != WALLY_OK) {
         return ret;
     }
     wally_tx_free(input->non_witness_utxo);
@@ -787,7 +787,7 @@ int wally_psbt_set_global_tx(
         }
     }
 
-    if ((ret = clone_tx(tx, &psbt->tx)) != WALLY_OK) {
+    if ((ret = wally_tx_clone(tx, 0, &psbt->tx)) != WALLY_OK) {
         goto fail;
     }
 
@@ -2302,7 +2302,7 @@ static int merge_input_into(
     int ret = WALLY_OK;
     size_t i, j;
 
-    if (!dst->non_witness_utxo && src->non_witness_utxo && (ret = clone_tx(src->non_witness_utxo, &dst->non_witness_utxo)) != WALLY_OK) {
+    if (!dst->non_witness_utxo && src->non_witness_utxo && (ret = wally_tx_clone(src->non_witness_utxo, 0, &dst->non_witness_utxo)) != WALLY_OK) {
         return ret;
     }
     if (!dst->witness_utxo && src->witness_utxo && (ret = wally_tx_output_init_alloc(src->witness_utxo->satoshi, src->witness_utxo->script, src->witness_utxo->script_len, &dst->witness_utxo)) != WALLY_OK) {
@@ -2464,7 +2464,7 @@ int wally_combine_psbts(
         return ret;
     }
 
-    if ((ret = clone_tx(psbts[0].tx, &result->tx)) != WALLY_OK) {
+    if ((ret = wally_tx_clone(psbts[0].tx, 0, &result->tx)) != WALLY_OK) {
         goto fail;
     }
     result->num_inputs = psbts[0].num_inputs;
@@ -2942,7 +2942,7 @@ int wally_extract_psbt(
         return WALLY_EINVAL;
     }
 
-    clone_tx(psbt->tx, &result);
+    wally_tx_clone(psbt->tx, 0, &result);
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
