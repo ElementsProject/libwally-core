@@ -2,49 +2,32 @@
 
 ## Version 0.7.8
 
-- Deprecate Python 2 wheels
-- Honor CFLAGS, default to O2
-- Bug fixing
+- Python 2 wheels are now deprecated. Users should move to Python 3 as soon as possible.
 
 ## Version 0.7.7
 
-- Expose wally_psbt_get_length
-- Add wally_scriptpubkey_to_address
-- Return written bytes in asset_pak_whitelistproof
-- Elements bug fixes
+- API change of wally_asset_pak_whitelistproof to return the number of bytes written.
 
 ## Version 0.7.6
 
-- Add flag to sort multisig keys (BIP67)
-- Add bip32_key_get_fingerprint
-- Add Liquid developer guide
-- Add liquid support to address_to_scriptpubkey
+- No API changes
 
 ## Version 0.7.5
 
-- Add support for P2PKH, P2SH-P2WPKH, P2WPKH address derivation from BIP32 key
-- Add support for P2KH and P2SH address parsing
-- Add support for PSBT
-- Add support for blech32
-- Add support for pegin and pegout
-- Bug fixing, build updates and improvements
+- No API changes
 
 ## Version 0.7.4
 
-- Add support for recoverable signatures
-- Generalize Elements function to use external nonces
-- Expose blinding key functions to js wrapper
-- doc improvement and bugs fixing
+- No API changes
 
 ## Version 0.7.3
 
-- Exposed ECDH, added py3.7 x86_64 linux wheels to released artifacts, updated
-  JS bindings to support latest nodejs, doc typos and bug fixing.
+- No API changes
 
 ## Version 0.7.2
 
 - API change of wally_tx_to_bytes and wally_tx_to_hex to not accept
-  WALLY_TX_FLAG_USE_ELEMENTS bit set in flags. You should remove such flag when
+  WALLY_TX_FLAG_USE_ELEMENTS set in flags. You should remove this flag when
   upgrading. This change affects elements transactions only.
 
 ## Version 0.6.5
