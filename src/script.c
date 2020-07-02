@@ -1097,18 +1097,15 @@ int wally_witness_p2wpkh_from_der(
     struct wally_tx_witness_stack **witness)
 {
     unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    size_t written;
     int ret;
-    size_t script_sig_len;
 
-    if ((ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
-        return ret;
-    }
+    ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, script_sig, sizeof(script_sig), &written);
 
-    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
-        return ret;
-    }
+    if (ret == WALLY_OK)
+        ret = scriptsig_to_witness(script_sig, written, witness);
 
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_witness_p2wpkh_from_sig(
@@ -1120,18 +1117,15 @@ int wally_witness_p2wpkh_from_sig(
     struct wally_tx_witness_stack **witness)
 {
     unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    size_t written;
     int ret;
-    size_t script_sig_len;
 
-    if ((ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
-        return ret;
-    }
+    ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, script_sig, sizeof(script_sig), &written);
 
-    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
-        return ret;
-    }
+    if (ret == WALLY_OK)
+        ret = scriptsig_to_witness(script_sig, written, witness);
 
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_witness_multisig_from_bytes(
