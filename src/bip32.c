@@ -338,7 +338,7 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes, size_t bytes_len,
 
     ALLOC_KEY();
     ret = bip32_key_unserialize(bytes, bytes_len, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
@@ -505,7 +505,7 @@ int bip32_key_from_parent_alloc(const struct ext_key *hdkey,
 
     ALLOC_KEY();
     ret = bip32_key_from_parent(hdkey, child_num, flags, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
@@ -561,7 +561,7 @@ int bip32_key_from_parent_path_alloc(const struct ext_key *hdkey,
     ALLOC_KEY();
     ret = bip32_key_from_parent_path(hdkey, child_path, child_path_len,
                                      flags, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
@@ -608,7 +608,7 @@ int bip32_key_with_tweak_from_parent_path_alloc(const struct ext_key *hdkey,
     ALLOC_KEY();
     ret = bip32_key_with_tweak_from_parent_path(hdkey, child_path, child_path_len,
                                                 flags, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = NULL;
     }
@@ -742,7 +742,7 @@ int bip32_key_from_base58_alloc(const char *base58,
 
     ALLOC_KEY();
     ret = bip32_key_from_base58(base58, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
