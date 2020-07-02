@@ -279,9 +279,9 @@ int wally_confidential_addr_from_addr_segwit(
     if (output)
         *output = NULL;
 
-    if (!address || !addr_family || !confidential_addr_family || !pub_key
-        || pub_key_len != EC_PUBLIC_KEY_LEN || !output
-        || strlen(confidential_addr_family) >= WALLY_BLECH32_MAXLEN)
+    if (!address || !addr_family || !confidential_addr_family || !pub_key ||
+        pub_key_len != EC_PUBLIC_KEY_LEN || !output ||
+        strlen(confidential_addr_family) >= WALLY_BLECH32_MAXLEN)
         return WALLY_EINVAL;
 
     /* get v0 witness programs script */
