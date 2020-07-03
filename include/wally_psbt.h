@@ -497,11 +497,11 @@ WALLY_CORE_API int wally_psbt_from_bytes(
  * Get length of psbt when serialized to bytes.
  *
  * :param psbt: the PSBT.
- * :param len: Length in bytes when serialized.
+ * :param written: Destination for the length in bytes when serialized.
  */
 WALLY_CORE_API int wally_psbt_get_length(
     const struct wally_psbt *psbt,
-    size_t *len);
+    size_t *written);
 
 /**
  * Serialize a psbt to bytes.

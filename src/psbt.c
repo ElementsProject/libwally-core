@@ -1757,15 +1757,15 @@ static int psbt_output_get_length(
 
 int wally_psbt_get_length(
     const struct wally_psbt *psbt,
-    size_t *len)
+    size_t *written)
 {
     int ret;
     size_t out, tx_len, i;
-    if (!len) {
+    if (!written) {
         return WALLY_EINVAL;
     }
 
-    *len = 0;
+    *written = 0;
     out = 5; /* Start with 5 byte magic */
 
     /* Global tx */
@@ -1802,7 +1802,7 @@ int wally_psbt_get_length(
         out += output_len;
     }
 
-    *len = out;
+    *written = out;
     return WALLY_OK;
 }
 
