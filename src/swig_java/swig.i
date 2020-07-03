@@ -384,6 +384,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
 %returns_size_t(bip32_key_get_child_num);
 %returns_size_t(bip32_key_get_depth);
+%returns_array_(bip32_key_get_fingerprint, 2, 3, BIP32_KEY_FINGERPRINT_LEN);
 %returns_array_(bip32_key_get_hash160, 2, 3, member_size(ext_key, hash160));
 %returns_array_(bip32_key_get_parent160, 2, 3, member_size(ext_key, parent160));
 %returns_array_(bip32_key_get_priv_key, 2, 3, member_size(ext_key, priv_key) - 1);

@@ -56,6 +56,10 @@
       return bip32_key_get_priv_key(jarg1, null);
   }
 
+  public final static byte[] bip32_key_get_fingerprint(Object jarg1) {
+      return bip32_key_get_fingerprint(jarg1, null);
+  }
+
   public final static byte[] bip32_key_get_hash160(Object jarg1) {
       return bip32_key_get_hash160(jarg1, null);
   }

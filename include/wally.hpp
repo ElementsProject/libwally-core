@@ -320,6 +320,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), out); \
 }
 
+#define WALLY_FN_P_B(F, N) template <class P1, class O> inline int F(const P1 &p1, O & out) { \
+        return ::N(WALLYP(p1), WALLYO(out)); \
+}
+
 #define WALLY_FN_P_BS(F, N) template <class P1, class O> inline int F(const P1 &p1, O & out, size_t * written = 0) { \
         size_t n; \
         int ret = ::N(WALLYP(p1), WALLYO(out), written ? written : &n); \
@@ -438,6 +442,7 @@ WALLY_FN_PS_A(bip39_get_word, bip39_get_word)
 WALLY_FN_P_A(bip32_key_from_base58_alloc, bip32_key_from_base58_alloc)
 WALLY_FN_P_A(bip39_get_languages, bip39_get_languages)
 WALLY_FN_P_A(bip39_get_wordlist, bip39_get_wordlist)
+WALLY_FN_P_B(bip32_key_get_fingerprint, bip32_key_get_fingerprint)
 WALLY_FN_P_BS(hex_to_bytes, wally_hex_to_bytes)
 WALLY_FN_P_S(base58_get_length, wally_base58_get_length)
 WALLY_FN_P_S(wif_is_uncompressed, wally_wif_is_uncompressed)
