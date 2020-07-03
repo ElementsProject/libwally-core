@@ -1,5 +1,10 @@
 # Changes
 
+## Version 0.7.9
+
+- FINGERPRINT_LEN was renamed to BIP32_KEY_FINGERPRINT_LEN for
+  consistency - You should change any references in your source when upgrading.
+
 ## Version 0.7.8
 
 - Python 2 wheels are now deprecated. Users should move to Python 3 as soon as possible.

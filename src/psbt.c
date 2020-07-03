@@ -93,7 +93,7 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
 {
     size_t latest;
 
-    if (fingerprint_len != FINGERPRINT_LEN || (pubkey_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN && pubkey_len != EC_PUBLIC_KEY_LEN)) {
+    if (fingerprint_len != BIP32_KEY_FINGERPRINT_LEN || (pubkey_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN && pubkey_len != EC_PUBLIC_KEY_LEN)) {
         return WALLY_EINVAL;
     }
 
@@ -137,7 +137,7 @@ static int add_keypath_item(struct wally_keypath_map *keypaths, struct wally_key
     return wally_add_new_keypath(keypaths, item->pubkey,
                                  EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
                                  item->origin.fingerprint,
-                                 FINGERPRINT_LEN,
+                                 BIP32_KEY_FINGERPRINT_LEN,
                                  item->origin.path,
                                  item->origin.path_len);
 }

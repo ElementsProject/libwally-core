@@ -38,7 +38,7 @@ struct wally_psbt;
 
 /** Key origin data. Contains a BIP 32 fingerprint and the derivation path */
 struct wally_key_origin_info {
-    unsigned char fingerprint[FINGERPRINT_LEN];
+    unsigned char fingerprint[BIP32_KEY_FINGERPRINT_LEN];
     uint32_t *path;
     size_t path_len;
 };
@@ -149,7 +149,7 @@ WALLY_CORE_API int wally_keypath_map_free(struct wally_keypath_map *keypaths);
  * :param pubkey: The pubkey to add
  * :param pubkey_len: The length of the pubkey. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``
  * :param fingerprint: The master key fingerprint for the pubkey
- * :param fingerprint_len: The length of the fingerprint. Must be ``FINGERPRINT_LEN``
+ * :param fingerprint_len: The length of the fingerprint. Must be ``BIP32_KEY_FINGERPRINT_LEN``
  * :param path: The BIP32 derivation path for the pubkey
  * :param path_len: The number of items in path
  */

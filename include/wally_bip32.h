@@ -13,7 +13,7 @@ extern "C" {
 #define BIP32_ENTROPY_LEN_512 64
 
 /** Length of a BIP32 key fingerprint */
-#define FINGERPRINT_LEN 4
+#define BIP32_KEY_FINGERPRINT_LEN 4
 
 /** Length of an ext_key serialized using BIP32 format */
 #define BIP32_SERIALIZED_LEN 78
@@ -335,7 +335,7 @@ WALLY_CORE_API int bip32_key_strip_private_key(
  *
  * :param hdkey: The extended key.
  * :param bytes_out: Destination for the fingerprint.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``FINGERPRINT_LEN``.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
  */
 WALLY_CORE_API int bip32_key_get_fingerprint(
     struct ext_key *hdkey,
