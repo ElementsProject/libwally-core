@@ -12,6 +12,9 @@ extern "C" {
 #define BIP32_ENTROPY_LEN_256 32
 #define BIP32_ENTROPY_LEN_512 64
 
+/** Length of a BIP32 key fingerprint */
+#define FINGERPRINT_LEN 4
+
 /** Length of an ext_key serialized using BIP32 format */
 #define BIP32_SERIALIZED_LEN 78
 

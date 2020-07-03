@@ -2,7 +2,7 @@
 #define LIBWALLY_CORE_PSBT_H
 
 #include "wally_transaction.h"
-#include "wally_core.h"
+#include "wally_bip32.h"
 
 #ifdef __cplusplus
 extern "C" {

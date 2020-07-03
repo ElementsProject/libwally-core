@@ -3,10 +3,8 @@
 #include "ccan/ccan/base64/base64.h"
 #include "ccan/ccan/build_assert/build_assert.h"
 
-#include <include/wally_crypto.h>
-#include <include/wally_script.h>
-#include <include/wally_transaction.h>
 #include <include/wally_psbt.h>
+#include <include/wally_script.h>
 
 #include <limits.h>
 #include <stdbool.h>
