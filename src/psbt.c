@@ -2500,7 +2500,7 @@ int wally_combine_psbts(
             }
 
             if ((ret = merge_unknowns_into(result->unknowns, psbts[i].unknowns)) != WALLY_OK) {
-                return ret;
+                goto fail;
             }
         }
     }
