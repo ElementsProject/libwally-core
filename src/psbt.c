@@ -710,44 +710,31 @@ int wally_psbt_init_alloc(
     size_t global_unknowns_allocation_len,
     struct wally_psbt **output)
 {
-    struct wally_psbt_input *new_inputs = NULL;
-    struct wally_psbt_output *new_outputs = NULL;
     struct wally_psbt *result;
+    int ret;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_psbt);
 
     if (inputs_allocation_len) {
-        new_inputs = wally_malloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
-        if (!new_inputs) {
-            return WALLY_ENOMEM;
-        }
-        wally_bzero(new_inputs, inputs_allocation_len * sizeof(*new_inputs));
+        result->inputs = wally_malloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
+        if (result->inputs)
+            wally_bzero(result->inputs, inputs_allocation_len * sizeof(*result->inputs));
     }
     if (outputs_allocation_len) {
-        new_outputs = wally_malloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
-        if (!new_outputs) {
-            return WALLY_ENOMEM;
-        }
-        wally_bzero(new_outputs, outputs_allocation_len * sizeof(*new_outputs));
+        result->outputs = wally_malloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
+        if (result->outputs)
+            wally_bzero(result->outputs, outputs_allocation_len * sizeof(*result->outputs));
     }
-    wally_unknowns_map_init_alloc(global_unknowns_allocation_len, &result->unknowns);
-    if ((inputs_allocation_len && !new_inputs) ||
-        (outputs_allocation_len && !new_outputs) ||
-        (global_unknowns_allocation_len && !result->unknowns)) {
-        wally_free(new_inputs);
-        wally_free(new_outputs);
-        wally_free(result->unknowns);
-        wally_free(result);
-        *output = NULL;
-        return WALLY_ENOMEM;
+    ret = wally_unknowns_map_init_alloc(global_unknowns_allocation_len, &result->unknowns);
+
+    if (ret != WALLY_OK ||
+        (inputs_allocation_len && !result->inputs) || (outputs_allocation_len && !result->outputs)) {
+        wally_psbt_free(result);
+        return ret != WALLY_OK ? ret : WALLY_ENOMEM;
     }
 
-    result->inputs = new_inputs;
-    result->num_inputs = 0;
     result->inputs_allocation_len = inputs_allocation_len;
-    result->outputs = new_outputs;
-    result->num_outputs = 0;
     result->outputs_allocation_len = outputs_allocation_len;
     result->tx = NULL;
     return WALLY_OK;
