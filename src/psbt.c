@@ -797,11 +797,11 @@ int wally_psbt_set_global_tx(
         }
         psbt->outputs_allocation_len = 0;
         psbt->outputs = wally_malloc(tx->num_outputs * sizeof(struct wally_psbt_output));
-        psbt->outputs_allocation_len = tx->num_outputs;
         if (!psbt->outputs) {
             ret = WALLY_ENOMEM;
             goto fail;
         }
+        psbt->outputs_allocation_len = tx->num_outputs;
     }
     wally_bzero(psbt->outputs, psbt->outputs_allocation_len * sizeof(*psbt->outputs));
     psbt->num_outputs = tx->num_outputs;
