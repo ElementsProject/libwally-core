@@ -100,7 +100,6 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
     if (keypaths->num_items == keypaths->items_allocation_len) {
         struct wally_keypath_item *new_items;
         size_t new_alloc_len = 1;
-        size_t orig_num_items = keypaths->num_items;
         if (keypaths->items_allocation_len != 0) {
             new_alloc_len = keypaths->items_allocation_len * 2;
         }
@@ -113,7 +112,6 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
 
         clear_and_free(keypaths->items, keypaths->items_allocation_len * sizeof(*keypaths->items));
         keypaths->items = new_items;
-        keypaths->num_items = orig_num_items;
         keypaths->items_allocation_len = new_alloc_len;
     }
 
@@ -219,7 +217,6 @@ int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
     if (sigs->num_items == sigs->items_allocation_len) {
         struct wally_partial_sigs_item *new_items;
         size_t new_alloc_len = 1;
-        size_t orig_num_items = sigs->num_items;
         if (sigs->items_allocation_len != 0) {
             new_alloc_len = sigs->items_allocation_len * 2;
         }
@@ -232,7 +229,6 @@ int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
 
         clear_and_free(sigs->items, sigs->items_allocation_len * sizeof(*sigs->items));
         sigs->items = new_items;
-        sigs->num_items = orig_num_items;
         sigs->items_allocation_len = new_alloc_len;
     }
 
@@ -339,7 +335,6 @@ int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
     if (unknowns->num_items == unknowns->items_allocation_len) {
         struct wally_unknowns_item *new_items;
         size_t new_alloc_len = 1;
-        size_t orig_num_items = unknowns->num_items;
         if (unknowns->items_allocation_len != 0) {
             new_alloc_len = unknowns->items_allocation_len * 2;
         }
@@ -352,7 +347,6 @@ int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
 
         clear_and_free(unknowns->items, unknowns->items_allocation_len * sizeof(*unknowns->items));
         unknowns->items = new_items;
-        unknowns->num_items = orig_num_items;
         unknowns->items_allocation_len = new_alloc_len;
     }
 
