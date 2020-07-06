@@ -557,7 +557,7 @@ int wally_asset_blinding_key_to_ec_private_key(
     if (!bytes || bytes_len != HMAC_SHA512_LEN || !script || !script_len || !bytes_out || len != EC_PRIVATE_KEY_LEN)
         return WALLY_EINVAL;
 
-    ret = wally_hmac_sha256(bytes + SYMMETRIC_KEY_LEN, SYMMETRIC_KEY_LEN, script, script_len, bytes_out, len);
+    ret = wally_hmac_sha256(bytes + HMAC_SHA512_LEN / 2, HMAC_SHA512_LEN / 2, script, script_len, bytes_out, len);
     if (ret == WALLY_OK)
         ret = wally_ec_private_key_verify(bytes_out, EC_PRIVATE_KEY_LEN);
 
