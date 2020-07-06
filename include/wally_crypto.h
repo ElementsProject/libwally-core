@@ -483,12 +483,13 @@ WALLY_CORE_API int wally_ec_sig_to_public_key(
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
-WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes,
-                                                size_t bytes_len,
-                                                uint32_t flags,
-                                                unsigned char *bytes_out,
-                                                size_t len,
-                                                size_t *written);
+WALLY_CORE_API int wally_format_bitcoin_message(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  *
@@ -501,12 +502,13 @@ WALLY_CORE_API int wally_format_bitcoin_message(const unsigned char *bytes,
  * :param bytes_out: Destination for the shared secret.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  */
-WALLY_CORE_API int wally_ecdh(const unsigned char *pub_key,
-                              size_t pub_key_len,
-                              const unsigned char *priv_key,
-                              size_t priv_key_len,
-                              unsigned char *bytes_out,
-                              size_t len);
+WALLY_CORE_API int wally_ecdh(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    unsigned char *bytes_out,
+    size_t len);
 
 #ifdef __cplusplus
 }
