@@ -575,7 +575,7 @@ int wally_psbt_input_set_sighash_type(
     return WALLY_OK;
 }
 
-int wally_psbt_input_free(struct wally_psbt_input *input)
+static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 {
     if (input) {
         wally_tx_free(input->non_witness_utxo);
@@ -587,8 +587,16 @@ int wally_psbt_input_free(struct wally_psbt_input *input)
         wally_keypath_map_free(input->keypaths);
         wally_partial_sigs_map_free(input->partial_sigs);
         wally_unknowns_map_free(input->unknowns);
+        wally_clear(input, sizeof(*input));
+        if (free_parent)
+            wally_free(input);
     }
     return WALLY_OK;
+}
+
+int wally_psbt_input_free(struct wally_psbt_input *input)
+{
+    return psbt_input_free(input, true);
 }
 
 int wally_psbt_output_init_alloc(
@@ -687,15 +695,23 @@ int wally_psbt_output_set_unknowns(
     return WALLY_OK;
 }
 
-int wally_psbt_output_free(struct wally_psbt_output *output)
+static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
 {
     if (output) {
         clear_and_free(output->redeem_script, output->redeem_script_len);
         clear_and_free(output->witness_script, output->witness_script_len);
         wally_keypath_map_free(output->keypaths);
         wally_unknowns_map_free(output->unknowns);
+        wally_clear(output, sizeof(*output));
+        if (free_parent)
+            wally_free(output);
     }
     return WALLY_OK;
+}
+
+int wally_psbt_output_free(struct wally_psbt_output *output)
+{
+    return psbt_output_free(output, true);
 }
 
 int wally_psbt_init_alloc(
@@ -739,16 +755,16 @@ int wally_psbt_free(struct wally_psbt *psbt)
     size_t i;
     if (psbt) {
         wally_tx_free(psbt->tx);
-        for (i = 0; i < psbt->num_inputs; ++i) {
-            wally_psbt_input_free(&psbt->inputs[i]);
-        }
+        for (i = 0; i < psbt->num_inputs; ++i)
+            psbt_input_free(&psbt->inputs[i], false);
+
         wally_free(psbt->inputs);
-        for (i = 0; i < psbt->num_outputs; ++i) {
-            wally_psbt_output_free(&psbt->outputs[i]);
-        }
+        for (i = 0; i < psbt->num_outputs; ++i)
+            psbt_output_free(&psbt->outputs[i], false);
+
         wally_free(psbt->outputs);
         wally_unknowns_map_free(psbt->unknowns);
-        wally_free(psbt);
+        clear_and_free(psbt, sizeof(*psbt));
     }
     return WALLY_OK;
 }
