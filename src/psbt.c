@@ -2926,7 +2926,7 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
 }
 
 int wally_extract_psbt(
-    struct wally_psbt *psbt,
+    const struct wally_psbt *psbt,
     struct wally_tx **output)
 {
     struct wally_tx *result = NULL;
