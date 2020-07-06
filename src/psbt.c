@@ -49,7 +49,7 @@ int wally_keypath_map_free(struct wally_keypath_map *keypaths)
 
     if (keypaths) {
         for (i = 0; i < keypaths->num_items; ++i) {
-            clear_and_free(keypaths->items[i].origin.path, keypaths->items[i].origin.path_len * sizeof(*keypaths->items[i].origin.path));
+            clear_and_free(keypaths->items[i].path, keypaths->items[i].path_len * sizeof(*keypaths->items[i].path));
         }
         clear_and_free(keypaths->items, keypaths->items_allocation_len * sizeof(*keypaths->items));
         clear_and_free(keypaths, sizeof(*keypaths));
@@ -68,12 +68,12 @@ static struct wally_keypath_map *clone_keypath_map(const struct wally_keypath_ma
 
     for (i = 0; i < keypaths->num_items; ++i) {
         memcpy(&result->items[i].pubkey, keypaths->items[i].pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-        memcpy(&result->items[i].origin.fingerprint, keypaths->items[i].origin.fingerprint, 4);
-        if (keypaths->items[i].origin.path) {
-            if (!clone_bytes((unsigned char **)&result->items[i].origin.path, (unsigned char *)keypaths->items[i].origin.path, keypaths->items[i].origin.path_len * sizeof(*keypaths->items[i].origin.path))) {
+        memcpy(&result->items[i].fingerprint, keypaths->items[i].fingerprint, 4);
+        if (keypaths->items[i].path) {
+            if (!clone_bytes((unsigned char **)&result->items[i].path, (unsigned char *)keypaths->items[i].path, keypaths->items[i].path_len * sizeof(*keypaths->items[i].path))) {
                 goto fail;
             }
-            result->items[i].origin.path_len = keypaths->items[i].origin.path_len;
+            result->items[i].path_len = keypaths->items[i].path_len;
         }
     }
     result->num_items = keypaths->num_items;
@@ -120,12 +120,12 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
     latest = keypaths->num_items;
 
     memcpy(&keypaths->items[latest].pubkey, pubkey, pubkey_len);
-    memcpy(&keypaths->items[latest].origin.fingerprint, fingerprint, fingerprint_len);
+    memcpy(&keypaths->items[latest].fingerprint, fingerprint, fingerprint_len);
     if (path) {
-        if (!clone_bytes((unsigned char **)&keypaths->items[latest].origin.path, (unsigned char *)path, path_len * sizeof(*path))) {
+        if (!clone_bytes((unsigned char **)&keypaths->items[latest].path, (unsigned char *)path, path_len * sizeof(*path))) {
             return WALLY_ENOMEM;
         }
-        keypaths->items[latest].origin.path_len = path_len;
+        keypaths->items[latest].path_len = path_len;
     }
     keypaths->num_items++;
 
@@ -136,10 +136,10 @@ static int add_keypath_item(struct wally_keypath_map *keypaths, struct wally_key
 {
     return wally_add_new_keypath(keypaths, item->pubkey,
                                  EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
-                                 item->origin.fingerprint,
+                                 item->fingerprint,
                                  BIP32_KEY_FINGERPRINT_LEN,
-                                 item->origin.path,
-                                 item->origin.path_len);
+                                 item->path,
+                                 item->path_len);
 }
 
 int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output)
@@ -909,17 +909,17 @@ static int pull_keypath(const unsigned char **cursor, size_t *max,
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
 
     /* Read the fingerprint */
-    pull_bytes(kpitem->origin.fingerprint, sizeof(kpitem->origin.fingerprint),
+    pull_bytes(kpitem->fingerprint, sizeof(kpitem->fingerprint),
                &val, &val_max);
 
     /* Remainder is the path */
-    kpitem->origin.path_len = val_max / sizeof(uint32_t);
-    kpitem->origin.path = wally_malloc(val_max);
-    if (kpitem->origin.path == NULL) {
+    kpitem->path_len = val_max / sizeof(uint32_t);
+    kpitem->path = wally_malloc(val_max);
+    if (kpitem->path == NULL) {
         return WALLY_ENOMEM;
     }
     for (i = 0; val_max >= sizeof(uint32_t); ++i) {
-        kpitem->origin.path[i] = pull_le32(&val, &val_max);
+        kpitem->path[i] = pull_le32(&val, &val_max);
     }
     subfield_nomore_end(cursor, max, val, val_max);
     return WALLY_OK;
@@ -1640,13 +1640,12 @@ static void push_keypath_item(
     push_psbt_key_with_pubkey(cursor, max, type,  item->pubkey);
 
     origin_len = 4;     /* Start with 4 bytes for fingerprint */
-    origin_len += item->origin.path_len * sizeof(uint32_t);
+    origin_len += item->path_len * sizeof(uint32_t);
     push_varint(cursor, max, origin_len);
 
-    push_bytes(cursor, max, item->origin.fingerprint, 4);
-    for (i = 0; i < item->origin.path_len; ++i) {
-        push_bytes(cursor, max,
-                   &item->origin.path[i], sizeof(uint32_t));
+    push_bytes(cursor, max, item->fingerprint, 4);
+    for (i = 0; i < item->path_len; ++i) {
+        push_bytes(cursor, max, &item->path[i], sizeof(uint32_t));
     }
 }
 

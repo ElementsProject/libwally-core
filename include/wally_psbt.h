@@ -27,7 +27,6 @@ extern "C" {
 #define WALLY_PSBT_OUT_BIP32_DERIVATION 0x02
 
 #ifdef SWIG
-struct wally_key_origin_info;
 struct wally_keypath_map;
 struct wally_partial_sigs_map;
 struct wally_unknowns_map;
@@ -36,17 +35,12 @@ struct wally_psbt_output;
 struct wally_psbt;
 #else
 
-/** Key origin data. Contains a BIP 32 fingerprint and the derivation path */
-struct wally_key_origin_info {
-    unsigned char fingerprint[BIP32_KEY_FINGERPRINT_LEN];
+/** Key path, a BIP 32 path and fingerprint with associated pubkey */
+struct wally_keypath_item {
     uint32_t *path;
     size_t path_len;
-};
-
-/** Item in keypath map */
-struct wally_keypath_item {
+    unsigned char fingerprint[BIP32_KEY_FINGERPRINT_LEN];
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    struct wally_key_origin_info origin;
 };
 
 /** A map of public keys to BIP 32 fingerprint and derivation paths */
@@ -85,7 +79,7 @@ struct wally_unknowns_map {
     size_t items_allocation_len;
 };
 
-/** A PSBT input map */
+/** A PSBT input */
 struct wally_psbt_input {
     struct wally_tx *non_witness_utxo;
     struct wally_tx_output *witness_utxo;
