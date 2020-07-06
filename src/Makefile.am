@@ -283,6 +283,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_sign.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_symmetric.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_transaction.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
