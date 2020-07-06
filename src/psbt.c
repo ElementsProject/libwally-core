@@ -1952,7 +1952,7 @@ static int merge_unknowns_into(
         bool found = false;
         for (j = 0; j < dst->num_items; ++j) {
             if (src->items[i].key_len == dst->items[j].key_len &&
-                memcmp((char *)dst->items[j].key, (char *)src->items[i].key, src->items[i].key_len) == 0) {
+                memcmp(dst->items[j].key, src->items[i].key, src->items[i].key_len) == 0) {
                 found = true;
                 break;
             }
@@ -1981,7 +1981,7 @@ static int merge_keypaths_into(
     for (i = 0; i < src->num_items; ++i) {
         bool found = false;
         for (j = 0; j < dst->num_items; ++j) {
-            if (memcmp((char *)dst->items[j].pubkey, (char *)src->items[i].pubkey, 65) == 0) {
+            if (memcmp(dst->items[j].pubkey, src->items[i].pubkey, 65) == 0) {
                 found = true;
                 break;
             }
@@ -2020,7 +2020,7 @@ static int merge_input_into(
         for (i = 0; i < src->partial_sigs->num_items; ++i) {
             bool found = false;
             for (j = 0; j < dst->partial_sigs->num_items; ++j) {
-                if (memcmp((char *)dst->partial_sigs->items[j].pubkey, (char *)src->partial_sigs->items[i].pubkey, 65) == 0) {
+                if (memcmp(dst->partial_sigs->items[j].pubkey, src->partial_sigs->items[i].pubkey, 65) == 0) {
                     found = true;
                     break;
                 }
@@ -2254,10 +2254,10 @@ int wally_sign_psbt(
         /* Go through each listed pubkey and see if it matches. */
         for (j = 0; j < input->keypaths->num_items; ++j) {
             struct wally_keypath_item *item = &input->keypaths->items[j];
-            if (item->pubkey[0] == 0x04 && memcmp((char *)item->pubkey, (char *)uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0) {
+            if (item->pubkey[0] == 0x04 && memcmp(item->pubkey, uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0) {
                 match = true;
                 break;
-            } else if (memcmp((char *)item->pubkey, (char *)pubkey, EC_PUBLIC_KEY_LEN) == 0) {
+            } else if (memcmp(item->pubkey, pubkey, EC_PUBLIC_KEY_LEN) == 0) {
                 match = true;
                 comp = true;
                 break;
@@ -2273,8 +2273,8 @@ int wally_sign_psbt(
         if (input->partial_sigs) {
             for (j = 0; j < input->partial_sigs->num_items; j++) {
                 struct wally_partial_sigs_item *item = &input->partial_sigs->items[j];
-                if (memcmp((char *)item->pubkey, (char *)uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0
-                    || memcmp((char *)item->pubkey, (char *)pubkey, EC_PUBLIC_KEY_LEN) == 0) {
+                if (memcmp(item->pubkey, uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0 ||
+                    memcmp(item->pubkey, pubkey, EC_PUBLIC_KEY_LEN) == 0) {
                     already_signed = true;
                     break;
                 }
@@ -2332,7 +2332,7 @@ int wally_sign_psbt(
             if ((ret = wally_tx_get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK) {
                 return ret;
             }
-            if (memcmp((char *)txid, (char *)txin->txhash, sizeof(txid)) != 0) {
+            if (memcmp(txid, txin->txhash, sizeof(txid)) != 0) {
                 return WALLY_EINVAL;
             }
 
@@ -2359,7 +2359,7 @@ int wally_sign_psbt(
                     return ret;
                 }
                 if (scriptcode_len != WALLY_SCRIPTPUBKEY_P2WSH_LEN ||
-                    memcmp((char *)wsh, (char *)scriptcode, WALLY_SCRIPTPUBKEY_P2WSH_LEN) != 0) {
+                    memcmp(wsh, scriptcode, WALLY_SCRIPTPUBKEY_P2WSH_LEN) != 0) {
                     return WALLY_EINVAL;
                 }
                 scriptcode = input->witness_script;
