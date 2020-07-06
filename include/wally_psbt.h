@@ -590,11 +590,11 @@ WALLY_CORE_API int wally_finalize_psbt(
 /**
  * Extract a network transaction from a finalized PSBT.
  *
- * :param psbt: PSBT to extract. Directly modifies this PSBT.
+ * :param psbt: PSBT to extract from.
  * :param output: Resulting transaction
  */
 WALLY_CORE_API int wally_extract_psbt(
-    struct wally_psbt *psbt,
+    const struct wally_psbt *psbt,
     struct wally_tx **output);
 
 #ifdef __cplusplus
