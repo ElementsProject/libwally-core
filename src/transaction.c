@@ -350,10 +350,11 @@ static bool clone_input_to(
 #endif
 
     struct wally_tx_witness_stack *new_witness;
+    struct wally_tx_witness_stack *new_pegin_witness;
+
     new_witness = src->witness ? clone_witness(src->witness) : NULL;
 
 #ifdef BUILD_ELEMENTS
-    struct wally_tx_witness_stack *new_pegin_witness;
     new_pegin_witness = src->pegin_witness ? clone_witness(src->pegin_witness) : NULL;
 #endif
 
@@ -826,10 +827,10 @@ static int tx_elements_output_proof_init(
     const unsigned char *rangeproof,
     size_t rangeproof_len)
 {
-    (void) output;
 #ifdef BUILD_ELEMENTS
     unsigned char *new_surjectionproof = NULL, *new_rangeproof = NULL;
 #endif
+    (void) output;
 
     if (BYTES_INVALID(surjectionproof, surjectionproof_len) ||
         BYTES_INVALID(rangeproof, rangeproof_len))
