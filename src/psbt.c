@@ -2122,9 +2122,9 @@ int wally_psbt_from_base64(
     ssize_t decoded_len;
     int ret;
 
-    if (!string) {
+    TX_CHECK_OUTPUT;
+    if (!string)
         return WALLY_EINVAL;
-    }
 
     string_len = strlen(string);
     /* Allocate the decoded buffer */
@@ -2161,9 +2161,9 @@ int wally_psbt_to_base64(
     ssize_t b64_len;
     int ret = WALLY_OK;
 
-    if (!output || !psbt) {
+    TX_CHECK_OUTPUT;
+    if (!psbt)
         return WALLY_EINVAL;
-    }
 
     if ((ret = wally_psbt_get_length(psbt, &len)) != WALLY_OK) {
         return ret;
