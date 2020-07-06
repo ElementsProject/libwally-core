@@ -112,14 +112,11 @@ class wally_tx(Structure):
                 ('num_outputs', c_ulong),
                 ('outputs_allocation_len', c_ulong),]
 
-class key_origin_info(Structure):
-    _fields_ = [('fingerprint', c_ubyte * 4),
-                ('items', POINTER(c_ulong)),
-                ('path_len', c_ulong)]
-
 class keypath_item(Structure):
-    _fields_ = [('pubkey', c_ubyte * 65),
-                ('origin', key_origin_info)]
+    _fields_ = [('path', POINTER(c_ulong)),
+                ('path_len', c_ulong),
+                ('fingerprint', c_ubyte * 4),
+                ('pubkey', c_ubyte * 65)]
 
 class keypath_map(Structure):
     _fields_ = [('items', POINTER(keypath_item)),
