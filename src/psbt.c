@@ -2931,33 +2931,35 @@ int wally_extract_psbt(
 {
     struct wally_tx *result = NULL;
     size_t i;
-    int ret = WALLY_OK;
+    int ret;
 
     TX_CHECK_OUTPUT;
 
-    if (!psbt || !psbt->tx || psbt->num_inputs == 0 || psbt->num_outputs == 0) {
+    if (!psbt || !psbt->tx || !psbt->num_inputs || !psbt->num_outputs ||
+        psbt->tx->num_inputs < psbt->num_inputs || psbt->tx->num_outputs < psbt->num_outputs)
         return WALLY_EINVAL;
-    }
 
-    wally_tx_clone(psbt->tx, 0, &result);
+    if ((ret = wally_tx_clone(psbt->tx, 0, &result)) != WALLY_OK)
+        return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *vin = &result->inputs[i];
+
         if (!input->final_script_sig && !input->final_witness) {
             ret = WALLY_EINVAL;
-            goto fail;
+            break;
         }
 
         if (input->final_script_sig) {
             if (vin->script) {
                 /* Our global tx shouldn't have a scriptSig */
                 ret = WALLY_EINVAL;
-                goto fail;
+                break;
             }
             if (!clone_bytes(&vin->script, input->final_script_sig, input->final_script_sig_len)) {
                 ret = WALLY_ENOMEM;
-                goto fail;
+                break;
             }
             vin->script_len = input->final_script_sig_len;
         }
@@ -2965,21 +2967,18 @@ int wally_extract_psbt(
             if (vin->witness) {
                 /* Our global tx shouldn't have a witness */
                 ret = WALLY_EINVAL;
-                goto fail;
+                break;
             }
             if (!(vin->witness = clone_witness(input->final_witness))) {
                 ret = WALLY_ENOMEM;
-                goto fail;
+                break;
             }
         }
     }
 
-    *output = result;
-    return ret;
-
-fail:
-    if (result) {
+    if (ret == WALLY_OK)
+        *output = result;
+    else
         wally_tx_free(result);
-    }
     return ret;
 }
