@@ -133,6 +133,7 @@ address_to_scriptpubkey = _wrap_bin(address_to_scriptpubkey, 21 + 4, resize=True
 
 tx_to_bytes = _wrap_bin(tx_to_bytes, tx_get_length, resize=True)
 tx_get_btc_signature_hash = _wrap_bin(tx_get_btc_signature_hash, SHA256_LEN)
+tx_get_txid = _wrap_bin(tx_get_txid, WALLY_TXHASH_LEN)
 tx_get_signature_hash = _wrap_bin(tx_get_signature_hash, SHA256_LEN)
 tx_input_get_txhash = _wrap_bin(tx_input_get_txhash, WALLY_TXHASH_LEN)
 tx_input_get_script = _wrap_bin(tx_input_get_script, tx_input_get_script_len, resize=True)

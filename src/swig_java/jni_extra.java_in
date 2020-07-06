@@ -231,6 +231,10 @@
       return _wif_is_uncompressed(wif) != 0;
   }
 
+  public final static byte[] tx_get_txid(final Object tx) {
+      return tx_get_txid(tx, null);
+  }
+
   public static final byte[] tx_to_bytes(final Object tx, long flags) {
       final int txlength = Wally.tx_get_length(tx, flags);
       final byte[] buf = new byte[txlength];
