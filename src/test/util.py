@@ -272,6 +272,8 @@ for f in (
     ('wally_elements_pegout_script_from_bytes', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_elements_pegin_contract_script_from_bytes', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_witness_program_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_symmetric_key_from_seed', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_symmetric_key_from_parent', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_tx_to_hex', c_int, [POINTER(wally_tx), c_uint, c_char_p_p]),
     ('wally_tx_from_hex', c_int, [c_char_p, c_uint, POINTER(POINTER(wally_tx))]),
     ('wally_tx_to_bytes', c_int, [POINTER(wally_tx), c_uint, c_void_p, c_ulong, c_ulong_p]),
