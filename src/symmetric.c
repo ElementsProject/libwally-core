@@ -55,7 +55,7 @@ int wally_symmetric_key_from_parent(
     *buff_p = version;
     memcpy(buff_p + 1, label, label_len);
 
-    ret = wally_hmac_sha512(bytes, SYMMETRIC_KEY_LEN, buff_p, buff_len, bytes_out, len);
+    ret = wally_hmac_sha512(bytes, HMAC_SHA512_LEN / 2, buff_p, buff_len, bytes_out, len);
 
     if (buff_p != buff)
         wally_free(buff_p);

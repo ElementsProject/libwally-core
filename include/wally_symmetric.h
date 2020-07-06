@@ -7,17 +7,13 @@
 extern "C" {
 #endif
 
-#define SYMMETRIC_KEY_LEN 32
-
 /**
- * Create a new symmetric key from entropy.
- *
- * This creates a new symmetric master key.
+ * Create a new symmetric parent key from entropy.
  *
  * :param bytes: Entropy to use.
  * :param bytes_len: Size of ``bytes`` in bytes. Must be one of ``BIP32_ENTROPY_LEN_128``,
  *|     ``BIP32_ENTROPY_LEN_256`` or ``BIP32_ENTROPY_LEN_512``.
- * :param bytes_out: Destination for the resulting key.
+ * :param bytes_out: Destination for the resulting parent key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``HMAC_SHA512_LEN``.
  */
 WALLY_CORE_API int wally_symmetric_key_from_seed(
