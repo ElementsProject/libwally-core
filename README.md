@@ -159,15 +159,15 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-coverage
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js_wrappers --enable-coverage
 $ make
 $ ./tools/coverage.sh clean
 $ make check
 $ ./tools/coverage.sh
 ```
 
-The coverage report can then be viewed at `src/lcov/index.html`. Patches to
-increase the test coverage are welcome.
+The coverage report can then be viewed at `./src/lcov/src/index.html`. Patches
+to increase the test coverage are welcome.
 
 ## Users of libwally-core
 
