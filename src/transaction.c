@@ -2152,14 +2152,21 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
     return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements);
 }
 
-static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
-                     char **output, bool is_elements)
+/* Common implementation for hex conversion and txid calculation */
+static int tx_to_hex_or_txid(const struct wally_tx *tx, uint32_t flags,
+                             char **output,
+                             unsigned char *bytes_out, size_t len,
+                             bool is_elements)
 {
     unsigned char buff[TX_STACK_SIZE], *buff_p = buff;
     size_t n, written;
     int ret;
 
-    if (!output)
+    if (output)
+        *output = NULL;
+
+    if ((output && (bytes_out || len)) ||
+        (!output && (!bytes_out || len != WALLY_TXHASH_LEN)))
         return WALLY_EINVAL;
 
     ret = tx_to_bytes(tx, NULL, flags, buff_p, sizeof(buff), &n, is_elements);
@@ -2171,12 +2178,15 @@ static int tx_to_hex(const struct wally_tx *tx, uint32_t flags,
             if (n != written)
                 ret = WALLY_ERROR; /* Length calculated incorrectly */
         }
-        if (ret == WALLY_OK)
-            ret = wally_hex_from_bytes(buff_p, n, output);
+        if (ret == WALLY_OK) {
+            if (output)
+                ret = wally_hex_from_bytes(buff_p, n, output);
+            else
+                ret = wally_sha256d(buff_p, n, bytes_out, len);
+        }
+        wally_clear(buff_p, n);
         if (buff_p != buff)
-            clear_and_free(buff_p, n);
-        else
-            wally_clear(buff, n);
+            wally_free(buff_p);
     }
     return ret;
 }
@@ -2190,7 +2200,18 @@ int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 #endif
-    return tx_to_hex(tx, flags, output, is_elements);
+    return tx_to_hex_or_txid(tx, flags, output, NULL, 0, is_elements);
+}
+
+int wally_tx_get_txid(const struct wally_tx *tx, unsigned char *bytes_out, size_t len)
+{
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+    return tx_to_hex_or_txid(tx, 0, NULL, bytes_out, len, is_elements);
 }
 
 int analyze_tx(const unsigned char *bytes, size_t bytes_len,

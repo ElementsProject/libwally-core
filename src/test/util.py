@@ -304,6 +304,7 @@ for f in (
     ('wally_tx_add_input', c_int, [POINTER(wally_tx), POINTER(wally_tx_input)]),
     ('wally_tx_add_raw_input', c_int, [POINTER(wally_tx), c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), c_uint]),
     ('wally_tx_add_elements_raw_input', c_int, [POINTER(wally_tx), c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), c_uint]),
+    ('wally_tx_get_txid', c_int, [POINTER(wally_tx), c_void_p, c_ulong]),
     ('wally_tx_remove_input', c_int, [POINTER(wally_tx), c_ulong]),
     ('wally_tx_set_input_script', c_int, [POINTER(wally_tx), c_ulong, c_void_p, c_ulong]),
     ('wally_tx_set_input_witness', c_int, [POINTER(wally_tx), c_ulong, POINTER(wally_tx_witness_stack)]),

@@ -59,6 +59,9 @@ class TransactionTests(unittest.TestCase):
             # Check the transaction can be cloned and serializes to the same hex
             self.assertEqual(WALLY_OK, wally_tx_clone(tx_out, 0, tx_copy))
             self.assertEqual(tx_hex, utf8(self.tx_serialize_hex(tx_copy)))
+            # Check that the txid can be computed
+            txid, txid_len = make_cbuffer('00' * 32)
+            self.assertEqual(WALLY_OK, wally_tx_get_txid(tx_out, txid, txid_len))
 
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""

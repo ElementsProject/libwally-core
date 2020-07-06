@@ -555,6 +555,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_get_output_value_len);
 %returns_array_(wally_tx_get_signature_hash, 12, 13, SHA256_LEN);
 %returns_uint64(wally_tx_get_total_output_satoshi);
+%returns_array_(wally_tx_get_txid, 2, 3, WALLY_TXHASH_LEN);
 %returns_size_t(wally_tx_get_version);
 %returns_size_t(wally_tx_get_vsize);
 %returns_size_t(wally_tx_get_weight);

@@ -1937,33 +1937,6 @@ done:
     return ret;
 }
 
-static int get_txid(
-    struct wally_tx *tx,
-    unsigned char *txid,
-    size_t txid_len)
-{
-    unsigned char *bytes = NULL;
-    size_t calc, written;
-    int ret = WALLY_OK;
-
-    if (!tx || !txid || txid_len != WALLY_TXHASH_LEN) {
-        return WALLY_EINVAL;
-    }
-
-    if ((ret = wally_tx_get_length(tx, 0, &calc)) != WALLY_OK) {
-        return ret;
-    }
-    if ((bytes = wally_malloc(calc)) == NULL) {
-        return WALLY_ENOMEM;
-    }
-    if ((ret = wally_tx_to_bytes(tx, 0, bytes, calc, &written)) == WALLY_OK) {
-        ret = wally_sha256d(bytes, written, txid, txid_len);
-    }
-
-    wally_free(bytes);
-    return ret;
-}
-
 static int merge_unknowns_into(
     struct wally_unknowns_map *dst,
     const struct wally_unknowns_map *src)
@@ -2184,7 +2157,7 @@ int wally_combine_psbts(
     }
 
     /* Get info from the first psbt and use it as the template */
-    if ((ret = get_txid(psbts->tx, global_txid, sizeof(global_txid))) != WALLY_OK) {
+    if ((ret = wally_tx_get_txid(psbts->tx, global_txid, sizeof(global_txid))) != WALLY_OK) {
         return ret;
     }
 
@@ -2202,7 +2175,7 @@ int wally_combine_psbts(
         unsigned char txid[sizeof(global_txid)];
 
         /* Compare the txids */
-        if ((ret = get_txid(psbts[i].tx, txid, sizeof(txid))) != WALLY_OK) {
+        if ((ret = wally_tx_get_txid(psbts[i].tx, txid, sizeof(txid))) != WALLY_OK) {
             goto fail;
         }
         if (memcmp(global_txid, txid, sizeof(txid)) != 0) {
@@ -2356,7 +2329,7 @@ int wally_sign_psbt(
         if (input->non_witness_utxo) {
             unsigned char txid[WALLY_TXHASH_LEN];
 
-            if ((ret = get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK) {
+            if ((ret = wally_tx_get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK) {
                 return ret;
             }
             if (memcmp((char *)txid, (char *)txin->txhash, sizeof(txid)) != 0) {

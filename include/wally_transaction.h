@@ -409,6 +409,20 @@ WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
 #endif /* SWIG_PYTHON */
 
 /**
+ * Return the txid of a transaction.
+ *
+ * :param tx: The transaction to compute the txid of.
+ * :param bytes_out: Destination for the txid.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ *
+ * .. note:: The txid is expensive to compute.
+ */
+WALLY_CORE_API int wally_tx_get_txid(
+    const struct wally_tx *tx,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Return the length of transaction once serialized into bytes.
  *
  * :param tx: The transaction to find the serialized length of.

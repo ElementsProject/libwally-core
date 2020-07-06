@@ -207,7 +207,7 @@ wally.tx_add_elements_raw_output(
 
 # start-sign
 vout = 0
-prev_txid = wally.sha256d(wally.tx_to_bytes(tx, 0))
+prev_txid = wally.tx_get_txid(tx)
 for vin, script_pubkey in zip(vouts_in, script_pubkeys_in):
 
     wally.tx_add_elements_raw_input(
