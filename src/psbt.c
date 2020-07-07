@@ -1981,7 +1981,7 @@ static int merge_keypaths_into(
     for (i = 0; i < src->num_items; ++i) {
         bool found = false;
         for (j = 0; j < dst->num_items; ++j) {
-            if (memcmp(dst->items[j].pubkey, src->items[i].pubkey, 65) == 0) {
+            if (memcmp(dst->items[j].pubkey, src->items[i].pubkey, sizeof(src->items[i].pubkey)) == 0) {
                 found = true;
                 break;
             }
@@ -2020,7 +2020,8 @@ static int merge_input_into(
         for (i = 0; i < src->partial_sigs->num_items; ++i) {
             bool found = false;
             for (j = 0; j < dst->partial_sigs->num_items; ++j) {
-                if (memcmp(dst->partial_sigs->items[j].pubkey, src->partial_sigs->items[i].pubkey, 65) == 0) {
+                if (memcmp(dst->partial_sigs->items[j].pubkey, src->partial_sigs->items[i].pubkey,
+                           sizeof(src->partial_sigs->items[i].pubkey)) == 0) {
                     found = true;
                     break;
                 }
