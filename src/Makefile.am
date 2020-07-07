@@ -273,7 +273,6 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_ecdh.py
-	$(AM_V_at)$(PYTHON_TEST) test/test_elements.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
@@ -289,6 +288,10 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_pset.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_elements.py
 endif
 if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
@@ -296,13 +299,10 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 if BUILD_ELEMENTS
-	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
-	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
-	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
 endif
-endif
+endif # USE_SWIG_PYTHON
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS
 if BUILD_ELEMENTS
