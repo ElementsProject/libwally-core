@@ -43,6 +43,11 @@
         {
           "psbt": "cHNidP8BAD8CAAAAAf//////////////////////////////////////////AAAAAAD/////AQAAAAAAAAAAA2oBAAAAAAAACg8BAgMEBQYHCAkPAQIDBAUGBwgJCgsMDQ4PAAA=",
           "len": 101
+        },
+        {
+          "comment": "Partial transaction (with no outputs)",
+          "psbt": "cHNidP8BADMCAAAAAZCmTNqA77Z44FTcG0k2D2xkazaLwfTcYgkhBHT1hFy0AAAAAAD9////AGYAAAAAAQEgQEIPAAAAAAAXqRRlVyjzbP420BqlDTI2cERp+EpVQIcBBBYAFNa5adNt/9rZhpGT9mPuSA39xzSIAA==",
+          "len": 121
         }
     ],
     "creator" : [

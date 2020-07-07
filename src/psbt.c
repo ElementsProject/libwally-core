@@ -1809,7 +1809,7 @@ int wally_psbt_to_bytes(
 
     /* Global tx */
     push_psbt_key(&cursor, &max, WALLY_PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
-    push_length_and_tx(&cursor, &max, psbt->tx, 0);
+    push_length_and_tx(&cursor, &max, psbt->tx, WALLY_TX_FLAG_ALLOW_PARTIAL);
 
     /* Unknowns */
     if (psbt->unknowns) {
