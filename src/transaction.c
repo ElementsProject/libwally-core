@@ -11,7 +11,8 @@
 #include "transaction_shared.h"
 #include "script_int.h"
 
-#define WALLY_TX_ALL_FLAGS (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS)
+#define WALLY_TX_ALL_FLAGS \
+    (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | WALLY_TX_FLAG_ALLOW_PARTIAL)
 
 /* We use the maximum DER sig length (plus a byte for the sighash) so that
  * we overestimate the size by a byte or two per tx sig. This allows using
@@ -143,6 +144,9 @@ static bool is_valid_elements_tx_output(const struct wally_tx_output *output)
 static bool is_valid_elements_tx(const struct wally_tx *tx)
 {
     size_t i;
+
+    if (!tx->num_inputs && !tx->num_outputs)
+        return false; /* No inputs & no outputs, treat as non-elements tx */
 
     for (i = 0; i < tx->num_inputs; ++i)
         if (!is_valid_elements_tx_input(tx->inputs + i))
@@ -1539,6 +1543,9 @@ static int tx_get_lengths(const struct wally_tx *tx,
 
     *witness_count = 0;
 
+    if (!is_valid_tx(tx))
+        return WALLY_EINVAL;
+
     if (opts) {
         if (flags & WALLY_TX_FLAG_USE_WITNESS)
             return WALLY_ERROR; /* Segwit tx hashing uses bip143 opts member */
@@ -1566,7 +1573,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
         }
     }
 
-    if ((flags & ~WALLY_TX_FLAG_USE_WITNESS) ||
+    if ((flags & ~WALLY_TX_ALL_FLAGS) ||
         ((flags & WALLY_TX_FLAG_USE_WITNESS) &&
          wally_tx_get_witness_count(tx, witness_count) != WALLY_OK))
         return WALLY_EINVAL;
@@ -1984,9 +1991,15 @@ static int tx_to_bytes(const struct wally_tx *tx,
     if (written)
         *written = 0;
 
-    if (!is_valid_tx(tx) || !tx->num_inputs || !tx->num_outputs ||
-        (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || !written ||
+    if (!is_valid_tx(tx) || !tx->num_inputs ||
+        (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || !written ||
         tx_get_length(tx, opts, flags, &n, is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    /* If requested, 0-output txs can be written. 0-input txs are not
+     * currently supported since they conflict due to segwit tx markers
+     * when serialized */
+    if (!(flags & WALLY_TX_FLAG_ALLOW_PARTIAL) && !tx->num_outputs)
         return WALLY_EINVAL;
 
     if (opts && (flags & WALLY_TX_FLAG_USE_WITNESS))
@@ -2231,8 +2244,7 @@ int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     if (expect_witnesses)
         *expect_witnesses = false;
 
-    if (!bytes || bytes_len < sizeof(uint32_t) + 2 ||
-        (flags & ~WALLY_TX_FLAG_USE_ELEMENTS) ||
+    if (!bytes || bytes_len < sizeof(uint32_t) + 2 || (flags & ~WALLY_TX_ALL_FLAGS) ||
         !num_inputs || !num_outputs || !expect_witnesses)
         return WALLY_EINVAL;
 
@@ -2404,12 +2416,11 @@ cleanup:
 }
 
 static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
-                         uint32_t flags, struct wally_tx **output,
-                         bool is_elements)
+                         uint32_t flags, struct wally_tx **output)
 {
     const unsigned char *p = bytes;
+    const bool is_elements = flags & WALLY_TX_FLAG_USE_ELEMENTS;
     bool expect_witnesses;
-    uint32_t analyze_flags = flags & ~WALLY_TX_FLAG_USE_WITNESS;
     size_t i, j, num_inputs, num_outputs;
     uint64_t tmp, num_witnesses;
     int ret;
@@ -2417,7 +2428,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
 
     TX_CHECK_OUTPUT;
 
-    if (analyze_tx(bytes, bytes_len, analyze_flags, &num_inputs, &num_outputs,
+    if (analyze_tx(bytes, bytes_len, flags, &num_inputs, &num_outputs,
                    &expect_witnesses) != WALLY_OK)
         return WALLY_EINVAL;
 
@@ -2576,7 +2587,7 @@ fail:
 int wally_tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                         uint32_t flags, struct wally_tx **output)
 {
-    return tx_from_bytes(bytes, bytes_len, flags, output, flags & WALLY_TX_FLAG_USE_ELEMENTS);
+    return tx_from_bytes(bytes, bytes_len, flags, output);
 }
 
 int wally_tx_from_hex(const char *hex, uint32_t flags,
@@ -2598,8 +2609,7 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
     }
     ret = wally_hex_to_bytes(hex, buff_p, bin_len, &written);
     if (ret == WALLY_OK)
-        ret = tx_from_bytes(buff_p, bin_len, flags, output,
-                            flags & WALLY_TX_FLAG_USE_ELEMENTS);
+        ret = tx_from_bytes(buff_p, bin_len, flags, output);
 
     if (buff_p != buff)
         clear_and_free(buff_p, bin_len);
@@ -2663,7 +2673,7 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
     if (!is_valid_tx(tx) || BYTES_INVALID(script, script_len) ||
         BYTES_INVALID(extra, extra_len) ||
         satoshi > WALLY_SATOSHI_MAX || (sighash & 0xffffff00) ||
-        (flags & ~WALLY_TX_FLAG_USE_WITNESS) || !bytes_out || len < SHA256_LEN)
+        (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || len < SHA256_LEN)
         return WALLY_EINVAL;
 
     if (extra || extra_len || extra_offset)
@@ -2843,7 +2853,7 @@ int wally_tx_elements_issuance_calculate_reissuance_token(const unsigned char *e
 {
     unsigned char buff[SHA256_LEN] = { 0 };
 
-    if ((flags & ~(WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE)))
+    if ((flags & ~WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE))
         return WALLY_EINVAL;
 
     /* 32-byte '1' constant for unblinded and '2' for confidential */

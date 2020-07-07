@@ -21,8 +21,9 @@ extern "C" {
 
 #define WALLY_TXHASH_LEN 32 /** Size of a transaction hash in bytes */
 
-#define WALLY_TX_FLAG_USE_WITNESS  0x1 /* Encode witness data if present */
-#define WALLY_TX_FLAG_USE_ELEMENTS 0x2 /* Encode/Decode as an elements transaction */
+#define WALLY_TX_FLAG_USE_WITNESS   0x1 /* Encode witness data if present */
+#define WALLY_TX_FLAG_USE_ELEMENTS  0x2 /* Encode/Decode as an elements transaction */
+#define WALLY_TX_FLAG_ALLOW_PARTIAL 0x4 /* Allow partially complete transactions */
 
 #define WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE 0x1
 
