@@ -2785,28 +2785,25 @@ int wally_tx_elements_issuance_generate_entropy(const unsigned char *txhash,
                                                 unsigned char *bytes_out,
                                                 size_t len)
 {
-    unsigned char buff_1[2 * SHA256_LEN], *buff_p1 = buff_1;
-    unsigned char buff_2[WALLY_TXHASH_LEN + sizeof(uint32_t)], *buff_p2 = buff_2;
-    int ret = WALLY_OK;
+    unsigned char buff[2 * SHA256_LEN];
+    unsigned char buff_2[WALLY_TXHASH_LEN + sizeof(uint32_t)];
+    int ret;
 
     if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
         !contract_hash || contract_hash_len != SHA256_LEN ||
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    memcpy(buff_p2, txhash, txhash_len);
-    buff_p2 += txhash_len;
-    buff_p2 += uint32_to_le_bytes(index, buff_p2);
+    memcpy(buff_2, txhash, txhash_len);
+    uint32_to_le_bytes(index, buff_2 + txhash_len);
 
-    if ((ret = wally_sha256d(buff_2, WALLY_TXHASH_LEN + sizeof(uint32_t), buff_p1, SHA256_LEN)) != WALLY_OK)
-        goto fail;
+    ret = wally_sha256d(buff_2, sizeof(buff_2), buff, SHA256_LEN);
+    if (ret == WALLY_OK) {
+        memcpy(buff + SHA256_LEN, contract_hash, contract_hash_len);
+        ret = wally_sha256_midstate(buff, sizeof(buff), bytes_out, len);
+    }
 
-    memcpy(buff_p1 + SHA256_LEN, contract_hash, contract_hash_len);
-
-    ret = wally_sha256_midstate(buff_p1, 2 * SHA256_LEN, bytes_out, len);
-fail:
-    wally_clear(buff_1, sizeof(buff_1));
-    wally_clear(buff_2, sizeof(buff_2));
+    wally_clear_2(buff, sizeof(buff), buff_2, sizeof(buff_2));
     return ret;
 }
 
@@ -2817,7 +2814,7 @@ static int tx_elements_token_from_bytes(const unsigned char *entropy,
                                         unsigned char *bytes_out,
                                         size_t len)
 {
-    unsigned char buff[2 * SHA256_LEN], *buff_p = buff;
+    unsigned char buff[2 * SHA256_LEN];
     int ret;
 
     if (!entropy || entropy_len != SHA256_LEN ||
@@ -2825,10 +2822,10 @@ static int tx_elements_token_from_bytes(const unsigned char *entropy,
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    memcpy(buff_p, entropy, entropy_len);
-    memcpy(buff_p + SHA256_LEN, bytes, bytes_len);
+    memcpy(buff, entropy, entropy_len);
+    memcpy(buff + SHA256_LEN, bytes, bytes_len);
 
-    ret = wally_sha256_midstate(buff_p, sizeof(buff), bytes_out, len);
+    ret = wally_sha256_midstate(buff, sizeof(buff), bytes_out, len);
     wally_clear(buff, sizeof(buff));
 
     return ret;
