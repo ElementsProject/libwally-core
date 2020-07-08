@@ -607,6 +607,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(_tx_is_elements);
 %returns_void__(wally_tx_elements_output_commitment_set);
 %returns_void__(wally_tx_elements_output_commitment_free);
+%returns_struct(wally_tx_output_clone_alloc, wally_tx_clone);
+%rename("tx_output_clone") wally_tx_output_clone_alloc;
 %returns_void__(wally_tx_output_free);
 %rename("_tx_output_get_asset") wally_tx_output_get_asset;
 %returns_size_t(_tx_output_get_asset);
