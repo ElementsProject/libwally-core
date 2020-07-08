@@ -2822,6 +2822,7 @@ static int push_psbt_input(
     /* Confidential Assets blinding data */
     if (input->has_value) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE, NULL, 0);
+        push_varint(cursor, max, sizeof(leint64_t));
         push_le64(cursor, max, input->value);
     }
     if (input->value_blinder) {
