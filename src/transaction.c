@@ -32,10 +32,6 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
     else \
         wally_clear(dst, siz);
 
-#define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
-#define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
-#define BYTES_INVALID_N(p, len, siz) ((p != NULL) != (len == siz))
-
 #define MAX_INVALID_SATOSHI ((uint64_t) -1)
 
 /* Extra options when serializing for hashing */
