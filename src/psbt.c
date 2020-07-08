@@ -548,14 +548,17 @@ int wally_psbt_input_set_witness_utxo(
     struct wally_psbt_input *input,
     struct wally_tx_output *witness_utxo)
 {
-    int ret = WALLY_OK;
-    struct wally_tx_output *result_witness_utxo;
+    int ret;
+    struct wally_tx_output *output;
 
-    if ((ret = wally_tx_output_init_alloc(witness_utxo->satoshi, witness_utxo->script, witness_utxo->script_len, &result_witness_utxo)) != WALLY_OK) {
-        return ret;
+    if (!input || !witness_utxo)
+        return WALLY_EINVAL;
+
+    ret = wally_tx_output_clone_alloc(witness_utxo, &output);
+    if (ret == WALLY_OK) {
+        wally_tx_output_free(input->witness_utxo);
+        input->witness_utxo = output;
     }
-    wally_tx_output_free(input->witness_utxo);
-    input->witness_utxo = result_witness_utxo;
     return ret;
 }
 
