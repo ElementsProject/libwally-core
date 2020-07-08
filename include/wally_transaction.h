@@ -396,6 +396,9 @@ WALLY_CORE_API int wally_tx_get_witness_count(
 WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
 #endif /* SWIG_PYTHON */
 
+WALLY_CORE_API int wally_clone_output_to(struct wally_tx_output *dst,
+                                         const struct wally_tx_output *src);
+
 /**
  * Return the length of transaction once serialized into bytes.
  *
@@ -945,6 +948,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_reissuance_token(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
 
 #endif /* BUILD_ELEMENTS */
 

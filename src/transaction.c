@@ -775,8 +775,8 @@ int wally_tx_input_free(struct wally_tx_input *input)
     return tx_input_free(input, true);
 }
 
-static bool clone_output_to(struct wally_tx_output *dst,
-                            const struct wally_tx_output *src)
+int wally_clone_output_to(struct wally_tx_output *dst,
+                          const struct wally_tx_output *src)
 {
     unsigned char *new_script = NULL;
 #ifdef BUILD_ELEMENTS
@@ -784,7 +784,7 @@ static bool clone_output_to(struct wally_tx_output *dst,
                   *new_surjectionproof = NULL, *new_rangeproof = NULL;
 #endif
     if (!dst || !src)
-        return false;
+        return WALLY_EINVAL;
 
 #ifdef BUILD_ELEMENTS
     if (!clone_bytes(&new_asset, src->asset, src->asset_len) ||
@@ -804,7 +804,7 @@ static bool clone_output_to(struct wally_tx_output *dst,
         clear_and_free(new_surjectionproof,  src->surjectionproof_len);
         clear_and_free(new_rangeproof, src->rangeproof_len);
 #endif
-        return false;
+        return WALLY_ENOMEM;
     }
 
     memcpy(dst, src, sizeof(*src));
@@ -816,7 +816,7 @@ static bool clone_output_to(struct wally_tx_output *dst,
     dst->surjectionproof = new_surjectionproof;
     dst->rangeproof = new_rangeproof;
 #endif
-    return true;
+    return WALLY_OK;
 }
 
 static int tx_elements_output_proof_init(
@@ -1358,6 +1358,7 @@ int wally_tx_remove_input(struct wally_tx *tx, size_t index)
 int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *output)
 {
     uint64_t total;
+    int ret;
     const bool is_elements = output->features & WALLY_TX_IS_ELEMENTS;
     if (!is_elements) {
         if (!is_valid_tx(tx) || !is_valid_tx_output(output) ||
@@ -1379,8 +1380,8 @@ int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *outpu
         tx->outputs = p;
         tx->outputs_allocation_len += 1;
     }
-    if (!clone_output_to(tx->outputs + tx->num_outputs, output))
-        return WALLY_ENOMEM;
+    if ((ret = wally_clone_output_to(tx->outputs + tx->num_outputs, output)) != WALLY_OK)
+        return ret;
 
     tx->num_outputs += 1;
     return WALLY_OK;
