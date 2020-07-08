@@ -776,16 +776,16 @@ int wally_tx_input_free(struct wally_tx_input *input)
     return tx_input_free(input, true);
 }
 
-static bool clone_output_to(struct wally_tx_output *dst,
-                            const struct wally_tx_output *src)
+int wally_tx_output_clone(const struct wally_tx_output *src,
+                          struct wally_tx_output *output)
 {
     unsigned char *new_script = NULL;
 #ifdef BUILD_ELEMENTS
     unsigned char *new_asset = NULL, *new_value = NULL, *new_nonce = NULL,
                   *new_surjectionproof = NULL, *new_rangeproof = NULL;
 #endif
-    if (!dst || !src)
-        return false;
+    if (!src || !output)
+        return WALLY_EINVAL;
 
 #ifdef BUILD_ELEMENTS
     if (!clone_bytes(&new_asset, src->asset, src->asset_len) ||
@@ -805,19 +805,36 @@ static bool clone_output_to(struct wally_tx_output *dst,
         clear_and_free(new_surjectionproof,  src->surjectionproof_len);
         clear_and_free(new_rangeproof, src->rangeproof_len);
 #endif
-        return false;
+        return WALLY_ENOMEM;
     }
 
-    memcpy(dst, src, sizeof(*src));
-    dst->script = new_script;
+    memcpy(output, src, sizeof(*src));
+    output->script = new_script;
 #ifdef BUILD_ELEMENTS
-    dst->asset = new_asset;
-    dst->value = new_value;
-    dst->nonce = new_nonce;
-    dst->surjectionproof = new_surjectionproof;
-    dst->rangeproof = new_rangeproof;
+    output->asset = new_asset;
+    output->value = new_value;
+    output->nonce = new_nonce;
+    output->surjectionproof = new_surjectionproof;
+    output->rangeproof = new_rangeproof;
 #endif
-    return true;
+    return WALLY_OK;
+}
+
+int wally_tx_output_clone_alloc(const struct wally_tx_output *src,
+                                struct wally_tx_output **output)
+{
+    struct wally_tx_output *result;
+    int ret;
+
+    TX_CHECK_OUTPUT;
+    TX_OUTPUT_ALLOC(struct wally_tx_output);
+
+    ret = wally_tx_output_clone(src, result);
+    if (ret != WALLY_OK) {
+        wally_free(result);
+        *output = NULL;
+    }
+    return ret;
 }
 
 static int tx_elements_output_proof_init(
@@ -1359,6 +1376,7 @@ int wally_tx_remove_input(struct wally_tx *tx, size_t index)
 int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *output)
 {
     uint64_t total;
+    int ret;
     const bool is_elements = output->features & WALLY_TX_IS_ELEMENTS;
     if (!is_elements) {
         if (!is_valid_tx(tx) || !is_valid_tx_output(output) ||
@@ -1380,8 +1398,8 @@ int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *outpu
         tx->outputs = p;
         tx->outputs_allocation_len += 1;
     }
-    if (!clone_output_to(tx->outputs + tx->num_outputs, output))
-        return WALLY_ENOMEM;
+    if ((ret = wally_tx_output_clone(output, tx->outputs + tx->num_outputs)) != WALLY_OK)
+        return ret;
 
     tx->num_outputs += 1;
     return WALLY_OK;

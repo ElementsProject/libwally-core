@@ -245,6 +245,30 @@ WALLY_CORE_API int wally_tx_output_init_alloc(
     size_t script_len,
     struct wally_tx_output **output);
 
+/**
+ * Create a new copy of a transaction output.
+ *
+ * :param tx_output_in: The transaction output to clone.
+ * :param output: Destination for the resulting transaction output copy.
+ */
+WALLY_CORE_API int wally_tx_output_clone_alloc(
+    const struct wally_tx_output *tx_output_in,
+    struct wally_tx_output **output);
+
+#ifndef SWIG
+/**
+ * Create a new copy of a transaction output in-place.
+ *
+ * :param tx_output_in: The transaction output to clone.
+ * :param output: Destination for the resulting transaction output copy.
+ *
+ * .. note:: ``output`` is overwritten in place, and not cleared first.
+ */
+WALLY_CORE_API int wally_tx_output_clone(
+    const struct wally_tx_output *tx_output_in,
+    struct wally_tx_output *output);
+#endif /* SWIG */
+
 #ifndef SWIG_PYTHON
 /**
  * Free a transaction output allocated by `wally_tx_output_init_alloc`.

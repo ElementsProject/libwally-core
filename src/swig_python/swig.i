@@ -344,6 +344,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
 %rename("tx_input_init") wally_tx_input_init_alloc;
 %rename("tx_output_init") wally_tx_output_init_alloc;
+%rename("tx_output_clone") wally_tx_output_clone_alloc;
 %rename("tx_init") wally_tx_init_alloc;
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;
 %rename("tx_elements_output_init") wally_tx_elements_output_init_alloc;
