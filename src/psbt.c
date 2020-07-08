@@ -1994,19 +1994,16 @@ static int pull_psbt_input(
 
             id_len = pull_varlength(&key, &key_len);
             if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
-                size_t subkey_len;
-                const unsigned char *subkey;
+                /* Skip the elements_id prefix */
+                pull_skip(&key, &key_len, WALLY_ELEMENTS_ID_LEN);
 
-                /* Start parsing subkey */
-                pull_subfield_start(&key, &key_len, id_len, &subkey, &subkey_len);
-
-                switch (pull_varint(&subkey, &subkey_len)) {
+                switch (pull_varint(&key, &key_len)) {
                 case WALLY_PSBT_IN_ELEMENTS_VALUE: {
                     valid_type = true;
                     if (result->has_value) {
                         return WALLY_EINVAL;    /* Already have value */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     /* Start parsing the value field. */
                     pull_subfield_start(cursor, max,
@@ -2022,7 +2019,7 @@ static int pull_psbt_input(
                     if (result->value_blinder) {
                         return WALLY_EINVAL;    /* Already have value blinding factor */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->value_blinder,
                                          &result->value_blinder_len,
@@ -2039,7 +2036,7 @@ static int pull_psbt_input(
                     if (result->asset) {
                         return WALLY_EINVAL;    /* Already have asset */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->asset,
                                          &result->asset_len,
@@ -2056,7 +2053,7 @@ static int pull_psbt_input(
                     if (result->asset_blinder) {
                         return WALLY_EINVAL;    /* Already have asset blinding factor */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->asset_blinder,
                                          &result->asset_blinder_len,
@@ -2073,7 +2070,7 @@ static int pull_psbt_input(
                     if (result->peg_in_tx) {
                         return WALLY_EINVAL;    /* Already have asset */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     /* Start parsing the value field. */
                     pull_subfield_start(cursor, max,
@@ -2092,7 +2089,7 @@ static int pull_psbt_input(
                     if (result->txout_proof) {
                         return WALLY_EINVAL;    /* Already have txout proof */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->txout_proof,
                                          &result->txout_proof_len,
@@ -2109,7 +2106,7 @@ static int pull_psbt_input(
                     if (result->genesis_hash) {
                         return WALLY_EINVAL;    /* Already have genesis hash */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->genesis_hash,
                                          &result->genesis_hash_len,
@@ -2126,7 +2123,7 @@ static int pull_psbt_input(
                     if (result->claim_script) {
                         return WALLY_EINVAL;    /* Already have asset */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->claim_script,
                                          &result->claim_script_len,
@@ -2239,19 +2236,16 @@ static int pull_psbt_output(
 
             id_len = pull_varlength(&key, &key_len);
             if (id_len == WALLY_ELEMENTS_ID_LEN && memcmp(key, WALLY_ELEMENTS_ID, id_len) == 0) {
-                size_t subkey_len;
-                const unsigned char *subkey;
+                /* Skip the elements_id prefix */
+                pull_skip(&key, &key_len, WALLY_ELEMENTS_ID_LEN);
 
-                /* Start parsing subkey */
-                pull_subfield_start(&key, &key_len, id_len, &subkey, &subkey_len);
-
-                switch (pull_varint(&subkey, &subkey_len)) {
+                switch (pull_varint(&key, &key_len)) {
                 case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT: {
                     valid_type = true;
                     if (result->value_commitment) {
                         return WALLY_EINVAL;    /* Already have value commitment */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->value_commitment,
                                          &result->value_commitment_len,
@@ -2268,7 +2262,7 @@ static int pull_psbt_output(
                     if (result->value_blinder) {
                         return WALLY_EINVAL;    /* Already have value blinder */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->value_blinder,
                                          &result->value_blinder_len,
@@ -2285,7 +2279,7 @@ static int pull_psbt_output(
                     if (result->asset_commitment) {
                         return WALLY_EINVAL;    /* Already have asset commitment */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->asset_commitment,
                                          &result->asset_commitment_len,
@@ -2302,7 +2296,7 @@ static int pull_psbt_output(
                     if (result->asset_blinder) {
                         return WALLY_EINVAL;    /* Already have asset blinder */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->asset_blinder,
                                          &result->asset_blinder_len,
@@ -2319,7 +2313,7 @@ static int pull_psbt_output(
                     if (result->range_proof) {
                         return WALLY_EINVAL;    /* Already have range proof */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->range_proof,
                                          &result->range_proof_len,
@@ -2336,7 +2330,7 @@ static int pull_psbt_output(
                     if (result->surjection_proof) {
                         return WALLY_EINVAL;    /* Already have surjection proof */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->surjection_proof,
                                          &result->surjection_proof_len,
@@ -2353,7 +2347,7 @@ static int pull_psbt_output(
                     if (result->blinding_pubkey) {
                         return WALLY_EINVAL;    /* Already have blinding pubkey */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->blinding_pubkey,
                                          &result->blinding_pubkey_len,
@@ -2374,7 +2368,7 @@ static int pull_psbt_output(
                     if (result->nonce_commitment) {
                         return WALLY_EINVAL;    /* Already have nonce commitment */
                     }
-                    subfield_nomore_end(&key, &key_len, subkey, subkey_len);
+                    subfield_nomore_end(cursor, max, key, key_len);
 
                     if (!clone_varlength(&result->nonce_commitment,
                                          &result->nonce_commitment_len,
