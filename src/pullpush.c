@@ -121,6 +121,16 @@ uint8_t pull_u8(const unsigned char **cursor, size_t *max)
     return v;
 }
 
+uint8_t peek_u8(const unsigned char **cursor, size_t *max)
+{
+    uint8_t v = pull_u8(cursor, max);
+    if (*cursor) {
+        *cursor -= sizeof(v);
+        *max += sizeof(v);
+    }
+    return v;
+}
+
 void push_varint(unsigned char **cursor, size_t *max, uint64_t v)
 {
     unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
