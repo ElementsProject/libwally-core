@@ -87,6 +87,9 @@ docs/source/transaction.rst
 docs/source/elements.rst
 .idea/
 
+# ctags
+tags
+
 # MacOS
 **/.DS_Store
 
