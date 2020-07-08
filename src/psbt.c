@@ -451,7 +451,7 @@ int wally_psbt_elements_input_init_alloc(
     struct wally_unknowns_map *unknowns,
     uint32_t sighash_type,
     uint64_t value,
-    bool has_value,
+    uint32_t has_value,
     unsigned char *value_blinder,
     size_t value_blinder_len,
     unsigned char *asset,
@@ -671,7 +671,7 @@ int wally_psbt_elements_input_set_value(
     uint64_t value)
 {
     input->value = value;
-    input->has_value = true;
+    input->has_value = 1u;
     return WALLY_OK;
 }
 

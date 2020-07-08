@@ -100,7 +100,7 @@ struct wally_psbt_input {
     uint32_t sighash_type;
 #ifdef BUILD_ELEMENTS
     uint64_t value;
-    bool has_value;
+    uint32_t has_value;
     unsigned char *value_blinder;
     size_t value_blinder_len;
     unsigned char *asset;
@@ -678,7 +678,7 @@ WALLY_CORE_API int wally_psbt_elements_input_init_alloc(
     struct wally_unknowns_map *unknowns,
     uint32_t sighash_type,
     uint64_t value,
-    bool has_value,
+    uint32_t has_value,
     unsigned char *value_blinder,
     size_t value_blinder_len,
     unsigned char *asset,
