@@ -870,8 +870,8 @@ int wally_psbt_elements_output_init_alloc(
     size_t witness_script_len,
     struct wally_keypath_map *keypaths,
     struct wally_unknowns_map *unknowns,
-    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN],
-    bool has_blinding_pubkey,
+    unsigned char *blinding_pubkey,
+    size_t blinding_pubkey_len,
     unsigned char *value_commitment,
     size_t value_commitment_len,
     unsigned char *value_blinder,
@@ -903,7 +903,7 @@ int wally_psbt_elements_output_init_alloc(
     /* wally_psbt_output_init_alloc allocates for us */
     result = *output;
 
-    if (has_blinding_pubkey && (ret = wally_psbt_elements_output_set_blinding_pubkey(result, blinding_pubkey)) != WALLY_OK) {
+    if ((ret = wally_psbt_elements_output_set_blinding_pubkey(result, blinding_pubkey, blinding_pubkey_len)) != WALLY_OK) {
         goto fail;
     }
     if (value_commitment && (ret = wally_psbt_elements_output_set_value_commitment(result, value_commitment, value_commitment_len)) != WALLY_OK) {
@@ -1000,10 +1000,20 @@ int wally_psbt_output_set_unknowns(
 #ifdef BUILD_ELEMENTS
 int wally_psbt_elements_output_set_blinding_pubkey(
     struct wally_psbt_output *output,
-    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN])
+    unsigned char *blinding_pubkey,
+    size_t blinding_pubkey_len)
 {
-    memcpy(output->blinding_pubkey, blinding_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    output->has_blinding_pubkey = true;
+    unsigned char *new_blinding_pubkey = NULL;
+
+    if (!output || BYTES_INVALID_N(blinding_pubkey, blinding_pubkey_len, EC_PUBLIC_KEY_UNCOMPRESSED_LEN))
+        return WALLY_EINVAL;
+
+    if (blinding_pubkey && !clone_bytes(&new_blinding_pubkey, blinding_pubkey, blinding_pubkey_len))
+        return WALLY_ENOMEM;
+
+    wally_free(output->blinding_pubkey);
+    output->blinding_pubkey = new_blinding_pubkey;
+    output->blinding_pubkey_len = blinding_pubkey_len;
     return WALLY_OK;
 }
 

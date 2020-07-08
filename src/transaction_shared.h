@@ -12,6 +12,10 @@ extern "C" {
     wally_clear((void *)*output, sizeof(typ)); \
     result = (typ *) *output;
 
+#define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
+#define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
+#define BYTES_INVALID_N(p, len, siz) ((p != NULL) != (len == siz))
+
 bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 void clear_and_free(void *p, size_t len);
 int analyze_tx(const unsigned char *bytes, size_t bytes_len,

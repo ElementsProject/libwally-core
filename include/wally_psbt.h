@@ -126,8 +126,8 @@ struct wally_psbt_output {
     struct wally_keypath_map *keypaths;
     struct wally_unknowns_map *unknowns;
 #ifdef BUILD_ELEMENTS
-    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    bool has_blinding_pubkey;
+    unsigned char *blinding_pubkey;
+    size_t blinding_pubkey_len;
     unsigned char *value_commitment;
     size_t value_commitment_len;
     unsigned char *value_blinder;
@@ -848,8 +848,8 @@ WALLY_CORE_API int wally_psbt_elements_output_init_alloc(
     size_t witness_script_len,
     struct wally_keypath_map *keypaths,
     struct wally_unknowns_map *unknowns,
-    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN],
-    bool has_blinding_pubkey,
+    unsigned char *blinding_pubkey,
+    size_t blinding_pubkey_len,
     unsigned char *value_commitment,
     size_t value_commitment_len,
     unsigned char *value_blinder,
@@ -874,7 +874,8 @@ WALLY_CORE_API int wally_psbt_elements_output_init_alloc(
  */
 WALLY_CORE_API int wally_psbt_elements_output_set_blinding_pubkey(
     struct wally_psbt_output *output,
-    unsigned char blinding_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]);
+    unsigned char *blinding_pubkey,
+    size_t blinding_pubkey_len);
 
 /**
  * Set the value commitment in an elements output
