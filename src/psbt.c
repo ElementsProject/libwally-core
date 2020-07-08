@@ -2630,8 +2630,8 @@ static void push_psbt_elements_key(
     uint64_t type, const void *extra, size_t extra_len)
 {
     push_varint(cursor, max, varint_get_length(WALLY_PSBT_PROPRIETARY_TYPE)
-            + varint_get_length(WALLY_ELEMENTS_ID_LEN)
-            + WALLY_ELEMENTS_ID_LEN + varint_get_length(type) + extra_len);
+                + varint_get_length(WALLY_ELEMENTS_ID_LEN)
+                + WALLY_ELEMENTS_ID_LEN + varint_get_length(type) + extra_len);
     push_varint(cursor, max, WALLY_PSBT_PROPRIETARY_TYPE);
     push_varbuff(cursor, max, WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN);
     push_bytes(cursor, max, extra, extra_len);
