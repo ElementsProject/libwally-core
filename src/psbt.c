@@ -4,6 +4,7 @@
 #include "ccan/ccan/build_assert/build_assert.h"
 
 #include <include/wally_crypto.h>
+#include <include/wally_elements.h>
 #include <include/wally_script.h>
 #include <include/wally_transaction.h>
 #include <include/wally_psbt.h>
@@ -1405,6 +1406,105 @@ static int pull_unknown_key_value(const unsigned char **cursor,
     return WALLY_OK;
 }
 
+#ifdef BUILD_ELEMENTS
+static size_t push_elements_bytes_size(const struct wally_tx_output *out)
+{
+    size_t size = 0;
+    size += out->asset_len == 0 ? 1 : out->asset_len;
+    size += out->value_len == 0 ? 1 : out->value_len;
+    size += out->nonce_len == 0 ? 1 : out->nonce_len;
+    size += out->script_len == 0 ? 1 : out->script_len + 1;
+    return size;
+}
+static void push_elements_bytes(unsigned char **cursor,
+                                size_t *max,
+                                unsigned char *value,
+                                size_t val_len)
+{
+    if (value == NULL) {
+        unsigned char empty[1] = { 0x00 };
+        push_bytes(cursor, max, empty, sizeof(empty));
+    } else {
+        push_bytes(cursor, max,
+                   value, val_len);
+    }
+}
+
+static int pull_elements_confidential(const unsigned char **cursor,
+                                      size_t *max,
+                                      unsigned char **value,
+                                      size_t *val_len,
+                                      size_t prefixA, size_t prefixB,
+                                      size_t prefixedSize, size_t explicitSize)
+{
+    uint8_t type = peek_u8(cursor, max);
+    /*The first byte is always the 'version'
+     * which tells you what the value is */
+    switch (type) {
+    /* Empty */
+    case 0:
+        /* Pop off the type */
+        pull_u8(cursor, max);
+        *value = NULL;
+        *val_len = 0;
+        return WALLY_OK;
+    /* Explicit size */
+    case 1:
+        *value = wally_malloc(explicitSize);
+        pull_bytes(*value, explicitSize, cursor, max);
+        if (!*cursor)
+            return WALLY_EINVAL;
+        *val_len = explicitSize;
+        return WALLY_OK;
+    }
+    if (type == prefixA || type == prefixB) {
+        *value = wally_malloc(prefixedSize);
+        pull_bytes(*value, prefixedSize, cursor, max);
+        if (!*cursor)
+            return WALLY_EINVAL;
+        *val_len = prefixedSize;
+        return WALLY_OK;
+    }
+    return WALLY_EINVAL;
+}
+
+/* Either returns a 33-byte commitment to a confidential value, or
+ * a 64-bit explicit value. */
+static int pull_confidential_value(const unsigned char **cursor,
+                                   size_t *max,
+                                   unsigned char **value,
+                                   size_t *val_len)
+
+{
+    return pull_elements_confidential(cursor, max, value, val_len,
+                                      WALLY_TX_ASSET_CT_VALUE_PREFIX_A, WALLY_TX_ASSET_CT_VALUE_PREFIX_B,
+                                      WALLY_TX_ASSET_CT_VALUE_LEN, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
+}
+
+static int pull_confidential_asset(const unsigned char **cursor,
+                                   size_t *max,
+                                   unsigned char **asset,
+                                   size_t *asset_len)
+
+{
+    return pull_elements_confidential(cursor, max, asset, asset_len,
+                                      WALLY_TX_ASSET_CT_ASSET_PREFIX_A, WALLY_TX_ASSET_CT_ASSET_PREFIX_B,
+                                      WALLY_TX_ASSET_CT_ASSET_LEN, WALLY_TX_ASSET_CT_ASSET_LEN);
+}
+
+static int pull_nonce(const unsigned char **cursor,
+                      size_t *max,
+                      unsigned char **nonce,
+                      size_t *nonce_len)
+
+{
+    return pull_elements_confidential(cursor, max, nonce, nonce_len,
+                                      WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B,
+                                      WALLY_TX_ASSET_CT_NONCE_LEN, WALLY_TX_ASSET_CT_NONCE_LEN);
+}
+
+#endif /* BUILD_ELEMENTS */
+
 struct psbt_input_counts {
     size_t num_unknowns;
     size_t num_keypaths;
@@ -1715,11 +1815,42 @@ static int pull_psbt_input(
                 return WALLY_EINVAL;     /* We already have a witness utxo */
             }
             subfield_nomore_end(cursor, max, key, key_len);
-
             /* Start parsing the value field. */
             pull_subfield_start(cursor, max,
                                 pull_varint(cursor, max),
                                 &val, &val_max);
+#ifdef BUILD_ELEMENTS
+            if (is_elements) {
+                unsigned char *asset, *value, *nonce;
+                size_t asset_len, value_len, nonce_len;
+                if ((ret = pull_confidential_asset(&val, &val_max, &asset, &asset_len)) != WALLY_OK) {
+                    return ret;
+                }
+                if ((ret = pull_confidential_value(&val, &val_max, &value, &value_len)) != WALLY_OK) {
+                    return ret;
+                }
+                if ((ret = pull_nonce(&val, &val_max, &nonce, &nonce_len)) != WALLY_OK) {
+                    return ret;
+                }
+                script_len = pull_varint(&val, &val_max);
+                script = pull_skip(&val, &val_max, script_len);
+                if (!script) {
+                    return WALLY_EINVAL;
+                }
+                ret = wally_tx_elements_output_init_alloc(script, script_len,
+                                                          asset, asset_len,
+                                                          value, value_len,
+                                                          nonce, nonce_len,
+                                                          NULL, 0, NULL, 0,
+                                                          &result->witness_utxo);
+                if (ret != WALLY_OK) {
+                    return ret;
+                }
+                subfield_nomore_end(cursor, max, val, val_max);
+                break;
+            }
+#endif /* BUILD_ELEMENTS */
+
             amount = pull_le64(&val, &val_max);
             script_len = pull_varint(&val, &val_max);
             script = pull_skip(&val, &val_max, script_len);
@@ -2573,6 +2704,7 @@ static void push_keypath_item(
 
 static int push_psbt_input(
     unsigned char **cursor, size_t *max,
+    bool is_elements,
     const struct wally_psbt_input *input)
 {
     int ret;
@@ -2590,11 +2722,41 @@ static int push_psbt_input(
     }
 
     /* Witness utxo */
+#ifdef BUILD_ELEMENTS
+    if (is_elements && input->witness_utxo) {
+        struct wally_tx_output *utxo = input->witness_utxo;
+        size_t buf_len = push_elements_bytes_size(utxo);
+        unsigned char buf[buf_len], *ptr = buf;
+        /* Push the asset, value, nonce, then scriptpubkey */
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_WITNESS_UTXO, NULL, 0);
+
+        push_elements_bytes(&ptr, &buf_len,
+                            utxo->asset,
+                            utxo->asset_len);
+        push_elements_bytes(&ptr, &buf_len,
+                            utxo->value,
+                            utxo->value_len);
+        push_elements_bytes(&ptr, &buf_len,
+                            utxo->nonce,
+                            utxo->nonce_len);
+        push_varbuff(&ptr, &buf_len,
+                     utxo->script,
+                     utxo->script_len);
+
+        assert(buf_len == 0);
+        push_varbuff(cursor, max, buf, sizeof(buf));
+    } else
+#else
+    if (is_elements) {
+        return WALLY_ERROR;
+    }
+#endif /* BUILD_ELEMENTS */
     if (input->witness_utxo) {
         unsigned char wit_bytes[50], *w = wit_bytes; /* Witness outputs can be no larger than 50 bytes as specified in BIP 141 */
         size_t wit_max = sizeof(wit_bytes);
 
         push_psbt_key(cursor, max, WALLY_PSBT_IN_WITNESS_UTXO, NULL, 0);
+
         push_le64(&w, &wit_max, input->witness_utxo->satoshi);
         push_varbuff(&w, &wit_max,
                      input->witness_utxo->script,
@@ -2833,9 +2995,13 @@ int wally_psbt_to_bytes(
     push_u8(&cursor, &max, WALLY_PSBT_SEPARATOR);
 
     /* Push each input and output */
+    size_t is_elements;
+    if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK) {
+        return ret;
+    }
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
-        ret = push_psbt_input(&cursor, &max, input);
+        ret = push_psbt_input(&cursor, &max, is_elements == 1, input);
         if (ret != WALLY_OK) {
             return ret;
         }
