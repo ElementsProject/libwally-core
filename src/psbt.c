@@ -2634,6 +2634,7 @@ static void push_psbt_elements_key(
                 + WALLY_ELEMENTS_ID_LEN + varint_get_length(type) + extra_len);
     push_varint(cursor, max, WALLY_PSBT_PROPRIETARY_TYPE);
     push_varbuff(cursor, max, WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN);
+    push_varint(cursor, max, type);
     push_bytes(cursor, max, extra, extra_len);
 }
 #endif /* BUILD_ELEMENTS */
