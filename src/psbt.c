@@ -555,15 +555,21 @@ int wally_psbt_input_set_witness_utxo(
     struct wally_psbt_input *input,
     struct wally_tx_output *witness_utxo)
 {
-    int ret = WALLY_OK;
-    struct wally_tx_output *result_witness_utxo;
+    int res = WALLY_OK;
+    struct wally_tx_output *output;
 
-    if ((ret = wally_tx_output_init_alloc(witness_utxo->satoshi, witness_utxo->script, witness_utxo->script_len, &result_witness_utxo)) != WALLY_OK) {
-        return ret;
+    output = wally_malloc(sizeof(struct wally_tx_output));
+    if (!output) return WALLY_ENOMEM;
+    wally_clear((void *)output, sizeof(struct wally_tx_output));
+
+    /* Since Elements has a different setup,
+     * we just clone the passed in output */
+    if ((res = wally_clone_output_to(output, witness_utxo)) != WALLY_OK) {
+        return res;
     }
     wally_tx_output_free(input->witness_utxo);
-    input->witness_utxo = result_witness_utxo;
-    return ret;
+    input->witness_utxo = output;
+    return res;
 }
 
 int wally_psbt_input_set_redeem_script(
