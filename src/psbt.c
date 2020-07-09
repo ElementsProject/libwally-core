@@ -3843,18 +3843,11 @@ int wally_extract_psbt(
     return ret;
 }
 
-int wally_psbt_is_elements(
-    const struct wally_psbt *psbt,
-    size_t *written)
+int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 {
     if (!psbt || !written)
         return WALLY_EINVAL;
 
-    *written = 0;
-#ifdef BUILD_ELEMENTS
-    if (memcmp(psbt->magic, WALLY_ELEMENTS_PSBT_MAGIC, 5) == 0) {
-        *written = 1;
-    }
-#endif /* BUILD_ELEMENTS */
+    *written = memcmp(psbt->magic, WALLY_ELEMENTS_PSBT_MAGIC, sizeof(psbt->magic)) ? 0 : 1;
     return WALLY_OK;
 }
