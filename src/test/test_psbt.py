@@ -1,7 +1,5 @@
 import binascii
-import base64
 import json
-import os
 import unittest
 from util import *
 
@@ -9,7 +7,7 @@ class PSBTTests(unittest.TestCase):
 
     def test_serialization(self):
         """Testing serialization and deserialization"""
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/psbt.json')) as f:
+        with open(root_dir + 'src/data/psbt.json', 'r') as f:
             d = json.load(f)
             invalids = d['invalid']
             valids = d['valid']
