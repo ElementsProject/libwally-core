@@ -37,7 +37,7 @@ int main(void)
         if (strcmp(output, valid_psbts[i].base64) != 0) {
             errx(1, "psbt %s turned into %s?", valid_psbts[i].base64, output);
         }
-        free(output);
+        wally_free_string(output);
 
         if (wally_psbt_get_length(psbt, &len) != WALLY_OK) {
             errx(1, "Failed to get pbst %s len", valid_psbts[i].base64);
