@@ -661,21 +661,21 @@ int wally_psbt_elements_input_set_asset_blinder(struct wally_psbt_input *input,
                          &input->asset_blinder, &input->asset_blinder_len);
 }
 
-int wally_psbt_elements_input_set_peg_in_tx(
-    struct wally_psbt_input *input,
-    struct wally_tx *peg_in_tx)
+int wally_psbt_elements_input_set_peg_in_tx(struct wally_psbt_input *input,
+                                            struct wally_tx *peg_in_tx)
 {
     int ret = WALLY_OK;
-    struct wally_tx *result_peg_in_tx;
+    struct wally_tx *new_tx;
 
-    if ((ret = wally_tx_clone(peg_in_tx, 0, &result_peg_in_tx)) != WALLY_OK) {
-        return ret;
+    if (!input)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_tx_clone(peg_in_tx, 0, &new_tx)) == WALLY_OK) {
+        wally_tx_free(input->peg_in_tx);
+        input->peg_in_tx = new_tx;
     }
-    wally_tx_free(input->peg_in_tx);
-    input->peg_in_tx = peg_in_tx;
     return ret;
 }
-
 
 int wally_psbt_elements_input_set_txout_proof(
     struct wally_psbt_input *input,
