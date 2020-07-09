@@ -570,17 +570,19 @@ int wally_psbt_input_set_final_script_sig(struct wally_psbt_input *input,
                          &input->final_script_sig, &input->final_script_sig_len);
 }
 
-int wally_psbt_input_set_final_witness(
-    struct wally_psbt_input *input,
-    struct wally_tx_witness_stack *final_witness)
+int wally_psbt_input_set_final_witness(struct wally_psbt_input *input,
+                                       struct wally_tx_witness_stack *final_witness)
 {
-    struct wally_tx_witness_stack *result_final_witness;
+    struct wally_tx_witness_stack *new_witness = NULL;
 
-    if (!(result_final_witness = clone_witness(final_witness))) {
+    if (!input)
+        return WALLY_EINVAL;
+
+    if (final_witness && !(new_witness = clone_witness(final_witness)))
         return WALLY_ENOMEM;
-    }
+
     wally_tx_witness_stack_free(input->final_witness);
-    input->final_witness = result_final_witness;
+    input->final_witness = new_witness;
     return WALLY_OK;
 }
 
