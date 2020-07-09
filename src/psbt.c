@@ -305,38 +305,27 @@ static int add_unknowns_item(struct wally_unknowns_map *unknowns, struct wally_u
     return wally_add_new_unknown(unknowns, item->key, item->key_len, item->value, item->value_len);
 }
 
-static struct wally_unknowns_map *clone_unknowns_map(const struct wally_unknowns_map *unknowns)
-{
-    struct wally_unknowns_map *result;
-    size_t i;
-    int ret;
-
-    if (!unknowns)
-        return NULL;
-
-    ret = wally_unknowns_map_init_alloc(unknowns->items_allocation_len, &result);
-
-    for (i = 0; ret == WALLY_OK && i < unknowns->num_items; ++i)
-        ret = add_unknowns_item(result, unknowns->items + i);
-
-    if (ret != WALLY_OK) {
-        wally_unknowns_map_free(result);
-        result = NULL;
-    }
-    return result;
-}
-
 static int replace_unknowns(const struct wally_unknowns_map *src,
                             struct wally_unknowns_map **dst)
 {
-    struct wally_unknowns_map *new_unknowns = NULL;
+    struct wally_unknowns_map *result = NULL;
+    size_t i;
+    int ret = WALLY_OK;
 
-    if (src && !(new_unknowns = clone_unknowns_map(src)))
-        return WALLY_ENOMEM;
+    if (src) {
+        ret = wally_unknowns_map_init_alloc(src->items_allocation_len, &result);
 
-    wally_unknowns_map_free(*dst);
-    *dst = new_unknowns;
-    return WALLY_OK;
+        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+            ret = add_unknowns_item(result, src->items + i);
+    }
+
+    if (ret != WALLY_OK) {
+        wally_unknowns_map_free(result);
+    } else {
+        wally_unknowns_map_free(*dst);
+        *dst = result;
+    }
+    return ret;
 }
 
 int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
