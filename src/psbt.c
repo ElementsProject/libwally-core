@@ -117,37 +117,32 @@ static int array_grow(void **src, size_t num_items, size_t *allocation_len, size
 }
 
 int wally_add_new_keypath(struct wally_keypath_map *keypaths,
-                          unsigned char *pubkey,
-                          size_t pubkey_len,
-                          unsigned char *fingerprint,
-                          size_t fingerprint_len,
-                          uint32_t *path,
-                          size_t path_len)
+                          unsigned char *pubkey, size_t pubkey_len,
+                          unsigned char *fingerprint, size_t fingerprint_len,
+                          uint32_t *path, size_t path_len)
 {
-    size_t latest;
     int ret;
 
-    if (fingerprint_len != BIP32_KEY_FINGERPRINT_LEN || !is_valid_pubkey_len(pubkey_len))
+    if (!keypaths || !pubkey || !is_valid_pubkey_len(pubkey_len) ||
+        !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
+        BYTES_INVALID(path, path_len))
         return WALLY_EINVAL;
 
     ret = array_grow((void *)&keypaths->items, keypaths->num_items,
                      &keypaths->items_allocation_len, sizeof(struct wally_keypath_item));
-    if (ret != WALLY_OK)
-        return ret;
+    if (ret == WALLY_OK) {
+        struct wally_keypath_item *new_item = keypaths->items + keypaths->num_items;
 
-    latest = keypaths->num_items;
-
-    memcpy(&keypaths->items[latest].pubkey, pubkey, pubkey_len);
-    memcpy(&keypaths->items[latest].fingerprint, fingerprint, fingerprint_len);
-    if (path) {
-        if (!clone_bytes((unsigned char **)&keypaths->items[latest].path, (unsigned char *)path, path_len * sizeof(*path))) {
-            return WALLY_ENOMEM;
+        if (path) {
+            if (!clone_bytes((unsigned char **)&new_item->path, (unsigned char *)path, path_len * sizeof(*path)))
+                return WALLY_ENOMEM;
+            new_item->path_len = path_len;
         }
-        keypaths->items[latest].path_len = path_len;
+        memcpy(new_item->pubkey, pubkey, pubkey_len);
+        memcpy(new_item->fingerprint, fingerprint, fingerprint_len);
+        keypaths->num_items++;
     }
-    keypaths->num_items++;
-
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output)
