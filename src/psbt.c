@@ -25,6 +25,15 @@ static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMP
     return pubkey[0] == 0x02 || pubkey[0] == 0x03;
 }
 
+static bool is_valid_pubkey_len(size_t len)
+{
+    return len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN || len == EC_PUBLIC_KEY_LEN;
+}
+
+static bool is_valid_optional_pubkey_len(size_t len)
+{
+    return !len || is_valid_pubkey_len(len);
+}
 
 int wally_keypath_map_init_alloc(size_t alloc_len, struct wally_keypath_map **output)
 {
@@ -99,9 +108,8 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
 {
     size_t latest;
 
-    if (fingerprint_len != BIP32_KEY_FINGERPRINT_LEN || (pubkey_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN && pubkey_len != EC_PUBLIC_KEY_LEN)) {
+    if (fingerprint_len != BIP32_KEY_FINGERPRINT_LEN || !is_valid_pubkey_len(pubkey_len))
         return WALLY_EINVAL;
-    }
 
     if (keypaths->num_items == keypaths->items_allocation_len) {
         struct wally_keypath_item *new_items;
@@ -216,9 +224,8 @@ int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
                               size_t sig_len)
 {
     size_t latest;
-    if (pubkey_len != EC_PUBLIC_KEY_LEN && pubkey_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+    if (!is_valid_pubkey_len(pubkey_len))
         return WALLY_EINVAL;
-    }
 
     if (sigs->num_items == sigs->items_allocation_len) {
         struct wally_partial_sigs_item *new_items;
@@ -1354,10 +1361,8 @@ static int pull_keypath(const unsigned char **cursor, size_t *max,
     size_t i, val_max;
     struct wally_keypath_item *kpitem;
 
-    if (key_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN
-        && key_len != EC_PUBLIC_KEY_LEN) {
-        return WALLY_EINVAL;     /* Size of key is unexpected */
-    }
+    if (!is_valid_pubkey_len(key_len))
+        return WALLY_EINVAL;
 
     /* Check for duplicates */
     for (i = 0; i < keypaths->num_items; ++i) {
@@ -1869,10 +1874,10 @@ static int pull_psbt_input(
             size_t i;
             struct wally_partial_sigs_item *sigitem;
             struct wally_partial_sigs_map *partial_sigs = result->partial_sigs;
-            if (key_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN
-                && key_len != EC_PUBLIC_KEY_LEN) {
-                return WALLY_EINVAL;     /* Size of key is unexpected */
-            }
+
+            if (!is_valid_pubkey_len(key_len))
+                return WALLY_EINVAL;
+
             /* Check for duplicates */
             for (i = 0; i < partial_sigs->num_items; ++i) {
                 if (memcmp(partial_sigs->items[i].pubkey, key, key_len) == 0) {
@@ -2357,13 +2362,10 @@ static int pull_psbt_output(
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->blinding_pubkey_len == 0) {
+                    if (!is_valid_optional_pubkey_len(result->blinding_pubkey_len))
+                        return WALLY_EINVAL;
+                    if (result->blinding_pubkey_len == 0)
                         result->blinding_pubkey = wally_malloc(1);
-                    } else if (result->blinding_pubkey_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN &&
-                               result->blinding_pubkey_len != EC_PUBLIC_KEY_LEN) {
-                        /* FIXME: blinding key elsewhere is assumed to be EC_PUBLIC_KEY_UNCOMPRESSED_LEN only */
-                        return WALLY_EINVAL;    /* Size of key is unexpected */
-                    }
                     break;
                 }
                 case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT: {
