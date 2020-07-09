@@ -1,5 +1,6 @@
 bld
 *.pyc
+*.swp
 src/test/__pycache__/
 *~
 *.class
