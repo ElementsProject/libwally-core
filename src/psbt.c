@@ -333,6 +333,19 @@ static struct wally_unknowns_map *clone_unknowns_map(const struct wally_unknowns
     return result;
 }
 
+static int replace_unknowns(const struct wally_unknowns_map *src,
+                            struct wally_unknowns_map **dst)
+{
+    struct wally_unknowns_map *new_unknowns = NULL;
+
+    if (src && !(new_unknowns = clone_unknowns_map(src)))
+        return WALLY_ENOMEM;
+
+    wally_unknowns_map_free(*dst);
+    *dst = new_unknowns;
+    return WALLY_OK;
+}
+
 int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
                           unsigned char *key,
                           size_t key_len,
@@ -648,18 +661,10 @@ int wally_psbt_input_set_partial_sigs(
     return WALLY_OK;
 }
 
-int wally_psbt_input_set_unknowns(
-    struct wally_psbt_input *input,
-    struct wally_unknowns_map *unknowns)
+int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
+                                  struct wally_unknowns_map *unknowns)
 {
-    struct wally_unknowns_map *result_unknowns;
-
-    if (!(result_unknowns = clone_unknowns_map(unknowns))) {
-        return WALLY_ENOMEM;
-    }
-    wally_unknowns_map_free(input->unknowns);
-    input->unknowns = result_unknowns;
-    return WALLY_OK;
+    return input ? replace_unknowns(unknowns, &input->unknowns) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_sighash_type(
@@ -973,18 +978,10 @@ int wally_psbt_output_set_keypaths(
     return WALLY_OK;
 }
 
-int wally_psbt_output_set_unknowns(
-    struct wally_psbt_output *output,
-    struct wally_unknowns_map *unknowns)
+int wally_psbt_output_set_unknowns(struct wally_psbt_output *output,
+                                   struct wally_unknowns_map *unknowns)
 {
-    struct wally_unknowns_map *result_unknowns;
-
-    if (!(result_unknowns = clone_unknowns_map(unknowns))) {
-        return WALLY_ENOMEM;
-    }
-    wally_unknowns_map_free(output->unknowns);
-    output->unknowns = result_unknowns;
-    return WALLY_OK;
+    return output ? replace_unknowns(unknowns, &output->unknowns) : WALLY_EINVAL;
 }
 
 #ifdef BUILD_ELEMENTS
