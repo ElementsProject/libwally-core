@@ -297,35 +297,31 @@ static int replace_unknowns(const struct wally_unknowns_map *src,
 }
 
 int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
-                          unsigned char *key,
-                          size_t key_len,
-                          unsigned char *value,
-                          size_t value_len)
+                          unsigned char *key, size_t key_len,
+                          unsigned char *value, size_t value_len)
 {
-    size_t latest;
+    int ret;
 
-    int ret = array_grow((void *)&unknowns->items, unknowns->num_items,
-                         &unknowns->items_allocation_len, sizeof(struct wally_unknowns_item));
-    if (ret != WALLY_OK)
-        return ret;
+    if (!unknowns || !key || BYTES_INVALID(key, key_len) || BYTES_INVALID(value, value_len))
+        return WALLY_EINVAL;
 
-    latest = unknowns->num_items;
+    ret = array_grow((void *)&unknowns->items, unknowns->num_items,
+                     &unknowns->items_allocation_len, sizeof(struct wally_unknowns_item));
+    if (ret == WALLY_OK) {
+        struct wally_unknowns_item *new_item = unknowns->items + unknowns->num_items;
 
-    if (key) {
-        if (!clone_bytes(&unknowns->items[latest].key, key, key_len)) {
+        if (!clone_bytes(&new_item->key, key, key_len))
+            return WALLY_ENOMEM;
+        if (value && !clone_bytes(&new_item->value, value, value_len)) {
+            clear_and_free(new_item->key, key_len);
+            new_item->key = NULL;
             return WALLY_ENOMEM;
         }
-        unknowns->items[latest].key_len = key_len;
+        new_item->key_len = key_len;
+        new_item->value_len = value_len;
+        unknowns->num_items++;
     }
-    if (value) {
-        if (!clone_bytes(&unknowns->items[latest].value, value, value_len)) {
-            return WALLY_ENOMEM;
-        }
-        unknowns->items[latest].value_len = value_len;
-    }
-    unknowns->num_items++;
-
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_psbt_input_init_alloc(
