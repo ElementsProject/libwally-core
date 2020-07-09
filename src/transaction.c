@@ -175,7 +175,7 @@ void clear_and_free(void *p, size_t len)
     }
 }
 
-static void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t size)
+void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t size)
 {
     unsigned char *p = wally_malloc(new_n * size);
     if (!p)

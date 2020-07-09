@@ -20,6 +20,7 @@ bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 int replace_bytes(const unsigned char *bytes, size_t bytes_len,
                   unsigned char **bytes_out, size_t *bytes_len_out);
 void clear_and_free(void *p, size_t len);
+void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t size);
 int analyze_tx(const unsigned char *bytes, size_t bytes_len,
                uint32_t flags, size_t *num_inputs, size_t *num_outputs,
                bool *expect_witnesses);
