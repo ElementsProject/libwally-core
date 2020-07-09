@@ -1450,6 +1450,7 @@ static void free_psbt_count(struct psbt_counts *counts)
 static int count_psbt_parts(
     const unsigned char *bytes,
     size_t bytes_len,
+    uint32_t flags,
     struct psbt_counts **output)
 {
     int ret;
@@ -1485,7 +1486,7 @@ static int count_psbt_parts(
                 ret = WALLY_EINVAL;
                 goto fail;
             }
-            ret = analyze_tx(val, val_max, 0, &result->num_inputs, &result->num_outputs, &expect_wit);
+            ret = analyze_tx(val, val_max, flags, &result->num_inputs, &result->num_outputs, &expect_wit);
             if (ret != WALLY_OK) {
                 goto fail;
             }
@@ -1660,6 +1661,7 @@ static int pull_psbt_input(
     const unsigned char **cursor,
     size_t *max,
     struct psbt_input_counts counts,
+    uint32_t flags,
     struct wally_psbt_input *result)
 {
     int ret;
@@ -1704,8 +1706,7 @@ static int pull_psbt_input(
             pull_subfield_start(cursor, max,
                                 pull_varint(cursor, max),
                                 &val, &val_max);
-
-            ret = wally_tx_from_bytes(val, val_max, 0,
+            ret = wally_tx_from_bytes(val, val_max, flags,
                                       &result->non_witness_utxo);
             if (ret != WALLY_OK) {
                 return ret;
@@ -1957,8 +1958,7 @@ static int pull_psbt_input(
                                         pull_varint(cursor, max),
                                         &val, &val_max);
 
-                    ret = wally_tx_from_bytes(val, val_max, 0,
-                                              &result->peg_in_tx);
+                    ret = wally_tx_from_bytes(val, val_max, flags, &result->peg_in_tx);
                     if (ret != WALLY_OK) {
                         return ret;
                     }
@@ -2300,6 +2300,7 @@ int wally_psbt_from_bytes(
     size_t i, key_len;
     struct psbt_counts *counts = NULL;
     struct wally_psbt *result = NULL;
+    uint32_t flags = 0;
 
     TX_CHECK_OUTPUT;
 
@@ -2314,6 +2315,7 @@ int wally_psbt_from_bytes(
             ret = WALLY_EINVAL;  /* Invalid Magic */
             goto fail;
         }
+        flags |= WALLY_TX_FLAG_USE_ELEMENTS;
 #else
         ret = WALLY_EINVAL;  /* Invalid Magic */
         goto fail;
@@ -2321,7 +2323,7 @@ int wally_psbt_from_bytes(
     }
 
     /* Get a count of the psbt parts */
-    if (count_psbt_parts(bytes, bytes_len, &counts) != WALLY_OK) {
+    if (count_psbt_parts(bytes, bytes_len, flags, &counts) != WALLY_OK) {
         ret = WALLY_EINVAL;
         goto fail;
     }
@@ -2358,7 +2360,7 @@ int wally_psbt_from_bytes(
             pull_subfield_start(&bytes, &bytes_len,
                                 pull_varint(&bytes, &bytes_len),
                                 &val, &val_max);
-            ret = wally_tx_from_bytes(val, val_max, 0, &result->tx);
+            ret = wally_tx_from_bytes(val, val_max, flags, &result->tx);
             if (ret != WALLY_OK) {
                 goto fail;
             }
@@ -2419,7 +2421,7 @@ int wally_psbt_from_bytes(
     /* Read inputs */
     for (i = 0; i < counts->num_inputs; ++i) {
         ret = pull_psbt_input(&bytes, &bytes_len, counts->input_counts[i],
-                              &result->inputs[i]);
+                              flags, &result->inputs[i]);
         /* Increment this now, might be partially initialized! */
         result->num_inputs++;
         if (ret != WALLY_OK) {
