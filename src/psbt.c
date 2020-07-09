@@ -209,34 +209,27 @@ static int replace_partial_sigs(const struct wally_partial_sigs_map *src,
 }
 
 int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
-                              unsigned char *pubkey,
-                              size_t pubkey_len,
-                              unsigned char *sig,
-                              size_t sig_len)
+                              unsigned char *pubkey, size_t pubkey_len,
+                              unsigned char *sig, size_t sig_len)
 {
-    size_t latest;
     int ret;
 
-    if (!is_valid_pubkey_len(pubkey_len))
+    if (!sigs || !pubkey || !is_valid_pubkey_len(pubkey_len) ||
+        BYTES_INVALID(sig, sig_len))
         return WALLY_EINVAL;
 
     ret = array_grow((void *)&sigs->items, sigs->num_items,
                      &sigs->items_allocation_len, sizeof(struct wally_partial_sigs_item));
-    if (ret != WALLY_OK)
-        return ret;
+    if (ret == WALLY_OK) {
+        struct wally_partial_sigs_item *new_item = sigs->items + sigs->num_items;
 
-    latest = sigs->num_items;
-
-    memcpy(&sigs->items[latest].pubkey, pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    if (sig) {
-        if (!clone_bytes(&sigs->items[latest].sig, sig, sig_len)) {
+        if (sig && !clone_bytes(&new_item->sig, sig, sig_len))
             return WALLY_ENOMEM;
-        }
-        sigs->items[latest].sig_len = sig_len;
+        new_item->sig_len = sig_len;
+        memcpy(&new_item->pubkey, pubkey, pubkey_len);
+        sigs->num_items++;
     }
-    sigs->num_items++;
-
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output)
