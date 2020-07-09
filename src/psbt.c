@@ -507,18 +507,19 @@ fail:
 }
 #endif /* BUILD_ELEMENTS */
 
-int wally_psbt_input_set_non_witness_utxo(
-    struct wally_psbt_input *input,
-    struct wally_tx *non_witness_utxo)
+int wally_psbt_input_set_non_witness_utxo(struct wally_psbt_input *input,
+                                          struct wally_tx *non_witness_utxo)
 {
     int ret = WALLY_OK;
-    struct wally_tx *result_non_witness_utxo;
+    struct wally_tx *new_tx;
 
-    if ((ret = wally_tx_clone(non_witness_utxo, 0, &result_non_witness_utxo)) != WALLY_OK) {
-        return ret;
+    if (!input)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_tx_clone(non_witness_utxo, 0, &new_tx)) == WALLY_OK) {
+        wally_tx_free(input->non_witness_utxo);
+        input->non_witness_utxo = new_tx;
     }
-    wally_tx_free(input->non_witness_utxo);
-    input->non_witness_utxo = result_non_witness_utxo;
     return ret;
 }
 
