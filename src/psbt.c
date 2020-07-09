@@ -1,7 +1,6 @@
 #include "internal.h"
 
 #include "ccan/ccan/base64/base64.h"
-#include "ccan/ccan/build_assert/build_assert.h"
 
 #include <include/wally_elements.h>
 #include <include/wally_script.h>
@@ -9,7 +8,6 @@
 
 #include <limits.h>
 #include <stdbool.h>
-#include <assert.h>
 #include "transaction_shared.h"
 #include "script_int.h"
 #include "script.h"
@@ -1368,7 +1366,8 @@ static int pull_keypath(const unsigned char **cursor, size_t *max,
         }
     }
 
-    assert(keypaths->num_items < keypaths->items_allocation_len);
+    if (keypaths->num_items >= keypaths->items_allocation_len)
+        return WALLY_ERROR; /* Should not happen! */
     kpitem = &keypaths->items[keypaths->num_items++];
 
     memcpy(kpitem->pubkey, key, key_len);
@@ -1411,7 +1410,8 @@ static int pull_unknown_key_value(const unsigned char **cursor,
     *max += (*cursor - pre_key);
     *cursor = pre_key;
 
-    assert(unknowns->num_items < unknowns->items_allocation_len);
+    if (unknowns->num_items >= unknowns->items_allocation_len)
+        return WALLY_ERROR; /* Should not happen! */
     item = &unknowns->items[unknowns->num_items++];
 
     if (!clone_varlength(&item->key, &item->key_len, cursor, max)) {
