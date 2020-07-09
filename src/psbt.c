@@ -1442,47 +1442,42 @@ static void push_elements_bytes(unsigned char **cursor,
 
 static int pull_elements_confidential(const unsigned char **cursor,
                                       size_t *max,
-                                      unsigned char **value,
+                                      const unsigned char **value,
                                       size_t *val_len,
                                       size_t prefixA, size_t prefixB,
                                       size_t prefixed_size, size_t explicit_size)
 {
-    uint8_t type = peek_u8(cursor, max);
-    /*The first byte is always the 'version'
-     * which tells you what the value is */
-    switch (type) {
-    /* Empty */
-    case 0:
-        /* Pop off the type */
+    /* First byte is always the 'version' which tells you what the value is */
+    const uint8_t type = peek_u8(cursor, max);
+    size_t size;
+
+    if (type == 0) {
+        /* Empty, Pop off the type */
         pull_u8(cursor, max);
         *value = NULL;
         *val_len = 0;
         return WALLY_OK;
-    /* Explicit size */
-    case 1:
-        *value = wally_malloc(explicit_size);
-        pull_bytes(*value, explicit_size, cursor, max);
-        if (!*cursor)
-            return WALLY_EINVAL;
-        *val_len = explicit_size;
-        return WALLY_OK;
     }
-    if (type == prefixA || type == prefixB) {
-        *value = wally_malloc(prefixed_size);
-        pull_bytes(*value, prefixed_size, cursor, max);
-        if (!*cursor)
-            return WALLY_EINVAL;
-        *val_len = prefixed_size;
-        return WALLY_OK;
-    }
-    return WALLY_EINVAL;
+
+    if (type == 1)
+        size = explicit_size;
+    else if (type == prefixA || type == prefixB)
+        size = prefixed_size;
+    else
+        return WALLY_EINVAL;
+
+    *value = pull_skip(cursor, max, size);
+    if (!*cursor)
+        return WALLY_EINVAL;
+    *val_len = size;
+    return WALLY_OK;
 }
 
 /* Either returns a 33-byte commitment to a confidential value, or
  * a 64-bit explicit value. */
 static int pull_confidential_value(const unsigned char **cursor,
                                    size_t *max,
-                                   unsigned char **value,
+                                   const unsigned char **value,
                                    size_t *val_len)
 
 {
@@ -1493,7 +1488,7 @@ static int pull_confidential_value(const unsigned char **cursor,
 
 static int pull_confidential_asset(const unsigned char **cursor,
                                    size_t *max,
-                                   unsigned char **asset,
+                                   const unsigned char **asset,
                                    size_t *asset_len)
 
 {
@@ -1504,7 +1499,7 @@ static int pull_confidential_asset(const unsigned char **cursor,
 
 static int pull_nonce(const unsigned char **cursor,
                       size_t *max,
-                      unsigned char **nonce,
+                      const unsigned char **nonce,
                       size_t *nonce_len)
 
 {
@@ -1823,7 +1818,7 @@ static int pull_psbt_input(
                                 &val, &val_max);
 #ifdef BUILD_ELEMENTS
             if (flags & WALLY_TX_FLAG_USE_ELEMENTS) {
-                unsigned char *asset, *value, *nonce;
+                const unsigned char *asset, *value, *nonce;
                 size_t asset_len, value_len, nonce_len;
                 if ((ret = pull_confidential_asset(&val, &val_max, &asset, &asset_len)) != WALLY_OK) {
                     return ret;
