@@ -307,34 +307,30 @@ int wally_unknowns_map_free(struct wally_unknowns_map *unknowns)
     return WALLY_OK;
 }
 
+static int add_unknowns_item(struct wally_unknowns_map *unknowns, struct wally_unknowns_item *item)
+{
+    return wally_add_new_unknown(unknowns, item->key, item->key_len, item->value, item->value_len);
+}
+
 static struct wally_unknowns_map *clone_unknowns_map(const struct wally_unknowns_map *unknowns)
 {
     struct wally_unknowns_map *result;
     size_t i;
+    int ret;
 
-    if (wally_unknowns_map_init_alloc(unknowns->items_allocation_len, &result) != WALLY_OK) {
+    if (!unknowns)
         return NULL;
-    }
 
-    for (i = 0; i < unknowns->num_items; ++i) {
-        if (unknowns->items[i].key) {
-            if (!clone_bytes(&result->items[i].key, unknowns->items[i].key, unknowns->items[i].key_len)) {
-                goto fail;
-            }
-            result->items[i].key_len = unknowns->items[i].key_len;
-        }
-        if (unknowns->items[i].value) {
-            if (!clone_bytes(&result->items[i].value, unknowns->items[i].value, unknowns->items[i].value_len)) {
-                goto fail;
-            }
-            result->items[i].value_len = unknowns->items[i].value_len;
-        }
+    ret = wally_unknowns_map_init_alloc(unknowns->items_allocation_len, &result);
+
+    for (i = 0; ret == WALLY_OK && i < unknowns->num_items; ++i)
+        ret = add_unknowns_item(result, unknowns->items + i);
+
+    if (ret != WALLY_OK) {
+        wally_unknowns_map_free(result);
+        result = NULL;
     }
-    result->num_items = unknowns->num_items;
     return result;
-fail:
-    wally_unknowns_map_free(result);
-    return NULL;
 }
 
 int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
@@ -380,11 +376,6 @@ int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
     unknowns->num_items++;
 
     return WALLY_OK;
-}
-
-static int add_unknowns_item(struct wally_unknowns_map *unknowns, struct wally_unknowns_item *item)
-{
-    return wally_add_new_unknown(unknowns, item->key, item->key_len, item->value, item->value_len);
 }
 
 int wally_psbt_input_init_alloc(
