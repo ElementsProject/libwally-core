@@ -1196,7 +1196,7 @@ int wally_psbt_init_alloc(
 
     /* Version is always 0 */
     result->version = 0;
-    memcpy(result->magic, WALLY_PSBT_MAGIC, 5);
+    memcpy(result->magic, WALLY_PSBT_MAGIC, sizeof(WALLY_PSBT_MAGIC));
     result->inputs_allocation_len = inputs_allocation_len;
     result->outputs_allocation_len = outputs_allocation_len;
     result->tx = NULL;
@@ -1213,7 +1213,7 @@ int wally_psbt_elements_init_alloc(
     int ret;
 
     ret = wally_psbt_init_alloc(inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, output);
-    memcpy((*output)->magic, WALLY_ELEMENTS_PSBT_MAGIC, 5);
+    memcpy((*output)->magic, WALLY_ELEMENTS_PSBT_MAGIC, sizeof(WALLY_ELEMENTS_PSBT_MAGIC));
 
     return ret;
 }
@@ -2455,7 +2455,7 @@ int wally_psbt_from_bytes(
     *output = result;
 
     /* Set the magic */
-    memcpy(result->magic, magic, 5);
+    memcpy(result->magic, magic, sizeof(WALLY_PSBT_MAGIC));
 
     /* Read globals first */
     pre_key = bytes;
@@ -3022,8 +3022,8 @@ int wally_psbt_from_base64(
 
     /* Decode the base64 psbt */
     decoded_len = base64_decode(decoded, safe_len, string, string_len);
-    if (decoded_len <= 5) { /* Make sure we also have enough bytes for the magic */
-        ret = WALLY_EINVAL;
+    if (decoded_len <= (ssize_t)sizeof(WALLY_PSBT_MAGIC)) {
+        ret = WALLY_EINVAL; /* Not enough bytes for the magic */
         goto done;
     }
 
