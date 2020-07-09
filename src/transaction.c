@@ -186,17 +186,21 @@ static void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t s
     return p;
 }
 
-static int replace_script(const unsigned char *script, size_t script_len,
-                          unsigned char **script_out, size_t *script_len_out)
+int replace_bytes(const unsigned char *bytes, size_t bytes_len,
+                  unsigned char **bytes_out, size_t *bytes_len_out)
 {
-    /* TODO: Avoid reallocation if new script is smaller than the existing one */
-    unsigned char *new_script = NULL;
-    if (!clone_bytes(&new_script, script, script_len))
+    unsigned char *new_bytes = NULL;
+
+    if (BYTES_INVALID(bytes, bytes_len) || BYTES_INVALID(*bytes_out, *bytes_len_out))
+        return WALLY_EINVAL;
+
+    /* TODO: Avoid reallocation if new bytes is smaller than the existing one */
+    if (!clone_bytes(&new_bytes, bytes, bytes_len))
         return WALLY_ENOMEM;
 
-    clear_and_free(*script_out, *script_len_out);
-    *script_out = new_script;
-    *script_len_out = script_len;
+    clear_and_free(*bytes_out, *bytes_len_out);
+    *bytes_out = new_bytes;
+    *bytes_len_out = bytes_len;
     return WALLY_OK;
 }
 
@@ -3090,9 +3094,9 @@ int wally_tx_input_set_txhash(struct wally_tx_input *input,
 int wally_tx_output_set_script(struct wally_tx_output *output,
                                const unsigned char *script, size_t script_len)
 {
-    if (!is_valid_tx_output(output) || BYTES_INVALID(script, script_len))
+    if (!is_valid_tx_output(output))
         return WALLY_EINVAL;
-    return replace_script(script, script_len, &output->script, &output->script_len);
+    return replace_bytes(script, script_len, &output->script, &output->script_len);
 }
 
 int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi)
@@ -3272,9 +3276,9 @@ int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
 int wally_tx_input_set_script(struct wally_tx_input *input,
                               const unsigned char *script, size_t script_len)
 {
-    if (!is_valid_tx_input(input) || BYTES_INVALID(script, script_len))
+    if (!is_valid_tx_input(input))
         return WALLY_EINVAL;
-    return replace_script(script, script_len, &input->script, &input->script_len);
+    return replace_bytes(script, script_len, &input->script, &input->script_len);
 }
 
 TX_SET_B(input, script)
