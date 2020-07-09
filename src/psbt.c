@@ -564,52 +564,34 @@ int wally_psbt_input_set_witness_utxo(
     return ret;
 }
 
-int wally_psbt_input_set_redeem_script(
-    struct wally_psbt_input *input,
-    unsigned char *redeem_script,
-    size_t redeem_script_len)
+int wally_psbt_input_set_redeem_script(struct wally_psbt_input *input,
+                                       unsigned char *redeem_script,
+                                       size_t redeem_script_len)
 {
-    unsigned char *result_redeem_script;
-
-    if (!clone_bytes(&result_redeem_script, redeem_script, redeem_script_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->redeem_script);
-    input->redeem_script = result_redeem_script;
-    input->redeem_script_len = redeem_script_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(redeem_script, redeem_script_len,
+                         &input->redeem_script, &input->redeem_script_len);
 }
 
-int wally_psbt_input_set_witness_script(
-    struct wally_psbt_input *input,
-    unsigned char *witness_script,
-    size_t witness_script_len)
+int wally_psbt_input_set_witness_script(struct wally_psbt_input *input,
+                                        unsigned char *witness_script,
+                                        size_t witness_script_len)
 {
-    unsigned char *result_witness_script;
-
-    if (!clone_bytes(&result_witness_script, witness_script, witness_script_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->witness_script);
-    input->witness_script = result_witness_script;
-    input->witness_script_len = witness_script_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(witness_script, witness_script_len,
+                         &input->witness_script, &input->witness_script_len);
 }
 
-int wally_psbt_input_set_final_script_sig(
-    struct wally_psbt_input *input,
-    unsigned char *final_script_sig,
-    size_t final_script_sig_len)
+int wally_psbt_input_set_final_script_sig(struct wally_psbt_input *input,
+                                          unsigned char *final_script_sig,
+                                          size_t final_script_sig_len)
 {
-    unsigned char *result_final_script_sig;
-
-    if (!clone_bytes(&result_final_script_sig, final_script_sig, final_script_sig_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->final_script_sig);
-    input->final_script_sig = result_final_script_sig;
-    input->final_script_sig_len = final_script_sig_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(final_script_sig, final_script_sig_len,
+                         &input->final_script_sig, &input->final_script_sig_len);
 }
 
 int wally_psbt_input_set_final_witness(
@@ -678,52 +660,32 @@ int wally_psbt_elements_input_set_value(
     return WALLY_OK;
 }
 
-int wally_psbt_elements_input_set_value_blinder(
-    struct wally_psbt_input *input,
-    unsigned char *value_blinder,
-    size_t value_blinder_len)
+int wally_psbt_elements_input_set_value_blinder(struct wally_psbt_input *input,
+                                                unsigned char *value_blinder,
+                                                size_t value_blinder_len)
 {
-    unsigned char *result_value_blinder;
-
-    if (!clone_bytes(&result_value_blinder, value_blinder, value_blinder_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->value_blinder);
-    input->value_blinder = value_blinder;
-    input->value_blinder_len = value_blinder_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(value_blinder, value_blinder_len,
+                         &input->value_blinder, &input->value_blinder_len);
 }
 
-int wally_psbt_elements_input_set_asset(
-    struct wally_psbt_input *input,
-    unsigned char *asset,
-    size_t asset_len)
+int wally_psbt_elements_input_set_asset(struct wally_psbt_input *input,
+                                        unsigned char *asset, size_t asset_len)
 {
-    unsigned char *result_asset;
-
-    if (!clone_bytes(&result_asset, asset, asset_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->asset);
-    input->asset = asset;
-    input->asset_len = asset_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(asset, asset_len, &input->asset, &input->asset_len);
 }
 
-int wally_psbt_elements_input_set_asset_blinder(
-    struct wally_psbt_input *input,
-    unsigned char *asset_blinder,
-    size_t asset_blinder_len)
+int wally_psbt_elements_input_set_asset_blinder(struct wally_psbt_input *input,
+                                                unsigned char *asset_blinder,
+                                                size_t asset_blinder_len)
 {
-    unsigned char *result_asset_blinder;
-
-    if (!clone_bytes(&result_asset_blinder, asset_blinder, asset_blinder_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->asset_blinder);
-    input->asset_blinder = asset_blinder;
-    input->asset_blinder_len = asset_blinder_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(asset_blinder, asset_blinder_len,
+                         &input->asset_blinder, &input->asset_blinder_len);
 }
 
 int wally_psbt_elements_input_set_peg_in_tx(
@@ -747,47 +709,30 @@ int wally_psbt_elements_input_set_txout_proof(
     unsigned char *txout_proof,
     size_t txout_proof_len)
 {
-    unsigned char *result_txout_proof;
-
-    if (!clone_bytes(&result_txout_proof, txout_proof, txout_proof_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->txout_proof);
-    input->txout_proof = txout_proof;
-    input->txout_proof_len = txout_proof_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(txout_proof, txout_proof_len,
+                         &input->txout_proof, &input->txout_proof_len);
 }
 
-int wally_psbt_elements_input_set_genesis_hash(
-    struct wally_psbt_input *input,
-    unsigned char *genesis_hash,
-    size_t genesis_hash_len)
+int wally_psbt_elements_input_set_genesis_hash(struct wally_psbt_input *input,
+                                               unsigned char *genesis_hash,
+                                               size_t genesis_hash_len)
 {
-    unsigned char *result_genesis_hash;
-
-    if (!clone_bytes(&result_genesis_hash, genesis_hash, genesis_hash_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->genesis_hash);
-    input->genesis_hash = genesis_hash;
-    input->genesis_hash_len = genesis_hash_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(genesis_hash, genesis_hash_len,
+                         &input->genesis_hash, &input->genesis_hash_len);
 }
 
-int wally_psbt_elements_input_set_claim_script(
-    struct wally_psbt_input *input,
-    unsigned char *claim_script,
-    size_t claim_script_len)
+int wally_psbt_elements_input_set_claim_script(struct wally_psbt_input *input,
+                                               unsigned char *claim_script,
+                                               size_t claim_script_len)
 {
-    unsigned char *result_claim_script;
-
-    if (!clone_bytes(&result_claim_script, claim_script, claim_script_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(input->claim_script);
-    input->claim_script = claim_script;
-    input->claim_script_len = claim_script_len;
-    return WALLY_OK;
+    if (!input)
+        return WALLY_EINVAL;
+    return replace_bytes(claim_script, claim_script_len,
+                         &input->claim_script, &input->claim_script_len);
 }
 #endif /* BUILD_ELEMENTS */
 
