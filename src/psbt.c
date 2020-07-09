@@ -70,32 +70,34 @@ int wally_keypath_map_free(struct wally_keypath_map *keypaths)
     return WALLY_OK;
 }
 
-static struct wally_keypath_map *clone_keypath_map(const struct wally_keypath_map *keypaths)
+static int add_keypath_item(struct wally_keypath_map *keypaths, struct wally_keypath_item *item)
 {
-    struct wally_keypath_map *result;
+    return wally_add_new_keypath(keypaths, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+                                 item->fingerprint, BIP32_KEY_FINGERPRINT_LEN,
+                                 item->path, item->path_len);
+}
+
+static int replace_keypaths(const struct wally_keypath_map *src,
+                            struct wally_keypath_map **dst)
+{
+    struct wally_keypath_map *result = NULL;
     size_t i;
+    int ret = WALLY_OK;
 
-    if (wally_keypath_map_init_alloc(keypaths->items_allocation_len, &result) != WALLY_OK) {
-        return NULL;
+    if (src) {
+        ret = wally_keypath_map_init_alloc(src->items_allocation_len, &result);
+
+        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+            ret = add_keypath_item(result, src->items + i);
     }
 
-    for (i = 0; i < keypaths->num_items; ++i) {
-        memcpy(&result->items[i].pubkey, keypaths->items[i].pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-        memcpy(&result->items[i].fingerprint, keypaths->items[i].fingerprint, 4);
-        if (keypaths->items[i].path) {
-            if (!clone_bytes((unsigned char **)&result->items[i].path, (unsigned char *)keypaths->items[i].path, keypaths->items[i].path_len * sizeof(*keypaths->items[i].path))) {
-                goto fail;
-            }
-            result->items[i].path_len = keypaths->items[i].path_len;
-        }
+    if (ret != WALLY_OK) {
+        wally_keypath_map_free(result);
+    } else {
+        wally_keypath_map_free(*dst);
+        *dst = result;
     }
-    result->num_items = keypaths->num_items;
-
-    return result;
-
-fail:
-    wally_keypath_map_free(result);
-    return NULL;
+    return ret;
 }
 
 int wally_add_new_keypath(struct wally_keypath_map *keypaths,
@@ -142,16 +144,6 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
     keypaths->num_items++;
 
     return WALLY_OK;
-}
-
-static int add_keypath_item(struct wally_keypath_map *keypaths, struct wally_keypath_item *item)
-{
-    return wally_add_new_keypath(keypaths, item->pubkey,
-                                 EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
-                                 item->fingerprint,
-                                 BIP32_KEY_FINGERPRINT_LEN,
-                                 item->path,
-                                 item->path_len);
 }
 
 int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output)
@@ -597,18 +589,10 @@ int wally_psbt_input_set_final_witness(
     return WALLY_OK;
 }
 
-int wally_psbt_input_set_keypaths(
-    struct wally_psbt_input *input,
-    struct wally_keypath_map *keypaths)
+int wally_psbt_input_set_keypaths(struct wally_psbt_input *input,
+                                  struct wally_keypath_map *keypaths)
 {
-    struct wally_keypath_map *result_keypaths;
-
-    if (!(result_keypaths = clone_keypath_map(keypaths))) {
-        return WALLY_ENOMEM;
-    }
-    wally_keypath_map_free(input->keypaths);
-    input->keypaths = result_keypaths;
-    return WALLY_OK;
+    return input ? replace_keypaths(keypaths, &input->keypaths) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_partial_sigs(
@@ -891,18 +875,10 @@ int wally_psbt_output_set_witness_script(struct wally_psbt_output *output,
                          &output->witness_script, &output->witness_script_len);
 }
 
-int wally_psbt_output_set_keypaths(
-    struct wally_psbt_output *output,
-    struct wally_keypath_map *keypaths)
+int wally_psbt_output_set_keypaths(struct wally_psbt_output *output,
+                                   struct wally_keypath_map *keypaths)
 {
-    struct wally_keypath_map *result_keypaths;
-
-    if (!(result_keypaths = clone_keypath_map(keypaths))) {
-        return WALLY_ENOMEM;
-    }
-    wally_keypath_map_free(output->keypaths);
-    output->keypaths = result_keypaths;
-    return WALLY_OK;
+    return output ? replace_keypaths(keypaths, &output->keypaths) : WALLY_EINVAL;
 }
 
 int wally_psbt_output_set_unknowns(struct wally_psbt_output *output,
