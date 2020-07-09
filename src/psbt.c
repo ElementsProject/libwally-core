@@ -180,30 +180,33 @@ int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs)
     return WALLY_OK;
 }
 
-static struct wally_partial_sigs_map *clone_partial_sigs_map(const struct wally_partial_sigs_map *sigs)
+static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, struct wally_partial_sigs_item *item)
 {
-    struct wally_partial_sigs_map *result;
+    return wally_add_new_partial_sig(sigs, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+                                     item->sig, item->sig_len);
+}
+
+static int replace_partial_sigs(const struct wally_partial_sigs_map *src,
+                                struct wally_partial_sigs_map **dst)
+{
+    struct wally_partial_sigs_map *result = NULL;
     size_t i;
+    int ret = WALLY_OK;
 
-    if (wally_partial_sigs_map_init_alloc(sigs->items_allocation_len, &result) != WALLY_OK) {
-        return NULL;
+    if (src) {
+        ret = wally_partial_sigs_map_init_alloc(src->items_allocation_len, &result);
+
+        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+            ret = add_partial_sig_item(result, src->items + i);
     }
 
-    for (i = 0; i < sigs->num_items; ++i) {
-        memcpy(&result->items[i].pubkey, sigs->items[i].pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-        if (sigs->items[i].sig) {
-            if (!clone_bytes(&result->items[i].sig, sigs->items[i].sig, sigs->items[i].sig_len)) {
-                goto fail;
-            }
-            result->items[i].sig_len = sigs->items[i].sig_len;
-        }
+    if (ret != WALLY_OK) {
+        wally_partial_sigs_map_free(result);
+    } else {
+        wally_partial_sigs_map_free(*dst);
+        *dst = result;
     }
-    result->num_items = sigs->num_items;
-    return result;
-
-fail:
-    wally_partial_sigs_map_free(result);
-    return NULL;
+    return ret;
 }
 
 int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
@@ -246,14 +249,6 @@ int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
     sigs->num_items++;
 
     return WALLY_OK;
-}
-
-static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, struct wally_partial_sigs_item *item)
-{
-    return wally_add_new_partial_sig(sigs, item->pubkey,
-                                     EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
-                                     item->sig,
-                                     item->sig_len);
 }
 
 int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output)
@@ -595,18 +590,10 @@ int wally_psbt_input_set_keypaths(struct wally_psbt_input *input,
     return input ? replace_keypaths(keypaths, &input->keypaths) : WALLY_EINVAL;
 }
 
-int wally_psbt_input_set_partial_sigs(
-    struct wally_psbt_input *input,
-    struct wally_partial_sigs_map *partial_sigs)
+int wally_psbt_input_set_partial_sigs(struct wally_psbt_input *input,
+                                      struct wally_partial_sigs_map *partial_sigs)
 {
-    struct wally_partial_sigs_map *result_partial_sigs;
-
-    if (!(result_partial_sigs = clone_partial_sigs_map(partial_sigs))) {
-        return WALLY_ENOMEM;
-    }
-    wally_partial_sigs_map_free(input->partial_sigs);
-    input->partial_sigs = result_partial_sigs;
-    return WALLY_OK;
+    return input ? replace_partial_sigs(partial_sigs, &input->partial_sigs) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
