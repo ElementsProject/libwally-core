@@ -699,7 +699,7 @@ int wally_psbt_elements_input_set_value_blinder(
         return WALLY_ENOMEM;
     }
     wally_free(input->value_blinder);
-    input->value_blinder = value_blinder;
+    input->value_blinder = result_value_blinder;
     input->value_blinder_len = value_blinder_len;
     return WALLY_OK;
 }
@@ -715,7 +715,7 @@ int wally_psbt_elements_input_set_asset(
         return WALLY_ENOMEM;
     }
     wally_free(input->asset);
-    input->asset = asset;
+    input->asset = result_asset;
     input->asset_len = asset_len;
     return WALLY_OK;
 }
@@ -731,7 +731,7 @@ int wally_psbt_elements_input_set_asset_blinder(
         return WALLY_ENOMEM;
     }
     wally_free(input->asset_blinder);
-    input->asset_blinder = asset_blinder;
+    input->asset_blinder = result_asset_blinder;
     input->asset_blinder_len = asset_blinder_len;
     return WALLY_OK;
 }
@@ -747,7 +747,7 @@ int wally_psbt_elements_input_set_peg_in_tx(
         return ret;
     }
     wally_tx_free(input->peg_in_tx);
-    input->peg_in_tx = peg_in_tx;
+    input->peg_in_tx = result_peg_in_tx;
     return ret;
 }
 
@@ -763,7 +763,7 @@ int wally_psbt_elements_input_set_txout_proof(
         return WALLY_ENOMEM;
     }
     wally_free(input->txout_proof);
-    input->txout_proof = txout_proof;
+    input->txout_proof = result_txout_proof;
     input->txout_proof_len = txout_proof_len;
     return WALLY_OK;
 }
@@ -779,7 +779,7 @@ int wally_psbt_elements_input_set_genesis_hash(
         return WALLY_ENOMEM;
     }
     wally_free(input->genesis_hash);
-    input->genesis_hash = genesis_hash;
+    input->genesis_hash = result_genesis_hash;
     input->genesis_hash_len = genesis_hash_len;
     return WALLY_OK;
 }
@@ -795,7 +795,7 @@ int wally_psbt_elements_input_set_claim_script(
         return WALLY_ENOMEM;
     }
     wally_free(input->claim_script);
-    input->claim_script = claim_script;
+    input->claim_script = result_claim_script;
     input->claim_script_len = claim_script_len;
     return WALLY_OK;
 }
