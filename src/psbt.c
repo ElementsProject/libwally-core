@@ -180,11 +180,8 @@ int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs)
     size_t i;
 
     if (sigs) {
-        for (i = 0; i < sigs->num_items; ++i) {
-            if (sigs->items[i].sig) {
-                clear_and_free(sigs->items[i].sig, sigs->items[i].sig_len);
-            }
-        }
+        for (i = 0; i < sigs->num_items; ++i)
+            clear_and_free(sigs->items[i].sig, sigs->items[i].sig_len);
         clear_and_free(sigs->items, sigs->items_allocation_len * sizeof(*sigs->items));
         clear_and_free(sigs, sizeof(*sigs));
     }
@@ -294,12 +291,8 @@ int wally_unknowns_map_free(struct wally_unknowns_map *unknowns)
 
     if (unknowns) {
         for (i = 0; i < unknowns->num_items; ++i) {
-            if (unknowns->items[i].key) {
-                clear_and_free(unknowns->items[i].key, unknowns->items[i].key_len);
-            }
-            if (unknowns->items[i].value) {
-                clear_and_free(unknowns->items[i].value, unknowns->items[i].value_len);
-            }
+            clear_and_free(unknowns->items[i].key, unknowns->items[i].key_len);
+            clear_and_free(unknowns->items[i].value, unknowns->items[i].value_len);
         }
         clear_and_free(unknowns->items, unknowns->num_items * sizeof(*unknowns->items));
         clear_and_free(unknowns, sizeof(*unknowns));
