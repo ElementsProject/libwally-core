@@ -948,36 +948,24 @@ fail:
 }
 #endif /* BUILD_ELEMENTS */
 
-int wally_psbt_output_set_redeem_script(
-    struct wally_psbt_output *output,
-    unsigned char *redeem_script,
-    size_t redeem_script_len)
+int wally_psbt_output_set_redeem_script(struct wally_psbt_output *output,
+                                        unsigned char *redeem_script,
+                                        size_t redeem_script_len)
 {
-    unsigned char *result_redeem_script;
-
-    if (!clone_bytes(&result_redeem_script, redeem_script, redeem_script_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->redeem_script);
-    output->redeem_script = result_redeem_script;
-    output->redeem_script_len = redeem_script_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(redeem_script, redeem_script_len,
+                         &output->redeem_script, &output->redeem_script_len);
 }
 
-int wally_psbt_output_set_witness_script(
-    struct wally_psbt_output *output,
-    unsigned char *witness_script,
-    size_t witness_script_len)
+int wally_psbt_output_set_witness_script(struct wally_psbt_output *output,
+                                         unsigned char *witness_script,
+                                         size_t witness_script_len)
 {
-    unsigned char *result_witness_script;
-
-    if (!clone_bytes(&result_witness_script, witness_script, witness_script_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->witness_script);
-    output->witness_script = result_witness_script;
-    output->witness_script_len = witness_script_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(witness_script, witness_script_len,
+                         &output->witness_script, &output->witness_script_len);
 }
 
 int wally_psbt_output_set_keypaths(
@@ -1009,135 +997,84 @@ int wally_psbt_output_set_unknowns(
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_elements_output_set_blinding_pubkey(
-    struct wally_psbt_output *output,
-    unsigned char *blinding_pubkey,
-    size_t blinding_pubkey_len)
+int wally_psbt_elements_output_set_blinding_pubkey(struct wally_psbt_output *output,
+                                                   unsigned char *blinding_pubkey,
+                                                   size_t blinding_pubkey_len)
 {
-    unsigned char *new_blinding_pubkey = NULL;
-
-    if (!output || BYTES_INVALID_N(blinding_pubkey, blinding_pubkey_len, EC_PUBLIC_KEY_UNCOMPRESSED_LEN))
+    if (!output || !is_valid_optional_pubkey_len(blinding_pubkey_len))
         return WALLY_EINVAL;
-
-    if (blinding_pubkey && !clone_bytes(&new_blinding_pubkey, blinding_pubkey, blinding_pubkey_len))
-        return WALLY_ENOMEM;
-
-    wally_free(output->blinding_pubkey);
-    output->blinding_pubkey = new_blinding_pubkey;
-    output->blinding_pubkey_len = blinding_pubkey_len;
-    return WALLY_OK;
+    return replace_bytes(blinding_pubkey, blinding_pubkey_len,
+                         &output->blinding_pubkey, &output->blinding_pubkey_len);
 }
 
-int wally_psbt_elements_output_set_value_commitment(
-    struct wally_psbt_output *output,
-    unsigned char *value_commitment,
-    size_t value_commitment_len)
+int wally_psbt_elements_output_set_value_commitment(struct wally_psbt_output *output,
+                                                    unsigned char *value_commitment,
+                                                    size_t value_commitment_len)
 {
-    unsigned char *result_value_commitment;
-
-    if (!clone_bytes(&result_value_commitment, value_commitment, value_commitment_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->value_commitment);
-    output->value_commitment = value_commitment;
-    output->value_commitment_len = value_commitment_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(value_commitment, value_commitment_len,
+                         &output->value_commitment, &output->value_commitment_len);
 }
 
-int wally_psbt_elements_output_set_value_blinder(
-    struct wally_psbt_output *output,
-    unsigned char *value_blinder,
-    size_t value_blinder_len)
+int wally_psbt_elements_output_set_value_blinder(struct wally_psbt_output *output,
+                                                 unsigned char *value_blinder,
+                                                 size_t value_blinder_len)
 {
-    unsigned char *result_value_blinder;
-
-    if (!clone_bytes(&result_value_blinder, value_blinder, value_blinder_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->value_blinder);
-    output->value_blinder = value_blinder;
-    output->value_blinder_len = value_blinder_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(value_blinder, value_blinder_len,
+                         &output->value_blinder, &output->value_blinder_len);
 }
 
-int wally_psbt_elements_output_set_asset_commitment(
-    struct wally_psbt_output *output,
-    unsigned char *asset_commitment,
-    size_t asset_commitment_len)
+int wally_psbt_elements_output_set_asset_commitment(struct wally_psbt_output *output,
+                                                    unsigned char *asset_commitment,
+                                                    size_t asset_commitment_len)
 {
-    unsigned char *result_asset_commitment;
-
-    if (!clone_bytes(&result_asset_commitment, asset_commitment, asset_commitment_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->asset_commitment);
-    output->asset_commitment = asset_commitment;
-    output->asset_commitment_len = asset_commitment_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(asset_commitment, asset_commitment_len,
+                         &output->asset_commitment, &output->asset_commitment_len);
 }
 
-int wally_psbt_elements_output_set_asset_blinder(
-    struct wally_psbt_output *output,
-    unsigned char *asset_blinder,
-    size_t asset_blinder_len)
+int wally_psbt_elements_output_set_asset_blinder(struct wally_psbt_output *output,
+                                                 unsigned char *asset_blinder,
+                                                 size_t asset_blinder_len)
 {
-    unsigned char *result_asset_blinder;
-
-    if (!clone_bytes(&result_asset_blinder, asset_blinder, asset_blinder_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->asset_blinder);
-    output->asset_blinder = asset_blinder;
-    output->asset_blinder_len = asset_blinder_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(asset_blinder, asset_blinder_len,
+                         &output->asset_blinder, &output->asset_blinder_len);
 }
 
-int wally_psbt_elements_output_set_nonce_commitment(
-    struct wally_psbt_output *output,
-    unsigned char *nonce_commitment,
-    size_t nonce_commitment_len)
+int wally_psbt_elements_output_set_nonce_commitment(struct wally_psbt_output *output,
+                                                    unsigned char *nonce_commitment,
+                                                    size_t nonce_commitment_len)
 {
-    unsigned char *result_nonce_commitment;
-
-    if (!clone_bytes(&result_nonce_commitment, nonce_commitment, nonce_commitment_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->nonce_commitment);
-    output->nonce_commitment = nonce_commitment;
-    output->nonce_commitment_len = nonce_commitment_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(nonce_commitment, nonce_commitment_len,
+                         &output->nonce_commitment, &output->nonce_commitment_len);
 }
 
-int wally_psbt_elements_output_set_range_proof(
-    struct wally_psbt_output *output,
-    unsigned char *range_proof,
-    size_t range_proof_len)
+int wally_psbt_elements_output_set_range_proof(struct wally_psbt_output *output,
+                                               unsigned char *range_proof,
+                                               size_t range_proof_len)
 {
-    unsigned char *result_range_proof;
-
-    if (!clone_bytes(&result_range_proof, range_proof, range_proof_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->range_proof);
-    output->range_proof = range_proof;
-    output->range_proof_len = range_proof_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(range_proof, range_proof_len,
+                         &output->range_proof, &output->range_proof_len);
 }
 
-int wally_psbt_elements_output_set_surjection_proof(
-    struct wally_psbt_output *output,
-    unsigned char *surjection_proof,
-    size_t surjection_proof_len)
+int wally_psbt_elements_output_set_surjection_proof(struct wally_psbt_output *output,
+                                                    unsigned char *surjection_proof,
+                                                    size_t surjection_proof_len)
 {
-    unsigned char *result_surjection_proof;
-
-    if (!clone_bytes(&result_surjection_proof, surjection_proof, surjection_proof_len)) {
-        return WALLY_ENOMEM;
-    }
-    wally_free(output->surjection_proof);
-    output->surjection_proof = surjection_proof;
-    output->surjection_proof_len = surjection_proof_len;
-    return WALLY_OK;
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(surjection_proof, surjection_proof_len,
+                         &output->surjection_proof, &output->surjection_proof_len);
 }
 #endif/* BUILD_ELEMENTS */
 
