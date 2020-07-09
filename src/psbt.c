@@ -100,6 +100,22 @@ static int replace_keypaths(const struct wally_keypath_map *src,
     return ret;
 }
 
+static int array_grow(void **src, size_t num_items, size_t *allocation_len, size_t item_size)
+{
+    if (num_items == *allocation_len) {
+        /* Array is full, allocate more space */
+        const size_t n = (*allocation_len == 0 ? 1 : *allocation_len) * 2;
+        void *p = realloc_array(*src, *allocation_len, n, item_size);
+        if (!p)
+            return WALLY_ENOMEM;
+        /* Free and replace the old array with the new enlarged copy */
+        clear_and_free(*src, num_items * item_size);
+        *src = p;
+        *allocation_len = n;
+    }
+    return WALLY_OK;
+}
+
 int wally_add_new_keypath(struct wally_keypath_map *keypaths,
                           unsigned char *pubkey,
                           size_t pubkey_len,
@@ -109,27 +125,15 @@ int wally_add_new_keypath(struct wally_keypath_map *keypaths,
                           size_t path_len)
 {
     size_t latest;
+    int ret;
 
     if (fingerprint_len != BIP32_KEY_FINGERPRINT_LEN || !is_valid_pubkey_len(pubkey_len))
         return WALLY_EINVAL;
 
-    if (keypaths->num_items == keypaths->items_allocation_len) {
-        struct wally_keypath_item *new_items;
-        size_t new_alloc_len = 1;
-        if (keypaths->items_allocation_len != 0) {
-            new_alloc_len = keypaths->items_allocation_len * 2;
-        }
-        new_items = wally_malloc(new_alloc_len * sizeof(struct wally_keypath_item));
-        if (!new_items) {
-            return WALLY_ENOMEM;
-        }
-        wally_bzero(new_items, new_alloc_len * sizeof(*new_items));
-        memcpy(new_items, keypaths->items, keypaths->items_allocation_len * sizeof(*keypaths->items));
-
-        clear_and_free(keypaths->items, keypaths->items_allocation_len * sizeof(*keypaths->items));
-        keypaths->items = new_items;
-        keypaths->items_allocation_len = new_alloc_len;
-    }
+    ret = array_grow((void *)&keypaths->items, keypaths->num_items,
+                     &keypaths->items_allocation_len, sizeof(struct wally_keypath_item));
+    if (ret != WALLY_OK)
+        return ret;
 
     latest = keypaths->num_items;
 
@@ -216,26 +220,15 @@ int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
                               size_t sig_len)
 {
     size_t latest;
+    int ret;
+
     if (!is_valid_pubkey_len(pubkey_len))
         return WALLY_EINVAL;
 
-    if (sigs->num_items == sigs->items_allocation_len) {
-        struct wally_partial_sigs_item *new_items;
-        size_t new_alloc_len = 1;
-        if (sigs->items_allocation_len != 0) {
-            new_alloc_len = sigs->items_allocation_len * 2;
-        }
-        new_items = wally_malloc(new_alloc_len * sizeof(struct wally_partial_sigs_item));
-        if (!new_items) {
-            return WALLY_ENOMEM;
-        }
-        wally_bzero(new_items, new_alloc_len * sizeof(*new_items));
-        memcpy(new_items, sigs->items, sigs->items_allocation_len * sizeof(*sigs->items));
-
-        clear_and_free(sigs->items, sigs->items_allocation_len * sizeof(*sigs->items));
-        sigs->items = new_items;
-        sigs->items_allocation_len = new_alloc_len;
-    }
+    ret = array_grow((void *)&sigs->items, sigs->num_items,
+                     &sigs->items_allocation_len, sizeof(struct wally_partial_sigs_item));
+    if (ret != WALLY_OK)
+        return ret;
 
     latest = sigs->num_items;
 
@@ -323,23 +316,10 @@ int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
 {
     size_t latest;
 
-    if (unknowns->num_items == unknowns->items_allocation_len) {
-        struct wally_unknowns_item *new_items;
-        size_t new_alloc_len = 1;
-        if (unknowns->items_allocation_len != 0) {
-            new_alloc_len = unknowns->items_allocation_len * 2;
-        }
-        new_items = wally_malloc(new_alloc_len * sizeof(struct wally_unknowns_item));
-        if (!new_items) {
-            return WALLY_ENOMEM;
-        }
-        wally_bzero(new_items, new_alloc_len * sizeof(*new_items));
-        memcpy(new_items, unknowns->items, unknowns->items_allocation_len * sizeof(*unknowns->items));
-
-        clear_and_free(unknowns->items, unknowns->items_allocation_len * sizeof(*unknowns->items));
-        unknowns->items = new_items;
-        unknowns->items_allocation_len = new_alloc_len;
-    }
+    int ret = array_grow((void *)&unknowns->items, unknowns->num_items,
+                         &unknowns->items_allocation_len, sizeof(struct wally_unknowns_item));
+    if (ret != WALLY_OK)
+        return ret;
 
     latest = unknowns->num_items;
 
