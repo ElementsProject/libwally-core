@@ -547,7 +547,6 @@ WALLY_CORE_API int wally_psbt_free(
 
 /**
  * Set the global transaction for a PSBT.
- * Also initializes all of the wally_psbt_input and wally_psbt_outputs necessary.
  *
  * :param psbt: The PSBT to set the transaction for.
  * :param tx: The transaction to set.

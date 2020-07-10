@@ -946,67 +946,52 @@ int wally_psbt_free(struct wally_psbt *psbt)
     return WALLY_OK;
 }
 
-int wally_psbt_set_global_tx(
-    struct wally_psbt *psbt,
-    struct wally_tx *tx)
+int wally_psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx)
 {
+    struct wally_tx *new_tx;
+    struct wally_psbt_input *new_inputs = NULL;
+    struct wally_psbt_output *new_outputs = NULL;
     size_t i;
-    int ret = WALLY_OK;
+    int ret;
 
-    /* Needs a psbt that is completely empty, i.e. no tx, no inputs, and no outputs. */
-    if (!tx || !psbt || psbt->tx || psbt->num_inputs != 0 || psbt->num_outputs != 0) {
-        return WALLY_EINVAL;
+    if (!psbt || psbt->tx || psbt->num_inputs || psbt->num_outputs || !tx)
+        return WALLY_EINVAL; /* PSBT must be completely empty */
+
+    for (i = 0; i < tx->num_inputs; ++i)
+        if (tx->inputs[i].script || tx->inputs[i].witness)
+            return WALLY_EINVAL; /* tx mustn't have scriptSigs or witnesses */
+
+    if ((ret = wally_tx_clone(tx, 0, &new_tx)) != WALLY_OK)
+        return ret;
+
+    if (psbt->inputs_allocation_len < tx->num_inputs)
+        new_inputs = wally_calloc(tx->num_inputs * sizeof(struct wally_psbt_input));
+
+    if (psbt->outputs_allocation_len < tx->num_outputs)
+        new_outputs = wally_calloc(tx->num_outputs * sizeof(struct wally_psbt_output));
+
+    if ((psbt->inputs_allocation_len < tx->num_inputs && !new_inputs) ||
+        (psbt->outputs_allocation_len < tx->num_outputs && !new_outputs)) {
+        wally_free(new_inputs);
+        wally_free(new_outputs);
+        wally_tx_free(new_tx);
+        return WALLY_ENOMEM;
     }
 
-    /* tx cannot have any scriptSigs or witnesses */
-    for (i = 0; i < tx->num_inputs; ++i) {
-        if (tx->inputs[i].script || tx->inputs[i].witness) {
-            return WALLY_EINVAL;
-        }
-    }
-
-    if ((ret = wally_tx_clone(tx, 0, &psbt->tx)) != WALLY_OK) {
-        goto fail;
-    }
-
-    if (psbt->inputs_allocation_len < tx->num_inputs) {
-        if (psbt->inputs) {
-            wally_free(psbt->inputs);
-        }
-        psbt->inputs_allocation_len = 0;
-        psbt->inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
-        if (!psbt->inputs) {
-            ret = WALLY_ENOMEM;
-            goto fail;
-        }
+    if (new_inputs) {
+        wally_free(psbt->inputs);
+        psbt->inputs = new_inputs;
         psbt->inputs_allocation_len = tx->num_inputs;
     }
-    wally_bzero(psbt->inputs, psbt->inputs_allocation_len * sizeof(*psbt->inputs));
-    psbt->num_inputs = tx->num_inputs;
-
-    if (psbt->outputs_allocation_len < tx->num_outputs) {
-        if (psbt->outputs) {
-            wally_free(psbt->outputs);
-        }
-        psbt->outputs_allocation_len = 0;
-        psbt->outputs = wally_malloc(tx->num_outputs * sizeof(struct wally_psbt_output));
-        if (!psbt->outputs) {
-            ret = WALLY_ENOMEM;
-            goto fail;
-        }
+    if (new_outputs) {
+        wally_free(psbt->outputs);
+        psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
     }
-    wally_bzero(psbt->outputs, psbt->outputs_allocation_len * sizeof(*psbt->outputs));
+    psbt->tx = new_tx;
+    psbt->num_inputs = tx->num_inputs;
     psbt->num_outputs = tx->num_outputs;
-
-    return ret;
-
-fail:
-    if (psbt->tx) {
-        wally_tx_free(psbt->tx);
-        psbt->tx = NULL;
-    }
-    return ret;
+    return WALLY_OK;
 }
 
 /* Returns false if it hits a zero length "key" (i.e. separator) or EOF.
