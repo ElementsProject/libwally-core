@@ -216,7 +216,7 @@ WALLY_CORE_API int wally_keypath_map_free(
  * :param path: The BIP32 derivation path for the pubkey.
  * :param path_len: The number of items in path.
  */
-WALLY_CORE_API int wally_add_new_keypath(
+WALLY_CORE_API int wally_keypath_map_add(
     struct wally_keypath_map *keypaths,
     unsigned char *pubkey,
     size_t pubkey_len,
@@ -254,7 +254,7 @@ WALLY_CORE_API int wally_partial_sigs_map_free(
  * :param sig: The DER-encoded signature to add.
  * :param sig_len: Length of ``sig`` in bytes.
  */
-WALLY_CORE_API int wally_add_new_partial_sig(
+WALLY_CORE_API int wally_partial_sigs_map_add(
     struct wally_partial_sigs_map *sigs,
     unsigned char *pubkey,
     size_t pubkey_len,
@@ -290,7 +290,7 @@ WALLY_CORE_API int wally_unknowns_map_free(
  * :param value: The value to add.
  * :param value_len: Length of ``value`` in bytes.
  */
-WALLY_CORE_API int wally_add_new_unknown(
+WALLY_CORE_API int wally_unknowns_map_add(
     struct wally_unknowns_map *unknowns,
     unsigned char *key,
     size_t key_len,
@@ -622,7 +622,7 @@ WALLY_CORE_API int wally_psbt_to_base64(
  * :param psbts_len: Number of PSBTs in ``psbts``.
  * :param output: Destination for resulting PSBT.
  */
-WALLY_CORE_API int wally_combine_psbts(
+WALLY_CORE_API int wally_psbt_combine(
     const struct wally_psbt *psbts,
     size_t psbts_len,
     struct wally_psbt **output);
@@ -637,7 +637,7 @@ WALLY_CORE_API int wally_combine_psbts(
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the simple signer algorithm.
  */
-WALLY_CORE_API int wally_sign_psbt(
+WALLY_CORE_API int wally_psbt_sign(
     struct wally_psbt *psbt,
     const unsigned char *key,
     size_t key_len);
@@ -647,7 +647,7 @@ WALLY_CORE_API int wally_sign_psbt(
  *
  * :param psbt: PSBT to finalize. Directly modifies this PSBT.
  */
-WALLY_CORE_API int wally_finalize_psbt(
+WALLY_CORE_API int wally_psbt_finalize(
     struct wally_psbt *psbt);
 
 /**
@@ -656,7 +656,7 @@ WALLY_CORE_API int wally_finalize_psbt(
  * :param psbt: PSBT to extract from.
  * :param output: Destination for the resulting transaction.
  */
-WALLY_CORE_API int wally_extract_psbt(
+WALLY_CORE_API int wally_psbt_extract(
     const struct wally_psbt *psbt,
     struct wally_tx **output);
 
