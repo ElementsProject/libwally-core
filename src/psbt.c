@@ -324,58 +324,43 @@ int wally_unknowns_map_add(struct wally_unknowns_map *unknowns,
     return ret;
 }
 
-int wally_psbt_input_init_alloc(
-    struct wally_tx *non_witness_utxo,
-    struct wally_tx_output *witness_utxo,
-    unsigned char *redeem_script,
-    size_t redeem_script_len,
-    unsigned char *witness_script,
-    size_t witness_script_len,
-    unsigned char *final_script_sig,
-    size_t final_script_sig_len,
-    struct wally_tx_witness_stack *final_witness,
-    struct wally_keypath_map *keypaths,
-    struct wally_partial_sigs_map *partial_sigs,
-    struct wally_unknowns_map *unknowns,
-    uint32_t sighash_type,
-    struct wally_psbt_input **output)
+int wally_psbt_input_init_alloc(struct wally_tx *non_witness_utxo,
+                                struct wally_tx_output *witness_utxo,
+                                unsigned char *redeem_script, size_t redeem_script_len,
+                                unsigned char *witness_script, size_t witness_script_len,
+                                unsigned char *final_script_sig, size_t final_script_sig_len,
+                                struct wally_tx_witness_stack *final_witness,
+                                struct wally_keypath_map *keypaths,
+                                struct wally_partial_sigs_map *partial_sigs,
+                                struct wally_unknowns_map *unknowns,
+                                uint32_t sighash_type,
+                                struct wally_psbt_input **output)
 {
     struct wally_psbt_input *result;
-    int ret = WALLY_OK;
+    int ret;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_psbt_input);
 
-    if (non_witness_utxo && (ret = wally_psbt_input_set_non_witness_utxo(result, non_witness_utxo)) != WALLY_OK) {
+    if (non_witness_utxo && (ret = wally_psbt_input_set_non_witness_utxo(result, non_witness_utxo)) != WALLY_OK)
         goto fail;
-    }
-    if (witness_utxo && (ret = wally_psbt_input_set_witness_utxo(result, witness_utxo)) != WALLY_OK) {
+    if (witness_utxo && (ret = wally_psbt_input_set_witness_utxo(result, witness_utxo)) != WALLY_OK)
         goto fail;
-    }
-    if (redeem_script && (ret = wally_psbt_input_set_redeem_script(result, redeem_script, redeem_script_len)) != WALLY_OK) {
+    if (redeem_script && (ret = wally_psbt_input_set_redeem_script(result, redeem_script, redeem_script_len)) != WALLY_OK)
         goto fail;
-    }
-    if (witness_script && (ret = wally_psbt_input_set_witness_script(result, witness_script, witness_script_len)) != WALLY_OK) {
+    if (witness_script && (ret = wally_psbt_input_set_witness_script(result, witness_script, witness_script_len)) != WALLY_OK)
         goto fail;
-    }
-    if (final_script_sig && (ret = wally_psbt_input_set_final_script_sig(result, final_script_sig, final_script_sig_len)) != WALLY_OK) {
+    if (final_script_sig && (ret = wally_psbt_input_set_final_script_sig(result, final_script_sig, final_script_sig_len)) != WALLY_OK)
         goto fail;
-    }
-    if (final_witness && (ret = wally_psbt_input_set_final_witness(result, final_witness)) != WALLY_OK) {
+    if (final_witness && (ret = wally_psbt_input_set_final_witness(result, final_witness)) != WALLY_OK)
         goto fail;
-    }
-    if (keypaths && (ret = wally_psbt_input_set_keypaths(result, keypaths)) != WALLY_OK) {
+    if (keypaths && (ret = wally_psbt_input_set_keypaths(result, keypaths)) != WALLY_OK)
         goto fail;
-    }
-    if (partial_sigs && (ret = wally_psbt_input_set_partial_sigs(result, partial_sigs)) != WALLY_OK) {
+    if (partial_sigs && (ret = wally_psbt_input_set_partial_sigs(result, partial_sigs)) != WALLY_OK)
         goto fail;
-    }
-    if (unknowns && (ret = wally_psbt_input_set_unknowns(result, unknowns)) != WALLY_OK) {
+    if (unknowns && (ret = wally_psbt_input_set_unknowns(result, unknowns)) != WALLY_OK)
         goto fail;
-    }
-    ret = wally_psbt_input_set_sighash_type(result, sighash_type);
-
-    return ret;
+    return wally_psbt_input_set_sighash_type(result, sighash_type);
 
 fail:
     wally_psbt_input_free(result);
@@ -384,85 +369,58 @@ fail:
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_elements_input_init_alloc(
-    struct wally_tx *non_witness_utxo,
-    struct wally_tx_output *witness_utxo,
-    unsigned char *redeem_script,
-    size_t redeem_script_len,
-    unsigned char *witness_script,
-    size_t witness_script_len,
-    unsigned char *final_script_sig,
-    size_t final_script_sig_len,
-    struct wally_tx_witness_stack *final_witness,
-    struct wally_keypath_map *keypaths,
-    struct wally_partial_sigs_map *partial_sigs,
-    struct wally_unknowns_map *unknowns,
-    uint32_t sighash_type,
-    uint64_t value,
-    uint32_t has_value,
-    unsigned char *value_blinder,
-    size_t value_blinder_len,
-    unsigned char *asset,
-    size_t asset_len,
-    unsigned char *asset_blinder,
-    size_t asset_blinder_len,
-    struct wally_tx *peg_in_tx,
-    unsigned char *txout_proof,
-    size_t txout_proof_len,
-    unsigned char *genesis_hash,
-    size_t genesis_hash_len,
-    unsigned char *claim_script,
-    size_t claim_script_len,
-    struct wally_psbt_input **output)
+int wally_psbt_elements_input_init_alloc(struct wally_tx *non_witness_utxo,
+                                         struct wally_tx_output *witness_utxo,
+                                         unsigned char *redeem_script, size_t redeem_script_len,
+                                         unsigned char *witness_script, size_t witness_script_len,
+                                         unsigned char *final_script_sig, size_t final_script_sig_len,
+                                         struct wally_tx_witness_stack *final_witness,
+                                         struct wally_keypath_map *keypaths,
+                                         struct wally_partial_sigs_map *partial_sigs,
+                                         struct wally_unknowns_map *unknowns,
+                                         uint32_t sighash_type,
+                                         uint64_t value, uint32_t has_value,
+                                         unsigned char *value_blinder, size_t value_blinder_len,
+                                         unsigned char *asset, size_t asset_len,
+                                         unsigned char *asset_blinder, size_t asset_blinder_len,
+                                         struct wally_tx *peg_in_tx,
+                                         unsigned char *txout_proof, size_t txout_proof_len,
+                                         unsigned char *genesis_hash, size_t genesis_hash_len,
+                                         unsigned char *claim_script, size_t claim_script_len,
+                                         struct wally_psbt_input **output)
 {
     struct wally_psbt_input *result;
-    int ret = wally_psbt_input_init_alloc(non_witness_utxo,
-                                          witness_utxo,
-                                          redeem_script,
-                                          redeem_script_len,
-                                          witness_script,
-                                          witness_script_len,
-                                          final_script_sig,
-                                          final_script_sig_len,
-                                          final_witness,
-                                          keypaths,
-                                          partial_sigs,
-                                          unknowns,
+    int ret = wally_psbt_input_init_alloc(non_witness_utxo, witness_utxo,
+                                          redeem_script, redeem_script_len,
+                                          witness_script, witness_script_len,
+                                          final_script_sig, final_script_sig_len,
+                                          final_witness, keypaths,
+                                          partial_sigs, unknowns,
                                           sighash_type,
                                           output);
-    if (ret != WALLY_OK) {
+    if (ret != WALLY_OK)
         return ret;
-    }
 
-    /* wally_psbt_input_init_alloc will allocate and initialize the input */
     result = *output;
 
-    if (has_value && (ret = wally_psbt_elements_input_set_value(result, value)) != WALLY_OK) {
+    if (has_value && (ret = wally_psbt_elements_input_set_value(result, value)) != WALLY_OK)
         goto fail;
-    }
-    if (value_blinder && (ret = wally_psbt_elements_input_set_value_blinder(result, value_blinder, value_blinder_len)) != WALLY_OK) {
+    if (value_blinder && (ret = wally_psbt_elements_input_set_value_blinder(result, value_blinder, value_blinder_len)) != WALLY_OK)
         goto fail;
-    }
-    if (asset && (ret = wally_psbt_elements_input_set_asset(result, asset, asset_len)) != WALLY_OK) {
+    if (asset && (ret = wally_psbt_elements_input_set_asset(result, asset, asset_len)) != WALLY_OK)
         goto fail;
-    }
-    if (asset_blinder && (ret = wally_psbt_elements_input_set_asset_blinder(result, asset_blinder, asset_blinder_len)) != WALLY_OK) {
+    if (asset_blinder && (ret = wally_psbt_elements_input_set_asset_blinder(result, asset_blinder, asset_blinder_len)) != WALLY_OK)
         goto fail;
-    }
-    if (peg_in_tx && (ret = wally_psbt_elements_input_set_peg_in_tx(result, peg_in_tx)) != WALLY_OK) {
+    if (peg_in_tx && (ret = wally_psbt_elements_input_set_peg_in_tx(result, peg_in_tx)) != WALLY_OK)
         goto fail;
-    }
-    if (txout_proof && (ret = wally_psbt_elements_input_set_txout_proof(result, txout_proof, txout_proof_len)) != WALLY_OK) {
+    if (txout_proof && (ret = wally_psbt_elements_input_set_txout_proof(result, txout_proof, txout_proof_len)) != WALLY_OK)
         goto fail;
-    }
-    if (genesis_hash && (ret = wally_psbt_elements_input_set_genesis_hash(result, genesis_hash, genesis_hash_len)) != WALLY_OK) {
+    if (genesis_hash && (ret = wally_psbt_elements_input_set_genesis_hash(result, genesis_hash, genesis_hash_len)) != WALLY_OK)
         goto fail;
-    }
-    if (claim_script && (ret = wally_psbt_elements_input_set_claim_script(result, claim_script, claim_script_len)) != WALLY_OK) {
+    if (claim_script && (ret = wally_psbt_elements_input_set_claim_script(result, claim_script, claim_script_len)) != WALLY_OK)
         goto fail;
-    }
 
-    return ret;
+    return WALLY_OK;
 
 fail:
     wally_psbt_input_free(result);
@@ -487,14 +445,13 @@ int wally_psbt_input_set_non_witness_utxo(struct wally_psbt_input *input,
     return ret;
 }
 
-int wally_psbt_input_set_witness_utxo(
-    struct wally_psbt_input *input,
-    struct wally_tx_output *witness_utxo)
+int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input,
+                                      struct wally_tx_output *witness_utxo)
 {
     int ret;
     struct wally_tx_output *output;
 
-    if (!input || !witness_utxo)
+    if (!input)
         return WALLY_EINVAL;
 
     ret = wally_tx_output_clone_alloc(witness_utxo, &output);
@@ -569,18 +526,16 @@ int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
     return input ? replace_unknowns(unknowns, &input->unknowns) : WALLY_EINVAL;
 }
 
-int wally_psbt_input_set_sighash_type(
-    struct wally_psbt_input *input,
-    uint32_t sighash_type)
+int wally_psbt_input_set_sighash_type(struct wally_psbt_input *input, uint32_t sighash_type)
 {
+    if (!input)
+        return WALLY_EINVAL;
     input->sighash_type = sighash_type;
     return WALLY_OK;
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_elements_input_set_value(
-    struct wally_psbt_input *input,
-    uint64_t value)
+int wally_psbt_elements_input_set_value(struct wally_psbt_input *input, uint64_t value)
 {
     input->value = value;
     input->has_value = 1u;
@@ -631,10 +586,9 @@ int wally_psbt_elements_input_set_peg_in_tx(struct wally_psbt_input *input,
     return ret;
 }
 
-int wally_psbt_elements_input_set_txout_proof(
-    struct wally_psbt_input *input,
-    unsigned char *txout_proof,
-    size_t txout_proof_len)
+int wally_psbt_elements_input_set_txout_proof(struct wally_psbt_input *input,
+                                              unsigned char *txout_proof,
+                                              size_t txout_proof_len)
 {
     if (!input)
         return WALLY_EINVAL;
@@ -698,14 +652,11 @@ int wally_psbt_input_free(struct wally_psbt_input *input)
     return psbt_input_free(input, true);
 }
 
-int wally_psbt_output_init_alloc(
-    unsigned char *redeem_script,
-    size_t redeem_script_len,
-    unsigned char *witness_script,
-    size_t witness_script_len,
-    struct wally_keypath_map *keypaths,
-    struct wally_unknowns_map *unknowns,
-    struct wally_psbt_output **output)
+int wally_psbt_output_init_alloc(unsigned char *redeem_script, size_t redeem_script_len,
+                                 unsigned char *witness_script, size_t witness_script_len,
+                                 struct wally_keypath_map *keypaths,
+                                 struct wally_unknowns_map *unknowns,
+                                 struct wally_psbt_output **output)
 {
     struct wally_psbt_output *result;
     int ret = WALLY_OK;
@@ -713,20 +664,16 @@ int wally_psbt_output_init_alloc(
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_psbt_output);
 
-    if (redeem_script && (ret = wally_psbt_output_set_redeem_script(result, redeem_script, redeem_script_len)) != WALLY_OK) {
+    if (redeem_script && (ret = wally_psbt_output_set_redeem_script(result, redeem_script, redeem_script_len)) != WALLY_OK)
         goto fail;
-    }
-    if (witness_script && (ret = wally_psbt_output_set_witness_script(result, witness_script, witness_script_len)) != WALLY_OK) {
+    if (witness_script && (ret = wally_psbt_output_set_witness_script(result, witness_script, witness_script_len)) != WALLY_OK)
         goto fail;
-    }
-    if (keypaths && (ret = wally_psbt_output_set_keypaths(result, keypaths)) != WALLY_OK) {
+    if (keypaths && (ret = wally_psbt_output_set_keypaths(result, keypaths)) != WALLY_OK)
         goto fail;
-    }
-    if (unknowns && (ret = wally_psbt_output_set_unknowns(result, unknowns)) != WALLY_OK) {
+    if (unknowns && (ret = wally_psbt_output_set_unknowns(result, unknowns)) != WALLY_OK)
         goto fail;
-    }
 
-    return ret;
+    return WALLY_OK;
 
 fail:
     wally_psbt_output_free(result);
@@ -735,70 +682,46 @@ fail:
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_elements_output_init_alloc(
-    unsigned char *redeem_script,
-    size_t redeem_script_len,
-    unsigned char *witness_script,
-    size_t witness_script_len,
-    struct wally_keypath_map *keypaths,
-    struct wally_unknowns_map *unknowns,
-    unsigned char *blinding_pubkey,
-    size_t blinding_pubkey_len,
-    unsigned char *value_commitment,
-    size_t value_commitment_len,
-    unsigned char *value_blinder,
-    size_t value_blinder_len,
-    unsigned char *asset_commitment,
-    size_t asset_commitment_len,
-    unsigned char *asset_blinder,
-    size_t asset_blinder_len,
-    unsigned char *nonce_commitment,
-    size_t nonce_commitment_len,
-    unsigned char *range_proof,
-    size_t range_proof_len,
-    unsigned char *surjection_proof,
-    size_t surjection_proof_len,
-    struct wally_psbt_output **output)
+int wally_psbt_elements_output_init_alloc(unsigned char *redeem_script, size_t redeem_script_len,
+                                          unsigned char *witness_script, size_t witness_script_len,
+                                          struct wally_keypath_map *keypaths,
+                                          struct wally_unknowns_map *unknowns,
+                                          unsigned char *blinding_pubkey, size_t blinding_pubkey_len,
+                                          unsigned char *value_commitment, size_t value_commitment_len,
+                                          unsigned char *value_blinder, size_t value_blinder_len,
+                                          unsigned char *asset_commitment, size_t asset_commitment_len,
+                                          unsigned char *asset_blinder, size_t asset_blinder_len,
+                                          unsigned char *nonce_commitment, size_t nonce_commitment_len,
+                                          unsigned char *range_proof, size_t range_proof_len,
+                                          unsigned char *surjection_proof, size_t surjection_proof_len,
+                                          struct wally_psbt_output **output)
 {
     struct wally_psbt_output *result;
-    int ret = wally_psbt_output_init_alloc(redeem_script,
-                                           redeem_script_len,
-                                           witness_script,
-                                           witness_script_len,
-                                           keypaths,
-                                           unknowns,
-                                           output);
-    if (ret != WALLY_OK) {
+    int ret = wally_psbt_output_init_alloc(redeem_script, redeem_script_len,
+                                           witness_script, witness_script_len,
+                                           keypaths, unknowns, output);
+    if (ret != WALLY_OK)
         return ret;
-    }
 
     /* wally_psbt_output_init_alloc allocates for us */
     result = *output;
 
-    if ((ret = wally_psbt_elements_output_set_blinding_pubkey(result, blinding_pubkey, blinding_pubkey_len)) != WALLY_OK) {
+    if ((ret = wally_psbt_elements_output_set_blinding_pubkey(result, blinding_pubkey, blinding_pubkey_len)) != WALLY_OK)
         goto fail;
-    }
-    if (value_commitment && (ret = wally_psbt_elements_output_set_value_commitment(result, value_commitment, value_commitment_len)) != WALLY_OK) {
+    if (value_commitment && (ret = wally_psbt_elements_output_set_value_commitment(result, value_commitment, value_commitment_len)) != WALLY_OK)
         goto fail;
-    }
-    if (value_blinder && (ret = wally_psbt_elements_output_set_value_blinder(result, value_blinder, value_blinder_len)) != WALLY_OK) {
+    if (value_blinder && (ret = wally_psbt_elements_output_set_value_blinder(result, value_blinder, value_blinder_len)) != WALLY_OK)
         goto fail;
-    }
-    if (asset_commitment && (ret = wally_psbt_elements_output_set_asset_commitment(result, asset_commitment, asset_commitment_len)) != WALLY_OK) {
+    if (asset_commitment && (ret = wally_psbt_elements_output_set_asset_commitment(result, asset_commitment, asset_commitment_len)) != WALLY_OK)
         goto fail;
-    }
-    if (asset_blinder && (ret = wally_psbt_elements_output_set_asset_blinder(result, asset_blinder, asset_blinder_len)) != WALLY_OK) {
+    if (asset_blinder && (ret = wally_psbt_elements_output_set_asset_blinder(result, asset_blinder, asset_blinder_len)) != WALLY_OK)
         goto fail;
-    }
-    if (nonce_commitment && (ret = wally_psbt_elements_output_set_nonce_commitment(result, nonce_commitment, nonce_commitment_len)) != WALLY_OK) {
+    if (nonce_commitment && (ret = wally_psbt_elements_output_set_nonce_commitment(result, nonce_commitment, nonce_commitment_len)) != WALLY_OK)
         goto fail;
-    }
-    if (range_proof && (ret = wally_psbt_elements_output_set_range_proof(result, range_proof, range_proof_len)) != WALLY_OK) {
+    if (range_proof && (ret = wally_psbt_elements_output_set_range_proof(result, range_proof, range_proof_len)) != WALLY_OK)
         goto fail;
-    }
-    if (surjection_proof && (ret = wally_psbt_elements_output_set_surjection_proof(result, surjection_proof, surjection_proof_len)) != WALLY_OK) {
+    if (surjection_proof && (ret = wally_psbt_elements_output_set_surjection_proof(result, surjection_proof, surjection_proof_len)) != WALLY_OK)
         goto fail;
-    }
 
     return ret;
 
