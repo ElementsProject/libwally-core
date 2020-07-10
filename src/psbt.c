@@ -72,7 +72,7 @@ int wally_keypath_map_free(struct wally_keypath_map *keypaths)
 
 static int add_keypath_item(struct wally_keypath_map *keypaths, struct wally_keypath_item *item)
 {
-    return wally_add_new_keypath(keypaths, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+    return wally_keypath_map_add(keypaths, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
                                  item->fingerprint, BIP32_KEY_FINGERPRINT_LEN,
                                  item->path, item->path_len);
 }
@@ -116,7 +116,7 @@ static int array_grow(void **src, size_t num_items, size_t *allocation_len, size
     return WALLY_OK;
 }
 
-int wally_add_new_keypath(struct wally_keypath_map *keypaths,
+int wally_keypath_map_add(struct wally_keypath_map *keypaths,
                           unsigned char *pubkey, size_t pubkey_len,
                           unsigned char *fingerprint, size_t fingerprint_len,
                           uint32_t *path, size_t path_len)
@@ -181,8 +181,8 @@ int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs)
 
 static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, struct wally_partial_sigs_item *item)
 {
-    return wally_add_new_partial_sig(sigs, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
-                                     item->sig, item->sig_len);
+    return wally_partial_sigs_map_add(sigs, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+                                      item->sig, item->sig_len);
 }
 
 static int replace_partial_sigs(const struct wally_partial_sigs_map *src,
@@ -208,9 +208,9 @@ static int replace_partial_sigs(const struct wally_partial_sigs_map *src,
     return ret;
 }
 
-int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
-                              unsigned char *pubkey, size_t pubkey_len,
-                              unsigned char *sig, size_t sig_len)
+int wally_partial_sigs_map_add(struct wally_partial_sigs_map *sigs,
+                               unsigned char *pubkey, size_t pubkey_len,
+                               unsigned char *sig, size_t sig_len)
 {
     int ret;
 
@@ -270,7 +270,7 @@ int wally_unknowns_map_free(struct wally_unknowns_map *unknowns)
 
 static int add_unknowns_item(struct wally_unknowns_map *unknowns, struct wally_unknowns_item *item)
 {
-    return wally_add_new_unknown(unknowns, item->key, item->key_len, item->value, item->value_len);
+    return wally_unknowns_map_add(unknowns, item->key, item->key_len, item->value, item->value_len);
 }
 
 static int replace_unknowns(const struct wally_unknowns_map *src,
@@ -296,9 +296,9 @@ static int replace_unknowns(const struct wally_unknowns_map *src,
     return ret;
 }
 
-int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
-                          unsigned char *key, size_t key_len,
-                          unsigned char *value, size_t value_len)
+int wally_unknowns_map_add(struct wally_unknowns_map *unknowns,
+                           unsigned char *key, size_t key_len,
+                           unsigned char *value, size_t value_len)
 {
     int ret;
 
@@ -3074,7 +3074,7 @@ static int merge_output_into(
     return WALLY_OK;
 }
 
-int wally_combine_psbts(
+int wally_psbt_combine(
     const struct wally_psbt *psbts,
     size_t psbts_len,
     struct wally_psbt **output)
@@ -3150,7 +3150,7 @@ fail:
     return ret;
 }
 
-int wally_sign_psbt(
+int wally_psbt_sign(
     struct wally_psbt *psbt,
     const unsigned char *key,
     size_t key_len)
@@ -3329,7 +3329,7 @@ int wally_sign_psbt(
                 return ret;
             }
         }
-        if ((ret = wally_add_new_partial_sig(input->partial_sigs, comp ? pubkey : uncomp_pubkey, comp ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN, der_sig, der_sig_len)) != WALLY_OK) {
+        if ((ret = wally_partial_sigs_map_add(input->partial_sigs, comp ? pubkey : uncomp_pubkey, comp ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN, der_sig, der_sig_len)) != WALLY_OK) {
             return ret;
         }
     }
@@ -3337,7 +3337,7 @@ int wally_sign_psbt(
     return WALLY_OK;
 }
 
-int wally_finalize_psbt(struct wally_psbt *psbt)
+int wally_psbt_finalize(struct wally_psbt *psbt)
 {
     size_t i;
     int ret;
@@ -3569,7 +3569,7 @@ int wally_finalize_psbt(struct wally_psbt *psbt)
     return WALLY_OK;
 }
 
-int wally_extract_psbt(
+int wally_psbt_extract(
     const struct wally_psbt *psbt,
     struct wally_tx **output)
 {

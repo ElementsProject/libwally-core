@@ -5,6 +5,15 @@
 - FINGERPRINT_LEN was renamed to BIP32_KEY_FINGERPRINT_LEN for
   consistency - You should change any references in your source when upgrading.
 
+- The following PSBT functions have been renamed for consistency:
+  - wally_add_new_keypath -> wally_keypath_map_add
+  - wally_add_new_partial_sig -> wally_partial_sigs_map_add
+  - wally_add_new_unknown -> wally_unknowns_map_add
+  - wally_extract_psbt -> wally_psbt_extract
+  - wally_finalize_psbt -> wally_psbt_finalize
+  - wally_sign_psbt -> wally_psbt_sign
+  - wally_combine_psbts -> wally_psbt_combine
+
 ## Version 0.7.8
 
 - Python 2 wheels are now deprecated. Users should move to Python 3 as soon as possible.
