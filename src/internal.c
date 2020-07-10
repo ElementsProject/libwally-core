@@ -231,6 +231,13 @@ void *wally_malloc(size_t size)
     return _ops.malloc_fn(size);
 }
 
+void *wally_calloc(size_t size)
+{
+    void *p = _ops.malloc_fn(size);
+    (void) wally_bzero(p, size);
+    return p;
+}
+
 void wally_free(void *ptr)
 {
     _ops.free_fn(ptr);
