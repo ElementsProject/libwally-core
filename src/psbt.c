@@ -888,16 +888,11 @@ int wally_psbt_init_alloc(
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_psbt);
 
-    if (inputs_allocation_len) {
-        result->inputs = wally_malloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
-        if (result->inputs)
-            wally_bzero(result->inputs, inputs_allocation_len * sizeof(*result->inputs));
-    }
-    if (outputs_allocation_len) {
-        result->outputs = wally_malloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
-        if (result->outputs)
-            wally_bzero(result->outputs, outputs_allocation_len * sizeof(*result->outputs));
-    }
+    if (inputs_allocation_len)
+        result->inputs = wally_calloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
+    if (outputs_allocation_len)
+        result->outputs = wally_calloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
+
     ret = wally_unknowns_map_init_alloc(global_unknowns_allocation_len, &result->unknowns);
 
     if (ret != WALLY_OK ||
