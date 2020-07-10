@@ -946,9 +946,9 @@ int wally_psbt_free(struct wally_psbt *psbt)
     return WALLY_OK;
 }
 
-int wally_psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx)
+static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool do_clone)
 {
-    struct wally_tx *new_tx;
+    struct wally_tx *new_tx = NULL;
     struct wally_psbt_input *new_inputs = NULL;
     struct wally_psbt_output *new_outputs = NULL;
     size_t i;
@@ -961,7 +961,7 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx)
         if (tx->inputs[i].script || tx->inputs[i].witness)
             return WALLY_EINVAL; /* tx mustn't have scriptSigs or witnesses */
 
-    if ((ret = wally_tx_clone(tx, 0, &new_tx)) != WALLY_OK)
+    if (do_clone && (ret = wally_tx_clone(tx, 0, &new_tx)) != WALLY_OK)
         return ret;
 
     if (psbt->inputs_allocation_len < tx->num_inputs)
@@ -988,8 +988,13 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx)
         psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
     }
-    psbt->tx = new_tx;
+    psbt->tx = do_clone ? new_tx : tx;
     return WALLY_OK;
+}
+
+int wally_psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx)
+{
+    return psbt_set_global_tx(psbt, tx, true);
 }
 
 /* Returns false if it hits a zero length "key" (i.e. separator) or EOF.
@@ -1897,8 +1902,9 @@ int wally_psbt_from_bytes(
                                 &val, &val_max);
             ret = wally_tx_from_bytes(val, val_max, flags, &tx);
             if (ret == WALLY_OK) {
-                ret = wally_psbt_set_global_tx(result, tx);
-                wally_tx_free(tx);
+                ret = psbt_set_global_tx(result, tx, false);
+                if (ret != WALLY_OK)
+                    wally_tx_free(tx);
             }
             if (ret != WALLY_OK)
                 goto fail;
