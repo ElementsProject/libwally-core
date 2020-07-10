@@ -218,11 +218,11 @@ WALLY_CORE_API int wally_keypath_map_free(
  */
 WALLY_CORE_API int wally_keypath_map_add(
     struct wally_keypath_map *keypaths,
-    unsigned char *pubkey,
+    const unsigned char *pubkey,
     size_t pubkey_len,
-    unsigned char *fingerprint,
+    const unsigned char *fingerprint,
     size_t fingerprint_len,
-    uint32_t *path,
+    const uint32_t *path,
     size_t path_len);
 
 /**
@@ -256,9 +256,9 @@ WALLY_CORE_API int wally_partial_sigs_map_free(
  */
 WALLY_CORE_API int wally_partial_sigs_map_add(
     struct wally_partial_sigs_map *sigs,
-    unsigned char *pubkey,
+    const unsigned char *pubkey,
     size_t pubkey_len,
-    unsigned char *sig,
+    const unsigned char *sig,
     size_t sig_len);
 
 /**
@@ -292,9 +292,9 @@ WALLY_CORE_API int wally_unknowns_map_free(
  */
 WALLY_CORE_API int wally_unknowns_map_add(
     struct wally_unknowns_map *unknowns,
-    unsigned char *key,
+    const unsigned char *key,
     size_t key_len,
-    unsigned char *value,
+    const unsigned char *value,
     size_t value_len);
 
 /**
