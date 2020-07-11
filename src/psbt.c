@@ -1982,17 +1982,9 @@ fail:
     return ret;
 }
 
-int wally_psbt_get_length(
-    const struct wally_psbt *psbt,
-    size_t *written)
+int wally_psbt_get_length(const struct wally_psbt *psbt, size_t *written)
 {
-    int ret;
-
-    ret = wally_psbt_to_bytes(psbt, NULL, 0, written);
-    if (ret == WALLY_EINVAL && *written != 0) {
-        return WALLY_OK;
-    }
-    return ret;
+    return wally_psbt_to_bytes(psbt, NULL, 0, written);
 }
 
 /* Literally a varbuff containing only type as a varint, then optional data */
@@ -2331,22 +2323,25 @@ static int push_psbt_output(
     return WALLY_OK;
 }
 
-int wally_psbt_to_bytes(
-    const struct wally_psbt *psbt,
-    unsigned char *bytes_out, size_t len,
-    size_t *written)
+int wally_psbt_to_bytes(const struct wally_psbt *psbt,
+                        unsigned char *bytes_out, size_t len,
+                        size_t *written)
 {
     unsigned char *cursor = bytes_out;
     size_t max = len, i, is_elements;
     uint32_t flags;
     int ret;
 
-    *written = 0;
+    if (written)
+        *written = 0;
+
+    if (!written)
+        return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
         return ret;
-    flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
 
+    flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
     push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
 
     /* Global tx */
@@ -2391,7 +2386,6 @@ int wally_psbt_to_bytes(
     if (cursor == NULL) {
         /* Once cursor was NULL, max accumulates hm bytes we needed */
         *written = len + max;
-        return WALLY_EINVAL;
     } else {
         *written = len - max;
     }
@@ -2437,29 +2431,29 @@ done:
     return ret;
 }
 
-int wally_psbt_to_base64(
-    struct wally_psbt *psbt,
-    char **output)
+int wally_psbt_to_base64(struct wally_psbt *psbt, char **output)
 {
     unsigned char *buff;
     char *result = NULL;
-    size_t len, written, b64_safe_len;
-    ssize_t b64_len;
+    size_t len, written, b64_safe_len = 0;
     int ret = WALLY_OK;
 
     TX_CHECK_OUTPUT;
     if (!psbt)
         return WALLY_EINVAL;
 
-    if ((ret = wally_psbt_get_length(psbt, &len)) != WALLY_OK) {
+    if ((ret = wally_psbt_get_length(psbt, &len)) != WALLY_OK)
         return ret;
-    }
-    if ((buff = wally_malloc(len)) == NULL) {
+
+    if ((buff = wally_malloc(len)) == NULL)
         return WALLY_ENOMEM;
-    }
 
     /* Get psbt bytes */
-    if ((ret = wally_psbt_to_bytes(psbt, buff, len, &written)) != WALLY_OK) {
+    if ((ret = wally_psbt_to_bytes(psbt, buff, len, &written)) != WALLY_OK)
+        goto done;
+
+    if (written != len) {
+        ret = WALLY_ERROR; /* Length calculated incorrectly */
         goto done;
     }
 
@@ -2469,7 +2463,7 @@ int wally_psbt_to_base64(
         ret = WALLY_ENOMEM;
         goto done;
     }
-    if ((b64_len = base64_encode(result, b64_safe_len, (char *)buff, written)) <= 0) {
+    if (base64_encode(result, b64_safe_len, (char *)buff, written) <= 0) {
         ret = WALLY_EINVAL;
         goto done;
     }
@@ -2477,12 +2471,8 @@ int wally_psbt_to_base64(
     result = NULL;
 
 done:
-    if (result) {
-        clear_and_free(result, b64_safe_len);
-    }
-    if (buff) {
-        clear_and_free(buff, len);
-    }
+    clear_and_free(result, b64_safe_len);
+    clear_and_free(buff, len);
     return ret;
 }
 
