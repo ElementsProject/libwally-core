@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 #include <err.h>
-#include <ccan/str/hex/hex.h>
 
 #include "psbts.h"
 
@@ -23,40 +21,44 @@ int main(void)
     }
 
     for (i = 0; i < sizeof(valid_psbts) / sizeof(valid_psbts[0]); i++) {
+        const char* base64_in = valid_psbts[i].base64;
         struct wally_psbt *psbt;
         char *output;
         unsigned char *bytes;
-        size_t len, actual_len;
+        size_t len, written;
 
-        if (wally_psbt_from_base64(valid_psbts[i].base64, &psbt) != WALLY_OK) {
-            errx(1, "Failed to parse psbt %s", valid_psbts[i].base64);
-        }
-        if (wally_psbt_to_base64(psbt, &output) != WALLY_OK) {
-            errx(1, "Failed to base64 psbt %s", valid_psbts[i].base64);
-        }
-        if (strcmp(output, valid_psbts[i].base64) != 0) {
-            errx(1, "psbt %s turned into %s?", valid_psbts[i].base64, output);
-        }
+        if (wally_psbt_from_base64(base64_in, &psbt) != WALLY_OK)
+            errx(1, "Failed to parse psbt %s", base64_in);
+
+        if (wally_psbt_to_base64(psbt, &output) != WALLY_OK)
+            errx(1, "Failed to base64 psbt %s", base64_in);
+
+        if (strcmp(output, base64_in) != 0)
+            errx(1, "psbt %s turned into %s?", base64_in, output);
+
         wally_free_string(output);
 
-        if (wally_psbt_get_length(psbt, &len) != WALLY_OK) {
-            errx(1, "Failed to get pbst %s len", valid_psbts[i].base64);
-        }
+        if (wally_psbt_get_length(psbt, &len) != WALLY_OK)
+            errx(1, "Failed to get psbt %s len", base64_in);
+
         bytes = malloc(len);
-        if (wally_psbt_to_bytes(psbt, bytes, len, &actual_len) != WALLY_OK) {
-            errx(1, "psbt %s could not to_bytes?", valid_psbts[i].base64);
+        if (wally_psbt_to_bytes(psbt, bytes, len, &written) != WALLY_OK)
+            errx(1, "psbt %s could not to_bytes?", base64_in);
+
+        if (len != written) {
+            errx(1, "psbt %s to_bytes to %zu not %zu?", base64_in,
+                 written, len);
         }
-        if (len != actual_len) {
-            errx(1, "psbt %s to_bytes to %zu not %zu?", valid_psbts[i].base64,
-                 actual_len, len);
-        }
-        output = malloc(hex_str_size(len));
-        hex_encode(bytes, len, output, hex_str_size(len));
-        if (strcmp(output, valid_psbts[i].hex) != 0) {
+
+        if (wally_hex_from_bytes(bytes, len, &output) != WALLY_OK)
+            errx(1, "Failed to convert psbt bytes to hex");
+
+        if (strcmp(output, valid_psbts[i].hex) != 0)
             errx(1, "psbt[%zi] bytes %s not %s", i, output, valid_psbts[i].hex);
-        }
+
+        wally_free_string(output);
+
         free(bytes);
-        free(output);
         wally_psbt_free(psbt);
     }
 
