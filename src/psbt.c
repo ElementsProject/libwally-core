@@ -1841,10 +1841,8 @@ static int pull_psbt_output(
     return WALLY_OK;
 }
 
-int wally_psbt_from_bytes(
-    const unsigned char *bytes,
-    size_t bytes_len,
-    struct wally_psbt **output)
+int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
+                          struct wally_psbt **output)
 {
     const unsigned char *magic, *pre_key;
     int ret;
@@ -1854,7 +1852,7 @@ int wally_psbt_from_bytes(
 
     TX_CHECK_OUTPUT;
 
-    magic = pull_skip(&bytes, &bytes_len, sizeof(WALLY_PSBT_MAGIC));
+    magic = pull_skip(&bytes, &len, sizeof(WALLY_PSBT_MAGIC));
     if (!magic) {
         ret = WALLY_EINVAL;  /* Not enough bytes */
         goto fail;
@@ -1882,23 +1880,23 @@ int wally_psbt_from_bytes(
 
     /* Read globals first */
     pre_key = bytes;
-    while ((key_len = pull_varlength(&bytes, &bytes_len)) != 0) {
+    while ((key_len = pull_varlength(&bytes, &len)) != 0) {
         const unsigned char *key, *val;
         size_t val_max;
 
         /* Start parsing key */
-        pull_subfield_start(&bytes, &bytes_len, key_len, &key, &key_len);
+        pull_subfield_start(&bytes, &len, key_len, &key, &key_len);
 
         /* Process based on type */
         switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_GLOBAL_UNSIGNED_TX: {
             struct wally_tx *tx;
 
-            subfield_nomore_end(&bytes, &bytes_len, key, key_len);
+            subfield_nomore_end(&bytes, &len, key, key_len);
 
             /* Start parsing the value field. */
-            pull_subfield_start(&bytes, &bytes_len,
-                                pull_varint(&bytes, &bytes_len),
+            pull_subfield_start(&bytes, &len,
+                                pull_varint(&bytes, &len),
                                 &val, &val_max);
             ret = wally_tx_from_bytes(val, val_max, flags, &tx);
             if (ret == WALLY_OK) {
@@ -1908,7 +1906,7 @@ int wally_psbt_from_bytes(
             }
             if (ret != WALLY_OK)
                 goto fail;
-            pull_subfield_end(&bytes, &bytes_len, val, val_max);
+            pull_subfield_end(&bytes, &len, val, val_max);
             break;
         }
         case WALLY_PSBT_GLOBAL_VERSION: {
@@ -1916,14 +1914,14 @@ int wally_psbt_from_bytes(
                 ret = WALLY_EINVAL;    /* Version already provided */
                 goto fail;
             }
-            subfield_nomore_end(&bytes, &bytes_len, key, key_len);
+            subfield_nomore_end(&bytes, &len, key, key_len);
 
             /* Start parsing the value field. */
-            pull_subfield_start(&bytes, &bytes_len,
-                                pull_varint(&bytes, &bytes_len),
+            pull_subfield_start(&bytes, &len,
+                                pull_varint(&bytes, &len),
                                 &val, &val_max);
             result->version = pull_le32(&val, &val_max);
-            subfield_nomore_end(&bytes, &bytes_len, val, val_max);
+            subfield_nomore_end(&bytes, &len, val, val_max);
             if (result->version > WALLY_PSBT_HIGHEST_VERSION) {
                 ret = WALLY_EINVAL;    /* Unsupported version number */
                 goto fail;
@@ -1932,7 +1930,7 @@ int wally_psbt_from_bytes(
         }
         /* Unknowns */
         default: {
-            ret = pull_unknown_key_value(&bytes, &bytes_len, pre_key, &result->unknowns);
+            ret = pull_unknown_key_value(&bytes, &len, pre_key, &result->unknowns);
             if (ret != WALLY_OK)
                 goto fail;
             break;
@@ -1954,7 +1952,7 @@ int wally_psbt_from_bytes(
 
     /* Read inputs */
     for (i = 0; i < result->tx->num_inputs; ++i) {
-        ret = pull_psbt_input(&bytes, &bytes_len, flags, &result->inputs[i]);
+        ret = pull_psbt_input(&bytes, &len, flags, &result->inputs[i]);
         result->num_inputs = i + 1; /* Free this input if we fail */
         if (ret != WALLY_OK)
             goto fail;
@@ -1962,7 +1960,7 @@ int wally_psbt_from_bytes(
 
     /* Read outputs */
     for (i = 0; i < result->tx->num_outputs; ++i) {
-        ret = pull_psbt_output(&bytes, &bytes_len, &result->outputs[i]);
+        ret = pull_psbt_output(&bytes, &len, &result->outputs[i]);
         result->num_outputs = i + 1; /* Free this output if we fail */
         if (ret != WALLY_OK)
             goto fail;
