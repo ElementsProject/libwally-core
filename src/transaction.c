@@ -351,10 +351,9 @@ static bool clone_input_to(
 #ifdef BUILD_ELEMENTS
     unsigned char *new_issuance_amount = NULL, *new_inflation_keys = NULL,
                   *new_issuance_amount_rangeproof = NULL, *new_inflation_keys_rangeproof = NULL;
-#endif
-
-    struct wally_tx_witness_stack *new_witness;
     struct wally_tx_witness_stack *new_pegin_witness;
+#endif
+    struct wally_tx_witness_stack *new_witness;
 
     new_witness = src->witness ? clone_witness(src->witness) : NULL;
 

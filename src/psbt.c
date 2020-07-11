@@ -13,12 +13,12 @@
 #include "script.h"
 #include "pullpush.h"
 
-const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
+static const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
+static const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
 #ifdef BUILD_ELEMENTS
-const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
-const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 's'};
-const size_t WALLY_ELEMENTS_ID_LEN = 8;
+static const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 's'};
+static const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
 static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
@@ -2089,6 +2089,8 @@ static int push_psbt_input(
 {
     int ret;
     size_t i;
+
+    (void)flags;
 
     /* Non witness utxo */
     if (input->non_witness_utxo) {
