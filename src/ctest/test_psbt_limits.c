@@ -72,20 +72,24 @@ static void test_psbt_read(const struct psbt_test *test,
 static void test_psbt_write(const struct psbt_test *test,
                             unsigned char *p, size_t plen)
 {
-    size_t i, written;
+    size_t i, psbt_len, written;
     struct wally_psbt *psbt;
 
     if (wally_psbt_from_base64(test->base64, &psbt) != WALLY_OK)
         abort();
 
-    for (i = 0;; i++) {
-        if (wally_psbt_to_bytes(psbt, p + plen - i, i, &written) == WALLY_OK)
-            break;
+    if (wally_psbt_get_length(psbt, &psbt_len) != WALLY_OK)
+        abort();
+
+    for (i = 0; i <= psbt_len; i++) {
+        /* A too short buffer should return OK and the required length */
+        if (wally_psbt_to_bytes(psbt, p + plen - i, i, &written) != WALLY_OK) {
+            errx(1, "wally_psbt_to_bytes should have suceeded");
+        }
+        if (written != psbt_len)
+            errx(1, "wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
+                 test->base64, written, i);
     }
-    /* Should have fit exactly */
-    if (written != i)
-        errx(1, "wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
-             test->base64, written, i);
     wally_psbt_free(psbt);
 }
 

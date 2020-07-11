@@ -2,6 +2,9 @@
 
 ## Version 0.7.9
 
+- psbt_to_bytes no longer returns WALLY_EINVAL if the supplied buffer is too
+  short. Please see the function documentation for details.
+
 - FINGERPRINT_LEN was renamed to BIP32_KEY_FINGERPRINT_LEN for
   consistency - You should change any references in your source when upgrading.
 
