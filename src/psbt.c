@@ -2393,9 +2393,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt,
     return WALLY_OK;
 }
 
-int wally_psbt_from_base64(
-    const char *string,
-    struct wally_psbt **output)
+int wally_psbt_from_base64(const char *string, struct wally_psbt **output)
 {
     char *decoded;
     size_t safe_len, string_len;
@@ -2425,9 +2423,7 @@ int wally_psbt_from_base64(
     ret = wally_psbt_from_bytes((unsigned char *)decoded, decoded_len, output);
 
 done:
-    if (decoded) {
-        wally_free(decoded);
-    }
+    clear_and_free(decoded, safe_len);
     return ret;
 }
 
