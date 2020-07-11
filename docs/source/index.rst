@@ -21,6 +21,7 @@ libwally-core documentation
    :maxdepth: 2
    :caption: Developer Guides
 
+   Library Conventions <conventions.rst>
    Liquid <Liquid.rst>
 
 Indices and tables
