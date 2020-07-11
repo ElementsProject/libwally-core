@@ -13,12 +13,14 @@ def output_func(docs, func):
     func = func[:-1].replace('WALLY_CORE_API','').strip()
     func = func.replace(',',', ').replace('  ', ' ')
     ret = ['.. c:function:: ' + func, '']
-    seen_param = False
+    is_variable_buffer_ret = 'unsigned char *bytes_out, size_t len, size_t *written' in func
     for l in docs:
         ret.extend(get_doc_lines(l))
     if is_normal_ret:
-        ret.append('   :return: WALLY_OK or an error code.') # FIXME: Link
-        ret.append('   :rtype: int')
+        if is_variable_buffer_ret:
+            ret.append('   :return: See :ref:`variable-length-output-buffers`')
+        else:
+            ret.append('   :return: See :ref:`error-codes`')
     ret.append('')
     ret.append('')
     return ret
