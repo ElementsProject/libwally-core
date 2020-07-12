@@ -10,6 +10,7 @@
 #include <wally_bip39.h>
 #include <wally_core.h>
 #include <wally_crypto.h>
+#include <wally_psbt.h>
 #include <wally_script.h>
 #include <wally_transaction.h>
 
@@ -55,6 +56,14 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 
 #define WALLY_FN_3_A(F, N) template <class O> inline int F(uint32_t i321, O * *out) { \
         return ::N(i321, out); \
+}
+
+#define WALLY_FN_S_A(F, N) template <class O> inline int F(size_t s1, O * *out) { \
+        return ::N(s1, out); \
+}
+
+#define WALLY_FN_SSS_A(F, N) template <class O> inline int F(size_t s1, size_t s2, size_t s3, O * *out) { \
+        return ::N(s1, s2, s3, out); \
 }
 
 #define WALLY_FN_6_B(F, N) template <class O> inline int F(uint64_t i641, O & out) { \
@@ -180,6 +189,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), i321); \
 }
 
+#define WALLY_FN_P6(F, N) template <class P1> inline int F(const P1 &p1, uint64_t i641) { \
+        return ::N(WALLYP(p1), i641); \
+}
+
 #define WALLY_FN_P33(F, N) template <class P1> inline int F(const P1 &p1, uint32_t i321, uint32_t i322) { \
         return ::N(WALLYP(p1), i321, i322); \
 }
@@ -242,6 +255,14 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1)); \
 }
 
+#define WALLY_FN_PBB(F, N) template <class P1, class I1, class I2> \
+    inline int F(const P1 &p1, const I1 &i1, const I2 &i2) { return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2)); }
+
+#define WALLY_FN_PBBB(F, N) template <class P1, class I1, class I2, class I3> \
+    inline int F(const P1 &p1, const I1 &i1, const I2 &i2, const I3 &i3) { \
+        return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2), WALLYB(i3)); \
+}
+
 #define WALLY_FN_PBBBBB(F, N) template <class P1, class I1, class I2, class I3, class I4, class I5> \
     inline int F(const P1 &p1, const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5) { \
         return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5)); \
@@ -284,6 +305,11 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1), out); \
 }
 
+#define WALLY_FN_PBBPP_A(F, N) template <class P1, class I1, class I2, class P2, class P3, class O> \
+    inline int F(const P1 &p1, const I1 &i1, const I2 &i2, const P2 &p2, const P3 &p3, O * *out) { \
+        return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2), WALLYP(p2), WALLYP(p3), out); \
+}
+
 #define WALLY_FN_PP(F, N) template <class P1, class P2> inline int F(const P1 &p1, const P2 &p2) { \
         return ::N(WALLYP(p1), WALLYP(p2)); \
 }
@@ -292,6 +318,12 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         size_t n; \
         int ret = ::N(WALLYP(p1), WALLYP(p2), i321, WALLYO(out), written ? written : &n); \
         return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(out.size()) ? WALLY_OK : WALLY_EINVAL; \
+}
+
+#define WALLY_FN_PPBBBPPPP3_A(F, N) template <class P1, class P2, class I1, class I2, class I3, class P3, class P4, class P5, class P6, class O> \
+    inline int F(const P1 &p1, const P2 &p2, const I1 &i1, const I2 &i2, const I3 &i3, \
+                 const P3 &p3, const P4 &p4, const P5 &p5, const P6 &p6, uint32_t i321, O * *out) { \
+        return ::N(WALLYP(p1), WALLYP(p2), WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYP(p3), WALLYP(p4), WALLYP(p5), WALLYP(p6), i321, out); \
 }
 
 #define WALLY_FN_PP_BS(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, O & out, size_t * written = 0) { \
@@ -347,6 +379,10 @@ WALLY_FN_3(cleanup, wally_cleanup)
 WALLY_FN_333_BBBBBA(bip32_key_init_alloc, bip32_key_init_alloc)
 WALLY_FN_33SS_A(tx_init_alloc, wally_tx_init_alloc)
 WALLY_FN_3_A(tx_witness_stack_init_alloc, wally_tx_witness_stack_init_alloc)
+WALLY_FN_S_A(keypath_map_init_alloc, wally_keypath_map_init_alloc)
+WALLY_FN_S_A(partial_sigs_map_init_alloc, wally_partial_sigs_map_init_alloc)
+WALLY_FN_S_A(unknowns_map_init_alloc, wally_unknowns_map_init_alloc)
+WALLY_FN_SSS_A(psbt_init_alloc, wally_psbt_init_alloc)
 WALLY_FN_6B_A(tx_output_init_alloc, wally_tx_output_init_alloc)
 WALLY_FN_B(ec_private_key_verify, wally_ec_private_key_verify)
 WALLY_FN_B(ec_public_key_verify, wally_ec_public_key_verify)
@@ -383,6 +419,7 @@ WALLY_FN_BP3_A(addr_segwit_from_bytes, wally_addr_segwit_from_bytes)
 WALLY_FN_BB_BS(scriptsig_p2pkh_from_der, wally_scriptsig_p2pkh_from_der)
 WALLY_FN_B_A(bip32_key_unserialize_alloc, bip32_key_unserialize_alloc)
 WALLY_FN_B_A(hex_from_bytes, wally_hex_from_bytes)
+WALLY_FN_B_A(psbt_from_bytes, wally_psbt_from_bytes)
 WALLY_FN_B_B(ec_public_key_decompress, wally_ec_public_key_decompress)
 WALLY_FN_B_B(ec_public_key_from_private_key, wally_ec_public_key_from_private_key)
 WALLY_FN_B_B(ec_sig_from_der, wally_ec_sig_from_der)
@@ -399,11 +436,18 @@ WALLY_FN_BB33_B(pbkdf2_hmac_sha512, wally_pbkdf2_hmac_sha512)
 WALLY_FN_P(bip32_key_free, bip32_key_free)
 WALLY_FN_P(bip32_key_strip_private_key, bip32_key_strip_private_key)
 WALLY_FN_P(get_operations, wally_get_operations)
+WALLY_FN_P(keypath_map_free, wally_keypath_map_free)
+WALLY_FN_P(partial_sigs_map_free, wally_partial_sigs_map_free)
+WALLY_FN_P(psbt_free, wally_psbt_free)
+WALLY_FN_P(psbt_input_free, wally_psbt_input_free)
+WALLY_FN_P(psbt_output_free, wally_psbt_output_free)
 WALLY_FN_P(set_operations, wally_set_operations)
 WALLY_FN_P(tx_free, wally_tx_free)
 WALLY_FN_P(tx_input_free, wally_tx_input_free)
 WALLY_FN_P(tx_output_free, wally_tx_output_free)
 WALLY_FN_P(tx_witness_stack_free, wally_tx_witness_stack_free)
+WALLY_FN_P(unknowns_map_free, wally_unknowns_map_free)
+WALLY_FN_P3(psbt_input_set_sighash_type, wally_psbt_input_set_sighash_type)
 WALLY_FN_P3(tx_witness_stack_add_dummy, wally_tx_witness_stack_add_dummy)
 WALLY_FN_P3(tx_witness_stack_set_dummy, wally_tx_witness_stack_set_dummy)
 WALLY_FN_P33_P(bip32_key_from_parent, bip32_key_from_parent)
@@ -423,16 +467,28 @@ WALLY_FN_P3_S(tx_get_length, wally_tx_get_length)
 WALLY_FN_P33_A(scriptpubkey_to_address, wally_scriptpubkey_to_address)
 WALLY_FN_P33_A(wif_to_address, wally_wif_to_address)
 WALLY_FN_P6B3(tx_add_raw_output, wally_tx_add_raw_output)
+WALLY_FN_PB(psbt_input_set_redeem_script, wally_psbt_input_set_redeem_script)
+WALLY_FN_PB(psbt_input_set_witness_script, wally_psbt_input_set_witness_script)
+WALLY_FN_PB(psbt_input_set_final_script_sig, wally_psbt_input_set_final_script_sig)
+WALLY_FN_PB(psbt_output_set_redeem_script, wally_psbt_output_set_redeem_script)
+WALLY_FN_PB(psbt_output_set_witness_script, wally_psbt_output_set_witness_script)
+WALLY_FN_PB(psbt_sign, wally_psbt_sign)
 WALLY_FN_PB(tx_witness_stack_add, wally_tx_witness_stack_add)
 WALLY_FN_PB33BP3(tx_add_raw_input, wally_tx_add_raw_input)
+WALLY_FN_PBB(partial_sigs_map_add, wally_partial_sigs_map_add)
+WALLY_FN_PBB(unknowns_map_add, wally_unknowns_map_add)
+WALLY_FN_PBBB(keypath_map_add, wally_keypath_map_add)
+WALLY_FN_PBBPP_A(psbt_output_init_alloc, wally_psbt_output_init_alloc)
 WALLY_FN_PB3_A(bip32_key_from_parent_path_alloc, bip32_key_from_parent_path_alloc)
 WALLY_FN_PB3_B(bip38_to_private_key, bip38_to_private_key)
 WALLY_FN_PB3_P(bip32_key_from_parent_path, bip32_key_from_parent_path)
 WALLY_FN_PB_A(bip39_mnemonic_from_bytes, bip39_mnemonic_from_bytes)
+WALLY_FN_PB_A(psbt_combine, wally_psbt_combine)
 WALLY_FN_PP(bip39_mnemonic_validate, bip39_mnemonic_validate)
 WALLY_FN_PP(tx_add_input, wally_tx_add_input)
 WALLY_FN_PP(tx_add_output, wally_tx_add_output)
 WALLY_FN_PP3_BS(addr_segwit_to_bytes, wally_addr_segwit_to_bytes)
+WALLY_FN_PPBBBPPPP3_A(psbt_input_init_alloc, wally_psbt_input_init_alloc)
 WALLY_FN_PP_BS(bip39_mnemonic_to_bytes, bip39_mnemonic_to_bytes)
 WALLY_FN_PP_BS(bip39_mnemonic_to_seed, bip39_mnemonic_to_seed)
 WALLY_FN_PS(tx_remove_input, wally_tx_remove_input)
@@ -443,18 +499,34 @@ WALLY_FN_PS_A(bip39_get_word, bip39_get_word)
 WALLY_FN_P_A(bip32_key_from_base58_alloc, bip32_key_from_base58_alloc)
 WALLY_FN_P_A(bip39_get_languages, bip39_get_languages)
 WALLY_FN_P_A(bip39_get_wordlist, bip39_get_wordlist)
+WALLY_FN_P_A(psbt_extract, wally_psbt_extract)
+WALLY_FN_P_A(psbt_from_base64, wally_psbt_from_base64)
+WALLY_FN_P_A(psbt_to_base64, wally_psbt_to_base64)
 WALLY_FN_P_A(tx_output_clone_alloc, wally_tx_output_clone_alloc)
 WALLY_FN_P_B(bip32_key_get_fingerprint, bip32_key_get_fingerprint)
 WALLY_FN_P_B(tx_get_txid, wally_tx_get_txid)
 WALLY_FN_P_BS(hex_to_bytes, wally_hex_to_bytes)
+WALLY_FN_P_BS(psbt_to_bytes, wally_psbt_to_bytes)
 WALLY_FN_P_S(base58_get_length, wally_base58_get_length)
-WALLY_FN_P_S(wif_is_uncompressed, wally_wif_is_uncompressed)
+WALLY_FN_P_S(psbt_get_length, wally_psbt_get_length)
+WALLY_FN_P_S(psbt_is_elements, wally_psbt_is_elements)
 WALLY_FN_P_S(tx_get_vsize, wally_tx_get_vsize)
 WALLY_FN_P_S(tx_get_weight, wally_tx_get_weight)
 WALLY_FN_P_S(tx_get_witness_count, wally_tx_get_witness_count)
+WALLY_FN_P_S(wif_is_uncompressed, wally_wif_is_uncompressed)
 WALLY_FN_P_P(bip32_key_from_base58, bip32_key_from_base58)
-WALLY_FN_P_P(tx_output_clone, wally_tx_output_clone)
+WALLY_FN_P_P(psbt_input_set_final_witness, wally_psbt_input_set_final_witness)
+WALLY_FN_P_P(psbt_input_set_keypaths, wally_psbt_input_set_keypaths)
+WALLY_FN_P_P(psbt_input_set_non_witness_utxo, wally_psbt_input_set_non_witness_utxo)
+WALLY_FN_P_P(psbt_input_set_partial_sigs, wally_psbt_input_set_partial_sigs)
+WALLY_FN_P_P(psbt_input_set_unknowns, wally_psbt_input_set_unknowns)
+WALLY_FN_P_P(psbt_input_set_witness_utxo, wally_psbt_input_set_witness_utxo)
+WALLY_FN_P_P(psbt_output_set_keypaths, wally_psbt_output_set_keypaths)
+WALLY_FN_P_P(psbt_output_set_unknowns, wally_psbt_output_set_unknowns)
+WALLY_FN_P_P(psbt_set_global_tx, wally_psbt_set_global_tx)
 WALLY_FN_P_P(tx_get_total_output_satoshi, wally_tx_get_total_output_satoshi)
+WALLY_FN_P_P(tx_output_clone, wally_tx_output_clone)
+
 WALLY_FN_S_S(tx_vsize_from_weight, wally_tx_vsize_from_weight)
 
 inline struct secp256k1_context_struct *get_secp_context() {
@@ -481,22 +553,46 @@ inline bool is_elements_build()
 }
 
 #ifdef BUILD_ELEMENTS
-WALLY_FN_PBBBBBB(tx_elements_input_issuance_set, wally_tx_elements_input_issuance_set)
-WALLY_FN_P(tx_elements_input_issuance_free, wally_tx_elements_input_issuance_free)
-WALLY_FN_B33BPBBBBBB_A(tx_elements_input_init_alloc, wally_tx_elements_input_init_alloc)
-WALLY_FN_PBBBBB(tx_elements_output_commitment_set, wally_tx_elements_output_commitment_set)
-WALLY_FN_P(tx_elements_output_commitment_free, wally_tx_elements_output_commitment_free)
 WALLY_FN_6BBBBBB_A(tx_elements_output_init_alloc, wally_tx_elements_output_init_alloc)
-WALLY_FN_PB33BPBBBBBB3(tx_add_elements_raw_input, wally_tx_add_elements_raw_input)
-WALLY_FN_P6BBBBBB3(tx_add_elements_raw_output, wally_tx_add_elements_raw_output)
-WALLY_FN_P_S(tx_is_elements, wally_tx_is_elements)
 WALLY_FN_6_B(tx_confidential_value_from_satoshi, wally_tx_confidential_value_from_satoshi)
-WALLY_FN_P6BB33_B(tx_get_elements_signature_hash, wally_tx_get_elements_signature_hash)
+WALLY_FN_B33BPBBBBBB_A(tx_elements_input_init_alloc, wally_tx_elements_input_init_alloc)
 WALLY_FN_B3B_B(tx_elements_issuance_generate_entropy, wally_tx_elements_issuance_generate_entropy)
-WALLY_FN_B_B(tx_elements_issuance_calculate_asset, wally_tx_elements_issuance_calculate_asset)
 WALLY_FN_B3_B(tx_elements_issuance_calculate_reissuance_token, wally_tx_elements_issuance_calculate_reissuance_token)
+WALLY_FN_B_B(tx_elements_issuance_calculate_asset, wally_tx_elements_issuance_calculate_asset)
+WALLY_FN_P(psbt_finalize, wally_psbt_finalize)
+WALLY_FN_P(tx_elements_input_issuance_free, wally_tx_elements_input_issuance_free)
+WALLY_FN_P(tx_elements_output_commitment_free, wally_tx_elements_output_commitment_free)
+WALLY_FN_P6BB33_B(tx_get_elements_signature_hash, wally_tx_get_elements_signature_hash)
+WALLY_FN_P6BBBBBB3(tx_add_elements_raw_output, wally_tx_add_elements_raw_output)
+WALLY_FN_PB33BPBBBBBB3(tx_add_elements_raw_input, wally_tx_add_elements_raw_input)
+WALLY_FN_PBBBBB(tx_elements_output_commitment_set, wally_tx_elements_output_commitment_set)
+WALLY_FN_PBBBBBB(tx_elements_input_issuance_set, wally_tx_elements_input_issuance_set)
+WALLY_FN_P_S(tx_is_elements, wally_tx_is_elements)
+WALLY_FN_P_P(psbt_elements_input_set_peg_in_tx, wally_psbt_elements_input_set_peg_in_tx)
+WALLY_FN_PB(psbt_elements_input_set_value_blinder, wally_psbt_elements_input_set_value_blinder)
+WALLY_FN_PB(psbt_elements_input_set_asset, wally_psbt_elements_input_set_asset)
+WALLY_FN_PB(psbt_elements_input_set_asset_blinder, wally_psbt_elements_input_set_asset_blinder)
+WALLY_FN_PB(psbt_elements_input_set_txout_proof, wally_psbt_elements_input_set_txout_proof)
+WALLY_FN_PB(psbt_elements_input_set_genesis_hash, wally_psbt_elements_input_set_genesis_hash)
+WALLY_FN_PB(psbt_elements_input_set_claim_script, wally_psbt_elements_input_set_claim_script)
+WALLY_FN_PB(psbt_elements_output_set_blinding_pubkey, wally_psbt_elements_output_set_blinding_pubkey)
+WALLY_FN_PB(psbt_elements_output_set_value_commitment, wally_psbt_elements_output_set_value_commitment)
+WALLY_FN_PB(psbt_elements_output_set_value_blinder, wally_psbt_elements_output_set_value_blinder)
+WALLY_FN_PB(psbt_elements_output_set_asset_commitment, wally_psbt_elements_output_set_asset_commitment)
+WALLY_FN_PB(psbt_elements_output_set_asset_blinder, wally_psbt_elements_output_set_asset_blinder)
+WALLY_FN_PB(psbt_elements_output_set_nonce_commitment, wally_psbt_elements_output_set_nonce_commitment)
+WALLY_FN_PB(psbt_elements_output_set_range_proof, wally_psbt_elements_output_set_range_proof)
+WALLY_FN_PB(psbt_elements_output_set_surjection_proof, wally_psbt_elements_output_set_surjection_proof)
+WALLY_FN_P6(psbt_elements_input_set_value, wally_psbt_elements_input_set_value)
+WALLY_FN_SSS_A(psbt_elements_init_alloc, wally_psbt_elements_init_alloc)
+#if 0
+// TODO: Perhaps these functions should be simplified, 19 i& 12 parameters seems a bit much
+(psbt_elements_input_init_alloc, wally_psbt_elements_input_init_alloc)
+(psbt_elements_output_init_alloc, wally_psbt_elements_output_init_alloc)
+#endif
 #endif /* BUILD_ELEMENTS */
 
+#undef WALLYP
 #undef WALLYB
 #undef WALLYO
 
