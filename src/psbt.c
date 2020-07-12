@@ -1980,9 +1980,9 @@ fail:
     return ret;
 }
 
-int wally_psbt_get_length(const struct wally_psbt *psbt, size_t *written)
+int wally_psbt_get_length(const struct wally_psbt *psbt, uint32_t flags, size_t *written)
 {
-    return wally_psbt_to_bytes(psbt, NULL, 0, written);
+    return wally_psbt_to_bytes(psbt, flags, NULL, 0, written);
 }
 
 /* Literally a varbuff containing only type as a varint, then optional data */
@@ -2323,25 +2323,25 @@ static int push_psbt_output(
     return WALLY_OK;
 }
 
-int wally_psbt_to_bytes(const struct wally_psbt *psbt,
+int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
                         unsigned char *bytes_out, size_t len,
                         size_t *written)
 {
     unsigned char *cursor = bytes_out;
     size_t max = len, i, is_elements;
-    uint32_t flags;
+    uint32_t tx_flags;
     int ret;
 
     if (written)
         *written = 0;
 
-    if (!written)
+    if (flags != 0 || !written)
         return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
         return ret;
 
-    flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
+    tx_flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
     push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
 
     /* Global tx */
@@ -2370,7 +2370,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt,
     /* Push each input and output */
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
-        ret = push_psbt_input(&cursor, &max, flags, input);
+        ret = push_psbt_input(&cursor, &max, tx_flags, input);
         if (ret != WALLY_OK) {
             return ret;
         }
@@ -2427,7 +2427,7 @@ done:
     return ret;
 }
 
-int wally_psbt_to_base64(const struct wally_psbt *psbt, char **output)
+int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **output)
 {
     unsigned char *buff;
     char *result = NULL;
@@ -2438,14 +2438,14 @@ int wally_psbt_to_base64(const struct wally_psbt *psbt, char **output)
     if (!psbt)
         return WALLY_EINVAL;
 
-    if ((ret = wally_psbt_get_length(psbt, &len)) != WALLY_OK)
+    if ((ret = wally_psbt_get_length(psbt, flags, &len)) != WALLY_OK)
         return ret;
 
     if ((buff = wally_malloc(len)) == NULL)
         return WALLY_ENOMEM;
 
     /* Get psbt bytes */
-    if ((ret = wally_psbt_to_bytes(psbt, buff, len, &written)) != WALLY_OK)
+    if ((ret = wally_psbt_to_bytes(psbt, flags, buff, len, &written)) != WALLY_OK)
         goto done;
 
     if (written != len) {

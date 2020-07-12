@@ -24,10 +24,10 @@ class PSBTTests(unittest.TestCase):
         for valid in valids:
             psbt = pointer(wally_psbt())
             self.assertEqual(WALLY_OK, wally_psbt_from_base64(valid['psbt'].encode('utf-8'), psbt))
-            ret, reser = wally_psbt_to_base64(psbt)
+            ret, reser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(valid['psbt'], reser)
-            ret, length = wally_psbt_get_length(psbt)
+            ret, length = wally_psbt_get_length(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(length, valid['len'])
 
@@ -58,7 +58,7 @@ class PSBTTests(unittest.TestCase):
             # empty reserved ones for this test.
             psbt.contents.num_inputs = psbt.contents.tx.contents.num_inputs
             psbt.contents.num_outputs = psbt.contents.tx.contents.num_outputs
-            ret, ser = wally_psbt_to_base64(psbt)
+            ret, ser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(creator['result'], ser)
 
@@ -70,7 +70,7 @@ class PSBTTests(unittest.TestCase):
                 to_combine.append(psbt.contents)
             combined = pointer(wally_psbt())
             self.assertEqual(WALLY_OK, wally_psbt_combine((wally_psbt * len(to_combine))(*to_combine), len(to_combine), combined))
-            ret, comb_ser = wally_psbt_to_base64(combined)
+            ret, comb_ser = wally_psbt_to_base64(combined, 0)
             self.assertEqual(combiner['result'], comb_ser)
 
         for signer in signers:
@@ -81,7 +81,7 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
                 self.assertEqual(WALLY_OK, wally_psbt_sign(psbt, buf, buf_len))
 
-            ret, reser = wally_psbt_to_base64(psbt)
+            ret, reser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             # Check that we can *demarshal* the signed PSBT (some bugs only appear here)
             self.assertEqual(WALLY_OK, wally_psbt_from_base64(reser, psbt))
@@ -100,7 +100,7 @@ class PSBTTests(unittest.TestCase):
             psbt = pointer(wally_psbt())
             self.assertEqual(WALLY_OK, wally_psbt_from_base64(finalizer['finalize'].encode('utf-8'), psbt))
             self.assertEqual(WALLY_OK, wally_psbt_finalize(psbt))
-            ret, reser = wally_psbt_to_base64(psbt)
+            ret, reser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(finalizer['result'], reser)
 
