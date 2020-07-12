@@ -30,7 +30,7 @@ int main(void)
         if (wally_psbt_from_base64(base64_in, &psbt) != WALLY_OK)
             errx(1, "Failed to parse psbt %s", base64_in);
 
-        if (wally_psbt_to_base64(psbt, &output) != WALLY_OK)
+        if (wally_psbt_to_base64(psbt, 0, &output) != WALLY_OK)
             errx(1, "Failed to base64 psbt %s", base64_in);
 
         if (strcmp(output, base64_in) != 0)
@@ -38,11 +38,11 @@ int main(void)
 
         wally_free_string(output);
 
-        if (wally_psbt_get_length(psbt, &len) != WALLY_OK)
+        if (wally_psbt_get_length(psbt, 0, &len) != WALLY_OK)
             errx(1, "Failed to get psbt %s len", base64_in);
 
         bytes = malloc(len);
-        if (wally_psbt_to_bytes(psbt, bytes, len, &written) != WALLY_OK)
+        if (wally_psbt_to_bytes(psbt, 0, bytes, len, &written) != WALLY_OK)
             errx(1, "psbt %s could not to_bytes?", base64_in);
 
         if (len != written) {

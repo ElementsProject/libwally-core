@@ -575,6 +575,7 @@ WALLY_CORE_API int wally_psbt_from_bytes(
  */
 WALLY_CORE_API int wally_psbt_get_length(
     const struct wally_psbt *psbt,
+    uint32_t flags,
     size_t *written);
 
 /**
@@ -587,6 +588,7 @@ WALLY_CORE_API int wally_psbt_get_length(
  */
 WALLY_CORE_API int wally_psbt_to_bytes(
     const struct wally_psbt *psbt,
+    uint32_t flags,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
@@ -609,6 +611,7 @@ WALLY_CORE_API int wally_psbt_from_base64(
  */
 WALLY_CORE_API int wally_psbt_to_base64(
     const struct wally_psbt *psbt,
+    uint32_t flags,
     char **output);
 
 /**

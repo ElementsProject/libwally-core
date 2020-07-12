@@ -78,12 +78,12 @@ static void test_psbt_write(const struct psbt_test *test,
     if (wally_psbt_from_base64(test->base64, &psbt) != WALLY_OK)
         abort();
 
-    if (wally_psbt_get_length(psbt, &psbt_len) != WALLY_OK)
+    if (wally_psbt_get_length(psbt, 0, &psbt_len) != WALLY_OK)
         abort();
 
     for (i = 0; i <= psbt_len; i++) {
         /* A too short buffer should return OK and the required length */
-        if (wally_psbt_to_bytes(psbt, p + plen - i, i, &written) != WALLY_OK) {
+        if (wally_psbt_to_bytes(psbt, 0, p + plen - i, i, &written) != WALLY_OK) {
             errx(1, "wally_psbt_to_bytes should have suceeded");
         }
         if (written != psbt_len)
