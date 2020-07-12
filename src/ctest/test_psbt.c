@@ -21,7 +21,7 @@ int main(void)
     }
 
     for (i = 0; i < sizeof(valid_psbts) / sizeof(valid_psbts[0]); i++) {
-        const char* base64_in = valid_psbts[i].base64;
+        const char *base64_in = valid_psbts[i].base64;
         struct wally_psbt *psbt;
         char *output;
         unsigned char *bytes;

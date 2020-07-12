@@ -324,15 +324,15 @@ int wally_unknowns_map_add(struct wally_unknowns_map *unknowns,
     return ret;
 }
 
-int wally_psbt_input_init_alloc(struct wally_tx *non_witness_utxo,
-                                struct wally_tx_output *witness_utxo,
-                                unsigned char *redeem_script, size_t redeem_script_len,
-                                unsigned char *witness_script, size_t witness_script_len,
-                                unsigned char *final_script_sig, size_t final_script_sig_len,
-                                struct wally_tx_witness_stack *final_witness,
-                                struct wally_keypath_map *keypaths,
-                                struct wally_partial_sigs_map *partial_sigs,
-                                struct wally_unknowns_map *unknowns,
+int wally_psbt_input_init_alloc(const struct wally_tx *non_witness_utxo,
+                                const struct wally_tx_output *witness_utxo,
+                                const unsigned char *redeem_script, size_t redeem_script_len,
+                                const unsigned char *witness_script, size_t witness_script_len,
+                                const unsigned char *final_script_sig, size_t final_script_sig_len,
+                                const struct wally_tx_witness_stack *final_witness,
+                                const struct wally_keypath_map *keypaths,
+                                const struct wally_partial_sigs_map *partial_sigs,
+                                const struct wally_unknowns_map *unknowns,
                                 uint32_t sighash_type,
                                 struct wally_psbt_input **output)
 {
@@ -369,24 +369,24 @@ fail:
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_elements_input_init_alloc(struct wally_tx *non_witness_utxo,
-                                         struct wally_tx_output *witness_utxo,
-                                         unsigned char *redeem_script, size_t redeem_script_len,
-                                         unsigned char *witness_script, size_t witness_script_len,
-                                         unsigned char *final_script_sig, size_t final_script_sig_len,
-                                         struct wally_tx_witness_stack *final_witness,
-                                         struct wally_keypath_map *keypaths,
-                                         struct wally_partial_sigs_map *partial_sigs,
-                                         struct wally_unknowns_map *unknowns,
+int wally_psbt_elements_input_init_alloc(const struct wally_tx *non_witness_utxo,
+                                         const struct wally_tx_output *witness_utxo,
+                                         const unsigned char *redeem_script, size_t redeem_script_len,
+                                         const unsigned char *witness_script, size_t witness_script_len,
+                                         const unsigned char *final_script_sig, size_t final_script_sig_len,
+                                         const struct wally_tx_witness_stack *final_witness,
+                                         const struct wally_keypath_map *keypaths,
+                                         const struct wally_partial_sigs_map *partial_sigs,
+                                         const struct wally_unknowns_map *unknowns,
                                          uint32_t sighash_type,
                                          uint64_t value, uint32_t has_value,
-                                         unsigned char *value_blinder, size_t value_blinder_len,
-                                         unsigned char *asset, size_t asset_len,
-                                         unsigned char *asset_blinder, size_t asset_blinder_len,
-                                         struct wally_tx *peg_in_tx,
-                                         unsigned char *txout_proof, size_t txout_proof_len,
-                                         unsigned char *genesis_hash, size_t genesis_hash_len,
-                                         unsigned char *claim_script, size_t claim_script_len,
+                                         const unsigned char *value_blinder, size_t value_blinder_len,
+                                         const unsigned char *asset, size_t asset_len,
+                                         const unsigned char *asset_blinder, size_t asset_blinder_len,
+                                         const struct wally_tx *peg_in_tx,
+                                         const unsigned char *txout_proof, size_t txout_proof_len,
+                                         const unsigned char *genesis_hash, size_t genesis_hash_len,
+                                         const unsigned char *claim_script, size_t claim_script_len,
                                          struct wally_psbt_input **output)
 {
     struct wally_psbt_input *result;
@@ -430,7 +430,7 @@ fail:
 #endif /* BUILD_ELEMENTS */
 
 int wally_psbt_input_set_non_witness_utxo(struct wally_psbt_input *input,
-                                          struct wally_tx *non_witness_utxo)
+                                          const struct wally_tx *non_witness_utxo)
 {
     int ret = WALLY_OK;
     struct wally_tx *new_tx;
@@ -446,7 +446,7 @@ int wally_psbt_input_set_non_witness_utxo(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input,
-                                      struct wally_tx_output *witness_utxo)
+                                      const struct wally_tx_output *witness_utxo)
 {
     int ret;
     struct wally_tx_output *output;
@@ -463,7 +463,7 @@ int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_redeem_script(struct wally_psbt_input *input,
-                                       unsigned char *redeem_script,
+                                       const unsigned char *redeem_script,
                                        size_t redeem_script_len)
 {
     if (!input)
@@ -473,7 +473,7 @@ int wally_psbt_input_set_redeem_script(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_witness_script(struct wally_psbt_input *input,
-                                        unsigned char *witness_script,
+                                        const unsigned char *witness_script,
                                         size_t witness_script_len)
 {
     if (!input)
@@ -483,7 +483,7 @@ int wally_psbt_input_set_witness_script(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_final_script_sig(struct wally_psbt_input *input,
-                                          unsigned char *final_script_sig,
+                                          const unsigned char *final_script_sig,
                                           size_t final_script_sig_len)
 {
     if (!input)
@@ -493,7 +493,7 @@ int wally_psbt_input_set_final_script_sig(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_final_witness(struct wally_psbt_input *input,
-                                       struct wally_tx_witness_stack *final_witness)
+                                       const struct wally_tx_witness_stack *final_witness)
 {
     struct wally_tx_witness_stack *new_witness = NULL;
 
@@ -509,19 +509,19 @@ int wally_psbt_input_set_final_witness(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_keypaths(struct wally_psbt_input *input,
-                                  struct wally_keypath_map *keypaths)
+                                  const struct wally_keypath_map *keypaths)
 {
     return input ? replace_keypaths(keypaths, &input->keypaths) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_partial_sigs(struct wally_psbt_input *input,
-                                      struct wally_partial_sigs_map *partial_sigs)
+                                      const struct wally_partial_sigs_map *partial_sigs)
 {
     return input ? replace_partial_sigs(partial_sigs, &input->partial_sigs) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
-                                  struct wally_unknowns_map *unknowns)
+                                  const struct wally_unknowns_map *unknowns)
 {
     return input ? replace_unknowns(unknowns, &input->unknowns) : WALLY_EINVAL;
 }
@@ -543,7 +543,7 @@ int wally_psbt_elements_input_set_value(struct wally_psbt_input *input, uint64_t
 }
 
 int wally_psbt_elements_input_set_value_blinder(struct wally_psbt_input *input,
-                                                unsigned char *value_blinder,
+                                                const unsigned char *value_blinder,
                                                 size_t value_blinder_len)
 {
     if (!input)
@@ -553,7 +553,7 @@ int wally_psbt_elements_input_set_value_blinder(struct wally_psbt_input *input,
 }
 
 int wally_psbt_elements_input_set_asset(struct wally_psbt_input *input,
-                                        unsigned char *asset, size_t asset_len)
+                                        const unsigned char *asset, size_t asset_len)
 {
     if (!input)
         return WALLY_EINVAL;
@@ -561,7 +561,7 @@ int wally_psbt_elements_input_set_asset(struct wally_psbt_input *input,
 }
 
 int wally_psbt_elements_input_set_asset_blinder(struct wally_psbt_input *input,
-                                                unsigned char *asset_blinder,
+                                                const unsigned char *asset_blinder,
                                                 size_t asset_blinder_len)
 {
     if (!input)
@@ -571,7 +571,7 @@ int wally_psbt_elements_input_set_asset_blinder(struct wally_psbt_input *input,
 }
 
 int wally_psbt_elements_input_set_peg_in_tx(struct wally_psbt_input *input,
-                                            struct wally_tx *peg_in_tx)
+                                            const struct wally_tx *peg_in_tx)
 {
     int ret = WALLY_OK;
     struct wally_tx *new_tx;
@@ -587,7 +587,7 @@ int wally_psbt_elements_input_set_peg_in_tx(struct wally_psbt_input *input,
 }
 
 int wally_psbt_elements_input_set_txout_proof(struct wally_psbt_input *input,
-                                              unsigned char *txout_proof,
+                                              const unsigned char *txout_proof,
                                               size_t txout_proof_len)
 {
     if (!input)
@@ -597,7 +597,7 @@ int wally_psbt_elements_input_set_txout_proof(struct wally_psbt_input *input,
 }
 
 int wally_psbt_elements_input_set_genesis_hash(struct wally_psbt_input *input,
-                                               unsigned char *genesis_hash,
+                                               const unsigned char *genesis_hash,
                                                size_t genesis_hash_len)
 {
     if (!input)
@@ -607,7 +607,7 @@ int wally_psbt_elements_input_set_genesis_hash(struct wally_psbt_input *input,
 }
 
 int wally_psbt_elements_input_set_claim_script(struct wally_psbt_input *input,
-                                               unsigned char *claim_script,
+                                               const unsigned char *claim_script,
                                                size_t claim_script_len)
 {
     if (!input)
@@ -652,10 +652,10 @@ int wally_psbt_input_free(struct wally_psbt_input *input)
     return psbt_input_free(input, true);
 }
 
-int wally_psbt_output_init_alloc(unsigned char *redeem_script, size_t redeem_script_len,
-                                 unsigned char *witness_script, size_t witness_script_len,
-                                 struct wally_keypath_map *keypaths,
-                                 struct wally_unknowns_map *unknowns,
+int wally_psbt_output_init_alloc(const unsigned char *redeem_script, size_t redeem_script_len,
+                                 const unsigned char *witness_script, size_t witness_script_len,
+                                 const struct wally_keypath_map *keypaths,
+                                 const struct wally_unknowns_map *unknowns,
                                  struct wally_psbt_output **output)
 {
     struct wally_psbt_output *result;
@@ -682,18 +682,18 @@ fail:
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_elements_output_init_alloc(unsigned char *redeem_script, size_t redeem_script_len,
-                                          unsigned char *witness_script, size_t witness_script_len,
-                                          struct wally_keypath_map *keypaths,
-                                          struct wally_unknowns_map *unknowns,
-                                          unsigned char *blinding_pubkey, size_t blinding_pubkey_len,
-                                          unsigned char *value_commitment, size_t value_commitment_len,
-                                          unsigned char *value_blinder, size_t value_blinder_len,
-                                          unsigned char *asset_commitment, size_t asset_commitment_len,
-                                          unsigned char *asset_blinder, size_t asset_blinder_len,
-                                          unsigned char *nonce_commitment, size_t nonce_commitment_len,
-                                          unsigned char *range_proof, size_t range_proof_len,
-                                          unsigned char *surjection_proof, size_t surjection_proof_len,
+int wally_psbt_elements_output_init_alloc(const unsigned char *redeem_script, size_t redeem_script_len,
+                                          const unsigned char *witness_script, size_t witness_script_len,
+                                          const struct wally_keypath_map *keypaths,
+                                          const struct wally_unknowns_map *unknowns,
+                                          const unsigned char *blinding_pubkey, size_t blinding_pubkey_len,
+                                          const unsigned char *value_commitment, size_t value_commitment_len,
+                                          const unsigned char *value_blinder, size_t value_blinder_len,
+                                          const unsigned char *asset_commitment, size_t asset_commitment_len,
+                                          const unsigned char *asset_blinder, size_t asset_blinder_len,
+                                          const unsigned char *nonce_commitment, size_t nonce_commitment_len,
+                                          const unsigned char *range_proof, size_t range_proof_len,
+                                          const unsigned char *surjection_proof, size_t surjection_proof_len,
                                           struct wally_psbt_output **output)
 {
     struct wally_psbt_output *result;
@@ -733,7 +733,7 @@ fail:
 #endif /* BUILD_ELEMENTS */
 
 int wally_psbt_output_set_redeem_script(struct wally_psbt_output *output,
-                                        unsigned char *redeem_script,
+                                        const unsigned char *redeem_script,
                                         size_t redeem_script_len)
 {
     if (!output)
@@ -743,7 +743,7 @@ int wally_psbt_output_set_redeem_script(struct wally_psbt_output *output,
 }
 
 int wally_psbt_output_set_witness_script(struct wally_psbt_output *output,
-                                         unsigned char *witness_script,
+                                         const unsigned char *witness_script,
                                          size_t witness_script_len)
 {
     if (!output)
@@ -753,20 +753,20 @@ int wally_psbt_output_set_witness_script(struct wally_psbt_output *output,
 }
 
 int wally_psbt_output_set_keypaths(struct wally_psbt_output *output,
-                                   struct wally_keypath_map *keypaths)
+                                   const struct wally_keypath_map *keypaths)
 {
     return output ? replace_keypaths(keypaths, &output->keypaths) : WALLY_EINVAL;
 }
 
 int wally_psbt_output_set_unknowns(struct wally_psbt_output *output,
-                                   struct wally_unknowns_map *unknowns)
+                                   const struct wally_unknowns_map *unknowns)
 {
     return output ? replace_unknowns(unknowns, &output->unknowns) : WALLY_EINVAL;
 }
 
 #ifdef BUILD_ELEMENTS
 int wally_psbt_elements_output_set_blinding_pubkey(struct wally_psbt_output *output,
-                                                   unsigned char *blinding_pubkey,
+                                                   const unsigned char *blinding_pubkey,
                                                    size_t blinding_pubkey_len)
 {
     if (!output || !is_valid_optional_pubkey_len(blinding_pubkey_len))
@@ -776,7 +776,7 @@ int wally_psbt_elements_output_set_blinding_pubkey(struct wally_psbt_output *out
 }
 
 int wally_psbt_elements_output_set_value_commitment(struct wally_psbt_output *output,
-                                                    unsigned char *value_commitment,
+                                                    const unsigned char *value_commitment,
                                                     size_t value_commitment_len)
 {
     if (!output)
@@ -786,7 +786,7 @@ int wally_psbt_elements_output_set_value_commitment(struct wally_psbt_output *ou
 }
 
 int wally_psbt_elements_output_set_value_blinder(struct wally_psbt_output *output,
-                                                 unsigned char *value_blinder,
+                                                 const unsigned char *value_blinder,
                                                  size_t value_blinder_len)
 {
     if (!output)
@@ -796,7 +796,7 @@ int wally_psbt_elements_output_set_value_blinder(struct wally_psbt_output *outpu
 }
 
 int wally_psbt_elements_output_set_asset_commitment(struct wally_psbt_output *output,
-                                                    unsigned char *asset_commitment,
+                                                    const unsigned char *asset_commitment,
                                                     size_t asset_commitment_len)
 {
     if (!output)
@@ -806,7 +806,7 @@ int wally_psbt_elements_output_set_asset_commitment(struct wally_psbt_output *ou
 }
 
 int wally_psbt_elements_output_set_asset_blinder(struct wally_psbt_output *output,
-                                                 unsigned char *asset_blinder,
+                                                 const unsigned char *asset_blinder,
                                                  size_t asset_blinder_len)
 {
     if (!output)
@@ -816,7 +816,7 @@ int wally_psbt_elements_output_set_asset_blinder(struct wally_psbt_output *outpu
 }
 
 int wally_psbt_elements_output_set_nonce_commitment(struct wally_psbt_output *output,
-                                                    unsigned char *nonce_commitment,
+                                                    const unsigned char *nonce_commitment,
                                                     size_t nonce_commitment_len)
 {
     if (!output)
@@ -826,7 +826,7 @@ int wally_psbt_elements_output_set_nonce_commitment(struct wally_psbt_output *ou
 }
 
 int wally_psbt_elements_output_set_range_proof(struct wally_psbt_output *output,
-                                               unsigned char *range_proof,
+                                               const unsigned char *range_proof,
                                                size_t range_proof_len)
 {
     if (!output)
@@ -836,7 +836,7 @@ int wally_psbt_elements_output_set_range_proof(struct wally_psbt_output *output,
 }
 
 int wally_psbt_elements_output_set_surjection_proof(struct wally_psbt_output *output,
-                                                    unsigned char *surjection_proof,
+                                                    const unsigned char *surjection_proof,
                                                     size_t surjection_proof_len)
 {
     if (!output)
@@ -992,9 +992,9 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
     return WALLY_OK;
 }
 
-int wally_psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx)
+int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
 {
-    return psbt_set_global_tx(psbt, tx, true);
+    return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
 /* Returns false if it hits a zero length "key" (i.e. separator) or EOF.
@@ -2427,7 +2427,7 @@ done:
     return ret;
 }
 
-int wally_psbt_to_base64(struct wally_psbt *psbt, char **output)
+int wally_psbt_to_base64(const struct wally_psbt *psbt, char **output)
 {
     unsigned char *buff;
     char *result = NULL;
