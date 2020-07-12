@@ -2393,27 +2393,27 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt,
     return WALLY_OK;
 }
 
-int wally_psbt_from_base64(const char *string, struct wally_psbt **output)
+int wally_psbt_from_base64(const char *base64, struct wally_psbt **output)
 {
     char *decoded;
-    size_t safe_len, string_len;
+    size_t safe_len, base64_len;
     ssize_t decoded_len;
     int ret;
 
     TX_CHECK_OUTPUT;
-    if (!string)
+    if (!base64)
         return WALLY_EINVAL;
 
-    string_len = strlen(string);
+    base64_len = strlen(base64);
     /* Allocate the decoded buffer */
-    safe_len = base64_decoded_length(string_len);
+    safe_len = base64_decoded_length(base64_len);
     if ((decoded = wally_malloc(safe_len)) == NULL) {
         ret = WALLY_ENOMEM;
         goto done;
     }
 
     /* Decode the base64 psbt */
-    decoded_len = base64_decode(decoded, safe_len, string, string_len);
+    decoded_len = base64_decode(decoded, safe_len, base64, base64_len);
     if (decoded_len <= (ssize_t)sizeof(WALLY_PSBT_MAGIC)) {
         ret = WALLY_EINVAL; /* Not enough bytes for the magic */
         goto done;
