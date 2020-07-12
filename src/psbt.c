@@ -35,23 +35,23 @@ static bool is_valid_optional_pubkey_len(size_t len)
     return !len || is_valid_pubkey_len(len);
 }
 
-int wally_keypath_map_init_alloc(size_t alloc_len, struct wally_keypath_map **output)
+int wally_keypath_map_init_alloc(size_t allocation_len, struct wally_keypath_map **output)
 {
     struct wally_keypath_map *result;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_keypath_map);
 
-    if (alloc_len) {
-        result->items = wally_malloc(alloc_len * sizeof(*result->items));
+    if (allocation_len) {
+        result->items = wally_malloc(allocation_len * sizeof(*result->items));
         if (!result->items) {
             wally_free(result);
             *output = NULL;
             return WALLY_ENOMEM;
         }
-        wally_clear(result->items, alloc_len * sizeof(*result->items));
+        wally_clear(result->items, allocation_len * sizeof(*result->items));
     }
-    result->items_allocation_len = alloc_len;
+    result->items_allocation_len = allocation_len;
     result->num_items = 0;
     return WALLY_OK;
 }
@@ -145,23 +145,23 @@ int wally_keypath_map_add(struct wally_keypath_map *keypaths,
     return ret;
 }
 
-int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output)
+int wally_partial_sigs_map_init_alloc(size_t allocation_len, struct wally_partial_sigs_map **output)
 {
     struct wally_partial_sigs_map *result;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_partial_sigs_map);
 
-    if (alloc_len) {
-        result->items = wally_malloc(alloc_len * sizeof(*result->items));
+    if (allocation_len) {
+        result->items = wally_malloc(allocation_len * sizeof(*result->items));
         if (!result->items) {
             wally_free(result);
             *output = NULL;
             return WALLY_ENOMEM;
         }
-        wally_clear(result->items, alloc_len * sizeof(*result->items));
+        wally_clear(result->items, allocation_len * sizeof(*result->items));
     }
-    result->items_allocation_len = alloc_len;
+    result->items_allocation_len = allocation_len;
     result->num_items = 0;
     return WALLY_OK;
 }
@@ -232,23 +232,23 @@ int wally_partial_sigs_map_add(struct wally_partial_sigs_map *sigs,
     return ret;
 }
 
-int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output)
+int wally_unknowns_map_init_alloc(size_t allocation_len, struct wally_unknowns_map **output)
 {
     struct wally_unknowns_map *result;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_unknowns_map);
 
-    if (alloc_len) {
-        result->items = wally_malloc(alloc_len * sizeof(*result->items));
+    if (allocation_len) {
+        result->items = wally_malloc(allocation_len * sizeof(*result->items));
         if (!result->items) {
             wally_free(result);
             *output = NULL;
             return WALLY_ENOMEM;
         }
-        wally_clear(result->items, alloc_len * sizeof(*result->items));
+        wally_clear(result->items, allocation_len * sizeof(*result->items));
     }
-    result->items_allocation_len = alloc_len;
+    result->items_allocation_len = allocation_len;
     result->num_items = 0;
     return WALLY_OK;
 }

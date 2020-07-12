@@ -188,11 +188,11 @@ struct wally_psbt {
 /**
  * Allocate and initialize a new keypath map.
  *
- * :param alloc_len: The number of items to allocate.
+ * :param allocation_len: The number of items to allocate.
  * :param output: Destination for the new keypath map.
  */
 WALLY_CORE_API int wally_keypath_map_init_alloc(
-    size_t alloc_len,
+    size_t allocation_len,
     struct wally_keypath_map **output);
 
 #ifndef SWIG_PYTHON
@@ -228,11 +228,11 @@ WALLY_CORE_API int wally_keypath_map_add(
 /**
  * Allocate and initialize a new partial sigs map.
  *
- * :param alloc_len: The number of items to allocate.
+ * :param allocation_len: The number of items to allocate.
  * :param output: Destination for the new partial sigs map.
  */
 WALLY_CORE_API int wally_partial_sigs_map_init_alloc(
-    size_t alloc_len,
+    size_t allocation_len,
     struct wally_partial_sigs_map **output);
 
 #ifndef SWIG_PYTHON
@@ -264,11 +264,11 @@ WALLY_CORE_API int wally_partial_sigs_map_add(
 /**
  * Allocate and initialize a new unknowns map.
  *
- * :param alloc_len: The number of items to allocate.
+ * :param allocation_len: The number of items to allocate.
  * :param output: Destination for the new unknowns map.
  */
 WALLY_CORE_API int wally_unknowns_map_init_alloc(
-    size_t alloc_len,
+    size_t allocation_len,
     struct wally_unknowns_map **output);
 
 #ifndef SWIG_PYTHON
