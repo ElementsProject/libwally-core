@@ -594,18 +594,18 @@ WALLY_CORE_API int wally_psbt_to_bytes(
 /**
  * Create a PSBT from its serialized base64 string.
  *
- * :param string: Base64 string to create the PSBT from.
+ * :param base64: Base64 string to create the PSBT from.
  * :param output: Destination for the resulting PSBT.
  */
 WALLY_CORE_API int wally_psbt_from_base64(
-    const char *string,
+    const char *base64,
     struct wally_psbt **output);
 
 /**
  * Serialize a PSBT to a base64 string.
  *
  * :param psbt: the PSBT to serialize.
- * :param output: Destination for the resulting PSBT.
+ * :param output: Destination for the resulting serialized PSBT.
  */
 WALLY_CORE_API int wally_psbt_to_base64(
     const struct wally_psbt *psbt,
