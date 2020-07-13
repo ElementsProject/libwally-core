@@ -2862,7 +2862,9 @@ fail:
 int wally_psbt_sign(struct wally_psbt *psbt,
                     const unsigned char *key, size_t key_len)
 {
-    unsigned char pubkey[EC_PUBLIC_KEY_LEN], uncomp_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
+    unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    unsigned char sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
+    const size_t pubkey_len = sizeof(pubkey), full_pubkey_len = sizeof(full_pubkey);
     size_t i, j, der_sig_len, is_elements;
     int ret;
 
@@ -2874,10 +2876,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         return ret;
 
     /* Get the pubkey */
-    if ((ret = wally_ec_public_key_from_private_key(key, key_len, pubkey, EC_PUBLIC_KEY_LEN)) != WALLY_OK) {
+    if ((ret = wally_ec_public_key_from_private_key(key, key_len, pubkey, pubkey_len)) != WALLY_OK) {
         return ret;
     }
-    if ((ret = wally_ec_public_key_decompress(pubkey, EC_PUBLIC_KEY_LEN, uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)) != WALLY_OK) {
+    if ((ret = wally_ec_public_key_decompress(pubkey, pubkey_len, full_pubkey, full_pubkey_len)) != WALLY_OK) {
         return ret;
     }
 
@@ -2887,7 +2889,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         struct wally_tx_input *txin = &psbt->tx->inputs[i];
         unsigned char sighash[SHA256_LEN], *scriptcode, wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
         size_t scriptcode_len;
-        bool match = false, comp = false, already_signed = false;
+        bool match = false, comp = false;
         uint32_t sighash_type = WALLY_SIGHASH_ALL;
 
         if (!input->keypaths) {
@@ -2898,10 +2900,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         /* Go through each listed pubkey and see if it matches. */
         for (j = 0; j < input->keypaths->num_items; ++j) {
             struct wally_keypath_item *item = &input->keypaths->items[j];
-            if (item->pubkey[0] == 0x04 && memcmp(item->pubkey, uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0) {
+            if (item->pubkey[0] == 0x04 && memcmp(item->pubkey, full_pubkey, full_pubkey_len) == 0) {
                 match = true;
                 break;
-            } else if (memcmp(item->pubkey, pubkey, EC_PUBLIC_KEY_LEN) == 0) {
+            } else if (memcmp(item->pubkey, pubkey, pubkey_len) == 0) {
                 match = true;
                 comp = true;
                 break;
@@ -2915,19 +2917,15 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
         /* Make sure we don't already have a sig for this input ?! */
         if (input->partial_sigs) {
-            for (j = 0; j < input->partial_sigs->num_items; j++) {
-                struct wally_partial_sigs_item *item = &input->partial_sigs->items[j];
-                if (memcmp(item->pubkey, uncomp_pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN) == 0 ||
-                    memcmp(item->pubkey, pubkey, EC_PUBLIC_KEY_LEN) == 0) {
-                    already_signed = true;
-                    break;
-                }
-            }
-        }
+            size_t is_found;
+            ret = wally_partial_sigs_map_find(input->partial_sigs, full_pubkey, full_pubkey_len, &is_found);
+            if (ret == WALLY_OK && !is_found)
+                ret = wally_partial_sigs_map_find(input->partial_sigs, pubkey, pubkey_len, &is_found);
+            if (ret != WALLY_OK)
+                return ret;
 
-        /* We've already got a partial sig for this pubkey on this input */
-        if (already_signed) {
-            continue;
+            if (is_found)
+                continue; /* Already got a partial sig for this pubkey on this input */
         }
 
         /* Sighash type */
@@ -3047,7 +3045,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                 return ret;
             }
         }
-        if ((ret = wally_partial_sigs_map_add(input->partial_sigs, comp ? pubkey : uncomp_pubkey, comp ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN, der_sig, der_sig_len)) != WALLY_OK) {
+        if ((ret = wally_partial_sigs_map_add(input->partial_sigs, comp ? pubkey : full_pubkey, comp ? pubkey_len : full_pubkey_len, der_sig, der_sig_len)) != WALLY_OK) {
             return ret;
         }
     }
