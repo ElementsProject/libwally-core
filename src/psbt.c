@@ -536,32 +536,35 @@ int wally_psbt_input_set_non_witness_utxo(struct wally_psbt_input *input,
                                           const struct wally_tx *non_witness_utxo)
 {
     int ret = WALLY_OK;
-    struct wally_tx *new_tx;
+    struct wally_tx *new_tx = NULL;
 
     if (!input)
         return WALLY_EINVAL;
 
-    if ((ret = wally_tx_clone(non_witness_utxo, 0, &new_tx)) == WALLY_OK) {
-        wally_tx_free(input->non_witness_utxo);
-        input->non_witness_utxo = new_tx;
-    }
+    if (non_witness_utxo &&
+        (ret = wally_tx_clone(non_witness_utxo, 0, &new_tx)) != WALLY_OK)
+        return ret;
+
+    wally_tx_free(input->non_witness_utxo);
+    input->non_witness_utxo = new_tx;
     return ret;
 }
 
 int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input,
                                       const struct wally_tx_output *witness_utxo)
 {
-    int ret;
-    struct wally_tx_output *output;
+    int ret = WALLY_OK;
+    struct wally_tx_output *new_output;
 
     if (!input)
         return WALLY_EINVAL;
 
-    ret = wally_tx_output_clone_alloc(witness_utxo, &output);
-    if (ret == WALLY_OK) {
-        wally_tx_output_free(input->witness_utxo);
-        input->witness_utxo = output;
-    }
+    if (witness_utxo &&
+        (ret = wally_tx_output_clone_alloc(witness_utxo, &new_output) != WALLY_OK))
+        return ret;
+
+    wally_tx_output_free(input->witness_utxo);
+    input->witness_utxo = new_output;
     return ret;
 }
 
@@ -645,6 +648,13 @@ int wally_psbt_elements_input_set_value(struct wally_psbt_input *input, uint64_t
     return WALLY_OK;
 }
 
+int wally_psbt_elements_input_clear_value(struct wally_psbt_input *input)
+{
+    input->value = 0;
+    input->has_value = 0;
+    return WALLY_OK;
+}
+
 int wally_psbt_elements_input_set_value_blinder(struct wally_psbt_input *input,
                                                 const unsigned char *value_blinder,
                                                 size_t value_blinder_len)
@@ -682,10 +692,12 @@ int wally_psbt_elements_input_set_peg_in_tx(struct wally_psbt_input *input,
     if (!input)
         return WALLY_EINVAL;
 
-    if ((ret = wally_tx_clone(peg_in_tx, 0, &new_tx)) == WALLY_OK) {
-        wally_tx_free(input->peg_in_tx);
-        input->peg_in_tx = new_tx;
-    }
+    if (peg_in_tx &&
+        (ret = wally_tx_clone(peg_in_tx, 0, &new_tx)) != WALLY_OK)
+        return ret;
+
+    wally_tx_free(input->peg_in_tx);
+    input->peg_in_tx = new_tx;
     return ret;
 }
 

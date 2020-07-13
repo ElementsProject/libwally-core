@@ -802,6 +802,14 @@ WALLY_CORE_API int wally_psbt_elements_input_set_value(
     uint64_t value);
 
 /**
+ * Clear the value in an elements input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_elements_input_clear_value(
+    struct wally_psbt_input *input);
+
+/**
  * Set the value blinder in an elements input.
  *
  * :param input: The input to update.
