@@ -2110,12 +2110,8 @@ static void push_psbt_key_with_pubkey(
     uint64_t type,
     const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN])
 {
-    if (pubkey_is_compressed(pubkey)) {
-        push_psbt_key(cursor, max, type, pubkey, EC_PUBLIC_KEY_LEN);
-    } else {
-        push_psbt_key(cursor, max, type, pubkey,
-                      EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    }
+    const size_t pubkey_len = get_pubkey_len(pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    push_psbt_key(cursor, max, type, pubkey, pubkey_len);
 }
 
 #ifdef BUILD_ELEMENTS
