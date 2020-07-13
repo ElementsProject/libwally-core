@@ -305,6 +305,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1), out); \
 }
 
+#define WALLY_FN_PB_S(F, N) template <class P1, class I1, class O> inline int F(const P1 &p1, const I1 &i1, size_t * written) { \
+        return ::N(WALLYP(p1), WALLYB(i1), written); \
+}
+
 #define WALLY_FN_PBBPP_A(F, N) template <class P1, class I1, class I2, class P2, class P3, class O> \
     inline int F(const P1 &p1, const I1 &i1, const I2 &i2, const P2 &p2, const P3 &p3, O * *out) { \
         return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2), WALLYP(p2), WALLYP(p3), out); \
@@ -487,6 +491,9 @@ WALLY_FN_PB3_B(bip38_to_private_key, bip38_to_private_key)
 WALLY_FN_PB3_P(bip32_key_from_parent_path, bip32_key_from_parent_path)
 WALLY_FN_PB_A(bip39_mnemonic_from_bytes, bip39_mnemonic_from_bytes)
 WALLY_FN_PB_A(psbt_combine, wally_psbt_combine)
+WALLY_FN_PB_S(keypath_map_find, wally_keypath_map_find)
+WALLY_FN_PB_S(partial_sigs_map_find, wally_partial_sigs_map_find)
+WALLY_FN_PB_S(unknowns_map_find, wally_unknowns_map_find)
 WALLY_FN_PP(bip39_mnemonic_validate, bip39_mnemonic_validate)
 WALLY_FN_PP(tx_add_input, wally_tx_add_input)
 WALLY_FN_PP(tx_add_output, wally_tx_add_output)

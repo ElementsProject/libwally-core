@@ -64,7 +64,7 @@ struct wally_psbt_output;
 struct wally_psbt;
 #else
 
-/** Key path, a BIP 32 path and fingerprint with associated pubkey */
+/** A BIP 32 path and fingerprint with associated public key */
 struct wally_keypath_item {
     uint32_t *path;
     size_t path_len;
@@ -79,14 +79,14 @@ struct wally_keypath_map {
     size_t items_allocation_len;
 };
 
-/** Item in partial signatures map */
+/** A signature with associated public key */
 struct wally_partial_sigs_item {
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     unsigned char *sig;
     size_t sig_len;
 };
 
-/** A map of public key's to signatures */
+/** A map of public keys to signatures */
 struct wally_partial_sigs_map {
     struct wally_partial_sigs_item *items;
     size_t num_items;
@@ -101,7 +101,7 @@ struct wally_unknowns_item {
     size_t value_len;
 };
 
-/** Unknown items map */
+/** A map of unknown key,value pairs */
 struct wally_unknowns_map {
     struct wally_unknowns_item *items;
     size_t num_items;
@@ -205,6 +205,22 @@ WALLY_CORE_API int wally_keypath_map_free(
     struct wally_keypath_map *keypaths);
 #endif /* SWIG_PYTHON */
 
+
+/**
+ * Find an item in a keypath map.
+ *
+ * :param keypaths: The keypath map to find ``pubkey`` in.
+ * :param pubkey: The pubkey to find.
+ * :param pubkey_len: Length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_keypath_map_find(
+    const struct wally_keypath_map *keypaths,
+    const unsigned char *pubkey,
+    size_t pubkey_len,
+    size_t *written);
+
 /**
  * Add an item to a keypath map.
  *
@@ -246,6 +262,21 @@ WALLY_CORE_API int wally_partial_sigs_map_free(
 #endif /* SWIG_PYTHON */
 
 /**
+ * Find an item in a partial sigs map.
+ *
+ * :param sigs: The partial sigs map to find ``pubkey`` in.
+ * :param pubkey: The pubkey to find.
+ * :param pubkey_len: Length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_partial_sigs_map_find(
+    const struct wally_partial_sigs_map *sigs,
+    const unsigned char *pubkey,
+    size_t pubkey_len,
+    size_t *written);
+
+/**
  * Add an item to a partial sigs map.
  *
  * :param sigs: The partial sigs map to add to.
@@ -280,6 +311,21 @@ WALLY_CORE_API int wally_unknowns_map_init_alloc(
 WALLY_CORE_API int wally_unknowns_map_free(
     struct wally_unknowns_map *unknowns);
 #endif /* SWIG_PYTHON */
+
+/**
+ * Find an item in an unknowns map.
+ *
+ * :param unknowns: The unknowns map to find ``key`` in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_keypath_map_find(
+    const struct wally_keypath_map *keypaths,
+    const unsigned char *pubkey,
+    size_t pubkey_len,
+    size_t *written);
 
 /**
  * Add an item to an unknowns map.
