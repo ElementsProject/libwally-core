@@ -2600,32 +2600,24 @@ static int combine_unknowns(struct wally_unknowns_map **dst,
     return ret;
 }
 
-static int merge_keypaths_into(
-    struct wally_keypath_map *dst,
-    const struct wally_keypath_map *src)
+static int combine_keypath(struct wally_keypath_map **dst,
+                           const struct wally_keypath_map *src)
 {
     int ret = WALLY_OK;
-    size_t i, j;
+    size_t i;
 
-    if (!src || !dst) {
+    if (!dst)
         return WALLY_EINVAL;
-    }
 
-    for (i = 0; i < src->num_items; ++i) {
-        bool found = false;
-        for (j = 0; j < dst->num_items; ++j) {
-            if (memcmp(dst->items[j].pubkey, src->items[i].pubkey, sizeof(src->items[i].pubkey)) == 0) {
-                found = true;
-                break;
-            }
-        }
-        if (found) {
-            continue;
-        }
-        if ((ret = add_keypath_item(dst, &src->items[i])) != WALLY_OK) {
-            return ret;
-        }
-    }
+    if (!src)
+        return WALLY_OK; /* No-op */
+
+    if (!*dst)
+        ret = wally_keypath_map_init_alloc(src->items_allocation_len, dst);
+
+    for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+        ret = add_keypath_item(*dst, &src->items[i]);
+
     return ret;
 }
 
@@ -2668,17 +2660,8 @@ static int merge_input_into(
         }
     }
 
-    if (src->keypaths) {
-        if (!dst->keypaths) {
-            if ((ret = wally_keypath_map_init_alloc(src->keypaths->items_allocation_len, &dst->keypaths)) != WALLY_OK) {
-                return ret;
-            }
-        }
-
-        if ((ret = merge_keypaths_into(dst->keypaths, src->keypaths)) != WALLY_OK) {
-            return ret;
-        }
-    }
+    if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
+        return ret;
 
     if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
         return ret;
@@ -2718,23 +2701,13 @@ static int merge_input_into(
     return WALLY_OK;
 }
 
-static int merge_output_into(
-    struct wally_psbt_output *dst,
-    const struct wally_psbt_output *src)
+static int merge_output_into(struct wally_psbt_output *dst,
+                             const struct wally_psbt_output *src)
 {
-    int ret = WALLY_OK;
+    int ret;
 
-    if (src->keypaths) {
-        if (!dst->keypaths) {
-            if ((ret = wally_keypath_map_init_alloc(src->keypaths->items_allocation_len, &dst->keypaths)) != WALLY_OK) {
-                return ret;
-            }
-        }
-
-        if ((ret = merge_keypaths_into(dst->keypaths, src->keypaths)) != WALLY_OK) {
-            return ret;
-        }
-    }
+    if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
+        return ret;
 
     if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
         return ret;
