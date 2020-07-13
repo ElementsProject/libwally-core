@@ -25,6 +25,13 @@ static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMP
     return pubkey[0] == 0x02 || pubkey[0] == 0x03;
 }
 
+static size_t get_pubkey_len(const unsigned char *pubkey, size_t pubkey_len)
+{
+    if (!pubkey_len)
+        return 0;
+    return pubkey_is_compressed(pubkey) ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+}
+
 static bool is_valid_pubkey_len(size_t len)
 {
     return len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN || len == EC_PUBLIC_KEY_LEN;
@@ -33,6 +40,14 @@ static bool is_valid_pubkey_len(size_t len)
 static bool is_valid_optional_pubkey_len(size_t len)
 {
     return !len || is_valid_pubkey_len(len);
+}
+
+static bool is_equal_pubkey(const unsigned char *l, size_t l_len, const unsigned char *r, size_t r_len)
+{
+    if (!l || !r)
+        return l == r; /* Equal if both NULL only */
+
+    return l_len == r_len && memcmp(l, r, l_len) == 0;
 }
 
 int wally_keypath_map_init_alloc(size_t allocation_len, struct wally_keypath_map **output)
@@ -66,6 +81,30 @@ int wally_keypath_map_free(struct wally_keypath_map *keypaths)
         }
         clear_and_free(keypaths->items, keypaths->items_allocation_len * sizeof(*keypaths->items));
         clear_and_free(keypaths, sizeof(*keypaths));
+    }
+    return WALLY_OK;
+}
+
+int wally_keypath_map_find(const struct wally_keypath_map *keypaths,
+                           const unsigned char *pubkey, size_t pubkey_len,
+                           size_t *written)
+{
+    size_t i;
+
+    if (written)
+        *written = 0;
+
+    if (!keypaths || !pubkey || !is_valid_pubkey_len(pubkey_len) || !written)
+        return WALLY_EINVAL;
+
+    for (i = 0; i < keypaths->num_items; ++i) {
+        const struct wally_keypath_item *item = &keypaths->items[i];
+
+        if (is_equal_pubkey(pubkey, pubkey_len,
+                            item->pubkey, get_pubkey_len(item->pubkey, sizeof(item->pubkey)))) {
+            *written = i + 1; /* Found */
+            break;
+        }
     }
     return WALLY_OK;
 }
@@ -179,6 +218,30 @@ int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs)
     return WALLY_OK;
 }
 
+int wally_partial_sigs_map_find(const struct wally_partial_sigs_map *partial_sigs,
+                                const unsigned char *pubkey, size_t pubkey_len,
+                                size_t *written)
+{
+    size_t i;
+
+    if (written)
+        *written = 0;
+
+    if (!partial_sigs || !pubkey || !is_valid_pubkey_len(pubkey_len) || !written)
+        return WALLY_EINVAL;
+
+    for (i = 0; i < partial_sigs->num_items; ++i) {
+        const struct wally_partial_sigs_item *item = &partial_sigs->items[i];
+
+        if (is_equal_pubkey(pubkey, pubkey_len,
+                            item->pubkey, get_pubkey_len(item->pubkey, sizeof(item->pubkey)))) {
+            *written = i + 1; /* Found */
+            break;
+        }
+    }
+    return WALLY_OK;
+}
+
 static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, const struct wally_partial_sigs_item *item)
 {
     return wally_partial_sigs_map_add(sigs, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
@@ -264,6 +327,29 @@ int wally_unknowns_map_free(struct wally_unknowns_map *unknowns)
         }
         clear_and_free(unknowns->items, unknowns->num_items * sizeof(*unknowns->items));
         clear_and_free(unknowns, sizeof(*unknowns));
+    }
+    return WALLY_OK;
+}
+
+int wally_unknowns_map_find(const struct wally_unknowns_map *unknowns,
+                            const unsigned char *key, size_t key_len,
+                            size_t *written)
+{
+    size_t i;
+
+    if (written)
+        *written = 0;
+
+    if (!unknowns || !key || BYTES_INVALID(key, key_len) || !written)
+        return WALLY_EINVAL;
+
+    for (i = 0; i < unknowns->num_items; ++i) {
+        const struct wally_unknowns_item *item = &unknowns->items[i];
+
+        if (key_len == item->key_len && memcmp(key, item->key, key_len) == 0) {
+            *written = i + 1; /* Found */
+            break;
+        }
     }
     return WALLY_OK;
 }
