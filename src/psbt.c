@@ -2865,7 +2865,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     unsigned char sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
     const size_t pubkey_len = sizeof(pubkey), full_pubkey_len = sizeof(full_pubkey);
-    size_t i, j, der_sig_len, is_elements;
+    size_t i, der_sig_len, is_elements;
     int ret;
 
     if (!psbt || !psbt->tx || !key || key_len != EC_PRIVATE_KEY_LEN) {
@@ -2888,32 +2888,23 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *txin = &psbt->tx->inputs[i];
         unsigned char sighash[SHA256_LEN], *scriptcode, wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
-        size_t scriptcode_len;
-        bool match = false, comp = false;
-        uint32_t sighash_type = WALLY_SIGHASH_ALL;
+        size_t keypath_index = 0, scriptcode_len;
+        bool is_compressed;
+        uint32_t sighash_type;
 
-        if (!input->keypaths) {
-            /* Can't do anything without the keypaths */
-            continue;
+        /* See if this input has a keypath matching the pubkey of the private key supplied */
+        if (input->keypaths) {
+            ret = wally_keypath_map_find(input->keypaths, full_pubkey, full_pubkey_len, &keypath_index);
+            if (ret == WALLY_OK && !keypath_index)
+                ret = wally_keypath_map_find(input->keypaths, pubkey, pubkey_len, &keypath_index);
+            if (ret != WALLY_OK)
+                return ret;
         }
 
-        /* Go through each listed pubkey and see if it matches. */
-        for (j = 0; j < input->keypaths->num_items; ++j) {
-            struct wally_keypath_item *item = &input->keypaths->items[j];
-            if (item->pubkey[0] == 0x04 && memcmp(item->pubkey, full_pubkey, full_pubkey_len) == 0) {
-                match = true;
-                break;
-            } else if (memcmp(item->pubkey, pubkey, pubkey_len) == 0) {
-                match = true;
-                comp = true;
-                break;
-            }
-        }
+        if (!keypath_index)
+            continue; /* Didn't find a keypath matching this pubkey: skip it */
 
-        /* Did not find pubkey, skip */
-        if (!match) {
-            continue;
-        }
+        is_compressed = pubkey_is_compressed(input->keypaths->items[keypath_index - 1].pubkey);
 
         /* Make sure we don't already have a sig for this input ?! */
         if (input->partial_sigs) {
@@ -2928,10 +2919,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                 continue; /* Already got a partial sig for this pubkey on this input */
         }
 
-        /* Sighash type */
-        if (input->sighash_type > 0) {
-            sighash_type = input->sighash_type;
-        }
+        sighash_type = input->sighash_type ? input->sighash_type : WALLY_SIGHASH_ALL;
 
         /* Get scriptcode and sighash */
         if (input->redeem_script) {
@@ -3040,14 +3028,16 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         der_sig_len++;
 
         /* Copy the DER sig into the psbt */
-        if (!input->partial_sigs) {
-            if ((ret = wally_partial_sigs_map_init_alloc(1, &input->partial_sigs)) != WALLY_OK) {
-                return ret;
-            }
-        }
-        if ((ret = wally_partial_sigs_map_add(input->partial_sigs, comp ? pubkey : full_pubkey, comp ? pubkey_len : full_pubkey_len, der_sig, der_sig_len)) != WALLY_OK) {
+        if (!input->partial_sigs &&
+            (ret = wally_partial_sigs_map_init_alloc(1, &input->partial_sigs)) != WALLY_OK)
             return ret;
-        }
+
+        ret = wally_partial_sigs_map_add(input->partial_sigs,
+                                         is_compressed ? pubkey : full_pubkey,
+                                         is_compressed ? pubkey_len : full_pubkey_len,
+                                         der_sig, der_sig_len);
+        if (ret != WALLY_OK)
+            return ret;
     }
 
     return WALLY_OK;
