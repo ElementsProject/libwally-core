@@ -111,7 +111,8 @@ int wally_keypath_map_find(const struct wally_keypath_map *keypaths,
 
 static int add_keypath_item(struct wally_keypath_map *keypaths, const struct wally_keypath_item *item)
 {
-    return wally_keypath_map_add(keypaths, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+    const size_t pubkey_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    return wally_keypath_map_add(keypaths, item->pubkey, pubkey_len,
                                  item->fingerprint, BIP32_KEY_FINGERPRINT_LEN,
                                  item->path, item->path_len);
 }
@@ -249,7 +250,8 @@ int wally_partial_sigs_map_find(const struct wally_partial_sigs_map *partial_sig
 
 static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, const struct wally_partial_sigs_item *item)
 {
-    return wally_partial_sigs_map_add(sigs, item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN,
+    const size_t pubkey_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    return wally_partial_sigs_map_add(sigs, item->pubkey, pubkey_len,
                                       item->sig, item->sig_len);
 }
 
