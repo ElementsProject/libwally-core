@@ -2752,18 +2752,19 @@ fail:
     return ret;
 }
 
-int wally_psbt_sign(
-    struct wally_psbt *psbt,
-    const unsigned char *key,
-    size_t key_len)
+int wally_psbt_sign(struct wally_psbt *psbt,
+                    const unsigned char *key, size_t key_len)
 {
     unsigned char pubkey[EC_PUBLIC_KEY_LEN], uncomp_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
-    size_t i, j, der_sig_len;
+    size_t i, j, der_sig_len, is_elements;
     int ret;
 
     if (!psbt || !psbt->tx || !key || key_len != EC_PRIVATE_KEY_LEN) {
         return WALLY_EINVAL;
     }
+
+    if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
+        return ret;
 
     /* Get the pubkey */
     if ((ret = wally_ec_public_key_from_private_key(key, key_len, pubkey, EC_PUBLIC_KEY_LEN)) != WALLY_OK) {
@@ -2905,7 +2906,15 @@ int wally_psbt_sign(
                 continue;
             }
 
-            if ((ret = wally_tx_get_btc_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, input->witness_utxo->satoshi, sighash_type, WALLY_TX_FLAG_USE_WITNESS, sighash, SHA256_LEN)) != WALLY_OK) {
+            if (is_elements) {
+#ifdef BUILD_ELEMENTS
+                if ((ret = wally_tx_get_elements_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, input->witness_utxo->value, input->witness_utxo->value_len, sighash_type, WALLY_TX_FLAG_USE_WITNESS, sighash, SHA256_LEN)) != WALLY_OK) {
+                    return ret;
+                }
+#else
+                return WALLY_ERROR;
+#endif /* BUILD_ELEMENTS */
+            } else if ((ret = wally_tx_get_btc_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, input->witness_utxo->satoshi, sighash_type, WALLY_TX_FLAG_USE_WITNESS, sighash, SHA256_LEN)) != WALLY_OK) {
                 return ret;
             }
         }
