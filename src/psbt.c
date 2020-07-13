@@ -2579,33 +2579,24 @@ done:
     return ret;
 }
 
-static int merge_unknowns_into(
-    struct wally_unknowns_map *dst,
-    const struct wally_unknowns_map *src)
+static int combine_unknowns(struct wally_unknowns_map **dst,
+                            const struct wally_unknowns_map *src)
 {
     int ret = WALLY_OK;
-    size_t i, j;
+    size_t i;
 
-    if (!src || !dst) {
+    if (!dst)
         return WALLY_EINVAL;
-    }
 
-    for (i = 0; i < src->num_items; ++i) {
-        bool found = false;
-        for (j = 0; j < dst->num_items; ++j) {
-            if (src->items[i].key_len == dst->items[j].key_len &&
-                memcmp(dst->items[j].key, src->items[i].key, src->items[i].key_len) == 0) {
-                found = true;
-                break;
-            }
-        }
-        if (found) {
-            continue;
-        }
-        if ((ret = add_unknowns_item(dst, &src->items[i])) != WALLY_OK) {
-            return ret;
-        }
-    }
+    if (!src)
+        return WALLY_OK; /* No-op */
+
+    if (!*dst)
+        ret = wally_unknowns_map_init_alloc(src->items_allocation_len, dst);
+
+    for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+        ret = add_unknowns_item(*dst, &src->items[i]);
+
     return ret;
 }
 
@@ -2689,17 +2680,8 @@ static int merge_input_into(
         }
     }
 
-    if (src->unknowns) {
-        if (!dst->unknowns) {
-            if ((ret = wally_unknowns_map_init_alloc(src->unknowns->items_allocation_len, &dst->unknowns)) != WALLY_OK) {
-                return ret;
-            }
-        }
-
-        if ((ret = merge_unknowns_into(dst->unknowns, src->unknowns)) != WALLY_OK) {
-            return ret;
-        }
-    }
+    if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
+        return ret;
 
     if (dst->redeem_script_len == 0 && src->redeem_script_len > 0) {
         if (!clone_bytes(&dst->redeem_script, src->redeem_script, src->redeem_script_len)) {
@@ -2754,17 +2736,8 @@ static int merge_output_into(
         }
     }
 
-    if (src->unknowns) {
-        if (!dst->unknowns) {
-            if ((ret = wally_unknowns_map_init_alloc(src->unknowns->items_allocation_len, &dst->unknowns)) != WALLY_OK) {
-                return ret;
-            }
-        }
-
-        if ((ret = merge_unknowns_into(dst->unknowns, src->unknowns)) != WALLY_OK) {
-            return ret;
-        }
-    }
+    if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
+        return ret;
 
     if (dst->redeem_script_len == 0 && src->redeem_script_len > 0) {
         if (!clone_bytes(&dst->redeem_script, src->redeem_script, src->redeem_script_len)) {
@@ -2805,13 +2778,8 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
         ret = merge_output_into(&psbt->outputs[i], &src->outputs[i]);
 
-    if (ret == WALLY_OK && src->unknowns) {
-        if (!psbt->unknowns)
-            ret = wally_unknowns_map_init_alloc(src->unknowns->items_allocation_len,
-                                                &psbt->unknowns);
-        if (ret == WALLY_OK)
-            ret = merge_unknowns_into(psbt->unknowns, src->unknowns);
-    }
+    if (ret == WALLY_OK)
+        ret = combine_unknowns(&psbt->unknowns, src->unknowns);
 
     return ret;
 }
