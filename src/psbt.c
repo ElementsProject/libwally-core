@@ -160,12 +160,17 @@ int wally_keypath_map_add(struct wally_keypath_map *keypaths,
                           const unsigned char *fingerprint, size_t fingerprint_len,
                           const uint32_t *path, size_t path_len)
 {
+    size_t is_found;
     int ret;
 
     if (!keypaths || !pubkey || !is_valid_pubkey_len(pubkey_len) ||
         !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
         BYTES_INVALID(path, path_len))
         return WALLY_EINVAL;
+
+    ret = wally_keypath_map_find(keypaths, pubkey, pubkey_len, &is_found);
+    if (ret != WALLY_OK || is_found)
+        return ret; /* Return WALLY_OK and do nothing if already present */
 
     ret = array_grow((void *)&keypaths->items, keypaths->num_items,
                      &keypaths->items_allocation_len, sizeof(struct wally_keypath_item));
@@ -275,11 +280,16 @@ int wally_partial_sigs_map_add(struct wally_partial_sigs_map *sigs,
                                const unsigned char *pubkey, size_t pubkey_len,
                                const unsigned char *sig, size_t sig_len)
 {
+    size_t is_found;
     int ret;
 
     if (!sigs || !pubkey || !is_valid_pubkey_len(pubkey_len) ||
         BYTES_INVALID(sig, sig_len))
         return WALLY_EINVAL;
+
+    ret = wally_partial_sigs_map_find(sigs, pubkey, pubkey_len, &is_found);
+    if (ret != WALLY_OK || is_found)
+        return ret; /* Return WALLY_OK and do nothing if already present */
 
     ret = array_grow((void *)&sigs->items, sigs->num_items,
                      &sigs->items_allocation_len, sizeof(struct wally_partial_sigs_item));
@@ -386,10 +396,15 @@ int wally_unknowns_map_add(struct wally_unknowns_map *unknowns,
                            const unsigned char *key, size_t key_len,
                            const unsigned char *value, size_t value_len)
 {
+    size_t is_found;
     int ret;
 
     if (!unknowns || !key || BYTES_INVALID(key, key_len) || BYTES_INVALID(value, value_len))
         return WALLY_EINVAL;
+
+    ret = wally_unknowns_map_find(unknowns, key, key_len, &is_found);
+    if (ret != WALLY_OK || is_found)
+        return ret; /* Return WALLY_OK and do nothing if already present */
 
     ret = array_grow((void *)&unknowns->items, unknowns->num_items,
                      &unknowns->items_allocation_len, sizeof(struct wally_unknowns_item));
