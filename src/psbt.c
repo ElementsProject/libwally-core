@@ -1148,22 +1148,21 @@ static int pull_keypath(const unsigned char **cursor, size_t *max,
                         struct wally_keypath_map **keypaths)
 {
     const unsigned char *val;
-    size_t i, val_max;
+    size_t i, val_max, is_found;
     const unsigned char *fingerprint;
     int ret;
 
     if (!is_valid_pubkey_len(key_len))
         return WALLY_EINVAL;
 
-    if (!*keypaths && wally_keypath_map_init_alloc(1, keypaths) != WALLY_OK)
-        return WALLY_ENOMEM;
+    if (!*keypaths && (ret = wally_keypath_map_init_alloc(1, keypaths)) != WALLY_OK)
+        return ret;
 
-    /* Check for duplicates */
-    for (i = 0; i < (*keypaths)->num_items; ++i) {
-        if (memcmp((*keypaths)->items[i].pubkey, key, key_len) == 0) {
-            return WALLY_EINVAL;     /* Duplicate key */
-        }
-    }
+    ret = wally_keypath_map_find(*keypaths, key, key_len, &is_found);
+    if (ret == WALLY_OK && is_found)
+        ret = WALLY_EINVAL; /* Duplicates are invalid */
+    if (ret != WALLY_OK)
+        return ret;
 
     pull_subfield_end(cursor, max, key, key_len);
 
@@ -1197,7 +1196,8 @@ static int pull_partial_sig(const unsigned char **cursor, size_t *max,
                             struct wally_partial_sigs_map **partial_sigs)
 {
     const unsigned char *val;
-    size_t val_len, i;
+    size_t val_len, is_found;
+    int ret;
 
     if (!is_valid_pubkey_len(key_len))
         return WALLY_EINVAL;
@@ -1205,12 +1205,11 @@ static int pull_partial_sig(const unsigned char **cursor, size_t *max,
     if (!*partial_sigs && wally_partial_sigs_map_init_alloc(1, partial_sigs) != WALLY_OK)
         return WALLY_ENOMEM;
 
-    /* Check for duplicates */
-    for (i = 0; i < (*partial_sigs)->num_items; ++i) {
-        if (memcmp((*partial_sigs)->items[i].pubkey, key, key_len) == 0) {
-            return WALLY_EINVAL;     /* Duplicate key */
-        }
-    }
+    ret = wally_partial_sigs_map_find(*partial_sigs, key, key_len, &is_found);
+    if (ret == WALLY_OK && is_found)
+        ret = WALLY_EINVAL; /* Duplicates are invalid */
+    if (ret != WALLY_OK)
+        return ret;
 
     pull_subfield_end(cursor, max, key, key_len);
 
@@ -1227,7 +1226,8 @@ static int pull_unknown_key_value(const unsigned char **cursor,
                                   struct wally_unknowns_map **unknowns)
 {
     const unsigned char *key, *val;
-    size_t key_len, val_len;
+    size_t key_len, val_len, is_found;
+    int ret;
 
     /* If we've already failed, it's invalid */
     if (!*cursor)
@@ -1244,6 +1244,12 @@ static int pull_unknown_key_value(const unsigned char **cursor,
     key = pull_skip(cursor, max, key_len);
     val_len = pull_varlength(cursor, max);
     val = pull_skip(cursor, max, val_len);
+
+    ret = wally_unknowns_map_find(*unknowns, key, key_len, &is_found);
+    if (ret == WALLY_OK && is_found)
+        ret = WALLY_EINVAL; /* Duplicates are invalid */
+    if (ret != WALLY_OK)
+        return ret;
 
     return wally_unknowns_map_add(*unknowns, key, key_len, val, val_len);
 }
