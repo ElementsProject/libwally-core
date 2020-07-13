@@ -63,15 +63,15 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(creator['result'], ser)
 
         for combiner in combiners:
-            to_combine = []
-            for comb in combiner['combine']:
-                psbt = pointer(wally_psbt())
-                self.assertEqual(WALLY_OK, wally_psbt_from_base64(comb.encode('utf-8'), psbt))
-                to_combine.append(psbt.contents)
-            combined = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_combine((wally_psbt * len(to_combine))(*to_combine), len(to_combine), combined))
-            ret, comb_ser = wally_psbt_to_base64(combined, 0)
-            self.assertEqual(combiner['result'], comb_ser)
+            psbt = pointer(wally_psbt())
+            self.assertEqual(WALLY_OK, wally_psbt_from_base64(combiner['combine'][0].encode('utf-8'), psbt))
+            for src_b64 in combiner['combine'][1:]:
+                src = pointer(wally_psbt())
+                self.assertEqual(WALLY_OK, wally_psbt_from_base64(src_b64.encode('utf-8'), src))
+                self.assertEqual(WALLY_OK, wally_psbt_combine(psbt, src))
+                self.assertEqual(WALLY_OK, wally_psbt_free(src))
+            ret, psbt_b64 = wally_psbt_to_base64(psbt, 0)
+            self.assertEqual(combiner['result'], psbt_b64)
 
         for signer in signers:
             psbt = pointer(wally_psbt())
