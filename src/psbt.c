@@ -2783,79 +2783,36 @@ static int merge_output_into(
     return WALLY_OK;
 }
 
-int wally_psbt_combine(
-    const struct wally_psbt *psbts,
-    size_t psbts_len,
-    struct wally_psbt **output)
+int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
-    struct wally_psbt *result;
-    unsigned char global_txid[WALLY_TXHASH_LEN];
-    size_t i, j;
-    int ret = WALLY_OK;
+    unsigned char txid[WALLY_TXHASH_LEN], src_txid[WALLY_TXHASH_LEN];
+    size_t i;
+    int ret;
 
-    TX_CHECK_OUTPUT;
-
-    if (!psbts) {
+    if (!psbt || !psbt->tx || !src || !src->tx)
         return WALLY_EINVAL;
+
+    ret = wally_tx_get_txid(psbt->tx, txid, sizeof(txid));
+    if (ret == WALLY_OK)
+        ret = wally_tx_get_txid(src->tx, src_txid, sizeof(src_txid));
+
+    if (ret == WALLY_OK && memcmp(txid, src_txid, sizeof(txid)) != 0)
+        ret = WALLY_EINVAL; /* Transactions don't match */
+
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
+        ret = merge_input_into(&psbt->inputs[i], &src->inputs[i]);
+
+    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
+        ret = merge_output_into(&psbt->outputs[i], &src->outputs[i]);
+
+    if (ret == WALLY_OK && src->unknowns) {
+        if (!psbt->unknowns)
+            ret = wally_unknowns_map_init_alloc(src->unknowns->items_allocation_len,
+                                                &psbt->unknowns);
+        if (ret == WALLY_OK)
+            ret = merge_unknowns_into(psbt->unknowns, src->unknowns);
     }
 
-    /* Get info from the first psbt and use it as the template */
-    if ((ret = wally_tx_get_txid(psbts->tx, global_txid, sizeof(global_txid))) != WALLY_OK) {
-        return ret;
-    }
-
-    if ((ret = wally_psbt_init_alloc(psbts[0].inputs_allocation_len, psbts[0].outputs_allocation_len, psbts[0].unknowns->items_allocation_len, &result)) != WALLY_OK) {
-        return ret;
-    }
-
-    if ((ret = wally_tx_clone(psbts[0].tx, 0, &result->tx)) != WALLY_OK) {
-        goto fail;
-    }
-    result->num_inputs = psbts[0].num_inputs;
-    result->num_outputs = psbts[0].num_outputs;
-
-    for (i = 0; i < psbts_len; ++i) {
-        unsigned char txid[sizeof(global_txid)];
-
-        /* Compare the txids */
-        if ((ret = wally_tx_get_txid(psbts[i].tx, txid, sizeof(txid))) != WALLY_OK) {
-            goto fail;
-        }
-        if (memcmp(global_txid, txid, sizeof(txid)) != 0) {
-            ret = WALLY_EINVAL;
-            goto fail;
-        }
-
-        /* Now start merging */
-        for (j = 0; j < result->num_inputs; ++j) {
-            if ((ret = merge_input_into(&result->inputs[j], &psbts[i].inputs[j])) != WALLY_OK) {
-                goto fail;
-            }
-        }
-        for (j = 0; j < result->num_outputs; ++j) {
-            if ((ret = merge_output_into(&result->outputs[j], &psbts[i].outputs[j])) != WALLY_OK) {
-                goto fail;
-            }
-        }
-
-        if (psbts[i].unknowns) {
-            if (!result->unknowns) {
-                if ((ret = wally_unknowns_map_init_alloc(psbts[i].unknowns->items_allocation_len, &result->unknowns)) != WALLY_OK) {
-                    goto fail;
-                }
-            }
-
-            if ((ret = merge_unknowns_into(result->unknowns, psbts[i].unknowns)) != WALLY_OK) {
-                goto fail;
-            }
-        }
-    }
-
-    *output = result;
-    return WALLY_OK;
-
-fail:
-    wally_psbt_free(result);
     return ret;
 }
 

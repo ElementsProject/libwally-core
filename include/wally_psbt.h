@@ -664,16 +664,14 @@ WALLY_CORE_API int wally_psbt_to_base64(
     char **output);
 
 /**
- * Combine the metadata from multiple PSBTs into one PSBT.
+ * Combine the metadata from a source PSBT into another PSBT.
  *
- * :param psbts: Array of PSBTs to combine.
- * :param psbts_len: Number of PSBTs in ``psbts``.
- * :param output: Destination for resulting PSBT.
+ * :param psbt: the PSBT to combine into.
+ * :param source: the PSBT to copy data from.
  */
 WALLY_CORE_API int wally_psbt_combine(
-    const struct wally_psbt *psbts,
-    size_t psbts_len,
-    struct wally_psbt **output);
+    struct wally_psbt *psbt,
+    const struct wally_psbt *src);
 
 /**
  * Sign a PSBT using the simple signer algorithm.
