@@ -2619,113 +2619,137 @@ static int combine_keypath(struct wally_keypath_map **dst,
     return ret;
 }
 
-static int merge_input_into(
-    struct wally_psbt_input *dst,
-    const struct wally_psbt_input *src)
+static int combine_partial_sigs(struct wally_partial_sigs_map **dst,
+                                const struct wally_partial_sigs_map *src)
 {
     int ret = WALLY_OK;
-    size_t i, j;
+    size_t i;
 
-    if (!dst->non_witness_utxo && src->non_witness_utxo && (ret = wally_tx_clone(src->non_witness_utxo, 0, &dst->non_witness_utxo)) != WALLY_OK) {
-        return ret;
-    }
-    if (!dst->witness_utxo && src->witness_utxo && (ret = wally_tx_output_init_alloc(src->witness_utxo->satoshi, src->witness_utxo->script, src->witness_utxo->script_len, &dst->witness_utxo)) != WALLY_OK) {
-        return ret;
-    }
+    if (!dst)
+        return WALLY_EINVAL;
 
-    if (src->partial_sigs) {
-        if (!dst->partial_sigs) {
-            if ((ret = wally_partial_sigs_map_init_alloc(src->partial_sigs->items_allocation_len, &dst->partial_sigs)) != WALLY_OK) {
-                return ret;
-            }
-        }
+    if (!src)
+        return WALLY_OK; /* No-op */
 
-        for (i = 0; i < src->partial_sigs->num_items; ++i) {
-            bool found = false;
-            for (j = 0; j < dst->partial_sigs->num_items; ++j) {
-                if (memcmp(dst->partial_sigs->items[j].pubkey, src->partial_sigs->items[i].pubkey,
-                           sizeof(src->partial_sigs->items[i].pubkey)) == 0) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
-                continue;
-            }
-            if ((ret = add_partial_sig_item(dst->partial_sigs, &src->partial_sigs->items[i])) != WALLY_OK) {
-                return ret;
-            }
-        }
-    }
+    if (!*dst)
+        ret = wally_partial_sigs_map_init_alloc(src->items_allocation_len, dst);
 
-    if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
-        return ret;
+    for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+        ret = add_partial_sig_item(*dst, &src->items[i]);
 
-    if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
-        return ret;
+    return ret;
+}
 
-    if (dst->redeem_script_len == 0 && src->redeem_script_len > 0) {
-        if (!clone_bytes(&dst->redeem_script, src->redeem_script, src->redeem_script_len)) {
-            return WALLY_ENOMEM;
-        }
-        dst->redeem_script_len = src->redeem_script_len;
-    }
+#define COMBINE_BYTES(typ, member) \
+    if (!dst->member && src->member && \
+        (ret = wally_psbt_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len)) != WALLY_OK) \
+        return ret
 
-    if (dst->witness_script_len == 0 && src->witness_script_len > 0) {
-        if (!clone_bytes(&dst->witness_script, src->witness_script, src->witness_script_len)) {
-            return WALLY_ENOMEM;
-        }
-        dst->witness_script_len = src->witness_script_len;
-    }
+#define COMBINE_ELEMENTS_BYTES(typ, member) \
+    if (!dst->member && src->member && \
+        (ret = wally_psbt_elements_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len)) != WALLY_OK) \
+        return ret
 
-    if (dst->final_script_sig_len == 0 && src->final_script_sig_len > 0) {
-        if (!clone_bytes(&dst->final_script_sig, src->final_script_sig, src->final_script_sig_len)) {
-            return WALLY_ENOMEM;
-        }
-        dst->final_script_sig_len = src->final_script_sig_len;
-    }
+static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
+{
+    if (!dst)
+        return WALLY_EINVAL;
 
-    if (!dst->final_witness && src->final_witness) {
-        dst->final_witness = clone_witness(src->final_witness);
-        if (!dst->final_witness) {
-            return WALLY_ENOMEM;
-        }
-    }
-
-    if (src->sighash_type > dst->sighash_type) {
-        dst->sighash_type = src->sighash_type;
-    }
+    if (!*dst && src)
+        return wally_tx_clone(src, 0, dst);
 
     return WALLY_OK;
 }
 
-static int merge_output_into(struct wally_psbt_output *dst,
-                             const struct wally_psbt_output *src)
+static int combine_inputs(struct wally_psbt_input *dst,
+                          const struct wally_psbt_input *src)
+{
+    int ret;
+
+    if ((ret = combine_txs(&dst->non_witness_utxo, src->non_witness_utxo)) != WALLY_OK)
+        return ret;
+
+    if (!dst->witness_utxo && src->witness_utxo) {
+        const struct wally_tx_output *src_utxo = src->witness_utxo;
+#ifdef BUILD_ELEMENTS
+        ret = wally_tx_elements_output_init_alloc(
+            src_utxo->script, src_utxo->script_len,
+            src_utxo->asset, src_utxo->asset_len,
+            src_utxo->value, src_utxo->value_len,
+            src_utxo->nonce, src_utxo->nonce_len,
+            src_utxo->surjectionproof, src_utxo->surjectionproof_len,
+            src_utxo->rangeproof, src_utxo->rangeproof_len,
+#else
+        ret = wally_tx_output_init_alloc(
+            src_utxo->satoshi,
+            src_utxo->script,
+            src_utxo->script_len,
+#endif
+            &dst->witness_utxo);
+        if (ret != WALLY_OK)
+            return ret;
+    }
+
+    COMBINE_BYTES(input, redeem_script);
+    COMBINE_BYTES(input, witness_script);
+    COMBINE_BYTES(input, final_script_sig);
+
+    if (!dst->final_witness && src->final_witness &&
+        (ret = wally_psbt_input_set_final_witness(dst, src->final_witness)) != WALLY_OK)
+        return ret;
+    if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
+        return ret;
+    if ((ret = combine_partial_sigs(&dst->partial_sigs, src->partial_sigs)) != WALLY_OK)
+        return ret;
+    if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
+        return ret;
+    if (!dst->sighash_type && src->sighash_type)
+        dst->sighash_type = src->sighash_type;
+
+#ifdef BUILD_ELEMENTS
+    if (!dst->has_value && src->has_value) {
+        dst->value = src->value;
+        dst->has_value = true;
+    }
+    COMBINE_ELEMENTS_BYTES(input, value_blinder);
+    COMBINE_ELEMENTS_BYTES(input, asset);
+    COMBINE_ELEMENTS_BYTES(input, asset_blinder);
+    if ((ret = combine_txs(&dst->peg_in_tx, src->peg_in_tx)) != WALLY_OK)
+        return ret;
+    COMBINE_ELEMENTS_BYTES(input, txout_proof);
+    COMBINE_ELEMENTS_BYTES(input, genesis_hash);
+    COMBINE_ELEMENTS_BYTES(input, claim_script);
+#endif
+    return WALLY_OK;
+}
+
+static int combine_outputs(struct wally_psbt_output *dst,
+                           const struct wally_psbt_output *src)
 {
     int ret;
 
     if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
         return ret;
-
     if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
         return ret;
 
-    if (dst->redeem_script_len == 0 && src->redeem_script_len > 0) {
-        if (!clone_bytes(&dst->redeem_script, src->redeem_script, src->redeem_script_len)) {
-            return WALLY_ENOMEM;
-        }
-        dst->redeem_script_len = src->redeem_script_len;
-    }
+    COMBINE_BYTES(output, redeem_script);
+    COMBINE_BYTES(output, witness_script);
 
-    if (dst->witness_script_len == 0 && src->witness_script_len > 0) {
-        if (!clone_bytes(&dst->witness_script, src->witness_script, src->witness_script_len)) {
-            return WALLY_ENOMEM;
-        }
-        dst->witness_script_len = src->witness_script_len;
-    }
-
+#ifdef BUILD_ELEMENTS
+    COMBINE_ELEMENTS_BYTES(output, blinding_pubkey);
+    COMBINE_ELEMENTS_BYTES(output, value_commitment);
+    COMBINE_ELEMENTS_BYTES(output, value_blinder);
+    COMBINE_ELEMENTS_BYTES(output, asset_commitment);
+    COMBINE_ELEMENTS_BYTES(output, asset_blinder);
+    COMBINE_ELEMENTS_BYTES(output, nonce_commitment);
+    COMBINE_ELEMENTS_BYTES(output, range_proof);
+    COMBINE_ELEMENTS_BYTES(output, surjection_proof);
+#endif
     return WALLY_OK;
 }
+#undef COMBINE_BYTES
+#undef COMBINE_ELEMENTS_BYTES
 
 int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
@@ -2744,10 +2768,10 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         ret = WALLY_EINVAL; /* Transactions don't match */
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
-        ret = merge_input_into(&psbt->inputs[i], &src->inputs[i]);
+        ret = combine_inputs(&psbt->inputs[i], &src->inputs[i]);
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
-        ret = merge_output_into(&psbt->outputs[i], &src->outputs[i]);
+        ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
 
     if (ret == WALLY_OK)
         ret = combine_unknowns(&psbt->unknowns, src->unknowns);
