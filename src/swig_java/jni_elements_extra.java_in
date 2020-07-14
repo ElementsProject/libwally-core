@@ -128,8 +128,8 @@
   public final static byte[] asset_pak_whitelistproof(byte[] on_keys, byte[] off_keys, long idx, byte[] sub_pubkey, byte[] priv_key, byte[] summed_key) {
       final int required_len = asset_pak_whitelistproof_size(off_keys.length / Wally.EC_PUBLIC_KEY_LEN);
       final byte[] buf = new byte[required_len];
-      asset_pak_whitelistproof(on_keys, off_keys, idx, sub_pubkey, priv_key, summed_key, buf);
-      return buf;
+      final int len = asset_pak_whitelistproof(on_keys, off_keys, idx, sub_pubkey, priv_key, summed_key, buf);
+      return checkBuffer(buf, len);
   }
 
   public final static byte[] elements_pegout_script_from_bytes(byte[] bh, byte[] mcs, byte[] pk, byte[] whl, long flags) {
