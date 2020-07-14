@@ -2,6 +2,9 @@
 
 ## Version 0.7.9
 
+- elements_pegout_script_from_bytes now follows the library convention for
+  too-short buffers. See the generated API documentation for details.
+
 - psbt_combine has been changed to only combine one PSBT into another.
 
 - psbt_to_bytes, psbt_get_length and psbt_to_base64 now take a flags argument.
