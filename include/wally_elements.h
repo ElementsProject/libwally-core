@@ -209,6 +209,27 @@ WALLY_CORE_API int wally_asset_surjectionproof(
     size_t len,
     size_t *written);
 
+/**
+ * Unblind a confidential transaction output.
+ *
+ * :param nonce_hash: SHA-256 hash of the generated nonce.
+ * :param nonce_hash_len: Length of ``nonce_hash``. Must be ``SHA256_LEN``.
+ * :param proof: Rangeproof from :c:func:`wally_tx_get_output_rangeproof`.
+ * :param proof_len: Length of ``proof``.
+ * :param commitment: Value commitment from :c:func:`wally_tx_get_output_value`.
+ * :param commitment_len: Length of ``commitment``.
+ * :param extra: Script pubkey from :c:func:`wally_tx_get_output_script`.
+ * :param extra_len: Length of ``extra``.
+ * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
+ * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
+ * :param asset_out: Buffer to receive unblinded asset id.
+ * :param asset_out_len: Length of ``asset_out``. Must be ``ASSET_TAG_LEN``.
+ * :param abf_out: Buffer to receive asset blinding factor.
+ * :param abf_out_len: Length of ``abf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param vbf_out: Buffer to receive asset blinding factor.
+ * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param value_out: Destination for unblinded transaction output value.
+ */
 WALLY_CORE_API int wally_asset_unblind_with_nonce(
     const unsigned char *nonce_hash,
     size_t nonce_hash_len,
