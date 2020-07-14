@@ -2,6 +2,8 @@
 
 ## Version 0.7.9
 
+- wally_is_elements_build now takes a size_t output instead of uin64_t.
+
 - elements_pegout_script_from_bytes, asset_pak_whitelistproof and
   psbt_to_bytes now follow the library convention for too-short buffers
   instead of returning WALLY_EINVAL. See the generated API documentation

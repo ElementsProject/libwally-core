@@ -278,14 +278,14 @@ int wally_set_operations(const struct wally_operations *ops)
     return WALLY_OK;
 }
 
-int wally_is_elements_build(uint64_t *value_out)
+int wally_is_elements_build(size_t *written)
 {
-    if (!value_out)
+    if (!written)
         return WALLY_EINVAL;
 #ifdef BUILD_ELEMENTS
-    *value_out = 1;
+    *written = 1;
 #else
-    *value_out = 0;
+    *written = 0;
 #endif
     return WALLY_OK;
 }

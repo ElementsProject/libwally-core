@@ -554,7 +554,7 @@ template<typename O> inline int clear(O& out) {
 
 inline bool is_elements_build()
 {
-    uint64_t ret = 0;
+    size_t ret;
     ::wally_is_elements_build(&ret);
     return ret != 0;
 }
