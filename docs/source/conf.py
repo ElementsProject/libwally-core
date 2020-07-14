@@ -3,6 +3,9 @@
 # libwally-core documentation build configuration file
 SCANNING, DOCS, FUNC = 1, 2, 3
 
+from os import getenv
+DUMP_FUNCS = getenv("WALLY_DOC_DUMP_FUNCS") is not None
+
 def get_doc_lines(l):
     if l.startswith('.. '):
         return ['   ' + l, '']
@@ -12,6 +15,9 @@ def output_func(docs, func):
     is_normal_ret = 'WALLY_CORE_API int' in func
     func = func[:-1].replace('WALLY_CORE_API','').strip()
     func = func.replace(',',', ').replace('  ', ' ')
+    if DUMP_FUNCS:
+        # Dump function definitions if requested
+        print ('%s' % func)
     ret = ['.. c:function:: ' + func, '']
     is_variable_buffer_ret = 'unsigned char *bytes_out, size_t len, size_t *written' in func
     for l in docs:
