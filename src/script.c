@@ -553,13 +553,13 @@ int wally_scriptpubkey_multisig_from_bytes(
     size_t n_pubkeys = bytes_len / EC_PUBLIC_KEY_LEN;
     size_t script_len = 3 + (n_pubkeys * (EC_PUBLIC_KEY_LEN + 1));
     size_t i;
-    unsigned char pubkey_bytes[16 * EC_PUBLIC_KEY_LEN];
+    unsigned char pubkey_bytes[15 * EC_PUBLIC_KEY_LEN];
 
     if (written)
         *written = 0;
 
     if (!bytes || !bytes_len || bytes_len % EC_PUBLIC_KEY_LEN ||
-        n_pubkeys < 1 || n_pubkeys > 16 || threshold < 1 || threshold > 16 ||
+        n_pubkeys < 1 || n_pubkeys > 15 || threshold < 1 || threshold > 15 ||
         threshold > n_pubkeys || (flags & ~WALLY_SCRIPT_MULTISIG_SORTED) ||
         !bytes_out || !written)
         return WALLY_EINVAL;
@@ -594,8 +594,8 @@ int wally_scriptsig_multisig_from_bytes(
     unsigned char *bytes_out, size_t len, size_t *written)
 {
 #define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
-    unsigned char der_buff[16 * MAX_DER], *p = bytes_out;
-    size_t der_len[16];
+    unsigned char der_buff[15 * MAX_DER], *p = bytes_out;
+    size_t der_len[15];
     size_t i, required = 0, n_sigs = bytes_len / EC_SIGNATURE_LEN;
     int ret = WALLY_OK;
 
@@ -603,7 +603,7 @@ int wally_scriptsig_multisig_from_bytes(
         *written = 0;
 
     if (!script || !script_len || !bytes || !bytes_len || bytes_len % EC_SIGNATURE_LEN ||
-        n_sigs < 1 || n_sigs > 16 || !sighash || sighash_len != n_sigs ||
+        n_sigs < 1 || n_sigs > 15 || !sighash || sighash_len != n_sigs ||
         flags || !bytes_out || !written)
         return WALLY_EINVAL;
 

@@ -6,7 +6,7 @@ SCRIPT_TYPE_P2PKH = 0x2
 SCRIPT_TYPE_P2SH = 0x4
 SCRIPT_TYPE_MULTISIG = 0x20
 
-WALLY_SCRIPT_MULTISIG_SORTED = 0x8
+SCRIPT_MULTISIG_SORTED = 0x8
 
 SCRIPT_HASH160 = 0x1
 SCRIPT_SHA256  = 0x2
@@ -24,10 +24,11 @@ PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
 SH, SH_LEN = make_cbuffer('11' * 20)  # Fake script hash
 MPK_2, MPK_2_LEN = make_cbuffer('11' * 33 * 2) # Fake multiple (2) pubkeys
 MPK_3, MPK_3_LEN =  make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
-MPK_3_SORTED, MPK_3_SORTED_LEN =  make_cbuffer('01'*33 + '10'*33 + '11'*33) # Fake multiple (3) sorted pubkeys
-MPK_3_SORTED_REVERSE, MPK_3_SORTED_LEN =  make_cbuffer('11'*33 + '10'*33 + '01'*33) # Fake multiple (3) sorted pubkeys, in reverse order
-MPK_3_SORTED_KEY_PUSH = '21'+'01'*33 + '21'+'10'*33 + '21'+'11'*33
-MPK_17, MPK_17_LEN = make_cbuffer('11' * 33 * 17) # Fake multiple (17) pubkeys
+SPK, SPK_LEN =  make_cbuffer('01'*33 + '10'*33 + '11'*33) # Fake multiple (3) sorted pubkeys
+RPK, _ =  make_cbuffer('11'*33 + '10'*33 + '01'*33) # Fake multiple (3) sorted pubkeys, in reverse order
+SPK_KEY_PUSH = '21'+'01'*33 + '21'+'10'*33 + '21'+'11'*33
+MPK_15, MPK_15_LEN = make_cbuffer('11' * 33 * 15) # Fake multiple (15) pubkeys
+MPK_16, MPK_16_LEN = make_cbuffer('11' * 33 * 16) # Fake multiple (16) pubkeys
 
 SIG, SIG_LEN = make_cbuffer('11' * 64) # Fake signature
 SIG_LARGE, SIG_LARGE_LEN = make_cbuffer('ff' * 64) # Fake out of range signature
@@ -142,7 +143,7 @@ class ScriptTests(unittest.TestCase):
             (MPK_2, 0, 1, 0, out, out_len), # Empty bytes
             (MPK_2, MPK_2_LEN+1, 1, 0, out, out_len), # Unsupported bytes len
             (SH, SH_LEN, 1, 0, out, out_len), # Too few pubkeys
-            (MPK_17, MPK_17_LEN, 1, 0, out, out_len), # Too many pubkeys
+            (MPK_16, MPK_16_LEN, 1, 0, out, out_len), # Too many pubkeys
             (MPK_2, MPK_2_LEN, 0, 0, out, out_len), # Too low threshold
             (MPK_2, MPK_2_LEN, 17, 0, out, out_len), # Too high threshold
             (MPK_2, MPK_2_LEN, 3, 0, out, out_len), # Inconsistent threshold
@@ -154,28 +155,34 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, (WALLY_EINVAL, 0))
 
         # Valid cases
-        out, out_len = make_cbuffer('00' * 33 * 4)
+        out, out_len = make_cbuffer('00' * 33 * 16)
         valid_args = [
-            [(MPK_2, MPK_2_LEN, 1, 0, out, out_len), '51'+('21'+'11'*33)*2+'52ae'], # 1of2
-            [(MPK_2, MPK_2_LEN, 2, 0, out, out_len), '52'+('21'+'11'*33)*2+'52ae'], # 2of2
-            [(MPK_3, MPK_3_LEN, 1, 0, out, out_len), '51'+('21'+'11'*33)*3+'53ae'], # 1of3
-            [(MPK_3, MPK_3_LEN, 2, 0, out, out_len), '52'+('21'+'11'*33)*3+'53ae'], # 2of3
-            [(MPK_3, MPK_3_LEN, 3, 0, out, out_len), '53'+('21'+'11'*33)*3+'53ae'], # 3of3
-            [(MPK_3_SORTED, MPK_3_SORTED_LEN, 1, 0, out, out_len), '51'+ MPK_3_SORTED_KEY_PUSH + '53ae'], # 1of3 sorted
-            [(MPK_3_SORTED, MPK_3_SORTED_LEN, 1, WALLY_SCRIPT_MULTISIG_SORTED, out, out_len), '51'+ MPK_3_SORTED_KEY_PUSH + '53ae'], # 1of3 sorted (WALLY_SCRIPT_MULTISIG_SORTED should have no effect)
-            [(MPK_3_SORTED_REVERSE, MPK_3_SORTED_LEN, 1, WALLY_SCRIPT_MULTISIG_SORTED, out, out_len), '51'+ MPK_3_SORTED_KEY_PUSH + '53ae'], # 1of3 sorted reverse (BIP67)
+            [(MPK_2, MPK_2_LEN,    1, 0, out, out_len), '51'+('21'+'11'*33)*2+'52ae'],  # 1of2
+            [(MPK_2, MPK_2_LEN,    2, 0, out, out_len), '52'+('21'+'11'*33)*2+'52ae'],  # 2of2
+            [(MPK_3, MPK_3_LEN,    1, 0, out, out_len), '51'+('21'+'11'*33)*3+'53ae'],  # 1of3
+            [(MPK_3, MPK_3_LEN,    2, 0, out, out_len), '52'+('21'+'11'*33)*3+'53ae'],  # 2of3
+            [(MPK_3, MPK_3_LEN,    3, 0, out, out_len), '53'+('21'+'11'*33)*3+'53ae'],  # 3of3
+            [(MPK_15, MPK_15_LEN,  1, 0, out, out_len), '51'+('21'+'11'*33)*15+'5fae'], # 1of15
+            [(MPK_15, MPK_15_LEN, 15, 0, out, out_len), '5f'+('21'+'11'*33)*15+'5fae'], # 15of15
+            # 1of3 sorted
+            [(SPK, SPK_LEN, 1, 0, out, out_len), '51'+ SPK_KEY_PUSH + '53ae'],
+            # 1of3 sorted (SCRIPT_MULTISIG_SORTED should have no effect)
+            [(SPK, SPK_LEN, 1, SCRIPT_MULTISIG_SORTED, out, out_len), '51'+ SPK_KEY_PUSH + '53ae'],
+            # 1of3 sorted reverse (BIP67)
+            [(RPK, SPK_LEN, 1, SCRIPT_MULTISIG_SORTED, out, out_len), '51'+ SPK_KEY_PUSH + '53ae'],
         ]
         for args, exp_script in valid_args:
-            script_len = 3 + (args[1] // 33 * (33 + 1))
+            (pubkeys, pubkeys_len, threshold, flags, out, out_len) = args
+            script_len = 3 + (pubkeys_len // 33 * (33 + 1))
             ret = wally_scriptpubkey_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
-            self.assertEqual(args[4][:script_len], unhexlify(exp_script))
+            self.assertEqual(out[:script_len], unhexlify(exp_script))
             # Check the script is identified by scriptpubkey_get_type
             ret = wally_scriptpubkey_get_type(out, script_len)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_MULTISIG))
             # Check a too-short output buffer
             short_out, short_out_len = make_cbuffer('00' * (script_len - 1))
-            short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len)
+            short_args = (pubkeys, pubkeys_len, threshold, flags, short_out, short_out_len)
             ret = wally_scriptpubkey_multisig_from_bytes(*short_args)
             self.assertEqual(ret, (WALLY_OK, script_len))
 
@@ -311,7 +318,7 @@ class ScriptTests(unittest.TestCase):
             (RS_1of2, RS_1of2_LEN, None, SIG_LEN, c_sighash([0x01]), 1, 0, out, out_len), # Null bytes
             (RS_1of2, RS_1of2_LEN, SIG, 0, c_sighash([0x01]), 1, 0, out, out_len), # Empty bytes or too few sigs
             (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN+1, c_sighash([0x01]), 1, 0, out, out_len), # Unsupported bytes len
-            (RS_1of2, RS_1of2_LEN, SIG, 17, c_sighash([0x01]), 1, 0, out, out_len), # Too many sigs
+            (RS_1of2, RS_1of2_LEN, SIG, 16, c_sighash([0x01]), 1, 0, out, out_len), # Too many sigs
             (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, None, 1, 0, out, out_len), # Null sighash
             (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 2, 0, out, out_len), # Inconsistent sighash length
             (RS_1of2, RS_1of2_LEN, SIG, SIG_LEN, c_sighash([0x01]), 1, 1, out, out_len), # Unsupported flags

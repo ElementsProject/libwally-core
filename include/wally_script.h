@@ -333,6 +333,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: A maximum of 15 keys are allowed to be passed.
  */
 WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
     const unsigned char *bytes,
