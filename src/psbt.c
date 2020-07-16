@@ -1423,7 +1423,7 @@ static int pull_psbt_input(
                 }
                 script_len = pull_varint(&val, &val_max);
                 script = pull_skip(&val, &val_max, script_len);
-                if (!script) {
+                if (!script || !script_len) {
                     return WALLY_EINVAL;
                 }
                 ret = wally_tx_elements_output_init_alloc(script, script_len,
@@ -1443,7 +1443,7 @@ static int pull_psbt_input(
             amount = pull_le64(&val, &val_max);
             script_len = pull_varint(&val, &val_max);
             script = pull_skip(&val, &val_max, script_len);
-            if (!script) {
+            if (!script || !script_len) {
                 return WALLY_EINVAL;
             }
             ret = wally_tx_output_init_alloc(amount, script, script_len,
