@@ -78,7 +78,7 @@ size_t pull_varlength(const unsigned char **cursor, size_t *max);
  * pull_subfield_start: initializes subcursor/submax to subfield_len at
  * cursor.  These can then be used with pull_ methods like normal.
  *
- * end_subfield_pull: updates *cursor and *max to point after the subfield has
+ * pull_subfield_end: updates *cursor and *max to point after the subfield has
  * been parsed.  If *subcursor is NULL, it's equivalent to pull_failed.
  */
 void pull_subfield_start(const unsigned char *const *cursor, const size_t *max,
