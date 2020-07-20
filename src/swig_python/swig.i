@@ -28,6 +28,8 @@ del swig_import_helper
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_psbt.h"
+#include "psbt_int.h"
 #include "../include/wally_script.h"
 #include "../include/wally_symmetric.h"
 #include "../include/wally_transaction.h"
@@ -83,6 +85,7 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
     if (p) fn(p); }
 
 capsule_dtor(ext_key, bip32_key_free)
+capsule_dtor(wally_psbt, wally_psbt_free)
 capsule_dtor(wally_tx, wally_tx_free)
 capsule_dtor(wally_tx_input, wally_tx_input_free)
 capsule_dtor(wally_tx_output, wally_tx_output_free)
@@ -329,6 +332,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 %py_opaque_struct(words);
 %py_opaque_struct(ext_key);
+%py_opaque_struct(wally_psbt);
 %py_opaque_struct(wally_tx_witness_stack);
 %py_opaque_struct(wally_tx_input);
 %py_opaque_struct(wally_tx_output);
@@ -346,6 +350,8 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("tx_output_init") wally_tx_output_init_alloc;
 %rename("tx_output_clone") wally_tx_output_clone_alloc;
 %rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
+%rename("psbt_init") wally_psbt_init_alloc;
+%rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
 %rename("tx_init") wally_tx_init_alloc;
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;
 %rename("tx_elements_output_init") wally_tx_elements_output_init_alloc;
@@ -359,6 +365,8 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
+%include "../include/wally_psbt.h"
+%include "psbt_int.h"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
 %include "transaction_int.h"

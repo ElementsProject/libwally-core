@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include "transaction_shared.h"
+#include "psbt_int.h"
 #include "script_int.h"
 #include "script.h"
 #include "pullpush.h"
@@ -1058,6 +1059,30 @@ int wally_psbt_free(struct wally_psbt *psbt)
     }
     return WALLY_OK;
 }
+
+int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_tx **output)
+{
+    TX_CHECK_OUTPUT;
+    if (!psbt)
+        return WALLY_EINVAL;
+    if (!psbt->tx)
+        return WALLY_OK; /* Return a NULL tx if not present */
+    return wally_tx_clone(psbt->tx, 0, output);
+}
+
+#define PSBT_GET(name) \
+    int wally_psbt_get_ ## name(const struct wally_psbt *psbt, size_t *written) { \
+        if (written) \
+            *written = 0; \
+        if (!psbt || !written) \
+            return WALLY_EINVAL; \
+        *written = psbt->name; \
+        return WALLY_OK; \
+    }
+
+PSBT_GET(version)
+PSBT_GET(num_inputs)
+PSBT_GET(num_outputs)
 
 static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool do_clone)
 {

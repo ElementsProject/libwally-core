@@ -14,6 +14,8 @@
 #include "hmac.c"
 #include "mnemonic.c"
 #include "pbkdf2.c"
+#include "pullpush.c"
+#include "psbt.c"
 #include "script.c"
 #include "scrypt.c"
 #include "sign.c"

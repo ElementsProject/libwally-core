@@ -7,7 +7,7 @@ static int bstrcmp(const void *l, const void *r)
 }
 
 /* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
-static int get_bits(size_t n)
+static size_t get_bits(size_t n)
 {
     size_t bits = 0;
     while (n >>= 1)

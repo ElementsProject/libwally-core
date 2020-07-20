@@ -296,7 +296,9 @@ endif
 if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/psbt.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/signmessage.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py

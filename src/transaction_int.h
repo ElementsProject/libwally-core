@@ -136,6 +136,6 @@ WALLY_CORE_API int wally_tx_set_output_rangeproof(const struct wally_tx *tx_in, 
 }
 #endif
 
-#endif /* SWIG_JAVA_BUILD/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
+#endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */
 
 #endif /* LIBWALLY_CORE_TRANSACTION_INT_H */
