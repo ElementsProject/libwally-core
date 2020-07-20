@@ -299,8 +299,12 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
-    const unsigned char *bytes, size_t bytes_len,
-    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written);
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  * Create a P2SH scriptPubkey.
