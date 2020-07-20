@@ -22,7 +22,7 @@ int main(void)
 
     for (i = 0; i < sizeof(valid_psbts) / sizeof(valid_psbts[0]); i++) {
         const char *base64_in = valid_psbts[i].base64;
-        struct wally_psbt *psbt;
+        struct wally_psbt *psbt, *psbt_clone;
         char *output;
         unsigned char *bytes;
         size_t len, written;
@@ -57,8 +57,15 @@ int main(void)
             errx(1, "psbt[%zi] bytes %s not %s", i, output, valid_psbts[i].hex);
 
         wally_free_string(output);
-
         free(bytes);
+
+        if (wally_psbt_from_base64(base64_in, &psbt_clone) != WALLY_OK)
+            errx(1, "Failed to parse psbt clone %s", base64_in);
+
+        if (wally_psbt_combine(psbt_clone, psbt) != WALLY_OK)
+            errx(1, "Failed to combine psbts %s", base64_in);
+
+        wally_psbt_free(psbt_clone);
         wally_psbt_free(psbt);
     }
 
