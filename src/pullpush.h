@@ -84,7 +84,6 @@ void pull_subfield_start(const unsigned char *const *cursor, const size_t *max,
                          const unsigned char **subcursor, size_t *submax);
 
 void pull_subfield_end(const unsigned char **cursor, size_t *max,
-                       const unsigned char *subcursor,
-                       const size_t submax);
+                       const unsigned char *subcursor, size_t submax);
 
 #endif /* LIBWALLY_CORE_PULLPUSH_H */

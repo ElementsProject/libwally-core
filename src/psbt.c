@@ -2224,19 +2224,28 @@ static int push_psbt_input(
 #ifdef BUILD_ELEMENTS
     if ((flags & WALLY_TX_FLAG_USE_ELEMENTS) && input->witness_utxo) {
         struct wally_tx_output *utxo = input->witness_utxo;
-        size_t buf_len = push_elements_bytes_size(utxo);
-        unsigned char buf[buf_len], *ptr = buf;
+        const size_t buff_len = push_elements_bytes_size(utxo);
+        size_t remaining = buff_len;
+        unsigned char buff[1024], *buff_p = buff, *ptr;
+
+        if (buff_len > sizeof(buff) && !(buff_p = wally_malloc(buff_len)))
+            return WALLY_ENOMEM;
+        ptr = buff_p;
+
         /* Push the asset, value, nonce, then scriptpubkey */
         push_psbt_key(cursor, max, WALLY_PSBT_IN_WITNESS_UTXO, NULL, 0);
 
-        push_elements_bytes(&ptr, &buf_len, utxo->asset, utxo->asset_len);
-        push_elements_bytes(&ptr, &buf_len, utxo->value, utxo->value_len);
-        push_elements_bytes(&ptr, &buf_len, utxo->nonce, utxo->nonce_len);
-        push_varbuff(&ptr, &buf_len, utxo->script, utxo->script_len);
+        push_elements_bytes(&ptr, &remaining, utxo->asset, utxo->asset_len);
+        push_elements_bytes(&ptr, &remaining, utxo->value, utxo->value_len);
+        push_elements_bytes(&ptr, &remaining, utxo->nonce, utxo->nonce_len);
+        push_varbuff(&ptr, &remaining, utxo->script, utxo->script_len);
 
-        if (buf_len != 0)
+        if (!remaining)
+            push_varbuff(cursor, max, buff_p, buff_len);
+        if (buff_p != buff)
+            clear_and_free(buff_p, buff_len);
+        if (remaining)
             return WALLY_ERROR; /* Should not happen! */
-        push_varbuff(cursor, max, buf, sizeof(buf));
     } else
 #endif /* BUILD_ELEMENTS */
     if (input->witness_utxo) {
