@@ -7,9 +7,8 @@ extern "C" {
 
 #define TX_CHECK_OUTPUT if (!output) return WALLY_EINVAL; else *output = NULL
 #define TX_OUTPUT_ALLOC(typ) \
-    *output = wally_malloc(sizeof(typ)); \
+    *output = wally_calloc(sizeof(typ)); \
     if (!*output) return WALLY_ENOMEM; \
-    wally_clear((void *)*output, sizeof(typ)); \
     result = (typ *) *output;
 
 #define BYTES_VALID(p, len) ((p != NULL) == (len != 0))

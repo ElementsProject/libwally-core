@@ -230,13 +230,12 @@ int wally_tx_witness_stack_init_alloc(size_t allocation_len,
     TX_OUTPUT_ALLOC(struct wally_tx_witness_stack);
 
     if (allocation_len) {
-        result->items = wally_malloc(allocation_len * sizeof(*result->items));
+        result->items = wally_calloc(allocation_len * sizeof(*result->items));
         if (!result->items) {
             wally_free(result);
             *output = NULL;
             return WALLY_ENOMEM;
         }
-        wally_clear(result->items, allocation_len * sizeof(*result->items));
     }
     result->items_allocation_len = allocation_len;
     result->num_items = 0;

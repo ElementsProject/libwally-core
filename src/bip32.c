@@ -162,10 +162,9 @@ int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
 #define ALLOC_KEY() \
     if (!output) \
         return WALLY_EINVAL; \
-    *output = wally_malloc(sizeof(struct ext_key)); \
+    *output = wally_calloc(sizeof(struct ext_key)); \
     if (!*output) \
-        return WALLY_ENOMEM; \
-    wally_clear((void *)*output, sizeof(struct ext_key))
+        return WALLY_ENOMEM
 
 int bip32_key_from_seed_alloc(const unsigned char *bytes, size_t bytes_len,
                               uint32_t version, uint32_t flags,
