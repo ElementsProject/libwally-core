@@ -96,19 +96,6 @@ uint32_t pull_le32(const unsigned char **cursor, size_t *max)
     return le32_to_cpu(lev);
 }
 
-void push_le16(unsigned char **cursor, size_t *max, uint16_t v)
-{
-    leint16_t lev = cpu_to_le16(v);
-    push_bytes(cursor, max, &lev, sizeof(lev));
-}
-
-uint16_t pull_le16(const unsigned char **cursor, size_t *max)
-{
-    leint16_t lev;
-    pull_bytes(&lev, sizeof(lev), cursor, max);
-    return le16_to_cpu(lev);
-}
-
 void push_u8(unsigned char **cursor, size_t *max, uint8_t v)
 {
     push_bytes(cursor, max, &v, sizeof(uint8_t));

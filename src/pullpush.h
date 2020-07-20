@@ -57,8 +57,6 @@ void push_le64(unsigned char **cursor, size_t *max, uint64_t v);
 uint64_t pull_le64(const unsigned char **cursor, size_t *max);
 void push_le32(unsigned char **cursor, size_t *max, uint32_t v);
 uint32_t pull_le32(const unsigned char **cursor, size_t *max);
-void push_le16(unsigned char **cursor, size_t *max, uint16_t v);
-uint16_t pull_le16(const unsigned char **cursor, size_t *max);
 void push_u8(unsigned char **cursor, size_t *max, uint8_t v);
 uint8_t pull_u8(const unsigned char **cursor, size_t *max);
 uint8_t peek_u8(const unsigned char **cursor, size_t *max);
