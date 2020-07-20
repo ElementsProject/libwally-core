@@ -17,6 +17,10 @@ class TxTests(unittest.TestCase):
         witness = tx_witness_stack_init(0)
         tx_witness_stack_set(witness, 0, witness_script)
 
+        with self.assertRaises(ValueError):
+            tx_witness_stack_clone(None)
+        cloned = tx_witness_stack_clone(witness)
+
     def test_tx_input(self):
         # Test invalid inputs
         txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'0000', b'000000'

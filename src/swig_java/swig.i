@@ -658,6 +658,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_witness_stack_free);
 %returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
+%returns_struct(wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack);
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
 %returns_string(wally_wif_from_bytes);

@@ -142,6 +142,16 @@ WALLY_CORE_API int wally_tx_witness_stack_init_alloc(
     struct wally_tx_witness_stack **output);
 
 /**
+ * Create a copy of a witness stack.
+ *
+ * :param stack: The witness stack to copy.
+ * :param output: Destination for the resulting copy.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_clone_alloc(
+    const struct wally_tx_witness_stack *stack,
+    struct wally_tx_witness_stack **output);
+
+/**
  * Add a witness to a witness stack.
  *
  * :param stack: The witness stack to add to.

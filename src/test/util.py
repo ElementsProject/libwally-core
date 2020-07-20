@@ -439,6 +439,7 @@ for f in (
     ('wally_tx_vsize_from_weight', c_int, [c_ulong, c_ulong_p]),
     ('wally_tx_witness_stack_add', c_int, [POINTER(wally_tx_witness_stack), c_void_p, c_ulong]),
     ('wally_tx_witness_stack_add_dummy', c_int, [POINTER(wally_tx_witness_stack), c_uint]),
+    ('wally_tx_witness_stack_clone_alloc', c_int, [POINTER(wally_tx_witness_stack), POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_tx_witness_stack_free', c_int, [POINTER(wally_tx_witness_stack)]),
     ('wally_tx_witness_stack_init_alloc', c_int, [c_ulong, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_tx_witness_stack_set', c_int, [POINTER(wally_tx_witness_stack), c_ulong, c_void_p, c_ulong]),

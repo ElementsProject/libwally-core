@@ -606,7 +606,8 @@ int wally_psbt_input_set_final_witness(struct wally_psbt_input *input,
     if (!input)
         return WALLY_EINVAL;
 
-    if (final_witness && !(new_witness = clone_witness(final_witness)))
+    if (final_witness &&
+        (wally_tx_witness_stack_clone_alloc(final_witness, &new_witness) != WALLY_OK))
         return WALLY_ENOMEM;
 
     wally_tx_witness_stack_free(input->final_witness);
@@ -3225,7 +3226,7 @@ int wally_psbt_extract(
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
-        struct wally_psbt_input *input = &psbt->inputs[i];
+        const struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *vin = &result->inputs[i];
 
         if (!input->final_script_sig && !input->final_witness) {
@@ -3251,10 +3252,9 @@ int wally_psbt_extract(
                 ret = WALLY_EINVAL;
                 break;
             }
-            if (!(vin->witness = clone_witness(input->final_witness))) {
-                ret = WALLY_ENOMEM;
+            ret = wally_tx_witness_stack_clone_alloc(input->final_witness, &vin->witness);
+            if (ret != WALLY_OK)
                 break;
-            }
         }
     }
 

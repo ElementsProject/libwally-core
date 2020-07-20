@@ -197,25 +197,28 @@ int replace_bytes(const unsigned char *bytes, size_t bytes_len,
 }
 
 
-struct wally_tx_witness_stack *clone_witness(
-    const struct wally_tx_witness_stack *stack)
+int wally_tx_witness_stack_clone_alloc(const struct wally_tx_witness_stack *stack,
+                                       struct wally_tx_witness_stack **output)
 {
     struct wally_tx_witness_stack *result;
     size_t i;
     int ret;
 
-    ret = wally_tx_witness_stack_init_alloc(stack->items_allocation_len, &result);
+    TX_CHECK_OUTPUT;
+    if (!stack)
+        return WALLY_EINVAL;
 
-    if (ret == WALLY_OK) {
-        for (i = 0; i < stack->num_items && ret == WALLY_OK; ++i) {
-            ret = wally_tx_witness_stack_set(result, i,
-                                             stack->items[i].witness,
-                                             stack->items[i].witness_len);
-            if (ret != WALLY_OK)
-                wally_tx_witness_stack_free(result);
-        }
+    ret = wally_tx_witness_stack_init_alloc(stack->items_allocation_len, &result);
+    for (i = 0; ret == WALLY_OK && i < stack->num_items; ++i) {
+        ret = wally_tx_witness_stack_set(result, i,
+                                         stack->items[i].witness,
+                                         stack->items[i].witness_len);
     }
-    return ret == WALLY_OK ? result : NULL;
+    if (ret == WALLY_OK)
+        *output = result;
+    else
+        wally_tx_witness_stack_free(result);
+    return ret;
 }
 
 int wally_tx_witness_stack_init_alloc(size_t allocation_len,
@@ -343,14 +346,16 @@ static bool clone_input_to(
 #ifdef BUILD_ELEMENTS
     unsigned char *new_issuance_amount = NULL, *new_inflation_keys = NULL,
                   *new_issuance_amount_rangeproof = NULL, *new_inflation_keys_rangeproof = NULL;
-    struct wally_tx_witness_stack *new_pegin_witness;
+    struct wally_tx_witness_stack *new_pegin_witness = NULL;
 #endif
-    struct wally_tx_witness_stack *new_witness;
+    struct wally_tx_witness_stack *new_witness = NULL;
 
-    new_witness = src->witness ? clone_witness(src->witness) : NULL;
+    if (src->witness)
+        wally_tx_witness_stack_clone_alloc(src->witness, &new_witness);
 
 #ifdef BUILD_ELEMENTS
-    new_pegin_witness = src->pegin_witness ? clone_witness(src->pegin_witness) : NULL;
+    if (src->pegin_witness)
+        wally_tx_witness_stack_clone_alloc(src->pegin_witness, &new_pegin_witness);
 #endif
 
     if (!clone_bytes(&new_script, src->script, src->script_len) ||
@@ -582,7 +587,7 @@ static int tx_elements_input_init(
     struct wally_tx_witness_stack *new_witness = NULL;
     struct wally_tx_witness_stack *new_pegin_witness = NULL;
     unsigned char *new_script = NULL;
-    int ret, old_features;
+    int ret = WALLY_OK, old_features;
 
     if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
         BYTES_INVALID(script, script_len) || !output)
@@ -590,11 +595,13 @@ static int tx_elements_input_init(
 
     old_features = output->features;
 
-    if ((witness && !(new_witness = clone_witness(witness))) ||
-        (pegin_witness && !(new_pegin_witness = clone_witness(pegin_witness))) ||
-        !clone_bytes(&new_script, script, script_len))
+    if (witness)
+        ret = wally_tx_witness_stack_clone_alloc(witness, &new_witness);
+    if (ret == WALLY_OK && pegin_witness)
+        ret = wally_tx_witness_stack_clone_alloc(pegin_witness, &new_pegin_witness);
+    if (ret == WALLY_OK && !clone_bytes(&new_script, script, script_len))
         ret = WALLY_ENOMEM;
-    else {
+    if (ret == WALLY_OK) {
         output->features = 0;
         ret = tx_elements_input_issuance_init(output,
                                               nonce,
@@ -3249,7 +3256,8 @@ int wally_tx_input_set_witness(struct wally_tx_input *input,
     if (!is_valid_tx_input(input) || (stack && !is_valid_witness_stack(stack)))
         return WALLY_EINVAL;
 
-    if (stack && (new_witness = clone_witness(stack)) == NULL)
+    if (stack &&
+        wally_tx_witness_stack_clone_alloc(stack, &new_witness) != WALLY_OK)
         return WALLY_ENOMEM;
 
     tx_witness_stack_free(input->witness, true);

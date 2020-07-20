@@ -20,8 +20,6 @@ bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 int replace_bytes(const unsigned char *bytes, size_t bytes_len,
                   unsigned char **bytes_out, size_t *bytes_len_out);
 void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t size);
-struct wally_tx_witness_stack *clone_witness(
-    const struct wally_tx_witness_stack *stack);
 
 #ifdef __cplusplus
 }
