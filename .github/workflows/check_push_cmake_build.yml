@@ -159,7 +159,7 @@ jobs:
         cmake -S . -B build -G "Visual Studio 16 2019"
     - name: cmake-normal-config
       if: matrix.target == 'cpp'
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release" --build build
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/" --build build
     - name: cmake-python-config
       if: matrix.target == 'python'
       run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../" --build build
