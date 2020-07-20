@@ -2244,9 +2244,9 @@ int wally_tx_get_txid(const struct wally_tx *tx, unsigned char *bytes_out, size_
     return tx_to_hex_or_txid(tx, 0, NULL, bytes_out, len, is_elements);
 }
 
-int analyze_tx(const unsigned char *bytes, size_t bytes_len,
-               uint32_t flags, size_t *num_inputs, size_t *num_outputs,
-               bool *expect_witnesses)
+static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
+                      uint32_t flags, size_t *num_inputs, size_t *num_outputs,
+                      bool *expect_witnesses)
 {
     const unsigned char *p = bytes, *end = bytes + bytes_len;
     uint64_t v, num_witnesses;
