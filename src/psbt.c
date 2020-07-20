@@ -1137,29 +1137,6 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
-/* Returns false if it hits a zero length "key" (i.e. separator) or EOF.
- *
- * Otherwise, starts the subfield (extra, extra_len), so caller should
- * call pull_subfield_end(cursor, max, extra, extra_len) if this
- * returns true.
- */
-static bool pull_psbt_key_start(
-    const unsigned char **cursor, size_t *max,
-    uint64_t *type,
-    const unsigned char **extra, size_t *extra_len)
-{
-    size_t key_len;
-
-    key_len = pull_varlength(cursor, max);
-    /* This incidentally covers the case where *cursor is NULL */
-    if (key_len == 0) {
-        return false;
-    }
-    pull_subfield_start(cursor, max, key_len, extra, extra_len);
-    *type = pull_varint(cursor, max);
-    return true;
-}
-
 /* clones varlength field entirely. */
 static bool clone_varlength(unsigned char **dst,
                             size_t *len,
