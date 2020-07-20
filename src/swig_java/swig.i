@@ -94,14 +94,6 @@ static unsigned char* malloc_or_throw(JNIEnv *jenv, size_t len) {
     return p;
 }
 
-static void clear_and_free(void *p, size_t len)
-{
-    if (p) {
-        wally_bzero(p, len);
-        wally_free(p);
-    }
-}
-
 static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len) {
     jbyteArray ret = (*jenv)->NewByteArray(jenv, len);
     if (ret)

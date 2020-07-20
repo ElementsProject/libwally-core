@@ -167,14 +167,6 @@ bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
     return *dst != NULL;
 }
 
-void clear_and_free(void *p, size_t len)
-{
-    if (p) {
-        wally_clear(p, len);
-        wally_free(p);
-    }
-}
-
 void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t size)
 {
     unsigned char *p = wally_malloc(new_n * size);

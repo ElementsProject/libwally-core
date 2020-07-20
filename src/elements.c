@@ -122,8 +122,8 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
         ret = WALLY_OK;
 
 cleanup:
-    wally_free(abf_p);
-    wally_free(vbf_p);
+    clear_and_free(abf_p, values_len * sizeof(unsigned char *));
+    clear_and_free(vbf_p, values_len * sizeof(unsigned char *));
     return ret;
 }
 
@@ -423,8 +423,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 cleanup:
     wally_clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
     if (generators)
-        wally_clear(generators, num_inputs * sizeof(secp256k1_generator));
-    wally_free(generators);
+        clear_and_free(generators, num_inputs * sizeof(secp256k1_generator));
     return ret;
 }
 

@@ -232,8 +232,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
     if (!ret && written)
         *written = BIP39_SEED_LEN_512; /* Succeeded */
 
-    wally_clear(salt, salt_len);
-    wally_free(salt);
+    clear_and_free(salt, salt_len);
 
     return ret;
 }

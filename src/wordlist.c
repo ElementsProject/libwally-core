@@ -100,7 +100,6 @@ void wordlist_free(struct words *w)
         }
         if (w->indices)
             wally_free((void *)w->indices); /* No need to clear */
-        wally_clear(w, sizeof(*w));
-        wally_free(w);
+        clear_and_free(w, sizeof(*w));
     }
 }

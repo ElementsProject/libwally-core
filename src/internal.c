@@ -335,6 +335,14 @@ void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
     _ops.bzero_fn(p6, len6);
 }
 
+void clear_and_free(void *p, size_t len)
+{
+    if (p) {
+        wally_clear(p, len);
+        wally_free(p);
+    }
+}
+
 static bool wally_init_done = false;
 
 int wally_init(uint32_t flags)
