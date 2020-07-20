@@ -1103,6 +1103,8 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
     }
+    psbt->num_inputs = tx->num_inputs;
+    psbt->num_outputs = tx->num_outputs;
     psbt->tx = do_clone ? new_tx : tx;
     return WALLY_OK;
 }
@@ -2074,7 +2076,6 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     /* Read inputs */
     for (i = 0; i < result->tx->num_inputs; ++i) {
         ret = pull_psbt_input(&bytes, &len, flags, &result->inputs[i]);
-        result->num_inputs = i + 1; /* Free this input if we fail */
         if (ret != WALLY_OK)
             goto fail;
     }
@@ -2082,7 +2083,6 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     /* Read outputs */
     for (i = 0; i < result->tx->num_outputs; ++i) {
         ret = pull_psbt_output(&bytes, &len, &result->outputs[i]);
-        result->num_outputs = i + 1; /* Free this output if we fail */
         if (ret != WALLY_OK)
             goto fail;
     }

@@ -596,6 +596,10 @@ WALLY_CORE_API int wally_psbt_free(
  *
  * :param psbt: The PSBT to set the transaction for.
  * :param tx: The transaction to set.
+ *
+ * The global transaction can only be set on a newly created PSBT. After this
+ * call completes the PSBT will have empty inputs and outputs for each input
+ * and output in the transaction ``tx`` given.
  */
 WALLY_CORE_API int wally_psbt_set_global_tx(
     struct wally_psbt *psbt,
