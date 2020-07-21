@@ -16,6 +16,7 @@ include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
+include_HEADERS += $(top_srcdir)/include/wally_symmetric.h
 include_HEADERS += $(top_srcdir)/include/wally_transaction.h
 
 pkgconfigdir = $(libdir)/pkgconfig
