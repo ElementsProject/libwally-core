@@ -80,25 +80,6 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), out); \
 }
 
-#define WALLY_FN_BBPPBBBBBBBB_A(F, N) template <class I1, class I2, class P1, class P2, class I3, \
-    class I4, class I5, class I6, class I7, class I8, class I9, class I10, class O> \
-    inline int F(const I1 &i1, const I2 &i2, const P1& p1, const P2& p2, const I3 &i3, const I4& i4, \
-            const I5 &i5, const I6 &i6, const I7 &i7, const I8& i8, const I9 &i9, const I10 &i10, O * *out) { \
-        return ::N(WALLYB(i1), WALLYB(i2), WALLYP(p1), WALLYP(p2), WALLYB(i3), WALLYB(i4), \
-                WALLYB(i5), WALLYB(i6), WALLYB(i7), WALLYB(i8), WALLYB(i9), WALLYB(i10), out); \
-}
-
-#define WALLY_FN_PPBBBPPPP363BBBPBBB_A(F, N) \
-    template <class P1, class P2, class I1, class I2, class I3, class P3, class P4, class P5, \
-    class P6, class I4, class I5, class I6, class P7, class I7, class I8, class I9, class O> \
-    inline int F(const P1& p1, const P2& p2, const I1 &i1, const I2 &i2, const I3 &i3, const P3& p3, \
-            const P4& p4, const P5& p5, const P6& p6, uint32_t i321, uint64_t i641, uint32_t i322, \
-            const I4& i4, \ const I5 &i5, const I6 &i6, const P7& p7, const I7 &i7, const I8& i8, const I9 &i9, O * *out) { \
-        return ::N(WALLYP(p1), WALLYP(p2), WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYP(p3), \
-                WALLYP(p4), WALLYP(p5), WALLYP(p6), i321, i641, i322, WALLYB(i4), WALLYB(i5), \
-                WALLYB(i6), WALLYP(p7), WALLYB(i7), WALLYB(i8), WALLYB(i9), out); \
-}
-
 #define WALLY_FN_BB_A(F, N) template <class I1, class I2, class O> \
     inline int F(const I1 &i1, const I2 &i2, O * *out) { \
         return ::N(WALLYB(i1), WALLYB(i2), out); \
@@ -363,11 +344,6 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1), written); \
 }
 
-#define WALLY_FN_BBPP_A(F, N) template <class I1, class I2, class P2, class P3, class O> \
-    inline int F(const I1 &i1, const I2 &i2, const P2 &p2, const P3 &p3, O * *out) { \
-        return ::N(WALLYB(i1), WALLYB(i2), WALLYP(p2), WALLYP(p3), out); \
-}
-
 #define WALLY_FN_PP(F, N) template <class P1, class P2> inline int F(const P1 &p1, const P2 &p2) { \
         return ::N(WALLYP(p1), WALLYP(p2)); \
 }
@@ -427,12 +403,6 @@ template <> inline auto get_p(const std::nullptr_t& p) {
 #define WALLY_FN_BBBBBB_BBB6(F, N) template <class I1, class I2, class I3, class I4, class I5, class I6, class O1, class O2, class O3>  \
     inline int F(const I1 &i1, const I2 &i2, size_t s1, const I3& i3, const I4& i4, const I5& i5, const I6& i6, O1& out1, O2& out2, O3& out3, uint64_t *out) { \
         return ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), WALLYO(out1), WALLYO(out2), WALLYO(out3), out); \
-}
-
-#define WALLY_FN_PPBBBPPPP3_A(F, N) template <class P1, class P2, class I1, class I2, class I3, class P3, class P4, class P5, class P6, class O> \
-    inline int F(const P1 &p1, const P2 &p2, const I1 &i1, const I2 &i2, const I3 &i3, \
-                 const P3 &p3, const P4 &p4, const P5 &p5, const P6 &p6, uint32_t i321, O * *out) { \
-        return ::N(WALLYP(p1), WALLYP(p2), WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYP(p3), WALLYP(p4), WALLYP(p5), WALLYP(p6), i321, out); \
 }
 
 #define WALLY_FN_PP_B(F, N) template <class P1, class P2, class O> inline int F(const P1 &p1, const P2 &p2, O & out) { \
@@ -530,7 +500,6 @@ WALLY_FN_BB3_BS(scriptsig_p2pkh_from_sig, wally_scriptsig_p2pkh_from_sig)
 WALLY_FN_BBB3_A(witness_multisig_from_bytes, wally_witness_multisig_from_bytes)
 WALLY_FN_BBB3_BS(aes_cbc, wally_aes_cbc)
 WALLY_FN_BBB3_BS(scriptsig_multisig_from_bytes, wally_scriptsig_multisig_from_bytes)
-WALLY_FN_BBPP_A(psbt_output_init_alloc, wally_psbt_output_init_alloc)
 WALLY_FN_BB_A(witness_p2wpkh_from_der, wally_witness_p2wpkh_from_der)
 WALLY_FN_BB_B(ec_sig_to_public_key, wally_ec_sig_to_public_key)
 WALLY_FN_BB_B(ecdh, wally_ecdh)
@@ -562,8 +531,6 @@ WALLY_FN_P(get_operations, wally_get_operations)
 WALLY_FN_P(keypath_map_free, wally_keypath_map_free)
 WALLY_FN_P(partial_sigs_map_free, wally_partial_sigs_map_free)
 WALLY_FN_P(psbt_free, wally_psbt_free)
-WALLY_FN_P(psbt_input_free, wally_psbt_input_free)
-WALLY_FN_P(psbt_output_free, wally_psbt_output_free)
 WALLY_FN_P(set_operations, wally_set_operations)
 WALLY_FN_P(tx_free, wally_tx_free)
 WALLY_FN_P(tx_input_free, wally_tx_input_free)
@@ -624,7 +591,6 @@ WALLY_FN_PP(tx_add_input, wally_tx_add_input)
 WALLY_FN_PP(tx_add_output, wally_tx_add_output)
 WALLY_FN_PP3_A(bip32_key_to_addr_segwit, wally_bip32_key_to_addr_segwit)
 WALLY_FN_PP3_BS(addr_segwit_to_bytes, wally_addr_segwit_to_bytes)
-WALLY_FN_PPBBBPPPP3_A(psbt_input_init_alloc, wally_psbt_input_init_alloc)
 WALLY_FN_PP_BS(bip39_mnemonic_to_bytes, bip39_mnemonic_to_bytes)
 WALLY_FN_PP_BS(bip39_mnemonic_to_seed, bip39_mnemonic_to_seed)
 WALLY_FN_PS(tx_remove_input, wally_tx_remove_input)
@@ -700,7 +666,6 @@ WALLY_FN_BBBBBBB_BS(asset_surjectionproof, wally_asset_surjectionproof)
 WALLY_FN_BBBBBB_A(tx_elements_output_init_alloc, wally_tx_elements_output_init_alloc)
 WALLY_FN_BBBBBB_BBB6(asset_unblind, wally_asset_unblind)
 WALLY_FN_BBBBB_BBB6(asset_unblind_with_nonce, wally_asset_unblind_with_nonce)
-WALLY_FN_BBPPBBBBBBBB_A(psbt_elements_output_init_alloc, wally_psbt_elements_output_init_alloc)
 WALLY_FN_BBSBBB_BS(asset_pak_whitelistproof, wally_asset_pak_whitelistproof)
 WALLY_FN_BB_B(asset_blinding_key_to_ec_private_key, wally_asset_blinding_key_to_ec_private_key)
 WALLY_FN_BB_B(asset_generator_from_bytes, wally_asset_generator_from_bytes)
@@ -738,7 +703,6 @@ WALLY_FN_PBBBBB(tx_elements_output_commitment_set, wally_tx_elements_output_comm
 WALLY_FN_PBBBBBB(tx_elements_input_issuance_set, wally_tx_elements_input_issuance_set)
 WALLY_FN_PBBBBBB3(tx_add_elements_raw_output, wally_tx_add_elements_raw_output)
 WALLY_FN_PP(psbt_elements_input_set_peg_in_tx, wally_psbt_elements_input_set_peg_in_tx)
-WALLY_FN_PPBBBPPPP363BBBPBBB_A(psbt_elements_input_init_alloc, wally_psbt_elements_input_init_alloc)
 WALLY_FN_PPPB_A(confidential_addr_from_addr_segwit, wally_confidential_addr_from_addr_segwit)
 WALLY_FN_PPP_A(confidential_addr_to_addr_segwit, wally_confidential_addr_to_addr_segwit)
 WALLY_FN_PP_B(confidential_addr_segwit_to_ec_public_key, wally_confidential_addr_segwit_to_ec_public_key)

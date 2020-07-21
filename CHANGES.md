@@ -9,6 +9,10 @@
   instead of returning WALLY_EINVAL. See the generated API documentation
   section "Variable Length Output Buffers" for details.
 
+- psbt_input_init_alloc, psbt_input_free, psbt_output_init_alloc, psbt_output_free,
+  and their elements counterparts psbt_elements_input_init_alloc and
+  psbt_elements_output_init_alloc have been removed.
+
 - psbt_combine has been changed to only combine one PSBT into another.
 
 - psbt_to_bytes, psbt_get_length and psbt_to_base64 now take a flags argument.

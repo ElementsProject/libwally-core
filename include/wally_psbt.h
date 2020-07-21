@@ -344,40 +344,6 @@ WALLY_CORE_API int wally_unknowns_map_add(
     size_t value_len);
 
 /**
- * Allocate and initialize a new PSBT input.
- *
- * :param non_witness_utxo: The non witness utxo for this input if it exists.
- * :param witness_utxo: The witness utxo for this input if it exists.
- * :param redeem_script: The redeem script for this input.
- * :param redeem_script_len: Length of ``redeem_script`` in bytes.
- * :param witness_script: The witness script for this input.
- * :param witness_script_len: Length of ``witness_script`` in bytes.
- * :param final_script_sig: The scriptSig for this input.
- * :param final_script_sig_len: Length of ``final_script_sig`` in bytes.
- * :param final_witness: The witness stack for the input, or NULL if no witness is present.
- * :param keypaths: The HD keypaths for this input.
- * :param partial_sigs: The partial signatures for this input.
- * :param unknowns: The unknown key value pairs for this input.
- * :param sighash_type: The sighash type for this input.
- * :param output: Destination for the resulting PSBT input.
- */
-WALLY_CORE_API int wally_psbt_input_init_alloc(
-    const struct wally_tx *non_witness_utxo,
-    const struct wally_tx_output *witness_utxo,
-    const unsigned char *redeem_script,
-    size_t redeem_script_len,
-    const unsigned char *witness_script,
-    size_t witness_script_len,
-    const unsigned char *final_script_sig,
-    size_t final_script_sig_len,
-    const struct wally_tx_witness_stack *final_witness,
-    const struct wally_keypath_map *keypaths,
-    const struct wally_partial_sigs_map *partial_sigs,
-    const struct wally_unknowns_map *unknowns,
-    uint32_t sighash_type,
-    struct wally_psbt_input **output);
-
-/**
  * Set the non_witness_utxo in an input.
  *
  * :param input: The input to update.
@@ -483,36 +449,6 @@ WALLY_CORE_API int wally_psbt_input_set_sighash_type(
     struct wally_psbt_input *input,
     uint32_t sighash_type);
 
-#ifndef SWIG_PYTHON
-/**
- * Free a PSBT input allocated by `wally_psbt_input_init_alloc`.
- *
- * :param input: The PSBT input to free.
- */
-WALLY_CORE_API int wally_psbt_input_free(
-    struct wally_psbt_input *input);
-#endif /* SWIG_PYTHON */
-
-/**
- * Allocate and initialize a new PSBT output.
- *
- * :param redeem_script: The redeem script needed for spending this output.
- * :param redeem_script_len: Length of ``redeem_script`` in bytes.
- * :param witness_script: The witness script needed for spending for this output.
- * :param witness_script_len: Length of ``witness_script`` in bytes.
- * :param keypaths: The HD keypaths for the keys needed for spending this output.
- * :param unknowns: The unknown key value pairs for this output.
- * :param output: Destination for the resulting PSBT output.
- */
-WALLY_CORE_API int wally_psbt_output_init_alloc(
-    const unsigned char *redeem_script,
-    size_t redeem_script_len,
-    const unsigned char *witness_script,
-    size_t witness_script_len,
-    const struct wally_keypath_map *keypaths,
-    const struct wally_unknowns_map *unknowns,
-    struct wally_psbt_output **output);
-
 /**
  * Set the redeem_script in an output.
  *
@@ -556,16 +492,6 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
 WALLY_CORE_API int wally_psbt_output_set_unknowns(
     struct wally_psbt_output *output,
     const struct wally_unknowns_map *unknowns);
-
-#ifndef SWIG_PYTHON
-/**
- * Free a PSBT output allocated by `wally_psbt_output_init_alloc`.
- *
- * :param output: The PSBT output to free.
- */
-WALLY_CORE_API int wally_psbt_output_free(
-    struct wally_psbt_output *output);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new PSBT.
@@ -736,69 +662,6 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
     struct wally_psbt **output);
 
 /**
- * Allocate and initialize a new PSBT elements input.
- *
- * :param non_witness_utxo: The non witness utxo for this input if it exists.
- * :param witness_utxo: The witness utxo for this input if it exists.
- * :param redeem_script: The redeem script for this input
- * :param redeem_script_len: Length of ``redeem_script`` in bytes.
- * :param witness_script: The witness script for this input
- * :param witness_script_len: Length of ``witness_script`` in bytes.
- * :param final_script_sig: The scriptSig for this input
- * :param final_script_sig_len: Length of ``final_script_sig`` in bytes.
- * :param final_witness: The witness stack for the input, or NULL if no witness is present.
- * :param keypaths: The HD keypaths for this input.
- * :param partial_sigs: The partial signatures for this input.
- * :param unknowns: The unknown key value pairs for this input.
- * :param sighash_type: The sighash type for this input
- * :param value: The value for this input
- * :param value_blinder: The value blinder for ths input
- * :param value_blinder_len: Length of ``value_blinder`` in bytes.
- * :param asset: The asset for this input.
- * :param asset_len: Length of ``asset`` in bytes.
- * :param asset_blinder: The asset blinder for this input.
- * :param asset_blinder_len: Length of ``asset_blinder`` in bytes.
- * :param peg_in_tx: The The peg in tx for this input
- * :param txout_proof: The txout proof for this input
- * :param txout_proof_len: Length of ``txout_proof`` in bytes.
- * :param genesis_hash: The genesis hash for this input
- * :param genesis_hash_len: Length of ``genesis_hash`` in bytes.
- * :param claim_script: The claim script for this input
- * :param claim_script_len: Length of ``claim_script`` in bytes.
- * :param output: Destination for the resulting PSBT input.
- */
-WALLY_CORE_API int wally_psbt_elements_input_init_alloc(
-    const struct wally_tx *non_witness_utxo,
-    const struct wally_tx_output *witness_utxo,
-    const unsigned char *redeem_script,
-    size_t redeem_script_len,
-    const unsigned char *witness_script,
-    size_t witness_script_len,
-    const unsigned char *final_script_sig,
-    size_t final_script_sig_len,
-    const struct wally_tx_witness_stack *final_witness,
-    const struct wally_keypath_map *keypaths,
-    const struct wally_partial_sigs_map *partial_sigs,
-    const struct wally_unknowns_map *unknowns,
-    uint32_t sighash_type,
-    uint64_t value,
-    uint32_t has_value,
-    const unsigned char *value_blinder,
-    size_t value_blinder_len,
-    const unsigned char *asset,
-    size_t asset_len,
-    const unsigned char *asset_blinder,
-    size_t asset_blinder_len,
-    const struct wally_tx *peg_in_tx,
-    const unsigned char *txout_proof,
-    size_t txout_proof_len,
-    const unsigned char *genesis_hash,
-    size_t genesis_hash_len,
-    const unsigned char *claim_script,
-    size_t claim_script_len,
-    struct wally_psbt_input **output);
-
-/**
  * Set the value in an elements input.
  *
  * :param input: The input to update.
@@ -897,57 +760,6 @@ WALLY_CORE_API int wally_psbt_elements_input_set_claim_script(
     struct wally_psbt_input *input,
     const unsigned char *claim_script,
     size_t claim_script_len);
-
-/**
- * Allocate and initialize a new PSBT elements output.
- *
- * :param redeem_script: The redeem script needed for spending this output.
- * :param redeem_script_len: Length of ``redeem_script`` in bytes.
- * :param witness_script: The witness script needed for spending for this output.
- * :param witness_script_len: Length of ``witness_script`` in bytes.
- * :param keypaths: The HD keypaths for the keys needed for spending this output.
- * :param unknowns: The unknown key value pairs for this output.
- * :param blinding_pubkey: The blinding pubkey for this output.
- * :param value_commitment: The value commitment for this output.
- * :param value_commitment_len: Length of ``value_commitment`` in bytes.
- * :param value_blinder: The value blinder for this output.
- * :param value_blinder_len: Length of ``value_blinder`` in bytes.
- * :param asset_commitment: The asset commitment for this output.
- * :param asset_commitment_len: Length of ``asset_commitment`` in bytes.
- * :param asset_blinder: The asset blinder for this output.
- * :param asset_blinder_len: Length of ``asset_blinder`` in bytes.
- * :param nonce_commitment: The nonce commitment for this output.
- * :param nonce_commitment_len: Length of ``nonce_commitment`` in bytes.
- * :param range_proof: The range proof for this output.
- * :param range_proof_len: Length of ``range_proof`` in bytes.
- * :param surjection_proof: The surjection proof for this output.
- * :param surjection_proof_len: Length of ``surjection_proof`` in bytes.
- * :param output: Destination for the resulting PSBT output.
- */
-WALLY_CORE_API int wally_psbt_elements_output_init_alloc(
-    const unsigned char *redeem_script,
-    size_t redeem_script_len,
-    const unsigned char *witness_script,
-    size_t witness_script_len,
-    const struct wally_keypath_map *keypaths,
-    const struct wally_unknowns_map *unknowns,
-    const unsigned char *blinding_pubkey,
-    size_t blinding_pubkey_len,
-    const unsigned char *value_commitment,
-    size_t value_commitment_len,
-    const unsigned char *value_blinder,
-    size_t value_blinder_len,
-    const unsigned char *asset_commitment,
-    size_t asset_commitment_len,
-    const unsigned char *asset_blinder,
-    size_t asset_blinder_len,
-    const unsigned char *nonce_commitment,
-    size_t nonce_commitment_len,
-    const unsigned char *range_proof,
-    size_t range_proof_len,
-    const unsigned char *surjection_proof,
-    size_t surjection_proof_len,
-    struct wally_psbt_output **output);
 
 /**
  * Set the blinding pubkey in an elements output.
