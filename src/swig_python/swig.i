@@ -85,11 +85,14 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
     if (p) fn(p); }
 
 capsule_dtor(ext_key, bip32_key_free)
+capsule_dtor(wally_keypath_map, wally_keypath_map_free)
+capsule_dtor(wally_partial_sigs_map, wally_partial_sigs_map_free)
 capsule_dtor(wally_psbt, wally_psbt_free)
 capsule_dtor(wally_tx, wally_tx_free)
 capsule_dtor(wally_tx_input, wally_tx_input_free)
 capsule_dtor(wally_tx_output, wally_tx_output_free)
 capsule_dtor(wally_tx_witness_stack, wally_tx_witness_stack_free)
+capsule_dtor(wally_unknowns_map, wally_unknowns_map_free)
 static void destroy_words(PyObject *obj) { (void)obj; }
 
 #define MAX_LOCAL_STACK 256u
@@ -239,7 +242,10 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len);
 %pybuffer_nonnull_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
 %pybuffer_nonnull_binary(const unsigned char *whitelist_proof, size_t whitelist_proof_len);
-%pybuffer_nonnull_binary(const unsigned char *redeem_script, size_t redeem_script_len);
+%pybuffer_nullable_binary(const unsigned char *redeem_script, size_t redeem_script_len);
+%pybuffer_nullable_binary(const unsigned char *witness_script, size_t witness_script_len);
+%pybuffer_nullable_binary(const unsigned char *final_script_sig, size_t final_script_sig_len);
+%pybuffer_nullable_binary(const unsigned char *fingerprint, size_t fingerprint_len);
 
 /* Output buffers */
 %pybuffer_output_binary(unsigned char *asset_out, size_t asset_out_len);
@@ -330,31 +336,37 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_int_array(uint32_t, 0xffull, sighash, sighash_len)
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
 
-%py_opaque_struct(words);
 %py_opaque_struct(ext_key);
+%py_opaque_struct(wally_keypath_map)
+%py_opaque_struct(wally_partial_sigs_map)
 %py_opaque_struct(wally_psbt);
-%py_opaque_struct(wally_tx_witness_stack);
+%py_opaque_struct(wally_tx);
 %py_opaque_struct(wally_tx_input);
 %py_opaque_struct(wally_tx_output);
-%py_opaque_struct(wally_tx);
+%py_opaque_struct(wally_tx_witness_stack);
+%py_opaque_struct(wally_unknowns_map)
+%py_opaque_struct(words);
 
+%rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
-%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
-%rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
-%rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
-%rename("tx_input_init") wally_tx_input_init_alloc;
-%rename("tx_output_init") wally_tx_output_init_alloc;
-%rename("tx_output_clone") wally_tx_output_clone_alloc;
-%rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
-%rename("psbt_init") wally_psbt_init_alloc;
+%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
+%rename("keypath_map_init") wally_keypath_map_init_alloc;
+%rename("partial_sigs_map_init") wally_partial_sigs_map_init_alloc;
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
-%rename("tx_init") wally_tx_init_alloc;
+%rename("psbt_init") wally_psbt_init_alloc;
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;
 %rename("tx_elements_output_init") wally_tx_elements_output_init_alloc;
+%rename("tx_init") wally_tx_init_alloc;
+%rename("tx_input_init") wally_tx_input_init_alloc;
+%rename("tx_output_clone") wally_tx_output_clone_alloc;
+%rename("tx_output_init") wally_tx_output_init_alloc;
+%rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
+%rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
+%rename("unknowns_map_init") wally_unknowns_map_init_alloc;
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"

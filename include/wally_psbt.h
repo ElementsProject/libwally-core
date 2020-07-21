@@ -209,37 +209,37 @@ WALLY_CORE_API int wally_keypath_map_free(
 /**
  * Find an item in a keypath map.
  *
- * :param keypaths: The keypath map to find ``pubkey`` in.
- * :param pubkey: The pubkey to find.
- * :param pubkey_len: Length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param keypaths: The keypath map to find ``pub_key`` in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
  */
 WALLY_CORE_API int wally_keypath_map_find(
     const struct wally_keypath_map *keypaths,
-    const unsigned char *pubkey,
-    size_t pubkey_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
     size_t *written);
 
 /**
  * Add an item to a keypath map.
  *
  * :param keypaths: The keypath map to add to.
- * :param pubkey: The pubkey to add.
- * :param pubkey_len: Length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param fingerprint: The master key fingerprint for the pubkey.
  * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
- * :param path: The BIP32 derivation path for the pubkey.
- * :param path_len: The number of items in path.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
  */
 WALLY_CORE_API int wally_keypath_map_add(
     struct wally_keypath_map *keypaths,
-    const unsigned char *pubkey,
-    size_t pubkey_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
     const unsigned char *fingerprint,
     size_t fingerprint_len,
-    const uint32_t *path,
-    size_t path_len);
+    const uint32_t *child_path,
+    size_t child_path_len);
 
 /**
  * Allocate and initialize a new partial sigs map.
@@ -264,31 +264,31 @@ WALLY_CORE_API int wally_partial_sigs_map_free(
 /**
  * Find an item in a partial sigs map.
  *
- * :param sigs: The partial sigs map to find ``pubkey`` in.
- * :param pubkey: The pubkey to find.
- * :param pubkey_len: Length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param sigs: The partial sigs map to find ``pub_key`` in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
  */
 WALLY_CORE_API int wally_partial_sigs_map_find(
     const struct wally_partial_sigs_map *sigs,
-    const unsigned char *pubkey,
-    size_t pubkey_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
     size_t *written);
 
 /**
  * Add an item to a partial sigs map.
  *
  * :param sigs: The partial sigs map to add to.
- * :param pubkey: The pubkey to add.
- * :param pubkey_len: Length of ``pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
  * :param sig: The DER-encoded signature to add.
  * :param sig_len: Length of ``sig`` in bytes.
  */
 WALLY_CORE_API int wally_partial_sigs_map_add(
     struct wally_partial_sigs_map *sigs,
-    const unsigned char *pubkey,
-    size_t pubkey_len,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
     const unsigned char *sig,
     size_t sig_len);
 

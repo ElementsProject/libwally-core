@@ -22,15 +22,15 @@ static const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 
 static const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
-static bool pubkey_is_compressed(const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
-    return pubkey[0] == 0x02 || pubkey[0] == 0x03;
+static bool pubkey_is_compressed(const unsigned char pub_key[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
+    return pub_key[0] == 0x02 || pub_key[0] == 0x03;
 }
 
-static size_t get_pubkey_len(const unsigned char *pubkey, size_t pubkey_len)
+static size_t get_pubkey_len(const unsigned char *pub_key, size_t pub_key_len)
 {
-    if (!pubkey_len)
+    if (!pub_key_len)
         return 0;
-    return pubkey_is_compressed(pubkey) ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+    return pubkey_is_compressed(pub_key) ? EC_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
 }
 
 static bool is_valid_pubkey_len(size_t len)
@@ -86,7 +86,7 @@ int wally_keypath_map_free(struct wally_keypath_map *keypaths)
 }
 
 int wally_keypath_map_find(const struct wally_keypath_map *keypaths,
-                           const unsigned char *pubkey, size_t pubkey_len,
+                           const unsigned char *pub_key, size_t pub_key_len,
                            size_t *written)
 {
     size_t i;
@@ -94,13 +94,13 @@ int wally_keypath_map_find(const struct wally_keypath_map *keypaths,
     if (written)
         *written = 0;
 
-    if (!keypaths || !pubkey || !is_valid_pubkey_len(pubkey_len) || !written)
+    if (!keypaths || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
         return WALLY_EINVAL;
 
     for (i = 0; i < keypaths->num_items; ++i) {
         const struct wally_keypath_item *item = &keypaths->items[i];
 
-        if (is_equal_pubkey(pubkey, pubkey_len,
+        if (is_equal_pubkey(pub_key, pub_key_len,
                             item->pubkey, get_pubkey_len(item->pubkey, sizeof(item->pubkey)))) {
             *written = i + 1; /* Found */
             break;
@@ -111,8 +111,8 @@ int wally_keypath_map_find(const struct wally_keypath_map *keypaths,
 
 static int add_keypath_item(struct wally_keypath_map *keypaths, const struct wally_keypath_item *item)
 {
-    const size_t pubkey_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    return wally_keypath_map_add(keypaths, item->pubkey, pubkey_len,
+    const size_t pub_key_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    return wally_keypath_map_add(keypaths, item->pubkey, pub_key_len,
                                  item->fingerprint, BIP32_KEY_FINGERPRINT_LEN,
                                  item->path, item->path_len);
 }
@@ -157,19 +157,19 @@ static int array_grow(void **src, size_t num_items, size_t *allocation_len, size
 }
 
 int wally_keypath_map_add(struct wally_keypath_map *keypaths,
-                          const unsigned char *pubkey, size_t pubkey_len,
+                          const unsigned char *pub_key, size_t pub_key_len,
                           const unsigned char *fingerprint, size_t fingerprint_len,
                           const uint32_t *path, size_t path_len)
 {
     size_t is_found;
     int ret;
 
-    if (!keypaths || !pubkey || !is_valid_pubkey_len(pubkey_len) ||
+    if (!keypaths || !pub_key || !is_valid_pubkey_len(pub_key_len) ||
         !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
         BYTES_INVALID(path, path_len))
         return WALLY_EINVAL;
 
-    ret = wally_keypath_map_find(keypaths, pubkey, pubkey_len, &is_found);
+    ret = wally_keypath_map_find(keypaths, pub_key, pub_key_len, &is_found);
     if (ret != WALLY_OK || is_found)
         return ret; /* Return WALLY_OK and do nothing if already present */
 
@@ -183,7 +183,7 @@ int wally_keypath_map_add(struct wally_keypath_map *keypaths,
                 return WALLY_ENOMEM;
             new_item->path_len = path_len;
         }
-        memcpy(new_item->pubkey, pubkey, pubkey_len);
+        memcpy(new_item->pubkey, pub_key, pub_key_len);
         memcpy(new_item->fingerprint, fingerprint, fingerprint_len);
         keypaths->num_items++;
     }
@@ -224,7 +224,7 @@ int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs)
 }
 
 int wally_partial_sigs_map_find(const struct wally_partial_sigs_map *partial_sigs,
-                                const unsigned char *pubkey, size_t pubkey_len,
+                                const unsigned char *pub_key, size_t pub_key_len,
                                 size_t *written)
 {
     size_t i;
@@ -232,13 +232,13 @@ int wally_partial_sigs_map_find(const struct wally_partial_sigs_map *partial_sig
     if (written)
         *written = 0;
 
-    if (!partial_sigs || !pubkey || !is_valid_pubkey_len(pubkey_len) || !written)
+    if (!partial_sigs || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
         return WALLY_EINVAL;
 
     for (i = 0; i < partial_sigs->num_items; ++i) {
         const struct wally_partial_sigs_item *item = &partial_sigs->items[i];
 
-        if (is_equal_pubkey(pubkey, pubkey_len,
+        if (is_equal_pubkey(pub_key, pub_key_len,
                             item->pubkey, get_pubkey_len(item->pubkey, sizeof(item->pubkey)))) {
             *written = i + 1; /* Found */
             break;
@@ -249,8 +249,8 @@ int wally_partial_sigs_map_find(const struct wally_partial_sigs_map *partial_sig
 
 static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, const struct wally_partial_sigs_item *item)
 {
-    const size_t pubkey_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    return wally_partial_sigs_map_add(sigs, item->pubkey, pubkey_len,
+    const size_t pub_key_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+    return wally_partial_sigs_map_add(sigs, item->pubkey, pub_key_len,
                                       item->sig, item->sig_len);
 }
 
@@ -278,17 +278,17 @@ static int replace_partial_sigs(const struct wally_partial_sigs_map *src,
 }
 
 int wally_partial_sigs_map_add(struct wally_partial_sigs_map *sigs,
-                               const unsigned char *pubkey, size_t pubkey_len,
+                               const unsigned char *pub_key, size_t pub_key_len,
                                const unsigned char *sig, size_t sig_len)
 {
     size_t is_found;
     int ret;
 
-    if (!sigs || !pubkey || !is_valid_pubkey_len(pubkey_len) ||
+    if (!sigs || !pub_key || !is_valid_pubkey_len(pub_key_len) ||
         BYTES_INVALID(sig, sig_len))
         return WALLY_EINVAL;
 
-    ret = wally_partial_sigs_map_find(sigs, pubkey, pubkey_len, &is_found);
+    ret = wally_partial_sigs_map_find(sigs, pub_key, pub_key_len, &is_found);
     if (ret != WALLY_OK || is_found)
         return ret; /* Return WALLY_OK and do nothing if already present */
 
@@ -300,7 +300,7 @@ int wally_partial_sigs_map_add(struct wally_partial_sigs_map *sigs,
         if (sig && !clone_bytes(&new_item->sig, sig, sig_len))
             return WALLY_ENOMEM;
         new_item->sig_len = sig_len;
-        memcpy(&new_item->pubkey, pubkey, pubkey_len);
+        memcpy(&new_item->pubkey, pub_key, pub_key_len);
         sigs->num_items++;
     }
     return ret;
@@ -3281,3 +3281,59 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
     *written = memcmp(psbt->magic, WALLY_ELEMENTS_PSBT_MAGIC, sizeof(psbt->magic)) ? 0 : 1;
     return WALLY_OK;
 }
+
+#if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
+
+static struct wally_psbt_input *psbt_get_input(const struct wally_psbt *psbt, size_t index)
+{
+    return psbt && index < psbt->num_inputs ? &psbt->inputs[index] : NULL;
+}
+
+static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, size_t index)
+{
+    return psbt && index < psbt->num_outputs ? &psbt->outputs[index] : NULL;
+}
+
+/* Set a binary buffer value on an input/output */
+#define PSBT_SET_B(typ, name) \
+    int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
+                                            const unsigned char *name, size_t name ## _len) { \
+        return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), name, name ## _len); \
+    }
+
+/* Set an integer value on an input/output */
+#define PSBT_SET_I(typ, name, inttyp) \
+    int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
+                                            inttyp v) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (!p) \
+            return WALLY_EINVAL; \
+        p->name = v; \
+        return WALLY_OK; \
+    }
+
+/* Set a struct on an input/output */
+#define PSBT_SET_S(typ, name, structtyp) \
+    int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
+                                            const struct structtyp *p) { \
+        return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
+    }
+
+
+PSBT_SET_S(input, non_witness_utxo, wally_tx)
+PSBT_SET_S(input, witness_utxo, wally_tx_output)
+PSBT_SET_B(input, redeem_script)
+PSBT_SET_B(input, witness_script)
+PSBT_SET_B(input, final_script_sig)
+PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
+PSBT_SET_S(input, keypaths, wally_keypath_map)
+PSBT_SET_S(input, partial_sigs, wally_partial_sigs_map)
+PSBT_SET_S(input, unknowns, wally_unknowns_map)
+PSBT_SET_I(input, sighash_type, uint32_t)
+
+PSBT_SET_B(output, redeem_script)
+PSBT_SET_B(output, witness_script)
+PSBT_SET_S(output, keypaths, wally_keypath_map)
+PSBT_SET_S(output, unknowns, wally_unknowns_map)
+
+#endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */
