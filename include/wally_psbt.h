@@ -343,6 +343,7 @@ WALLY_CORE_API int wally_unknowns_map_add(
     const unsigned char *value,
     size_t value_len);
 
+#ifndef SWIG
 /**
  * Set the non_witness_utxo in an input.
  *
@@ -492,6 +493,7 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
 WALLY_CORE_API int wally_psbt_output_set_unknowns(
     struct wally_psbt_output *output,
     const struct wally_unknowns_map *unknowns);
+#endif /* SWIG */
 
 /**
  * Allocate and initialize a new PSBT.
@@ -661,6 +663,7 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
     size_t global_unknowns_allocation_len,
     struct wally_psbt **output);
 
+#ifndef SWIG
 /**
  * Set the value in an elements input.
  *
@@ -856,6 +859,7 @@ WALLY_CORE_API int wally_psbt_elements_output_set_surjection_proof(
     struct wally_psbt_output *output,
     const unsigned char *surjection_proof,
     size_t surjection_proof_len);
+#endif /* SWIG */
 
 #endif /* BUILD_ELEMENTS */
 
