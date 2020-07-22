@@ -747,7 +747,7 @@ WALLY_CORE_API int wally_tx_elements_input_is_pegin(
  * :param asset: The commitment to a possibly blinded asset.
  * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
  * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
  * :param surjectionproof: surjection proof.
@@ -786,7 +786,7 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_free(
  * :param asset: The asset tag of the output.
  * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
  * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
  * :param surjectionproof: The surjection proof.
@@ -869,7 +869,7 @@ WALLY_CORE_API int wally_tx_add_elements_raw_input(
  * :param asset: The asset tag of the output.
  * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
  * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
  * :param surjectionproof: The surjection proof.
