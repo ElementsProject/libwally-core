@@ -69,7 +69,7 @@ int wally_asset_generator_from_bytes(const unsigned char *asset, size_t asset_le
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!asset || asset_len != ASSET_TAG_LEN || !abf || abf_len != ASSET_TAG_LEN ||
+    if (!asset || asset_len != ASSET_TAG_LEN || !abf || abf_len != BLINDING_FACTOR_LEN ||
         !bytes_out || len != ASSET_GENERATOR_LEN)
         return WALLY_EINVAL;
 
@@ -96,8 +96,8 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
 
     if (!values || values_len < 2u ||
         num_inputs >= values_len ||
-        !abf || abf_len != (values_len * ASSET_TAG_LEN) ||
-        !vbf || vbf_len != ((values_len - 1) * ASSET_TAG_LEN) ||
+        !abf || abf_len != (values_len * BLINDING_FACTOR_LEN) ||
+        !vbf || vbf_len != ((values_len - 1) * BLINDING_FACTOR_LEN) ||
         !bytes_out || len != ASSET_TAG_LEN)
         return WALLY_EINVAL;
 
@@ -110,8 +110,8 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
     }
 
     for (i = 0; i < values_len; i++) {
-        abf_p[i] = abf + i * ASSET_TAG_LEN;
-        vbf_p[i] = vbf + i * ASSET_TAG_LEN;
+        abf_p[i] = abf + i * BLINDING_FACTOR_LEN;
+        vbf_p[i] = vbf + i * BLINDING_FACTOR_LEN;
     }
     vbf_p[values_len - 1] = bytes_out;
     wally_clear(bytes_out, len);
@@ -177,8 +177,8 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
 
     if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
         !asset || asset_len != ASSET_TAG_LEN ||
-        !abf || abf_len != ASSET_TAG_LEN ||
-        !vbf || vbf_len != ASSET_TAG_LEN ||
+        !abf || abf_len != BLINDING_FACTOR_LEN ||
+        !vbf || vbf_len != BLINDING_FACTOR_LEN ||
         !bytes_out || len < ASSET_RANGEPROOF_MAX_LEN || !written ||
         get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         /* FIXME: Is there an upper size limit on the extra commitment? */
@@ -276,8 +276,8 @@ int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce
         (extra_len && !extra) ||
         get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
-        !abf_out || abf_out_len != ASSET_TAG_LEN ||
-        !vbf_out || vbf_out_len != ASSET_TAG_LEN || !value_out)
+        !abf_out || abf_out_len != BLINDING_FACTOR_LEN ||
+        !vbf_out || vbf_out_len != BLINDING_FACTOR_LEN || !value_out)
         goto cleanup;
 
     /* Extract the value blinding factor, value and message from the rangeproof */
@@ -374,11 +374,11 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
         return WALLY_ENOMEM;
 
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
-        !output_abf || output_abf_len != ASSET_TAG_LEN ||
+        !output_abf || output_abf_len != BLINDING_FACTOR_LEN ||
         get_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
         !bytes || bytes_len != 32u ||
         !asset || !num_inputs || (asset_len % ASSET_TAG_LEN != 0) ||
-        !abf || abf_len != num_inputs * ASSET_TAG_LEN ||
+        !abf || abf_len != num_inputs * BLINDING_FACTOR_LEN ||
         !generator || generator_len != num_inputs * ASSET_GENERATOR_LEN ||
         !bytes_out || len != SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
         !written)
@@ -410,7 +410,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 
     if (!secp256k1_surjectionproof_generate(ctx, &proof, generators, num_inputs,
                                             &gen, actual_index,
-                                            abf + actual_index * ASSET_TAG_LEN,
+                                            abf + actual_index * BLINDING_FACTOR_LEN,
                                             output_abf)) {
         ret = WALLY_ERROR; /* Caller must retry with different entropy/outputs */
         goto cleanup;
