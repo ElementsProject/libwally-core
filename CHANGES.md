@@ -9,28 +9,11 @@
   instead of returning WALLY_EINVAL. See the generated API documentation
   section "Variable Length Output Buffers" for details.
 
-- psbt_init_alloc and psbt_elements_init_alloc now take a version number
-  as their first argument which must be 0.
-
-- psbt_input_init_alloc, psbt_input_free, psbt_output_init_alloc, psbt_output_free,
-  and their elements counterparts psbt_elements_input_init_alloc and
-  psbt_elements_output_init_alloc have been removed.
-
-- psbt_combine has been changed to only combine one PSBT into another.
-
-- psbt_to_bytes, psbt_get_length and psbt_to_base64 now take a flags argument.
-
 - FINGERPRINT_LEN was renamed to BIP32_KEY_FINGERPRINT_LEN for
   consistency - You should change any references in your source when upgrading.
 
-- The following PSBT functions have been renamed for consistency:
-  - wally_add_new_keypath -> wally_keypath_map_add
-  - wally_add_new_partial_sig -> wally_partial_sigs_map_add
-  - wally_add_new_unknown -> wally_unknowns_map_add
-  - wally_extract_psbt -> wally_psbt_extract
-  - wally_finalize_psbt -> wally_psbt_finalize
-  - wally_sign_psbt -> wally_psbt_sign
-  - wally_combine_psbts -> wally_psbt_combine
+- Almost all functions comprising the PSBT interface have changed name,
+  arguments, semantics or all three. Users can consider the new interface final.
 
 ## Version 0.7.8
 
