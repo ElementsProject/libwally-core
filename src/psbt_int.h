@@ -36,9 +36,14 @@ WALLY_CORE_API int wally_psbt_set_output_keypaths(struct wally_psbt *psbt, size_
 WALLY_CORE_API int wally_psbt_set_output_unknowns(struct wally_psbt *psbt, size_t index,  const struct wally_unknowns_map *unknowns);
 
 #ifdef BUILD_ELEMENTS
-#endif /* BUILD_ELEMENTS */
-
-#ifdef BUILD_ELEMENTS
+WALLY_CORE_API int wally_psbt_set_output_blinding_pubkey(struct wally_psbt *psbt, size_t index, const unsigned char *pub_key, size_t pub_key_len);
+WALLY_CORE_API int wally_psbt_set_output_value_commitment(struct wally_psbt *psbt, size_t index, const unsigned char *commitment, size_t commitment_len);
+WALLY_CORE_API int wally_psbt_set_output_vbf(struct wally_psbt *psbt, size_t index, const unsigned char *vbf, size_t vbf_len);
+WALLY_CORE_API int wally_psbt_set_output_asset_commitment(struct wally_psbt *psbt, size_t index, const unsigned char *commitment, size_t commitment_len);
+WALLY_CORE_API int wally_psbt_set_output_abf(struct wally_psbt *psbt, size_t index, const unsigned char *abf, size_t abf_len);
+WALLY_CORE_API int wally_psbt_set_output_nonce(struct wally_psbt *psbt, size_t index, const unsigned char *nonce, size_t nonce_len);
+WALLY_CORE_API int wally_psbt_set_output_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_set_output_surjectionproof(struct wally_psbt *psbt, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus

@@ -193,11 +193,11 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 
 /* Input buffers with lengths are passed as python buffers */
-%pybuffer_nonnull_binary(const unsigned char *abf, size_t abf_len);
+%pybuffer_nullable_binary(const unsigned char *abf, size_t abf_len);
 %pybuffer_nonnull_binary(const unsigned char *asset, size_t asset_len);
 %pybuffer_nullable_binary(const unsigned char *bytes, size_t bytes_len);
 %pybuffer_nonnull_binary(const unsigned char *chain_code, size_t chain_code_len);
-%pybuffer_nonnull_binary(const unsigned char *commitment, size_t commitment_len);
+%pybuffer_nullable_binary(const unsigned char *commitment, size_t commitment_len);
 %pybuffer_nullable_binary(const unsigned char *extra, size_t extra_len);
 %pybuffer_nonnull_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
@@ -217,7 +217,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *sig, size_t sig_len);
 %pybuffer_nonnull_binary(const unsigned char *sighash, size_t sighash_len);
 %pybuffer_nonnull_binary(const unsigned char *txhash, size_t txhash_len);
-%pybuffer_nonnull_binary(const unsigned char *vbf, size_t vbf_len);
+%pybuffer_nullable_binary(const unsigned char *vbf, size_t vbf_len);
 %pybuffer_nullable_binary(const unsigned char *witness, size_t witness_len);
 %pybuffer_nonnull_binary(const unsigned char *nonce, size_t nonce_len);
 %pybuffer_nonnull_binary(const unsigned char *nonce_hash, size_t nonce_hash_len);

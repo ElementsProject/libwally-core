@@ -46,6 +46,10 @@ class PSBTTests(unittest.TestCase):
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
         dummy_sig = bytearray(b'\x00' * 72)
+        if is_elements_build():
+            dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
+            dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
+            dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
 
         dummy_keypaths = keypath_map_init(0)
         self.assertIsNotNone(dummy_keypaths)
@@ -83,6 +87,15 @@ class PSBTTests(unittest.TestCase):
         self._try_set(psbt_set_output_witness_script, psbt, dummy_bytes)
         self._try_set(psbt_set_output_keypaths, psbt, dummy_keypaths)
         self._try_set(psbt_set_output_unknowns, psbt, dummy_unknowns)
+        if is_elements_build():
+            self._try_set(psbt_set_output_blinding_pubkey, psbt, dummy_pubkey)
+            self._try_set(psbt_set_output_value_commitment, psbt, dummy_commitment)
+            self._try_set(psbt_set_output_vbf, psbt, dummy_bf)
+            self._try_set(psbt_set_output_asset_commitment, psbt, dummy_commitment)
+            self._try_set(psbt_set_output_abf, psbt, dummy_bf)
+            self._try_set(psbt_set_output_nonce, psbt, dummy_nonce)
+            self._try_set(psbt_set_output_rangeproof, psbt, dummy_bytes)
+            self._try_set(psbt_set_output_surjectionproof, psbt, dummy_bytes)
 
 
 if __name__ == '__main__':

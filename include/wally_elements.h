@@ -72,7 +72,7 @@ WALLY_CORE_API int wally_asset_final_vbf(
  * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param bytes_out: Buffer to receive value commitment.
- * :param len: Length of ``bytes_out``. Must be ``ASSET_GENERATOR_LEN``.
+ * :param len: Length of ``bytes_out``. Must be ``ASSET_COMMITMENT_LEN``.
  */
 WALLY_CORE_API int wally_asset_value_commitment(
     uint64_t value,

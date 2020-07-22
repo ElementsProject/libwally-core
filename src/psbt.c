@@ -554,14 +554,12 @@ int wally_psbt_input_clear_value(struct wally_psbt_input *input)
     return WALLY_OK;
 }
 
-int wally_psbt_input_set_value_blinder(struct wally_psbt_input *input,
-                                       const unsigned char *value_blinder,
-                                       size_t value_blinder_len)
+int wally_psbt_input_set_vbf(struct wally_psbt_input *input,
+                             const unsigned char *vbf, size_t vbf_len)
 {
-    if (!input)
+    if (!input || (vbf && vbf_len != BLINDING_FACTOR_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(value_blinder, value_blinder_len,
-                         &input->value_blinder, &input->value_blinder_len);
+    return replace_bytes(vbf, vbf_len, &input->vbf, &input->vbf_len);
 }
 
 int wally_psbt_input_set_asset(struct wally_psbt_input *input,
@@ -572,14 +570,12 @@ int wally_psbt_input_set_asset(struct wally_psbt_input *input,
     return replace_bytes(asset, asset_len, &input->asset, &input->asset_len);
 }
 
-int wally_psbt_input_set_asset_blinder(struct wally_psbt_input *input,
-                                       const unsigned char *asset_blinder,
-                                       size_t asset_blinder_len)
+int wally_psbt_input_set_abf(struct wally_psbt_input *input,
+                             const unsigned char *abf, size_t abf_len)
 {
-    if (!input)
+    if (!input || (abf && abf_len != BLINDING_FACTOR_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(asset_blinder, asset_blinder_len,
-                         &input->asset_blinder, &input->asset_blinder_len);
+    return replace_bytes(abf, abf_len, &input->abf, &input->abf_len);
 }
 
 int wally_psbt_input_set_peg_in_tx(struct wally_psbt_input *input,
@@ -645,9 +641,9 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_unknowns_map_free(input->unknowns);
 
 #ifdef BUILD_ELEMENTS
-        clear_and_free(input->value_blinder, input->value_blinder_len);
+        clear_and_free(input->vbf, input->vbf_len);
         clear_and_free(input->asset, input->asset_len);
-        clear_and_free(input->asset_blinder, input->asset_blinder_len);
+        clear_and_free(input->abf, input->abf_len);
         wally_tx_free(input->peg_in_tx);
         clear_and_free(input->txout_proof, input->txout_proof_len);
         clear_and_free(input->genesis_hash, input->genesis_hash_len);
@@ -705,73 +701,69 @@ int wally_psbt_output_set_blinding_pubkey(struct wally_psbt_output *output,
 }
 
 int wally_psbt_output_set_value_commitment(struct wally_psbt_output *output,
-                                           const unsigned char *value_commitment,
-                                           size_t value_commitment_len)
+                                           const unsigned char *commitment,
+                                           size_t commitment_len)
 {
-    if (!output)
+    if (!output || (commitment && commitment_len != ASSET_COMMITMENT_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(value_commitment, value_commitment_len,
+    return replace_bytes(commitment, commitment_len,
                          &output->value_commitment, &output->value_commitment_len);
 }
 
-int wally_psbt_output_set_value_blinder(struct wally_psbt_output *output,
-                                        const unsigned char *value_blinder,
-                                        size_t value_blinder_len)
+int wally_psbt_output_set_vbf(struct wally_psbt_output *output,
+                              const unsigned char *vbf, size_t vbf_len)
 {
-    if (!output)
+    if (!output || (vbf && vbf_len != BLINDING_FACTOR_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(value_blinder, value_blinder_len,
-                         &output->value_blinder, &output->value_blinder_len);
+    return replace_bytes(vbf, vbf_len, &output->vbf, &output->vbf_len);
 }
 
 int wally_psbt_output_set_asset_commitment(struct wally_psbt_output *output,
-                                           const unsigned char *asset_commitment,
-                                           size_t asset_commitment_len)
+                                           const unsigned char *commitment,
+                                           size_t commitment_len)
 {
-    if (!output)
+    if (!output || (commitment && commitment_len != ASSET_COMMITMENT_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(asset_commitment, asset_commitment_len,
+    return replace_bytes(commitment, commitment_len,
                          &output->asset_commitment, &output->asset_commitment_len);
 }
 
-int wally_psbt_output_set_asset_blinder(struct wally_psbt_output *output,
-                                        const unsigned char *asset_blinder,
-                                        size_t asset_blinder_len)
+int wally_psbt_output_set_abf(struct wally_psbt_output *output,
+                              const unsigned char *abf, size_t abf_len)
 {
-    if (!output)
+    if (!output || (abf && abf_len != BLINDING_FACTOR_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(asset_blinder, asset_blinder_len,
-                         &output->asset_blinder, &output->asset_blinder_len);
+    return replace_bytes(abf, abf_len, &output->abf, &output->abf_len);
 }
 
-int wally_psbt_output_set_nonce_commitment(struct wally_psbt_output *output,
-                                           const unsigned char *nonce_commitment,
-                                           size_t nonce_commitment_len)
+int wally_psbt_output_set_nonce(struct wally_psbt_output *output,
+                                const unsigned char *nonce,
+                                size_t nonce_len)
 {
-    if (!output)
+    if (!output || (nonce_len && nonce_len != WALLY_TX_ASSET_CT_NONCE_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(nonce_commitment, nonce_commitment_len,
-                         &output->nonce_commitment, &output->nonce_commitment_len);
+    return replace_bytes(nonce, nonce_len,
+                         &output->nonce, &output->nonce_len);
 }
 
-int wally_psbt_output_set_range_proof(struct wally_psbt_output *output,
-                                      const unsigned char *range_proof,
-                                      size_t range_proof_len)
+int wally_psbt_output_set_rangeproof(struct wally_psbt_output *output,
+                                     const unsigned char *rangeproof,
+                                     size_t rangeproof_len)
 {
     if (!output)
         return WALLY_EINVAL;
-    return replace_bytes(range_proof, range_proof_len,
-                         &output->range_proof, &output->range_proof_len);
+    return replace_bytes(rangeproof, rangeproof_len,
+                         &output->rangeproof, &output->rangeproof_len);
 }
 
-int wally_psbt_output_set_surjection_proof(struct wally_psbt_output *output,
-                                           const unsigned char *surjection_proof,
-                                           size_t surjection_proof_len)
+int wally_psbt_output_set_surjectionproof(struct wally_psbt_output *output,
+                                          const unsigned char *surjectionproof,
+                                          size_t surjectionproof_len)
 {
     if (!output)
         return WALLY_EINVAL;
-    return replace_bytes(surjection_proof, surjection_proof_len,
-                         &output->surjection_proof, &output->surjection_proof_len);
+    return replace_bytes(surjectionproof, surjectionproof_len,
+                         &output->surjectionproof, &output->surjectionproof_len);
 }
 #endif/* BUILD_ELEMENTS */
 
@@ -785,12 +777,12 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
 
 #ifdef BUILD_ELEMENTS
         clear_and_free(output->value_commitment, output->value_commitment_len);
-        clear_and_free(output->value_blinder, output->value_blinder_len);
+        clear_and_free(output->vbf, output->vbf_len);
         clear_and_free(output->asset_commitment, output->asset_commitment_len);
-        clear_and_free(output->asset_blinder, output->asset_blinder_len);
-        clear_and_free(output->nonce_commitment, output->nonce_commitment_len);
-        clear_and_free(output->range_proof, output->range_proof_len);
-        clear_and_free(output->surjection_proof, output->surjection_proof_len);
+        clear_and_free(output->abf, output->abf_len);
+        clear_and_free(output->nonce, output->nonce_len);
+        clear_and_free(output->rangeproof, output->rangeproof_len);
+        clear_and_free(output->surjectionproof, output->surjectionproof_len);
 #endif /* BUILD_ELEMENTS */
 
         wally_clear(output, sizeof(*output));
@@ -1400,18 +1392,18 @@ static int pull_psbt_input(
                 }
                 case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER: {
                     valid_type = true;
-                    if (result->value_blinder) {
+                    if (result->vbf) {
                         return WALLY_EINVAL;    /* Already have value blinding factor */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->value_blinder,
-                                         &result->value_blinder_len,
+                    if (!clone_varlength(&result->vbf,
+                                         &result->vbf_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->value_blinder_len == 0) {
-                        result->value_blinder = wally_malloc(1);
+                    if (result->vbf_len == 0) {
+                        result->vbf = wally_malloc(1);
                     }
                     break;
                 }
@@ -1434,18 +1426,18 @@ static int pull_psbt_input(
                 }
                 case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER: {
                     valid_type = true;
-                    if (result->asset_blinder) {
+                    if (result->abf) {
                         return WALLY_EINVAL;    /* Already have asset blinding factor */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->asset_blinder,
-                                         &result->asset_blinder_len,
+                    if (!clone_varlength(&result->abf,
+                                         &result->abf_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->asset_blinder_len == 0) {
-                        result->asset_blinder = wally_malloc(1);
+                    if (result->abf_len == 0) {
+                        result->abf = wally_malloc(1);
                     }
                     break;
                 }
@@ -1632,18 +1624,18 @@ static int pull_psbt_output(
                 }
                 case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER: {
                     valid_type = true;
-                    if (result->value_blinder) {
+                    if (result->vbf) {
                         return WALLY_EINVAL;    /* Already have value blinder */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->value_blinder,
-                                         &result->value_blinder_len,
+                    if (!clone_varlength(&result->vbf,
+                                         &result->vbf_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->value_blinder_len == 0) {
-                        result->value_blinder = wally_malloc(1);
+                    if (result->vbf_len == 0) {
+                        result->vbf = wally_malloc(1);
                     }
                     break;
                 }
@@ -1666,52 +1658,52 @@ static int pull_psbt_output(
                 }
                 case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER: {
                     valid_type = true;
-                    if (result->asset_blinder) {
+                    if (result->abf) {
                         return WALLY_EINVAL;    /* Already have asset blinder */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->asset_blinder,
-                                         &result->asset_blinder_len,
+                    if (!clone_varlength(&result->abf,
+                                         &result->abf_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->asset_blinder_len == 0) {
-                        result->asset_blinder = wally_malloc(1);
+                    if (result->abf_len == 0) {
+                        result->abf = wally_malloc(1);
                     }
                     break;
                 }
                 case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF: {
                     valid_type = true;
-                    if (result->range_proof) {
+                    if (result->rangeproof) {
                         return WALLY_EINVAL;    /* Already have range proof */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->range_proof,
-                                         &result->range_proof_len,
+                    if (!clone_varlength(&result->rangeproof,
+                                         &result->rangeproof_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->range_proof_len == 0) {
-                        result->range_proof = wally_malloc(1);
+                    if (result->rangeproof_len == 0) {
+                        result->rangeproof = wally_malloc(1);
                     }
                     break;
                 }
                 case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF: {
                     valid_type = true;
-                    if (result->surjection_proof) {
+                    if (result->surjectionproof) {
                         return WALLY_EINVAL;    /* Already have surjection proof */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->surjection_proof,
-                                         &result->surjection_proof_len,
+                    if (!clone_varlength(&result->surjectionproof,
+                                         &result->surjectionproof_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->surjection_proof_len == 0) {
-                        result->surjection_proof = wally_malloc(1);
+                    if (result->surjectionproof_len == 0) {
+                        result->surjectionproof = wally_malloc(1);
                     }
                     break;
                 }
@@ -1735,18 +1727,18 @@ static int pull_psbt_output(
                 }
                 case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT: {
                     valid_type = true;
-                    if (result->nonce_commitment) {
+                    if (result->nonce) {
                         return WALLY_EINVAL;    /* Already have nonce commitment */
                     }
                     subfield_nomore_end(cursor, max, key, key_len);
 
-                    if (!clone_varlength(&result->nonce_commitment,
-                                         &result->nonce_commitment_len,
+                    if (!clone_varlength(&result->nonce,
+                                         &result->nonce_len,
                                          cursor, max)) {
                         return WALLY_ENOMEM;
                     }
-                    if (result->nonce_commitment_len == 0) {
-                        result->nonce_commitment = wally_malloc(1);
+                    if (result->nonce_len == 0) {
+                        result->nonce = wally_malloc(1);
                     }
                     break;
                 }
@@ -2129,17 +2121,17 @@ static int push_psbt_input(
         push_varint(cursor, max, sizeof(leint64_t));
         push_le64(cursor, max, input->value);
     }
-    if (input->value_blinder) {
+    if (input->vbf) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER, NULL, 0);
-        push_varbuff(cursor, max, input->value_blinder, input->value_blinder_len);
+        push_varbuff(cursor, max, input->vbf, input->vbf_len);
     }
     if (input->asset) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET, NULL, 0);
         push_varbuff(cursor, max, input->asset, input->asset_len);
     }
-    if (input->asset_blinder) {
+    if (input->abf) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER, NULL, 0);
-        push_varbuff(cursor, max, input->asset_blinder, input->asset_blinder_len);
+        push_varbuff(cursor, max, input->abf, input->abf_len);
     }
     /* Peg ins */
     if (input->peg_in_tx) {
@@ -2209,33 +2201,33 @@ static int push_psbt_output(
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT, NULL, 0);
         push_varbuff(cursor, max, output->value_commitment, output->value_commitment_len);
     }
-    if (output->value_blinder) {
+    if (output->vbf) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER, NULL, 0);
-        push_varbuff(cursor, max, output->value_blinder, output->value_blinder_len);
+        push_varbuff(cursor, max, output->vbf, output->vbf_len);
     }
     if (output->asset_commitment) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT, NULL, 0);
         push_varbuff(cursor, max, output->asset_commitment, output->asset_commitment_len);
     }
-    if (output->asset_blinder) {
+    if (output->abf) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER, NULL, 0);
-        push_varbuff(cursor, max, output->asset_blinder, output->asset_blinder_len);
+        push_varbuff(cursor, max, output->abf, output->abf_len);
     }
-    if (output->range_proof) {
+    if (output->rangeproof) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF, NULL, 0);
-        push_varbuff(cursor, max, output->range_proof, output->range_proof_len);
+        push_varbuff(cursor, max, output->rangeproof, output->rangeproof_len);
     }
-    if (output->surjection_proof) {
+    if (output->surjectionproof) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF, NULL, 0);
-        push_varbuff(cursor, max, output->surjection_proof, output->surjection_proof_len);
+        push_varbuff(cursor, max, output->surjectionproof, output->surjectionproof_len);
     }
     if (output->blinding_pubkey) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY, NULL, 0);
         push_varbuff(cursor, max, output->blinding_pubkey, output->blinding_pubkey_len);
     }
-    if (output->nonce_commitment) {
+    if (output->nonce) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT, NULL, 0);
-        push_varbuff(cursor, max, output->nonce_commitment, output->nonce_commitment_len);
+        push_varbuff(cursor, max, output->nonce, output->nonce_len);
     }
 #endif /* BUILD_ELEMENTS */
     /* Unknowns */
@@ -2530,9 +2522,9 @@ static int combine_inputs(struct wally_psbt_input *dst,
         dst->value = src->value;
         dst->has_value = true;
     }
-    COMBINE_BYTES(input, value_blinder);
+    COMBINE_BYTES(input, vbf);
     COMBINE_BYTES(input, asset);
-    COMBINE_BYTES(input, asset_blinder);
+    COMBINE_BYTES(input, abf);
     if ((ret = combine_txs(&dst->peg_in_tx, src->peg_in_tx)) != WALLY_OK)
         return ret;
     COMBINE_BYTES(input, txout_proof);
@@ -2558,12 +2550,12 @@ static int combine_outputs(struct wally_psbt_output *dst,
 #ifdef BUILD_ELEMENTS
     COMBINE_BYTES(output, blinding_pubkey);
     COMBINE_BYTES(output, value_commitment);
-    COMBINE_BYTES(output, value_blinder);
+    COMBINE_BYTES(output, vbf);
     COMBINE_BYTES(output, asset_commitment);
-    COMBINE_BYTES(output, asset_blinder);
-    COMBINE_BYTES(output, nonce_commitment);
-    COMBINE_BYTES(output, range_proof);
-    COMBINE_BYTES(output, surjection_proof);
+    COMBINE_BYTES(output, abf);
+    COMBINE_BYTES(output, nonce);
+    COMBINE_BYTES(output, rangeproof);
+    COMBINE_BYTES(output, surjectionproof);
 #endif
     return WALLY_OK;
 }
@@ -3132,5 +3124,15 @@ PSBT_SET_B(output, redeem_script)
 PSBT_SET_B(output, witness_script)
 PSBT_SET_S(output, keypaths, wally_keypath_map)
 PSBT_SET_S(output, unknowns, wally_unknowns_map)
+#ifdef BUILD_ELEMENTS
+PSBT_SET_B(output, blinding_pubkey)
+PSBT_SET_B(output, value_commitment)
+PSBT_SET_B(output, vbf)
+PSBT_SET_B(output, asset_commitment)
+PSBT_SET_B(output, abf)
+PSBT_SET_B(output, nonce)
+PSBT_SET_B(output, rangeproof)
+PSBT_SET_B(output, surjectionproof)
+#endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */
