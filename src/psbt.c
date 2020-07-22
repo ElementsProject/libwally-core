@@ -940,15 +940,6 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
-/* clones varlength field entirely. */
-static bool clone_varlength(unsigned char **dst,
-                            size_t *len,
-                            const unsigned char **cursor, size_t *max)
-{
-    *len = pull_varlength(cursor, max);
-    return clone_bytes(dst, pull_skip(cursor, max, *len), *len);
-}
-
 /* Stricter version of pull_subfield_end which insists there's nothing left. */
 static void subfield_nomore_end(const unsigned char **cursor, size_t *max,
                                 const unsigned char *subcursor,
@@ -1163,15 +1154,30 @@ static int pull_nonce(const unsigned char **cursor,
 
 #endif /* BUILD_ELEMENTS */
 
-static int pull_psbt_input(
-    const unsigned char **cursor,
-    size_t *max,
-    uint32_t flags,
-    struct wally_psbt_input *result)
+static void fetch_varlength_ptr(const unsigned char **dst, size_t *len,
+                                const unsigned char **cursor, size_t *max)
+{
+    *len = pull_varlength(cursor, max);
+    *dst = pull_skip(cursor, max, *len);
+}
+
+/* Pull and set a variable length byte buffer */
+#define PSBT_PULL_B(typ, name) \
+    if (result->name) \
+        return WALLY_EINVAL; /* Duplicate value */ \
+    subfield_nomore_end(cursor, max, key, key_len); \
+    fetch_varlength_ptr(&vl_p, &vl_len, cursor, max); \
+    if (!vl_len) \
+        result->name = wally_malloc(1); /* TODO: handle empty values more elegantly */ \
+    else if ((ret = wally_psbt_ ## typ ## _set_ ## name(result, vl_p, vl_len)) != WALLY_OK) \
+        return ret
+
+static int pull_psbt_input(const unsigned char **cursor, size_t *max,
+                           uint32_t flags, struct wally_psbt_input *result)
 {
     int ret;
-    size_t key_len;
-    const unsigned char *pre_key;
+    size_t key_len, vl_len;
+    const unsigned char *pre_key, *vl_p;
 
     /* Read key value pairs */
     pre_key = *cursor;
@@ -1185,61 +1191,58 @@ static int pull_psbt_input(
         /* Process based on type */
         switch (pull_varint(&key, &key_len)) {
         case WALLY_PSBT_IN_NON_WITNESS_UTXO: {
-            if (result->non_witness_utxo) {
+            if (result->non_witness_utxo)
                 return WALLY_EINVAL;     /* We already have a non witness utxo */
-            }
+
             subfield_nomore_end(cursor, max, key, key_len);
 
             /* Start parsing the value field. */
-            pull_subfield_start(cursor, max,
-                                pull_varint(cursor, max),
+            pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                 &val, &val_max);
-            ret = wally_tx_from_bytes(val, val_max, flags,
-                                      &result->non_witness_utxo);
-            if (ret != WALLY_OK) {
+            if ((ret = wally_tx_from_bytes(val, val_max, flags,
+                                           &result->non_witness_utxo)) != WALLY_OK)
                 return ret;
-            }
+
             pull_subfield_end(cursor, max, val, val_max);
             break;
         }
         case WALLY_PSBT_IN_WITNESS_UTXO: {
             uint64_t amount, script_len;
             const unsigned char *script;
-            if (result->witness_utxo) {
-                return WALLY_EINVAL;     /* We already have a witness utxo */
-            }
+
+            if (result->witness_utxo)
+                return WALLY_EINVAL; /* Duplicate value */
+
             subfield_nomore_end(cursor, max, key, key_len);
+
             /* Start parsing the value field. */
-            pull_subfield_start(cursor, max,
-                                pull_varint(cursor, max),
+            pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                 &val, &val_max);
 #ifdef BUILD_ELEMENTS
             if (flags & WALLY_TX_FLAG_USE_ELEMENTS) {
                 const unsigned char *asset, *value, *nonce;
                 size_t asset_len, value_len, nonce_len;
-                if ((ret = pull_confidential_asset(&val, &val_max, &asset, &asset_len)) != WALLY_OK) {
+                if ((ret = pull_confidential_asset(&val, &val_max, &asset, &asset_len)) != WALLY_OK)
                     return ret;
-                }
-                if ((ret = pull_confidential_value(&val, &val_max, &value, &value_len)) != WALLY_OK) {
+                if ((ret = pull_confidential_value(&val, &val_max, &value, &value_len)) != WALLY_OK)
                     return ret;
-                }
-                if ((ret = pull_nonce(&val, &val_max, &nonce, &nonce_len)) != WALLY_OK) {
+                if ((ret = pull_nonce(&val, &val_max, &nonce, &nonce_len)) != WALLY_OK)
                     return ret;
-                }
+
                 script_len = pull_varint(&val, &val_max);
                 script = pull_skip(&val, &val_max, script_len);
-                if (!script || !script_len) {
+                if (!script || !script_len)
                     return WALLY_EINVAL;
-                }
+
                 ret = wally_tx_elements_output_init_alloc(script, script_len,
                                                           asset, asset_len,
                                                           value, value_len,
                                                           nonce, nonce_len,
                                                           NULL, 0, NULL, 0,
                                                           &result->witness_utxo);
-                if (ret != WALLY_OK) {
+                if (ret != WALLY_OK)
                     return ret;
-                }
+
                 subfield_nomore_end(cursor, max, val, val_max);
                 break;
             }
@@ -1248,14 +1251,13 @@ static int pull_psbt_input(
             amount = pull_le64(&val, &val_max);
             script_len = pull_varint(&val, &val_max);
             script = pull_skip(&val, &val_max, script_len);
-            if (!script || !script_len) {
+            if (!script || !script_len)
                 return WALLY_EINVAL;
-            }
             ret = wally_tx_output_init_alloc(amount, script, script_len,
                                              &result->witness_utxo);
-            if (ret != WALLY_OK) {
+            if (ret != WALLY_OK)
                 return ret;
-            }
+
             subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
@@ -1266,9 +1268,9 @@ static int pull_psbt_input(
             break;
         }
         case WALLY_PSBT_IN_SIGHASH_TYPE: {
-            if (result->sighash_type > 0) {
-                return WALLY_EINVAL;     /* Sighash already provided */
-            }
+            if (result->sighash_type != 0)
+                return WALLY_EINVAL; /* Duplicate value */
+
             subfield_nomore_end(cursor, max, key, key_len);
 
             /* Start parsing the value field. */
@@ -1279,36 +1281,11 @@ static int pull_psbt_input(
             subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
-        case WALLY_PSBT_IN_REDEEM_SCRIPT: {
-            if (result->redeem_script) {
-                return WALLY_EINVAL;     /* Already have a redeem script */
-            }
-            subfield_nomore_end(cursor, max, key, key_len);
-
-            if (!clone_varlength(&result->redeem_script,
-                                 &result->redeem_script_len,
-                                 cursor, max)) {
-                return WALLY_ENOMEM;
-            }
-            if (result->redeem_script_len == 0) {
-                result->redeem_script = wally_malloc(1);
-            }
+        case WALLY_PSBT_IN_REDEEM_SCRIPT:
+            PSBT_PULL_B(input, redeem_script);
             break;
-        }
         case WALLY_PSBT_IN_WITNESS_SCRIPT: {
-            if (result->witness_script) {
-                return WALLY_EINVAL;     /* Already have a witness script */
-            }
-            subfield_nomore_end(cursor, max, key, key_len);
-
-            if (!clone_varlength(&result->witness_script,
-                                 &result->witness_script_len,
-                                 cursor, max)) {
-                return WALLY_ENOMEM;
-            }
-            if (result->witness_script_len == 0) {
-                result->witness_script = wally_malloc(1);
-            }
+            PSBT_PULL_B(input, witness_script);
             break;
         }
         case WALLY_PSBT_IN_BIP32_DERIVATION: {
@@ -1317,28 +1294,14 @@ static int pull_psbt_input(
                 return ret;
             break;
         }
-        case WALLY_PSBT_IN_FINAL_SCRIPTSIG: {
-            if (result->final_script_sig) {
-                return WALLY_EINVAL;     /* Already have a scriptSig */
-            }
-            subfield_nomore_end(cursor, max, key, key_len);
-
-            if (!clone_varlength(&result->final_script_sig,
-                                 &result->final_script_sig_len,
-                                 cursor, max)) {
-                return WALLY_ENOMEM;
-            }
-            if (result->final_script_sig_len == 0) {
-                result->final_script_sig = wally_malloc(1);
-            }
+        case WALLY_PSBT_IN_FINAL_SCRIPTSIG:
+            PSBT_PULL_B(input, final_script_sig);
             break;
-        }
         case WALLY_PSBT_IN_FINAL_SCRIPTWITNESS: {
             uint64_t num_witnesses;
             size_t i;
-            if (result->final_witness) {
-                return WALLY_EINVAL;     /* Already have a scriptWitness */
-            }
+            if (result->final_witness)
+                return WALLY_EINVAL; /* Duplicate value */
             subfield_nomore_end(cursor, max, key, key_len);
 
             /* Start parsing the value field. */
@@ -1347,18 +1310,16 @@ static int pull_psbt_input(
                                 &val, &val_max);
             num_witnesses = pull_varint(&val, &val_max);
             ret = wally_tx_witness_stack_init_alloc(num_witnesses, &result->final_witness);
-            if (ret != WALLY_OK) {
+            if (ret != WALLY_OK)
                 return ret;
-            }
 
             for (i = 0; i < num_witnesses; ++i) {
                 uint64_t witness_len = pull_varint(&val, &val_max);
                 ret = wally_tx_witness_stack_set(result->final_witness, i,
                                                  pull_skip(&val, &val_max, witness_len),
                                                  witness_len);
-                if (ret != WALLY_OK) {
+                if (ret != WALLY_OK)
                     return ret;
-                }
             }
             subfield_nomore_end(cursor, max, val, val_max);
             break;
@@ -1375,72 +1336,32 @@ static int pull_psbt_input(
 
             switch (pull_varint(&key, &key_len)) {
             case WALLY_PSBT_IN_ELEMENTS_VALUE: {
-                if (result->has_value) {
-                    return WALLY_EINVAL;        /* Already have value */
-                }
+                if (result->has_value)
+                    return WALLY_EINVAL; /* Duplicate value */
+
                 subfield_nomore_end(cursor, max, key, key_len);
 
                 /* Start parsing the value field. */
-                pull_subfield_start(cursor, max,
-                                    pull_varint(cursor, max),
+                pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                     &val, &val_max);
                 result->value = pull_le64(&val, &val_max);
                 subfield_nomore_end(cursor, max, val, val_max);
                 result->has_value = true;
                 break;
             }
-            case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER: {
-                if (result->vbf) {
-                    return WALLY_EINVAL;        /* Already have value blinding factor */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->vbf,
-                                     &result->vbf_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->vbf_len == 0) {
-                    result->vbf = wally_malloc(1);
-                }
+            case WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER:
+                PSBT_PULL_B(input, vbf);
                 break;
-            }
-            case WALLY_PSBT_IN_ELEMENTS_ASSET: {
-                if (result->asset) {
-                    return WALLY_EINVAL;        /* Already have asset */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->asset,
-                                     &result->asset_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->asset_len == 0) {
-                    result->asset = wally_malloc(1);
-                }
+            case WALLY_PSBT_IN_ELEMENTS_ASSET:
+                PSBT_PULL_B(input, asset);
                 break;
-            }
-            case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER: {
-                if (result->abf) {
-                    return WALLY_EINVAL;        /* Already have asset blinding factor */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->abf,
-                                     &result->abf_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->abf_len == 0) {
-                    result->abf = wally_malloc(1);
-                }
+            case WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER:
+                PSBT_PULL_B(input, abf);
                 break;
-            }
             case WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX: {
-                if (result->peg_in_tx) {
-                    return WALLY_EINVAL;        /* Already have asset */
-                }
+                if (result->peg_in_tx)
+                    return WALLY_EINVAL; /* Duplicate value */
+
                 subfield_nomore_end(cursor, max, key, key_len);
 
                 /* Start parsing the value field. */
@@ -1449,60 +1370,21 @@ static int pull_psbt_input(
                                     &val, &val_max);
 
                 ret = wally_tx_from_bytes(val, val_max, flags, &result->peg_in_tx);
-                if (ret != WALLY_OK) {
+                if (ret != WALLY_OK)
                     return ret;
-                }
+
                 pull_subfield_end(cursor, max, val, val_max);
                 break;
             }
-            case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF: {
-                if (result->txout_proof) {
-                    return WALLY_EINVAL;        /* Already have txout proof */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->txout_proof,
-                                     &result->txout_proof_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->txout_proof_len == 0) {
-                    result->txout_proof = wally_malloc(1);
-                }
+            case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF:
+                PSBT_PULL_B(input, txout_proof);
                 break;
-            }
-            case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH: {
-                if (result->genesis_hash) {
-                    return WALLY_EINVAL;        /* Already have genesis hash */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->genesis_hash,
-                                     &result->genesis_hash_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->genesis_hash_len == 0) {
-                    result->genesis_hash = wally_malloc(1);
-                }
+            case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH:
+                PSBT_PULL_B(input, genesis_hash);
                 break;
-            }
-            case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT: {
-                if (result->claim_script) {
-                    return WALLY_EINVAL;        /* Already have asset */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->claim_script,
-                                     &result->claim_script_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->claim_script_len == 0) {
-                    result->claim_script = wally_malloc(1);
-                }
+            case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT:
+                PSBT_PULL_B(input, claim_script);
                 break;
-            }
             default:
                 goto unknown_type;
             }
@@ -1524,14 +1406,12 @@ unknown_type:
     return WALLY_OK;
 }
 
-static int pull_psbt_output(
-    const unsigned char **cursor,
-    size_t *max,
-    struct wally_psbt_output *result)
+static int pull_psbt_output(const unsigned char **cursor, size_t *max,
+                            struct wally_psbt_output *result)
 {
     int ret;
-    size_t key_len;
-    const unsigned char *pre_key;
+    size_t key_len, vl_len;
+    const unsigned char *pre_key, *vl_p;
 
     /* Read key value */
     pre_key = *cursor;
@@ -1543,38 +1423,12 @@ static int pull_psbt_output(
 
         /* Process based on type */
         switch (pull_varint(&key, &key_len)) {
-        case WALLY_PSBT_OUT_REDEEM_SCRIPT: {
-            if (result->redeem_script) {
-                return WALLY_EINVAL;     /* Already have a redeem script */
-            }
-            subfield_nomore_end(cursor, max, key, key_len);
-
-            if (!clone_varlength(&result->redeem_script,
-                                 &result->redeem_script_len,
-                                 cursor, max)) {
-                return WALLY_ENOMEM;
-            }
-            if (result->redeem_script_len == 0) {
-                result->redeem_script = wally_malloc(1);
-            }
+        case WALLY_PSBT_OUT_REDEEM_SCRIPT:
+            PSBT_PULL_B(output, redeem_script);
             break;
-        }
-        case WALLY_PSBT_OUT_WITNESS_SCRIPT: {
-            if (result->witness_script) {
-                return WALLY_EINVAL;     /* Already have a witness script */
-            }
-            subfield_nomore_end(cursor, max, key, key_len);
-
-            if (!clone_varlength(&result->witness_script,
-                                 &result->witness_script_len,
-                                 cursor, max)) {
-                return WALLY_ENOMEM;
-            }
-            if (result->witness_script_len == 0) {
-                result->witness_script = wally_malloc(1);
-            }
+        case WALLY_PSBT_OUT_WITNESS_SCRIPT:
+            PSBT_PULL_B(output, witness_script);
             break;
-        }
         case WALLY_PSBT_OUT_BIP32_DERIVATION: {
             ret = pull_keypath(cursor, max, key, key_len, &result->keypaths);
             if (ret != WALLY_OK)
@@ -1592,135 +1446,30 @@ static int pull_psbt_output(
             pull_skip(&key, &key_len, WALLY_ELEMENTS_ID_LEN);
 
             switch (pull_varint(&key, &key_len)) {
-            case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT: {
-                if (result->value_commitment) {
-                    return WALLY_EINVAL;        /* Already have value commitment */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->value_commitment,
-                                     &result->value_commitment_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->value_commitment_len == 0) {
-                    result->value_commitment = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT:
+                PSBT_PULL_B(output, value_commitment);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER: {
-                if (result->vbf) {
-                    return WALLY_EINVAL;        /* Already have value blinder */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->vbf,
-                                     &result->vbf_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->vbf_len == 0) {
-                    result->vbf = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER:
+                PSBT_PULL_B(output, vbf);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT: {
-                if (result->asset_commitment) {
-                    return WALLY_EINVAL;        /* Already have asset commitment */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->asset_commitment,
-                                     &result->asset_commitment_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->asset_commitment_len == 0) {
-                    result->asset_commitment = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT:
+                PSBT_PULL_B(output, asset_commitment);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER: {
-                if (result->abf) {
-                    return WALLY_EINVAL;        /* Already have asset blinder */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->abf,
-                                     &result->abf_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->abf_len == 0) {
-                    result->abf = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER:
+                PSBT_PULL_B(output, abf);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF: {
-                if (result->rangeproof) {
-                    return WALLY_EINVAL;        /* Already have range proof */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->rangeproof,
-                                     &result->rangeproof_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->rangeproof_len == 0) {
-                    result->rangeproof = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF:
+                PSBT_PULL_B(output, rangeproof);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF: {
-                if (result->surjectionproof) {
-                    return WALLY_EINVAL;        /* Already have surjection proof */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->surjectionproof,
-                                     &result->surjectionproof_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->surjectionproof_len == 0) {
-                    result->surjectionproof = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF:
+                PSBT_PULL_B(output, surjectionproof);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY: {
-                if (result->blinding_pubkey) {
-                    return WALLY_EINVAL;        /* Already have blinding pubkey */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->blinding_pubkey,
-                                     &result->blinding_pubkey_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (!is_valid_optional_pubkey_len(result->blinding_pubkey_len))
-                    return WALLY_EINVAL;
-                if (result->blinding_pubkey_len == 0)
-                    result->blinding_pubkey = wally_malloc(1);
+            case WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY:
+                PSBT_PULL_B(output, blinding_pubkey);
                 break;
-            }
-            case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT: {
-                if (result->nonce) {
-                    return WALLY_EINVAL;        /* Already have nonce commitment */
-                }
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                if (!clone_varlength(&result->nonce,
-                                     &result->nonce_len,
-                                     cursor, max)) {
-                    return WALLY_ENOMEM;
-                }
-                if (result->nonce_len == 0) {
-                    result->nonce = wally_malloc(1);
-                }
+            case WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT:
+                PSBT_PULL_B(output, nonce);
                 break;
-            }
             default:
                 goto unknown_type;
             }
