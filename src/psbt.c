@@ -1921,16 +1921,6 @@ static void push_psbt_key(
     push_bytes(cursor, max, extra, extra_len);
 }
 
-/* Common case of pushing a type whose key is a pubkey */
-static void push_psbt_key_with_pubkey(
-    unsigned char **cursor, size_t *max,
-    uint64_t type,
-    const unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN])
-{
-    const size_t pubkey_len = get_pubkey_len(pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    push_psbt_key(cursor, max, type, pubkey, pubkey_len);
-}
-
 #ifdef BUILD_ELEMENTS
 /* Common case of pushing elements proprietary type keys */
 static void push_psbt_elements_key(
@@ -1992,7 +1982,8 @@ static void push_keypath_item(
 {
     size_t origin_len, i;
 
-    push_psbt_key_with_pubkey(cursor, max, type,  item->pubkey);
+    push_psbt_key(cursor, max, type, item->pubkey,
+                  get_pubkey_len(item->pubkey, sizeof(item->pubkey)));
 
     origin_len = 4;     /* Start with 4 bytes for fingerprint */
     origin_len += item->path_len * sizeof(uint32_t);
@@ -2073,10 +2064,11 @@ static int push_psbt_input(
     if (input->partial_sigs) {
         struct wally_partial_sigs_map *partial_sigs = input->partial_sigs;
         for (i = 0; i < partial_sigs->num_items; ++i) {
-            struct wally_partial_sigs_item *item = &partial_sigs->items[i];
-            push_psbt_key_with_pubkey(cursor, max, WALLY_PSBT_IN_PARTIAL_SIG,
-                                      item->pubkey);
-            push_varbuff(cursor, max, item->sig, item->sig_len);
+            const struct wally_partial_sigs_item *p = &partial_sigs->items[i];
+
+            push_psbt_key(cursor, max, WALLY_PSBT_IN_PARTIAL_SIG,
+                          p->pubkey, get_pubkey_len(p->pubkey, sizeof(p->pubkey)));
+            push_varbuff(cursor, max, p->sig, p->sig_len);
         }
     }
     /* Sighash type */
