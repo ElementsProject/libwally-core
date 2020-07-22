@@ -1991,11 +1991,11 @@ static void push_keypath_item(
     push_psbt_key(cursor, max, type, item->pubkey,
                   get_pubkey_len(item->pubkey, sizeof(item->pubkey)));
 
-    origin_len = 4;     /* Start with 4 bytes for fingerprint */
+    origin_len = BIP32_KEY_FINGERPRINT_LEN;
     origin_len += item->path_len * sizeof(uint32_t);
     push_varint(cursor, max, origin_len);
 
-    push_bytes(cursor, max, item->fingerprint, 4);
+    push_bytes(cursor, max, item->fingerprint, sizeof(item->fingerprint));
     for (i = 0; i < item->path_len; ++i) {
         push_bytes(cursor, max, &item->path[i], sizeof(uint32_t));
     }
