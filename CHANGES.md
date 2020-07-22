@@ -9,6 +9,9 @@
   instead of returning WALLY_EINVAL. See the generated API documentation
   section "Variable Length Output Buffers" for details.
 
+- psbt_init_alloc and psbt_elements_init_alloc now take a version number
+  as their first argument which must be 0.
+
 - psbt_input_init_alloc, psbt_input_free, psbt_output_init_alloc, psbt_output_free,
   and their elements counterparts psbt_elements_input_init_alloc and
   psbt_elements_output_init_alloc have been removed.

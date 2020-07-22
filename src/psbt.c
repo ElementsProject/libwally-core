@@ -800,16 +800,17 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
     return WALLY_OK;
 }
 
-int wally_psbt_init_alloc(
-    size_t inputs_allocation_len,
-    size_t outputs_allocation_len,
-    size_t global_unknowns_allocation_len,
-    struct wally_psbt **output)
+int wally_psbt_init_alloc(uint32_t version, size_t inputs_allocation_len,
+                          size_t outputs_allocation_len,
+                          size_t global_unknowns_allocation_len,
+                          struct wally_psbt **output)
 {
     struct wally_psbt *result;
     int ret;
 
     TX_CHECK_OUTPUT;
+    if (version)
+        return WALLY_EINVAL; /* Only version 0 is specified/supported */
     TX_OUTPUT_ALLOC(struct wally_psbt);
 
     if (inputs_allocation_len)
@@ -825,8 +826,7 @@ int wally_psbt_init_alloc(
         return ret != WALLY_OK ? ret : WALLY_ENOMEM;
     }
 
-    /* Version is always 0 */
-    result->version = 0;
+    result->version = version;
     memcpy(result->magic, WALLY_PSBT_MAGIC, sizeof(WALLY_PSBT_MAGIC));
     result->inputs_allocation_len = inputs_allocation_len;
     result->outputs_allocation_len = outputs_allocation_len;
@@ -836,12 +836,13 @@ int wally_psbt_init_alloc(
 
 #ifdef BUILD_ELEMENTS
 int wally_psbt_elements_init_alloc(
+    uint32_t version,
     size_t inputs_allocation_len,
     size_t outputs_allocation_len,
     size_t global_unknowns_allocation_len,
     struct wally_psbt **output)
 {
-    int ret = wally_psbt_init_alloc(inputs_allocation_len,
+    int ret = wally_psbt_init_alloc(version, inputs_allocation_len,
                                     outputs_allocation_len,
                                     global_unknowns_allocation_len, output);
     if (ret == WALLY_OK)
@@ -1804,7 +1805,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     }
 
     /* Make the wally_psbt */
-    ret = wally_psbt_init_alloc(0, 0, 8, &result);
+    ret = wally_psbt_init_alloc(0, 0, 0, 8, &result);
     if (ret != WALLY_OK)
         goto fail;
 

@@ -33,7 +33,7 @@ class PSBTTests(unittest.TestCase):
 
         for creator in creators:
             psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 2, 0, psbt))
+            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(0, 2, 2, 0, psbt))
 
             tx = pointer(wally_tx())
             self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))

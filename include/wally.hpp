@@ -59,8 +59,8 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(s1, out); \
 }
 
-#define WALLY_FN_SSS_A(F, N) template <class O> inline int F(size_t s1, size_t s2, size_t s3, O * *out) { \
-        return ::N(s1, s2, s3, out); \
+#define WALLY_FN_3SSS_A(F, N) template <class O> inline int F(uint32_t i321, size_t s1, size_t s2, size_t s3, O * *out) { \
+        return ::N(i321, s1, s2, s3, out); \
 }
 
 #define WALLY_FN_SSSS_S(F, N) inline int F(size_t s1, size_t s2, size_t s3, size_t s4, size_t * written = 0) { \
@@ -465,6 +465,7 @@ WALLY_FN_3(cleanup, wally_cleanup)
 WALLY_FN_3(init, wally_init)
 WALLY_FN_333BBBBB_A(bip32_key_init_alloc, bip32_key_init_alloc)
 WALLY_FN_33SS_A(tx_init_alloc, wally_tx_init_alloc)
+WALLY_FN_3SSS_A(psbt_init_alloc, wally_psbt_init_alloc)
 WALLY_FN_6B_A(tx_output_init_alloc, wally_tx_output_init_alloc)
 WALLY_FN_B(ec_private_key_verify, wally_ec_private_key_verify)
 WALLY_FN_B(ec_public_key_verify, wally_ec_public_key_verify)
@@ -622,7 +623,6 @@ WALLY_FN_P_S(tx_get_weight, wally_tx_get_weight)
 WALLY_FN_P_S(tx_get_witness_count, wally_tx_get_witness_count)
 WALLY_FN_P_S(tx_is_coinbase, wally_tx_is_coinbase)
 WALLY_FN_P_S(wif_is_uncompressed, wally_wif_is_uncompressed)
-WALLY_FN_SSS_A(psbt_init_alloc, wally_psbt_init_alloc)
 WALLY_FN_S_A(keypath_map_init_alloc, wally_keypath_map_init_alloc)
 WALLY_FN_S_A(partial_sigs_map_init_alloc, wally_partial_sigs_map_init_alloc)
 WALLY_FN_S_A(tx_witness_stack_init_alloc, wally_tx_witness_stack_init_alloc)
@@ -654,6 +654,7 @@ inline bool is_elements_build()
 }
 
 #ifdef BUILD_ELEMENTS
+WALLY_FN_3SSS_A(psbt_elements_init_alloc, wally_psbt_elements_init_alloc)
 WALLY_FN_6BBBBBBBB6II_BS(asset_rangeproof, wally_asset_rangeproof)
 WALLY_FN_6BB_B(asset_value_commitment, wally_asset_value_commitment)
 WALLY_FN_6_B(tx_confidential_value_from_satoshi, wally_tx_confidential_value_from_satoshi)
@@ -710,7 +711,6 @@ WALLY_FN_PSBB33_B(tx_get_elements_signature_hash, wally_tx_get_elements_signatur
 WALLY_FN_P_S(tx_elements_input_is_pegin, wally_tx_elements_input_is_pegin)
 WALLY_FN_P_S(tx_is_elements, wally_tx_is_elements)
 WALLY_FN_SSSS_S(elements_pegout_script_size, wally_elements_pegout_script_size)
-WALLY_FN_SSS_A(psbt_elements_init_alloc, wally_psbt_elements_init_alloc)
 WALLY_FN_S_S(asset_pak_whitelistproof_size, wally_asset_pak_whitelistproof_size)
 WALLY_FN_S_S(asset_surjectionproof_size, wally_asset_surjectionproof_size)
 #endif /* BUILD_ELEMENTS */

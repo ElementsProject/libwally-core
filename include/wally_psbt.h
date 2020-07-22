@@ -498,12 +498,14 @@ WALLY_CORE_API int wally_psbt_output_set_unknowns(
 /**
  * Allocate and initialize a new PSBT.
  *
+ * :param version: The version of the PSBT. Must be 0.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
  * :param output: Destination for the resulting PSBT output.
  */
 WALLY_CORE_API int wally_psbt_init_alloc(
+    uint32_t version,
     size_t inputs_allocation_len,
     size_t outputs_allocation_len,
     size_t global_unknowns_allocation_len,
@@ -652,12 +654,14 @@ WALLY_CORE_API int wally_psbt_is_elements(
 /**
  * Allocate and initialize a new elements PSBT.
  *
+ * :param version: The version of the PSBT. Must be 0.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
  * :param output: Destination for the resulting PSBT output.
  */
 WALLY_CORE_API int wally_psbt_elements_init_alloc(
+    uint32_t version,
     size_t inputs_allocation_len,
     size_t outputs_allocation_len,
     size_t global_unknowns_allocation_len,
