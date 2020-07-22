@@ -14,6 +14,11 @@
 #include "script.h"
 #include "pullpush.h"
 
+/* FIXME: In input getters and setters, as well as in pubkey keyed maps,
+ * Check the validity of the values being set (e.g. the length is correct
+ * for the type, the pubkey is valid etc etc)
+ */
+
 static const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
