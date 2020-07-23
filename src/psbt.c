@@ -2473,15 +2473,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
         /* Sign the sighash */
         flags = flags & EC_FLAG_GRIND_R; /* Only grinding flag is relevant */
-        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, EC_FLAG_ECDSA | flags, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
+        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, EC_FLAG_ECDSA | flags, sig, EC_SIGNATURE_LEN)) != WALLY_OK)
             return ret;
-        }
-        if ((ret = wally_ec_sig_normalize(sig, EC_SIGNATURE_LEN, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
+        if ((ret = wally_ec_sig_to_der(sig, EC_SIGNATURE_LEN, der_sig, EC_SIGNATURE_DER_MAX_LEN, &der_sig_len)) != WALLY_OK)
             return ret;
-        }
-        if ((ret = wally_ec_sig_to_der(sig, EC_SIGNATURE_LEN, der_sig, EC_SIGNATURE_DER_MAX_LEN, &der_sig_len)) != WALLY_OK) {
-            return ret;
-        }
 
         /* Add the sighash type to the end of the sig */
         der_sig[der_sig_len] = (unsigned char)sighash_type;
