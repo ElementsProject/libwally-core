@@ -243,10 +243,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *label, size_t label_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *genesis_blockhash, size_t genesis_blockhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *mainchain_script, size_t mainchain_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sub_pubkey, size_t sub_pubkey_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *whitelist_proof, size_t whitelist_proof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *whitelistproof, size_t whitelistproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *online_keys, size_t online_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *offline_keys, size_t offline_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *online_priv_key, size_t online_priv_key_len) };

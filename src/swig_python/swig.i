@@ -209,7 +209,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *pass, size_t pass_len);
 %pybuffer_nullable_binary(const unsigned char *parent160, size_t parent160_len);
 %pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
-%pybuffer_nonnull_binary(const unsigned char *proof, size_t proof_len);
+%pybuffer_nullable_binary(const unsigned char *proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
 %pybuffer_nonnull_binary(const unsigned char *salt, size_t salt_len);
 %pybuffer_nullable_binary(const unsigned char *script, size_t script_len);
@@ -239,9 +239,9 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nonnull_binary(const unsigned char *sub_pubkey, size_t sub_pubkey_len);
 %pybuffer_nonnull_binary(const unsigned char *online_priv_key, size_t online_priv_key_len);
 %pybuffer_nonnull_binary(const unsigned char *summed_key, size_t summed_key_len);
-%pybuffer_nonnull_binary(const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len);
+%pybuffer_nullable_binary(const unsigned char *genesis_blockhash, size_t genesis_blockhash_len);
 %pybuffer_nonnull_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
-%pybuffer_nonnull_binary(const unsigned char *whitelist_proof, size_t whitelist_proof_len);
+%pybuffer_nonnull_binary(const unsigned char *whitelistproof, size_t whitelistproof_len);
 %pybuffer_nullable_binary(const unsigned char *redeem_script, size_t redeem_script_len);
 %pybuffer_nullable_binary(const unsigned char *witness_script, size_t witness_script_len);
 %pybuffer_nullable_binary(const unsigned char *final_script_sig, size_t final_script_sig_len);

@@ -26,6 +26,15 @@ WALLY_CORE_API int wally_psbt_set_input_partial_sigs(struct wally_psbt *psbt, si
 WALLY_CORE_API int wally_psbt_set_input_unknowns(struct wally_psbt *psbt, size_t index, const struct wally_unknowns_map *unknowns);
 WALLY_CORE_API int wally_psbt_set_input_sighash_type(struct wally_psbt *psbt, size_t index, uint32_t sighash_type);
 #ifdef BUILD_ELEMENTS
+WALLY_CORE_API int wally_psbt_set_input_value(struct wally_psbt *psbt, size_t index, uint64_t value);
+WALLY_CORE_API int wally_psbt_clear_input_value(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_vbf(struct wally_psbt *psbt, size_t index, const unsigned char *vbf, size_t vbf_len);
+WALLY_CORE_API int wally_psbt_set_input_asset(struct wally_psbt *psbt, size_t index, const unsigned char *asset, size_t asset_len);
+WALLY_CORE_API int wally_psbt_set_input_abf(struct wally_psbt *psbt, size_t index, const unsigned char *abf, size_t abf_len);
+WALLY_CORE_API int wally_psbt_set_input_peg_in_tx(struct wally_psbt *psbt, size_t index, const struct wally_tx *peg_in_tx);
+WALLY_CORE_API int wally_psbt_set_input_txoutproof(struct wally_psbt *psbt, size_t index, const unsigned char *proof, size_t proof_len);
+WALLY_CORE_API int wally_psbt_set_input_genesis_blockhash(struct wally_psbt *psbt, size_t index, const unsigned char *genesis_blockhash, size_t genesis_blockhash_len);
+WALLY_CORE_API int wally_psbt_set_input_claim_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
 #endif /* BUILD_ELEMENTS */
 
 /* Outputs */
@@ -42,8 +51,8 @@ WALLY_CORE_API int wally_psbt_set_output_vbf(struct wally_psbt *psbt, size_t ind
 WALLY_CORE_API int wally_psbt_set_output_asset_commitment(struct wally_psbt *psbt, size_t index, const unsigned char *commitment, size_t commitment_len);
 WALLY_CORE_API int wally_psbt_set_output_abf(struct wally_psbt *psbt, size_t index, const unsigned char *abf, size_t abf_len);
 WALLY_CORE_API int wally_psbt_set_output_nonce(struct wally_psbt *psbt, size_t index, const unsigned char *nonce, size_t nonce_len);
-WALLY_CORE_API int wally_psbt_set_output_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
-WALLY_CORE_API int wally_psbt_set_output_surjectionproof(struct wally_psbt *psbt, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
+WALLY_CORE_API int wally_psbt_set_output_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *proof, size_t proof_len);
+WALLY_CORE_API int wally_psbt_set_output_surjectionproof(struct wally_psbt *psbt, size_t index, const unsigned char *proof, size_t proof_len);
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus

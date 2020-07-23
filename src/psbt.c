@@ -467,22 +467,22 @@ int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_redeem_script(struct wally_psbt_input *input,
-                                       const unsigned char *redeem_script,
-                                       size_t redeem_script_len)
+                                       const unsigned char *script,
+                                       size_t script_len)
 {
     if (!input)
         return WALLY_EINVAL;
-    return replace_bytes(redeem_script, redeem_script_len,
+    return replace_bytes(script, script_len,
                          &input->redeem_script, &input->redeem_script_len);
 }
 
 int wally_psbt_input_set_witness_script(struct wally_psbt_input *input,
-                                        const unsigned char *witness_script,
-                                        size_t witness_script_len)
+                                        const unsigned char *script,
+                                        size_t script_len)
 {
     if (!input)
         return WALLY_EINVAL;
-    return replace_bytes(witness_script, witness_script_len,
+    return replace_bytes(script, script_len,
                          &input->witness_script, &input->witness_script_len);
 }
 
@@ -542,6 +542,8 @@ int wally_psbt_input_set_sighash_type(struct wally_psbt_input *input, uint32_t s
 #ifdef BUILD_ELEMENTS
 int wally_psbt_input_set_value(struct wally_psbt_input *input, uint64_t value)
 {
+    if (!input)
+        return WALLY_EINVAL;
     input->value = value;
     input->has_value = 1u;
     return WALLY_OK;
@@ -549,6 +551,8 @@ int wally_psbt_input_set_value(struct wally_psbt_input *input, uint64_t value)
 
 int wally_psbt_input_clear_value(struct wally_psbt_input *input)
 {
+    if (!input)
+        return WALLY_EINVAL;
     input->value = 0;
     input->has_value = 0;
     return WALLY_OK;
@@ -565,7 +569,7 @@ int wally_psbt_input_set_vbf(struct wally_psbt_input *input,
 int wally_psbt_input_set_asset(struct wally_psbt_input *input,
                                const unsigned char *asset, size_t asset_len)
 {
-    if (!input)
+    if (!input || (asset && asset_len != ASSET_TAG_LEN))
         return WALLY_EINVAL;
     return replace_bytes(asset, asset_len, &input->asset, &input->asset_len);
 }
@@ -596,33 +600,33 @@ int wally_psbt_input_set_peg_in_tx(struct wally_psbt_input *input,
     return ret;
 }
 
-int wally_psbt_input_set_txout_proof(struct wally_psbt_input *input,
-                                     const unsigned char *txout_proof,
-                                     size_t txout_proof_len)
+int wally_psbt_input_set_txoutproof(struct wally_psbt_input *input,
+                                    const unsigned char *txoutproof,
+                                    size_t txoutproof_len)
 {
     if (!input)
         return WALLY_EINVAL;
-    return replace_bytes(txout_proof, txout_proof_len,
-                         &input->txout_proof, &input->txout_proof_len);
+    return replace_bytes(txoutproof, txoutproof_len,
+                         &input->txoutproof, &input->txoutproof_len);
 }
 
-int wally_psbt_input_set_genesis_hash(struct wally_psbt_input *input,
-                                      const unsigned char *genesis_hash,
-                                      size_t genesis_hash_len)
+int wally_psbt_input_set_genesis_blockhash(struct wally_psbt_input *input,
+                                           const unsigned char *genesis_blockhash,
+                                           size_t genesis_blockhash_len)
 {
-    if (!input)
+    if (!input || (genesis_blockhash && genesis_blockhash_len != SHA256_LEN))
         return WALLY_EINVAL;
-    return replace_bytes(genesis_hash, genesis_hash_len,
-                         &input->genesis_hash, &input->genesis_hash_len);
+    return replace_bytes(genesis_blockhash, genesis_blockhash_len,
+                         &input->genesis_blockhash, &input->genesis_blockhash_len);
 }
 
 int wally_psbt_input_set_claim_script(struct wally_psbt_input *input,
-                                      const unsigned char *claim_script,
-                                      size_t claim_script_len)
+                                      const unsigned char *script,
+                                      size_t script_len)
 {
     if (!input)
         return WALLY_EINVAL;
-    return replace_bytes(claim_script, claim_script_len,
+    return replace_bytes(script, script_len,
                          &input->claim_script, &input->claim_script_len);
 }
 #endif /* BUILD_ELEMENTS */
@@ -645,8 +649,8 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         clear_and_free(input->asset, input->asset_len);
         clear_and_free(input->abf, input->abf_len);
         wally_tx_free(input->peg_in_tx);
-        clear_and_free(input->txout_proof, input->txout_proof_len);
-        clear_and_free(input->genesis_hash, input->genesis_hash_len);
+        clear_and_free(input->txoutproof, input->txoutproof_len);
+        clear_and_free(input->genesis_blockhash, input->genesis_blockhash_len);
         clear_and_free(input->claim_script, input->claim_script_len);
 #endif /* BUILD_ELEMENTS */
 
@@ -658,22 +662,22 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 }
 
 int wally_psbt_output_set_redeem_script(struct wally_psbt_output *output,
-                                        const unsigned char *redeem_script,
-                                        size_t redeem_script_len)
+                                        const unsigned char *script,
+                                        size_t script_len)
 {
     if (!output)
         return WALLY_EINVAL;
-    return replace_bytes(redeem_script, redeem_script_len,
+    return replace_bytes(script, script_len,
                          &output->redeem_script, &output->redeem_script_len);
 }
 
 int wally_psbt_output_set_witness_script(struct wally_psbt_output *output,
-                                         const unsigned char *witness_script,
-                                         size_t witness_script_len)
+                                         const unsigned char *script,
+                                         size_t script_len)
 {
     if (!output)
         return WALLY_EINVAL;
-    return replace_bytes(witness_script, witness_script_len,
+    return replace_bytes(script, script_len,
                          &output->witness_script, &output->witness_script_len);
 }
 
@@ -1377,10 +1381,10 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 break;
             }
             case WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF:
-                PSBT_PULL_B(input, txout_proof);
+                PSBT_PULL_B(input, txoutproof);
                 break;
             case WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH:
-                PSBT_PULL_B(input, genesis_hash);
+                PSBT_PULL_B(input, genesis_blockhash);
                 break;
             case WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT:
                 PSBT_PULL_B(input, claim_script);
@@ -1867,13 +1871,13 @@ static int push_psbt_input(
             return ret;
         }
     }
-    if (input->txout_proof) {
+    if (input->txoutproof) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF, NULL, 0);
-        push_varbuff(cursor, max, input->txout_proof, input->txout_proof_len);
+        push_varbuff(cursor, max, input->txoutproof, input->txoutproof_len);
     }
-    if (input->genesis_hash) {
+    if (input->genesis_blockhash) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH, NULL, 0);
-        push_varbuff(cursor, max, input->genesis_hash, input->genesis_hash_len);
+        push_varbuff(cursor, max, input->genesis_blockhash, input->genesis_blockhash_len);
     }
     if (input->claim_script) {
         push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT, NULL, 0);
@@ -2251,8 +2255,8 @@ static int combine_inputs(struct wally_psbt_input *dst,
     COMBINE_BYTES(input, abf);
     if ((ret = combine_txs(&dst->peg_in_tx, src->peg_in_tx)) != WALLY_OK)
         return ret;
-    COMBINE_BYTES(input, txout_proof);
-    COMBINE_BYTES(input, genesis_hash);
+    COMBINE_BYTES(input, txoutproof);
+    COMBINE_BYTES(input, genesis_blockhash);
     COMBINE_BYTES(input, claim_script);
 #endif
     return WALLY_OK;
@@ -2818,11 +2822,7 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
 #define PSBT_SET_I(typ, name, inttyp) \
     int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
                                             inttyp v) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (!p) \
-            return WALLY_EINVAL; \
-        p->name = v; \
-        return WALLY_OK; \
+        return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), v); \
     }
 
 /* Set a struct on an input/output */
@@ -2843,6 +2843,19 @@ PSBT_SET_S(input, keypaths, wally_keypath_map)
 PSBT_SET_S(input, partial_sigs, wally_partial_sigs_map)
 PSBT_SET_S(input, unknowns, wally_unknowns_map)
 PSBT_SET_I(input, sighash_type, uint32_t)
+#ifdef BUILD_ELEMENTS
+PSBT_SET_I(input, value, uint64_t)
+int wally_psbt_clear_input_value(struct wally_psbt *psbt, size_t index) {
+    return wally_psbt_input_clear_value(psbt_get_input(psbt, index));
+}
+PSBT_SET_B(input, vbf)
+PSBT_SET_B(input, asset)
+PSBT_SET_B(input, abf)
+PSBT_SET_S(input, peg_in_tx, wally_tx)
+PSBT_SET_B(input, txoutproof)
+PSBT_SET_B(input, genesis_blockhash)
+PSBT_SET_B(input, claim_script)
+#endif /* BUILD_ELEMENTS */
 
 PSBT_SET_B(output, redeem_script)
 PSBT_SET_B(output, witness_script)

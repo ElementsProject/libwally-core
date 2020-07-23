@@ -133,10 +133,10 @@ struct wally_psbt_input {
     unsigned char *abf;
     size_t abf_len;
     struct wally_tx *peg_in_tx;
-    unsigned char *txout_proof;
-    size_t txout_proof_len;
-    unsigned char *genesis_hash;
-    size_t genesis_hash_len;
+    unsigned char *txoutproof;
+    size_t txoutproof_len;
+    unsigned char *genesis_blockhash;
+    size_t genesis_blockhash_len;
     unsigned char *claim_script;
     size_t claim_script_len;
 #endif /* BUILD_ELEMENTS */
@@ -368,25 +368,25 @@ WALLY_CORE_API int wally_psbt_input_set_witness_utxo(
  * Set the redeem_script in an input.
  *
  * :param input: The input to update.
- * :param redeem_script: The redeem script for this input.
- * :param redeem_script_len: Length of ``redeem_script`` in bytes.
+ * :param script: The redeem script for this input.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_input_set_redeem_script(
     struct wally_psbt_input *input,
-    const unsigned char *redeem_script,
-    size_t redeem_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
  * Set the witness_script in an input.
  *
  * :param input: The input to update.
- * :param witness_script: The witness script for this input.
- * :param witness_script_len: Length of ``witness_script`` in bytes.
+ * :param script: The witness script for this input.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_input_set_witness_script(
     struct wally_psbt_input *input,
-    const unsigned char *witness_script,
-    size_t witness_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
  * Set the final_script_sig in an input.
@@ -454,25 +454,25 @@ WALLY_CORE_API int wally_psbt_input_set_sighash_type(
  * Set the redeem_script in an output.
  *
  * :param output: The input to update.
- * :param redeem_script: The redeem script for this output.
- * :param redeem_script_len: Length of ``redeem_script`` in bytes.
+ * :param script: The redeem script for this output.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_output_set_redeem_script(
     struct wally_psbt_output *output,
-    const unsigned char *redeem_script,
-    size_t redeem_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
  * Set the witness_script in an output.
  *
  * :param output: The output to update.
- * :param witness_script: The witness script for this output.
- * :param witness_script_len: Length of ``witness_script`` in bytes.
+ * :param script: The witness script for this output.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_output_set_witness_script(
     struct wally_psbt_output *output,
-    const unsigned char *witness_script,
-    size_t witness_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
  * Set the keypaths in an output.
@@ -736,37 +736,37 @@ WALLY_CORE_API int wally_psbt_input_set_peg_in_tx(
  * Set the txout proof in an elements input.
  *
  * :param input: The input to update.
- * :param txout_proof: The txout proof for this input.
- * :param txout_proof_len: Length of ``txout_proof`` in bytes.
+ * :param proof: The txout proof for this input.
+ * :param proof_len: Length of ``proof`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_txout_proof(
+WALLY_CORE_API int wally_psbt_input_set_txoutproof(
     struct wally_psbt_input *input,
-    const unsigned char *txout_proof,
-    size_t txout_proof_len);
+    const unsigned char *proof,
+    size_t proof_len);
 
 /**
  * Set the genesis hash in an elements input.
  *
  * :param input: The input to update.
- * :param genesis_hash: The genesis hash for this input.
- * :param genesis_hash_len: Length of ``genesis_hash`` in bytes.
+ * :param genesis_blockhash: The genesis hash for this input.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_set_genesis_hash(
+WALLY_CORE_API int wally_psbt_input_set_genesis_blockhash(
     struct wally_psbt_input *input,
-    const unsigned char *genesis_hash,
-    size_t genesis_hash_len);
+    const unsigned char *genesis_blockhash,
+    size_t genesis_blockhash_len);
 
 /**
  * Set the claim script in an elements input.
  *
  * :param input: The input to update.
- * :param claim_script: The claim script for this input.
- * :param claim_script_len: Length of ``claim_script`` in bytes.
+ * :param script: The claim script for this input.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_input_set_claim_script(
     struct wally_psbt_input *input,
-    const unsigned char *claim_script,
-    size_t claim_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
  * Set the blinding pubkey in an elements output.
@@ -844,25 +844,25 @@ WALLY_CORE_API int wally_psbt_output_set_nonce(
  * Set the range proof in an elements output.
  *
  * :param output: The output to update.
- * :param rangeproof: The rangeproof for this output.
- * :param rangeproof_len: Length of ``rangeproof`` in bytes.
+ * :param proof: The range proof for this output.
+ * :param proof_len: Length of ``proof`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_output_set_rangeproof(
     struct wally_psbt_output *output,
-    const unsigned char *rangeproof,
-    size_t rangeproof_len);
+    const unsigned char *proof,
+    size_t proof_len);
 
 /**
  * Set the surjection proof in an elements output.
  *
  * :param output: The output to update.
- * :param surjectionproof: The surjection proof for this output.
- * :param surjectionproof_len: Length of ``surjectionproof`` in bytes.
+ * :param proof: The surjection proof for this output.
+ * :param proof_len: Length of ``proof`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_output_set_surjectionproof(
     struct wally_psbt_output *output,
-    const unsigned char *surjectionproof,
-    size_t surjectionproof_len);
+    const unsigned char *proof,
+    size_t proof_len);
 #endif /* SWIG */
 
 #endif /* BUILD_ELEMENTS */

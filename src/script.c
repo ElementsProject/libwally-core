@@ -885,28 +885,28 @@ int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_le
     return ret;
 }
 
-int wally_elements_pegout_script_size(size_t parent_genesis_blockhash_len,
+int wally_elements_pegout_script_size(size_t genesis_blockhash_len,
                                       size_t mainchain_script_len,
                                       size_t sub_pubkey_len,
-                                      size_t whitelist_proof_len,
+                                      size_t whitelistproof_len,
                                       size_t *written)
 {
     *written = 1
-               + parent_genesis_blockhash_len + calc_push_opcode_size(parent_genesis_blockhash_len)
+               + genesis_blockhash_len + calc_push_opcode_size(genesis_blockhash_len)
                + mainchain_script_len + calc_push_opcode_size(mainchain_script_len)
                + sub_pubkey_len + calc_push_opcode_size(sub_pubkey_len)
-               + whitelist_proof_len + calc_push_opcode_size(whitelist_proof_len);
+               + whitelistproof_len + calc_push_opcode_size(whitelistproof_len);
     return WALLY_OK;
 }
 
-int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_blockhash,
-                                            size_t parent_genesis_blockhash_len,
+int wally_elements_pegout_script_from_bytes(const unsigned char *genesis_blockhash,
+                                            size_t genesis_blockhash_len,
                                             const unsigned char *mainchain_script,
                                             size_t mainchain_script_len,
                                             const unsigned char *sub_pubkey,
                                             size_t sub_pubkey_len,
-                                            const unsigned char *whitelist_proof,
-                                            size_t whitelist_proof_len,
+                                            const unsigned char *whitelistproof,
+                                            size_t whitelistproof_len,
                                             uint32_t flags,
                                             unsigned char *bytes_out,
                                             size_t len,
@@ -928,19 +928,19 @@ int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_
     if (written)
         *written = 0;
 
-    if (!parent_genesis_blockhash || parent_genesis_blockhash_len != 32 ||
+    if (!genesis_blockhash || genesis_blockhash_len != SHA256_LEN ||
         !mainchain_script || !mainchain_script_len || !sub_pubkey || sub_pubkey_len != EC_PUBLIC_KEY_LEN ||
-        !whitelist_proof || !whitelist_proof_len || flags || !bytes_out || !len)
+        !whitelistproof || !whitelistproof_len || flags || !bytes_out || !len)
         return WALLY_EINVAL;
 
     *bytes_out = OP_RETURN;
     if (written)
         *written += bytes_written;
 
-    pegout_script_push(parent_genesis_blockhash, parent_genesis_blockhash_len);
+    pegout_script_push(genesis_blockhash, genesis_blockhash_len);
     pegout_script_push(mainchain_script, mainchain_script_len);
     pegout_script_push(sub_pubkey, sub_pubkey_len);
-    pegout_script_push(whitelist_proof, whitelist_proof_len);
+    pegout_script_push(whitelistproof, whitelistproof_len);
 
     return WALLY_OK;
 

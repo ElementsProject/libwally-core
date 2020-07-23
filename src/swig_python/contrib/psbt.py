@@ -50,6 +50,7 @@ class PSBTTests(unittest.TestCase):
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
             dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
+            dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
 
         dummy_keypaths = keypath_map_init(0)
         self.assertIsNotNone(dummy_keypaths)
@@ -79,6 +80,20 @@ class PSBTTests(unittest.TestCase):
         self._try_set(psbt_set_input_redeem_script, psbt, dummy_bytes)
         self._try_set(psbt_set_input_witness_script, psbt, dummy_bytes)
         self._try_set(psbt_set_input_final_script_sig, psbt, dummy_bytes)
+        if is_elements_build():
+            self._try_set(psbt_set_input_value, psbt, 1234567, 0)
+            psbt_clear_input_value(psbt, 0)
+            with self.assertRaises(ValueError):
+                psbt_clear_input_value(None, 0) # Null PSBT
+            with self.assertRaises(ValueError):
+                psbt_clear_input_value(psbt, 1) # Invalid index
+            self._try_set(psbt_set_input_vbf, psbt, dummy_bf)
+            self._try_set(psbt_set_input_asset, psbt, dummy_asset)
+            self._try_set(psbt_set_input_abf, psbt, dummy_bf)
+            self._try_set(psbt_set_input_peg_in_tx, psbt, dummy_tx)
+            self._try_set(psbt_set_input_txoutproof, psbt, dummy_bytes)
+            self._try_set(psbt_set_input_genesis_blockhash, psbt, dummy_bytes)
+            self._try_set(psbt_set_input_claim_script, psbt, dummy_bytes)
 
         #
         # Outputs
