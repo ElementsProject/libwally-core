@@ -26,7 +26,7 @@ class TxTests(unittest.TestCase):
         txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'0000', b'000000'
         witness = tx_witness_stack_init(5)
         tx_witness_stack_add(witness, witness_script)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             tx_input_init(None, 0, seq, script, witness) # Null txhash
         with self.assertRaises(ValueError):
             tx_input_init(bytes(), 0, seq, script, witness) # Empty txhash

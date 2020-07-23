@@ -11,7 +11,7 @@ class ElementsTxTests(unittest.TestCase):
         nonce, entropy = b'0' * 32, b'0' * 32
         witness = tx_witness_stack_init(5)
         tx_witness_stack_add(witness, witness_script)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             tx_elements_input_init(None, 0, seq, script, witness, nonce, entropy) # Null txhash
         with self.assertRaises(ValueError):
             tx_elements_input_init(bytes(), 0, seq, script, witness, nonce, entropy) # Empty txhash

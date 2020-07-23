@@ -2,6 +2,11 @@
 
 ## Version 0.7.9
 
+- Python: 'None' passed as a binary buffer argument to wally calls which
+  require the buffer to be non-NULL now consistently throws ValueError (Just
+  as the library does for incorrectly sized or otherwise invalid inputs).
+  Previously this might throw a TypeError depending on the function.
+
 - wally_is_elements_build now takes a size_t output instead of uin64_t.
 
 - elements_pegout_script_from_bytes, asset_pak_whitelistproof and
