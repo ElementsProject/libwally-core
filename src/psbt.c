@@ -2318,7 +2318,7 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 }
 
 int wally_psbt_sign(struct wally_psbt *psbt,
-                    const unsigned char *key, size_t key_len)
+                    const unsigned char *key, size_t key_len, uint32_t flags)
 {
     unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     unsigned char sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
@@ -2326,7 +2326,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     size_t i, der_sig_len, is_elements;
     int ret;
 
-    if (!psbt || !psbt->tx || !key || key_len != EC_PRIVATE_KEY_LEN) {
+    if (!psbt || !psbt->tx || !key || key_len != EC_PRIVATE_KEY_LEN ||
+        (flags & ~EC_FLAGS_ALL)) {
         return WALLY_EINVAL;
     }
 
@@ -2471,7 +2472,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         }
 
         /* Sign the sighash */
-        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, EC_FLAG_ECDSA | EC_FLAG_GRIND_R, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
+        flags = flags & EC_FLAG_GRIND_R; /* Only grinding flag is relevant */
+        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, EC_FLAG_ECDSA | flags, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
             return ret;
         }
         if ((ret = wally_ec_sig_normalize(sig, EC_SIGNATURE_LEN, sig, EC_SIGNATURE_LEN)) != WALLY_OK) {

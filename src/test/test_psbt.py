@@ -3,6 +3,8 @@ import json
 import unittest
 from util import *
 
+FLAG_GRIND_R = 0x4
+
 class PSBTTests(unittest.TestCase):
 
     def test_serialization(self):
@@ -79,7 +81,7 @@ class PSBTTests(unittest.TestCase):
             for priv in signer['privkeys']:
                 buf, buf_len = make_cbuffer('00'*32)
                 self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
-                self.assertEqual(WALLY_OK, wally_psbt_sign(psbt, buf, buf_len))
+                self.assertEqual(WALLY_OK, wally_psbt_sign(psbt, buf, buf_len, FLAG_GRIND_R))
 
             ret, reser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
@@ -94,7 +96,7 @@ class PSBTTests(unittest.TestCase):
             for priv in inval_signer['privkeys']:
                 buf, buf_len = make_cbuffer('00'*32)
                 self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
-                self.assertEqual(WALLY_EINVAL, wally_psbt_sign(psbt, buf, buf_len))
+                self.assertEqual(WALLY_EINVAL, wally_psbt_sign(psbt, buf, buf_len, FLAG_GRIND_R))
 
         for finalizer in finalizers:
             psbt = pointer(wally_psbt())

@@ -360,7 +360,7 @@ for f in (
     ('wally_psbt_output_set_unknowns', c_int, [POINTER(wally_psbt_output), POINTER(wally_unknowns_map)]),
     ('wally_psbt_output_set_witness_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
     ('wally_psbt_set_global_tx', c_int, [POINTER(wally_psbt), POINTER(wally_tx)]),
-    ('wally_psbt_sign', c_int, [POINTER(wally_psbt), c_void_p, c_ulong]),
+    ('wally_psbt_sign', c_int, [POINTER(wally_psbt), c_void_p, c_ulong, c_uint]),
     ('wally_psbt_to_base64', c_int, [POINTER(wally_psbt), c_uint, c_char_p_p]),
     ('wally_psbt_to_bytes', c_int, [POINTER(wally_psbt), c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_scriptpubkey_csv_2of2_then_1_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, c_ulong_p]),

@@ -293,6 +293,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 /** Indicates that the signature is recoverable */
 #define EC_FLAG_RECOVERABLE 0x8
 
+/* All defined flags */
+#define EC_FLAGS_ALL (0x1 | 0x2 | 0x4 | 0x8)
 
 /**
  * Verify that a private key is valid.

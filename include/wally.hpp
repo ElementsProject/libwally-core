@@ -290,6 +290,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), WALLYB(i1)); \
 }
 
+#define WALLY_FN_PB3(F, N) template <class P1, class I1> inline int F(const P1 &p1, const I1 &i1, uint32_t i321) { \
+        return ::N(WALLYP(p1), WALLYB(i1), i321); \
+}
+
 #define WALLY_FN_PBB(F, N) template <class P1, class I1, class I2> \
     inline int F(const P1 &p1, const I1 &i1, const I2 &i2) { return ::N(WALLYP(p1), WALLYB(i1), WALLYB(i2)); }
 
@@ -564,8 +568,8 @@ WALLY_FN_PB(psbt_input_set_redeem_script, wally_psbt_input_set_redeem_script)
 WALLY_FN_PB(psbt_input_set_witness_script, wally_psbt_input_set_witness_script)
 WALLY_FN_PB(psbt_output_set_redeem_script, wally_psbt_output_set_redeem_script)
 WALLY_FN_PB(psbt_output_set_witness_script, wally_psbt_output_set_witness_script)
-WALLY_FN_PB(psbt_sign, wally_psbt_sign)
 WALLY_FN_PB(tx_witness_stack_add, wally_tx_witness_stack_add)
+WALLY_FN_PB3(psbt_sign, wally_psbt_sign)
 WALLY_FN_PB33BP3(tx_add_raw_input, wally_tx_add_raw_input)
 WALLY_FN_PB3_A(bip32_key_from_parent_path_alloc, bip32_key_from_parent_path_alloc)
 WALLY_FN_PB3_B(bip38_to_private_key, bip38_to_private_key)
