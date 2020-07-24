@@ -2389,7 +2389,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                 return ret;
             }
             if (input->non_witness_utxo) {
-                if (input->non_witness_utxo->outputs[txin->index].script_len != WALLY_SCRIPTPUBKEY_P2SH_LEN ||
+                if (txin->index >= input->non_witness_utxo->num_outputs ||
+                    input->non_witness_utxo->outputs[txin->index].script_len != WALLY_SCRIPTPUBKEY_P2SH_LEN ||
                     memcmp(sh, input->non_witness_utxo->outputs[txin->index].script, WALLY_SCRIPTPUBKEY_P2SH_LEN) != 0) {
                     return WALLY_EINVAL;
                 }
@@ -2405,6 +2406,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
             scriptcode_len = input->redeem_script_len;
         } else {
             if (input->non_witness_utxo) {
+                if (txin->index >= input->non_witness_utxo->num_outputs)
+                    return WALLY_EINVAL;
                 scriptcode = input->non_witness_utxo->outputs[txin->index].script;
                 scriptcode_len = input->non_witness_utxo->outputs[txin->index].script_len;
             } else if (input->witness_utxo) {
