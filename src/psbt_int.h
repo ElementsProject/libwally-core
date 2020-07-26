@@ -44,7 +44,7 @@ WALLY_CORE_API int wally_psbt_set_input_final_script_sig(struct wally_psbt *psbt
 WALLY_CORE_API int wally_psbt_set_input_final_witness(struct wally_psbt *psbt, size_t index, const struct wally_tx_witness_stack *final_witness);
 WALLY_CORE_API int wally_psbt_set_input_keypaths(struct wally_psbt *psbt, size_t index, const struct wally_keypath_map *keypaths);
 WALLY_CORE_API int wally_psbt_set_input_partial_sigs(struct wally_psbt *psbt, size_t index, const struct wally_partial_sigs_map *partial_sigs);
-WALLY_CORE_API int wally_psbt_set_input_unknowns(struct wally_psbt *psbt, size_t index, const struct wally_unknowns_map *unknowns);
+WALLY_CORE_API int wally_psbt_set_input_unknowns(struct wally_psbt *psbt, size_t index, const struct wally_map *map_in);
 WALLY_CORE_API int wally_psbt_set_input_sighash_type(struct wally_psbt *psbt, size_t index, uint32_t sighash_type);
 
 #ifdef BUILD_ELEMENTS
@@ -90,7 +90,7 @@ WALLY_CORE_API int wally_psbt_get_output_unknown_len(const struct wally_psbt *ps
 WALLY_CORE_API int wally_psbt_set_output_redeem_script(struct wally_psbt *psbt, size_t index,  const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_psbt_set_output_witness_script(struct wally_psbt *psbt, size_t index,  const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_psbt_set_output_keypaths(struct wally_psbt *psbt, size_t index,  const struct wally_keypath_map *keypaths);
-WALLY_CORE_API int wally_psbt_set_output_unknowns(struct wally_psbt *psbt, size_t index,  const struct wally_unknowns_map *unknowns);
+WALLY_CORE_API int wally_psbt_set_output_unknowns(struct wally_psbt *psbt, size_t index,  const struct wally_map *map_in);
 
 #ifdef BUILD_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_output_blinding_pubkey(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);

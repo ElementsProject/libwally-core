@@ -58,7 +58,7 @@ extern "C" {
 #ifdef SWIG
 struct wally_keypath_map;
 struct wally_partial_sigs_map;
-struct wally_unknowns_map;
+struct wally_map;
 struct wally_psbt_input;
 struct wally_psbt_output;
 struct wally_psbt;
@@ -94,7 +94,7 @@ struct wally_partial_sigs_map {
 };
 
 /** Unknown item */
-struct wally_unknowns_item {
+struct wally_map_item {
     unsigned char *key;
     size_t key_len;
     unsigned char *value;
@@ -102,8 +102,8 @@ struct wally_unknowns_item {
 };
 
 /** A map of unknown key,value pairs */
-struct wally_unknowns_map {
-    struct wally_unknowns_item *items;
+struct wally_map {
+    struct wally_map_item *items;
     size_t num_items;
     size_t items_allocation_len;
 };
@@ -121,7 +121,7 @@ struct wally_psbt_input {
     struct wally_tx_witness_stack *final_witness;
     struct wally_keypath_map *keypaths;
     struct wally_partial_sigs_map *partial_sigs;
-    struct wally_unknowns_map *unknowns;
+    struct wally_map *unknowns;
     uint32_t sighash_type;
 #ifdef BUILD_ELEMENTS
     uint64_t value;
@@ -149,7 +149,7 @@ struct wally_psbt_output {
     unsigned char *witness_script;
     size_t witness_script_len;
     struct wally_keypath_map *keypaths;
-    struct wally_unknowns_map *unknowns;
+    struct wally_map *unknowns;
 #ifdef BUILD_ELEMENTS
     unsigned char *blinding_pubkey;
     size_t blinding_pubkey_len;
@@ -180,7 +180,7 @@ struct wally_psbt {
     struct wally_psbt_output *outputs;
     size_t num_outputs;
     size_t outputs_allocation_len;
-    struct wally_unknowns_map *unknowns;
+    struct wally_map *unknowns;
     uint32_t version;
 };
 #endif /* SWIG */
@@ -293,51 +293,51 @@ WALLY_CORE_API int wally_partial_sigs_map_add(
     size_t sig_len);
 
 /**
- * Allocate and initialize a new unknowns map.
+ * Allocate and initialize a new map.
  *
  * :param allocation_len: The number of items to allocate.
- * :param output: Destination for the new unknowns map.
+ * :param output: Destination for the new map.
  */
-WALLY_CORE_API int wally_unknowns_map_init_alloc(
+WALLY_CORE_API int wally_map_init_alloc(
     size_t allocation_len,
-    struct wally_unknowns_map **output);
+    struct wally_map **output);
 
 #ifndef SWIG_PYTHON
 /**
- * Free an unknowns map allocated by `wally_unknowns_map_init_alloc`.
+ * Free a map allocated by `wally_map_init_alloc`.
  *
- * :param unknowns: The unknowns map to free.
+ * :param map_in: The map to free.
  */
-WALLY_CORE_API int wally_unknowns_map_free(
-    struct wally_unknowns_map *unknowns);
+WALLY_CORE_API int wally_map_free(
+    struct wally_map *map_in);
 #endif /* SWIG_PYTHON */
 
 /**
- * Find an item in an unknowns map.
+ * Find an item in a map.
  *
- * :param unknowns: The unknowns map to find ``key`` in.
+ * :param map_in: The map to find ``key`` in.
  * :param key: The key to find.
  * :param key_len: Length of ``key`` in bytes.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
  */
-WALLY_CORE_API int wally_unknowns_map_find(
-    const struct wally_unknowns_map *unknowns,
+WALLY_CORE_API int wally_map_find(
+    const struct wally_map *map_in,
     const unsigned char *key,
     size_t key_len,
     size_t *written);
 
 /**
- * Add an item to an unknowns map.
+ * Add an item to a map.
  *
- * :param unknowns: The unknowns map to add to.
+ * :param map_in: The map to add to.
  * :param key: The key to add.
  * :param key_len: Length of ``key`` in bytes.
  * :param value: The value to add.
  * :param value_len: Length of ``value`` in bytes.
  */
-WALLY_CORE_API int wally_unknowns_map_add(
-    struct wally_unknowns_map *unknowns,
+WALLY_CORE_API int wally_map_add(
+    struct wally_map *map_in,
     const unsigned char *key,
     size_t key_len,
     const unsigned char *value,
@@ -464,11 +464,11 @@ WALLY_CORE_API int wally_psbt_input_find_partial_sig(
  * Set the unknown values in an input.
  *
  * :param input: The input to update.
- * :param unknowns: The unknown key value pairs for this input.
+ * :param map_in: The unknown key value pairs for this input.
  */
 WALLY_CORE_API int wally_psbt_input_set_unknowns(
     struct wally_psbt_input *input,
-    const struct wally_unknowns_map *unknowns);
+    const struct wally_map *map_in);
 
 /**
  * Find an unknown item matching a key in an input.
@@ -548,11 +548,11 @@ WALLY_CORE_API int wally_psbt_output_find_keypath(
  * Set the unknown map in an output.
  *
  * :param output: The output to update.
- * :param unknowns: The unknown key value pairs for this output.
+ * :param map_in: The unknown key value pairs for this output.
  */
 WALLY_CORE_API int wally_psbt_output_set_unknowns(
     struct wally_psbt_output *output,
-    const struct wally_unknowns_map *unknowns);
+    const struct wally_map *map_in);
 
 /**
  * Find an unknown item matching a key in an output.

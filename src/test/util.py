@@ -136,14 +136,14 @@ class wally_partial_sigs_map(Structure):
                 ('num_items', c_ulong),
                 ('items_allocation_len', c_ulong)]
 
-class wally_unknowns_item(Structure):
+class wally_map_item(Structure):
     _fields_ = [('key', c_void_p),
                 ('key_len', c_ulong),
                 ('value', c_void_p),
                 ('value_len', c_ulong)]
 
-class wally_unknowns_map(Structure):
-    _fields_ = [('items', POINTER(wally_unknowns_item)),
+class wally_map(Structure):
+    _fields_ = [('items', POINTER(wally_map_item)),
                 ('num_items', c_ulong),
                 ('items_allocation_len', c_ulong)]
 
@@ -159,7 +159,7 @@ class wally_psbt_input(Structure):
                 ('final_witness', POINTER(wally_tx_witness_stack)),
                 ('keypaths', POINTER(wally_keypath_map)),
                 ('partial_sigs', POINTER(wally_partial_sigs_map)),
-                ('unknowns', POINTER(wally_unknowns_map)),
+                ('unknowns', POINTER(wally_map)),
                 ('sighash_type', c_ulong),
                 ('value', c_uint64),
                 ('has_value', c_ulong),
@@ -183,7 +183,7 @@ class wally_psbt_output(Structure):
                 ('witness_script', c_void_p),
                 ('witness_script_len', c_ulong),
                 ('keypaths', POINTER(wally_keypath_map)),
-                ('unknowns', POINTER(wally_unknowns_map)),
+                ('unknowns', POINTER(wally_map)),
                 ('blinding_pubkey', c_ubyte * 65),
                 ('has_blinding_pubkey', c_ulong),
                 ('value_commitment', c_void_p),
@@ -210,7 +210,7 @@ class wally_psbt(Structure):
                 ('outputs', POINTER(wally_psbt_output)),
                 ('num_outputs', c_ulong),
                 ('outputs_allocation_len', c_ulong),
-                ('unknowns', POINTER(wally_unknowns_map)),
+                ('unknowns', POINTER(wally_map)),
                 ('version', c_ulong)]
 
 for f in (
@@ -354,7 +354,7 @@ for f in (
     ('wally_psbt_input_set_partial_sigs', c_int, [POINTER(wally_psbt_input), POINTER(wally_partial_sigs_map)]),
     ('wally_psbt_input_set_redeem_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_sighash_type', c_int, [POINTER(wally_psbt_input), c_uint]),
-    ('wally_psbt_input_set_unknowns', c_int, [POINTER(wally_psbt_input), POINTER(wally_unknowns_map)]),
+    ('wally_psbt_input_set_unknowns', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
     ('wally_psbt_input_set_witness_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_witness_utxo', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx_output)]),
     ('wally_psbt_is_elements', c_int, [POINTER(wally_psbt), c_ulong_p]),
@@ -362,7 +362,7 @@ for f in (
     ('wally_psbt_output_find_unknown', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong, c_ulong_p]),
     ('wally_psbt_output_set_keypaths', c_int, [POINTER(wally_psbt_output), POINTER(wally_keypath_map)]),
     ('wally_psbt_output_set_redeem_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
-    ('wally_psbt_output_set_unknowns', c_int, [POINTER(wally_psbt_output), POINTER(wally_unknowns_map)]),
+    ('wally_psbt_output_set_unknowns', c_int, [POINTER(wally_psbt_output), POINTER(wally_map)]),
     ('wally_psbt_output_set_witness_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
     ('wally_psbt_set_global_tx', c_int, [POINTER(wally_psbt), POINTER(wally_tx)]),
     ('wally_psbt_sign', c_int, [POINTER(wally_psbt), c_void_p, c_ulong, c_uint]),
@@ -443,10 +443,10 @@ for f in (
     ('wally_tx_witness_stack_init_alloc', c_int, [c_ulong, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_tx_witness_stack_set', c_int, [POINTER(wally_tx_witness_stack), c_ulong, c_void_p, c_ulong]),
     ('wally_tx_witness_stack_set_dummy', c_int, [POINTER(wally_tx_witness_stack), c_ulong, c_uint]),
-    ('wally_unknowns_map_add', c_int, [POINTER(wally_unknowns_map), c_void_p, c_ulong, c_void_p, c_ulong]),
-    ('wally_unknowns_map_find', c_int, [POINTER(wally_unknowns_map), c_void_p, c_ulong, c_ulong_p]),
-    ('wally_unknowns_map_free', c_int, [POINTER(wally_unknowns_map)]),
-    ('wally_unknowns_map_init_alloc', c_int, [c_ulong, POINTER(POINTER(wally_unknowns_map))]),
+    ('wally_map_add', c_int, [POINTER(wally_map), c_void_p, c_ulong, c_void_p, c_ulong]),
+    ('wally_map_find', c_int, [POINTER(wally_map), c_void_p, c_ulong, c_ulong_p]),
+    ('wally_map_free', c_int, [POINTER(wally_map)]),
+    ('wally_map_init_alloc', c_int, [c_ulong, POINTER(POINTER(wally_map))]),
     ('wally_wif_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_char_p_p]),
     ('wally_wif_is_uncompressed', c_int, [c_char_p, c_ulong_p]),
     ('wally_wif_to_address', c_int, [c_char_p, c_uint, c_uint, c_char_p_p]),

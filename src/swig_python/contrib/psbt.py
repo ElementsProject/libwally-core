@@ -98,10 +98,10 @@ class PSBTTests(unittest.TestCase):
         partial_sigs_map_add(dummy_partial_sigs, dummy_pubkey, dummy_sig)
         self.assertEqual(partial_sigs_map_find(dummy_partial_sigs, dummy_pubkey), 1)
 
-        dummy_unknowns = unknowns_map_init(1)
+        dummy_unknowns = map_init(1)
         self.assertIsNotNone(dummy_unknowns)
-        unknowns_map_add(dummy_unknowns, dummy_pubkey, dummy_fingerprint)
-        self.assertEqual(unknowns_map_find(dummy_unknowns, dummy_pubkey), 1)
+        map_add(dummy_unknowns, dummy_pubkey, dummy_fingerprint)
+        self.assertEqual(map_find(dummy_unknowns, dummy_pubkey), 1)
 
         #
         # Inputs

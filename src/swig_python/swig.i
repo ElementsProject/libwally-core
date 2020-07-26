@@ -92,7 +92,7 @@ capsule_dtor(wally_tx, wally_tx_free)
 capsule_dtor(wally_tx_input, wally_tx_input_free)
 capsule_dtor(wally_tx_output, wally_tx_output_free)
 capsule_dtor(wally_tx_witness_stack, wally_tx_witness_stack_free)
-capsule_dtor(wally_unknowns_map, wally_unknowns_map_free)
+capsule_dtor(wally_map, wally_map_free)
 static void destroy_words(PyObject *obj) { (void)obj; }
 
 #define MAX_LOCAL_STACK 256u
@@ -318,7 +318,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_opaque_struct(wally_tx_input);
 %py_opaque_struct(wally_tx_output);
 %py_opaque_struct(wally_tx_witness_stack);
-%py_opaque_struct(wally_unknowns_map)
+%py_opaque_struct(wally_map)
 %py_opaque_struct(words);
 
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
@@ -344,7 +344,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("tx_output_init") wally_tx_output_init_alloc;
 %rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
-%rename("unknowns_map_init") wally_unknowns_map_init_alloc;
+%rename("map_init") wally_map_init_alloc;
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
