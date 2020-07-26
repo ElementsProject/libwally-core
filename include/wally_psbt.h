@@ -57,7 +57,6 @@ extern "C" {
 
 #ifdef SWIG
 struct wally_keypath_map;
-struct wally_partial_sigs_map;
 struct wally_map;
 struct wally_psbt_input;
 struct wally_psbt_output;
@@ -79,21 +78,7 @@ struct wally_keypath_map {
     size_t items_allocation_len;
 };
 
-/** A signature with associated public key */
-struct wally_partial_sigs_item {
-    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    unsigned char *sig;
-    size_t sig_len;
-};
-
-/** A map of public keys to signatures */
-struct wally_partial_sigs_map {
-    struct wally_partial_sigs_item *items;
-    size_t num_items;
-    size_t items_allocation_len;
-};
-
-/** Unknown item */
+/** A map item */
 struct wally_map_item {
     unsigned char *key;
     size_t key_len;
@@ -101,7 +86,7 @@ struct wally_map_item {
     size_t value_len;
 };
 
-/** A map of unknown key,value pairs */
+/** A map of key,value pairs */
 struct wally_map {
     struct wally_map_item *items;
     size_t num_items;
@@ -120,8 +105,8 @@ struct wally_psbt_input {
     size_t final_script_sig_len;
     struct wally_tx_witness_stack *final_witness;
     struct wally_keypath_map *keypaths;
-    struct wally_partial_sigs_map *partial_sigs;
-    struct wally_map *unknowns;
+    struct wally_map partial_sigs;
+    struct wally_map unknowns;
     uint32_t sighash_type;
 #ifdef BUILD_ELEMENTS
     uint64_t value;
@@ -149,7 +134,7 @@ struct wally_psbt_output {
     unsigned char *witness_script;
     size_t witness_script_len;
     struct wally_keypath_map *keypaths;
-    struct wally_map *unknowns;
+    struct wally_map unknowns;
 #ifdef BUILD_ELEMENTS
     unsigned char *blinding_pubkey;
     size_t blinding_pubkey_len;
@@ -180,7 +165,7 @@ struct wally_psbt {
     struct wally_psbt_output *outputs;
     size_t num_outputs;
     size_t outputs_allocation_len;
-    struct wally_map *unknowns;
+    struct wally_map unknowns;
     uint32_t version;
 };
 #endif /* SWIG */
@@ -240,57 +225,6 @@ WALLY_CORE_API int wally_keypath_map_add(
     size_t fingerprint_len,
     const uint32_t *child_path,
     size_t child_path_len);
-
-/**
- * Allocate and initialize a new partial sigs map.
- *
- * :param allocation_len: The number of items to allocate.
- * :param output: Destination for the new partial sigs map.
- */
-WALLY_CORE_API int wally_partial_sigs_map_init_alloc(
-    size_t allocation_len,
-    struct wally_partial_sigs_map **output);
-
-#ifndef SWIG_PYTHON
-/**
- * Free a partial sigs map allocated by `wally_partial_sigs_map_init_alloc`.
- *
- * :param sigs: The partial sigs map to free.
- */
-WALLY_CORE_API int wally_partial_sigs_map_free(
-    struct wally_partial_sigs_map *sigs);
-#endif /* SWIG_PYTHON */
-
-/**
- * Find an item in a partial sigs map.
- *
- * :param sigs: The partial sigs map to find ``pub_key`` in.
- * :param pub_key: The pubkey to find.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
- * :param written: On success, set to zero if the item is not found, otherwise
- *|    the index of the item plus one.
- */
-WALLY_CORE_API int wally_partial_sigs_map_find(
-    const struct wally_partial_sigs_map *sigs,
-    const unsigned char *pub_key,
-    size_t pub_key_len,
-    size_t *written);
-
-/**
- * Add an item to a partial sigs map.
- *
- * :param sigs: The partial sigs map to add to.
- * :param pub_key: The pubkey to add.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
- * :param sig: The DER-encoded signature to add.
- * :param sig_len: Length of ``sig`` in bytes.
- */
-WALLY_CORE_API int wally_partial_sigs_map_add(
-    struct wally_partial_sigs_map *sigs,
-    const unsigned char *pub_key,
-    size_t pub_key_len,
-    const unsigned char *sig,
-    size_t sig_len);
 
 /**
  * Allocate and initialize a new map.
@@ -439,11 +373,11 @@ WALLY_CORE_API int wally_psbt_input_find_keypath(
  * Set the partial signatures in an input.
  *
  * :param input: The input to update.
- * :param partial_sigs: The partial signatures for this input.
+ * :param map_in: The partial signatures for this input.
  */
 WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
     struct wally_psbt_input *input,
-    const struct wally_partial_sigs_map *partial_sigs);
+    const struct wally_map *map_in);
 
 /**
  * Find a partial signature matching a pubkey in an input.
@@ -486,7 +420,7 @@ WALLY_CORE_API int wally_psbt_input_find_unknown(
     size_t *written);
 
 /**
- * Set the partial_sigs in an input.
+ * Set the sighash type in an input.
  *
  * :param input: The input to update.
  * :param sighash_type: The sighash type for this input.

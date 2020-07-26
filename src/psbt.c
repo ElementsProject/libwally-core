@@ -27,6 +27,7 @@ static const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 
 static const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
+
 static bool pubkey_is_compressed(const unsigned char pub_key[EC_PUBLIC_KEY_UNCOMPRESSED_LEN]) {
     return pub_key[0] == 0x02 || pub_key[0] == 0x03;
 }
@@ -195,153 +196,57 @@ int wally_keypath_map_add(struct wally_keypath_map *keypaths,
     return ret;
 }
 
-int wally_partial_sigs_map_init_alloc(size_t allocation_len, struct wally_partial_sigs_map **output)
+int wally_map_init(size_t allocation_len, struct wally_map *output)
 {
-    struct wally_partial_sigs_map *result;
+    if (!output)
+        return WALLY_EINVAL;
 
-    TX_CHECK_OUTPUT;
-    TX_OUTPUT_ALLOC(struct wally_partial_sigs_map);
-
+    wally_clear(output, sizeof(*output));
     if (allocation_len) {
-        result->items = wally_calloc(allocation_len * sizeof(*result->items));
-        if (!result->items) {
-            wally_free(result);
-            *output = NULL;
+        output->items = wally_calloc(allocation_len * sizeof(*output->items));
+        if (!output->items)
             return WALLY_ENOMEM;
-        }
     }
-    result->items_allocation_len = allocation_len;
-    result->num_items = 0;
+    output->items_allocation_len = allocation_len;
     return WALLY_OK;
-}
-
-int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs)
-{
-    size_t i;
-
-    if (sigs) {
-        for (i = 0; i < sigs->num_items; ++i)
-            clear_and_free(sigs->items[i].sig, sigs->items[i].sig_len);
-        clear_and_free(sigs->items, sigs->items_allocation_len * sizeof(*sigs->items));
-        clear_and_free(sigs, sizeof(*sigs));
-    }
-    return WALLY_OK;
-}
-
-int wally_partial_sigs_map_find(const struct wally_partial_sigs_map *partial_sigs,
-                                const unsigned char *pub_key, size_t pub_key_len,
-                                size_t *written)
-{
-    size_t i;
-
-    if (written)
-        *written = 0;
-
-    if (!partial_sigs || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
-        return WALLY_EINVAL;
-
-    for (i = 0; i < partial_sigs->num_items; ++i) {
-        const struct wally_partial_sigs_item *item = &partial_sigs->items[i];
-
-        if (is_equal_pubkey(pub_key, pub_key_len,
-                            item->pubkey, get_pubkey_len(item->pubkey, sizeof(item->pubkey)))) {
-            *written = i + 1; /* Found */
-            break;
-        }
-    }
-    return WALLY_OK;
-}
-
-static int add_partial_sig_item(struct wally_partial_sigs_map *sigs, const struct wally_partial_sigs_item *item)
-{
-    const size_t pub_key_len = get_pubkey_len(item->pubkey, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-    return wally_partial_sigs_map_add(sigs, item->pubkey, pub_key_len,
-                                      item->sig, item->sig_len);
-}
-
-static int replace_partial_sigs(const struct wally_partial_sigs_map *src,
-                                struct wally_partial_sigs_map **dst)
-{
-    struct wally_partial_sigs_map *result = NULL;
-    size_t i;
-    int ret = WALLY_OK;
-
-    if (src) {
-        ret = wally_partial_sigs_map_init_alloc(src->items_allocation_len, &result);
-
-        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = add_partial_sig_item(result, src->items + i);
-    }
-
-    if (ret != WALLY_OK) {
-        wally_partial_sigs_map_free(result);
-    } else {
-        wally_partial_sigs_map_free(*dst);
-        *dst = result;
-    }
-    return ret;
-}
-
-int wally_partial_sigs_map_add(struct wally_partial_sigs_map *sigs,
-                               const unsigned char *pub_key, size_t pub_key_len,
-                               const unsigned char *sig, size_t sig_len)
-{
-    size_t is_found;
-    int ret;
-
-    if (!sigs || !pub_key || !is_valid_pubkey_len(pub_key_len) ||
-        BYTES_INVALID(sig, sig_len))
-        return WALLY_EINVAL;
-
-    ret = wally_partial_sigs_map_find(sigs, pub_key, pub_key_len, &is_found);
-    if (ret != WALLY_OK || is_found)
-        return ret; /* Return WALLY_OK and do nothing if already present */
-
-    ret = array_grow((void *)&sigs->items, sigs->num_items,
-                     &sigs->items_allocation_len, sizeof(struct wally_partial_sigs_item));
-    if (ret == WALLY_OK) {
-        struct wally_partial_sigs_item *new_item = sigs->items + sigs->num_items;
-
-        if (sig && !clone_bytes(&new_item->sig, sig, sig_len))
-            return WALLY_ENOMEM;
-        new_item->sig_len = sig_len;
-        memcpy(&new_item->pubkey, pub_key, pub_key_len);
-        sigs->num_items++;
-    }
-    return ret;
 }
 
 int wally_map_init_alloc(size_t allocation_len, struct wally_map **output)
 {
     struct wally_map *result;
+    int ret;
 
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_map);
 
-    if (allocation_len) {
-        result->items = wally_calloc(allocation_len * sizeof(*result->items));
-        if (!result->items) {
-            wally_free(result);
-            *output = NULL;
-            return WALLY_ENOMEM;
-        }
+    ret = wally_map_init(allocation_len, result);
+    if (ret != WALLY_OK) {
+        wally_free(result);
+        *output = NULL;
     }
-    result->items_allocation_len = allocation_len;
-    result->num_items = 0;
+    return ret;
+}
+
+int wally_map_clear(struct wally_map *map_in)
+{
+    size_t i;
+
+    if (!map_in)
+        return WALLY_EINVAL;
+    for (i = 0; i < map_in->num_items; ++i) {
+        clear_and_free(map_in->items[i].key, map_in->items[i].key_len);
+        clear_and_free(map_in->items[i].value, map_in->items[i].value_len);
+    }
+    clear_and_free(map_in->items, map_in->num_items * sizeof(*map_in->items));
+    wally_clear(map_in, sizeof(*map_in));
     return WALLY_OK;
 }
 
 int wally_map_free(struct wally_map *map_in)
 {
-    size_t i;
-
     if (map_in) {
-        for (i = 0; i < map_in->num_items; ++i) {
-            clear_and_free(map_in->items[i].key, map_in->items[i].key_len);
-            clear_and_free(map_in->items[i].value, map_in->items[i].value_len);
-        }
-        clear_and_free(map_in->items, map_in->num_items * sizeof(*map_in->items));
-        clear_and_free(map_in, sizeof(*map_in));
+        wally_map_clear(map_in);
+        wally_free(map_in);
     }
     return WALLY_OK;
 }
@@ -369,26 +274,31 @@ int wally_map_find(const struct wally_map *map_in,
     return WALLY_OK;
 }
 
-static int replace_unknowns(const struct wally_map *src,
-                            struct wally_map **dst)
+static int replace_map(const struct wally_map *src, struct wally_map *dst,
+                       int (*check_fn)(const unsigned char *key, size_t key_len))
 {
-    struct wally_map *result = NULL;
+    struct wally_map result;
     size_t i;
     int ret = WALLY_OK;
 
-    if (src) {
-        ret = wally_map_init_alloc(src->items_allocation_len, &result);
+    if (!src)
+        ret = wally_map_init(0, &result);
+    else {
+        for (i = 0; check_fn && i < src->num_items; ++i)
+            if (check_fn(src->items[i].key, src->items[i].key_len) != WALLY_OK)
+                return WALLY_EINVAL; /* Invalid key */
 
+        ret = wally_map_init(src->items_allocation_len, &result);
         for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = wally_map_add(result, src->items[i].key, src->items[i].key_len,
+            ret = wally_map_add(&result, src->items[i].key, src->items[i].key_len,
                                 src->items[i].value, src->items[i].value_len);
     }
 
-    if (ret != WALLY_OK) {
-        wally_map_free(result);
-    } else {
-        wally_map_free(*dst);
-        *dst = result;
+    if (ret != WALLY_OK)
+        wally_map_clear(&result);
+    else {
+        wally_map_clear(dst);
+        memcpy(dst, &result, sizeof(result));
     }
     return ret;
 }
@@ -527,9 +437,9 @@ int wally_psbt_input_find_keypath(struct wally_psbt_input *input,
 }
 
 int wally_psbt_input_set_partial_sigs(struct wally_psbt_input *input,
-                                      const struct wally_partial_sigs_map *partial_sigs)
+                                      const struct wally_map *partial_sigs)
 {
-    return input ? replace_partial_sigs(partial_sigs, &input->partial_sigs) : WALLY_EINVAL;
+    return input ? replace_map(partial_sigs, &input->partial_sigs, wally_ec_public_key_verify) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_find_partial_sig(struct wally_psbt_input *input,
@@ -538,15 +448,13 @@ int wally_psbt_input_find_partial_sig(struct wally_psbt_input *input,
 {
     if (written)
         *written = 0;
-    if (!input || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
-        return WALLY_EINVAL;
-    return input->partial_sigs ? wally_partial_sigs_map_find(input->partial_sigs, pub_key, pub_key_len, written) : WALLY_OK;
+    return input ? wally_map_find(&input->partial_sigs, pub_key, pub_key_len, written) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
                                   const struct wally_map *map_in)
 {
-    return input ? replace_unknowns(map_in, &input->unknowns) : WALLY_EINVAL;
+    return input ? replace_map(map_in, &input->unknowns, NULL) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_find_unknown(struct wally_psbt_input *input,
@@ -555,9 +463,7 @@ int wally_psbt_input_find_unknown(struct wally_psbt_input *input,
 {
     if (written)
         *written = 0;
-    if (!input || !key || !key_len || !written)
-        return WALLY_EINVAL;
-    return input->unknowns ? wally_map_find(input->unknowns, key, key_len, written) : WALLY_OK;
+    return input ? wally_map_find(&input->unknowns, key, key_len, written) : WALLY_EINVAL;
 }
 
 int wally_psbt_input_set_sighash_type(struct wally_psbt_input *input, uint32_t sighash_type)
@@ -670,8 +576,8 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         clear_and_free(input->final_script_sig, input->final_script_sig_len);
         wally_tx_witness_stack_free(input->final_witness);
         wally_keypath_map_free(input->keypaths);
-        wally_partial_sigs_map_free(input->partial_sigs);
-        wally_map_free(input->unknowns);
+        wally_map_clear(&input->partial_sigs);
+        wally_map_clear(&input->unknowns);
 
 #ifdef BUILD_ELEMENTS
         clear_and_free(input->vbf, input->vbf_len);
@@ -730,7 +636,7 @@ int wally_psbt_output_find_keypath(struct wally_psbt_output *output,
 int wally_psbt_output_set_unknowns(struct wally_psbt_output *output,
                                    const struct wally_map *map_in)
 {
-    return output ? replace_unknowns(map_in, &output->unknowns) : WALLY_EINVAL;
+    return output ? replace_map(map_in, &output->unknowns, NULL) : WALLY_EINVAL;
 }
 
 int wally_psbt_output_find_unknown(struct wally_psbt_output *output,
@@ -739,9 +645,7 @@ int wally_psbt_output_find_unknown(struct wally_psbt_output *output,
 {
     if (written)
         *written = 0;
-    if (!output || !key || !key_len || !written)
-        return WALLY_EINVAL;
-    return output->unknowns ? wally_map_find(output->unknowns, key, key_len, written) : WALLY_OK;
+    return output ? wally_map_find(&output->unknowns, key, key_len, written) : WALLY_EINVAL;
 }
 
 #ifdef BUILD_ELEMENTS
@@ -828,7 +732,7 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         clear_and_free(output->redeem_script, output->redeem_script_len);
         clear_and_free(output->witness_script, output->witness_script_len);
         wally_keypath_map_free(output->keypaths);
-        wally_map_free(output->unknowns);
+        wally_map_clear(&output->unknowns);
 
 #ifdef BUILD_ELEMENTS
         clear_and_free(output->value_commitment, output->value_commitment_len);
@@ -865,7 +769,7 @@ int wally_psbt_init_alloc(uint32_t version, size_t inputs_allocation_len,
     if (outputs_allocation_len)
         result->outputs = wally_calloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
 
-    ret = wally_map_init_alloc(global_unknowns_allocation_len, &result->unknowns);
+    ret = wally_map_init(global_unknowns_allocation_len, &result->unknowns);
 
     if (ret != WALLY_OK ||
         (inputs_allocation_len && !result->inputs) || (outputs_allocation_len && !result->outputs)) {
@@ -912,7 +816,7 @@ int wally_psbt_free(struct wally_psbt *psbt)
             psbt_output_free(&psbt->outputs[i], false);
 
         wally_free(psbt->outputs);
-        wally_map_free(psbt->unknowns);
+        wally_map_clear(&psbt->unknowns);
         clear_and_free(psbt, sizeof(*psbt));
     }
     return WALLY_OK;
@@ -1058,7 +962,7 @@ static int pull_keypath(const unsigned char **cursor, size_t *max,
 /* The remainder of the key is a public key, the value is a signature */
 static int pull_partial_sig(const unsigned char **cursor, size_t *max,
                             const unsigned char *key, size_t key_len,
-                            struct wally_partial_sigs_map **partial_sigs)
+                            struct wally_map *partial_sigs)
 {
     const unsigned char *val;
     size_t val_len, is_found;
@@ -1067,10 +971,7 @@ static int pull_partial_sig(const unsigned char **cursor, size_t *max,
     if (!is_valid_pubkey_len(key_len))
         return WALLY_EINVAL;
 
-    if (!*partial_sigs && wally_partial_sigs_map_init_alloc(1, partial_sigs) != WALLY_OK)
-        return WALLY_ENOMEM;
-
-    ret = wally_partial_sigs_map_find(*partial_sigs, key, key_len, &is_found);
+    ret = wally_map_find(partial_sigs, key, key_len, &is_found);
     if (ret == WALLY_OK && is_found)
         ret = WALLY_EINVAL; /* Duplicates are invalid */
     if (ret != WALLY_OK)
@@ -1081,14 +982,14 @@ static int pull_partial_sig(const unsigned char **cursor, size_t *max,
     val_len = pull_varlength(cursor, max);
     val = pull_skip(cursor, max, val_len);
 
-    return wally_partial_sigs_map_add(*partial_sigs, key, key_len, val, val_len);
+    return wally_map_add(partial_sigs, key, key_len, val, val_len);
 }
 
 /* Rewind cursor to prekey, and append unknown key/value to unknowns */
 static int pull_unknown_key_value(const unsigned char **cursor,
                                   size_t *max,
                                   const unsigned char *pre_key,
-                                  struct wally_map **unknowns)
+                                  struct wally_map *unknowns)
 {
     const unsigned char *key, *val;
     size_t key_len, val_len, is_found;
@@ -1097,9 +998,6 @@ static int pull_unknown_key_value(const unsigned char **cursor,
     /* If we've already failed, it's invalid */
     if (!*cursor)
         return WALLY_EINVAL;
-
-    if (!*unknowns && wally_map_init_alloc(1, unknowns) != WALLY_OK)
-        return WALLY_ENOMEM;
 
     /* We have to unwind a bit, to get entire key again. */
     *max += (*cursor - pre_key);
@@ -1110,13 +1008,13 @@ static int pull_unknown_key_value(const unsigned char **cursor,
     val_len = pull_varlength(cursor, max);
     val = pull_skip(cursor, max, val_len);
 
-    ret = wally_map_find(*unknowns, key, key_len, &is_found);
+    ret = wally_map_find(unknowns, key, key_len, &is_found);
     if (ret == WALLY_OK && is_found)
         ret = WALLY_EINVAL; /* Duplicates are invalid */
     if (ret != WALLY_OK)
         return ret;
 
-    return wally_map_add(*unknowns, key, key_len, val, val_len);
+    return wally_map_add(unknowns, key, key_len, val, val_len);
 }
 
 #ifdef BUILD_ELEMENTS
@@ -1838,15 +1736,11 @@ static int push_psbt_input(
         push_varbuff(cursor, max, wit_bytes, w - wit_bytes);
     }
     /* Partial sigs */
-    if (input->partial_sigs) {
-        struct wally_partial_sigs_map *partial_sigs = input->partial_sigs;
-        for (i = 0; i < partial_sigs->num_items; ++i) {
-            const struct wally_partial_sigs_item *p = &partial_sigs->items[i];
+    for (i = 0; i < input->partial_sigs.num_items; ++i) {
+        const struct wally_map_item *p = &input->partial_sigs.items[i];
 
-            push_psbt_key(cursor, max, WALLY_PSBT_IN_PARTIAL_SIG,
-                          p->pubkey, get_pubkey_len(p->pubkey, sizeof(p->pubkey)));
-            push_varbuff(cursor, max, p->sig, p->sig_len);
-        }
+        push_psbt_key(cursor, max, WALLY_PSBT_IN_PARTIAL_SIG, p->key, p->key_len);
+        push_varbuff(cursor, max, p->value, p->value_len);
     }
     /* Sighash type */
     if (input->sighash_type > 0) {
@@ -1936,12 +1830,10 @@ static int push_psbt_input(
     }
 #endif /* BUILD_ELEMENTS */
     /* Unknowns */
-    if (input->unknowns) {
-        for (i = 0; i < input->unknowns->num_items; ++i) {
-            struct wally_map_item *unknown = &input->unknowns->items[i];
-            push_varbuff(cursor, max, unknown->key, unknown->key_len);
-            push_varbuff(cursor, max, unknown->value, unknown->value_len);
-        }
+    for (i = 0; i < input->unknowns.num_items; ++i) {
+        struct wally_map_item *unknown = &input->unknowns.items[i];
+        push_varbuff(cursor, max, unknown->key, unknown->key_len);
+        push_varbuff(cursor, max, unknown->value, unknown->value_len);
     }
 
     /* Separator */
@@ -2010,12 +1902,10 @@ static int push_psbt_output(
     }
 #endif /* BUILD_ELEMENTS */
     /* Unknowns */
-    if (output->unknowns) {
-        for (i = 0; i < output->unknowns->num_items; ++i) {
-            struct wally_map_item *unknown = &output->unknowns->items[i];
-            push_varbuff(cursor, max, unknown->key, unknown->key_len);
-            push_varbuff(cursor, max, unknown->value, unknown->value_len);
-        }
+    for (i = 0; i < output->unknowns.num_items; ++i) {
+        struct wally_map_item *unknown = &output->unknowns.items[i];
+        push_varbuff(cursor, max, unknown->key, unknown->key_len);
+        push_varbuff(cursor, max, unknown->value, unknown->value_len);
     }
 
     /* Separator */
@@ -2056,12 +1946,10 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     }
 
     /* Unknowns */
-    if (psbt->unknowns) {
-        for (i = 0; i < psbt->unknowns->num_items; ++i) {
-            struct wally_map_item *unknown = &psbt->unknowns->items[i];
-            push_varbuff(&cursor, &max, unknown->key, unknown->key_len);
-            push_varbuff(&cursor, &max, unknown->value, unknown->value_len);
-        }
+    for (i = 0; i < psbt->unknowns.num_items; ++i) {
+        struct wally_map_item *unknown = &psbt->unknowns.items[i];
+        push_varbuff(&cursor, &max, unknown->key, unknown->key_len);
+        push_varbuff(&cursor, &max, unknown->value, unknown->value_len);
     }
 
     /* Separator */
@@ -2172,25 +2060,17 @@ done:
     return ret;
 }
 
-static int combine_unknowns(struct wally_map **dst,
-                            const struct wally_map *src)
+static int combine_maps(struct wally_map *dst,
+                        const struct wally_map *src)
 {
     int ret = WALLY_OK;
     size_t i;
 
-    if (!dst)
-        return WALLY_EINVAL;
-
-    if (!src)
-        return WALLY_OK; /* No-op */
-
-    if (!*dst)
-        ret = wally_map_init_alloc(src->items_allocation_len, dst);
-
-    for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-        ret = wally_map_add(*dst, src->items[i].key, src->items[i].key_len,
-                            src->items[i].value, src->items[i].value_len);
-
+    if (src) {
+        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
+            ret = wally_map_add(dst, src->items[i].key, src->items[i].key_len,
+                                src->items[i].value, src->items[i].value_len);
+    }
     return ret;
 }
 
@@ -2211,27 +2091,6 @@ static int combine_keypath(struct wally_keypath_map **dst,
 
     for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
         ret = add_keypath_item(*dst, &src->items[i]);
-
-    return ret;
-}
-
-static int combine_partial_sigs(struct wally_partial_sigs_map **dst,
-                                const struct wally_partial_sigs_map *src)
-{
-    int ret = WALLY_OK;
-    size_t i;
-
-    if (!dst)
-        return WALLY_EINVAL;
-
-    if (!src)
-        return WALLY_OK; /* No-op */
-
-    if (!*dst)
-        ret = wally_partial_sigs_map_init_alloc(src->items_allocation_len, dst);
-
-    for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-        ret = add_partial_sig_item(*dst, &src->items[i]);
 
     return ret;
 }
@@ -2290,9 +2149,9 @@ static int combine_inputs(struct wally_psbt_input *dst,
         return ret;
     if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
         return ret;
-    if ((ret = combine_partial_sigs(&dst->partial_sigs, src->partial_sigs)) != WALLY_OK)
+    if ((ret = combine_maps(&dst->partial_sigs, &src->partial_sigs)) != WALLY_OK)
         return ret;
-    if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
+    if ((ret = combine_maps(&dst->unknowns, &src->unknowns)) != WALLY_OK)
         return ret;
     if (!dst->sighash_type && src->sighash_type)
         dst->sighash_type = src->sighash_type;
@@ -2321,7 +2180,7 @@ static int combine_outputs(struct wally_psbt_output *dst,
 
     if ((ret = combine_keypath(&dst->keypaths, src->keypaths)) != WALLY_OK)
         return ret;
-    if ((ret = combine_unknowns(&dst->unknowns, src->unknowns)) != WALLY_OK)
+    if ((ret = combine_maps(&dst->unknowns, &src->unknowns)) != WALLY_OK)
         return ret;
 
     COMBINE_BYTES(output, redeem_script);
@@ -2364,7 +2223,7 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
 
     if (ret == WALLY_OK)
-        ret = combine_unknowns(&psbt->unknowns, src->unknowns);
+        ret = combine_maps(&psbt->unknowns, &src->unknowns);
 
     return ret;
 }
@@ -2418,17 +2277,15 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         is_compressed = pubkey_is_compressed(input->keypaths->items[keypath_index - 1].pubkey);
 
         /* Make sure we don't already have a sig for this input ?! */
-        if (input->partial_sigs) {
-            size_t is_found;
-            ret = wally_partial_sigs_map_find(input->partial_sigs, full_pubkey, full_pubkey_len, &is_found);
-            if (ret == WALLY_OK && !is_found)
-                ret = wally_partial_sigs_map_find(input->partial_sigs, pubkey, pubkey_len, &is_found);
-            if (ret != WALLY_OK)
-                return ret;
+        size_t is_found;
+        ret = wally_map_find(&input->partial_sigs, full_pubkey, full_pubkey_len, &is_found);
+        if (ret == WALLY_OK && !is_found)
+            ret = wally_map_find(&input->partial_sigs, pubkey, pubkey_len, &is_found);
+        if (ret != WALLY_OK)
+            return ret;
 
-            if (is_found)
-                continue; /* Already got a partial sig for this pubkey on this input */
-        }
+        if (is_found)
+            continue; /* Already got a partial sig for this pubkey on this input */
 
         sighash_type = input->sighash_type ? input->sighash_type : WALLY_SIGHASH_ALL;
 
@@ -2538,14 +2395,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         der_sig_len++;
 
         /* Copy the DER sig into the psbt */
-        if (!input->partial_sigs &&
-            (ret = wally_partial_sigs_map_init_alloc(1, &input->partial_sigs)) != WALLY_OK)
-            return ret;
-
-        ret = wally_partial_sigs_map_add(input->partial_sigs,
-                                         is_compressed ? pubkey : full_pubkey,
-                                         is_compressed ? pubkey_len : full_pubkey_len,
-                                         der_sig, der_sig_len);
+        ret = wally_map_add(&input->partial_sigs,
+                            is_compressed ? pubkey : full_pubkey,
+                            is_compressed ? pubkey_len : full_pubkey_len,
+                            der_sig, der_sig_len);
         if (ret != WALLY_OK)
             return ret;
     }
@@ -2610,28 +2463,25 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         switch(type) {
         case WALLY_SCRIPT_TYPE_P2PKH:
         case WALLY_SCRIPT_TYPE_P2WPKH: {
-            struct wally_partial_sigs_item *partial_sig;
+            struct wally_map_item *partial_sig;
             unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
-            size_t written, script_sig_len, pubkey_len = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+            size_t written, script_sig_len;
 
-            if (!input->partial_sigs || input->partial_sigs->num_items != 1) {
+            if (input->partial_sigs.num_items != 1) {
                 /* Must be single key, single sig */
                 continue;
             }
-            partial_sig = &input->partial_sigs->items[0];
-            if (pubkey_is_compressed(partial_sig->pubkey)) {
-                pubkey_len = EC_PUBLIC_KEY_LEN;
-            }
+            partial_sig = &input->partial_sigs.items[0];
 
             if (type == WALLY_SCRIPT_TYPE_P2PKH) {
-                if ((ret = wally_scriptsig_p2pkh_from_der(partial_sig->pubkey, pubkey_len, partial_sig->sig, partial_sig->sig_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
+                if ((ret = wally_scriptsig_p2pkh_from_der(partial_sig->key, partial_sig->key_len, partial_sig->value, partial_sig->value_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
                     return ret;
                 }
                 if (!clone_bytes(&input->final_script_sig, script_sig, script_sig_len)) {
                     return WALLY_ENOMEM;
                 }
             } else {
-                if ((ret = wally_witness_p2wpkh_from_der(partial_sig->pubkey, pubkey_len, partial_sig->sig, partial_sig->sig_len, &input->final_witness)) != WALLY_OK) {
+                if ((ret = wally_witness_p2wpkh_from_der(partial_sig->key, partial_sig->key_len, partial_sig->value, partial_sig->value_len, &input->final_witness)) != WALLY_OK) {
                     return ret;
                 }
                 if (input->redeem_script) {
@@ -2660,7 +2510,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
                 return WALLY_ERROR;
             }
 
-            if (!input->partial_sigs || input->partial_sigs->num_items < n_sigs) {
+            if (input->partial_sigs.num_items < n_sigs) {
                 continue;
             }
 
@@ -2696,8 +2546,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
                 pubkey = p;
                 p += push_size;
 
-                for (k = 0; k < input->partial_sigs->num_items; ++k) {
-                    if (memcmp(input->partial_sigs->items[k].pubkey, pubkey, push_size) == 0) {
+                for (k = 0; k < input->partial_sigs.num_items; ++k) {
+                    if (memcmp(input->partial_sigs.items[k].key, pubkey, push_size) == 0) {
                         found = true;
                         break;
                     }
@@ -2708,8 +2558,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
                 }
 
                 /* Get the signature and sighash separately */
-                sig = input->partial_sigs->items[k].sig;
-                sig_len = input->partial_sigs->items[k].sig_len; /* Has sighash byte at end */
+                sig = input->partial_sigs.items[k].value;
+                sig_len = input->partial_sigs.items[k].value_len; /* Has sighash byte at end */
                 if ((ret = wally_ec_sig_from_der(sig, sig_len - 1, compact_sig, EC_SIGNATURE_LEN)) != WALLY_OK) {
                     wally_free(sigs);
                     wally_free(sighashes);
@@ -2778,8 +2628,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         input->witness_script = NULL;
         wally_keypath_map_free(input->keypaths);
         input->keypaths = NULL;
-        wally_partial_sigs_map_free(input->partial_sigs);
-        input->partial_sigs = NULL;
+        wally_map_clear(&input->partial_sigs);
         input->sighash_type = 0;
     }
     return WALLY_OK;
@@ -2880,7 +2729,7 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (written) *written = 0; \
         if (!p || !written) return WALLY_EINVAL; \
-        *written = p->name ## s ? p->name ## s->num_items : 0; \
+        *written = p->name ## s.num_items; \
         return WALLY_OK; \
     } \
     int wally_psbt_find_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
@@ -2888,26 +2737,24 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (written) *written = 0; \
         if (!p || !key || !key_len || !written) return WALLY_EINVAL; \
-        if (!p->name ## s) \
-            return WALLY_OK; /* Not found */ \
         return wally_psbt_ ## typ ## _find_ ## name(p, key, key_len, written); \
     } \
     int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
                                             size_t subindex, unsigned char *bytes_out, size_t len, size_t *written) { \
         struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (written) *written = 0; \
-        if (!p || !bytes_out || !len || !written || !p->name ## s || subindex >= p->name ## s->num_items) return WALLY_EINVAL; \
-        *written = p->name ## s->items[subindex].valname ## _len; \
+        if (!p || !bytes_out || !len || !written || subindex >= p->name ## s.num_items) return WALLY_EINVAL; \
+        *written = p->name ## s.items[subindex].valname ## _len; \
         if (*written <= len) \
-            memcpy(bytes_out, p->name ## s->items[subindex].valname, *written); \
+            memcpy(bytes_out, p->name ## s.items[subindex].valname, *written); \
         return WALLY_OK; \
     } \
     int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, size_t index, \
                                                     size_t subindex, size_t *written) { \
         struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (written) *written = 0; \
-        if (!p || !written || !p->name ## s || subindex >= p->name ## s->num_items) return WALLY_EINVAL; \
-        *written = p->name ## s->items[subindex].valname ## _len; \
+        if (!p || !written || subindex >= p->name ## s.num_items) return WALLY_EINVAL; \
+        *written = p->name ## s.items[subindex].valname ## _len; \
         return WALLY_OK; \
     }
 
@@ -2986,7 +2833,7 @@ PSBT_GET_B(input, witness_script)
 PSBT_GET_B(input, final_script_sig)
 PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_K(input, keypath)
-PSBT_GET_M(input, partial_sig, sig)
+PSBT_GET_M(input, partial_sig, value)
 PSBT_GET_M(input, unknown, value)
 PSBT_GET_I(input, sighash_type, size_t)
 
@@ -2997,7 +2844,7 @@ PSBT_SET_B(input, witness_script)
 PSBT_SET_B(input, final_script_sig)
 PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
 PSBT_SET_S(input, keypaths, wally_keypath_map)
-PSBT_SET_S(input, partial_sigs, wally_partial_sigs_map)
+PSBT_SET_S(input, partial_sigs, wally_map)
 PSBT_SET_S(input, unknowns, wally_map)
 PSBT_SET_I(input, sighash_type, uint32_t)
 

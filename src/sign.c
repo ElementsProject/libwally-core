@@ -58,6 +58,7 @@ int wally_ec_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
         !pubkey_parse(ctx, &pub, pub_key, pub_key_len))
         return WALLY_EINVAL;
 
+    wally_clear(&pub, sizeof(pub));
     return WALLY_OK;
 }
 
