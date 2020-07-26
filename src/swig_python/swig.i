@@ -331,6 +331,10 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("keypath_map_init") wally_keypath_map_init_alloc;
 %rename("partial_sigs_map_init") wally_partial_sigs_map_init_alloc;
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
+%rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
+%rename("psbt_get_input_non_witness_utxo") wally_psbt_get_input_non_witness_utxo_alloc;
+%rename("psbt_get_input_peg_in_tx") wally_psbt_get_input_peg_in_tx_alloc;
+%rename("psbt_get_input_witness_utxo") wally_psbt_get_input_witness_utxo_alloc;
 %rename("psbt_init") wally_psbt_init_alloc;
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;
 %rename("tx_elements_output_init") wally_tx_elements_output_init_alloc;

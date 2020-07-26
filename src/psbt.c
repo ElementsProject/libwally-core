@@ -519,16 +519,49 @@ int wally_psbt_input_set_keypaths(struct wally_psbt_input *input,
     return input ? replace_keypaths(keypaths, &input->keypaths) : WALLY_EINVAL;
 }
 
+int wally_psbt_input_find_keypath(struct wally_psbt_input *input,
+                                  const unsigned char *pub_key, size_t pub_key_len,
+                                  size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
+        return WALLY_EINVAL;
+    return input->keypaths ? wally_keypath_map_find(input->keypaths, pub_key, pub_key_len, written) : WALLY_OK;
+}
+
 int wally_psbt_input_set_partial_sigs(struct wally_psbt_input *input,
                                       const struct wally_partial_sigs_map *partial_sigs)
 {
     return input ? replace_partial_sigs(partial_sigs, &input->partial_sigs) : WALLY_EINVAL;
 }
 
+int wally_psbt_input_find_partial_sig(struct wally_psbt_input *input,
+                                      const unsigned char *pub_key, size_t pub_key_len,
+                                      size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
+        return WALLY_EINVAL;
+    return input->partial_sigs ? wally_partial_sigs_map_find(input->partial_sigs, pub_key, pub_key_len, written) : WALLY_OK;
+}
+
 int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
                                   const struct wally_unknowns_map *unknowns)
 {
     return input ? replace_unknowns(unknowns, &input->unknowns) : WALLY_EINVAL;
+}
+
+int wally_psbt_input_find_unknown(struct wally_psbt_input *input,
+                                  const unsigned char *key, size_t key_len,
+                                  size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !key || !key_len || !written)
+        return WALLY_EINVAL;
+    return input->unknowns ? wally_unknowns_map_find(input->unknowns, key, key_len, written) : WALLY_OK;
 }
 
 int wally_psbt_input_set_sighash_type(struct wally_psbt_input *input, uint32_t sighash_type)
@@ -687,10 +720,32 @@ int wally_psbt_output_set_keypaths(struct wally_psbt_output *output,
     return output ? replace_keypaths(keypaths, &output->keypaths) : WALLY_EINVAL;
 }
 
+int wally_psbt_output_find_keypath(struct wally_psbt_output *output,
+                                   const unsigned char *pub_key, size_t pub_key_len,
+                                   size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!output || !pub_key || !is_valid_pubkey_len(pub_key_len) || !written)
+        return WALLY_EINVAL;
+    return output->keypaths ? wally_keypath_map_find(output->keypaths, pub_key, pub_key_len, written) : WALLY_OK;
+}
+
 int wally_psbt_output_set_unknowns(struct wally_psbt_output *output,
                                    const struct wally_unknowns_map *unknowns)
 {
     return output ? replace_unknowns(unknowns, &output->unknowns) : WALLY_EINVAL;
+}
+
+int wally_psbt_output_find_unknown(struct wally_psbt_output *output,
+                                   const unsigned char *key, size_t key_len,
+                                   size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!output || !key || !key_len || !written)
+        return WALLY_EINVAL;
+    return output->unknowns ? wally_unknowns_map_find(output->unknowns, key, key_len, written) : WALLY_OK;
 }
 
 #ifdef BUILD_ELEMENTS
@@ -2811,11 +2866,92 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
     return psbt && index < psbt->num_outputs ? &psbt->outputs[index] : NULL;
 }
 
+/* Getters for maps in inputs/outputs */
+#define PSBT_GET_K(typ, name) \
+    int wally_psbt_get_ ## typ ## _ ## name ## s_size(const struct wally_psbt *psbt, size_t index, \
+                                                      size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written) return WALLY_EINVAL; \
+        *written = p->name ## s ? p->name ## s->num_items : 0; \
+        return WALLY_OK; \
+    }
+
+#define PSBT_GET_M(typ, name, valname) \
+    int wally_psbt_get_ ## typ ## _ ## name ## s_size(const struct wally_psbt *psbt, size_t index, \
+                                                      size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written) return WALLY_EINVAL; \
+        *written = p->name ## s ? p->name ## s->num_items : 0; \
+        return WALLY_OK; \
+    } \
+    int wally_psbt_find_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
+                                             const unsigned char *key, size_t key_len, size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !key || !key_len || !written) return WALLY_EINVAL; \
+        if (!p->name ## s) \
+            return WALLY_OK; /* Not found */ \
+        return wally_psbt_ ## typ ## _find_ ## name(p, key, key_len, written); \
+    } \
+    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
+                                            size_t subindex, unsigned char *bytes_out, size_t len, size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !bytes_out || !len || !written || !p->name ## s || subindex >= p->name ## s->num_items) return WALLY_EINVAL; \
+        *written = p->name ## s->items[subindex].valname ## _len; \
+        if (*written <= len) \
+            memcpy(bytes_out, p->name ## s->items[subindex].valname, *written); \
+        return WALLY_OK; \
+    } \
+    int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, size_t index, \
+                                                    size_t subindex, size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written || !p->name ## s || subindex >= p->name ## s->num_items) return WALLY_EINVAL; \
+        *written = p->name ## s->items[subindex].valname ## _len; \
+        return WALLY_OK; \
+    }
+
+
+/* Get a binary buffer value from an input/output */
+#define PSBT_GET_B(typ, name) \
+    int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, size_t index, \
+                                                    size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written) return WALLY_EINVAL; \
+        *written = p->name ## _len; \
+        return WALLY_OK; \
+    } \
+    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
+                                            unsigned char *bytes_out, size_t len, size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written) return WALLY_EINVAL; \
+        *written = p->name ## _len; \
+        if (p->name ## _len <= len) \
+            memcpy(bytes_out, p->name, p->name ## _len); \
+        return WALLY_OK; \
+    }
+
 /* Set a binary buffer value on an input/output */
 #define PSBT_SET_B(typ, name) \
     int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
                                             const unsigned char *name, size_t name ## _len) { \
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), name, name ## _len); \
+    }
+
+/* Get an integer value from an input/output */
+#define PSBT_GET_I(typ, name, inttyp) \
+    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
+                                            inttyp *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written) return WALLY_EINVAL; \
+        *written = p->name; \
+        return WALLY_OK; \
     }
 
 /* Set an integer value on an input/output */
@@ -2825,6 +2961,16 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), v); \
     }
 
+/* Get a struct from an input/output */
+#define PSBT_GET_S(typ, name, structtyp, clonefn) \
+    int wally_psbt_get_ ## typ ## _ ## name ## _alloc(const struct wally_psbt *psbt, size_t index, \
+                                                      struct structtyp **output) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (output) *output = NULL; \
+        if (!p || !output) return WALLY_EINVAL; \
+        return clonefn(p->name, output); \
+    }
+
 /* Set a struct on an input/output */
 #define PSBT_SET_S(typ, name, structtyp) \
     int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
@@ -2832,6 +2978,20 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
     }
 
+static int tx_clone(const struct wally_tx *src, struct wally_tx **dst) {
+    return wally_tx_clone(src, 0, dst);
+}
+
+PSBT_GET_S(input, non_witness_utxo, wally_tx, tx_clone)
+PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
+PSBT_GET_B(input, redeem_script)
+PSBT_GET_B(input, witness_script)
+PSBT_GET_B(input, final_script_sig)
+PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
+PSBT_GET_K(input, keypath)
+PSBT_GET_M(input, partial_sig, sig)
+PSBT_GET_M(input, unknown, value)
+PSBT_GET_I(input, sighash_type, size_t)
 
 PSBT_SET_S(input, non_witness_utxo, wally_tx)
 PSBT_SET_S(input, witness_utxo, wally_tx_output)
@@ -2843,7 +3003,24 @@ PSBT_SET_S(input, keypaths, wally_keypath_map)
 PSBT_SET_S(input, partial_sigs, wally_partial_sigs_map)
 PSBT_SET_S(input, unknowns, wally_unknowns_map)
 PSBT_SET_I(input, sighash_type, uint32_t)
+
 #ifdef BUILD_ELEMENTS
+int wally_psbt_has_input_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    if (written) *written = 0;
+    if (!p || !written) return WALLY_EINVAL;
+    *written = p->has_value ? 1 : 0;
+    return WALLY_OK;
+}
+PSBT_GET_I(input, value, uint64_t)
+PSBT_GET_B(input, vbf)
+PSBT_GET_B(input, asset)
+PSBT_GET_B(input, abf)
+PSBT_GET_S(input, peg_in_tx, wally_tx, tx_clone)
+PSBT_GET_B(input, txoutproof)
+PSBT_GET_B(input, genesis_blockhash)
+PSBT_GET_B(input, claim_script)
+
 PSBT_SET_I(input, value, uint64_t)
 int wally_psbt_clear_input_value(struct wally_psbt *psbt, size_t index) {
     return wally_psbt_input_clear_value(psbt_get_input(psbt, index));
@@ -2857,11 +3034,25 @@ PSBT_SET_B(input, genesis_blockhash)
 PSBT_SET_B(input, claim_script)
 #endif /* BUILD_ELEMENTS */
 
+PSBT_GET_B(output, redeem_script)
+PSBT_GET_B(output, witness_script)
+PSBT_GET_K(output, keypath)
+PSBT_GET_M(output, unknown, value)
+
 PSBT_SET_B(output, redeem_script)
 PSBT_SET_B(output, witness_script)
 PSBT_SET_S(output, keypaths, wally_keypath_map)
 PSBT_SET_S(output, unknowns, wally_unknowns_map)
 #ifdef BUILD_ELEMENTS
+PSBT_GET_B(output, blinding_pubkey)
+PSBT_GET_B(output, value_commitment)
+PSBT_GET_B(output, vbf)
+PSBT_GET_B(output, asset_commitment)
+PSBT_GET_B(output, abf)
+PSBT_GET_B(output, nonce)
+PSBT_GET_B(output, rangeproof)
+PSBT_GET_B(output, surjectionproof)
+
 PSBT_SET_B(output, blinding_pubkey)
 PSBT_SET_B(output, value_commitment)
 PSBT_SET_B(output, vbf)

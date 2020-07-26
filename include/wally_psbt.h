@@ -421,7 +421,22 @@ WALLY_CORE_API int wally_psbt_input_set_keypaths(
     const struct wally_keypath_map *keypaths);
 
 /**
- * Set the partial_sigs in an input.
+ * Find a keypath matching a pubkey in an input.
+ *
+ * :param input: The input to search in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_input_find_keypath(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    size_t *written);
+
+/**
+ * Set the partial signatures in an input.
  *
  * :param input: The input to update.
  * :param partial_sigs: The partial signatures for this input.
@@ -431,7 +446,22 @@ WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
     const struct wally_partial_sigs_map *partial_sigs);
 
 /**
- * Set the partial_sigs in an input.
+ * Find a partial signature matching a pubkey in an input.
+ *
+ * :param input: The input to search in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_input_find_partial_sig(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    size_t *written);
+
+/**
+ * Set the unknown values in an input.
  *
  * :param input: The input to update.
  * :param unknowns: The unknown key value pairs for this input.
@@ -439,6 +469,21 @@ WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
 WALLY_CORE_API int wally_psbt_input_set_unknowns(
     struct wally_psbt_input *input,
     const struct wally_unknowns_map *unknowns);
+
+/**
+ * Find an unknown item matching a key in an input.
+ *
+ * :param input: The input to search in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_input_find_unknown(
+    struct wally_psbt_input *input,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
 
 /**
  * Set the partial_sigs in an input.
@@ -485,7 +530,22 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
     const struct wally_keypath_map *keypaths);
 
 /**
- * Set the partial_sigs in an output.
+ * Find a keypath matching a pubkey in an output.
+ *
+ * :param output: The output to search in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_output_find_keypath(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    size_t *written);
+
+/**
+ * Set the unknown map in an output.
  *
  * :param output: The output to update.
  * :param unknowns: The unknown key value pairs for this output.
@@ -493,6 +553,21 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
 WALLY_CORE_API int wally_psbt_output_set_unknowns(
     struct wally_psbt_output *output,
     const struct wally_unknowns_map *unknowns);
+
+/**
+ * Find an unknown item matching a key in an output.
+ *
+ * :param output: The output to search in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_output_find_unknown(
+    struct wally_psbt_output *output,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
 #endif /* SWIG */
 
 /**

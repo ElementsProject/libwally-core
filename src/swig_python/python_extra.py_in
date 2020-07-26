@@ -162,6 +162,16 @@ wif_to_public_key = _wrap_bin(wif_to_public_key, _wif_to_public_key_len, resize=
 symmetric_key_from_seed = _wrap_bin(symmetric_key_from_seed, HMAC_SHA512_LEN)
 symmetric_key_from_parent = _wrap_bin(symmetric_key_from_parent, HMAC_SHA512_LEN)
 
+psbt_get_input_redeem_script = _wrap_bin(psbt_get_input_redeem_script, psbt_get_input_redeem_script_len, resize=True)
+psbt_get_input_witness_script = _wrap_bin(psbt_get_input_witness_script, psbt_get_input_witness_script_len, resize=True)
+psbt_get_input_final_script_sig = _wrap_bin(psbt_get_input_final_script_sig, psbt_get_input_final_script_sig_len, resize=True)
+psbt_get_input_partial_sig = _wrap_bin(psbt_get_input_partial_sig, psbt_get_input_partial_sig_len, resize=True)
+psbt_get_input_unknown = _wrap_bin(psbt_get_input_unknown, psbt_get_input_unknown_len, resize=True)
+
+psbt_get_output_redeem_script = _wrap_bin(psbt_get_output_redeem_script, psbt_get_output_redeem_script_len, resize=True)
+psbt_get_output_witness_script = _wrap_bin(psbt_get_output_witness_script, psbt_get_output_witness_script_len, resize=True)
+psbt_get_output_unknown = _wrap_bin(psbt_get_output_unknown, psbt_get_output_unknown_len, resize=True)
+
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)
@@ -235,5 +245,20 @@ if is_elements_build():
         return len(rs)
     elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, _epcsfb_len_fn, resize=True)
 
+    psbt_get_input_vbf = _wrap_bin(psbt_get_input_vbf, psbt_get_input_vbf_len, resize=True)
+    psbt_get_input_asset = _wrap_bin(psbt_get_input_asset, psbt_get_input_asset_len, resize=True)
+    psbt_get_input_abf = _wrap_bin(psbt_get_input_abf, psbt_get_input_abf_len, resize=True)
+    psbt_get_input_txoutproof = _wrap_bin(psbt_get_input_txoutproof, psbt_get_input_txoutproof_len, resize=True)
+    psbt_get_input_genesis_blockhash = _wrap_bin(psbt_get_input_genesis_blockhash, psbt_get_input_genesis_blockhash_len, resize=True)
+    psbt_get_input_claim_script = _wrap_bin(psbt_get_input_claim_script, psbt_get_input_claim_script_len, resize=True)
+
+    psbt_get_output_blinding_pubkey = _wrap_bin(psbt_get_output_blinding_pubkey, psbt_get_output_blinding_pubkey_len, resize=True)
+    psbt_get_output_value_commitment = _wrap_bin(psbt_get_output_value_commitment, psbt_get_output_value_commitment_len, resize=True)
+    psbt_get_output_vbf = _wrap_bin(psbt_get_output_vbf, psbt_get_output_vbf_len, resize=True)
+    psbt_get_output_asset_commitment = _wrap_bin(psbt_get_output_asset_commitment, psbt_get_output_asset_commitment_len, resize=True)
+    psbt_get_output_abf = _wrap_bin(psbt_get_output_abf, psbt_get_output_abf_len, resize=True)
+    psbt_get_output_nonce = _wrap_bin(psbt_get_output_nonce, psbt_get_output_nonce_len, resize=True)
+    psbt_get_output_rangeproof = _wrap_bin(psbt_get_output_rangeproof, psbt_get_output_rangeproof_len, resize=True)
+    psbt_get_output_surjectionproof = _wrap_bin(psbt_get_output_surjectionproof, psbt_get_output_surjectionproof_len, resize=True)
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

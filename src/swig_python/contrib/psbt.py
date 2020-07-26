@@ -7,13 +7,46 @@ SAMPLE = "cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD///
 
 class PSBTTests(unittest.TestCase):
 
+    def _try_invalid(self, fn, psbt, *args):
+        with self.assertRaises(ValueError):
+            fn(None, 0, *args) # Null PSBT
+        with self.assertRaises(ValueError):
+            fn(psbt, 1, *args) # Invalid index
+
     def _try_set(self, fn, psbt, valid_value, null_value=None):
         fn(psbt, 0, valid_value) # Set
         fn(psbt, 0, null_value) # Un-set
+        self._try_invalid(fn, psbt, valid_value)
+
+    def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None):
+        self._try_set(setfn, psbt, valid_value, null_value)
+        setfn(psbt, 0, valid_value) # Set
+        self._try_invalid(lenfn, psbt)
+        self._try_invalid(getfn, psbt)
+        ret = getfn(psbt, 0) # Get
+        self.assertEqual(valid_value, ret)
+
+    def _try_get_set_k(self, setfn, lenfn, psbt, valid_value, null_value=None):
+        self._try_set(setfn, psbt, valid_value, null_value)
+        self._try_invalid(lenfn, psbt)
+        self.assertEqual(lenfn(psbt, 0), 0)
+        setfn(psbt, 0, valid_value) # Set
+        self.assertEqual(lenfn(psbt, 0), 1)
+
+    def _try_get_set_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt, valid_value, valid_item):
+        self._try_set(setfn, psbt, valid_value, None)
+        self._try_invalid(sizefn, psbt)
+        self.assertEqual(sizefn(psbt, 0), 0)
+        setfn(psbt, 0, valid_value) # Set
+        self.assertEqual(sizefn(psbt, 0), 1) # 1 item in the map
+        self._try_invalid(lenfn, psbt, 0)
         with self.assertRaises(ValueError):
-            fn(None, 0, valid_value) # Null PSBT
-        with self.assertRaises(ValueError):
-            fn(psbt, 1, valid_value) # Invalid index
+            lenfn(psbt, 0, 1) # Invalid subindex
+        map_val = getfn(psbt, 0, 0)
+        self.assertTrue(len(map_val) > 0)
+        self.assertEqual(lenfn(psbt, 0, 0), len(map_val))
+        self._try_invalid(findfn, psbt, map_val)
+        self.assertEqual(findfn(psbt, 0, valid_item), 1)
 
 
     def test_psbt(self):
@@ -21,9 +54,12 @@ class PSBTTests(unittest.TestCase):
 
         self.assertIsNotNone(psbt_get_global_tx(psbt))
 
-        self.assertEqual(psbt_get_version(psbt), 0)
-        self.assertEqual(psbt_get_num_inputs(psbt), 1)
-        self.assertEqual(psbt_get_num_outputs(psbt), 1)
+        for fn, ret in [(psbt_get_version, 0),
+                        (psbt_get_num_inputs, 1),
+                        (psbt_get_num_outputs, 1)]:
+            self.assertEqual(fn(psbt), ret)
+            with self.assertRaises(ValueError):
+                fn(None) # Null PSBT
 
         # Conversion to base64 should round trip
         self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
@@ -71,46 +107,109 @@ class PSBTTests(unittest.TestCase):
         # Inputs
         #
         self._try_set(psbt_set_input_non_witness_utxo, psbt, dummy_tx)
+        self._try_invalid(psbt_get_input_non_witness_utxo, psbt)
         self._try_set(psbt_set_input_witness_utxo, psbt, dummy_txout)
+        self._try_invalid(psbt_get_input_witness_utxo, psbt)
+        self._try_get_set_b(psbt_set_input_redeem_script,
+                            psbt_get_input_redeem_script,
+                            psbt_get_input_redeem_script_len, psbt, dummy_bytes)
+        self._try_get_set_b(psbt_set_input_witness_script,
+                            psbt_get_input_witness_script,
+                            psbt_get_input_witness_script_len, psbt, dummy_bytes)
+        self._try_get_set_b(psbt_set_input_final_script_sig,
+                            psbt_get_input_final_script_sig,
+                            psbt_get_input_final_script_sig_len, psbt, dummy_bytes)
         self._try_set(psbt_set_input_final_witness, psbt, dummy_witness)
-        self._try_set(psbt_set_input_keypaths, psbt, dummy_keypaths)
-        self._try_set(psbt_set_input_partial_sigs, psbt, dummy_partial_sigs)
-        self._try_set(psbt_set_input_unknowns, psbt, dummy_unknowns)
+        self._try_invalid(psbt_get_input_final_witness, psbt)
+        self._try_get_set_k(psbt_set_input_keypaths,
+                            psbt_get_input_keypaths_size, psbt, dummy_keypaths)
+        self._try_get_set_m(psbt_set_input_partial_sigs,
+                            psbt_get_input_partial_sigs_size,
+                            psbt_get_input_partial_sig_len,
+                            psbt_get_input_partial_sig,
+                            psbt_find_input_partial_sig,
+                            psbt, dummy_partial_sigs, dummy_pubkey)
+        self._try_get_set_m(psbt_set_input_unknowns,
+                            psbt_get_input_unknowns_size,
+                            psbt_get_input_unknown_len,
+                            psbt_get_input_unknown,
+                            psbt_find_input_unknown,
+                            psbt, dummy_unknowns, dummy_pubkey)
         self._try_set(psbt_set_input_sighash_type, psbt, 0xff, 0x0)
-        self._try_set(psbt_set_input_redeem_script, psbt, dummy_bytes)
-        self._try_set(psbt_set_input_witness_script, psbt, dummy_bytes)
-        self._try_set(psbt_set_input_final_script_sig, psbt, dummy_bytes)
+        self.assertEqual(psbt_get_input_sighash_type(psbt, 0), 0)
+        self._try_invalid(psbt_get_input_sighash_type, psbt)
+
         if is_elements_build():
             self._try_set(psbt_set_input_value, psbt, 1234567, 0)
+            self._try_invalid(psbt_has_input_value, psbt)
+            self._try_invalid(psbt_get_input_value, psbt)
+            self._try_invalid(psbt_clear_input_value, psbt)
+            self.assertEqual(psbt_has_input_value(psbt, 0), 1)
             psbt_clear_input_value(psbt, 0)
-            with self.assertRaises(ValueError):
-                psbt_clear_input_value(None, 0) # Null PSBT
-            with self.assertRaises(ValueError):
-                psbt_clear_input_value(psbt, 1) # Invalid index
-            self._try_set(psbt_set_input_vbf, psbt, dummy_bf)
-            self._try_set(psbt_set_input_asset, psbt, dummy_asset)
-            self._try_set(psbt_set_input_abf, psbt, dummy_bf)
+            self.assertEqual(psbt_has_input_value(psbt, 0), 0)
+            self._try_get_set_b(psbt_set_input_vbf,
+                                psbt_get_input_vbf,
+                                psbt_get_input_vbf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_input_asset,
+                                psbt_get_input_asset,
+                                psbt_get_input_asset_len, psbt, dummy_asset)
+            self._try_get_set_b(psbt_set_input_abf,
+                                psbt_get_input_abf,
+                                psbt_get_input_abf_len, psbt, dummy_bf)
             self._try_set(psbt_set_input_peg_in_tx, psbt, dummy_tx)
-            self._try_set(psbt_set_input_txoutproof, psbt, dummy_bytes)
-            self._try_set(psbt_set_input_genesis_blockhash, psbt, dummy_bytes)
-            self._try_set(psbt_set_input_claim_script, psbt, dummy_bytes)
+            self._try_invalid(psbt_get_input_peg_in_tx, psbt)
+            self._try_get_set_b(psbt_set_input_txoutproof,
+                                psbt_get_input_txoutproof,
+                                psbt_get_input_txoutproof_len, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_input_genesis_blockhash,
+                                psbt_get_input_genesis_blockhash,
+                                psbt_get_input_genesis_blockhash_len, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_input_claim_script,
+                                psbt_get_input_claim_script,
+                                psbt_get_input_claim_script_len, psbt, dummy_bytes)
 
         #
         # Outputs
         #
-        self._try_set(psbt_set_output_redeem_script, psbt, dummy_bytes)
-        self._try_set(psbt_set_output_witness_script, psbt, dummy_bytes)
-        self._try_set(psbt_set_output_keypaths, psbt, dummy_keypaths)
-        self._try_set(psbt_set_output_unknowns, psbt, dummy_unknowns)
+        self._try_get_set_b(psbt_set_output_redeem_script,
+                            psbt_get_output_redeem_script,
+                            psbt_get_output_redeem_script_len, psbt, dummy_bytes)
+        self._try_get_set_b(psbt_set_output_witness_script,
+                            psbt_get_output_witness_script,
+                            psbt_get_output_witness_script_len, psbt, dummy_bytes)
+        self._try_get_set_k(psbt_set_output_keypaths,
+                            psbt_get_output_keypaths_size, psbt, dummy_keypaths)
+        self._try_get_set_m(psbt_set_output_unknowns,
+                            psbt_get_output_unknowns_size,
+                            psbt_get_output_unknown_len,
+                            psbt_get_output_unknown,
+                            psbt_find_output_unknown,
+                            psbt, dummy_unknowns, dummy_pubkey)
         if is_elements_build():
-            self._try_set(psbt_set_output_blinding_pubkey, psbt, dummy_pubkey)
-            self._try_set(psbt_set_output_value_commitment, psbt, dummy_commitment)
-            self._try_set(psbt_set_output_vbf, psbt, dummy_bf)
-            self._try_set(psbt_set_output_asset_commitment, psbt, dummy_commitment)
-            self._try_set(psbt_set_output_abf, psbt, dummy_bf)
-            self._try_set(psbt_set_output_nonce, psbt, dummy_nonce)
-            self._try_set(psbt_set_output_rangeproof, psbt, dummy_bytes)
-            self._try_set(psbt_set_output_surjectionproof, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_output_blinding_pubkey,
+                                psbt_get_output_blinding_pubkey,
+                                psbt_get_output_blinding_pubkey_len, psbt, dummy_pubkey)
+            self._try_get_set_b(psbt_set_output_value_commitment,
+                                psbt_get_output_value_commitment,
+                                psbt_get_output_value_commitment_len, psbt, dummy_commitment)
+            self._try_get_set_b(psbt_set_output_vbf,
+                                psbt_get_output_vbf,
+                                psbt_get_output_vbf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_output_asset_commitment,
+                                psbt_get_output_asset_commitment,
+                                psbt_get_output_asset_commitment_len, psbt, dummy_commitment)
+            self._try_get_set_b(psbt_set_output_abf,
+                                psbt_get_output_abf,
+                                psbt_get_output_abf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_output_nonce,
+                                psbt_get_output_nonce,
+                                psbt_get_output_nonce_len, psbt, dummy_nonce)
+            self._try_get_set_b(psbt_set_output_rangeproof,
+                                psbt_get_output_rangeproof,
+                                psbt_get_output_rangeproof_len, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_output_surjectionproof,
+                                psbt_get_output_surjectionproof,
+                                psbt_get_output_surjectionproof_len, psbt, dummy_bytes)
 
 
 if __name__ == '__main__':
