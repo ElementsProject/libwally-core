@@ -1666,7 +1666,7 @@ static void push_keypath_item(
 
     push_bytes(cursor, max, item->fingerprint, sizeof(item->fingerprint));
     for (i = 0; i < item->path_len; ++i) {
-        push_bytes(cursor, max, &item->path[i], sizeof(uint32_t));
+        push_le32(cursor, max, item->path[i]);
     }
 }
 
