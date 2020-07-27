@@ -178,10 +178,10 @@ int wally_map_add(struct wally_map *map_in,
     return map_add(map_in, key, key_len, value, value_len, false, NULL, true);
 }
 
-int wally_map_add_keypath(struct wally_map *map_in,
-                          const unsigned char *pub_key, size_t pub_key_len,
-                          const unsigned char *fingerprint, size_t fingerprint_len,
-                          const uint32_t *path, size_t path_len)
+int wally_map_add_keypath_item(struct wally_map *map_in,
+                               const unsigned char *pub_key, size_t pub_key_len,
+                               const unsigned char *fingerprint, size_t fingerprint_len,
+                               const uint32_t *path, size_t path_len)
 {
     unsigned char *value;
     size_t value_len, i;
@@ -280,7 +280,7 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
                              &parent->NAME, &parent->NAME ## _len); \
     }
 
-/* Set a variable length bytes member on a parent struct */
+/* Set/find in and add a vap value member on a parent struct */
 #define SET_MAP(PARENT, NAME, CHECK_FN) \
     int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
         if (!parent) return WALLY_EINVAL; \
@@ -292,6 +292,24 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
         if (written) *written = 0; \
         if (!parent) return WALLY_EINVAL; \
         return wally_map_find(&parent->NAME ## s, key, key_len, written); \
+    } \
+    int PARENT ## _add_ ## NAME(struct PARENT *parent, \
+                                const unsigned char *key, size_t key_len, \
+                                const unsigned char *value, size_t value_len) { \
+        if (!parent) return WALLY_EINVAL; \
+        return wally_map_add(&parent->NAME ## s, key, key_len, value, value_len); \
+    }
+
+/* Add a keypath to parent structs keyoaths member */
+#define ADD_KEYPATH(PARENT) \
+    int PARENT ## _add_keypath_item(struct PARENT *parent, \
+                                    const unsigned char *pub_key, size_t pub_key_len, \
+                                    const unsigned char *fingerprint, size_t fingerprint_len, \
+                                    const uint32_t *child_path, size_t child_path_len) { \
+        if (!parent) return WALLY_EINVAL; \
+        return wally_map_add_keypath_item(&parent->keypaths, pub_key, pub_key_len, \
+                                          fingerprint, fingerprint_len, \
+                                          child_path, child_path_len); \
     }
 
 SET_STRUCT(wally_psbt_input, non_witness_utxo, wally_tx,
@@ -304,6 +322,7 @@ SET_BYTES(wally_psbt_input, final_script_sig)
 SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify)
+ADD_KEYPATH(wally_psbt_input)
 SET_MAP(wally_psbt_input, partial_sig, wally_ec_public_key_verify)
 SET_MAP(wally_psbt_input, unknown, NULL)
 
@@ -377,6 +396,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 SET_BYTES(wally_psbt_output, redeem_script)
 SET_BYTES(wally_psbt_output, witness_script)
 SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify)
+ADD_KEYPATH(wally_psbt_output)
 SET_MAP(wally_psbt_output, unknown, NULL)
 
 #ifdef BUILD_ELEMENTS
@@ -1904,10 +1924,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         }
 
         /* Sign the sighash */
-        flags = flags & EC_FLAG_GRIND_R; /* Only grinding flag is relevant */
-        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, EC_FLAG_ECDSA | flags, sig, EC_SIGNATURE_LEN)) != WALLY_OK)
+        flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R); /* Only grinding flag is relevant */
+        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, flags, sig, sizeof(sig))) != WALLY_OK)
             return ret;
-        if ((ret = wally_ec_sig_to_der(sig, EC_SIGNATURE_LEN, der_sig, EC_SIGNATURE_DER_MAX_LEN, &der_sig_len)) != WALLY_OK)
+        if ((ret = wally_ec_sig_to_der(sig, sizeof(sig), der_sig, sizeof(der_sig), &der_sig_len)) != WALLY_OK)
             return ret;
 
         /* Add the sighash type to the end of the sig */
@@ -1915,11 +1935,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         der_sig_len++;
 
         /* Copy the DER sig into the psbt */
-        ret = map_add(&input->partial_sigs,
-                      input->keypaths.items[keypath_index].key,
-                      input->keypaths.items[keypath_index].key_len,
-                      der_sig, der_sig_len,
-                      false, wally_ec_public_key_verify, true);
+        ret = wally_psbt_input_add_partial_sig(input,
+                                               input->keypaths.items[keypath_index].key,
+                                               input->keypaths.items[keypath_index].key_len,
+                                               der_sig, der_sig_len);
         if (ret != WALLY_OK)
             return ret;
     }
