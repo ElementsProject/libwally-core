@@ -14,11 +14,6 @@
 #include "script.h"
 #include "pullpush.h"
 
-/* FIXME: In input getters and setters, as well as in pubkey keyed maps,
- * Check the validity of the values being set (e.g. the length is correct
- * for the type, the pubkey is valid etc etc)
- */
-
 static const uint8_t WALLY_PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t WALLY_ELEMENTS_PSBT_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
@@ -27,6 +22,10 @@ static const uint8_t WALLY_ELEMENTS_ID[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 
 static const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
+
+static int tx_clone(const struct wally_tx *src, struct wally_tx **dst) {
+    return wally_tx_clone(src, 0, dst);
+}
 
 static int array_grow(void **src, size_t num_items, size_t *allocation_len, size_t item_size)
 {
@@ -253,134 +252,60 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
     return ret;
 }
 
+/* Set a struct member on a parent struct */
+#define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
+    int PARENT ## _set_ ## NAME(struct PARENT *parent, const struct STRUCT_TYPE *p) { \
+        int ret = WALLY_OK; \
+        struct STRUCT_TYPE *new_p = NULL; \
+        if (!parent) return WALLY_EINVAL; \
+        if (p && (ret = CLONE_FN(p, &new_p)) != WALLY_OK) return ret; \
+        FREE_FN(parent->NAME); \
+        parent->NAME = new_p; \
+        return ret; \
+    }
 
-int wally_psbt_input_set_non_witness_utxo(struct wally_psbt_input *input,
-                                          const struct wally_tx *non_witness_utxo)
-{
-    int ret = WALLY_OK;
-    struct wally_tx *new_tx = NULL;
+/* Set a variable length bytes member on a parent struct */
+#define SET_BYTES(PARENT, NAME) \
+    int PARENT ## _set_ ## NAME(struct PARENT *parent, const unsigned char *bytes, size_t len) { \
+        if (!parent) return WALLY_EINVAL; \
+        return replace_bytes(bytes, len, \
+                             &parent->NAME, &parent->NAME ## _len); \
+    }
 
-    if (!input)
-        return WALLY_EINVAL;
+/* Set a fixed length bytes member on a parent struct */
+#define SET_BYTES_N(PARENT, NAME, SIZE) \
+    int PARENT ## _set_ ## NAME(struct PARENT *parent, const unsigned char *bytes, size_t len) { \
+        if (!parent || BYTES_INVALID_N(bytes, len, SIZE)) return WALLY_EINVAL; \
+        return replace_bytes(bytes, len, \
+                             &parent->NAME, &parent->NAME ## _len); \
+    }
 
-    if (non_witness_utxo &&
-        (ret = wally_tx_clone(non_witness_utxo, 0, &new_tx)) != WALLY_OK)
-        return ret;
+/* Set a variable length bytes member on a parent struct */
+#define SET_MAP(PARENT, NAME, CHECK_FN) \
+    int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
+        if (!parent) return WALLY_EINVAL; \
+        return map_assign(map_in, &parent->NAME ## s, CHECK_FN); \
+    } \
+    int PARENT ## _find_ ## NAME(struct PARENT *parent, \
+                                 const unsigned char *key, size_t key_len, \
+                                 size_t *written) { \
+        if (written) *written = 0; \
+        if (!parent) return WALLY_EINVAL; \
+        return wally_map_find(&parent->NAME ## s, key, key_len, written); \
+    }
 
-    wally_tx_free(input->non_witness_utxo);
-    input->non_witness_utxo = new_tx;
-    return ret;
-}
-
-int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input,
-                                      const struct wally_tx_output *witness_utxo)
-{
-    int ret = WALLY_OK;
-    struct wally_tx_output *new_output = NULL;
-
-    if (!input)
-        return WALLY_EINVAL;
-
-    if (witness_utxo &&
-        (ret = wally_tx_output_clone_alloc(witness_utxo, &new_output) != WALLY_OK))
-        return ret;
-
-    wally_tx_output_free(input->witness_utxo);
-    input->witness_utxo = new_output;
-    return ret;
-}
-
-int wally_psbt_input_set_redeem_script(struct wally_psbt_input *input,
-                                       const unsigned char *script,
-                                       size_t script_len)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    return replace_bytes(script, script_len,
-                         &input->redeem_script, &input->redeem_script_len);
-}
-
-int wally_psbt_input_set_witness_script(struct wally_psbt_input *input,
-                                        const unsigned char *script,
-                                        size_t script_len)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    return replace_bytes(script, script_len,
-                         &input->witness_script, &input->witness_script_len);
-}
-
-int wally_psbt_input_set_final_script_sig(struct wally_psbt_input *input,
-                                          const unsigned char *final_script_sig,
-                                          size_t final_script_sig_len)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    return replace_bytes(final_script_sig, final_script_sig_len,
-                         &input->final_script_sig, &input->final_script_sig_len);
-}
-
-int wally_psbt_input_set_final_witness(struct wally_psbt_input *input,
-                                       const struct wally_tx_witness_stack *final_witness)
-{
-    struct wally_tx_witness_stack *new_witness = NULL;
-
-    if (!input)
-        return WALLY_EINVAL;
-
-    if (final_witness &&
-        (wally_tx_witness_stack_clone_alloc(final_witness, &new_witness) != WALLY_OK))
-        return WALLY_ENOMEM;
-
-    wally_tx_witness_stack_free(input->final_witness);
-    input->final_witness = new_witness;
-    return WALLY_OK;
-}
-
-int wally_psbt_input_set_keypaths(struct wally_psbt_input *input,
-                                  const struct wally_map *map_in)
-{
-    return input ? map_assign(map_in, &input->keypaths, wally_ec_public_key_verify) : WALLY_EINVAL;
-}
-
-int wally_psbt_input_find_keypath(struct wally_psbt_input *input,
-                                  const unsigned char *pub_key, size_t pub_key_len,
-                                  size_t *written)
-{
-    if (written)
-        *written = 0;
-    return input ? wally_map_find(&input->keypaths, pub_key, pub_key_len, written) : WALLY_EINVAL;
-}
-
-int wally_psbt_input_set_partial_sigs(struct wally_psbt_input *input,
-                                      const struct wally_map *map_in)
-{
-    return input ? map_assign(map_in, &input->partial_sigs, wally_ec_public_key_verify) : WALLY_EINVAL;
-}
-
-int wally_psbt_input_find_partial_sig(struct wally_psbt_input *input,
-                                      const unsigned char *pub_key, size_t pub_key_len,
-                                      size_t *written)
-{
-    if (written)
-        *written = 0;
-    return input ? wally_map_find(&input->partial_sigs, pub_key, pub_key_len, written) : WALLY_EINVAL;
-}
-
-int wally_psbt_input_set_unknowns(struct wally_psbt_input *input,
-                                  const struct wally_map *map_in)
-{
-    return input ? map_assign(map_in, &input->unknowns, NULL) : WALLY_EINVAL;
-}
-
-int wally_psbt_input_find_unknown(struct wally_psbt_input *input,
-                                  const unsigned char *key, size_t key_len,
-                                  size_t *written)
-{
-    if (written)
-        *written = 0;
-    return input ? wally_map_find(&input->unknowns, key, key_len, written) : WALLY_EINVAL;
-}
+SET_STRUCT(wally_psbt_input, non_witness_utxo, wally_tx,
+           tx_clone, wally_tx_free)
+SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
+           wally_tx_output_clone_alloc, wally_tx_output_free)
+SET_BYTES(wally_psbt_input, redeem_script)
+SET_BYTES(wally_psbt_input, witness_script)
+SET_BYTES(wally_psbt_input, final_script_sig)
+SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
+           wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
+SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify)
+SET_MAP(wally_psbt_input, partial_sig, wally_ec_public_key_verify)
+SET_MAP(wally_psbt_input, unknown, NULL)
 
 int wally_psbt_input_set_sighash_type(struct wally_psbt_input *input, uint32_t sighash_type)
 {
@@ -409,77 +334,14 @@ int wally_psbt_input_clear_value(struct wally_psbt_input *input)
     return WALLY_OK;
 }
 
-int wally_psbt_input_set_vbf(struct wally_psbt_input *input,
-                             const unsigned char *vbf, size_t vbf_len)
-{
-    if (!input || (vbf && vbf_len != BLINDING_FACTOR_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(vbf, vbf_len, &input->vbf, &input->vbf_len);
-}
-
-int wally_psbt_input_set_asset(struct wally_psbt_input *input,
-                               const unsigned char *asset, size_t asset_len)
-{
-    if (!input || (asset && asset_len != ASSET_TAG_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(asset, asset_len, &input->asset, &input->asset_len);
-}
-
-int wally_psbt_input_set_abf(struct wally_psbt_input *input,
-                             const unsigned char *abf, size_t abf_len)
-{
-    if (!input || (abf && abf_len != BLINDING_FACTOR_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(abf, abf_len, &input->abf, &input->abf_len);
-}
-
-int wally_psbt_input_set_peg_in_tx(struct wally_psbt_input *input,
-                                   const struct wally_tx *peg_in_tx)
-{
-    int ret = WALLY_OK;
-    struct wally_tx *new_tx = NULL;
-
-    if (!input)
-        return WALLY_EINVAL;
-
-    if (peg_in_tx &&
-        (ret = wally_tx_clone(peg_in_tx, 0, &new_tx)) != WALLY_OK)
-        return ret;
-
-    wally_tx_free(input->peg_in_tx);
-    input->peg_in_tx = new_tx;
-    return ret;
-}
-
-int wally_psbt_input_set_txoutproof(struct wally_psbt_input *input,
-                                    const unsigned char *txoutproof,
-                                    size_t txoutproof_len)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    return replace_bytes(txoutproof, txoutproof_len,
-                         &input->txoutproof, &input->txoutproof_len);
-}
-
-int wally_psbt_input_set_genesis_blockhash(struct wally_psbt_input *input,
-                                           const unsigned char *genesis_blockhash,
-                                           size_t genesis_blockhash_len)
-{
-    if (!input || (genesis_blockhash && genesis_blockhash_len != SHA256_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(genesis_blockhash, genesis_blockhash_len,
-                         &input->genesis_blockhash, &input->genesis_blockhash_len);
-}
-
-int wally_psbt_input_set_claim_script(struct wally_psbt_input *input,
-                                      const unsigned char *script,
-                                      size_t script_len)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    return replace_bytes(script, script_len,
-                         &input->claim_script, &input->claim_script_len);
-}
+SET_BYTES_N(wally_psbt_input, vbf, BLINDING_FACTOR_LEN)
+SET_BYTES_N(wally_psbt_input, asset, ASSET_TAG_LEN)
+SET_BYTES_N(wally_psbt_input, abf, BLINDING_FACTOR_LEN)
+SET_STRUCT(wally_psbt_input, peg_in_tx, wally_tx,
+           tx_clone, wally_tx_free)
+SET_BYTES(wally_psbt_input, txoutproof)
+SET_BYTES_N(wally_psbt_input, genesis_blockhash, SHA256_LEN)
+SET_BYTES(wally_psbt_input, claim_script)
 #endif /* BUILD_ELEMENTS */
 
 static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
@@ -512,55 +374,10 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
     return WALLY_OK;
 }
 
-int wally_psbt_output_set_redeem_script(struct wally_psbt_output *output,
-                                        const unsigned char *script,
-                                        size_t script_len)
-{
-    if (!output)
-        return WALLY_EINVAL;
-    return replace_bytes(script, script_len,
-                         &output->redeem_script, &output->redeem_script_len);
-}
-
-int wally_psbt_output_set_witness_script(struct wally_psbt_output *output,
-                                         const unsigned char *script,
-                                         size_t script_len)
-{
-    if (!output)
-        return WALLY_EINVAL;
-    return replace_bytes(script, script_len,
-                         &output->witness_script, &output->witness_script_len);
-}
-
-int wally_psbt_output_set_keypaths(struct wally_psbt_output *output,
-                                   const struct wally_map *map_in)
-{
-    return output ? map_assign(map_in, &output->keypaths, wally_ec_public_key_verify) : WALLY_EINVAL;
-}
-
-int wally_psbt_output_find_keypath(struct wally_psbt_output *output,
-                                   const unsigned char *pub_key, size_t pub_key_len,
-                                   size_t *written)
-{
-    if (written)
-        *written = 0;
-    return output ? wally_map_find(&output->keypaths, pub_key, pub_key_len, written) : WALLY_EINVAL;
-}
-
-int wally_psbt_output_set_unknowns(struct wally_psbt_output *output,
-                                   const struct wally_map *map_in)
-{
-    return output ? map_assign(map_in, &output->unknowns, NULL) : WALLY_EINVAL;
-}
-
-int wally_psbt_output_find_unknown(struct wally_psbt_output *output,
-                                   const unsigned char *key, size_t key_len,
-                                   size_t *written)
-{
-    if (written)
-        *written = 0;
-    return output ? wally_map_find(&output->unknowns, key, key_len, written) : WALLY_EINVAL;
-}
+SET_BYTES(wally_psbt_output, redeem_script)
+SET_BYTES(wally_psbt_output, witness_script)
+SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify)
+SET_MAP(wally_psbt_output, unknown, NULL)
 
 #ifdef BUILD_ELEMENTS
 int wally_psbt_output_set_blinding_pubkey(struct wally_psbt_output *output,
@@ -577,71 +394,13 @@ int wally_psbt_output_set_blinding_pubkey(struct wally_psbt_output *output,
                          &output->blinding_pubkey, &output->blinding_pubkey_len);
 }
 
-int wally_psbt_output_set_value_commitment(struct wally_psbt_output *output,
-                                           const unsigned char *commitment,
-                                           size_t commitment_len)
-{
-    if (!output || (commitment && commitment_len != ASSET_COMMITMENT_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(commitment, commitment_len,
-                         &output->value_commitment, &output->value_commitment_len);
-}
-
-int wally_psbt_output_set_vbf(struct wally_psbt_output *output,
-                              const unsigned char *vbf, size_t vbf_len)
-{
-    if (!output || (vbf && vbf_len != BLINDING_FACTOR_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(vbf, vbf_len, &output->vbf, &output->vbf_len);
-}
-
-int wally_psbt_output_set_asset_commitment(struct wally_psbt_output *output,
-                                           const unsigned char *commitment,
-                                           size_t commitment_len)
-{
-    if (!output || (commitment && commitment_len != ASSET_COMMITMENT_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(commitment, commitment_len,
-                         &output->asset_commitment, &output->asset_commitment_len);
-}
-
-int wally_psbt_output_set_abf(struct wally_psbt_output *output,
-                              const unsigned char *abf, size_t abf_len)
-{
-    if (!output || (abf && abf_len != BLINDING_FACTOR_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(abf, abf_len, &output->abf, &output->abf_len);
-}
-
-int wally_psbt_output_set_nonce(struct wally_psbt_output *output,
-                                const unsigned char *nonce,
-                                size_t nonce_len)
-{
-    if (!output || (nonce_len && nonce_len != WALLY_TX_ASSET_CT_NONCE_LEN))
-        return WALLY_EINVAL;
-    return replace_bytes(nonce, nonce_len,
-                         &output->nonce, &output->nonce_len);
-}
-
-int wally_psbt_output_set_rangeproof(struct wally_psbt_output *output,
-                                     const unsigned char *rangeproof,
-                                     size_t rangeproof_len)
-{
-    if (!output)
-        return WALLY_EINVAL;
-    return replace_bytes(rangeproof, rangeproof_len,
-                         &output->rangeproof, &output->rangeproof_len);
-}
-
-int wally_psbt_output_set_surjectionproof(struct wally_psbt_output *output,
-                                          const unsigned char *surjectionproof,
-                                          size_t surjectionproof_len)
-{
-    if (!output)
-        return WALLY_EINVAL;
-    return replace_bytes(surjectionproof, surjectionproof_len,
-                         &output->surjectionproof, &output->surjectionproof_len);
-}
+SET_BYTES_N(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN)
+SET_BYTES_N(wally_psbt_output, vbf, BLINDING_FACTOR_LEN)
+SET_BYTES_N(wally_psbt_output, asset_commitment, ASSET_COMMITMENT_LEN)
+SET_BYTES_N(wally_psbt_output, abf, BLINDING_FACTOR_LEN)
+SET_BYTES_N(wally_psbt_output, nonce, WALLY_TX_ASSET_CT_NONCE_LEN)
+SET_BYTES(wally_psbt_output, rangeproof)
+SET_BYTES(wally_psbt_output, surjectionproof)
 #endif/* BUILD_ELEMENTS */
 
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
@@ -747,7 +506,7 @@ int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_t
         return WALLY_EINVAL;
     if (!psbt->tx)
         return WALLY_OK; /* Return a NULL tx if not present */
-    return wally_tx_clone(psbt->tx, 0, output);
+    return tx_clone(psbt->tx, output);
 }
 
 #define PSBT_GET(name) \
@@ -779,7 +538,7 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         if (tx->inputs[i].script || tx->inputs[i].witness)
             return WALLY_EINVAL; /* tx mustn't have scriptSigs or witnesses */
 
-    if (do_clone && (ret = wally_tx_clone(tx, 0, &new_tx)) != WALLY_OK)
+    if (do_clone && (ret = tx_clone(tx, &new_tx)) != WALLY_OK)
         return ret;
 
     if (psbt->inputs_allocation_len < tx->num_inputs)
@@ -1871,7 +1630,7 @@ static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
         return WALLY_EINVAL;
 
     if (!*dst && src)
-        return wally_tx_clone(src, 0, dst);
+        return tx_clone(src, dst);
 
     return WALLY_OK;
 }
@@ -2409,7 +2168,7 @@ int wally_psbt_extract(
         psbt->tx->num_inputs < psbt->num_inputs || psbt->tx->num_outputs < psbt->num_outputs)
         return WALLY_EINVAL;
 
-    if ((ret = wally_tx_clone(psbt->tx, 0, &result)) != WALLY_OK)
+    if ((ret = tx_clone(psbt->tx, &result)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -2582,10 +2341,6 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
                                             const struct structtyp *p) { \
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
     }
-
-static int tx_clone(const struct wally_tx *src, struct wally_tx **dst) {
-    return wally_tx_clone(src, 0, dst);
-}
 
 PSBT_GET_S(input, non_witness_utxo, wally_tx, tx_clone)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
