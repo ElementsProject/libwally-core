@@ -1449,17 +1449,15 @@ static void push_psbt_key(
 
 #ifdef BUILD_ELEMENTS
 /* Common case of pushing elements proprietary type keys */
-static void push_psbt_elements_key(
-    unsigned char **cursor, size_t *max,
-    uint64_t type, const void *extra, size_t extra_len)
+static void push_psbt_elements_key(unsigned char **cursor, size_t *max,
+                                   uint64_t type)
 {
     push_varint(cursor, max, varint_get_length(WALLY_PSBT_PROPRIETARY_TYPE)
                 + varint_get_length(WALLY_ELEMENTS_ID_LEN)
-                + WALLY_ELEMENTS_ID_LEN + varint_get_length(type) + extra_len);
+                + WALLY_ELEMENTS_ID_LEN + varint_get_length(type));
     push_varint(cursor, max, WALLY_PSBT_PROPRIETARY_TYPE);
     push_varbuff(cursor, max, WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN);
     push_varint(cursor, max, type);
-    push_bytes(cursor, max, extra, extra_len);
 }
 #endif /* BUILD_ELEMENTS */
 
@@ -1631,25 +1629,25 @@ static int push_psbt_input(
 #ifdef BUILD_ELEMENTS
     /* Confidential Assets blinding data */
     if (input->has_value) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE);
         push_varint(cursor, max, sizeof(leint64_t));
         push_le64(cursor, max, input->value);
     }
     if (input->vbf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER);
         push_varbuff(cursor, max, input->vbf, input->vbf_len);
     }
     if (input->asset) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET);
         push_varbuff(cursor, max, input->asset, input->asset_len);
     }
     if (input->abf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER);
         push_varbuff(cursor, max, input->abf, input->abf_len);
     }
     /* Peg ins */
     if (input->peg_in_tx) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX);
         ret = push_length_and_tx(cursor, max,
                                  input->peg_in_tx,
                                  WALLY_TX_FLAG_USE_WITNESS);
@@ -1658,15 +1656,15 @@ static int push_psbt_input(
         }
     }
     if (input->txoutproof) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF);
         push_varbuff(cursor, max, input->txoutproof, input->txoutproof_len);
     }
     if (input->genesis_blockhash) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH);
         push_varbuff(cursor, max, input->genesis_blockhash, input->genesis_blockhash_len);
     }
     if (input->claim_script) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT);
         push_varbuff(cursor, max, input->claim_script, input->claim_script_len);
     }
 #endif /* BUILD_ELEMENTS */
@@ -1698,35 +1696,35 @@ static int push_psbt_output(
 
 #ifdef BUILD_ELEMENTS
     if (output->value_commitment) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT);
         push_varbuff(cursor, max, output->value_commitment, output->value_commitment_len);
     }
     if (output->vbf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER);
         push_varbuff(cursor, max, output->vbf, output->vbf_len);
     }
     if (output->asset_commitment) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT);
         push_varbuff(cursor, max, output->asset_commitment, output->asset_commitment_len);
     }
     if (output->abf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER);
         push_varbuff(cursor, max, output->abf, output->abf_len);
     }
     if (output->rangeproof) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF);
         push_varbuff(cursor, max, output->rangeproof, output->rangeproof_len);
     }
     if (output->surjectionproof) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF);
         push_varbuff(cursor, max, output->surjectionproof, output->surjectionproof_len);
     }
     if (output->blinding_pubkey) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY);
         push_varbuff(cursor, max, output->blinding_pubkey, output->blinding_pubkey_len);
     }
     if (output->nonce) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT, NULL, 0);
+        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT);
         push_varbuff(cursor, max, output->nonce, output->nonce_len);
     }
 #endif /* BUILD_ELEMENTS */
