@@ -47,7 +47,7 @@ class TransactionTests(unittest.TestCase):
             # Partial transactions cannot be dumped by default
             self.assertEqual(WALLY_EINVAL, wally_tx_to_hex(tx_out, 0)[0])
             # Check the partial transaction can be cloned
-            self.assertEqual(WALLY_OK, wally_tx_clone(tx_out, 0, tx_copy))
+            self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, 0, tx_copy))
             if tx_out.contents.num_inputs != 0:
                 # Partial txs with inputs can be dumped with ALLOW_PARTIAL:0x4
                 ret, hex_ = wally_tx_to_hex(tx_out, 0x1|0x4)
@@ -64,7 +64,7 @@ class TransactionTests(unittest.TestCase):
             hex_ = utf8(self.tx_serialize_hex(tx_out))
             self.assertEqual(tx_hex, hex_)
             # Check the transaction can be cloned and serializes to the same hex
-            self.assertEqual(WALLY_OK, wally_tx_clone(tx_out, 0, tx_copy))
+            self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, 0, tx_copy))
             self.assertEqual(hex_, utf8(self.tx_serialize_hex(tx_copy)))
             # Check that the txid can be computed
             txid, txid_len = make_cbuffer('00' * 32)

@@ -23,8 +23,8 @@ static const size_t WALLY_ELEMENTS_ID_LEN = 8;
 #endif /* BUILD_ELEMENTS */
 
 
-static int tx_clone(const struct wally_tx *src, struct wally_tx **dst) {
-    return wally_tx_clone(src, 0, dst);
+static int tx_clone_alloc(const struct wally_tx *src, struct wally_tx **dst) {
+    return wally_tx_clone_alloc(src, 0, dst);
 }
 
 static int array_grow(void **src, size_t num_items, size_t *allocation_len, size_t item_size)
@@ -313,7 +313,7 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
     }
 
 SET_STRUCT(wally_psbt_input, non_witness_utxo, wally_tx,
-           tx_clone, wally_tx_free)
+           tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
            wally_tx_output_clone_alloc, wally_tx_output_free)
 SET_BYTES(wally_psbt_input, redeem_script)
@@ -357,7 +357,7 @@ SET_BYTES_N(wally_psbt_input, vbf, BLINDING_FACTOR_LEN)
 SET_BYTES_N(wally_psbt_input, asset, ASSET_TAG_LEN)
 SET_BYTES_N(wally_psbt_input, abf, BLINDING_FACTOR_LEN)
 SET_STRUCT(wally_psbt_input, peg_in_tx, wally_tx,
-           tx_clone, wally_tx_free)
+           tx_clone_alloc, wally_tx_free)
 SET_BYTES(wally_psbt_input, txoutproof)
 SET_BYTES_N(wally_psbt_input, genesis_blockhash, SHA256_LEN)
 SET_BYTES(wally_psbt_input, claim_script)
@@ -526,7 +526,7 @@ int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_t
         return WALLY_EINVAL;
     if (!psbt->tx)
         return WALLY_OK; /* Return a NULL tx if not present */
-    return tx_clone(psbt->tx, output);
+    return tx_clone_alloc(psbt->tx, output);
 }
 
 #define PSBT_GET(name) \
@@ -558,7 +558,7 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         if (tx->inputs[i].script || tx->inputs[i].witness)
             return WALLY_EINVAL; /* tx mustn't have scriptSigs or witnesses */
 
-    if (do_clone && (ret = tx_clone(tx, &new_tx)) != WALLY_OK)
+    if (do_clone && (ret = tx_clone_alloc(tx, &new_tx)) != WALLY_OK)
         return ret;
 
     if (psbt->inputs_allocation_len < tx->num_inputs)
@@ -1650,7 +1650,7 @@ static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
         return WALLY_EINVAL;
 
     if (!*dst && src)
-        return tx_clone(src, dst);
+        return tx_clone_alloc(src, dst);
 
     return WALLY_OK;
 }
@@ -2187,7 +2187,7 @@ int wally_psbt_extract(
         psbt->tx->num_inputs < psbt->num_inputs || psbt->tx->num_outputs < psbt->num_outputs)
         return WALLY_EINVAL;
 
-    if ((ret = tx_clone(psbt->tx, &result)) != WALLY_OK)
+    if ((ret = tx_clone_alloc(psbt->tx, &result)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -2361,7 +2361,7 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
     }
 
-PSBT_GET_S(input, non_witness_utxo, wally_tx, tx_clone)
+PSBT_GET_S(input, non_witness_utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
 PSBT_GET_B(input, redeem_script)
 PSBT_GET_B(input, witness_script)
@@ -2395,7 +2395,7 @@ PSBT_GET_I(input, value, uint64_t)
 PSBT_GET_B(input, vbf)
 PSBT_GET_B(input, asset)
 PSBT_GET_B(input, abf)
-PSBT_GET_S(input, peg_in_tx, wally_tx, tx_clone)
+PSBT_GET_S(input, peg_in_tx, wally_tx, tx_clone_alloc)
 PSBT_GET_B(input, txoutproof)
 PSBT_GET_B(input, genesis_blockhash)
 PSBT_GET_B(input, claim_script)

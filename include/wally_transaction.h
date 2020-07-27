@@ -326,7 +326,7 @@ WALLY_CORE_API int wally_tx_init_alloc(
  * :param flags: Flags controlling script creation. Must be 0.
  * :param output: Destination for the resulting transaction copy.
  */
-WALLY_CORE_API int wally_tx_clone(
+WALLY_CORE_API int wally_tx_clone_alloc(
     const struct wally_tx *tx,
     uint32_t flags,
     struct wally_tx **output);

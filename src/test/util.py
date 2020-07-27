@@ -370,7 +370,7 @@ for f in (
     ('wally_tx_add_output', c_int, [POINTER(wally_tx), POINTER(wally_tx_output)]),
     ('wally_tx_add_raw_input', c_int, [POINTER(wally_tx), c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), c_uint]),
     ('wally_tx_add_raw_output', c_int, [POINTER(wally_tx), c_uint64, c_void_p, c_ulong, c_uint]),
-    ('wally_tx_clone', c_int, [POINTER(wally_tx), c_uint, POINTER(POINTER(wally_tx))]),
+    ('wally_tx_clone_alloc', c_int, [POINTER(wally_tx), c_uint, POINTER(POINTER(wally_tx))]),
     ('wally_tx_confidential_value_from_satoshi', c_int, [c_uint64, c_void_p, c_ulong]),
     ('wally_tx_confidential_value_to_satoshi', c_int, [c_void_p, c_ulong, c_uint64_p]),
     ('wally_tx_elements_input_init_alloc', c_int, [c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, POINTER(wally_tx_witness_stack), POINTER(POINTER(wally_tx_input))]),

@@ -3281,7 +3281,7 @@ int wally_tx_input_set_script(struct wally_tx_input *input,
 
 TX_SET_B(input, script)
 
-int wally_tx_clone(const struct wally_tx *tx, uint32_t flags, struct wally_tx **output)
+int wally_tx_clone_alloc(const struct wally_tx *tx, uint32_t flags, struct wally_tx **output)
 {
     size_t i;
     struct wally_tx *result = NULL;
