@@ -241,6 +241,21 @@ WALLY_CORE_API int wally_tx_input_init_alloc(
 WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *input);
 #endif /* SWIG_PYTHON */
 
+#ifndef SWIG
+/**
+ * Initialize a new transaction output.
+ *
+ * :param satoshi The amount of the output in satoshi.
+ * :param script: The scriptPubkey for the output.
+ * :param script_len: Size of ``script`` in bytes.
+ * :param output: Transaction output to initialize.
+ */
+WALLY_CORE_API int wally_tx_output_init(uint64_t satoshi,
+                                        const unsigned char *script,
+                                        size_t script_len,
+                                        struct wally_tx_output *output);
+#endif /* SWIG */
+
 /**
  * Allocate and initialize a new transaction output.
  *
@@ -267,7 +282,7 @@ WALLY_CORE_API int wally_tx_output_clone_alloc(
 
 #ifndef SWIG
 /**
- * Create a new copy of a transaction output in-place.
+ * Create a new copy of a transaction output in place.
  *
  * :param tx_output_in: The transaction output to clone.
  * :param output: Destination for the resulting transaction output copy.
@@ -777,6 +792,42 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_set(
 WALLY_CORE_API int wally_tx_elements_output_commitment_free(
     struct wally_tx_output *output);
 #endif /* SWIG_PYTHON */
+
+#ifndef SWIG
+/**
+ * Initialize a new elements transaction output in place.
+ *
+ * :param script: The scriptPubkey for the output.
+ * :param script_len: Size of ``script`` in bytes.
+ * :param asset: The asset tag of the output.
+ * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
+ * :param value: The commitment to a possibly blinded value.
+ * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param surjectionproof: The surjection proof.
+ * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
+ * :param rangeproof: The range proof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ * :param output: Destination for the resulting transaction output copy.
+ *
+ * .. note:: ``output`` is overwritten in place, and not cleared first.
+ */
+WALLY_CORE_API int wally_tx_elements_output_init(
+    const unsigned char *script,
+    size_t script_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *value,
+    size_t value_len,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    struct wally_tx_output *output);
+#endif /* SWIG */
 
 /**
  * Allocate and initialize a new elements transaction output.

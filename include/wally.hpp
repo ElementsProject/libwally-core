@@ -75,8 +75,17 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(i641, WALLYB(i1), out); \
 }
 
+#define WALLY_FN_6B_P(F, N) template <class I1, class O> inline int F(uint64_t i641, const I1 &i1, O *out) { \
+        return ::N(i641, WALLYB(i1), out); \
+}
+
 #define WALLY_FN_BBBBBB_A(F, N) template <class I1, class I2, class I3, class I4, class I5, class I6, class O> \
     inline int F(const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5, const I6 &i6, O * *out) { \
+        return ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), out); \
+}
+
+#define WALLY_FN_BBBBBB_P(F, N) template <class I1, class I2, class I3, class I4, class I5, class I6, class O> \
+    inline int F(const I1 &i1, const I2 &i2, const I3 &i3, const I4& i4, const I5 &i5, const I6 &i6, O *out) { \
         return ::N(WALLYB(i1), WALLYB(i2), WALLYB(i3), WALLYB(i4), WALLYB(i5), WALLYB(i6), out); \
 }
 
@@ -471,6 +480,7 @@ WALLY_FN_333BBBBB_A(bip32_key_init_alloc, bip32_key_init_alloc)
 WALLY_FN_33SS_A(tx_init_alloc, wally_tx_init_alloc)
 WALLY_FN_3SSS_A(psbt_init_alloc, wally_psbt_init_alloc)
 WALLY_FN_6B_A(tx_output_init_alloc, wally_tx_output_init_alloc)
+WALLY_FN_6B_P(tx_output_init, wally_tx_output_init)
 WALLY_FN_B(ec_private_key_verify, wally_ec_private_key_verify)
 WALLY_FN_B(ec_public_key_verify, wally_ec_public_key_verify)
 WALLY_FN_B(secp_randomize, wally_secp_randomize)
@@ -666,6 +676,7 @@ WALLY_FN_BB3_BS(elements_pegin_contract_script_from_bytes, wally_elements_pegin_
 WALLY_FN_BBBB3_BS(elements_pegout_script_from_bytes, wally_elements_pegout_script_from_bytes)
 WALLY_FN_BBBBBBB_BS(asset_surjectionproof, wally_asset_surjectionproof)
 WALLY_FN_BBBBBB_A(tx_elements_output_init_alloc, wally_tx_elements_output_init_alloc)
+WALLY_FN_BBBBBB_P(tx_elements_output_init, wally_tx_elements_output_init)
 WALLY_FN_BBBBBB_BBB6(asset_unblind, wally_asset_unblind)
 WALLY_FN_BBBBB_BBB6(asset_unblind_with_nonce, wally_asset_unblind_with_nonce)
 WALLY_FN_BBSBBB_BS(asset_pak_whitelistproof, wally_asset_pak_whitelistproof)
