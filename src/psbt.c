@@ -1217,9 +1217,8 @@ int wally_psbt_get_length(const struct wally_psbt *psbt, uint32_t flags, size_t 
 }
 
 /* Literally a varbuff containing only type as a varint, then optional data */
-static void push_psbt_key(
-    unsigned char **cursor, size_t *max,
-    uint64_t type, const void *extra, size_t extra_len)
+static void push_psbt_key(unsigned char **cursor, size_t *max,
+                          uint64_t type, const void *extra, size_t extra_len)
 {
     push_varint(cursor, max, varint_get_length(type) + extra_len);
     push_varint(cursor, max, type);
@@ -1300,6 +1299,16 @@ static void push_typed_map(unsigned char **cursor, size_t *max,
         const struct wally_map_item *item = &map_in->items[i];
         push_psbt_key(cursor, max, type, item->key, item->key_len);
         push_varbuff(cursor, max, item->value, item->value_len);
+    }
+}
+
+static void push_typed_varbuff(unsigned char **cursor, size_t *max,
+                               uint64_t type,
+                               const unsigned char *bytes, size_t bytes_len)
+{
+    if (bytes) {
+        push_psbt_key(cursor, max, type, NULL, 0);
+        push_varbuff(cursor, max, bytes, bytes_len);
     }
 }
 
@@ -1387,25 +1396,16 @@ static int push_psbt_input(
         push_le32(cursor, max, input->sighash_type);
     }
     /* Redeem script */
-    if (input->redeem_script) {
-        push_psbt_key(cursor, max, WALLY_PSBT_IN_REDEEM_SCRIPT, NULL, 0);
-        push_varbuff(cursor, max,
-                     input->redeem_script, input->redeem_script_len);
-    }
+    push_typed_varbuff(cursor, max, WALLY_PSBT_IN_REDEEM_SCRIPT,
+                       input->redeem_script, input->redeem_script_len);
     /* Witness script */
-    if (input->witness_script) {
-        push_psbt_key(cursor, max, WALLY_PSBT_IN_WITNESS_SCRIPT, NULL, 0);
-        push_varbuff(cursor, max,
-                     input->witness_script, input->witness_script_len);
-    }
+    push_typed_varbuff(cursor, max, WALLY_PSBT_IN_WITNESS_SCRIPT,
+                       input->witness_script, input->witness_script_len);
     /* Keypaths */
     push_typed_map(cursor, max, WALLY_PSBT_IN_BIP32_DERIVATION, &input->keypaths);
     /* Final scriptSig */
-    if (input->final_script_sig) {
-        push_psbt_key(cursor, max, WALLY_PSBT_IN_FINAL_SCRIPTSIG, NULL, 0);
-        push_varbuff(cursor, max,
-                     input->final_script_sig, input->final_script_sig_len);
-    }
+    push_typed_varbuff(cursor, max, WALLY_PSBT_IN_FINAL_SCRIPTSIG,
+                       input->final_script_sig, input->final_script_sig_len);
     /* Final scriptWitness */
     if (input->final_witness) {
         size_t wit_len;
@@ -1461,17 +1461,11 @@ static int push_psbt_output(
     const struct wally_psbt_output *output)
 {
     /* Redeem script */
-    if (output->redeem_script) {
-        push_psbt_key(cursor, max, WALLY_PSBT_OUT_REDEEM_SCRIPT, NULL, 0);
-        push_varbuff(cursor, max,
-                     output->redeem_script, output->redeem_script_len);
-    }
+    push_typed_varbuff(cursor, max, WALLY_PSBT_OUT_REDEEM_SCRIPT,
+                       output->redeem_script, output->redeem_script_len);
     /* Witness script */
-    if (output->witness_script) {
-        push_psbt_key(cursor, max, WALLY_PSBT_OUT_WITNESS_SCRIPT, NULL, 0);
-        push_varbuff(cursor, max,
-                     output->witness_script, output->witness_script_len);
-    }
+    push_typed_varbuff(cursor, max, WALLY_PSBT_OUT_WITNESS_SCRIPT,
+                       output->witness_script, output->witness_script_len);
     /* Keypaths */
     push_typed_map(cursor, max, WALLY_PSBT_OUT_BIP32_DERIVATION, &output->keypaths);
 
