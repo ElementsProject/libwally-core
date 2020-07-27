@@ -599,8 +599,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(_tx_is_elements);
 %returns_void__(wally_tx_elements_output_commitment_set);
 %returns_void__(wally_tx_elements_output_commitment_free);
-%returns_struct(wally_tx_output_clone_alloc, wally_tx_clone);
-%rename("tx_output_clone") wally_tx_output_clone_alloc;
 %returns_void__(wally_tx_output_free);
 %rename("_tx_output_get_asset") wally_tx_output_get_asset;
 %returns_size_t(_tx_output_get_asset);
@@ -623,6 +621,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_output_get_value_len);
 %returns_struct(wally_tx_output_init_alloc, wally_tx_output);
 %rename("tx_output_init") wally_tx_output_init_alloc;
+%returns_struct(wally_tx_output_clone_alloc, wally_tx_output_clone);
+%rename("tx_output_clone") wally_tx_output_clone_alloc;
 %returns_void__(wally_tx_output_set_satoshi);
 %returns_void__(wally_tx_output_set_script);
 %returns_void__(wally_tx_output_set_asset);
@@ -659,6 +659,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
 %returns_struct(wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack);
+%rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
 %returns_string(wally_wif_from_bytes);
