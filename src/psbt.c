@@ -1449,8 +1449,8 @@ static void push_psbt_key(
 
 #ifdef BUILD_ELEMENTS
 /* Common case of pushing elements proprietary type keys */
-static void push_psbt_elements_key(unsigned char **cursor, size_t *max,
-                                   uint64_t type)
+static void push_elements_key(unsigned char **cursor, size_t *max,
+                              uint64_t type)
 {
     push_varint(cursor, max, varint_get_length(WALLY_PSBT_PROPRIETARY_TYPE)
                 + varint_get_length(WALLY_ELEMENTS_ID_LEN)
@@ -1459,6 +1459,20 @@ static void push_psbt_elements_key(unsigned char **cursor, size_t *max,
     push_varbuff(cursor, max, WALLY_ELEMENTS_ID, WALLY_ELEMENTS_ID_LEN);
     push_varint(cursor, max, type);
 }
+
+static void push_elements_varbuff(unsigned char **cursor, size_t *max,
+                                  uint64_t type,
+                                  const unsigned char *bytes, size_t bytes_len)
+{
+    /* Note that due to dummy mallocs, bytes can be non-NULL while
+     * bytes_len is 0. This represents a present-but-empty varbuff.
+     */
+    if (bytes) {
+        push_elements_key(cursor, max, type);
+        push_varbuff(cursor, max, bytes, bytes_len);
+    }
+}
+
 #endif /* BUILD_ELEMENTS */
 
 static int push_length_and_tx(
@@ -1629,25 +1643,19 @@ static int push_psbt_input(
 #ifdef BUILD_ELEMENTS
     /* Confidential Assets blinding data */
     if (input->has_value) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE);
+        push_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE);
         push_varint(cursor, max, sizeof(leint64_t));
         push_le64(cursor, max, input->value);
     }
-    if (input->vbf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER);
-        push_varbuff(cursor, max, input->vbf, input->vbf_len);
-    }
-    if (input->asset) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET);
-        push_varbuff(cursor, max, input->asset, input->asset_len);
-    }
-    if (input->abf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER);
-        push_varbuff(cursor, max, input->abf, input->abf_len);
-    }
+    push_elements_varbuff(cursor, max, WALLY_PSBT_IN_ELEMENTS_VALUE_BLINDER,
+                          input->vbf, input->vbf_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET,
+                          input->asset, input->asset_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_IN_ELEMENTS_ASSET_BLINDER,
+                          input->abf, input->abf_len);
     /* Peg ins */
     if (input->peg_in_tx) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX);
+        push_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_PEG_IN_TX);
         ret = push_length_and_tx(cursor, max,
                                  input->peg_in_tx,
                                  WALLY_TX_FLAG_USE_WITNESS);
@@ -1655,18 +1663,12 @@ static int push_psbt_input(
             return ret;
         }
     }
-    if (input->txoutproof) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF);
-        push_varbuff(cursor, max, input->txoutproof, input->txoutproof_len);
-    }
-    if (input->genesis_blockhash) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH);
-        push_varbuff(cursor, max, input->genesis_blockhash, input->genesis_blockhash_len);
-    }
-    if (input->claim_script) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT);
-        push_varbuff(cursor, max, input->claim_script, input->claim_script_len);
-    }
+    push_elements_varbuff(cursor, max, WALLY_PSBT_IN_ELEMENTS_TXOUT_PROOF,
+                          input->txoutproof, input->txoutproof_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_IN_ELEMENTS_GENESIS_HASH,
+                          input->genesis_blockhash, input->genesis_blockhash_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_IN_ELEMENTS_CLAIM_SCRIPT,
+                          input->claim_script, input->claim_script_len);
 #endif /* BUILD_ELEMENTS */
     /* Unknowns */
     push_map(cursor, max, &input->unknowns);
@@ -1695,38 +1697,22 @@ static int push_psbt_output(
     push_typed_map(cursor, max, WALLY_PSBT_OUT_BIP32_DERIVATION, &output->keypaths);
 
 #ifdef BUILD_ELEMENTS
-    if (output->value_commitment) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT);
-        push_varbuff(cursor, max, output->value_commitment, output->value_commitment_len);
-    }
-    if (output->vbf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER);
-        push_varbuff(cursor, max, output->vbf, output->vbf_len);
-    }
-    if (output->asset_commitment) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT);
-        push_varbuff(cursor, max, output->asset_commitment, output->asset_commitment_len);
-    }
-    if (output->abf) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER);
-        push_varbuff(cursor, max, output->abf, output->abf_len);
-    }
-    if (output->rangeproof) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF);
-        push_varbuff(cursor, max, output->rangeproof, output->rangeproof_len);
-    }
-    if (output->surjectionproof) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF);
-        push_varbuff(cursor, max, output->surjectionproof, output->surjectionproof_len);
-    }
-    if (output->blinding_pubkey) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY);
-        push_varbuff(cursor, max, output->blinding_pubkey, output->blinding_pubkey_len);
-    }
-    if (output->nonce) {
-        push_psbt_elements_key(cursor, max, WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT);
-        push_varbuff(cursor, max, output->nonce, output->nonce_len);
-    }
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_COMMITMENT,
+                          output->value_commitment, output->value_commitment_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_VALUE_BLINDER,
+                          output->vbf, output->vbf_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_COMMITMENT,
+                          output->asset_commitment, output->asset_commitment_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_ASSET_BLINDER,
+                          output->abf, output->abf_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_RANGE_PROOF,
+                          output->rangeproof, output->rangeproof_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_SURJECTION_PROOF,
+                          output->surjectionproof, output->surjectionproof_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_BLINDING_PUBKEY,
+                          output->blinding_pubkey, output->blinding_pubkey_len);
+    push_elements_varbuff(cursor, max, WALLY_PSBT_OUT_ELEMENTS_NONCE_COMMITMENT,
+                          output->nonce, output->nonce_len);
 #endif /* BUILD_ELEMENTS */
     /* Unknowns */
     push_map(cursor, max, &output->unknowns);
