@@ -69,5 +69,6 @@ int main(void)
         wally_psbt_free(psbt);
     }
 
+    wally_cleanup(0);
     return 0;
 }

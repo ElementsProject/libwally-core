@@ -85,7 +85,6 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
     if (p) fn(p); }
 
 capsule_dtor(ext_key, bip32_key_free)
-capsule_dtor(wally_keypath_map, wally_keypath_map_free)
 capsule_dtor(wally_psbt, wally_psbt_free)
 capsule_dtor(wally_tx, wally_tx_free)
 capsule_dtor(wally_tx_input, wally_tx_input_free)
@@ -310,7 +309,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
 
 %py_opaque_struct(ext_key);
-%py_opaque_struct(wally_keypath_map)
 %py_opaque_struct(wally_psbt);
 %py_opaque_struct(wally_tx);
 %py_opaque_struct(wally_tx_input);
@@ -326,7 +324,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 %rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
-%rename("keypath_map_init") wally_keypath_map_init_alloc;
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
 %rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
 %rename("psbt_get_input_non_witness_utxo") wally_psbt_get_input_non_witness_utxo_alloc;

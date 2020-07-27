@@ -115,17 +115,6 @@ class wally_tx(Structure):
                 ('num_outputs', c_ulong),
                 ('outputs_allocation_len', c_ulong),]
 
-class wally_keypath_item(Structure):
-    _fields_ = [('path', POINTER(c_ulong)),
-                ('path_len', c_ulong),
-                ('fingerprint', c_ubyte * 4),
-                ('pubkey', c_ubyte * 65)]
-
-class wally_keypath_map(Structure):
-    _fields_ = [('items', POINTER(wally_keypath_item)),
-                ('num_items', c_ulong),
-                ('items_allocation_len', c_ulong)]
-
 class wally_map_item(Structure):
     _fields_ = [('key', c_void_p),
                 ('key_len', c_ulong),
@@ -147,9 +136,9 @@ class wally_psbt_input(Structure):
                 ('final_script_sig', c_void_p),
                 ('final_script_sig_len', c_ulong),
                 ('final_witness', POINTER(wally_tx_witness_stack)),
-                ('keypaths', POINTER(wally_keypath_map)),
-                ('partial_sigs', POINTER(wally_map)),
-                ('unknowns', POINTER(wally_map)),
+                ('keypaths', wally_map),
+                ('partial_sigs', wally_map),
+                ('unknowns', wally_map),
                 ('sighash_type', c_ulong),
                 ('value', c_uint64),
                 ('has_value', c_ulong),
@@ -172,8 +161,8 @@ class wally_psbt_output(Structure):
                 ('redeem_script_len', c_ulong),
                 ('witness_script', c_void_p),
                 ('witness_script_len', c_ulong),
-                ('keypaths', POINTER(wally_keypath_map)),
-                ('unknowns', POINTER(wally_map)),
+                ('keypaths', wally_map),
+                ('unknowns', wally_map),
                 ('blinding_pubkey', c_ubyte * 65),
                 ('has_blinding_pubkey', c_ulong),
                 ('value_commitment', c_void_p),
@@ -298,10 +287,7 @@ for f in (
     ('wally_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_init', c_int, [c_uint]),
     ('wally_is_elements_build', c_int, [c_ulong_p]),
-    ('wally_keypath_map_add', c_int, [POINTER(wally_keypath_map), c_void_p, c_ulong, c_void_p, c_ulong, c_uint_p, c_ulong]),
-    ('wally_keypath_map_find', c_int, [POINTER(wally_keypath_map), c_void_p, c_ulong, c_ulong_p]),
-    ('wally_keypath_map_free', c_int, [POINTER(wally_keypath_map)]),
-    ('wally_keypath_map_init_alloc', c_int, [c_ulong, POINTER(POINTER(wally_keypath_map))]),
+    ('wally_map_add_keypath', c_int, [POINTER(wally_map), c_void_p, c_ulong, c_void_p, c_ulong, c_uint_p, c_ulong]),
     ('wally_pbkdf2_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong]),
     ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong]),
     ('wally_psbt_combine', c_int, [POINTER(wally_psbt), POINTER(wally_psbt)]),
@@ -335,7 +321,7 @@ for f in (
     ('wally_psbt_input_find_unknown', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong, c_ulong_p]),
     ('wally_psbt_input_set_final_script_sig', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_final_witness', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx_witness_stack)]),
-    ('wally_psbt_input_set_keypaths', c_int, [POINTER(wally_psbt_input), POINTER(wally_keypath_map)]),
+    ('wally_psbt_input_set_keypaths', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
     ('wally_psbt_input_set_non_witness_utxo', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx)]),
     ('wally_psbt_input_set_partial_sigs', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
     ('wally_psbt_input_set_redeem_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
@@ -346,7 +332,7 @@ for f in (
     ('wally_psbt_is_elements', c_int, [POINTER(wally_psbt), c_ulong_p]),
     ('wally_psbt_output_find_keypath', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong, c_ulong_p]),
     ('wally_psbt_output_find_unknown', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong, c_ulong_p]),
-    ('wally_psbt_output_set_keypaths', c_int, [POINTER(wally_psbt_output), POINTER(wally_keypath_map)]),
+    ('wally_psbt_output_set_keypaths', c_int, [POINTER(wally_psbt_output), POINTER(wally_map)]),
     ('wally_psbt_output_set_redeem_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
     ('wally_psbt_output_set_unknowns', c_int, [POINTER(wally_psbt_output), POINTER(wally_map)]),
     ('wally_psbt_output_set_witness_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),

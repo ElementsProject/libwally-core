@@ -108,5 +108,6 @@ int main(void)
         test_psbt_write(valid_psbts + i, p, plen);
     }
 
+    wally_cleanup(0);
     return 0;
 }
