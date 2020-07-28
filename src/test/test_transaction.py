@@ -118,16 +118,27 @@ class TransactionTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_remove_output(*args))
 
-        # Add and then remove, then test that serialization remains the same
-        for args, expected in [
-            ((self.tx_deserialize_hex(TX_FAKE_HEX), 1, script, script_len, 0), None),
-            ]:
-            before = self.tx_serialize_hex(args[0])
-            self.assertEqual(WALLY_OK, wally_tx_add_raw_output(*args))
-            if expected:
-                self.assertEqual(self.tx_serialize_hex(args[0]), expected)
-            self.assertEqual(WALLY_OK, wally_tx_remove_output(byref(args[0]), args[0].num_outputs-1))
-            self.assertEqual(before, self.tx_serialize_hex(args[0]))
+        # Add and remove inputs and outputs, test that serialization remains the same
+        script2, script2_len = make_cbuffer('77' * 16)
+        tx = self.tx_deserialize_hex(TX_FAKE_HEX)
+        self.assertEqual(WALLY_OK, wally_tx_add_raw_output(tx, 55, script2, script2_len, 0))
+        before_hex = self.tx_serialize_hex(tx)
+        num_outputs = tx.num_outputs
+
+        def remove_and_test(idx):
+            self.assertNotEqual(before_hex, self.tx_serialize_hex(tx))
+            self.assertEqual(WALLY_OK, wally_tx_remove_output(tx, idx))
+            self.assertEqual(before_hex, self.tx_serialize_hex(tx))
+
+        self.assertEqual(WALLY_OK, wally_tx_add_raw_output(tx, 1, script, script_len, 0))
+        remove_and_test(num_outputs)
+        for idx in range(0, num_outputs + 1):
+            ret = wally_tx_add_raw_output_at(tx, idx, 1, script, script_len, 0)
+            self.assertEqual(ret, WALLY_OK)
+            remove_and_test(idx)
+
+        ret = wally_tx_add_raw_output_at(tx, num_outputs + 1, 1, script, script_len, 0)
+        self.assertEqual(ret, WALLY_EINVAL) # Invalid index
 
     def test_inputs(self):
         """Testing functions manipulating inputs"""
@@ -154,10 +165,11 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, wally_tx_remove_input(*args))
 
         # Add and then remove, then test that serialization remains the same
+        wit = wally_tx_witness_stack()
         for args, expected in [
-            ((self.tx_deserialize_hex(TX_FAKE_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wally_tx_witness_stack(), 0),
+            ((self.tx_deserialize_hex(TX_FAKE_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wit, 0),
              None),
-            ((self.tx_deserialize_hex(TX_WITNESS_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wally_tx_witness_stack(), 0),
+            ((self.tx_deserialize_hex(TX_WITNESS_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wit, 0),
              TX_WITNESS_HEX[:13]+utf8('2')+TX_WITNESS_HEX[14:96]+utf8('00'*36)+utf8('0100ffffffff')+TX_WITNESS_HEX[96:-8]+utf8('00')+TX_WITNESS_HEX[-8:]),
             ]:
             before = self.tx_serialize_hex(args[0])
@@ -166,6 +178,29 @@ class TransactionTests(unittest.TestCase):
                 self.assertEqual(utf8(self.tx_serialize_hex(args[0])), expected)
             self.assertEqual(WALLY_OK, wally_tx_remove_input(byref(args[0]), args[0].num_inputs-1))
             self.assertEqual(before, self.tx_serialize_hex(args[0]))
+
+        script2, script2_len = make_cbuffer('77' * 16)
+        tx = self.tx_deserialize_hex(TX_FAKE_HEX)
+        ret = wally_tx_add_raw_input(tx, txhash, txhash_len, 1, 0xfffffffe, script2, script2_len, wit, 0)
+        self.assertEqual(ret, WALLY_OK)
+        before_hex = self.tx_serialize_hex(tx)
+        num_inputs = tx.num_inputs
+
+        def remove_and_test(idx):
+            self.assertNotEqual(before_hex, self.tx_serialize_hex(tx))
+            self.assertEqual(WALLY_OK, wally_tx_remove_input(tx, idx))
+            self.assertEqual(before_hex, self.tx_serialize_hex(tx))
+
+        for idx in range(0, num_inputs + 1):
+            ret = wally_tx_add_raw_input_at(tx, idx, txhash, txhash_len,
+                                            2, 0xfffffffd, script, script_len, wit, 0)
+            self.assertEqual(ret, WALLY_OK)
+            remove_and_test(idx)
+
+        ret = wally_tx_add_raw_input_at(tx, num_inputs + 1, txhash, txhash_len,
+                                        2, 0xfffffffd, script, script_len, wit, 0)
+        self.assertEqual(ret, WALLY_EINVAL) # Invalid index
+
 
     def test_witness(self):
         """Testing functions manipulating witness"""

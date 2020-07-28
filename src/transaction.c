@@ -564,24 +564,17 @@ int wally_tx_elements_input_issuance_free(
 
 static int tx_elements_input_init(
     const unsigned char *txhash, size_t txhash_len,
-    uint32_t index, uint32_t sequence,
+    uint32_t utxo_index, uint32_t sequence,
     const unsigned char *script, size_t script_len,
     const struct wally_tx_witness_stack *witness,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *entropy,
-    size_t entropy_len,
-    const unsigned char *issuance_amount,
-    size_t issuance_amount_len,
-    const unsigned char *inflation_keys,
-    size_t inflation_keys_len,
-    const unsigned char *issuance_amount_rangeproof,
-    size_t issuance_amount_rangeproof_len,
-    const unsigned char *inflation_keys_rangeproof,
-    size_t inflation_keys_rangeproof_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *entropy, size_t entropy_len,
+    const unsigned char *issuance_amount, size_t issuance_amount_len,
+    const unsigned char *inflation_keys, size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len,
     const struct wally_tx_witness_stack *pegin_witness,
-    struct wally_tx_input *output,
-    bool is_elements)
+    struct wally_tx_input *output, bool is_elements)
 {
     struct wally_tx_witness_stack *new_witness = NULL;
     struct wally_tx_witness_stack *new_pegin_witness = NULL;
@@ -624,13 +617,13 @@ static int tx_elements_input_init(
         clear_and_free(new_script, script_len);
         output->features = old_features;
     } else {
-        const bool is_coinbase = is_coinbase_bytes(txhash, WALLY_TXHASH_LEN, index);
+        const bool is_coinbase = is_coinbase_bytes(txhash, WALLY_TXHASH_LEN, utxo_index);
         memcpy(output->txhash, txhash, WALLY_TXHASH_LEN);
         if (is_elements && !is_coinbase)
-            output->index = index & WALLY_TX_INDEX_MASK;
+            output->index = utxo_index & WALLY_TX_INDEX_MASK;
         else
-            output->index = index;
-        if (is_elements && !is_coinbase && (index & WALLY_TX_PEGIN_FLAG))
+            output->index = utxo_index;
+        if (is_elements && !is_coinbase && (utxo_index & WALLY_TX_PEGIN_FLAG))
             output->features |= WALLY_TX_IS_PEGIN;
         if (is_coinbase)
             output->features |= WALLY_TX_IS_COINBASE;
@@ -647,69 +640,56 @@ static int tx_elements_input_init(
 
 int wally_tx_elements_input_init(
     const unsigned char *txhash, size_t txhash_len,
-    uint32_t index, uint32_t sequence,
+    uint32_t utxo_index, uint32_t sequence,
     const unsigned char *script, size_t script_len,
     const struct wally_tx_witness_stack *witness,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *entropy,
-    size_t entropy_len,
-    const unsigned char *issuance_amount,
-    size_t issuance_amount_len,
-    const unsigned char *inflation_keys,
-    uint64_t inflation_keys_len,
-    const unsigned char *issuance_amount_rangeproof,
-    size_t issuance_amount_rangeproof_len,
-    const unsigned char *inflation_keys_rangeproof,
-    size_t inflation_keys_rangeproof_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *entropy, size_t entropy_len,
+    const unsigned char *issuance_amount, size_t issuance_amount_len,
+    const unsigned char *inflation_keys, uint64_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len,
     const struct wally_tx_witness_stack *pegin_witness,
     struct wally_tx_input *output)
 {
-    return tx_elements_input_init(txhash, txhash_len,
-                                  index, sequence,
-                                  script, script_len,
-                                  witness, nonce, nonce_len,
-                                  entropy, entropy_len,
-                                  issuance_amount, issuance_amount_len,
-                                  inflation_keys, inflation_keys_len,
-                                  issuance_amount_rangeproof, issuance_amount_rangeproof_len,
-                                  inflation_keys_rangeproof, inflation_keys_rangeproof_len,
-                                  pegin_witness, output, true);
+    return tx_elements_input_init(
+        txhash, txhash_len,
+        utxo_index, sequence,
+        script, script_len,
+        witness, nonce, nonce_len,
+        entropy, entropy_len,
+        issuance_amount, issuance_amount_len,
+        inflation_keys, inflation_keys_len,
+        issuance_amount_rangeproof, issuance_amount_rangeproof_len,
+        inflation_keys_rangeproof, inflation_keys_rangeproof_len,
+        pegin_witness, output, true);
 }
 
 int wally_tx_input_init(const unsigned char *txhash, size_t txhash_len,
-                        uint32_t index, uint32_t sequence,
+                        uint32_t utxo_index, uint32_t sequence,
                         const unsigned char *script, size_t script_len,
                         const struct wally_tx_witness_stack *witness,
                         struct wally_tx_input *output)
 {
     return tx_elements_input_init(txhash, txhash_len,
-                                  index, sequence,
+                                  utxo_index, sequence,
                                   script, script_len,
                                   witness, NULL, 0, NULL, 0,
-                                  NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, output, false);
+                                  NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL,
+                                  output, false);
 }
 
 int wally_tx_elements_input_init_alloc(
-    const unsigned char *txhash,
-    size_t txhash_len,
-    uint32_t index,
-    uint32_t sequence,
-    const unsigned char *script,
-    size_t script_len,
+    const unsigned char *txhash, size_t txhash_len,
+    uint32_t utxo_index, uint32_t sequence,
+    const unsigned char *script, size_t script_len,
     const struct wally_tx_witness_stack *witness,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *entropy,
-    size_t entropy_len,
-    const unsigned char *issuance_amount,
-    size_t issuance_amount_len,
-    const unsigned char *inflation_keys,
-    size_t inflation_keys_len,
-    const unsigned char *issuance_amount_rangeproof,
-    size_t issuance_amount_rangeproof_len,
-    const unsigned char *inflation_keys_rangeproof,
-    size_t inflation_keys_rangeproof_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *entropy, size_t entropy_len,
+    const unsigned char *issuance_amount, size_t issuance_amount_len,
+    const unsigned char *inflation_keys, size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len,
     const struct wally_tx_witness_stack *pegin_witness,
     struct wally_tx_input **output)
 {
@@ -719,7 +699,7 @@ int wally_tx_elements_input_init_alloc(
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_tx_input);
 
-    ret = tx_elements_input_init(txhash, txhash_len, index, sequence,
+    ret = tx_elements_input_init(txhash, txhash_len, utxo_index, sequence,
                                  script, script_len, witness,
                                  nonce, nonce_len, entropy, entropy_len,
                                  issuance_amount, issuance_amount_len,
@@ -738,7 +718,7 @@ int wally_tx_elements_input_init_alloc(
 }
 
 int wally_tx_input_init_alloc(const unsigned char *txhash, size_t txhash_len,
-                              uint32_t index, uint32_t sequence,
+                              uint32_t utxo_index, uint32_t sequence,
                               const unsigned char *script, size_t script_len,
                               const struct wally_tx_witness_stack *witness,
                               struct wally_tx_input **output)
@@ -749,7 +729,7 @@ int wally_tx_input_init_alloc(const unsigned char *txhash, size_t txhash_len,
     TX_CHECK_OUTPUT;
     TX_OUTPUT_ALLOC(struct wally_tx_input);
 
-    ret = wally_tx_input_init(txhash, txhash_len, index, sequence,
+    ret = wally_tx_input_init(txhash, txhash_len, utxo_index, sequence,
                               script, script_len, witness, result);
 
     if (ret != WALLY_OK) {
@@ -1196,9 +1176,10 @@ int wally_tx_free(struct wally_tx *tx)
     return tx_free(tx, true);
 }
 
-int wally_tx_add_input(struct wally_tx *tx, const struct wally_tx_input *input)
+int wally_tx_add_input_at(struct wally_tx *tx, uint32_t index,
+                          const struct wally_tx_input *input)
 {
-    if (!is_valid_tx(tx) || !is_valid_tx_input(input))
+    if (!is_valid_tx(tx) || index > tx->num_inputs || !is_valid_tx_input(input))
         return WALLY_EINVAL;
 
     if (tx->num_inputs >= tx->inputs_allocation_len) {
@@ -1213,41 +1194,43 @@ int wally_tx_add_input(struct wally_tx *tx, const struct wally_tx_input *input)
         tx->inputs = p;
         tx->inputs_allocation_len += 1;
     }
-    if (!clone_input_to(tx->inputs + tx->num_inputs, input))
+
+    memmove(tx->inputs + index + 1, tx->inputs + index,
+            (tx->num_inputs - index) * sizeof(*input));
+
+    if (!clone_input_to(tx->inputs + index, input)) {
+        memmove(tx->inputs + index, tx->inputs + index + 1,
+                (tx->num_inputs - index) * sizeof(*input)); /* Undo */
         return WALLY_ENOMEM;
+    }
 
     tx->num_inputs += 1;
     return WALLY_OK;
 }
 
-static int tx_add_elements_raw_input(
-    struct wally_tx *tx,
-    const unsigned char *txhash,
-    size_t txhash_len,
-    uint32_t index,
-    uint32_t sequence,
-    const unsigned char *script,
-    size_t script_len,
+int wally_tx_add_input(struct wally_tx *tx, const struct wally_tx_input *input)
+{
+    return tx ? wally_tx_add_input_at(tx, tx->num_inputs, input) : WALLY_EINVAL;
+}
+
+static int tx_add_elements_raw_input_at(
+    struct wally_tx *tx, uint32_t index,
+    const unsigned char *txhash, size_t txhash_len,
+    uint32_t utxo_index, uint32_t sequence,
+    const unsigned char *script, size_t script_len,
     const struct wally_tx_witness_stack *witness,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *entropy,
-    size_t entropy_len,
-    const unsigned char *issuance_amount,
-    size_t issuance_amount_len,
-    const unsigned char *inflation_keys,
-    size_t inflation_keys_len,
-    const unsigned char *issuance_amount_rangeproof,
-    size_t issuance_amount_rangeproof_len,
-    const unsigned char *inflation_keys_rangeproof,
-    size_t inflation_keys_rangeproof_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *entropy, size_t entropy_len,
+    const unsigned char *issuance_amount, size_t issuance_amount_len,
+    const unsigned char *inflation_keys, size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len,
     const struct wally_tx_witness_stack *pegin_witness,
-    uint32_t flags,
-    bool is_elements)
+    uint32_t flags, bool is_elements)
 {
     /* Add an input without allocating a temporary wally_tx_input */
     struct wally_tx_input input = {
-        { 0 }, index, sequence,
+        { 0 }, utxo_index, sequence,
         (unsigned char *)script, script_len,
         (struct wally_tx_witness_stack *) witness,
         is_elements ? WALLY_TX_IS_ELEMENTS : 0,
@@ -1281,17 +1264,17 @@ static int tx_add_elements_raw_input(
         BYTES_INVALID(inflation_keys_rangeproof, inflation_keys_rangeproof_len))
         return WALLY_EINVAL;
 
-    is_coinbase = is_coinbase_bytes(txhash, txhash_len, index);
+    is_coinbase = is_coinbase_bytes(txhash, txhash_len, utxo_index);
     if (is_elements && !is_coinbase)
-        input.index = index & WALLY_TX_INDEX_MASK;
+        input.index = utxo_index & WALLY_TX_INDEX_MASK;
     else
-        input.index = index;
+        input.index = utxo_index;
     if (is_coinbase)
         input.features |= WALLY_TX_IS_COINBASE;
     else if (is_elements) {
-        if (index & WALLY_TX_ISSUANCE_FLAG)
+        if (utxo_index & WALLY_TX_ISSUANCE_FLAG)
             input.features |= WALLY_TX_IS_ISSUANCE;
-        if (index & WALLY_TX_PEGIN_FLAG)
+        if (utxo_index & WALLY_TX_PEGIN_FLAG)
             input.features |= WALLY_TX_IS_PEGIN;
     }
 
@@ -1302,58 +1285,94 @@ static int tx_add_elements_raw_input(
     if (entropy)
         memcpy(input.entropy, entropy, WALLY_TX_ASSET_TAG_LEN);
 #endif /* BUILD_ELEMENTS */
-    ret = wally_tx_add_input(tx, &input);
+    ret = wally_tx_add_input_at(tx, index, &input);
     wally_clear(&input, sizeof(input));
     return ret;
 }
 
 int wally_tx_add_elements_raw_input(
     struct wally_tx *tx,
-    const unsigned char *txhash,
-    size_t txhash_len,
-    uint32_t index,
-    uint32_t sequence,
-    const unsigned char *script,
-    size_t script_len,
+    const unsigned char *txhash, size_t txhash_len,
+    uint32_t utxo_index, uint32_t sequence,
+    const unsigned char *script, size_t script_len,
     const struct wally_tx_witness_stack *witness,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *entropy,
-    size_t entropy_len,
-    const unsigned char *issuance_amount,
-    size_t issuance_amount_len,
-    const unsigned char *inflation_keys,
-    size_t inflation_keys_len,
-    const unsigned char *issuance_amount_rangeproof,
-    size_t issuance_amount_rangeproof_len,
-    const unsigned char *inflation_keys_rangeproof,
-    size_t inflation_keys_rangeproof_len,
-    const struct wally_tx_witness_stack *pegin_witness,
-    uint32_t flags)
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *entropy, size_t entropy_len,
+    const unsigned char *issuance_amount, size_t issuance_amount_len,
+    const unsigned char *inflation_keys, size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness, uint32_t flags)
 {
-    return tx_add_elements_raw_input(tx, txhash, txhash_len,
-                                     index, sequence, script,
-                                     script_len, witness,
-                                     nonce, nonce_len, entropy, entropy_len,
-                                     issuance_amount, issuance_amount_len,
-                                     inflation_keys, inflation_keys_len,
-                                     issuance_amount_rangeproof, issuance_amount_rangeproof_len,
-                                     inflation_keys_rangeproof, inflation_keys_rangeproof_len,
-                                     pegin_witness, flags, true);
+    if (!tx)
+        return WALLY_EINVAL;
+    return tx_add_elements_raw_input_at(
+        tx, tx->num_inputs, txhash, txhash_len,
+        utxo_index, sequence, script,
+        script_len, witness,
+        nonce, nonce_len, entropy, entropy_len,
+        issuance_amount, issuance_amount_len,
+        inflation_keys, inflation_keys_len,
+        issuance_amount_rangeproof, issuance_amount_rangeproof_len,
+        inflation_keys_rangeproof, inflation_keys_rangeproof_len,
+        pegin_witness, flags, true);
 }
+
+int wally_tx_add_elements_raw_input_at(
+    struct wally_tx *tx, uint32_t index,
+    const unsigned char *txhash, size_t txhash_len,
+    uint32_t utxo_index, uint32_t sequence,
+    const unsigned char *script, size_t script_len,
+    const struct wally_tx_witness_stack *witness,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *entropy, size_t entropy_len,
+    const unsigned char *issuance_amount, size_t issuance_amount_len,
+    const unsigned char *inflation_keys, size_t inflation_keys_len,
+    const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len,
+    const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len,
+    const struct wally_tx_witness_stack *pegin_witness, uint32_t flags)
+{
+    return tx_add_elements_raw_input_at(
+        tx, index, txhash, txhash_len,
+        utxo_index, sequence, script,
+        script_len, witness,
+        nonce, nonce_len, entropy, entropy_len,
+        issuance_amount, issuance_amount_len,
+        inflation_keys, inflation_keys_len,
+        issuance_amount_rangeproof, issuance_amount_rangeproof_len,
+        inflation_keys_rangeproof, inflation_keys_rangeproof_len,
+        pegin_witness, flags, true);
+}
+
 
 int wally_tx_add_raw_input(struct wally_tx *tx,
                            const unsigned char *txhash, size_t txhash_len,
-                           uint32_t index, uint32_t sequence,
+                           uint32_t utxo_index, uint32_t sequence,
                            const unsigned char *script, size_t script_len,
                            const struct wally_tx_witness_stack *witness,
                            uint32_t flags)
 {
-    return tx_add_elements_raw_input(tx, txhash, txhash_len,
-                                     index, sequence, script,
-                                     script_len, witness,
-                                     NULL, 0, NULL, 0, NULL, 0, NULL, 0,
-                                     NULL, 0, NULL, 0, NULL, flags, false);
+    if (!tx)
+        return WALLY_EINVAL;
+    return tx_add_elements_raw_input_at(tx, tx->num_inputs, txhash, txhash_len,
+                                        utxo_index, sequence, script,
+                                        script_len, witness,
+                                        NULL, 0, NULL, 0, NULL, 0, NULL, 0,
+                                        NULL, 0, NULL, 0, NULL, flags, false);
+}
+
+int wally_tx_add_raw_input_at(struct wally_tx *tx, uint32_t index,
+                              const unsigned char *txhash, size_t txhash_len,
+                              uint32_t utxo_index, uint32_t sequence,
+                              const unsigned char *script, size_t script_len,
+                              const struct wally_tx_witness_stack *witness,
+                              uint32_t flags)
+{
+    return tx_add_elements_raw_input_at(tx, index, txhash, txhash_len,
+                                        utxo_index, sequence, script,
+                                        script_len, witness,
+                                        NULL, 0, NULL, 0, NULL, 0, NULL, 0,
+                                        NULL, 0, NULL, 0, NULL, flags, false);
 }
 
 int wally_tx_remove_input(struct wally_tx *tx, size_t index)
@@ -1374,17 +1393,22 @@ int wally_tx_remove_input(struct wally_tx *tx, size_t index)
     return WALLY_OK;
 }
 
-int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *output)
+int wally_tx_add_output_at(struct wally_tx *tx, uint32_t index,
+                           const struct wally_tx_output *output)
 {
     uint64_t total;
     int ret;
     const bool is_elements = output->features & WALLY_TX_IS_ELEMENTS;
+
+    if (!is_valid_tx(tx) || index > tx->num_outputs)
+        return WALLY_EINVAL;
+
     if (!is_elements) {
-        if (!is_valid_tx(tx) || !is_valid_tx_output(output) ||
+        if (!is_valid_tx_output(output) ||
             wally_tx_get_total_output_satoshi(tx, &total) != WALLY_OK ||
             total + output->satoshi < total || total + output->satoshi > WALLY_SATOSHI_MAX)
             return WALLY_EINVAL;
-    } else if (!is_valid_tx(tx) || !is_valid_elements_tx_output(output))
+    } else if (!is_valid_elements_tx_output(output))
         return WALLY_EINVAL;
 
     if (tx->num_outputs >= tx->outputs_allocation_len) {
@@ -1399,30 +1423,34 @@ int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *outpu
         tx->outputs = p;
         tx->outputs_allocation_len += 1;
     }
-    if ((ret = wally_tx_output_clone(output, tx->outputs + tx->num_outputs)) != WALLY_OK)
+
+    memmove(tx->outputs + index + 1, tx->outputs + index,
+            (tx->num_outputs - index) * sizeof(*output));
+
+    if ((ret = wally_tx_output_clone(output, tx->outputs + index)) != WALLY_OK) {
+        memmove(tx->outputs + index, tx->outputs + index + 1,
+                (tx->num_outputs - index) * sizeof(*output)); /* Undo */
         return ret;
+    }
 
     tx->num_outputs += 1;
     return WALLY_OK;
 }
 
-static int tx_add_elements_raw_output(
-    struct wally_tx *tx,
-    uint64_t satoshi,
-    const unsigned char *script,
-    size_t script_len,
-    const unsigned char *asset,
-    size_t asset_len,
-    const unsigned char *value,
-    size_t value_len,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *surjectionproof,
-    size_t surjectionproof_len,
-    const unsigned char *rangeproof,
-    size_t rangeproof_len,
-    uint32_t flags,
-    bool is_elements)
+int wally_tx_add_output(struct wally_tx *tx, const struct wally_tx_output *output)
+{
+    return tx ? wally_tx_add_output_at(tx, tx->num_outputs, output) : WALLY_EINVAL;
+}
+
+static int tx_add_elements_raw_output_at(
+    struct wally_tx *tx, uint32_t index, uint64_t satoshi,
+    const unsigned char *script, size_t script_len,
+    const unsigned char *asset, size_t asset_len,
+    const unsigned char *value, size_t value_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *surjectionproof, size_t surjectionproof_len,
+    const unsigned char *rangeproof, size_t rangeproof_len,
+    uint32_t flags, bool is_elements)
 {
     /* Add an output without allocating a temporary wally_tx_output */
     struct wally_tx_output output = {
@@ -1447,45 +1475,74 @@ static int tx_add_elements_raw_output(
         BYTES_INVALID(rangeproof, rangeproof_len))
         return WALLY_EINVAL;
 
-    ret = wally_tx_add_output(tx, &output);
+    ret = wally_tx_add_output_at(tx, index, &output);
     wally_clear(&output, sizeof(output));
     return ret;
 }
 
 int wally_tx_add_elements_raw_output(
     struct wally_tx *tx,
-    const unsigned char *script,
-    size_t script_len,
-    const unsigned char *asset,
-    size_t asset_len,
-    const unsigned char *value,
-    size_t value_len,
-    const unsigned char *nonce,
-    size_t nonce_len,
-    const unsigned char *surjectionproof,
-    size_t surjectionproof_len,
-    const unsigned char *rangeproof,
-    size_t rangeproof_len,
+    const unsigned char *script, size_t script_len,
+    const unsigned char *asset, size_t asset_len,
+    const unsigned char *value, size_t value_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *surjectionproof, size_t surjectionproof_len,
+    const unsigned char *rangeproof, size_t rangeproof_len,
     uint32_t flags)
 {
-    return tx_add_elements_raw_output(tx, -1,
-                                      script, script_len,
-                                      asset, asset_len,
-                                      value, value_len,
-                                      nonce, nonce_len,
-                                      surjectionproof, surjectionproof_len,
-                                      rangeproof, rangeproof_len,
-                                      flags, true);
+    if (!tx)
+        return WALLY_EINVAL;
+    return tx_add_elements_raw_output_at(tx, tx->num_outputs, -1,
+                                         script, script_len,
+                                         asset, asset_len,
+                                         value, value_len,
+                                         nonce, nonce_len,
+                                         surjectionproof, surjectionproof_len,
+                                         rangeproof, rangeproof_len,
+                                         flags, true);
+}
+
+int wally_tx_add_elements_raw_output_at(
+    struct wally_tx *tx, uint32_t index,
+    const unsigned char *script, size_t script_len,
+    const unsigned char *asset, size_t asset_len,
+    const unsigned char *value, size_t value_len,
+    const unsigned char *nonce, size_t nonce_len,
+    const unsigned char *surjectionproof, size_t surjectionproof_len,
+    const unsigned char *rangeproof, size_t rangeproof_len,
+    uint32_t flags)
+{
+    return tx_add_elements_raw_output_at(tx, index, -1,
+                                         script, script_len,
+                                         asset, asset_len,
+                                         value, value_len,
+                                         nonce, nonce_len,
+                                         surjectionproof, surjectionproof_len,
+                                         rangeproof, rangeproof_len,
+                                         flags, true);
 }
 
 int wally_tx_add_raw_output(struct wally_tx *tx, uint64_t satoshi,
                             const unsigned char *script, size_t script_len,
                             uint32_t flags)
 {
-    return tx_add_elements_raw_output(tx, satoshi,
-                                      script, script_len,
-                                      NULL, 0, NULL, 0, NULL, 0,
-                                      NULL, 0, NULL, 0, flags, false);
+    if (!tx)
+        return WALLY_EINVAL;
+    return tx_add_elements_raw_output_at(tx, tx->num_outputs, satoshi,
+                                         script, script_len,
+                                         NULL, 0, NULL, 0, NULL, 0,
+                                         NULL, 0, NULL, 0, flags, false);
+}
+
+int wally_tx_add_raw_output_at(struct wally_tx *tx, uint32_t index,
+                               uint64_t satoshi,
+                               const unsigned char *script, size_t script_len,
+                               uint32_t flags)
+{
+    return tx_add_elements_raw_output_at(tx, index, satoshi,
+                                         script, script_len,
+                                         NULL, 0, NULL, 0, NULL, 0,
+                                         NULL, 0, NULL, 0, flags, false);
 }
 
 int wally_tx_remove_output(struct wally_tx *tx, size_t index)
