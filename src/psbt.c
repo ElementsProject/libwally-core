@@ -71,7 +71,8 @@ static int tx_clone_alloc(const struct wally_tx *src, struct wally_tx **dst) {
     return wally_tx_clone_alloc(src, 0, dst);
 }
 
-static int array_grow(void **src, size_t num_items, size_t *allocation_len, size_t item_size)
+static int array_grow(void **src, size_t num_items, size_t *allocation_len,
+                      size_t item_size)
 {
     if (num_items == *allocation_len) {
         /* Array is full, allocate more space */
@@ -774,9 +775,9 @@ static int pull_map(const unsigned char **cursor, size_t *max,
 
     return map_add(map_in, key, key_len, val, val_len, false, check_fn, false);
 }
+
 /* Rewind cursor to prekey, and append unknown key/value to unknowns */
-static int pull_unknown_key_value(const unsigned char **cursor,
-                                  size_t *max,
+static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
                                   const unsigned char *pre_key,
                                   struct wally_map *unknowns)
 {
@@ -810,19 +811,15 @@ static size_t push_elements_bytes_size(const struct wally_tx_output *out)
     return size;
 }
 
-static void push_elements_bytes(unsigned char **cursor,
-                                size_t *max,
-                                unsigned char *value,
-                                size_t val_len)
+static void push_elements_bytes(unsigned char **cursor, size_t *max,
+                                unsigned char *value, size_t val_len)
 {
     unsigned char empty = 0;
     push_bytes(cursor, max, value ? value : &empty, value ? val_len : sizeof(empty));
 }
 
-static int pull_elements_confidential(const unsigned char **cursor,
-                                      size_t *max,
-                                      const unsigned char **value,
-                                      size_t *val_len,
+static int pull_elements_confidential(const unsigned char **cursor, size_t *max,
+                                      const unsigned char **value, size_t *val_len,
                                       size_t prefixA, size_t prefixB,
                                       size_t prefixed_size, size_t explicit_size)
 {
@@ -854,10 +851,8 @@ static int pull_elements_confidential(const unsigned char **cursor,
 
 /* Either returns a 33-byte commitment to a confidential value, or
  * a 64-bit explicit value. */
-static int pull_confidential_value(const unsigned char **cursor,
-                                   size_t *max,
-                                   const unsigned char **value,
-                                   size_t *val_len)
+static int pull_confidential_value(const unsigned char **cursor, size_t *max,
+                                   const unsigned char **value, size_t *val_len)
 
 {
     return pull_elements_confidential(cursor, max, value, val_len,
@@ -865,10 +860,8 @@ static int pull_confidential_value(const unsigned char **cursor,
                                       WALLY_TX_ASSET_CT_VALUE_LEN, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
 }
 
-static int pull_confidential_asset(const unsigned char **cursor,
-                                   size_t *max,
-                                   const unsigned char **asset,
-                                   size_t *asset_len)
+static int pull_confidential_asset(const unsigned char **cursor, size_t *max,
+                                   const unsigned char **asset, size_t *asset_len)
 
 {
     return pull_elements_confidential(cursor, max, asset, asset_len,
@@ -876,10 +869,8 @@ static int pull_confidential_asset(const unsigned char **cursor,
                                       WALLY_TX_ASSET_CT_ASSET_LEN, WALLY_TX_ASSET_CT_ASSET_LEN);
 }
 
-static int pull_nonce(const unsigned char **cursor,
-                      size_t *max,
-                      const unsigned char **nonce,
-                      size_t *nonce_len)
+static int pull_nonce(const unsigned char **cursor, size_t *max,
+                      const unsigned char **nonce, size_t *nonce_len)
 
 {
     return pull_elements_confidential(cursor, max, nonce, nonce_len,
@@ -1403,9 +1394,8 @@ static void push_elements_varbuff(unsigned char **cursor, size_t *max,
 
 #endif /* BUILD_ELEMENTS */
 
-static int push_length_and_tx(
-    unsigned char **cursor, size_t *max,
-    const struct wally_tx *tx, uint32_t flags)
+static int push_length_and_tx(unsigned char **cursor, size_t *max,
+                              const struct wally_tx *tx, uint32_t flags)
 {
     int ret;
     size_t txlen;
@@ -1428,9 +1418,8 @@ static int push_length_and_tx(
     return wally_tx_to_bytes(tx, flags, p, txlen, &txlen);
 }
 
-static void push_witness_stack(
-    unsigned char **cursor, size_t *max,
-    const struct wally_tx_witness_stack *witness)
+static void push_witness_stack(unsigned char **cursor, size_t *max,
+                               const struct wally_tx_witness_stack *witness)
 {
     size_t i;
 
@@ -1473,10 +1462,8 @@ static void push_map(unsigned char **cursor, size_t *max,
     }
 }
 
-static int push_psbt_input(
-    unsigned char **cursor, size_t *max,
-    uint32_t flags,
-    const struct wally_psbt_input *input)
+static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
+                           const struct wally_psbt_input *input)
 {
     int ret;
 
@@ -2359,9 +2346,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
     return WALLY_OK;
 }
 
-int wally_psbt_extract(
-    const struct wally_psbt *psbt,
-    struct wally_tx **output)
+int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 {
     struct wally_tx *result = NULL;
     size_t i;
