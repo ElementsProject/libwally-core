@@ -2176,19 +2176,18 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
             size_t written, script_sig_len;
 
-            if (input->partial_sigs.num_items != 1) {
-                /* Must be single key, single sig */
-                continue;
-            }
+            if (input->partial_sigs.num_items != 1)
+                continue; /* Must be single key, single sig */
+
             partial_sig = &input->partial_sigs.items[0];
 
             if (type == WALLY_SCRIPT_TYPE_P2PKH) {
                 if ((ret = wally_scriptsig_p2pkh_from_der(partial_sig->key, partial_sig->key_len, partial_sig->value, partial_sig->value_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
                     return ret;
                 }
-                if (!clone_bytes(&input->final_script_sig, script_sig, script_sig_len)) {
+                if (!clone_bytes(&input->final_script_sig, script_sig, script_sig_len))
                     return WALLY_ENOMEM;
-                }
+                input->final_script_sig_len = script_sig_len;
             } else {
                 if ((ret = wally_witness_p2wpkh_from_der(partial_sig->key, partial_sig->key_len, partial_sig->value, partial_sig->value_len, &input->final_witness)) != WALLY_OK) {
                     return ret;
