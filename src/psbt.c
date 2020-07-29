@@ -2163,14 +2163,11 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             witness = true;
         }
 
-        /* We need an outscript to do anything */
-        if (!out_script) {
-            continue;
-        }
+        if (!out_script)
+            continue; /* We need an outscript to do anything */
 
-        if ((ret = wally_scriptpubkey_get_type(out_script, out_script_len, &type)) != WALLY_OK) {
-            return ret;
-        }
+        if (wally_scriptpubkey_get_type(out_script, out_script_len, &type) != WALLY_OK)
+            continue; /* Can't identify the type, skip */
 
         switch(type) {
         case WALLY_SCRIPT_TYPE_P2PKH:
