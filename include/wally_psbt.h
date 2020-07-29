@@ -621,6 +621,18 @@ WALLY_CORE_API int wally_psbt_combine(
     const struct wally_psbt *src);
 
 /**
+ * Clone a PSBT into a newly allocated copy.
+ *
+ * :param psbt: the PSBT to clone.
+ * :param flags: Flags controlling PSBT creation. Must be 0.
+ * :param output: Destination for the resulting cloned PSBT.
+ */
+WALLY_CORE_API int wally_psbt_clone_alloc(
+    const struct wally_psbt *psbt,
+    uint32_t flags,
+    struct wally_psbt **output);
+
+/**
  * Sign a PSBT using the simple signer algorithm.
  *
  * :param psbt: PSBT to sign. Directly modifies this PSBT.

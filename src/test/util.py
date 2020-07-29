@@ -291,6 +291,7 @@ for f in (
     ('wally_pbkdf2_hmac_sha256', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong]),
     ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong]),
     ('wally_psbt_combine', c_int, [POINTER(wally_psbt), POINTER(wally_psbt)]),
+    ('wally_psbt_clone_alloc', c_int, [POINTER(wally_psbt), c_uint, POINTER(POINTER(wally_psbt))]),
     ('wally_psbt_elements_init_alloc', c_int, [c_uint, c_ulong, c_ulong, c_ulong, POINTER(POINTER(wally_psbt))]),
     ('wally_psbt_extract', c_int, [POINTER(wally_psbt), POINTER(POINTER(wally_tx))]),
     ('wally_psbt_finalize', c_int, [POINTER(wally_psbt)]),

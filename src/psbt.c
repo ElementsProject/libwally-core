@@ -210,8 +210,7 @@ int wally_map_add_keypath_item(struct wally_map *map_in,
     return ret;
 }
 
-static int map_extend(const struct wally_map *src,
-                      struct wally_map *dst,
+static int map_extend(struct wally_map *dst, const struct wally_map *src,
                       int (*check_fn)(const unsigned char *key, size_t key_len))
 {
     int ret = WALLY_OK;
@@ -1633,10 +1632,15 @@ done:
     return ret;
 }
 
-#define COMBINE_BYTES(typ, member) \
-    if (!dst->member && src->member && \
-        (ret = wally_psbt_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len)) != WALLY_OK) \
-        return ret
+#define COMBINE_BYTES(typ, member)  do { \
+        if (!dst->member && src->member) { \
+            if (src->member && !src->member ## _len) { \
+                if ((dst->member = wally_malloc(1)) == NULL) ret = WALLY_ENOMEM; \
+            } else \
+                ret = wally_psbt_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len); \
+            if (ret != WALLY_OK) \
+                return ret; \
+        } } while (0)
 
 static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
 {
@@ -1658,22 +1662,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
         return ret;
 
     if (!dst->witness_utxo && src->witness_utxo) {
-        const struct wally_tx_output *src_utxo = src->witness_utxo;
-#ifdef BUILD_ELEMENTS
-        ret = wally_tx_elements_output_init_alloc(
-            src_utxo->script, src_utxo->script_len,
-            src_utxo->asset, src_utxo->asset_len,
-            src_utxo->value, src_utxo->value_len,
-            src_utxo->nonce, src_utxo->nonce_len,
-            src_utxo->surjectionproof, src_utxo->surjectionproof_len,
-            src_utxo->rangeproof, src_utxo->rangeproof_len,
-#else
-        ret = wally_tx_output_init_alloc(
-            src_utxo->satoshi,
-            src_utxo->script,
-            src_utxo->script_len,
-#endif
-            &dst->witness_utxo);
+        ret = wally_tx_output_clone_alloc(src->witness_utxo, &dst->witness_utxo);
         if (ret != WALLY_OK)
             return ret;
     }
@@ -1685,11 +1674,11 @@ static int combine_inputs(struct wally_psbt_input *dst,
     if (!dst->final_witness && src->final_witness &&
         (ret = wally_psbt_input_set_final_witness(dst, src->final_witness)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->keypaths, &dst->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->partial_sigs, &dst->partial_sigs, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->partial_sigs, &src->partial_sigs, wally_ec_public_key_verify)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->unknowns, &dst->unknowns, NULL)) != WALLY_OK)
+    if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
         return ret;
     if (!dst->sighash_type && src->sighash_type)
         dst->sighash_type = src->sighash_type;
@@ -1716,9 +1705,9 @@ static int combine_outputs(struct wally_psbt_output *dst,
 {
     int ret;
 
-    if ((ret = map_extend(&src->keypaths, &dst->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->unknowns, &dst->unknowns, NULL)) != WALLY_OK)
+    if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
         return ret;
 
     COMBINE_BYTES(output, redeem_script);
@@ -1738,10 +1727,26 @@ static int combine_outputs(struct wally_psbt_output *dst,
 }
 #undef COMBINE_BYTES
 
+static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
+{
+    size_t i;
+    int ret = WALLY_OK;
+
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
+        ret = combine_inputs(&psbt->inputs[i], &src->inputs[i]);
+
+    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
+        ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
+
+    if (ret == WALLY_OK)
+        ret = map_extend(&psbt->unknowns, &src->unknowns, NULL);
+
+    return ret;
+}
+
 int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
     unsigned char txid[WALLY_TXHASH_LEN], src_txid[WALLY_TXHASH_LEN];
-    size_t i;
     int ret;
 
     if (!psbt || !psbt->tx || !src || !src->tx)
@@ -1754,15 +1759,51 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
     if (ret == WALLY_OK && memcmp(txid, src_txid, sizeof(txid)) != 0)
         ret = WALLY_EINVAL; /* Transactions don't match */
 
-    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
-        ret = combine_inputs(&psbt->inputs[i], &src->inputs[i]);
+    return ret == WALLY_OK ? psbt_combine(psbt, src) : ret;
+}
 
-    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
-        ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
+int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
+                           struct wally_psbt **output)
+{
+#ifdef BUILD_ELEMENTS
+    size_t is_elements;
+#endif /* BUILD_ELEMENTS */
+    int ret;
 
-    if (ret == WALLY_OK)
-        ret = map_extend(&src->unknowns, &psbt->unknowns, NULL);
+    if (output)
+        *output = NULL;
+    if (!psbt || flags || !output)
+        return WALLY_EINVAL;
 
+#ifdef BUILD_ELEMENTS
+    if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
+        return ret;
+
+    if (is_elements)
+        ret = wally_psbt_elements_init_alloc(psbt->version,
+                                             psbt->inputs_allocation_len,
+                                             psbt->outputs_allocation_len,
+                                             psbt->unknowns.items_allocation_len,
+                                             output);
+    else
+#endif /* BUILD_ELEMENTS */
+    ret = wally_psbt_init_alloc(psbt->version,
+                                psbt->inputs_allocation_len,
+                                psbt->outputs_allocation_len,
+                                psbt->unknowns.items_allocation_len,
+                                output);
+    if (ret == WALLY_OK) {
+        (*output)->num_inputs = psbt->num_inputs;
+        (*output)->num_outputs = psbt->num_outputs;
+        ret = psbt_combine(*output, psbt);
+
+        if (ret == WALLY_OK && psbt->tx)
+            ret = tx_clone_alloc(psbt->tx, &(*output)->tx);
+        if (ret != WALLY_OK) {
+            wally_psbt_free(*output);
+            *output = NULL;
+        }
+    }
     return ret;
 }
 

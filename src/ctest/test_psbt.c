@@ -59,12 +59,33 @@ int main(void)
         wally_free_string(output);
         free(bytes);
 
+        /* combining with a copy of ourselves should be a no-op */
         if (wally_psbt_from_base64(base64_in, &psbt_clone) != WALLY_OK)
             errx(1, "Failed to parse psbt clone %s", base64_in);
 
         if (wally_psbt_combine(psbt_clone, psbt) != WALLY_OK)
             errx(1, "Failed to combine psbts %s", base64_in);
 
+        if (wally_psbt_to_base64(psbt_clone, 0, &output) != WALLY_OK)
+            errx(1, "Failed to base64 psbt combined %s", base64_in);
+
+        if (strcmp(output, base64_in) != 0)
+            errx(1, "psbt combine %s turned into %s?", base64_in, output);
+
+        wally_free_string(output);
+        wally_psbt_free(psbt_clone);
+
+        /* Clone should return an identical copy */
+        if (wally_psbt_clone_alloc(psbt, 0, &psbt_clone) != WALLY_OK)
+            errx(1, "Failed to clone psbts %s", base64_in);
+
+        if (wally_psbt_to_base64(psbt_clone, 0, &output) != WALLY_OK)
+            errx(1, "Failed to base64 psbt clone %s", base64_in);
+
+        if (strcmp(output, base64_in) != 0)
+            errx(1, "psbt clone %s turned into %s?", base64_in, output);
+
+        wally_free_string(output);
         wally_psbt_free(psbt_clone);
         wally_psbt_free(psbt);
     }
