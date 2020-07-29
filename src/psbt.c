@@ -595,6 +595,113 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
+int wally_psbt_add_input_at(struct wally_psbt *psbt,
+                            uint32_t index, uint32_t flags,
+                            const struct wally_tx_input *input)
+{
+    struct wally_tx_input tmp;
+    int ret;
+
+    if (!psbt || !psbt->tx || psbt->tx->num_inputs != psbt->num_inputs ||
+        (flags & ~WALLY_PSBT_FLAG_NON_FINAL) ||
+        index > psbt->num_inputs || !input)
+        return WALLY_EINVAL;
+
+    memcpy(&tmp, input, sizeof(tmp));
+    if (flags & WALLY_PSBT_FLAG_NON_FINAL) {
+        /* Clear scriptSig and witness before adding */
+        tmp.script = NULL;
+        tmp.script_len = 0;
+        tmp.witness = NULL;
+    }
+    ret = wally_tx_add_input_at(psbt->tx, index, &tmp);
+    wally_clear(&tmp, sizeof(tmp));
+
+    if (ret == WALLY_OK) {
+        if (psbt->num_inputs >= psbt->inputs_allocation_len) {
+            ret = array_grow((void *)&psbt->inputs, psbt->num_inputs,
+                             &psbt->inputs_allocation_len,
+                             sizeof(struct wally_psbt_input));
+            if (ret != WALLY_OK) {
+                wally_tx_remove_input(psbt->tx, index);
+                return ret;
+            }
+        }
+
+        memmove(psbt->inputs + index + 1, psbt->inputs + index,
+                (psbt->num_inputs - index) * sizeof(struct wally_psbt_input));
+        wally_clear(psbt->inputs + index, sizeof(struct wally_psbt_input));
+        psbt->num_inputs += 1;
+    }
+    return ret;
+}
+
+int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
+{
+    int ret;
+
+    if (!psbt || !psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)
+        ret = WALLY_EINVAL;
+    else
+        ret = wally_tx_remove_input(psbt->tx, index);
+    if (ret == WALLY_OK) {
+        psbt_input_free(&psbt->inputs[index], false);
+        memmove(psbt->inputs + index, psbt->inputs + index + 1,
+                (psbt->num_inputs - index - 1) * sizeof(struct wally_psbt_input));
+        psbt->num_inputs -= 1;
+    }
+    return ret;
+}
+
+int wally_psbt_add_output_at(struct wally_psbt *psbt,
+                             uint32_t index, uint32_t flags,
+                             const struct wally_tx_output *output)
+{
+    int ret;
+
+    if (!psbt || !psbt->tx || psbt->tx->num_outputs != psbt->num_outputs ||
+        flags || index > psbt->num_outputs || !output)
+        return WALLY_EINVAL;
+
+    ret = wally_tx_add_output_at(psbt->tx, index, output);
+
+    if (ret == WALLY_OK) {
+        if (psbt->num_outputs >= psbt->outputs_allocation_len) {
+            ret = array_grow((void *)&psbt->outputs, psbt->num_outputs,
+                             &psbt->outputs_allocation_len,
+                             sizeof(struct wally_psbt_output));
+            if (ret != WALLY_OK) {
+                wally_tx_remove_output(psbt->tx, index);
+                return ret;
+            }
+        }
+
+        memmove(psbt->outputs + index + 1, psbt->outputs + index,
+                (psbt->num_outputs - index) * sizeof(struct wally_psbt_output));
+        wally_clear(psbt->outputs + index, sizeof(struct wally_psbt_output));
+        psbt->num_outputs += 1;
+    }
+    return ret;
+}
+
+int wally_psbt_remove_output(struct wally_psbt *psbt, uint32_t index)
+{
+    int ret;
+
+    if (!psbt || !psbt->tx || psbt->tx->num_outputs != psbt->num_outputs)
+        ret = WALLY_EINVAL;
+    else
+        ret = wally_tx_remove_output(psbt->tx, index);
+    if (ret == WALLY_OK) {
+        psbt_output_free(&psbt->outputs[index], false);
+        memmove(psbt->outputs + index, psbt->outputs + index + 1,
+                (psbt->num_outputs - index - 1) * sizeof(struct wally_psbt_output));
+        psbt->num_outputs -= 1;
+    }
+    return ret;
+}
+
+
 /* Stricter version of pull_subfield_end which insists there's nothing left. */
 static void subfield_nomore_end(const unsigned char **cursor, size_t *max,
                                 const unsigned char *subcursor,

@@ -55,6 +55,9 @@ extern "C" {
 /* PSBT Version number */
 #define WALLY_PSBT_HIGHEST_VERSION 0
 
+/* Ignore scriptsig and witness when adding an input */
+#define WALLY_PSBT_FLAG_NON_FINAL 0x1
+
 #ifdef SWIG
 struct wally_map;
 struct wally_psbt_input;
@@ -547,6 +550,54 @@ WALLY_CORE_API int wally_psbt_free(
 WALLY_CORE_API int wally_psbt_set_global_tx(
     struct wally_psbt *psbt,
     const struct wally_tx *tx);
+
+/**
+ * Add a transaction input to PBST at a given position.
+ *
+ * :param psbt: The PSBT to add the input to.
+ * :param index: The zero-based index of the position to add the input at.
+ * :param flags: Flags controlling input insertion. Must be 0 or ``WALLY_PSBT_FLAG_NON_FINAL``.
+ * :param input: The transaction input to add.
+ */
+WALLY_CORE_API int wally_psbt_add_input_at(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    uint32_t flags,
+    const struct wally_tx_input *input);
+
+/**
+ * Remove a transaction input from a PBST.
+ *
+ * :param psbt: The PSBT to remove the input from.
+ * :param index: The zero-based index of the input to remove.
+ */
+WALLY_CORE_API int wally_psbt_remove_input(
+    struct wally_psbt *psbt,
+    uint32_t index);
+
+/**
+ * Add a transaction output to PBST at a given position.
+ *
+ * :param psbt: The PSBT to add the output to.
+ * :param index: The zero-based index of the position to add the output at.
+ * :param flags: Flags controlling output insertion. Must be 0.
+ * :param output: The transaction output to add.
+ */
+WALLY_CORE_API int wally_psbt_add_output_at(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    uint32_t flags,
+    const struct wally_tx_output *output);
+
+/**
+ * Remove a transaction output from a PBST.
+ *
+ * :param psbt: The PSBT to remove the output from.
+ * :param index: The zero-based index of the output to remove.
+ */
+WALLY_CORE_API int wally_psbt_remove_output(
+    struct wally_psbt *psbt,
+    uint32_t index);
 
 /**
  * Create a PSBT from its serialized bytes.

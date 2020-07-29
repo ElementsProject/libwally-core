@@ -237,6 +237,10 @@ template <> inline auto get_p(const std::nullptr_t& p) {
         return ::N(WALLYP(p1), i321, i322); \
 }
 
+#define WALLY_FN_P33P(F, N) template <class P1, class P2> inline int F(const P1 &p1, uint32_t i321, uint32_t i322, const P2 &p2) { \
+        return ::N(WALLYP(p1), i321, i322, WALLYP(p2)); \
+}
+
 #define WALLY_FN_P33_P(F, N) template <class P1, class O> inline int F(const P1 &p1, uint32_t i321, uint32_t i322, O * out) { \
         return ::N(WALLYP(p1), i321, i322, out); \
 }
@@ -576,12 +580,16 @@ WALLY_FN_P(tx_output_free, wally_tx_output_free)
 WALLY_FN_P(tx_witness_stack_free, wally_tx_witness_stack_free)
 WALLY_FN_P(map_free, wally_map_free)
 WALLY_FN_P3(psbt_input_set_sighash_type, wally_psbt_input_set_sighash_type)
+WALLY_FN_P3(psbt_remove_input, wally_psbt_remove_input)
+WALLY_FN_P3(psbt_remove_output, wally_psbt_remove_output)
 WALLY_FN_P3(tx_witness_stack_add_dummy, wally_tx_witness_stack_add_dummy)
 WALLY_FN_P33_A(bip32_key_from_parent_alloc, bip32_key_from_parent_alloc)
 WALLY_FN_P33_A(bip32_key_to_address, wally_bip32_key_to_address)
 WALLY_FN_P33_A(wif_to_address, wally_wif_to_address)
 WALLY_FN_P33_B(wif_to_bytes, wally_wif_to_bytes)
 WALLY_FN_P33_P(bip32_key_from_parent, bip32_key_from_parent)
+WALLY_FN_P33P(psbt_add_input_at, wally_psbt_add_input_at)
+WALLY_FN_P33P(psbt_add_output_at, wally_psbt_add_output_at)
 WALLY_FN_P36B3(tx_add_raw_output_at, wally_tx_add_raw_output_at)
 WALLY_FN_P3B33BP3(tx_add_raw_input_at, wally_tx_add_raw_input_at)
 WALLY_FN_P3_A(bip32_key_to_base58, bip32_key_to_base58)
