@@ -2196,11 +2196,12 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
                     /* P2SH wrapped witness requires final scriptsig of pushing the redeemScript */
                     script_sig_len = varint_get_length(input->redeem_script_len) + input->redeem_script_len;
                     input->final_script_sig = wally_malloc(script_sig_len);
-                    if (!input->final_script_sig) {
+                    if (!input->final_script_sig)
                         return WALLY_ENOMEM;
-                    }
+
                     if ((ret = wally_script_push_from_bytes(input->redeem_script, input->redeem_script_len, 0, input->final_script_sig, script_sig_len, &written)) != WALLY_OK) {
                         wally_free(input->final_script_sig);
+                        input->final_script_sig = NULL;
                         return ret;
                     }
                     input->final_script_sig_len = written;
@@ -2314,6 +2315,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
                 }
                 if ((ret = wally_script_push_from_bytes(input->redeem_script, input->redeem_script_len, 0, input->final_script_sig, script_sig_len, &written)) != WALLY_OK) {
                     wally_free(input->final_script_sig);
+                    input->final_script_sig = NULL;
                     return ret;
                 }
                 input->final_script_sig_len = written;
