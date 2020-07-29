@@ -2148,10 +2148,10 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             out_script = input->witness_utxo->script;
             out_script_len = input->witness_utxo->script_len;
             witness = true;
-        } else if (input->non_witness_utxo && input->non_witness_utxo->num_outputs > txin->index) {
-            struct wally_tx_output out = input->non_witness_utxo->outputs[txin->index];
-            out_script = out.script;
-            out_script_len = out.script_len;
+        } else if (input->non_witness_utxo && txin->index < input->non_witness_utxo->num_outputs) {
+            struct wally_tx_output *out = &input->non_witness_utxo->outputs[txin->index];
+            out_script = out->script;
+            out_script_len = out->script_len;
         }
         if (input->redeem_script) {
             out_script = input->redeem_script;
