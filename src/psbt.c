@@ -2124,9 +2124,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
     size_t i;
     int ret;
 
-    if (!psbt) {
+    if (!psbt || !psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)
         return WALLY_EINVAL;
-    }
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
