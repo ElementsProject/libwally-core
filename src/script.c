@@ -69,6 +69,11 @@ static size_t calc_push_opcode_size(size_t n)
     return 5;
 }
 
+size_t script_get_push_size(size_t n)
+{
+    return calc_push_opcode_size(n) + n;
+}
+
 static int get_push_size(const unsigned char *bytes, size_t bytes_len,
                          bool get_opcode_size, size_t *size_out)
 {
@@ -478,8 +483,7 @@ int wally_scriptsig_p2pkh_from_der(
         !bytes_out || !written)
         return WALLY_EINVAL;
 
-    if (len < pub_key_len + calc_push_opcode_size(pub_key_len) +
-        sig_len + calc_push_opcode_size(sig_len))
+    if (len < script_get_push_size(pub_key_len) + script_get_push_size(sig_len))
         return WALLY_EINVAL;
 
     ret = wally_script_push_from_bytes(sig, sig_len, 0,
@@ -619,11 +623,11 @@ int wally_scriptsig_multisig_from_bytes(
             goto cleanup;
         der_buff[i * MAX_DER + der_len[i]] = sighash[i] & 0xff;
         ++der_len[i];
-        required += calc_push_opcode_size(der_len[i]) + der_len[i];
+        required += script_get_push_size(der_len[i]);
     }
 
     /* Account for the initial OP_0 and final script push */
-    required += 1 + calc_push_opcode_size(script_len) + script_len;
+    required += 1 + script_get_push_size(script_len);
 
     if (len < required) {
         *written = required;
@@ -892,10 +896,10 @@ int wally_elements_pegout_script_size(size_t genesis_blockhash_len,
                                       size_t *written)
 {
     *written = 1
-               + genesis_blockhash_len + calc_push_opcode_size(genesis_blockhash_len)
-               + mainchain_script_len + calc_push_opcode_size(mainchain_script_len)
-               + sub_pubkey_len + calc_push_opcode_size(sub_pubkey_len)
-               + whitelistproof_len + calc_push_opcode_size(whitelistproof_len);
+               + script_get_push_size(genesis_blockhash_len)
+               + script_get_push_size(mainchain_script_len)
+               + script_get_push_size(sub_pubkey_len)
+               + script_get_push_size(whitelistproof_len);
     return WALLY_OK;
 }
 
