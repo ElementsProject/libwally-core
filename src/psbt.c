@@ -2149,19 +2149,20 @@ static bool finalize_p2sh_wrapped(struct wally_psbt_input *input)
 
     /* P2SH wrapped witness: add scriptSig pushing the redeemScript */
     script_len = script_get_push_size(input->redeem_script_len);
-    if (!(script = wally_malloc(script_len)))
-        return false;
-
-    if (wally_script_push_from_bytes(input->redeem_script,
+    if ((script = wally_malloc(script_len)) != NULL &&
+        wally_script_push_from_bytes(input->redeem_script,
                                      input->redeem_script_len, 0,
                                      script, script_len,
-                                     &push_len) != WALLY_OK) {
-        wally_free(script);
-        return false;
+                                     &push_len) == WALLY_OK) {
+        input->final_script_sig = script;
+        input->final_script_sig_len = push_len;
+        return true;
     }
-    input->final_script_sig = script;
-    input->final_script_sig_len = push_len;
-    return true;
+    /* Failed: clear caller-created witness stack before returning */
+    wally_free(script);
+    wally_tx_witness_stack_free(input->final_witness);
+    input->final_witness = NULL;
+    return false;
 }
 
 static bool finalize_p2wpkh(struct wally_psbt_input *input)
