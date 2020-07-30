@@ -186,6 +186,16 @@ WALLY_CORE_API int wally_map_add_keypath_item(
 
 #ifndef SWIG
 /**
+ * Determine if a PSBT input is finalized.
+ *
+ * :param input: The input to check.
+ * :param written: On success, set to one if the input is finalized, otherwise zero.
+ */
+WALLY_CORE_API int wally_psbt_input_is_finalized(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
  * Set the non_witness_utxo in an input.
  *
  * :param input: The input to update.
@@ -492,6 +502,16 @@ WALLY_CORE_API int wally_psbt_init_alloc(
 WALLY_CORE_API int wally_psbt_free(
     struct wally_psbt *psbt);
 #endif /* SWIG_PYTHON */
+
+/**
+ * Determine if all PSBT inputs are finalized.
+ *
+ * :param psbt: The PSBT to check.
+ * :param written: On success, set to one if the PSBT is finalized, otherwise zero.
+ */
+WALLY_CORE_API int wally_psbt_is_finalized(
+    const struct wally_psbt *psbt,
+    size_t *written);
 
 /**
  * Set the global transaction for a PSBT.

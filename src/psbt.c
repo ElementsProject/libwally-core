@@ -356,6 +356,17 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
                                           child_path, child_path_len); \
     }
 
+int wally_psbt_input_is_finalized(const struct wally_psbt_input *input,
+                                  size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    *written = input->final_script_sig || input->final_witness ? 1 : 0;
+    return WALLY_OK;
+}
+
 SET_STRUCT(wally_psbt_input, non_witness_utxo, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
@@ -586,6 +597,25 @@ int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_t
 PSBT_GET(version)
 PSBT_GET(num_inputs)
 PSBT_GET(num_outputs)
+
+int wally_psbt_is_finalized(const struct wally_psbt *psbt,
+                            size_t *written)
+{
+    size_t i;
+
+    if (written)
+        *written = 0;
+    if (!psbt || !written)
+        return WALLY_EINVAL;
+
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        if (!psbt->inputs[i].final_script_sig && !psbt->inputs[i].final_witness)
+            return WALLY_OK; /* Non fully finalized */
+    }
+    /* We are finalized if we have inputs since they are all finalized */
+    *written = psbt->num_inputs > 0 ?  1 : 0;
+    return WALLY_OK;
+}
 
 static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool do_clone)
 {
