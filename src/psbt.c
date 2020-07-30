@@ -15,8 +15,16 @@
 #include "pullpush.h"
 
 /* TODO:
- * - When setting non_witness_utxo in an input, check the txid matches the input
- *   (see is_matching_txid() call in the signing code)
+ * - When setting non_witness_utxo in an input via the psbt (in the SWIG
+ *   case), check the txid matches the input (see is_matching_txid() call
+ *   in the signing code).
+ * - When signing, validate the existing signatures and refuse to sign if
+ *   any are incorrect. This prevents others pretending to sign and then
+ *   gaining our signature without having provided theirs.
+ * - Signing of multisig inputs is not implemented.
+ * - Change detection is not implemented, something like:
+ *   wally_psbt_is_related_output(psbt, index, ext_key, written) could
+ *   identify whether the given output pays to and address from ext_key.
  */
 
 /* Constants for key types in serialized PSBTs */
