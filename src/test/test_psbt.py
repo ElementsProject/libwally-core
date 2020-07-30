@@ -55,11 +55,6 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(WALLY_OK, wally_tx_add_output(tx, output))
 
             self.assertEqual(WALLY_OK, wally_psbt_set_global_tx(psbt, tx))
-            # wally_psbt_set_global_tx() reserves space for but does not add
-            # PSBT input and output values. Set the count here to use the
-            # empty reserved ones for this test.
-            psbt.contents.num_inputs = psbt.contents.tx.contents.num_inputs
-            psbt.contents.num_outputs = psbt.contents.tx.contents.num_outputs
             ret, ser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(creator['result'], ser)
