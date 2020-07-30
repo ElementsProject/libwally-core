@@ -62,7 +62,7 @@ static void assert_tx_assumptions(void)
     BUILD_ASSERT(sizeof(DUMMY_SIG) == EC_SIGNATURE_DER_MAX_LEN + 1);
     BUILD_ASSERT(sizeof(DUMMY_SIG) - 1 == EC_SIGNATURE_DER_MAX_LOW_R_LEN + 1);
 }
-/* LCOV_EXCL_END */
+/* LCOV_EXCL_STOP */
 
 static bool is_valid_witness_stack(const struct wally_tx_witness_stack *stack)
 {
