@@ -15,7 +15,7 @@
 #include "pullpush.h"
 
 /* TODO:
- * - When setting non_witness_utxo in an input via the psbt (in the SWIG
+ * - When setting utxo in an input via the psbt (in the SWIG
  *   case), check the txid matches the input (see is_matching_txid() call
  *   in the signing code).
  * - When signing, validate the existing signatures and refuse to sign if
@@ -397,7 +397,7 @@ int wally_psbt_input_is_finalized(const struct wally_psbt_input *input,
     return WALLY_OK;
 }
 
-SET_STRUCT(wally_psbt_input, non_witness_utxo, wally_tx,
+SET_STRUCT(wally_psbt_input, utxo, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
            wally_tx_output_clone_alloc, wally_tx_output_free)
@@ -451,7 +451,7 @@ SET_BYTES(wally_psbt_input, claim_script)
 static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 {
     if (input) {
-        wally_tx_free(input->non_witness_utxo);
+        wally_tx_free(input->utxo);
         wally_tx_output_free(input->witness_utxo);
         clear_and_free(input->redeem_script, input->redeem_script_len);
         clear_and_free(input->witness_script, input->witness_script_len);
@@ -977,7 +977,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
         /* Process based on type */
         switch (pull_varint(&key, &key_len)) {
         case PSBT_IN_NON_WITNESS_UTXO: {
-            if (result->non_witness_utxo)
+            if (result->utxo)
                 return WALLY_EINVAL;     /* We already have a non witness utxo */
 
             subfield_nomore_end(cursor, max, key, key_len);
@@ -986,7 +986,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                 &val, &val_max);
             if ((ret = wally_tx_from_bytes(val, val_max, flags,
-                                           &result->non_witness_utxo)) != WALLY_OK)
+                                           &result->utxo)) != WALLY_OK)
                 return ret;
 
             pull_subfield_end(cursor, max, val, val_max);
@@ -1524,10 +1524,10 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     (void)flags;
 
     /* Non witness utxo */
-    if (input->non_witness_utxo) {
+    if (input->utxo) {
         push_psbt_key(cursor, max, PSBT_IN_NON_WITNESS_UTXO, NULL, 0);
         if ((ret = push_length_and_tx(cursor, max,
-                                      input->non_witness_utxo,
+                                      input->utxo,
                                       WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
             return ret;
     }
@@ -1843,7 +1843,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
 {
     int ret;
 
-    if ((ret = combine_txs(&dst->non_witness_utxo, src->non_witness_utxo)) != WALLY_OK)
+    if ((ret = combine_txs(&dst->utxo, src->utxo)) != WALLY_OK)
         return ret;
 
     if (!dst->witness_utxo && src->witness_utxo) {
@@ -2033,7 +2033,7 @@ static bool input_get_scriptcode(const struct wally_psbt_input *input,
                                  const unsigned char **script,
                                  size_t *script_len)
 {
-    const struct wally_tx_output *non_witness_utxo = NULL;
+    const struct wally_tx_output *utxo = NULL;
     const struct wally_tx_output *out;
 
     if (!input || !script || !script_len)
@@ -2042,13 +2042,13 @@ static bool input_get_scriptcode(const struct wally_psbt_input *input,
     *script = NULL;
     *script_len = 0;
 
-    if (input->non_witness_utxo) {
-        if (input_index >= input->non_witness_utxo->num_outputs)
+    if (input->utxo) {
+        if (input_index >= input->utxo->num_outputs)
             return false; /* Invalid input index */
-        non_witness_utxo = &input->non_witness_utxo->outputs[input_index];
+        utxo = &input->utxo->outputs[input_index];
     }
 
-    out = input->witness_utxo ? input->witness_utxo : non_witness_utxo;
+    out = input->witness_utxo ? input->witness_utxo : utxo;
     if (!out)
         return false; /* No prevout to get the script from */
 
@@ -2143,8 +2143,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
         sighash = input->sighash ? input->sighash : WALLY_SIGHASH_ALL;
 
-        if (input->non_witness_utxo) {
-            if (!is_matching_txid(input->non_witness_utxo,
+        if (input->utxo) {
+            if (!is_matching_txid(input->utxo,
                                   txin->txhash, sizeof(txin->txhash)))
                 return WALLY_EINVAL; /* prevout doesn't match this input */
 
@@ -2402,8 +2402,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             out_script = input->witness_utxo->script;
             out_script_len = input->witness_utxo->script_len;
             is_witness = true;
-        } else if (input->non_witness_utxo && utxo_index < input->non_witness_utxo->num_outputs) {
-            struct wally_tx_output *out = &input->non_witness_utxo->outputs[utxo_index];
+        } else if (input->utxo && utxo_index < input->utxo->num_outputs) {
+            struct wally_tx_output *out = &input->utxo->outputs[utxo_index];
             out_script = out->script;
             out_script_len = out->script_len;
         }
@@ -2645,7 +2645,7 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
     }
 
-PSBT_GET_S(input, non_witness_utxo, wally_tx, tx_clone_alloc)
+PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
 PSBT_GET_B(input, redeem_script)
 PSBT_GET_B(input, witness_script)
@@ -2656,7 +2656,7 @@ PSBT_GET_M(input, signature)
 PSBT_GET_M(input, unknown)
 PSBT_GET_I(input, sighash, size_t)
 
-PSBT_SET_S(input, non_witness_utxo, wally_tx)
+PSBT_SET_S(input, utxo, wally_tx)
 PSBT_SET_S(input, witness_utxo, wally_tx_output)
 PSBT_SET_B(input, redeem_script)
 PSBT_SET_B(input, witness_script)

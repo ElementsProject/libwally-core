@@ -106,8 +106,8 @@ class PSBTTests(unittest.TestCase):
         #
         # Inputs
         #
-        self._try_set(psbt_set_input_non_witness_utxo, psbt, dummy_tx)
-        self._try_invalid(psbt_get_input_non_witness_utxo, psbt)
+        self._try_set(psbt_set_input_utxo, psbt, dummy_tx)
+        self._try_invalid(psbt_get_input_utxo, psbt)
         self._try_set(psbt_set_input_witness_utxo, psbt, dummy_txout)
         self._try_invalid(psbt_get_input_witness_utxo, psbt)
         self._try_get_set_b(psbt_set_input_redeem_script,

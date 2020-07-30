@@ -127,7 +127,7 @@ class wally_map(Structure):
                 ('items_allocation_len', c_ulong)]
 
 class wally_psbt_input(Structure):
-    _fields_ = [('non_witness_utxo', POINTER(wally_tx)),
+    _fields_ = [('utxo', POINTER(wally_tx)),
                 ('witness_utxo', POINTER(wally_tx_output)),
                 ('redeem_script', c_void_p),
                 ('redeem_script_len', c_ulong),
@@ -316,7 +316,7 @@ for f in (
     ('wally_psbt_input_set_final_witness', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx_witness_stack)]),
     ('wally_psbt_input_set_genesis_blockhash', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_keypaths', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
-    ('wally_psbt_input_set_non_witness_utxo', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx)]),
+    ('wally_psbt_input_set_utxo', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx)]),
     ('wally_psbt_input_set_signatures', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
     ('wally_psbt_input_set_pegin_tx', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx)]),
     ('wally_psbt_input_set_redeem_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),

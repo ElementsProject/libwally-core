@@ -38,7 +38,7 @@ struct wally_map {
 
 /** A PSBT input */
 struct wally_psbt_input {
-    struct wally_tx *non_witness_utxo;
+    struct wally_tx *utxo;
     struct wally_tx_output *witness_utxo;
     unsigned char *redeem_script;
     size_t redeem_script_len;
@@ -196,14 +196,14 @@ WALLY_CORE_API int wally_psbt_input_is_finalized(
     size_t *written);
 
 /**
- * Set the non_witness_utxo in an input.
+ * Set the utxo in an input.
  *
  * :param input: The input to update.
- * :param non_witness_utxo: The non witness utxo for this input if it exists.
+ * :param utxo: The (non witness) utxo for this input if it exists.
  */
-WALLY_CORE_API int wally_psbt_input_set_non_witness_utxo(
+WALLY_CORE_API int wally_psbt_input_set_utxo(
     struct wally_psbt_input *input,
-    const struct wally_tx *non_witness_utxo);
+    const struct wally_tx *utxo);
 
 /**
  * Set the witness_utxo in an input.
