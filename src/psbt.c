@@ -1275,8 +1275,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     }
 
     /* Make the wally_psbt */
-    ret = wally_psbt_init_alloc(0, 0, 0, 8, &result);
-    if (ret != WALLY_OK)
+    if ((ret = wally_psbt_init_alloc(0, 0, 0, 8, &result)) != WALLY_OK)
         goto fail;
 
     /* Set the magic */
@@ -1428,24 +1427,19 @@ static int push_length_and_tx(unsigned char **cursor, size_t *max,
                               const struct wally_tx *tx, uint32_t flags)
 {
     int ret;
-    size_t txlen;
+    size_t tx_len;
     unsigned char *p;
 
-    ret = wally_tx_get_length(tx, flags, &txlen);
-    if (ret != WALLY_OK) {
+    if ((ret = wally_tx_get_length(tx, flags, &tx_len)) != WALLY_OK)
         return ret;
-    }
 
-    push_varint(cursor, max, txlen);
+    push_varint(cursor, max, tx_len);
 
-    /* FIXME: convert wally_tx to use push  */
-    p = push_bytes(cursor, max, NULL, txlen);
-    if (!p) {
-        /* We catch this in caller. */
-        return WALLY_OK;
-    }
+    /* TODO: convert wally_tx to use push  */
+    if (!(p = push_bytes(cursor, max, NULL, tx_len)))
+        return WALLY_OK; /* We catch this in caller. */
 
-    return wally_tx_to_bytes(tx, flags, p, txlen, &txlen);
+    return wally_tx_to_bytes(tx, flags, p, tx_len, &tx_len);
 }
 
 static void push_witness_stack(unsigned char **cursor, size_t *max,
@@ -1502,12 +1496,10 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     /* Non witness utxo */
     if (input->non_witness_utxo) {
         push_psbt_key(cursor, max, PSBT_IN_NON_WITNESS_UTXO, NULL, 0);
-        ret = push_length_and_tx(cursor, max,
-                                 input->non_witness_utxo,
-                                 WALLY_TX_FLAG_USE_WITNESS);
-        if (ret != WALLY_OK) {
+        if ((ret = push_length_and_tx(cursor, max,
+                                      input->non_witness_utxo,
+                                      WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
             return ret;
-        }
     }
 
     /* Witness utxo */
@@ -1548,10 +1540,9 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
         push_varbuff(&w, &wit_max,
                      input->witness_utxo->script,
                      input->witness_utxo->script_len);
-
-        if (!w) {
+        if (!w)
             return WALLY_EINVAL;
-        }
+
         push_varbuff(cursor, max, wit_bytes, w - wit_bytes);
     }
     /* Partial sigs */
@@ -1575,12 +1566,11 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
                        input->final_script_sig, input->final_script_sig_len);
     /* Final scriptWitness */
     if (input->final_witness) {
-        size_t wit_len;
+        size_t wit_len = 0;
 
         push_psbt_key(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS, NULL, 0);
 
         /* First pass simply calculates length */
-        wit_len = 0;
         push_witness_stack(NULL, &wit_len, input->final_witness);
 
         push_varint(cursor, max, wit_len);
@@ -1602,12 +1592,10 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     /* Peg ins */
     if (input->peg_in_tx) {
         push_elements_key(cursor, max, PSET_IN_PEG_IN_TX);
-        ret = push_length_and_tx(cursor, max,
-                                 input->peg_in_tx,
-                                 WALLY_TX_FLAG_USE_WITNESS);
-        if (ret != WALLY_OK) {
+        if ((ret = push_length_and_tx(cursor, max,
+                                      input->peg_in_tx,
+                                      WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
             return ret;
-        }
     }
     push_elements_varbuff(cursor, max, PSET_IN_TXOUT_PROOF,
                           input->txoutproof, input->txoutproof_len);
@@ -1623,9 +1611,8 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     return WALLY_OK;
 }
 
-static int push_psbt_output(
-    unsigned char **cursor, size_t *max,
-    const struct wally_psbt_output *output)
+static int push_psbt_output(unsigned char **cursor, size_t *max,
+                            const struct wally_psbt_output *output)
 {
     /* Redeem script */
     push_typed_varbuff(cursor, max, PSBT_OUT_REDEEM_SCRIPT,
@@ -1712,7 +1699,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     }
 
     if (cursor == NULL) {
-        /* Once cursor was NULL, max accumulates hm bytes we needed */
+        /* Once cursor is NULL, max holds how many bytes we needed */
         *written = len + max;
     } else {
         *written = len - max;
@@ -1782,7 +1769,7 @@ int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **o
     }
 
     /* Base64 encode */
-    b64_safe_len = base64_encoded_length(written) + 1; /* + 1 for null termination */
+    b64_safe_len = base64_encoded_length(written) + 1; /* +1 for NUL */
     if ((result = wally_malloc(b64_safe_len)) == NULL) {
         ret = WALLY_ENOMEM;
         goto done;
@@ -1991,14 +1978,19 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
     if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
         return ret;
+#ifndef BUILD_ELEMENTS
+    if (is_elements)
+        return WALLY_EINVAL;
+#endif /* ndef BUILD_ELEMENTS */
 
     /* Get the pubkey */
-    if ((ret = wally_ec_public_key_from_private_key(key, key_len, pubkey, pubkey_len)) != WALLY_OK) {
+    ret = wally_ec_public_key_from_private_key(key, key_len,
+                                               pubkey, pubkey_len);
+    if (ret == WALLY_OK)
+        ret = wally_ec_public_key_decompress(pubkey, pubkey_len,
+                                             full_pubkey, full_pubkey_len);
+    if (ret != WALLY_OK)
         return ret;
-    }
-    if ((ret = wally_ec_public_key_decompress(pubkey, pubkey_len, full_pubkey, full_pubkey_len)) != WALLY_OK) {
-        return ret;
-    }
 
     /* Go through each of the inputs */
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -2019,7 +2011,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
             continue; /* Didn't find a keypath matching this pubkey: skip it */
         keypath_index -= 1; /* Use 0 based index below */
 
-        /* Make sure we don't already have a sig for this input ?! */
+        /* Make sure we don't already have a sig for this input */
         size_t is_found;
         ret = wally_map_find(&input->partial_sigs, full_pubkey, full_pubkey_len, &is_found);
         if (ret == WALLY_OK && !is_found)
@@ -2037,23 +2029,28 @@ int wally_psbt_sign(struct wally_psbt *psbt,
             unsigned char sh[WALLY_SCRIPTPUBKEY_P2SH_LEN];
             size_t written;
 
-            if ((ret = wally_scriptpubkey_p2sh_from_bytes(input->redeem_script, input->redeem_script_len, WALLY_SCRIPT_HASH160, sh, WALLY_SCRIPTPUBKEY_P2SH_LEN, &written)) != WALLY_OK) {
+            ret = wally_scriptpubkey_p2sh_from_bytes(input->redeem_script,
+                                                     input->redeem_script_len,
+                                                     WALLY_SCRIPT_HASH160,
+                                                     sh, sizeof(sh),
+                                                     &written);
+            if (ret != WALLY_OK)
                 return ret;
-            }
+
             if (input->non_witness_utxo) {
                 if (txin->index >= input->non_witness_utxo->num_outputs ||
-                    input->non_witness_utxo->outputs[txin->index].script_len != WALLY_SCRIPTPUBKEY_P2SH_LEN ||
-                    memcmp(sh, input->non_witness_utxo->outputs[txin->index].script, WALLY_SCRIPTPUBKEY_P2SH_LEN) != 0) {
+                    input->non_witness_utxo->outputs[txin->index].script_len != sizeof(sh) ||
+                    memcmp(sh, input->non_witness_utxo->outputs[txin->index].script, sizeof(sh)) != 0) {
                     return WALLY_EINVAL;
                 }
             } else if (input->witness_utxo) {
-                if (input->witness_utxo->script_len != WALLY_SCRIPTPUBKEY_P2SH_LEN ||
-                    memcmp(sh, input->witness_utxo->script, WALLY_SCRIPTPUBKEY_P2SH_LEN) != 0) {
+                if (input->witness_utxo->script_len != sizeof(sh) ||
+                    memcmp(sh, input->witness_utxo->script, sizeof(sh)) != 0) {
                     return WALLY_EINVAL;
                 }
-            } else {
+            } else
                 continue;
-            }
+
             scriptcode = input->redeem_script;
             scriptcode_len = input->redeem_script_len;
         } else {
@@ -2065,65 +2062,72 @@ int wally_psbt_sign(struct wally_psbt *psbt,
             } else if (input->witness_utxo) {
                 scriptcode = input->witness_utxo->script;
                 scriptcode_len = input->witness_utxo->script_len;
-            } else {
+            } else
                 continue;
-            }
         }
 
         if (input->non_witness_utxo) {
             unsigned char txid[WALLY_TXHASH_LEN];
 
-            if ((ret = wally_tx_get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK) {
+            if ((ret = wally_tx_get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK)
                 return ret;
-            }
-            if (memcmp(txid, txin->txhash, sizeof(txid)) != 0) {
-                return WALLY_EINVAL;
-            }
 
-            if ((ret = wally_tx_get_btc_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, 0, sighash_type, 0, sighash, SHA256_LEN)) != WALLY_OK) {
+            if (memcmp(txid, txin->txhash, sizeof(txid)) != 0)
+                return WALLY_EINVAL;
+
+            ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
+                                                  scriptcode, scriptcode_len,
+                                                  0, sighash_type, 0,
+                                                  sighash, SHA256_LEN);
+            if (ret != WALLY_OK)
                 return ret;
-            }
         } else if (input->witness_utxo) {
             size_t type;
-            if ((ret = wally_scriptpubkey_get_type(scriptcode, scriptcode_len, &type)) != WALLY_OK) {
+            if ((ret = wally_scriptpubkey_get_type(scriptcode, scriptcode_len, &type)) != WALLY_OK)
                 return ret;
-            }
+
             if (type == WALLY_SCRIPT_TYPE_P2WPKH) {
                 size_t written;
-                if ((ret = wally_scriptpubkey_p2pkh_from_bytes(&scriptcode[2], HASH160_LEN, 0, wpkh_sc, WALLY_SCRIPTPUBKEY_P2PKH_LEN, &written)) != WALLY_OK) {
+                if ((ret = wally_scriptpubkey_p2pkh_from_bytes(&scriptcode[2], HASH160_LEN, 0, wpkh_sc, WALLY_SCRIPTPUBKEY_P2PKH_LEN, &written)) != WALLY_OK)
                     return ret;
-                }
+
                 scriptcode = wpkh_sc;
                 scriptcode_len = WALLY_SCRIPTPUBKEY_P2PKH_LEN;
             } else if (type == WALLY_SCRIPT_TYPE_P2WSH && input->witness_script) {
                 unsigned char wsh[WALLY_SCRIPTPUBKEY_P2WSH_LEN];
                 size_t written;
 
-                if ((ret = wally_witness_program_from_bytes(input->witness_script, input->witness_script_len, WALLY_SCRIPT_SHA256, wsh, WALLY_SCRIPTPUBKEY_P2WSH_LEN, &written)) != WALLY_OK) {
+                if ((ret = wally_witness_program_from_bytes(input->witness_script, input->witness_script_len, WALLY_SCRIPT_SHA256, wsh, sizeof(wsh), &written)) != WALLY_OK) {
                     return ret;
                 }
-                if (scriptcode_len != WALLY_SCRIPTPUBKEY_P2WSH_LEN ||
-                    memcmp(wsh, scriptcode, WALLY_SCRIPTPUBKEY_P2WSH_LEN) != 0) {
+                if (scriptcode_len != sizeof(wsh) ||
+                    memcmp(wsh, scriptcode, sizeof(wsh)) != 0)
                     return WALLY_EINVAL;
-                }
+
                 scriptcode = input->witness_script;
                 scriptcode_len = input->witness_script_len;
-            } else {
-                /* Not a recognized scriptPubKey type or not enough information */
-                continue;
-            }
+            } else
+                continue; /* Unknown scriptPubKey type/not enough info */
 
-            if (is_elements) {
 #ifdef BUILD_ELEMENTS
-                if ((ret = wally_tx_get_elements_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, input->witness_utxo->value, input->witness_utxo->value_len, sighash_type, WALLY_TX_FLAG_USE_WITNESS, sighash, SHA256_LEN)) != WALLY_OK) {
-                    return ret;
-                }
-#else
-                return WALLY_ERROR;
+            if (is_elements)
+                ret = wally_tx_get_elements_signature_hash(psbt->tx, i,
+                                                           scriptcode, scriptcode_len,
+                                                           input->witness_utxo->value,
+                                                           input->witness_utxo->value_len,
+                                                           sighash_type,
+                                                           WALLY_TX_FLAG_USE_WITNESS,
+                                                           sighash, SHA256_LEN);
+            else
 #endif /* BUILD_ELEMENTS */
-            } else if ((ret = wally_tx_get_btc_signature_hash(psbt->tx, i, scriptcode, scriptcode_len, input->witness_utxo->satoshi, sighash_type, WALLY_TX_FLAG_USE_WITNESS, sighash, SHA256_LEN)) != WALLY_OK) {
+            ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
+                                                  scriptcode, scriptcode_len,
+                                                  input->witness_utxo->satoshi,
+                                                  sighash_type,
+                                                  WALLY_TX_FLAG_USE_WITNESS,
+                                                  sighash, SHA256_LEN);
+            if (ret != WALLY_OK)
                 return ret;
-            }
         }
 
         /* Sign the sighash */
@@ -2142,6 +2146,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                                                input->keypaths.items[keypath_index].key,
                                                input->keypaths.items[keypath_index].key_len,
                                                der_sig, der_sig_len);
+
         if (ret != WALLY_OK)
             return ret;
     }
@@ -2390,7 +2395,8 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
     TX_CHECK_OUTPUT;
 
     if (!psbt || !psbt->tx || !psbt->num_inputs || !psbt->num_outputs ||
-        psbt->tx->num_inputs < psbt->num_inputs || psbt->tx->num_outputs < psbt->num_outputs)
+        psbt->tx->num_inputs != psbt->num_inputs ||
+        psbt->tx->num_outputs != psbt->num_outputs)
         return WALLY_EINVAL;
 
     if ((ret = tx_clone_alloc(psbt->tx, &result)) != WALLY_OK)
@@ -2398,7 +2404,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = &psbt->inputs[i];
-        struct wally_tx_input *vin = &result->inputs[i];
+        struct wally_tx_input *tx_input = &result->inputs[i];
 
         if (!input->final_script_sig && !input->final_witness) {
             ret = WALLY_EINVAL;
@@ -2406,24 +2412,27 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
         }
 
         if (input->final_script_sig) {
-            if (vin->script) {
+            if (tx_input->script) {
                 /* Our global tx shouldn't have a scriptSig */
                 ret = WALLY_EINVAL;
                 break;
             }
-            if (!clone_bytes(&vin->script, input->final_script_sig, input->final_script_sig_len)) {
+            if (!clone_bytes(&tx_input->script,
+                             input->final_script_sig,
+                             input->final_script_sig_len)) {
                 ret = WALLY_ENOMEM;
                 break;
             }
-            vin->script_len = input->final_script_sig_len;
+            tx_input->script_len = input->final_script_sig_len;
         }
         if (input->final_witness) {
-            if (vin->witness) {
+            if (tx_input->witness) {
                 /* Our global tx shouldn't have a witness */
                 ret = WALLY_EINVAL;
                 break;
             }
-            ret = wally_tx_witness_stack_clone_alloc(input->final_witness, &vin->witness);
+            ret = wally_tx_witness_stack_clone_alloc(input->final_witness,
+                                                     &tx_input->witness);
             if (ret != WALLY_OK)
                 break;
         }
