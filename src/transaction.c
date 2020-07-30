@@ -2375,10 +2375,10 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
     for (i = 0; i < *num_inputs; ++i) {
         bool expect_issuance;
-        uint32_t prevout_index;
+        uint32_t utxo_index;
         ensure_n(WALLY_TXHASH_LEN + sizeof(uint32_t));
-        uint32_from_le_bytes(p + WALLY_TXHASH_LEN, &prevout_index);
-        expect_issuance = is_elements && (prevout_index & WALLY_TX_ISSUANCE_FLAG) && !is_coinbase_bytes(p, WALLY_TXHASH_LEN, prevout_index);
+        uint32_from_le_bytes(p + WALLY_TXHASH_LEN, &utxo_index);
+        expect_issuance = is_elements && (utxo_index & WALLY_TX_ISSUANCE_FLAG) && !is_coinbase_bytes(p, WALLY_TXHASH_LEN, utxo_index);
         p += WALLY_TXHASH_LEN + sizeof(uint32_t);
         ensure_varbuff(&v);
         /* FIXME: Analyze script types if required */

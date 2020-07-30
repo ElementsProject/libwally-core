@@ -2385,7 +2385,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
-        const uint32_t prevout_index = psbt->tx->inputs[i].index;
+        const uint32_t utxo_index = psbt->tx->inputs[i].index;
 
         /* Script for this input. originally set to the input's scriptPubKey, but in the case of a p2sh/p2wsh
          * input, it will be eventually be set to the unhashed script, if known */
@@ -2402,8 +2402,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             out_script = input->witness_utxo->script;
             out_script_len = input->witness_utxo->script_len;
             is_witness = true;
-        } else if (input->non_witness_utxo && prevout_index < input->non_witness_utxo->num_outputs) {
-            struct wally_tx_output *out = &input->non_witness_utxo->outputs[prevout_index];
+        } else if (input->non_witness_utxo && utxo_index < input->non_witness_utxo->num_outputs) {
+            struct wally_tx_output *out = &input->non_witness_utxo->outputs[utxo_index];
             out_script = out->script;
             out_script_len = out->script_len;
         }
