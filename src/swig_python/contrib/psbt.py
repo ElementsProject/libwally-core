@@ -93,10 +93,10 @@ class PSBTTests(unittest.TestCase):
         map_add_keypath_item(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
         self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
 
-        dummy_partial_sigs = map_init(0)
-        self.assertIsNotNone(dummy_partial_sigs)
-        map_add(dummy_partial_sigs, dummy_pubkey, dummy_sig)
-        self.assertEqual(map_find(dummy_partial_sigs, dummy_pubkey), 1)
+        dummy_signatures = map_init(0)
+        self.assertIsNotNone(dummy_signatures)
+        map_add(dummy_signatures, dummy_pubkey, dummy_sig)
+        self.assertEqual(map_find(dummy_signatures, dummy_pubkey), 1)
 
         dummy_unknowns = map_init(1)
         self.assertIsNotNone(dummy_unknowns)
@@ -123,12 +123,12 @@ class PSBTTests(unittest.TestCase):
         self._try_invalid(psbt_get_input_final_witness, psbt)
         self._try_get_set_k(psbt_set_input_keypaths,
                             psbt_get_input_keypaths_size, psbt, dummy_keypaths)
-        self._try_get_set_m(psbt_set_input_partial_sigs,
-                            psbt_get_input_partial_sigs_size,
-                            psbt_get_input_partial_sig_len,
-                            psbt_get_input_partial_sig,
-                            psbt_find_input_partial_sig,
-                            psbt, dummy_partial_sigs, dummy_pubkey)
+        self._try_get_set_m(psbt_set_input_signatures,
+                            psbt_get_input_signatures_size,
+                            psbt_get_input_signature_len,
+                            psbt_get_input_signature,
+                            psbt_find_input_signature,
+                            psbt, dummy_signatures, dummy_pubkey)
         self._try_get_set_m(psbt_set_input_unknowns,
                             psbt_get_input_unknowns_size,
                             psbt_get_input_unknown_len,

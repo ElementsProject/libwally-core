@@ -48,7 +48,7 @@ struct wally_psbt_input {
     size_t final_scriptsig_len;
     struct wally_tx_witness_stack *final_witness;
     struct wally_map keypaths;
-    struct wally_map partial_sigs;
+    struct wally_map signatures;
     struct wally_map unknowns;
     uint32_t sighash;
 #ifdef BUILD_ELEMENTS
@@ -312,7 +312,7 @@ WALLY_CORE_API int wally_psbt_input_add_keypath_item(
  * :param input: The input to update.
  * :param map_in: The partial signatures for this input.
  */
-WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
+WALLY_CORE_API int wally_psbt_input_set_signatures(
     struct wally_psbt_input *input,
     const struct wally_map *map_in);
 
@@ -325,7 +325,7 @@ WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
  */
-WALLY_CORE_API int wally_psbt_input_find_partial_sig(
+WALLY_CORE_API int wally_psbt_input_find_signature(
     struct wally_psbt_input *input,
     const unsigned char *pub_key,
     size_t pub_key_len,
@@ -340,7 +340,7 @@ WALLY_CORE_API int wally_psbt_input_find_partial_sig(
  * :param sig: The DER-encoded signature plus sighash byte to add.
  * :param sig_len: The length of ``sig`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_add_partial_sig(
+WALLY_CORE_API int wally_psbt_input_add_signature(
     struct wally_psbt_input *input,
     const unsigned char *pub_key,
     size_t pub_key_len,

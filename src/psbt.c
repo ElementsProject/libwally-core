@@ -400,7 +400,7 @@ SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify)
 ADD_KEYPATH(wally_psbt_input)
-SET_MAP(wally_psbt_input, partial_sig, wally_ec_public_key_verify)
+SET_MAP(wally_psbt_input, signature, wally_ec_public_key_verify)
 SET_MAP(wally_psbt_input, unknown, NULL)
 
 int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighash)
@@ -450,7 +450,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         clear_and_free(input->final_scriptsig, input->final_scriptsig_len);
         wally_tx_witness_stack_free(input->final_witness);
         wally_map_clear(&input->keypaths);
-        wally_map_clear(&input->partial_sigs);
+        wally_map_clear(&input->signatures);
         wally_map_clear(&input->unknowns);
 
 #ifdef BUILD_ELEMENTS
@@ -1040,7 +1040,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             break;
         }
         case PSBT_IN_PARTIAL_SIG: {
-            ret = pull_map(cursor, max, key, key_len, &result->partial_sigs,
+            ret = pull_map(cursor, max, key, key_len, &result->signatures,
                            wally_ec_public_key_verify);
             if (ret != WALLY_OK)
                 return ret;
@@ -1568,7 +1568,7 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
         push_varbuff(cursor, max, wit_bytes, w - wit_bytes);
     }
     /* Partial sigs */
-    push_typed_map(cursor, max, PSBT_IN_PARTIAL_SIG, &input->partial_sigs);
+    push_typed_map(cursor, max, PSBT_IN_PARTIAL_SIG, &input->signatures);
     /* Sighash type */
     if (input->sighash > 0) {
         push_psbt_key(cursor, max, PSBT_IN_SIGHASH_TYPE, NULL, 0);
@@ -1853,7 +1853,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
         return ret;
     if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&dst->partial_sigs, &src->partial_sigs, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->signatures, &src->signatures, wally_ec_public_key_verify)) != WALLY_OK)
         return ret;
     if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
         return ret;
@@ -2013,8 +2013,8 @@ static int psbt_input_sign(struct wally_psbt_input *input,
 
     /* Convert sig to DER, add sighash byte and store in the input */
     der[der_len++] = sighash & 0xff;
-    ret = wally_psbt_input_add_partial_sig(input, pub_key, pub_key_len,
-                                           der, der_len);
+    ret = wally_psbt_input_add_signature(input, pub_key, pub_key_len,
+                                         der, der_len);
     wally_clear_2(sig, sizeof(sig), der, sizeof(der));
     return ret;
 }
@@ -2120,9 +2120,9 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
         /* Make sure we don't already have a sig for this input */
         size_t is_found;
-        ret = wally_map_find(&input->partial_sigs, full_pubkey, full_pubkey_len, &is_found);
+        ret = wally_map_find(&input->signatures, full_pubkey, full_pubkey_len, &is_found);
         if (ret == WALLY_OK && !is_found)
-            ret = wally_map_find(&input->partial_sigs, pubkey, pubkey_len, &is_found);
+            ret = wally_map_find(&input->signatures, pubkey, pubkey_len, &is_found);
 
         if (ret != WALLY_OK || is_found)
             continue; /* Already got a partial sig for this pubkey on this input */
@@ -2221,10 +2221,10 @@ static bool finalize_p2pkh(struct wally_psbt_input *input)
     size_t script_len;
     const struct wally_map_item *sig;
 
-    if (input->partial_sigs.num_items != 1)
+    if (input->signatures.num_items != 1)
         return false; /* Must be single key, single sig */
 
-    sig = &input->partial_sigs.items[0];
+    sig = &input->signatures.items[0];
 
     if (wally_scriptsig_p2pkh_from_der(sig->key, sig->key_len,
                                        sig->value, sig->value_len,
@@ -2265,10 +2265,10 @@ static bool finalize_p2wpkh(struct wally_psbt_input *input)
 {
     const struct wally_map_item *sig;
 
-    if (input->partial_sigs.num_items != 1)
+    if (input->signatures.num_items != 1)
         return false; /* Must be single key, single sig */
 
-    sig = &input->partial_sigs.items[0];
+    sig = &input->signatures.items[0];
 
     if (wally_witness_p2wpkh_from_der(sig->key, sig->key_len,
                                       sig->value, sig->value_len,
@@ -2289,7 +2289,7 @@ static bool finalize_multisig(struct wally_psbt_input *input,
     bool ret = false;
 
     if (!script_is_op_n(out_script[0], false, &threshold) ||
-        input->partial_sigs.num_items < threshold ||
+        input->signatures.num_items < threshold ||
         !script_is_op_n(out_script[out_script_len - 2], false, &n_pubkeys) ||
         n_pubkeys > 15)
         goto fail; /* Failed to parse or invalid script */
@@ -2314,12 +2314,12 @@ static bool finalize_multisig(struct wally_psbt_input *input,
         p += found_pubkey_len; /* Move to next pubkey push */
 
         /* Find the associated signature for this pubkey */
-        if (wally_map_find(&input->partial_sigs,
+        if (wally_map_find(&input->signatures,
                            found_pubkey, found_pubkey_len,
                            &sig_index) != WALLY_OK || !sig_index)
             continue; /* Not found: try the next pubkey in the script */
 
-        found_sig = &input->partial_sigs.items[sig_index - 1];
+        found_sig = &input->signatures.items[sig_index - 1];
 
         /* Sighash is appended to the DER signature */
         sighashes[n_found] = found_sig->value[found_sig->value_len - 1];
@@ -2441,7 +2441,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         input->witness_script_len = 0;
         input->witness_script = NULL;
         wally_map_clear(&input->keypaths);
-        wally_map_clear(&input->partial_sigs);
+        wally_map_clear(&input->signatures);
         input->sighash = 0;
     }
     return WALLY_OK;
@@ -2644,7 +2644,7 @@ PSBT_GET_B(input, witness_script)
 PSBT_GET_B(input, final_scriptsig)
 PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_M(input, keypath)
-PSBT_GET_M(input, partial_sig)
+PSBT_GET_M(input, signature)
 PSBT_GET_M(input, unknown)
 PSBT_GET_I(input, sighash, size_t)
 
@@ -2655,7 +2655,7 @@ PSBT_SET_B(input, witness_script)
 PSBT_SET_B(input, final_scriptsig)
 PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
 PSBT_SET_S(input, keypaths, wally_map)
-PSBT_SET_S(input, partial_sigs, wally_map)
+PSBT_SET_S(input, signatures, wally_map)
 PSBT_SET_S(input, unknowns, wally_map)
 PSBT_SET_I(input, sighash, uint32_t)
 
