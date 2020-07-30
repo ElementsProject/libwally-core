@@ -403,11 +403,11 @@ ADD_KEYPATH(wally_psbt_input)
 SET_MAP(wally_psbt_input, partial_sig, wally_ec_public_key_verify)
 SET_MAP(wally_psbt_input, unknown, NULL)
 
-int wally_psbt_input_set_sighash_type(struct wally_psbt_input *input, uint32_t sighash_type)
+int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighash)
 {
     if (!input)
         return WALLY_EINVAL;
-    input->sighash_type = sighash_type;
+    input->sighash = sighash;
     return WALLY_OK;
 }
 
@@ -1047,7 +1047,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             break;
         }
         case PSBT_IN_SIGHASH_TYPE: {
-            if (result->sighash_type != 0)
+            if (result->sighash != 0)
                 return WALLY_EINVAL; /* Duplicate value */
 
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1056,7 +1056,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             pull_subfield_start(cursor, max,
                                 pull_varint(cursor, max),
                                 &val, &val_max);
-            result->sighash_type = pull_le32(&val, &val_max);
+            result->sighash = pull_le32(&val, &val_max);
             subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
@@ -1570,10 +1570,10 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     /* Partial sigs */
     push_typed_map(cursor, max, PSBT_IN_PARTIAL_SIG, &input->partial_sigs);
     /* Sighash type */
-    if (input->sighash_type > 0) {
+    if (input->sighash > 0) {
         push_psbt_key(cursor, max, PSBT_IN_SIGHASH_TYPE, NULL, 0);
         push_varint(cursor, max, sizeof(uint32_t));
-        push_le32(cursor, max, input->sighash_type);
+        push_le32(cursor, max, input->sighash);
     }
     /* Redeem script */
     push_typed_varbuff(cursor, max, PSBT_IN_REDEEM_SCRIPT,
@@ -1857,8 +1857,8 @@ static int combine_inputs(struct wally_psbt_input *dst,
         return ret;
     if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
         return ret;
-    if (!dst->sighash_type && src->sighash_type)
-        dst->sighash_type = src->sighash_type;
+    if (!dst->sighash && src->sighash)
+        dst->sighash = src->sighash;
 
 #ifdef BUILD_ELEMENTS
     if (!dst->has_value && src->has_value) {
@@ -1991,7 +1991,7 @@ static int psbt_input_sign(struct wally_psbt_input *input,
 {
     unsigned char sig[EC_SIGNATURE_LEN], der[EC_SIGNATURE_DER_MAX_LEN + 1];
     size_t der_len;
-    uint32_t sighash = input && input->sighash_type ? input->sighash_type : WALLY_SIGHASH_ALL;
+    uint32_t sighash = input && input->sighash ? input->sighash : WALLY_SIGHASH_ALL;
     int ret;
 
     if (!input || !priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
@@ -2102,10 +2102,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *txin = &psbt->tx->inputs[i];
-        unsigned char sighash[SHA256_LEN];
+        unsigned char signature_hash[SHA256_LEN];
         const unsigned char *scriptcode;
         size_t keypath_index = 0, scriptcode_len;
-        uint32_t sighash_type;
+        uint32_t sighash;
 
         /* See if this input has a keypath matching the pubkey of the private key supplied */
         ret = wally_map_find(&input->keypaths, full_pubkey, full_pubkey_len, &keypath_index);
@@ -2133,7 +2133,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         if (!input_get_scriptcode(input, txin->index, &scriptcode, &scriptcode_len))
             return WALLY_EINVAL; /* Couldn't find the script to sign with */
 
-        sighash_type = input->sighash_type ? input->sighash_type : WALLY_SIGHASH_ALL;
+        sighash = input->sighash ? input->sighash : WALLY_SIGHASH_ALL;
 
         if (input->non_witness_utxo) {
             if (!is_matching_txid(input->non_witness_utxo,
@@ -2142,8 +2142,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
             ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
                                                   scriptcode, scriptcode_len,
-                                                  0, sighash_type, 0,
-                                                  sighash, SHA256_LEN);
+                                                  0, sighash, 0,
+                                                  signature_hash, SHA256_LEN);
             if (ret != WALLY_OK)
                 return ret;
         } else if (input->witness_utxo) {
@@ -2189,17 +2189,17 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                                                            scriptcode, scriptcode_len,
                                                            input->witness_utxo->value,
                                                            input->witness_utxo->value_len,
-                                                           sighash_type,
+                                                           sighash,
                                                            WALLY_TX_FLAG_USE_WITNESS,
-                                                           sighash, SHA256_LEN);
+                                                           signature_hash, SHA256_LEN);
             else
 #endif /* BUILD_ELEMENTS */
             ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
                                                   scriptcode, scriptcode_len,
                                                   input->witness_utxo->satoshi,
-                                                  sighash_type,
+                                                  sighash,
                                                   WALLY_TX_FLAG_USE_WITNESS,
-                                                  sighash, SHA256_LEN);
+                                                  signature_hash, SHA256_LEN);
             if (ret != WALLY_OK)
                 return ret;
         }
@@ -2207,7 +2207,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         ret = psbt_input_sign(input, key, key_len,
                               input->keypaths.items[keypath_index].key,
                               input->keypaths.items[keypath_index].key_len,
-                              sighash, sizeof(sighash), flags);
+                              signature_hash, SHA256_LEN, flags);
         if (ret != WALLY_OK)
             return ret;
     }
@@ -2442,7 +2442,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         input->witness_script = NULL;
         wally_map_clear(&input->keypaths);
         wally_map_clear(&input->partial_sigs);
-        input->sighash_type = 0;
+        input->sighash = 0;
     }
     return WALLY_OK;
 }
@@ -2646,7 +2646,7 @@ PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_
 PSBT_GET_M(input, keypath)
 PSBT_GET_M(input, partial_sig)
 PSBT_GET_M(input, unknown)
-PSBT_GET_I(input, sighash_type, size_t)
+PSBT_GET_I(input, sighash, size_t)
 
 PSBT_SET_S(input, non_witness_utxo, wally_tx)
 PSBT_SET_S(input, witness_utxo, wally_tx_output)
@@ -2657,7 +2657,7 @@ PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
 PSBT_SET_S(input, keypaths, wally_map)
 PSBT_SET_S(input, partial_sigs, wally_map)
 PSBT_SET_S(input, unknowns, wally_map)
-PSBT_SET_I(input, sighash_type, uint32_t)
+PSBT_SET_I(input, sighash, uint32_t)
 
 #ifdef BUILD_ELEMENTS
 int wally_psbt_has_input_value(const struct wally_psbt *psbt, size_t index, size_t *written) {

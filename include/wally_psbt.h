@@ -50,7 +50,7 @@ struct wally_psbt_input {
     struct wally_map keypaths;
     struct wally_map partial_sigs;
     struct wally_map unknowns;
-    uint32_t sighash_type;
+    uint32_t sighash;
 #ifdef BUILD_ELEMENTS
     uint64_t value;
     uint32_t has_value;
@@ -376,11 +376,11 @@ WALLY_CORE_API int wally_psbt_input_find_unknown(
  * Set the sighash type in an input.
  *
  * :param input: The input to update.
- * :param sighash_type: The sighash type for this input.
+ * :param sighash: The sighash type for this input.
  */
-WALLY_CORE_API int wally_psbt_input_set_sighash_type(
+WALLY_CORE_API int wally_psbt_input_set_sighash(
     struct wally_psbt_input *input,
-    uint32_t sighash_type);
+    uint32_t sighash);
 
 /**
  * Set the redeem_script in an output.

@@ -135,9 +135,9 @@ class PSBTTests(unittest.TestCase):
                             psbt_get_input_unknown,
                             psbt_find_input_unknown,
                             psbt, dummy_unknowns, dummy_pubkey)
-        self._try_set(psbt_set_input_sighash_type, psbt, 0xff, 0x0)
-        self.assertEqual(psbt_get_input_sighash_type(psbt, 0), 0)
-        self._try_invalid(psbt_get_input_sighash_type, psbt)
+        self._try_set(psbt_set_input_sighash, psbt, 0xff, 0x0)
+        self.assertEqual(psbt_get_input_sighash(psbt, 0), 0)
+        self._try_invalid(psbt_get_input_sighash, psbt)
 
         if is_elements_build():
             self._try_set(psbt_set_input_value, psbt, 1234567, 0)
