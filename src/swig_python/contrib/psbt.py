@@ -156,8 +156,8 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_abf,
                                 psbt_get_input_abf,
                                 psbt_get_input_abf_len, psbt, dummy_bf)
-            self._try_set(psbt_set_input_peg_in_tx, psbt, dummy_tx)
-            self._try_invalid(psbt_get_input_peg_in_tx, psbt)
+            self._try_set(psbt_set_input_pegin_tx, psbt, dummy_tx)
+            self._try_invalid(psbt_get_input_pegin_tx, psbt)
             self._try_get_set_b(psbt_set_input_txoutproof,
                                 psbt_get_input_txoutproof,
                                 psbt_get_input_txoutproof_len, psbt, dummy_bytes)

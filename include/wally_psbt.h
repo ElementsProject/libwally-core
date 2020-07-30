@@ -60,7 +60,7 @@ struct wally_psbt_input {
     size_t asset_len;
     unsigned char *abf;
     size_t abf_len;
-    struct wally_tx *peg_in_tx;
+    struct wally_tx *pegin_tx;
     unsigned char *txoutproof;
     size_t txoutproof_len;
     unsigned char *genesis_blockhash;
@@ -780,11 +780,11 @@ WALLY_CORE_API int wally_psbt_input_set_abf(
  * Set the peg in tx in an input.
  *
  * :param input: The input to update.
- * :param peg_in_tx: The peg in tx for this input if it exists.
+ * :param pegin_tx: The peg in tx for this input if it exists.
  */
-WALLY_CORE_API int wally_psbt_input_set_peg_in_tx(
+WALLY_CORE_API int wally_psbt_input_set_pegin_tx(
     struct wally_psbt_input *input,
-    const struct wally_tx *peg_in_tx);
+    const struct wally_tx *pegin_tx);
 
 /**
  * Set the txout proof in an elements input.

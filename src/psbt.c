@@ -433,7 +433,7 @@ int wally_psbt_input_clear_value(struct wally_psbt_input *input)
 SET_BYTES_N(wally_psbt_input, vbf, BLINDING_FACTOR_LEN)
 SET_BYTES_N(wally_psbt_input, asset, ASSET_TAG_LEN)
 SET_BYTES_N(wally_psbt_input, abf, BLINDING_FACTOR_LEN)
-SET_STRUCT(wally_psbt_input, peg_in_tx, wally_tx,
+SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_BYTES(wally_psbt_input, txoutproof)
 SET_BYTES_N(wally_psbt_input, genesis_blockhash, SHA256_LEN)
@@ -457,7 +457,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         clear_and_free(input->vbf, input->vbf_len);
         clear_and_free(input->asset, input->asset_len);
         clear_and_free(input->abf, input->abf_len);
-        wally_tx_free(input->peg_in_tx);
+        wally_tx_free(input->pegin_tx);
         clear_and_free(input->txoutproof, input->txoutproof_len);
         clear_and_free(input->genesis_blockhash, input->genesis_blockhash_len);
         clear_and_free(input->claim_script, input->claim_script_len);
@@ -1136,7 +1136,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 PSBT_PULL_B(input, abf);
                 break;
             case PSET_IN_PEG_IN_TX: {
-                if (result->peg_in_tx)
+                if (result->pegin_tx)
                     return WALLY_EINVAL; /* Duplicate value */
 
                 subfield_nomore_end(cursor, max, key, key_len);
@@ -1146,7 +1146,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                                     pull_varint(cursor, max),
                                     &val, &val_max);
 
-                ret = wally_tx_from_bytes(val, val_max, flags, &result->peg_in_tx);
+                ret = wally_tx_from_bytes(val, val_max, flags, &result->pegin_tx);
                 if (ret != WALLY_OK)
                     return ret;
 
@@ -1612,10 +1612,10 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     push_elements_varbuff(cursor, max, PSET_IN_ASSET_BLINDER,
                           input->abf, input->abf_len);
     /* Peg ins */
-    if (input->peg_in_tx) {
+    if (input->pegin_tx) {
         push_elements_key(cursor, max, PSET_IN_PEG_IN_TX);
         if ((ret = push_length_and_tx(cursor, max,
-                                      input->peg_in_tx,
+                                      input->pegin_tx,
                                       WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
             return ret;
     }
@@ -1868,7 +1868,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
     COMBINE_BYTES(input, vbf);
     COMBINE_BYTES(input, asset);
     COMBINE_BYTES(input, abf);
-    if ((ret = combine_txs(&dst->peg_in_tx, src->peg_in_tx)) != WALLY_OK)
+    if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
         return ret;
     COMBINE_BYTES(input, txoutproof);
     COMBINE_BYTES(input, genesis_blockhash);
@@ -2671,7 +2671,7 @@ PSBT_GET_I(input, value, uint64_t)
 PSBT_GET_B(input, vbf)
 PSBT_GET_B(input, asset)
 PSBT_GET_B(input, abf)
-PSBT_GET_S(input, peg_in_tx, wally_tx, tx_clone_alloc)
+PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
 PSBT_GET_B(input, txoutproof)
 PSBT_GET_B(input, genesis_blockhash)
 PSBT_GET_B(input, claim_script)
@@ -2683,7 +2683,7 @@ int wally_psbt_clear_input_value(struct wally_psbt *psbt, size_t index) {
 PSBT_SET_B(input, vbf)
 PSBT_SET_B(input, asset)
 PSBT_SET_B(input, abf)
-PSBT_SET_S(input, peg_in_tx, wally_tx)
+PSBT_SET_S(input, pegin_tx, wally_tx)
 PSBT_SET_B(input, txoutproof)
 PSBT_SET_B(input, genesis_blockhash)
 PSBT_SET_B(input, claim_script)
