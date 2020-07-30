@@ -1962,13 +1962,48 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
     return ret;
 }
 
+static int psbt_input_sign(struct wally_psbt_input *input,
+                           const unsigned char *priv_key, size_t priv_key_len,
+                           const unsigned char *pub_key, size_t pub_key_len,
+                           const unsigned char *bytes, size_t bytes_len,
+                           uint32_t flags)
+{
+    unsigned char sig[EC_SIGNATURE_LEN], der[EC_SIGNATURE_DER_MAX_LEN + 1];
+    size_t der_len;
+    uint32_t sighash = input && input->sighash_type ? input->sighash_type : WALLY_SIGHASH_ALL;
+    int ret;
+
+    if (!input || !priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
+        (wally_ec_public_key_verify(pub_key, pub_key_len) != WALLY_OK) ||
+        !bytes || bytes_len != SHA256_LEN || (flags & ~EC_FLAGS_ALL) ||
+        (sighash & 0xffffff00))
+        return WALLY_EINVAL;
+
+    /* Only grinding flag is relevant */
+    flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R);
+    if ((ret = wally_ec_sig_from_bytes(priv_key, priv_key_len,
+                                       bytes, SHA256_LEN, flags,
+                                       sig, sizeof(sig))) != WALLY_OK)
+        return ret;
+
+    if ((ret = wally_ec_sig_to_der(sig, sizeof(sig), der,
+                                   sizeof(der), &der_len)) != WALLY_OK)
+        return ret;
+
+    /* Convert sig to DER, add sighash byte and store in the input */
+    der[der_len++] = sighash & 0xff;
+    ret = wally_psbt_input_add_partial_sig(input, pub_key, pub_key_len,
+                                           der, der_len);
+    wally_clear_2(sig, sizeof(sig), der, sizeof(der));
+    return ret;
+}
+
 int wally_psbt_sign(struct wally_psbt *psbt,
                     const unsigned char *key, size_t key_len, uint32_t flags)
 {
     unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    unsigned char sig[EC_SIGNATURE_LEN], der_sig[EC_SIGNATURE_DER_MAX_LEN + 1];
     const size_t pubkey_len = sizeof(pubkey), full_pubkey_len = sizeof(full_pubkey);
-    size_t i, der_sig_len, is_elements;
+    size_t is_elements, i;
     int ret;
 
     if (!psbt || !psbt->tx || !key || key_len != EC_PRIVATE_KEY_LEN ||
@@ -2130,23 +2165,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                 return ret;
         }
 
-        /* Sign the sighash */
-        flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R); /* Only grinding flag is relevant */
-        if ((ret = wally_ec_sig_from_bytes(key, key_len, sighash, SHA256_LEN, flags, sig, sizeof(sig))) != WALLY_OK)
-            return ret;
-        if ((ret = wally_ec_sig_to_der(sig, sizeof(sig), der_sig, sizeof(der_sig), &der_sig_len)) != WALLY_OK)
-            return ret;
-
-        /* Add the sighash type to the end of the sig */
-        der_sig[der_sig_len] = (unsigned char)sighash_type;
-        der_sig_len++;
-
-        /* Copy the DER sig into the psbt */
-        ret = wally_psbt_input_add_partial_sig(input,
-                                               input->keypaths.items[keypath_index].key,
-                                               input->keypaths.items[keypath_index].key_len,
-                                               der_sig, der_sig_len);
-
+        ret = psbt_input_sign(input, key, key_len,
+                              input->keypaths.items[keypath_index].key,
+                              input->keypaths.items[keypath_index].key_len,
+                              sighash, sizeof(sighash), flags);
         if (ret != WALLY_OK)
             return ret;
     }
