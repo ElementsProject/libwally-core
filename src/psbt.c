@@ -14,6 +14,11 @@
 #include "script.h"
 #include "pullpush.h"
 
+/* TODO:
+ * - When setting non_witness_utxo in an input, check the txid matches the input
+ *   (see is_matching_txid() call in the signing code)
+ */
+
 /* Constants for key types in serialized PSBTs */
 #define PSBT_SEPARATOR 0x00
 #define PSBT_PROPRIETARY_TYPE 0xFC
@@ -69,6 +74,23 @@ static bool is_elements_prefix(const unsigned char *key, size_t key_len) {
 
 static int tx_clone_alloc(const struct wally_tx *src, struct wally_tx **dst) {
     return wally_tx_clone_alloc(src, 0, dst);
+}
+
+static bool is_matching_txid(const struct wally_tx *tx,
+                             const unsigned char *txid, size_t txid_len)
+{
+    unsigned char src_txid[WALLY_TXHASH_LEN];
+    bool ret;
+
+    if (!tx || !txid || txid_len != WALLY_TXHASH_LEN)
+        return false;
+
+    if (wally_tx_get_txid(tx, src_txid, sizeof(src_txid)) != WALLY_OK)
+        return false;
+
+    ret = memcmp(src_txid, txid, txid_len) == 0;
+    wally_clear(src_txid, sizeof(src_txid));
+    return ret;
 }
 
 static int array_grow(void **src, size_t num_items, size_t *allocation_len,
@@ -1901,19 +1923,18 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 
 int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
-    unsigned char txid[WALLY_TXHASH_LEN], src_txid[WALLY_TXHASH_LEN];
+    unsigned char txid[WALLY_TXHASH_LEN];
     int ret;
 
     if (!psbt || !psbt->tx || !src || !src->tx)
         return WALLY_EINVAL;
 
-    ret = wally_tx_get_txid(psbt->tx, txid, sizeof(txid));
-    if (ret == WALLY_OK)
-        ret = wally_tx_get_txid(src->tx, src_txid, sizeof(src_txid));
+    ret = wally_tx_get_txid(src->tx, txid, sizeof(txid));
 
-    if (ret == WALLY_OK && memcmp(txid, src_txid, sizeof(txid)) != 0)
+    if (ret == WALLY_OK && !is_matching_txid(psbt->tx, txid, sizeof(txid)))
         ret = WALLY_EINVAL; /* Transactions don't match */
 
+    wally_clear(txid, sizeof(txid));
     return ret == WALLY_OK ? psbt_combine(psbt, src) : ret;
 }
 
@@ -2102,12 +2123,8 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         }
 
         if (input->non_witness_utxo) {
-            unsigned char txid[WALLY_TXHASH_LEN];
-
-            if ((ret = wally_tx_get_txid(input->non_witness_utxo, txid, sizeof(txid))) != WALLY_OK)
-                return ret;
-
-            if (memcmp(txid, txin->txhash, sizeof(txid)) != 0)
+            if (!is_matching_txid(input->non_witness_utxo,
+                                  txin->txhash, sizeof(txin->txhash)))
                 return WALLY_EINVAL;
 
             ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
