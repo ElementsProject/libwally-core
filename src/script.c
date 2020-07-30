@@ -1095,14 +1095,14 @@ int wally_witness_p2wpkh_from_der(
     size_t sig_len,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    unsigned char scriptsig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
     size_t written;
     int ret;
 
-    ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, script_sig, sizeof(script_sig), &written);
+    ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, scriptsig, sizeof(scriptsig), &written);
 
     if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(script_sig, written, witness);
+        ret = scriptsig_to_witness(scriptsig, written, witness);
 
     return ret;
 }
@@ -1115,14 +1115,14 @@ int wally_witness_p2wpkh_from_sig(
     uint32_t sighash,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    unsigned char scriptsig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
     size_t written;
     int ret;
 
-    ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, script_sig, sizeof(script_sig), &written);
+    ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, scriptsig, sizeof(scriptsig), &written);
 
     if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(script_sig, written, witness);
+        ret = scriptsig_to_witness(scriptsig, written, witness);
 
     return ret;
 }
@@ -1137,25 +1137,25 @@ int wally_witness_multisig_from_bytes(
     uint32_t flags,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char *script_sig = NULL;
+    unsigned char *scriptsig = NULL;
     int ret = WALLY_OK;
-    size_t script_sig_len, n_sigs, buf_len;
+    size_t scriptsig_len, n_sigs, buf_len;
 
     if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len ||
         !witness || !script_is_op_n(script[0], false, &n_sigs))
         return WALLY_EINVAL;
 
     buf_len = n_sigs * (EC_SIGNATURE_DER_MAX_LEN + 2) + script_len;
-    if (!(script_sig = wally_malloc(buf_len)))
+    if (!(scriptsig = wally_malloc(buf_len)))
         return WALLY_ENOMEM;
 
     ret = wally_scriptsig_multisig_from_bytes(script, script_len,
                                               bytes, bytes_len,
                                               sighash, sighash_len, flags,
-                                              script_sig, buf_len, &script_sig_len);
+                                              scriptsig, buf_len, &scriptsig_len);
     if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(script_sig, script_sig_len, witness);
+        ret = scriptsig_to_witness(scriptsig, scriptsig_len, witness);
 
-    clear_and_free(script_sig, script_sig_len);
+    clear_and_free(scriptsig, scriptsig_len);
     return ret;
 }

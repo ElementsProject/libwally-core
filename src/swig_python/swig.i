@@ -178,7 +178,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char *contract_hash, size_t contract_hash_len);
 %pybuffer_nullable_binary(const unsigned char *entropy, size_t entropy_len);
 %pybuffer_nullable_binary(const unsigned char *extra, size_t extra_len);
-%pybuffer_nullable_binary(const unsigned char *final_script_sig, size_t final_script_sig_len);
+%pybuffer_nullable_binary(const unsigned char *final_scriptsig, size_t final_scriptsig_len);
 %pybuffer_nullable_binary(const unsigned char *fingerprint, size_t fingerprint_len);
 %pybuffer_nullable_binary(const unsigned char *generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char *genesis_blockhash, size_t genesis_blockhash_len);

@@ -44,8 +44,8 @@ struct wally_psbt_input {
     size_t redeem_script_len;
     unsigned char *witness_script;
     size_t witness_script_len;
-    unsigned char *final_script_sig;
-    size_t final_script_sig_len;
+    unsigned char *final_scriptsig;
+    size_t final_scriptsig_len;
     struct wally_tx_witness_stack *final_witness;
     struct wally_map keypaths;
     struct wally_map partial_sigs;
@@ -240,16 +240,16 @@ WALLY_CORE_API int wally_psbt_input_set_witness_script(
     size_t script_len);
 
 /**
- * Set the final_script_sig in an input.
+ * Set the final_scriptsig in an input.
  *
  * :param input: The input to update.
- * :param final_script_sig: The scriptSig for this input.
- * :param final_script_sig_len: Length of ``final_script_sig`` in bytes.
+ * :param final_scriptsig: The scriptSig for this input.
+ * :param final_scriptsig_len: Length of ``final_scriptsig`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_final_script_sig(
+WALLY_CORE_API int wally_psbt_input_set_final_scriptsig(
     struct wally_psbt_input *input,
-    const unsigned char *final_script_sig,
-    size_t final_script_sig_len);
+    const unsigned char *final_scriptsig,
+    size_t final_scriptsig_len);
 
 /**
  * Set the final_witness in an input.

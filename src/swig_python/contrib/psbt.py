@@ -116,9 +116,9 @@ class PSBTTests(unittest.TestCase):
         self._try_get_set_b(psbt_set_input_witness_script,
                             psbt_get_input_witness_script,
                             psbt_get_input_witness_script_len, psbt, dummy_bytes)
-        self._try_get_set_b(psbt_set_input_final_script_sig,
-                            psbt_get_input_final_script_sig,
-                            psbt_get_input_final_script_sig_len, psbt, dummy_bytes)
+        self._try_get_set_b(psbt_set_input_final_scriptsig,
+                            psbt_get_input_final_scriptsig,
+                            psbt_get_input_final_scriptsig_len, psbt, dummy_bytes)
         self._try_set(psbt_set_input_final_witness, psbt, dummy_witness)
         self._try_invalid(psbt_get_input_final_witness, psbt)
         self._try_get_set_k(psbt_set_input_keypaths,
