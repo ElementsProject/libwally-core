@@ -98,9 +98,7 @@ is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
-running `setup.py` or (when compiling manually) `./configure`.
-
-Before running pip.
+running pip or (when compiling manually) `./configure`.
 
 You can also install the binary wally releases using the released
 wheel files without having to compile the library, e.g.:
