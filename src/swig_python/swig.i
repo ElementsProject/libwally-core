@@ -325,6 +325,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 %rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("psbt_clone") wally_psbt_clone_alloc;
+%rename("psbt_elements_init") wally_psbt_elements_init_alloc;
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
 %rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
 %rename("psbt_get_input_utxo") wally_psbt_get_input_utxo_alloc;
