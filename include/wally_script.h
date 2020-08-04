@@ -215,6 +215,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
  * :param bytes_out: Destination for the resulting scriptSig.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
     const unsigned char *pub_key,
@@ -236,6 +238,8 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param witness: Destination for the newly created witness.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
     const unsigned char *pub_key,
@@ -549,6 +553,8 @@ WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
  * :param bytes_out: Destination for the resulting script.
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
     const unsigned char *redeem_script,

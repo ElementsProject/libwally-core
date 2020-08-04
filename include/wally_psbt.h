@@ -174,6 +174,8 @@ WALLY_CORE_API int wally_map_add(
  * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
  * :param child_path: The BIP32 derivation path for the pubkey.
  * :param child_path_len: The number of items in ``child_path``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_map_add_keypath_item(
     struct wally_map *map_in,
@@ -266,6 +268,8 @@ WALLY_CORE_API int wally_psbt_input_set_final_witness(
  *
  * :param input: The input to update.
  * :param map_in: The HD keypaths for this input.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_set_keypaths(
     struct wally_psbt_input *input,
@@ -279,6 +283,8 @@ WALLY_CORE_API int wally_psbt_input_set_keypaths(
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_find_keypath(
     struct wally_psbt_input *input,
@@ -296,6 +302,8 @@ WALLY_CORE_API int wally_psbt_input_find_keypath(
  * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
  * :param child_path: The BIP32 derivation path for the pubkey.
  * :param child_path_len: The number of items in ``child_path``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_add_keypath_item(
     struct wally_psbt_input *input,
@@ -311,6 +319,8 @@ WALLY_CORE_API int wally_psbt_input_add_keypath_item(
  *
  * :param input: The input to update.
  * :param map_in: The partial signatures for this input.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_set_signatures(
     struct wally_psbt_input *input,
@@ -324,6 +334,8 @@ WALLY_CORE_API int wally_psbt_input_set_signatures(
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_find_signature(
     struct wally_psbt_input *input,
@@ -339,6 +351,8 @@ WALLY_CORE_API int wally_psbt_input_find_signature(
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param sig: The DER-encoded signature plus sighash byte to add.
  * :param sig_len: The length of ``sig`` in bytes.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_add_signature(
     struct wally_psbt_input *input,
@@ -411,6 +425,8 @@ WALLY_CORE_API int wally_psbt_output_set_witness_script(
  *
  * :param output: The output to update.
  * :param map_in: The HD keypaths for this output.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_output_set_keypaths(
     struct wally_psbt_output *output,
@@ -424,6 +440,8 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_output_find_keypath(
     struct wally_psbt_output *output,
@@ -441,6 +459,8 @@ WALLY_CORE_API int wally_psbt_output_find_keypath(
  * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
  * :param child_path: The BIP32 derivation path for the pubkey.
  * :param child_path_len: The number of items in ``child_path``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_output_add_keypath_item(
     struct wally_psbt_output *output,
@@ -581,6 +601,8 @@ WALLY_CORE_API int wally_psbt_remove_output(
  * :param bytes: Bytes to create the PSBT from.
  * :param len: Length of ``bytes`` in bytes.
  * :param output: Destination for the resulting PSBT.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_from_bytes(
     const unsigned char *bytes,
@@ -620,6 +642,8 @@ WALLY_CORE_API int wally_psbt_to_bytes(
  *
  * :param base64: Base64 string to create the PSBT from.
  * :param output: Destination for the resulting PSBT.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_from_base64(
     const char *base64,
@@ -642,6 +666,8 @@ WALLY_CORE_API int wally_psbt_to_base64(
  *
  * :param psbt: the PSBT to combine into.
  * :param source: the PSBT to copy data from.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_combine(
     struct wally_psbt *psbt,
@@ -667,6 +693,7 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
  * :param key_len: Length of key in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param flags: Flags controlling sigining. Must be 0 or EC_FLAG_GRIND_R.
  *
+ * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the simple signer algorithm.
  */
@@ -680,6 +707,8 @@ WALLY_CORE_API int wally_psbt_sign(
  * Finalize a PSBT.
  *
  * :param psbt: PSBT to finalize. Directly modifies this PSBT.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_finalize(
     struct wally_psbt *psbt);
@@ -828,6 +857,8 @@ WALLY_CORE_API int wally_psbt_input_set_claim_script(
  * :param output: The output to update.
  * :param pub_key: The blinding pubkey for this output.
  * :param pub_key_len: Length of ``pub_key`` in bytes.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_output_set_blinding_pubkey(
     struct wally_psbt_output *output,
