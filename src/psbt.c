@@ -29,7 +29,6 @@
 
 /* Constants for key types in serialized PSBTs */
 #define PSBT_SEPARATOR 0x00
-#define PSBT_PROPRIETARY_TYPE 0xFC
 
 #define PSBT_GLOBAL_UNSIGNED_TX 0x00
 #define PSBT_GLOBAL_VERSION 0xFB

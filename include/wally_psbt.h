@@ -14,6 +14,9 @@ extern "C" {
 /* Ignore scriptsig and witness when adding an input */
 #define WALLY_PSBT_FLAG_NON_FINAL 0x1
 
+/* Key prefix for proprietary keys in our unknown maps */
+#define PSBT_PROPRIETARY_TYPE 0xFC
+
 #ifdef SWIG
 struct wally_map;
 struct wally_psbt_input;
