@@ -52,6 +52,12 @@ class PSBTTests(unittest.TestCase):
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
 
+        # Roundtrip to/from bytes
+        psbt_bytes = psbt_to_bytes(psbt, 0)
+        psbt_tmp = psbt_from_bytes(psbt_bytes)
+        self.assertEqual(hex_from_bytes(psbt_bytes),
+                         hex_from_bytes(psbt_to_bytes(psbt_tmp, 0)))
+
         self.assertIsNotNone(psbt_get_global_tx(psbt))
 
         for fn, ret in [(psbt_get_version, 0),

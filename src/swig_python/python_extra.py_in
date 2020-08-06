@@ -172,6 +172,8 @@ psbt_get_output_redeem_script = _wrap_bin(psbt_get_output_redeem_script, psbt_ge
 psbt_get_output_witness_script = _wrap_bin(psbt_get_output_witness_script, psbt_get_output_witness_script_len, resize=True)
 psbt_get_output_unknown = _wrap_bin(psbt_get_output_unknown, psbt_get_output_unknown_len, resize=True)
 
+psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length, resize=True)
+
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)

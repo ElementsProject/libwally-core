@@ -599,14 +599,14 @@ WALLY_CORE_API int wally_psbt_remove_output(
  * Create a PSBT from its serialized bytes.
  *
  * :param bytes: Bytes to create the PSBT from.
- * :param len: Length of ``bytes`` in bytes.
+ * :param bytes_len: Length of ``bytes`` in bytes.
  * :param output: Destination for the resulting PSBT.
  *
  * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_from_bytes(
     const unsigned char *bytes,
-    size_t len,
+    size_t bytes_len,
     struct wally_psbt **output);
 
 /**
