@@ -156,22 +156,24 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
 int wally_hash160(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {
-    struct sha256 sha;
+    unsigned char buff[SHA256_LEN];
     struct ripemd160 ripemd;
-    bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
 
-    if ((!bytes && bytes_len != 0) || !bytes_out || len != HASH160_LEN)
+    if (!bytes_out || len != HASH160_LEN)
         return WALLY_EINVAL;
 
     BUILD_ASSERT(sizeof(ripemd) == HASH160_LEN);
 
-    sha256(&sha, bytes, bytes_len);
-    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &sha, sizeof(sha));
+    if (wally_sha256(bytes, bytes_len, buff, sizeof(buff)) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &buff, sizeof(buff));
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
         wally_clear(&ripemd, sizeof(ripemd));
     }
-    wally_clear(&sha, sizeof(sha));
+    wally_clear(&buff, sizeof(buff));
     return WALLY_OK;
 }
 
