@@ -284,6 +284,30 @@ int wally_map_add_keypath_item(struct wally_map *map_in,
     return ret;
 }
 
+static int map_item_compare(const void *lhs, const void *rhs)
+{
+    const struct wally_map_item *l = lhs, *r = rhs;
+    const size_t min_len = l->key_len < r->key_len ? l->key_len : r->key_len;
+    int cmp;
+
+    cmp = memcmp(l->key, r->key, min_len);
+    if (cmp == 0) {
+        /* Equal up to the min length, longest key is greater. If we have
+         * duplicate keys somehow, the resulting order is undefined */
+        cmp = l->key_len < r->key_len ? -1 : 1;
+    }
+    return cmp;
+}
+
+int wally_map_sort(struct wally_map *map_in, uint32_t flags)
+{
+    if (!map_in || flags)
+        return WALLY_EINVAL;
+
+    qsort(map_in->items, map_in->num_items, sizeof(struct wally_map_item), map_item_compare);
+    return WALLY_OK;
+}
+
 static int map_extend(struct wally_map *dst, const struct wally_map *src,
                       int (*check_fn)(const unsigned char *key, size_t key_len))
 {

@@ -189,6 +189,16 @@ WALLY_CORE_API int wally_map_add_keypath_item(
     const uint32_t *child_path,
     size_t child_path_len);
 
+/**
+ * Sort the items in a map.
+ *
+ * :param map_in: The map to sort.
+ * :param flags: Flags controlling sorting. Must be 0.
+ */
+WALLY_CORE_API int wally_map_sort(
+    struct wally_map *map_in,
+    uint32_t flags);
+
 #ifndef SWIG
 /**
  * Determine if a PSBT input is finalized.
