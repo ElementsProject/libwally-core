@@ -2166,18 +2166,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
 
         sighash = input->sighash ? input->sighash : WALLY_SIGHASH_ALL;
 
-        if (input->utxo) {
-            if (!is_matching_txid(input->utxo,
-                                  txin->txhash, sizeof(txin->txhash)))
-                return WALLY_EINVAL; /* prevout doesn't match this input */
-
-            ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
-                                                  scriptcode, scriptcode_len,
-                                                  0, sighash, 0,
-                                                  signature_hash, SHA256_LEN);
-            if (ret != WALLY_OK)
-                return ret;
-        } else if (input->witness_utxo) {
+        if (input->witness_utxo) {
             size_t type;
 
             ret = wally_scriptpubkey_get_type(scriptcode, scriptcode_len, &type);
@@ -2230,6 +2219,17 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                                                   input->witness_utxo->satoshi,
                                                   sighash,
                                                   WALLY_TX_FLAG_USE_WITNESS,
+                                                  signature_hash, SHA256_LEN);
+            if (ret != WALLY_OK)
+                return ret;
+        } else if (input->utxo) {
+            if (!is_matching_txid(input->utxo,
+                                  txin->txhash, sizeof(txin->txhash)))
+                return WALLY_EINVAL; /* prevout doesn't match this input */
+
+            ret = wally_tx_get_btc_signature_hash(psbt->tx, i,
+                                                  scriptcode, scriptcode_len,
+                                                  0, sighash, 0,
                                                   signature_hash, SHA256_LEN);
             if (ret != WALLY_OK)
                 return ret;
