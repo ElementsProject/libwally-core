@@ -71,7 +71,7 @@ static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
 #ifdef BUILD_ELEMENTS
-static const uint8_t PSET_KEY_PREFIX[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 's'};
+static const uint8_t PSET_KEY_PREFIX[8] = {'p', 's', 'e', 't'};
 
 static bool is_elements_prefix(const unsigned char *key, size_t key_len) {
     return key_len == sizeof(PSET_KEY_PREFIX) &&
