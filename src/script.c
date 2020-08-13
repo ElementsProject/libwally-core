@@ -712,6 +712,53 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
     return WALLY_OK;
 }
 
+int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
+    const unsigned char *bytes, size_t bytes_len, uint32_t csv_blocks,
+    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    size_t csv_len = scriptint_get_length(csv_blocks);
+    size_t script_len = 2 * (EC_PUBLIC_KEY_LEN + 1) + 6 + 1 + csv_len; /* 1 for push */
+
+    if (written)
+        *written = 0;
+
+    if (!bytes || bytes_len != 2 * EC_PUBLIC_KEY_LEN ||
+        !csv_blocks || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        return WALLY_EINVAL;
+
+    if (len < script_len) {
+        *written = script_len;
+        return WALLY_OK;
+    }
+
+    /* The script we create is:
+     *     <recovery_pubkey> OP_CHECKSIGVERIFY
+     *     <main_pubkey> OP_CHECKSIG OP_IFDUP OP_NOTIF
+     *         <CSV_BLOCLK> OP_CHECKSEQUENCEVERIFY
+     * OP_ENDIF
+     * Solved by:
+     * 1) The stack containing the main and and recovery signatures.
+     * 2) The stack containing an empty signature and the recovery signature.
+     */
+    *bytes_out++ = EC_PUBLIC_KEY_LEN;
+    memcpy(bytes_out, bytes + EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN);
+    bytes_out += EC_PUBLIC_KEY_LEN;
+    *bytes_out++ = OP_CHECKSIGVERIFY;
+    *bytes_out++ = EC_PUBLIC_KEY_LEN;
+    memcpy(bytes_out, bytes, EC_PUBLIC_KEY_LEN);
+    bytes_out += EC_PUBLIC_KEY_LEN;
+    *bytes_out++ = OP_CHECKSIG;
+    *bytes_out++ = OP_IFDUP;
+    *bytes_out++ = OP_NOTIF;
+    *bytes_out++ = csv_len & 0xff;
+    bytes_out += scriptint_to_bytes(csv_blocks, bytes_out);
+    *bytes_out++ = OP_CHECKSEQUENCEVERIFY;
+    *bytes_out++ = OP_ENDIF;
+
+    *written = script_len;
+    return WALLY_OK;
+}
+
 int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
     const unsigned char *bytes, size_t bytes_len, uint32_t csv_blocks,
     uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)

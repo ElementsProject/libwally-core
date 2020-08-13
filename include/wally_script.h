@@ -428,6 +428,22 @@ WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
     size_t *written);
 
 /**
+ * Create an optimised CSV 2of2 multisig with a single key recovery scriptPubkey.
+ *
+ * Works like ``wally_scriptpubkey_csv_2of2_then_1_from_bytes`` but produces a
+ * script that is smaller and compatible with the miniscript expression
+ * "and(pk(key_user),or(99@pk(key_service),older(<csv_blocks>)))".
+ */
+WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t csv_blocks,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
  * Create a CSV 2of3 multisig with two key recovery scriptPubkey.
  *
  * The resulting output can be spent at any time with any two of the three keys

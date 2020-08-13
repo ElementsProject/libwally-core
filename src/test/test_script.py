@@ -200,8 +200,9 @@ class ScriptTests(unittest.TestCase):
             (MPK_2, MPK_2_LEN, 1, 0, None, out_len), # Null output
         ]
         for args in invalid_args:
-            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            for fn in [wally_scriptpubkey_csv_2of2_then_1_from_bytes,
+                       wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt]:
+                self.assertEqual(fn(*args), (WALLY_EINVAL, 0))
 
         # Valid cases
         valid_args = [
@@ -214,11 +215,16 @@ class ScriptTests(unittest.TestCase):
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
             self.assertEqual(args[4][:script_len], unhexlify(exp_script))
+            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*args)
+            self.assertEqual(ret, (WALLY_OK, script_len - 3))
             # Check a too-short output buffer
             short_out, short_out_len = make_cbuffer('00' * (script_len - 1))
             short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len)
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*short_args)
             self.assertEqual(ret, (WALLY_OK, script_len))
+            short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len - 3)
+            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*short_args)
+            self.assertEqual(ret, (WALLY_OK, script_len - 3))
 
     def test_scriptpubkey_csv_2of3_then_2_from_bytes(self):
         """Tests for creating csv 2of3 then 2 scriptPubKeys"""
