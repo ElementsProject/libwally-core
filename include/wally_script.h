@@ -412,7 +412,7 @@ WALLY_CORE_API int wally_witness_multisig_from_bytes(
  *|    second key given will be used as the recovery key.
  * :param bytes_len: Length of ``bytes`` in bytes. Must 2 * ``EC_PUBLIC_KEY_LEN``.
  * :param csv_blocks: The number of blocks before the recovery key can be
- *| used. Must be non-zero and less than 65536.
+ *| used. Must be between 17 and 65536.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
@@ -454,7 +454,7 @@ WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
  *|    second and third keys given will be used as the recovery keys.
  * :param bytes_len: Length of ``bytes`` in bytes. Must 3 * ``EC_PUBLIC_KEY_LEN``.
  * :param csv_blocks: The number of blocks before the recovery keys can be
- *| used. Must be non-zero and less than 65536.
+ *| used. Must be between 17 and 65536.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.

@@ -668,7 +668,7 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
         *written = 0;
 
     if (!bytes || bytes_len != 2 * EC_PUBLIC_KEY_LEN ||
-        !csv_blocks || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
         return WALLY_EINVAL;
 
     if (len < script_len) {
@@ -723,7 +723,7 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
         *written = 0;
 
     if (!bytes || bytes_len != 2 * EC_PUBLIC_KEY_LEN ||
-        !csv_blocks || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
         return WALLY_EINVAL;
 
     if (len < script_len) {
@@ -770,7 +770,7 @@ int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
         *written = 0;
 
     if (!bytes || bytes_len != 3 * EC_PUBLIC_KEY_LEN ||
-        !csv_blocks || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
         return WALLY_EINVAL;
 
     if (len < script_len) {
