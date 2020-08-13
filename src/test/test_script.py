@@ -194,7 +194,7 @@ class ScriptTests(unittest.TestCase):
             (None, MPK_2_LEN, 1, 0, out, out_len), # Null bytes
             (MPK_2, 0, 1, 0, out, out_len), # Empty bytes
             (MPK_2, MPK_2_LEN+1, 1, 0, out, out_len), # Unsupported bytes len
-            (MPK_2, MPK_2_LEN, 0, 0, out, out_len), # 0 csv blocks
+            (MPK_2, MPK_2_LEN, 16, 0, out, out_len), # Too few csv blocks
             (MPK_2, MPK_2_LEN, 0x10000, 0, out, out_len), # Too many csv blocks
             (MPK_2, MPK_2_LEN, 1, SCRIPT_HASH160, out, out_len), # Unsupported flags
             (MPK_2, MPK_2_LEN, 1, 0, None, out_len), # Null output
@@ -206,7 +206,7 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            [(MPK_2, MPK_2_LEN, 1, 0, out, out_len), '748c6321'+'11'*33+'ad670101b2756821'+'11'*33+'ac'],
+            [(MPK_2, MPK_2_LEN, 17, 0, out, out_len), '748c6321'+'11'*33+'ad670111b2756821'+'11'*33+'ac'],
             [(MPK_2, MPK_2_LEN, 0x8000, 0, out, out_len), '748c6321'+'11'*33+'ad6703008000b2756821'+'11'*33+'ac'],
         ]
         for args, exp_script in valid_args:
@@ -234,7 +234,7 @@ class ScriptTests(unittest.TestCase):
             (None, MPK_3_LEN, 1, 0, out, out_len), # Null bytes
             (MPK_3, 0, 1, 0, out, out_len), # Empty bytes
             (MPK_3, MPK_3_LEN+1, 1, 0, out, out_len), # Unsupported bytes len
-            (MPK_3, MPK_3_LEN, 0, 0, out, out_len), # 0 csv blocks
+            (MPK_3, MPK_3_LEN, 16, 0, out, out_len), # Too few csv blocks
             (MPK_3, MPK_3_LEN, 0x10000, 0, out, out_len), # Too many csv blocks
             (MPK_3, MPK_3_LEN, 1, SCRIPT_HASH160, out, out_len), # Unsupported flags
             (MPK_3, MPK_3_LEN, 1, 0, None, out_len), # Null output
@@ -245,7 +245,7 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            [(MPK_3, MPK_3_LEN, 1, 0, out, out_len), '748c8c635221'+'11'*33+'670101b275510068'+('21'+'11'*33)*2+'53ae'],
+            [(MPK_3, MPK_3_LEN, 17, 0, out, out_len), '748c8c635221'+'11'*33+'670111b275510068'+('21'+'11'*33)*2+'53ae'],
             [(MPK_3, MPK_3_LEN, 0x8000, 0, out, out_len), '748c8c635221'+'11'*33+'6703008000b275510068'+('21'+'11'*33)*2+'53ae'],
         ]
         for args, exp_script in valid_args:
