@@ -200,8 +200,9 @@ class ScriptTests(unittest.TestCase):
             (MPK_2, MPK_2_LEN, 1, 0, None, out_len), # Null output
         ]
         for args in invalid_args:
-            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            for fn in [wally_scriptpubkey_csv_2of2_then_1_from_bytes,
+                       wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt]:
+                self.assertEqual(fn(*args), (WALLY_EINVAL, 0))
 
         # Valid cases
         valid_args = [
