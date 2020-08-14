@@ -863,6 +863,26 @@ static int pull_map(const unsigned char **cursor, size_t *max,
     return map_add(map_in, key, key_len, val, val_len, false, check_fn, false);
 }
 
+static int pull_tx(const unsigned char **cursor, size_t *max,
+                   uint32_t flags, struct wally_tx **tx_out)
+{
+    const unsigned char *val;
+    size_t val_max;
+    int ret;
+
+    if (*tx_out)
+        return WALLY_EINVAL; /* Duplicate value */
+
+    pull_subfield_start(cursor, max, pull_varint(cursor, max),
+                        &val, &val_max);
+
+    if ((ret = wally_tx_from_bytes(val, val_max, flags, tx_out)) != WALLY_OK)
+        return ret;
+
+    pull_subfield_end(cursor, max, val, val_max);
+    return WALLY_OK;
+}
+
 static int pull_witness(const unsigned char **cursor, size_t *max,
                         struct wally_tx_witness_stack **witness_out)
 {
@@ -874,7 +894,6 @@ static int pull_witness(const unsigned char **cursor, size_t *max,
     if (*witness_out)
         return WALLY_EINVAL; /* Duplicate value */
 
-    /* Start parsing the value field. */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
     num_witnesses = pull_varint(&val, &val_max);
     ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness_out);
@@ -1034,31 +1053,20 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
         pull_subfield_start(cursor, max, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (field_type = pull_varint(&key, &key_len)) {
-        case PSBT_IN_NON_WITNESS_UTXO: {
-            if (result->utxo)
-                return WALLY_EINVAL;     /* We already have a non witness utxo */
-
+        field_type = pull_varint(&key, &key_len);
+        switch (field_type) {
+        case PSBT_IN_NON_WITNESS_UTXO:
             subfield_nomore_end(cursor, max, key, key_len);
-
-            /* Start parsing the value field. */
-            pull_subfield_start(cursor, max, pull_varint(cursor, max),
-                                &val, &val_max);
-            if ((ret = wally_tx_from_bytes(val, val_max, flags,
-                                           &result->utxo)) != WALLY_OK)
+            if ((ret = pull_tx(cursor, max, flags, &result->utxo)) != WALLY_OK)
                 return ret;
-
-            pull_subfield_end(cursor, max, val, val_max);
             break;
-        }
         case PSBT_IN_WITNESS_UTXO: {
             uint64_t amount, script_len;
             const unsigned char *script;
 
+            subfield_nomore_end(cursor, max, key, key_len);
             if (result->witness_utxo)
                 return WALLY_EINVAL; /* Duplicate value */
-
-            subfield_nomore_end(cursor, max, key, key_len);
 
             /* Start parsing the value field. */
             pull_subfield_start(cursor, max, pull_varint(cursor, max),
@@ -1106,27 +1114,23 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             subfield_nomore_end(cursor, max, val, val_max);
             break;
         }
-        case PSBT_IN_PARTIAL_SIG: {
+        case PSBT_IN_PARTIAL_SIG:
             ret = pull_map(cursor, max, key, key_len, &result->signatures,
                            wally_ec_public_key_verify);
             if (ret != WALLY_OK)
                 return ret;
             break;
-        }
-        case PSBT_IN_SIGHASH_TYPE: {
+        case PSBT_IN_SIGHASH_TYPE:
+            subfield_nomore_end(cursor, max, key, key_len);
             if (result->sighash != 0)
                 return WALLY_EINVAL; /* Duplicate value */
 
-            subfield_nomore_end(cursor, max, key, key_len);
-
             /* Start parsing the value field. */
-            pull_subfield_start(cursor, max,
-                                pull_varint(cursor, max),
+            pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                 &val, &val_max);
             result->sighash = pull_le32(&val, &val_max);
             subfield_nomore_end(cursor, max, val, val_max);
             break;
-        }
         case PSBT_IN_REDEEM_SCRIPT:
             subfield_nomore_end(cursor, max, key, key_len);
             PSBT_PULL_B(input, redeem_script, keyset);
@@ -1160,12 +1164,12 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             /* Skip the elements_id prefix */
             pull_skip(&key, &key_len, sizeof(PSET_KEY_PREFIX));
 
-            switch (field_type = pull_varint(&key, &key_len)) {
-            case PSET_IN_VALUE: {
+            field_type = pull_varint(&key, &key_len);
+            switch (field_type) {
+            case PSET_IN_VALUE:
+                subfield_nomore_end(cursor, max, key, key_len);
                 if (result->has_value)
                     return WALLY_EINVAL; /* Duplicate value */
-
-                subfield_nomore_end(cursor, max, key, key_len);
 
                 /* Start parsing the value field. */
                 pull_subfield_start(cursor, max, pull_varint(cursor, max),
@@ -1174,7 +1178,6 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 subfield_nomore_end(cursor, max, val, val_max);
                 result->has_value = true;
                 break;
-            }
             case PSET_IN_VALUE_BLINDER:
                 subfield_nomore_end(cursor, max, key, key_len);
                 PSBT_PULL_B(input, vbf, elements_keyset);
@@ -1187,24 +1190,11 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 subfield_nomore_end(cursor, max, key, key_len);
                 PSBT_PULL_B(input, abf, elements_keyset);
                 break;
-            case PSET_IN_PEG_IN_TX: {
-                if (result->pegin_tx)
-                    return WALLY_EINVAL; /* Duplicate value */
-
+            case PSET_IN_PEG_IN_TX:
                 subfield_nomore_end(cursor, max, key, key_len);
-
-                /* Start parsing the value field. */
-                pull_subfield_start(cursor, max,
-                                    pull_varint(cursor, max),
-                                    &val, &val_max);
-
-                ret = wally_tx_from_bytes(val, val_max, flags, &result->pegin_tx);
-                if (ret != WALLY_OK)
+                if ((ret = pull_tx(cursor, max, flags, &result->pegin_tx)) != WALLY_OK)
                     return ret;
-
-                pull_subfield_end(cursor, max, val, val_max);
                 break;
-            }
             case PSET_IN_TXOUT_PROOF:
                 subfield_nomore_end(cursor, max, key, key_len);
                 PSBT_PULL_B(input, txoutproof, elements_keyset);
@@ -1219,8 +1209,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 break;
             case PSET_IN_PEG_IN_WITNESS:
                 subfield_nomore_end(cursor, max, key, key_len);
-                ret = pull_witness(cursor, max, &result->pegin_witness);
-                if (ret != WALLY_OK)
+                if ((ret = pull_witness(cursor, max, &result->pegin_witness)) != WALLY_OK)
                     return ret;
                 break;
             default:
@@ -1245,12 +1234,14 @@ unknown_type:
 }
 
 static int pull_psbt_output(const unsigned char **cursor, size_t *max,
-                            struct wally_psbt_output *result)
+                            uint32_t flags, struct wally_psbt_output *result)
 {
     int ret;
     size_t key_len, vl_len;
     const unsigned char *pre_key, *vl_p;
     uint64_t keyset = 0, elements_keyset = 0;
+
+    (void)flags;
 
     /* Read key value */
     pre_key = *cursor;
@@ -1388,23 +1379,15 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         /* Process based on type */
         switch (pull_varint(&key, &key_len)) {
         case PSBT_GLOBAL_UNSIGNED_TX: {
-            struct wally_tx *tx;
+            struct wally_tx *tx = result->tx;
 
             subfield_nomore_end(&bytes, &len, key, key_len);
-
-            /* Start parsing the value field. */
-            pull_subfield_start(&bytes, &len,
-                                pull_varint(&bytes, &len),
-                                &val, &val_max);
-            ret = wally_tx_from_bytes(val, val_max, flags, &tx);
-            if (ret == WALLY_OK) {
-                ret = psbt_set_global_tx(result, tx, false);
-                if (ret != WALLY_OK)
-                    wally_tx_free(tx);
-            }
-            if (ret != WALLY_OK)
+            if ((ret = pull_tx(&bytes, &len, flags, &tx)) != WALLY_OK)
                 goto fail;
-            pull_subfield_end(&bytes, &len, val, val_max);
+            if ((ret = psbt_set_global_tx(result, tx, false)) != WALLY_OK) {
+                wally_tx_free(tx);
+                goto fail;
+            }
             break;
         }
         case PSBT_GLOBAL_VERSION: {
@@ -1457,7 +1440,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
 
     /* Read outputs */
     for (i = 0; i < result->tx->num_outputs; ++i) {
-        ret = pull_psbt_output(&bytes, &len, &result->outputs[i]);
+        ret = pull_psbt_output(&bytes, &len, flags, &result->outputs[i]);
         if (ret != WALLY_OK)
             goto fail;
     }
