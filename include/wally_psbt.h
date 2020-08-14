@@ -64,6 +64,7 @@ struct wally_psbt_input {
     unsigned char *abf;
     size_t abf_len;
     struct wally_tx *pegin_tx;
+    struct wally_tx_witness_stack *pegin_witness;
     unsigned char *txoutproof;
     size_t txoutproof_len;
     unsigned char *genesis_blockhash;
@@ -799,6 +800,16 @@ WALLY_CORE_API int wally_psbt_input_set_abf(
 WALLY_CORE_API int wally_psbt_input_set_pegin_tx(
     struct wally_psbt_input *input,
     const struct wally_tx *pegin_tx);
+
+/**
+ * Set the peg in witness in an input.
+ *
+ * :param input: The input to update.
+ * :param pegin_witness: The peg in witness for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_witness(
+    struct wally_psbt_input *input,
+    const struct wally_tx_witness_stack *pegin_witness);
 
 /**
  * Set the txout proof in an elements input.

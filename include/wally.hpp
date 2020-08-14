@@ -1388,6 +1388,12 @@ inline int psbt_input_set_pegin_tx(const INPUT& input, const struct wally_tx* pe
     return ret;
 }
 
+template <class INPUT>
+inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_tx_witness_stack* pegin_witness) {
+    int ret = ::wally_psbt_input_set_pegin_witness(detail::get_p(input), pegin_witness);
+    return ret;
+}
+
 template <class INPUT, class PROOF>
 inline int psbt_input_set_txoutproof(const INPUT& input, const PROOF& proof) {
     int ret = ::wally_psbt_input_set_txoutproof(detail::get_p(input), proof.data(), proof.size());

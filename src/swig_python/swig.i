@@ -337,6 +337,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
 %rename("psbt_get_input_utxo") wally_psbt_get_input_utxo_alloc;
 %rename("psbt_get_input_pegin_tx") wally_psbt_get_input_pegin_tx_alloc;
+%rename("psbt_get_input_pegin_witness") wally_psbt_get_input_pegin_witness_alloc;
 %rename("psbt_get_input_witness_utxo") wally_psbt_get_input_witness_utxo_alloc;
 %rename("psbt_init") wally_psbt_init_alloc;
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;

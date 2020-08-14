@@ -56,6 +56,7 @@
 #define PSET_IN_TXOUT_PROOF 0x05
 #define PSET_IN_GENESIS_HASH 0x06
 #define PSET_IN_CLAIM_SCRIPT 0x07
+#define PSET_IN_PEG_IN_WITNESS 0x09
 
 #define PSET_OUT_VALUE_COMMITMENT 0x00
 #define PSET_OUT_VALUE_BLINDER 0x01
@@ -466,6 +467,8 @@ SET_BYTES_N(wally_psbt_input, asset, ASSET_TAG_LEN)
 SET_BYTES_N(wally_psbt_input, abf, BLINDING_FACTOR_LEN)
 SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
            tx_clone_alloc, wally_tx_free)
+SET_STRUCT(wally_psbt_input, pegin_witness, wally_tx_witness_stack,
+           wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 SET_BYTES(wally_psbt_input, txoutproof)
 SET_BYTES_N(wally_psbt_input, genesis_blockhash, SHA256_LEN)
 SET_BYTES(wally_psbt_input, claim_script)
@@ -489,6 +492,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         clear_and_free(input->asset, input->asset_len);
         clear_and_free(input->abf, input->abf_len);
         wally_tx_free(input->pegin_tx);
+        wally_tx_witness_stack_free(input->pegin_witness);
         clear_and_free(input->txoutproof, input->txoutproof_len);
         clear_and_free(input->genesis_blockhash, input->genesis_blockhash_len);
         clear_and_free(input->claim_script, input->claim_script_len);
@@ -859,6 +863,37 @@ static int pull_map(const unsigned char **cursor, size_t *max,
     return map_add(map_in, key, key_len, val, val_len, false, check_fn, false);
 }
 
+static int pull_witness(const unsigned char **cursor, size_t *max,
+                        struct wally_tx_witness_stack **witness_out)
+{
+    uint64_t num_witnesses;
+    const unsigned char *val;
+    size_t val_max, i;
+    int ret;
+
+    if (*witness_out)
+        return WALLY_EINVAL; /* Duplicate value */
+
+    /* Start parsing the value field. */
+    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
+    num_witnesses = pull_varint(&val, &val_max);
+    ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness_out);
+
+    for (i = 0; ret == WALLY_OK && i < num_witnesses; ++i) {
+        uint64_t witness_len = pull_varint(&val, &val_max);
+        ret = wally_tx_witness_stack_set(*witness_out, i,
+                                         pull_skip(&val, &val_max, witness_len),
+                                         witness_len);
+    }
+    if (ret == WALLY_OK)
+        subfield_nomore_end(cursor, max, val, val_max);
+    else {
+        wally_tx_witness_stack_free(*witness_out);
+        *witness_out = NULL;
+    }
+    return ret;
+}
+
 /* Rewind cursor to prekey, and append unknown key/value to unknowns */
 static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
                                   const unsigned char *pre_key,
@@ -993,12 +1028,13 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
     while ((key_len = pull_varlength(cursor, max)) != 0) {
         const unsigned char *key, *val;
         size_t val_max;
+        uint64_t field_type;
 
         /* Start parsing key */
         pull_subfield_start(cursor, max, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (pull_varint(&key, &key_len)) {
+        switch (field_type = pull_varint(&key, &key_len)) {
         case PSBT_IN_NON_WITNESS_UTXO: {
             if (result->utxo)
                 return WALLY_EINVAL;     /* We already have a non witness utxo */
@@ -1108,33 +1144,12 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             subfield_nomore_end(cursor, max, key, key_len);
             PSBT_PULL_B(input, final_scriptsig, keyset);
             break;
-        case PSBT_IN_FINAL_SCRIPTWITNESS: {
-            uint64_t num_witnesses;
-            size_t i;
-            if (result->final_witness)
-                return WALLY_EINVAL; /* Duplicate value */
+        case PSBT_IN_FINAL_SCRIPTWITNESS:
             subfield_nomore_end(cursor, max, key, key_len);
-
-            /* Start parsing the value field. */
-            pull_subfield_start(cursor, max,
-                                pull_varint(cursor, max),
-                                &val, &val_max);
-            num_witnesses = pull_varint(&val, &val_max);
-            ret = wally_tx_witness_stack_init_alloc(num_witnesses, &result->final_witness);
+            ret = pull_witness(cursor, max, &result->final_witness);
             if (ret != WALLY_OK)
                 return ret;
-
-            for (i = 0; i < num_witnesses; ++i) {
-                uint64_t witness_len = pull_varint(&val, &val_max);
-                ret = wally_tx_witness_stack_set(result->final_witness, i,
-                                                 pull_skip(&val, &val_max, witness_len),
-                                                 witness_len);
-                if (ret != WALLY_OK)
-                    return ret;
-            }
-            subfield_nomore_end(cursor, max, val, val_max);
             break;
-        }
 #ifdef BUILD_ELEMENTS
         case PSBT_PROPRIETARY_TYPE: {
             const uint64_t id_len = pull_varlength(&key, &key_len);
@@ -1201,6 +1216,12 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             case PSET_IN_CLAIM_SCRIPT:
                 subfield_nomore_end(cursor, max, key, key_len);
                 PSBT_PULL_B(input, claim_script, elements_keyset);
+                break;
+            case PSET_IN_PEG_IN_WITNESS:
+                subfield_nomore_end(cursor, max, key, key_len);
+                ret = pull_witness(cursor, max, &result->pegin_witness);
+                if (ret != WALLY_OK)
+                    return ret;
                 break;
             default:
                 goto unknown_type;
@@ -1525,6 +1546,26 @@ static void push_witness_stack(unsigned char **cursor, size_t *max,
     }
 }
 
+static void push_typed_witness_stack(unsigned char **cursor, size_t *max,
+                                     uint64_t type, bool is_elements,
+                                     const struct wally_tx_witness_stack *witness)
+{
+    (void)is_elements;
+
+    if (witness) {
+        size_t wit_len = 0;
+#ifdef BUILD_ELEMENTS
+        if (is_elements)
+            push_elements_key(cursor, max, type);
+        else
+#endif
+        push_psbt_key(cursor, max, type, NULL, 0);
+        push_witness_stack(NULL, &wit_len, witness); /* Get length */
+        push_varint(cursor, max, wit_len);
+        push_witness_stack(cursor, max, witness);
+    }
+}
+
 static void push_typed_map(unsigned char **cursor, size_t *max,
                            uint64_t type, const struct wally_map *map_in)
 {
@@ -1636,17 +1677,8 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     push_typed_varbuff(cursor, max, PSBT_IN_FINAL_SCRIPTSIG,
                        input->final_scriptsig, input->final_scriptsig_len);
     /* Final scriptWitness */
-    if (input->final_witness) {
-        size_t wit_len = 0;
-
-        push_psbt_key(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS, NULL, 0);
-
-        /* First pass simply calculates length */
-        push_witness_stack(NULL, &wit_len, input->final_witness);
-
-        push_varint(cursor, max, wit_len);
-        push_witness_stack(cursor, max, input->final_witness);
-    }
+    push_typed_witness_stack(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS,
+                             false, input->final_witness);
 #ifdef BUILD_ELEMENTS
     /* Confidential Assets blinding data */
     if (input->has_value) {
@@ -1668,6 +1700,8 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
                                       WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
             return ret;
     }
+    push_typed_witness_stack(cursor, max, PSET_IN_PEG_IN_WITNESS,
+                             true, input->pegin_witness);
     push_elements_varbuff(cursor, max, PSET_IN_TXOUT_PROOF,
                           input->txoutproof, input->txoutproof_len);
     push_elements_varbuff(cursor, max, PSET_IN_GENESIS_HASH,
@@ -1915,6 +1949,9 @@ static int combine_inputs(struct wally_psbt_input *dst,
     COMBINE_BYTES(input, asset);
     COMBINE_BYTES(input, abf);
     if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
+        return ret;
+    if (!dst->pegin_witness && src->pegin_witness &&
+        (ret = wally_psbt_input_set_pegin_witness(dst, src->pegin_witness)) != WALLY_OK)
         return ret;
     COMBINE_BYTES(input, txoutproof);
     COMBINE_BYTES(input, genesis_blockhash);
@@ -2718,6 +2755,7 @@ PSBT_GET_B(input, vbf)
 PSBT_GET_B(input, asset)
 PSBT_GET_B(input, abf)
 PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
+PSBT_GET_S(input, pegin_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_B(input, txoutproof)
 PSBT_GET_B(input, genesis_blockhash)
 PSBT_GET_B(input, claim_script)
@@ -2730,6 +2768,7 @@ PSBT_SET_B(input, vbf)
 PSBT_SET_B(input, asset)
 PSBT_SET_B(input, abf)
 PSBT_SET_S(input, pegin_tx, wally_tx)
+PSBT_SET_S(input, pegin_witness, wally_tx_witness_stack)
 PSBT_SET_B(input, txoutproof)
 PSBT_SET_B(input, genesis_blockhash)
 PSBT_SET_B(input, claim_script)
