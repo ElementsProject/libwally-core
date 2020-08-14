@@ -71,15 +71,6 @@
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
-#ifdef BUILD_ELEMENTS
-static const uint8_t PSET_KEY_PREFIX[4] = {'p', 's', 'e', 't'};
-
-static bool is_elements_prefix(const unsigned char *key, size_t key_len) {
-    return key_len == sizeof(PSET_KEY_PREFIX) &&
-           memcmp(key, PSET_KEY_PREFIX, key_len) == 0;
-}
-#endif /* BUILD_ELEMENTS */
-
 static int tx_clone_alloc(const struct wally_tx *src, struct wally_tx **dst) {
     return wally_tx_clone_alloc(src, 0, dst);
 }
@@ -938,6 +929,18 @@ static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
 }
 
 #ifdef BUILD_ELEMENTS
+static const uint8_t PSET_KEY_PREFIX[4] = {'p', 's', 'e', 't'};
+
+static bool is_elements_key(const unsigned char **key, size_t *key_len)
+{
+    const uint64_t id_len = pull_varlength(key, key_len);
+    const bool ret = id_len == sizeof(PSET_KEY_PREFIX) &&
+                     !memcmp(*key, PSET_KEY_PREFIX, id_len);
+    if (ret)
+        pull_skip(key, key_len, id_len); /* Skip prefix */
+    return ret;
+}
+
 static size_t push_elements_bytes_size(const struct wally_tx_output *out)
 {
     size_t size = 0;
@@ -1156,13 +1159,8 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             break;
 #ifdef BUILD_ELEMENTS
         case PSBT_PROPRIETARY_TYPE: {
-            const uint64_t id_len = pull_varlength(&key, &key_len);
-
-            if (!is_elements_prefix(key, id_len))
+            if (!is_elements_key(&key, &key_len))
                 goto unknown_type;
-
-            /* Skip the elements_id prefix */
-            pull_skip(&key, &key_len, sizeof(PSET_KEY_PREFIX));
 
             field_type = pull_varint(&key, &key_len);
             switch (field_type) {
@@ -1269,15 +1267,11 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
             break;
 #ifdef BUILD_ELEMENTS
         case PSBT_PROPRIETARY_TYPE: {
-            const uint64_t id_len = pull_varlength(&key, &key_len);
-
-            if (!is_elements_prefix(key, id_len))
+            if (!is_elements_key(&key, &key_len))
                 goto unknown_type;
 
-            /* Skip the elements_id prefix */
-            pull_skip(&key, &key_len, sizeof(PSET_KEY_PREFIX));
-
-            switch (field_type = pull_varint(&key, &key_len)) {
+            field_type = pull_varint(&key, &key_len);
+            switch (field_type) {
             case PSET_OUT_VALUE_COMMITMENT:
                 subfield_nomore_end(cursor, max, key, key_len);
                 PSBT_PULL_B(output, value_commitment, elements_keyset);
