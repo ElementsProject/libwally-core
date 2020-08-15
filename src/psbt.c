@@ -27,6 +27,9 @@
  *   identify whether the given output pays to an address from ext_key.
  */
 
+typedef int (*input_bytes_setter_fn)(struct wally_psbt_input *, const unsigned char *, size_t);
+typedef int (*output_bytes_setter_fn)(struct wally_psbt_output *, const unsigned char *, size_t);
+
 /* Constants for key types in serialized PSBTs */
 #define PSBT_SEPARATOR 0x00
 
@@ -43,9 +46,25 @@
 #define PSBT_IN_FINAL_SCRIPTSIG 0x07
 #define PSBT_IN_FINAL_SCRIPTWITNESS 0x08
 
+static const input_bytes_setter_fn PSBT_INPUT_SETTERS[PSBT_IN_FINAL_SCRIPTSIG + 1] = {
+    NULL, /* PSBT_IN_NON_WITNESS_UTXO */
+    NULL, /* PSBT_IN_WITNESS_UTXO */
+    NULL, /* PSBT_IN_PARTIAL_SIG */
+    NULL, /* PSBT_IN_SIGHASH_TYPE */
+    wally_psbt_input_set_redeem_script, /* PSBT_IN_REDEEM_SCRIPT */
+    wally_psbt_input_set_witness_script, /* PSBT_IN_WITNESS_SCRIPT */
+    NULL, /* PSBT_IN_BIP32_DERIVATION */
+    wally_psbt_input_set_final_scriptsig, /* PSBT_IN_FINAL_SCRIPTSIG */
+};
+
 #define PSBT_OUT_REDEEM_SCRIPT 0x00
 #define PSBT_OUT_WITNESS_SCRIPT 0x01
 #define PSBT_OUT_BIP32_DERIVATION 0x02
+
+static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT + 1] = {
+    wally_psbt_output_set_redeem_script, /* PSBT_OUT_REDEEM_SCRIPT */
+    wally_psbt_output_set_witness_script, /* PSBT_OUT_WITNESS_SCRIPT */
+};
 
 #ifdef BUILD_ELEMENTS
 #define PSET_IN_VALUE 0x00
@@ -58,6 +77,17 @@
 #define PSET_IN_CLAIM_SCRIPT 0x07
 #define PSET_IN_PEG_IN_WITNESS 0x09
 
+static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_CLAIM_SCRIPT + 1] = {
+    NULL, /* PSET_IN_VALUE */
+    wally_psbt_input_set_vbf, /* PSET_IN_VALUE_BLINDER */
+    wally_psbt_input_set_asset, /* PSET_IN_ASSET */
+    wally_psbt_input_set_abf, /* PSET_IN_ASSET_BLINDER */
+    NULL, /* PSET_IN_PEG_IN_TX */
+    wally_psbt_input_set_txoutproof, /* PSET_IN_TXOUT_PROOF */
+    wally_psbt_input_set_genesis_blockhash, /* PSET_IN_GENESIS_HASH */
+    wally_psbt_input_set_claim_script /* PSET_IN_CLAIM_SCRIPT */
+};
+
 #define PSET_OUT_VALUE_COMMITMENT 0x00
 #define PSET_OUT_VALUE_BLINDER 0x01
 #define PSET_OUT_ASSET_COMMITMENT 0x02
@@ -66,6 +96,18 @@
 #define PSET_OUT_SURJECTION_PROOF 0x05
 #define PSET_OUT_BLINDING_PUBKEY 0x06
 #define PSET_OUT_NONCE_COMMITMENT 0x07
+
+static const output_bytes_setter_fn PSET_OUTPUT_SETTERS[PSET_OUT_NONCE_COMMITMENT + 1] = {
+    wally_psbt_output_set_value_commitment, /* PSET_OUT_VALUE_COMMITMENT */
+    wally_psbt_output_set_vbf, /* PSET_OUT_VALUE_BLINDER */
+    wally_psbt_output_set_asset_commitment, /* PSET_OUT_ASSET_COMMITMENT */
+    wally_psbt_output_set_abf, /* PSET_OUT_ASSET_BLINDER */
+    wally_psbt_output_set_rangeproof, /* PSET_OUT_RANGE_PROOF */
+    wally_psbt_output_set_surjectionproof, /* PSET_OUT_SURJECTION_PROOF */
+    wally_psbt_output_set_blinding_pubkey, /* PSET_OUT_BLINDING_PUBKEY */
+    wally_psbt_output_set_nonce, /* PSET_OUT_NONCE_COMMITMENT */
+};
+
 #endif /* BUILD ELEMENTS */
 
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
@@ -1020,29 +1062,44 @@ static int pull_nonce(const unsigned char **cursor, size_t *max,
 
 #endif /* BUILD_ELEMENTS */
 
-static void fetch_varlength_ptr(const unsigned char **dst, size_t *len,
-                                const unsigned char **cursor, size_t *max)
+static int pull_input_bytes(const unsigned char **cursor, size_t *max,
+                            uint64_t field_type, uint64_t *keyset,
+                            struct wally_psbt_input *input,
+                            input_bytes_setter_fn set_fn)
 {
-    *len = pull_varlength(cursor, max);
-    *dst = pull_skip(cursor, max, *len);
+    const unsigned char *val;
+    size_t val_len;
+
+    if (*keyset & (1 << field_type))
+        return WALLY_EINVAL; /* Duplicate value */
+    *keyset |= (1 << field_type);
+    val_len = pull_varlength(cursor, max);
+    val = pull_skip(cursor, max, val_len);
+    return val_len ? set_fn(input, val, val_len) : WALLY_OK;
 }
 
-/* Pull and set a variable length byte buffer */
-#define PSBT_PULL_B(typ, name, keyset) \
-    if (result->name || (keyset & (1 << field_type))) \
-        return WALLY_EINVAL; /* Duplicate value */ \
-    keyset |= (1 << field_type); \
-    fetch_varlength_ptr(&vl_p, &vl_len, cursor, max); \
-    if (vl_len && \
-        (ret = wally_psbt_ ## typ ## _set_ ## name(result, vl_p, vl_len)) != WALLY_OK) \
-        return ret
+static int pull_output_bytes(const unsigned char **cursor, size_t *max,
+                             uint64_t field_type, uint64_t *keyset,
+                             struct wally_psbt_output *output,
+                             output_bytes_setter_fn set_fn)
+{
+    const unsigned char *val;
+    size_t val_len;
+
+    if (*keyset & (1 << field_type))
+        return WALLY_EINVAL; /* Duplicate value */
+    *keyset |= (1 << field_type);
+    val_len = pull_varlength(cursor, max);
+    val = pull_skip(cursor, max, val_len);
+    return val_len ? set_fn(output, val, val_len) : WALLY_OK;
+}
 
 static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                            uint32_t flags, struct wally_psbt_input *result)
 {
     int ret;
-    size_t key_len, vl_len;
-    const unsigned char *pre_key, *vl_p;
+    size_t key_len;
+    const unsigned char *pre_key;
     uint64_t keyset = 0, elements_keyset = 0;
 
     /* Read key value pairs */
@@ -1135,21 +1192,17 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             subfield_nomore_end(cursor, max, val, val_max);
             break;
         case PSBT_IN_REDEEM_SCRIPT:
-            subfield_nomore_end(cursor, max, key, key_len);
-            PSBT_PULL_B(input, redeem_script, keyset);
-            break;
         case PSBT_IN_WITNESS_SCRIPT:
+        case PSBT_IN_FINAL_SCRIPTSIG:
             subfield_nomore_end(cursor, max, key, key_len);
-            PSBT_PULL_B(input, witness_script, keyset);
+            if ((ret = pull_input_bytes(cursor, max, field_type, &keyset, result,
+                                        PSBT_INPUT_SETTERS[field_type])) != WALLY_OK)
+                return ret;
             break;
         case PSBT_IN_BIP32_DERIVATION:
             if ((ret = pull_map(cursor, max, key, key_len, &result->keypaths,
                                 wally_ec_public_key_verify)) != WALLY_OK)
                 return ret;
-            break;
-        case PSBT_IN_FINAL_SCRIPTSIG:
-            subfield_nomore_end(cursor, max, key, key_len);
-            PSBT_PULL_B(input, final_scriptsig, keyset);
             break;
         case PSBT_IN_FINAL_SCRIPTWITNESS:
             subfield_nomore_end(cursor, max, key, key_len);
@@ -1158,7 +1211,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 return ret;
             break;
 #ifdef BUILD_ELEMENTS
-        case PSBT_PROPRIETARY_TYPE: {
+        case PSBT_PROPRIETARY_TYPE:
             if (!is_elements_key(&key, &key_len))
                 goto unknown_type;
 
@@ -1176,54 +1229,39 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 subfield_nomore_end(cursor, max, val, val_max);
                 result->has_value = true;
                 break;
-            case PSET_IN_VALUE_BLINDER:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(input, vbf, elements_keyset);
-                break;
-            case PSET_IN_ASSET:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(input, asset, elements_keyset);
-                break;
-            case PSET_IN_ASSET_BLINDER:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(input, abf, elements_keyset);
-                break;
             case PSET_IN_PEG_IN_TX:
                 subfield_nomore_end(cursor, max, key, key_len);
                 if ((ret = pull_tx(cursor, max, flags, &result->pegin_tx)) != WALLY_OK)
                     return ret;
-                break;
-            case PSET_IN_TXOUT_PROOF:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(input, txoutproof, elements_keyset);
-                break;
-            case PSET_IN_GENESIS_HASH:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(input, genesis_blockhash, elements_keyset);
-                break;
-            case PSET_IN_CLAIM_SCRIPT:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(input, claim_script, elements_keyset);
                 break;
             case PSET_IN_PEG_IN_WITNESS:
                 subfield_nomore_end(cursor, max, key, key_len);
                 if ((ret = pull_witness(cursor, max, &result->pegin_witness)) != WALLY_OK)
                     return ret;
                 break;
+            case PSET_IN_VALUE_BLINDER:
+            case PSET_IN_ASSET:
+            case PSET_IN_ASSET_BLINDER:
+            case PSET_IN_TXOUT_PROOF:
+            case PSET_IN_GENESIS_HASH:
+            case PSET_IN_CLAIM_SCRIPT:
+                subfield_nomore_end(cursor, max, key, key_len);
+                if ((ret = pull_input_bytes(cursor, max, field_type, &elements_keyset, result,
+                                            PSET_INPUT_SETTERS[field_type])) != WALLY_OK)
+                    return ret;
+                break;
             default:
                 goto unknown_type;
             }
             break;
-        }
 #endif /* BUILD_ELEMENTS */
-        default: {
+        default:
 unknown_type:
             /* Unknown case without elements or for unknown proprietary types */
             ret = pull_unknown_key_value(cursor, max, pre_key, &result->unknowns);
             if (ret != WALLY_OK)
                 return ret;
             break;
-        }
         }
         pre_key = *cursor;
     }
@@ -1235,8 +1273,8 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
                             uint32_t flags, struct wally_psbt_output *result)
 {
     int ret;
-    size_t key_len, vl_len;
-    const unsigned char *pre_key, *vl_p;
+    size_t key_len;
+    const unsigned char *pre_key;
     uint64_t keyset = 0, elements_keyset = 0;
 
     (void)flags;
@@ -1251,14 +1289,14 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
         pull_subfield_start(cursor, max, key_len, &key, &key_len);
 
         /* Process based on type */
-        switch (field_type = pull_varint(&key, &key_len)) {
+        field_type = pull_varint(&key, &key_len);
+        switch (field_type) {
         case PSBT_OUT_REDEEM_SCRIPT:
-            subfield_nomore_end(cursor, max, key, key_len);
-            PSBT_PULL_B(output, redeem_script, keyset);
-            break;
         case PSBT_OUT_WITNESS_SCRIPT:
             subfield_nomore_end(cursor, max, key, key_len);
-            PSBT_PULL_B(output, witness_script, keyset);
+            if ((ret = pull_output_bytes(cursor, max, field_type, &keyset, result,
+                                         PSBT_OUTPUT_SETTERS[field_type])) != WALLY_OK)
+                return ret;
             break;
         case PSBT_OUT_BIP32_DERIVATION:
             if ((ret = pull_map(cursor, max, key, key_len, &result->keypaths,
@@ -1266,58 +1304,37 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
                 return ret;
             break;
 #ifdef BUILD_ELEMENTS
-        case PSBT_PROPRIETARY_TYPE: {
+        case PSBT_PROPRIETARY_TYPE:
             if (!is_elements_key(&key, &key_len))
                 goto unknown_type;
 
             field_type = pull_varint(&key, &key_len);
             switch (field_type) {
             case PSET_OUT_VALUE_COMMITMENT:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, value_commitment, elements_keyset);
-                break;
             case PSET_OUT_VALUE_BLINDER:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, vbf, elements_keyset);
-                break;
             case PSET_OUT_ASSET_COMMITMENT:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, asset_commitment, elements_keyset);
-                break;
             case PSET_OUT_ASSET_BLINDER:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, abf, elements_keyset);
-                break;
             case PSET_OUT_RANGE_PROOF:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, rangeproof, elements_keyset);
-                break;
             case PSET_OUT_SURJECTION_PROOF:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, surjectionproof, elements_keyset);
-                break;
             case PSET_OUT_BLINDING_PUBKEY:
-                subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, blinding_pubkey, elements_keyset);
-                break;
             case PSET_OUT_NONCE_COMMITMENT:
                 subfield_nomore_end(cursor, max, key, key_len);
-                PSBT_PULL_B(output, nonce, elements_keyset);
+                if ((ret = pull_output_bytes(cursor, max, field_type, &elements_keyset, result,
+                                             PSET_OUTPUT_SETTERS[field_type])) != WALLY_OK)
+                    return ret;
                 break;
             default:
                 goto unknown_type;
             }
             break;
-        }
 #endif /* BUILD_ELEMENTS */
-        default: {
+        default:
 unknown_type:
             /* Unknown case without elements or for unknown proprietary types */
             ret = pull_unknown_key_value(cursor, max, pre_key, &result->unknowns);
             if (ret != WALLY_OK)
                 return ret;
             break;
-        }
         }
         pre_key = *cursor;
     }
