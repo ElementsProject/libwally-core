@@ -555,7 +555,6 @@ target_include_directories(${PROJECT_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include>
     $<INSTALL_INTERFACE:include>
-    $<INSTALL_INTERFACE:src/secp256k1/include>
   PRIVATE
     ${CONFIG_HEADER_DIRECTORY}
     .
@@ -799,7 +798,6 @@ target_include_directories(${WALLYCORE_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include>
     $<INSTALL_INTERFACE:include>
-    $<INSTALL_INTERFACE:src/secp256k1/include>
   PRIVATE
     ${CONFIG_HEADER_DIRECTORY}
     .
