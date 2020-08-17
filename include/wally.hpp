@@ -1360,8 +1360,14 @@ inline int psbt_get_global_scalar_offset(const PSBT& psbt, BYTES_OUT& bytes_out,
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
-inline int psbt_input_clear_value(struct wally_psbt_input* input) {
-    int ret = ::wally_psbt_input_clear_value(input);
+inline int psbt_input_clear_pegin_value(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_value(input);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_has_pegin_value(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_has_pegin_value(detail::get_p(input), written);
     return ret;
 }
 
@@ -1396,6 +1402,12 @@ inline int psbt_input_set_pegin_tx(const INPUT& input, const struct wally_tx* pe
 }
 
 template <class INPUT>
+inline int psbt_input_set_pegin_value(const INPUT& input, uint64_t value) {
+    int ret = ::wally_psbt_input_set_pegin_value(detail::get_p(input), value);
+    return ret;
+}
+
+template <class INPUT>
 inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_tx_witness_stack* pegin_witness) {
     int ret = ::wally_psbt_input_set_pegin_witness(detail::get_p(input), pegin_witness);
     return ret;
@@ -1404,12 +1416,6 @@ inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_t
 template <class INPUT, class PROOF>
 inline int psbt_input_set_txoutproof(const INPUT& input, const PROOF& proof) {
     int ret = ::wally_psbt_input_set_txoutproof(detail::get_p(input), proof.data(), proof.size());
-    return ret;
-}
-
-template <class INPUT>
-inline int psbt_input_set_value(const INPUT& input, uint64_t value) {
-    int ret = ::wally_psbt_input_set_value(detail::get_p(input), value);
     return ret;
 }
 

@@ -55,8 +55,8 @@ struct wally_psbt_input {
     struct wally_map unknowns;
     uint32_t sighash;
 #ifdef BUILD_ELEMENTS
-    uint64_t value;
-    uint32_t has_value;
+    uint64_t pegin_value;
+    uint32_t has_pegin_value;
     unsigned char *vbf;
     size_t vbf_len;
     unsigned char *asset;
@@ -770,22 +770,32 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
 
 #ifndef SWIG
 /**
- * Set the value in an elements input.
+ * Set the peg-in value in an elements input.
  *
  * :param input: The input to update.
- * :param value: The value for this input.
+ * :param value: The peg-in value for this input.
  */
-WALLY_CORE_API int wally_psbt_input_set_value(
+WALLY_CORE_API int wally_psbt_input_set_pegin_value(
     struct wally_psbt_input *input,
     uint64_t value);
 
 /**
- * Clear the value in an elements input.
+ * Clear the peg-in value in an elements input.
  *
  * :param input: The input to update.
  */
-WALLY_CORE_API int wally_psbt_input_clear_value(
+WALLY_CORE_API int wally_psbt_input_clear_pegin_value(
     struct wally_psbt_input *input);
+
+/**
+ * Determine if the peg-in value is set in an elements input.
+ *
+ * :param input: The input to query.
+ * :param written: On success, set to one if the peg-in value is set, otherwise zero.
+ */
+int wally_psbt_input_has_pegin_value(
+    const struct wally_psbt_input *input,
+    size_t *written);
 
 /**
  * Set the value blinding factor in an elements input.

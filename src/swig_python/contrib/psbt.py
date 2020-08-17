@@ -154,13 +154,13 @@ class PSBTTests(unittest.TestCase):
         self._try_invalid(psbt_get_input_sighash, psbt)
 
         if is_elements_build():
-            self._try_set(psbt_set_input_value, psbt, 1234567, 0)
-            self._try_invalid(psbt_has_input_value, psbt)
-            self._try_invalid(psbt_get_input_value, psbt)
-            self._try_invalid(psbt_clear_input_value, psbt)
-            self.assertEqual(psbt_has_input_value(psbt, 0), 1)
-            psbt_clear_input_value(psbt, 0)
-            self.assertEqual(psbt_has_input_value(psbt, 0), 0)
+            self._try_set(psbt_set_input_pegin_value, psbt, 1234567, 0)
+            self._try_invalid(psbt_has_input_pegin_value, psbt)
+            self._try_invalid(psbt_get_input_pegin_value, psbt)
+            self._try_invalid(psbt_clear_input_pegin_value, psbt)
+            self.assertEqual(psbt_has_input_pegin_value(psbt, 0), 1)
+            psbt_clear_input_pegin_value(psbt, 0)
+            self.assertEqual(psbt_has_input_pegin_value(psbt, 0), 0)
             self._try_get_set_b(psbt_set_input_vbf,
                                 psbt_get_input_vbf,
                                 psbt_get_input_vbf_len, psbt, dummy_bf)

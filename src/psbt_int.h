@@ -50,8 +50,8 @@ WALLY_CORE_API int wally_psbt_set_input_unknowns(struct wally_psbt *psbt, size_t
 WALLY_CORE_API int wally_psbt_set_input_sighash(struct wally_psbt *psbt, size_t index, uint32_t sighash);
 
 #ifdef BUILD_ELEMENTS
-WALLY_CORE_API int wally_psbt_get_input_value(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
-WALLY_CORE_API int wally_psbt_has_input_value(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_pegin_value(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
+WALLY_CORE_API int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_vbf(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_vbf_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_asset(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -67,8 +67,8 @@ WALLY_CORE_API int wally_psbt_get_input_genesis_blockhash_len(const struct wally
 WALLY_CORE_API int wally_psbt_get_input_claim_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_claim_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 
-WALLY_CORE_API int wally_psbt_set_input_value(struct wally_psbt *psbt, size_t index, uint64_t value);
-WALLY_CORE_API int wally_psbt_clear_input_value(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_pegin_value(struct wally_psbt *psbt, size_t index, uint64_t value);
+WALLY_CORE_API int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_input_vbf(struct wally_psbt *psbt, size_t index, const unsigned char *vbf, size_t vbf_len);
 WALLY_CORE_API int wally_psbt_set_input_asset(struct wally_psbt *psbt, size_t index, const unsigned char *asset, size_t asset_len);
 WALLY_CORE_API int wally_psbt_set_input_abf(struct wally_psbt *psbt, size_t index, const unsigned char *abf, size_t abf_len);
