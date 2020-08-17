@@ -1371,15 +1371,15 @@ inline int psbt_input_has_pegin_value(const INPUT& input, size_t* written) {
     return ret;
 }
 
-template <class INPUT, class ASSET>
-inline int psbt_input_set_asset(const INPUT& input, const ASSET& asset) {
-    int ret = ::wally_psbt_input_set_asset(detail::get_p(input), asset.data(), asset.size());
-    return ret;
-}
-
 template <class INPUT, class INFLATION_KEYS_RANGEPROOF>
 inline int psbt_input_set_inflation_keys_rangeproof(const INPUT& input, const INFLATION_KEYS_RANGEPROOF& inflation_keys_rangeproof) {
     int ret = ::wally_psbt_input_set_inflation_keys_rangeproof(detail::get_p(input), inflation_keys_rangeproof.data(), inflation_keys_rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class ISSUANCE_AMOUNT_RANGEPROOF>
+inline int psbt_input_set_issuance_amount_rangeproof(const INPUT& input, const ISSUANCE_AMOUNT_RANGEPROOF& issuance_amount_rangeproof) {
+    int ret = ::wally_psbt_input_set_issuance_amount_rangeproof(detail::get_p(input), issuance_amount_rangeproof.data(), issuance_amount_rangeproof.size());
     return ret;
 }
 

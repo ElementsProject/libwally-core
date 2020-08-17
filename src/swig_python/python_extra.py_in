@@ -256,11 +256,16 @@ if is_elements_build():
     psbt_get_global_scalar_offset = _wrap_bin(psbt_get_global_scalar_offset, 32, resize=True)
 
     psbt_get_input_vbf = _wrap_bin(psbt_get_input_vbf, psbt_get_input_vbf_len, resize=True)
-    psbt_get_input_asset = _wrap_bin(psbt_get_input_asset, psbt_get_input_asset_len, resize=True)
-    psbt_get_input_inflation_keys_rangeproof = _wrap_bin(psbt_get_input_inflation_keys_rangeproof, psbt_get_input_inflation_keys_rangeproof_len, resize=True)
-    psbt_get_input_pegin_txoutproof = _wrap_bin(psbt_get_input_pegin_txoutproof, psbt_get_input_pegin_txoutproof_len, resize=True)
-    psbt_get_input_pegin_genesis_blockhash = _wrap_bin(psbt_get_input_pegin_genesis_blockhash, psbt_get_input_pegin_genesis_blockhash_len, resize=True)
-    psbt_get_input_pegin_claim_script = _wrap_bin(psbt_get_input_pegin_claim_script, psbt_get_input_pegin_claim_script_len, resize=True)
+    psbt_get_input_issuance_amount_rangeproof = _wrap_bin(psbt_get_input_issuance_amount_rangeproof,
+                                                          psbt_get_input_issuance_amount_rangeproof_len, resize=True)
+    psbt_get_input_inflation_keys_rangeproof = _wrap_bin(psbt_get_input_inflation_keys_rangeproof,
+                                                         psbt_get_input_inflation_keys_rangeproof_len, resize=True)
+    psbt_get_input_pegin_txoutproof = _wrap_bin(psbt_get_input_pegin_txoutproof,
+                                                psbt_get_input_pegin_txoutproof_len, resize=True)
+    psbt_get_input_pegin_genesis_blockhash = _wrap_bin(psbt_get_input_pegin_genesis_blockhash,
+                                                       psbt_get_input_pegin_genesis_blockhash_len, resize=True)
+    psbt_get_input_pegin_claim_script = _wrap_bin(psbt_get_input_pegin_claim_script,
+                                                  psbt_get_input_pegin_claim_script_len, resize=True)
 
     psbt_get_output_blinding_pubkey = _wrap_bin(psbt_get_output_blinding_pubkey, psbt_get_output_blinding_pubkey_len, resize=True)
     psbt_get_output_value_commitment = _wrap_bin(psbt_get_output_value_commitment, psbt_get_output_value_commitment_len, resize=True)

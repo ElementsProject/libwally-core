@@ -70,7 +70,7 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 #define PSET_GLOBAL_SCALAR 0x00
 
 #define PSET_IN_VALUE_BLINDER 0x01
-#define PSET_IN_ASSET 0x02
+#define PSET_IN_ISSUANCE_VALUE_RANGEPROOF 0x02
 #define PSET_IN_ISSUANCE_KEYS_RANGEPROOF 0x03
 #define PSET_IN_PEGIN_TX 0x04
 #define PSET_IN_PEGIN_TXOUTPROOF 0x05
@@ -82,7 +82,7 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT + 1] = {
     NULL, /* 0 */
     wally_psbt_input_set_vbf, /* PSET_IN_VALUE_BLINDER */
-    wally_psbt_input_set_asset, /* PSET_IN_ASSET */
+    wally_psbt_input_set_issuance_amount_rangeproof, /* PSET_IN_ISSUANCE_VALUE_RANGEPROOF */
     wally_psbt_input_set_inflation_keys_rangeproof, /* PSET_IN_ISSUANCE_KEYS_RANGEPROOF */
     NULL, /* PSET_IN_PEGIN_TX */
     wally_psbt_input_set_pegin_txoutproof, /* PSET_IN_PEGIN_TXOUTPROOF */
@@ -507,8 +507,8 @@ int wally_psbt_input_has_pegin_value(const struct wally_psbt_input *input, size_
     return WALLY_OK;
 }
 
-SET_BYTES_N(wally_psbt_input, vbf, BLINDING_FACTOR_LEN)
-SET_BYTES_N(wally_psbt_input, asset, ASSET_TAG_LEN)
+SET_BYTES_N(wally_psbt_input, vbf, ASSET_COMMITMENT_LEN)
+SET_BYTES(wally_psbt_input, issuance_amount_rangeproof)
 SET_BYTES(wally_psbt_input, inflation_keys_rangeproof)
 SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
            tx_clone_alloc, wally_tx_free)
@@ -534,7 +534,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 
 #ifdef BUILD_ELEMENTS
         clear_and_free(input->vbf, input->vbf_len);
-        clear_and_free(input->asset, input->asset_len);
+        clear_and_free(input->issuance_amount_rangeproof, input->issuance_amount_rangeproof_len);
         clear_and_free(input->inflation_keys_rangeproof, input->inflation_keys_rangeproof_len);
         wally_tx_free(input->pegin_tx);
         wally_tx_witness_stack_free(input->pegin_witness);
@@ -1266,7 +1266,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 ret = pull_witness(cursor, max, &result->pegin_witness);
                 break;
             case PSET_IN_VALUE_BLINDER:
-            case PSET_IN_ASSET:
+            case PSET_IN_ISSUANCE_VALUE_RANGEPROOF:
             case PSET_IN_ISSUANCE_KEYS_RANGEPROOF:
             case PSET_IN_PEGIN_TXOUTPROOF:
             case PSET_IN_PEGIN_GENESIS_HASH:
@@ -1731,8 +1731,9 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
     }
     push_elements_varbuff(cursor, max, PSET_IN_VALUE_BLINDER,
                           input->vbf, input->vbf_len);
-    push_elements_varbuff(cursor, max, PSET_IN_ASSET,
-                          input->asset, input->asset_len);
+    push_elements_varbuff(cursor, max, PSET_IN_ISSUANCE_VALUE_RANGEPROOF,
+                          input->issuance_amount_rangeproof,
+                          input->issuance_amount_rangeproof_len);
     push_elements_varbuff(cursor, max, PSET_IN_ISSUANCE_KEYS_RANGEPROOF,
                           input->inflation_keys_rangeproof,
                           input->inflation_keys_rangeproof_len);
@@ -1991,7 +1992,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
         dst->has_pegin_value = true;
     }
     COMBINE_BYTES(input, vbf);
-    COMBINE_BYTES(input, asset);
+    COMBINE_BYTES(input, issuance_amount_rangeproof);
     COMBINE_BYTES(input, inflation_keys_rangeproof);
     if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
         return ret;
@@ -2797,7 +2798,7 @@ int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index
 }
 PSBT_GET_I(input, pegin_value, uint64_t)
 PSBT_GET_B(input, vbf)
-PSBT_GET_B(input, asset)
+PSBT_GET_B(input, issuance_amount_rangeproof)
 PSBT_GET_B(input, inflation_keys_rangeproof)
 PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, pegin_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
@@ -2810,7 +2811,7 @@ int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index) {
     return wally_psbt_input_clear_pegin_value(psbt_get_input(psbt, index));
 }
 PSBT_SET_B(input, vbf)
-PSBT_SET_B(input, asset)
+PSBT_SET_B(input, issuance_amount_rangeproof)
 PSBT_SET_B(input, inflation_keys_rangeproof)
 PSBT_SET_S(input, pegin_tx, wally_tx)
 PSBT_SET_S(input, pegin_witness, wally_tx_witness_stack)

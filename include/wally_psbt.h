@@ -60,8 +60,8 @@ struct wally_psbt_input {
     uint32_t has_pegin_value;
     unsigned char *vbf;
     size_t vbf_len;
-    unsigned char *asset;
-    size_t asset_len;
+    unsigned char *issuance_amount_rangeproof;
+    size_t issuance_amount_rangeproof_len;
     unsigned char *inflation_keys_rangeproof;
     size_t inflation_keys_rangeproof_len;
     /* Peg-ins */
@@ -812,16 +812,16 @@ WALLY_CORE_API int wally_psbt_input_set_vbf(
     size_t vbf_len);
 
 /**
- * Set the asset in an elements input.
+ * Set the issuance amount rangeproof in an elements input.
  *
  * :param input: The input to update.
- * :param asset: The asset for this input.
- * :param asset_len: Length of ``asset`` in bytes.
+ * :param issuance_amount_rangeproof: The issuance amount rangeproof.
+ * :param issuance_amount_rangeproof_len: Length of ``issuance_amount_rangeproof`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_asset(
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_rangeproof(
     struct wally_psbt_input *input,
-    const unsigned char *asset,
-    size_t asset_len);
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len);
 
 /**
  * Set the inflation keys rangeproof in an elements input.

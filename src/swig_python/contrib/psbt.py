@@ -164,9 +164,10 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_vbf,
                                 psbt_get_input_vbf,
                                 psbt_get_input_vbf_len, psbt, dummy_bf)
-            self._try_get_set_b(psbt_set_input_asset,
-                                psbt_get_input_asset,
-                                psbt_get_input_asset_len, psbt, dummy_asset)
+            self._try_get_set_b(psbt_set_input_issuance_amount_rangeproof,
+                                psbt_get_input_issuance_amount_rangeproof,
+                                psbt_get_input_issuance_amount_rangeproof_len,
+                                psbt, dummy_bytes)
             self._try_get_set_b(psbt_set_input_inflation_keys_rangeproof,
                                 psbt_get_input_inflation_keys_rangeproof,
                                 psbt_get_input_inflation_keys_rangeproof_len,
