@@ -1279,9 +1279,9 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                 goto unknown_type;
             }
             break;
+unknown_type:
 #endif /* BUILD_ELEMENTS */
         default:
-unknown_type:
             /* Unknown case without elements or for unknown proprietary types */
             ret = pull_unknown_key_value(cursor, max, pre_key, &result->unknowns);
             break;
@@ -1352,9 +1352,9 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
                 goto unknown_type;
             }
             break;
+unknown_type:
 #endif /* BUILD_ELEMENTS */
         default:
-unknown_type:
             /* Unknown case without elements or for unknown proprietary types */
             ret = pull_unknown_key_value(cursor, max, pre_key, &result->unknowns);
             break;
@@ -1469,9 +1469,9 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             } else
                 goto unknown_type;
             break;
+unknown_type:
 #endif /* BUILD_ELEMENTS */
         default:
-unknown_type:
             ret = pull_unknown_key_value(&bytes, &len, pre_key, &result->unknowns);
             if (ret != WALLY_OK)
                 goto fail;
