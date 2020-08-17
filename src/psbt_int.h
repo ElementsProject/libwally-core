@@ -52,8 +52,8 @@ WALLY_CORE_API int wally_psbt_set_input_sighash(struct wally_psbt *psbt, size_t 
 #ifdef BUILD_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_input_pegin_value(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
 WALLY_CORE_API int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_vbf(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_vbf_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_issuance_amount_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_issuance_amount_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_inflation_keys_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -69,7 +69,9 @@ WALLY_CORE_API int wally_psbt_get_input_pegin_claim_script_len(const struct wall
 
 WALLY_CORE_API int wally_psbt_set_input_pegin_value(struct wally_psbt *psbt, size_t index, uint64_t value);
 WALLY_CORE_API int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index);
-WALLY_CORE_API int wally_psbt_set_input_vbf(struct wally_psbt *psbt, size_t index, const unsigned char *vbf, size_t vbf_len);
+WALLY_CORE_API int wally_psbt_set_input_issuance_amount(struct wally_psbt *psbt, size_t index,
+                                                        const unsigned char *issuance_amount,
+                                                        size_t issuance_amount_len);
 WALLY_CORE_API int wally_psbt_set_input_issuance_amount_rangeproof(struct wally_psbt *psbt, size_t index,
                                                                    const unsigned char *issuance_amount_rangeproof,
                                                                    size_t issuance_amount_rangeproof_len);

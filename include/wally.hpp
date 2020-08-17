@@ -1377,6 +1377,12 @@ inline int psbt_input_set_inflation_keys_rangeproof(const INPUT& input, const IN
     return ret;
 }
 
+template <class INPUT, class ISSUANCE_AMOUNT>
+inline int psbt_input_set_issuance_amount(const INPUT& input, const ISSUANCE_AMOUNT& issuance_amount) {
+    int ret = ::wally_psbt_input_set_issuance_amount(detail::get_p(input), issuance_amount.data(), issuance_amount.size());
+    return ret;
+}
+
 template <class INPUT, class ISSUANCE_AMOUNT_RANGEPROOF>
 inline int psbt_input_set_issuance_amount_rangeproof(const INPUT& input, const ISSUANCE_AMOUNT_RANGEPROOF& issuance_amount_rangeproof) {
     int ret = ::wally_psbt_input_set_issuance_amount_rangeproof(detail::get_p(input), issuance_amount_rangeproof.data(), issuance_amount_rangeproof.size());
@@ -1416,12 +1422,6 @@ inline int psbt_input_set_pegin_value(const INPUT& input, uint64_t value) {
 template <class INPUT>
 inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_tx_witness_stack* pegin_witness) {
     int ret = ::wally_psbt_input_set_pegin_witness(detail::get_p(input), pegin_witness);
-    return ret;
-}
-
-template <class INPUT, class VBF>
-inline int psbt_input_set_vbf(const INPUT& input, const VBF& vbf) {
-    int ret = ::wally_psbt_input_set_vbf(detail::get_p(input), vbf.data(), vbf.size());
     return ret;
 }
 

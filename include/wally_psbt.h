@@ -58,8 +58,8 @@ struct wally_psbt_input {
     /* Issuance */
     uint64_t pegin_value;
     uint32_t has_pegin_value;
-    unsigned char *vbf;
-    size_t vbf_len;
+    unsigned char *issuance_amount;
+    size_t issuance_amount_len;
     unsigned char *issuance_amount_rangeproof;
     size_t issuance_amount_rangeproof_len;
     unsigned char *inflation_keys_rangeproof;
@@ -800,16 +800,16 @@ int wally_psbt_input_has_pegin_value(
     size_t *written);
 
 /**
- * Set the value blinding factor in an elements input.
+ * Set the blinded issuance amount in an elements input.
  *
  * :param input: The input to update.
- * :param vbf: The value blinding factor.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param issuance_amount: The blinded issuance amount.
+ * :param issuance_amount_len: Length of ``issuance_amount``. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_set_vbf(
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount(
     struct wally_psbt_input *input,
-    const unsigned char *vbf,
-    size_t vbf_len);
+    const unsigned char *issuance_amount,
+    size_t issuance_amount_len);
 
 /**
  * Set the issuance amount rangeproof in an elements input.

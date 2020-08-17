@@ -74,6 +74,7 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_witness)
 
         dummy_bytes = bytearray(b'\x00' * 32)
+        dummy_commitment = bytearray(b'\x00' * 33)
         dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
@@ -161,9 +162,10 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(psbt_has_input_pegin_value(psbt, 0), 1)
             psbt_clear_input_pegin_value(psbt, 0)
             self.assertEqual(psbt_has_input_pegin_value(psbt, 0), 0)
-            self._try_get_set_b(psbt_set_input_vbf,
-                                psbt_get_input_vbf,
-                                psbt_get_input_vbf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_input_issuance_amount,
+                                psbt_get_input_issuance_amount,
+                                psbt_get_input_issuance_amount_len,
+                                psbt, dummy_commitment)
             self._try_get_set_b(psbt_set_input_issuance_amount_rangeproof,
                                 psbt_get_input_issuance_amount_rangeproof,
                                 psbt_get_input_issuance_amount_rangeproof_len,
