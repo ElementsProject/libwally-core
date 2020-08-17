@@ -50,6 +50,8 @@ WALLY_CORE_API int wally_psbt_set_input_unknowns(struct wally_psbt *psbt, size_t
 WALLY_CORE_API int wally_psbt_set_input_sighash(struct wally_psbt *psbt, size_t index, uint32_t sighash);
 
 #ifdef BUILD_ELEMENTS
+WALLY_CORE_API int wally_psbt_get_input_issuance_value(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
+WALLY_CORE_API int wally_psbt_has_input_issuance_value(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_pegin_value(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
 WALLY_CORE_API int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_issuance_amount(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -67,6 +69,8 @@ WALLY_CORE_API int wally_psbt_get_input_pegin_genesis_blockhash_len(const struct
 WALLY_CORE_API int wally_psbt_get_input_pegin_claim_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_pegin_claim_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 
+WALLY_CORE_API int wally_psbt_set_input_issuance_value(struct wally_psbt *psbt, size_t index, uint64_t value);
+WALLY_CORE_API int wally_psbt_clear_input_issuance_value(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_input_pegin_value(struct wally_psbt *psbt, size_t index, uint64_t value);
 WALLY_CORE_API int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_input_issuance_amount(struct wally_psbt *psbt, size_t index,

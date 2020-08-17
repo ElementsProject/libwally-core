@@ -155,13 +155,18 @@ class PSBTTests(unittest.TestCase):
         self._try_invalid(psbt_get_input_sighash, psbt)
 
         if is_elements_build():
-            self._try_set(psbt_set_input_pegin_value, psbt, 1234567, 0)
-            self._try_invalid(psbt_has_input_pegin_value, psbt)
-            self._try_invalid(psbt_get_input_pegin_value, psbt)
-            self._try_invalid(psbt_clear_input_pegin_value, psbt)
-            self.assertEqual(psbt_has_input_pegin_value(psbt, 0), 1)
-            psbt_clear_input_pegin_value(psbt, 0)
-            self.assertEqual(psbt_has_input_pegin_value(psbt, 0), 0)
+            for get_fn, set_fn, has_fn, clear_fn in [
+                (psbt_get_input_issuance_value, psbt_set_input_issuance_value,
+                    psbt_has_input_issuance_value, psbt_clear_input_issuance_value),
+                (psbt_get_input_pegin_value, psbt_set_input_pegin_value,
+                    psbt_has_input_pegin_value, psbt_clear_input_pegin_value)]:
+                self._try_set(set_fn, psbt, 1234567, 0)
+                self._try_invalid(has_fn, psbt)
+                self._try_invalid(get_fn, psbt)
+                self._try_invalid(clear_fn, psbt)
+                self.assertEqual(has_fn(psbt, 0), 1)
+                clear_fn(psbt, 0)
+                self.assertEqual(has_fn(psbt, 0), 0)
             self._try_get_set_b(psbt_set_input_issuance_amount,
                                 psbt_get_input_issuance_amount,
                                 psbt_get_input_issuance_amount_len,

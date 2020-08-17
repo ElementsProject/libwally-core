@@ -56,8 +56,8 @@ struct wally_psbt_input {
     uint32_t sighash;
 #ifdef BUILD_ELEMENTS
     /* Issuance */
-    uint64_t pegin_value;
-    uint32_t has_pegin_value;
+    uint64_t issuance_value;
+    uint32_t has_issuance_value;
     unsigned char *issuance_amount;
     size_t issuance_amount_len;
     unsigned char *issuance_amount_rangeproof;
@@ -65,6 +65,8 @@ struct wally_psbt_input {
     unsigned char *inflation_keys_rangeproof;
     size_t inflation_keys_rangeproof_len;
     /* Peg-ins */
+    uint64_t pegin_value;
+    uint32_t has_pegin_value;
     struct wally_tx *pegin_tx;
     struct wally_tx_witness_stack *pegin_witness;
     unsigned char *pegin_txoutproof;
@@ -771,6 +773,34 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
     struct wally_psbt **output);
 
 #ifndef SWIG
+/**
+ * Set the issuance value in an elements input.
+ *
+ * :param input: The input to update.
+ * :param value: The issuance value for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_value(
+    struct wally_psbt_input *input,
+    uint64_t value);
+
+/**
+ * Clear the issuance value in an elements input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_issuance_value(
+    struct wally_psbt_input *input);
+
+/**
+ * Determine if the issuance value is set in an elements input.
+ *
+ * :param input: The input to query.
+ * :param written: On success, set to one if the issuance value is set, otherwise zero.
+ */
+int wally_psbt_input_has_issuance_value(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
 /**
  * Set the peg-in value in an elements input.
  *

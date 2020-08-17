@@ -69,6 +69,7 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 #ifdef BUILD_ELEMENTS
 #define PSET_GLOBAL_SCALAR 0x00
 
+#define PSET_IN_ISSUANCE_VALUE 0x00
 #define PSET_IN_ISSUANCE_VALUE_COMMITMENT 0x01
 #define PSET_IN_ISSUANCE_VALUE_RANGEPROOF 0x02
 #define PSET_IN_ISSUANCE_KEYS_RANGEPROOF 0x03
@@ -80,7 +81,7 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 #define PSET_IN_PEGIN_WITNESS 0x09
 
 static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT + 1] = {
-    NULL, /* 0 */
+    NULL, /* PSET_IN_ISSUANCE_VALUE */
     wally_psbt_input_set_issuance_amount, /* PSET_IN_ISSUANCE_VALUE_COMMITMENT */
     wally_psbt_input_set_issuance_amount_rangeproof, /* PSET_IN_ISSUANCE_VALUE_RANGEPROOF */
     wally_psbt_input_set_inflation_keys_rangeproof, /* PSET_IN_ISSUANCE_KEYS_RANGEPROOF */
@@ -413,7 +414,25 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
                              &parent->NAME, &parent->NAME ## _len); \
     }
 
-/* Set/find in and add a vap value member on a parent struct */
+#define SET_OPTIONAL_INT(PARENT, NAME, INT_TYPE) \
+    int PARENT ## _set_ ## NAME(struct PARENT *parent, INT_TYPE value) { \
+        if (!parent) return WALLY_EINVAL; \
+        parent->NAME = value; parent->has_ ## NAME = 1u; \
+        return WALLY_OK; \
+    } \
+    int PARENT ## _clear_ ## NAME(struct PARENT *parent) { \
+        if (!parent) return WALLY_EINVAL; \
+        parent->NAME = 0; parent->has_ ## NAME = 0; \
+        return WALLY_OK; \
+    } \
+    int PARENT ## _has_ ## NAME(const struct PARENT *parent, size_t *written) { \
+        if (written) *written = 0; \
+        if (!parent || !written) return WALLY_EINVAL; \
+        *written = parent->has_ ## NAME ? 1u : 0; \
+        return WALLY_OK; \
+    }
+
+/* Set/find in and add a map value member on a parent struct */
 #define SET_MAP(PARENT, NAME, CHECK_FN) \
     int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
         if (!parent) return WALLY_EINVAL; \
@@ -479,37 +498,11 @@ int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighas
 }
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_input_set_pegin_value(struct wally_psbt_input *input, uint64_t value)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    input->pegin_value = value;
-    input->has_pegin_value = 1u;
-    return WALLY_OK;
-}
-
-int wally_psbt_input_clear_pegin_value(struct wally_psbt_input *input)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    input->pegin_value = 0;
-    input->has_pegin_value = 0;
-    return WALLY_OK;
-}
-
-int wally_psbt_input_has_pegin_value(const struct wally_psbt_input *input, size_t *written)
-{
-    if (written)
-        *written = 0;
-    if (!input || !written)
-        return WALLY_EINVAL;
-    *written = input->has_pegin_value ? 1 : 0;
-    return WALLY_OK;
-}
-
+SET_OPTIONAL_INT(wally_psbt_input, issuance_value, uint64_t)
 SET_BYTES_N(wally_psbt_input, issuance_amount, ASSET_COMMITMENT_LEN)
 SET_BYTES(wally_psbt_input, issuance_amount_rangeproof)
 SET_BYTES(wally_psbt_input, inflation_keys_rangeproof)
+SET_OPTIONAL_INT(wally_psbt_input, pegin_value, uint64_t)
 SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, pegin_witness, wally_tx_witness_stack,
@@ -1130,6 +1123,23 @@ static int pull_output_bytes(const unsigned char **cursor, size_t *max,
     return val_len ? set_fn(output, val, val_len) : WALLY_OK;
 }
 
+static int pull_uint64_value(const unsigned char **cursor, size_t *max,
+                             uint64_t *value_out, uint32_t *has_value_out)
+{
+    const unsigned char *val;
+    size_t val_max;
+
+    if (*has_value_out)
+        return WALLY_EINVAL; /* Duplicate value */
+
+    /* Start parsing the value field. */
+    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
+    *value_out = pull_le64(&val, &val_max);
+    subfield_nomore_end(cursor, max, val, val_max);
+    *has_value_out = 1u;
+    return WALLY_OK;
+}
+
 static int pull_psbt_input(const unsigned char **cursor, size_t *max,
                            uint32_t flags, struct wally_psbt_input *result)
 {
@@ -1245,17 +1255,15 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
 
             field_type = pull_varint(&key, &key_len);
             switch (field_type) {
+            case PSET_IN_ISSUANCE_VALUE:
+                subfield_nomore_end(cursor, max, key, key_len);
+                ret = pull_uint64_value(cursor, max, &result->issuance_value,
+                                        &result->has_issuance_value);
+                break;
             case PSET_IN_PEGIN_VALUE:
                 subfield_nomore_end(cursor, max, key, key_len);
-                if (result->has_pegin_value)
-                    return WALLY_EINVAL; /* Duplicate value */
-
-                /* Start parsing the value field. */
-                pull_subfield_start(cursor, max, pull_varint(cursor, max),
-                                    &val, &val_max);
-                result->pegin_value = pull_le64(&val, &val_max);
-                subfield_nomore_end(cursor, max, val, val_max);
-                result->has_pegin_value = true;
+                ret = pull_uint64_value(cursor, max, &result->pegin_value,
+                                        &result->has_pegin_value);
                 break;
             case PSET_IN_PEGIN_TX:
                 subfield_nomore_end(cursor, max, key, key_len);
@@ -1724,10 +1732,10 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
                              false, input->final_witness);
 #ifdef BUILD_ELEMENTS
     /* Confidential Assets blinding data */
-    if (input->has_pegin_value) {
-        push_elements_key(cursor, max, PSET_IN_PEGIN_VALUE);
+    if (input->has_issuance_value) {
+        push_elements_key(cursor, max, PSET_IN_ISSUANCE_VALUE);
         push_varint(cursor, max, sizeof(leint64_t));
-        push_le64(cursor, max, input->pegin_value);
+        push_le64(cursor, max, input->issuance_value);
     }
     push_elements_varbuff(cursor, max, PSET_IN_ISSUANCE_VALUE_COMMITMENT,
                           input->issuance_amount, input->issuance_amount_len);
@@ -1738,6 +1746,11 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
                           input->inflation_keys_rangeproof,
                           input->inflation_keys_rangeproof_len);
     /* Peg ins */
+    if (input->has_pegin_value) {
+        push_elements_key(cursor, max, PSET_IN_PEGIN_VALUE);
+        push_varint(cursor, max, sizeof(leint64_t));
+        push_le64(cursor, max, input->pegin_value);
+    }
     if (input->pegin_tx) {
         push_elements_key(cursor, max, PSET_IN_PEGIN_TX);
         if ((ret = push_length_and_tx(cursor, max,
@@ -1987,9 +2000,13 @@ static int combine_inputs(struct wally_psbt_input *dst,
         dst->sighash = src->sighash;
 
 #ifdef BUILD_ELEMENTS
+    if (!dst->has_issuance_value && src->has_issuance_value) {
+        dst->issuance_value = src->issuance_value;
+        dst->has_issuance_value = 1u;
+    }
     if (!dst->has_pegin_value && src->has_pegin_value) {
         dst->pegin_value = src->pegin_value;
-        dst->has_pegin_value = true;
+        dst->has_pegin_value = 1u;
     }
     COMBINE_BYTES(input, issuance_amount);
     COMBINE_BYTES(input, issuance_amount_rangeproof);
@@ -2789,30 +2806,34 @@ PSBT_SET_S(input, unknowns, wally_map)
 PSBT_SET_I(input, sighash, uint32_t)
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
-    struct wally_psbt_input *p = psbt_get_input(psbt, index);
-    if (written) *written = 0;
-    if (!p || !written) return WALLY_EINVAL;
-    *written = p->has_pegin_value ? 1 : 0;
-    return WALLY_OK;
+int wally_psbt_has_input_issuance_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
+    return wally_psbt_input_has_issuance_value(psbt_get_input(psbt, index), written);
 }
-PSBT_GET_I(input, pegin_value, uint64_t)
+PSBT_GET_I(input, issuance_value, uint64_t)
 PSBT_GET_B(input, issuance_amount)
 PSBT_GET_B(input, issuance_amount_rangeproof)
 PSBT_GET_B(input, inflation_keys_rangeproof)
+int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
+    return wally_psbt_input_has_pegin_value(psbt_get_input(psbt, index), written);
+}
+PSBT_GET_I(input, pegin_value, uint64_t)
 PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, pegin_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_B(input, pegin_txoutproof)
 PSBT_GET_B(input, pegin_genesis_blockhash)
 PSBT_GET_B(input, pegin_claim_script)
 
-PSBT_SET_I(input, pegin_value, uint64_t)
-int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index) {
-    return wally_psbt_input_clear_pegin_value(psbt_get_input(psbt, index));
+PSBT_SET_I(input, issuance_value, uint64_t)
+int wally_psbt_clear_input_issuance_value(struct wally_psbt *psbt, size_t index) {
+    return wally_psbt_input_clear_issuance_value(psbt_get_input(psbt, index));
 }
 PSBT_SET_B(input, issuance_amount)
 PSBT_SET_B(input, issuance_amount_rangeproof)
 PSBT_SET_B(input, inflation_keys_rangeproof)
+PSBT_SET_I(input, pegin_value, uint64_t)
+int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index) {
+    return wally_psbt_input_clear_pegin_value(psbt_get_input(psbt, index));
+}
 PSBT_SET_S(input, pegin_tx, wally_tx)
 PSBT_SET_S(input, pegin_witness, wally_tx_witness_stack)
 PSBT_SET_B(input, pegin_txoutproof)
