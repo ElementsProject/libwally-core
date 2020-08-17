@@ -69,8 +69,8 @@ struct wally_psbt_input {
     size_t txoutproof_len;
     unsigned char *genesis_blockhash;
     size_t genesis_blockhash_len;
-    unsigned char *claim_script;
-    size_t claim_script_len;
+    unsigned char *pegin_claim_script;
+    size_t pegin_claim_script_len;
 #endif /* BUILD_ELEMENTS */
 };
 
@@ -878,13 +878,13 @@ WALLY_CORE_API int wally_psbt_input_set_genesis_blockhash(
     size_t genesis_blockhash_len);
 
 /**
- * Set the claim script in an elements input.
+ * Set the peg-in claim script in an elements input.
  *
  * :param input: The input to update.
- * :param script: The claim script for this input.
+ * :param script: The peg-in claim script for this input.
  * :param script_len: Length of ``script`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_claim_script(
+WALLY_CORE_API int wally_psbt_input_set_pegin_claim_script(
     struct wally_psbt_input *input,
     const unsigned char *script,
     size_t script_len);

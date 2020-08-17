@@ -154,8 +154,8 @@ class wally_psbt_input(Structure):
                 ('txoutproof_len', c_ulong),
                 ('genesis_blockhash', c_void_p),
                 ('genesis_blockhash_len', c_ulong),
-                ('claim_script', c_void_p),
-                ('claim_script_len', c_ulong)]
+                ('pegin_claim_script', c_void_p),
+                ('pegin_claim_script_len', c_ulong)]
 
 class wally_psbt_output(Structure):
     _fields_ = [('redeem_script', c_void_p),
@@ -321,11 +321,11 @@ for f in (
     ('wally_psbt_input_is_finalized', c_int, [POINTER(wally_psbt_input), c_ulong_p]),
     ('wally_psbt_input_set_abf', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_asset', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
-    ('wally_psbt_input_set_claim_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_final_scriptsig', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_final_witness', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx_witness_stack)]),
     ('wally_psbt_input_set_genesis_blockhash', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_keypaths', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
+    ('wally_psbt_input_set_pegin_claim_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_ulong]),
     ('wally_psbt_input_set_pegin_tx', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx)]),
     ('wally_psbt_input_set_pegin_value', c_int, [POINTER(wally_psbt_input), c_uint64]),
     ('wally_psbt_input_set_pegin_witness', c_int, [POINTER(wally_psbt_input), POINTER(wally_tx_witness_stack)]),

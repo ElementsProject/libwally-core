@@ -1383,15 +1383,15 @@ inline int psbt_input_set_asset(const INPUT& input, const ASSET& asset) {
     return ret;
 }
 
-template <class INPUT, class SCRIPT>
-inline int psbt_input_set_claim_script(const INPUT& input, const SCRIPT& script) {
-    int ret = ::wally_psbt_input_set_claim_script(detail::get_p(input), script.data(), script.size());
-    return ret;
-}
-
 template <class INPUT, class GENESIS_BLOCKHASH>
 inline int psbt_input_set_genesis_blockhash(const INPUT& input, const GENESIS_BLOCKHASH& genesis_blockhash) {
     int ret = ::wally_psbt_input_set_genesis_blockhash(detail::get_p(input), genesis_blockhash.data(), genesis_blockhash.size());
+    return ret;
+}
+
+template <class INPUT, class SCRIPT>
+inline int psbt_input_set_pegin_claim_script(const INPUT& input, const SCRIPT& script) {
+    int ret = ::wally_psbt_input_set_pegin_claim_script(detail::get_p(input), script.data(), script.size());
     return ret;
 }
 
