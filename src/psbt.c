@@ -67,6 +67,8 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 };
 
 #ifdef BUILD_ELEMENTS
+#define PSET_GLOBAL_SCALAR 0x00
+
 #define PSET_IN_VALUE 0x00
 #define PSET_IN_VALUE_BLINDER 0x01
 #define PSET_IN_ASSET 0x02
@@ -760,6 +762,30 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
+#ifdef BUILD_ELEMENTS
+int wally_psbt_get_global_scalar_offset(struct wally_psbt *psbt,
+                                        unsigned char *bytes_out, size_t len,
+                                        size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!psbt || !bytes_out || len != 32 || !written)
+        return WALLY_EINVAL;
+    *written = psbt->scalar_len;
+    if (psbt->scalar_len)
+        memcpy(bytes_out, psbt->scalar, psbt->scalar_len);
+    return WALLY_OK;
+}
+
+int wally_psbt_set_global_scalar_offset(struct wally_psbt *psbt,
+                                        const unsigned char *bytes, size_t bytes_len)
+{
+    if (!psbt || BYTES_INVALID(bytes, bytes_len) || (bytes_len && bytes_len != 32))
+        return WALLY_EINVAL;
+    return replace_bytes(bytes, bytes_len, &psbt->scalar, &psbt->scalar_len);
+}
+#endif /* BUILD_ELEMENTS */
+
 int wally_psbt_add_input_at(struct wally_psbt *psbt,
                             uint32_t index, uint32_t flags,
                             const struct wally_tx_input *input)
@@ -1099,7 +1125,10 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
 {
     size_t key_len;
     const unsigned char *pre_key;
-    uint64_t keyset = 0, elements_keyset = 0;
+    uint64_t keyset = 0;
+#ifdef BUILD_ELEMENTS
+    uint64_t elements_keyset = 0;
+#endif
 
     /* Read key value pairs */
     pre_key = *cursor;
@@ -1260,7 +1289,10 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
 {
     size_t key_len;
     const unsigned char *pre_key;
-    uint64_t keyset = 0, elements_keyset = 0;
+    uint64_t keyset = 0;
+#ifdef BUILD_ELEMENTS
+    uint64_t elements_keyset = 0;
+#endif
 
     (void)flags;
 
@@ -1333,6 +1365,10 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     size_t i, key_len;
     struct wally_psbt *result = NULL;
     uint32_t flags = 0;
+#ifdef BUILD_ELEMENTS
+    uint64_t elements_keyset = 0;
+#endif
+
 
     TX_CHECK_OUTPUT;
 
@@ -1384,7 +1420,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             }
             break;
         }
-        case PSBT_GLOBAL_VERSION: {
+        case PSBT_GLOBAL_VERSION:
             if (result->version > 0) {
                 ret = WALLY_EINVAL;    /* Version already provided */
                 goto fail;
@@ -1392,8 +1428,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             subfield_nomore_end(&bytes, &len, key, key_len);
 
             /* Start parsing the value field. */
-            pull_subfield_start(&bytes, &len,
-                                pull_varint(&bytes, &len),
+            pull_subfield_start(&bytes, &len, pull_varint(&bytes, &len),
                                 &val, &val_max);
             result->version = pull_le32(&val, &val_max);
             subfield_nomore_end(&bytes, &len, val, val_max);
@@ -1402,14 +1437,35 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                 goto fail;
             }
             break;
-        }
-        /* Unknowns */
-        default: {
+#ifdef BUILD_ELEMENTS
+        case PSBT_PROPRIETARY_TYPE:
+            if (!is_elements_key(&key, &key_len))
+                goto unknown_type;
+
+            if (pull_varint(&key, &key_len) == PSET_GLOBAL_SCALAR) {
+                size_t val_len;
+                if (elements_keyset & (1 << PSET_GLOBAL_SCALAR)) {
+                    ret = WALLY_EINVAL; /* Duplicate value */
+                    goto fail;
+                }
+                elements_keyset |= (1 << PSET_GLOBAL_SCALAR);
+                subfield_nomore_end(&bytes, &len, key, key_len);
+
+                val_len = pull_varlength(&bytes, &len);
+                val = pull_skip(&bytes, &len, val_len);
+                ret = wally_psbt_set_global_scalar_offset(result, val, val_len);
+                if (ret != WALLY_OK)
+                    goto fail;
+            } else
+                goto unknown_type;
+            break;
+#endif /* BUILD_ELEMENTS */
+        default:
+unknown_type:
             ret = pull_unknown_key_value(&bytes, &len, pre_key, &result->unknowns);
             if (ret != WALLY_OK)
                 goto fail;
             break;
-        }
         }
         pre_key = bytes;
     }
@@ -1751,21 +1807,22 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     tx_flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
     push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
 
-    /* Global tx */
     push_psbt_key(&cursor, &max, PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
     push_length_and_tx(&cursor, &max, psbt->tx, WALLY_TX_FLAG_ALLOW_PARTIAL);
 
-    /* version */
     if (psbt->version > 0) {
         push_psbt_key(&cursor, &max, PSBT_GLOBAL_VERSION, NULL, 0);
         push_varint(&cursor, &max, sizeof(uint32_t));
         push_le32(&cursor, &max, psbt->version);
     }
 
-    /* Unknowns */
+#ifdef BUILD_ELEMENTS
+    push_elements_varbuff(&cursor, &max, PSET_GLOBAL_SCALAR,
+                          psbt->scalar, psbt->scalar_len);
+#endif /* BUILD_ELEMENTS */
+
     push_map(&cursor, &max, &psbt->unknowns);
 
-    /* Separator */
     push_u8(&cursor, &max, PSBT_SEPARATOR);
 
     /* Push each input and output */

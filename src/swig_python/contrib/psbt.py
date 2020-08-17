@@ -68,9 +68,6 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
 
         # Test setters
-        dummy_tx = psbt_get_global_tx(psbt)
-        self.assertIsNotNone(dummy_tx)
-
         dummy_txout = tx_output_init(1234567, bytearray(b'\x00' * 33))
 
         dummy_witness = tx_witness_stack_init(5)
@@ -86,6 +83,20 @@ class PSBTTests(unittest.TestCase):
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
             dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
+
+        dummy_tx = psbt_get_global_tx(psbt)
+        self.assertIsNotNone(dummy_tx)
+        with self.assertRaises(ValueError):
+            psbt_get_global_tx(None)
+
+        if is_elements_build():
+            for args in [(None, dummy_bytes),              # Null PSBT
+                         (psbt, bytearray(b'\x00' * 31))]: # Invalid length
+                with self.assertRaises(ValueError):
+                    psbt_set_global_scalar_offset(*args)
+            self.assertEqual(psbt_get_global_scalar_offset(psbt), bytearray())
+            psbt_set_global_scalar_offset(psbt, dummy_bytes)
+            self.assertEqual(psbt_get_global_scalar_offset(psbt), dummy_bytes)
 
         dummy_keypaths = map_init(0)
         self.assertIsNotNone(dummy_keypaths)

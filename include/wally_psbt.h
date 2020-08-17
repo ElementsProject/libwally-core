@@ -114,6 +114,10 @@ struct wally_psbt {
     size_t outputs_allocation_len;
     struct wally_map unknowns;
     uint32_t version;
+#ifdef BUILD_ELEMENTS
+    unsigned char *scalar;
+    size_t scalar_len;
+#endif
 };
 #endif /* SWIG */
 
@@ -540,6 +544,34 @@ WALLY_CORE_API int wally_psbt_is_finalized(
 WALLY_CORE_API int wally_psbt_set_global_tx(
     struct wally_psbt *psbt,
     const struct wally_tx *tx);
+
+#ifdef BUILD_ELEMENTS
+/**
+ * Get the global scalar offset for a PSBT.
+ *
+ * :param psbt: the PSBT to query.
+ * :param bytes_out: Destination for the scalar offset.
+ * :param len: Length of ``bytes_out`` in bytes. Must be 32.
+ * :param written: number of bytes written to bytes_out. 0 if the PSBT does
+ *|     not have a scalar offset set.
+ */
+WALLY_CORE_API int wally_psbt_get_global_scalar_offset(
+    struct wally_psbt *psbt,
+    unsigned char *bytes_out, size_t len,
+    size_t *written);
+
+/**
+ * Set the global scalar offset for a PSBT.
+ *
+ * :param psbt: The PSBT to set the scalar offset for.
+ * :param bytes: The scalar offset.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be 32.
+ */
+WALLY_CORE_API int wally_psbt_set_global_scalar_offset(
+    struct wally_psbt *psbt,
+    const unsigned char *bytes,
+    size_t bytes_len);
+#endif /* BUILD_ELEMENTS */
 
 /**
  * Add a transaction input to PBST at a given position.
