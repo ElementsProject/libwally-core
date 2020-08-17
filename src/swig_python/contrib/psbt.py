@@ -167,9 +167,10 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_asset,
                                 psbt_get_input_asset,
                                 psbt_get_input_asset_len, psbt, dummy_asset)
-            self._try_get_set_b(psbt_set_input_abf,
-                                psbt_get_input_abf,
-                                psbt_get_input_abf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_input_inflation_keys_rangeproof,
+                                psbt_get_input_inflation_keys_rangeproof,
+                                psbt_get_input_inflation_keys_rangeproof_len,
+                                psbt, dummy_bytes)
             self._try_set(psbt_set_input_pegin_tx, psbt, dummy_tx)
             self._try_invalid(psbt_get_input_pegin_tx, psbt)
             self._try_set(psbt_set_input_pegin_witness, psbt, dummy_witness)

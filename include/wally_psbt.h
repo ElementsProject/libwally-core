@@ -55,14 +55,16 @@ struct wally_psbt_input {
     struct wally_map unknowns;
     uint32_t sighash;
 #ifdef BUILD_ELEMENTS
+    /* Issuance */
     uint64_t pegin_value;
     uint32_t has_pegin_value;
     unsigned char *vbf;
     size_t vbf_len;
     unsigned char *asset;
     size_t asset_len;
-    unsigned char *abf;
-    size_t abf_len;
+    unsigned char *inflation_keys_rangeproof;
+    size_t inflation_keys_rangeproof_len;
+    /* Peg-ins */
     struct wally_tx *pegin_tx;
     struct wally_tx_witness_stack *pegin_witness;
     unsigned char *pegin_txoutproof;
@@ -822,16 +824,16 @@ WALLY_CORE_API int wally_psbt_input_set_asset(
     size_t asset_len);
 
 /**
- * Set the asset blinding factor in an elements input
+ * Set the inflation keys rangeproof in an elements input.
  *
  * :param input: The input to update.
- * :param abf: The asset blinding factor.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * :param inflation_keys_rangeproof: The inflation keys rangeproof.
+ * :param inflation_keys_rangeproof_len: Length of ``inflation_keys_rangeproof`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_abf(
+WALLY_CORE_API int wally_psbt_input_set_inflation_keys_rangeproof(
     struct wally_psbt_input *input,
-    const unsigned char *abf,
-    size_t abf_len);
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len);
 
 /**
  * Set the peg in tx in an input.
