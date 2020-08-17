@@ -65,8 +65,8 @@ struct wally_psbt_input {
     size_t abf_len;
     struct wally_tx *pegin_tx;
     struct wally_tx_witness_stack *pegin_witness;
-    unsigned char *txoutproof;
-    size_t txoutproof_len;
+    unsigned char *pegin_txoutproof;
+    size_t pegin_txoutproof_len;
     unsigned char *pegin_genesis_blockhash;
     size_t pegin_genesis_blockhash_len;
     unsigned char *pegin_claim_script;
@@ -854,13 +854,13 @@ WALLY_CORE_API int wally_psbt_input_set_pegin_witness(
     const struct wally_tx_witness_stack *pegin_witness);
 
 /**
- * Set the txout proof in an elements input.
+ * Set the peg-in txout proof in an elements input.
  *
  * :param input: The input to update.
- * :param proof: The txout proof for this input.
+ * :param proof: The peg-in txout proof for this input.
  * :param proof_len: Length of ``proof`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_txoutproof(
+WALLY_CORE_API int wally_psbt_input_set_pegin_txoutproof(
     struct wally_psbt_input *input,
     const unsigned char *proof,
     size_t proof_len);

@@ -83,10 +83,10 @@
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_input_txoutproof(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_txoutproof_len(psbt, idx)];
+  public final static byte[] psbt_get_input_pegin_txoutproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_txoutproof_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_txoutproof(psbt, idx, buf);
+      final int len = psbt_get_input_pegin_txoutproof(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 

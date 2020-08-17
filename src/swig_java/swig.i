@@ -509,8 +509,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_input_signature_len);
 %returns_size_t(wally_psbt_get_input_sighash);
 %rename("psbt_get_input_pegin_tx") wally_psbt_get_input_pegin_tx_alloc;
-%returns_size_t(wally_psbt_get_input_txoutproof);
-%returns_size_t(wally_psbt_get_input_txoutproof_len);
+%returns_size_t(wally_psbt_get_input_pegin_txoutproof);
+%returns_size_t(wally_psbt_get_input_pegin_txoutproof_len);
 %returns_size_t(wally_psbt_get_input_unknown);
 %returns_size_t(wally_psbt_get_input_unknown_len);
 %returns_size_t(wally_psbt_get_input_unknowns_size);
@@ -572,7 +572,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_input_redeem_script);
 %returns_void__(wally_psbt_set_input_sighash);
 %returns_void__(wally_psbt_set_input_signatures);
-%returns_void__(wally_psbt_set_input_txoutproof);
+%returns_void__(wally_psbt_set_input_pegin_txoutproof);
 %returns_void__(wally_psbt_set_input_unknowns);
 %returns_void__(wally_psbt_set_input_utxo);
 %returns_void__(wally_psbt_set_input_value);

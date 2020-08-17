@@ -174,9 +174,9 @@ class PSBTTests(unittest.TestCase):
             self._try_invalid(psbt_get_input_pegin_tx, psbt)
             self._try_set(psbt_set_input_pegin_witness, psbt, dummy_witness)
             self._try_invalid(psbt_get_input_pegin_witness, psbt)
-            self._try_get_set_b(psbt_set_input_txoutproof,
-                                psbt_get_input_txoutproof,
-                                psbt_get_input_txoutproof_len, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_input_pegin_txoutproof,
+                                psbt_get_input_pegin_txoutproof,
+                                psbt_get_input_pegin_txoutproof_len, psbt, dummy_bytes)
             self._try_get_set_b(psbt_set_input_pegin_genesis_blockhash,
                                 psbt_get_input_pegin_genesis_blockhash,
                                 psbt_get_input_pegin_genesis_blockhash_len, psbt, dummy_bytes)
