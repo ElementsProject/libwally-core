@@ -498,8 +498,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_input_final_scriptsig_len);
 %returns_struct(wally_psbt_get_input_final_witness_alloc, wally_tx_witness_stack);
 %rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
-%returns_size_t(wally_psbt_get_input_genesis_blockhash);
-%returns_size_t(wally_psbt_get_input_genesis_blockhash_len);
+%returns_size_t(wally_psbt_get_input_pegin_genesis_blockhash);
+%returns_size_t(wally_psbt_get_input_pegin_genesis_blockhash_len);
 %returns_size_t(wally_psbt_get_input_keypaths_size);
 %returns_size_t(wally_psbt_get_input_keypath);
 %returns_size_t(wally_psbt_get_input_keypath_len);
@@ -566,7 +566,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_input_pegin_claim_script);
 %returns_void__(wally_psbt_set_input_final_scriptsig);
 %returns_void__(wally_psbt_set_input_final_witness);
-%returns_void__(wally_psbt_set_input_genesis_blockhash);
+%returns_void__(wally_psbt_set_input_pegin_genesis_blockhash);
 %returns_void__(wally_psbt_set_input_keypaths);
 %returns_void__(wally_psbt_set_input_pegin_tx);
 %returns_void__(wally_psbt_set_input_redeem_script);

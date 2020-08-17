@@ -177,9 +177,9 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_txoutproof,
                                 psbt_get_input_txoutproof,
                                 psbt_get_input_txoutproof_len, psbt, dummy_bytes)
-            self._try_get_set_b(psbt_set_input_genesis_blockhash,
-                                psbt_get_input_genesis_blockhash,
-                                psbt_get_input_genesis_blockhash_len, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_input_pegin_genesis_blockhash,
+                                psbt_get_input_pegin_genesis_blockhash,
+                                psbt_get_input_pegin_genesis_blockhash_len, psbt, dummy_bytes)
             self._try_get_set_b(psbt_set_input_pegin_claim_script,
                                 psbt_get_input_pegin_claim_script,
                                 psbt_get_input_pegin_claim_script_len, psbt, dummy_bytes)

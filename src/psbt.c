@@ -74,7 +74,7 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 #define PSET_IN_ASSET_BLINDER 0x03
 #define PSET_IN_PEGIN_TX 0x04
 #define PSET_IN_TXOUT_PROOF 0x05
-#define PSET_IN_GENESIS_HASH 0x06
+#define PSET_IN_PEGIN_GENESIS_HASH 0x06
 #define PSET_IN_PEGIN_CLAIM_SCRIPT 0x07
 #define PSET_IN_PEGIN_VALUE 0x08
 #define PSET_IN_PEGIN_WITNESS 0x09
@@ -86,7 +86,7 @@ static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT
     wally_psbt_input_set_abf, /* PSET_IN_ASSET_BLINDER */
     NULL, /* PSET_IN_PEGIN_TX */
     wally_psbt_input_set_txoutproof, /* PSET_IN_TXOUT_PROOF */
-    wally_psbt_input_set_genesis_blockhash, /* PSET_IN_GENESIS_HASH */
+    wally_psbt_input_set_pegin_genesis_blockhash, /* PSET_IN_PEGIN_GENESIS_HASH */
     wally_psbt_input_set_pegin_claim_script /* PSET_IN_PEGIN_CLAIM_SCRIPT */
 };
 
@@ -515,7 +515,7 @@ SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
 SET_STRUCT(wally_psbt_input, pegin_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 SET_BYTES(wally_psbt_input, txoutproof)
-SET_BYTES_N(wally_psbt_input, genesis_blockhash, SHA256_LEN)
+SET_BYTES_N(wally_psbt_input, pegin_genesis_blockhash, SHA256_LEN)
 SET_BYTES(wally_psbt_input, pegin_claim_script)
 #endif /* BUILD_ELEMENTS */
 
@@ -539,7 +539,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_tx_free(input->pegin_tx);
         wally_tx_witness_stack_free(input->pegin_witness);
         clear_and_free(input->txoutproof, input->txoutproof_len);
-        clear_and_free(input->genesis_blockhash, input->genesis_blockhash_len);
+        clear_and_free(input->pegin_genesis_blockhash, input->pegin_genesis_blockhash_len);
         clear_and_free(input->pegin_claim_script, input->pegin_claim_script_len);
 #endif /* BUILD_ELEMENTS */
 
@@ -1269,7 +1269,7 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             case PSET_IN_ASSET:
             case PSET_IN_ASSET_BLINDER:
             case PSET_IN_TXOUT_PROOF:
-            case PSET_IN_GENESIS_HASH:
+            case PSET_IN_PEGIN_GENESIS_HASH:
             case PSET_IN_PEGIN_CLAIM_SCRIPT:
                 subfield_nomore_end(cursor, max, key, key_len);
                 ret = pull_input_bytes(cursor, max, field_type, &elements_keyset, result,
@@ -1747,8 +1747,8 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
                              true, input->pegin_witness);
     push_elements_varbuff(cursor, max, PSET_IN_TXOUT_PROOF,
                           input->txoutproof, input->txoutproof_len);
-    push_elements_varbuff(cursor, max, PSET_IN_GENESIS_HASH,
-                          input->genesis_blockhash, input->genesis_blockhash_len);
+    push_elements_varbuff(cursor, max, PSET_IN_PEGIN_GENESIS_HASH,
+                          input->pegin_genesis_blockhash, input->pegin_genesis_blockhash_len);
     push_elements_varbuff(cursor, max, PSET_IN_PEGIN_CLAIM_SCRIPT,
                           input->pegin_claim_script, input->pegin_claim_script_len);
 #endif /* BUILD_ELEMENTS */
@@ -1998,7 +1998,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
         (ret = wally_psbt_input_set_pegin_witness(dst, src->pegin_witness)) != WALLY_OK)
         return ret;
     COMBINE_BYTES(input, txoutproof);
-    COMBINE_BYTES(input, genesis_blockhash);
+    COMBINE_BYTES(input, pegin_genesis_blockhash);
     COMBINE_BYTES(input, pegin_claim_script);
 #endif
     return WALLY_OK;
@@ -2801,7 +2801,7 @@ PSBT_GET_B(input, abf)
 PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, pegin_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_B(input, txoutproof)
-PSBT_GET_B(input, genesis_blockhash)
+PSBT_GET_B(input, pegin_genesis_blockhash)
 PSBT_GET_B(input, pegin_claim_script)
 
 PSBT_SET_I(input, pegin_value, uint64_t)
@@ -2814,7 +2814,7 @@ PSBT_SET_B(input, abf)
 PSBT_SET_S(input, pegin_tx, wally_tx)
 PSBT_SET_S(input, pegin_witness, wally_tx_witness_stack)
 PSBT_SET_B(input, txoutproof)
-PSBT_SET_B(input, genesis_blockhash)
+PSBT_SET_B(input, pegin_genesis_blockhash)
 PSBT_SET_B(input, pegin_claim_script)
 #endif /* BUILD_ELEMENTS */
 

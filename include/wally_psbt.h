@@ -67,8 +67,8 @@ struct wally_psbt_input {
     struct wally_tx_witness_stack *pegin_witness;
     unsigned char *txoutproof;
     size_t txoutproof_len;
-    unsigned char *genesis_blockhash;
-    size_t genesis_blockhash_len;
+    unsigned char *pegin_genesis_blockhash;
+    size_t pegin_genesis_blockhash_len;
     unsigned char *pegin_claim_script;
     size_t pegin_claim_script_len;
 #endif /* BUILD_ELEMENTS */
@@ -866,13 +866,13 @@ WALLY_CORE_API int wally_psbt_input_set_txoutproof(
     size_t proof_len);
 
 /**
- * Set the genesis hash in an elements input.
+ * Set the peg-in genesis hash in an elements input.
  *
  * :param input: The input to update.
- * :param genesis_blockhash: The genesis hash for this input.
+ * :param genesis_blockhash: The peg-in genesis hash for this input.
  * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_set_genesis_blockhash(
+WALLY_CORE_API int wally_psbt_input_set_pegin_genesis_blockhash(
     struct wally_psbt_input *input,
     const unsigned char *genesis_blockhash,
     size_t genesis_blockhash_len);
