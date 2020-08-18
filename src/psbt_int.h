@@ -28,8 +28,8 @@ NESTED_MAP____DECL(WALLY_CORE_API, wally_psbt, input, unknown);
 NESTED_INT____DECL(WALLY_CORE_API, wally_psbt, input, uint32_t, sighash);
 
 #ifdef BUILD_ELEMENTS
-NESTED_OPTINT_DECL(WALLY_CORE_API, wally_psbt, input, uint64_t, issuance_value);
-NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, input, issuance_amount);
+NESTED_OPTINT_DECL(WALLY_CORE_API, wally_psbt, input, uint64_t, issuance_amount);
+NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, input, issuance_amount_commitment);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, input, issuance_amount_rangeproof);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, input, inflation_keys_rangeproof);
 NESTED_OPTINT_DECL(WALLY_CORE_API, wally_psbt, input, uint64_t, pegin_value);

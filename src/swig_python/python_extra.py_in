@@ -255,8 +255,8 @@ if is_elements_build():
 
     psbt_get_global_scalar_offset = _wrap_bin(psbt_get_global_scalar_offset, 32, resize=True)
 
-    psbt_get_input_issuance_amount = _wrap_bin(psbt_get_input_issuance_amount,
-                                               psbt_get_input_issuance_amount_len, resize=True)
+    psbt_get_input_issuance_amount_commitment = _wrap_bin(psbt_get_input_issuance_amount_commitment,
+                                                          psbt_get_input_issuance_amount_commitment_len, resize=True)
     psbt_get_input_issuance_amount_rangeproof = _wrap_bin(psbt_get_input_issuance_amount_rangeproof,
                                                           psbt_get_input_issuance_amount_rangeproof_len, resize=True)
     psbt_get_input_inflation_keys_rangeproof = _wrap_bin(psbt_get_input_inflation_keys_rangeproof,

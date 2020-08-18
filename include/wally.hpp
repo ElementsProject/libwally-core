@@ -1360,8 +1360,8 @@ inline int psbt_get_global_scalar_offset(const PSBT& psbt, BYTES_OUT& bytes_out,
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
-inline int psbt_input_clear_issuance_value(struct wally_psbt_input* input) {
-    int ret = ::wally_psbt_input_clear_issuance_value(input);
+inline int psbt_input_clear_issuance_amount(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount(input);
     return ret;
 }
 
@@ -1371,8 +1371,8 @@ inline int psbt_input_clear_pegin_value(struct wally_psbt_input* input) {
 }
 
 template <class INPUT>
-inline int psbt_input_has_issuance_value(const INPUT& input, size_t* written) {
-    int ret = ::wally_psbt_input_has_issuance_value(detail::get_p(input), written);
+inline int psbt_input_has_issuance_amount(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_has_issuance_amount(detail::get_p(input), written);
     return ret;
 }
 
@@ -1388,21 +1388,21 @@ inline int psbt_input_set_inflation_keys_rangeproof(const INPUT& input, const IN
     return ret;
 }
 
-template <class INPUT, class ISSUANCE_AMOUNT>
-inline int psbt_input_set_issuance_amount(const INPUT& input, const ISSUANCE_AMOUNT& issuance_amount) {
-    int ret = ::wally_psbt_input_set_issuance_amount(detail::get_p(input), issuance_amount.data(), issuance_amount.size());
+template <class INPUT>
+inline int psbt_input_set_issuance_amount(const INPUT& input, uint64_t value) {
+    int ret = ::wally_psbt_input_set_issuance_amount(detail::get_p(input), value);
+    return ret;
+}
+
+template <class INPUT, class ISSUANCE_AMOUNT_COMMITMENT>
+inline int psbt_input_set_issuance_amount_commitment(const INPUT& input, const ISSUANCE_AMOUNT_COMMITMENT& issuance_amount_commitment) {
+    int ret = ::wally_psbt_input_set_issuance_amount_commitment(detail::get_p(input), issuance_amount_commitment.data(), issuance_amount_commitment.size());
     return ret;
 }
 
 template <class INPUT, class ISSUANCE_AMOUNT_RANGEPROOF>
 inline int psbt_input_set_issuance_amount_rangeproof(const INPUT& input, const ISSUANCE_AMOUNT_RANGEPROOF& issuance_amount_rangeproof) {
     int ret = ::wally_psbt_input_set_issuance_amount_rangeproof(detail::get_p(input), issuance_amount_rangeproof.data(), issuance_amount_rangeproof.size());
-    return ret;
-}
-
-template <class INPUT>
-inline int psbt_input_set_issuance_value(const INPUT& input, uint64_t value) {
-    int ret = ::wally_psbt_input_set_issuance_value(detail::get_p(input), value);
     return ret;
 }
 

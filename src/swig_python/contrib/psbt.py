@@ -156,8 +156,8 @@ class PSBTTests(unittest.TestCase):
 
         if is_elements_build():
             for get_fn, set_fn, has_fn, clear_fn in [
-                (psbt_get_input_issuance_value, psbt_set_input_issuance_value,
-                    psbt_has_input_issuance_value, psbt_clear_input_issuance_value),
+                (psbt_get_input_issuance_amount, psbt_set_input_issuance_amount,
+                    psbt_has_input_issuance_amount, psbt_clear_input_issuance_amount),
                 (psbt_get_input_pegin_value, psbt_set_input_pegin_value,
                     psbt_has_input_pegin_value, psbt_clear_input_pegin_value)]:
                 self._try_set(set_fn, psbt, 1234567, 0)
@@ -167,9 +167,9 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(has_fn(psbt, 0), 1)
                 clear_fn(psbt, 0)
                 self.assertEqual(has_fn(psbt, 0), 0)
-            self._try_get_set_b(psbt_set_input_issuance_amount,
-                                psbt_get_input_issuance_amount,
-                                psbt_get_input_issuance_amount_len,
+            self._try_get_set_b(psbt_set_input_issuance_amount_commitment,
+                                psbt_get_input_issuance_amount_commitment,
+                                psbt_get_input_issuance_amount_commitment_len,
                                 psbt, dummy_commitment)
             self._try_get_set_b(psbt_set_input_issuance_amount_rangeproof,
                                 psbt_get_input_issuance_amount_rangeproof,

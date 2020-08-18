@@ -56,10 +56,10 @@ struct wally_psbt_input {
     uint32_t sighash;
 #ifdef BUILD_ELEMENTS
     /* Issuance */
-    uint64_t issuance_value;
-    uint32_t has_issuance_value;
-    unsigned char *issuance_amount;
-    size_t issuance_amount_len;
+    uint64_t issuance_amount;
+    uint32_t has_issuance_amount;
+    unsigned char *issuance_amount_commitment;
+    size_t issuance_amount_commitment_len;
     unsigned char *issuance_amount_rangeproof;
     size_t issuance_amount_rangeproof_len;
     unsigned char *inflation_keys_rangeproof;
@@ -774,30 +774,30 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
 
 #ifndef SWIG
 /**
- * Set the issuance value in an elements input.
+ * Set the unblinded issuance amount in an elements input.
  *
  * :param input: The input to update.
- * :param value: The issuance value for this input.
+ * :param value: The issuance amount for this input.
  */
-WALLY_CORE_API int wally_psbt_input_set_issuance_value(
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount(
     struct wally_psbt_input *input,
     uint64_t value);
 
 /**
- * Clear the issuance value in an elements input.
+ * Clear the unblinded issuance amount in an elements input.
  *
  * :param input: The input to update.
  */
-WALLY_CORE_API int wally_psbt_input_clear_issuance_value(
+WALLY_CORE_API int wally_psbt_input_clear_issuance_amount(
     struct wally_psbt_input *input);
 
 /**
- * Determine if the issuance value is set in an elements input.
+ * Determine if the unblinded issuance amount is set in an elements input.
  *
  * :param input: The input to query.
- * :param written: On success, set to one if the issuance value is set, otherwise zero.
+ * :param written: On success, set to one if the issuance amount is set, otherwise zero.
  */
-int wally_psbt_input_has_issuance_value(
+int wally_psbt_input_has_issuance_amount(
     const struct wally_psbt_input *input,
     size_t *written);
 
@@ -833,13 +833,13 @@ int wally_psbt_input_has_pegin_value(
  * Set the blinded issuance amount in an elements input.
  *
  * :param input: The input to update.
- * :param issuance_amount: The blinded issuance amount.
- * :param issuance_amount_len: Length of ``issuance_amount``. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
+ * :param issuance_amount_commitment: The blinded issuance amount.
+ * :param issuance_amount_commitment_len: Length of ``issuance_amount_commitment``. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_set_issuance_amount(
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_commitment(
     struct wally_psbt_input *input,
-    const unsigned char *issuance_amount,
-    size_t issuance_amount_len);
+    const unsigned char *issuance_amount_commitment,
+    size_t issuance_amount_commitment_len);
 
 /**
  * Set the issuance amount rangeproof in an elements input.

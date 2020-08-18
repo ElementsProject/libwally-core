@@ -82,7 +82,7 @@ static const output_bytes_setter_fn PSBT_OUTPUT_SETTERS[PSBT_OUT_WITNESS_SCRIPT 
 
 static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT + 1] = {
     NULL, /* PSET_IN_ISSUANCE_VALUE */
-    wally_psbt_input_set_issuance_amount, /* PSET_IN_ISSUANCE_VALUE_COMMITMENT */
+    wally_psbt_input_set_issuance_amount_commitment, /* PSET_IN_ISSUANCE_VALUE_COMMITMENT */
     wally_psbt_input_set_issuance_amount_rangeproof, /* PSET_IN_ISSUANCE_VALUE_RANGEPROOF */
     wally_psbt_input_set_inflation_keys_rangeproof, /* PSET_IN_ISSUANCE_KEYS_RANGEPROOF */
     NULL, /* PSET_IN_PEGIN_TX */
@@ -498,8 +498,8 @@ int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighas
 }
 
 #ifdef BUILD_ELEMENTS
-SET_OPTIONAL_INT(wally_psbt_input, issuance_value, uint64_t)
-SET_BYTES_N(wally_psbt_input, issuance_amount, ASSET_COMMITMENT_LEN)
+SET_OPTIONAL_INT(wally_psbt_input, issuance_amount, uint64_t)
+SET_BYTES_N(wally_psbt_input, issuance_amount_commitment, ASSET_COMMITMENT_LEN)
 SET_BYTES(wally_psbt_input, issuance_amount_rangeproof)
 SET_BYTES(wally_psbt_input, inflation_keys_rangeproof)
 SET_OPTIONAL_INT(wally_psbt_input, pegin_value, uint64_t)
@@ -526,7 +526,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_map_clear(&input->unknowns);
 
 #ifdef BUILD_ELEMENTS
-        clear_and_free(input->issuance_amount, input->issuance_amount_len);
+        clear_and_free(input->issuance_amount_commitment, input->issuance_amount_commitment_len);
         clear_and_free(input->issuance_amount_rangeproof, input->issuance_amount_rangeproof_len);
         clear_and_free(input->inflation_keys_rangeproof, input->inflation_keys_rangeproof_len);
         wally_tx_free(input->pegin_tx);
@@ -1257,8 +1257,8 @@ static int pull_psbt_input(const unsigned char **cursor, size_t *max,
             switch (field_type) {
             case PSET_IN_ISSUANCE_VALUE:
                 subfield_nomore_end(cursor, max, key, key_len);
-                ret = pull_uint64_value(cursor, max, &result->issuance_value,
-                                        &result->has_issuance_value);
+                ret = pull_uint64_value(cursor, max, &result->issuance_amount,
+                                        &result->has_issuance_amount);
                 break;
             case PSET_IN_PEGIN_VALUE:
                 subfield_nomore_end(cursor, max, key, key_len);
@@ -1732,13 +1732,13 @@ static int push_psbt_input(unsigned char **cursor, size_t *max, uint32_t flags,
                              false, input->final_witness);
 #ifdef BUILD_ELEMENTS
     /* Confidential Assets blinding data */
-    if (input->has_issuance_value) {
+    if (input->has_issuance_amount) {
         push_elements_key(cursor, max, PSET_IN_ISSUANCE_VALUE);
         push_varint(cursor, max, sizeof(leint64_t));
-        push_le64(cursor, max, input->issuance_value);
+        push_le64(cursor, max, input->issuance_amount);
     }
     push_elements_varbuff(cursor, max, PSET_IN_ISSUANCE_VALUE_COMMITMENT,
-                          input->issuance_amount, input->issuance_amount_len);
+                          input->issuance_amount_commitment, input->issuance_amount_commitment_len);
     push_elements_varbuff(cursor, max, PSET_IN_ISSUANCE_VALUE_RANGEPROOF,
                           input->issuance_amount_rangeproof,
                           input->issuance_amount_rangeproof_len);
@@ -2000,15 +2000,15 @@ static int combine_inputs(struct wally_psbt_input *dst,
         dst->sighash = src->sighash;
 
 #ifdef BUILD_ELEMENTS
-    if (!dst->has_issuance_value && src->has_issuance_value) {
-        dst->issuance_value = src->issuance_value;
-        dst->has_issuance_value = 1u;
+    if (!dst->has_issuance_amount && src->has_issuance_amount) {
+        dst->issuance_amount = src->issuance_amount;
+        dst->has_issuance_amount = 1u;
     }
     if (!dst->has_pegin_value && src->has_pegin_value) {
         dst->pegin_value = src->pegin_value;
         dst->has_pegin_value = 1u;
     }
-    COMBINE_BYTES(input, issuance_amount);
+    COMBINE_BYTES(input, issuance_amount_commitment);
     COMBINE_BYTES(input, issuance_amount_rangeproof);
     COMBINE_BYTES(input, inflation_keys_rangeproof);
     if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
@@ -2673,8 +2673,8 @@ NESTED_MAP____IMPL(/**/, wally_psbt, input, signature, wally_ec_public_key_verif
 NESTED_MAP____IMPL(/**/, wally_psbt, input, unknown, NULL)
 NESTED_INT____IMPL(/**/, wally_psbt, input, uint32_t, sighash)
 #ifdef BUILD_ELEMENTS
-NESTED_OPTINT_IMPL(/**/, wally_psbt, input, uint64_t, issuance_value)
-NESTED_VARBUF_IMPL(/**/, wally_psbt, input, issuance_amount)
+NESTED_OPTINT_IMPL(/**/, wally_psbt, input, uint64_t, issuance_amount)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, issuance_amount_commitment)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, input, issuance_amount_rangeproof)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, input, inflation_keys_rangeproof)
 NESTED_OPTINT_IMPL(/**/, wally_psbt, input, uint64_t, pegin_value)
