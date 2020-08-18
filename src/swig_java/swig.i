@@ -264,10 +264,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t values_len) }
 
-%typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
+%typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
    val = 0; $1 = ($1_ltype)&val;
 }
-%typemap(argout) uint64_t* value_out{
+%typemap(argout) uint32_t* value_out{
    $result = (jlong)*$1;
 }
 

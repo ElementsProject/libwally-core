@@ -234,6 +234,14 @@ static void destroy_words(PyObject *obj) { (void)obj; }
    $result = PyInt_FromSize_t(*$1);
 }
 
+%typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
+   val = 0; $1 = ($1_ltype)&val;
+}
+%typemap(argout) uint32_t* value_out{
+   Py_DecRef($result);
+   $result = PyLong_FromUnsignedLong(*$1);
+}
+
 %typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
    val = 0; $1 = ($1_ltype)&val;
 }
