@@ -2662,212 +2662,43 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 }
 
 #if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
-
-static struct wally_psbt_input *psbt_get_input(const struct wally_psbt *psbt, size_t index)
-{
-    return psbt && index < psbt->num_inputs ? &psbt->inputs[index] : NULL;
-}
-
-static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, size_t index)
-{
-    return psbt && index < psbt->num_outputs ? &psbt->outputs[index] : NULL;
-}
-
-/* Getters for maps in inputs/outputs */
-#define PSBT_GET_K(typ, name) \
-    int wally_psbt_get_ ## typ ## _ ## name ## s_size(const struct wally_psbt *psbt, size_t index, \
-                                                      size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written) return WALLY_EINVAL; \
-        *written = p->name ## s ? p->name ## s->num_items : 0; \
-        return WALLY_OK; \
-    }
-
-#define PSBT_GET_M(typ, name) \
-    int wally_psbt_get_ ## typ ## _ ## name ## s_size(const struct wally_psbt *psbt, size_t index, \
-                                                      size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written) return WALLY_EINVAL; \
-        *written = p->name ## s.num_items; \
-        return WALLY_OK; \
-    } \
-    int wally_psbt_find_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
-                                             const unsigned char *key, size_t key_len, size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !key || !key_len || !written) return WALLY_EINVAL; \
-        return wally_psbt_ ## typ ## _find_ ## name(p, key, key_len, written); \
-    } \
-    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
-                                            size_t subindex, unsigned char *bytes_out, size_t len, size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !bytes_out || !len || !written || subindex >= p->name ## s.num_items) return WALLY_EINVAL; \
-        *written = p->name ## s.items[subindex].value_len; \
-        if (*written <= len) \
-            memcpy(bytes_out, p->name ## s.items[subindex].value, *written); \
-        return WALLY_OK; \
-    } \
-    int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, size_t index, \
-                                                    size_t subindex, size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written || subindex >= p->name ## s.num_items) return WALLY_EINVAL; \
-        *written = p->name ## s.items[subindex].value_len; \
-        return WALLY_OK; \
-    }
-
-
-/* Get a binary buffer value from an input/output */
-#define PSBT_GET_B(typ, name) \
-    int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, size_t index, \
-                                                    size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written) return WALLY_EINVAL; \
-        *written = p->name ## _len; \
-        return WALLY_OK; \
-    } \
-    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
-                                            unsigned char *bytes_out, size_t len, size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written) return WALLY_EINVAL; \
-        *written = p->name ## _len; \
-        if (p->name ## _len <= len) \
-            memcpy(bytes_out, p->name, p->name ## _len); \
-        return WALLY_OK; \
-    }
-
-/* Set a binary buffer value on an input/output */
-#define PSBT_SET_B(typ, name) \
-    int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
-                                            const unsigned char *name, size_t name ## _len) { \
-        return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), name, name ## _len); \
-    }
-
-/* Get an integer value from an input/output */
-#define PSBT_GET_I(typ, name, inttyp) \
-    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
-                                            inttyp *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written) return WALLY_EINVAL; \
-        *written = p->name; \
-        return WALLY_OK; \
-    }
-
-/* Set an integer value on an input/output */
-#define PSBT_SET_I(typ, name, inttyp) \
-    int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
-                                            inttyp v) { \
-        return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), v); \
-    }
-
-/* Get a struct from an input/output */
-#define PSBT_GET_S(typ, name, structtyp, clonefn) \
-    int wally_psbt_get_ ## typ ## _ ## name ## _alloc(const struct wally_psbt *psbt, size_t index, \
-                                                      struct structtyp **output) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (output) *output = NULL; \
-        if (!p || !output) return WALLY_EINVAL; \
-        return clonefn(p->name, output); \
-    }
-
-/* Set a struct on an input/output */
-#define PSBT_SET_S(typ, name, structtyp) \
-    int wally_psbt_set_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index, \
-                                            const struct structtyp *p) { \
-        return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
-    }
-
-PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
-PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
-PSBT_GET_B(input, redeem_script)
-PSBT_GET_B(input, witness_script)
-PSBT_GET_B(input, final_scriptsig)
-PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
-PSBT_GET_M(input, keypath)
-PSBT_GET_M(input, signature)
-PSBT_GET_M(input, unknown)
-PSBT_GET_I(input, sighash, size_t)
-
-PSBT_SET_S(input, utxo, wally_tx)
-PSBT_SET_S(input, witness_utxo, wally_tx_output)
-PSBT_SET_B(input, redeem_script)
-PSBT_SET_B(input, witness_script)
-PSBT_SET_B(input, final_scriptsig)
-PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
-PSBT_SET_S(input, keypaths, wally_map)
-PSBT_SET_S(input, signatures, wally_map)
-PSBT_SET_S(input, unknowns, wally_map)
-PSBT_SET_I(input, sighash, uint32_t)
-
+NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx, utxo, tx_clone_alloc)
+NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx_output, witness_utxo, wally_tx_output_clone_alloc)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, redeem_script)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, witness_script)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, final_scriptsig)
+NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx_witness_stack, final_witness, wally_tx_witness_stack_clone_alloc)
+NESTED_MAP____IMPL(/**/, wally_psbt, input, keypath, wally_ec_public_key_verify)
+NESTED_MAP____IMPL(/**/, wally_psbt, input, signature, wally_ec_public_key_verify)
+NESTED_MAP____IMPL(/**/, wally_psbt, input, unknown, NULL)
+NESTED_INT____IMPL(/**/, wally_psbt, input, uint32_t, sighash)
 #ifdef BUILD_ELEMENTS
-int wally_psbt_has_input_issuance_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
-    return wally_psbt_input_has_issuance_value(psbt_get_input(psbt, index), written);
-}
-PSBT_GET_I(input, issuance_value, uint64_t)
-PSBT_GET_B(input, issuance_amount)
-PSBT_GET_B(input, issuance_amount_rangeproof)
-PSBT_GET_B(input, inflation_keys_rangeproof)
-int wally_psbt_has_input_pegin_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
-    return wally_psbt_input_has_pegin_value(psbt_get_input(psbt, index), written);
-}
-PSBT_GET_I(input, pegin_value, uint64_t)
-PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
-PSBT_GET_S(input, pegin_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
-PSBT_GET_B(input, pegin_txoutproof)
-PSBT_GET_B(input, pegin_genesis_blockhash)
-PSBT_GET_B(input, pegin_claim_script)
-
-PSBT_SET_I(input, issuance_value, uint64_t)
-int wally_psbt_clear_input_issuance_value(struct wally_psbt *psbt, size_t index) {
-    return wally_psbt_input_clear_issuance_value(psbt_get_input(psbt, index));
-}
-PSBT_SET_B(input, issuance_amount)
-PSBT_SET_B(input, issuance_amount_rangeproof)
-PSBT_SET_B(input, inflation_keys_rangeproof)
-PSBT_SET_I(input, pegin_value, uint64_t)
-int wally_psbt_clear_input_pegin_value(struct wally_psbt *psbt, size_t index) {
-    return wally_psbt_input_clear_pegin_value(psbt_get_input(psbt, index));
-}
-PSBT_SET_S(input, pegin_tx, wally_tx)
-PSBT_SET_S(input, pegin_witness, wally_tx_witness_stack)
-PSBT_SET_B(input, pegin_txoutproof)
-PSBT_SET_B(input, pegin_genesis_blockhash)
-PSBT_SET_B(input, pegin_claim_script)
+NESTED_OPTINT_IMPL(/**/, wally_psbt, input, uint64_t, issuance_value)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, issuance_amount)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, issuance_amount_rangeproof)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, inflation_keys_rangeproof)
+NESTED_OPTINT_IMPL(/**/, wally_psbt, input, uint64_t, pegin_value)
+NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx, pegin_tx, tx_clone_alloc)
+NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx_witness_stack, pegin_witness, wally_tx_witness_stack_clone_alloc)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, pegin_txoutproof)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, pegin_genesis_blockhash)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, input, pegin_claim_script)
 #endif /* BUILD_ELEMENTS */
 
-PSBT_GET_B(output, redeem_script)
-PSBT_GET_B(output, witness_script)
-PSBT_GET_M(output, keypath)
-PSBT_GET_M(output, unknown)
-
-PSBT_SET_B(output, redeem_script)
-PSBT_SET_B(output, witness_script)
-PSBT_SET_S(output, keypaths, wally_map)
-PSBT_SET_S(output, unknowns, wally_map)
+/* Outputs */
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, redeem_script)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, witness_script)
+NESTED_MAP____IMPL(/**/, wally_psbt, output, keypath, wally_ec_public_key_verify)
+NESTED_MAP____IMPL(/**/, wally_psbt, output, unknown, NULL)
 #ifdef BUILD_ELEMENTS
-PSBT_GET_B(output, blinding_pubkey)
-PSBT_GET_B(output, value_commitment)
-PSBT_GET_B(output, vbf)
-PSBT_GET_B(output, asset_commitment)
-PSBT_GET_B(output, abf)
-PSBT_GET_B(output, nonce)
-PSBT_GET_B(output, rangeproof)
-PSBT_GET_B(output, surjectionproof)
-
-PSBT_SET_B(output, blinding_pubkey)
-PSBT_SET_B(output, value_commitment)
-PSBT_SET_B(output, vbf)
-PSBT_SET_B(output, asset_commitment)
-PSBT_SET_B(output, abf)
-PSBT_SET_B(output, nonce)
-PSBT_SET_B(output, rangeproof)
-PSBT_SET_B(output, surjectionproof)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, blinding_pubkey)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, value_commitment)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, vbf)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, asset_commitment)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, abf)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, nonce)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, rangeproof)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, surjectionproof)
 #endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */

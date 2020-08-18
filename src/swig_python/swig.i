@@ -352,6 +352,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
+%include "wally_struct.h"
 %include "../include/wally_address.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
