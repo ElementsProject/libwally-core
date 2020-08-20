@@ -87,22 +87,22 @@ struct wally_psbt_output {
     struct wally_map keypaths;
     struct wally_map unknowns;
 #ifdef BUILD_ELEMENTS
-    unsigned char *blinding_pub_key;
-    size_t blinding_pub_key_len;
-    unsigned char *value_commitment;
-    size_t value_commitment_len;
     unsigned char *vbf;
     size_t vbf_len;
+    unsigned char *value_commitment;
+    size_t value_commitment_len;
     unsigned char *asset;
     size_t asset_len;
     unsigned char *asset_commitment;
     size_t asset_commitment_len;
-    unsigned char *ecdh_pub_key;
-    size_t ecdh_pub_key_len;
     unsigned char *rangeproof;
     size_t rangeproof_len;
     unsigned char *surjectionproof;
     size_t surjectionproof_len;
+    unsigned char *blinding_pub_key;
+    size_t blinding_pub_key_len;
+    unsigned char *ecdh_pub_key;
+    size_t ecdh_pub_key_len;
 #endif /* BUILD_ELEMENTS */
 };
 

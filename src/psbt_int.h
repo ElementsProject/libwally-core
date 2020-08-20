@@ -47,14 +47,14 @@ NESTED_MAP____DECL(WALLY_CORE_API, wally_psbt, output, keypath);
 NESTED_MAP____DECL(WALLY_CORE_API, wally_psbt, output, unknown);
 
 #ifdef BUILD_ELEMENTS
-NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, blinding_pub_key);
-NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, value_commitment);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, vbf);
+NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, value_commitment);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, asset);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, asset_commitment);
-NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, ecdh_pub_key);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, rangeproof);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, surjectionproof);
+NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, blinding_pub_key);
+NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, ecdh_pub_key);
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus

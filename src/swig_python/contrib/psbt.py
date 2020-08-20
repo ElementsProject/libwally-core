@@ -215,30 +215,30 @@ class PSBTTests(unittest.TestCase):
                             psbt_find_output_unknown,
                             psbt, dummy_unknowns, dummy_pubkey)
         if is_elements_build():
-            self._try_get_set_b(psbt_set_output_blinding_pub_key,
-                                psbt_get_output_blinding_pub_key,
-                                psbt_get_output_blinding_pub_key_len, psbt, dummy_pubkey)
-            self._try_get_set_b(psbt_set_output_value_commitment,
-                                psbt_get_output_value_commitment,
-                                psbt_get_output_value_commitment_len, psbt, dummy_commitment)
             self._try_get_set_b(psbt_set_output_vbf,
                                 psbt_get_output_vbf,
                                 psbt_get_output_vbf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_output_value_commitment,
+                                psbt_get_output_value_commitment,
+                                psbt_get_output_value_commitment_len, psbt, dummy_commitment)
             self._try_get_set_b(psbt_set_output_asset_commitment,
                                 psbt_get_output_asset_commitment,
                                 psbt_get_output_asset_commitment_len, psbt, dummy_commitment)
             self._try_get_set_b(psbt_set_output_asset,
                                 psbt_get_output_asset,
                                 psbt_get_output_asset_len, psbt, dummy_asset)
-            self._try_get_set_b(psbt_set_output_ecdh_pub_key,
-                                psbt_get_output_ecdh_pub_key,
-                                psbt_get_output_ecdh_pub_key_len, psbt, dummy_pubkey)
             self._try_get_set_b(psbt_set_output_rangeproof,
                                 psbt_get_output_rangeproof,
                                 psbt_get_output_rangeproof_len, psbt, dummy_bytes)
             self._try_get_set_b(psbt_set_output_surjectionproof,
                                 psbt_get_output_surjectionproof,
                                 psbt_get_output_surjectionproof_len, psbt, dummy_bytes)
+            self._try_get_set_b(psbt_set_output_blinding_pub_key,
+                                psbt_get_output_blinding_pub_key,
+                                psbt_get_output_blinding_pub_key_len, psbt, dummy_pubkey)
+            self._try_get_set_b(psbt_set_output_ecdh_pub_key,
+                                psbt_get_output_ecdh_pub_key,
+                                psbt_get_output_ecdh_pub_key_len, psbt, dummy_pubkey)
 
 
 if __name__ == '__main__':
