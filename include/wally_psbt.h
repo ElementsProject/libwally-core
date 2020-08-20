@@ -93,10 +93,10 @@ struct wally_psbt_output {
     size_t value_commitment_len;
     unsigned char *vbf;
     size_t vbf_len;
+    unsigned char *asset;
+    size_t asset_len;
     unsigned char *asset_commitment;
     size_t asset_commitment_len;
-    unsigned char *abf;
-    size_t abf_len;
     unsigned char *ecdh_pub_key;
     size_t ecdh_pub_key_len;
     unsigned char *rangeproof;
@@ -970,16 +970,16 @@ WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
     size_t commitment_len);
 
 /**
- * Set the asset blinding factor in an elements output.
+ * Set the asset in an elements output.
  *
  * :param output: The output to update.
- * :param abf: The asset blinding factor.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * :param asset: The asset to set for this input..
+ * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
  */
-WALLY_CORE_API int wally_psbt_output_set_abf(
+WALLY_CORE_API int wally_psbt_output_set_asset(
     struct wally_psbt_output *output,
-    const unsigned char *abf,
-    size_t abf_len);
+    const unsigned char *asset,
+    size_t asset_len);
 
 /**
  * Set the ECDH public key in an elements output.

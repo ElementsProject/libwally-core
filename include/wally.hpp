@@ -1442,9 +1442,9 @@ inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_t
     return ret;
 }
 
-template <class OUTPUT, class ABF>
-inline int psbt_output_set_abf(const OUTPUT& output, const ABF& abf) {
-    int ret = ::wally_psbt_output_set_abf(detail::get_p(output), abf.data(), abf.size());
+template <class OUTPUT, class ASSET>
+inline int psbt_output_set_asset(const OUTPUT& output, const ASSET& asset) {
+    int ret = ::wally_psbt_output_set_asset(detail::get_p(output), asset.data(), asset.size());
     return ret;
 }
 

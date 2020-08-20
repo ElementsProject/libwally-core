@@ -97,10 +97,10 @@
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_output_abf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_abf_len(psbt, idx)];
+  public final static byte[] psbt_get_output_asset(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_asset_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_output_abf(psbt, idx, buf);
+      final int len = psbt_get_output_asset(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 

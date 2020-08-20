@@ -227,9 +227,9 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_output_asset_commitment,
                                 psbt_get_output_asset_commitment,
                                 psbt_get_output_asset_commitment_len, psbt, dummy_commitment)
-            self._try_get_set_b(psbt_set_output_abf,
-                                psbt_get_output_abf,
-                                psbt_get_output_abf_len, psbt, dummy_bf)
+            self._try_get_set_b(psbt_set_output_asset,
+                                psbt_get_output_asset,
+                                psbt_get_output_asset_len, psbt, dummy_asset)
             self._try_get_set_b(psbt_set_output_ecdh_pub_key,
                                 psbt_get_output_ecdh_pub_key,
                                 psbt_get_output_ecdh_pub_key_len, psbt, dummy_pubkey)
