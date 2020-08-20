@@ -230,9 +230,9 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_output_abf,
                                 psbt_get_output_abf,
                                 psbt_get_output_abf_len, psbt, dummy_bf)
-            self._try_get_set_b(psbt_set_output_nonce,
-                                psbt_get_output_nonce,
-                                psbt_get_output_nonce_len, psbt, dummy_nonce)
+            self._try_get_set_b(psbt_set_output_ecdh_pub_key,
+                                psbt_get_output_ecdh_pub_key,
+                                psbt_get_output_ecdh_pub_key_len, psbt, dummy_pubkey)
             self._try_get_set_b(psbt_set_output_rangeproof,
                                 psbt_get_output_rangeproof,
                                 psbt_get_output_rangeproof_len, psbt, dummy_bytes)

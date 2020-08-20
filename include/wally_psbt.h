@@ -97,8 +97,8 @@ struct wally_psbt_output {
     size_t asset_commitment_len;
     unsigned char *abf;
     size_t abf_len;
-    unsigned char *nonce;
-    size_t nonce_len;
+    unsigned char *ecdh_pub_key;
+    size_t ecdh_pub_key_len;
     unsigned char *rangeproof;
     size_t rangeproof_len;
     unsigned char *surjectionproof;
@@ -982,16 +982,16 @@ WALLY_CORE_API int wally_psbt_output_set_abf(
     size_t abf_len);
 
 /**
- * Set the nonce commitment in an elements output.
+ * Set the ECDH public key in an elements output.
  *
  * :param output: The output to update.
- * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param pub_key: The ECDH public key used for blinding for this output.
+ * :param pub_key_len: Size of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  */
-WALLY_CORE_API int wally_psbt_output_set_nonce(
+WALLY_CORE_API int wally_psbt_output_set_ecdh_pub_key(
     struct wally_psbt_output *output,
-    const unsigned char *nonce,
-    size_t nonce_len);
+    const unsigned char *pub_key,
+    size_t pub_key_len);
 
 /**
  * Set the range proof in an elements output.

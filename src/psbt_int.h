@@ -52,7 +52,7 @@ NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, value_commitment);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, vbf);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, asset_commitment);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, abf);
-NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, nonce);
+NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, ecdh_pub_key);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, rangeproof);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, surjectionproof);
 #endif /* BUILD_ELEMENTS */

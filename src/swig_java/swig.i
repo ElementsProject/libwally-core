@@ -538,8 +538,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_output_keypaths_size);
 %returns_size_t(wally_psbt_get_output_keypath);
 %returns_size_t(wally_psbt_get_output_keypath_len);
-%returns_size_t(wally_psbt_get_output_nonce);
-%returns_size_t(wally_psbt_get_output_nonce_len);
+%returns_size_t(wally_psbt_get_output_ecdh_pub_key);
+%returns_size_t(wally_psbt_get_output_ecdh_pub_key_len);
 %returns_size_t(wally_psbt_get_output_rangeproof);
 %returns_size_t(wally_psbt_get_output_rangeproof_len);
 %returns_size_t(wally_psbt_get_output_redeem_script);
@@ -589,7 +589,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_output_asset_commitment);
 %returns_void__(wally_psbt_set_output_blinding_pubkey);
 %returns_void__(wally_psbt_set_output_keypaths);
-%returns_void__(wally_psbt_set_output_nonce);
+%returns_void__(wally_psbt_set_output_ecdh_pub_key);
 %returns_void__(wally_psbt_set_output_rangeproof);
 %returns_void__(wally_psbt_set_output_redeem_script);
 %returns_void__(wally_psbt_set_output_surjectionproof);
