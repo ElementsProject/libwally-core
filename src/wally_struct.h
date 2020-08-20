@@ -28,14 +28,16 @@
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i, const struct STRUCT_TYPE *ps); \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME ## _alloc(const struct PARENT *p, size_t i, struct STRUCT_TYPE **output)
 
-#define NESTED_STRUCT_IMPL(SCOPE, PARENT, COLLECTION, STRUCT_TYPE, NAME, CLONE_FN) \
+#define NESTED_STRUCT_IMPL(SCOPE, PARENT, COLLECTION, STRUCT_TYPE, NAME, CLONE_FN, USE_SETTER) \
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i, const struct STRUCT_TYPE *ps) { \
-        struct STRUCT_TYPE *new_ps = NULL; \
-        int ret; \
         if (!p || i >= p->num_ ## COLLECTION ## s) return WALLY_EINVAL; \
-        ret = ps ? CLONE_FN(ps, &new_ps) : WALLY_OK; \
-        if (ret == WALLY_OK) { STRUCT_TYPE ## _free(p->COLLECTION ## s[i].NAME); p->COLLECTION ## s[i].NAME = new_ps; } \
-        return ret; \
+        if (USE_SETTER) return PARENT ## _ ## COLLECTION ## _set_ ## NAME(&p->COLLECTION ## s[i], ps); \
+        else { \
+            struct STRUCT_TYPE *new_ps = NULL; \
+            int ret = ps ? CLONE_FN(ps, &new_ps) : WALLY_OK; \
+            if (ret == WALLY_OK) { STRUCT_TYPE ## _free(p->COLLECTION ## s[i].NAME); p->COLLECTION ## s[i].NAME = new_ps; } \
+            return ret; \
+        } \
     } \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME ## _alloc(const struct PARENT *p, size_t i, struct STRUCT_TYPE **output) { \
         if (output) *output = NULL; \
@@ -49,9 +51,10 @@
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME(const struct PARENT *p, size_t i, unsigned char *bytes_out, size_t len, size_t *written); \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME ## _len(const struct PARENT *p, size_t i, size_t *written)
 
-#define NESTED_VARBUF_IMPL(SCOPE, PARENT, COLLECTION, NAME) \
+#define NESTED_VARBUF_IMPL(SCOPE, PARENT, COLLECTION, NAME, USE_SETTER) \
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i, const unsigned char *bytes, size_t bytes_len) { \
         if (!p || i >= p->num_ ## COLLECTION ## s) return WALLY_EINVAL; \
+        if (USE_SETTER) return PARENT ## _ ## COLLECTION ## _set_ ## NAME(&p->COLLECTION ## s[i], bytes, bytes_len); \
         return replace_bytes(bytes, bytes_len, &p->COLLECTION ## s[i].NAME, &p->COLLECTION ## s[i].NAME ## _len); \
     } \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME(const struct PARENT *p, size_t i, unsigned char *bytes_out, size_t len, size_t *written) { \
@@ -73,9 +76,10 @@
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i, INT_TYPE value); \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME(const struct PARENT *p, size_t i, INT_TYPE *value_out)
 
-#define NESTED_INT____IMPL(SCOPE, PARENT, COLLECTION, INT_TYPE, NAME) \
+#define NESTED_INT____IMPL(SCOPE, PARENT, COLLECTION, INT_TYPE, NAME, USE_SETTER) \
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i, INT_TYPE value) { \
         if (!p || i >= p->num_ ## COLLECTION ## s) return WALLY_EINVAL; \
+        if (USE_SETTER) return PARENT ## _ ## COLLECTION ## _set_ ## NAME(&p->COLLECTION ## s[i], value); \
         p->COLLECTION ## s[i].NAME = value; \
         return WALLY_OK; \
     } \
@@ -92,9 +96,10 @@
     SCOPE int PARENT ## _clear_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i); \
     SCOPE int PARENT ## _has_ ## COLLECTION ## _ ## NAME(const struct PARENT *p, size_t i, size_t *written)
 
-#define NESTED_OPTINT_IMPL(SCOPE, PARENT, COLLECTION, INT_TYPE, NAME) \
+#define NESTED_OPTINT_IMPL(SCOPE, PARENT, COLLECTION, INT_TYPE, NAME, USE_SETTER) \
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME(struct PARENT *p, size_t i, INT_TYPE value) { \
         if (!p || i >= p->num_ ## COLLECTION ## s) return WALLY_EINVAL; \
+        if (USE_SETTER) return PARENT ## _ ## COLLECTION ## _set_ ## NAME(&p->COLLECTION ## s[i], value); \
         p->COLLECTION ## s[i].NAME = value; p->COLLECTION ## s[i].has_ ## NAME = 1u; \
         return WALLY_OK; \
     } \
@@ -123,9 +128,10 @@
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME(const struct PARENT *p, size_t i, size_t sub_i, unsigned char *bytes_out, size_t len, size_t *written); \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME ## _len(const struct PARENT *p, size_t i, size_t sub_i, size_t *written)
 
-#define NESTED_MAP____IMPL(SCOPE, PARENT, COLLECTION, NAME, CHECK_FN) \
+#define NESTED_MAP____IMPL(SCOPE, PARENT, COLLECTION, NAME, CHECK_FN, USE_SETTER) \
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME ## s(struct PARENT *p, size_t i, const struct wally_map *map_in) { \
         if (!p || i >= p->num_ ## COLLECTION ## s) return WALLY_EINVAL; \
+        if (USE_SETTER) return PARENT ## _ ## COLLECTION ## _set_ ## NAME ## s(&p->COLLECTION ## s[i], map_in); \
         return map_assign(map_in, &p->COLLECTION ## s[i].NAME ## s, CHECK_FN); \
     } \
     SCOPE int PARENT ## _get_ ## COLLECTION ## _ ## NAME ## s_size(const struct PARENT *p, size_t i, size_t *written) { \
