@@ -97,7 +97,7 @@ static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT
 #define PSET_OUT_ASSET_COMMITMENT 0x03
 #define PSET_OUT_RANGE_PROOF 0x04
 #define PSET_OUT_SURJECTION_PROOF 0x05
-#define PSET_OUT_BLINDING_PUBKEY 0x06
+#define PSET_OUT_BLINDING_PUB_KEY 0x06
 #define PSET_OUT_ECDH_PUB_KEY 0x07
 
 static const output_bytes_setter_fn PSET_OUTPUT_SETTERS[PSET_OUT_ECDH_PUB_KEY + 1] = {
@@ -107,7 +107,7 @@ static const output_bytes_setter_fn PSET_OUTPUT_SETTERS[PSET_OUT_ECDH_PUB_KEY + 
     wally_psbt_output_set_asset_commitment, /* PSET_OUT_ASSET_COMMITMENT */
     wally_psbt_output_set_rangeproof, /* PSET_OUT_RANGE_PROOF */
     wally_psbt_output_set_surjectionproof, /* PSET_OUT_SURJECTION_PROOF */
-    wally_psbt_output_set_blinding_pubkey, /* PSET_OUT_BLINDING_PUBKEY */
+    wally_psbt_output_set_blinding_pub_key, /* PSET_OUT_BLINDING_PUB_KEY */
     wally_psbt_output_set_ecdh_pub_key, /* PSET_OUT_ECDH_PUB_KEY */
 };
 
@@ -550,9 +550,9 @@ ADD_KEYPATH(wally_psbt_output)
 SET_MAP(wally_psbt_output, unknown, NULL)
 
 #ifdef BUILD_ELEMENTS
-int wally_psbt_output_set_blinding_pubkey(struct wally_psbt_output *output,
-                                          const unsigned char *pub_key,
-                                          size_t pub_key_len)
+int wally_psbt_output_set_blinding_pub_key(struct wally_psbt_output *output,
+                                           const unsigned char *pub_key,
+                                           size_t pub_key_len)
 {
     int ret;
     if (!output || BYTES_INVALID(pub_key, pub_key_len))
@@ -561,7 +561,7 @@ int wally_psbt_output_set_blinding_pubkey(struct wally_psbt_output *output,
         (ret = wally_ec_public_key_verify(pub_key, pub_key_len)) != WALLY_OK)
         return ret;
     return replace_bytes(pub_key, pub_key_len,
-                         &output->blinding_pubkey, &output->blinding_pubkey_len);
+                         &output->blinding_pub_key, &output->blinding_pub_key_len);
 }
 
 SET_BYTES_N(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN)
@@ -1350,7 +1350,7 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
             case PSET_OUT_ASSET_COMMITMENT:
             case PSET_OUT_RANGE_PROOF:
             case PSET_OUT_SURJECTION_PROOF:
-            case PSET_OUT_BLINDING_PUBKEY:
+            case PSET_OUT_BLINDING_PUB_KEY:
             case PSET_OUT_ECDH_PUB_KEY:
                 subfield_nomore_end(cursor, max, key, key_len);
                 ret = pull_output_bytes(cursor, max, field_type, &elements_keyset, result,
@@ -1799,8 +1799,8 @@ static int push_psbt_output(unsigned char **cursor, size_t *max,
                           output->rangeproof, output->rangeproof_len);
     push_elements_varbuff(cursor, max, PSET_OUT_SURJECTION_PROOF,
                           output->surjectionproof, output->surjectionproof_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_BLINDING_PUBKEY,
-                          output->blinding_pubkey, output->blinding_pubkey_len);
+    push_elements_varbuff(cursor, max, PSET_OUT_BLINDING_PUB_KEY,
+                          output->blinding_pub_key, output->blinding_pub_key_len);
     push_elements_varbuff(cursor, max, PSET_OUT_ECDH_PUB_KEY,
                           output->ecdh_pub_key, output->ecdh_pub_key_len);
 #endif /* BUILD_ELEMENTS */
@@ -2037,7 +2037,7 @@ static int combine_outputs(struct wally_psbt_output *dst,
     COMBINE_BYTES(output, witness_script);
 
 #ifdef BUILD_ELEMENTS
-    COMBINE_BYTES(output, blinding_pubkey);
+    COMBINE_BYTES(output, blinding_pub_key);
     COMBINE_BYTES(output, value_commitment);
     COMBINE_BYTES(output, vbf);
     COMBINE_BYTES(output, asset);
@@ -2691,7 +2691,7 @@ NESTED_VARBUF_IMPL(/**/, wally_psbt, output, witness_script)
 NESTED_MAP____IMPL(/**/, wally_psbt, output, keypath, wally_ec_public_key_verify)
 NESTED_MAP____IMPL(/**/, wally_psbt, output, unknown, NULL)
 #ifdef BUILD_ELEMENTS
-NESTED_VARBUF_IMPL(/**/, wally_psbt, output, blinding_pubkey)
+NESTED_VARBUF_IMPL(/**/, wally_psbt, output, blinding_pub_key)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, value_commitment)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, vbf)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, asset_commitment)

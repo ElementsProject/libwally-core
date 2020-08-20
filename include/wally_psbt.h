@@ -87,8 +87,8 @@ struct wally_psbt_output {
     struct wally_map keypaths;
     struct wally_map unknowns;
 #ifdef BUILD_ELEMENTS
-    unsigned char *blinding_pubkey;
-    size_t blinding_pubkey_len;
+    unsigned char *blinding_pub_key;
+    size_t blinding_pub_key_len;
     unsigned char *value_commitment;
     size_t value_commitment_len;
     unsigned char *vbf;
@@ -928,7 +928,7 @@ WALLY_CORE_API int wally_psbt_input_set_pegin_claim_script(
  * :param pub_key: The blinding pubkey for this output.
  * :param pub_key_len: Length of ``pub_key`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_output_set_blinding_pubkey(
+WALLY_CORE_API int wally_psbt_output_set_blinding_pub_key(
     struct wally_psbt_output *output,
     const unsigned char *pub_key,
     size_t pub_key_len);

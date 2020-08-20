@@ -1455,8 +1455,8 @@ inline int psbt_output_set_asset_commitment(const OUTPUT& output, const COMMITME
 }
 
 template <class OUTPUT, class PUB_KEY>
-inline int psbt_output_set_blinding_pubkey(const OUTPUT& output, const PUB_KEY& pub_key) {
-    int ret = ::wally_psbt_output_set_blinding_pubkey(detail::get_p(output), pub_key.data(), pub_key.size());
+inline int psbt_output_set_blinding_pub_key(const OUTPUT& output, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_output_set_blinding_pub_key(detail::get_p(output), pub_key.data(), pub_key.size());
     return ret;
 }
 

@@ -111,10 +111,10 @@
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_output_blinding_pubkey(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_blinding_pubkey_len(psbt, idx)];
+  public final static byte[] psbt_get_output_blinding_pub_key(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_blinding_pub_key_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_output_blinding_pubkey(psbt, idx, buf);
+      final int len = psbt_get_output_blinding_pub_key(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 

@@ -215,9 +215,9 @@ class PSBTTests(unittest.TestCase):
                             psbt_find_output_unknown,
                             psbt, dummy_unknowns, dummy_pubkey)
         if is_elements_build():
-            self._try_get_set_b(psbt_set_output_blinding_pubkey,
-                                psbt_get_output_blinding_pubkey,
-                                psbt_get_output_blinding_pubkey_len, psbt, dummy_pubkey)
+            self._try_get_set_b(psbt_set_output_blinding_pub_key,
+                                psbt_get_output_blinding_pub_key,
+                                psbt_get_output_blinding_pub_key_len, psbt, dummy_pubkey)
             self._try_get_set_b(psbt_set_output_value_commitment,
                                 psbt_get_output_value_commitment,
                                 psbt_get_output_value_commitment_len, psbt, dummy_commitment)

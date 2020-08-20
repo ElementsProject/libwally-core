@@ -268,7 +268,7 @@ if is_elements_build():
     psbt_get_input_pegin_claim_script = _wrap_bin(psbt_get_input_pegin_claim_script,
                                                   psbt_get_input_pegin_claim_script_len, resize=True)
 
-    psbt_get_output_blinding_pubkey = _wrap_bin(psbt_get_output_blinding_pubkey, psbt_get_output_blinding_pubkey_len, resize=True)
+    psbt_get_output_blinding_pub_key = _wrap_bin(psbt_get_output_blinding_pub_key, psbt_get_output_blinding_pub_key_len, resize=True)
     psbt_get_output_value_commitment = _wrap_bin(psbt_get_output_value_commitment, psbt_get_output_value_commitment_len, resize=True)
     psbt_get_output_vbf = _wrap_bin(psbt_get_output_vbf, psbt_get_output_vbf_len, resize=True)
     psbt_get_output_asset_commitment = _wrap_bin(psbt_get_output_asset_commitment, psbt_get_output_asset_commitment_len, resize=True)

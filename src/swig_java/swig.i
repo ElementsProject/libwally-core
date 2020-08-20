@@ -533,8 +533,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_output_asset_len);
 %returns_size_t(wally_psbt_get_output_asset_commitment);
 %returns_size_t(wally_psbt_get_output_asset_commitment_len);
-%returns_size_t(wally_psbt_get_output_blinding_pubkey);
-%returns_size_t(wally_psbt_get_output_blinding_pubkey_len);
+%returns_size_t(wally_psbt_get_output_blinding_pub_key);
+%returns_size_t(wally_psbt_get_output_blinding_pub_key_len);
 %returns_size_t(wally_psbt_get_output_keypaths_size);
 %returns_size_t(wally_psbt_get_output_keypath);
 %returns_size_t(wally_psbt_get_output_keypath_len);
@@ -587,7 +587,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_input_witness_utxo);
 %returns_void__(wally_psbt_set_output_asset);
 %returns_void__(wally_psbt_set_output_asset_commitment);
-%returns_void__(wally_psbt_set_output_blinding_pubkey);
+%returns_void__(wally_psbt_set_output_blinding_pub_key);
 %returns_void__(wally_psbt_set_output_keypaths);
 %returns_void__(wally_psbt_set_output_ecdh_pub_key);
 %returns_void__(wally_psbt_set_output_rangeproof);
