@@ -146,13 +146,6 @@
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_output_vbf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_vbf_len(psbt, idx)];
-      if (buf.length == 0) return buf;
-      final int len = psbt_get_output_vbf(psbt, idx, buf);
-      return checkBuffer(buf, len);
-  }
-
   public final static byte[] tx_confidential_value_from_satoshi(long satoshi) {
       return tx_confidential_value_from_satoshi(satoshi, null);
   }

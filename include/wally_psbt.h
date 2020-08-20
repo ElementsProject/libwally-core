@@ -87,8 +87,8 @@ struct wally_psbt_output {
     struct wally_map keypaths;
     struct wally_map unknowns;
 #ifdef BUILD_ELEMENTS
-    unsigned char *vbf;
-    size_t vbf_len;
+    uint64_t value;
+    uint32_t has_value;
     unsigned char *value_commitment;
     size_t value_commitment_len;
     unsigned char *asset;
@@ -946,16 +946,32 @@ WALLY_CORE_API int wally_psbt_output_set_value_commitment(
     size_t commitment_len);
 
 /**
- * Set the value blinding factor in an elements output.
+ * Set the value in an elements output.
  *
  * :param output: The output to update.
- * :param vbf: The value blinding factor.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param value: The value for this output.
  */
-WALLY_CORE_API int wally_psbt_output_set_vbf(
+WALLY_CORE_API int wally_psbt_output_set_value(
     struct wally_psbt_output *output,
-    const unsigned char *vbf,
-    size_t vbf_len);
+    uint64_t value);
+
+/**
+ * Clear the value in an elements output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_value(
+    struct wally_psbt_output *output);
+
+/**
+ * Determine if the value is set in an elements output.
+ *
+ * :param output: The output to query.
+ * :param written: On success, set to one if the value is set, otherwise zero.
+ */
+int wally_psbt_output_has_value(
+    const struct wally_psbt_output *output,
+    size_t *written);
 
 /**
  * Set the asset commitment in an elements output.

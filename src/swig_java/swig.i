@@ -471,6 +471,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_add_output_at);
 %returns_void__(wally_psbt_clear_input_issuance_amount);
 %returns_void__(wally_psbt_clear_input_value);
+%returns_void__(wally_psbt_clear_output_value);
 %returns_struct(wally_psbt_clone_alloc, wally_psbt);
 %rename("psbt_clone") wally_psbt_clone_alloc;
 %returns_void__(wally_psbt_combine);
@@ -551,8 +552,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_output_unknowns_size);
 %returns_size_t(wally_psbt_get_output_value_commitment);
 %returns_size_t(wally_psbt_get_output_value_commitment_len);
-%returns_size_t(wally_psbt_get_output_vbf);
-%returns_size_t(wally_psbt_get_output_vbf_len);
+%returns_uint64(wally_psbt_get_output_value);
 %returns_size_t(wally_psbt_get_output_witness_script);
 %returns_size_t(wally_psbt_get_output_witness_script_len);
 %returns_size_t(wally_psbt_get_version);
@@ -595,7 +595,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_output_surjectionproof);
 %returns_void__(wally_psbt_set_output_unknowns);
 %returns_void__(wally_psbt_set_output_value_commitment);
-%returns_void__(wally_psbt_set_output_vbf);
+%returns_void__(wally_psbt_set_output_value);
 %returns_void__(wally_psbt_set_output_witness_script);
 %returns_void__(wally_psbt_sign);
 %returns_string(wally_psbt_to_base64);

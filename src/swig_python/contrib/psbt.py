@@ -80,8 +80,6 @@ class PSBTTests(unittest.TestCase):
         dummy_path = [1234, 1234, 1234]
         dummy_sig = bytearray(b'\x00' * 72)
         if is_elements_build():
-            dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
-            dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
             dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
 
@@ -159,7 +157,9 @@ class PSBTTests(unittest.TestCase):
                 (psbt_get_input_issuance_amount, psbt_set_input_issuance_amount,
                     psbt_has_input_issuance_amount, psbt_clear_input_issuance_amount),
                 (psbt_get_input_pegin_value, psbt_set_input_pegin_value,
-                    psbt_has_input_pegin_value, psbt_clear_input_pegin_value)]:
+                    psbt_has_input_pegin_value, psbt_clear_input_pegin_value),
+                (psbt_get_output_value, psbt_set_output_value,
+                    psbt_has_output_value, psbt_clear_output_value)]:
                 self._try_set(set_fn, psbt, 1234567, 0)
                 self._try_invalid(has_fn, psbt)
                 self._try_invalid(get_fn, psbt)
@@ -215,9 +215,7 @@ class PSBTTests(unittest.TestCase):
                             psbt_find_output_unknown,
                             psbt, dummy_unknowns, dummy_pubkey)
         if is_elements_build():
-            self._try_get_set_b(psbt_set_output_vbf,
-                                psbt_get_output_vbf,
-                                psbt_get_output_vbf_len, psbt, dummy_bf)
+            # Note: "value" tested with inputs above
             self._try_get_set_b(psbt_set_output_value_commitment,
                                 psbt_get_output_value_commitment,
                                 psbt_get_output_value_commitment_len, psbt, dummy_commitment)

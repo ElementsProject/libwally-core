@@ -1442,6 +1442,17 @@ inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_t
     return ret;
 }
 
+inline int psbt_output_clear_value(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_value(output);
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_has_value(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_has_value(detail::get_p(output), written);
+    return ret;
+}
+
 template <class OUTPUT, class ASSET>
 inline int psbt_output_set_asset(const OUTPUT& output, const ASSET& asset) {
     int ret = ::wally_psbt_output_set_asset(detail::get_p(output), asset.data(), asset.size());
@@ -1478,15 +1489,15 @@ inline int psbt_output_set_surjectionproof(const OUTPUT& output, const PROOF& pr
     return ret;
 }
 
-template <class OUTPUT, class COMMITMENT>
-inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITMENT& commitment) {
-    int ret = ::wally_psbt_output_set_value_commitment(detail::get_p(output), commitment.data(), commitment.size());
+template <class OUTPUT>
+inline int psbt_output_set_value(const OUTPUT& output, uint64_t value) {
+    int ret = ::wally_psbt_output_set_value(detail::get_p(output), value);
     return ret;
 }
 
-template <class OUTPUT, class VBF>
-inline int psbt_output_set_vbf(const OUTPUT& output, const VBF& vbf) {
-    int ret = ::wally_psbt_output_set_vbf(detail::get_p(output), vbf.data(), vbf.size());
+template <class OUTPUT, class COMMITMENT>
+inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_output_set_value_commitment(detail::get_p(output), commitment.data(), commitment.size());
     return ret;
 }
 

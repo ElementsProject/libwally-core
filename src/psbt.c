@@ -91,7 +91,7 @@ static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT
     wally_psbt_input_set_pegin_claim_script /* PSET_IN_PEGIN_CLAIM_SCRIPT */
 };
 
-#define PSET_OUT_VALUE_BLINDER 0x00
+#define PSET_OUT_VALUE 0x00
 #define PSET_OUT_VALUE_COMMITMENT 0x01
 #define PSET_OUT_ASSET 0x02
 #define PSET_OUT_ASSET_COMMITMENT 0x03
@@ -101,7 +101,7 @@ static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT
 #define PSET_OUT_ECDH_PUB_KEY 0x07
 
 static const output_bytes_setter_fn PSET_OUTPUT_SETTERS[PSET_OUT_ECDH_PUB_KEY + 1] = {
-    wally_psbt_output_set_vbf, /* PSET_OUT_VALUE_BLINDER */
+    NULL, /* PSET_OUT_VALUE */
     wally_psbt_output_set_value_commitment, /* PSET_OUT_VALUE_COMMITMENT */
     wally_psbt_output_set_asset, /* PSET_OUT_ASSET */
     wally_psbt_output_set_asset_commitment, /* PSET_OUT_ASSET_COMMITMENT */
@@ -565,7 +565,7 @@ int wally_psbt_output_set_blinding_pub_key(struct wally_psbt_output *output,
 }
 
 SET_BYTES_N(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN)
-SET_BYTES_N(wally_psbt_output, vbf, BLINDING_FACTOR_LEN)
+SET_OPTIONAL_INT(wally_psbt_output, value, uint64_t)
 SET_BYTES_N(wally_psbt_output, asset, ASSET_TAG_LEN)
 SET_BYTES_N(wally_psbt_output, asset_commitment, ASSET_COMMITMENT_LEN)
 SET_BYTES_N(wally_psbt_output, ecdh_pub_key, EC_PUBLIC_KEY_LEN)
@@ -582,7 +582,6 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->unknowns);
 
 #ifdef BUILD_ELEMENTS
-        clear_and_free(output->vbf, output->vbf_len);
         clear_and_free(output->value_commitment, output->value_commitment_len);
         clear_and_free(output->asset, output->asset_len);
         clear_and_free(output->asset_commitment, output->asset_commitment_len);
@@ -1345,7 +1344,11 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
 
             field_type = pull_varint(&key, &key_len);
             switch (field_type) {
-            case PSET_OUT_VALUE_BLINDER:
+            case PSET_OUT_VALUE:
+                subfield_nomore_end(cursor, max, key, key_len);
+                ret = pull_uint64_value(cursor, max, &result->value,
+                                        &result->has_value);
+                break;
             case PSET_OUT_VALUE_COMMITMENT:
             case PSET_OUT_ASSET:
             case PSET_OUT_ASSET_COMMITMENT:
@@ -1788,8 +1791,11 @@ static int push_psbt_output(unsigned char **cursor, size_t *max,
     push_typed_map(cursor, max, PSBT_OUT_BIP32_DERIVATION, &output->keypaths);
 
 #ifdef BUILD_ELEMENTS
-    push_elements_varbuff(cursor, max, PSET_OUT_VALUE_BLINDER,
-                          output->vbf, output->vbf_len);
+    if (output->has_value) {
+        push_elements_key(cursor, max, PSET_OUT_VALUE);
+        push_varint(cursor, max, sizeof(leint64_t));
+        push_le64(cursor, max, output->value);
+    }
     push_elements_varbuff(cursor, max, PSET_OUT_VALUE_COMMITMENT,
                           output->value_commitment, output->value_commitment_len);
     push_elements_varbuff(cursor, max, PSET_OUT_ASSET,
@@ -2038,7 +2044,10 @@ static int combine_outputs(struct wally_psbt_output *dst,
     COMBINE_BYTES(output, witness_script);
 
 #ifdef BUILD_ELEMENTS
-    COMBINE_BYTES(output, vbf);
+    if (!dst->has_value && src->has_value) {
+        dst->value = src->value;
+        dst->has_value = 1u;
+    }
     COMBINE_BYTES(output, value_commitment);
     COMBINE_BYTES(output, asset);
     COMBINE_BYTES(output, asset_commitment);
@@ -2692,7 +2701,7 @@ NESTED_VARBUF_IMPL(/**/, wally_psbt, output, witness_script)
 NESTED_MAP____IMPL(/**/, wally_psbt, output, keypath, wally_ec_public_key_verify)
 NESTED_MAP____IMPL(/**/, wally_psbt, output, unknown, NULL)
 #ifdef BUILD_ELEMENTS
-NESTED_VARBUF_IMPL(/**/, wally_psbt, output, vbf)
+NESTED_OPTINT_IMPL(/**/, wally_psbt, output, uint64_t, value)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, value_commitment)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, asset)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, asset_commitment)

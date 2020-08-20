@@ -47,7 +47,7 @@ NESTED_MAP____DECL(WALLY_CORE_API, wally_psbt, output, keypath);
 NESTED_MAP____DECL(WALLY_CORE_API, wally_psbt, output, unknown);
 
 #ifdef BUILD_ELEMENTS
-NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, vbf);
+NESTED_OPTINT_DECL(WALLY_CORE_API, wally_psbt, output, uint64_t, value);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, value_commitment);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, asset);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, asset_commitment);
