@@ -386,6 +386,10 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
     return ret;
 }
 
+static inline int no_op_1(const void *p) {
+    (void)p; return WALLY_OK;
+}
+
 /* Set a struct member on a parent struct */
 #define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, const struct STRUCT_TYPE *p) { \
@@ -399,18 +403,20 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
     }
 
 /* Set a varbuff on a parent struct with optional length check */
-#define SET_VARBUF(PARENT, NAME, SIZE) \
+#define SET_VARBUF(PARENT, NAME, SIZE, POST_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, const unsigned char *bytes, size_t len) { \
+        int ret; \
         if (!parent || (SIZE && BYTES_INVALID_N(bytes, len, SIZE))) return WALLY_EINVAL; \
-        return replace_bytes(bytes, len, \
-                             &parent->NAME, &parent->NAME ## _len); \
+        ret = replace_bytes(bytes, len, &parent->NAME, &parent->NAME ## _len); \
+        if (ret == WALLY_OK && bytes != NULL) ret = POST_FN(parent); \
+        return ret; \
     }
 
-#define SET_OPTIONAL_INT(PARENT, NAME, INT_TYPE) \
+#define SET_OPTINT(PARENT, NAME, INT_TYPE, POST_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, INT_TYPE value) { \
         if (!parent) return WALLY_EINVAL; \
         parent->NAME = value; parent->has_ ## NAME = 1u; \
-        return WALLY_OK; \
+        return POST_FN(parent); \
     } \
     int PARENT ## _clear_ ## NAME(struct PARENT *parent) { \
         if (!parent) return WALLY_EINVAL; \
@@ -471,9 +477,9 @@ SET_STRUCT(wally_psbt_input, utxo, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
            wally_tx_output_clone_alloc, wally_tx_output_free)
-SET_VARBUF(wally_psbt_input, redeem_script, 0)
-SET_VARBUF(wally_psbt_input, witness_script, 0)
-SET_VARBUF(wally_psbt_input, final_scriptsig, 0)
+SET_VARBUF(wally_psbt_input, redeem_script, 0, no_op_1)
+SET_VARBUF(wally_psbt_input, witness_script, 0, no_op_1)
+SET_VARBUF(wally_psbt_input, final_scriptsig, 0, no_op_1)
 SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify)
@@ -490,18 +496,25 @@ int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighas
 }
 
 #ifdef BUILD_ELEMENTS
-SET_OPTIONAL_INT(wally_psbt_input, issuance_amount, uint64_t)
-SET_VARBUF(wally_psbt_input, issuance_amount_commitment, ASSET_COMMITMENT_LEN)
-SET_VARBUF(wally_psbt_input, issuance_amount_rangeproof, 0)
-SET_VARBUF(wally_psbt_input, inflation_keys_rangeproof, 0)
-SET_OPTIONAL_INT(wally_psbt_input, pegin_value, uint64_t)
+static int input_clear_issuance_amount_commitment(struct wally_psbt_input *input)
+{
+    return wally_psbt_input_set_issuance_amount_commitment(input, NULL, 0);
+}
+
+SET_OPTINT(wally_psbt_input, issuance_amount, uint64_t,
+           input_clear_issuance_amount_commitment)
+SET_VARBUF(wally_psbt_input, issuance_amount_commitment, ASSET_COMMITMENT_LEN,
+           wally_psbt_input_clear_issuance_amount)
+SET_VARBUF(wally_psbt_input, issuance_amount_rangeproof, 0, no_op_1)
+SET_VARBUF(wally_psbt_input, inflation_keys_rangeproof, 0, no_op_1)
+SET_OPTINT(wally_psbt_input, pegin_value, uint64_t, no_op_1)
 SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, pegin_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
-SET_VARBUF(wally_psbt_input, pegin_txoutproof, 0)
-SET_VARBUF(wally_psbt_input, pegin_genesis_blockhash, SHA256_LEN)
-SET_VARBUF(wally_psbt_input, pegin_claim_script, 0)
+SET_VARBUF(wally_psbt_input, pegin_txoutproof, 0, no_op_1)
+SET_VARBUF(wally_psbt_input, pegin_genesis_blockhash, SHA256_LEN, no_op_1)
+SET_VARBUF(wally_psbt_input, pegin_claim_script, 0, no_op_1)
 #endif /* BUILD_ELEMENTS */
 
 static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
@@ -535,13 +548,28 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
     return WALLY_OK;
 }
 
-SET_VARBUF(wally_psbt_output, redeem_script, 0)
-SET_VARBUF(wally_psbt_output, witness_script, 0)
+SET_VARBUF(wally_psbt_output, redeem_script, 0, no_op_1)
+SET_VARBUF(wally_psbt_output, witness_script, 0, no_op_1)
 SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify)
 ADD_KEYPATH(wally_psbt_output)
 SET_MAP(wally_psbt_output, unknown, NULL)
 
 #ifdef BUILD_ELEMENTS
+static int output_clear_value_commitment(struct wally_psbt_output *output)
+{
+    return wally_psbt_output_set_value_commitment(output, NULL, 0);
+}
+
+static int output_clear_asset(struct wally_psbt_output *output)
+{
+    return wally_psbt_output_set_asset(output, NULL, 0);
+}
+
+static int output_clear_asset_commitment(struct wally_psbt_output *output)
+{
+    return wally_psbt_output_set_asset_commitment(output, NULL, 0);
+}
+
 int wally_psbt_output_set_blinding_pub_key(struct wally_psbt_output *output,
                                            const unsigned char *pub_key,
                                            size_t pub_key_len)
@@ -556,13 +584,13 @@ int wally_psbt_output_set_blinding_pub_key(struct wally_psbt_output *output,
                          &output->blinding_pub_key, &output->blinding_pub_key_len);
 }
 
-SET_VARBUF(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN)
-SET_OPTIONAL_INT(wally_psbt_output, value, uint64_t)
-SET_VARBUF(wally_psbt_output, asset, ASSET_TAG_LEN)
-SET_VARBUF(wally_psbt_output, asset_commitment, ASSET_COMMITMENT_LEN)
-SET_VARBUF(wally_psbt_output, ecdh_pub_key, EC_PUBLIC_KEY_LEN)
-SET_VARBUF(wally_psbt_output, rangeproof, 0)
-SET_VARBUF(wally_psbt_output, surjectionproof, 0)
+SET_OPTINT(wally_psbt_output, value, uint64_t, output_clear_value_commitment)
+SET_VARBUF(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN, wally_psbt_output_clear_value)
+SET_VARBUF(wally_psbt_output, asset, ASSET_TAG_LEN, output_clear_asset_commitment)
+SET_VARBUF(wally_psbt_output, asset_commitment, ASSET_COMMITMENT_LEN, output_clear_asset)
+SET_VARBUF(wally_psbt_output, ecdh_pub_key, EC_PUBLIC_KEY_LEN, no_op_1)
+SET_VARBUF(wally_psbt_output, rangeproof, 0, no_op_1)
+SET_VARBUF(wally_psbt_output, surjectionproof, 0, no_op_1)
 #endif/* BUILD_ELEMENTS */
 
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)

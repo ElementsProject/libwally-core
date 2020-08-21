@@ -778,10 +778,28 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
  *
  * :param input: The input to update.
  * :param value: The issuance amount for this input.
+ *
+ * .. note:: On success, the inputs blinded issuance amount is cleared.
  */
 WALLY_CORE_API int wally_psbt_input_set_issuance_amount(
     struct wally_psbt_input *input,
     uint64_t value);
+
+/**
+ * Set the blinded issuance amount in an elements input.
+ *
+ * :param input: The input to update.
+ * :param commitment: The blinded issuance amount.
+ * :param commitment_len: Length of ``commitment``.
+ *|     Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
+ *
+ * .. note:: On success, if ``commitment`` is not NULL,
+ *|    the inputs unblinded issuance amount is cleared.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_commitment(
+    struct wally_psbt_input *input,
+    const unsigned char *commitment,
+    size_t commitment_len);
 
 /**
  * Clear the unblinded issuance amount in an elements input.
@@ -828,18 +846,6 @@ WALLY_CORE_API int wally_psbt_input_clear_pegin_value(
 int wally_psbt_input_has_pegin_value(
     const struct wally_psbt_input *input,
     size_t *written);
-
-/**
- * Set the blinded issuance amount in an elements input.
- *
- * :param input: The input to update.
- * :param issuance_amount_commitment: The blinded issuance amount.
- * :param issuance_amount_commitment_len: Length of ``issuance_amount_commitment``. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
- */
-WALLY_CORE_API int wally_psbt_input_set_issuance_amount_commitment(
-    struct wally_psbt_input *input,
-    const unsigned char *issuance_amount_commitment,
-    size_t issuance_amount_commitment_len);
 
 /**
  * Set the issuance amount rangeproof in an elements input.
@@ -934,11 +940,44 @@ WALLY_CORE_API int wally_psbt_output_set_blinding_pub_key(
     size_t pub_key_len);
 
 /**
- * Set the value commitment in an elements output.
+ * Set the unblinded value in an elements output.
  *
  * :param output: The output to update.
- * :param commitment: The value commitment for this output.
- * :param commitment_len: Length of ``commitment`` in bytes.
+ * :param value: The value for this output.
+ *
+ * .. note:: On success, the outputs blinded value is cleared.
+ */
+WALLY_CORE_API int wally_psbt_output_set_value(
+    struct wally_psbt_output *output,
+    uint64_t value);
+
+/**
+ * Clear the unblinded value in an elements output.
+ *
+ * :param output: The output to query.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_value(
+    struct wally_psbt_output *output);
+
+/**
+ * Determine if the unblinded value is set in an elements output.
+ *
+ * :param output: The output to query.
+ * :param written: On success, set to one if the unblinded value is set, otherwise zero.
+ */
+int wally_psbt_output_has_value(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinded value in an elements output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The blinded value for this output.
+ * :param commitment_len: Length of ``commitment`` in bytes. Must be ``ASSET_COMMITMENT_LEN``.
+ *
+ * .. note:: On success, if ``commitment`` is not NULL,
+ *|    the outputs unblinded value is cleared.
  */
 WALLY_CORE_API int wally_psbt_output_set_value_commitment(
     struct wally_psbt_output *output,
@@ -946,56 +985,34 @@ WALLY_CORE_API int wally_psbt_output_set_value_commitment(
     size_t commitment_len);
 
 /**
- * Set the value in an elements output.
+ * Set the unblinded asset in an elements output.
  *
  * :param output: The output to update.
- * :param value: The value for this output.
- */
-WALLY_CORE_API int wally_psbt_output_set_value(
-    struct wally_psbt_output *output,
-    uint64_t value);
-
-/**
- * Clear the value in an elements output.
- *
- * :param output: The output to update.
- */
-WALLY_CORE_API int wally_psbt_output_clear_value(
-    struct wally_psbt_output *output);
-
-/**
- * Determine if the value is set in an elements output.
- *
- * :param output: The output to query.
- * :param written: On success, set to one if the value is set, otherwise zero.
- */
-int wally_psbt_output_has_value(
-    const struct wally_psbt_output *output,
-    size_t *written);
-
-/**
- * Set the asset commitment in an elements output.
- *
- * :param output: The output to update.
- * :param commitment: The asset commitment for this output.
- * :param commitment_len: Length of ``commitment`` in bytes.
- */
-WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
-    struct wally_psbt_output *output,
-    const unsigned char *commitment,
-    size_t commitment_len);
-
-/**
- * Set the asset in an elements output.
- *
- * :param output: The output to update.
- * :param asset: The asset to set for this input..
+ * :param asset: The unblinded asset to set for this input..
  * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
+ *
+ * .. note:: On success, if ``asset`` is not NULL,
+ *|    the outputs blinded asset is cleared.
  */
 WALLY_CORE_API int wally_psbt_output_set_asset(
     struct wally_psbt_output *output,
     const unsigned char *asset,
     size_t asset_len);
+
+/**
+ * Set the blinded asset in an elements output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The blinded asset for this output.
+ * :param commitment_len: Length of ``commitment`` in bytes.
+ *
+ * .. note:: On success, if ``commitment`` is not NULL,
+ *|    the outputs unblinded asset is cleared.
+ */
+WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
+    struct wally_psbt_output *output,
+    const unsigned char *commitment,
+    size_t commitment_len);
 
 /**
  * Set the ECDH public key in an elements output.

@@ -167,6 +167,14 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(has_fn(psbt, 0), 1)
                 clear_fn(psbt, 0)
                 self.assertEqual(has_fn(psbt, 0), 0)
+            # Verify mutuality of issuance_amount/clears issuance_amount_commitment
+            psbt_set_input_issuance_amount(psbt, 0 , 300)
+            self.assertTrue(psbt_has_input_issuance_amount(psbt, 0))
+            psbt_set_input_issuance_amount_commitment(psbt, 0 , dummy_commitment)
+            self.assertFalse(psbt_has_input_issuance_amount(psbt, 0))
+            psbt_set_input_issuance_amount(psbt, 0 , 300)
+            self.assertEqual(psbt_get_input_issuance_amount_commitment(psbt, 0), bytes())
+
             self._try_get_set_b(psbt_set_input_issuance_amount_commitment,
                                 psbt_get_input_issuance_amount_commitment,
                                 psbt_get_input_issuance_amount_commitment_len,
