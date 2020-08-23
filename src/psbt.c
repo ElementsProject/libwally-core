@@ -1978,8 +1978,9 @@ done:
     return ret;
 }
 
-#define COMBINE_BYTES(typ, member)  do { \
+#define COMBINE_BYTES(typ, member, ALLOW_DUPS)  do { \
         if (!dst->member && src->member) { \
+            if (!ALLOW_DUPS) return WALLY_EINVAL; \
             ret = wally_psbt_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len); \
             if (ret != WALLY_OK) \
                 return ret; \
@@ -2010,9 +2011,9 @@ static int combine_inputs(struct wally_psbt_input *dst,
             return ret;
     }
 
-    COMBINE_BYTES(input, redeem_script);
-    COMBINE_BYTES(input, witness_script);
-    COMBINE_BYTES(input, final_scriptsig);
+    COMBINE_BYTES(input, redeem_script, true);
+    COMBINE_BYTES(input, witness_script, true);
+    COMBINE_BYTES(input, final_scriptsig, true);
 
     if (!dst->final_witness && src->final_witness &&
         (ret = wally_psbt_input_set_final_witness(dst, src->final_witness)) != WALLY_OK)
@@ -2028,24 +2029,24 @@ static int combine_inputs(struct wally_psbt_input *dst,
 
 #ifdef BUILD_ELEMENTS
     if (!dst->has_issuance_amount && src->has_issuance_amount) {
-        dst->issuance_amount = src->issuance_amount;
-        dst->has_issuance_amount = 1u;
+        if ((ret = wally_psbt_input_set_issuance_amount(dst, src->issuance_amount)) != WALLY_OK)
+            return ret;
     }
     if (!dst->has_pegin_value && src->has_pegin_value) {
-        dst->pegin_value = src->pegin_value;
-        dst->has_pegin_value = 1u;
+        if ((ret = wally_psbt_input_set_pegin_value(dst, src->pegin_value)) != WALLY_OK)
+            return ret;
     }
-    COMBINE_BYTES(input, issuance_amount_commitment);
-    COMBINE_BYTES(input, issuance_amount_rangeproof);
-    COMBINE_BYTES(input, inflation_keys_rangeproof);
+    COMBINE_BYTES(input, issuance_amount_commitment, true);
+    COMBINE_BYTES(input, issuance_amount_rangeproof, true);
+    COMBINE_BYTES(input, inflation_keys_rangeproof, true);
     if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
         return ret;
     if (!dst->pegin_witness && src->pegin_witness &&
         (ret = wally_psbt_input_set_pegin_witness(dst, src->pegin_witness)) != WALLY_OK)
         return ret;
-    COMBINE_BYTES(input, pegin_txoutproof);
-    COMBINE_BYTES(input, pegin_genesis_blockhash);
-    COMBINE_BYTES(input, pegin_claim_script);
+    COMBINE_BYTES(input, pegin_txoutproof, true);
+    COMBINE_BYTES(input, pegin_genesis_blockhash, true);
+    COMBINE_BYTES(input, pegin_claim_script, true);
 #endif
     return WALLY_OK;
 }
@@ -2060,21 +2061,21 @@ static int combine_outputs(struct wally_psbt_output *dst,
     if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
         return ret;
 
-    COMBINE_BYTES(output, redeem_script);
-    COMBINE_BYTES(output, witness_script);
+    COMBINE_BYTES(output, redeem_script, true);
+    COMBINE_BYTES(output, witness_script, true);
 
 #ifdef BUILD_ELEMENTS
     if (!dst->has_value && src->has_value) {
-        dst->value = src->value;
-        dst->has_value = 1u;
+        if ((ret = wally_psbt_output_set_value(dst, src->value)) != WALLY_OK)
+            return ret;
     }
-    COMBINE_BYTES(output, value_commitment);
-    COMBINE_BYTES(output, asset);
-    COMBINE_BYTES(output, asset_commitment);
-    COMBINE_BYTES(output, rangeproof);
-    COMBINE_BYTES(output, surjectionproof);
-    COMBINE_BYTES(output, blinding_pub_key);
-    COMBINE_BYTES(output, ecdh_pub_key);
+    COMBINE_BYTES(output, value_commitment, false);
+    COMBINE_BYTES(output, asset, true);
+    COMBINE_BYTES(output, asset_commitment, false);
+    COMBINE_BYTES(output, rangeproof, false);
+    COMBINE_BYTES(output, surjectionproof, false);
+    COMBINE_BYTES(output, blinding_pub_key, false); /* TODO: Should possibly be false also */
+    COMBINE_BYTES(output, ecdh_pub_key, false);
 #endif
     return WALLY_OK;
 }
