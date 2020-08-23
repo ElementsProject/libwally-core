@@ -273,7 +273,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* inflation_keys, size_t inflation_keys_len);
 %pybuffer_nullable_binary(const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char* issuance_amount, size_t issuance_amount_len);
-%pybuffer_nullable_binary(const unsigned char* issuance_amount_commitment, size_t issuance_amount_commitment_len);
 %pybuffer_nullable_binary(const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char* iv, size_t iv_len);
 %pybuffer_nullable_binary(const unsigned char* key, size_t key_len);

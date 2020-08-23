@@ -1394,9 +1394,9 @@ inline int psbt_input_set_issuance_amount(const INPUT& input, uint64_t value) {
     return ret;
 }
 
-template <class INPUT, class ISSUANCE_AMOUNT_COMMITMENT>
-inline int psbt_input_set_issuance_amount_commitment(const INPUT& input, const ISSUANCE_AMOUNT_COMMITMENT& issuance_amount_commitment) {
-    int ret = ::wally_psbt_input_set_issuance_amount_commitment(detail::get_p(input), issuance_amount_commitment.data(), issuance_amount_commitment.size());
+template <class INPUT, class COMMITMENT>
+inline int psbt_input_set_issuance_amount_commitment(const INPUT& input, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_input_set_issuance_amount_commitment(detail::get_p(input), commitment.data(), commitment.size());
     return ret;
 }
 
@@ -1442,8 +1442,19 @@ inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_t
     return ret;
 }
 
+inline int psbt_output_clear_blinding_index(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_blinding_index(output);
+    return ret;
+}
+
 inline int psbt_output_clear_value(struct wally_psbt_output* output) {
     int ret = ::wally_psbt_output_clear_value(output);
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_has_blinding_index(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_has_blinding_index(detail::get_p(output), written);
     return ret;
 }
 
@@ -1462,6 +1473,12 @@ inline int psbt_output_set_asset(const OUTPUT& output, const ASSET& asset) {
 template <class OUTPUT, class COMMITMENT>
 inline int psbt_output_set_asset_commitment(const OUTPUT& output, const COMMITMENT& commitment) {
     int ret = ::wally_psbt_output_set_asset_commitment(detail::get_p(output), commitment.data(), commitment.size());
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_set_blinding_index(const OUTPUT& output, uint32_t blinding_index) {
+    int ret = ::wally_psbt_output_set_blinding_index(detail::get_p(output), blinding_index);
     return ret;
 }
 

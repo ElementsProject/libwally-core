@@ -99,6 +99,7 @@ static const input_bytes_setter_fn PSET_INPUT_SETTERS[PSET_IN_PEGIN_CLAIM_SCRIPT
 #define PSET_OUT_SURJECTION_PROOF 0x05
 #define PSET_OUT_BLINDING_PUB_KEY 0x06
 #define PSET_OUT_ECDH_PUB_KEY 0x07
+#define PSET_OUT_BLINDING_INDEX 0x08
 
 static const output_bytes_setter_fn PSET_OUTPUT_SETTERS[PSET_OUT_ECDH_PUB_KEY + 1] = {
     NULL, /* PSET_OUT_VALUE */
@@ -588,9 +589,10 @@ SET_OPTINT(wally_psbt_output, value, uint64_t, output_clear_value_commitment)
 SET_VARBUF(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN, wally_psbt_output_clear_value)
 SET_VARBUF(wally_psbt_output, asset, ASSET_TAG_LEN, output_clear_asset_commitment)
 SET_VARBUF(wally_psbt_output, asset_commitment, ASSET_COMMITMENT_LEN, output_clear_asset)
-SET_VARBUF(wally_psbt_output, ecdh_pub_key, EC_PUBLIC_KEY_LEN, no_op_1)
 SET_VARBUF(wally_psbt_output, rangeproof, 0, no_op_1)
 SET_VARBUF(wally_psbt_output, surjectionproof, 0, no_op_1)
+SET_VARBUF(wally_psbt_output, ecdh_pub_key, EC_PUBLIC_KEY_LEN, no_op_1)
+SET_OPTINT(wally_psbt_output, blinding_index, uint32_t, no_op_1)
 #endif/* BUILD_ELEMENTS */
 
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
@@ -1152,9 +1154,24 @@ static int pull_uint64_value(const unsigned char **cursor, size_t *max,
     if (*has_value_out)
         return WALLY_EINVAL; /* Duplicate value */
 
-    /* Start parsing the value field. */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
     *value_out = pull_le64(&val, &val_max);
+    subfield_nomore_end(cursor, max, val, val_max);
+    *has_value_out = 1u;
+    return WALLY_OK;
+}
+
+static int pull_uint32_value(const unsigned char **cursor, size_t *max,
+                             uint32_t *value_out, uint32_t *has_value_out)
+{
+    const unsigned char *val;
+    size_t val_max;
+
+    if (*has_value_out)
+        return WALLY_EINVAL; /* Duplicate value */
+
+    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_max);
+    *value_out = pull_le32(&val, &val_max);
     subfield_nomore_end(cursor, max, val, val_max);
     *has_value_out = 1u;
     return WALLY_OK;
@@ -1368,6 +1385,11 @@ static int pull_psbt_output(const unsigned char **cursor, size_t *max,
                 subfield_nomore_end(cursor, max, key, key_len);
                 ret = pull_uint64_value(cursor, max, &result->value,
                                         &result->has_value);
+                break;
+            case PSET_OUT_BLINDING_INDEX:
+                subfield_nomore_end(cursor, max, key, key_len);
+                ret = pull_uint32_value(cursor, max, &result->blinding_index,
+                                        &result->has_blinding_index);
                 break;
             case PSET_OUT_VALUE_COMMITMENT:
             case PSET_OUT_ASSET:
@@ -1830,6 +1852,11 @@ static int push_psbt_output(unsigned char **cursor, size_t *max,
                           output->blinding_pub_key, output->blinding_pub_key_len);
     push_elements_varbuff(cursor, max, PSET_OUT_ECDH_PUB_KEY,
                           output->ecdh_pub_key, output->ecdh_pub_key_len);
+    if (output->has_blinding_index) {
+        push_elements_key(cursor, max, PSET_OUT_BLINDING_INDEX);
+        push_varint(cursor, max, sizeof(leint32_t));
+        push_le32(cursor, max, output->blinding_index);
+    }
 #endif /* BUILD_ELEMENTS */
     /* Unknowns */
     push_map(cursor, max, &output->unknowns);
@@ -2076,6 +2103,11 @@ static int combine_outputs(struct wally_psbt_output *dst,
     COMBINE_BYTES(output, surjectionproof, false);
     COMBINE_BYTES(output, blinding_pub_key, false); /* TODO: Should possibly be false also */
     COMBINE_BYTES(output, ecdh_pub_key, false);
+    if (!dst->has_blinding_index && src->has_blinding_index) {
+        /* TODO: Should possibly be an error */
+        if ((ret = wally_psbt_output_set_blinding_index(dst, src->blinding_index)) != WALLY_OK)
+            return ret;
+    }
 #endif
     return WALLY_OK;
 }
@@ -2730,6 +2762,7 @@ NESTED_VARBUF_IMPL(/**/, wally_psbt, output, rangeproof, true)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, surjectionproof, true)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, blinding_pub_key, true)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, output, ecdh_pub_key, true)
+NESTED_OPTINT_IMPL(/**/, wally_psbt, output, uint32_t, blinding_index, true)
 #endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */

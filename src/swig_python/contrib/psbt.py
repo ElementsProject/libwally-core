@@ -159,7 +159,9 @@ class PSBTTests(unittest.TestCase):
                 (psbt_get_input_pegin_value, psbt_set_input_pegin_value,
                     psbt_has_input_pegin_value, psbt_clear_input_pegin_value),
                 (psbt_get_output_value, psbt_set_output_value,
-                    psbt_has_output_value, psbt_clear_output_value)]:
+                    psbt_has_output_value, psbt_clear_output_value),
+                (psbt_get_output_blinding_index, psbt_set_output_blinding_index,
+                    psbt_has_output_blinding_index, psbt_clear_output_blinding_index)]:
                 self._try_set(set_fn, psbt, 1234567, 0)
                 self._try_invalid(has_fn, psbt)
                 self._try_invalid(get_fn, psbt)
@@ -223,7 +225,7 @@ class PSBTTests(unittest.TestCase):
                             psbt_find_output_unknown,
                             psbt, dummy_unknowns, dummy_pubkey)
         if is_elements_build():
-            # Note: "value" tested with inputs above
+            # Note: "value" and "blinding_index" tested with inputs above
             self._try_get_set_b(psbt_set_output_value_commitment,
                                 psbt_get_output_value_commitment,
                                 psbt_get_output_value_commitment_len, psbt, dummy_commitment)

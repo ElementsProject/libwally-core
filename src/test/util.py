@@ -181,7 +181,9 @@ class wally_psbt_output(Structure):
                 ('blinding_pub_key', c_void_p),
                 ('blinding_pub_key_len', c_ulong),
                 ('ecdh_pub_key', c_void_p),
-                ('ecdh_pub_key_len', c_ulong)]
+                ('ecdh_pub_key_len', c_ulong),
+                ('blinding_index', c_uint32),
+                ('has_blinding_index', c_uint32)]
 
 class wally_psbt(Structure):
     _fields_ = [('magic', c_ubyte * 5),
@@ -346,12 +348,15 @@ for f in (
     ('wally_psbt_is_elements', c_int, [POINTER(wally_psbt), c_ulong_p]),
     ('wally_psbt_is_finalized', c_int, [POINTER(wally_psbt), c_ulong_p]),
     ('wally_psbt_output_add_keypath_item', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong, c_void_p, c_ulong, c_uint_p, c_ulong]),
+    ('wally_psbt_output_clear_blinding_index', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_clear_value', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_find_keypath', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong, c_ulong_p]),
     ('wally_psbt_output_find_unknown', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong, c_ulong_p]),
+    ('wally_psbt_output_has_blinding_index', c_int, [POINTER(wally_psbt_output), c_ulong_p]),
     ('wally_psbt_output_has_value', c_int, [POINTER(wally_psbt_output), c_ulong_p]),
     ('wally_psbt_output_set_asset', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
     ('wally_psbt_output_set_asset_commitment', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
+    ('wally_psbt_output_set_blinding_index', c_int, [POINTER(wally_psbt_output), c_uint]),
     ('wally_psbt_output_set_blinding_pub_key', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
     ('wally_psbt_output_set_ecdh_pub_key', c_int, [POINTER(wally_psbt_output), c_void_p, c_ulong]),
     ('wally_psbt_output_set_keypaths', c_int, [POINTER(wally_psbt_output), POINTER(wally_map)]),

@@ -55,6 +55,7 @@ NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, rangeproof);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, surjectionproof);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, blinding_pub_key);
 NESTED_VARBUF_DECL(WALLY_CORE_API, wally_psbt, output, ecdh_pub_key);
+NESTED_OPTINT_DECL(WALLY_CORE_API, wally_psbt, output, uint32_t, blinding_index);
 #endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus

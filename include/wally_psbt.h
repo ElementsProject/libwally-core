@@ -103,7 +103,9 @@ struct wally_psbt_output {
     size_t blinding_pub_key_len;
     unsigned char *ecdh_pub_key;
     size_t ecdh_pub_key_len;
-#endif /* BUILD_ELEMENTS */
+    uint32_t blinding_index;
+    uint32_t has_blinding_index;
+ #endif /* BUILD_ELEMENTS */
 };
 
 /** A partially signed bitcoin transaction */
@@ -954,7 +956,7 @@ WALLY_CORE_API int wally_psbt_output_set_value(
 /**
  * Clear the unblinded value in an elements output.
  *
- * :param output: The output to query.
+ * :param output: The output to update.
  */
 WALLY_CORE_API int wally_psbt_output_clear_value(
     struct wally_psbt_output *output);
@@ -966,6 +968,34 @@ WALLY_CORE_API int wally_psbt_output_clear_value(
  * :param written: On success, set to one if the unblinded value is set, otherwise zero.
  */
 int wally_psbt_output_has_value(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinding index in an elements output.
+ *
+ * :param output: The output to update.
+ * :param blinding_index: The blinding index for this output.
+ */
+WALLY_CORE_API int wally_psbt_output_set_blinding_index(
+    struct wally_psbt_output *output,
+    uint32_t blinding_index);
+
+/**
+ * Clear the blinding index in an elements output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_blinding_index(
+    struct wally_psbt_output *output);
+
+/**
+ * Determine if the blinding index is set in an elements output.
+ *
+ * :param output: The output to query.
+ * :param written: On success, set to one if the blinding index is set, otherwise zero.
+ */
+int wally_psbt_output_has_blinding_index(
     const struct wally_psbt_output *output,
     size_t *written);
 

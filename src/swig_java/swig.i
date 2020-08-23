@@ -224,7 +224,6 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys, size_t inflation_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount, size_t issuance_amount_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount_commitment, size_t issuance_amount_commitment_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
