@@ -2005,12 +2005,17 @@ done:
     return ret;
 }
 
-#define COMBINE_BYTES(typ, member, ALLOW_DUPS)  do { \
-        if (!dst->member && src->member) { \
-            if (!ALLOW_DUPS) return WALLY_EINVAL; \
-            ret = wally_psbt_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len); \
-            if (ret != WALLY_OK) \
-                return ret; \
+#define COMBINE_BYTES(TYP, MEMBER, ALLOW_DUPS)  do { \
+        if (src->MEMBER) { \
+            if (dst->MEMBER && !ALLOW_DUPS) { \
+                if (dst->MEMBER ## _len != src->MEMBER ## _len || \
+                    memcmp(dst->MEMBER, src->MEMBER, dst->MEMBER ## _len) != 0) \
+                    return WALLY_EINVAL; \
+            } else if (!dst->MEMBER) { \
+                ret = wally_psbt_ ## TYP ## _set_ ## MEMBER(dst, src->MEMBER, src->MEMBER ## _len); \
+                if (ret != WALLY_OK) \
+                    return ret; \
+            } \
         } } while (0)
 
 static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
