@@ -345,15 +345,22 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes, size_t bytes_len,
     return ret;
 }
 
-static int bip32_privkey_tweak_add(const secp256k1_context *ctx, unsigned char *seckey,
-                                   size_t seckey_size, const unsigned char *tweak)
+#ifdef BUILD_ELEMENTS
+static int bip32_privkey_tweak_add(const secp256k1_context *ctx,
+                                   const unsigned char *tweak, size_t tweak_len,
+                                   struct ext_key *key_out)
 {
-    if (mem_is_zero(seckey, seckey_size)) {
-        memcpy(seckey, tweak, seckey_size);
-        return WALLY_OK;
-    }
-    return !privkey_tweak_add(ctx, seckey, tweak);
+    if (!ctx || !tweak || tweak_len != sizeof(key_out->pub_key_tweak_sum) || !key_out)
+        return WALLY_EINVAL;
+
+    if (!mem_is_zero(key_out->pub_key_tweak_sum, tweak_len))
+        return privkey_tweak_add(ctx, key_out->pub_key_tweak_sum, tweak) ? WALLY_OK : WALLY_EINVAL;
+
+    /* tweak sum is zero: start wih the tweak */
+    memcpy(key_out->pub_key_tweak_sum, tweak, tweak_len);
+    return WALLY_OK;
 }
+#endif /* BUILD_ELEMENTS */
 
 /* BIP32: Child Key Derivations
  *
@@ -471,9 +478,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
             len != sizeof(key_out->pub_key)
 #ifdef BUILD_ELEMENTS
             || ((flags & BIP32_FLAG_KEY_TWEAK_SUM) &&
-                bip32_privkey_tweak_add(ctx, key_out->pub_key_tweak_sum,
-                                        sizeof(key_out->pub_key_tweak_sum),
-                                        sha.u.u8))
+                bip32_privkey_tweak_add(ctx, sha.u.u8, SHA256_LEN, key_out) != WALLY_OK)
 #endif /* BUILD_ELEMENTS */
             ) {
             wally_clear(&sha, sizeof(sha));
