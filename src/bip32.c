@@ -337,6 +337,16 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes, size_t bytes_len,
     return ret;
 }
 
+static int bip32_privkey_tweak_add(const secp256k1_context *ctx, unsigned char *seckey,
+                                   size_t seckey_size, const unsigned char *tweak)
+{
+    if (mem_is_zero(seckey, seckey_size)) {
+        memcpy(seckey, tweak, seckey_size);
+        return WALLY_OK;
+    }
+    return !privkey_tweak_add(ctx, seckey, tweak);
+}
+
 /* BIP32: Child Key Derivations
  *
  * The spec doesn't have a simple table of derivations, its:
@@ -453,7 +463,9 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
             len != sizeof(key_out->pub_key)
 #ifdef BUILD_ELEMENTS
             || ((flags & BIP32_FLAG_KEY_TWEAK_SUM) &&
-                !privkey_tweak_add(ctx, key_out->pub_key_tweak_sum, sha.u.u8))
+                bip32_privkey_tweak_add(ctx, key_out->pub_key_tweak_sum,
+                                        sizeof(key_out->pub_key_tweak_sum),
+                                        sha.u.u8))
 #endif /* BUILD_ELEMENTS */
             ) {
             wally_clear(&sha, sizeof(sha));
