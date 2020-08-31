@@ -36,6 +36,12 @@
 /* Define this symbol to enable the key whitelisting module */
 #cmakedefine ENABLE_MODULE_WHITELIST @ENABLE_MODULE_WHITELIST@
 
+/* Define this symbol to enable the extrakeys module */
+#cmakedefine ENABLE_MODULE_EXTRAKEYS @ENABLE_MODULE_EXTRAKEYS@
+
+/* Define this symbol to enable the ECDSA adaptor module */
+#cmakedefine ENABLE_MODULE_ECDSA_ADAPTOR @ENABLE_MODULE_ECDSA_ADAPTOR@
+
 /* Define this symbol if OpenSSL EC functions are available */
 #cmakedefine ENABLE_OPENSSL_TESTS @ENABLE_OPENSSL_TESTS@
 

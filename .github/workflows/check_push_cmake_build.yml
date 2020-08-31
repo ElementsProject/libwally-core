@@ -5,11 +5,13 @@ on:
     branches:
     - cmake_build
     - cfd-develop
+    - dlc-develop
     - feature/*
   pull_request:
     branches:
     - cmake_build
     - cfd-develop
+    - dlc-develop
     - feature/*
 
 env:

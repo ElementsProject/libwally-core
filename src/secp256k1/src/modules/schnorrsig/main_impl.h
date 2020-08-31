@@ -414,4 +414,275 @@ int secp256k1_schnorrsig_verify_batch(const secp256k1_context *ctx, secp256k1_sc
             && secp256k1_gej_is_infinity(&rj);
 }
 
+
+/* Initializes SHA256 with fixed midstate. This midstate was computed by applying
+ * SHA256 to SHA256("BIP340/nonce")||SHA256("BIP340/nonce"). */
+static void secp256k1_nonce_function_bip340_sha256_tagged(secp256k1_sha256 *sha) {
+    secp256k1_sha256_initialize(sha);
+    sha->s[0] = 0xa96e75cbul;
+    sha->s[1] = 0x74f9f0acul;
+    sha->s[2] = 0xc49e3c98ul;
+    sha->s[3] = 0x202f99baul;
+    sha->s[4] = 0x8946a616ul;
+    sha->s[5] = 0x4accf415ul;
+    sha->s[6] = 0x86e335c3ul;
+    sha->s[7] = 0x48d0a072ul;
+
+    sha->bytes = 64;
+}
+
+/* Initializes SHA256 with fixed midstate. This midstate was computed by applying
+ * SHA256 to SHA256("BIP340/aux")||SHA256("BIP340/aux"). */
+static void secp256k1_nonce_function_bip340_sha256_tagged_aux(secp256k1_sha256 *sha) {
+    secp256k1_sha256_initialize(sha);
+    sha->s[0] = 0x5d74a872ul;
+    sha->s[1] = 0xd57064d4ul;
+    sha->s[2] = 0x89495becul;
+    sha->s[3] = 0x910f46f5ul;
+    sha->s[4] = 0xcbc6fd3eul;
+    sha->s[5] = 0xaf05d9d0ul;
+    sha->s[6] = 0xcb781ce6ul;
+    sha->s[7] = 0x062930acul;
+
+    sha->bytes = 64;
+}
+
+/* algo16 argument for nonce_function_bip340 to derive the nonce exactly as stated in BIP-340
+ * by using the correct tagged hash function. */
+static const unsigned char bip340_algo16[16] = "BIP340/nonce\0\0\0\0";
+
+static int nonce_function_bip340(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, const unsigned char *xonly_pk32, const unsigned char *algo16, void *data) {
+    secp256k1_sha256 sha;
+    unsigned char masked_key[32];
+    int i;
+
+    if (algo16 == NULL) {
+        return 0;
+    }
+
+    if (data != NULL) {
+        secp256k1_nonce_function_bip340_sha256_tagged_aux(&sha);
+        secp256k1_sha256_write(&sha, data, 32);
+        secp256k1_sha256_finalize(&sha, masked_key);
+        for (i = 0; i < 32; i++) {
+            masked_key[i] ^= key32[i];
+        }
+    }
+
+    /* Tag the hash with algo16 which is important to avoid nonce reuse across
+     * algorithms. If this nonce function is used in BIP-340 signing as defined
+     * in the spec, an optimized tagging implementation is used. */
+    if (memcmp(algo16, bip340_algo16, 16) == 0) {
+        secp256k1_nonce_function_bip340_sha256_tagged(&sha);
+    } else {
+        int algo16_len = 16;
+        /* Remove terminating null bytes */
+        while (algo16_len > 0 && !algo16[algo16_len - 1]) {
+            algo16_len--;
+        }
+        secp256k1_sha256_initialize_tagged(&sha, algo16, algo16_len);
+    }
+
+    /* Hash (masked-)key||pk||msg using the tagged hash as per the spec */
+    if (data != NULL) {
+        secp256k1_sha256_write(&sha, masked_key, 32);
+    } else {
+        secp256k1_sha256_write(&sha, key32, 32);
+    }
+    secp256k1_sha256_write(&sha, xonly_pk32, 32);
+    secp256k1_sha256_write(&sha, msg32, 32);
+    secp256k1_sha256_finalize(&sha, nonce32);
+    return 1;
+}
+
+const secp256k1_nonce_function_hardened secp256k1_nonce_function_bip340 = nonce_function_bip340;
+
+/* Initializes SHA256 with fixed midstate. This midstate was computed by applying
+ * SHA256 to SHA256("BIP340/challenge")||SHA256("BIP340/challenge"). */
+static void secp256k1_schnorrsig_sha256_tagged(secp256k1_sha256 *sha) {
+    secp256k1_sha256_initialize(sha);
+    sha->s[0] = 0x71985ac9ul;
+    sha->s[1] = 0x198317a2ul;
+    sha->s[2] = 0x60b6e581ul;
+    sha->s[3] = 0x54c109b6ul;
+    sha->s[4] = 0x64bac2fdul;
+    sha->s[5] = 0x91231de2ul;
+    sha->s[6] = 0x7301ebdeul;
+    sha->s[7] = 0x87635f83ul;
+    sha->bytes = 64;
+}
+
+int secp256k1_schnorrsig_xonly_sign(const secp256k1_context* ctx, unsigned char *sig64, const unsigned char *msg32, const secp256k1_keypair *keypair, secp256k1_nonce_function_hardened noncefp, void *ndata) {
+    secp256k1_scalar sk;
+    secp256k1_scalar e;
+    secp256k1_scalar k;
+    secp256k1_gej rj;
+    secp256k1_ge pk;
+    secp256k1_ge r;
+    secp256k1_sha256 sha;
+    unsigned char buf[32] = { 0 };
+    unsigned char pk_buf[32];
+    unsigned char seckey[32];
+    int ret = 1;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(secp256k1_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
+    ARG_CHECK(sig64 != NULL);
+    ARG_CHECK(msg32 != NULL);
+    ARG_CHECK(keypair != NULL);
+
+    if (noncefp == NULL) {
+        noncefp = secp256k1_nonce_function_bip340;
+    }
+
+    ret &= secp256k1_keypair_load(ctx, &sk, &pk, keypair);
+    /* Because we are signing for a x-only pubkey, the secret key is negated
+     * before signing if the point corresponding to the secret key does not
+     * have an even Y. */
+    if (secp256k1_fe_is_odd(&pk.y)) {
+        secp256k1_scalar_negate(&sk, &sk);
+    }
+
+    secp256k1_scalar_get_b32(seckey, &sk);
+    secp256k1_fe_get_b32(pk_buf, &pk.x);
+    ret &= !!noncefp(buf, msg32, seckey, pk_buf, bip340_algo16, (void*)ndata);
+    secp256k1_scalar_set_b32(&k, buf, NULL);
+    ret &= !secp256k1_scalar_is_zero(&k);
+    secp256k1_scalar_cmov(&k, &secp256k1_scalar_one, !ret);
+
+    secp256k1_ecmult_gen(&ctx->ecmult_gen_ctx, &rj, &k);
+    secp256k1_ge_set_gej(&r, &rj);
+
+    /* We declassify r to allow using it as a branch point. This is fine
+     * because r is not a secret. */
+    secp256k1_declassify(ctx, &r, sizeof(r));
+    if (!secp256k1_fe_is_quad_var(&r.y)) {
+        secp256k1_scalar_negate(&k, &k);
+    }
+    secp256k1_fe_normalize_var(&r.x);
+    secp256k1_fe_get_b32(&sig64[0], &r.x);
+
+    /* tagged hash(r.x, pk.x, msg32) */
+    secp256k1_schnorrsig_sha256_tagged(&sha);
+    secp256k1_sha256_write(&sha, &sig64[0], 32);
+    secp256k1_sha256_write(&sha, pk_buf, sizeof(pk_buf));
+    secp256k1_sha256_write(&sha, msg32, 32);
+    secp256k1_sha256_finalize(&sha, buf);
+
+    /* Set scalar e to the challenge hash modulo the curve order as per
+     * BIP340. */
+    secp256k1_scalar_set_b32(&e, buf, NULL);
+    secp256k1_scalar_mul(&e, &e, &sk);
+    secp256k1_scalar_add(&e, &e, &k);
+    secp256k1_scalar_get_b32(&sig64[32], &e);
+
+    memczero(sig64, 64, !ret);
+    secp256k1_scalar_clear(&k);
+    secp256k1_scalar_clear(&sk);
+    memset(seckey, 0, sizeof(seckey));
+
+    return ret;
+}
+
+int secp256k1_schnorrsig_compute_sigpoint(const secp256k1_context* ctx, secp256k1_pubkey *sigpoint, const unsigned char *msg32, const unsigned char *rx32, const secp256k1_xonly_pubkey *pubkey) {
+    unsigned char pk_buf[32];
+    secp256k1_sha256 sha;
+    unsigned char buf[32];
+    secp256k1_gej pubkey_gej;
+    secp256k1_ge pubkey_ge;
+    secp256k1_fe rx_fe;
+    secp256k1_ge nonce_ge;
+    secp256k1_scalar e;
+    secp256k1_gej sigpoint_gej;
+    secp256k1_ge sigpoint_ge;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(secp256k1_ecmult_context_is_built(&ctx->ecmult_ctx));
+    ARG_CHECK(msg32 != NULL);
+    ARG_CHECK(rx32 != NULL);
+    ARG_CHECK(pubkey != NULL);
+
+    secp256k1_xonly_pubkey_serialize(ctx, pk_buf, pubkey);
+
+    /* tagged hash(r.x, pk.x, msg32) */
+    secp256k1_schnorrsig_sha256_tagged(&sha);
+    secp256k1_sha256_write(&sha, rx32, 32);
+    secp256k1_sha256_write(&sha, pk_buf, 32);
+    secp256k1_sha256_write(&sha, msg32, 32);
+    secp256k1_sha256_finalize(&sha, buf);
+
+    secp256k1_scalar_set_b32(&e, buf, NULL);
+
+    if (!secp256k1_xonly_pubkey_load(ctx, &pubkey_ge, pubkey)) {
+        return 0;
+    }
+
+    if (!secp256k1_eckey_pubkey_tweak_mul(&ctx->ecmult_ctx, &pubkey_ge, &e)) {
+        return 0;
+    }
+
+    if (!secp256k1_fe_set_b32(&rx_fe, rx32)) {
+        return 0;
+    }
+
+    if (!secp256k1_ge_set_xquad(&nonce_ge, &rx_fe)) {
+            return 0;
+    }
+
+    secp256k1_gej_set_ge(&pubkey_gej, &pubkey_ge);
+    secp256k1_gej_add_ge(&sigpoint_gej, &pubkey_gej, &nonce_ge);
+
+    secp256k1_ge_set_gej(&sigpoint_ge, &sigpoint_gej);
+    secp256k1_pubkey_save(sigpoint, &sigpoint_ge);
+
+    return 1;
+}
+
+int secp256k1_schnorrsig_xonly_verify(const secp256k1_context* ctx, const unsigned char *sig64, const unsigned char *msg32, const secp256k1_xonly_pubkey *pubkey) {
+    secp256k1_scalar s;
+    secp256k1_scalar e;
+    secp256k1_gej rj;
+    secp256k1_ge pk;
+    secp256k1_gej pkj;
+    secp256k1_fe rx;
+    secp256k1_sha256 sha;
+    unsigned char buf[32];
+    int overflow;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(secp256k1_ecmult_context_is_built(&ctx->ecmult_ctx));
+    ARG_CHECK(sig64 != NULL);
+    ARG_CHECK(msg32 != NULL);
+    ARG_CHECK(pubkey != NULL);
+
+    if (!secp256k1_fe_set_b32(&rx, &sig64[0])) {
+        return 0;
+    }
+
+    secp256k1_scalar_set_b32(&s, &sig64[32], &overflow);
+    if (overflow) {
+        return 0;
+    }
+
+    if (!secp256k1_xonly_pubkey_load(ctx, &pk, pubkey)) {
+        return 0;
+    }
+
+    secp256k1_schnorrsig_sha256_tagged(&sha);
+    secp256k1_sha256_write(&sha, &sig64[0], 32);
+    secp256k1_fe_get_b32(buf, &pk.x);
+    secp256k1_sha256_write(&sha, buf, sizeof(buf));
+    secp256k1_sha256_write(&sha, msg32, 32);
+    secp256k1_sha256_finalize(&sha, buf);
+    secp256k1_scalar_set_b32(&e, buf, NULL);
+
+    /* Compute rj =  s*G + (-e)*pkj */
+    secp256k1_scalar_negate(&e, &e);
+    secp256k1_gej_set_ge(&pkj, &pk);
+    secp256k1_ecmult(&ctx->ecmult_ctx, &rj, &pkj, &e, &s);
+
+    return secp256k1_gej_has_quad_y_var(&rj) /* fails if rj is infinity */
+            && secp256k1_gej_eq_x_var(&rx, &rj);
+}
+
 #endif

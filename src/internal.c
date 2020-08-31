@@ -21,7 +21,7 @@ static secp256k1_context *global_ctx = NULL;
 
 const secp256k1_context *secp_ctx(void)
 {
-    const uint32_t flags = SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN;
+    const uint32_t flags = SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_DECLASSIFY;
 
     if (!global_ctx)
         global_ctx = secp256k1_context_create(flags);
