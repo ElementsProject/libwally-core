@@ -123,6 +123,9 @@ AC_ARG_ENABLE(elements,
 AC_ARG_ENABLE(builtin-memset,
     AS_HELP_STRING([--enable-builtin-memset],[disable to add -fno-builtin-memset to compiler flags. helps with explicit_bzero/memset being elided on Linux clang 7.0.1 and up (default: yes)]),
     [builtin_memset=$enableval], [builtin_memset=yes])
+AC_ARG_ENABLE(secp256k1-tests,
+    AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
+    [secp256k1_tests=$enableval], [secp256k1_tests=no])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
 
@@ -410,6 +413,11 @@ if test "x$swig_java" == "xyes"; then
     secp_jni="--enable-jni"
 fi
 
+secp256k1_test_opt="--disable-tests"
+if test "x$secp256k1_tests" == "xyes"; then
+    secp256k1_test_opt="--enable-tests"
+fi
+
 if test x"$cross_compiling" = "xyes"; then
     # For cross compiling we assume the users host O/S Java install is not
     # usable and that they have provided suitable FLAGS/LDFLAGS
@@ -422,7 +430,7 @@ export ARFLAGS
 export AR_FLAGS
 export LD
 export LDFLAGS
-ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
+ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-schnorrsig --enable-module-extrakeys --enable-module-ecdsa-adaptor --enable-openssl-tests=no ${secp256k1_test_opt} --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 

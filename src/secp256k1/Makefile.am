@@ -85,6 +85,8 @@ if USE_BENCHMARK
 noinst_PROGRAMS += bench_verify bench_sign bench_internal bench_ecmult
 bench_verify_SOURCES = src/bench_verify.c
 bench_verify_LDADD = libsecp256k1.la $(SECP_LIBS) $(SECP_TEST_LIBS) $(COMMON_LIB)
+# SECP_TEST_INCLUDES are only used here for CRYPTO_CPPFLAGS
+bench_verify_CPPFLAGS = -DSECP256K1_BUILD $(SECP_TEST_INCLUDES)
 bench_sign_SOURCES = src/bench_sign.c
 bench_sign_LDADD = libsecp256k1.la $(SECP_LIBS) $(SECP_TEST_LIBS) $(COMMON_LIB)
 bench_internal_SOURCES = src/bench_internal.c
@@ -151,11 +153,11 @@ endif
 endif
 
 if USE_ECMULT_STATIC_PRECOMPUTATION
-CPPFLAGS_FOR_BUILD +=-I$(top_srcdir)
+CPPFLAGS_FOR_BUILD +=-I$(top_srcdir) -I$(builddir)/src
 
 gen_context_OBJECTS = gen_context.o
 gen_context_BIN = gen_context$(BUILD_EXEEXT)
-gen_%.o: src/gen_%.c
+gen_%.o: src/gen_%.c src/libsecp256k1-config.h
 	$(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) -c $< -o $@
 
 $(gen_context_BIN): $(gen_context_OBJECTS)
@@ -204,4 +206,12 @@ endif
 
 if ENABLE_MODULE_SURJECTIONPROOF
 include src/modules/surjection/Makefile.am.include
+endif
+
+if ENABLE_MODULE_EXTRAKEYS
+include src/modules/extrakeys/Makefile.am.include
+endif
+
+if ENABLE_MODULE_ECDSA_ADAPTOR
+include src/modules/ecdsa_adaptor/Makefile.am.include
 endif

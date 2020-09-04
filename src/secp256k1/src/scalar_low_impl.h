@@ -39,8 +39,11 @@ static int secp256k1_scalar_add(secp256k1_scalar *r, const secp256k1_scalar *a, 
 
 static void secp256k1_scalar_cadd_bit(secp256k1_scalar *r, unsigned int bit, int flag) {
     if (flag && bit < 32)
-        *r += (1 << bit);
+        *r += ((uint32_t)1 << bit);
 #ifdef VERIFY
+    VERIFY_CHECK(bit < 32);
+    /* Verify that adding (1 << bit) will not overflow any in-range scalar *r by overflowing the underlying uint32_t. */
+    VERIFY_CHECK(((uint32_t)1 << bit) - 1 <= UINT32_MAX - EXHAUSTIVE_TEST_ORDER);
     VERIFY_CHECK(secp256k1_scalar_check_overflow(r) == 0);
 #endif
 }
@@ -115,6 +118,14 @@ SECP256K1_INLINE static int secp256k1_scalar_eq(const secp256k1_scalar *a, const
 SECP256K1_INLINE static void secp256k1_scalar_chacha20(secp256k1_scalar *r1, secp256k1_scalar *r2, const unsigned char *seed, uint64_t n) {
     *r1 = (seed[0] + n) % EXHAUSTIVE_TEST_ORDER;
     *r2 = (seed[1] + n) % EXHAUSTIVE_TEST_ORDER;
+}
+
+static SECP256K1_INLINE void secp256k1_scalar_cmov(secp256k1_scalar *r, const secp256k1_scalar *a, int flag) {
+    uint32_t mask0, mask1;
+    VG_CHECK_VERIFY(r, sizeof(*r));
+    mask0 = flag + ~((uint32_t)0);
+    mask1 = ~mask0;
+    *r = (*r & mask0) | (*a & mask1);
 }
 
 #endif /* SECP256K1_SCALAR_REPR_IMPL_H */

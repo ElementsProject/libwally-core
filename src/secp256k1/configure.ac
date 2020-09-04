@@ -159,6 +159,16 @@ AC_ARG_ENABLE(module_whitelist,
     [enable_module_whitelist=$enableval],
     [enable_module_whitelist=no])
 
+AC_ARG_ENABLE(module_extrakeys,
+    AS_HELP_STRING([--enable-module-extrakeys],[enable extrakeys module (experimental)]),
+    [enable_module_extrakeys=$enableval],
+    [enable_module_extrakeys=no])
+
+AC_ARG_ENABLE(module_ecdsa-adaptor,
+    AS_HELP_STRING([--enable-module-ecdsa-adaptor],[enable ECDSA adaptor module [default=no]]),
+    [enable_module_ecdsa_adaptor=$enableval],
+    [enable_module_ecdsa_adaptor=no])
+
 AC_ARG_ENABLE(external_default_callbacks,
     AS_HELP_STRING([--enable-external-default-callbacks],[enable external default callback functions [default=no]]),
     [use_external_default_callbacks=$enableval],
@@ -566,6 +576,16 @@ if test x"$enable_module_surjectionproof" = x"yes"; then
   AC_DEFINE(ENABLE_MODULE_SURJECTIONPROOF, 1, [Define this symbol to enable the surjection proof module])
 fi
 
+# Test if extrakeys is set after the schnorrsig module to allow the schnorrsig
+# module to set enable_module_extrakeys=yes
+if test x"$enable_module_extrakeys" = x"yes"; then
+  AC_DEFINE(ENABLE_MODULE_EXTRAKEYS, 1, [Define this symbol to enable the extrakeys module])
+fi
+
+if test x"$enable_module_ecdsa_adaptor" = x"yes"; then
+  AC_DEFINE(ENABLE_MODULE_ECDSA_ADAPTOR, 1, [Define this symbol to enable the ECDSA adaptor module])
+fi
+
 AC_C_BIGENDIAN()
 
 if test x"$use_external_asm" = x"yes"; then
@@ -589,6 +609,7 @@ if test x"$enable_experimental" = x"yes"; then
   AC_MSG_NOTICE([Building range proof module: $enable_module_rangeproof])
   AC_MSG_NOTICE([Building key whitelisting module: $enable_module_whitelist])
   AC_MSG_NOTICE([Building surjection proof module: $enable_module_surjectionproof])
+  AC_MSG_NOTICE([Building extrakeys module: $enable_module_extrakeys])
   AC_MSG_NOTICE([Building schnorrsig module: $enable_module_schnorrsig])
   AC_MSG_NOTICE([Building MuSig module: $enable_module_musig])
   AC_MSG_NOTICE([******])
@@ -639,6 +660,9 @@ else
   if test x"$enable_module_surjectionproof" = x"yes"; then
     AC_MSG_ERROR([Surjection proof module is experimental. Use --enable-experimental to allow.])
   fi
+  if test x"$enable_module_extrakeys" = x"yes"; then
+    AC_MSG_ERROR([extrakeys module is experimental. Use --enable-experimental to allow.])
+  fi
 fi
 
 AC_CONFIG_HEADERS([src/libsecp256k1-config.h])
@@ -661,6 +685,8 @@ AM_CONDITIONAL([ENABLE_MODULE_GENERATOR], [test x"$enable_module_generator" = x"
 AM_CONDITIONAL([ENABLE_MODULE_RANGEPROOF], [test x"$enable_module_rangeproof" = x"yes"])
 AM_CONDITIONAL([ENABLE_MODULE_WHITELIST], [test x"$enable_module_whitelist" = x"yes"])
 AM_CONDITIONAL([USE_JNI], [test x"$use_jni" = x"yes"])
+AM_CONDITIONAL([ENABLE_MODULE_EXTRAKEYS], [test x"$enable_module_extrakeys" = x"yes"])
+AM_CONDITIONAL([ENABLE_MODULE_ECDSA_ADAPTOR], [test x"$enable_module_ecdsa_adaptor" = x"yes"])
 AM_CONDITIONAL([USE_EXTERNAL_ASM], [test x"$use_external_asm" = x"yes"])
 AM_CONDITIONAL([USE_ASM_ARM], [test x"$set_asm" = x"arm"])
 AM_CONDITIONAL([ENABLE_MODULE_SURJECTIONPROOF], [test x"$enable_module_surjectionproof" = x"yes"])
@@ -684,6 +710,8 @@ echo "  with coverage           = $enable_coverage"
 echo "  module ecdh             = $enable_module_ecdh"
 echo "  module recovery         = $enable_module_recovery"
 echo "  module schnorrsig       = $enable_module_schnorrsig"
+echo "  module extrakeys        = $enable_module_extrakeys"
+echo "  module ecdsa-adaptor    = $enable_module_ecdsa_adaptor"
 echo
 echo "  asm                     = $set_asm"
 echo "  bignum                  = $set_bignum"
@@ -695,4 +723,6 @@ echo "  CC                      = $CC"
 echo "  CFLAGS                  = $CFLAGS"
 echo "  CPPFLAGS                = $CPPFLAGS"
 echo "  LDFLAGS                 = $LDFLAGS"
+echo
+echo "  tests                   = $use_tests"
 echo
