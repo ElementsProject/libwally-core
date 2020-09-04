@@ -248,7 +248,11 @@ libwallycore_la_INCLUDES = \
     include/wally_transaction.h
 
 if SHARED_BUILD_ENABLED
+if IS_OSX
+WALLYCORE_LDFLAGS = 
+else
 WALLYCORE_LDFLAGS = -Wl,-rpath=@rpath -Wl,-rpath=./ -Wl,-rpath=./build/Release
+endif
 if IS_MINGW
 libwallycore_la_LDFLAGS = -no-undefined $(WALLYCORE_LDFLAGS)
 else
