@@ -4,24 +4,56 @@
 #include <wally_psbt.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdbool.h>
-#include <err.h>
 #include <ccan/str/hex/hex.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include <errno.h>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <memoryapi.h>
+#undef WIN32_LEAN_AND_MEAN
+#else
+#include <sys/mman.h>
+#endif
 
 #include "psbts.h"
+
+static void fail(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+    abort();
+}
 
 /* Create a cliff: any access past the end will SEGV */
 static unsigned char *cliff(size_t *size)
 {
     unsigned char *p;
 
+#ifdef _WIN32
+    SYSTEM_INFO info;
+    DWORD tmp;
+
+    GetSystemInfo(&info);
+    *size = info.dwPageSize;
+
+    p = (unsigned char *)VirtualAlloc(NULL, (*size) * 2, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    if (!p)
+        fail("VirtualAlloc failed, err %d", GetLastError());
+
+    if (!VirtualProtect(p + *size, *size, PAGE_READWRITE | PAGE_GUARD, &tmp));
+    fail("VirtualProtect failed, err %d", GetLastError());
+#else
     /* One page is enough for our tests so far */
     *size = getpagesize();
 
@@ -29,11 +61,12 @@ static unsigned char *cliff(size_t *size)
     p = mmap(NULL, *size + getpagesize(),
              PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     if (p == MAP_FAILED)
-        err(1, "Failed to mmap anon");
+        fail("Failed to mmap anon, errno %d", errno);
 
     /* Remove second page. */
     if (munmap(p + *size, getpagesize()) != 0)
-        err(1, "Failed to munmap /dev/zero");
+        fail("Failed to munmap /dev/zero, errno %d", errno);
+#endif
     return p;
 }
 
@@ -84,10 +117,10 @@ static void test_psbt_write(const struct psbt_test *test,
     for (i = 0; i <= psbt_len; i++) {
         /* A too short buffer should return OK and the required length */
         if (wally_psbt_to_bytes(psbt, 0, p + plen - i, i, &written) != WALLY_OK) {
-            errx(1, "wally_psbt_to_bytes should have suceeded");
+            fail("wally_psbt_to_bytes %s should have suceeded", test->base64);
         }
         if (written != psbt_len)
-            errx(1, "wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
+            fail("wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
                  test->base64, written, i);
     }
     wally_psbt_free(psbt);
