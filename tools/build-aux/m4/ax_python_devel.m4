@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_python_devel.html
+#     https://www.gnu.org/software/autoconf-archive/ax_python_devel.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -52,7 +52,7 @@
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -67,7 +67,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 18
+#serial 21
 
 AU_ALIAS([AC_PYTHON_DEVEL], [AX_PYTHON_DEVEL])
 AC_DEFUN([AX_PYTHON_DEVEL],[
@@ -136,8 +136,8 @@ variable to configure. See ``configure --help'' for reference.
 	# Check if you have distutils, else fail
 	#
 	AC_MSG_CHECKING([for the distutils Python package])
-	ac_distutils_result=`$PYTHON -c "import distutils" >/dev/null 2>&1`
-	if test -z "$ac_distutils_result"; then
+	ac_distutils_result=`$PYTHON -c "import distutils" 2>&1`
+	if test $? -eq 0; then
 		AC_MSG_RESULT([yes])
 	else
 		AC_MSG_RESULT([no])
@@ -166,6 +166,7 @@ $ac_distutils_result])
 		PYTHON_CPPFLAGS=$python_path
 	fi
 	AC_MSG_RESULT([$PYTHON_CPPFLAGS])
+	AC_SUBST([PYTHON_CPPFLAGS])
 
 	#
 	# Check for Python library path
@@ -244,6 +245,7 @@ EOD`
 		fi
 	fi
 	AC_MSG_RESULT([$PYTHON_LIBS])
+	AC_SUBST([PYTHON_LIBS])
 
 	#
 	# Check for site packages
@@ -254,32 +256,31 @@ EOD`
 			print (distutils.sysconfig.get_python_lib(0,0));"`
 	fi
 	AC_MSG_RESULT([$PYTHON_SITE_PKG])
+	AC_SUBST([PYTHON_SITE_PKG])
 
 	#
 	# libraries which must be linked in when embedding
 	#
 	AC_MSG_CHECKING(python extra libraries)
-	if test -z "$PYTHON_EXTRA_LDFLAGS"; then
-	   PYTHON_EXTRA_LDFLAGS=`$PYTHON -c "import distutils.sysconfig; \
+	if test -z "$PYTHON_EXTRA_LIBS"; then
+	   PYTHON_EXTRA_LIBS=`$PYTHON -c "import distutils.sysconfig; \
                 conf = distutils.sysconfig.get_config_var; \
                 print (conf('LIBS') + ' ' + conf('SYSLIBS'))"`
 	fi
-	AC_MSG_RESULT([$PYTHON_EXTRA_LDFLAGS])
+	AC_MSG_RESULT([$PYTHON_EXTRA_LIBS])
+	AC_SUBST(PYTHON_EXTRA_LIBS)
 
 	#
 	# linking flags needed when embedding
 	#
 	AC_MSG_CHECKING(python extra linking flags)
-	if test -z "$PYTHON_EXTRA_LIBS"; then
-		PYTHON_EXTRA_LIBS=`$PYTHON -c "import distutils.sysconfig; \
+	if test -z "$PYTHON_EXTRA_LDFLAGS"; then
+		PYTHON_EXTRA_LDFLAGS=`$PYTHON -c "import distutils.sysconfig; \
 			conf = distutils.sysconfig.get_config_var; \
 			print (conf('LINKFORSHARED'))"`
-		if echo "$PYTHON_EXTRA_LIBS" | grep " Python.framework" >/dev/null; then
-			# On OSX we can hit https://bugs.python.org/issue3588
-			PYTHON_EXTRA_LIBS=`$PYTHON-config --ldflags`
-		fi
 	fi
-	AC_MSG_RESULT([$PYTHON_EXTRA_LIBS])
+	AC_MSG_RESULT([$PYTHON_EXTRA_LDFLAGS])
+	AC_SUBST(PYTHON_EXTRA_LDFLAGS)
 
 	#
 	# final check to see if everything compiles alright
@@ -306,7 +307,7 @@ EOD`
 	AC_MSG_RESULT([$pythonexists])
 
         if test ! "x$pythonexists" = "xyes"; then
-		AC_MSG_RESULT([
+	   AC_MSG_FAILURE([
   Could not link test program to Python. Maybe the main Python library has been
   installed in some non-standard library path. If so, pass it to configure,
   via the LIBS environment variable.
@@ -317,20 +318,10 @@ EOD`
    for your distribution.  The exact name of this package varies among them.
   ============================================================================
 	   ])
-		PYTHON_VERSION=""
-		PYTHON_CPPFLAGS=""
-		PYTHON_LIBS=""
-		PYTHON_SITE_PKG=""
-		PYTHON_EXTRA_LDFLAGS=""
-		PYTHON_EXTRA_LIBS=""
+	  PYTHON_VERSION=""
 	fi
-	AC_SUBST([PYTHON_CPPFLAGS])
-	AC_SUBST([PYTHON_LIBS])
-	AC_SUBST([PYTHON_SITE_PKG])
-	AC_SUBST(PYTHON_EXTRA_LDFLAGS)
-	AC_SUBST(PYTHON_EXTRA_LIBS)
+
 	#
 	# all done!
 	#
 ])
-
