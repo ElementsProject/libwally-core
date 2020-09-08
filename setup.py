@@ -2,7 +2,7 @@
 
 kwargs = {
     'name': 'wallycore',
-    'version': '0.7.8',
+    'version': '0.7.9',
     'description': 'libwally Bitcoin library',
     'long_description': 'Python bindings for the libwally Bitcoin library',
     'url': 'https://github.com/ElementsProject/libwally-core',

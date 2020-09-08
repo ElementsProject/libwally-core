@@ -18,7 +18,10 @@
   consistency - You should change any references in your source when upgrading.
 
 - Almost all functions comprising the PSBT interface have changed name,
-  arguments, semantics or all three. Users can consider the new interface final.
+  arguments, semantics or all three. Users can consider the new interface
+  final for non-Elements PSBTs, however the Elements PSBT (PSET) interface
+  and implementation will be changed in the next release to match the
+  Elements codebase.
 
 ## Version 0.7.8
 
