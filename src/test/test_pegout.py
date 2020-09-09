@@ -51,13 +51,12 @@ class PegoutTests(unittest.TestCase):
         pub_key, pub_tweak = self.derive_pub_tweak(key_out, [0, offline_counter])
 
         whitelistproof, whitelistproof_len = make_cbuffer('00'*65)
-        # (code, written) = wally_asset_pak_whitelistproof(online_keys, online_keys_len, offline_keys,
-        (code) = wally_asset_pak_whitelistproof(online_keys, online_keys_len, offline_keys,
+        (code, written) = wally_asset_pak_whitelistproof(online_keys, online_keys_len, offline_keys,
                                                         offline_keys_len, whitelist_index, pub_key, len(pub_key),
                                                         master_online_key, master_online_key_len,
                                                         pub_tweak, len(pub_tweak), whitelistproof, whitelistproof_len)
         self.assertEqual(code, WALLY_OK)
-        # self.assertEqual(whitelistproof_len, written)
+        self.assertEqual(whitelistproof_len, written)
 
         return whitelistproof, whitelistproof_len, pub_key, len(pub_key)
 

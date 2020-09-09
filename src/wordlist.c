@@ -7,7 +7,7 @@ static int bstrcmp(const void *l, const void *r)
 }
 
 /* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
-static int get_bits(size_t n)
+static size_t get_bits(size_t n)
 {
     size_t bits = 0;
     while (n >>= 1)
@@ -100,7 +100,6 @@ void wordlist_free(struct words *w)
         }
         if (w->indices)
             wally_free((void *)w->indices); /* No need to clear */
-        wally_clear(w, sizeof(*w));
-        wally_free(w);
+        clear_and_free(w, sizeof(*w));
     }
 }

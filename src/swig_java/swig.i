@@ -94,14 +94,6 @@ static unsigned char* malloc_or_throw(JNIEnv *jenv, size_t len) {
     return p;
 }
 
-static void clear_and_free(void *p, size_t len)
-{
-    if (p) {
-        wally_bzero(p, len);
-        wally_free(p);
-    }
-}
-
 static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len) {
     jbyteArray ret = (*jenv)->NewByteArray(jenv, len);
     if (ret)
@@ -234,6 +226,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *output_asset, size_t output_asset_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *output_generator, size_t output_generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce, size_t nonce_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce_hash, size_t nonce_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *parent160, size_t parent160_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
@@ -250,10 +243,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *label, size_t label_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *parent_genesis_blockhash, size_t parent_genesis_blockhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *genesis_blockhash, size_t genesis_blockhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *mainchain_script, size_t mainchain_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *sub_pubkey, size_t sub_pubkey_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *whitelist_proof, size_t whitelist_proof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char *whitelistproof, size_t whitelistproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *online_keys, size_t online_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *offline_keys, size_t offline_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char *online_priv_key, size_t online_priv_key_len) };
@@ -379,12 +372,11 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(bip32_key_from_parent_path_alloc, ext_key);
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
-%returns_struct(bip32_key_with_tweak_from_parent_path_alloc, ext_key);
-%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
 %returns_size_t(bip32_key_get_child_num);
 %returns_size_t(bip32_key_get_depth);
+%returns_array_(bip32_key_get_fingerprint, 2, 3, BIP32_KEY_FINGERPRINT_LEN);
 %returns_array_(bip32_key_get_hash160, 2, 3, member_size(ext_key, hash160));
 %returns_array_(bip32_key_get_parent160, 2, 3, member_size(ext_key, parent160));
 %returns_array_(bip32_key_get_priv_key, 2, 3, member_size(ext_key, priv_key) - 1);
@@ -394,9 +386,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(bip32_key_init_alloc, ext_key);
 %rename("bip32_key_init") bip32_key_init_alloc;
 %returns_array_(bip32_key_serialize, 3, 4, BIP32_SERIALIZED_LEN);
+%returns_void__(bip32_key_strip_private_key);
 %returns_string(bip32_key_to_base58);
 %returns_struct(bip32_key_unserialize_alloc, ext_key);
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
+%returns_struct(bip32_key_with_tweak_from_parent_path_alloc, ext_key);
+%rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALIZED_LEN);
 %returns_string(bip38_from_private_key);
 %returns_array_(bip38_raw_to_private_key, 6, 7, 32);
@@ -412,6 +407,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_to_bytes);
+%returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
 %returns_size_t(wally_aes_cbc);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
@@ -461,6 +457,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_size_t(wally_script_push_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes);
+%returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt);
 %returns_size_t(wally_scriptpubkey_csv_2of3_then_2_from_bytes);
 %returns_size_t(wally_scriptpubkey_get_type);
 %returns_size_t(wally_scriptpubkey_op_return_from_bytes);
@@ -551,12 +548,15 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_get_output_value_len);
 %returns_array_(wally_tx_get_signature_hash, 12, 13, SHA256_LEN);
 %returns_uint64(wally_tx_get_total_output_satoshi);
+%returns_array_(wally_tx_get_txid, 2, 3, WALLY_TXHASH_LEN);
 %returns_size_t(wally_tx_get_version);
 %returns_size_t(wally_tx_get_vsize);
 %returns_size_t(wally_tx_get_weight);
 %returns_size_t(wally_tx_get_witness_count);
 %returns_struct(wally_tx_init_alloc, wally_tx);
 %rename("tx_init") wally_tx_init_alloc;
+%returns_struct(wally_tx_clone_alloc, wally_tx);
+%rename("tx_clone") wally_tx_clone_alloc;
 %returns_void__(wally_tx_input_free);
 %returns_array_(wally_tx_input_get_blinding_nonce, 2, 3, SHA256_LEN);
 %returns_array_(wally_tx_input_get_entropy, 2, 3, SHA256_LEN);
@@ -578,7 +578,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_input_get_script_len);
 %rename("_tx_input_get_sequence") wally_tx_input_get_sequence;
 %returns_size_t(_tx_input_get_sequence);
-%returns_array_(wally_tx_input_get_txhash, 2, 3, SHA256_LEN);
+%returns_array_(wally_tx_input_get_txhash, 2, 3, WALLY_TXHASH_LEN);
 %rename("_tx_input_get_witness") wally_tx_input_get_witness;
 %returns_size_t(_tx_input_get_witness);
 %returns_size_t(wally_tx_input_get_witness_len);
@@ -623,6 +623,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_tx_output_get_value_len);
 %returns_struct(wally_tx_output_init_alloc, wally_tx_output);
 %rename("tx_output_init") wally_tx_output_init_alloc;
+%returns_struct(wally_tx_output_clone_alloc, wally_tx_output_clone);
+%rename("tx_output_clone") wally_tx_output_clone_alloc;
 %returns_void__(wally_tx_output_set_satoshi);
 %returns_void__(wally_tx_output_set_script);
 %returns_void__(wally_tx_output_set_asset);
@@ -658,6 +660,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_tx_witness_stack_free);
 %returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
+%returns_struct(wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack);
+%rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
 %returns_string(wally_wif_from_bytes);
@@ -671,7 +675,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
 %returns_size_t(wally_asset_pak_whitelistproof_size);
-%returns_void__(wally_asset_pak_whitelistproof);
+%returns_size_t(wally_asset_pak_whitelistproof);
 
 %rename("_cleanup") wally_cleanup;
 %returns_void__(_cleanup)

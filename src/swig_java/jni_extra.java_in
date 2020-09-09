@@ -56,6 +56,10 @@
       return bip32_key_get_priv_key(jarg1, null);
   }
 
+  public final static byte[] bip32_key_get_fingerprint(Object jarg1) {
+      return bip32_key_get_fingerprint(jarg1, null);
+  }
+
   public final static byte[] bip32_key_get_hash160(Object jarg1) {
       return bip32_key_get_hash160(jarg1, null);
   }
@@ -74,6 +78,10 @@
 
   public final static byte[] bip38_to_private_key(String jarg1, byte[] jarg2, long jarg3) {
       return bip38_to_private_key(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] ecdh(byte[] jarg1, byte[] jarg2) {
+      return ecdh(jarg1, jarg2, null);
   }
 
   public final static byte[] sha256(byte[] jarg1) {
@@ -119,6 +127,10 @@
       return ec_public_key_from_private_key(jarg1, null);
   }
 
+  public final static byte[] ec_public_key_negate(byte[] jarg1) {
+      return ec_public_key_negate(jarg1, null);
+  }
+
   public final static byte[] ec_sig_from_bytes(byte[] jarg1, byte[] jarg2, long jarg3) {
       return ec_sig_from_bytes(jarg1, jarg2, jarg3, null);
   }
@@ -137,6 +149,10 @@
 
   public final static byte[] tx_get_input_txhash(Object jarg1, long jarg2) {
         return tx_get_input_txhash(jarg1, jarg2, null);
+  }
+
+  public final static byte[] tx_input_get_txhash(Object jarg1) {
+        return tx_input_get_txhash(jarg1, null);
   }
 
   public final static byte[] ec_sig_to_der(byte[] sig) {
@@ -174,19 +190,19 @@
       return ret;
   }
 
-  public static final byte[] scriptpubkey_p2pkh_from_bytes(byte[] bytes, long flags) {
+  public final static byte[] scriptpubkey_p2pkh_from_bytes(byte[] bytes, long flags) {
       final byte[] buf = new byte[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
       final int len = scriptpubkey_p2pkh_from_bytes(bytes, flags, buf);
       return checkBuffer(buf, len);
   }
 
-  public static final byte[] scriptpubkey_p2sh_from_bytes(byte[] bytes, long flags) {
+  public final static byte[] scriptpubkey_p2sh_from_bytes(byte[] bytes, long flags) {
       final byte[] buf = new byte[WALLY_SCRIPTPUBKEY_P2SH_LEN];
       final int len = scriptpubkey_p2sh_from_bytes(bytes, flags, buf);
       return checkBuffer(buf, len);
   }
 
-  public static final byte[] scriptpubkey_multisig_from_bytes(byte[] bytes, long threshold, long flags, int num_sigs) {
+  public final static byte[] scriptpubkey_multisig_from_bytes(byte[] bytes, long threshold, long flags, int num_sigs) {
       final int required_len = 3 + num_sigs * (Wally.EC_PUBLIC_KEY_LEN + 1);
       final byte[] buf = new byte[required_len];
       final int len = scriptpubkey_multisig_from_bytes(bytes, threshold, flags, buf);
@@ -205,7 +221,7 @@
       return ret;
   }
 
-  public static final byte[] addr_segwit_to_bytes(String jarg1, String jarg2, long jarg3) {
+  public final static byte[] addr_segwit_to_bytes(String jarg1, String jarg2, long jarg3) {
       final byte[] buf = new byte[32 + 2]; /* Largest v0 witness script possible */
       final int len = addr_segwit_to_bytes(jarg1, jarg2, jarg3, buf);
       return trimBuffer(buf, len);
@@ -213,6 +229,10 @@
 
   public final static boolean wif_is_uncompressed(final String wif) {
       return _wif_is_uncompressed(wif) != 0;
+  }
+
+  public final static byte[] tx_get_txid(final Object tx) {
+      return tx_get_txid(tx, null);
   }
 
   public static final byte[] tx_to_bytes(final Object tx, long flags) {
@@ -272,6 +292,14 @@
 
   public final static boolean is_elements_build() {
       return _is_elements_build() != 0;
+  }
+
+  public final static byte[] symmetric_key_from_seed(byte[] jarg1) {
+      return symmetric_key_from_seed(jarg1, null);
+  }
+
+  public final static byte[] symmetric_key_from_parent(byte[] jarg1, long jarg2, byte[] jarg3) {
+      return symmetric_key_from_parent(jarg1, jarg2, jarg3, null);
   }
 
   public final static void cleanup() {

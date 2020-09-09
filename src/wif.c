@@ -74,7 +74,7 @@ int wally_wif_to_bytes(const char *wif,
 
     ret = is_uncompressed(wif, buf, sizeof(buf), &uncompressed);
 
-    if (ret ||
+    if (ret != WALLY_OK ||
         (buf[0] != prefix) ||
         (uncompressed && flags != WALLY_WIF_FLAG_UNCOMPRESSED) ||
         (!uncompressed && flags != WALLY_WIF_FLAG_COMPRESSED)) {
@@ -139,7 +139,7 @@ int wally_wif_to_public_key(const char *wif,
     } else
         ret = wally_ec_public_key_from_private_key(&buf[1], EC_PRIVATE_KEY_LEN, bytes_out, EC_PUBLIC_KEY_LEN);
 
-    if (ret)
+    if (ret != WALLY_OK)
         *written = 0;
 
     wally_clear_2(buf, sizeof(buf), pub_key, sizeof(pub_key));

@@ -17,6 +17,7 @@ include_HEADERS += $(top_srcdir)/include/wally_descriptor.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
+include_HEADERS += $(top_srcdir)/include/wally_symmetric.h
 include_HEADERS += $(top_srcdir)/include/wally_transaction.h
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -219,6 +220,7 @@ libwallycore_la_SOURCES = \
     mnemonic.c \
     pbkdf2.c \
     psbt.c \
+    pullpush.c \
     script.c \
     scrypt.c \
     sign.c \
@@ -273,6 +275,16 @@ noinst_PROGRAMS += test_bech32
 test_bech32_SOURCES = ctest/test_bech32.c
 test_bech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_bech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+TESTS += test_psbt
+noinst_PROGRAMS += test_psbt
+test_psbt_SOURCES = ctest/test_psbt.c ccan/ccan/str/hex/hex.c
+test_psbt_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
+test_psbt_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+TESTS += test_psbt_limits
+noinst_PROGRAMS += test_psbt_limits
+test_psbt_limits_SOURCES = ctest/test_psbt_limits.c ccan/ccan/str/hex/hex.c
+test_psbt_limits_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
+test_psbt_limits_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear
@@ -316,7 +328,6 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_descriptor.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_ecdh.py
-	$(AM_V_at)$(PYTHON_TEST) test/test_elements.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
@@ -326,23 +337,29 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_scrypt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_sign.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_symmetric.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_transaction.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
-if USE_SWIG_PYTHON
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/address.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
 if BUILD_ELEMENTS
+	$(AM_V_at)$(PYTHON_TEST) test/test_pset.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_elements.py
+endif
+if USE_SWIG_PYTHON
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/psbt.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/signmessage.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
+if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
 endif
-endif
+endif # USE_SWIG_PYTHON
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS
 if BUILD_ELEMENTS

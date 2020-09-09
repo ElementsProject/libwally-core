@@ -28,9 +28,6 @@ extern "C" {
 #define WALLY_EINVAL -2 /** Invalid argument */
 #define WALLY_ENOMEM -3 /** malloc() failed */
 
-/** BIP32 fingerprint length */
-#define FINGERPRINT_LEN 4
-
 /**
  * Initialize wally.
  *
@@ -244,9 +241,9 @@ WALLY_CORE_API int wally_set_operations(
 /**
  * Determine if the library was built with elements support.
  *
- * :param value_out: 1 if the library supports elements, otherwise 0.
+ * :param written: 1 if the library supports elements, otherwise 0.
  */
-WALLY_CORE_API int wally_is_elements_build(uint64_t *value_out);
+WALLY_CORE_API int wally_is_elements_build(size_t *written);
 
 #ifdef __cplusplus
 }

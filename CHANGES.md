@@ -1,50 +1,56 @@
 # Changes
 
+## Version 0.7.9
+
+- Python: 'None' passed as a binary buffer argument to wally calls which
+  require the buffer to be non-NULL now consistently throws ValueError (Just
+  as the library does for incorrectly sized or otherwise invalid inputs).
+  Previously this might throw a TypeError depending on the function.
+
+- wally_is_elements_build now takes a size_t output instead of uin64_t.
+
+- elements_pegout_script_from_bytes, asset_pak_whitelistproof and
+  psbt_to_bytes now follow the library convention for too-short buffers
+  instead of returning WALLY_EINVAL. See the generated API documentation
+  section "Variable Length Output Buffers" for details.
+
+- FINGERPRINT_LEN was renamed to BIP32_KEY_FINGERPRINT_LEN for
+  consistency - You should change any references in your source when upgrading.
+
+- Almost all functions comprising the PSBT interface have changed name,
+  arguments, semantics or all three. Users can consider the new interface
+  final for non-Elements PSBTs, however the Elements PSBT (PSET) interface
+  and implementation will be changed in the next release to match the
+  Elements codebase.
+
 ## Version 0.7.8
 
-- Deprecate Python 2 wheels
-- Honor CFLAGS, default to O2
-- Bug fixing
+- Python 2 wheels are now deprecated. Users should move to Python 3 as soon as possible.
 
 ## Version 0.7.7
 
-- Expose wally_psbt_get_length
-- Add wally_scriptpubkey_to_address
-- Return written bytes in asset_pak_whitelistproof
-- Elements bug fixes
+- API change of wally_asset_pak_whitelistproof to return the number of bytes written.
 
 ## Version 0.7.6
 
-- Add flag to sort multisig keys (BIP67)
-- Add bip32_key_get_fingerprint
-- Add Liquid developer guide
-- Add liquid support to address_to_scriptpubkey
+- No API changes
 
 ## Version 0.7.5
 
-- Add support for P2PKH, P2SH-P2WPKH, P2WPKH address derivation from BIP32 key
-- Add support for P2KH and P2SH address parsing
-- Add support for PSBT
-- Add support for blech32
-- Add support for pegin and pegout
-- Bug fixing, build updates and improvements
+- No API changes
 
 ## Version 0.7.4
 
-- Add support for recoverable signatures
-- Generalize Elements function to use external nonces
-- Expose blinding key functions to js wrapper
-- doc improvement and bugs fixing
+- No API changes
 
 ## Version 0.7.3
 
-- Exposed ECDH, added py3.7 x86_64 linux wheels to released artifacts, updated
-  JS bindings to support latest nodejs, doc typos and bug fixing.
+- No API changes
 
 ## Version 0.7.2
 
 - API change of wally_tx_to_bytes and wally_tx_to_hex to not accept
-  WALLY_TX_FLAG_USE_ELEMENTS bit set in flags. You should remove such flag when
+  WALLY_TX_FLAG_USE_ELEMENTS set in flags. You should remove this flag when
   upgrading. This change affects elements transactions only.
 
 ## Version 0.6.5

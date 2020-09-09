@@ -2,7 +2,6 @@
 
 #include <wally_crypto.h>
 #include <wally_transaction.h>
-#include <transaction_int.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

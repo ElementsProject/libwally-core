@@ -40,6 +40,13 @@ public class test_assets {
             throw new RuntimeException("Unexpected public_blinding_key result");
     }
 
+    public void test_symmetric() {
+        // Just test our wrappers; the values are tested by test_blinding_keys() above
+        final byte[] seed = h("fecd7938b912091cdedb47f70d4f3742f59f77e3bac780c0c498e2aaf6f9f4ab");
+        final byte[] master_key = Wally.symmetric_key_from_seed(seed);
+        final byte[] child_key = Wally.symmetric_key_from_parent(master_key, 0, new String("foo").getBytes());
+    }
+
     private void test_confidential_address() {
         // hexes from local regtest testing
         final String addr = "Q7qcjTLsYGoMA7TjUp97R6E6AM5VKqBik6";
@@ -79,6 +86,7 @@ public class test_assets {
         final test_assets t = new test_assets();
         t.test_blinding();
         t.test_blinding_keys();
+        t.test_symmetric();
         t.test_confidential_address();
         t.test_confidential_values();
     }

@@ -13,6 +13,7 @@ libwally-core documentation
    bip39
    psbt
    script
+   symmetric
    transaction
    elements
 
@@ -20,6 +21,7 @@ libwally-core documentation
    :maxdepth: 2
    :caption: Developer Guides
 
+   Library Conventions <conventions.rst>
    Liquid <Liquid.rst>
 
 Indices and tables

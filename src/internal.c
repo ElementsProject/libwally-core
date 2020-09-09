@@ -156,22 +156,24 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
 int wally_hash160(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {
-    struct sha256 sha;
+    unsigned char buff[SHA256_LEN];
     struct ripemd160 ripemd;
-    bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
 
-    if ((!bytes && bytes_len != 0) || !bytes_out || len != HASH160_LEN)
+    if (!bytes_out || len != HASH160_LEN)
         return WALLY_EINVAL;
 
     BUILD_ASSERT(sizeof(ripemd) == HASH160_LEN);
 
-    sha256(&sha, bytes, bytes_len);
-    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &sha, sizeof(sha));
+    if (wally_sha256(bytes, bytes_len, buff, sizeof(buff)) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &buff, sizeof(buff));
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
         wally_clear(&ripemd, sizeof(ripemd));
     }
-    wally_clear(&sha, sizeof(sha));
+    wally_clear(&buff, sizeof(buff));
     return WALLY_OK;
 }
 
@@ -231,6 +233,13 @@ void *wally_malloc(size_t size)
     return _ops.malloc_fn(size);
 }
 
+void *wally_calloc(size_t size)
+{
+    void *p = _ops.malloc_fn(size);
+    (void) wally_bzero(p, size);
+    return p;
+}
+
 void wally_free(void *ptr)
 {
     _ops.free_fn(ptr);
@@ -271,14 +280,14 @@ int wally_set_operations(const struct wally_operations *ops)
     return WALLY_OK;
 }
 
-int wally_is_elements_build(uint64_t *value_out)
+int wally_is_elements_build(size_t *written)
 {
-    if (!value_out)
+    if (!written)
         return WALLY_EINVAL;
 #ifdef BUILD_ELEMENTS
-    *value_out = 1;
+    *written = 1;
 #else
-    *value_out = 0;
+    *written = 0;
 #endif
     return WALLY_OK;
 }
@@ -326,6 +335,14 @@ void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
     _ops.bzero_fn(p4, len4);
     _ops.bzero_fn(p5, len5);
     _ops.bzero_fn(p6, len6);
+}
+
+void clear_and_free(void *p, size_t len)
+{
+    if (p) {
+        wally_clear(p, len);
+        wally_free(p);
+    }
 }
 
 static bool wally_init_done = false;

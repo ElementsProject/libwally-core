@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import unittest
 from util import *
 
@@ -13,11 +12,14 @@ ADDRESS_TYPE_P2WPKH      = 0x04
 
 ADDRESS_VERSION_P2PKH_MAINNET = 0x00
 ADDRESS_VERSION_P2PKH_TESTNET = 0x6F
-ADDRESS_VERSION_P2SH_MAINNET = 0x05
-ADDRESS_VERSION_P2SH_TESTNET = 0xC4
+ADDRESS_VERSION_P2SH_MAINNET  = 0x05
+ADDRESS_VERSION_P2SH_TESTNET  = 0xC4
 
 NETWORK_BITCOIN_MAINNET = 0x01
 NETWORK_BITCOIN_TESTNET = 0x02
+NETWORK_LIQUID_MAINNET  = 0x03
+NETWORK_LIQUID_REGTEST  = 0x04
+
 
 # Vector from test_bip32.py. We only need an xpub to derive addresses.
 vec = {
@@ -97,29 +99,29 @@ class AddressTests(unittest.TestCase):
 
         # Address type flag is mandatory
         version = ADDRESS_VERSION_P2PKH_MAINNET if network == NETWORK_BITCOIN_MAINNET else ADDRESS_VERSION_P2PKH_TESTNET
-        ret, out = wally_bip32_key_to_address(key, 0, version)
+        ret, new_addr = wally_bip32_key_to_address(key, 0, version)
         self.assertEqual(ret, WALLY_EINVAL)
 
         # Obtain legacy address (P2PKH)
-        ret, out = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2PKH, version)
+        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2PKH, version)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(out, vec[path]['address_legacy'])
+        self.assertEqual(new_addr, vec[path]['address_legacy'])
 
         # Obtain wrapped SegWit address (P2SH_P2WPKH)
         version = ADDRESS_VERSION_P2SH_MAINNET if network == NETWORK_BITCOIN_MAINNET else ADDRESS_VERSION_P2SH_TESTNET
-        ret, out = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2SH_P2WPKH, version)
+        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2SH_P2WPKH, version)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(out, vec[path]['address_p2sh_segwit'])
+        self.assertEqual(new_addr, vec[path]['address_p2sh_segwit'])
 
         # wally_bip32_key_to_address does not support bech32 native SegWit (P2WPKH)
-        ret, out = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2WPKH, version)
+        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2WPKH, version)
         self.assertEqual(ret, WALLY_EINVAL)
 
         # Obtain native SegWit address (P2WPKH)
         bech32_prefix = 'bc' if network == NETWORK_BITCOIN_MAINNET else 'tb'
-        ret, out = wally_bip32_key_to_addr_segwit(key, utf8(bech32_prefix), 0)
+        ret, new_addr = wally_bip32_key_to_addr_segwit(key, utf8(bech32_prefix), 0)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(out, vec[path]['address_segwit'])
+        self.assertEqual(new_addr, vec[path]['address_segwit'])
 
         # Parse legacy address (P2PKH):
         out, out_len = make_cbuffer('00' * (25))
@@ -129,9 +131,9 @@ class AddressTests(unittest.TestCase):
         self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
 
         # Get address for P2PKH scriptPubKey
-        ret, out = wally_scriptpubkey_to_address(out, written, network)
+        ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(out, vec[path]['address_legacy'])
+        self.assertEqual(new_addr, vec[path]['address_legacy'])
 
         # Parse wrapped SegWit address (P2SH_P2WPKH):
         out, out_len = make_cbuffer('00' * (25))
@@ -141,15 +143,31 @@ class AddressTests(unittest.TestCase):
         self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
 
         # Get address for P2SH scriptPubKey
-        ret, out = wally_scriptpubkey_to_address(out, written, network)
+        ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(out, vec[path]['address_p2sh_segwit'])
+        self.assertEqual(new_addr, vec[path]['address_p2sh_segwit'])
 
         # Parse native SegWit address (P2WPKH):
         out, out_len = make_cbuffer('00' * (100))
         ret, written = wally_addr_segwit_to_bytes(utf8(vec[path]['address_segwit']), utf8(bech32_prefix), 0, out, out_len)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
+
+    def test_address_scriptpubkey_liquid(self):
+        """Check that addresses can be converted to and from scriptpubkeys for Liquid"""
+        for addr, scriptpubkey, network in [
+            ('XYtnYoGoSeE9ouMEVi6mfeujhjT2VnJncA', 'a914ec51ffb65120594389733bf8625f542446d97f7987', NETWORK_LIQUID_REGTEST),
+            ('H5nswXhfo8AMt159sgA5FWT35De34hVR4o', 'a914f80278b2011573a2ac59c83fadf929b0fc57ad0187', NETWORK_LIQUID_MAINNET),
+        ]:
+            out, out_len = make_cbuffer('00' * (100))
+            ret, written = wally_address_to_scriptpubkey(utf8(addr), network, out, out_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(hexlify(out[0:written]), utf8(scriptpubkey))
+
+            ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(utf8(new_addr), utf8(addr))
+
 
 if __name__ == '__main__':
     unittest.main()

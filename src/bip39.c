@@ -203,7 +203,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
                             unsigned char *bytes_out, size_t len,
                             size_t *written)
 {
-    const size_t bip9_cost = 2048u;
+    const uint32_t bip9_cost = 2048u;
     const char *prefix = "mnemonic";
     const size_t prefix_len = strlen(prefix);
     const size_t passphrase_len = passphrase ? strlen(passphrase) : 0;
@@ -232,8 +232,7 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
     if (!ret && written)
         *written = BIP39_SEED_LEN_512; /* Succeeded */
 
-    wally_clear(salt, salt_len);
-    wally_free(salt);
+    clear_and_free(salt, salt_len);
 
     return ret;
 }

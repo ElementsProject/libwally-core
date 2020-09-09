@@ -215,6 +215,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
  * :param bytes_out: Destination for the resulting scriptSig.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
     const unsigned char *pub_key,
@@ -236,6 +238,8 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param witness: Destination for the newly created witness.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
     const unsigned char *pub_key,
@@ -299,8 +303,12 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
-    const unsigned char *bytes, size_t bytes_len,
-    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written);
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  * Create a P2SH scriptPubkey.
@@ -333,6 +341,8 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: A maximum of 15 keys are allowed to be passed.
  */
 WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
     const unsigned char *bytes,
@@ -402,13 +412,29 @@ WALLY_CORE_API int wally_witness_multisig_from_bytes(
  *|    second key given will be used as the recovery key.
  * :param bytes_len: Length of ``bytes`` in bytes. Must 2 * ``EC_PUBLIC_KEY_LEN``.
  * :param csv_blocks: The number of blocks before the recovery key can be
- *| used. Must be non-zero and less than 65536.
+ *| used. Must be between 17 and 65536.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t csv_blocks,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create an optimised CSV 2of2 multisig with a single key recovery scriptPubkey.
+ *
+ * Works like ``wally_scriptpubkey_csv_2of2_then_1_from_bytes`` but produces a
+ * script that is smaller and compatible with the miniscript expression
+ * "and(pk(key_user),or(99@pk(key_service),older(<csv_blocks>)))".
+ */
+WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
     const unsigned char *bytes,
     size_t bytes_len,
     uint32_t csv_blocks,
@@ -428,7 +454,7 @@ WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
  *|    second and third keys given will be used as the recovery keys.
  * :param bytes_len: Length of ``bytes`` in bytes. Must 3 * ``EC_PUBLIC_KEY_LEN``.
  * :param csv_blocks: The number of blocks before the recovery keys can be
- *| used. Must be non-zero and less than 65536.
+ *| used. Must be between 17 and 65536.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
@@ -489,44 +515,44 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
 /**
  * Get the pegout script size.
  *
- * :param parent_genesis_blockhash_len: Length of ``parent_genesis_blockhash`` in bytes. Must be 32.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
  * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
  * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- * :param whitelist_proof_len: The length of ``whitelist_proof`` in bytes.
+ * :param whitelistproof_len: The length of ``whitelistproof`` in bytes.
  * :param written: Destination for the number of bytes required to hold the pegout script.
  */
 WALLY_CORE_API int wally_elements_pegout_script_size(
-    size_t parent_genesis_blockhash_len,
+    size_t genesis_blockhash_len,
     size_t mainchain_script_len,
     size_t sub_pubkey_len,
-    size_t whitelist_proof_len,
+    size_t whitelistproof_len,
     size_t *written);
 
 /**
  * Create a pegout script.
  *
- * :param parent_genesis_blockhash: The genesis blockhash of the parent chain.
- * :param parent_genesis_blockhash_len: Length of ``parent_genesis_blockhash`` in bytes. Must be 32.
+ * :param genesis_blockhash: The genesis blockhash of the parent chain.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
  * :param mainchain_script: The parent chain script.
  * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
  * :param sub_pubkey: The whitelisted public key.
  * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- * :param whitelist_proof: The whitelist proof.
- * :param whitelist_proof_len: The length of ``whitelist_proof`` in bytes.
+ * :param whitelistproof: The whitelist proof.
+ * :param whitelistproof_len: The length of ``whitelistproof`` in bytes.
  * :param flags: Must be zero.
  * :param bytes_out: Destination for the resulting pegout script.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
-    const unsigned char *parent_genesis_blockhash,
-    size_t parent_genesis_blockhash_len,
+    const unsigned char *genesis_blockhash,
+    size_t genesis_blockhash_len,
     const unsigned char *mainchain_script,
     size_t mainchain_script_len,
     const unsigned char *sub_pubkey,
     size_t sub_pubkey_len,
-    const unsigned char *whitelist_proof,
-    size_t whitelist_proof_len,
+    const unsigned char *whitelistproof,
+    size_t whitelistproof_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,
@@ -543,6 +569,8 @@ WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
  * :param bytes_out: Destination for the resulting script.
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
     const unsigned char *redeem_script,

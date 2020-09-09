@@ -1,6 +1,5 @@
 import unittest
 from util import *
-from hashlib import sha256
 
 FLAG_ECDSA, FLAG_SCHNORR, FLAG_GRIND_R, FLAG_RECOVERABLE = 1, 2, 4, 8
 EX_PRIV_KEY_LEN, EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
@@ -177,7 +176,9 @@ class SignTests(unittest.TestCase):
             for flags in (0, BITCOIN_MESSAGE_HASH_FLAG):
                 expected = PREFIX + varint + msg
                 if flags:
-                    expected = sha256(sha256(expected).digest()).digest()
+                    buf, buf_len = make_cbuffer('00'*32)
+                    self.assertEqual(WALLY_OK, wally_sha256d(expected, len(expected), buf, buf_len))
+                    expected = buf
 
                 ret, written = fn(flags, out_len)
                 self.assertEqual((ret, written), (WALLY_OK, len(expected)))
