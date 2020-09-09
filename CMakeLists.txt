@@ -472,6 +472,7 @@ set(LIBWALLY_FILES
     src/mnemonic.c
     src/pbkdf2.c
     src/psbt.c
+    src/pullpush.c
     src/script.c
     src/scrypt.c
     src/sign.c
@@ -1387,6 +1388,88 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
+set(TEST_PSBT_NAME ctest_psbt)
+add_executable(${TEST_PSBT_NAME} src/ctest/test_psbt.c src/ccan/ccan/str/hex/hex.c)
+target_compile_options(${TEST_PSBT_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
+)
+target_compile_definitions(${TEST_PSBT_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+)
+target_include_directories(${TEST_PSBT_NAME}
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${SECP256K_OUTPUT_PATH}
+)
+target_link_directories(${TEST_PSBT_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_PSBT_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
+)
+add_test(
+  NAME ${TEST_PSBT_NAME}
+  COMMAND $<TARGET_FILE:${TEST_PSBT_NAME}>
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
+)
+
+if(NOT WIN32)
+set(TEST_PSBT_LIMITS_NAME ctest_psbt_limits)
+add_executable(${TEST_PSBT_LIMITS_NAME} src/ctest/test_psbt_limits.c src/ccan/ccan/str/hex/hex.c)
+target_compile_options(${TEST_PSBT_LIMITS_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
+)
+target_compile_definitions(${TEST_PSBT_LIMITS_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+)
+target_include_directories(${TEST_PSBT_LIMITS_NAME}
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+    ${SECP256K_OUTPUT_PATH}
+)
+target_link_directories(${TEST_PSBT_LIMITS_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_PSBT_LIMITS_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
+)
+add_test(
+  NAME ${TEST_PSBT_LIMITS_NAME}
+  COMMAND $<TARGET_FILE:${TEST_PSBT_LIMITS_NAME}>
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
+)
+endif(NOT WIN32)
+
 set(TEST_DESCRIPTOR_NAME ctest_descriptor)
 add_executable(${TEST_DESCRIPTOR_NAME} src/ctest/test_descriptor.c)
 target_compile_options(${TEST_DESCRIPTOR_NAME}
@@ -1597,7 +1680,7 @@ add_test(NAME py_test_mnemonic        COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/
 add_test(NAME py_test_reconcile_sigs  COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/reconcile_sigs.py )
 add_test(NAME py_test_signmessage     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/signmessage.py )
 add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/tx.py )
-add_test(NAME py_test_address         COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/address.py )
+add_test(NAME py_test_psbt            COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/psbt.py )
 add_test(NAME py_test_sha             COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/sha.py )
 
 if(ENABLE_ELEMENTS)
@@ -1677,9 +1760,13 @@ add_test(NAME test_mnemonic     COMMAND ${PYTHON_BIN} test/test_mnemonic.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_pbkdf2       COMMAND ${PYTHON_BIN} test/test_pbkdf2.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_psbt         COMMAND ${PYTHON_BIN} test/test_psbt.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_script       COMMAND ${PYTHON_BIN} test/test_script.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_scrypt       COMMAND ${PYTHON_BIN} test/test_scrypt.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_symmetric    COMMAND ${PYTHON_BIN} test/test_symmetric.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_wif          COMMAND ${PYTHON_BIN} test/test_wif.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
@@ -1688,14 +1775,14 @@ add_test(NAME test_wordlist     COMMAND ${PYTHON_BIN} test/test_wordlist.py
 add_test(NAME test_descriptor   COMMAND ${PYTHON_BIN} test/test_descriptor.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 if(NOT PY_TEST_IGNORE)
-add_test(NAME test_psbt         COMMAND ${PYTHON_BIN} test/test_psbt.py
-                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 endif(NOT PY_TEST_IGNORE)
 
 if(ENABLE_ELEMENTS)
 add_test(NAME test_elements           COMMAND ${PYTHON_BIN} test/test_elements.py
+                                      WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_pset               COMMAND ${PYTHON_BIN} test/test_pset.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_confidential_addr  COMMAND ${PYTHON_BIN} test/test_confidential_addr.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
