@@ -1,5 +1,6 @@
 bld
 *.pyc
+*.swp
 src/test/__pycache__/
 *~
 *.class
@@ -43,6 +44,7 @@ src/test_bech32*
 src/test_blech32*
 src/test_clear*
 src/test_tx*
+src/test_psbt*
 src/test_elements_tx*
 src/test-suite.log
 src/swig_java/swig_java_wrap.c
@@ -82,9 +84,13 @@ docs/source/core.rst
 docs/source/crypto.rst
 docs/source/psbt.rst
 docs/source/script.rst
+docs/source/symmetric.rst
 docs/source/transaction.rst
 docs/source/elements.rst
 .idea/
+
+# ctags
+tags
 
 # MacOS
 **/.DS_Store

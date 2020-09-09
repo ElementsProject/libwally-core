@@ -108,7 +108,8 @@ WALLY_CORE_API int wally_scriptpubkey_to_address(
  *
  * :param priv_key: Private key bytes.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- * :param prefix: Expected prefix byte, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``, ``WALLY_ADDRESS_VERSION_TESTNET``.
+ * :param prefix: Expected prefix byte, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``
+ *|     or ``WALLY_ADDRESS_VERSION_WIF_TESTNET``.
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param output: Destination for the resulting Wallet Import Format string.
@@ -124,7 +125,8 @@ WALLY_CORE_API int wally_wif_from_bytes(
  * Convert a Wallet Import Format string to a private key.
  *
  * :param wif: Private key in Wallet Import Format.
- * :param prefix: Prefix byte to use, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``, ``WALLY_ADDRESS_VERSION_TESTNET``.
+ * :param prefix: Prefix byte to use, e.g. ``WALLY_ADDRESS_VERSION_WIF_MAINNET``
+ *|     or ``WALLY_ADDRESS_VERSION_WIF_TESTNET``.
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param bytes_out: Destination for the private key.

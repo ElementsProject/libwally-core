@@ -14,43 +14,61 @@ class TransactionTests(unittest.TestCase):
 
     def tx_deserialize_hex(self, hex_):
         tx_p = pointer(wally_tx())
-        self.assertEqual(WALLY_OK, wally_tx_from_hex(hex_, 0, tx_p))
+        self.assertEqual(WALLY_OK, wally_tx_from_hex(hex_, 0x0, tx_p))
         return tx_p[0]
 
     def tx_serialize_hex(self, tx):
-        ret, hex_ = wally_tx_to_hex(tx, 1)
+        ret, hex_ = wally_tx_to_hex(tx, 0x1)
         self.assertEqual(ret, WALLY_OK)
         return hex_
 
     def test_serialization(self):
         """Testing serialization and deserialization"""
+        tx_out = pointer(wally_tx())
+        tx_copy = pointer(wally_tx())
+
+        # Invalid arguments
         for args in [
-            (utf8(''), 0, pointer(wally_tx())), # Empty hex
-            (utf8('00'*5), 0, pointer(wally_tx())), # Short hex
+            (None, 0, tx_out), # Null hex
+            (utf8(''), 0, tx_out), # Empty hex
+            (utf8('00'*5), 0, tx_out), # Short hex
             (TX_FAKE_HEX, 0, None), # Empty output
-            (TX_FAKE_HEX, 4, pointer(wally_tx())), # Unsupported flag
-            (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, pointer(wally_tx())), # Invalid witness flag
+            (TX_FAKE_HEX, 8, tx_out), # Unsupported flag
+            (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, tx_out), # Invalid witness flag
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_from_hex(*args))
 
-        # deserialization is allowed, but the opposite is not
-        for args in [
-            (TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:], 0, pointer(wally_tx())), # No inputs
-            (TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], 0, pointer(wally_tx())), # No outputs
-            (TX_FAKE_HEX, 2, pointer(wally_tx())), # Elements flag must not be set for serialization
-        ]:
-            self.assertEqual(WALLY_OK, wally_tx_from_hex(*args))
-            self.assertEqual(WALLY_EINVAL, wally_tx_to_hex(args[2][0], 0)[0])
-
-        for args in [
-            (TX_HEX, 0, pointer(wally_tx())),
-            (utf8('00')+TX_HEX[2:], 0, pointer(wally_tx())),
-            (utf8('ff')+TX_FAKE_HEX[2:], 0, pointer(wally_tx())),
-            (TX_FAKE_HEX, 0, pointer(wally_tx())),
-            (TX_WITNESS_HEX, 0, pointer(wally_tx())),
+        # No-input/no-output transactions
+        for tx_hex in [
+             TX_FAKE_HEX[:9]+utf8('0')+TX_FAKE_HEX[92:],   # No inputs
+             TX_FAKE_HEX[:93]+utf8('0')+TX_FAKE_HEX[112:], # No outputs
             ]:
-            self.assertEqual(WALLY_OK, wally_tx_from_hex(*args))
-            self.assertEqual(args[0], utf8(self.tx_serialize_hex(args[2][0])))
+            self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, 0, tx_out))
+            # Partial transactions cannot be dumped by default
+            self.assertEqual(WALLY_EINVAL, wally_tx_to_hex(tx_out, 0)[0])
+            # Check the partial transaction can be cloned
+            self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, 0, tx_copy))
+            if tx_out.contents.num_inputs != 0:
+                # Partial txs with inputs can be dumped with ALLOW_PARTIAL:0x4
+                ret, hex_ = wally_tx_to_hex(tx_out, 0x1|0x4)
+                self.assertEqual(WALLY_OK, ret)
+                self.assertEqual(tx_hex, utf8(hex_))
+
+        # Valid transactions
+        for tx_hex in [ TX_HEX,
+                        utf8('00')+TX_HEX[2:],
+                        utf8('ff')+TX_FAKE_HEX[2:],
+                        TX_FAKE_HEX,
+                        TX_WITNESS_HEX ]:
+            self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, 0 ,tx_out))
+            hex_ = utf8(self.tx_serialize_hex(tx_out))
+            self.assertEqual(tx_hex, hex_)
+            # Check the transaction can be cloned and serializes to the same hex
+            self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, 0, tx_copy))
+            self.assertEqual(hex_, utf8(self.tx_serialize_hex(tx_copy)))
+            # Check that the txid can be computed
+            txid, txid_len = make_cbuffer('00' * 32)
+            self.assertEqual(WALLY_OK, wally_tx_get_txid(tx_out, txid, txid_len))
 
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""
@@ -66,7 +84,7 @@ class TransactionTests(unittest.TestCase):
             vsize = (weight + 3) // 4
             self.assertEqual((WALLY_OK, length), wally_tx_get_length(byref(tx), 0))
             self.assertEqual((WALLY_OK, length_with_witness), wally_tx_get_length(byref(tx), 1))
-            self.assertEqual((WALLY_EINVAL, 0), wally_tx_get_length(byref(tx), 2)) # Unsupported flag
+            self.assertEqual((WALLY_EINVAL, 0), wally_tx_get_length(byref(tx), 8)) # Unsupported flag
             self.assertEqual((WALLY_OK, weight), wally_tx_get_weight(byref(tx)))
             self.assertEqual((WALLY_OK, vsize), wally_tx_get_vsize(byref(tx)))
             self.assertEqual((WALLY_OK, vsize), wally_tx_vsize_from_weight(weight))
@@ -100,16 +118,27 @@ class TransactionTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_remove_output(*args))
 
-        # Add and then remove, then test that serialization remains the same
-        for args, expected in [
-            ((self.tx_deserialize_hex(TX_FAKE_HEX), 1, script, script_len, 0), None),
-            ]:
-            before = self.tx_serialize_hex(args[0])
-            self.assertEqual(WALLY_OK, wally_tx_add_raw_output(*args))
-            if expected:
-                self.assertEqual(self.tx_serialize_hex(args[0]), expected)
-            self.assertEqual(WALLY_OK, wally_tx_remove_output(byref(args[0]), args[0].num_outputs-1))
-            self.assertEqual(before, self.tx_serialize_hex(args[0]))
+        # Add and remove inputs and outputs, test that serialization remains the same
+        script2, script2_len = make_cbuffer('77' * 16)
+        tx = self.tx_deserialize_hex(TX_FAKE_HEX)
+        self.assertEqual(WALLY_OK, wally_tx_add_raw_output(tx, 55, script2, script2_len, 0))
+        before_hex = self.tx_serialize_hex(tx)
+        num_outputs = tx.num_outputs
+
+        def remove_and_test(idx):
+            self.assertNotEqual(before_hex, self.tx_serialize_hex(tx))
+            self.assertEqual(WALLY_OK, wally_tx_remove_output(tx, idx))
+            self.assertEqual(before_hex, self.tx_serialize_hex(tx))
+
+        self.assertEqual(WALLY_OK, wally_tx_add_raw_output(tx, 1, script, script_len, 0))
+        remove_and_test(num_outputs)
+        for idx in range(0, num_outputs + 1):
+            ret = wally_tx_add_raw_output_at(tx, idx, 1, script, script_len, 0)
+            self.assertEqual(ret, WALLY_OK)
+            remove_and_test(idx)
+
+        ret = wally_tx_add_raw_output_at(tx, num_outputs + 1, 1, script, script_len, 0)
+        self.assertEqual(ret, WALLY_EINVAL) # Invalid index
 
     def test_inputs(self):
         """Testing functions manipulating inputs"""
@@ -136,10 +165,11 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, wally_tx_remove_input(*args))
 
         # Add and then remove, then test that serialization remains the same
+        wit = wally_tx_witness_stack()
         for args, expected in [
-            ((self.tx_deserialize_hex(TX_FAKE_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wally_tx_witness_stack(), 0),
+            ((self.tx_deserialize_hex(TX_FAKE_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wit, 0),
              None),
-            ((self.tx_deserialize_hex(TX_WITNESS_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wally_tx_witness_stack(), 0),
+            ((self.tx_deserialize_hex(TX_WITNESS_HEX), txhash, txhash_len, 0, 0xffffffff, script, script_len, wit, 0),
              TX_WITNESS_HEX[:13]+utf8('2')+TX_WITNESS_HEX[14:96]+utf8('00'*36)+utf8('0100ffffffff')+TX_WITNESS_HEX[96:-8]+utf8('00')+TX_WITNESS_HEX[-8:]),
             ]:
             before = self.tx_serialize_hex(args[0])
@@ -148,6 +178,29 @@ class TransactionTests(unittest.TestCase):
                 self.assertEqual(utf8(self.tx_serialize_hex(args[0])), expected)
             self.assertEqual(WALLY_OK, wally_tx_remove_input(byref(args[0]), args[0].num_inputs-1))
             self.assertEqual(before, self.tx_serialize_hex(args[0]))
+
+        script2, script2_len = make_cbuffer('77' * 16)
+        tx = self.tx_deserialize_hex(TX_FAKE_HEX)
+        ret = wally_tx_add_raw_input(tx, txhash, txhash_len, 1, 0xfffffffe, script2, script2_len, wit, 0)
+        self.assertEqual(ret, WALLY_OK)
+        before_hex = self.tx_serialize_hex(tx)
+        num_inputs = tx.num_inputs
+
+        def remove_and_test(idx):
+            self.assertNotEqual(before_hex, self.tx_serialize_hex(tx))
+            self.assertEqual(WALLY_OK, wally_tx_remove_input(tx, idx))
+            self.assertEqual(before_hex, self.tx_serialize_hex(tx))
+
+        for idx in range(0, num_inputs + 1):
+            ret = wally_tx_add_raw_input_at(tx, idx, txhash, txhash_len,
+                                            2, 0xfffffffd, script, script_len, wit, 0)
+            self.assertEqual(ret, WALLY_OK)
+            remove_and_test(idx)
+
+        ret = wally_tx_add_raw_input_at(tx, num_inputs + 1, txhash, txhash_len,
+                                        2, 0xfffffffd, script, script_len, wit, 0)
+        self.assertEqual(ret, WALLY_EINVAL) # Invalid index
+
 
     def test_witness(self):
         """Testing functions manipulating witness"""
@@ -175,16 +228,16 @@ class TransactionTests(unittest.TestCase):
             (tx, 0, script, 0, 1, 1, 0, out, out_len), # Invalid script length
             (tx, 0, script, script_len, MAX_SATOSHI+1, 1, 1, out, out_len), # Invalid amount (only with segwit)
             (tx, 0, script, script_len, 1, 0x100, 0, out, out_len), # Invalid sighash
-            (tx, 0, script, script_len, 1, 1, 2, out, out_len), # Invalid flags
+            (tx, 0, script, script_len, 1, 1, 8, out, out_len), # Invalid flags
             (tx, 0, script, script_len, 1, 1, 0, None, out_len), # Empty bytes
             (tx, 0, script, script_len, 1, 1, 0, out, 31), # Short len
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_signature_hash(*args))
 
         def sha256d(hex_):
-            input, input_len = make_cbuffer(hex_)
+            bin_input, bin_input_len = make_cbuffer(hex_)
             buf, buf_len = make_cbuffer('00'*32)
-            self.assertEqual(WALLY_OK, wally_sha256d(input, input_len, buf, buf_len))
+            self.assertEqual(WALLY_OK, wally_sha256d(bin_input, bin_input_len, buf, buf_len))
             return h(buf)
 
         script, script_len = make_cbuffer('00')

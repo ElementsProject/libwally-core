@@ -3,6 +3,9 @@
 # libwally-core documentation build configuration file
 SCANNING, DOCS, FUNC = 1, 2, 3
 
+from os import getenv
+DUMP_FUNCS = getenv("WALLY_DOC_DUMP_FUNCS") is not None
+
 def get_doc_lines(l):
     if l.startswith('.. '):
         return ['   ' + l, '']
@@ -12,13 +15,18 @@ def output_func(docs, func):
     is_normal_ret = 'WALLY_CORE_API int' in func
     func = func[:-1].replace('WALLY_CORE_API','').strip()
     func = func.replace(',',', ').replace('  ', ' ')
+    if DUMP_FUNCS:
+        # Dump function definitions if requested
+        print ('%s' % func)
     ret = ['.. c:function:: ' + func, '']
-    seen_param = False
+    is_variable_buffer_ret = 'unsigned char *bytes_out, size_t len, size_t *written' in func
     for l in docs:
         ret.extend(get_doc_lines(l))
     if is_normal_ret:
-        ret.append('   :return: WALLY_OK or an error code.') # FIXME: Link
-        ret.append('   :rtype: int')
+        if is_variable_buffer_ret:
+            ret.append('   :return: See :ref:`variable-length-output-buffers`')
+        else:
+            ret.append('   :return: See :ref:`error-codes`')
     ret.append('')
     ret.append('')
     return ret
@@ -53,8 +61,8 @@ def extract_docs(infile, outfile):
 
 # Generate the documentation source files
 for m in [
-    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt', 'transaction',
-    'elements'
+    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt',
+    'symmetric', 'transaction', 'elements'
     ]:
     extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
@@ -94,7 +102,7 @@ author = u'Jon Griffiths'
 # built documents.
 #
 # The short X.Y version.
-version = u'0.7.8'
+version = u'0.7.9'
 # The full version, including alpha/beta/rc tags.
 release = version
 

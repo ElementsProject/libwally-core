@@ -7,7 +7,7 @@ Read the API documentation at https://wally.readthedocs.io.
 
 Note that library interfaces may change slightly while the library design matures. Please see the [CHANGES](./CHANGES.md) file to determine if the API has changed when upgrading.
 
-Please report bugs and submit patches to https://github.com/ElementsProject/libwally-core.
+Please report bugs and submit patches to [Our github repository](https://github.com/ElementsProject/libwally-core). If you wish to report a security issue, please read [Our security reporting guidelines](./SECURITY.md).
 
 [![Build Status](https://travis-ci.org/ElementsProject/libwally-core.svg?branch=master)](https://travis-ci.org/ElementsProject/libwally-core)
 
@@ -98,15 +98,13 @@ is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
-running `setup.py` or (when compiling manually) `./configure`.
-
-Before running pip.
+running pip or (when compiling manually) `./configure`.
 
 You can also install the binary wally releases using the released
 wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.7.8-cp37-cp37m-linux_x86_64.whl
+pip install wallycore-0.7.9-cp37-cp37m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_wheels.sh` builds the release files and can be
@@ -149,8 +147,22 @@ should format your changes using [uncrustify](https://github.com/uncrustify/uncr
 version 0.60 or later. The script `./tools/uncrustify` will reformat all C
 sources in the library as needed, with the currently chosen uncrustify options.
 
+To reformat a single source file, use e.g.:
+```
+$ ./tools/uncrustify src/transaction.c
+```
+
+Or to reformat all source files, pass no arguments:
+```
+$ ./tools/uncrustify
+```
+
 You should also make sure the existing tests pass and if possible write tests
-covering any new functionality, following the existing style.
+covering any new functionality, following the existing style. You can run the
+tests via:
+```
+$ make check
+```
 
 ## Generating a coverage report
 
@@ -159,15 +171,15 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-coverage
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js_wrappers --enable-coverage
 $ make
 $ ./tools/coverage.sh clean
 $ make check
 $ ./tools/coverage.sh
 ```
 
-The coverage report can then be viewed at `src/lcov/index.html`. Patches to
-increase the test coverage are welcome.
+The coverage report can then be viewed at `./src/lcov/src/index.html`. Patches
+to increase the test coverage are welcome.
 
 ## Users of libwally-core
 

@@ -102,20 +102,24 @@ def _script_push_from_bytes_len_fn(data, flags):
             break
     return push_len + opcode_len
 script_push_from_bytes = _wrap_bin(script_push_from_bytes, _script_push_from_bytes_len_fn, resize=True)
-def _spkcsv2of2_1_len_fn(sigs, csv_blocks, flags):
+def _spkcsv2of2_1_opt_len_fn(pubkeys, csv_blocks, flags):
     # TODO: If we expose scriptint functions we can calc the real length here
     # instead of hardcoding 4 (largest push for the max csv_blocks of 0xffff)
+    return 6 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 4
+scriptpubkey_csv_2of2_then_1_from_bytes_opt = _wrap_bin(scriptpubkey_csv_2of2_then_1_from_bytes_opt, _spkcsv2of2_1_opt_len_fn, resize=True)
+def _spkcsv2of2_1_len_fn(pubkeys, csv_blocks, flags):
+    # TODO: See _spkcsv2of2_1_opt_len_fn above
     return 9 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 4
 scriptpubkey_csv_2of2_then_1_from_bytes = _wrap_bin(scriptpubkey_csv_2of2_then_1_from_bytes, _spkcsv2of2_1_len_fn, resize=True)
-def _spkcsv2of3_2_len_fn(sigs, csv_blocks, flags):
+def _spkcsv2of3_2_len_fn(pubkeys, csv_blocks, flags):
     # TODO: See TODO in _spkcsv2of2_1_len_fn
     return 13 + 3 * (EC_PUBLIC_KEY_LEN + 1) + 4
 scriptpubkey_csv_2of3_then_2_from_bytes = _wrap_bin(scriptpubkey_csv_2of3_then_2_from_bytes, _spkcsv2of3_2_len_fn, resize=True)
 scriptpubkey_op_return_from_bytes = _wrap_bin(scriptpubkey_op_return_from_bytes, WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN, resize=True)
 scriptpubkey_p2pkh_from_bytes = _wrap_bin(scriptpubkey_p2pkh_from_bytes, WALLY_SCRIPTPUBKEY_P2PKH_LEN, resize=True)
 scriptpubkey_p2sh_from_bytes = _wrap_bin(scriptpubkey_p2sh_from_bytes, WALLY_SCRIPTPUBKEY_P2SH_LEN, resize=True)
-def _spkmfb_len_fn(sigs, threshold, flags):
-    return 3 + (len(sigs) // EC_PUBLIC_KEY_LEN) * (EC_PUBLIC_KEY_LEN + 1)
+def _spkmfb_len_fn(pubkeys, threshold, flags):
+    return 3 + (len(pubkeys) // EC_PUBLIC_KEY_LEN) * (EC_PUBLIC_KEY_LEN + 1)
 scriptpubkey_multisig_from_bytes = _wrap_bin(scriptpubkey_multisig_from_bytes, _spkmfb_len_fn, resize=True)
 def _ssmfb_len_fn(script, sigs, sighashes, flags):
     der_len = (len(sigs) // EC_SIGNATURE_LEN) * (EC_SIGNATURE_DER_MAX_LEN + 2)
@@ -133,6 +137,7 @@ address_to_scriptpubkey = _wrap_bin(address_to_scriptpubkey, 21 + 4, resize=True
 
 tx_to_bytes = _wrap_bin(tx_to_bytes, tx_get_length, resize=True)
 tx_get_btc_signature_hash = _wrap_bin(tx_get_btc_signature_hash, SHA256_LEN)
+tx_get_txid = _wrap_bin(tx_get_txid, WALLY_TXHASH_LEN)
 tx_get_signature_hash = _wrap_bin(tx_get_signature_hash, SHA256_LEN)
 tx_input_get_txhash = _wrap_bin(tx_input_get_txhash, WALLY_TXHASH_LEN)
 tx_input_get_script = _wrap_bin(tx_input_get_script, tx_input_get_script_len, resize=True)
@@ -160,6 +165,18 @@ wif_to_public_key = _wrap_bin(wif_to_public_key, _wif_to_public_key_len, resize=
 
 symmetric_key_from_seed = _wrap_bin(symmetric_key_from_seed, HMAC_SHA512_LEN)
 symmetric_key_from_parent = _wrap_bin(symmetric_key_from_parent, HMAC_SHA512_LEN)
+
+psbt_get_input_redeem_script = _wrap_bin(psbt_get_input_redeem_script, psbt_get_input_redeem_script_len, resize=True)
+psbt_get_input_witness_script = _wrap_bin(psbt_get_input_witness_script, psbt_get_input_witness_script_len, resize=True)
+psbt_get_input_final_scriptsig = _wrap_bin(psbt_get_input_final_scriptsig, psbt_get_input_final_scriptsig_len, resize=True)
+psbt_get_input_signature = _wrap_bin(psbt_get_input_signature, psbt_get_input_signature_len, resize=True)
+psbt_get_input_unknown = _wrap_bin(psbt_get_input_unknown, psbt_get_input_unknown_len, resize=True)
+
+psbt_get_output_redeem_script = _wrap_bin(psbt_get_output_redeem_script, psbt_get_output_redeem_script_len, resize=True)
+psbt_get_output_witness_script = _wrap_bin(psbt_get_output_witness_script, psbt_get_output_witness_script_len, resize=True)
+psbt_get_output_unknown = _wrap_bin(psbt_get_output_unknown, psbt_get_output_unknown_len, resize=True)
+
+psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length, resize=True)
 
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
@@ -234,5 +251,20 @@ if is_elements_build():
         return len(rs)
     elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, _epcsfb_len_fn, resize=True)
 
+    psbt_get_input_vbf = _wrap_bin(psbt_get_input_vbf, psbt_get_input_vbf_len, resize=True)
+    psbt_get_input_asset = _wrap_bin(psbt_get_input_asset, psbt_get_input_asset_len, resize=True)
+    psbt_get_input_abf = _wrap_bin(psbt_get_input_abf, psbt_get_input_abf_len, resize=True)
+    psbt_get_input_txoutproof = _wrap_bin(psbt_get_input_txoutproof, psbt_get_input_txoutproof_len, resize=True)
+    psbt_get_input_genesis_blockhash = _wrap_bin(psbt_get_input_genesis_blockhash, psbt_get_input_genesis_blockhash_len, resize=True)
+    psbt_get_input_claim_script = _wrap_bin(psbt_get_input_claim_script, psbt_get_input_claim_script_len, resize=True)
+
+    psbt_get_output_blinding_pubkey = _wrap_bin(psbt_get_output_blinding_pubkey, psbt_get_output_blinding_pubkey_len, resize=True)
+    psbt_get_output_value_commitment = _wrap_bin(psbt_get_output_value_commitment, psbt_get_output_value_commitment_len, resize=True)
+    psbt_get_output_vbf = _wrap_bin(psbt_get_output_vbf, psbt_get_output_vbf_len, resize=True)
+    psbt_get_output_asset_commitment = _wrap_bin(psbt_get_output_asset_commitment, psbt_get_output_asset_commitment_len, resize=True)
+    psbt_get_output_abf = _wrap_bin(psbt_get_output_abf, psbt_get_output_abf_len, resize=True)
+    psbt_get_output_nonce = _wrap_bin(psbt_get_output_nonce, psbt_get_output_nonce_len, resize=True)
+    psbt_get_output_rangeproof = _wrap_bin(psbt_get_output_rangeproof, psbt_get_output_rangeproof_len, resize=True)
+    psbt_get_output_surjectionproof = _wrap_bin(psbt_get_output_surjectionproof, psbt_get_output_surjectionproof_len, resize=True)
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

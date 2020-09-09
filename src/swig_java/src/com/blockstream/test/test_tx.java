@@ -31,6 +31,7 @@ public class test_tx {
         final Object tx_input_wit_null = Wally.tx_input_init(tx_get_input_txhash, 0, 4294967295L, tx_get_input_script, null);
         final Object tx_out = Wally.tx_output_init(100, tx_get_output_script);
         final byte[] tx_input_get_script = Wally.tx_input_get_script(tx_input);
+        final byte[] txid = Wally.tx_get_txid(tx);
 
         assert_eq(p2pkh_hex, tx_string, "hex ser/der doesn't match original");
         assert_eq(p2pkh_hex, h(tx_bytes), "hex(bytes) doesn't match original");
@@ -46,7 +47,7 @@ public class test_tx {
         assert_eq(25, tx_get_output_script.length, "output script length mismatch");
         assert_eq("76a9142bc89c2702e0e618db7d59eb5ce2f0f147b4075488ac", h(tx_get_output_script), "output script mismatch");
         assert_eq( 0, Wally.tx_get_witness_count(tx), "witness count mismatch");
-        assert_eq(p2pkh_hex_first_input_hash, h(Wally.tx_input_get_txhash(tx_input, null)), "hash of prevout 0 from tx_input does not match");
+        assert_eq(p2pkh_hex_first_input_hash, h(Wally.tx_input_get_txhash(tx_input)), "hash of prevout 0 from tx_input does not match");
         assert_eq(p2pkh_hex_first_input_script, h(tx_input_get_script), "script hex mismatch");
         assert_eq(4294967295L, Wally.tx_input_get_sequence(tx_input), "sequence mismatch from tx_input");
         assert_eq(118307L, Wally.tx_get_output_satoshi(tx,0), "output 0, satoshi mismatch");
@@ -55,6 +56,8 @@ public class test_tx {
         assert_eq(72, Wally.tx_get_input_witness(tx_wit, 0, 1).length, "witness buffer mismatch");
         assert_eq(h(tx_get_output_script), h(Wally.tx_output_get_script(tx_out)), "script hex mismatch");
         assert_eq(100L, Wally.tx_output_get_satoshi(tx_out), "total output mismatch");
+        /* Note that the hex used here is reversed from the typical txid display order */
+        assert_eq("26641caee29b3ce14d0888ad3cfdd2f73f32f0c41d3da85127639009b38f1b21", h(txid), "txid mismatch");
 
         Wally.tx_add_input(tx, tx_input);
         assert_eq(2, Wally.tx_get_num_inputs(tx), "after adding number of inputs is not 2");

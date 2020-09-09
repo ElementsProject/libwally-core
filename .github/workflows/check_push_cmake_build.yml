@@ -14,90 +14,85 @@ on:
     - dlc-develop
     - feature/*
 
-env:
-  CMAKE_VERSION: 3.17.2
-
 jobs:
   cmake-js-build:
+    timeout-minutes: 20
     name: cmake-js build
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 2
       matrix:
         os: [macos-latest, ubuntu-latest]
-        node: [8, 12, 14]
+        node: [12, 14]
         exclude:
           - os: macos-latest
-            node: 8
-          - os: macos-latest
-            node: 14
+            node: 12
 
+# windows has illegal AES result.
     steps:
     - uses: actions/checkout@v2
     - name: setup-node
-      uses: actions/setup-node@v1
-      continue-on-error: true
+      uses: actions/setup-node@v2.1.1
       with:
         node-version: ${{ matrix.node }}
-    - name: setup-node retry
-      uses: actions/setup-node@v1
-      continue-on-error: true
-      with:
-        node-version: ${{ matrix.node }}
-    - name: setup-node third-try
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node }}
-    - name: cmake-useCache-ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/cache@v1
-      id: cache
-      with:
-        path: cache/cmake
-        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
-        restore-keys: |
-          ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
-    - name: cmake-download-ubuntu
-      if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p cache/cmake
-        cd cache/cmake
-        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
-        cd ../..
-    - name: cmake-setting-ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
-        cd cache/cmake
-        tar zxvf $cmake_file_name.tar.gz
-        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
-        export CURRENT_DIR=$(pwd)
-        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
-        cd ../..
     - name: npm_install
       run: npm install
     - name: test
       run: npm run ctest
-    - name: ubuntu-after
-      if: matrix.os == 'ubuntu-latest'
-      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   cmake-build:
+    timeout-minutes: 20
     name: cmake build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        type: [msvc, msys, apple, ubuntu-20.04, ubuntu-18.04]
+        include:
+          - type: msvc
+            os: windows-latest
+            generator: Visual Studio 16 2019
+          - type: msys
+            os: windows-latest
+            generator: MSYS Makefiles
+          - type: apple
+            os: macos-latest
+            generator: Unix Makefiles
+          - type: ubuntu-20.04
+            os: ubuntu-20.04
+            generator: Unix Makefiles
+          - type: ubuntu-18.04
+            os: ubuntu-18.04
+            generator: Unix Makefiles
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: cmake-generate
+      run: |
+        cmake -S . -B build -G "${{ matrix.generator }}"
+    - name: cmake-config
+      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/" --build build
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake --build build --config Release
+    - name: test
+      run: |
+        cd build
+        ctest -C Release --output-on-failure
+
+  cmake-swig-build:
+    timeout-minutes: 20
+    name: cmake swig build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        target: [cpp, python, java]
+        target: [python, java]
         java: [8.0.x, 11.0.x, 13]
         exclude:
           - target: python
             java: 11.0.x
           - target: python
-            java: 13
-          - target: cpp
-            java: 11.0.x
-          - target: cpp
             java: 13
           - os: windows-latest
             target: python
@@ -122,34 +117,8 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
-    - name: cmake-useCache-ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/cache@v1
-      id: cache
-      with:
-        path: cache/cmake
-        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
-        restore-keys: |
-          ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
-    - name: cmake-download-ubuntu
-      if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p cache/cmake
-        cd cache/cmake
-        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
-        cd ../..
-    - name: cmake-setting-ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
-        cd cache/cmake
-        tar zxvf $cmake_file_name.tar.gz
-        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
-        export CURRENT_DIR=$(pwd)
-        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
-        cd ../..
     - name: ubuntu-install-swig
-      if: matrix.os == 'ubuntu-latest' && matrix.target != 'cpp'
+      if: matrix.os == 'ubuntu-latest'
       run: sudo apt install swig
     - name: cmake-generate
       if: matrix.os != 'windows-latest'
@@ -159,9 +128,6 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         cmake -S . -B build -G "Visual Studio 16 2019"
-    - name: cmake-normal-config
-      if: matrix.target == 'cpp'
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/" --build build
     - name: cmake-python-config
       if: matrix.target == 'python'
       run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../" --build build
@@ -176,49 +142,21 @@ jobs:
       run: |
         cd build
         ctest -C Release --output-on-failure
-    - name: ubuntu-after
-      if: matrix.os == 'ubuntu-latest'
-      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64
 
   go-test:
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
-        go-version: [1.13.x, 1.14.x]
+        go-version: [1.14.x, 1.15.x]
 
     steps:
     - name: setup go
       uses: actions/setup-go@v1
       with:
         go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v1
-    - name: cmake-useCache-ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/cache@v1
-      id: cache
-      with:
-        path: cache/cmake
-        key: ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-0
-        restore-keys: |
-          ${{ runner.os }}-cmake-${{ env.CMAKE_VERSION }}-x64-
-    - name: cmake-download-ubuntu
-      if: matrix.os == 'ubuntu-latest' && steps.cache.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p cache/cmake
-        cd cache/cmake
-        wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz
-        cd ../..
-    - name: cmake-setting-ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        export cmake_file_name="cmake-$CMAKE_VERSION-Linux-x86_64"
-        cd cache/cmake
-        tar zxvf $cmake_file_name.tar.gz
-        chmod +x $cmake_file_name/bin/cmake $cmake_file_name/bin/ctest
-        export CURRENT_DIR=$(pwd)
-        echo ::add-path::$CURRENT_DIR/$cmake_file_name/bin
-        cd ../..
+    - uses: actions/checkout@v2
     - name: cmake-generate
       if: matrix.os != 'windows-latest'
       run: |
@@ -255,6 +193,3 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         LD_LIBRARY_PATH=./build/Release go test
-    - name: ubuntu-after
-      if: matrix.os == 'ubuntu-latest'
-      run: rm -rf cache/cmake/cmake-$CMAKE_VERSION-Linux-x86_64

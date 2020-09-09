@@ -85,12 +85,6 @@ static bool key_is_private(const struct ext_key *hdkey)
     return hdkey->priv_key[0] == BIP32_FLAG_KEY_PRIVATE;
 }
 
-static void key_strip_private_key(struct ext_key *key_out)
-{
-    key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
-    wally_clear(key_out->priv_key + 1, sizeof(key_out->priv_key) - 1);
-}
-
 /* Compute a public key from a private key */
 static int key_compute_pub_key(struct ext_key *key_out)
 {
@@ -110,8 +104,7 @@ int bip32_key_free(const struct ext_key *hdkey)
 {
     if (!hdkey)
         return WALLY_EINVAL;
-    wally_clear((void *)hdkey, sizeof(*hdkey));
-    wally_free((void *)hdkey);
+    clear_and_free((void *)hdkey, sizeof(*hdkey));
     return WALLY_OK;
 }
 
@@ -169,10 +162,9 @@ int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
 #define ALLOC_KEY() \
     if (!output) \
         return WALLY_EINVAL; \
-    *output = wally_malloc(sizeof(struct ext_key)); \
+    *output = wally_calloc(sizeof(struct ext_key)); \
     if (!*output) \
-        return WALLY_ENOMEM; \
-    wally_clear((void *)*output, sizeof(struct ext_key))
+        return WALLY_ENOMEM
 
 int bip32_key_from_seed_alloc(const unsigned char *bytes, size_t bytes_len,
                               uint32_t version, uint32_t flags,
@@ -257,7 +249,7 @@ int bip32_key_serialize(const struct ext_key *hdkey, uint32_t flags,
     *out++ = hdkey->depth;
 
     /* Save the first 32 bits of the parent key (aka fingerprint) only */
-    out = copy_out(out, hdkey->parent160, FINGERPRINT_LEN);
+    out = copy_out(out, hdkey->parent160, BIP32_KEY_FINGERPRINT_LEN);
 
     tmp32_be = cpu_to_be32(hdkey->child_num);
     out = copy_out(out, &tmp32_be, sizeof(tmp32_be));
@@ -305,7 +297,7 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
      * user will need to call bip32_key_set_parent() (FIXME: Implement)
      * later if they want it to be fully populated.
      */
-    bytes = copy_in(key_out->parent160, bytes, FINGERPRINT_LEN);
+    bytes = copy_in(key_out->parent160, bytes, BIP32_KEY_FINGERPRINT_LEN);
     bytes = copy_in(&key_out->child_num, bytes, sizeof(key_out->child_num));
     key_out->child_num = be32_to_cpu(key_out->child_num);
     bytes = copy_in(key_out->chain_code, bytes, sizeof(key_out->chain_code));
@@ -324,7 +316,7 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
             return wipe_key_fail(key_out); /* Public key data in private key */
 
         copy_in(key_out->pub_key, bytes, sizeof(key_out->pub_key));
-        key_strip_private_key(key_out);
+        bip32_key_strip_private_key(key_out);
     }
 
     key_compute_hash160(key_out);
@@ -338,7 +330,7 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes, size_t bytes_len,
 
     ALLOC_KEY();
     ret = bip32_key_unserialize(bytes, bytes_len, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
@@ -498,7 +490,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
         else
             key_out->version = BIP32_VER_TEST_PUBLIC;
 
-        key_strip_private_key(key_out);
+        bip32_key_strip_private_key(key_out);
     }
 
     key_out->depth = hdkey->depth + 1;
@@ -522,7 +514,7 @@ int bip32_key_from_parent_alloc(const struct ext_key *hdkey,
 
     ALLOC_KEY();
     ret = bip32_key_from_parent(hdkey, child_num, flags, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
@@ -578,7 +570,7 @@ int bip32_key_from_parent_path_alloc(const struct ext_key *hdkey,
     ALLOC_KEY();
     ret = bip32_key_from_parent_path(hdkey, child_path, child_path_len,
                                      flags, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
@@ -625,7 +617,7 @@ int bip32_key_with_tweak_from_parent_path_alloc(const struct ext_key *hdkey,
     ALLOC_KEY();
     ret = bip32_key_with_tweak_from_parent_path(hdkey, child_path, child_path_len,
                                                 flags, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = NULL;
     }
@@ -759,18 +751,19 @@ int bip32_key_from_base58_alloc(const char *base58,
 
     ALLOC_KEY();
     ret = bip32_key_from_base58(base58, *output);
-    if (ret) {
+    if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
     return ret;
 }
 
-int bip32_key_strip_private_key(struct ext_key *hdkey)
+int bip32_key_strip_private_key(struct ext_key *key_out)
 {
-    if (!hdkey)
+    if (!key_out)
         return WALLY_EINVAL;
-    key_strip_private_key(hdkey);
+    key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
+    wally_clear(key_out->priv_key + 1, sizeof(key_out->priv_key) - 1);
     return WALLY_OK;
 }
 
@@ -780,7 +773,7 @@ int bip32_key_get_fingerprint(struct ext_key *hdkey,
     /* Validate our arguments and then the input key */
     if (!hdkey ||
         !key_is_valid(hdkey) ||
-        !bytes_out || len != FINGERPRINT_LEN)
+        !bytes_out || len != BIP32_KEY_FINGERPRINT_LEN)
         return WALLY_EINVAL;
 
     /* Derive hash160 if needed. */
@@ -789,7 +782,7 @@ int bip32_key_get_fingerprint(struct ext_key *hdkey,
     }
 
     /* Fingerprint is first 32 bits of the key hash. */
-    memcpy(bytes_out, hdkey->hash160, FINGERPRINT_LEN);
+    memcpy(bytes_out, hdkey->hash160, BIP32_KEY_FINGERPRINT_LEN);
     return WALLY_OK;
 }
 

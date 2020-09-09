@@ -18,4 +18,7 @@ int script_get_push_opcode_size_from_bytes(
 /* Get OP_N */
 bool script_is_op_n(unsigned char op, bool allow_zero, size_t *n);
 
+/* Get the length of a script pushing 'n' bytes */
+size_t script_get_push_size(size_t n);
+
 #endif /* LIBWALLY_CORE_SCRIPT_INTERNAL_H */

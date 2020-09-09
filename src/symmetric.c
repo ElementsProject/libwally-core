@@ -25,13 +25,13 @@ int wally_symmetric_key_from_seed(
     if (!bytes || !is_valid_seed_length(bytes_len) || !bytes_out || len != HMAC_SHA512_LEN)
         return WALLY_EINVAL;
 
-    return wally_hmac_sha512(DOMAIN_STR, sizeof(DOMAIN_STR), bytes, bytes_len, bytes_out, HMAC_SHA512_LEN);
+    return wally_hmac_sha512(DOMAIN_STR, sizeof(DOMAIN_STR), bytes, bytes_len, bytes_out, len);
 }
 
 int wally_symmetric_key_from_parent(
     const unsigned char *bytes,
     size_t bytes_len,
-    unsigned char version,
+    uint32_t version,
     const unsigned char *label,
     size_t label_len,
     unsigned char *bytes_out,
@@ -55,8 +55,9 @@ int wally_symmetric_key_from_parent(
     *buff_p = version;
     memcpy(buff_p + 1, label, label_len);
 
-    ret = wally_hmac_sha512(bytes, SYMMETRIC_KEY_LEN, buff_p, buff_len, bytes_out, HMAC_SHA512_LEN);
+    ret = wally_hmac_sha512(bytes, HMAC_SHA512_LEN / 2, buff_p, buff_len, bytes_out, len);
 
+    wally_clear(buff_p, buff_len);
     if (buff_p != buff)
         wally_free(buff_p);
 

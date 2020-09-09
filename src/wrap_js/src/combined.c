@@ -14,6 +14,8 @@
 #include "hmac.c"
 #include "mnemonic.c"
 #include "pbkdf2.c"
+#include "pullpush.c"
+#include "psbt.c"
 #include "script.c"
 #include "scrypt.c"
 #include "sign.c"
@@ -36,6 +38,7 @@ void wally_silence_unused_warnings(void)
     assert_bip32_assumptions();
     assert_bip38_assumptions();
     assert_tx_assumptions();
+    secp256k1_fe_inv_all_var(NULL, NULL, 0);
     secp256k1_ge_set_all_gej_var(NULL, NULL, 0);
     secp256k1_gej_has_quad_y_var(NULL);
     secp256k1_gej_is_valid_var(NULL);
@@ -43,6 +46,8 @@ void wally_silence_unused_warnings(void)
     secp256k1_ecmult_multi_var(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     secp256k1_ecmult_strauss_batch_single(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     secp256k1_ecmult_pippenger_batch_single(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+    secp256k1_pippenger_scratch_size(0, 0);
+    secp256k1_scalar_chacha20(NULL, NULL, NULL, 0);
     tx_elements_input_issuance_proof_init(NULL, NULL, 0, NULL, 0);
     tx_elements_output_proof_init(NULL, NULL, 0, NULL, 0);
     witness_stack_from_bytes(NULL, NULL, NULL);

@@ -2,118 +2,108 @@
 #define LIBWALLY_CORE_PSBT_H
 
 #include "wally_transaction.h"
-#include "wally_core.h"
+#include "wally_bip32.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define WALLY_PSBT_SEPARATOR 0x00
+/* PSBT Version number */
+#define WALLY_PSBT_HIGHEST_VERSION 0
 
-#define WALLY_PSBT_GLOBAL_UNSIGNED_TX 0x00
+/* Ignore scriptsig and witness when adding an input */
+#define WALLY_PSBT_FLAG_NON_FINAL 0x1
 
-#define WALLY_PSBT_IN_NON_WITNESS_UTXO 0x00
-#define WALLY_PSBT_IN_WITNESS_UTXO 0x01
-#define WALLY_PSBT_IN_PARTIAL_SIG 0x02
-#define WALLY_PSBT_IN_SIGHASH_TYPE 0x03
-#define WALLY_PSBT_IN_REDEEM_SCRIPT 0x04
-#define WALLY_PSBT_IN_WITNESS_SCRIPT 0x05
-#define WALLY_PSBT_IN_BIP32_DERIVATION 0x06
-#define WALLY_PSBT_IN_FINAL_SCRIPTSIG 0x07
-#define WALLY_PSBT_IN_FINAL_SCRIPTWITNESS 0x08
-
-#define WALLY_PSBT_OUT_REDEEM_SCRIPT 0x00
-#define WALLY_PSBT_OUT_WITNESS_SCRIPT 0x01
-#define WALLY_PSBT_OUT_BIP32_DERIVATION 0x02
+/* Key prefix for proprietary keys in our unknown maps */
+#define PSBT_PROPRIETARY_TYPE 0xFC
 
 #ifdef SWIG
-struct wally_key_origin_info;
-struct wally_keypath_map;
-struct wally_partial_sigs_map;
-struct wally_unknowns_map;
+struct wally_map;
 struct wally_psbt_input;
 struct wally_psbt_output;
 struct wally_psbt;
 #else
 
-/** Key origin data. Contains a BIP 32 fingerprint and the derivation path */
-struct wally_key_origin_info {
-    unsigned char fingerprint[FINGERPRINT_LEN];
-    uint32_t *path;
-    size_t path_len;
-};
-
-/** Item in keypath map */
-struct wally_keypath_item {
-    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    struct wally_key_origin_info origin;
-};
-
-/** A map of public keys to BIP 32 fingerprint and derivation paths */
-struct wally_keypath_map {
-    struct wally_keypath_item *items;
-    size_t num_items;
-    size_t items_allocation_len;
-};
-
-/** Item in partial signatures map */
-struct wally_partial_sigs_item {
-    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    unsigned char *sig;
-    size_t sig_len;
-};
-
-/** A map of public key's to signatures */
-struct wally_partial_sigs_map {
-    struct wally_partial_sigs_item *items;
-    size_t num_items;
-    size_t items_allocation_len;
-};
-
-/** Unknown item */
-struct wally_unknowns_item {
+/** A map item */
+struct wally_map_item {
     unsigned char *key;
     size_t key_len;
     unsigned char *value;
     size_t value_len;
 };
 
-/** Unknown items map */
-struct wally_unknowns_map {
-    struct wally_unknowns_item *items;
+/** A map of key,value pairs */
+struct wally_map {
+    struct wally_map_item *items;
     size_t num_items;
     size_t items_allocation_len;
 };
 
-/** A psbt input map */
+/** A PSBT input */
 struct wally_psbt_input {
-    struct wally_tx *non_witness_utxo;
+    struct wally_tx *utxo;
     struct wally_tx_output *witness_utxo;
     unsigned char *redeem_script;
     size_t redeem_script_len;
     unsigned char *witness_script;
     size_t witness_script_len;
-    unsigned char *final_script_sig;
-    size_t final_script_sig_len;
+    unsigned char *final_scriptsig;
+    size_t final_scriptsig_len;
     struct wally_tx_witness_stack *final_witness;
-    struct wally_keypath_map *keypaths;
-    struct wally_partial_sigs_map *partial_sigs;
-    struct wally_unknowns_map *unknowns;
-    uint32_t sighash_type;
+    struct wally_map keypaths;
+    struct wally_map signatures;
+    struct wally_map unknowns;
+    uint32_t sighash;
+#ifdef BUILD_ELEMENTS
+    uint64_t value;
+    uint32_t has_value;
+    unsigned char *vbf;
+    size_t vbf_len;
+    unsigned char *asset;
+    size_t asset_len;
+    unsigned char *abf;
+    size_t abf_len;
+    struct wally_tx *pegin_tx;
+    unsigned char *txoutproof;
+    size_t txoutproof_len;
+    unsigned char *genesis_blockhash;
+    size_t genesis_blockhash_len;
+    unsigned char *claim_script;
+    size_t claim_script_len;
+#endif /* BUILD_ELEMENTS */
 };
 
-/** A psbt output map */
+/** A PSBT output */
 struct wally_psbt_output {
     unsigned char *redeem_script;
     size_t redeem_script_len;
     unsigned char *witness_script;
     size_t witness_script_len;
-    struct wally_keypath_map *keypaths;
-    struct wally_unknowns_map *unknowns;
+    struct wally_map keypaths;
+    struct wally_map unknowns;
+#ifdef BUILD_ELEMENTS
+    unsigned char *blinding_pubkey;
+    size_t blinding_pubkey_len;
+    unsigned char *value_commitment;
+    size_t value_commitment_len;
+    unsigned char *vbf;
+    size_t vbf_len;
+    unsigned char *asset_commitment;
+    size_t asset_commitment_len;
+    unsigned char *abf;
+    size_t abf_len;
+    unsigned char *nonce;
+    size_t nonce_len;
+    unsigned char *rangeproof;
+    size_t rangeproof_len;
+    unsigned char *surjectionproof;
+    size_t surjectionproof_len;
+#endif /* BUILD_ELEMENTS */
 };
 
 /** A partially signed bitcoin transaction */
 struct wally_psbt {
+    unsigned char magic[5];
     struct wally_tx *tx;
     struct wally_psbt_input *inputs;
     size_t num_inputs;
@@ -121,341 +111,416 @@ struct wally_psbt {
     struct wally_psbt_output *outputs;
     size_t num_outputs;
     size_t outputs_allocation_len;
-    struct wally_unknowns_map *unknowns;
+    struct wally_map unknowns;
+    uint32_t version;
 };
 #endif /* SWIG */
 
 /**
- * Allocate and initialize a new keypath map.
+ * Allocate and initialize a new map.
  *
- * :param alloc_len: The number of items to allocate.
- * :param output: Destination for the new keypath map
+ * :param allocation_len: The number of items to allocate.
+ * :param output: Destination for the new map.
  */
-WALLY_CORE_API int wally_keypath_map_init_alloc(size_t alloc_len, struct wally_keypath_map **output);
+WALLY_CORE_API int wally_map_init_alloc(
+    size_t allocation_len,
+    struct wally_map **output);
 
 #ifndef SWIG_PYTHON
 /**
- * Free a keypath map allocated by `wally_keypath_map_init_alloc`.
+ * Free a map allocated by `wally_map_init_alloc`.
  *
- * :param keypaths: The keypath map to free.
+ * :param map_in: The map to free.
  */
-WALLY_CORE_API int wally_keypath_map_free(struct wally_keypath_map *keypaths);
+WALLY_CORE_API int wally_map_free(
+    struct wally_map *map_in);
 #endif /* SWIG_PYTHON */
 
 /**
- * Add an item to a keypath map
+ * Find an item in a map.
  *
- * :param keypaths: The keypath map to add to
- * :param pubkey: The pubkey to add
- * :param pubkey_len: The length of the pubkey. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``
- * :param fingerprint: The master key fingerprint for the pubkey
- * :param fingerprint_len: The length of the fingerprint. Must be ``FINGERPRINT_LEN``
- * :param path: The BIP32 derivation path for the pubkey
- * :param path_len: The number of items in path
+ * :param map_in: The map to find ``key`` in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
  */
-WALLY_CORE_API int wally_add_new_keypath(struct wally_keypath_map *keypaths,
-                                         unsigned char *pubkey,
-                                         size_t pubkey_len,
-                                         unsigned char *fingerprint,
-                                         size_t fingerprint_len,
-                                         uint32_t *path,
-                                         size_t path_len);
+WALLY_CORE_API int wally_map_find(
+    const struct wally_map *map_in,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
 
 /**
- * Allocate and initialize a new partial sigs map.
+ * Add an item to a map.
  *
- * :param alloc_len: The number of items to allocate.
- * :param output: Destination for the new partial sigs map
+ * :param map_in: The map to add to.
+ * :param key: The key to add.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param value: The value to add.
+ * :param value_len: Length of ``value`` in bytes.
  */
-WALLY_CORE_API int wally_partial_sigs_map_init_alloc(size_t alloc_len, struct wally_partial_sigs_map **output);
-
-#ifndef SWIG_PYTHON
-/**
- * Free a partial sigs map allocated by `wally_partial_sigs_map_init_alloc`.
- *
- * :param sigs: The partial sigs map to free.
- */
-WALLY_CORE_API int wally_partial_sigs_map_free(struct wally_partial_sigs_map *sigs);
-#endif /* SWIG_PYTHON */
-
-/**
- * Add an item to a partial sigs map
- *
- * :param sigs: The partial sigs map to add to
- * :param pubkey: The pubkey to add
- * :param pubkey_len: Length of the public key. Must be ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
- * :param sig: The signature to add
- * :param sig_len: The length of sig
- */
-WALLY_CORE_API int wally_add_new_partial_sig(struct wally_partial_sigs_map *sigs,
-                                             unsigned char *pubkey,
-                                             size_t pubkey_len,
-                                             unsigned char *sig,
-                                             size_t sig_len);
+WALLY_CORE_API int wally_map_add(
+    struct wally_map *map_in,
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *value,
+    size_t value_len);
 
 /**
- * Allocate and initialize a new unknowns map
+ * Convert and add a pubkey/keypath to a map.
  *
- * :param alloc_len: The number of items to allocate.
- * :param output: Destination for the new unknowns map
- */
-WALLY_CORE_API int wally_unknowns_map_init_alloc(size_t alloc_len, struct wally_unknowns_map **output);
-
-#ifndef SWIG_PYTHON
-/**
- * Free an unknowns map allocated by `wally_unknowns_map_init_alloc`.
+ * :param map_in: The map to add to.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
  *
- * :param unknowns: The unknowns map map to free.
+ * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_unknowns_map_free(struct wally_unknowns_map *unknowns);
-#endif /* SWIG_PYTHON */
-
-/**
- * Add an item to an unknowns map
- *
- * :param unknowns: The unknowns map to add to
- * :param key: The key to add
- * :param key_len: The length of the key
- * :param value: The value to add
- * :param value_len: The length of value
- */
-WALLY_CORE_API int wally_add_new_unknown(struct wally_unknowns_map *unknowns,
-                                         unsigned char *key,
-                                         size_t key_len,
-                                         unsigned char *value,
-                                         size_t value_len);
+WALLY_CORE_API int wally_map_add_keypath_item(
+    struct wally_map *map_in,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
 
 /**
- * Allocate and initialize a new psbt input.
+ * Sort the items in a map.
  *
- * :param non_witness_utxo: The non witness utxo for this input if it exists.
- * :param witness_utxo: The witness utxo for this input if it exists.
- * :param redeem_script: The redeem script for this input
- * :param redeem_script_len: The length of the redeem script.
- * :param witness_script: The witness script for this input
- * :param witness_script_len: The length of the witness script.
- * :param final_script_sig: The scriptSig for this input
- * :param final_script_sig_len: Size of ``final_script_sig`` in bytes.
- * :param final_witness: The witness stack for the input, or NULL if no witness is present.
- * :param keypaths: The HD keypaths for this input.
- * :param partial_sigs: The partial signatures for this input.
- * :param unknowns: The unknown key value pairs for this input.
- * :param sighash_type: The sighash type for this input
- * :param output: Destination for the resulting psbt input.
+ * :param map_in: The map to sort.
+ * :param flags: Flags controlling sorting. Must be 0.
  */
-WALLY_CORE_API int wally_psbt_input_init_alloc(
-    struct wally_tx *non_witness_utxo,
-    struct wally_tx_output *witness_utxo,
-    unsigned char *redeem_script,
-    size_t redeem_script_len,
-    unsigned char *witness_script,
-    size_t witness_script_len,
-    unsigned char *final_script_sig,
-    size_t final_script_sig_len,
-    struct wally_tx_witness_stack *final_witness,
-    struct wally_keypath_map *keypaths,
-    struct wally_partial_sigs_map *partial_sigs,
-    struct wally_unknowns_map *unknowns,
-    uint32_t sighash_type,
-    struct wally_psbt_input **output);
+WALLY_CORE_API int wally_map_sort(
+    struct wally_map *map_in,
+    uint32_t flags);
+
+#ifndef SWIG
+/**
+ * Determine if a PSBT input is finalized.
+ *
+ * :param input: The input to check.
+ * :param written: On success, set to one if the input is finalized, otherwise zero.
+ */
+WALLY_CORE_API int wally_psbt_input_is_finalized(
+    const struct wally_psbt_input *input,
+    size_t *written);
 
 /**
- * Set the non_witness_utxo in an input
+ * Set the utxo in an input.
  *
  * :param input: The input to update.
- * :param non_witness_utxo: The non witness utxo for this input if it exists.
+ * :param utxo: The (non witness) utxo for this input if it exists.
  */
-WALLY_CORE_API int wally_psbt_input_set_non_witness_utxo(
+WALLY_CORE_API int wally_psbt_input_set_utxo(
     struct wally_psbt_input *input,
-    struct wally_tx *non_witness_utxo);
+    const struct wally_tx *utxo);
 
 /**
- * Set the witness_utxo in an input
+ * Set the witness_utxo in an input.
  *
  * :param input: The input to update.
  * :param witness_utxo: The witness utxo for this input if it exists.
  */
 WALLY_CORE_API int wally_psbt_input_set_witness_utxo(
     struct wally_psbt_input *input,
-    struct wally_tx_output *witness_utxo);
+    const struct wally_tx_output *witness_utxo);
 
 /**
- * Set the redeem_script in an input
+ * Set the redeem_script in an input.
  *
  * :param input: The input to update.
- * :param redeem_script: The redeem script for this input
- * :param redeem_script_len: The length of the redeem script.
+ * :param script: The redeem script for this input.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_input_set_redeem_script(
     struct wally_psbt_input *input,
-    unsigned char *redeem_script,
-    size_t redeem_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
- * Set the witness_script in an input
+ * Set the witness_script in an input.
  *
  * :param input: The input to update.
- * :param witness_script: The witness script for this input
- * :param witness_script_len: The length of the witness script.
+ * :param script: The witness script for this input.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_input_set_witness_script(
     struct wally_psbt_input *input,
-    unsigned char *witness_script,
-    size_t witness_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
- * Set the final_script_sig in an input
+ * Set the final_scriptsig in an input.
  *
  * :param input: The input to update.
- * :param final_script_sig: The scriptSig for this input
- * :param final_script_sig_len: Size of ``final_script_sig`` in bytes.
+ * :param final_scriptsig: The scriptSig for this input.
+ * :param final_scriptsig_len: Length of ``final_scriptsig`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_final_script_sig(
+WALLY_CORE_API int wally_psbt_input_set_final_scriptsig(
     struct wally_psbt_input *input,
-    unsigned char *final_script_sig,
-    size_t final_script_sig_len);
+    const unsigned char *final_scriptsig,
+    size_t final_scriptsig_len);
 
 /**
- * Set the final_witness in an input
+ * Set the final_witness in an input.
  *
  * :param input: The input to update.
  * :param final_witness: The witness stack for the input, or NULL if no witness is present.
  */
 WALLY_CORE_API int wally_psbt_input_set_final_witness(
     struct wally_psbt_input *input,
-    struct wally_tx_witness_stack *final_witness);
+    const struct wally_tx_witness_stack *final_witness);
 
 /**
- * Set the keypaths in an input
+ * Set the keypaths in an input.
  *
  * :param input: The input to update.
- * :param keypaths: The HD keypaths for this input.
+ * :param map_in: The HD keypaths for this input.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_input_set_keypaths(
     struct wally_psbt_input *input,
-    struct wally_keypath_map *keypaths);
+    const struct wally_map *map_in);
 
 /**
- * Set the partial_sigs in an input
+ * Find a keypath matching a pubkey in an input.
  *
- * :param input: The input to update.
- * :param partial_sigs: The partial signatures for this input.
+ * :param input: The input to search in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_psbt_input_set_partial_sigs(
+WALLY_CORE_API int wally_psbt_input_find_keypath(
     struct wally_psbt_input *input,
-    struct wally_partial_sigs_map *partial_sigs);
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    size_t *written);
 
 /**
- * Set the partial_sigs in an input
+ * Convert and add a pubkey/keypath to an input.
+ *
+ * :param input: The input to add to.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_input_add_keypath_item(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
+/**
+ * Set the partial signatures in an input.
  *
  * :param input: The input to update.
- * :param unknowns: The unknown key value pairs for this input.
+ * :param map_in: The partial signatures for this input.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_input_set_signatures(
+    struct wally_psbt_input *input,
+    const struct wally_map *map_in);
+
+/**
+ * Find a partial signature matching a pubkey in an input.
+ *
+ * :param input: The input to search in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_input_find_signature(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    size_t *written);
+
+/**
+ * Add a pubkey/partial signature item to an input.
+ *
+ * :param input: The input to add the partial signature to.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param sig: The DER-encoded signature plus sighash byte to add.
+ * :param sig_len: The length of ``sig`` in bytes.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_input_add_signature(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *sig,
+    size_t sig_len);
+
+/**
+ * Set the unknown values in an input.
+ *
+ * :param input: The input to update.
+ * :param map_in: The unknown key value pairs for this input.
  */
 WALLY_CORE_API int wally_psbt_input_set_unknowns(
     struct wally_psbt_input *input,
-    struct wally_unknowns_map *unknowns);
+    const struct wally_map *map_in);
 
 /**
- * Set the partial_sigs in an input
+ * Find an unknown item matching a key in an input.
+ *
+ * :param input: The input to search in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_input_find_unknown(
+    struct wally_psbt_input *input,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
+
+/**
+ * Set the sighash type in an input.
  *
  * :param input: The input to update.
- * :param sighash_type: The sighash type for this input
+ * :param sighash: The sighash type for this input.
  */
-WALLY_CORE_API int wally_psbt_input_set_sighash_type(
+WALLY_CORE_API int wally_psbt_input_set_sighash(
     struct wally_psbt_input *input,
-    uint32_t sighash_type);
-
-#ifndef SWIG_PYTHON
-/**
- * Free a psbt input allocated by `wally_psbt_input_init_alloc`.
- *
- * :param input: The psbt input to free.
- */
-WALLY_CORE_API int wally_psbt_input_free(struct wally_psbt_input *input);
-#endif /* SWIG_PYTHON */
+    uint32_t sighash);
 
 /**
- * Allocate and initialize a new psbt output.
- *
- * :param redeem_script: The redeem script needed for spending this output
- * :param redeem_script_len: The length of the redeem script.
- * :param witness_script: The witness script needed for spending for this output
- * :param witness_script_len: The length of the witness script.
- * :param keypaths: The HD keypaths for the keys needed for spending this output
- * :param unknowns: The unknown key value pairs for this output.
- * :param output: Destination for the resulting psbt output.
- */
-WALLY_CORE_API int wally_psbt_output_init_alloc(
-    unsigned char *redeem_script,
-    size_t redeem_script_len,
-    unsigned char *witness_script,
-    size_t witness_script_len,
-    struct wally_keypath_map *keypaths,
-    struct wally_unknowns_map *unknowns,
-    struct wally_psbt_output **output);
-
-/**
- * Set the redeem_script in an output
+ * Set the redeem_script in an output.
  *
  * :param output: The input to update.
- * :param redeem_script: The redeem script for this output
- * :param redeem_script_len: The length of the redeem script.
+ * :param script: The redeem script for this output.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_output_set_redeem_script(
     struct wally_psbt_output *output,
-    unsigned char *redeem_script,
-    size_t redeem_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
- * Set the witness_script in an output
+ * Set the witness_script in an output.
  *
  * :param output: The output to update.
- * :param witness_script: The witness script for this output
- * :param witness_script_len: The length of the witness script.
+ * :param script: The witness script for this output.
+ * :param script_len: Length of ``script`` in bytes.
  */
 WALLY_CORE_API int wally_psbt_output_set_witness_script(
     struct wally_psbt_output *output,
-    unsigned char *witness_script,
-    size_t witness_script_len);
+    const unsigned char *script,
+    size_t script_len);
 
 /**
- * Set the keypaths in an output
+ * Set the keypaths in an output.
  *
  * :param output: The output to update.
- * :param keypaths: The HD keypaths for this output.
+ * :param map_in: The HD keypaths for this output.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_output_set_keypaths(
     struct wally_psbt_output *output,
-    struct wally_keypath_map *keypaths);
+    const struct wally_map *map_in);
 
 /**
- * Set the partial_sigs in an output
+ * Find a keypath matching a pubkey in an output.
+ *
+ * :param output: The output to search in.
+ * :param pub_key: The pubkey to find.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_output_find_keypath(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    size_t *written);
+
+/**
+ * Convert and add a pubkey/keypath to an output.
+ *
+ * :param output: The output to add to.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_output_add_keypath_item(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
+/**
+ * Set the unknown map in an output.
  *
  * :param output: The output to update.
- * :param unknowns: The unknown key value pairs for this output.
+ * :param map_in: The unknown key value pairs for this output.
  */
 WALLY_CORE_API int wally_psbt_output_set_unknowns(
     struct wally_psbt_output *output,
-    struct wally_unknowns_map *unknowns);
+    const struct wally_map *map_in);
 
-#ifndef SWIG_PYTHON
 /**
- * Free a psbt output allocated by `wally_psbt_output_init_alloc`.
+ * Find an unknown item matching a key in an output.
  *
- * :param output: The psbt output to free.
+ * :param output: The output to search in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
  */
-WALLY_CORE_API int wally_psbt_output_free(struct wally_psbt_output *output);
-#endif /* SWIG_PYTHON */
+WALLY_CORE_API int wally_psbt_output_find_unknown(
+    struct wally_psbt_output *output,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
+#endif /* SWIG */
 
 /**
- * Allocate and initialize a new psbt.
+ * Allocate and initialize a new PSBT.
  *
+ * :param version: The version of the PSBT. Must be 0.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
- * :param output: Destination for the resulting psbt output.
+ * :param output: Destination for the resulting PSBT output.
  */
 WALLY_CORE_API int wally_psbt_init_alloc(
+    uint32_t version,
     size_t inputs_allocation_len,
     size_t outputs_allocation_len,
     size_t global_unknowns_allocation_len,
@@ -463,30 +528,94 @@ WALLY_CORE_API int wally_psbt_init_alloc(
 
 #ifndef SWIG_PYTHON
 /**
- * Free a psbt allocated by `wally_psbt_init_alloc`.
+ * Free a PSBT allocated by `wally_psbt_init_alloc`.
  *
- * :param psbt: The psbt to free.
+ * :param psbt: The PSBT to free.
  */
-WALLY_CORE_API int wally_psbt_free(struct wally_psbt *psbt);
+WALLY_CORE_API int wally_psbt_free(
+    struct wally_psbt *psbt);
 #endif /* SWIG_PYTHON */
 
 /**
- * Set the global transaction for a psbt.
- * Also initializes all of the wally_psbt_input and wally_psbt_outputs necessary
+ * Determine if all PSBT inputs are finalized.
  *
+ * :param psbt: The PSBT to check.
+ * :param written: On success, set to one if the PSBT is finalized, otherwise zero.
+ */
+WALLY_CORE_API int wally_psbt_is_finalized(
+    const struct wally_psbt *psbt,
+    size_t *written);
+
+/**
+ * Set the global transaction for a PSBT.
+ *
+ * :param psbt: The PSBT to set the transaction for.
  * :param tx: The transaction to set.
- * :param psbt: The psbt to set the transaction for
+ *
+ * The global transaction can only be set on a newly created PSBT. After this
+ * call completes the PSBT will have empty inputs and outputs for each input
+ * and output in the transaction ``tx`` given.
  */
 WALLY_CORE_API int wally_psbt_set_global_tx(
     struct wally_psbt *psbt,
-    struct wally_tx *tx);
+    const struct wally_tx *tx);
 
 /**
- * Create a psbt from its serialized bytes.
+ * Add a transaction input to PBST at a given position.
  *
- * :param bytes: Bytes to create the psbt from.
+ * :param psbt: The PSBT to add the input to.
+ * :param index: The zero-based index of the position to add the input at.
+ * :param flags: Flags controlling input insertion. Must be 0 or ``WALLY_PSBT_FLAG_NON_FINAL``.
+ * :param input: The transaction input to add.
+ */
+WALLY_CORE_API int wally_psbt_add_input_at(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    uint32_t flags,
+    const struct wally_tx_input *input);
+
+/**
+ * Remove a transaction input from a PBST.
+ *
+ * :param psbt: The PSBT to remove the input from.
+ * :param index: The zero-based index of the input to remove.
+ */
+WALLY_CORE_API int wally_psbt_remove_input(
+    struct wally_psbt *psbt,
+    uint32_t index);
+
+/**
+ * Add a transaction output to PBST at a given position.
+ *
+ * :param psbt: The PSBT to add the output to.
+ * :param index: The zero-based index of the position to add the output at.
+ * :param flags: Flags controlling output insertion. Must be 0.
+ * :param output: The transaction output to add.
+ */
+WALLY_CORE_API int wally_psbt_add_output_at(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    uint32_t flags,
+    const struct wally_tx_output *output);
+
+/**
+ * Remove a transaction output from a PBST.
+ *
+ * :param psbt: The PSBT to remove the output from.
+ * :param index: The zero-based index of the output to remove.
+ */
+WALLY_CORE_API int wally_psbt_remove_output(
+    struct wally_psbt *psbt,
+    uint32_t index);
+
+/**
+ * Create a PSBT from its serialized bytes.
+ *
+ * :param bytes: Bytes to create the PSBT from.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param output: Destination for the resulting psbt.
+ * :param output: Destination for the resulting PSBT.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_from_bytes(
     const unsigned char *bytes,
@@ -494,89 +623,347 @@ WALLY_CORE_API int wally_psbt_from_bytes(
     struct wally_psbt **output);
 
 /**
- * Get length of psbt when serialized to bytes.
+ * Get the length of a PSBT when serialized to bytes.
  *
  * :param psbt: the PSBT.
- * :param len: Length in bytes when serialized.
+ * :param flags: Flags controlling length determination. Must be 0.
+ * :param written: Destination for the length in bytes when serialized.
  */
 WALLY_CORE_API int wally_psbt_get_length(
     const struct wally_psbt *psbt,
-    size_t *len);
+    uint32_t flags,
+    size_t *written);
 
 /**
- * Serialize a psbt to bytes.
+ * Serialize a PSBT to bytes.
  *
  * :param psbt: the PSBT to serialize.
+ * :param flags: Flags controlling serialization. Must be 0.
  * :param bytes_out: Bytes to create the transaction from.
- * :param bytes_len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
- * :param bytes_written: number of bytes written to bytes_out
+ * :param len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
+ * :param written: number of bytes written to bytes_out.
  */
 WALLY_CORE_API int wally_psbt_to_bytes(
     const struct wally_psbt *psbt,
-    unsigned char *bytes_out, size_t bytes_len,
-    size_t *bytes_written);
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
- * Create a psbt from the base64 string.
+ * Create a PSBT from its serialized base64 string.
  *
- * :param string: Base64 string to create the psbt from.
- * :param output: Destination for the resulting psbt.
+ * :param base64: Base64 string to create the PSBT from.
+ * :param output: Destination for the resulting PSBT.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_psbt_from_base64(
-    const char *string,
+    const char *base64,
     struct wally_psbt **output);
 
 /**
- * Create a base64 string for a psbt
+ * Serialize a PSBT to a base64 string.
  *
  * :param psbt: the PSBT to serialize.
- * :param output: Destination for the resulting psbt.
+ * :param flags: Flags controlling serialization. Must be 0.
+ * :param output: Destination for the resulting serialized PSBT.
  */
 WALLY_CORE_API int wally_psbt_to_base64(
-    struct wally_psbt *psbt,
+    const struct wally_psbt *psbt,
+    uint32_t flags,
     char **output);
 
 /**
- * Combine the metadata from multiple PSBTs into one
+ * Combine the metadata from a source PSBT into another PSBT.
  *
- * :param psbts: Array of PSBTs to combine
- * :param psbts_len: Number of PSBTs in psbts
- * :param output: Destination for resulting psbt
+ * :param psbt: the PSBT to combine into.
+ * :param source: the PSBT to copy data from.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_combine_psbts(
-    const struct wally_psbt *psbts,
-    size_t psbts_len,
+WALLY_CORE_API int wally_psbt_combine(
+    struct wally_psbt *psbt,
+    const struct wally_psbt *src);
+
+/**
+ * Clone a PSBT into a newly allocated copy.
+ *
+ * :param psbt: the PSBT to clone.
+ * :param flags: Flags controlling PSBT creation. Must be 0.
+ * :param output: Destination for the resulting cloned PSBT.
+ */
+WALLY_CORE_API int wally_psbt_clone_alloc(
+    const struct wally_psbt *psbt,
+    uint32_t flags,
     struct wally_psbt **output);
 
 /**
- * Sign a PSBT using the simple signer algorithm: https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
+ * Sign a PSBT using the simple signer algorithm.
  *
- * :param psbt: PSBT to sign. Directly modifies this PSBT
- * :param key: Private key to sign PSBT with
- * :param key_len: Length of key in bytes. Must be ``EC_PRIVATE_KEY_LEN``
+ * :param psbt: PSBT to sign. Directly modifies this PSBT.
+ * :param key: Private key to sign PSBT with.
+ * :param key_len: Length of key in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param flags: Flags controlling sigining. Must be 0 or EC_FLAG_GRIND_R.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
+ *|    for a description of the simple signer algorithm.
  */
-WALLY_CORE_API int wally_sign_psbt(
+WALLY_CORE_API int wally_psbt_sign(
     struct wally_psbt *psbt,
     const unsigned char *key,
-    size_t key_len);
+    size_t key_len,
+    uint32_t flags);
 
 /**
- * Finalize a PSBT
+ * Finalize a PSBT.
  *
- * :param psbt: PSBT to finalize. Directly modifies this PSBT
+ * :param psbt: PSBT to finalize. Directly modifies this PSBT.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_finalize_psbt(
+WALLY_CORE_API int wally_psbt_finalize(
     struct wally_psbt *psbt);
 
 /**
- * Convert a finalized PSBT to a network transaction, i.e. extract
+ * Extract a network transaction from a finalized PSBT.
  *
- * :param psbt: PSBT to extract. Directly modifies this PSBT
- * :param output: Resulting transaction
+ * :param psbt: PSBT to extract from.
+ * :param output: Destination for the resulting transaction.
  */
-WALLY_CORE_API int wally_extract_psbt(
-    struct wally_psbt *psbt,
+WALLY_CORE_API int wally_psbt_extract(
+    const struct wally_psbt *psbt,
     struct wally_tx **output);
+
+/**
+ * Determine if a PSBT is an elements PSBT.
+ *
+ * :param psbt: The PSBT to check.
+ * :param written: 1 if the PSBT is an elements PSBT, otherwise 0.
+ */
+WALLY_CORE_API int wally_psbt_is_elements(
+    const struct wally_psbt *psbt,
+    size_t *written);
+
+#ifdef BUILD_ELEMENTS
+/**
+ * Allocate and initialize a new elements PSBT.
+ *
+ * :param version: The version of the PSBT. Must be 0.
+ * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
+ * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
+ * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
+ * :param output: Destination for the resulting PSBT output.
+ */
+WALLY_CORE_API int wally_psbt_elements_init_alloc(
+    uint32_t version,
+    size_t inputs_allocation_len,
+    size_t outputs_allocation_len,
+    size_t global_unknowns_allocation_len,
+    struct wally_psbt **output);
+
+#ifndef SWIG
+/**
+ * Set the value in an elements input.
+ *
+ * :param input: The input to update.
+ * :param value: The value for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_value(
+    struct wally_psbt_input *input,
+    uint64_t value);
+
+/**
+ * Clear the value in an elements input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_value(
+    struct wally_psbt_input *input);
+
+/**
+ * Set the value blinding factor in an elements input.
+ *
+ * :param input: The input to update.
+ * :param vbf: The value blinding factor.
+ * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_vbf(
+    struct wally_psbt_input *input,
+    const unsigned char *vbf,
+    size_t vbf_len);
+
+/**
+ * Set the asset in an elements input.
+ *
+ * :param input: The input to update.
+ * :param asset: The asset for this input.
+ * :param asset_len: Length of ``asset`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_asset(
+    struct wally_psbt_input *input,
+    const unsigned char *asset,
+    size_t asset_len);
+
+/**
+ * Set the asset blinding factor in an elements input
+ *
+ * :param input: The input to update.
+ * :param abf: The asset blinding factor.
+ * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_abf(
+    struct wally_psbt_input *input,
+    const unsigned char *abf,
+    size_t abf_len);
+
+/**
+ * Set the peg in tx in an input.
+ *
+ * :param input: The input to update.
+ * :param pegin_tx: The peg in tx for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_tx(
+    struct wally_psbt_input *input,
+    const struct wally_tx *pegin_tx);
+
+/**
+ * Set the txout proof in an elements input.
+ *
+ * :param input: The input to update.
+ * :param proof: The txout proof for this input.
+ * :param proof_len: Length of ``proof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_txoutproof(
+    struct wally_psbt_input *input,
+    const unsigned char *proof,
+    size_t proof_len);
+
+/**
+ * Set the genesis hash in an elements input.
+ *
+ * :param input: The input to update.
+ * :param genesis_blockhash: The genesis hash for this input.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_genesis_blockhash(
+    struct wally_psbt_input *input,
+    const unsigned char *genesis_blockhash,
+    size_t genesis_blockhash_len);
+
+/**
+ * Set the claim script in an elements input.
+ *
+ * :param input: The input to update.
+ * :param script: The claim script for this input.
+ * :param script_len: Length of ``script`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_claim_script(
+    struct wally_psbt_input *input,
+    const unsigned char *script,
+    size_t script_len);
+
+/**
+ * Set the blinding pubkey in an elements output.
+ *
+ * :param output: The output to update.
+ * :param pub_key: The blinding pubkey for this output.
+ * :param pub_key_len: Length of ``pub_key`` in bytes.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_psbt_output_set_blinding_pubkey(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
+ * Set the value commitment in an elements output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The value commitment for this output.
+ * :param commitment_len: Length of ``commitment`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_value_commitment(
+    struct wally_psbt_output *output,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Set the value blinding factor in an elements output.
+ *
+ * :param output: The output to update.
+ * :param vbf: The value blinding factor.
+ * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_output_set_vbf(
+    struct wally_psbt_output *output,
+    const unsigned char *vbf,
+    size_t vbf_len);
+
+/**
+ * Set the asset commitment in an elements output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The asset commitment for this output.
+ * :param commitment_len: Length of ``commitment`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
+    struct wally_psbt_output *output,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Set the asset blinding factor in an elements output.
+ *
+ * :param output: The output to update.
+ * :param abf: The asset blinding factor.
+ * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_output_set_abf(
+    struct wally_psbt_output *output,
+    const unsigned char *abf,
+    size_t abf_len);
+
+/**
+ * Set the nonce commitment in an elements output.
+ *
+ * :param output: The output to update.
+ * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_output_set_nonce(
+    struct wally_psbt_output *output,
+    const unsigned char *nonce,
+    size_t nonce_len);
+
+/**
+ * Set the range proof in an elements output.
+ *
+ * :param output: The output to update.
+ * :param proof: The range proof for this output.
+ * :param proof_len: Length of ``proof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_rangeproof(
+    struct wally_psbt_output *output,
+    const unsigned char *proof,
+    size_t proof_len);
+
+/**
+ * Set the surjection proof in an elements output.
+ *
+ * :param output: The output to update.
+ * :param proof: The surjection proof for this output.
+ * :param proof_len: Length of ``proof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_surjectionproof(
+    struct wally_psbt_output *output,
+    const unsigned char *proof,
+    size_t proof_len);
+#endif /* SWIG */
+
+#endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
 }

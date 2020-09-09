@@ -30,7 +30,7 @@ blinding key from a mnemonic.
     :start-after: start-derive_blinding_key
     :end-before: end-derive_blinding_key
 
-Finally call the wally function `confidential_addr_from_addr` to combine
+Finally call the wally function :c:func:`wally_confidential_addr_from_addr` to combine
 the non-confidential address with the public blinding key to create a
 confidential address. We also supply a blinding prefix indicating the
 network version.
@@ -39,7 +39,7 @@ network version.
     :start-after: start-create_conf_address
     :end-before: end-create_conf_address
 
-The confidential address can now be passed to liquid-cli to received
+The confidential address can now be passed to liquid-cli to receive
 funds. We'll send 1.1 BTC to our confidential address and save the raw
 hex transaction for further processing.
 
@@ -87,7 +87,7 @@ less some fixed ``fee``.
 Generate blinding factors for the outputs. These are asset blinding
 factors (abf) and value blinding factors (vbf). The blinding factors are
 random except for the final vbf which must be calculated by calling
-:c:func:`asset_final_vbf`.
+:c:func:`wally_asset_final_vbf`.
 
 .. literalinclude:: ../../src/pyexample/liquid/receive-send.py
     :start-after: start-blinding_factors
@@ -95,7 +95,7 @@ random except for the final vbf which must be calculated by calling
 
 A confidential output address can be decomposed into a standard address
 plus the public blinding key, and the libwally function
-`address_to_scriptpubkey` will provide the corresponding script pubkey.
+:c:func:`wally_address_to_scriptpubkey` will provide the corresponding script pubkey.
 
 .. literalinclude:: ../../src/pyexample/liquid/receive-send.py
     :start-after: start-decompose_address
@@ -130,7 +130,7 @@ Sign the transaction inputs.
     :end-before: end-sign
 
 The transaction is now ready to be broadcast, the hex value is easily
-retrieved by calling `tx_to_hex`.
+retrieved by calling :c:func:`wally_tx_to_hex`.
 
 .. literalinclude:: ../../src/pyexample/liquid/receive-send.py
     :start-after: start-to_hex

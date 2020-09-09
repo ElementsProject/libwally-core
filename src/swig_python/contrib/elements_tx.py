@@ -11,7 +11,7 @@ class ElementsTxTests(unittest.TestCase):
         nonce, entropy = b'0' * 32, b'0' * 32
         witness = tx_witness_stack_init(5)
         tx_witness_stack_add(witness, witness_script)
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             tx_elements_input_init(None, 0, seq, script, witness, nonce, entropy) # Null txhash
         with self.assertRaises(ValueError):
             tx_elements_input_init(bytes(), 0, seq, script, witness, nonce, entropy) # Empty txhash
@@ -82,13 +82,10 @@ class ElementsTxTests(unittest.TestCase):
         tx_add_elements_raw_output(tx, script, None, ct_value, None, None, None, 0)
         size = tx_get_length(tx, 0)
         vsize = tx_vsize_from_weight(tx_get_weight(tx))
-        tx_hex = tx_to_hex(tx, WALLY_TX_FLAG_USE_WITNESS)
-        tx_bytes = tx_to_bytes(tx, WALLY_TX_FLAG_USE_WITNESS)
-        self.assertEqual(tx_hex, hex_from_bytes(tx_bytes))
-        with self.assertRaises(ValueError):
-            tx_to_hex(tx, WALLY_TX_FLAG_USE_ELEMENTS)
-        with self.assertRaises(ValueError):
-            tx_to_bytes(tx, WALLY_TX_FLAG_USE_ELEMENTS)
+        for extra_flags in (0, WALLY_TX_FLAG_USE_ELEMENTS, WALLY_TX_FLAG_ALLOW_PARTIAL):
+            tx_hex = tx_to_hex(tx, WALLY_TX_FLAG_USE_WITNESS | extra_flags)
+            tx_bytes = tx_to_bytes(tx, WALLY_TX_FLAG_USE_WITNESS | extra_flags)
+            self.assertEqual(tx_hex, hex_from_bytes(tx_bytes))
 
     def test_coinbase(self):
         txhash, seq, script = bytearray(b'\x00'*32), 0xffffffff, b'0000'

@@ -69,6 +69,11 @@ static size_t calc_push_opcode_size(size_t n)
     return 5;
 }
 
+size_t script_get_push_size(size_t n)
+{
+    return calc_push_opcode_size(n) + n;
+}
+
 static int get_push_size(const unsigned char *bytes, size_t bytes_len,
                          bool get_opcode_size, size_t *size_out)
 {
@@ -478,8 +483,7 @@ int wally_scriptsig_p2pkh_from_der(
         !bytes_out || !written)
         return WALLY_EINVAL;
 
-    if (len < pub_key_len + calc_push_opcode_size(pub_key_len) +
-        sig_len + calc_push_opcode_size(sig_len))
+    if (len < script_get_push_size(pub_key_len) + script_get_push_size(sig_len))
         return WALLY_EINVAL;
 
     ret = wally_script_push_from_bytes(sig, sig_len, 0,
@@ -553,13 +557,13 @@ int wally_scriptpubkey_multisig_from_bytes(
     size_t n_pubkeys = bytes_len / EC_PUBLIC_KEY_LEN;
     size_t script_len = 3 + (n_pubkeys * (EC_PUBLIC_KEY_LEN + 1));
     size_t i;
-    unsigned char pubkey_bytes[16 * EC_PUBLIC_KEY_LEN];
+    unsigned char pubkey_bytes[15 * EC_PUBLIC_KEY_LEN];
 
     if (written)
         *written = 0;
 
     if (!bytes || !bytes_len || bytes_len % EC_PUBLIC_KEY_LEN ||
-        n_pubkeys < 1 || n_pubkeys > 16 || threshold < 1 || threshold > 16 ||
+        n_pubkeys < 1 || n_pubkeys > 15 || threshold < 1 || threshold > 15 ||
         threshold > n_pubkeys || (flags & ~WALLY_SCRIPT_MULTISIG_SORTED) ||
         !bytes_out || !written)
         return WALLY_EINVAL;
@@ -594,8 +598,8 @@ int wally_scriptsig_multisig_from_bytes(
     unsigned char *bytes_out, size_t len, size_t *written)
 {
 #define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
-    unsigned char der_buff[16 * MAX_DER], *p = bytes_out;
-    size_t der_len[16];
+    unsigned char der_buff[15 * MAX_DER], *p = bytes_out;
+    size_t der_len[15];
     size_t i, required = 0, n_sigs = bytes_len / EC_SIGNATURE_LEN;
     int ret = WALLY_OK;
 
@@ -603,7 +607,7 @@ int wally_scriptsig_multisig_from_bytes(
         *written = 0;
 
     if (!script || !script_len || !bytes || !bytes_len || bytes_len % EC_SIGNATURE_LEN ||
-        n_sigs < 1 || n_sigs > 16 || !sighash || sighash_len != n_sigs ||
+        n_sigs < 1 || n_sigs > 15 || !sighash || sighash_len != n_sigs ||
         flags || !bytes_out || !written)
         return WALLY_EINVAL;
 
@@ -619,11 +623,11 @@ int wally_scriptsig_multisig_from_bytes(
             goto cleanup;
         der_buff[i * MAX_DER + der_len[i]] = sighash[i] & 0xff;
         ++der_len[i];
-        required += calc_push_opcode_size(der_len[i]) + der_len[i];
+        required += script_get_push_size(der_len[i]);
     }
 
     /* Account for the initial OP_0 and final script push */
-    required += 1 + calc_push_opcode_size(script_len) + script_len;
+    required += 1 + script_get_push_size(script_len);
 
     if (len < required) {
         *written = required;
@@ -664,7 +668,7 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
         *written = 0;
 
     if (!bytes || bytes_len != 2 * EC_PUBLIC_KEY_LEN ||
-        !csv_blocks || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
         return WALLY_EINVAL;
 
     if (len < script_len) {
@@ -708,6 +712,53 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
     return WALLY_OK;
 }
 
+int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
+    const unsigned char *bytes, size_t bytes_len, uint32_t csv_blocks,
+    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    size_t csv_len = scriptint_get_length(csv_blocks);
+    size_t script_len = 2 * (EC_PUBLIC_KEY_LEN + 1) + 6 + 1 + csv_len; /* 1 for push */
+
+    if (written)
+        *written = 0;
+
+    if (!bytes || bytes_len != 2 * EC_PUBLIC_KEY_LEN ||
+        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        return WALLY_EINVAL;
+
+    if (len < script_len) {
+        *written = script_len;
+        return WALLY_OK;
+    }
+
+    /* The script we create is:
+     *     <recovery_pubkey> OP_CHECKSIGVERIFY
+     *     <main_pubkey> OP_CHECKSIG OP_IFDUP OP_NOTIF
+     *         <CSV_BLOCLK> OP_CHECKSEQUENCEVERIFY
+     * OP_ENDIF
+     * Solved by:
+     * 1) The stack containing the main and and recovery signatures.
+     * 2) The stack containing an empty signature and the recovery signature.
+     */
+    *bytes_out++ = EC_PUBLIC_KEY_LEN;
+    memcpy(bytes_out, bytes + EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN);
+    bytes_out += EC_PUBLIC_KEY_LEN;
+    *bytes_out++ = OP_CHECKSIGVERIFY;
+    *bytes_out++ = EC_PUBLIC_KEY_LEN;
+    memcpy(bytes_out, bytes, EC_PUBLIC_KEY_LEN);
+    bytes_out += EC_PUBLIC_KEY_LEN;
+    *bytes_out++ = OP_CHECKSIG;
+    *bytes_out++ = OP_IFDUP;
+    *bytes_out++ = OP_NOTIF;
+    *bytes_out++ = csv_len & 0xff;
+    bytes_out += scriptint_to_bytes(csv_blocks, bytes_out);
+    *bytes_out++ = OP_CHECKSEQUENCEVERIFY;
+    *bytes_out++ = OP_ENDIF;
+
+    *written = script_len;
+    return WALLY_OK;
+}
+
 int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
     const unsigned char *bytes, size_t bytes_len, uint32_t csv_blocks,
     uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
@@ -719,7 +770,7 @@ int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
         *written = 0;
 
     if (!bytes || bytes_len != 3 * EC_PUBLIC_KEY_LEN ||
-        !csv_blocks || csv_blocks > 0xffff || flags || !bytes_out || !written)
+        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
         return WALLY_EINVAL;
 
     if (len < script_len) {
@@ -885,37 +936,36 @@ int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_le
     return ret;
 }
 
-int wally_elements_pegout_script_size(size_t parent_genesis_blockhash_len,
+int wally_elements_pegout_script_size(size_t genesis_blockhash_len,
                                       size_t mainchain_script_len,
                                       size_t sub_pubkey_len,
-                                      size_t whitelist_proof_len,
+                                      size_t whitelistproof_len,
                                       size_t *written)
 {
-    if (!written)
-        return WALLY_EINVAL;
-
     *written = 1
-               + parent_genesis_blockhash_len + calc_push_opcode_size(parent_genesis_blockhash_len)
-               + mainchain_script_len + calc_push_opcode_size(mainchain_script_len)
-               + sub_pubkey_len + calc_push_opcode_size(sub_pubkey_len)
-               + whitelist_proof_len + calc_push_opcode_size(whitelist_proof_len);
+               + script_get_push_size(genesis_blockhash_len)
+               + script_get_push_size(mainchain_script_len)
+               + script_get_push_size(sub_pubkey_len)
+               + script_get_push_size(whitelistproof_len);
     return WALLY_OK;
 }
 
-int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_blockhash,
-                                            size_t parent_genesis_blockhash_len,
+int wally_elements_pegout_script_from_bytes(const unsigned char *genesis_blockhash,
+                                            size_t genesis_blockhash_len,
                                             const unsigned char *mainchain_script,
                                             size_t mainchain_script_len,
                                             const unsigned char *sub_pubkey,
                                             size_t sub_pubkey_len,
-                                            const unsigned char *whitelist_proof,
-                                            size_t whitelist_proof_len,
+                                            const unsigned char *whitelistproof,
+                                            size_t whitelistproof_len,
                                             uint32_t flags,
                                             unsigned char *bytes_out,
                                             size_t len,
                                             size_t *written)
 {
 #define pegout_script_push(bytes, bytes_len) \
+    if (len < bytes_written) \
+        return WALLY_OK; \
     bytes_out += bytes_written; \
     len -= bytes_written; \
     if ((ret = wally_script_push_from_bytes(bytes, bytes_len, 0, bytes_out, len, &bytes_written)) != WALLY_OK) \
@@ -924,28 +974,24 @@ int wally_elements_pegout_script_from_bytes(const unsigned char *parent_genesis_
         *written += bytes_written;
 
     size_t bytes_written = 1; /* OP_RETURN */
-    size_t required_size;
     int ret;
 
     if (written)
         *written = 0;
 
-    if ((ret = wally_elements_pegout_script_size(parent_genesis_blockhash_len, mainchain_script_len, sub_pubkey_len, whitelist_proof_len, &required_size)) != WALLY_OK)
-        return ret;
-
-    if (!parent_genesis_blockhash || parent_genesis_blockhash_len != 32 ||
+    if (!genesis_blockhash || genesis_blockhash_len != SHA256_LEN ||
         !mainchain_script || !mainchain_script_len || !sub_pubkey || sub_pubkey_len != EC_PUBLIC_KEY_LEN ||
-        !whitelist_proof || !whitelist_proof_len || flags || !bytes_out || len < required_size)
+        !whitelistproof || !whitelistproof_len || flags || !bytes_out || !len)
         return WALLY_EINVAL;
 
     *bytes_out = OP_RETURN;
     if (written)
         *written += bytes_written;
 
-    pegout_script_push(parent_genesis_blockhash, parent_genesis_blockhash_len);
+    pegout_script_push(genesis_blockhash, genesis_blockhash_len);
     pegout_script_push(mainchain_script, mainchain_script_len);
     pegout_script_push(sub_pubkey, sub_pubkey_len);
-    pegout_script_push(whitelist_proof, whitelist_proof_len);
+    pegout_script_push(whitelistproof, whitelistproof_len);
 
     return WALLY_OK;
 
@@ -1000,6 +1046,8 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
                 secp256k1_pubkey pub_key_tweaked;
                 const secp256k1_pubkey *pub_key_combination[2];
                 secp256k1_pubkey pub_key_combined;
+                size_t push_size;
+
                 if (!pubkey_parse(ctx, &pub_key, p + 1, EC_PUBLIC_KEY_LEN))
                     return WALLY_ERROR;
                 memcpy(&pub_key_tweaked, &pub_key, sizeof(pub_key));
@@ -1009,9 +1057,8 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
                     return WALLY_ERROR;
                 if (!pubkey_serialize(ctx, ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
                     return WALLY_ERROR;
-                if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, written)) != WALLY_OK)
+                if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, &push_size)) != WALLY_OK)
                     return ret;
-
                 /* sanity checks as per elementsd */
                 if (!pubkey_create(ctx, &pub_key_from_tweak, tweak))
                     return WALLY_ERROR;
@@ -1095,19 +1142,16 @@ int wally_witness_p2wpkh_from_der(
     size_t sig_len,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    unsigned char scriptsig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    size_t written;
     int ret;
-    size_t script_sig_len;
 
-    if ((ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
-        return ret;
-    }
+    ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, scriptsig, sizeof(scriptsig), &written);
 
-    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
-        return ret;
-    }
+    if (ret == WALLY_OK)
+        ret = scriptsig_to_witness(scriptsig, written, witness);
 
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_witness_p2wpkh_from_sig(
@@ -1118,19 +1162,16 @@ int wally_witness_p2wpkh_from_sig(
     uint32_t sighash,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char script_sig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    unsigned char scriptsig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    size_t written;
     int ret;
-    size_t script_sig_len;
 
-    if ((ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, script_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, &script_sig_len)) != WALLY_OK) {
-        return ret;
-    }
+    ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, scriptsig, sizeof(scriptsig), &written);
 
-    if ((ret = scriptsig_to_witness(script_sig, script_sig_len, witness)) != WALLY_OK) {
-        return ret;
-    }
+    if (ret == WALLY_OK)
+        ret = scriptsig_to_witness(scriptsig, written, witness);
 
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_witness_multisig_from_bytes(
@@ -1143,23 +1184,25 @@ int wally_witness_multisig_from_bytes(
     uint32_t flags,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char *script_sig = NULL;
+    unsigned char *scriptsig = NULL;
     int ret = WALLY_OK;
-    size_t script_sig_len, n_sigs, buf_len;
+    size_t scriptsig_len, n_sigs, buf_len;
 
-    if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len || !witness || !script_is_op_n(script[0], false, &n_sigs)) {
+    if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len ||
+        !witness || !script_is_op_n(script[0], false, &n_sigs))
         return WALLY_EINVAL;
-    }
 
     buf_len = n_sigs * (EC_SIGNATURE_DER_MAX_LEN + 2) + script_len;
-    if (!(script_sig = wally_malloc(buf_len))) {
+    if (!(scriptsig = wally_malloc(buf_len)))
         return WALLY_ENOMEM;
-    }
 
-    if ((ret = wally_scriptsig_multisig_from_bytes(script, script_len, bytes, bytes_len, sighash, sighash_len, flags, script_sig, buf_len, &script_sig_len)) == WALLY_OK) {
-        ret = scriptsig_to_witness(script_sig, script_sig_len, witness);
-    }
+    ret = wally_scriptsig_multisig_from_bytes(script, script_len,
+                                              bytes, bytes_len,
+                                              sighash, sighash_len, flags,
+                                              scriptsig, buf_len, &scriptsig_len);
+    if (ret == WALLY_OK)
+        ret = scriptsig_to_witness(scriptsig, scriptsig_len, witness);
 
-    wally_free(script_sig);
+    clear_and_free(scriptsig, scriptsig_len);
     return ret;
 }

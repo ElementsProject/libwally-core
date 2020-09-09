@@ -206,14 +206,14 @@ wally.tx_add_elements_raw_output(
 # end-add_fee
 
 # start-sign
-vout = 0
-prev_txid = wally.sha256d(wally.tx_to_bytes(tx, 0))
-for vin, script_pubkey in zip(vouts_in, script_pubkeys_in):
+flags = 0
+prev_txid = wally.tx_get_txid(tx)
+for vout in vouts_in:
 
     wally.tx_add_elements_raw_input(
         output_tx,
         prev_txid,
-        vin,
+        vout,
         0xffffffff,
         None, # scriptSig
         None, # witness
@@ -224,13 +224,15 @@ for vin, script_pubkey in zip(vouts_in, script_pubkeys_in):
         None, # issuance amount rangeproof
         None, # inflation keys rangeproof
         None, # pegin witness
-        vout)
+        flags)
+
+for vin, script_pubkey in enumerate(script_pubkeys_in):
 
     privkey = wally.bip32_key_get_priv_key(wallet_derived_key)
     pubkey = wally.ec_public_key_from_private_key(privkey)
 
-    sighash = wally.tx_get_btc_signature_hash(
-        output_tx, vout, script_pubkey, 0, wally.WALLY_SIGHASH_ALL, 0)
+    sighash = wally.tx_get_elements_signature_hash(
+        output_tx, vin, script_pubkey, None, wally.WALLY_SIGHASH_ALL, 0)
 
     signature = wally.ec_sig_from_bytes(
         privkey, sighash, wally.EC_FLAG_ECDSA)
@@ -238,7 +240,7 @@ for vin, script_pubkey in zip(vouts_in, script_pubkeys_in):
     scriptsig = wally.scriptsig_p2pkh_from_sig(
         pubkey, signature, wally.WALLY_SIGHASH_ALL)
 
-    wally.tx_set_input_script(output_tx, vout, scriptsig)
+    wally.tx_set_input_script(output_tx, vin, scriptsig)
 # end-sign
 
 # start-to_hex
