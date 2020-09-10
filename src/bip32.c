@@ -338,15 +338,14 @@ int bip32_key_unserialize_alloc(const unsigned char *bytes, size_t bytes_len,
 }
 
 #ifdef BUILD_ELEMENTS
-static int bip32_privkey_tweak_add(const secp256k1_context *ctx,
-                                   const unsigned char *tweak, size_t tweak_len,
+static int bip32_privkey_tweak_add(const unsigned char *tweak, size_t tweak_len,
                                    struct ext_key *key_out)
 {
-    if (!ctx || !tweak || tweak_len != sizeof(key_out->pub_key_tweak_sum) || !key_out)
+    if (!tweak || tweak_len != sizeof(key_out->pub_key_tweak_sum) || !key_out)
         return WALLY_EINVAL;
 
     if (!mem_is_zero(key_out->pub_key_tweak_sum, tweak_len))
-        return privkey_tweak_add(ctx, key_out->pub_key_tweak_sum, tweak) ? WALLY_OK : WALLY_EINVAL;
+        return privkey_tweak_add(key_out->pub_key_tweak_sum, tweak) ? WALLY_OK : WALLY_EINVAL;
 
     /* tweak sum is zero: start wih the tweak */
     memcpy(key_out->pub_key_tweak_sum, tweak, tweak_len);
@@ -443,7 +442,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
          * (NOTE: privkey_tweak_add checks both conditions)
          */
         memcpy(key_out->priv_key, hdkey->priv_key, sizeof(hdkey->priv_key));
-        if (!privkey_tweak_add(ctx, key_out->priv_key + 1, sha.u.u8)) {
+        if (!privkey_tweak_add(key_out->priv_key + 1, sha.u.u8)) {
             wally_clear(&sha, sizeof(sha));
             return wipe_key_fail(key_out); /* Out of bounds FIXME: Iterate to the next? */
         }
@@ -462,15 +461,14 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
         size_t len = sizeof(key_out->pub_key);
 
         /* FIXME: Out of bounds on pubkey_tweak_add */
-        if (!pubkey_parse(ctx, &pub_key, hdkey->pub_key,
-                          sizeof(hdkey->pub_key)) ||
+        if (!pubkey_parse(&pub_key, hdkey->pub_key, sizeof(hdkey->pub_key)) ||
             !pubkey_tweak_add(ctx, &pub_key, sha.u.u8) ||
-            !pubkey_serialize(ctx, key_out->pub_key, &len, &pub_key,
+            !pubkey_serialize(key_out->pub_key, &len, &pub_key,
                               PUBKEY_COMPRESSED) ||
             len != sizeof(key_out->pub_key)
 #ifdef BUILD_ELEMENTS
             || ((flags & BIP32_FLAG_KEY_TWEAK_SUM) &&
-                bip32_privkey_tweak_add(ctx, sha.u.u8, SHA256_LEN, key_out) != WALLY_OK)
+                bip32_privkey_tweak_add(sha.u.u8, SHA256_LEN, key_out) != WALLY_OK)
 #endif /* BUILD_ELEMENTS */
             ) {
             wally_clear(&sha, sizeof(sha));
@@ -599,9 +597,9 @@ int bip32_key_with_tweak_from_parent_path(const struct ext_key *hdkey,
                                           child_path_len, flags, output)) != WALLY_OK)
         return ret;
 
-    if (!pubkey_parse(ctx, &pub_key, hdkey->pub_key, sizeof(hdkey->pub_key)) ||
+    if (!pubkey_parse(&pub_key, hdkey->pub_key, sizeof(hdkey->pub_key)) ||
         !pubkey_tweak_add(ctx, &pub_key, output->pub_key_tweak_sum) ||
-        !pubkey_serialize(ctx, output->pub_key, &len, &pub_key, PUBKEY_COMPRESSED))
+        !pubkey_serialize(output->pub_key, &len, &pub_key, PUBKEY_COMPRESSED))
         return wipe_key_fail(output);
 
     return WALLY_OK;

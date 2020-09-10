@@ -596,7 +596,7 @@ int wally_asset_pak_whitelistproof(
         !sub_pubkey || sub_pubkey_len != EC_PUBLIC_KEY_LEN ||
         !online_priv_key || online_priv_key_len != EC_PRIVATE_KEY_LEN ||
         !summed_key || summed_key_len != EC_PRIVATE_KEY_LEN ||
-        !pubkey_parse(ctx, &pubkey, sub_pubkey, sub_pubkey_len) ||
+        !pubkey_parse(&pubkey, sub_pubkey, sub_pubkey_len) ||
         !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
@@ -606,8 +606,8 @@ int wally_asset_pak_whitelistproof(
     }
 
     for (i = 0; i < num_keys; ++i) {
-        if (!pubkey_parse(ctx, &online_secp_keys[i], online_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN) ||
-            !pubkey_parse(ctx, &offline_secp_keys[i], offline_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN)) {
+        if (!pubkey_parse(&online_secp_keys[i], online_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN) ||
+            !pubkey_parse(&offline_secp_keys[i], offline_keys + i * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN)) {
             ret = WALLY_EINVAL;
             goto fail;
         }

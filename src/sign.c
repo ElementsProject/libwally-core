@@ -48,14 +48,10 @@ int wally_ec_private_key_verify(const unsigned char *priv_key, size_t priv_key_l
 int wally_ec_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
 {
     secp256k1_pubkey pub;
-    const secp256k1_context *ctx = secp_ctx();
-
-    if (!ctx)
-        return WALLY_ENOMEM;
 
     if (!pub_key ||
         !(pub_key_len == EC_PUBLIC_KEY_LEN || pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) ||
-        !pubkey_parse(ctx, &pub, pub_key, pub_key_len))
+        !pubkey_parse(&pub, pub_key, pub_key_len))
         return WALLY_EINVAL;
 
     wally_clear(&pub, sizeof(pub));
@@ -76,7 +72,7 @@ int wally_ec_public_key_from_private_key(const unsigned char *priv_key, size_t p
     ok = priv_key && priv_key_len == EC_PRIVATE_KEY_LEN &&
          bytes_out && len == EC_PUBLIC_KEY_LEN &&
          pubkey_create(ctx, &pub, priv_key) &&
-         pubkey_serialize(ctx, bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED) &&
+         pubkey_serialize(bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED) &&
          len_in_out == EC_PUBLIC_KEY_LEN;
 
     if (!ok && bytes_out)
@@ -90,16 +86,12 @@ int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_
 {
     secp256k1_pubkey pub;
     size_t len_in_out = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-    const secp256k1_context *ctx = secp_ctx();
     bool ok;
-
-    if (!ctx)
-        return WALLY_ENOMEM;
 
     ok = pub_key && pub_key_len == EC_PUBLIC_KEY_LEN &&
          bytes_out && len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN &&
-         pubkey_parse(ctx, &pub, pub_key, pub_key_len) &&
-         pubkey_serialize(ctx, bytes_out, &len_in_out, &pub, PUBKEY_UNCOMPRESSED) &&
+         pubkey_parse(&pub, pub_key, pub_key_len) &&
+         pubkey_serialize(bytes_out, &len_in_out, &pub, PUBKEY_UNCOMPRESSED) &&
          len_in_out == EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
 
     if (!ok && bytes_out)
@@ -113,17 +105,13 @@ int wally_ec_public_key_negate(const unsigned char *pub_key, size_t pub_key_len,
 {
     secp256k1_pubkey pub;
     size_t len_in_out = EC_PUBLIC_KEY_LEN;
-    const secp256k1_context *ctx = secp_ctx();
     bool ok;
-
-    if (!ctx)
-        return WALLY_ENOMEM;
 
     ok = pub_key && pub_key_len == EC_PUBLIC_KEY_LEN &&
          bytes_out && len == EC_PUBLIC_KEY_LEN &&
-         pubkey_parse(ctx, &pub, pub_key, pub_key_len) &&
-         pubkey_negate(ctx, &pub) &&
-         pubkey_serialize(ctx, bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED) &&
+         pubkey_parse(&pub, pub_key, pub_key_len) &&
+         pubkey_negate(&pub) &&
+         pubkey_serialize(bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED) &&
          len_in_out == EC_PUBLIC_KEY_LEN;
 
     if (!ok && bytes_out)
@@ -136,11 +124,8 @@ int wally_ec_sig_normalize(const unsigned char *sig, size_t sig_len,
                            unsigned char *bytes_out, size_t len)
 {
     secp256k1_ecdsa_signature sig_secp, sig_low;
-    const secp256k1_context *ctx = secp_ctx();
+    const secp256k1_context *ctx = secp256k1_context_no_precomp;
     bool ok;
-
-    if (!ctx)
-        return WALLY_ENOMEM;
 
     ok = sig && sig_len == EC_SIGNATURE_LEN &&
          bytes_out && len == EC_SIGNATURE_LEN &&
@@ -165,7 +150,7 @@ int wally_ec_sig_to_der(const unsigned char *sig, size_t sig_len,
 {
     secp256k1_ecdsa_signature sig_secp;
     size_t len_in_out = len;
-    const secp256k1_context *ctx = secp_ctx();
+    const secp256k1_context *ctx = secp256k1_context_no_precomp;
     bool ok;
 
     if (written)
@@ -192,11 +177,8 @@ int wally_ec_sig_from_der(const unsigned char *bytes, size_t bytes_len,
                           unsigned char *bytes_out, size_t len)
 {
     secp256k1_ecdsa_signature sig_secp;
-    const secp256k1_context *ctx = secp_ctx();
+    const secp256k1_context *ctx = secp256k1_context_no_precomp;
     bool ok;
-
-    if (!ctx)
-        return WALLY_ENOMEM;
 
     ok = bytes && bytes_len && bytes_out && len == EC_SIGNATURE_LEN &&
          secp256k1_ecdsa_signature_parse_der(ctx, &sig_secp, bytes, bytes_len) &&
@@ -289,7 +271,7 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = pubkey_parse(ctx, &pub, pub_key, pub_key_len);
+    ok = pubkey_parse(&pub, pub_key, pub_key_len);
 
     if (flags & EC_FLAG_SCHNORR)
 #if 0 /*FIXME: Schnorr is unavailable in secp for now*/
@@ -327,7 +309,7 @@ int wally_ec_sig_to_public_key(const unsigned char *bytes, size_t bytes_len,
     recid = (sig[0] - 27) & 3;
     ok = secp256k1_ecdsa_recoverable_signature_parse_compact(ctx, &sig_secp, &sig[1], recid) &&
          secp256k1_ecdsa_recover(ctx, &pub, &sig_secp, bytes) &&
-         pubkey_serialize(ctx, bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED);
+         pubkey_serialize(bytes_out, &len_in_out, &pub, PUBKEY_COMPRESSED);
 
     wally_clear_2(&pub, sizeof(pub), &sig_secp, sizeof(sig_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;

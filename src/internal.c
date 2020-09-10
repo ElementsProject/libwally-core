@@ -29,6 +29,36 @@ const secp256k1_context *secp_ctx(void)
     return global_ctx;
 }
 
+int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
+{
+    return secp256k1_ec_privkey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
+}
+
+int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
+{
+    return secp256k1_ec_pubkey_combine(secp256k1_context_no_precomp, pubnonce, pubnonces, n);
+}
+
+int pubkey_negate(secp256k1_pubkey *pubkey)
+{
+    return secp256k1_ec_pubkey_negate(secp256k1_context_no_precomp, pubkey);
+}
+
+int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t inputlen)
+{
+    return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, inputlen);
+}
+
+int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags)
+{
+    return secp256k1_ec_pubkey_serialize(secp256k1_context_no_precomp, output, outputlen, pubkey, flags);
+}
+
+int seckey_verify(const unsigned char *seckey)
+{
+    return secp256k1_ec_seckey_verify(secp256k1_context_no_precomp, seckey);
+}
+
 #ifndef SWIG
 struct secp256k1_context_struct *wally_get_secp_context(void)
 {

@@ -1048,26 +1048,26 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
                 secp256k1_pubkey pub_key_combined;
                 size_t push_size;
 
-                if (!pubkey_parse(ctx, &pub_key, p + 1, EC_PUBLIC_KEY_LEN))
+                if (!pubkey_parse(&pub_key, p + 1, EC_PUBLIC_KEY_LEN))
                     return WALLY_ERROR;
                 memcpy(&pub_key_tweaked, &pub_key, sizeof(pub_key));
                 if ((ret = wally_hmac_sha256(p + 1, EC_PUBLIC_KEY_LEN, script, script_len, tweak, HMAC_SHA256_LEN)) != WALLY_OK)
                     return ret;
                 if (!pubkey_tweak_add(ctx, &pub_key_tweaked, tweak))
                     return WALLY_ERROR;
-                if (!pubkey_serialize(ctx, ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
+                if (!pubkey_serialize(ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
                     return WALLY_ERROR;
                 if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, &push_size)) != WALLY_OK)
                     return ret;
                 /* sanity checks as per elementsd */
                 if (!pubkey_create(ctx, &pub_key_from_tweak, tweak))
                     return WALLY_ERROR;
-                if (!pubkey_negate(ctx, &pub_key))
+                if (!pubkey_negate(&pub_key))
                     return WALLY_ERROR;
 
                 pub_key_combination[0] = &pub_key;
                 pub_key_combination[1] = &pub_key_tweaked;
-                if (!pubkey_combine(ctx, &pub_key_combined, pub_key_combination, 2))
+                if (!pubkey_combine(&pub_key_combined, pub_key_combination, 2))
                     return WALLY_ERROR;
                 if (memcmp(&pub_key_combined, &pub_key_from_tweak, sizeof(secp256k1_pubkey)) != 0)
                     return WALLY_ERROR;
