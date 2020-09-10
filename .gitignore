@@ -70,6 +70,7 @@ docs/source/bip39.rst
 docs/source/core.rst
 docs/source/crypto.rst
 docs/source/map.rst
+docs/source/descriptor.rst
 docs/source/psbt.rst
 docs/source/psbt_members.rst
 docs/source/script.rst

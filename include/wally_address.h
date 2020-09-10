@@ -16,7 +16,9 @@ struct ext_key;
 #define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
 #define WALLY_CA_PREFIX_LIQUID_TESTNET 0x17 /** Liquid v1 confidential address prefix for testnet */
 
+#define WALLY_NETWORK_NONE 0x00 /** Used for miniscript parsing only */
 #define WALLY_NETWORK_BITCOIN_MAINNET 0x01 /** Bitcoin mainnet */
+#define WALLY_NETWORK_BITCOIN_REGTEST 0xff  /** Bitcoin regtest: Behaves as testnet except for segwit */
 #define WALLY_NETWORK_BITCOIN_TESTNET 0x02 /** Bitcoin testnet */
 #define WALLY_NETWORK_LIQUID 0x03 /** Liquid v1 */
 #define WALLY_NETWORK_LIQUID_REGTEST 0x04 /** Liquid v1 regtest */

@@ -157,7 +157,7 @@ size_t varint_length_from_bytes(const unsigned char *bytes)
 /* Get the length of a script integer in bytes. signed_v should not be
  * larger than int32_t (i.e. +/- 31 bits)
  */
-static size_t scriptint_get_length(int64_t signed_v)
+size_t scriptint_get_length(int64_t signed_v)
 {
     uint64_t v = signed_v < 0 ? -signed_v : signed_v;
     size_t len = 0;
@@ -171,7 +171,7 @@ static size_t scriptint_get_length(int64_t signed_v)
     return len + (last & 0x80 ? 1 : 0);
 }
 
-static size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
+size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
 {
     uint64_t v = signed_v < 0 ? -signed_v : signed_v;
     size_t len = 0;

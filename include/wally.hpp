@@ -433,6 +433,84 @@ inline int cleanup(uint32_t flags) {
     return ret;
 }
 
+template <class DESCRIPTOR>
+inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_canonicalize(detail::get_p(descriptor), flags, output);
+    return ret;
+}
+
+inline int descriptor_free(struct wally_descriptor* descriptor) {
+    int ret = ::wally_descriptor_free(descriptor);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_get_checksum(detail::get_p(descriptor), flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_features(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_features(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_num_paths(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_num_paths(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_num_variants(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_num_variants(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_parse(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t network, uint32_t flags, struct wally_descriptor** output) {
+    int ret = ::wally_descriptor_parse(detail::get_p(descriptor), detail::get_p(vars_in), network, flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_set_network(const DESCRIPTOR& descriptor, uint32_t network) {
+    int ret = ::wally_descriptor_set_network(detail::get_p(descriptor), network);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_to_address(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), variant, multi_index, child_num, flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, char** output, size_t num_outputs) {
+    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), variant, multi_index, child_num, flags, output, num_outputs);
+    return ret;
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_to_script(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_descriptor_to_script(detail::get_p(descriptor), depth, index, variant, multi_index, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_script_get_maximum_length(detail::get_p(descriptor), flags, written);
+    return ret;
+}
+
 template <class PRIV_KEY>
 inline int ec_private_key_verify(const PRIV_KEY& priv_key) {
     int ret = ::wally_ec_private_key_verify(priv_key.data(), priv_key.size());
