@@ -109,7 +109,7 @@ static const char *const g_miniscript_keyvalue_list[] = {
 };
 
 struct wally_miniscript_ref_test g_miniscript_ref_test_table[] = {
-    // Randomly generated test set that covers the majority of type and node type combinations
+    /* Randomly generated test set that covers the majority of type and node type combinations */
     {"lltvln:after(1231488000)", "6300676300676300670400046749b1926869516868"},
     {"uuj:and_v(v:multi(2,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a,025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc),after(1231488000))", "6363829263522103d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a21025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc52af0400046749b168670068670068"},
     {"or_b(un:multi(2,03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729,024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),al:older(16))", "63522103daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee872921024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c9752ae926700686b63006760b2686c9b"},
@@ -189,6 +189,62 @@ struct wally_miniscript_test g_miniscript_test_table[] = {
         "andor(c:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_i(and_v(vc:pk_h(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),hash160(d0721279e70d39fb4aa409b52839a0056454e3b5)),older(1008)),c:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
         "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
         "andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation))",
+        "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
+    },
+    {
+        "miniscript(2) - A single key",
+        "pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048)",
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        "pk(key_1)",
+        "0020fa5bf4aae3ee617c6cce1976f6d7d285c359613ffeed481f1067f62bc0f54852"
+    },
+    {
+        "miniscript(2) - One of two keys (equally likely)",
+        "or_b(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),s:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7))",
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac9b",
+        "or_b(pk(key_1),s:pk(key_2))",
+        "002018a9df986ba10bcd8f503f495cab5fd00c9fb23c05143e65dbba49ef4d8a825f"
+    },
+    {
+        "miniscript(2) - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
+        "and_v(v:pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),or_d(pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),older(12960)))",
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
+        "and_v(v:pk(key_user),or_d(pk(key_service),older(12960)))",
+        "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
+    },
+    {
+        "miniscript(2) - A 3-of-3 that turns into a 2-of-3 after 90 days",
+        "thresh(3,pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),s:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),s:pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),sdv:older(12960))",
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c766302a032b26968935387",
+        "thresh(3,pk(key_1),s:pk(key_2),s:pk(key_3),sdv:older(12960))",
+        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70"
+    },
+    {
+        "miniscript(2) - The BOLT #3 to_local policy",
+        "andor(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),older(1008),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac6702f003b268",
+        "andor(pk(key_local),older(1008),pk(key_revocation))",
+        "0020052cf1e9c90e9a2883d890467a6a01837e21b3b755a743c9d96a2b6f8285d7c0"
+    },
+    {
+        "miniscript(2) - The BOLT #3 offered HTLC policy ",
+        "t:or_c(pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),and_v(v:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_c(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),v:hash160(d0721279e70d39fb4aa409b52839a0056454e3b5))))",
+        "2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac6482012088a914d0721279e70d39fb4aa409b52839a0056454e3b588686851",
+        "t:or_c(pk(key_revocation),and_v(v:pk(key_remote),or_c(pk(key_local),v:hash160(H))))",
+        "0020f9259363db0facc7b97ab2c0294c4f21a0cd56b01bb54ecaaa5899012aae1bc2"
+    },
+    {
+        "miniscript(2) - The BOLT #3 received HTLC policy ",
+        "andor(pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_i(and_v(v:pkh(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),hash160(d0721279e70d39fb4aa409b52839a0056454e3b5)),older(1008)),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
+        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
+        "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
+        "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
+    },
+    {
+        "miniscript(2) - The BOLT #3 received HTLC policy ",
+        "andor(pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_i(and_v(v:pkh(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),hash160(d0721279e70d39fb4aa409b52839a0056454e3b5)),older(1008)),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
+        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
+        "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
         "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
     },
 };
@@ -815,7 +871,7 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
     uint32_t index = 0;
     uint32_t flag = 0;
 
-    ret = wally_parse_miniscript(
+    ret = wally_descriptor_parse_miniscript(
         descriptor,
         key_name_list,
         key_value_list,
@@ -826,7 +882,7 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
         sizeof(script),
         &written);
     if (ret != WALLY_OK) {
-        printf("wally_parse_miniscript NG[%d]\n", ret);
+        printf("wally_descriptor_parse_miniscript NG[%d]\n", ret);
         return false;
     }
 
@@ -891,7 +947,7 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
         return false;
     }
 
-    ret = wally_create_descriptor_checksum(
+    ret = wally_descriptor_create_checksum(
         descriptor,
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
@@ -899,7 +955,7 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
         flag,
         &checksum);
     if (ret != WALLY_OK) {
-        printf("wally_create_descriptor_checksum NG[%d]\n", ret);
+        printf("wally_descriptor_create_checksum NG[%d]\n", ret);
         wally_free_string(hex);
         return false;
     }

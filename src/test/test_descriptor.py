@@ -37,7 +37,7 @@ class DescriptorTests(unittest.TestCase):
             ('t:andor(multi(3,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e,03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556,02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13),v:older(4194305),v:sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2))', 0, '532102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a14602975562102e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1353ae6482012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2886703010040b2696851'),
             ('andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation))', 0, '2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868'),
         ]:
-            ret, written = wally_parse_miniscript(miniscript, key_arr_p, value_arr_p, s_arr_num, child_num, 0, script, script_len)
+            ret, written = wally_descriptor_parse_miniscript(miniscript, key_arr_p, value_arr_p, s_arr_num, child_num, 0, script, script_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(expect_script) / 2)
             self.assertEqual(script[:written], unhexlify(expect_script))
@@ -92,7 +92,7 @@ class DescriptorTests(unittest.TestCase):
         for descriptor, expect_checksum in [
             ('wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))', 't2zpj2eu'),
         ]:
-            ret, checksum = wally_create_descriptor_checksum(descriptor, None, None, 0, 0)
+            ret, checksum = wally_descriptor_create_checksum(descriptor, None, None, 0, 0)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(checksum, expect_checksum)
 
