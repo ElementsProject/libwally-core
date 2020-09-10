@@ -70,6 +70,12 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_bip340_tagged_hash' \
 ,'_wally_bzero' \
 ,'_wally_cleanup' \
+,'_wally_descriptor_canonicalize' \
+,'_wally_descriptor_get_checksum' \
+,'_wally_descriptor_to_address' \
+,'_wally_descriptor_to_addresses' \
+,'_wally_descriptor_to_scriptpubkey' \
+,'_wally_descriptor_to_scriptpubkey_len' \
 ,'_wally_ec_private_key_verify' \
 ,'_wally_ec_public_key_decompress' \
 ,'_wally_ec_public_key_from_private_key' \
@@ -143,6 +149,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_replace' \
 ,'_wally_map_replace_integer' \
 ,'_wally_map_sort' \
+,'_wally_miniscript_to_script' \
+,'_wally_miniscript_to_script_len' \
 ,'_wally_pbkdf2_hmac_sha256' \
 ,'_wally_pbkdf2_hmac_sha512' \
 ,'_wally_psbt_add_input_signature' \

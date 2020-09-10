@@ -29,6 +29,7 @@ del swig_import_helper
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
 #include "../include/wally_psbt.h"
 #include "../include/wally_psbt_members.h"
@@ -62,17 +63,19 @@ static int check_result(int result)
     return result;
 }
 
-static bool ulonglong_cast(PyObject *item, unsigned long long *val)
+static bool size_t_cast(PyObject *item, size_t *val)
 {
-#if PY_MAJOR_VERSION < 3
-    if (PyInt_Check(item)) {
-        *val = PyInt_AsUnsignedLongLongMask(item);
+    if (PyLong_Check(item)) {
+        *val = PyLong_AsSize_t(item);
         if (!PyErr_Occurred())
           return true;
         PyErr_Clear();
-        return false;
     }
-#endif
+    return false;
+}
+
+static bool ulonglong_cast(PyObject *item, unsigned long long *val)
+{
     if (PyLong_Check(item)) {
         *val = PyLong_AsUnsignedLongLong(item);
         if (!PyErr_Occurred())
@@ -205,6 +208,28 @@ static void destroy_words(PyObject *obj) { (void)obj; }
        Py_DecRef($result);
        $result = PyString_FromString(*$1);
        wally_free_string(*$1);
+   }
+}
+
+/* Output string arrays are converted to a native python string list and returned */
+%typemap(in) (char** output, size_t num_outputs) {
+    if (!size_t_cast($input, &$2)) {
+        PyErr_SetString(PyExc_OverflowError, "Invalid output size");
+        SWIG_fail;
+    }
+    $1 = (void *) wally_malloc($2 * sizeof(char*));
+}
+%typemap(argout) (char** output, size_t num_outputs) {
+   if ($1 != NULL) {
+       size_t i;
+       Py_DecRef($result);
+       $result = PyList_New($2);
+       for (i = 0; i < $2; i++) {
+           PyObject *s = PyString_FromString($1[i]);
+           PyList_SetItem($result, i, s);
+           wally_free_string($1[i]);
+       }
+       wally_free($1);
    }
 }
 
@@ -408,10 +433,11 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
-%include "../include/wally_script.h"
+%include "../include/wally_descriptor.h"
 %include "../include/wally_map.h"
 %include "../include/wally_psbt.h"
 %include "../include/wally_psbt_members.h"
+%include "../include/wally_script.h"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
 %include "transaction_int.h"

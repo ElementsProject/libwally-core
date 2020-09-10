@@ -10,6 +10,7 @@
 #include "bip32.c"
 #include "bip38.c"
 #include "bip39.c"
+#include "descriptor.c"
 #include "ecdh.c"
 #include "elements.c"
 #include "hex.c"

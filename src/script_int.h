@@ -83,6 +83,10 @@ size_t varint_to_bytes(uint64_t v, unsigned char *bytes_out);
 /* Read a variant from bytes */
 size_t varint_from_bytes(const unsigned char *bytes, uint64_t *v);
 
+size_t scriptint_get_length(int64_t signed_v);
+
+size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out);
+
 size_t varint_length_from_bytes(const unsigned char *bytes);
 
 size_t confidential_asset_length_from_bytes(const unsigned char *bytes);

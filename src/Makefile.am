@@ -14,6 +14,7 @@ include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
+include_HEADERS += $(top_srcdir)/include/wally_descriptor.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
 include_HEADERS += $(top_srcdir)/include/wally_map.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt.h
@@ -109,6 +110,7 @@ all: swig_java/wallycore.jar
 
 SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_bip32.class \
+    $(sjs)/$(cbt)/test_descriptor.class \
     $(sjs)/$(cbt)/test_tx.class \
     $(sjs)/$(cbt)/test_scripts.class \
     $(sjs)/$(cbt)/test_mnemonic.class
@@ -141,6 +143,7 @@ libwallycore_la_SOURCES = \
     bip38.c \
     bip39.c \
     bech32.c \
+    descriptor.c \
     ecdh.c \
     elements.c \
     blech32.c \
@@ -173,6 +176,7 @@ libwallycore_la_INCLUDES = \
     include/wally_bip39.h \
     include/wally_core.h \
     include/wally_crypto.h \
+    include/wally_descriptor.h \
     include/wally_elements.h \
     include/wally_map.h \
     include/wally_psbt.h \
@@ -239,6 +243,14 @@ test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_tx_LDADD += $(PYTHON_LIBS)
 endif
+TESTS += test_descriptor
+noinst_PROGRAMS += test_descriptor
+test_descriptor_SOURCES = ctest/test_descriptor.c
+test_descriptor_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_descriptor_LDADD += $(PYTHON_LIBS)
+endif
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
@@ -265,6 +277,7 @@ check-libwallycore: $(PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_descriptor.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_ecdh.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
@@ -291,6 +304,7 @@ endif
 if USE_SWIG_PYTHON
 check-swig-python: $(SWIG_PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/descriptor.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/psbt.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
@@ -317,6 +331,7 @@ if BUILD_ELEMENTS
 	$(AM_V_at)$(JAVA_TEST)test_pegs
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
+	$(AM_V_at)$(JAVA_TEST)test_descriptor
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
 	$(AM_V_at)$(JAVA_TEST)test_scripts
 	$(AM_V_at)$(JAVA_TEST)test_tx

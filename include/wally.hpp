@@ -433,6 +433,43 @@ inline int cleanup(uint32_t flags) {
     return ret;
 }
 
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_canonicalize(detail::get_p(descriptor), detail::get_p(vars_in), flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_get_checksum(detail::get_p(descriptor), detail::get_p(vars_in), flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_to_address(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t flags, char** output, size_t num_outputs) {
+    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, flags, output, num_outputs);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN, class BYTES_OUT>
+inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t depth, uint32_t index, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, depth, index, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_to_scriptpubkey_len(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t depth, uint32_t index, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_scriptpubkey_len(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, depth, index, flags, written);
+    return ret;
+}
+
 template <class PRIV_KEY>
 inline int ec_private_key_verify(const PRIV_KEY& priv_key) {
     int ret = ::wally_ec_private_key_verify(priv_key.data(), priv_key.size());
@@ -883,6 +920,19 @@ inline int map_replace_integer(const MAP_IN& map_in, uint32_t key, const VALUE& 
 template <class MAP_IN>
 inline int map_sort(const MAP_IN& map_in, uint32_t flags) {
     int ret = ::wally_map_sort(detail::get_p(map_in), flags);
+    return ret;
+}
+
+template <class MINISCRIPT, class VARS_IN, class BYTES_OUT>
+inline int miniscript_to_script(const MINISCRIPT& miniscript, const VARS_IN& vars_in, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_miniscript_to_script(detail::get_p(miniscript), detail::get_p(vars_in), child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class MINISCRIPT, class VARS_IN>
+inline int miniscript_to_script_len(const MINISCRIPT& miniscript, const VARS_IN& vars_in, uint32_t child_num, uint32_t flags, size_t* written) {
+    int ret = ::wally_miniscript_to_script_len(detail::get_p(miniscript), detail::get_p(vars_in), child_num, flags, written);
     return ret;
 }
 

@@ -14,6 +14,7 @@ libwally-core documentation
    map
    psbt
    script
+   descriptor
    symmetric
    transaction
    elements
