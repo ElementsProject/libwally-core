@@ -53,6 +53,15 @@ class ext_key(Structure):
                 ('pub_key', c_ubyte * 33),
                 ('pub_key_tweak_sum', c_ubyte * 32)]
 
+class wally_descriptor_address_item(Structure):
+    _fields_ = [('child_num', c_uint),
+                ('address', c_char_p),
+                ('address_len', c_ulong)]
+
+class wally_descriptor_addresses(Structure):
+    _fields_ = [('items',  POINTER(wally_descriptor_address_item)),
+                ('num_items', c_ulong)]
+
 # Sentinel classes for returning output parameters
 class c_char_p_p_class(object):
     pass
@@ -281,6 +290,11 @@ for f in (
     ('wally_confidential_addr_to_addr', c_int, [c_char_p, c_uint, c_char_p_p]),
     ('wally_confidential_addr_to_addr_segwit', c_int, [c_char_p, c_char_p, c_char_p, c_char_p_p]),
     ('wally_confidential_addr_to_ec_public_key', c_int, [c_char_p, c_uint, c_void_p, c_ulong]),
+    ('wally_descriptor_create_checksum', c_int, [c_char_p, c_void_p, c_void_p, c_ulong, c_uint, c_char_p_p]),
+    ('wally_descriptor_parse_miniscript', c_int, [c_char_p, c_void_p, c_void_p, c_ulong, c_uint, c_uint, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_descriptor_to_address', c_int, [c_char_p, c_void_p, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_char_p_p]),
+    ('wally_descriptor_to_addresses', c_int, [c_char_p, c_void_p, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_uint, POINTER(wally_descriptor_addresses)]),
+    ('wally_descriptor_to_scriptpubkey', c_int, [c_char_p, c_void_p, c_void_p, c_ulong, c_uint, c_uint, c_uint, c_uint, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_ec_private_key_verify', c_int, [c_void_p, c_ulong]),
     ('wally_ec_public_key_decompress', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_ec_public_key_from_private_key', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
