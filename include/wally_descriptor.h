@@ -51,7 +51,7 @@ WALLY_CORE_API int wally_free_descriptor_addresses(
  * :param script_len: Length of the script array.
  * :param written: Destination for the using scriptpubkey length.
  */
-WALLY_CORE_API int wally_parse_miniscript(
+WALLY_CORE_API int wally_descriptor_parse_miniscript(
     const char *miniscript,
     const char **key_name_array,
     const char **key_value_array,
@@ -150,7 +150,7 @@ WALLY_CORE_API int wally_descriptor_to_addresses(
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting descriptor string.
  */
-WALLY_CORE_API int wally_create_descriptor_checksum(
+WALLY_CORE_API int wally_descriptor_create_checksum(
     const char *descriptor,
     const char **key_name_array,
     const char **key_value_array,
