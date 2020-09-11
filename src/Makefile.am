@@ -13,6 +13,7 @@ include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
+include_HEADERS += $(top_srcdir)/include/wally_descriptor.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
@@ -177,6 +178,7 @@ libwallycore_la_SOURCES = \
     bip38.c \
     bip39.c \
     bech32.c \
+    descriptor.c \
     ecdh.c \
     elements.c \
     blech32.c \
@@ -208,6 +210,7 @@ libwallycore_la_INCLUDES = \
     include/wally_bip39.h \
     include/wally_core.h \
     include/wally_crypto.h \
+    include/wally_descriptor.h \
     include/wally_elements.h \
     include/wally_psbt.h \
     include/wally_script.h \
@@ -250,6 +253,11 @@ noinst_PROGRAMS += test_tx
 test_tx_SOURCES = ctest/test_tx.c
 test_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+TESTS += test_descriptor
+noinst_PROGRAMS += test_descriptor
+test_descriptor_SOURCES = ctest/test_descriptor.c
+test_descriptor_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
@@ -273,6 +281,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_descriptor.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_ecdh.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
