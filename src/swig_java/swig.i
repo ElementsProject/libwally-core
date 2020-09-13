@@ -205,60 +205,60 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %java_int_array(uint32_t, jintArray, int, GetIntArrayElements, ReleaseIntArrayElements)
 %java_int_array(uint64_t, jlongArray, long, GetLongArrayElements, ReleaseLongArrayElements)
 
-/* Input buffers with lengths are passed as arrays */
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *abf, size_t abf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *asset, size_t asset_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes, size_t bytes_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *contract_hash, size_t contract_hash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *entropy, size_t entropy_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra, size_t extra_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *inflation_keys, size_t inflation_keys_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *issuance_amount, size_t issuance_amount_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_abf, size_t output_abf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_asset, size_t output_asset_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_generator, size_t output_generator_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce, size_t nonce_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce_hash, size_t nonce_hash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *parent160, size_t parent160_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *rangeproof, size_t rangeproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *script, size_t script_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig, size_t sig_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sighash, size_t sighash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *surjectionproof, size_t surjectionproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash, size_t txhash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *value, size_t value_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *label, size_t label_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *genesis_blockhash, size_t genesis_blockhash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *mainchain_script, size_t mainchain_script_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sub_pubkey, size_t sub_pubkey_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *whitelistproof, size_t whitelistproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *online_keys, size_t online_keys_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *offline_keys, size_t offline_keys_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *online_priv_key, size_t online_priv_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *summed_key, size_t summed_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *redeem_script, size_t redeem_script_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *scriptpubkey, size_t scriptpubkey_len) };
-
-/* Output buffers */
-%apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *abf_out, size_t abf_out_len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) };
+/* BEGIN AUTOGENERATED */
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* abf, size_t abf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* asset, size_t asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* bytes, size_t bytes_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* chain_code, size_t chain_code_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* commitment, size_t commitment_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* contract_hash, size_t contract_hash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* entropy, size_t entropy_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* extra, size_t extra_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* final_scriptsig, size_t final_scriptsig_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* fingerprint, size_t fingerprint_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* generator, size_t generator_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* genesis_blockhash, size_t genesis_blockhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* hash160, size_t hash160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys, size_t inflation_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount, size_t issuance_amount_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* iv, size_t iv_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* online_keys, size_t online_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* online_priv_key, size_t online_priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* output_abf, size_t output_abf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* output_asset, size_t output_asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* output_generator, size_t output_generator_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* parent160, size_t parent160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pass, size_t pass_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_key, size_t priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* proof, size_t proof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key, size_t pub_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* rangeproof, size_t rangeproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* redeem_script, size_t redeem_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* salt, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* script, size_t script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* scriptpubkey, size_t scriptpubkey_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* sig, size_t sig_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* value, size_t value_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* vbf, size_t vbf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* whitelistproof, size_t whitelistproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* witness, size_t witness_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* abf_out, size_t abf_out_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* asset_out, size_t asset_out_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* bytes_out, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* vbf_out, size_t vbf_out_len) };
+/* END AUTOGENERATED */
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
