@@ -1125,6 +1125,32 @@ inline int tx_witness_stack_set_dummy(const STACK& stack, size_t index, uint32_t
     return ret;
 }
 
+template <class BYTES>
+inline int varbuff_get_length(const BYTES& bytes, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_varbuff_get_length(bytes.data(), bytes.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class BYTES, class BYTES_OUT>
+inline int varbuff_to_bytes(const BYTES& bytes, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_varbuff_to_bytes(bytes.data(), bytes.size(), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+inline int varint_get_length(uint64_t value, size_t* written) {
+    int ret = ::wally_varint_get_length(value, written);
+    return ret;
+}
+
+template <class BYTES_OUT>
+inline int varint_to_bytes(uint64_t value, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_varint_to_bytes(value, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class PRIV_KEY>
 inline int wif_from_bytes(const PRIV_KEY& priv_key, uint32_t prefix, uint32_t flags, char** output) {
     int ret = ::wally_wif_from_bytes(priv_key.data(), priv_key.size(), prefix, flags, output);

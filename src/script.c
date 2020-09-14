@@ -893,6 +893,46 @@ cleanup:
     return ret;
 }
 
+int wally_varint_get_length(uint64_t value, size_t *written)
+{
+    if (!written)
+        return WALLY_EINVAL;
+    *written = varint_get_length(value);
+    return WALLY_OK;
+}
+
+int wally_varint_to_bytes(uint64_t value, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!bytes_out || len < varint_get_length(value) || !written)
+        return WALLY_EINVAL;
+    *written = varint_to_bytes(value, bytes_out);
+    return WALLY_OK;
+}
+
+int wally_varbuff_get_length(const unsigned char *bytes, size_t bytes_len, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (BYTES_INVALID(bytes, bytes_len) || !written)
+        return WALLY_EINVAL;
+    *written = varint_get_length(bytes_len) + bytes_len;
+    return WALLY_OK;
+}
+
+int wally_varbuff_to_bytes(const unsigned char *bytes, size_t bytes_len,
+                           unsigned char *bytes_out, size_t len, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (BYTES_INVALID(bytes, bytes_len) || !bytes_out ||
+        len < varint_get_length(bytes_len) + bytes_len || !written)
+        return WALLY_EINVAL;
+    *written = varbuff_to_bytes(bytes, bytes_len, bytes_out);
+    return WALLY_OK;
+}
+
 int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                      uint32_t flags,
                                      unsigned char *bytes_out, size_t len, size_t *written)

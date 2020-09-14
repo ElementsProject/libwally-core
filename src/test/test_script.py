@@ -369,6 +369,69 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(data)/2 + len(prefix)/2)
 
+    def test_varint_to_bytes(self):
+        out, out_len = make_cbuffer('00' * 9)
+
+        # Invalid args
+        invalid_cases = [
+                (252,     None, out_len), # Null output
+                (252,     out, 0),        # 2^8  short buffer
+                (253,     out, 2),        # 2^16 short buffer
+                (2**16-1, out, 2),        # 2^16 short buffer
+                (2**32-1, out, 4),        # 2^32 short buffer
+                (2**64-1, out, 8),        # 2^64 short buffer
+        ]
+        for value, out_buff, out_buff_len in invalid_cases:
+            ret, written = wally_varint_to_bytes(value, out_buff, out_buff_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+            ret, written = wally_varint_get_length(value)
+
+        # Valid cases
+        valid_cases = [
+            (0, "00"),
+            (1, "01"),
+            (252, "fc"),
+            (253, "fdfd00"),
+            ((2**16-1) + 10, "fe09000100"),
+            ((2**32-1) + 10, "ff0900000001000000"),
+            (2**64-1, "ffffffffffffffffff"),
+        ]
+        for value, expected in valid_cases:
+            ret, written = wally_varint_to_bytes(value, out, out_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(out[:written], unhexlify(expected))
+
+            ret, written = wally_varint_get_length(value)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(written, len(expected) // 2)
+
+    def test_varbuff_to_bytes(self):
+        varint_size = 3
+        in_, in_len = make_cbuffer('aa' * 253)
+        out, out_len = make_cbuffer('00' * (in_len + varint_size))
+
+        # Invalid cases
+        invalid_cases = [
+            (None, in_len, out,  out_len),     # Null buffer with length
+            (in_,  0,      out,  out_len),     # Buffer with 0 length
+            (in_,  in_len, None, out_len),     # Null output
+            (in_,  in_len, out,  out_len - 1), # Too-small output
+        ]
+        for buff, buff_len, out_buff, out_buff_len in invalid_cases:
+            ret, written = wally_varbuff_to_bytes(buff, buff_len, out_buff, out_buff_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        # Valid cases
+        ret, varbuff_len = wally_varbuff_get_length(in_, in_len)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(varbuff_len, in_len + varint_size)
+
+        ret, written = wally_varbuff_to_bytes(in_, in_len, out, out_len)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(written, varbuff_len)
+        self.assertEqual(out[:written], unhexlify("fdfd00" + 'aa' * 253))
+
     def test_wally_witness_program_from_bytes(self):
         valid_cases = [('00' * 20, 0, '0014'+'00'*20),
                        ('00' * 32, 0, '0020'+'00'*32),

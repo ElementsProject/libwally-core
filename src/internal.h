@@ -57,4 +57,9 @@ char *wally_strdup(const char *str);
 #endif
 #define strdup(ptr) __use_wally_strdup_internally__
 
+/* Validity checking for input parameters */
+#define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
+#define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
+#define BYTES_INVALID_N(p, len, siz) ((p != NULL) != (len == siz))
+
 #endif /* LIBWALLY_INTERNAL_H */
