@@ -32,12 +32,6 @@ void wally_clear_3(void *p, size_t len, void *p2, size_t len2,
                    void *p3, size_t len3);
 void wally_clear_4(void *p, size_t len, void *p2, size_t len2,
                    void *p3, size_t len3, void *p4, size_t len4);
-void wally_clear_5(void *p, size_t len, void *p2, size_t len2,
-                   void *p3, size_t len3, void *p4, size_t len4,
-                   void *p5, size_t len5);
-void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
-                   void *p3, size_t len3, void *p4, size_t len4,
-                   void *p5, size_t len5, void *p6, size_t len6);
 
 void clear_and_free(void *p, size_t len);
 
