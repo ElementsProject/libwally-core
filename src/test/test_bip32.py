@@ -356,6 +356,12 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_parent_path(key, c_path, plen, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
 
+        master.depth = 0xff # Cant derive from a parent of depth 255
+        ret = bip32_key_from_parent(m, 5, FLAG_KEY_PUBLIC, key_out)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret = bip32_key_from_parent_path(m, c_path, len(c_path), FLAG_KEY_PUBLIC, key_out)
+        self.assertEqual(ret, WALLY_EINVAL)
+
     def test_free_invalid(self):
         self.assertEqual(WALLY_EINVAL, bip32_key_free(None))
 
