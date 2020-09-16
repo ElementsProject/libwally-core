@@ -108,6 +108,11 @@ int bip32_key_free(const struct ext_key *hdkey)
     return WALLY_OK;
 }
 
+static bool is_valid_parent160_len(size_t len) {
+    /* Allow partial as well as full fingerprints */
+    return len == BIP32_KEY_FINGERPRINT_LEN || len == key_size(parent160);
+}
+
 static bool is_valid_seed_len(size_t len) {
     return len == BIP32_ENTROPY_LEN_512 || len == BIP32_ENTROPY_LEN_256 ||
            len == BIP32_ENTROPY_LEN_128;
@@ -674,7 +679,8 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
     if ((priv_key && priv_key_len != key_size(priv_key) - 1) || (!priv_key && priv_key_len) ||
         (pub_key && pub_key_len != key_size(pub_key)) || (!pub_key && pub_key_len) ||
         (hash160 && hash160_len != key_size(hash160)) || (!hash160 && hash160_len) ||
-        (parent160 && parent160_len != key_size(parent160)) || depth > 0xff)
+        (parent160 && !is_valid_parent160_len(parent160_len)) ||
+        (!parent160 && parent160_len) || depth > 0xff)
         return WALLY_EINVAL;
 
     wally_clear(key_out, sizeof(*key_out));
@@ -702,7 +708,7 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
     else
         key_compute_hash160(key_out);
     if (parent160)
-        memcpy(key_out->parent160, parent160, key_size(parent160));
+        memcpy(key_out->parent160, parent160, parent160_len);
 
     return WALLY_OK;
 }
