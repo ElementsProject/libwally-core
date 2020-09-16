@@ -412,8 +412,8 @@ class BIP32Tests(unittest.TestCase):
             ret, out = bip32_key_to_base58(key, flag)
             self.assertEqual(ret, WALLY_OK)
 
-            key_out = ext_key()
-            self.assertEqual(bip32_key_from_base58(utf8(out), byref(key_out)), WALLY_OK)
+            key_out = POINTER(ext_key)()
+            self.assertEqual(bip32_key_from_base58_alloc(utf8(out), byref(key_out)), WALLY_OK)
             self.assertEqual(bip32_key_serialize(key_out, flag, buf, buf_len), WALLY_OK)
             self.assertEqual(h(buf).upper(), exp_hex)
 
