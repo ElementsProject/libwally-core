@@ -298,7 +298,7 @@ def _generate_nan(funcname, f):
             output_args.extend([
                 'const uint32_t res_size = GetUInt32(info, %s, ret);' % i,
                 'unsigned char *res_ptr = Allocate(res_size, ret);',
-                'size_t out_size;'
+                'size_t out_size = 0;'
             ])
             args.append('res_ptr')
             args.append('res_size')
