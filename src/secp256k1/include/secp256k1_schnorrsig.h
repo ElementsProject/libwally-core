@@ -21,7 +21,8 @@ extern "C" {
  *  inputs against reusing the nonce when signing with the wrong precomputed
  *  pubkey.
  *
- *  Returns: 1 if a nonce was successfully generated. 0 will cause signing to fail.
+ *  Returns: 1 if a nonce was successfully generated. 0 will cause signing to
+ *           return an error.
  *  Out:     nonce32:   pointer to a 32-byte array to be filled by the function.
  *  In:      msg32:     the 32-byte message hash being verified (will not be NULL)
  *           key32:     pointer to a 32-byte secret key (will not be NULL)
@@ -32,7 +33,7 @@ extern "C" {
  *           data:      Arbitrary data pointer that is passed through.
  *
  *  Except for test cases, this function should compute some cryptographic hash of
- *  the message, the key, the pubkey the algorithm and data.
+ *  the message, the key, the pubkey, the algorithm description, and data.
  */
 typedef int (*secp256k1_nonce_function_hardened)(
     unsigned char *nonce32,
@@ -53,7 +54,7 @@ typedef int (*secp256k1_nonce_function_hardened)(
  *  argument must be non-NULL, otherwise the function will fail and return 0.
  *  The hash will be tagged with algo16 after removing all terminating null
  *  bytes. Therefore, to create BIP-340 compliant signatures, algo16 must be set
- *  to "BIP340/nonce\0\0\0\0"
+ *  to "BIP0340/nonce\0\0\0"
  */
 SECP256K1_API extern const secp256k1_nonce_function_hardened secp256k1_nonce_function_bip340;
 
@@ -93,14 +94,14 @@ SECP256K1_API int secp256k1_schnorrsig_sign(
  *  Args:     ctx: pointer to a context object, initialized for signing (cannot be NULL)
  *  Out: sigpoint: pointer to the returned signature point (cannot be NULL)
  *  In:     msg32: the 32-byte message being signed (cannot be NULL)
- *          nonce: the 32-byte nonce that the signature will use (cannot be NULL)
+ *          nonce: pointer to the nonce point which the signature will use (cannot be NULL)
  *         pubkey: pointer to the public key for which the signature is being generated (cannot be NULL)
  */
 SECP256K1_API int secp256k1_schnorrsig_compute_sigpoint(
     const secp256k1_context* ctx,
     secp256k1_pubkey *sigpoint,
     const unsigned char *msg32,
-    const unsigned char *nonce,
+    const secp256k1_xonly_pubkey *nonce,
     const secp256k1_xonly_pubkey *pubkey
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5);
 

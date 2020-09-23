@@ -34,7 +34,6 @@ int secp256k1_xonly_pubkey_parse(const secp256k1_context* ctx, secp256k1_xonly_p
         return 0;
     }
     secp256k1_xonly_pubkey_save(pubkey, &pk);
-    secp256k1_ge_clear(&pk);
     return 1;
 }
 
@@ -53,15 +52,35 @@ int secp256k1_xonly_pubkey_serialize(const secp256k1_context* ctx, unsigned char
     return 1;
 }
 
-int secp256k1_xonly_pubkey_from_pubkey(const secp256k1_context* ctx, secp256k1_xonly_pubkey *xonly_pubkey, int *y_parity, const secp256k1_pubkey *pubkey) {
+/** Keeps a group element as is if it has an even Y and otherwise negates it.
+ *  y_parity is set to 0 in the former case and to 1 in the latter case.
+ *  Requires that the coordinates of r are normalized. */
+static int secp256k1_extrakeys_ge_even_y(secp256k1_ge *r) {
+    int y_parity = 0;
+    VERIFY_CHECK(!secp256k1_ge_is_infinity(r));
+
+    if (secp256k1_fe_is_odd(&r->y)) {
+        secp256k1_fe_negate(&r->y, &r->y, 1);
+        y_parity = 1;
+    }
+    return y_parity;
+}
+
+int secp256k1_xonly_pubkey_from_pubkey(const secp256k1_context* ctx, secp256k1_xonly_pubkey *xonly_pubkey, int *pk_parity, const secp256k1_pubkey *pubkey) {
     secp256k1_ge pk;
+    int tmp;
 
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(xonly_pubkey != NULL);
     ARG_CHECK(pubkey != NULL);
 
-    secp256k1_pubkey_load(ctx, &pk, pubkey);
-    secp256k1_ge_even_y(&pk, y_parity);
+    if (!secp256k1_pubkey_load(ctx, &pk, pubkey)) {
+        return 0;
+    }
+    tmp = secp256k1_extrakeys_ge_even_y(&pk);
+    if (pk_parity != NULL) {
+        *pk_parity = tmp;
+    }
     secp256k1_xonly_pubkey_save(xonly_pubkey, &pk);
     return 1;
 }
@@ -84,14 +103,14 @@ int secp256k1_xonly_pubkey_tweak_add(const secp256k1_context* ctx, secp256k1_pub
     return 1;
 }
 
-int secp256k1_xonly_pubkey_tweak_add_check(const secp256k1_context* ctx, const unsigned char *output_pubkey32, int output_pubkey_parity, const secp256k1_xonly_pubkey *internal_pubkey, const unsigned char *tweak32) {
+int secp256k1_xonly_pubkey_tweak_add_check(const secp256k1_context* ctx, const unsigned char *tweaked_pubkey32, int tweaked_pk_parity, const secp256k1_xonly_pubkey *internal_pubkey, const unsigned char *tweak32) {
     secp256k1_ge pk;
     unsigned char pk_expected32[32];
 
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(secp256k1_ecmult_context_is_built(&ctx->ecmult_ctx));
     ARG_CHECK(internal_pubkey != NULL);
-    ARG_CHECK(output_pubkey32 != NULL);
+    ARG_CHECK(tweaked_pubkey32 != NULL);
     ARG_CHECK(tweak32 != NULL);
 
     if (!secp256k1_xonly_pubkey_load(ctx, &pk, internal_pubkey)
@@ -102,8 +121,8 @@ int secp256k1_xonly_pubkey_tweak_add_check(const secp256k1_context* ctx, const u
     secp256k1_fe_normalize_var(&pk.y);
     secp256k1_fe_get_b32(pk_expected32, &pk.x);
 
-    return memcmp(&pk_expected32, output_pubkey32, 32) == 0
-            && secp256k1_fe_is_odd(&pk.y) == output_pubkey_parity;
+    return memcmp(&pk_expected32, tweaked_pubkey32, 32) == 0
+            && secp256k1_fe_is_odd(&pk.y) == tweaked_pk_parity;
 }
 
 static void secp256k1_keypair_save(secp256k1_keypair *keypair, const secp256k1_scalar *sk, secp256k1_ge *pk) {
@@ -115,13 +134,12 @@ static void secp256k1_keypair_save(secp256k1_keypair *keypair, const secp256k1_s
 static int secp256k1_keypair_seckey_load(const secp256k1_context* ctx, secp256k1_scalar *sk, const secp256k1_keypair *keypair) {
     int ret;
 
-    secp256k1_scalar_set_b32(sk, &keypair->data[0], NULL);
-    ret = !secp256k1_scalar_is_zero(sk);
+    ret = secp256k1_scalar_set_b32_seckey(sk, &keypair->data[0]);
     /* We can declassify ret here because sk is only zero if a keypair function
      * failed (which zeroes the keypair) and its return value is ignored. */
     secp256k1_declassify(ctx, &ret, sizeof(ret));
     ARG_CHECK(ret);
-    return 1;
+    return ret;
 }
 
 /* Load a keypair into pk and sk (if non-NULL). This function declassifies pk
@@ -175,8 +193,9 @@ int secp256k1_keypair_pub(const secp256k1_context* ctx, secp256k1_pubkey *pubkey
     return 1;
 }
 
-int secp256k1_keypair_xonly_pub(const secp256k1_context* ctx, secp256k1_xonly_pubkey *pubkey, int *pubkey_parity, const secp256k1_keypair *keypair) {
+int secp256k1_keypair_xonly_pub(const secp256k1_context* ctx, secp256k1_xonly_pubkey *pubkey, int *pk_parity, const secp256k1_keypair *keypair) {
     secp256k1_ge pk;
+    int tmp;
 
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(pubkey != NULL);
@@ -186,7 +205,10 @@ int secp256k1_keypair_xonly_pub(const secp256k1_context* ctx, secp256k1_xonly_pu
     if (!secp256k1_keypair_load(ctx, NULL, &pk, keypair)) {
         return 0;
     }
-    secp256k1_ge_even_y(&pk, pubkey_parity);
+    tmp = secp256k1_extrakeys_ge_even_y(&pk);
+    if (pk_parity != NULL) {
+        *pk_parity = tmp;
+    }
     secp256k1_xonly_pubkey_save(pubkey, &pk);
 
     return 1;
@@ -195,6 +217,7 @@ int secp256k1_keypair_xonly_pub(const secp256k1_context* ctx, secp256k1_xonly_pu
 int secp256k1_keypair_xonly_tweak_add(const secp256k1_context* ctx, secp256k1_keypair *keypair, const unsigned char *tweak32) {
     secp256k1_ge pk;
     secp256k1_scalar sk;
+    int y_parity;
     int ret;
 
     VERIFY_CHECK(ctx != NULL);
@@ -205,13 +228,12 @@ int secp256k1_keypair_xonly_tweak_add(const secp256k1_context* ctx, secp256k1_ke
     ret = secp256k1_keypair_load(ctx, &sk, &pk, keypair);
     memset(keypair, 0, sizeof(*keypair));
 
-    if (secp256k1_fe_is_odd(&pk.y)) {
+    y_parity = secp256k1_extrakeys_ge_even_y(&pk);
+    if (y_parity == 1) {
         secp256k1_scalar_negate(&sk, &sk);
-        secp256k1_ge_neg(&pk, &pk);
     }
 
     ret &= secp256k1_ec_seckey_tweak_add_helper(&sk, tweak32);
-    secp256k1_scalar_cmov(&sk, &secp256k1_scalar_zero, !ret);
     ret &= secp256k1_ec_pubkey_tweak_add_helper(&ctx->ecmult_ctx, &pk, tweak32);
 
     secp256k1_declassify(ctx, &ret, sizeof(ret));
