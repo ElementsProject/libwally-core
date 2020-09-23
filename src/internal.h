@@ -5,6 +5,9 @@
 #include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_recovery.h"
 #include <config.h>
+#if defined(HAVE_MEMSET_S)
+#define __STDC_WANT_LIB_EXT1__ 1
+#endif
 #include <string.h>
 
 /* Fetch an internal secp context */
