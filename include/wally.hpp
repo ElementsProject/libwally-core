@@ -1353,13 +1353,6 @@ inline int psbt_elements_init_alloc(uint32_t version, size_t inputs_allocation_l
     return ret;
 }
 
-template <class PSBT, class BYTES_OUT>
-inline int psbt_get_global_scalar_offset(const PSBT& psbt, BYTES_OUT& bytes_out, size_t* written = 0) {
-    size_t n;
-    int ret = ::wally_psbt_get_global_scalar_offset(detail::get_p(psbt), bytes_out.data(), bytes_out.size(), written ? written : &n);
-    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
-}
-
 inline int psbt_input_clear_issuance_amount(struct wally_psbt_input* input) {
     int ret = ::wally_psbt_input_clear_issuance_amount(input);
     return ret;
@@ -1515,12 +1508,6 @@ inline int psbt_output_set_value(const OUTPUT& output, uint64_t value) {
 template <class OUTPUT, class COMMITMENT>
 inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITMENT& commitment) {
     int ret = ::wally_psbt_output_set_value_commitment(detail::get_p(output), commitment.data(), commitment.size());
-    return ret;
-}
-
-template <class PSBT, class BYTES>
-inline int psbt_set_global_scalar_offset(const PSBT& psbt, const BYTES& bytes) {
-    int ret = ::wally_psbt_set_global_scalar_offset(detail::get_p(psbt), bytes.data(), bytes.size());
     return ret;
 }
 

@@ -9,11 +9,15 @@
 extern "C" {
 #endif
 
+/* Map */
+WALLY_CORE_API int wally_map_get_num_items(const struct wally_map *map_in, size_t *written);
+
 /* PSBT */
 WALLY_CORE_API int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_tx **output);
 WALLY_CORE_API int wally_psbt_get_version(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_get_num_inputs(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_get_num_outputs(const struct wally_psbt *psbt, size_t *written);
+MAP____DECL(WALLY_CORE_API, wally_psbt, global_scalar_offset);
 
 /* Inputs */
 NESTED_STRUCT_DECL(WALLY_CORE_API, wally_psbt, input, wally_tx, utxo);

@@ -112,6 +112,10 @@ static const output_bytes_setter_fn PSET_OUTPUT_SETTERS[PSET_OUT_ECDH_PUB_KEY + 
     wally_psbt_output_set_ecdh_pub_key, /* PSET_OUT_ECDH_PUB_KEY */
 };
 
+static int scalar_offset_verify(const unsigned char *bytes, size_t len)
+{
+    return (bytes && len == 32u) ? WALLY_OK : WALLY_EINVAL;
+}
 #endif /* BUILD ELEMENTS */
 
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
@@ -787,30 +791,6 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
-#ifdef BUILD_ELEMENTS
-int wally_psbt_get_global_scalar_offset(struct wally_psbt *psbt,
-                                        unsigned char *bytes_out, size_t len,
-                                        size_t *written)
-{
-    if (written)
-        *written = 0;
-    if (!psbt || !bytes_out || len != 32 || !written)
-        return WALLY_EINVAL;
-    *written = psbt->scalar_len;
-    if (psbt->scalar_len)
-        memcpy(bytes_out, psbt->scalar, psbt->scalar_len);
-    return WALLY_OK;
-}
-
-int wally_psbt_set_global_scalar_offset(struct wally_psbt *psbt,
-                                        const unsigned char *bytes, size_t bytes_len)
-{
-    if (!psbt || BYTES_INVALID(bytes, bytes_len) || (bytes_len && bytes_len != 32))
-        return WALLY_EINVAL;
-    return replace_bytes(bytes, bytes_len, &psbt->scalar, &psbt->scalar_len);
-}
-#endif /* BUILD_ELEMENTS */
-
 int wally_psbt_add_input_at(struct wally_psbt *psbt,
                             uint32_t index, uint32_t flags,
                             const struct wally_tx_input *input)
@@ -1429,10 +1409,6 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     size_t i, key_len;
     struct wally_psbt *result = NULL;
     uint32_t flags = 0;
-#ifdef BUILD_ELEMENTS
-    uint64_t elements_keyset = 0;
-#endif
-
 
     TX_CHECK_OUTPUT;
 
@@ -1466,6 +1442,9 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     while ((key_len = pull_varlength(&bytes, &len)) != 0) {
         const unsigned char *key, *val;
         size_t val_max;
+#ifdef BUILD_ELEMENTS
+        uint64_t field_type;
+#endif /* BUILD_ELEMENTS */
 
         /* Start parsing key */
         pull_subfield_start(&bytes, &len, key_len, &key, &key_len);
@@ -1506,20 +1485,15 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             if (!is_elements_key(&key, &key_len))
                 goto unknown_type;
 
-            if (pull_varint(&key, &key_len) == PSET_GLOBAL_SCALAR) {
-                size_t val_len;
-                if (elements_keyset & (1 << PSET_GLOBAL_SCALAR)) {
-                    ret = WALLY_EINVAL; /* Duplicate value */
-                    goto fail;
-                }
-                elements_keyset |= (1 << PSET_GLOBAL_SCALAR);
-                subfield_nomore_end(&bytes, &len, key, key_len);
-
-                val_len = pull_varlength(&bytes, &len);
-                val = pull_skip(&bytes, &len, val_len);
-                ret = wally_psbt_set_global_scalar_offset(result, val, val_len);
+            field_type = pull_varint(&key, &key_len);
+            if (field_type == PSET_GLOBAL_SCALAR) {
+                const unsigned char *scalar = pull_skip(&key, &key_len, 32u);
+                ret = map_add(&result->global_scalar_offsets, scalar, 32u, scalar, 32u, false, NULL, false);
                 if (ret != WALLY_OK)
                     goto fail;
+                subfield_nomore_end(&bytes, &len, key, key_len);
+                if (pull_varint(&bytes, &len) != 0)
+                    goto fail; /* Scalars do not have associated data */
             } else
                 goto unknown_type;
             break;
@@ -1582,22 +1556,32 @@ int wally_psbt_get_length(const struct wally_psbt *psbt, uint32_t flags, size_t 
 static void push_psbt_key(unsigned char **cursor, size_t *max,
                           uint64_t type, const void *extra, size_t extra_len)
 {
-    push_varint(cursor, max, varint_get_length(type) + extra_len);
+    const uint64_t key_len = varint_get_length(type) + extra_len;
+    push_varint(cursor, max, key_len);
     push_varint(cursor, max, type);
     push_bytes(cursor, max, extra, extra_len);
 }
 
 #ifdef BUILD_ELEMENTS
-/* Common case of pushing elements proprietary type keys */
-static void push_elements_key(unsigned char **cursor, size_t *max,
-                              uint64_t type)
+/* Push an elements proprietary key with extra key data */
+static void push_elements_key_data(unsigned char **cursor, size_t *max,
+                                   uint64_t type, const unsigned char *extra,
+                                   size_t extra_len)
 {
-    push_varint(cursor, max, varint_get_length(PSBT_PROPRIETARY_TYPE)
-                + varint_get_length(sizeof(PSET_KEY_PREFIX))
-                + sizeof(PSET_KEY_PREFIX) + varint_get_length(type));
+    const uint64_t key_len = varint_get_length(PSBT_PROPRIETARY_TYPE)
+                             + varbuff_get_length(sizeof(PSET_KEY_PREFIX))
+                             + varint_get_length(type) + extra_len;
+    push_varint(cursor, max, key_len);
     push_varint(cursor, max, PSBT_PROPRIETARY_TYPE);
     push_varbuff(cursor, max, PSET_KEY_PREFIX, sizeof(PSET_KEY_PREFIX));
     push_varint(cursor, max, type);
+    push_bytes(cursor, max, extra, extra_len);
+}
+
+/* Common case of pushing elements proprietary type keys */
+static void push_elements_key(unsigned char **cursor, size_t *max, uint64_t type)
+{
+    push_elements_key_data(cursor, max, type, NULL, 0);
 }
 
 static void push_elements_varbuff(unsigned char **cursor, size_t *max,
@@ -1896,8 +1880,12 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     }
 
 #ifdef BUILD_ELEMENTS
-    push_elements_varbuff(&cursor, &max, PSET_GLOBAL_SCALAR,
-                          psbt->scalar, psbt->scalar_len);
+    for (i = 0; i < psbt->global_scalar_offsets.num_items; ++i) {
+        push_elements_key_data(&cursor, &max, PSET_GLOBAL_SCALAR,
+                               psbt->global_scalar_offsets.items[i].key,
+                               psbt->global_scalar_offsets.items[i].key_len);
+        push_varint(&cursor, &max, 0); /* No data */
+    }
 #endif /* BUILD_ELEMENTS */
 
     push_map(&cursor, &max, &psbt->unknowns);
@@ -2730,6 +2718,20 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 }
 
 #if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
+int wally_map_get_num_items(const struct wally_map *map_in, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!map_in || !written)
+        return WALLY_EINVAL;
+    *written = map_in->num_items;
+    return WALLY_OK;
+}
+
+#ifdef BUILD_ELEMENTS
+MAP____IMPL(/**/, wally_psbt, global_scalar_offset, scalar_offset_verify)
+#endif /* BUILD_ELEMENTS */
+
 NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx, utxo, tx_clone_alloc, true)
 NESTED_STRUCT_IMPL(/**/, wally_psbt, input, wally_tx_output, witness_utxo, wally_tx_output_clone_alloc, true)
 NESTED_VARBUF_IMPL(/**/, wally_psbt, input, redeem_script, true)

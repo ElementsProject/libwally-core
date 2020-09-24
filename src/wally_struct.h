@@ -120,6 +120,43 @@
         return WALLY_OK; \
     }
 
+#define MAP____DECL(SCOPE, PARENT, NAME) \
+    SCOPE int PARENT ## _set_ ## NAME ## s(struct PARENT *p, const struct wally_map *map_in); \
+    SCOPE int PARENT ## _get_ ## NAME ## s_size(const struct PARENT *p, size_t *written); \
+    SCOPE int PARENT ## _find_ ## NAME(const struct PARENT *p, const unsigned char *bytes, size_t bytes_len, size_t *written); \
+    SCOPE int PARENT ## _get_ ## NAME(const struct PARENT *p, size_t i, unsigned char *bytes_out, size_t len, size_t *written); \
+    SCOPE int PARENT ## _get_ ## NAME ## _len(const struct PARENT *p, size_t i, size_t *written)
+
+#define MAP____IMPL(SCOPE, PARENT, NAME, CHECK_FN) \
+    SCOPE int PARENT ## _set_ ## NAME ## s(struct PARENT *p, const struct wally_map *map_in) { \
+        if (!p) return WALLY_EINVAL; \
+        return map_assign(map_in, &p->NAME ## s, CHECK_FN); \
+    } \
+    SCOPE int PARENT ## _get_ ## NAME ## s_size(const struct PARENT *p, size_t *written) { \
+        if (written) *written = 0; \
+        if (!p || !written) return WALLY_EINVAL; \
+        *written = p->NAME ## s.num_items; \
+        return WALLY_OK; \
+    } \
+    SCOPE int PARENT ## _find_ ## NAME(const struct PARENT *p, const unsigned char *bytes, size_t bytes_len, size_t *written) { \
+        if (written) *written = 0; \
+        if (!p) return WALLY_EINVAL; \
+        return wally_map_find(&p->NAME ## s, bytes, bytes_len, written); \
+    } \
+    SCOPE int PARENT ## _get_ ## NAME(const struct PARENT *p, size_t i, unsigned char *bytes_out, size_t len, size_t *written) { \
+        if (written) *written = 0; \
+        if (!p || !written || !bytes_out || !len || i >= p->NAME ## s.num_items) \
+            return WALLY_EINVAL; \
+        *written = p->NAME ## s.items[i].value_len; \
+        if (*written && len >= *written) memcpy(bytes_out, p->NAME ## s.items[i].value, *written); \
+        return WALLY_OK; \
+    } \
+    SCOPE int PARENT ## _get_ ## NAME ## _len(const struct PARENT *p, size_t i, size_t *written) { \
+        if (written) *written = 0; \
+        if (!p || !written || i >= p->NAME ## s.num_items) return WALLY_EINVAL; \
+        *written = p->NAME ## s.items[i].value_len; \
+        return WALLY_OK; \
+    }
 
 #define NESTED_MAP____DECL(SCOPE, PARENT, COLLECTION, NAME) \
     SCOPE int PARENT ## _set_ ## COLLECTION ## _ ## NAME ## s(struct PARENT *p, size_t i, const struct wally_map *map_in); \

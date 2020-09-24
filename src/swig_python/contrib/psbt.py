@@ -74,13 +74,12 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_witness)
 
         dummy_bytes = bytearray(b'\x00' * 32)
-        dummy_commitment = bytearray(b'\x00' * 33)
         dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
         dummy_sig = bytearray(b'\x00' * 72)
         if is_elements_build():
-            dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
+            dummy_commitment = bytearray(b'\x11' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
 
         dummy_tx = psbt_get_global_tx(psbt)
@@ -89,13 +88,27 @@ class PSBTTests(unittest.TestCase):
             psbt_get_global_tx(None)
 
         if is_elements_build():
-            for args in [(None, dummy_bytes),              # Null PSBT
-                         (psbt, bytearray(b'\x00' * 31))]: # Invalid length
-                with self.assertRaises(ValueError):
-                    psbt_set_global_scalar_offset(*args)
-            self.assertEqual(psbt_get_global_scalar_offset(psbt), bytearray())
-            psbt_set_global_scalar_offset(psbt, dummy_bytes)
-            self.assertEqual(psbt_get_global_scalar_offset(psbt), dummy_bytes)
+            dummy_scalars = map_init(0)
+            map_add(dummy_scalars, dummy_bytes, dummy_bytes)
+            map_add(dummy_scalars, dummy_commitment[:32], dummy_commitment[:32])
+            self.assertEqual(map_get_num_items(dummy_scalars), 2)
+
+            with self.assertRaises(ValueError):
+                psbt_set_global_scalar_offsets(None, dummy_scalars) # Null psbt
+            psbt_set_global_scalar_offsets(psbt, dummy_scalars)
+            with self.assertRaises(ValueError):
+                psbt_get_global_scalar_offsets_size(None)           # Null psbt
+            self.assertEqual(psbt_get_global_scalar_offsets_size(psbt), 2)
+            with self.assertRaises(ValueError):
+                psbt_find_global_scalar_offset(None, dummy_bytes)   # Null psbt
+            self.assertEqual(psbt_find_global_scalar_offset(psbt, dummy_bytes), 1)
+            with self.assertRaises(ValueError):
+                psbt_get_global_scalar_offset(None, 0)              # Null psbt
+            self.assertEqual(psbt_get_global_scalar_offset(psbt, 0), dummy_bytes)
+              # FIXME: Reminaing tests
+            with self.assertRaises(ValueError):
+                psbt_get_global_scalar_offset_len(None, 0)          # Null psbt
+            self.assertEqual(psbt_get_global_scalar_offset_len(psbt, 0), 32)
 
         dummy_keypaths = map_init(0)
         self.assertIsNotNone(dummy_keypaths)
