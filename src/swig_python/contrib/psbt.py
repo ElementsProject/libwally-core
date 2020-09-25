@@ -7,6 +7,16 @@ SAMPLE = "cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD///
 
 class PSBTTests(unittest.TestCase):
 
+    def _round_trip(self, psbt):
+        orig_bytes = psbt_to_bytes(psbt, 0)
+        try:
+            copy_psbt = psbt_from_bytes(orig_bytes)
+        except Exception as e:
+            print(hex_from_bytes(orig_bytes))
+            raise e
+        copy_bytes = psbt_to_bytes(copy_psbt, 0)
+        self.assertEqual(orig_bytes, copy_bytes)
+
     def _try_invalid(self, fn, psbt, *args):
         with self.assertRaises(ValueError):
             fn(None, 0, *args) # Null PSBT
@@ -14,8 +24,11 @@ class PSBTTests(unittest.TestCase):
             fn(psbt, 1, *args) # Invalid index
 
     def _try_set(self, fn, psbt, valid_value, null_value=None):
+        self._round_trip(psbt)
         fn(psbt, 0, valid_value) # Set
-        fn(psbt, 0, null_value) # Un-set
+        self._round_trip(psbt)
+        fn(psbt, 0, null_value)  # Un-set
+        self._round_trip(psbt)
         self._try_invalid(fn, psbt, valid_value)
 
     def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None):
@@ -68,47 +81,22 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
 
         # Test setters
-        dummy_txout = tx_output_init(1234567, bytearray(b'\x00' * 33))
+        dummy_txout = tx_output_init(1234567, bytearray(b'\x44' * 33))
 
         dummy_witness = tx_witness_stack_init(5)
         self.assertIsNotNone(dummy_witness)
 
         dummy_bytes = bytearray(b'\x00' * 32)
         dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
-        dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
+        dummy_fingerprint = bytearray(b'\x03' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
         dummy_sig = bytearray(b'\x00' * 72)
         if is_elements_build():
             dummy_commitment = bytearray(b'\x11' * ASSET_COMMITMENT_LEN)
-            dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
+            dummy_asset = bytearray(b'\x99' * ASSET_TAG_LEN)
 
         dummy_tx = psbt_get_global_tx(psbt)
         self.assertIsNotNone(dummy_tx)
-        with self.assertRaises(ValueError):
-            psbt_get_global_tx(None)
-
-        if is_elements_build():
-            dummy_scalars = map_init(0)
-            map_add(dummy_scalars, dummy_bytes, dummy_bytes)
-            map_add(dummy_scalars, dummy_commitment[:32], dummy_commitment[:32])
-            self.assertEqual(map_get_num_items(dummy_scalars), 2)
-
-            with self.assertRaises(ValueError):
-                psbt_set_global_scalar_offsets(None, dummy_scalars) # Null psbt
-            psbt_set_global_scalar_offsets(psbt, dummy_scalars)
-            with self.assertRaises(ValueError):
-                psbt_get_global_scalar_offsets_size(None)           # Null psbt
-            self.assertEqual(psbt_get_global_scalar_offsets_size(psbt), 2)
-            with self.assertRaises(ValueError):
-                psbt_find_global_scalar_offset(None, dummy_bytes)   # Null psbt
-            self.assertEqual(psbt_find_global_scalar_offset(psbt, dummy_bytes), 1)
-            with self.assertRaises(ValueError):
-                psbt_get_global_scalar_offset(None, 0)              # Null psbt
-            self.assertEqual(psbt_get_global_scalar_offset(psbt, 0), dummy_bytes)
-              # FIXME: Reminaing tests
-            with self.assertRaises(ValueError):
-                psbt_get_global_scalar_offset_len(None, 0)          # Null psbt
-            self.assertEqual(psbt_get_global_scalar_offset_len(psbt, 0), 32)
 
         dummy_keypaths = map_init(0)
         self.assertIsNotNone(dummy_keypaths)
@@ -121,9 +109,39 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(map_find(dummy_signatures, dummy_pubkey), 1)
 
         dummy_unknowns = map_init(1)
+        dummy_unknown = bytearray(b'\xfc034679790100')
         self.assertIsNotNone(dummy_unknowns)
-        map_add(dummy_unknowns, dummy_pubkey, dummy_fingerprint)
-        self.assertEqual(map_find(dummy_unknowns, dummy_pubkey), 1)
+        map_add(dummy_unknowns, dummy_unknown, bytearray(b'\xffffffff'))
+
+        with self.assertRaises(ValueError):
+            psbt_get_global_tx(None)
+
+        psbt_set_unknowns(psbt, dummy_unknowns)
+        self._round_trip(psbt)
+        psbt_set_unknowns(psbt, None)
+
+        if is_elements_build():
+            dummy_scalars = map_init(0)
+            map_add(dummy_scalars, dummy_bytes, dummy_bytes)
+            map_add(dummy_scalars, dummy_commitment[:32], dummy_commitment[:32])
+            self.assertEqual(map_get_num_items(dummy_scalars), 2)
+
+            with self.assertRaises(ValueError):
+                psbt_set_global_scalar_offsets(None, dummy_scalars) # Null psbt
+            psbt_set_global_scalar_offsets(psbt, dummy_scalars)
+            self._round_trip(psbt)
+            with self.assertRaises(ValueError):
+                psbt_get_global_scalar_offsets_size(None)           # Null psbt
+            self.assertEqual(psbt_get_global_scalar_offsets_size(psbt), 2)
+            with self.assertRaises(ValueError):
+                psbt_find_global_scalar_offset(None, dummy_bytes)   # Null psbt
+            self.assertEqual(psbt_find_global_scalar_offset(psbt, dummy_bytes), 1)
+            with self.assertRaises(ValueError):
+                psbt_get_global_scalar_offset(None, 0)              # Null psbt
+            self.assertEqual(psbt_get_global_scalar_offset(psbt, 0), dummy_bytes)
+            with self.assertRaises(ValueError):
+                psbt_get_global_scalar_offset_len(None, 0)          # Null psbt
+            self.assertEqual(psbt_get_global_scalar_offset_len(psbt, 0), 32)
 
         #
         # Inputs
@@ -160,11 +178,12 @@ class PSBTTests(unittest.TestCase):
                             psbt_get_input_unknown_len,
                             psbt_get_input_unknown,
                             psbt_find_input_unknown,
-                            psbt, dummy_unknowns, dummy_pubkey)
+                            psbt, dummy_unknowns, dummy_unknown)
         self._try_set(psbt_set_input_sighash, psbt, 0xff, 0x0)
         self.assertEqual(psbt_get_input_sighash(psbt, 0), 0)
         self._try_invalid(psbt_get_input_sighash, psbt)
 
+        self._round_trip(psbt)
         if is_elements_build():
             for get_fn, set_fn, has_fn, clear_fn in [
                 (psbt_get_input_issuance_amount, psbt_set_input_issuance_amount,
@@ -182,13 +201,17 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(has_fn(psbt, 0), 1)
                 clear_fn(psbt, 0)
                 self.assertEqual(has_fn(psbt, 0), 0)
+            self._round_trip(psbt)
             # Verify mutuality of issuance_amount/clears issuance_amount_commitment
             psbt_set_input_issuance_amount(psbt, 0 , 300)
             self.assertTrue(psbt_has_input_issuance_amount(psbt, 0))
+            self._round_trip(psbt)
             psbt_set_input_issuance_amount_commitment(psbt, 0 , dummy_commitment)
             self.assertFalse(psbt_has_input_issuance_amount(psbt, 0))
+            self._round_trip(psbt)
             psbt_set_input_issuance_amount(psbt, 0 , 300)
             self.assertEqual(psbt_get_input_issuance_amount_commitment(psbt, 0), bytes())
+            self._round_trip(psbt)
 
             self._try_get_set_b(psbt_set_input_issuance_amount_commitment,
                                 psbt_get_input_issuance_amount_commitment,
@@ -236,7 +259,7 @@ class PSBTTests(unittest.TestCase):
                             psbt_get_output_unknown_len,
                             psbt_get_output_unknown,
                             psbt_find_output_unknown,
-                            psbt, dummy_unknowns, dummy_pubkey)
+                            psbt, dummy_unknowns, dummy_unknown)
         if is_elements_build():
             # Note: "value" and "blinding_index" tested with inputs above
             self._try_get_set_b(psbt_set_output_value_commitment,
