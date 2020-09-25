@@ -2728,6 +2728,7 @@ int wally_map_get_num_items(const struct wally_map *map_in, size_t *written)
     return WALLY_OK;
 }
 
+MAP____IMPL(/**/, wally_psbt, unknown, NULL)
 #ifdef BUILD_ELEMENTS
 MAP____IMPL(/**/, wally_psbt, global_scalar_offset, scalar_offset_verify)
 #endif /* BUILD_ELEMENTS */
