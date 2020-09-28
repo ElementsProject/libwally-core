@@ -1,4 +1,3 @@
-from binascii import b2a_hex
 import sys
 
 def as_hex(s):

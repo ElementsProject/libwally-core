@@ -77,7 +77,6 @@ else:
     import distutils
     import distutils.command.build_py
     import os
-    import platform
     import subprocess
     import multiprocessing
 
