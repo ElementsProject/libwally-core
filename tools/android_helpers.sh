@@ -32,7 +32,7 @@ function android_get_configure_flags() {
     esac
 
     local host=$(basename $toolsdir/bin/$archfilename-linux-android*-strip | sed 's/-strip$//')
-    local args="--host=$host --enable-endomorph"
+    local args="--host=$host --enable-endomorphism"
     case $arch in
        arm*) args="$args --with-asm=auto";;
        x86_64) args="$args --with-asm=x86_64";;
