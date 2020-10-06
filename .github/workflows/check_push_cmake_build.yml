@@ -176,7 +176,7 @@ jobs:
         go build
     - name: add-path-windows
       if: matrix.os == 'windows-latest'
-      run: echo $GITHUB_WORKSPACE/build/Release >> $env:GITHUB_PATH
+      run: echo "$GITHUB_WORKSPACE/build/Release" >> $GITHUB_PATH
       shell: bash
     - name: go_test-windows
       if: matrix.os == 'windows-latest'
