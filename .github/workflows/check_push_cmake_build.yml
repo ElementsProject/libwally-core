@@ -174,11 +174,14 @@ jobs:
         cp ./src/swig_go/*_test.go .
         go mod init github.com/cryptogarageinc/libwally-core
         go build
+    - name: add-path-windows
+      if: matrix.os == 'windows-latest'
+      run: echo $GITHUB_WORKSPACE/build/Release >> $env:GITHUB_PATH
+      shell: bash
     - name: go_test-windows
       if: matrix.os == 'windows-latest'
       run: |
         dir
-        echo ::add-path::$GITHUB_WORKSPACE/build/Release
         cp ./src/swig_go/*_test.go .
         go test
       shell: bash
