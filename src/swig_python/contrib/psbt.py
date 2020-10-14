@@ -129,6 +129,12 @@ class PSBTTests(unittest.TestCase):
         self._try_invalid(psbt_get_input_final_witness, psbt)
         self._try_get_set_k(psbt_set_input_keypaths,
                             psbt_get_input_keypaths_size, psbt, dummy_keypaths)
+        self._try_get_set_m(psbt_set_input_keypaths,
+                            psbt_get_input_keypaths_size,
+                            psbt_get_input_keypath_len,
+                            psbt_get_input_keypath,
+                            psbt_find_input_keypath,
+                            psbt, dummy_keypaths, dummy_pubkey)
         self._try_get_set_m(psbt_set_input_signatures,
                             psbt_get_input_signatures_size,
                             psbt_get_input_signature_len,
