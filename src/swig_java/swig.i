@@ -616,11 +616,17 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_sha256_midstate, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha512, 3, 4, SHA512_LEN);
 %returns_void__(wally_tx_add_elements_raw_input);
+%returns_void__(wally_tx_add_elements_raw_input_at);
 %returns_void__(wally_tx_add_elements_raw_output);
+%returns_void__(wally_tx_add_elements_raw_output_at);
 %returns_void__(wally_tx_add_input);
+%returns_void__(wally_tx_add_input_at);
 %returns_void__(wally_tx_add_raw_input);
+%returns_void__(wally_tx_add_raw_input_at);
 %returns_void__(wally_tx_add_output);
+%returns_void__(wally_tx_add_output_at);
 %returns_void__(wally_tx_add_raw_output);
+%returns_void__(wally_tx_add_raw_output_at);
 %returns_array_(wally_tx_confidential_value_from_satoshi, 2, 3, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
 %returns_uint64(wally_tx_confidential_value_to_satoshi);
 %returns_struct(wally_tx_elements_input_init_alloc, wally_tx_input);
@@ -800,6 +806,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
+%returns_size_t(wally_varbuff_get_length);
+%returns_size_t(wally_varbuff_to_bytes);
+%returns_size_t(wally_varint_get_length);
+%returns_size_t(wally_varint_to_bytes);
 %returns_string(wally_wif_from_bytes);
 %returns_size_t(wally_wif_to_bytes);
 %rename("_wif_is_uncompressed") wally_wif_is_uncompressed;
