@@ -479,6 +479,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_find_input_keypath);
 %returns_size_t(wally_psbt_find_input_signature);
 %returns_size_t(wally_psbt_find_input_unknown);
+%returns_size_t(wally_psbt_find_output_keypath);
 %returns_size_t(wally_psbt_find_output_unknown);
 %returns_void__(wally_psbt_free)
 %returns_struct(wally_psbt_from_base64, wally_psbt);
@@ -532,6 +533,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_output_blinding_pubkey);
 %returns_size_t(wally_psbt_get_output_blinding_pubkey_len);
 %returns_size_t(wally_psbt_get_output_keypaths_size);
+%returns_size_t(wally_psbt_get_output_keypath);
+%returns_size_t(wally_psbt_get_output_keypath_len);
 %returns_size_t(wally_psbt_get_output_nonce);
 %returns_size_t(wally_psbt_get_output_nonce_len);
 %returns_size_t(wally_psbt_get_output_rangeproof);

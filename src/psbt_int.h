@@ -83,7 +83,9 @@ WALLY_CORE_API int wally_psbt_get_output_redeem_script_len(const struct wally_ps
 WALLY_CORE_API int wally_psbt_get_output_witness_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_output_witness_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_output_keypaths_size(const struct wally_psbt *psbt, size_t index, size_t *written);
-/* FIXME: WALLY_CORE_API int wally_psbt_get_output_keypath_len(const struct wally_psbt *psbt, size_t index, size_t subindex, size_t *written); */
+WALLY_CORE_API int wally_psbt_find_output_keypath(const struct wally_psbt *psbt, size_t index, const unsigned char *key, size_t key_len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_output_keypath(const struct wally_psbt *psbt, size_t index, size_t subindex, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_output_keypath_len(const struct wally_psbt *psbt, size_t index, size_t subindex, size_t *written);
 WALLY_CORE_API int wally_psbt_get_output_unknowns_size(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_find_output_unknown(const struct wally_psbt *psbt, size_t index, const unsigned char *key, size_t key_len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_output_unknown(const struct wally_psbt *psbt, size_t index, size_t subindex, unsigned char *bytes_out, size_t len, size_t *written);
