@@ -168,63 +168,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 }
 %enddef
 
-
-/* Input buffers with lengths are passed as python buffers */
-%pybuffer_nullable_binary(const unsigned char *abf, size_t abf_len);
-%pybuffer_nullable_binary(const unsigned char *asset, size_t asset_len);
-%pybuffer_nullable_binary(const unsigned char *bytes, size_t bytes_len);
-%pybuffer_nullable_binary(const unsigned char *chain_code, size_t chain_code_len);
-%pybuffer_nullable_binary(const unsigned char *commitment, size_t commitment_len);
-%pybuffer_nullable_binary(const unsigned char *contract_hash, size_t contract_hash_len);
-%pybuffer_nullable_binary(const unsigned char *entropy, size_t entropy_len);
-%pybuffer_nullable_binary(const unsigned char *extra, size_t extra_len);
-%pybuffer_nullable_binary(const unsigned char *final_scriptsig, size_t final_scriptsig_len);
-%pybuffer_nullable_binary(const unsigned char *fingerprint, size_t fingerprint_len);
-%pybuffer_nullable_binary(const unsigned char *generator, size_t generator_len);
-%pybuffer_nullable_binary(const unsigned char *genesis_blockhash, size_t genesis_blockhash_len);
-%pybuffer_nullable_binary(const unsigned char *hash160, size_t hash160_len);
-%pybuffer_nullable_binary(const unsigned char *inflation_keys, size_t inflation_keys_len);
-%pybuffer_nullable_binary(const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
-%pybuffer_nullable_binary(const unsigned char *issuance_amount, size_t issuance_amount_len);
-%pybuffer_nullable_binary(const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
-%pybuffer_nullable_binary(const unsigned char *iv, size_t iv_len);
-%pybuffer_nullable_binary(const unsigned char *key, size_t key_len);
-%pybuffer_nullable_binary(const unsigned char *label, size_t label_len);
-%pybuffer_nullable_binary(const unsigned char *mainchain_script, size_t mainchain_script_len);
-%pybuffer_nullable_binary(const unsigned char *nonce, size_t nonce_len);
-%pybuffer_nullable_binary(const unsigned char *nonce_hash, size_t nonce_hash_len);
-%pybuffer_nullable_binary(const unsigned char *offline_keys, size_t offline_keys_len);
-%pybuffer_nullable_binary(const unsigned char *online_keys, size_t online_keys_len);
-%pybuffer_nullable_binary(const unsigned char *online_priv_key, size_t online_priv_key_len);
-%pybuffer_nullable_binary(const unsigned char *output_abf, size_t output_abf_len);
-%pybuffer_nullable_binary(const unsigned char *output_asset, size_t output_asset_len);
-%pybuffer_nullable_binary(const unsigned char *output_generator, size_t output_generator_len);
-%pybuffer_nullable_binary(const unsigned char *parent160, size_t parent160_len);
-%pybuffer_nullable_binary(const unsigned char *pass, size_t pass_len);
-%pybuffer_nullable_binary(const unsigned char *priv_key, size_t priv_key_len);
-%pybuffer_nullable_binary(const unsigned char *proof, size_t proof_len);
-%pybuffer_nullable_binary(const unsigned char *pub_key, size_t pub_key_len);
-%pybuffer_nullable_binary(const unsigned char *rangeproof, size_t rangeproof_len);
-%pybuffer_nullable_binary(const unsigned char *redeem_script, size_t redeem_script_len);
-%pybuffer_nullable_binary(const unsigned char *salt, size_t salt_len);
-%pybuffer_nullable_binary(const unsigned char *script, size_t script_len);
-%pybuffer_nullable_binary(const unsigned char *scriptpubkey, size_t scriptpubkey_len);
-%pybuffer_nullable_binary(const unsigned char *sig, size_t sig_len);
-%pybuffer_nullable_binary(const unsigned char *sub_pubkey, size_t sub_pubkey_len);
-%pybuffer_nullable_binary(const unsigned char *summed_key, size_t summed_key_len);
-%pybuffer_nullable_binary(const unsigned char *surjectionproof, size_t surjectionproof_len);
-%pybuffer_nullable_binary(const unsigned char *txhash, size_t txhash_len);
-%pybuffer_nullable_binary(const unsigned char *value, size_t value_len);
-%pybuffer_nullable_binary(const unsigned char *vbf, size_t vbf_len);
-%pybuffer_nullable_binary(const unsigned char *whitelistproof, size_t whitelistproof_len);
-%pybuffer_nullable_binary(const unsigned char *witness, size_t witness_len);
-
-/* Output buffers */
-%pybuffer_output_binary(unsigned char *asset_out, size_t asset_out_len);
-%pybuffer_output_binary(unsigned char *abf_out, size_t abf_out_len);
-%pybuffer_output_binary(unsigned char *bytes_out, size_t len);
-%pybuffer_output_binary(unsigned char *vbf_out, size_t vbf_out_len)
-
 /* Output integer values are converted into return values. */
 %typemap(in, numinputs=0) size_t *written (size_t sz) {
    sz = 0; $1 = ($1_ltype)&sz;
@@ -232,6 +175,14 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %typemap(argout) size_t* written {
    Py_DecRef($result);
    $result = PyInt_FromSize_t(*$1);
+}
+
+%typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
+   val = 0; $1 = ($1_ltype)&val;
+}
+%typemap(argout) uint32_t* value_out{
+   Py_DecRef($result);
+   $result = PyLong_FromUnsignedLong(*$1);
 }
 
 %typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
@@ -304,6 +255,62 @@ static void destroy_words(PyObject *obj) { (void)obj; }
         wally_free($1);
 }
 %enddef
+
+/* BEGIN AUTOGENERATED */
+%pybuffer_nullable_binary(const unsigned char* abf, size_t abf_len);
+%pybuffer_nullable_binary(const unsigned char* asset, size_t asset_len);
+%pybuffer_nullable_binary(const unsigned char* bytes, size_t bytes_len);
+%pybuffer_nullable_binary(const unsigned char* chain_code, size_t chain_code_len);
+%pybuffer_nullable_binary(const unsigned char* commitment, size_t commitment_len);
+%pybuffer_nullable_binary(const unsigned char* contract_hash, size_t contract_hash_len);
+%pybuffer_nullable_binary(const unsigned char* entropy, size_t entropy_len);
+%pybuffer_nullable_binary(const unsigned char* extra, size_t extra_len);
+%pybuffer_nullable_binary(const unsigned char* final_scriptsig, size_t final_scriptsig_len);
+%pybuffer_nullable_binary(const unsigned char* fingerprint, size_t fingerprint_len);
+%pybuffer_nullable_binary(const unsigned char* generator, size_t generator_len);
+%pybuffer_nullable_binary(const unsigned char* genesis_blockhash, size_t genesis_blockhash_len);
+%pybuffer_nullable_binary(const unsigned char* hash160, size_t hash160_len);
+%pybuffer_nullable_binary(const unsigned char* inflation_keys, size_t inflation_keys_len);
+%pybuffer_nullable_binary(const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
+%pybuffer_nullable_binary(const unsigned char* issuance_amount, size_t issuance_amount_len);
+%pybuffer_nullable_binary(const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
+%pybuffer_nullable_binary(const unsigned char* iv, size_t iv_len);
+%pybuffer_nullable_binary(const unsigned char* key, size_t key_len);
+%pybuffer_nullable_binary(const unsigned char* label, size_t label_len);
+%pybuffer_nullable_binary(const unsigned char* mainchain_script, size_t mainchain_script_len);
+%pybuffer_nullable_binary(const unsigned char* nonce, size_t nonce_len);
+%pybuffer_nullable_binary(const unsigned char* nonce_hash, size_t nonce_hash_len);
+%pybuffer_nullable_binary(const unsigned char* offline_keys, size_t offline_keys_len);
+%pybuffer_nullable_binary(const unsigned char* online_keys, size_t online_keys_len);
+%pybuffer_nullable_binary(const unsigned char* online_priv_key, size_t online_priv_key_len);
+%pybuffer_nullable_binary(const unsigned char* output_abf, size_t output_abf_len);
+%pybuffer_nullable_binary(const unsigned char* output_asset, size_t output_asset_len);
+%pybuffer_nullable_binary(const unsigned char* output_generator, size_t output_generator_len);
+%pybuffer_nullable_binary(const unsigned char* parent160, size_t parent160_len);
+%pybuffer_nullable_binary(const unsigned char* pass, size_t pass_len);
+%pybuffer_nullable_binary(const unsigned char* priv_key, size_t priv_key_len);
+%pybuffer_nullable_binary(const unsigned char* proof, size_t proof_len);
+%pybuffer_nullable_binary(const unsigned char* pub_key, size_t pub_key_len);
+%pybuffer_nullable_binary(const unsigned char* rangeproof, size_t rangeproof_len);
+%pybuffer_nullable_binary(const unsigned char* redeem_script, size_t redeem_script_len);
+%pybuffer_nullable_binary(const unsigned char* salt, size_t salt_len);
+%pybuffer_nullable_binary(const unsigned char* script, size_t script_len);
+%pybuffer_nullable_binary(const unsigned char* scriptpubkey, size_t scriptpubkey_len);
+%pybuffer_nullable_binary(const unsigned char* sig, size_t sig_len);
+%pybuffer_nullable_binary(const unsigned char* sub_pubkey, size_t sub_pubkey_len);
+%pybuffer_nullable_binary(const unsigned char* summed_key, size_t summed_key_len);
+%pybuffer_nullable_binary(const unsigned char* surjectionproof, size_t surjectionproof_len);
+%pybuffer_nullable_binary(const unsigned char* txhash, size_t txhash_len);
+%pybuffer_nullable_binary(const unsigned char* value, size_t value_len);
+%pybuffer_nullable_binary(const unsigned char* vbf, size_t vbf_len);
+%pybuffer_nullable_binary(const unsigned char* whitelistproof, size_t whitelistproof_len);
+%pybuffer_nullable_binary(const unsigned char* witness, size_t witness_len);
+%pybuffer_output_binary(unsigned char* abf_out, size_t abf_out_len);
+%pybuffer_output_binary(unsigned char* asset_out, size_t asset_out_len);
+%pybuffer_output_binary(unsigned char* bytes_out, size_t len);
+%pybuffer_output_binary(unsigned char* vbf_out, size_t vbf_out_len);
+/* END AUTOGENERATED */
+
 %py_int_array(uint32_t, 0xffffffffull, child_path, child_path_len)
 %py_int_array(uint32_t, 0xffull, sighash, sighash_len)
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)

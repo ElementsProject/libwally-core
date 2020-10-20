@@ -893,6 +893,46 @@ cleanup:
     return ret;
 }
 
+int wally_varint_get_length(uint64_t value, size_t *written)
+{
+    if (!written)
+        return WALLY_EINVAL;
+    *written = varint_get_length(value);
+    return WALLY_OK;
+}
+
+int wally_varint_to_bytes(uint64_t value, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!bytes_out || len < varint_get_length(value) || !written)
+        return WALLY_EINVAL;
+    *written = varint_to_bytes(value, bytes_out);
+    return WALLY_OK;
+}
+
+int wally_varbuff_get_length(const unsigned char *bytes, size_t bytes_len, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (BYTES_INVALID(bytes, bytes_len) || !written)
+        return WALLY_EINVAL;
+    *written = varint_get_length(bytes_len) + bytes_len;
+    return WALLY_OK;
+}
+
+int wally_varbuff_to_bytes(const unsigned char *bytes, size_t bytes_len,
+                           unsigned char *bytes_out, size_t len, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (BYTES_INVALID(bytes, bytes_len) || !bytes_out ||
+        len < varint_get_length(bytes_len) + bytes_len || !written)
+        return WALLY_EINVAL;
+    *written = varbuff_to_bytes(bytes, bytes_len, bytes_out);
+    return WALLY_OK;
+}
+
 int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                      uint32_t flags,
                                      unsigned char *bytes_out, size_t len, size_t *written)
@@ -1048,26 +1088,26 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
                 secp256k1_pubkey pub_key_combined;
                 size_t push_size;
 
-                if (!pubkey_parse(ctx, &pub_key, p + 1, EC_PUBLIC_KEY_LEN))
+                if (!pubkey_parse(&pub_key, p + 1, EC_PUBLIC_KEY_LEN))
                     return WALLY_ERROR;
                 memcpy(&pub_key_tweaked, &pub_key, sizeof(pub_key));
                 if ((ret = wally_hmac_sha256(p + 1, EC_PUBLIC_KEY_LEN, script, script_len, tweak, HMAC_SHA256_LEN)) != WALLY_OK)
                     return ret;
                 if (!pubkey_tweak_add(ctx, &pub_key_tweaked, tweak))
                     return WALLY_ERROR;
-                if (!pubkey_serialize(ctx, ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
+                if (!pubkey_serialize(ser_pub_key, &ser_len, &pub_key_tweaked, PUBKEY_COMPRESSED))
                     return WALLY_ERROR;
                 if ((ret = wally_script_push_from_bytes(ser_pub_key, ser_len, 0, q, bytes_len, &push_size)) != WALLY_OK)
                     return ret;
                 /* sanity checks as per elementsd */
                 if (!pubkey_create(ctx, &pub_key_from_tweak, tweak))
                     return WALLY_ERROR;
-                if (!pubkey_negate(ctx, &pub_key))
+                if (!pubkey_negate(&pub_key))
                     return WALLY_ERROR;
 
                 pub_key_combination[0] = &pub_key;
                 pub_key_combination[1] = &pub_key_tweaked;
-                if (!pubkey_combine(ctx, &pub_key_combined, pub_key_combination, 2))
+                if (!pubkey_combine(&pub_key_combined, pub_key_combination, 2))
                     return WALLY_ERROR;
                 if (memcmp(&pub_key_combined, &pub_key_from_tweak, sizeof(secp256k1_pubkey)) != 0)
                     return WALLY_ERROR;

@@ -26,13 +26,6 @@ class PSBTTests(unittest.TestCase):
         ret = getfn(psbt, 0) # Get
         self.assertEqual(valid_value, ret)
 
-    def _try_get_set_k(self, setfn, lenfn, psbt, valid_value, null_value=None):
-        self._try_set(setfn, psbt, valid_value, null_value)
-        self._try_invalid(lenfn, psbt)
-        self.assertEqual(lenfn(psbt, 0), 0)
-        setfn(psbt, 0, valid_value) # Set
-        self.assertEqual(lenfn(psbt, 0), 1)
-
     def _try_get_set_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt, valid_value, valid_item):
         self._try_set(setfn, psbt, valid_value, None)
         self._try_invalid(sizefn, psbt)
@@ -127,8 +120,12 @@ class PSBTTests(unittest.TestCase):
                             psbt_get_input_final_scriptsig_len, psbt, dummy_bytes)
         self._try_set(psbt_set_input_final_witness, psbt, dummy_witness)
         self._try_invalid(psbt_get_input_final_witness, psbt)
-        self._try_get_set_k(psbt_set_input_keypaths,
-                            psbt_get_input_keypaths_size, psbt, dummy_keypaths)
+        self._try_get_set_m(psbt_set_input_keypaths,
+                            psbt_get_input_keypaths_size,
+                            psbt_get_input_keypath_len,
+                            psbt_get_input_keypath,
+                            psbt_find_input_keypath,
+                            psbt, dummy_keypaths, dummy_pubkey)
         self._try_get_set_m(psbt_set_input_signatures,
                             psbt_get_input_signatures_size,
                             psbt_get_input_signature_len,
@@ -183,8 +180,12 @@ class PSBTTests(unittest.TestCase):
         self._try_get_set_b(psbt_set_output_witness_script,
                             psbt_get_output_witness_script,
                             psbt_get_output_witness_script_len, psbt, dummy_bytes)
-        self._try_get_set_k(psbt_set_output_keypaths,
-                            psbt_get_output_keypaths_size, psbt, dummy_keypaths)
+        self._try_get_set_m(psbt_set_output_keypaths,
+                            psbt_get_output_keypaths_size,
+                            psbt_get_output_keypath_len,
+                            psbt_get_output_keypath,
+                            psbt_find_output_keypath,
+                            psbt, dummy_keypaths, dummy_pubkey)
         self._try_get_set_m(psbt_set_output_unknowns,
                             psbt_get_output_unknowns_size,
                             psbt_get_output_unknown_len,

@@ -51,8 +51,8 @@ static unsigned char *cliff(size_t *size)
     if (!p)
         fail("VirtualAlloc failed, err %d", GetLastError());
 
-    if (!VirtualProtect(p + *size, *size, PAGE_READWRITE | PAGE_GUARD, &tmp));
-    fail("VirtualProtect failed, err %d", GetLastError());
+    if (!VirtualProtect(p + *size, *size, PAGE_READWRITE | PAGE_GUARD, &tmp))
+        fail("VirtualProtect failed, err %d", GetLastError());
 #else
     /* One page is enough for our tests so far */
     *size = getpagesize();

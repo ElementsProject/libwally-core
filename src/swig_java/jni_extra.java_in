@@ -12,6 +12,23 @@
       return buf;
   }
 
+  private final static byte[] get_keypath_fingerprint(final byte[] buf) {
+      if (buf.length == 0) return buf;
+      final byte[] ret = new byte[4];
+      ret[0] = buf[0]; ret[1] = buf[1]; ret[2] = buf[2]; ret[3] = buf[3];
+      return ret;
+  }
+
+  private final static int[] get_keypath_path(final byte[] buf) {
+      final int[] ret = new int[buf.length > 4 ? (buf.length / 4) - 1 : 0];
+      for (int i = 0; i < ret.length; i++) {
+          final int b_idx = (i + 1) * 4;
+          ret[i] = (buf[b_idx + 0] & 0xFF) | (buf[b_idx + 1] & 0xFF) << 8 |
+                   (buf[b_idx + 2] & 0xFF) << 16 | (buf[b_idx + 3] & 0xFF) << 24;
+      }
+      return ret;
+  }
+
   public final static byte[] aes(byte[] jarg1, byte[] jarg2, long jarg3) {
       return aes(jarg1, jarg2, jarg3, null);
   }
@@ -300,6 +317,85 @@
 
   public final static byte[] symmetric_key_from_parent(byte[] jarg1, long jarg2, byte[] jarg3) {
       return symmetric_key_from_parent(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] psbt_get_input_final_scriptsig(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_final_scriptsig_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_final_scriptsig(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_keypath(Object psbt, long idx, long sub_idx) {
+      final byte[] buf = new byte[psbt_get_input_keypath_len(psbt, idx, sub_idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_keypath(psbt, idx, sub_idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_keypath_fingerprint(Object psbt, long idx, long sub_idx) {
+      return get_keypath_fingerprint(psbt_get_input_keypath(psbt, idx, sub_idx));
+  }
+
+  public final static int[] psbt_get_input_keypath_path(Object psbt, long idx, long sub_idx) {
+      return get_keypath_path(psbt_get_input_keypath(psbt, idx, sub_idx));
+  }
+
+  public final static byte[] psbt_get_input_redeem_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_redeem_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_redeem_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_signature(Object psbt, long idx, long sub_idx) {
+      final byte[] buf = new byte[psbt_get_input_signature_len(psbt, idx, sub_idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_signature(psbt, idx, sub_idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_unknown(Object psbt, long idx, long sub_idx) {
+      final byte[] buf = new byte[psbt_get_input_unknown_len(psbt, idx, sub_idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_unknown(psbt, idx, sub_idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_witness_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_witness_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_witness_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_keypath(Object psbt, long idx, long sub_idx) {
+      final byte[] buf = new byte[psbt_get_output_keypath_len(psbt, idx, sub_idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_keypath(psbt, idx, sub_idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_keypath_fingerprint(Object psbt, long idx, long sub_idx) {
+      return get_keypath_fingerprint(psbt_get_output_keypath(psbt, idx, sub_idx));
+  }
+
+  public final static int[] psbt_get_output_keypath_path(Object psbt, long idx, long sub_idx) {
+      return get_keypath_path(psbt_get_output_keypath(psbt, idx, sub_idx));
+  }
+
+  public final static byte[] psbt_get_output_redeem_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_redeem_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_redeem_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_witness_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_witness_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_witness_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
   }
 
   public final static void cleanup() {

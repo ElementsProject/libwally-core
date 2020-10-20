@@ -7,6 +7,8 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_psbt.h"
+#include "psbt_int.h"
 #include "../include/wally_script.h"
 #include "../include/wally_symmetric.h"
 #include "../include/wally_transaction.h"
@@ -205,69 +207,69 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %java_int_array(uint32_t, jintArray, int, GetIntArrayElements, ReleaseIntArrayElements)
 %java_int_array(uint64_t, jlongArray, long, GetLongArrayElements, ReleaseLongArrayElements)
 
-/* Input buffers with lengths are passed as arrays */
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *abf, size_t abf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *asset, size_t asset_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *bytes, size_t bytes_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *chain_code, size_t chain_code_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *commitment, size_t commitment_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *contract_hash, size_t contract_hash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *entropy, size_t entropy_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *extra, size_t extra_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *generator, size_t generator_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *hash160, size_t hash160_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *inflation_keys, size_t inflation_keys_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *issuance_amount, size_t issuance_amount_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *iv, size_t iv_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *key, size_t key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_abf, size_t output_abf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_asset, size_t output_asset_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *output_generator, size_t output_generator_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce, size_t nonce_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *nonce_hash, size_t nonce_hash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *pass, size_t pass_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *parent160, size_t parent160_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *priv_key, size_t priv_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *proof, size_t proof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *pub_key, size_t pub_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *rangeproof, size_t rangeproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *salt, size_t salt_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *script, size_t script_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sig, size_t sig_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sighash, size_t sighash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *surjectionproof, size_t surjectionproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *txhash, size_t txhash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *value, size_t value_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *vbf, size_t vbf_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *witness, size_t witness_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *label, size_t label_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *genesis_blockhash, size_t genesis_blockhash_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *mainchain_script, size_t mainchain_script_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *sub_pubkey, size_t sub_pubkey_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *whitelistproof, size_t whitelistproof_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *online_keys, size_t online_keys_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *offline_keys, size_t offline_keys_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *online_priv_key, size_t online_priv_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *summed_key, size_t summed_key_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *redeem_script, size_t redeem_script_len) };
-%apply(char *STRING, size_t LENGTH) { (const unsigned char *scriptpubkey, size_t scriptpubkey_len) };
-
-/* Output buffers */
-%apply(char *STRING, size_t LENGTH) { (unsigned char *asset_out, size_t asset_out_len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *abf_out, size_t abf_out_len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *bytes_out, size_t len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char *vbf_out, size_t vbf_out_len) };
+/* BEGIN AUTOGENERATED */
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* abf, size_t abf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* asset, size_t asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* bytes, size_t bytes_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* chain_code, size_t chain_code_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* commitment, size_t commitment_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* contract_hash, size_t contract_hash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* entropy, size_t entropy_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* extra, size_t extra_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* final_scriptsig, size_t final_scriptsig_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* fingerprint, size_t fingerprint_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* generator, size_t generator_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* genesis_blockhash, size_t genesis_blockhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* hash160, size_t hash160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys, size_t inflation_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount, size_t issuance_amount_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* iv, size_t iv_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* online_keys, size_t online_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* online_priv_key, size_t online_priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* output_abf, size_t output_abf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* output_asset, size_t output_asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* output_generator, size_t output_generator_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* parent160, size_t parent160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pass, size_t pass_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_key, size_t priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* proof, size_t proof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key, size_t pub_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* rangeproof, size_t rangeproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* redeem_script, size_t redeem_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* salt, size_t salt_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* script, size_t script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* scriptpubkey, size_t scriptpubkey_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* sig, size_t sig_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* value, size_t value_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* vbf, size_t vbf_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* whitelistproof, size_t whitelistproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* witness, size_t witness_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* abf_out, size_t abf_out_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* asset_out, size_t asset_out_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* bytes_out, size_t len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* vbf_out, size_t vbf_out_len) };
+/* END AUTOGENERATED */
 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t values_len) }
 
-%typemap(in, numinputs=0) uint64_t *value_out (uint64_t val) {
+%typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
    val = 0; $1 = ($1_ltype)&val;
 }
-%typemap(argout) uint64_t* value_out{
+%typemap(argout) uint32_t* value_out{
    $result = (jlong)*$1;
 }
 
@@ -362,6 +364,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %java_opaque_struct(wally_tx_input, 4);
 %java_opaque_struct(wally_tx_output, 5);
 %java_opaque_struct(wally_tx, 6);
+%java_opaque_struct(wally_map, 7);
+%java_opaque_struct(wally_psbt, 8);
 
 /* Our wrapped functions return types */
 %returns_void__(bip32_key_free);
@@ -453,8 +457,143 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_init);
 %rename("_is_elements_build") wally_is_elements_build;
 %returns_size_t(_is_elements_build);
+%returns_void__(wally_map_add);
+%returns_void__(wally_map_add_keypath_item);
+%returns_size_t(wally_map_find);
+%returns_void__(wally_map_free)
+%returns_struct(wally_map_init_alloc, wally_map);
+%rename("map_init") wally_map_init_alloc;
+%returns_void__(wally_map_sort);
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
+%returns_void__(wally_psbt_add_input_at);
+%returns_void__(wally_psbt_add_output_at);
+%returns_void__(wally_psbt_clear_input_value);
+%returns_struct(wally_psbt_clone_alloc, wally_psbt);
+%rename("psbt_clone") wally_psbt_clone_alloc;
+%returns_void__(wally_psbt_combine);
+%returns_struct(wally_psbt_elements_init_alloc, wally_psbt);
+%rename("psbt_elements_init") wally_psbt_elements_init_alloc;
+%returns_struct(wally_psbt_extract, wally_tx);
+%returns_void__(wally_psbt_finalize);
+%returns_size_t(wally_psbt_find_input_keypath);
+%returns_size_t(wally_psbt_find_input_signature);
+%returns_size_t(wally_psbt_find_input_unknown);
+%returns_size_t(wally_psbt_find_output_keypath);
+%returns_size_t(wally_psbt_find_output_unknown);
+%returns_void__(wally_psbt_free)
+%returns_struct(wally_psbt_from_base64, wally_psbt);
+%returns_struct(wally_psbt_from_bytes, wally_psbt);
+%returns_struct(wally_psbt_get_global_tx_alloc, wally_tx);
+%rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
+%returns_size_t(wally_psbt_get_input_abf);
+%returns_size_t(wally_psbt_get_input_abf_len);
+%returns_size_t(wally_psbt_get_input_asset);
+%returns_size_t(wally_psbt_get_input_asset_len);
+%returns_size_t(wally_psbt_get_input_redeem_script);
+%returns_size_t(wally_psbt_get_input_redeem_script_len);
+%returns_size_t(wally_psbt_get_input_claim_script);
+%returns_size_t(wally_psbt_get_input_claim_script_len);
+%returns_size_t(wally_psbt_get_input_final_scriptsig);
+%returns_size_t(wally_psbt_get_input_final_scriptsig_len);
+%returns_struct(wally_psbt_get_input_final_witness_alloc, wally_tx_witness_stack);
+%rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
+%returns_size_t(wally_psbt_get_input_genesis_blockhash);
+%returns_size_t(wally_psbt_get_input_genesis_blockhash_len);
+%returns_size_t(wally_psbt_get_input_keypaths_size);
+%returns_size_t(wally_psbt_get_input_keypath);
+%returns_size_t(wally_psbt_get_input_keypath_len);
+%returns_struct(wally_psbt_get_input_pegin_tx_alloc, wally_tx);
+%returns_size_t(wally_psbt_get_input_signatures_size);
+%returns_size_t(wally_psbt_get_input_signature);
+%returns_size_t(wally_psbt_get_input_signature_len);
+%returns_size_t(wally_psbt_get_input_sighash);
+%rename("psbt_get_input_pegin_tx") wally_psbt_get_input_pegin_tx_alloc;
+%returns_size_t(wally_psbt_get_input_txoutproof);
+%returns_size_t(wally_psbt_get_input_txoutproof_len);
+%returns_size_t(wally_psbt_get_input_unknown);
+%returns_size_t(wally_psbt_get_input_unknown_len);
+%returns_size_t(wally_psbt_get_input_unknowns_size);
+%returns_struct(wally_psbt_get_input_utxo_alloc, wally_tx);
+%rename("psbt_get_input_utxo") wally_psbt_get_input_utxo_alloc;
+%returns_uint64(wally_psbt_get_input_value);
+%returns_size_t(wally_psbt_get_input_vbf);
+%returns_size_t(wally_psbt_get_input_vbf_len);
+%returns_size_t(wally_psbt_get_input_witness_script);
+%returns_size_t(wally_psbt_get_input_witness_script_len);
+%returns_struct(wally_psbt_get_input_witness_utxo_alloc, wally_tx_output);
+%rename("psbt_get_input_witness_utxo") wally_psbt_get_input_witness_utxo_alloc;
+%returns_size_t(wally_psbt_get_length);
+%returns_size_t(wally_psbt_get_num_inputs);
+%returns_size_t(wally_psbt_get_num_outputs);
+%returns_size_t(wally_psbt_get_output_abf);
+%returns_size_t(wally_psbt_get_output_abf_len);
+%returns_size_t(wally_psbt_get_output_asset_commitment);
+%returns_size_t(wally_psbt_get_output_asset_commitment_len);
+%returns_size_t(wally_psbt_get_output_blinding_pubkey);
+%returns_size_t(wally_psbt_get_output_blinding_pubkey_len);
+%returns_size_t(wally_psbt_get_output_keypaths_size);
+%returns_size_t(wally_psbt_get_output_keypath);
+%returns_size_t(wally_psbt_get_output_keypath_len);
+%returns_size_t(wally_psbt_get_output_nonce);
+%returns_size_t(wally_psbt_get_output_nonce_len);
+%returns_size_t(wally_psbt_get_output_rangeproof);
+%returns_size_t(wally_psbt_get_output_rangeproof_len);
+%returns_size_t(wally_psbt_get_output_redeem_script);
+%returns_size_t(wally_psbt_get_output_redeem_script_len);
+%returns_size_t(wally_psbt_get_output_surjectionproof);
+%returns_size_t(wally_psbt_get_output_surjectionproof_len);
+%returns_size_t(wally_psbt_get_output_unknown);
+%returns_size_t(wally_psbt_get_output_unknown_len);
+%returns_size_t(wally_psbt_get_output_unknowns_size);
+%returns_size_t(wally_psbt_get_output_value_commitment);
+%returns_size_t(wally_psbt_get_output_value_commitment_len);
+%returns_size_t(wally_psbt_get_output_vbf);
+%returns_size_t(wally_psbt_get_output_vbf_len);
+%returns_size_t(wally_psbt_get_output_witness_script);
+%returns_size_t(wally_psbt_get_output_witness_script_len);
+%returns_size_t(wally_psbt_get_version);
+%returns_size_t(wally_psbt_has_input_value);
+%returns_struct(wally_psbt_init_alloc, wally_psbt);
+%rename("psbt_init") wally_psbt_init_alloc;
+%returns_size_t(wally_psbt_is_elements);
+%returns_size_t(wally_psbt_is_finalized);
+%returns_void__(wally_psbt_remove_input);
+%returns_void__(wally_psbt_remove_output);
+%returns_void__(wally_psbt_set_global_tx);
+%returns_void__(wally_psbt_set_input_abf);
+%returns_void__(wally_psbt_set_input_asset);
+%returns_void__(wally_psbt_set_input_claim_script);
+%returns_void__(wally_psbt_set_input_final_scriptsig);
+%returns_void__(wally_psbt_set_input_final_witness);
+%returns_void__(wally_psbt_set_input_genesis_blockhash);
+%returns_void__(wally_psbt_set_input_keypaths);
+%returns_void__(wally_psbt_set_input_pegin_tx);
+%returns_void__(wally_psbt_set_input_redeem_script);
+%returns_void__(wally_psbt_set_input_sighash);
+%returns_void__(wally_psbt_set_input_signatures);
+%returns_void__(wally_psbt_set_input_txoutproof);
+%returns_void__(wally_psbt_set_input_unknowns);
+%returns_void__(wally_psbt_set_input_utxo);
+%returns_void__(wally_psbt_set_input_value);
+%returns_void__(wally_psbt_set_input_vbf);
+%returns_void__(wally_psbt_set_input_witness_script);
+%returns_void__(wally_psbt_set_input_witness_utxo);
+%returns_void__(wally_psbt_set_output_abf);
+%returns_void__(wally_psbt_set_output_asset_commitment);
+%returns_void__(wally_psbt_set_output_blinding_pubkey);
+%returns_void__(wally_psbt_set_output_keypaths);
+%returns_void__(wally_psbt_set_output_nonce);
+%returns_void__(wally_psbt_set_output_rangeproof);
+%returns_void__(wally_psbt_set_output_redeem_script);
+%returns_void__(wally_psbt_set_output_surjectionproof);
+%returns_void__(wally_psbt_set_output_unknowns);
+%returns_void__(wally_psbt_set_output_value_commitment);
+%returns_void__(wally_psbt_set_output_vbf);
+%returns_void__(wally_psbt_set_output_witness_script);
+%returns_void__(wally_psbt_sign);
+%returns_string(wally_psbt_to_base64);
+%returns_size_t(wally_psbt_to_bytes);
 %returns_size_t(wally_script_push_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt);
@@ -480,11 +619,17 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_sha256_midstate, 3, 4, SHA256_LEN);
 %returns_array_(wally_sha512, 3, 4, SHA512_LEN);
 %returns_void__(wally_tx_add_elements_raw_input);
+%returns_void__(wally_tx_add_elements_raw_input_at);
 %returns_void__(wally_tx_add_elements_raw_output);
+%returns_void__(wally_tx_add_elements_raw_output_at);
 %returns_void__(wally_tx_add_input);
+%returns_void__(wally_tx_add_input_at);
 %returns_void__(wally_tx_add_raw_input);
+%returns_void__(wally_tx_add_raw_input_at);
 %returns_void__(wally_tx_add_output);
+%returns_void__(wally_tx_add_output_at);
 %returns_void__(wally_tx_add_raw_output);
+%returns_void__(wally_tx_add_raw_output_at);
 %returns_array_(wally_tx_confidential_value_from_satoshi, 2, 3, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
 %returns_uint64(wally_tx_confidential_value_to_satoshi);
 %returns_struct(wally_tx_elements_input_init_alloc, wally_tx_input);
@@ -664,6 +809,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
+%returns_size_t(wally_varbuff_get_length);
+%returns_size_t(wally_varbuff_to_bytes);
+%returns_size_t(wally_varint_get_length);
+%returns_size_t(wally_varint_to_bytes);
 %returns_string(wally_wif_from_bytes);
 %returns_size_t(wally_wif_to_bytes);
 %rename("_wif_is_uncompressed") wally_wif_is_uncompressed;
@@ -687,6 +836,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_psbt.h"
+%include "psbt_int.h"
 %include "../include/wally_script.h"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"

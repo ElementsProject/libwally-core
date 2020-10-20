@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.7.9])
+AC_INIT([libwallycore],[0.8.0])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -415,6 +415,10 @@ secp_jni="--disable-jni"
 if test "x$swig_java" == "xyes"; then
     secp_jni="--enable-jni"
 fi
+secp_asm="--with-asm=auto"
+if test "x$debug" == "xyes"; then
+    secp_asm="--with-asm=no"
+fi
 
 secp256k1_test_opt="--disable-tests"
 if test "x$secp256k1_tests" == "xyes"; then
@@ -433,7 +437,7 @@ export ARFLAGS
 export AR_FLAGS
 export LD
 export LDFLAGS
-ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-schnorrsig --enable-module-extrakeys --enable-module-ecdsa-adaptor --enable-openssl-tests=no ${secp256k1_test_opt} --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
+ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-schnorrsig --enable-module-extrakeys --enable-module-ecdsa-adaptor --enable-openssl-tests=no ${secp256k1_test_opt} --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 
