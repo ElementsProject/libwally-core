@@ -11,10 +11,6 @@ extern "C" {
     if (!*output) return WALLY_ENOMEM; \
     result = (typ *) *output;
 
-#define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
-#define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
-#define BYTES_INVALID_N(p, len, siz) ((p != NULL) != (len == siz))
-
 bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 int replace_bytes(const unsigned char *bytes, size_t bytes_len,
                   unsigned char **bytes_out, size_t *bytes_len_out);

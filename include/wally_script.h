@@ -30,6 +30,8 @@ extern "C" {
 #define WALLY_SCRIPTSIG_P2PKH_MAX_LEN 140 /** [SIG+SIGHASH] [PUBKEY] */
 #define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
 
+#define WALLY_SCRIPT_VARINT_MAX_SIZE 9
+
 /* Script creation flags */
 #define WALLY_SCRIPT_HASH160          0x1 /** hash160 input bytes before using them */
 #define WALLY_SCRIPT_SHA256           0x2 /** sha256 input bytes before using them */
@@ -215,8 +217,6 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
  * :param bytes_out: Destination for the resulting scriptSig.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
     const unsigned char *pub_key,
@@ -238,8 +238,6 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param witness: Destination for the newly created witness.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
     const unsigned char *pub_key,
@@ -484,6 +482,60 @@ WALLY_CORE_API int wally_script_push_from_bytes(
     const unsigned char *bytes,
     size_t bytes_len,
     uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of an integer serialized to a varint.
+ *
+ * :param value: The integer value to be find the length of.
+ * :param written: Destination for the length of the integer when serialized.
+ */
+WALLY_CORE_API int wally_varint_get_length(
+    uint64_t value,
+    size_t *written);
+
+/**
+ * Serialize an integer to a buffer as a varint.
+ *
+ * :param value: The integer value to be serialized.
+ * :param bytes_out: Destination for the resulting serialized varint.
+ * :param len: The length of ``bytes_out`` in bytes. Must be at least
+ *|    wally_varint_get_length(value).
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_varint_to_bytes(
+    uint64_t value,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a buffer serialized to a varbuff (varint size, followed by the buffer).
+ *
+ * :param bytes: The buffer to get the length of.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param written: Destination for the length of the buffer when serialized.
+ */
+WALLY_CORE_API int wally_varbuff_get_length(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    size_t *written);
+
+/**
+ * Serialize a buffer to a varbuff (varint size, followed by the buffer).
+ *
+ * :param bytes: The buffer to be serialized.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param bytes_out: Destination for the resulting serialized varbuff.
+ * :param len: The length of ``bytes_out`` in bytes. Must be at least
+ *|    wally_varbuff_get_length(bytes, bytes_len).
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_varbuff_to_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);

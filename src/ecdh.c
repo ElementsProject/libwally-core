@@ -19,8 +19,8 @@ int wally_ecdh(const unsigned char *pub_key, size_t pub_key_len,
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    if (!pubkey_parse(ctx, &pub, pub_key, pub_key_len) ||
-        !secp256k1_ec_seckey_verify(ctx, priv_key)) {
+    if (!pubkey_parse(&pub, pub_key, pub_key_len) ||
+        !seckey_verify(priv_key)) {
         ret = WALLY_EINVAL;
     } else if (!secp256k1_ecdh(ctx, bytes_out, &pub, priv_key, NULL, NULL)) {
         wally_clear(bytes_out, len);

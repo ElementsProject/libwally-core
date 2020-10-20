@@ -314,8 +314,6 @@ WALLY_CORE_API int wally_ec_private_key_verify(
  * :param pub_key: The public key to validate.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be
  *|    ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_public_key_verify(
     const unsigned char *pub_key,
@@ -344,8 +342,6 @@ WALLY_CORE_API int wally_ec_public_key_from_private_key(
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param bytes_out: Destination for the resulting public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_public_key_decompress(
     const unsigned char *pub_key,
@@ -360,8 +356,6 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  * :param bytes_out: Destination for the resulting public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_public_key_negate(
     const unsigned char *pub_key,
@@ -400,8 +394,6 @@ WALLY_CORE_API int wally_ec_sig_from_bytes(
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param bytes_out: Destination for the resulting low-s signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_sig_normalize(
     const unsigned char *sig,
@@ -417,8 +409,6 @@ WALLY_CORE_API int wally_ec_sig_normalize(
  * :param bytes_out: Destination for the resulting DER encoded signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_DER_MAX_LEN``.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_sig_to_der(
     const unsigned char *sig,
@@ -434,8 +424,6 @@ WALLY_CORE_API int wally_ec_sig_to_der(
  * :param bytes_len: The length of ``sig`` in bytes.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_sig_from_der(
     const unsigned char *bytes,

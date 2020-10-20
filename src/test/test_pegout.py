@@ -18,10 +18,11 @@ class PegoutTests(unittest.TestCase):
 
     def derive_pub_tweak(self, parent, path):
         c_path = self.path_to_c(path)
-        key_out = ext_key()
-        self.assertEqual(bip32_key_with_tweak_from_parent_path(byref(parent), c_path, len(path),
-                                                    FLAG_KEY_PUBLIC | FLAG_KEY_TWEAK_SUM, byref(key_out)), WALLY_OK)
-        return key_out.pub_key, key_out.pub_key_tweak_sum
+        key_out = POINTER(ext_key)()
+        fn = bip32_key_with_tweak_from_parent_path_alloc
+        self.assertEqual(fn(byref(parent), c_path, len(path),
+                            FLAG_KEY_PUBLIC | FLAG_KEY_TWEAK_SUM, byref(key_out)), WALLY_OK)
+        return key_out[0].pub_key, key_out[0].pub_key_tweak_sum
 
     def generate_pegout_whitelistproof(self):
         offline_xpub = 'tpubDAY5hwtonH4NE8zY46ZMFf6B6F3fqMis7cwfNihXXpAg6XzBZNoHAdAzAZx2peoU8nTWFqvUncXwJ9qgE5VxcnUKxdut8F6mptVmKjfiwDQ'

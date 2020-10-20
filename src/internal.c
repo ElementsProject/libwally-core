@@ -29,6 +29,36 @@ const secp256k1_context *secp_ctx(void)
     return global_ctx;
 }
 
+int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
+{
+    return secp256k1_ec_privkey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
+}
+
+int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
+{
+    return secp256k1_ec_pubkey_combine(secp256k1_context_no_precomp, pubnonce, pubnonces, n);
+}
+
+int pubkey_negate(secp256k1_pubkey *pubkey)
+{
+    return secp256k1_ec_pubkey_negate(secp256k1_context_no_precomp, pubkey);
+}
+
+int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t inputlen)
+{
+    return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, inputlen);
+}
+
+int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags)
+{
+    return secp256k1_ec_pubkey_serialize(secp256k1_context_no_precomp, output, outputlen, pubkey, flags);
+}
+
+int seckey_verify(const unsigned char *seckey)
+{
+    return secp256k1_ec_seckey_verify(secp256k1_context_no_precomp, seckey);
+}
+
 #ifndef SWIG
 struct secp256k1_context_struct *wally_get_secp_context(void)
 {
@@ -314,27 +344,6 @@ void wally_clear_4(void *p, size_t len, void *p2, size_t len2,
     _ops.bzero_fn(p2, len2);
     _ops.bzero_fn(p3, len3);
     _ops.bzero_fn(p4, len4);
-}
-
-void wally_clear_5(void *p, size_t len, void *p2, size_t len2,
-                   void *p3, size_t len3, void *p4, size_t len4,
-                   void *p5, size_t len5){
-    _ops.bzero_fn(p, len);
-    _ops.bzero_fn(p2, len2);
-    _ops.bzero_fn(p3, len3);
-    _ops.bzero_fn(p4, len4);
-    _ops.bzero_fn(p5, len5);
-}
-
-void wally_clear_6(void *p, size_t len, void *p2, size_t len2,
-                   void *p3, size_t len3, void *p4, size_t len4,
-                   void *p5, size_t len5, void *p6, size_t len6){
-    _ops.bzero_fn(p, len);
-    _ops.bzero_fn(p2, len2);
-    _ops.bzero_fn(p3, len3);
-    _ops.bzero_fn(p4, len4);
-    _ops.bzero_fn(p5, len5);
-    _ops.bzero_fn(p6, len6);
 }
 
 void clear_and_free(void *p, size_t len)

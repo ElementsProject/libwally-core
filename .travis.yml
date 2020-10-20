@@ -24,6 +24,12 @@ addons:
           - gcc-multilib
           - clang-8
           - clang-9
+    homebrew:
+        update: true
+        packages:
+          - gnu-sed
+          - swig
+          - yarn
 jobs:
     include:
       - services:

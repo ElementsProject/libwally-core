@@ -1,4 +1,5 @@
 import unittest
+import copy
 from util import *
 
 VER_MAIN_PUBLIC = 0x0488B21E
@@ -251,6 +252,41 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_seed(seed, seed_len, ver, flags, byref(key_out))
             self.assertEqual(ret, expected)
 
+    def test_key_init(self):
+        # Note we test bip32_key_init_alloc: it calls bip32_key_init internally
+        _, _, priv = self.create_master_pub_priv()
+
+        ver, depth, num = priv.version, priv.depth, priv.child_num
+        cc, cc_len = make_cbuffer(h(priv.chain_code))
+        pub_key, pub_key_len = make_cbuffer(h(priv.pub_key))
+        priv_key, priv_key_len = make_cbuffer(h(priv.priv_key)[2:])
+        h160, h160_len = make_cbuffer(h(priv.hash160))
+        p160, p160_len = make_cbuffer(h(priv.parent160))
+        key_out = POINTER(ext_key)()
+        valid_args = [ver, depth, num, cc, cc_len, pub_key, pub_key_len,
+                      priv_key, priv_key_len, h160, h160_len, p160, p160_len]
+
+        # Test cases
+        arg_diffs = [
+            (True,  12, p160_len),  # No change
+            (True,  12, 4),         # 4 byte fingerprint only
+            (False, 1,  256),       # Depth > 255
+            (False, 3,  None),      # Null chaincode, valid length
+            (False, 4,  15),        # Invalid chaincode length
+            (False, 5,  None),      # Null pub key, valid length
+            (False, 6,  15),        # Invalid pub key length
+            (False, 7,  None),      # Null priv key, valid length
+            (False, 8,  15),        # Invalid priv key length
+            (False, 9,  None),      # Null hash160, valid length
+            (False, 10, 15),        # Invalid hash160 length
+            (False, 11, None),      # Null parent160, valid length
+            (False, 12, 15),        # Invalid parent160 length
+        ]
+        for ok, idx, new_val in arg_diffs:
+            call_args = copy.deepcopy(valid_args) + [byref(key_out)]
+            call_args[idx] = new_val
+            ret = bip32_key_init_alloc(*call_args)
+            self.assertEqual(ret, WALLY_OK if ok else WALLY_EINVAL)
 
     def test_bip32_vectors(self):
         self.do_test_vector(vec_1)
@@ -356,6 +392,12 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_parent_path(key, c_path, plen, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
 
+        master.depth = 0xff # Cant derive from a parent of depth 255
+        ret = bip32_key_from_parent(m, 5, FLAG_KEY_PUBLIC, key_out)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret = bip32_key_from_parent_path(m, c_path, len(c_path), FLAG_KEY_PUBLIC, key_out)
+        self.assertEqual(ret, WALLY_EINVAL)
+
     def test_free_invalid(self):
         self.assertEqual(WALLY_EINVAL, bip32_key_free(None))
 
@@ -370,8 +412,8 @@ class BIP32Tests(unittest.TestCase):
             ret, out = bip32_key_to_base58(key, flag)
             self.assertEqual(ret, WALLY_OK)
 
-            key_out = ext_key()
-            self.assertEqual(bip32_key_from_base58(utf8(out), byref(key_out)), WALLY_OK)
+            key_out = POINTER(ext_key)()
+            self.assertEqual(bip32_key_from_base58_alloc(utf8(out), byref(key_out)), WALLY_OK)
             self.assertEqual(bip32_key_serialize(key_out, flag, buf, buf_len), WALLY_OK)
             self.assertEqual(h(buf).upper(), exp_hex)
 

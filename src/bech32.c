@@ -245,7 +245,8 @@ int wally_addr_segwit_to_bytes(const char *addr, const char *addr_family,
     if (flags || !addr_family || !addr || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    if (!segwit_addr_decode(&witver, decoded, written, addr_family, addr) || witver > 16)
+    /* Only v0 witness programs are currently allowed */
+    if (!segwit_addr_decode(&witver, decoded, written, addr_family, addr) || witver != 0)
         ret = WALLY_EINVAL;
     else
         ret = wally_witness_program_from_bytes(decoded, *written, flags, bytes_out, len, written);
