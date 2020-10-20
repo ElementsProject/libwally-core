@@ -1,5 +1,9 @@
 # Changes
 
+## Version 0.8.0
+
+- No API changes
+
 ## Version 0.7.9
 
 - Python: 'None' passed as a binary buffer argument to wally calls which
