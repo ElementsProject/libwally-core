@@ -169,7 +169,7 @@ static size_t scriptint_get_length(int64_t signed_v)
     return len + (last & 0x80 ? 1 : 0);
 }
 
-static size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
+size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
 {
     uint64_t v = signed_v < 0 ? -signed_v : signed_v;
     size_t len = 0;
