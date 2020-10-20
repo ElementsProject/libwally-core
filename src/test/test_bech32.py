@@ -20,6 +20,7 @@ invalid_cases = [
     ["tb", 'tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kg3g4ty'], # Invalid human-readable part
     ["bc", 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5'], # Invalid checksum
     ["bc", 'BC13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KN40WF2'], # Invalid witness version
+    ["bc", 'bc1pmfr3p9j00pfxjh0zmgp99y8zftmd3s5pmedqhyptwy6lm87hf5ss52r5n8'], # Invalid witness version v1
     ["bc", 'bc1rw5uspcuh'], # Invalid program length
     ["bc", 'bc10w508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kw5rljs90'], # Invalid program length
     ["bc", 'BC1QR508D6QEJXTDG4Y5R3ZARVARYV98GJ9P'], # Invalid program length for witness version 0 (per BIP141)
