@@ -10,6 +10,7 @@ Note that library interfaces may change slightly while the library design mature
 Please report bugs and submit patches to [Our github repository](https://github.com/ElementsProject/libwally-core). If you wish to report a security issue, please read [Our security reporting guidelines](./SECURITY.md).
 
 [![Build Status](https://travis-ci.org/ElementsProject/libwally-core.svg?branch=master)](https://travis-ci.org/ElementsProject/libwally-core)
+[![Documentation Status](https://readthedocs.org/projects/wally/badge/?version=latest)](https://wally.readthedocs.io/en/latest/?badge=latest)
 
 ## Platforms
 
