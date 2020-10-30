@@ -289,16 +289,21 @@ AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == 
 AC_PROG_SWIG
 
 AC_ARG_ENABLE(swig-python,
-    AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
+    AS_HELP_STRING([--enable-swig-python],[enable the SWIG Python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable python was found for swig-python])
+        AC_MSG_FAILURE([ERROR: No usable Python was found for swig-python])
     fi
     SWIG_PYTHON
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
+
+    AC_ARG_ENABLE(python-manylinux,
+        AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
+        [python_manylinux=$enableval], [python_manylinux=no])
+    AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
 fi
 
 AC_ARG_ENABLE(js-wrappers,
@@ -308,7 +313,7 @@ AM_CONDITIONAL([USE_JS_WRAPPERS], [test "x$js_wrappers" == "xyes"])
 
 if test "x$js_wrappers" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable python was found for generating js wrappers])
+        AC_MSG_FAILURE([ERROR: No usable Python was found for generating js wrappers])
     fi
     if test "x$swig_python" != "xyes"; then
         SWIG_PYTHON
