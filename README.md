@@ -77,6 +77,7 @@ $ brew install swig
    build with this option enabled and generate coverage reports.
 - `--disable-shared`. Disables building a shared library and builds a static
   library instead.
+- `--disable-tests`. Disables building library tests.
 
 ### Recommended development configure options
 
