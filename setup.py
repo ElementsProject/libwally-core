@@ -91,7 +91,7 @@ else:
             # Run the autotools/make build to generate a python extension module
             call('./tools/cleanup.sh')
             call('./tools/autogen.sh')
-            call('./configure --enable-swig-python --enable-python-manylinux --enable-ecmult-static-precomputation --enable-elements')
+            call('./configure --enable-swig-python --enable-python-manylinux --enable-ecmult-static-precomputation --enable-elements --disable-tests')
             call('make -j{}'.format(multiprocessing.cpu_count()))
 
             # Copy the so that has just been built to the build_dir that distutils expects it to be in
