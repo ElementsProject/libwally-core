@@ -306,6 +306,10 @@ EOD`
 	AC_MSG_RESULT([$pythonexists])
 
         if test ! "x$pythonexists" = "xyes"; then
+        if test "x$python_manylinux" = "xyes"; then
+		# Ignore linking errors for manylinux builds (no libpython.so)
+		pythonexists="yes"
+	else
 		AC_MSG_RESULT([
   Could not link test program to Python. Maybe the main Python library has been
   installed in some non-standard library path. If so, pass it to configure,
@@ -323,6 +327,7 @@ EOD`
 		PYTHON_SITE_PKG=""
 		PYTHON_EXTRA_LDFLAGS=""
 		PYTHON_EXTRA_LIBS=""
+	fi
 	fi
 	AC_SUBST([PYTHON_CPPFLAGS])
 	AC_SUBST([PYTHON_LIBS])
