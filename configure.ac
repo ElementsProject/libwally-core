@@ -279,6 +279,11 @@ AC_SUBST([LIBADD_SECP256K1])
 #
 # Python facilities
 #
+AC_ARG_ENABLE(python-manylinux,
+    AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
+    [python_manylinux=$enableval], [python_manylinux=no])
+AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
+
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes"])
@@ -299,11 +304,6 @@ if test "x$swig_python" == "xyes"; then
     fi
     SWIG_PYTHON
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
-
-    AC_ARG_ENABLE(python-manylinux,
-        AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
-        [python_manylinux=$enableval], [python_manylinux=no])
-    AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
 fi
 
 AC_ARG_ENABLE(js-wrappers,
