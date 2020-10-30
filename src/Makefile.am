@@ -35,7 +35,10 @@ noinst_LTLIBRARIES += libswig_python.la
 libswig_python_la_SOURCES = swig_python/swig_python_wrap.c
 
 libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
+if PYTHON_MANYLINUX
+else
 libswig_python_la_LIBADD = $(PYTHON_LIBS)
+endif # PYTHON_MANYLINUX
 
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
@@ -227,16 +230,25 @@ noinst_PROGRAMS += test_bech32
 test_bech32_SOURCES = ctest/test_bech32.c
 test_bech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_bech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_bech32_LDADD += $(PYTHON_LIBS)
+endif
 TESTS += test_psbt
 noinst_PROGRAMS += test_psbt
 test_psbt_SOURCES = ctest/test_psbt.c ccan/ccan/str/hex/hex.c
 test_psbt_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
 test_psbt_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_psbt_LDADD += $(PYTHON_LIBS)
+endif
 TESTS += test_psbt_limits
 noinst_PROGRAMS += test_psbt_limits
 test_psbt_limits_SOURCES = ctest/test_psbt_limits.c ccan/ccan/str/hex/hex.c
 test_psbt_limits_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
 test_psbt_limits_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_psbt_limits_LDADD += $(PYTHON_LIBS)
+endif
 if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear
@@ -244,23 +256,35 @@ test_clear_SOURCES = ctest/test_clear.c
 test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(AM_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_clear_LDADD += $(PYTHON_LIBS)
+endif
 endif
 TESTS += test_tx
 noinst_PROGRAMS += test_tx
 test_tx_SOURCES = ctest/test_tx.c
 test_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_tx_LDADD += $(PYTHON_LIBS)
+endif
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
 test_elements_tx_SOURCES = ctest/test_elements_tx.c
 test_elements_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_elements_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_elements_tx_LDADD += $(PYTHON_LIBS)
+endif
 TESTS += test_blech32
 noinst_PROGRAMS += test_blech32
 test_blech32_SOURCES = ctest/test_blech32.c
 test_blech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_blech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_blech32_LDADD += $(PYTHON_LIBS)
+endif
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
