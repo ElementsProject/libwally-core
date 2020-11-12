@@ -11,6 +11,11 @@ if [ ! -d "/opt/python" ]; then
     exit 0
 fi
 
+if [ ! -f "src/secp256k1/README.md" ]; then
+    git submodule sync --recursive
+    git submodule update --init --recursive
+fi
+
 source ./tools/build_python_wheels.sh " "
 
 # Remember the unmodified PATH so we can reset inbetween builds
