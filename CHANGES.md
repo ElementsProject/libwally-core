@@ -2,7 +2,10 @@
 
 ## Version 0.8.0
 
-- No API changes
+- Build: Note that the secp256k1-zkp library is now as git submodule rather
+  than being directly checked in to the source tree. Run
+  `git submodule sync --recursive` then `git submodule update --init --recursive`
+  from the srouce tree in order to clone the secp source and build the library.
 
 ## Version 0.7.9
 

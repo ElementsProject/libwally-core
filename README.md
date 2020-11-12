@@ -31,6 +31,12 @@ And can be used from:
 ## Building
 
 ```
+# Initialise the libsecp sources (Needs to be run only once)
+$ git submodule init
+$ git submodule sync --recursive
+$ git submodule update --init --recursive`
+
+# Build
 $ ./tools/autogen.sh
 $ ./configure <options - see below>
 $ make
