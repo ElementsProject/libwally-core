@@ -71,12 +71,16 @@ jobs:
         name: Windows - Python 3
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig
         before_script:
+          - git submodule sync --recursive
+          - git submodule update --init --recursive
         script:
           - tools/msvc/wheel.bat
       - os: windows
         name: Windows - JS bindings
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH NODE_VERSION=node/12.14.0
         before_script:
+          - git submodule sync --recursive
+          - git submodule update --init --recursive
         script:
           - source $ProgramData/nvs/nvs.sh
           - nvs use $NODE_VERSION
@@ -86,6 +90,8 @@ jobs:
         compiler: clang
 
 before_script:
+  - git submodule sync --recursive
+  - git submodule update --init --recursive
   - ./tools/cleanup.sh && ./tools/autogen.sh
 before_install:
   - ./tools/travis_install.sh
