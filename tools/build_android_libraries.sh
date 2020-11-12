@@ -5,6 +5,11 @@
 #
 set -e
 
+if [ ! -f "src/secp256k1/README.md" ]; then
+    git submodule sync --recursive
+    git submodule update --init --recursive
+fi
+
 if [ -z "$ANDROID_NDK" ]; then
     export ANDROID_NDK=$(dirname `which ndk-build 2>/dev/null`)
 fi
