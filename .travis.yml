@@ -30,6 +30,7 @@ addons:
           - gnu-sed
           - swig
           - yarn
+          - git
 jobs:
     include:
       - services:
