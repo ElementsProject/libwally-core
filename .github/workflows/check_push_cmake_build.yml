@@ -22,17 +22,17 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-10.15, ubuntu-18.04]
         node: [12, 14]
         exclude:
-          - os: macos-latest
+          - os: macos-10.15
             node: 12
 
 # windows has illegal AES result.
     steps:
     - uses: actions/checkout@v2
     - name: setup-node
-      uses: actions/setup-node@v2.1.1
+      uses: actions/setup-node@v2.1.2
       with:
         node-version: ${{ matrix.node }}
     - name: npm_install
@@ -49,13 +49,13 @@ jobs:
         type: [msvc, msys, apple, ubuntu-20.04, ubuntu-18.04]
         include:
           - type: msvc
-            os: windows-latest
+            os: windows-2019
             generator: Visual Studio 16 2019
           - type: msys
-            os: windows-latest
+            os: windows-2019
             generator: MSYS Makefiles
           - type: apple
-            os: macos-latest
+            os: macos-10.15
             generator: Unix Makefiles
           - type: ubuntu-20.04
             os: ubuntu-20.04
@@ -86,7 +86,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-10.15, windows-2019, ubuntu-18.04]
         target: [python, java]
         java: [8.0.x, 11.0.x, 13]
         exclude:
@@ -94,13 +94,13 @@ jobs:
             java: 11.0.x
           - target: python
             java: 13
-          - os: windows-latest
+          - os: windows-2019
             target: python
-          - os: windows-latest
+          - os: windows-2019
             target: java
-          - os: macos-latest
+          - os: macos-10.15
             target: python
-          - os: macos-latest
+          - os: macos-10.15
             target: java
 
     steps:
@@ -118,14 +118,14 @@ jobs:
         java-version: ${{ matrix.java }}
         architecture: x64
     - name: ubuntu-install-swig
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-18.04'
       run: sudo apt install swig
     - name: cmake-generate
-      if: matrix.os != 'windows-latest'
+      if: matrix.os != 'windows-2019'
       run: |
         cmake -S . -B build -G "Unix Makefiles"
     - name: cmake-generate-windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-2019'
       run: |
         cmake -S . -B build -G "Visual Studio 16 2019"
     - name: cmake-python-config
@@ -148,7 +148,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-10.15, ubuntu-18.04]
         go-version: [1.14.x, 1.15.x]
 
     steps:
@@ -158,12 +158,12 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - uses: actions/checkout@v2
     - name: cmake-generate
-      if: matrix.os != 'windows-latest'
+      if: matrix.os != 'windows-2019'
       run: |
         cmake -S . -B build -G "Unix Makefiles"
         cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on -DTARGET_RPATH="/usr/local/lib;/usr/local/lib64;./build/Release" --build build
     - name: cmake-generate-windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-2019'
       run: |
         cmake -S . -B build -G "MSYS Makefiles"
         cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on --build build
@@ -175,24 +175,24 @@ jobs:
         go mod init github.com/cryptogarageinc/libwally-core
         go build
     - name: add-path-windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-2019'
       run: echo "$GITHUB_WORKSPACE/build/Release" >> $GITHUB_PATH
       shell: bash
     - name: go_test-windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-2019'
       run: |
         dir
         cp ./src/swig_go/*_test.go .
         go test
       shell: bash
     - name: go_test-mac
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-10.15'
       run: |
         cd build
         sudo make install
         cd ..
         LD_LIBRARY_PATH=/usr/local/lib go test
     - name: go_test
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-18.04'
       run: |
         LD_LIBRARY_PATH=./build/Release go test
