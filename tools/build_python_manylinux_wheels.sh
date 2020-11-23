@@ -22,6 +22,7 @@ source ./tools/build_python_wheels.sh " "
 PPATH=$PATH
 for PYBIN in /opt/python/*/bin/; do
     PATH=$PYBIN:$PPATH
+    pip install virtualenv
     build_wheel python
     PATH=$PPATH
 done
