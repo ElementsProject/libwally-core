@@ -1,5 +1,5 @@
 buster_release:
-  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
+  image: greenaddress/wallycore@sha256:12bf0b71bb2bd2d8923d934cbded6c652f3db48d944175ca9964d98268a9b987
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -28,7 +28,7 @@ buster_release:
     - gzip -9 wallycore-wasm.tar
 
 linux_py3_debug:
-  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
+  image: greenaddress/wallycore@sha256:12bf0b71bb2bd2d8923d934cbded6c652f3db48d944175ca9964d98268a9b987
   tags:
     - ga
   before_script:
@@ -140,7 +140,7 @@ windows10_release:
     - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
+  image: greenaddress/wallycore@sha256:12bf0b71bb2bd2d8923d934cbded6c652f3db48d944175ca9964d98268a9b987
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
