@@ -35,8 +35,13 @@ jobs:
     include:
       - services:
           - docker
-        name: Docker Service
         script: docker run -v $PWD:/wally debian:buster /bin/sh -c "apt-get update -yqq && apt-get install -yqq --no-install-recommends git uncrustify && cd /wally && (tools/uncrustify || true) && git diff --exit-code"
+      - services:
+          - docker
+        script: docker run -v $PWD:/wally greenaddress/wallycore@sha256:c3c36a55173eb29e5727dfc9a0417d05ac4c301adea109092fb9a0f7edbba10e /bin/sh -c "cd /wally && git submodule sync --recursive && git submodule update --init --recursive && yum install swig -y && ./tools/build_python_manylinux_wheels.sh"
+      - services:
+          - docker
+        script: docker run -v $PWD:/wally greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398 bash -c "cd /wally && git submodule sync --recursive && git submodule update --init --recursive && source /opt/emsdk/emsdk_env.sh && tools/build_wasm.sh"
       - os: linux
         name: Linux - GCC
         compiler: gcc
