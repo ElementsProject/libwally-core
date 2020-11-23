@@ -9,8 +9,6 @@ buster_release:
   tags:
     - ga
   before_script:
-    - apt-get update -yqq
-    - apt-get install -yqq --no-install-recommends git uncrustify
     - tools/uncrustify || true
     - git diff --exit-code
     - git submodule sync --recursive
