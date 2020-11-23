@@ -65,6 +65,7 @@ manylinux_release:
   before_script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
+    - yum install swig -y
   script:
     - ./tools/build_python_manylinux_wheels.sh
 
