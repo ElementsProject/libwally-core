@@ -52,6 +52,22 @@ ubuntu_18.04_release:
   script:
     - ./tools/build_python_wheels.sh python3
 
+manylinux_release:
+  image: greenaddress/wallycore@sha256:c3c36a55173eb29e5727dfc9a0417d05ac4c301adea109092fb9a0f7edbba10e
+  artifacts:
+    expire_in: 1 day
+    name: wallycore-bindings
+    when: on_success
+    paths:
+    - wally_dist/*
+  tags:
+    - ga
+  before_script:
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+  script:
+    - ./tools/build_python_manylinux_wheels.sh
+
 ubuntu_19.04_release:
   image: greenaddress/wallycore@sha256:dd66cf18815756de37238c5fdfafc38c80076ce93d9ce644e517143894f24350
   artifacts:
