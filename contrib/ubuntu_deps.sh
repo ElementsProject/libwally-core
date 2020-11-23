@@ -3,7 +3,7 @@ set -e
 
 apt-get update -qq
 apt-get upgrade -yqq
-apt-get install python3-distutils-extra python3-dev build-essential libffi-dev swig autoconf libtool pkg-config lib32z1 unzip lib32z1 virtualenv python3-setuptools apt-transport-https -yqq
+apt-get install python3-distutils-extra python3-dev build-essential libffi-dev swig autoconf libtool pkg-config lib32z1 unzip lib32z1 virtualenv python3-setuptools apt-transport-https git -yqq
 
 apt-get -yqq autoremove
 apt-get -yqq clean

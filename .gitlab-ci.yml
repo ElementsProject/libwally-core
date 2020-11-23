@@ -35,7 +35,7 @@ linux_py3_debug:
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
 ubuntu_18.04_release:
-  image: greenaddress/wallycore@sha256:059eeaa5c61df5403fd28d6ea556c317d5809f7274e27901d0f09288a316bb53
+  image: greenaddress/wallycore@sha256:9f3b7b84b02884db4a54111cd39ce20453b0552e30e3a443c694c0e83029c878
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -66,22 +66,6 @@ manylinux_release:
     - yum install swig -y
   script:
     - ./tools/build_python_manylinux_wheels.sh
-
-ubuntu_19.04_release:
-  image: greenaddress/wallycore@sha256:dd66cf18815756de37238c5fdfafc38c80076ce93d9ce644e517143894f24350
-  artifacts:
-    expire_in: 1 day
-    name: wallycore-bindings
-    when: on_success
-    paths:
-    - wally_dist/*
-  tags:
-    - ga
-  before_script:
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-  script:
-    - ./tools/build_python_wheels.sh python3
 
 osx_release:
   tags:
@@ -217,7 +201,6 @@ package_release:
   dependencies:
   - buster_release
   - ubuntu_18.04_release
-  - ubuntu_19.04_release
   - manylinux_release
   - osx_release
   - armv7l_release
