@@ -21,10 +21,13 @@ source ./tools/build_python_wheels.sh " "
 # Remember the unmodified PATH so we can reset inbetween builds
 PPATH=$PATH
 for PYBIN in /opt/python/*/bin/; do
-    PATH=$PYBIN:$PPATH
-    pip install virtualenv
-    build_wheel python
-    PATH=$PPATH
+    # cp35 is deprecated in Jan 2021
+    if [[ "$PYBIN" != "/opt/python/cp35-cp35m/bin/" ]]; then
+        PATH=$PYBIN:$PPATH
+        pip install virtualenv
+        build_wheel python
+        PATH=$PPATH
+    fi
 done
 
 ./tools/cleanup.sh

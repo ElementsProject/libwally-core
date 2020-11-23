@@ -202,6 +202,7 @@ package_release:
   - buster_release
   - ubuntu_18.04_release
   - ubuntu_19.04_release
+  - manylinux_release
   - osx_release
   - armv7l_release
   - arm64_release
