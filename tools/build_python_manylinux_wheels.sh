@@ -30,4 +30,9 @@ for PYBIN in /opt/python/*/bin/; do
     fi
 done
 
+# name required by pip twine upload
+for f in wally_dist/*.whl; do
+    mv -- "$f" "${f/-linux_/-manylinux2014_}"
+done
+
 ./tools/cleanup.sh
