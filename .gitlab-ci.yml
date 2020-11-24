@@ -28,6 +28,7 @@ buster_release:
     - gzip -9 wallycore-wasm.tar
 
 linux_py3_debug:
+  when: manual
   image: greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f
   tags:
     - ga
