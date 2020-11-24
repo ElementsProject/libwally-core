@@ -180,7 +180,7 @@ apidocs:
     - ga
   script:
     - ./tools/cleanup.sh
-    - virtualenv -p python2 .venv
+    - virtualenv -p python3 .venv
     - source .venv/bin/activate
     - pip install sphinx sphinx_rtd_theme
     - sphinx-build -b html -a -c docs/source docs/source docs/build/html
