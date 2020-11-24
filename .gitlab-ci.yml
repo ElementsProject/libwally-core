@@ -18,10 +18,12 @@ buster_release:
     - ./tools/autogen.sh
     - python setup.py sdist --dist-dir ./wally_dist
     - ./tools/build_android_libraries.sh
-    - ./tools/build_js_bindings.sh
     - mv release wallycore-android-jni
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wally_dist/wallycore-android-jni.tar
+    - ./tools/build_js_bindings.sh
+    - source /opt/emsdk/emsdk_env.sh
+    - tools/build_wasm.sh
 
 linux_py3_debug:
   image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
@@ -134,24 +136,6 @@ windows10_release:
     - cd %CI_PROJECT_DIR%
     - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
     - tools\msvc\wheel.bat
-
-webassembly_release:
-  image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
-  artifacts:
-    expire_in: 1 day
-    name: wallycore-bindings
-    when: on_success
-    paths:
-    - wally_dist/*
-  tags:
-    - ga
-  before_script:
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-    - source /opt/emsdk/emsdk_env.sh
-  script:
-    - cd $CI_PROJECT_DIR
-    - tools/build_wasm.sh
 
 apidocs:
   image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
