@@ -117,7 +117,7 @@ static void test_psbt_write(const struct psbt_test *test,
     for (i = 0; i <= psbt_len; i++) {
         /* A too short buffer should return OK and the required length */
         if (wally_psbt_to_bytes(psbt, 0, p + plen - i, i, &written) != WALLY_OK) {
-            fail("wally_psbt_to_bytes %s should have suceeded", test->base64);
+            fail("wally_psbt_to_bytes %s should have succeeded", test->base64);
         }
         if (written != psbt_len)
             fail("wally_psbt_to_bytes %s wrote %zu in %zu bytes?",
