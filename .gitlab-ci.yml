@@ -16,7 +16,7 @@ buster_release:
   script:
     - ./tools/cleanup.sh
     - ./tools/autogen.sh
-    - python setup.py sdist --dist-dir ./wally_dist
+    - mkdir wally_dist
     - ./tools/build_android_libraries.sh
     - mv release wallycore-android-jni
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
