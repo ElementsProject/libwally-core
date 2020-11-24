@@ -34,22 +34,6 @@ linux_py3_debug:
     - ENABLE_ELEMENTS=--enable-elements PYTHON_VERSION=3.7 DEBUG_WALLY=--enable-debug ./tools/travis_build.sh
     - DEBUG_WALLY=--enable-debug ./tools/build_js_bindings.sh
 
-ubuntu_18.04_release:
-  image: greenaddress/wallycore@sha256:9f3b7b84b02884db4a54111cd39ce20453b0552e30e3a443c694c0e83029c878
-  artifacts:
-    expire_in: 1 day
-    name: wallycore-bindings
-    when: on_success
-    paths:
-    - wally_dist/*
-  tags:
-    - ga
-  before_script:
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-  script:
-    - ./tools/build_python_wheels.sh python3
-
 manylinux_release:
   image: greenaddress/wallycore@sha256:c3c36a55173eb29e5727dfc9a0417d05ac4c301adea109092fb9a0f7edbba10e
   artifacts:
@@ -200,7 +184,6 @@ package_release:
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
   - buster_release
-  - ubuntu_18.04_release
   - manylinux_release
   - osx_release
   - armv7l_release
