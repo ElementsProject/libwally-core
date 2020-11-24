@@ -14,8 +14,9 @@ buster_release:
     - git submodule sync --recursive
     - git submodule update --init --recursive
   script:
-    - ./tools/build_python_wheels.sh python3
-    - python setup.py sdist --dist-dir ./wally_core
+    - ./tools/cleanup.sh
+    - ./tools/autogen.sh
+    - python setup.py sdist --dist-dir ./wally_dist
     - ./tools/build_android_libraries.sh
     - ./tools/build_js_bindings.sh
     - mv release wallycore-android-jni
