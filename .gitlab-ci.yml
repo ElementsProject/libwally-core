@@ -24,6 +24,8 @@ buster_release:
     - ./tools/build_js_bindings.sh
     - source /opt/emsdk/emsdk_env.sh
     - tools/build_wasm.sh
+    - cd wally_dist && tar cvf wallycore-wasm.tar --remove-files wallycore.html wallycore.js wallycore.wasm
+    - gzip -9 wallycore-wasm.tar
 
 linux_py3_debug:
   image: greenaddress/wallycore@sha256:fd5ea7660f6cbc015e07782ac8f04c6f705661dbe4556e64eea0914ab6406398
