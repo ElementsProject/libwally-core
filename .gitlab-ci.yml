@@ -100,7 +100,7 @@ powerpcg4_release:
   tags:
     - powerpcg4
   script:
-    - ./tools/build_python_wheels.sh
+    - ./tools/build_python_wheels.sh python3
 
 freebsdamd64_release:
   tags:
