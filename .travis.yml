@@ -41,7 +41,7 @@ jobs:
         script: docker run -v $PWD:/wally greenaddress/wallycore@sha256:c3c36a55173eb29e5727dfc9a0417d05ac4c301adea109092fb9a0f7edbba10e /bin/sh -c "cd /wally && git submodule sync --recursive && git submodule update --init --recursive && yum install swig3 -y && ./tools/build_python_manylinux_wheels.sh"
       - services:
           - docker
-        script: docker run -v $PWD:/wally greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f bash -c "cd /wally && git submodule sync --recursive && git submodule update --init --recursive && source /opt/emsdk/emsdk_env.sh && tools/build_wasm.sh"
+        script: docker run -v $PWD:/wally greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f bash -c "cd /wally && git submodule sync --recursive && git submodule update --init --recursive && source /opt/emsdk/emsdk_env.sh && tools/build_wasm.sh --enable-elements"
       - os: linux
         name: Linux - GCC
         compiler: gcc

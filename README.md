@@ -151,21 +151,24 @@ can be used as an example for your own Android projects.
 WebAssembly is available as a preview feature. Users may want to avoid using wally compiled for
 wasm for signing or encryption/decryption as the transpiled code may not remain constant time.
 
-Wally wasm requires following emsdk instructions for
+Building wally as wasm requires following emsdk instructions for
 your [platform](https://webassembly.org/getting-started/developers-guide/) and sourcing
 the `emsdk_env.sh` file:
 
 ```
-# Source env file, this sets up the environment variables for the toolchain
+# Set up the environment variables for the toolchain
 $ source $HOME/emsdk/emsdk_env.sh
 
-# Build
-$ ./tools/build_wasm.sh
+# Optionally set the list of wally functions to export to wasm (default: all)
+$ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',...]"
+
+`# Build
+$ ./tools/build_wasm.sh [--enable-elements]
 ```
 
 The script `tools/build_wasm.sh` builds the `wallycore.html` example as well
 as the required `wallycore.js` and `wallycore.wasm` files, which can be used
-as an example for your own webAssembly projects.
+as an example for your own WebAssembly projects.
 
 Open `wallycore.html` in a browser via a webserver like [nginx](https://www.nginx.com/)
 or `python2 -m SimpleHTTPServer 8000` to run the example.
@@ -207,7 +210,7 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js_wrappers --enable-coverage
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js_wrappers --enable-coverage --enable-elements
 $ make
 $ ./tools/coverage.sh clean
 $ make check
