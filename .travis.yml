@@ -94,6 +94,7 @@ jobs:
       - os: osx
         name: OSX - Clang
         compiler: clang
+        osx_image: xcode12.2
 
 before_script:
   - git submodule sync --recursive
