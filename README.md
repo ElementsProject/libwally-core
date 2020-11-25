@@ -110,16 +110,16 @@ is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
 `PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
-running pip or (when compiling manually) `./configure`.
+running `pip` or (when compiling manually) `./configure`.
 
-You can also install the binary wally releases using the released
-wheel files without having to compile the library, e.g.:
+You can also install the binary [wally releases](https://github.com/ElementsProject/libwally-core/releases)
+using the released wheel files without having to compile the library, e.g.:
 
 ```
 pip install wallycore-0.8.0-cp37-cp37m-linux_x86_64.whl
 ```
 
-The script `tools/build_python_wheels.sh` builds the release files and can be
+The script `tools/build_python_manylinux_wheels.sh` builds the release files and can be
 used as an example for your own python projects.
 
 ### Android
@@ -181,10 +181,11 @@ $ ./tools/cleanup.sh
 
 ## Submitting patches
 
-Please use pull requests on github to submit. Before producing your patch you
-should format your changes using [uncrustify](https://github.com/uncrustify/uncrustify.git)
-version 0.60 or later. The script `./tools/uncrustify` will reformat all C
-sources in the library as needed, with the currently chosen uncrustify options.
+Please use pull requests on [github](https://github.com/ElementsProject/libwally-core) to
+submit. Before producing your patch you should format your changes
+using [uncrustify](https://github.com/uncrustify/uncrustify.git) version 0.60 or
+later. The script `./tools/uncrustify` will reformat all C sources in the library
+as needed, with the currently chosen uncrustify options.
 
 To reformat a single source file, use e.g.:
 ```
@@ -196,12 +197,19 @@ Or to reformat all source files, pass no arguments:
 $ ./tools/uncrustify
 ```
 
+If you have added new API functions in your patch, run `./tools/build_wrappers.py`
+to update the auto-generated support code for various platforms.
+
 You should also make sure the existing tests pass and if possible write tests
 covering any new functionality, following the existing style. You can run the
 tests via:
 ```
 $ make check
 ```
+
+Python ctypes tests (in `./src/test/` are strongly preferred, but you can add
+to the other test suites if your changes target a specific language or your
+tests need to be written at a higher level of abstraction.
 
 ## Generating a coverage report
 
@@ -237,4 +245,4 @@ Projects and products that are known to depend on or use `libwally`:
 * [LibWally Swift](https://github.com/blockchain/libwally-swift)
 * [Multy-Core](https://github.com/Multy-io/Multy-Core)
 
-Please note that some of listed projects may be experimental or superseded.
+Please note that some of the listed projects may be experimental or superseded.
