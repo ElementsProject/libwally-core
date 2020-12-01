@@ -34,9 +34,6 @@ AC_PROG_CC
 # not provide an AC_PATH_TOOLS macro for this purpose.
 candidate_ars="ar"
 candidate_ranlibs="ranlib"
-# gcc bugs cause memory clearing to fail randomly. clang exhibits much more
-# consistent and sane behaviour so should be preferred going forward.
-enable_clear_tests="no"
 case $CC in
 *gcc*)
     candidate_ars="gcc-ar ar"
@@ -46,7 +43,6 @@ case $CC in
     ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1)
     candidate_ars="llvm-ar-$ver llvm-ar ar"
     candidate_ranlibs="llvm-ranlib-$ver llvm-ranlib ranlib"
-    enable_clear_tests="yes"
     ;;
 esac
 
@@ -130,9 +126,11 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT8_T
 
 AM_CFLAGS=
+AX_CHECK_COMPILE_FLAG([-O0], [NOOPT_CFLAGS="-O0"])
+
 if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
-    AX_CHECK_COMPILE_FLAG([-O0], [AM_CFLAGS="$AM_CFLAGS -O0"])
+    AM_CFLAGS="$AM_CFLAGS $NOOPT_CFLAGS"
     AX_CHECK_COMPILE_FLAG([-ggdb], [AM_CFLAGS="$AM_CFLAGS -ggdb"])
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
@@ -164,6 +162,7 @@ fi
 # -flax-vector-conversions is needed for our arm assembly
 AX_CHECK_COMPILE_FLAG([-flax-vector-conversions], [AM_CFLAGS="$AM_CFLAGS -flax-vector-conversions"])
 AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [NOALIAS_CFLAGS="-fno-strict-aliasing"])
+AX_CHECK_COMPILE_FLAG([-fno-builtin], [NOBUILTIN_CFLAGS="-fno-builtin"])
 
 AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [AM_CFLAGS="-Wformat-nonliteral $AM_CFLAGS"])
 AX_CHECK_COMPILE_FLAG([-Wformat-security], [AM_CFLAGS="-Wformat-security $AM_CFLAGS"])
@@ -191,7 +190,9 @@ if [[ "$CC" == *"clang"* ]]; then
     AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [AM_CFLAGS="$AM_CFLAGS -Wno-language-extension-token"])
     AX_CHECK_COMPILE_FLAG([-Wno-unknown-attributes], [AM_CFLAGS="$AM_CFLAGS -Wno-unknown-attributes"])
 fi
+AC_SUBST([NOOPT_CFLAGS])
 AC_SUBST([NOALIAS_CFLAGS])
+AC_SUBST([NOBUILTIN_CFLAGS])
 
 # Under OSX the compiler accepts this flag but the linker then fails.
 if test "x$is_osx" != "xyes"; then
@@ -247,8 +248,12 @@ __asm__ __volatile__ ("" : : "r"(pnt) : "memory");
 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
+AC_ARG_ENABLE(clear-tests,
+    AS_HELP_STRING([--enable-clear-tests],[enable tests for memory clearing (default: yes)]),
+    [clear_tests=$enableval], [clear_tests=yes])
+
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
-AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes" -a "x$enable_clear_tests" == "xyes"])
+AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes" -a "x$clear_tests" == "xyes"])
 if test "x$ac_have_pthread" == "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], 1, [Define if we have pthread support])
     AC_CHECK_HEADERS([asm/page.h])

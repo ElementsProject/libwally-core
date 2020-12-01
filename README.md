@@ -85,6 +85,8 @@ $ brew install swig
 - `--disable-shared`. Disables building a shared library and builds a static
   library instead.
 - `--disable-tests`. Disables building library tests.
+- `--disable-clear-tests`. Disables just the test_clear test (required to pass
+  the test suite with some compilers).
 
 ### Recommended development configure options
 
