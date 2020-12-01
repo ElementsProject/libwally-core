@@ -21,7 +21,9 @@ AM_CONDITIONAL([IS_OSX], [test "x$is_osx" == "xyes"])
 AC_SUBST([LDPATH_VAR])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+saved_cflags="$CFLAGS"
 LT_INIT([disable-static])
+CFLAGS="$saved_cflags"
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
