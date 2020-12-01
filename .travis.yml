@@ -45,6 +45,7 @@ jobs:
       - os: linux
         name: Linux - GCC
         compiler: gcc
+        env: PYTHON_VERSION=3 WALLY_CONFIGURE="--disable-clear-tests"
       - os: linux
         name: Linux - Clang 9
         compiler: clang
@@ -58,21 +59,17 @@ jobs:
         compiler: gcc
         env: HOST=i686-linux-gnu
       - os: linux
-        name: Linux - GCC - Python 3
-        compiler: gcc
-        env: PYTHON_VERSION=3
-      - os: linux
         name: Linux - Clang - Debug
         compiler: clang
-        env: DEBUG_WALLY=--enable-debug LDFLAGS=-Wl,-z,now
+        env: WALLY_CONFIGURE="--enable-debug" LDFLAGS=-Wl,-z,now
       - os: linux
         name: Linux - GCC - Elements
         compiler: gcc
-        env: ENABLE_ELEMENTS=--enable-elements
+        env: PYTHON_VERSION=3 WALLY_CONFIGURE="--disable-clear-tests --enable-elements"
       - os: linux
         name: Linux - Clang 8 - Elements
         compiler: clang
-        env: CC=clang-8 CXX=clang++-8 LDFLAGS=-Wl,-z,now ENABLE_ELEMENTS=--enable-elements
+        env: WALLY_CONFIGURE="--enable-elements" CC=clang-8 CXX=clang++-8 LDFLAGS=-Wl,-z,now
       - os: windows
         name: Windows - Python 3
         env: PATH=/c/Python37:/c/Python37/Scripts:$PATH SWIG_PATH=/c/swig
