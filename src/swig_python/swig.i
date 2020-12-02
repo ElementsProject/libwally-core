@@ -361,7 +361,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
 %include "../include/wally_psbt.h"
-%include "psbt_int.h"
+%include "swig_python/psbt_int.pp"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
 %include "transaction_int.h"

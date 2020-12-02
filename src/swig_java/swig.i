@@ -842,7 +842,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_psbt.h"
-%include "psbt_int.h"
+%include "swig_java/psbt_int.pp"
 %include "../include/wally_script.h"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"

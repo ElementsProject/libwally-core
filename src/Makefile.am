@@ -40,8 +40,12 @@ else
 libswig_python_la_LIBADD = $(PYTHON_LIBS)
 endif # PYTHON_MANYLINUX
 
+# Preprocess internal headers (required for SWIG with macro generated functions)
+swig_python/psbt_int.pp : psbt_int.h
+	$(AM_V_at)$(CC) -E $(AM_CFLAGS) $(SWIG_GEN_FLAGS) -DSWIG_PYTHON=1 $< | grep "wally_" >$@
+
 # We must sed the wrapper to workaround SWIGs odd library naming conventions
-swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
+swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in swig_python/psbt_int.pp
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_GEN_FLAGS) -outdir swig_python -o $@ $< && \
     $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
@@ -125,7 +129,12 @@ libswig_java_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_JAVA_CPPFLAGS) $(SW
 
 SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally
 
-swig_java/swig_java_wrap.c: swig_java/swig.i swig_java/jni_extra.java_in
+# Preprocess internal headers (required for SWIG with macro generated functions)
+swig_java/psbt_int.pp : psbt_int.h
+	$(AM_V_at)$(CC) -E $(AM_CFLAGS) $(SWIG_GEN_FLAGS) -DSWIG_JAVA=1 $< | grep "wally_" >$@
+
+# We must sed the wrapper to workaround SWIGs odd library naming conventions
+swig_java/swig_java_wrap.c: swig_java/swig.i swig_java/jni_extra.java_in swig_java/psbt_int.pp
 	$(AM_V_at)$(SWIG) $(SWIG_JOPT) $(SWIG_GEN_FLAGS) -o $@ $< && \
     $(GNU_SED) -i 's/wallycoreJNI/Wally/g' $@ && \
     $(GNU_SED) -i 's/ = (char \*) (\*jenv)->Get/ = (unsigned char \*) (\*jenv)->Get/g' $@
