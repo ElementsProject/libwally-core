@@ -488,8 +488,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_struct(wally_psbt_from_bytes, wally_psbt);
 %returns_struct(wally_psbt_get_global_tx_alloc, wally_tx);
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
-%returns_size_t(wally_psbt_get_input_abf);
-%returns_size_t(wally_psbt_get_input_abf_len);
+%returns_size_t(wally_psbt_get_input_inflation_keys_rangeproof);
+%returns_size_t(wally_psbt_get_input_inflation_keys_rangeproof_len);
 %returns_size_t(wally_psbt_get_input_issuance_amount_rangeproof);
 %returns_size_t(wally_psbt_get_input_issuance_amount_rangeproof_len);
 %returns_size_t(wally_psbt_get_input_redeem_script);
@@ -565,7 +565,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_remove_input);
 %returns_void__(wally_psbt_remove_output);
 %returns_void__(wally_psbt_set_global_tx);
-%returns_void__(wally_psbt_set_input_abf);
+%returns_void__(wally_psbt_set_input_inflation_keys_rangeproof);
 %returns_void__(wally_psbt_set_input_issuance_amount_rangeproof);
 %returns_void__(wally_psbt_set_input_pegin_claim_script);
 %returns_void__(wally_psbt_set_input_final_scriptsig);

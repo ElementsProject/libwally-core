@@ -55,10 +55,10 @@
       return buf;
   }
 
-  public final static byte[] psbt_get_input_abf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_abf_len(psbt, idx)];
+  public final static byte[] psbt_get_input_inflation_keys_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_inflation_keys_rangeproof_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_abf(psbt, idx, buf);
+      final int len = psbt_get_input_inflation_keys_rangeproof(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
