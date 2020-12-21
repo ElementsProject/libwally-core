@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased changes
+## Version 0.8.1
 
 - Build: Note that the secp256k1-zkp library is now as git submodule rather
   than being directly checked in to the source tree. Run
