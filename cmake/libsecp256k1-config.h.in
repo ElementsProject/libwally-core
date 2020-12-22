@@ -11,6 +11,9 @@
 /* Set window size for ecmult precomputation */
 #cmakedefine ECMULT_WINDOW_SIZE @ECMULT_WINDOW_SIZE@
 
+/* Set ecmult gen precision bits */
+#cmakedefine ECMULT_GEN_PREC_BITS @ECMULT_GEN_PREC_BITS@
+
 /* Define this symbol to enable the ECDH module */
 #cmakedefine ENABLE_MODULE_ECDH @ENABLE_MODULE_ECDH@
 
