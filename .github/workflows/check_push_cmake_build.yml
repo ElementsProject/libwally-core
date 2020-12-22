@@ -31,6 +31,8 @@ jobs:
 # windows has illegal AES result.
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: setup-node
       uses: actions/setup-node@v2.1.2
       with:
@@ -66,6 +68,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: cmake-generate
       run: |
         cmake -S . -B build -G "${{ matrix.generator }}"
@@ -105,6 +109,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: setup python
       if: matrix.target == 'python'
       uses: actions/setup-python@v1
@@ -157,6 +163,8 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: cmake-generate
       if: matrix.os != 'windows-2019'
       run: |
