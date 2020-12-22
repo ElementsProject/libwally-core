@@ -94,6 +94,10 @@ tags
 
 # MacOS
 **/.DS_Store
+# WebAssembly
+wallycore.html
+wallycore.js
+wallycore.wasm
 
 # Windows
 *.obj

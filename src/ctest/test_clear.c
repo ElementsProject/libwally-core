@@ -11,8 +11,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-/* From ASAN wiki */
-#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+
+/* From ASAN wiki, modified to not break gcc */
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__ 1
+#endif
+#endif
+
+#if defined(__SANITIZE_ADDRESS__)
 extern void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
     __asan_poison_memory_region((addr), (size))
@@ -58,7 +65,7 @@ static const unsigned char BIP39_SECRET[16] = {
 };
 
 /* Useful for developing these tests */
-static void dump_mem(const void *mem, size_t len)
+static void dump_mem(volatile const void *mem, size_t len)
 {
     static size_t i;
     for (i = 0; i < len; ++i) {
@@ -79,12 +86,12 @@ static unsigned char *checked_malloc(size_t len)
     return ret;
 }
 
-static bool in_stack(const char *caller, const void *search, size_t len)
+static bool in_stack(const char *caller, volatile const void *search, size_t len)
 {
     static size_t i;
 
     for (i = 0; i < PTHREAD_STACK_MIN - len - 1; ++i)
-        if (!memcmp(gstack + i, search, len)) {
+        if (!memcmp(gstack + i, (const void *)search, len)) {
             if (caller) {
                 printf("Found %s secret at stack position %ld and base %p\n", caller, (long)i, (void *)gstack);
                 dump_mem(search, len);
