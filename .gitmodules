@@ -1,0 +1,4 @@
+[submodule "src/secp256k1"]
+	path = src/secp256k1
+	url = https://github.com/cryptogarageinc/secp256k1-zkp.git
+	branch = cfd-develop
