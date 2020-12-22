@@ -71,7 +71,7 @@ if platform.system() == "Windows":
             'src/wrap_js/src/combined_ccan2.c',
             ],
     )
-    kwargs['py_modules'] = 'wallycore'
+    kwargs['py_modules'] = ['wallycore']
     kwargs['ext_modules'] = [wally_ext]
 else:
     # *nix uses a custom autotools/make build
