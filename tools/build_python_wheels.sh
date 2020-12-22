@@ -9,6 +9,16 @@
 
 set -e
 
+have_cmd()
+{
+    command -v "$1" >/dev/null 2>&1
+}
+
+if [ ! -f "src/secp256k1/README.md" ]; then
+    git submodule sync --recursive
+    git submodule update --init --recursive
+fi
+
 function build_wheel {
     ./tools/cleanup.sh
 
@@ -41,7 +51,9 @@ if [ -n "$1" ]; then
 fi
 
 for pyv in $PYV_LIST; do
-    build_wheel $pyv
+    if have_cmd $pyv; then
+        build_wheel $pyv
+    fi
 done
 
 ./tools/cleanup.sh

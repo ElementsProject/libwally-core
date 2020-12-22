@@ -2,9 +2,14 @@
 
 set -e
 
+if [ ! -f "src/secp256k1/README.md" ]; then
+    git submodule sync --recursive
+    git submodule update --init --recursive
+fi
+
 tools/cleanup.sh
 tools/autogen.sh
-./configure --enable-js-wrappers --disable-swig-python --disable-swig-java --enable-ecmult-static-precomputation --enable-elements $DEBUG_WALLY
+./configure --enable-js-wrappers --disable-swig-python --disable-swig-java --enable-ecmult-static-precomputation --enable-elements $WALLY_CONFIGURE
 num_jobs=4
 if [ -f /proc/cpuinfo ]; then
     num_jobs=$(grep ^processor /proc/cpuinfo | wc -l)

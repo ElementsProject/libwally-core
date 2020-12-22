@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.8.0])
+AC_INIT([libwallycore],[0.8.1])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -28,7 +28,9 @@ esac
 AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" == "xyes"])
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+saved_cflags="$CFLAGS"
 LT_INIT([disable-static])
+CFLAGS="$saved_cflags"
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
@@ -39,9 +41,6 @@ AC_PROG_CC
 # not provide an AC_PATH_TOOLS macro for this purpose.
 candidate_ars="ar"
 candidate_ranlibs="ranlib"
-# gcc bugs cause memory clearing to fail randomly. clang exhibits much more
-# consistent and sane behaviour so should be preferred going forward.
-enable_clear_tests="no"
 case $CC in
 *gcc*)
     candidate_ars="gcc-ar ar"
@@ -51,7 +50,6 @@ case $CC in
     ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1)
     candidate_ars="llvm-ar-$ver llvm-ar ar"
     candidate_ranlibs="llvm-ranlib-$ver llvm-ranlib ranlib"
-    enable_clear_tests="yes"
     ;;
 esac
 
@@ -138,9 +136,11 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT8_T
 
 AM_CFLAGS=
+AX_CHECK_COMPILE_FLAG([-O0], [NOOPT_CFLAGS="-O0"])
+
 if test "x$debug" == "xyes"; then
     # Make debugging easier, leave assertions in
-    AX_CHECK_COMPILE_FLAG([-O0], [AM_CFLAGS="$AM_CFLAGS -O0"])
+    AM_CFLAGS="$AM_CFLAGS $NOOPT_CFLAGS"
     AX_CHECK_COMPILE_FLAG([-ggdb], [AM_CFLAGS="$AM_CFLAGS -ggdb"])
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
@@ -171,7 +171,8 @@ fi
 
 # -flax-vector-conversions is needed for our arm assembly
 AX_CHECK_COMPILE_FLAG([-flax-vector-conversions], [AM_CFLAGS="$AM_CFLAGS -flax-vector-conversions"])
-AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [NOALIAS_CFLAGS="$AM_CFLAGS -fno-strict-aliasing $AM_CFLAGS"])
+AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing], [NOALIAS_CFLAGS="-fno-strict-aliasing"])
+AX_CHECK_COMPILE_FLAG([-fno-builtin], [NOBUILTIN_CFLAGS="-fno-builtin"])
 
 AX_CHECK_COMPILE_FLAG([-Wformat-nonliteral], [AM_CFLAGS="-Wformat-nonliteral $AM_CFLAGS"])
 AX_CHECK_COMPILE_FLAG([-Wformat-security], [AM_CFLAGS="-Wformat-security $AM_CFLAGS"])
@@ -199,7 +200,9 @@ if [[ "$CC" == *"clang"* ]]; then
     AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [AM_CFLAGS="$AM_CFLAGS -Wno-language-extension-token"])
     AX_CHECK_COMPILE_FLAG([-Wno-unknown-attributes], [AM_CFLAGS="$AM_CFLAGS -Wno-unknown-attributes"])
 fi
+AC_SUBST([NOOPT_CFLAGS])
 AC_SUBST([NOALIAS_CFLAGS])
+AC_SUBST([NOBUILTIN_CFLAGS])
 
 # Under OSX the compiler accepts this flag but the linker then fails.
 if test "x$is_osx" != "xyes"; then
@@ -255,8 +258,12 @@ __asm__ __volatile__ ("" : : "r"(pnt) : "memory");
 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
+AC_ARG_ENABLE(clear-tests,
+    AS_HELP_STRING([--enable-clear-tests],[enable tests for memory clearing (default: yes)]),
+    [clear_tests=$enableval], [clear_tests=yes])
+
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
-AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes" -a "x$enable_clear_tests" == "xyes"])
+AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes" -a "x$clear_tests" == "xyes"])
 if test "x$ac_have_pthread" == "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], 1, [Define if we have pthread support])
     AC_CHECK_HEADERS([asm/page.h])
@@ -289,6 +296,11 @@ AC_SUBST([LIBADD_SECP256K1])
 #
 # Python facilities
 #
+AC_ARG_ENABLE(python-manylinux,
+    AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
+    [python_manylinux=$enableval], [python_manylinux=no])
+AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
+
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
@@ -298,7 +310,7 @@ AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 AC_PROG_SWIG
 
 AC_ARG_ENABLE(swig-python,
-    AS_HELP_STRING([--enable-swig-python],[enable the SWIG python interface (default: no)]),
+    AS_HELP_STRING([--enable-swig-python],[enable the SWIG Python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
 
@@ -306,7 +318,7 @@ AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == 
 
 if test "x$swig_python" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable python was found for swig-python])
+        AC_MSG_FAILURE([ERROR: No usable Python was found for swig-python])
     fi
     SWIG_PYTHON
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
@@ -319,7 +331,7 @@ AM_CONDITIONAL([USE_JS_WRAPPERS], [test "x$js_wrappers" == "xyes"])
 
 if test "x$js_wrappers" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable python was found for generating js wrappers])
+        AC_MSG_FAILURE([ERROR: No usable Python was found for generating js wrappers])
     fi
     if test "x$swig_python" != "xyes"; then
         SWIG_PYTHON
@@ -411,10 +423,6 @@ AC_CONFIG_FILES([
  src/wallycore.pc
 ])
 
-secp_jni="--disable-jni"
-if test "x$swig_java" == "xyes"; then
-    secp_jni="--enable-jni"
-fi
 secp_asm="--with-asm=auto"
 if test "x$debug" == "xyes"; then
     secp_asm="--with-asm=no"
@@ -437,7 +445,7 @@ export ARFLAGS
 export AR_FLAGS
 export LD
 export LDFLAGS
-ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-schnorrsig --enable-module-extrakeys --enable-module-ecdsa-adaptor --enable-openssl-tests=no ${secp256k1_test_opt} --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
+ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-schnorrsig --enable-module-extrakeys --enable-module-ecdsa-adaptor --enable-openssl-tests=no ${secp256k1_test_opt} --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 

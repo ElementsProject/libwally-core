@@ -2,7 +2,7 @@
 
 kwargs = {
     'name': 'wallycore',
-    'version': '0.8.0',
+    'version': '0.8.1',
     'description': 'libwally Bitcoin library',
     'long_description': 'Python bindings for the libwally Bitcoin library',
     'url': 'https://github.com/ElementsProject/libwally-core',
@@ -20,9 +20,10 @@ kwargs = {
         'License :: OSI Approved :: MIT License',
 
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
 
     'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1',
@@ -91,7 +92,7 @@ else:
             # Run the autotools/make build to generate a python extension module
             call('./tools/cleanup.sh')
             call('./tools/autogen.sh')
-            call('./configure --enable-swig-python --enable-ecmult-static-precomputation --enable-elements')
+            call('./configure --enable-swig-python --enable-python-manylinux --enable-ecmult-static-precomputation --enable-elements --disable-tests')
             call('make -j{}'.format(multiprocessing.cpu_count()))
 
             # Copy the so that has just been built to the build_dir that distutils expects it to be in

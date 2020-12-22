@@ -352,7 +352,7 @@ static int bip32_privkey_tweak_add(const unsigned char *tweak, size_t tweak_len,
     if (!mem_is_zero(key_out->pub_key_tweak_sum, tweak_len))
         return privkey_tweak_add(key_out->pub_key_tweak_sum, tweak) ? WALLY_OK : WALLY_EINVAL;
 
-    /* tweak sum is zero: start wih the tweak */
+    /* tweak sum is zero: start with the tweak */
     memcpy(key_out->pub_key_tweak_sum, tweak, tweak_len);
     return WALLY_OK;
 }
