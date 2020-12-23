@@ -77,12 +77,6 @@ manylinux_aarch64_release:
 osx_release:
   tags:
     - osx
-  artifacts:
-    expire_in: 1 day
-    name: wallycore-bindings
-    when: on_success
-    paths:
-    - wally_dist/*
   before_script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
@@ -129,11 +123,6 @@ freebsdamd64_release:
 windows10_release:
   tags:
     - win10
-  artifacts:
-    name: wallycore-dll
-    when: on_success
-    paths:
-    - wally_dist\*
   before_script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
