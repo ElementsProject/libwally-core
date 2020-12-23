@@ -29,6 +29,7 @@ option(ENABLE_SWIG_GO "enable the SWIG Go interface (ON or OFF. default:OFF)" OF
 option(GENERATE_WALLY "generate the wally.xxx library (ON or OFF. default:ON)" ON)
 option(ENABLE_EMSCRIPTEN "enable EMSCRIPTEN (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SECP256K1_TEST "enable secp256k1 test (ON or OFF. default:OFF)" OFF)
+option(EXCLUDE_WALLYCORE_LIB "exclude wallycore lib (ON or OFF. default:OFF)" OFF)
 
 if(NOT EXCLUDE_GENERATE_WALLY)
 set(EXCLUDE_GENERATE_WALLY  FALSE)
@@ -587,7 +588,10 @@ endif() # GENERATE_WALLY OR (ENABLE_JS_WRAPPER)
 ####################
 # node.js build
 ####################
-if(ENABLE_JS_WRAPPER)
+if(EXCLUDE_WALLYCORE_LIB)
+set(INSTALL_WALLYCORE  FALSE)
+
+elseif(ENABLE_JS_WRAPPER)
 
 set(INSTALL_WALLYCORE  FALSE)
 set(NODE_LIBRARY_NAME wallycore)
