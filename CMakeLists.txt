@@ -1077,15 +1077,6 @@ include(UseJava)
 include(GenerateExportHeader)
 set(JAVAC_TARGET  1.8)
 
-set(SECP256K1_JNI_FILES
-    src/secp256k1/src/java/org_bitcoin_NativeSecp256k1.c
-    src/secp256k1/src/java/org_bitcoin_Secp256k1Context.c
-    src/secp256k1/src/java/org_bitcoin_NativeSecp256k1.h
-    src/secp256k1/src/java/org_bitcoin_Secp256k1Context.h
-    src/secp256k1/include/secp256k1_ecdh.h
-    src/secp256k1/include/secp256k1_recovery.h
-)
-
 set(WALLY_SWIG_JAVA_NAME wallycore_swig_java)
 set(WALLY_PROJECT_NAME ${WALLY_SWIG_JAVA_NAME})
 set(WALLY_SWIG_JAVA_OUTPUT_NAME wallycore)
@@ -1117,14 +1108,14 @@ swig_add_library(${WALLY_SWIG_JAVA_NAME}
     LANGUAGE java
     NO_PROXY
     OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${JAVA_INTERFACE_FILE} ${LIBWALLY_FILES} ${SECP256K1_JNI_FILES})
+    SOURCES ${JAVA_INTERFACE_FILE} ${LIBWALLY_FILES})
 else()
 swig_add_library(${WALLY_SWIG_JAVA_NAME}
     TYPE STATIC
     LANGUAGE java
     NO_PROXY
     OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    SOURCES ${JAVA_INTERFACE_FILE} ${LIBWALLY_FILES} ${SECP256K1_JNI_FILES})
+    SOURCES ${JAVA_INTERFACE_FILE} ${LIBWALLY_FILES})
 endif()
 
 # message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
