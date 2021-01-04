@@ -101,6 +101,12 @@ installed.
 
 ### Python
 
+For non-development use, you can install wally with `pip` as follows:
+
+```
+pip install wallycore==0.8.1
+```
+
 For python development, you can build and install wally using:
 
 ```
@@ -111,7 +117,7 @@ It is suggested you only install this way into a virtualenv while the library
 is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
-`PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
+`PYTHON_VERSION` environment variable (to e.g. `2.7`, `3`, `3.7` etc) before
 running `pip` or (when compiling manually) `./configure`.
 
 You can also install the binary [wally releases](https://github.com/ElementsProject/libwally-core/releases)
@@ -121,8 +127,8 @@ using the released wheel files without having to compile the library, e.g.:
 pip install wallycore-0.8.1-cp37-cp37m-linux_x86_64.whl
 ```
 
-The script `tools/build_python_manylinux_wheels.sh` builds the release files and can be
-used as an example for your own python projects.
+The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
+and can be used as an example for your own python projects.
 
 ### Android
 
