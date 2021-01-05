@@ -243,6 +243,7 @@ Projects and products that are known to depend on or use `libwally`:
 * [Blockstream Green Development Kit](https://github.com/Blockstream/gdk)
 * [Blockstream Green Wallet for Android](https://github.com/Blockstream/green_android)
 * [Blockstream Green Wallet for iOS](https://github.com/Blockstream/green_ios)
+* [Blockstream Green Wallet for Desktops](https://github.com/Blockstream/green_qt)
 * [Blockstream Jade Hardware Wallet](https://github.com/Blockstream/Jade)
 * [BitBox02 Hardware Wallet](https://github.com/digitalbitbox/bitbox02-firmware)
 * [Blockstream Blind PIN Server](https://github.com/Blockstream/blind_pin_server)
