@@ -215,7 +215,7 @@ tests via:
 $ make check
 ```
 
-Python ctypes tests (in `./src/test/` are strongly preferred, but you can add
+Python ctypes tests (in `./src/test/`) are strongly preferred, but you can add
 to the other test suites if your changes target a specific language or your
 tests need to be written at a higher level of abstraction.
 
@@ -244,6 +244,7 @@ Projects and products that are known to depend on or use `libwally`:
 * [Blockstream Green Wallet for Android](https://github.com/Blockstream/green_android)
 * [Blockstream Green Wallet for iOS](https://github.com/Blockstream/green_ios)
 * [Blockstream Jade Hardware Wallet](https://github.com/Blockstream/Jade)
+* [Blockstream Blind PIN Server](https://github.com/Blockstream/blind_pin_server)
 * [Blockstream/liquid-melt](https://github.com/Blockstream/liquid-melt)
 * [Blockstream/liquid_multisig_issuance](https://github.com/Blockstream/liquid_multisig_issuance)
 * [c-lightning](https://github.com/ElementsProject/lightning)
