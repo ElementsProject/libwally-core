@@ -24,6 +24,7 @@ libwally-core documentation
 
    Library Conventions <conventions.rst>
    Liquid <Liquid.rst>
+   Anti Klepto protocol <anti_klepto_protocol.rst>
 
 Indices and tables
 ==================

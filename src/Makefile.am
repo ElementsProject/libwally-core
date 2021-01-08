@@ -328,6 +328,7 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/signmessage.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/anti-klepto.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
