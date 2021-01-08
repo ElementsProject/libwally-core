@@ -244,6 +244,52 @@ class SignTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_EINVAL, wally_ec_sig_to_public_key(*args))
 
+    def test_s2c(self):
+        priv_key, pub_key, msg, s2c_data, sig_out, s2c_opening_out = self.cbufferize(
+            ['11' * 32, '00' * 32, '22' * 32, '33' * 32, '00' * 64, '00' * 33])
+
+        flags = FLAG_ECDSA
+
+        self.assertEqual(WALLY_OK, wally_s2c_sig_from_bytes(priv_key, 32, msg, 32, s2c_data, 32, flags, s2c_opening_out, 33, sig_out, 64))
+
+        self.assertEqual(WALLY_OK, wally_ec_public_key_from_private_key(priv_key, 32, pub_key, 33))
+        self.assertEqual(WALLY_OK, wally_ec_sig_verify(pub_key, 33, msg, 32, flags, sig_out, 64))
+
+        self.assertEqual(WALLY_OK, wally_s2c_commitment_verify(sig_out, 64, s2c_data, 32, s2c_opening_out, 33, flags))
+
+        # Invalid cases
+        for args in [
+            (None,     32, msg,  32, s2c_data, 32, flags, s2c_opening_out, 33, sig_out, 64), # Missing privkey
+            (priv_key, 31, msg,  32, s2c_data, 32, flags, s2c_opening_out, 33, sig_out, 64), # Incorrect privkey length
+            (priv_key, 32, None, 32, s2c_data, 32, flags, s2c_opening_out, 33, sig_out, 64), # Missing message
+            (priv_key, 32, msg,  31, s2c_data, 32, flags, s2c_opening_out, 33, sig_out, 64), # Incorrect message length
+            (priv_key, 32, msg,  32, None,     32, flags, s2c_opening_out, 33, sig_out, 64), # Missing s2c data
+            (priv_key, 32, msg,  32, s2c_data, 31, flags, s2c_opening_out, 33, sig_out, 64), # Incorrect s2c data length
+            (priv_key, 32, msg,  32, s2c_data, 32, 0,     s2c_opening_out, 33, sig_out, 64), # Unsupported flags
+            (priv_key, 32, msg,  32, s2c_data, 32, flags, None,            33, sig_out, 64), # Missing s2c opening
+            (priv_key, 32, msg,  32, s2c_data, 32, flags, s2c_opening_out, 32, sig_out, 64), # Incorrect s2c opening length
+            (priv_key, 32, msg,  32, s2c_data, 32, flags, s2c_opening_out, 33, None,    64), # Missing sig
+            (priv_key, 32, msg,  32, s2c_data, 32, flags, s2c_opening_out, 33, sig_out, 63), # Incorrect sig length
+            ]:
+            self.assertEqual(WALLY_EINVAL, wally_s2c_sig_from_bytes(*args))
+
+        inv_sig, inv_s2c_data, inv_s2c_opening = self.cbufferize(
+            ['ff' * 64, 'ff' * 32, 'ff' * 33])
+
+        for args in [
+            (None,    64, s2c_data,     32, s2c_opening_out, 33, flags), # Missing signature
+            (sig_out, 63, s2c_data,     32, s2c_opening_out, 33, flags), # Incorrect signature length
+            (inv_sig, 64, s2c_data,     32, s2c_opening_out, 33, flags), # Invalid signature
+            (sig_out, 64, None,         32, s2c_opening_out, 33, flags), # Missing s2c data
+            (sig_out, 64, s2c_data,     31, s2c_opening_out, 33, flags), # Incorrect s2c data length
+            (sig_out, 64, inv_s2c_data, 32, s2c_opening_out, 33, flags), # Invalid s2c data
+            (sig_out, 64, s2c_data,     32, None,            33, flags), # Missing s2c opening
+            (sig_out, 64, s2c_data,     32, s2c_opening_out, 32, flags), # Incorrect s2c opening length
+            (sig_out, 64, s2c_data,     32, inv_s2c_opening, 33, flags), # Invalid s2c opening
+            (sig_out, 64, s2c_data,     32, s2c_opening_out, 33, 0),     # Unsupported flags
+            ]:
+            self.assertEqual(WALLY_EINVAL, wally_s2c_commitment_verify(*args))
+
 
 if __name__ == '__main__':
     unittest.main()
