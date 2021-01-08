@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <string>
 #include <wally_address.h>
+#include <wally_anti_klepto.h>
 #include <wally_bip32.h>
 #include <wally_bip38.h>
 #include <wally_bip39.h>

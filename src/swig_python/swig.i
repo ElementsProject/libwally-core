@@ -23,6 +23,7 @@ del swig_import_helper
 #include <stdbool.h>
 #include "../include/wally_core.h"
 #include "../include/wally_address.h"
+#include "../include/wally_anti_klepto.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
@@ -355,6 +356,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"
+%include "../include/wally_anti_klepto.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
