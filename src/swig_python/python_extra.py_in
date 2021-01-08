@@ -180,6 +180,16 @@ psbt_get_output_unknown = _wrap_bin(psbt_get_output_unknown, psbt_get_output_unk
 
 psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length, resize=True)
 
+def _s2c_sig_from_bytes_fn(fn):
+    def wrapped(*args):
+        buffers = [bytearray(WALLY_S2C_OPENING_LEN), bytearray(EC_SIGNATURE_LEN)]
+        ret = fn(*list(args) + buffers)
+        if ret is None:
+            return buffers[0], buffers[1]
+        return ret, buffers[0], buffers[1]
+    return wrapped
+s2c_sig_from_bytes = _s2c_sig_from_bytes_fn(s2c_sig_from_bytes)
+
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)
