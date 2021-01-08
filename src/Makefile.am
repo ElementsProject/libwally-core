@@ -8,6 +8,7 @@ noinst_LTLIBRARIES =
 include_HEADERS =
 include_HEADERS += $(top_srcdir)/include/wally.hpp
 include_HEADERS += $(top_srcdir)/include/wally_address.h
+include_HEADERS += $(top_srcdir)/include/wally_anti_klepto.h
 include_HEADERS += $(top_srcdir)/include/wally_bip32.h
 include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
@@ -174,6 +175,7 @@ lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
     address.c \
+    anti_klepto.c \
     aes.c \
     base58.c \
     bip32.c \
