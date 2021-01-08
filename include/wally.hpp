@@ -730,6 +730,18 @@ inline int psbt_to_bytes(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out,
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class SIG, class S2C_DATA, class S2C_OPENING>
+inline int s2c_commitment_verify(const SIG& sig, const S2C_DATA& s2c_data, const S2C_OPENING& s2c_opening, uint32_t flags) {
+    int ret = ::wally_s2c_commitment_verify(sig.data(), sig.size(), s2c_data.data(), s2c_data.size(), s2c_opening.data(), s2c_opening.size(), flags);
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class S2C_DATA, class S2C_OPENING_OUT, class BYTES_OUT>
+inline int s2c_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const S2C_DATA& s2c_data, uint32_t flags, S2C_OPENING_OUT& s2c_opening_out, BYTES_OUT& bytes_out) {
+    int ret = ::wally_s2c_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), s2c_data.data(), s2c_data.size(), flags, s2c_opening_out.data(), s2c_opening_out.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class BYTES, class BYTES_OUT>
 inline int script_push_from_bytes(const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
