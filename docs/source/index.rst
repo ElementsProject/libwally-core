@@ -16,6 +16,7 @@ libwally-core documentation
    symmetric
    transaction
    elements
+   anti_klepto
 
 .. toctree::
    :maxdepth: 2

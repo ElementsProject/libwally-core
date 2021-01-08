@@ -34,7 +34,7 @@ def output_func(docs, func):
 def extract_docs(infile, outfile):
 
     lines = [l.strip() for l in open(infile).readlines()]
-    title = infile.split('_')[1][:-2].capitalize() + ' Functions'
+    title = infile.split('wally_')[1][:-2].title().replace('_', '-') + ' Functions'
     title_markup = '=' * len(title)
     output, current, func, state = [title, title_markup, ''], [], '', SCANNING
 
@@ -62,7 +62,7 @@ def extract_docs(infile, outfile):
 # Generate the documentation source files
 for m in [
     'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt',
-    'symmetric', 'transaction', 'elements'
+    'symmetric', 'transaction', 'elements', 'anti_klepto'
     ]:
     extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
