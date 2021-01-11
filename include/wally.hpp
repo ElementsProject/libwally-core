@@ -299,6 +299,25 @@ inline int base58_to_bytes(const STR_IN& str_in, uint32_t flags, BYTES_OUT& byte
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class BYTES>
+inline int base64_from_bytes(const BYTES& bytes, uint32_t flags, char** output) {
+    int ret = ::wally_base64_from_bytes(bytes.data(), bytes.size(), flags, output);
+    return ret;
+}
+
+template <class STR_IN>
+inline int base64_get_maximum_length(const STR_IN& str_in, uint32_t flags, size_t* written) {
+    int ret = ::wally_base64_get_maximum_length(detail::get_p(str_in), flags, written);
+    return ret;
+}
+
+template <class STR_IN, class BYTES_OUT>
+inline int base64_to_bytes(const STR_IN& str_in, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_base64_to_bytes(detail::get_p(str_in), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class HDKEY, class ADDR_FAMILY>
 inline int bip32_key_to_addr_segwit(const HDKEY& hdkey, const ADDR_FAMILY& addr_family, uint32_t flags, char** output) {
     int ret = ::wally_bip32_key_to_addr_segwit(detail::get_p(hdkey), detail::get_p(addr_family), flags, output);
