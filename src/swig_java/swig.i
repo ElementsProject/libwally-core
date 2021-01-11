@@ -432,6 +432,9 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(wally_base58_from_bytes);
 %returns_size_t(wally_base58_to_bytes);
 %returns_size_t(wally_base58_get_length);
+%returns_string(wally_base64_from_bytes);
+%returns_size_t(wally_base64_to_bytes);
+%returns_size_t(wally_base64_get_maximum_length);
 %returns_string(wally_bip32_key_to_address);
 %returns_string(wally_bip32_key_to_addr_segwit);
 %returns_string(wally_confidential_addr_to_addr);

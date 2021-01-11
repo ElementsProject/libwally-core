@@ -83,6 +83,8 @@ base58_to_bytes = _wrap_bin(base58_to_bytes, _base58_len_fn, resize=True)
 def base58check_to_bytes(base58):
     return base58_to_bytes(base58, BASE58_FLAG_CHECKSUM)
 
+base64_to_bytes = _wrap_bin(base64_to_bytes, base64_get_maximum_length, resize=True)
+
 def _format_bitcoin_message_len_fn(msg, flags):
     if flags & BITCOIN_MESSAGE_FLAG_HASH:
         return SHA256_LEN
