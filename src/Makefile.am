@@ -332,6 +332,7 @@ endif
 endif # USE_SWIG_PYTHON
 endif # RUN_PYTHON_TESTS
 if RUN_JAVA_TESTS
+	$(AM_V_at)! grep 'native int wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
 if BUILD_ELEMENTS
 	$(AM_V_at)$(JAVA_TEST)test_assets
 	$(AM_V_at)$(JAVA_TEST)test_pegs
