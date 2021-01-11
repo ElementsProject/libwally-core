@@ -4,6 +4,7 @@
 #include "aes.c"
 #include "anti_klepto.c"
 #include "base58.c"
+#include "base64.c"
 #include "bech32.c"
 #include "blech32.c"
 #include "bip32.c"

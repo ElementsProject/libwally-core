@@ -168,7 +168,7 @@ WALLY_CORE_API int wally_base58_to_bytes(
     size_t *written);
 
 /**
- * Return the length of a base58 encoded string once decoded into bytes.
+ * Return the length of a base 58 encoded string once decoded into bytes.
  *
  * Returns the exact number of bytes that would be required to store ``str_in``
  * as decoded binary, including any embedded checksum. If the string contains
@@ -186,6 +186,56 @@ WALLY_CORE_API int wally_base58_to_bytes(
  */
 WALLY_CORE_API int wally_base58_get_length(
     const char *str_in,
+    size_t *written);
+
+/**
+ * Create a base64 encoded string representing binary data.
+ *
+ * :param bytes: Binary data to convert.
+ * :param bytes_len: The length of ``bytes`` in bytes.
+ * :param flags: Must be 0.
+ * :param output: Destination for the base64 encoded string representing ``bytes``.
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_base64_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    char **output);
+
+/**
+ * Decode a base64 encoded string back into into binary data.
+ *
+ * :param str_in: Base64 encoded string to decode.
+ * :param flags: Must be 0.
+ * :param bytes_out: Destination for converted binary data.
+ * :param len: The length of ``bytes_out`` in bytes. See ``wally_base64_get_maximum_length`.
+ * :param written: Destination for the length of the decoded bytes.
+ */
+WALLY_CORE_API int wally_base64_to_bytes(
+    const char *str_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Return the maximum length of a base64 encoded string once decoded into bytes.
+ *
+ * Since base64 strings may contain line breaks and padding, it is not
+ * possible to compute their decoded length without fully decoding them.
+ * This function cheaply calculates the maximum possible decoded length,
+ * which can be used to allocate a buffer for ``wally_base64_to_bytes``.
+ * In most cases the decoded data will be shorter than the value returned.
+ *
+ * :param str_in: Base64 encoded string to find the length of.
+ * :param flags: Must be 0.
+ * :param written: Destination for the maximum length of the decoded bytes.
+ *
+ */
+WALLY_CORE_API int wally_base64_get_maximum_length(
+    const char *str_in,
+    uint32_t flags,
     size_t *written);
 
 

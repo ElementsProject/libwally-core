@@ -178,6 +178,7 @@ libwallycore_la_SOURCES = \
     anti_klepto.c \
     aes.c \
     base58.c \
+    base64.c \
     bip32.c \
     bip38.c \
     bip39.c \
