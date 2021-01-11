@@ -831,6 +831,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_asset_pak_whitelistproof);
 %returns_array_(wally_s2c_sig_from_bytes, 10, 11, EC_SIGNATURE_LEN);
 %returns_void__(wally_s2c_commitment_verify);
+%returns_array_(wally_ak_host_commit_from_bytes, 4, 5, WALLY_HOST_COMMITMENT_LEN);
+%returns_array_(wally_ak_signer_commit_from_bytes, 8, 9, WALLY_S2C_OPENING_LEN);
+%returns_array_(wally_ak_sig_from_bytes, 8, 9, EC_SIGNATURE_LEN);
+%returns_void__(wally_ak_verify);
 
 %rename("_cleanup") wally_cleanup;
 %returns_void__(_cleanup)
