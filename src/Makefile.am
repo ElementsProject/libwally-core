@@ -297,6 +297,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_anti_klepto.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_base64.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bech32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip32.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
