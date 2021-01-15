@@ -173,6 +173,25 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
+int wally_ripemd160(const unsigned char *bytes, size_t bytes_len,
+                    unsigned char *bytes_out, size_t len)
+{
+    struct ripemd160 ripemd;
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+
+    if ((!bytes && bytes_len != 0) || !bytes_out || len != RIPEMD160_LEN)
+        return WALLY_EINVAL;
+
+    BUILD_ASSERT(sizeof(ripemd) == RIPEMD160_LEN);
+
+    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, bytes, bytes_len);
+    if (!aligned) {
+        memcpy(bytes_out, &ripemd, sizeof(ripemd));
+        wally_clear(&ripemd, sizeof(ripemd));
+    }
+    return WALLY_OK;
+}
+
 int wally_hash160(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {

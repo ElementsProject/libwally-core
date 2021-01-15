@@ -152,6 +152,23 @@ WALLY_CORE_API int wally_sha512(
     unsigned char *bytes_out,
     size_t len);
 
+/** Output length for `wally_ripemd160` */
+#define RIPEMD160_LEN 20
+
+/**
+ * RIPEMD-160(m)
+ *
+ * :param bytes: The message to hash
+ * :param bytes_len: The length of ``bytes`` in bytes.
+ * :param bytes_out: Destination for the resulting hash.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``RIPEMD160_LEN``.
+ */
+WALLY_CORE_API int wally_ripemd160(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    unsigned char *bytes_out,
+    size_t len);
+
 /** Output length for `wally_hash160` */
 #define HASH160_LEN 20
 
