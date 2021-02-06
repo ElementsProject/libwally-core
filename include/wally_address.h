@@ -301,6 +301,15 @@ WALLY_CORE_API int wally_confidential_addr_from_addr_segwit(
     char **output);
 #endif /* BUILD_ELEMENTS */
 
+
+WALLY_CORE_API int wally_encode_bech32(const unsigned char *bytes, size_t bytes_len,
+                        uint8_t version, const char *hrp, uint32_t flags,
+                        char **output);
+
+WALLY_CORE_API int wally_decode_bech32(const char *message, const char *hrp,
+                        uint32_t flags, unsigned char *bytes_out, size_t len,
+                        size_t *written, size_t *is_bech32m);
+
 #ifdef __cplusplus
 }
 #endif

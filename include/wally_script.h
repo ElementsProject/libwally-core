@@ -563,6 +563,30 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
     size_t len,
     size_t *written);
 
+/**
+ * Create a segwit witness program from a script or hash using witness version.
+ *
+ * :param bytes: Script or hash bytes to create a witness program from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param witness_version: Witness Version to create a witness program from.
+ *|    Specify a value of 16 or less.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to hash
+ *|    the input script before using it. ``WALLY_SCRIPT_AS_PUSH`` to generate
+ *|    a push of the generated script as used for the scriptSig in p2sh-p2wpkh
+ *|    and p2sh-p2wsh.
+ * :param bytes_out: Destination for the resulting witness program.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_witness_program_from_bytes_using_version(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint8_t witness_version,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
 #ifdef BUILD_ELEMENTS
 /**
  * Get the pegout script size.

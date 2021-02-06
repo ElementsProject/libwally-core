@@ -976,6 +976,51 @@ int wally_witness_program_from_bytes(const unsigned char *bytes, size_t bytes_le
     return ret;
 }
 
+int wally_witness_program_from_bytes_using_version(
+    const unsigned char *bytes, size_t bytes_len, uint8_t witness_version,
+    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
+{
+    int ret;
+    unsigned char *p = bytes_out;
+
+    if (witness_version == 0)
+        return wally_witness_program_from_bytes(
+            bytes, bytes_len, flags, bytes_out, len, written);
+
+    if (written)
+        *written = 0;
+
+    if ((bytes_len && !bytes) || (witness_version > 16) ||
+        !script_flags_ok(flags, WALLY_SCRIPT_AS_PUSH) ||
+        !bytes_out || !len || !written)
+        return WALLY_EINVAL;
+
+    if (flags & ALL_SCRIPT_HASH_FLAGS) {
+        if (!bytes_len)
+            return WALLY_EINVAL;
+    }
+    if (flags & WALLY_SCRIPT_AS_PUSH) {
+        if (len < 2)
+            return WALLY_EINVAL;
+        ++bytes_out;
+        --len;
+    }
+
+    /* Witness version */
+    bytes_out[0] = (witness_version == 0) ? 0 : 0x50 + witness_version;
+    ret = wally_script_push_from_bytes(bytes, bytes_len,
+                                       flags & ~WALLY_SCRIPT_AS_PUSH,
+                                       bytes_out + 1, len - 1, written);
+    if (ret == WALLY_OK) {
+        *written += 1; /* For Witness version byte */
+        if (flags & WALLY_SCRIPT_AS_PUSH) {
+            *p = *written & 0xff;
+            *written += 1; /* For Witness version byte */
+        }
+    }
+    return ret;
+}
+
 int wally_elements_pegout_script_size(size_t genesis_blockhash_len,
                                       size_t mainchain_script_len,
                                       size_t sub_pubkey_len,

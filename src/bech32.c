@@ -50,7 +50,7 @@ static const int8_t charset_rev[128] = {
     1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1
 };
 
-static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, size_t max_input_len) {
+static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, size_t max_input_len, bool is_bech32m) {
     uint32_t chk = 1;
     size_t i = 0;
     while (hrp[i] != 0) {
@@ -78,7 +78,7 @@ static int bech32_encode(char *output, const char *hrp, const uint8_t *data, siz
     for (i = 0; i < 6; ++i) {
         chk = bech32_polymod_step(chk);
     }
-    chk ^= 1;
+    chk ^= (is_bech32m) ? 0x2bc830a3 : 1;
     for (i = 0; i < 6; ++i) {
         *(output++) = charset[(chk >> ((5 - i) * 5)) & 0x1f];
     }
@@ -86,7 +86,7 @@ static int bech32_encode(char *output, const char *hrp, const uint8_t *data, siz
     return 1;
 }
 
-static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input, size_t max_input_len) {
+static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input, size_t max_input_len, bool *is_bech32m) {
     uint32_t chk = 1;
     size_t i;
     size_t input_len = strlen(input);
@@ -140,7 +140,8 @@ static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char 
     if (have_lower && have_upper) {
         return 0;
     }
-    return chk == 1;
+    if (is_bech32m != NULL) *is_bech32m = (chk == 0x2bc830a3);
+    return (chk == 1) || (chk == 0x2bc830a3);
 }
 
 static int convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits, int pad) {
@@ -165,16 +166,16 @@ static int convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t
     return 1;
 }
 
-static int segwit_addr_encode(char *output, const char *hrp, int witver, const uint8_t *witprog, size_t witprog_len) {
+static int segwit_addr_encode(char *output, const char *hrp, uint8_t witver, const uint8_t *witprog, size_t witprog_len) {
     uint8_t data[65];
     size_t datalen = 0;
-    if (witver < 0 || witver > 16) goto fail;
+    if (witver > 16) goto fail;
     if (witver == 0 && witprog_len != 20 && witprog_len != 32) goto fail;
     if (witprog_len < 2 || witprog_len > 40) goto fail;
     data[0] = witver;
     convert_bits(data + 1, &datalen, 5, witprog, witprog_len, 8, 1);
     ++datalen;
-    return bech32_encode(output, hrp, data, datalen, 90);
+    return bech32_encode(output, hrp, data, datalen, 90, (witver != 0));
 fail:
     wally_clear_2(data, sizeof(data), (void *)witprog, witprog_len);
     return 0;
@@ -184,14 +185,18 @@ static int segwit_addr_decode(int *witver, uint8_t *witdata, size_t *witdata_len
     uint8_t data[84];
     char hrp_actual[84];
     size_t data_len;
-    if (!bech32_decode(hrp_actual, data, &data_len, addr, 90)) goto fail;
+    bool is_bech32m = false;
+    if (!bech32_decode(hrp_actual, data, &data_len, addr, 90, &is_bech32m)) goto fail;
     if (data_len == 0 || data_len > 65) goto fail;
     if (strncmp(hrp, hrp_actual, 84) != 0) goto fail;
+    if (data[0] == 0 && is_bech32m) goto fail;
+    if (data[0] != 0 && !is_bech32m) goto fail;
     if (data[0] > 16) goto fail;
     *witdata_len = 0;
     if (!convert_bits(witdata, witdata_len, 8, data + 1, data_len - 1, 5, 0)) goto fail;
     if (*witdata_len < 2 || *witdata_len > 40) goto fail;
     if (data[0] == 0 && *witdata_len != 20 && *witdata_len != 32) goto fail;
+    // if (data[0] == 1 && *witdata_len != 32) goto fail;
     *witver = data[0];
     return 1;
 fail:
@@ -206,6 +211,7 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
     char result[90];
     size_t push_size;
     int ret;
+    uint8_t witness_version;
 
     if (output)
         *output = 0;
@@ -213,15 +219,21 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
     if (!addr_family || flags || !bytes || !bytes_len || !output)
         return WALLY_EINVAL;
 
-    if (bytes[0] != 0)
-        return WALLY_EINVAL; /* Only v0 witness programs are currently allowed */
+    if (bytes[0] == 0)
+        witness_version = 0;
+    else if (bytes[0] >= OP_1 && bytes[0] <= OP_16)
+        witness_version = bytes[0] - (OP_1 - 1);
+    else
+        return WALLY_EINVAL;
 
     ret = script_get_push_size_from_bytes(bytes + 1, bytes_len - 1, &push_size);
-    if (ret != WALLY_OK || (push_size != HASH160_LEN && push_size != SHA256_LEN))
+    if (ret != WALLY_OK)
+        return WALLY_EINVAL;
+    else if (witness_version == 0 && push_size != HASH160_LEN && push_size != SHA256_LEN)
         return WALLY_EINVAL;
 
     result[0] = '\0';
-    if (!segwit_addr_encode(result, addr_family, 0, bytes + 2, bytes_len - 2))
+    if (!segwit_addr_encode(result, addr_family, witness_version, bytes + 2, bytes_len - 2))
         return WALLY_ERROR;
 
     *output = wally_strdup(result);
@@ -246,11 +258,68 @@ int wally_addr_segwit_to_bytes(const char *addr, const char *addr_family,
         return WALLY_EINVAL;
 
     /* Only v0 witness programs are currently allowed */
-    if (!segwit_addr_decode(&witver, decoded, written, addr_family, addr) || witver != 0)
+    if (!segwit_addr_decode(&witver, decoded, written, addr_family, addr))
         ret = WALLY_EINVAL;
     else
-        ret = wally_witness_program_from_bytes(decoded, *written, flags, bytes_out, len, written);
+        ret = wally_witness_program_from_bytes_using_version(
+            decoded, *written, witver, flags, bytes_out, len, written);
 
     wally_clear(decoded, sizeof(decoded));
+    return ret;
+}
+
+int wally_encode_bech32(const unsigned char *bytes, size_t bytes_len,
+                        uint8_t version, const char *hrp, uint32_t flags,
+                        char **output)
+{
+    if (flags || !hrp || !bytes || !bytes_len || !output || bytes_len > 64)
+        return WALLY_EINVAL;
+
+    char result[90];
+    uint8_t data[65];
+    size_t datalen = 0;
+    data[0] = (uint8_t) version;
+    convert_bits(data + 1, &datalen, 5, bytes, bytes_len, 8, 1);
+    ++datalen;
+    int ret = bech32_encode(result, hrp, data, datalen, sizeof(result), (version != 0));
+    if (ret == WALLY_OK) {
+        *output = wally_strdup(result);
+        ret = (*output == NULL) ? WALLY_ENOMEM : WALLY_OK;
+    }
+
+    wally_clear_2(data, sizeof(data), result, sizeof(result));
+    return ret;
+}
+
+int wally_decode_bech32(const char *message, const char *hrp,
+                        uint32_t flags, unsigned char *bytes_out, size_t len,
+                        size_t *written, size_t *is_bech32m)
+{
+    if (flags || !hrp || !message || !bytes_out || !len || !written)
+        return WALLY_EINVAL;
+
+    *written = 0;
+    uint8_t data[84];
+    char hrp_actual[84];
+    size_t data_len;
+    int ret = WALLY_OK;
+    bool has_bech32m = false;
+
+    if (!bech32_decode(hrp_actual, data, &data_len, message, 90, &has_bech32m) ||
+        strncmp(hrp, hrp_actual, 84) != 0 || data_len > 84)
+        ret = WALLY_EINVAL;
+
+    if (ret == WALLY_OK && data_len != 0) {
+        *written = data_len;
+        if (len < data_len)
+            ret = WALLY_EINVAL;
+        else
+            memcpy(bytes_out, data, data_len);
+    }
+
+    if (ret == WALLY_OK && is_bech32m != NULL)
+        *is_bech32m = (has_bech32m) ? 1 : 0;
+
+    wally_clear_2(data, sizeof(data), hrp_actual, sizeof(hrp_actual));
     return ret;
 }
