@@ -31,8 +31,7 @@ extern "C" {
 /**
  * Initialize wally.
  *
- * As wally is not currently threadsafe, this function should be called once
- * before threads are created by the application.
+ * This function must be called once before threads are created by the application.
  *
  * :param flags: Flags controlling what to initialize. Currently must be zero.
  */
@@ -49,9 +48,27 @@ WALLY_CORE_API int wally_cleanup(uint32_t flags);
 /**
  * Fetch the wally internal secp256k1 context object.
  *
- * The context is created on demand.
+ * By default, a single global context is created on demand. This behaviour
+ * can be overriden by providing a custom context fetching function when
+ * calling `wally_set_operations`.
  */
-struct secp256k1_context_struct *wally_get_secp_context(void);
+WALLY_CORE_API struct secp256k1_context_struct *wally_get_secp_context(void);
+
+/**
+ * Create a new wally-suitable secp256k1 context object.
+ *
+ * The created context is initialised to be usable by all wally functions.
+ */
+WALLY_CORE_API struct secp256k1_context_struct *wally_get_new_secp_context(void);
+
+/**
+ * Free a secp256k1 context object created by `wally_get_new_secp_context`.
+ *
+ * This function must only be called on context objects returned from
+ * `wally_get_new_secp_context`, it should not be called on the default
+ * context returned from `wally_get_secp_context`.
+ */
+WALLY_CORE_API void wally_secp_context_free(struct secp256k1_context_struct *ctx);
 #endif
 
 /**
@@ -79,13 +96,17 @@ WALLY_CORE_API int wally_free_string(
  * Provide entropy to randomize the libraries internal libsecp256k1 context.
  *
  * Random data is used in libsecp256k1 to blind the data being processed,
- * making side channel attacks more difficult. Wally uses a single
+ * making side channel attacks more difficult. By default, Wally uses a single
  * internal context for secp functions that is not initially randomized.
- * The caller should call this function before using any functions that rely on
- * libsecp256k1 (i.e. Anything using public/private keys).
  *
- * As wally is not currently threadsafe, this function should either be
- * called before threads are created or access to wally functions wrapped
+ * The caller should call this function before using any functions that rely on
+ * libsecp256k1 (i.e. Anything using public/private keys). If the caller
+ * has overriden the library's default libsecp context fetching using
+ * `wally_set_operations`, then it may be necessary to call this function
+ * before calling wally functions in each thread created by the caller.
+ *
+ * If wally is used in its default configuration, this function should either
+ * be called before threads are created or access to wally functions wrapped
  * in an application level mutex.
  *
  * :param bytes: Entropy to use.
@@ -262,12 +283,18 @@ typedef int (*wally_ec_nonce_t)(
     unsigned int attempt
     );
 
+/** The type of an overridable function to return a secp context */
+typedef struct secp256k1_context_struct *(*secp_context_t)(
+    void);
+
 /** Structure holding function pointers for overridable wally operations */
 struct wally_operations {
+    uintptr_t struct_size; /* Must be initialised to sizeof(wally_operations) */
     wally_malloc_t malloc_fn;
     wally_free_t free_fn;
     wally_bzero_t bzero_fn;
     wally_ec_nonce_t ec_nonce_fn;
+    secp_context_t secp_context_fn;
 };
 
 /**
@@ -282,6 +309,8 @@ WALLY_CORE_API int wally_get_operations(
  * Set the current overridable operations used by wally.
  *
  * :param ops: The overridable operations to set.
+ *
+ * .. note:: Any NULL members in the passed structure are ignored.
  */
 WALLY_CORE_API int wally_set_operations(
     const struct wally_operations *ops);

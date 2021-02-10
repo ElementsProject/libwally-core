@@ -1628,6 +1628,14 @@ inline struct secp256k1_context_struct *get_secp_context() {
     return ::wally_get_secp_context();
 }
 
+inline struct secp256k1_context_struct *get_new_secp_context() {
+    return ::wally_get_new_secp_context();
+}
+
+inline void secp_context_free(struct secp256k1_context_struct *ctx) {
+    ::wally_secp_context_free(ctx);
+}
+
 inline int clear(void *p, size_t n) {
     return ::wally_bzero(p, n);
 }

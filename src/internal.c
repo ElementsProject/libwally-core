@@ -19,16 +19,6 @@
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
 
-const secp256k1_context *secp_ctx(void)
-{
-    const uint32_t flags = SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN;
-
-    if (!global_ctx)
-        global_ctx = secp256k1_context_create(flags);
-
-    return global_ctx;
-}
-
 int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
 {
     return secp256k1_ec_privkey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
@@ -251,12 +241,33 @@ static int wally_internal_ec_nonce_fn(unsigned char *nonce32,
     return secp256k1_nonce_function_default(nonce32, msg32, key32, algo16, data, attempt);
 }
 
+struct secp256k1_context_struct *wally_get_new_secp_context(void)
+{
+    return secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
+}
+
+struct secp256k1_context_struct *wally_internal_secp_context(void)
+{
+    /* Default implementation uses a non-threadsafe, lazy-initialized global context */
+    if (!global_ctx)
+        global_ctx = wally_get_new_secp_context();
+
+    return global_ctx;
+}
+
 static struct wally_operations _ops = {
+    sizeof(struct wally_operations),
     wally_internal_malloc,
     wally_internal_free,
     wally_internal_bzero,
-    wally_internal_ec_nonce_fn
+    wally_internal_ec_nonce_fn,
+    wally_internal_secp_context
 };
+
+const secp256k1_context *secp_ctx(void)
+{
+    return (const secp256k1_context *)_ops.secp_context_fn();
+}
 
 void *wally_malloc(size_t size)
 {
@@ -291,7 +302,7 @@ const struct wally_operations *wally_ops(void)
 
 int wally_get_operations(struct wally_operations *output)
 {
-    if (!output)
+    if (!output || output->struct_size != sizeof(struct wally_operations))
         return WALLY_EINVAL;
     memcpy(output, &_ops, sizeof(_ops));
     return WALLY_OK;
@@ -299,13 +310,14 @@ int wally_get_operations(struct wally_operations *output)
 
 int wally_set_operations(const struct wally_operations *ops)
 {
-    if (!ops)
-        return WALLY_EINVAL;
+    if (!ops || ops->struct_size != sizeof(struct wally_operations))
+        return WALLY_EINVAL; /* Null or invalid version of ops */
 #define COPY_FN_PTR(name) if (ops->name) _ops.name = ops->name
     COPY_FN_PTR(malloc_fn);
     COPY_FN_PTR(free_fn);
     COPY_FN_PTR (bzero_fn);
     COPY_FN_PTR (ec_nonce_fn);
+    COPY_FN_PTR (secp_context_fn);
 #undef COPY_FN_PTR
     return WALLY_OK;
 }
@@ -374,13 +386,18 @@ int wally_cleanup(uint32_t flags)
     if (flags)
         return WALLY_EINVAL;
     if (global_ctx) {
-#undef secp256k1_context_destroy
-        secp256k1_context_destroy(global_ctx);
+        wally_secp_context_free(global_ctx);
         global_ctx = NULL;
     }
     return WALLY_OK;
 }
 
+void wally_secp_context_free(struct secp256k1_context_struct *ctx)
+{
+#undef secp256k1_context_destroy
+    if (ctx)
+        secp256k1_context_destroy(ctx);
+}
 
 #ifdef __ANDROID__
 #define malloc(size) wally_malloc(size)
