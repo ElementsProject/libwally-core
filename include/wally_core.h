@@ -295,6 +295,10 @@ struct wally_operations {
     wally_bzero_t bzero_fn;
     wally_ec_nonce_t ec_nonce_fn;
     secp_context_t secp_context_fn;
+    void *reserved_1; /* reserved_ pointers are reserved for future use */
+    void *reserved_2;
+    void *reserved_3;
+    void *reserved_4;
 };
 
 /**

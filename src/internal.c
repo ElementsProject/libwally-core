@@ -261,7 +261,11 @@ static struct wally_operations _ops = {
     wally_internal_free,
     wally_internal_bzero,
     wally_internal_ec_nonce_fn,
-    wally_internal_secp_context
+    wally_internal_secp_context,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 const secp256k1_context *secp_ctx(void)
@@ -312,6 +316,11 @@ int wally_set_operations(const struct wally_operations *ops)
 {
     if (!ops || ops->struct_size != sizeof(struct wally_operations))
         return WALLY_EINVAL; /* Null or invalid version of ops */
+    /* Reserved pointers must be null so they can be enabled in the
+     * future without breaking back compatibility */
+    if (ops->reserved_1 || ops->reserved_2 || ops->reserved_3 || ops->reserved_4)
+        return WALLY_EINVAL;
+
 #define COPY_FN_PTR(name) if (ops->name) _ops.name = ops->name
     COPY_FN_PTR(malloc_fn);
     COPY_FN_PTR(free_fn);

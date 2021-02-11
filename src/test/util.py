@@ -34,7 +34,11 @@ class wally_operations(Structure):
                 ('free_fn', _free_fn_t),
                 ('bzero_fn', _bzero_fn_t),
                 ('ec_nonce_fn', _ec_nonce_fn_t),
-                ('secp_context_fn', _secp_context_fn_t)]
+                ('secp_context_fn', _secp_context_fn_t),
+                ('reserved_1', c_void_p),
+                ('reserved_2', c_void_p),
+                ('reserved_3', c_void_p),
+                ('reserved_4', c_void_p)]
 
 class ext_key(Structure):
     _fields_ = [('chain_code', c_ubyte * 32),
