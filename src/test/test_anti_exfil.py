@@ -18,16 +18,16 @@ class AntiExfilTests(unittest.TestCase):
         ret = wally_ec_public_key_from_private_key(priv_key, 32, pub_key, 33);
         self.assertEqual(WALLY_OK, ret)
 
-        ret = wally_ak_host_commit_from_bytes(entropy, 32, flags, host_commitment, 32)
+        ret = wally_ae_host_commit_from_bytes(entropy, 32, flags, host_commitment, 32)
         self.assertEqual(WALLY_OK, ret)
 
-        ret = wally_ak_signer_commit_from_bytes(priv_key, 32, msg, 32, host_commitment, 32, flags, signer_commitment, 33)
+        ret = wally_ae_signer_commit_from_bytes(priv_key, 32, msg, 32, host_commitment, 32, flags, signer_commitment, 33)
         self.assertEqual(WALLY_OK, ret)
 
-        ret = wally_ak_sig_from_bytes(priv_key, 32, msg, 32, entropy, 32, flags, sig, 64)
+        ret = wally_ae_sig_from_bytes(priv_key, 32, msg, 32, entropy, 32, flags, sig, 64)
         self.assertEqual(WALLY_OK, ret)
 
-        ret = wally_ak_verify(pub_key, 33, msg, 32, entropy, 32, signer_commitment, 33, flags, sig, 64)
+        ret = wally_ae_verify(pub_key, 33, msg, 32, entropy, 32, signer_commitment, 33, flags, sig, 64)
         self.assertEqual(WALLY_OK, ret)
 
         # Invalid cases
@@ -38,7 +38,7 @@ class AntiExfilTests(unittest.TestCase):
             (entropy, 31, flags, None,            32), # Missing host commitment
             (entropy, 31, flags, host_commitment, 31), # Incorrect host commitment length
             ]:
-            self.assertEqual(WALLY_EINVAL, wally_ak_host_commit_from_bytes(*args))
+            self.assertEqual(WALLY_EINVAL, wally_ae_host_commit_from_bytes(*args))
 
         for args in [
             (None,     32, msg,  32, host_commitment, 32, flags, signer_commitment, 33), # Missing privkey
@@ -51,7 +51,7 @@ class AntiExfilTests(unittest.TestCase):
             (priv_key, 32, msg,  32, host_commitment, 32, flags, None,              33), # Missing signer commitment
             (priv_key, 32, msg,  32, host_commitment, 32, flags, signer_commitment, 32), # Incorrect signer commitment length
             ]:
-            self.assertEqual(WALLY_EINVAL, wally_ak_signer_commit_from_bytes(*args))
+            self.assertEqual(WALLY_EINVAL, wally_ae_signer_commit_from_bytes(*args))
 
         for args in [
             (None,     32, msg,  32, entropy, 32, flags, sig,  64), # Missing privkey
@@ -64,7 +64,7 @@ class AntiExfilTests(unittest.TestCase):
             (priv_key, 32, msg,  32, entropy, 32, flags, None, 64), # Missing sig
             (priv_key, 32, msg,  32, entropy, 32, flags, sig,  63), # Incorrect sig length
             ]:
-            self.assertEqual(WALLY_EINVAL, wally_ak_sig_from_bytes(*args))
+            self.assertEqual(WALLY_EINVAL, wally_ae_sig_from_bytes(*args))
 
         inv_pub, inv_msg, inv_rand, inv_opening, inv_sig = self.cbufferize(
             ['02' * 33, 'ff' * 32, 'ff' * 32, 'ff' * 33, 'ff' * 64])
@@ -87,7 +87,7 @@ class AntiExfilTests(unittest.TestCase):
             (pub_key, 32, msg,     32, entropy,  32, signer_commitment, 33, flags, sig,     64), # Incorrect sig length
             (pub_key, 32, msg,     32, entropy,  32, signer_commitment, 33, flags, inv_sig, 64), # Invalid sig
             ]:
-            self.assertEqual(WALLY_EINVAL, wally_ak_verify(*args))
+            self.assertEqual(WALLY_EINVAL, wally_ae_verify(*args))
 
 
 if __name__ == '__main__':

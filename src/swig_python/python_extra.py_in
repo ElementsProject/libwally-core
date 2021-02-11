@@ -192,9 +192,9 @@ def _s2c_sig_from_bytes_fn(fn):
     return wrapped
 s2c_sig_from_bytes = _s2c_sig_from_bytes_fn(s2c_sig_from_bytes)
 
-ak_host_commit_from_bytes = _wrap_bin(ak_host_commit_from_bytes, WALLY_HOST_COMMITMENT_LEN)
-ak_signer_commit_from_bytes = _wrap_bin(ak_signer_commit_from_bytes, WALLY_S2C_OPENING_LEN)
-ak_sig_from_bytes = _wrap_bin(ak_sig_from_bytes, EC_SIGNATURE_LEN)
+ae_host_commit_from_bytes = _wrap_bin(ae_host_commit_from_bytes, WALLY_HOST_COMMITMENT_LEN)
+ae_signer_commit_from_bytes = _wrap_bin(ae_signer_commit_from_bytes, WALLY_S2C_OPENING_LEN)
+ae_sig_from_bytes = _wrap_bin(ae_sig_from_bytes, EC_SIGNATURE_LEN)
 
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)

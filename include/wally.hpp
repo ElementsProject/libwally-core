@@ -243,6 +243,30 @@ inline int address_to_scriptpubkey(const ADDR& addr, uint32_t network, BYTES_OUT
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class ENTROPY, class BYTES_OUT>
+inline int ae_host_commit_from_bytes(const ENTROPY& entropy, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ae_host_commit_from_bytes(entropy.data(), entropy.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class ENTROPY, class BYTES_OUT>
+inline int ae_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const ENTROPY& entropy, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ae_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class COMMITMENT, class S2C_OPENING_OUT>
+inline int ae_signer_commit_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const COMMITMENT& commitment, uint32_t flags, S2C_OPENING_OUT& s2c_opening_out) {
+    int ret = ::wally_ae_signer_commit_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), commitment.data(), commitment.size(), flags, s2c_opening_out.data(), s2c_opening_out.size());
+    return ret;
+}
+
+template <class PUB_KEY, class BYTES, class ENTROPY, class S2C_OPENING, class SIG>
+inline int ae_verify(const PUB_KEY& pub_key, const BYTES& bytes, const ENTROPY& entropy, const S2C_OPENING& s2c_opening, uint32_t flags, const SIG& sig) {
+    int ret = ::wally_ae_verify(pub_key.data(), pub_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), s2c_opening.data(), s2c_opening.size(), flags, sig.data(), sig.size());
+    return ret;
+}
+
 template <class KEY, class BYTES, class BYTES_OUT>
 inline int aes(const KEY& key, const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_aes(key.data(), key.size(), bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size());
@@ -254,30 +278,6 @@ inline int aes_cbc(const KEY& key, const IV& iv, const BYTES& bytes, uint32_t fl
     size_t n;
     int ret = ::wally_aes_cbc(key.data(), key.size(), iv.data(), iv.size(), bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
-}
-
-template <class ENTROPY, class BYTES_OUT>
-inline int ak_host_commit_from_bytes(const ENTROPY& entropy, uint32_t flags, BYTES_OUT& bytes_out) {
-    int ret = ::wally_ak_host_commit_from_bytes(entropy.data(), entropy.size(), flags, bytes_out.data(), bytes_out.size());
-    return ret;
-}
-
-template <class PRIV_KEY, class BYTES, class ENTROPY, class BYTES_OUT>
-inline int ak_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const ENTROPY& entropy, uint32_t flags, BYTES_OUT& bytes_out) {
-    int ret = ::wally_ak_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), flags, bytes_out.data(), bytes_out.size());
-    return ret;
-}
-
-template <class PRIV_KEY, class BYTES, class COMMITMENT, class S2C_OPENING_OUT>
-inline int ak_signer_commit_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const COMMITMENT& commitment, uint32_t flags, S2C_OPENING_OUT& s2c_opening_out) {
-    int ret = ::wally_ak_signer_commit_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), commitment.data(), commitment.size(), flags, s2c_opening_out.data(), s2c_opening_out.size());
-    return ret;
-}
-
-template <class PUB_KEY, class BYTES, class ENTROPY, class S2C_OPENING, class SIG>
-inline int ak_verify(const PUB_KEY& pub_key, const BYTES& bytes, const ENTROPY& entropy, const S2C_OPENING& s2c_opening, uint32_t flags, const SIG& sig) {
-    int ret = ::wally_ak_verify(pub_key.data(), pub_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), s2c_opening.data(), s2c_opening.size(), flags, sig.data(), sig.size());
-    return ret;
 }
 
 template <class BYTES>

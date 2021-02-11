@@ -3,7 +3,7 @@
 #include <include/wally_anti_exfil.h>
 #include <stdbool.h>
 
-WALLY_CORE_API int wally_ak_host_commit_from_bytes(
+WALLY_CORE_API int wally_ae_host_commit_from_bytes(
     const unsigned char *entropy,
     size_t entropy_len,
     uint32_t flags,
@@ -25,7 +25,7 @@ WALLY_CORE_API int wally_ak_host_commit_from_bytes(
     return WALLY_OK;
 }
 
-WALLY_CORE_API int wally_ak_signer_commit_from_bytes(
+WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
     const unsigned char *bytes,
@@ -57,7 +57,7 @@ WALLY_CORE_API int wally_ak_signer_commit_from_bytes(
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-WALLY_CORE_API int wally_ak_sig_from_bytes(
+WALLY_CORE_API int wally_ae_sig_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
     const unsigned char *bytes,
@@ -89,7 +89,7 @@ WALLY_CORE_API int wally_ak_sig_from_bytes(
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-WALLY_CORE_API int wally_ak_verify(
+WALLY_CORE_API int wally_ae_verify(
     const unsigned char *pub_key,
     size_t pub_key_len,
     const unsigned char *bytes,

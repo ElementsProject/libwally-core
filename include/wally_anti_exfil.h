@@ -25,7 +25,7 @@ extern "C" {
  *
  * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_ak_host_commit_from_bytes(
+WALLY_CORE_API int wally_ae_host_commit_from_bytes(
     const unsigned char *entropy,
     size_t entropy_len,
     uint32_t flags,
@@ -49,7 +49,7 @@ WALLY_CORE_API int wally_ak_host_commit_from_bytes(
  *
  * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_ak_signer_commit_from_bytes(
+WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
     const unsigned char *bytes,
@@ -75,7 +75,7 @@ WALLY_CORE_API int wally_ak_signer_commit_from_bytes(
  *
  * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_ak_sig_from_bytes(
+WALLY_CORE_API int wally_ae_sig_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
     const unsigned char *bytes,
@@ -104,7 +104,7 @@ WALLY_CORE_API int wally_ak_sig_from_bytes(
  *
  * .. note:: This function requires external locking if called from multiple threads.
  */
-WALLY_CORE_API int wally_ak_verify(
+WALLY_CORE_API int wally_ae_verify(
     const unsigned char *pub_key,
     size_t pub_key_len,
     const unsigned char *bytes,
