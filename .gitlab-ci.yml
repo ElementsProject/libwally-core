@@ -98,11 +98,11 @@ armv7l_release:
   script:
     - ./tools/build_python_wheels.sh python3
 
-powerpcg4_release:
-  tags:
-    - powerpcg4
-  script:
-    - ./tools/build_python_wheels.sh python3
+# powerpcg4_release:
+#  tags:
+#    - powerpcg4
+#  script:
+#    - ./tools/build_python_wheels.sh python3
 
 freebsdamd64_release:
   tags:
