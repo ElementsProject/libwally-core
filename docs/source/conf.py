@@ -102,7 +102,7 @@ author = u'Jon Griffiths'
 # built documents.
 #
 # The short X.Y version.
-version = u'0.8.1'
+version = u'0.8.2'
 # The full version, including alpha/beta/rc tags.
 release = version
 
