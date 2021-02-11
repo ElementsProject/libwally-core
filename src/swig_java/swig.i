@@ -2,7 +2,7 @@
 %{
 #include "../include/wally_core.h"
 #include "../include/wally_address.h"
-#include "../include/wally_anti_klepto.h"
+#include "../include/wally_anti_exfil.h"
 #include "../include/wally_bip32.h"
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
@@ -844,7 +844,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"
-%include "../include/wally_anti_klepto.h"
+%include "../include/wally_anti_exfil.h"
 %include "../include/wally_bip32.h"
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"

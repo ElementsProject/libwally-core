@@ -1,5 +1,5 @@
-#ifndef LIBWALLY_CORE_ANTI_KLEPTO_H
-#define LIBWALLY_CORE_ANTI_KLEPTO_H
+#ifndef LIBWALLY_CORE_ANTI_EXFIL_H
+#define LIBWALLY_CORE_ANTI_EXFIL_H
 
 #include "wally_core.h"
 
@@ -87,7 +87,7 @@ WALLY_CORE_API int wally_ak_sig_from_bytes(
     size_t len);
 
 /**
- * Verify a signature was correctly constructed using the Anti-Klepto Protocol.
+ * Verify a signature was correctly constructed using the Anti-Exfil Protocol.
  *
  * :param pub_key: The public key to verify with.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
@@ -121,4 +121,4 @@ WALLY_CORE_API int wally_ak_verify(
 }
 #endif
 
-#endif /* LIBWALLY_CORE_ANTI_KLEPTO_H */
+#endif /* LIBWALLY_CORE_ANTI_EXFIL_H */

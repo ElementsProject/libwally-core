@@ -8,7 +8,7 @@ noinst_LTLIBRARIES =
 include_HEADERS =
 include_HEADERS += $(top_srcdir)/include/wally.hpp
 include_HEADERS += $(top_srcdir)/include/wally_address.h
-include_HEADERS += $(top_srcdir)/include/wally_anti_klepto.h
+include_HEADERS += $(top_srcdir)/include/wally_anti_exfil.h
 include_HEADERS += $(top_srcdir)/include/wally_bip32.h
 include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
@@ -175,7 +175,7 @@ lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
     address.c \
-    anti_klepto.c \
+    anti_exfil.c \
     aes.c \
     base58.c \
     base64.c \
@@ -295,7 +295,7 @@ if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_address.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
-	$(AM_V_at)$(PYTHON_TEST) test/test_anti_klepto.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_anti_exfil.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_base58.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_base64.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bech32.py
@@ -331,7 +331,7 @@ if USE_SWIG_PYTHON
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/signmessage.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/anti-klepto.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/anti-exfil.py
 if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py

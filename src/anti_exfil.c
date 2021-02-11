@@ -1,6 +1,6 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
-#include <include/wally_anti_klepto.h>
+#include <include/wally_anti_exfil.h>
 #include <stdbool.h>
 
 WALLY_CORE_API int wally_ak_host_commit_from_bytes(
@@ -20,7 +20,7 @@ WALLY_CORE_API int wally_ak_host_commit_from_bytes(
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!secp256k1_ecdsa_anti_klepto_host_commit(ctx, bytes_out, entropy))
+    if (!secp256k1_ecdsa_anti_exfil_host_commit(ctx, bytes_out, entropy))
         return WALLY_ERROR; /* Should not happen! */
     return WALLY_OK;
 }
@@ -50,7 +50,7 @@ WALLY_CORE_API int wally_ak_signer_commit_from_bytes(
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = secp256k1_ecdsa_anti_klepto_signer_commit(ctx, &opening_secp, bytes, priv_key, commitment) &&
+    ok = secp256k1_ecdsa_anti_exfil_signer_commit(ctx, &opening_secp, bytes, priv_key, commitment) &&
          secp256k1_ecdsa_s2c_opening_serialize(ctx, s2c_opening_out, &opening_secp);
 
     wally_clear(&opening_secp, sizeof(opening_secp));
@@ -82,7 +82,7 @@ WALLY_CORE_API int wally_ak_sig_from_bytes(
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = secp256k1_anti_klepto_sign(ctx, &sig_secp, bytes, priv_key, entropy) &&
+    ok = secp256k1_anti_exfil_sign(ctx, &sig_secp, bytes, priv_key, entropy) &&
          secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig_secp);
 
     wally_clear(&sig_secp, sizeof(sig_secp));
@@ -122,7 +122,7 @@ WALLY_CORE_API int wally_ak_verify(
     ok = pubkey_parse(&pub_secp, pub_key, pub_key_len) &&
          secp256k1_ecdsa_signature_parse_compact(ctx, &sig_secp, sig) &&
          secp256k1_ecdsa_s2c_opening_parse(ctx, &opening_secp, s2c_opening) &&
-         secp256k1_anti_klepto_host_verify(ctx, &sig_secp, bytes, &pub_secp, entropy, &opening_secp);
+         secp256k1_anti_exfil_host_verify(ctx, &sig_secp, bytes, &pub_secp, entropy, &opening_secp);
 
     wally_clear_3(&pub_secp, sizeof(pub_secp), &sig_secp, sizeof(sig_secp), &opening_secp, sizeof(opening_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;

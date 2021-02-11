@@ -3,13 +3,13 @@ from util import *
 
 FLAG_ECDSA = 1
 
-class AntiKleptoTests(unittest.TestCase):
+class AntiExfilTests(unittest.TestCase):
 
     def cbufferize(self, values):
         conv = lambda v: make_cbuffer(v)[0] if type(v) is str else v
         return [conv(v) for v in values]
 
-    def test_anti_klepto(self):
+    def test_anti_exfil(self):
         entropy, host_commitment, signer_commitment, priv_key, pub_key, msg, sig = self.cbufferize(
             ['11' * 32, '00' * 32, '00' * 33, '22' * 32, '00' * 33, '33' * 32, '00' * 64])
 

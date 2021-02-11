@@ -16,7 +16,7 @@ libwally-core documentation
    symmetric
    transaction
    elements
-   anti_klepto
+   anti_exfil
 
 .. toctree::
    :maxdepth: 2
@@ -24,7 +24,7 @@ libwally-core documentation
 
    Library Conventions <conventions.rst>
    Liquid <Liquid.rst>
-   Anti Klepto protocol <anti_klepto_protocol.rst>
+   Anti Exfil Protocol <anti_exfil_protocol.rst>
 
 Indices and tables
 ==================

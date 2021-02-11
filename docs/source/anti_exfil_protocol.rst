@@ -1,10 +1,10 @@
-Anti-Klepto Protocol
+Anti-Exfil Protocol
 ====================
 
-.. _anti-klepto-protocol:
+.. _anti-exfil-protocol:
 
 The following walkthrough demonstrates how to use libwally to implement the
-ECDSA Anti-Klepto Protocol to prevent a signing device from exfiltrating the
+ECDSA Anti-Exfil Protocol to prevent a signing device from exfiltrating the
 secret signing keys through biased signature nonces.
 For the full details, see
 `here <https://github.com/ElementsProject/secp256k1-zkp/blob/secp256k1-zkp/include/secp256k1_ecdsa_s2c.h#L100-L155>`_.
@@ -17,7 +17,7 @@ Step 1
 
 The host draws randomness ``rho`` and computes a commitment to it:
 
-.. literalinclude:: ../../src/pyexample/anti-klepto.py
+.. literalinclude:: ../../src/pyexample/anti-exfil.py
     :start-after: start-step-1
     :end-before: end-step-1
 
@@ -28,7 +28,7 @@ Step 2
 
 The signing device computes the original nonce ``R``, i.e. ``signer commitment``:
 
-.. literalinclude:: ../../src/pyexample/anti-klepto.py
+.. literalinclude:: ../../src/pyexample/anti-exfil.py
     :start-after: start-step-2
     :end-before: end-step-2
 
@@ -61,7 +61,7 @@ Step 4
 
 The signing device signs and provide the signature to the host:
 
-.. literalinclude:: ../../src/pyexample/anti-klepto.py
+.. literalinclude:: ../../src/pyexample/anti-exfil.py
     :start-after: start-step-4
     :end-before: end-step-4
 
@@ -71,6 +71,6 @@ Step 5
 The host verifies that the signature's public nonce matches the signer
 commitment ``R`` from `Step 2`_ and its original randomness ``rho``:
 
-.. literalinclude:: ../../src/pyexample/anti-klepto.py
+.. literalinclude:: ../../src/pyexample/anti-exfil.py
     :start-after: start-step-5
     :end-before: end-step-5

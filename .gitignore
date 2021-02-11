@@ -77,7 +77,7 @@ wally*.sha256
 wally*.asc
 wally*.whl
 docs/source/address.rst
-docs/source/anti_klepto.rst
+docs/source/anti_exfil.rst
 docs/source/bip32.rst
 docs/source/bip38.rst
 docs/source/bip39.rst
