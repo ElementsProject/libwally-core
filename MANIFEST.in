@@ -1,5 +1,4 @@
 graft .
-prune src/swig_java
 prune src/wrap_js
 prune src/test
 prune contrib
