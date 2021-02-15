@@ -2,7 +2,7 @@
 
 kwargs = {
     'name': 'wallycore',
-    'version': '0.8.1',
+    'version': '0.8.2',
     'description': 'libwally Bitcoin library',
     'long_description': 'Python bindings for the libwally Bitcoin library',
     'url': 'https://github.com/ElementsProject/libwally-core',
@@ -71,7 +71,7 @@ if platform.system() == "Windows":
             'src/wrap_js/src/combined_ccan2.c',
             ],
     )
-    kwargs['py_modules'] = 'wallycore'
+    kwargs['py_modules'] = ['wallycore']
     kwargs['ext_modules'] = [wally_ext]
 else:
     # *nix uses a custom autotools/make build

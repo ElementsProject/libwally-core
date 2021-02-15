@@ -101,6 +101,12 @@ installed.
 
 ### Python
 
+For non-development use, you can install wally with `pip` as follows:
+
+```
+pip install wallycore==0.8.2
+```
+
 For python development, you can build and install wally using:
 
 ```
@@ -111,18 +117,18 @@ It is suggested you only install this way into a virtualenv while the library
 is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
-`PYTHON_VERSION` environment variable (to e.g. `2`, `2.7`, `3` etc) before
+`PYTHON_VERSION` environment variable (to e.g. `2.7`, `3`, `3.7` etc) before
 running `pip` or (when compiling manually) `./configure`.
 
 You can also install the binary [wally releases](https://github.com/ElementsProject/libwally-core/releases)
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.1-cp37-cp37m-linux_x86_64.whl
+pip install wallycore-0.8.2-cp37-cp37m-linux_x86_64.whl
 ```
 
-The script `tools/build_python_manylinux_wheels.sh` builds the release files and can be
-used as an example for your own python projects.
+The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
+and can be used as an example for your own python projects.
 
 ### Android
 
@@ -209,7 +215,7 @@ tests via:
 $ make check
 ```
 
-Python ctypes tests (in `./src/test/` are strongly preferred, but you can add
+Python ctypes tests (in `./src/test/`) are strongly preferred, but you can add
 to the other test suites if your changes target a specific language or your
 tests need to be written at a higher level of abstraction.
 
@@ -237,6 +243,10 @@ Projects and products that are known to depend on or use `libwally`:
 * [Blockstream Green Development Kit](https://github.com/Blockstream/gdk)
 * [Blockstream Green Wallet for Android](https://github.com/Blockstream/green_android)
 * [Blockstream Green Wallet for iOS](https://github.com/Blockstream/green_ios)
+* [Blockstream Green Wallet for Desktops](https://github.com/Blockstream/green_qt)
+* [Blockstream Jade Hardware Wallet](https://github.com/Blockstream/Jade)
+* [BitBox02 Hardware Wallet](https://github.com/digitalbitbox/bitbox02-firmware)
+* [Blockstream Blind PIN Server](https://github.com/Blockstream/blind_pin_server)
 * [Blockstream/liquid-melt](https://github.com/Blockstream/liquid-melt)
 * [Blockstream/liquid_multisig_issuance](https://github.com/Blockstream/liquid_multisig_issuance)
 * [c-lightning](https://github.com/ElementsProject/lightning)

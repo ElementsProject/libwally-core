@@ -31,8 +31,7 @@ extern "C" {
 /**
  * Initialize wally.
  *
- * As wally is not currently threadsafe, this function should be called once
- * before threads are created by the application.
+ * This function must be called once before threads are created by the application.
  *
  * :param flags: Flags controlling what to initialize. Currently must be zero.
  */
@@ -49,9 +48,27 @@ WALLY_CORE_API int wally_cleanup(uint32_t flags);
 /**
  * Fetch the wally internal secp256k1 context object.
  *
- * The context is created on demand.
+ * By default, a single global context is created on demand. This behaviour
+ * can be overriden by providing a custom context fetching function when
+ * calling `wally_set_operations`.
  */
 WALLY_CORE_API struct secp256k1_context_struct *wally_get_secp_context(void);
+
+/**
+ * Create a new wally-suitable secp256k1 context object.
+ *
+ * The created context is initialised to be usable by all wally functions.
+ */
+WALLY_CORE_API struct secp256k1_context_struct *wally_get_new_secp_context(void);
+
+/**
+ * Free a secp256k1 context object created by `wally_get_new_secp_context`.
+ *
+ * This function must only be called on context objects returned from
+ * `wally_get_new_secp_context`, it should not be called on the default
+ * context returned from `wally_get_secp_context`.
+ */
+WALLY_CORE_API void wally_secp_context_free(struct secp256k1_context_struct *ctx);
 #endif
 
 /**
@@ -79,13 +96,17 @@ WALLY_CORE_API int wally_free_string(
  * Provide entropy to randomize the libraries internal libsecp256k1 context.
  *
  * Random data is used in libsecp256k1 to blind the data being processed,
- * making side channel attacks more difficult. Wally uses a single
+ * making side channel attacks more difficult. By default, Wally uses a single
  * internal context for secp functions that is not initially randomized.
- * The caller should call this function before using any functions that rely on
- * libsecp256k1 (i.e. Anything using public/private keys).
  *
- * As wally is not currently threadsafe, this function should either be
- * called before threads are created or access to wally functions wrapped
+ * The caller should call this function before using any functions that rely on
+ * libsecp256k1 (i.e. Anything using public/private keys). If the caller
+ * has overriden the library's default libsecp context fetching using
+ * `wally_set_operations`, then it may be necessary to call this function
+ * before calling wally functions in each thread created by the caller.
+ *
+ * If wally is used in its default configuration, this function should either
+ * be called before threads are created or access to wally functions wrapped
  * in an application level mutex.
  *
  * :param bytes: Entropy to use.
@@ -168,7 +189,7 @@ WALLY_CORE_API int wally_base58_to_bytes(
     size_t *written);
 
 /**
- * Return the length of a base58 encoded string once decoded into bytes.
+ * Return the length of a base 58 encoded string once decoded into bytes.
  *
  * Returns the exact number of bytes that would be required to store ``str_in``
  * as decoded binary, including any embedded checksum. If the string contains
@@ -186,6 +207,56 @@ WALLY_CORE_API int wally_base58_to_bytes(
  */
 WALLY_CORE_API int wally_base58_get_length(
     const char *str_in,
+    size_t *written);
+
+/**
+ * Create a base64 encoded string representing binary data.
+ *
+ * :param bytes: Binary data to convert.
+ * :param bytes_len: The length of ``bytes`` in bytes.
+ * :param flags: Must be 0.
+ * :param output: Destination for the base64 encoded string representing ``bytes``.
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_base64_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    char **output);
+
+/**
+ * Decode a base64 encoded string back into into binary data.
+ *
+ * :param str_in: Base64 encoded string to decode.
+ * :param flags: Must be 0.
+ * :param bytes_out: Destination for converted binary data.
+ * :param len: The length of ``bytes_out`` in bytes. See ``wally_base64_get_maximum_length`.
+ * :param written: Destination for the length of the decoded bytes.
+ */
+WALLY_CORE_API int wally_base64_to_bytes(
+    const char *str_in,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Return the maximum length of a base64 encoded string once decoded into bytes.
+ *
+ * Since base64 strings may contain line breaks and padding, it is not
+ * possible to compute their decoded length without fully decoding them.
+ * This function cheaply calculates the maximum possible decoded length,
+ * which can be used to allocate a buffer for ``wally_base64_to_bytes``.
+ * In most cases the decoded data will be shorter than the value returned.
+ *
+ * :param str_in: Base64 encoded string to find the length of.
+ * :param flags: Must be 0.
+ * :param written: Destination for the maximum length of the decoded bytes.
+ *
+ */
+WALLY_CORE_API int wally_base64_get_maximum_length(
+    const char *str_in,
+    uint32_t flags,
     size_t *written);
 
 
@@ -212,12 +283,22 @@ typedef int (*wally_ec_nonce_t)(
     unsigned int attempt
     );
 
+/** The type of an overridable function to return a secp context */
+typedef struct secp256k1_context_struct *(*secp_context_t)(
+    void);
+
 /** Structure holding function pointers for overridable wally operations */
 struct wally_operations {
+    uintptr_t struct_size; /* Must be initialised to sizeof(wally_operations) */
     wally_malloc_t malloc_fn;
     wally_free_t free_fn;
     wally_bzero_t bzero_fn;
     wally_ec_nonce_t ec_nonce_fn;
+    secp_context_t secp_context_fn;
+    void *reserved_1; /* reserved_ pointers are reserved for future use */
+    void *reserved_2;
+    void *reserved_3;
+    void *reserved_4;
 };
 
 /**
@@ -232,6 +313,8 @@ WALLY_CORE_API int wally_get_operations(
  * Set the current overridable operations used by wally.
  *
  * :param ops: The overridable operations to set.
+ *
+ * .. note:: Any NULL members in the passed structure are ignored.
  */
 WALLY_CORE_API int wally_set_operations(
     const struct wally_operations *ops);

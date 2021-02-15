@@ -1,7 +1,5 @@
 #include "internal.h"
 
-#include "ccan/ccan/base64/base64.h"
-
 #include <include/wally_elements.h>
 #include <include/wally_script.h>
 #include <include/wally_psbt.h>
@@ -1763,43 +1761,43 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
 
 int wally_psbt_from_base64(const char *base64, struct wally_psbt **output)
 {
-    char *decoded;
-    size_t safe_len, base64_len;
-    ssize_t decoded_len;
+    unsigned char *decoded;
+    size_t max_len, written;
     int ret;
 
     TX_CHECK_OUTPUT;
-    if (!base64)
-        return WALLY_EINVAL;
+    if ((ret = wally_base64_get_maximum_length(base64, 0, &max_len)) != WALLY_OK)
+        return ret;
 
-    base64_len = strlen(base64);
-    /* Allocate the decoded buffer */
-    safe_len = base64_decoded_length(base64_len);
-    if ((decoded = wally_malloc(safe_len)) == NULL) {
-        ret = WALLY_ENOMEM;
+    /* Allocate the buffer to decode into */
+    if ((decoded = wally_malloc(max_len)) == NULL)
+        return WALLY_ENOMEM;
+
+    /* Decode the base64 psbt into binary */
+    if ((ret = wally_base64_to_bytes(base64, 0, decoded, max_len, &written)) != WALLY_OK)
+        goto done;
+
+    if (written <= sizeof(PSBT_MAGIC)) {
+        ret = WALLY_EINVAL; /* Not enough bytes for the magic + any data */
+        goto done;
+    }
+    if (written > max_len) {
+        ret = WALLY_ERROR; /* Max len too small, should never happen! */
         goto done;
     }
 
-    /* Decode the base64 psbt */
-    decoded_len = base64_decode(decoded, safe_len, base64, base64_len);
-    if (decoded_len <= (ssize_t)sizeof(PSBT_MAGIC)) {
-        ret = WALLY_EINVAL; /* Not enough bytes for the magic */
-        goto done;
-    }
-
-    /* Now decode the psbt */
-    ret = wally_psbt_from_bytes((unsigned char *)decoded, decoded_len, output);
+    /* decode the psbt */
+    ret = wally_psbt_from_bytes(decoded, written, output);
 
 done:
-    clear_and_free(decoded, safe_len);
+    clear_and_free(decoded, max_len);
     return ret;
 }
 
 int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **output)
 {
     unsigned char *buff;
-    char *result = NULL;
-    size_t len, written, b64_safe_len = 0;
+    size_t len, written;
     int ret = WALLY_OK;
 
     TX_CHECK_OUTPUT;
@@ -1822,20 +1820,9 @@ int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **o
     }
 
     /* Base64 encode */
-    b64_safe_len = base64_encoded_length(written) + 1; /* +1 for NUL */
-    if ((result = wally_malloc(b64_safe_len)) == NULL) {
-        ret = WALLY_ENOMEM;
-        goto done;
-    }
-    if (base64_encode(result, b64_safe_len, (char *)buff, written) <= 0) {
-        ret = WALLY_EINVAL;
-        goto done;
-    }
-    *output = result;
-    result = NULL;
+    ret = wally_base64_from_bytes(buff, len, 0, output);
 
 done:
-    clear_and_free(result, b64_safe_len);
     clear_and_free(buff, len);
     return ret;
 }

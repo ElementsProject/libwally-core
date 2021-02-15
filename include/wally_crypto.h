@@ -540,6 +540,66 @@ WALLY_CORE_API int wally_ecdh(
     unsigned char *bytes_out,
     size_t len);
 
+/** The length of a data committed using sign-to-contract (s2c) */
+#define WALLY_S2C_DATA_LEN 32
+/** The length of a sign-to-contract (s2c) opening */
+#define WALLY_S2C_OPENING_LEN 33
+
+/**
+ * Sign a message hash with a private key, producing a compact signature which
+ * commits to additional data using sign-to-contract (s2c).
+ *
+ * :param priv_key: The private key to sign with.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes: The message hash to sign.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param s2c_data: The data to commit to.
+ * :param s2c_data_len: The length of ``s2c_data`` in bytes. Must be ``WALLY_S2C_DATA_LEN``.
+ * :param flags: Must be ``EC_FLAG_ECDSA``.
+ * :param s2c_opening_out: Destination for the resulting opening information.
+ * :param s2c_opening_out_len: The length of ``s2c_opening_out`` in bytes. Must be
+ *|    ``WALLY_S2C_OPENING_LEN``.
+ * :param bytes_out: Destination for the resulting compact signature.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_s2c_sig_from_bytes(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *s2c_data,
+    size_t s2c_data_len,
+    uint32_t flags,
+    unsigned char *s2c_opening_out,
+    size_t s2c_opening_out_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Verify a sign-to-contract (s2c) commitment.
+ *
+ * :param sig: The compact signature.
+ * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param s2c_data: The data that was committed to.
+ * :param s2c_data_len: The length of ``s2c_data`` in bytes. Must be ``WALLY_S2C_DATA_LEN``.
+ * :param s2c_opening: The opening information produced during signing.
+ * :param s2c_opening_len: The length of ``s2c_opening`` in bytes. Must be
+ *|    ``WALLY_S2C_OPENING_LEN``.
+ * :param flags: Must be ``EC_FLAG_ECDSA``.
+ *
+ * .. note:: This function requires external locking if called from multiple threads.
+ */
+WALLY_CORE_API int wally_s2c_commitment_verify(
+    const unsigned char *sig,
+    size_t sig_len,
+    const unsigned char *s2c_data,
+    size_t s2c_data_len,
+    const unsigned char *s2c_opening,
+    size_t s2c_opening_len,
+    uint32_t flags);
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <string>
 #include <wally_address.h>
+#include <wally_anti_exfil.h>
 #include <wally_bip32.h>
 #include <wally_bip38.h>
 #include <wally_bip39.h>
@@ -242,6 +243,30 @@ inline int address_to_scriptpubkey(const ADDR& addr, uint32_t network, BYTES_OUT
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class ENTROPY, class BYTES_OUT>
+inline int ae_host_commit_from_bytes(const ENTROPY& entropy, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ae_host_commit_from_bytes(entropy.data(), entropy.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class ENTROPY, class BYTES_OUT>
+inline int ae_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const ENTROPY& entropy, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ae_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class COMMITMENT, class S2C_OPENING_OUT>
+inline int ae_signer_commit_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const COMMITMENT& commitment, uint32_t flags, S2C_OPENING_OUT& s2c_opening_out) {
+    int ret = ::wally_ae_signer_commit_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), commitment.data(), commitment.size(), flags, s2c_opening_out.data(), s2c_opening_out.size());
+    return ret;
+}
+
+template <class PUB_KEY, class BYTES, class ENTROPY, class S2C_OPENING, class SIG>
+inline int ae_verify(const PUB_KEY& pub_key, const BYTES& bytes, const ENTROPY& entropy, const S2C_OPENING& s2c_opening, uint32_t flags, const SIG& sig) {
+    int ret = ::wally_ae_verify(pub_key.data(), pub_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), s2c_opening.data(), s2c_opening.size(), flags, sig.data(), sig.size());
+    return ret;
+}
+
 template <class KEY, class BYTES, class BYTES_OUT>
 inline int aes(const KEY& key, const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_aes(key.data(), key.size(), bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size());
@@ -271,6 +296,25 @@ template <class STR_IN, class BYTES_OUT>
 inline int base58_to_bytes(const STR_IN& str_in, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
     int ret = ::wally_base58_to_bytes(detail::get_p(str_in), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class BYTES>
+inline int base64_from_bytes(const BYTES& bytes, uint32_t flags, char** output) {
+    int ret = ::wally_base64_from_bytes(bytes.data(), bytes.size(), flags, output);
+    return ret;
+}
+
+template <class STR_IN>
+inline int base64_get_maximum_length(const STR_IN& str_in, uint32_t flags, size_t* written) {
+    int ret = ::wally_base64_get_maximum_length(detail::get_p(str_in), flags, written);
+    return ret;
+}
+
+template <class STR_IN, class BYTES_OUT>
+inline int base64_to_bytes(const STR_IN& str_in, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_base64_to_bytes(detail::get_p(str_in), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
@@ -728,6 +772,18 @@ inline int psbt_to_bytes(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out,
     size_t n;
     int ret = ::wally_psbt_to_bytes(detail::get_p(psbt), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class SIG, class S2C_DATA, class S2C_OPENING>
+inline int s2c_commitment_verify(const SIG& sig, const S2C_DATA& s2c_data, const S2C_OPENING& s2c_opening, uint32_t flags) {
+    int ret = ::wally_s2c_commitment_verify(sig.data(), sig.size(), s2c_data.data(), s2c_data.size(), s2c_opening.data(), s2c_opening.size(), flags);
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class S2C_DATA, class S2C_OPENING_OUT, class BYTES_OUT>
+inline int s2c_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, const S2C_DATA& s2c_data, uint32_t flags, S2C_OPENING_OUT& s2c_opening_out, BYTES_OUT& bytes_out) {
+    int ret = ::wally_s2c_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), s2c_data.data(), s2c_data.size(), flags, s2c_opening_out.data(), s2c_opening_out.size(), bytes_out.data(), bytes_out.size());
+    return ret;
 }
 
 template <class BYTES, class BYTES_OUT>
@@ -1570,6 +1626,14 @@ inline int tx_is_elements(const TX& tx, size_t* written) {
 
 inline struct secp256k1_context_struct *get_secp_context() {
     return ::wally_get_secp_context();
+}
+
+inline struct secp256k1_context_struct *get_new_secp_context() {
+    return ::wally_get_new_secp_context();
+}
+
+inline void secp_context_free(struct secp256k1_context_struct *ctx) {
+    ::wally_secp_context_free(ctx);
 }
 
 inline int clear(void *p, size_t n) {

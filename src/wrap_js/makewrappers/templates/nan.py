@@ -400,6 +400,7 @@ static v8::Local<v8::Object> TransactionToObject(const struct wally_tx *tx, int 
 !!nan_impl!!
 
 NAN_MODULE_INIT(Init) {
+    w_ops.struct_size = sizeof(w_ops);
     wally_get_operations(&w_ops);
     !!nan_decl!!
 }
