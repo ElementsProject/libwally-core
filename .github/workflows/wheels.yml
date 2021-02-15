@@ -1,6 +1,13 @@
 name: Build
 
-on: [push, pull_request]
+on: 
+  push:
+    branches-ignore:
+    - feature/*
+  pull_request:
+    branches-ignore:
+    - cfd-develop
+    - feature/*
 
 jobs:
   build_wheels:

@@ -16,13 +16,22 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
+/* Define to 1 if you have the `explicit_bzero' function. */
+#cmakedefine HAVE_EXPLICIT_BZERO @HAVE_EXPLICIT_BZERO@
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#cmakedefine HAVE_EXPLICIT_MEMSET @HAVE_EXPLICIT_MEMSET@
+
+/* inline asm code can be used */
+#cmakedefine HAVE_INLINE_ASM @HAVE_INLINE_ASM@
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #cmakedefine HAVE_MEMORY_H @HAVE_MEMORY_H@
 
-/* Define if we have memset_s */
+/* Define to 1 if you have the `memset_s' function. */
 #cmakedefine HAVE_MEMSET_S @HAVE_MEMSET_S@
 
 /* Define if we have mmap */

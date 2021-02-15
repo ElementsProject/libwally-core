@@ -8,14 +8,23 @@
 /* Define this symbol to compile out all VERIFY code */
 #cmakedefine COVERAGE @COVERAGE@
 
-/* Set window size for ecmult precomputation */
-#cmakedefine ECMULT_WINDOW_SIZE @ECMULT_WINDOW_SIZE@
-
 /* Set ecmult gen precision bits */
 #cmakedefine ECMULT_GEN_PREC_BITS @ECMULT_GEN_PREC_BITS@
 
+/* Set window size for ecmult precomputation */
+#cmakedefine ECMULT_WINDOW_SIZE @ECMULT_WINDOW_SIZE@
+
 /* Define this symbol to enable the ECDH module */
 #cmakedefine ENABLE_MODULE_ECDH @ENABLE_MODULE_ECDH@
+
+/* Define this symbol to enable the ECDSA adaptor module */
+#cmakedefine ENABLE_MODULE_ECDSA_ADAPTOR @ENABLE_MODULE_ECDSA_ADAPTOR@
+
+/* Define this symbol to enable the ECDSA sign-to-contract module */
+#cmakedefine ENABLE_MODULE_ECDSA_S2C @ENABLE_MODULE_ECDSA_S2C@
+
+/* Define this symbol to enable the extrakeys module */
+#cmakedefine ENABLE_MODULE_EXTRAKEYS @ENABLE_MODULE_EXTRAKEYS@
 
 /* Define this symbol to enable the NUMS generator module */
 #cmakedefine ENABLE_MODULE_GENERATOR @ENABLE_MODULE_GENERATOR@
@@ -38,12 +47,6 @@
 
 /* Define this symbol to enable the key whitelisting module */
 #cmakedefine ENABLE_MODULE_WHITELIST @ENABLE_MODULE_WHITELIST@
-
-/* Define this symbol to enable the extrakeys module */
-#cmakedefine ENABLE_MODULE_EXTRAKEYS @ENABLE_MODULE_EXTRAKEYS@
-
-/* Define this symbol to enable the ECDSA adaptor module */
-#cmakedefine ENABLE_MODULE_ECDSA_ADAPTOR @ENABLE_MODULE_ECDSA_ADAPTOR@
 
 /* Define this symbol if OpenSSL EC functions are available */
 #cmakedefine ENABLE_OPENSSL_TESTS @ENABLE_OPENSSL_TESTS@
@@ -90,9 +93,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define to 1 if the system has the type `__int128'. */
-#cmakedefine HAVE___INT128 @HAVE___INT128@
-
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #cmakedefine LT_OBJDIR @LT_OBJDIR@
 
@@ -126,9 +126,6 @@
 /* Define this symbol to use a statically generated ecmult table */
 #cmakedefine USE_ECMULT_STATIC_PRECOMPUTATION @USE_ECMULT_STATIC_PRECOMPUTATION@
 
-/* Define this symbol to use endomorphism optimization */
-#cmakedefine USE_ENDOMORPHISM @USE_ENDOMORPHISM@
-
 /* Define this symbol if an external (non-inline) assembly implementation is
    used */
 #cmakedefine USE_EXTERNAL_ASM @USE_EXTERNAL_ASM@
@@ -137,17 +134,19 @@
    is used */
 #cmakedefine USE_EXTERNAL_DEFAULT_CALLBACKS @USE_EXTERNAL_DEFAULT_CALLBACKS@
 
-/* Define this symbol to use the FIELD_10X26 implementation */
-#cmakedefine USE_FIELD_10X26 @USE_FIELD_10X26@
-
-/* Define this symbol to use the FIELD_5X52 implementation */
-#cmakedefine USE_FIELD_5X52 @USE_FIELD_5X52@
-
 /* Define this symbol to use the native field inverse implementation */
 #cmakedefine USE_FIELD_INV_BUILTIN @USE_FIELD_INV_BUILTIN@
 
 /* Define this symbol to use the num-based field inverse implementation */
 #cmakedefine USE_FIELD_INV_NUM @USE_FIELD_INV_NUM@
+
+/* Define this symbol to force the use of the (unsigned) __int128 based wide
+   multiplication implementation */
+#cmakedefine USE_FORCE_WIDEMUL_INT128 @USE_FORCE_WIDEMUL_INT128@
+
+/* Define this symbol to force the use of the (u)int64_t based wide
+   multiplication implementation */
+#cmakedefine USE_FORCE_WIDEMUL_INT64 @USE_FORCE_WIDEMUL_INT64@
 
 /* Define this symbol to use the gmp implementation for num */
 #cmakedefine USE_NUM_GMP @USE_NUM_GMP@
@@ -155,11 +154,9 @@
 /* Define this symbol to use no num implementation */
 #cmakedefine USE_NUM_NONE @USE_NUM_NONE@
 
-/* Define this symbol to use the 4x64 scalar implementation */
-#cmakedefine USE_SCALAR_4X64 @USE_SCALAR_4X64@
-
-/* Define this symbol to use the 8x32 scalar implementation */
-#cmakedefine USE_SCALAR_8X32 @USE_SCALAR_8X32@
+/* Define this symbol to reduce SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS to 16,
+   disabling parsing and verification */
+#cmakedefine USE_REDUCED_SURJECTION_PROOF_SIZE @USE_REDUCED_SURJECTION_PROOF_SIZE@
 
 /* Define this symbol to use the native scalar inverse implementation */
 #cmakedefine USE_SCALAR_INV_BUILTIN @USE_SCALAR_INV_BUILTIN@
