@@ -2,7 +2,9 @@
 #include "internal.c"
 #include "address.c"
 #include "aes.c"
+#include "anti_exfil.c"
 #include "base58.c"
+#include "base64.c"
 #include "bech32.c"
 #include "blech32.c"
 #include "bip32.c"
@@ -43,6 +45,7 @@ void wally_silence_unused_warnings(void)
     secp256k1_gej_has_quad_y_var(NULL);
     secp256k1_ge_is_valid_var(NULL);
     secp256k1_ge_set_infinity(NULL);
+    secp256k1_ec_commit_verify(NULL, NULL, NULL, NULL, NULL, 0);
     secp256k1_ecmult_multi_var(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     secp256k1_ecmult_strauss_batch_single(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
     secp256k1_ecmult_pippenger_batch_single(NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);

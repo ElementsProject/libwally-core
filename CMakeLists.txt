@@ -287,13 +287,14 @@ endif()
 endif(NOT ENABLE_EMSCRIPTEN)
 
 # secp256k1 configure options
-# ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
+# ac_configure_args="${ac_configure_args} --disable-shared ${secp_jni} --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-ecdsa-s2c --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking"
 
 # USE_ENDOMORPHISM (option only)
 set(ECMULT_WINDOW_SIZE "15")
 set(ECMULT_GEN_PREC_BITS "4")
 set(ENABLE_MODULE_ECDH "1")
 set(ENABLE_MODULE_RECOVERY "1")
+set(ENABLE_MODULE_ECDSA_S2C "1")
 set(ENABLE_MODULE_RANGEPROOF "1")
 set(ENABLE_MODULE_SURJECTIONPROOF "1")
 set(ENABLE_MODULE_WHITELIST "1")
@@ -301,6 +302,9 @@ set(ENABLE_MODULE_GENERATOR "1")
 set(ENABLE_MODULE_SCHNORRSIG "1")
 set(ENABLE_MODULE_EXTRAKEYS "1")
 set(ENABLE_MODULE_ECDSA_ADAPTOR "1")
+
+check_cxx_source_compiles("int main() { __builtin_popcount(0); return 0;}"
+  HAVE_BUILTIN_POPCOUNT)
 
 check_cxx_source_compiles("int main() { __builtin_popcount(0); return 0;}"
   HAVE_BUILTIN_POPCOUNT)
@@ -315,6 +319,10 @@ endif(ARMCC)
 endif()
 set(USE_ECMULT_STATIC_PRECOMPUTATION "1")
 # set(USE_REDUCED_SURJECTION_PROOF_SIZE "1")
+
+# AC_ARG_WITH([test-override-wide-multiply], [] ,[set_widemul=$withval], [set_widemul=auto])
+# set(USE_FORCE_WIDEMUL_INT128 "1")
+# set(USE_FORCE_WIDEMUL_INT64 "1")
 
 find_package(GMP QUIET)
 if(GMP_FOUND)
@@ -462,7 +470,9 @@ set(LIBWALLY_FILES
     ${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h
     src/address.c
     src/aes.c
+    src/anti_exfil.c
     src/base58.c
+    src/base64.c
     src/bip32.c
     src/bip38.c
     src/bip39.c
@@ -1663,15 +1673,17 @@ message(STATUS "python version is ${PYTHON_VERSION_STRING}")
 endif()
 
 # copy testfile
+set(SWIG_PY_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/pyexample)
 add_test(NAME py_test_init1 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_SOURCE_DIR}/contrib ${SWIG_PY_OUTPUT_DIR}/contrib )
 add_test(NAME py_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_OUTPUT_DIR}/wallycore ${SWIG_PY_TEST_DIR}/wallycore )
 if(MSVC)
 add_test(NAME py_test_init3 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_OUTPUT_DIR}/wallycore ${SWIG_PY_TEST_DIR} )
 endif()
 
+add_test(NAME py_test_init4 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_EXAMPLE_DIR} ${SWIG_PY_OUTPUT_DIR}/contrib )
+
 if(ENABLE_ELEMENTS)
-set(SWIG_PY_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/pyexample)
-add_test(NAME py_test_init4 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_EXAMPLE_DIR}/liquid ${SWIG_PY_OUTPUT_DIR}/contrib )
+add_test(NAME py_test_init5 COMMAND ${CMAKE_COMMAND} -E copy_directory ${SWIG_PY_EXAMPLE_DIR}/liquid ${SWIG_PY_OUTPUT_DIR}/contrib )
 endif()
 
 add_test(NAME py_test_bip32           COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/bip32.py )
@@ -1681,6 +1693,7 @@ add_test(NAME py_test_signmessage     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/
 add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/tx.py )
 add_test(NAME py_test_psbt            COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/psbt.py )
 add_test(NAME py_test_sha             COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/sha.py )
+add_test(NAME py_test_anti_exfil      COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/anti-exfil.py )
 
 if(ENABLE_ELEMENTS)
 add_test(NAME py_test_elements_tx     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/elements_tx.py )
@@ -1737,7 +1750,11 @@ add_test(NAME test_address      COMMAND ${PYTHON_BIN} test/test_address.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_aes          COMMAND ${PYTHON_BIN} test/test_aes.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_anti_exfil   COMMAND ${PYTHON_BIN} test/test_anti_exfil.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_base58       COMMAND ${PYTHON_BIN} test/test_base58.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_base64       COMMAND ${PYTHON_BIN} test/test_base64.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_bech32       COMMAND ${PYTHON_BIN} test/test_bech32.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
@@ -1754,6 +1771,8 @@ add_test(NAME test_hash         COMMAND ${PYTHON_BIN} test/test_hash.py
 add_test(NAME test_hex          COMMAND ${PYTHON_BIN} test/test_hex.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_hmac         COMMAND ${PYTHON_BIN} test/test_hmac.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_internal     COMMAND ${PYTHON_BIN} test/test_internal.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_mnemonic     COMMAND ${PYTHON_BIN} test/test_mnemonic.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})

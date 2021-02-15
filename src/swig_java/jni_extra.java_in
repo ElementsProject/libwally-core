@@ -51,6 +51,16 @@
       return base58_to_bytes(base58, BASE58_FLAG_CHECKSUM);
   }
 
+  private final static byte[] base64_to_bytes(String base64, long flags) {
+      final byte buf[] = new byte[base64_get_maximum_length(base64, flags)];
+      final int len = base64_to_bytes(base64, flags, buf);
+      return trimBuffer(buf, len);
+  }
+
+  public final static byte[] base64_to_bytes(String base64) {
+      return base64_to_bytes(base64, 0);
+  }
+
   public final static Object bip32_pub_key_init(final int version, final int depth, final int childNum,
                                          final byte[] chainCode, final byte[] pubKey) {
       return Wally.bip32_key_init(version, depth, childNum, chainCode, pubKey, null, null, null);

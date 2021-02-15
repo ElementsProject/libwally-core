@@ -1,8 +1,16 @@
 # Changes
 
+## Version 0.8.2
+
+- struct wally_operations has changed to hold the size of the struct
+  and has an additional member to allow overriding the lib secp context
+  used internally. Users must recompile their applications against this
+  version as a result (re-linking or simply upgrading the shared library
+  is insufficient).
+
 ## Version 0.8.1
 
-- Build: Note that the secp256k1-zkp library is now as git submodule rather
+- Build: Note that the secp256k1-zkp library is now a git submodule rather
   than being directly checked in to the source tree. Run
   `git submodule sync --recursive` then `git submodule update --init --recursive`
   from the source tree in order to clone the secp source and build the library.
