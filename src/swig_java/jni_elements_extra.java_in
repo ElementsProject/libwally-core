@@ -55,52 +55,52 @@
       return buf;
   }
 
-  public final static byte[] psbt_get_input_abf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_abf_len(psbt, idx)];
+  public final static byte[] psbt_get_input_inflation_keys_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_inflation_keys_rangeproof_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_abf(psbt, idx, buf);
+      final int len = psbt_get_input_inflation_keys_rangeproof(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_input_asset(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_asset_len(psbt, idx)];
+  public final static byte[] psbt_get_input_issuance_amount_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_amount_rangeproof_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_asset(psbt, idx, buf);
+      final int len = psbt_get_input_issuance_amount_rangeproof(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_input_claim_script(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_claim_script_len(psbt, idx)];
+  public final static byte[] psbt_get_input_pegin_claim_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_claim_script_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_claim_script(psbt, idx, buf);
+      final int len = psbt_get_input_pegin_claim_script(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_input_genesis_blockhash(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_genesis_blockhash_len(psbt, idx)];
+  public final static byte[] psbt_get_input_pegin_genesis_blockhash(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_genesis_blockhash_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_genesis_blockhash(psbt, idx, buf);
+      final int len = psbt_get_input_pegin_genesis_blockhash(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_input_txoutproof(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_txoutproof_len(psbt, idx)];
+  public final static byte[] psbt_get_input_pegin_txoutproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_txoutproof_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_txoutproof(psbt, idx, buf);
+      final int len = psbt_get_input_pegin_txoutproof(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_input_vbf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_vbf_len(psbt, idx)];
+  public final static byte[] psbt_get_input_issuance_amount_commitment(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_amount_commitment_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_input_vbf(psbt, idx, buf);
+      final int len = psbt_get_input_issuance_amount_commitment(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_output_abf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_abf_len(psbt, idx)];
+  public final static byte[] psbt_get_output_asset(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_asset_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_output_abf(psbt, idx, buf);
+      final int len = psbt_get_output_asset(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
@@ -111,17 +111,17 @@
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_output_blinding_pubkey(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_blinding_pubkey_len(psbt, idx)];
+  public final static byte[] psbt_get_output_blinding_pub_key(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_blinding_pub_key_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_output_blinding_pubkey(psbt, idx, buf);
+      final int len = psbt_get_output_blinding_pub_key(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
-  public final static byte[] psbt_get_output_nonce(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_nonce_len(psbt, idx)];
+  public final static byte[] psbt_get_output_ecdh_pub_key(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_ecdh_pub_key_len(psbt, idx)];
       if (buf.length == 0) return buf;
-      final int len = psbt_get_output_nonce(psbt, idx, buf);
+      final int len = psbt_get_output_ecdh_pub_key(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 
@@ -143,13 +143,6 @@
       final byte[] buf = new byte[psbt_get_output_value_commitment_len(psbt, idx)];
       if (buf.length == 0) return buf;
       final int len = psbt_get_output_value_commitment(psbt, idx, buf);
-      return checkBuffer(buf, len);
-  }
-
-  public final static byte[] psbt_get_output_vbf(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_output_vbf_len(psbt, idx)];
-      if (buf.length == 0) return buf;
-      final int len = psbt_get_output_vbf(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 

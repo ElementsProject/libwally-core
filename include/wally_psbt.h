@@ -55,21 +55,26 @@ struct wally_psbt_input {
     struct wally_map unknowns;
     uint32_t sighash;
 #ifdef BUILD_ELEMENTS
-    uint64_t value;
-    uint32_t has_value;
-    unsigned char *vbf;
-    size_t vbf_len;
-    unsigned char *asset;
-    size_t asset_len;
-    unsigned char *abf;
-    size_t abf_len;
+    /* Issuance */
+    uint64_t issuance_amount;
+    uint32_t has_issuance_amount;
+    unsigned char *issuance_amount_commitment;
+    size_t issuance_amount_commitment_len;
+    unsigned char *issuance_amount_rangeproof;
+    size_t issuance_amount_rangeproof_len;
+    unsigned char *inflation_keys_rangeproof;
+    size_t inflation_keys_rangeproof_len;
+    /* Peg-ins */
+    uint64_t pegin_value;
+    uint32_t has_pegin_value;
     struct wally_tx *pegin_tx;
-    unsigned char *txoutproof;
-    size_t txoutproof_len;
-    unsigned char *genesis_blockhash;
-    size_t genesis_blockhash_len;
-    unsigned char *claim_script;
-    size_t claim_script_len;
+    struct wally_tx_witness_stack *pegin_witness;
+    unsigned char *pegin_txoutproof;
+    size_t pegin_txoutproof_len;
+    unsigned char *pegin_genesis_blockhash;
+    size_t pegin_genesis_blockhash_len;
+    unsigned char *pegin_claim_script;
+    size_t pegin_claim_script_len;
 #endif /* BUILD_ELEMENTS */
 };
 
@@ -82,23 +87,25 @@ struct wally_psbt_output {
     struct wally_map keypaths;
     struct wally_map unknowns;
 #ifdef BUILD_ELEMENTS
-    unsigned char *blinding_pubkey;
-    size_t blinding_pubkey_len;
+    uint64_t value;
+    uint32_t has_value;
     unsigned char *value_commitment;
     size_t value_commitment_len;
-    unsigned char *vbf;
-    size_t vbf_len;
+    unsigned char *asset;
+    size_t asset_len;
     unsigned char *asset_commitment;
     size_t asset_commitment_len;
-    unsigned char *abf;
-    size_t abf_len;
-    unsigned char *nonce;
-    size_t nonce_len;
     unsigned char *rangeproof;
     size_t rangeproof_len;
     unsigned char *surjectionproof;
     size_t surjectionproof_len;
-#endif /* BUILD_ELEMENTS */
+    unsigned char *blinding_pub_key;
+    size_t blinding_pub_key_len;
+    unsigned char *ecdh_pub_key;
+    size_t ecdh_pub_key_len;
+    uint32_t blinding_index;
+    uint32_t has_blinding_index;
+ #endif /* BUILD_ELEMENTS */
 };
 
 /** A partially signed bitcoin transaction */
@@ -113,6 +120,10 @@ struct wally_psbt {
     size_t outputs_allocation_len;
     struct wally_map unknowns;
     uint32_t version;
+#ifdef BUILD_ELEMENTS
+    /* Scalars are stored as a map of value->value */
+    struct wally_map global_scalar_offsets;
+#endif
 };
 #endif /* SWIG */
 
@@ -737,58 +748,102 @@ WALLY_CORE_API int wally_psbt_elements_init_alloc(
 
 #ifndef SWIG
 /**
- * Set the value in an elements input.
+ * Set the unblinded issuance amount in an elements input.
  *
  * :param input: The input to update.
- * :param value: The value for this input.
+ * :param value: The issuance amount for this input.
+ *
+ * .. note:: On success, the inputs blinded issuance amount is cleared.
  */
-WALLY_CORE_API int wally_psbt_input_set_value(
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount(
     struct wally_psbt_input *input,
     uint64_t value);
 
 /**
- * Clear the value in an elements input.
+ * Set the blinded issuance amount in an elements input.
+ *
+ * :param input: The input to update.
+ * :param commitment: The blinded issuance amount.
+ * :param commitment_len: Length of ``commitment``.
+ *|     Must be ``WALLY_TX_ASSET_CT_VALUE_LEN``.
+ *
+ * .. note:: On success, if ``commitment`` is not NULL,
+ *|    the inputs unblinded issuance amount is cleared.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_commitment(
+    struct wally_psbt_input *input,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Clear the unblinded issuance amount in an elements input.
  *
  * :param input: The input to update.
  */
-WALLY_CORE_API int wally_psbt_input_clear_value(
+WALLY_CORE_API int wally_psbt_input_clear_issuance_amount(
     struct wally_psbt_input *input);
 
 /**
- * Set the value blinding factor in an elements input.
+ * Determine if the unblinded issuance amount is set in an elements input.
  *
- * :param input: The input to update.
- * :param vbf: The value blinding factor.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param input: The input to query.
+ * :param written: On success, set to one if the issuance amount is set, otherwise zero.
  */
-WALLY_CORE_API int wally_psbt_input_set_vbf(
-    struct wally_psbt_input *input,
-    const unsigned char *vbf,
-    size_t vbf_len);
+int wally_psbt_input_has_issuance_amount(
+    const struct wally_psbt_input *input,
+    size_t *written);
 
 /**
- * Set the asset in an elements input.
+ * Set the peg-in value in an elements input.
  *
  * :param input: The input to update.
- * :param asset: The asset for this input.
- * :param asset_len: Length of ``asset`` in bytes.
+ * :param value: The peg-in value for this input.
  */
-WALLY_CORE_API int wally_psbt_input_set_asset(
+WALLY_CORE_API int wally_psbt_input_set_pegin_value(
     struct wally_psbt_input *input,
-    const unsigned char *asset,
-    size_t asset_len);
+    uint64_t value);
 
 /**
- * Set the asset blinding factor in an elements input
+ * Clear the peg-in value in an elements input.
  *
  * :param input: The input to update.
- * :param abf: The asset blinding factor.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_set_abf(
+WALLY_CORE_API int wally_psbt_input_clear_pegin_value(
+    struct wally_psbt_input *input);
+
+/**
+ * Determine if the peg-in value is set in an elements input.
+ *
+ * :param input: The input to query.
+ * :param written: On success, set to one if the peg-in value is set, otherwise zero.
+ */
+int wally_psbt_input_has_pegin_value(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the issuance amount rangeproof in an elements input.
+ *
+ * :param input: The input to update.
+ * :param issuance_amount_rangeproof: The issuance amount rangeproof.
+ * :param issuance_amount_rangeproof_len: Length of ``issuance_amount_rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_rangeproof(
     struct wally_psbt_input *input,
-    const unsigned char *abf,
-    size_t abf_len);
+    const unsigned char *issuance_amount_rangeproof,
+    size_t issuance_amount_rangeproof_len);
+
+/**
+ * Set the inflation keys rangeproof in an elements input.
+ *
+ * :param input: The input to update.
+ * :param inflation_keys_rangeproof: The inflation keys rangeproof.
+ * :param inflation_keys_rangeproof_len: Length of ``inflation_keys_rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_inflation_keys_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *inflation_keys_rangeproof,
+    size_t inflation_keys_rangeproof_len);
 
 /**
  * Set the peg in tx in an input.
@@ -801,37 +856,47 @@ WALLY_CORE_API int wally_psbt_input_set_pegin_tx(
     const struct wally_tx *pegin_tx);
 
 /**
- * Set the txout proof in an elements input.
+ * Set the peg in witness in an input.
  *
  * :param input: The input to update.
- * :param proof: The txout proof for this input.
+ * :param pegin_witness: The peg in witness for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_witness(
+    struct wally_psbt_input *input,
+    const struct wally_tx_witness_stack *pegin_witness);
+
+/**
+ * Set the peg-in txout proof in an elements input.
+ *
+ * :param input: The input to update.
+ * :param proof: The peg-in txout proof for this input.
  * :param proof_len: Length of ``proof`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_txoutproof(
+WALLY_CORE_API int wally_psbt_input_set_pegin_txoutproof(
     struct wally_psbt_input *input,
     const unsigned char *proof,
     size_t proof_len);
 
 /**
- * Set the genesis hash in an elements input.
+ * Set the peg-in genesis hash in an elements input.
  *
  * :param input: The input to update.
- * :param genesis_blockhash: The genesis hash for this input.
+ * :param genesis_blockhash: The peg-in genesis hash for this input.
  * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_set_genesis_blockhash(
+WALLY_CORE_API int wally_psbt_input_set_pegin_genesis_blockhash(
     struct wally_psbt_input *input,
     const unsigned char *genesis_blockhash,
     size_t genesis_blockhash_len);
 
 /**
- * Set the claim script in an elements input.
+ * Set the peg-in claim script in an elements input.
  *
  * :param input: The input to update.
- * :param script: The claim script for this input.
+ * :param script: The peg-in claim script for this input.
  * :param script_len: Length of ``script`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_input_set_claim_script(
+WALLY_CORE_API int wally_psbt_input_set_pegin_claim_script(
     struct wally_psbt_input *input,
     const unsigned char *script,
     size_t script_len);
@@ -843,17 +908,78 @@ WALLY_CORE_API int wally_psbt_input_set_claim_script(
  * :param pub_key: The blinding pubkey for this output.
  * :param pub_key_len: Length of ``pub_key`` in bytes.
  */
-WALLY_CORE_API int wally_psbt_output_set_blinding_pubkey(
+WALLY_CORE_API int wally_psbt_output_set_blinding_pub_key(
     struct wally_psbt_output *output,
     const unsigned char *pub_key,
     size_t pub_key_len);
 
 /**
- * Set the value commitment in an elements output.
+ * Set the unblinded value in an elements output.
  *
  * :param output: The output to update.
- * :param commitment: The value commitment for this output.
- * :param commitment_len: Length of ``commitment`` in bytes.
+ * :param value: The value for this output.
+ *
+ * .. note:: On success, the outputs blinded value is cleared.
+ */
+WALLY_CORE_API int wally_psbt_output_set_value(
+    struct wally_psbt_output *output,
+    uint64_t value);
+
+/**
+ * Clear the unblinded value in an elements output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_value(
+    struct wally_psbt_output *output);
+
+/**
+ * Determine if the unblinded value is set in an elements output.
+ *
+ * :param output: The output to query.
+ * :param written: On success, set to one if the unblinded value is set, otherwise zero.
+ */
+int wally_psbt_output_has_value(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinding index in an elements output.
+ *
+ * :param output: The output to update.
+ * :param blinding_index: The blinding index for this output.
+ */
+WALLY_CORE_API int wally_psbt_output_set_blinding_index(
+    struct wally_psbt_output *output,
+    uint32_t blinding_index);
+
+/**
+ * Clear the blinding index in an elements output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_blinding_index(
+    struct wally_psbt_output *output);
+
+/**
+ * Determine if the blinding index is set in an elements output.
+ *
+ * :param output: The output to query.
+ * :param written: On success, set to one if the blinding index is set, otherwise zero.
+ */
+int wally_psbt_output_has_blinding_index(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinded value in an elements output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The blinded value for this output.
+ * :param commitment_len: Length of ``commitment`` in bytes. Must be ``ASSET_COMMITMENT_LEN``.
+ *
+ * .. note:: On success, if ``commitment`` is not NULL,
+ *|    the outputs unblinded value is cleared.
  */
 WALLY_CORE_API int wally_psbt_output_set_value_commitment(
     struct wally_psbt_output *output,
@@ -861,23 +987,29 @@ WALLY_CORE_API int wally_psbt_output_set_value_commitment(
     size_t commitment_len);
 
 /**
- * Set the value blinding factor in an elements output.
+ * Set the unblinded asset in an elements output.
  *
  * :param output: The output to update.
- * :param vbf: The value blinding factor.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param asset: The unblinded asset to set for this input..
+ * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
+ *
+ * .. note:: On success, if ``asset`` is not NULL,
+ *|    the outputs blinded asset is cleared.
  */
-WALLY_CORE_API int wally_psbt_output_set_vbf(
+WALLY_CORE_API int wally_psbt_output_set_asset(
     struct wally_psbt_output *output,
-    const unsigned char *vbf,
-    size_t vbf_len);
+    const unsigned char *asset,
+    size_t asset_len);
 
 /**
- * Set the asset commitment in an elements output.
+ * Set the blinded asset in an elements output.
  *
  * :param output: The output to update.
- * :param commitment: The asset commitment for this output.
+ * :param commitment: The blinded asset for this output.
  * :param commitment_len: Length of ``commitment`` in bytes.
+ *
+ * .. note:: On success, if ``commitment`` is not NULL,
+ *|    the outputs unblinded asset is cleared.
  */
 WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
     struct wally_psbt_output *output,
@@ -885,28 +1017,16 @@ WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
     size_t commitment_len);
 
 /**
- * Set the asset blinding factor in an elements output.
+ * Set the ECDH public key in an elements output.
  *
  * :param output: The output to update.
- * :param abf: The asset blinding factor.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * :param pub_key: The ECDH public key used for blinding for this output.
+ * :param pub_key_len: Size of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  */
-WALLY_CORE_API int wally_psbt_output_set_abf(
+WALLY_CORE_API int wally_psbt_output_set_ecdh_pub_key(
     struct wally_psbt_output *output,
-    const unsigned char *abf,
-    size_t abf_len);
-
-/**
- * Set the nonce commitment in an elements output.
- *
- * :param output: The output to update.
- * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
- */
-WALLY_CORE_API int wally_psbt_output_set_nonce(
-    struct wally_psbt_output *output,
-    const unsigned char *nonce,
-    size_t nonce_len);
+    const unsigned char *pub_key,
+    size_t pub_key_len);
 
 /**
  * Set the range proof in an elements output.

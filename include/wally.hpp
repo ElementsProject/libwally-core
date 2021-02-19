@@ -1409,32 +1409,61 @@ inline int psbt_elements_init_alloc(uint32_t version, size_t inputs_allocation_l
     return ret;
 }
 
-inline int psbt_input_clear_value(struct wally_psbt_input* input) {
-    int ret = ::wally_psbt_input_clear_value(input);
+inline int psbt_input_clear_issuance_amount(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount(input);
     return ret;
 }
 
-template <class INPUT, class ABF>
-inline int psbt_input_set_abf(const INPUT& input, const ABF& abf) {
-    int ret = ::wally_psbt_input_set_abf(detail::get_p(input), abf.data(), abf.size());
+inline int psbt_input_clear_pegin_value(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_value(input);
     return ret;
 }
 
-template <class INPUT, class ASSET>
-inline int psbt_input_set_asset(const INPUT& input, const ASSET& asset) {
-    int ret = ::wally_psbt_input_set_asset(detail::get_p(input), asset.data(), asset.size());
+template <class INPUT>
+inline int psbt_input_has_issuance_amount(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_has_issuance_amount(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_has_pegin_value(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_has_pegin_value(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class INFLATION_KEYS_RANGEPROOF>
+inline int psbt_input_set_inflation_keys_rangeproof(const INPUT& input, const INFLATION_KEYS_RANGEPROOF& inflation_keys_rangeproof) {
+    int ret = ::wally_psbt_input_set_inflation_keys_rangeproof(detail::get_p(input), inflation_keys_rangeproof.data(), inflation_keys_rangeproof.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_issuance_amount(const INPUT& input, uint64_t value) {
+    int ret = ::wally_psbt_input_set_issuance_amount(detail::get_p(input), value);
+    return ret;
+}
+
+template <class INPUT, class COMMITMENT>
+inline int psbt_input_set_issuance_amount_commitment(const INPUT& input, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_input_set_issuance_amount_commitment(detail::get_p(input), commitment.data(), commitment.size());
+    return ret;
+}
+
+template <class INPUT, class ISSUANCE_AMOUNT_RANGEPROOF>
+inline int psbt_input_set_issuance_amount_rangeproof(const INPUT& input, const ISSUANCE_AMOUNT_RANGEPROOF& issuance_amount_rangeproof) {
+    int ret = ::wally_psbt_input_set_issuance_amount_rangeproof(detail::get_p(input), issuance_amount_rangeproof.data(), issuance_amount_rangeproof.size());
     return ret;
 }
 
 template <class INPUT, class SCRIPT>
-inline int psbt_input_set_claim_script(const INPUT& input, const SCRIPT& script) {
-    int ret = ::wally_psbt_input_set_claim_script(detail::get_p(input), script.data(), script.size());
+inline int psbt_input_set_pegin_claim_script(const INPUT& input, const SCRIPT& script) {
+    int ret = ::wally_psbt_input_set_pegin_claim_script(detail::get_p(input), script.data(), script.size());
     return ret;
 }
 
 template <class INPUT, class GENESIS_BLOCKHASH>
-inline int psbt_input_set_genesis_blockhash(const INPUT& input, const GENESIS_BLOCKHASH& genesis_blockhash) {
-    int ret = ::wally_psbt_input_set_genesis_blockhash(detail::get_p(input), genesis_blockhash.data(), genesis_blockhash.size());
+inline int psbt_input_set_pegin_genesis_blockhash(const INPUT& input, const GENESIS_BLOCKHASH& genesis_blockhash) {
+    int ret = ::wally_psbt_input_set_pegin_genesis_blockhash(detail::get_p(input), genesis_blockhash.data(), genesis_blockhash.size());
     return ret;
 }
 
@@ -1445,26 +1474,48 @@ inline int psbt_input_set_pegin_tx(const INPUT& input, const struct wally_tx* pe
 }
 
 template <class INPUT, class PROOF>
-inline int psbt_input_set_txoutproof(const INPUT& input, const PROOF& proof) {
-    int ret = ::wally_psbt_input_set_txoutproof(detail::get_p(input), proof.data(), proof.size());
+inline int psbt_input_set_pegin_txoutproof(const INPUT& input, const PROOF& proof) {
+    int ret = ::wally_psbt_input_set_pegin_txoutproof(detail::get_p(input), proof.data(), proof.size());
     return ret;
 }
 
 template <class INPUT>
-inline int psbt_input_set_value(const INPUT& input, uint64_t value) {
-    int ret = ::wally_psbt_input_set_value(detail::get_p(input), value);
+inline int psbt_input_set_pegin_value(const INPUT& input, uint64_t value) {
+    int ret = ::wally_psbt_input_set_pegin_value(detail::get_p(input), value);
     return ret;
 }
 
-template <class INPUT, class VBF>
-inline int psbt_input_set_vbf(const INPUT& input, const VBF& vbf) {
-    int ret = ::wally_psbt_input_set_vbf(detail::get_p(input), vbf.data(), vbf.size());
+template <class INPUT>
+inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_tx_witness_stack* pegin_witness) {
+    int ret = ::wally_psbt_input_set_pegin_witness(detail::get_p(input), pegin_witness);
     return ret;
 }
 
-template <class OUTPUT, class ABF>
-inline int psbt_output_set_abf(const OUTPUT& output, const ABF& abf) {
-    int ret = ::wally_psbt_output_set_abf(detail::get_p(output), abf.data(), abf.size());
+inline int psbt_output_clear_blinding_index(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_blinding_index(output);
+    return ret;
+}
+
+inline int psbt_output_clear_value(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_value(output);
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_has_blinding_index(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_has_blinding_index(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_has_value(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_has_value(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class ASSET>
+inline int psbt_output_set_asset(const OUTPUT& output, const ASSET& asset) {
+    int ret = ::wally_psbt_output_set_asset(detail::get_p(output), asset.data(), asset.size());
     return ret;
 }
 
@@ -1474,15 +1525,21 @@ inline int psbt_output_set_asset_commitment(const OUTPUT& output, const COMMITME
     return ret;
 }
 
-template <class OUTPUT, class PUB_KEY>
-inline int psbt_output_set_blinding_pubkey(const OUTPUT& output, const PUB_KEY& pub_key) {
-    int ret = ::wally_psbt_output_set_blinding_pubkey(detail::get_p(output), pub_key.data(), pub_key.size());
+template <class OUTPUT>
+inline int psbt_output_set_blinding_index(const OUTPUT& output, uint32_t blinding_index) {
+    int ret = ::wally_psbt_output_set_blinding_index(detail::get_p(output), blinding_index);
     return ret;
 }
 
-template <class OUTPUT, class NONCE>
-inline int psbt_output_set_nonce(const OUTPUT& output, const NONCE& nonce) {
-    int ret = ::wally_psbt_output_set_nonce(detail::get_p(output), nonce.data(), nonce.size());
+template <class OUTPUT, class PUB_KEY>
+inline int psbt_output_set_blinding_pub_key(const OUTPUT& output, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_output_set_blinding_pub_key(detail::get_p(output), pub_key.data(), pub_key.size());
+    return ret;
+}
+
+template <class OUTPUT, class PUB_KEY>
+inline int psbt_output_set_ecdh_pub_key(const OUTPUT& output, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_output_set_ecdh_pub_key(detail::get_p(output), pub_key.data(), pub_key.size());
     return ret;
 }
 
@@ -1498,15 +1555,15 @@ inline int psbt_output_set_surjectionproof(const OUTPUT& output, const PROOF& pr
     return ret;
 }
 
-template <class OUTPUT, class COMMITMENT>
-inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITMENT& commitment) {
-    int ret = ::wally_psbt_output_set_value_commitment(detail::get_p(output), commitment.data(), commitment.size());
+template <class OUTPUT>
+inline int psbt_output_set_value(const OUTPUT& output, uint64_t value) {
+    int ret = ::wally_psbt_output_set_value(detail::get_p(output), value);
     return ret;
 }
 
-template <class OUTPUT, class VBF>
-inline int psbt_output_set_vbf(const OUTPUT& output, const VBF& vbf) {
-    int ret = ::wally_psbt_output_set_vbf(detail::get_p(output), vbf.data(), vbf.size());
+template <class OUTPUT, class COMMITMENT>
+inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_output_set_value_commitment(detail::get_p(output), commitment.data(), commitment.size());
     return ret;
 }
 

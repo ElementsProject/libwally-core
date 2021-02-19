@@ -349,6 +349,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
 %rename("psbt_get_input_utxo") wally_psbt_get_input_utxo_alloc;
 %rename("psbt_get_input_pegin_tx") wally_psbt_get_input_pegin_tx_alloc;
+%rename("psbt_get_input_pegin_witness") wally_psbt_get_input_pegin_witness_alloc;
 %rename("psbt_get_input_witness_utxo") wally_psbt_get_input_witness_utxo_alloc;
 %rename("psbt_init") wally_psbt_init_alloc;
 %rename("tx_elements_input_init") wally_tx_elements_input_init_alloc;
@@ -363,6 +364,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
 %include "../include/wally_core.h"
+%include "wally_struct.h"
 %include "../include/wally_address.h"
 %include "../include/wally_anti_exfil.h"
 %include "../include/wally_bip32.h"
@@ -372,7 +374,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
 %include "../include/wally_psbt.h"
-%include "psbt_int.h"
+%include "swig_python/psbt_int.pp"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
 %include "transaction_int.h"
