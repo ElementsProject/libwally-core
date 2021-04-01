@@ -1611,6 +1611,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
 {
     size_t n, i, j;
     const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_rangeproof = opts && opts->sighash & WALLY_SIGHASH_RANGEPROOF;
     const bool sh_none = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
 
@@ -1633,6 +1634,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
                           sizeof(uint64_t)) + /* amount */
                          sizeof(uint32_t) + /* input sequence */
                          SHA256_LEN + /* hash outputs */
+                         ((is_elements && sh_rangeproof) ? SHA256_LEN : 0) + /* rangeproof */
                          sizeof(uint32_t) + /* nlocktime */
                          sizeof(uint32_t); /* tx sighash */
 #ifdef BUILD_ELEMENTS
@@ -1707,6 +1709,13 @@ static int tx_get_lengths(const struct wally_tx *tx,
                 } else
                     n += sizeof(output->satoshi);
                 n += varbuff_get_length(output->script_len);
+
+#ifdef BUILD_ELEMENTS
+                if (is_elements && sh_rangeproof) {
+                    n += varbuff_get_length(output->rangeproof_len) +
+                         varbuff_get_length(output->surjectionproof_len);
+                }
+#endif /* BUILD_ELEMENTS */
             }
         }
     }
@@ -1845,9 +1854,12 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
                                      size_t *written)
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
-    size_t i, inputs_size, outputs_size, issuances_size = 0, buff_len = sizeof(buff);
+    size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
     size_t is_elements = 0;
     const bool anyonecanpay = opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
+#ifdef BUILD_ELEMENTS
+    const bool sh_rangeproof = opts->sighash & WALLY_SIGHASH_RANGEPROOF;
+#endif
     const bool sh_none = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out, *output_p;
@@ -1872,11 +1884,17 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
             outputs_size = sizeof(uint64_t) +
                            varbuff_get_length(tx->outputs[opts->index].script_len);
 #ifdef BUILD_ELEMENTS
-        else
+        else {
             outputs_size = confidential_asset_length_from_bytes(tx->outputs[opts->index].asset) +
                            confidential_value_length_from_bytes(tx->outputs[opts->index].value) +
                            confidential_nonce_length_from_bytes(tx->outputs[opts->index].nonce) +
                            varbuff_get_length(tx->outputs[opts->index].script_len);
+
+            if (sh_rangeproof) {
+                rangeproof_size = varbuff_get_length(tx->outputs[opts->index].rangeproof_len) +
+                                  varbuff_get_length(tx->outputs[opts->index].surjectionproof_len);
+            }
+        }
 #else
         else
             return WALLY_EINVAL;
@@ -1887,10 +1905,16 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
             if (!is_elements)
                 outputs_size += sizeof(uint64_t);
 #ifdef BUILD_ELEMENTS
-            else
+            else {
                 outputs_size += confidential_asset_length_from_bytes(tx->outputs[i].asset) +
                                 confidential_value_length_from_bytes(tx->outputs[i].value) +
                                 confidential_nonce_length_from_bytes(tx->outputs[i].nonce);
+
+                if (sh_rangeproof) {
+                    rangeproof_size += varbuff_get_length(tx->outputs[i].rangeproof_len) +
+                                       varbuff_get_length(tx->outputs[i].surjectionproof_len);
+                }
+            }
 #else
             else
                 return WALLY_EINVAL;
@@ -1913,8 +1937,10 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     }
 #endif
 
-    if (inputs_size > buff_len || outputs_size > buff_len || issuances_size > buff_len) {
+    if (inputs_size > buff_len || outputs_size > buff_len ||
+        rangeproof_size > buff_len || issuances_size > buff_len) {
         buff_len = inputs_size > outputs_size ? inputs_size : outputs_size;
+        buff_len = buff_len > rangeproof_size ? buff_len : rangeproof_size;
         buff_len = buff_len > issuances_size ? buff_len : issuances_size;
         buff_p = wally_malloc(buff_len);
         if (buff_p == NULL)
@@ -2034,6 +2060,29 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     }
     p += SHA256_LEN;
 
+    /* rangeproof */
+#ifdef BUILD_ELEMENTS
+    if (is_elements && sh_rangeproof) {
+        if (sh_none || (sh_single && opts->index >= tx->num_outputs))
+            memset(p, 0, SHA256_LEN);
+        else {
+            output_p = buff_p;
+            for (i = 0; i < tx->num_outputs; ++i) {
+                if (sh_single && i != opts->index)
+                    continue;
+                output_p += varbuff_to_bytes(tx->outputs[i].rangeproof,
+                                             tx->outputs[i].rangeproof_len, output_p);
+                output_p += varbuff_to_bytes(tx->outputs[i].surjectionproof,
+                                             tx->outputs[i].surjectionproof_len, output_p);
+            }
+            ret = wally_sha256d(buff_p, rangeproof_size, p, SHA256_LEN);
+            if (ret != WALLY_OK)
+                goto error;
+        }
+        p += SHA256_LEN;
+    }
+#endif
+
     /* nlocktime and sighash*/
     p += uint32_to_le_bytes(tx->locktime, p);
     p += uint32_to_le_bytes(opts->tx_sighash, p);
@@ -2057,6 +2106,9 @@ static int tx_to_bytes(const struct wally_tx *tx,
 {
     size_t n, i, j, witness_count;
     const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
+#ifdef BUILD_ELEMENTS
+    const bool sh_rangeproof = opts && opts->sighash & WALLY_SIGHASH_RANGEPROOF;
+#endif
     const bool sh_none = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out;
@@ -2181,6 +2233,15 @@ static int tx_to_bytes(const struct wally_tx *tx,
                     p += uint64_to_le_bytes(output->satoshi, p);
                 }
                 p += varbuff_to_bytes(output->script, output->script_len, p);
+
+#ifdef BUILD_ELEMENTS
+                if (is_elements && sh_rangeproof) {
+                    p += varbuff_to_bytes(output->rangeproof,
+                                          output->rangeproof_len, p);
+                    p += varbuff_to_bytes(output->surjectionproof,
+                                          output->surjectionproof_len, p);
+                }
+#endif
             }
         }
     }
