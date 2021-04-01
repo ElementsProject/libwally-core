@@ -72,9 +72,7 @@ jobs:
         submodules: true
     - name: cmake-generate
       run: |
-        cmake -S . -B build -G "${{ matrix.generator }}"
-    - name: cmake-config
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/" --build build
+        cmake -S . -B build -G "${{ matrix.generator }}" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/"
     - name: cmake-build
       run: |
         cmake --version
@@ -126,20 +124,22 @@ jobs:
     - name: ubuntu-install-swig
       if: matrix.os == 'ubuntu-18.04'
       run: sudo apt install swig
-    - name: cmake-generate
-      if: matrix.os != 'windows-2019'
+    - name: cmake-generate-python-config
+      if: matrix.os != 'windows-2019' && matrix.target == 'python'
       run: |
-        cmake -S . -B build -G "Unix Makefiles"
-    - name: cmake-generate-windows
-      if: matrix.os == 'windows-2019'
+        cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+    - name: cmake-generate-windows-python-config
+      if: matrix.os == 'windows-2019' && matrix.target == 'python'
       run: |
-        cmake -S . -B build -G "Visual Studio 16 2019"
-    - name: cmake-python-config
-      if: matrix.target == 'python'
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../" --build build
-    - name: cmake-java-config
-      if: matrix.target == 'java'
-      run: cmake -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../" --build build
+        cmake -S . -B build -G "Visual Studio 16 2019" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+    - name: cmake-generate-java-config
+      if: matrix.os != 'windows-2019' && matrix.target == 'java'
+      run: |
+        cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+    - name: cmake-generate-windows-java-config
+      if: matrix.os == 'windows-2019' && matrix.target == 'java'
+      run: |
+        cmake -S . -B build -G "Visual Studio 16 2019" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
     - name: cmake-build
       run: |
         cmake --version
@@ -168,13 +168,11 @@ jobs:
     - name: cmake-generate
       if: matrix.os != 'windows-2019'
       run: |
-        cmake -S . -B build -G "Unix Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on -DTARGET_RPATH="/usr/local/lib;/usr/local/lib64;./build/Release" --build build
+        cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on -DTARGET_RPATH="/usr/local/lib;/usr/local/lib64;./build/Release"
     - name: cmake-generate-windows
       if: matrix.os == 'windows-2019'
       run: |
-        cmake -S . -B build -G "MSYS Makefiles"
-        cmake -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on --build build
+        cmake -S . -B build -G "MSYS Makefiles" -DENABLE_SHARED=on -DENABLE_TESTS=off -DENABLE_ELEMENTS=on
     - name: cmake-build
       run: |
         cmake --version
