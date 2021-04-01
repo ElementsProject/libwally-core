@@ -36,6 +36,7 @@ extern "C" {
 #define WALLY_SIGHASH_NONE         0x02
 #define WALLY_SIGHASH_SINGLE       0x03
 #define WALLY_SIGHASH_FORKID       0x40
+#define WALLY_SIGHASH_RANGEPROOF   0x40  /* for elements */
 #define WALLY_SIGHASH_ANYONECANPAY 0x80
 
 #define WALLY_TX_ASSET_CT_VALUE_PREFIX_A 8
