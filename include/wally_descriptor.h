@@ -10,6 +10,10 @@ extern "C" {
 
 #define WALLY_NETWORK_BITCOIN_REGTEST 0xff  /** Bitcoin regtest */
 
+/* miniscript type flag */
+#define WALLY_MINISCRIPT_WITNESS_SCRIPT  0x00
+#define WALLY_MINISCRIPT_TAPSCRIPT       0x01
+
 #ifdef SWIG
 struct wally_descriptor_address_item;
 struct wally_descriptor_addresses;
@@ -46,7 +50,8 @@ WALLY_CORE_API int wally_free_descriptor_addresses(
  * :param key_value_array: Array of key mapped value string.
  * :param array_len: Length of the array of key policy name.
  * :param derive_child_num: Number of the derive path.
- * :param flags: For future use. Must be 0.
+ * :param flags: For analyze type.
+ *   see WALLY_MINISCRIPT_WITNESS_SCRIPT, WALLY_MINISCRIPT_TAPSCRIPT.
  * :param script: Destination for the resulting scriptpubkey.
  * :param script_len: Length of the script array.
  * :param written: Destination for the using scriptpubkey length.
