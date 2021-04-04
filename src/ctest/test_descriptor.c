@@ -37,6 +37,12 @@ struct wally_miniscript_test {
     const char *p2wsh_scriptpubkey;
 };
 
+struct wally_miniscript_taproot_test {
+    const char *miniscript;
+    const char *scriptpubkey;
+    uint32_t flags;
+};
+
 struct wally_descriptor_test {
     const char *name;
     const char *descriptor;
@@ -247,6 +253,11 @@ struct wally_miniscript_test g_miniscript_test_table[] = {
         "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
         "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
     },
+};
+
+struct wally_miniscript_taproot_test g_miniscript_taproot_test_table[] = {
+    {"c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)", "20daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac",
+    WALLY_MINISCRIPT_TAPSCRIPT},
 };
 
 struct wally_descriptor_test g_descriptor_test_table[] = {
@@ -861,7 +872,8 @@ struct wally_descriptor_err_test g_address_err_test_table[] = {
 static bool check_parse_miniscript(const char *function, const char *descriptor,
                                    const char *expected,
                                    const char **key_name_list,
-                                   const char **key_value_list, size_t list_num)
+                                   const char **key_value_list, size_t list_num,
+                                   uint32_t flags)
 {
     size_t written = 0;
     unsigned char script[520];
@@ -869,7 +881,6 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
     int ret;
     bool is_success = false;
     uint32_t index = 0;
-    uint32_t flag = 0;
 
     ret = wally_descriptor_parse_miniscript(
         descriptor,
@@ -877,7 +888,7 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
         key_value_list,
         list_num,
         index,
-        flag,
+        flags,
         script,
         sizeof(script),
         &written);
@@ -1175,6 +1186,7 @@ int main(void)
     size_t index;
     size_t miniscript_ref_max = sizeof(g_miniscript_ref_test_table) / sizeof(struct wally_miniscript_ref_test);
     size_t miniscript_max = sizeof(g_miniscript_test_table) / sizeof(struct wally_miniscript_test);
+    size_t miniscript_tr_max = sizeof(g_miniscript_taproot_test_table) / sizeof(struct wally_miniscript_taproot_test);
     size_t desc_max = sizeof(g_descriptor_test_table) / sizeof(struct wally_descriptor_test);
     size_t desc_depth_max = sizeof(g_descriptor_depth_test_table) / sizeof(struct wally_descriptor_depth_test);
     size_t addr_max = sizeof(g_descriptor_address_test_table) / sizeof(struct wally_descriptor_address_test);
@@ -1187,7 +1199,7 @@ int main(void)
                 g_miniscript_ref_test_table[index].miniscript,
                 g_miniscript_ref_test_table[index].miniscript,
                 g_miniscript_ref_test_table[index].scriptpubkey,
-                NULL, NULL, 0)) {
+                NULL, NULL, 0, 0)) {
             printf("[%s] test failed!\n", g_miniscript_ref_test_table[index].miniscript);
             tests_ok = false;
         }
@@ -1198,8 +1210,20 @@ int main(void)
                 g_miniscript_test_table[index].name,
                 g_miniscript_test_table[index].descriptor,
                 g_miniscript_test_table[index].scriptpubkey,
-                NULL, NULL, 0)) {
+                NULL, NULL, 0, 0)) {
             printf("[%s] test failed!\n", g_miniscript_test_table[index].name);
+            tests_ok = false;
+        }
+    }
+
+    for (index = 0; index < miniscript_tr_max; ++index) {
+        if (!check_parse_miniscript(
+                g_miniscript_taproot_test_table[index].miniscript,
+                g_miniscript_taproot_test_table[index].miniscript,
+                g_miniscript_taproot_test_table[index].scriptpubkey,
+                NULL, NULL, 0,
+                g_miniscript_taproot_test_table[index].flags)) {
+            printf("[%s] test failed!\n", g_miniscript_taproot_test_table[index].miniscript);
             tests_ok = false;
         }
     }
