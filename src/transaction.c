@@ -2221,7 +2221,7 @@ static int tx_to_bytes(const struct wally_tx *tx,
                 p += varbuff_to_bytes(output->script, output->script_len, p);
 
 #ifdef BUILD_ELEMENTS
-                if (sh_rangeproof) {
+                if (is_elements && sh_rangeproof) {
                     p += varbuff_to_bytes(output->rangeproof,
                                           output->rangeproof_len, p);
                     p += varbuff_to_bytes(output->surjectionproof,
