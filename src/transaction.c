@@ -2326,6 +2326,9 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         *expect_witnesses = *p++ != 0;
     else {
         if (*p == 0) {
+            /* Is this the 'empty tx' */
+            if (p[1] == 0x0 && bytes_len == 10)
+                goto next;
             /* BIP 144 extended serialization */
             if (p[1] != 0x1)
                 return WALLY_EINVAL; /* Invalid witness flag */
@@ -2333,6 +2336,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
             *expect_witnesses = true;
         }
     }
+
+next:
 
 #define ensure_n(n) if (p > end || p + (n) > end) return WALLY_EINVAL
 

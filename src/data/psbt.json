@@ -56,7 +56,12 @@
           "comment": "Partial transaction (with no outputs)",
           "psbt": "cHNidP8BADMCAAAAAZCmTNqA77Z44FTcG0k2D2xkazaLwfTcYgkhBHT1hFy0AAAAAAD9////AGYAAAAAAQEgQEIPAAAAAAAXqRRlVyjzbP420BqlDTI2cERp+EpVQIcBBBYAFNa5adNt/9rZhpGT9mPuSA39xzSIAA==",
           "len": 121
-        }
+        },
+	{
+	  "comment": "PSBT of the empty transaction '00000000000000000000'",
+	  "psbt": "cHNidP8BAAoAAAAAAAAAAAAAAA==",
+	  "len": 19
+	}
     ],
     "creator" : [
         {
