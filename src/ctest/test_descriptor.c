@@ -256,8 +256,21 @@ struct wally_miniscript_test g_miniscript_test_table[] = {
 };
 
 struct wally_miniscript_taproot_test g_miniscript_taproot_test_table[] = {
-    {"c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)", "20daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac",
-    WALLY_MINISCRIPT_TAPSCRIPT},
+    {
+        "c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)",
+        "20daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac",
+        WALLY_MINISCRIPT_TAPSCRIPT
+    },
+    {
+        "c:pk_k([bd16bee5/0]xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/1)",
+        "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac",
+        WALLY_MINISCRIPT_TAPSCRIPT
+    },
+    {
+        "c:pk_k(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
+        "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
+        WALLY_MINISCRIPT_TAPSCRIPT
+    },
 };
 
 struct wally_descriptor_test g_descriptor_test_table[] = {
