@@ -538,6 +538,7 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->unknowns);
 
 #ifdef BUILD_ELEMENTS
+        clear_and_free(output->blinding_pubkey, output->blinding_pubkey_len);
         clear_and_free(output->value_commitment, output->value_commitment_len);
         clear_and_free(output->vbf, output->vbf_len);
         clear_and_free(output->asset_commitment, output->asset_commitment_len);
