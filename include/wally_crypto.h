@@ -301,8 +301,6 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
  *
  * :param priv_key: The private key to validate.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_private_key_verify(
     const unsigned char *priv_key,
@@ -326,8 +324,6 @@ WALLY_CORE_API int wally_ec_public_key_verify(
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param bytes_out: Destination for the resulting public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_public_key_from_private_key(
     const unsigned char *priv_key,
@@ -375,8 +371,6 @@ WALLY_CORE_API int wally_ec_public_key_negate(
  * :param len: The length of ``bytes_out`` in bytes. Must be
  *|    ``EC_SIGNATURE_LEN`` if EC_FLAG_RECOVERABLE is not set, otherwise must
  *|    be ``EC_SIGNATURE_RECOVERABLE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_sig_from_bytes(
     const unsigned char *priv_key,
@@ -441,8 +435,6 @@ WALLY_CORE_API int wally_ec_sig_from_der(
  * :param flags: EC_FLAG_ flag values indicating desired behavior.
  * :param sig: The compact signature of the message in ``bytes``.
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ec_sig_verify(
     const unsigned char *pub_key,
@@ -462,8 +454,6 @@ WALLY_CORE_API int wally_ec_sig_verify(
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_RECOVERABLE_LEN``.
  * :param bytes_out: Destination for recovered public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: The successful recovery of the public key guarantees the correctness of the signature.
  */
 WALLY_CORE_API int wally_ec_sig_to_public_key(
@@ -512,8 +502,6 @@ WALLY_CORE_API int wally_format_bitcoin_message(
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param bytes_out: Destination for the shared secret.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ecdh(
     const unsigned char *pub_key,
@@ -544,8 +532,6 @@ WALLY_CORE_API int wally_ecdh(
  *|    ``WALLY_S2C_OPENING_LEN``.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_s2c_sig_from_bytes(
     const unsigned char *priv_key,
@@ -571,8 +557,6 @@ WALLY_CORE_API int wally_s2c_sig_from_bytes(
  * :param s2c_opening_len: The length of ``s2c_opening`` in bytes. Must be
  *|    ``WALLY_S2C_OPENING_LEN``.
  * :param flags: Must be ``EC_FLAG_ECDSA``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_s2c_commitment_verify(
     const unsigned char *sig,

@@ -621,8 +621,6 @@ WALLY_CORE_API int wally_elements_pegout_script_from_bytes(
  * :param bytes_out: Destination for the resulting script.
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
     const unsigned char *redeem_script,

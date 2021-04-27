@@ -248,7 +248,9 @@ struct secp256k1_context_struct *wally_get_new_secp_context(void)
 
 struct secp256k1_context_struct *wally_internal_secp_context(void)
 {
-    /* Default implementation uses a non-threadsafe, lazy-initialized global context */
+    /* Default implementation uses a lazy-initialized global context,
+     * this should be fetched or set by the caller before any threads
+     * are created in order to be thread-safe. */
     if (!global_ctx)
         global_ctx = wally_get_new_secp_context();
 
