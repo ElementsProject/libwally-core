@@ -3362,7 +3362,6 @@ static int parse_miniscript(
     size_t temp_script_len = 0;
     size_t write_len;
     struct miniscript_node_t *top_node = NULL;
-    bool is_tapscript = false;
 
     if (((flags & ~0x1) != 0) ||
         !miniscript || (array_len && (!key_name_array || !key_value_array)) ||
