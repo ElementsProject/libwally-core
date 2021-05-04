@@ -6,14 +6,18 @@ valid_cases = {
         ["bc", 0, '0014751e76e8199196d454941c45d1b3a323f1433bd6'],
     'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7':
         ["tb", 0, '00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262'],
-    'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7k7grplx':
+    'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kt5nd6y':
         ["bc", 1, '5128751e76e8199196d454941c45d1b3a323f1433bd6751e76e8199196d454941c45d1b3a323f1433bd6'],
-    'BC1SW50QA3JX3S':
+    'BC1SW50QGDZ25J':
         ["bc", 16, '6002751e'],
-    'bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj':
+    'bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs':
         ["bc", 2, '5210751e76e8199196d454941c45d1b3a323'],
     'tb1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesrxh6hy':
-        ["tb", 0, '0020000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433']
+        ["tb", 0, '0020000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433'],
+    'tb1pqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesf3hn0c':
+        ["tb", 1, '5120000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433'],
+    'bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0':
+        ["bc", 1, '512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798']
 }
 
 invalid_cases = [
@@ -22,12 +26,26 @@ invalid_cases = [
     ["bc", 'BC13W508D6QEJXTDG4Y5R3ZARVARY0C5XW7KN40WF2'], # Invalid witness version
     ["bc", 'bc1pmfr3p9j00pfxjh0zmgp99y8zftmd3s5pmedqhyptwy6lm87hf5ss52r5n8'], # Invalid witness version v1
     ["bc", 'bc1rw5uspcuh'], # Invalid program length
+    ["bc", 'bc1pw5dgrnzv'], # Invalid program length
+    ["tc", 'tc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq5zuyut'], # Invalid HRP
+    ["bc", 'bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqh2y7hd'], # Invalid checksum algorithm (bech32 instead of bech32m)
+    ["tb", 'tb1z0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqglt7rf'], # Invalid checksum algorithm (bech32 instead of bech32m)
+    ["bc", 'BC1S0XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ54WELL'], # Invalid checksum algorithm (bech32m instead of bech32)
+    ["bc", 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kemeawh'], # Invalid checksum algorithm (bech32m instead of bech32)
+    ["tb", 'tb1q0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq24jc47'], # Invalid checksum algorithm (bech32m instead of bech32)
+    ["bc", 'bc1p38j9r5y49hruaue7wxjce0updqjuyyx0kh56v8s25huc6995vvpql3jow4'], # Invalid character in checksum
+    ["bc", 'BC130XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ7ZWS8R'], # Invalid witness version
+    ["bc", 'bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v8n0nx0muaewav253zgeav'], # Invalid program length (41 bytes)
     ["bc", 'bc10w508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kw5rljs90'], # Invalid program length
     ["bc", 'BC1QR508D6QEJXTDG4Y5R3ZARVARYV98GJ9P'], # Invalid program length for witness version 0 (per BIP141)
     ["tb", 'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sL5k7'], # Mixed case
     ["bc", 'bc1zw508d6qejxtdg4y5r3zarvaryvqyzf3du'], # zero padding of more than 4 bits
+    ["tb", 'tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vq47Zagq'], # Mixed case
+    ["bc", 'bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7v07qwwzcrf'], # more than 4 bit padding
     ["tb", 'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv'], # Non-zero padding in 8-to-5 conversion
+    ["tb", 'tb1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vpggkg4j'], # Non-zero padding in 8-to-5 conversion
     ["bc", 'bc1gmk9yu'], # Empty data section
+    ["bc", "bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7k7grplx"] # V1 should be encoded in bech32m
 ]
 
 class Bech32Tests(unittest.TestCase):
@@ -56,7 +74,7 @@ class Bech32Tests(unittest.TestCase):
             # Encode the script and make sure the address matches
             script_buf, script_len = make_cbuffer(script_hex)
             ret, retstr = wally_addr_segwit_from_bytes(script_buf, script_len, utf8(family), 0)
-            if script_ver != 0:
+            if script_ver > 1:
                 self.assertEqual(ret, WALLY_EINVAL)
             else:
                 self.assertEqual(ret, WALLY_OK)
