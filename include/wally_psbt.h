@@ -680,7 +680,6 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
  * :param key_len: Length of key in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param flags: Flags controlling sigining. Must be 0 or EC_FLAG_GRIND_R.
  *
- * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the simple signer algorithm.
  */

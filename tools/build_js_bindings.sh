@@ -9,7 +9,7 @@ fi
 
 tools/cleanup.sh
 tools/autogen.sh
-./configure --enable-debug --enable-js-wrappers --disable-swig-python --disable-swig-java --enable-ecmult-static-precomputation --enable-elements $WALLY_CONFIGURE
+PYTHON_VERSION=`python3 --version | cut -d ' ' -f 2 | cut -d '.' -f -2` ./configure --enable-debug --enable-js-wrappers --disable-swig-python --disable-swig-java --enable-ecmult-static-precomputation --enable-elements $WALLY_CONFIGURE
 num_jobs=4
 if [ -f /proc/cpuinfo ]; then
     num_jobs=$(grep ^processor /proc/cpuinfo | wc -l)

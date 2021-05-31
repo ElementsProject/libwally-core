@@ -12,7 +12,8 @@
 #include "script_int.h"
 
 #define WALLY_TX_ALL_FLAGS \
-    (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | WALLY_TX_FLAG_ALLOW_PARTIAL)
+    (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | \
+     WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144)
 
 /* We use the maximum DER sig length (plus a byte for the sighash) so that
  * we overestimate the size by a byte or two per tx sig. This allows using
@@ -1856,7 +1857,9 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
     size_t is_elements = 0;
     const bool anyonecanpay = opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
+#ifdef BUILD_ELEMENTS
     const bool sh_rangeproof = opts->sighash & WALLY_SIGHASH_RANGEPROOF;
+#endif
     const bool sh_none = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out, *output_p;
@@ -2104,7 +2107,9 @@ static int tx_to_bytes(const struct wally_tx *tx,
 {
     size_t n, i, j, witness_count;
     const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
+#ifdef BUILD_ELEMENTS
     const bool sh_rangeproof = opts && opts->sighash & WALLY_SIGHASH_RANGEPROOF;
+#endif
     const bool sh_none = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out;
@@ -2112,19 +2117,29 @@ static int tx_to_bytes(const struct wally_tx *tx,
     if (written)
         *written = 0;
 
-    if (!is_valid_tx(tx) || !tx->num_inputs ||
+    if (!is_valid_tx(tx) ||
         (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || !written ||
         tx_get_length(tx, opts, flags, &n, is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 
-    /* If requested, 0-output txs can be written. 0-input txs are not
-     * currently supported since they conflict due to segwit tx markers
-     * when serialized */
-    if (!(flags & WALLY_TX_FLAG_ALLOW_PARTIAL) && !tx->num_outputs)
-        return WALLY_EINVAL;
-
     if (opts && (flags & WALLY_TX_FLAG_USE_WITNESS))
         return WALLY_ERROR; /* Segwit tx hashing is handled elsewhere */
+
+    if (!(flags & WALLY_TX_FLAG_ALLOW_PARTIAL)) {
+        /* 0-input/output txs can be only be written with this flag */
+        if (!tx->num_inputs || !tx->num_outputs)
+            return WALLY_EINVAL;
+    }
+
+    if (!tx->num_inputs) {
+        /* 0-input txs can only be written in the pre-BIP144 format,
+         * since otherwise the resulting tx is ambiguous.
+         * Used in PSBTs while building the tx for example.
+         */
+        if (!(flags & WALLY_TX_FLAG_PRE_BIP144))
+            return WALLY_EINVAL;
+        flags &= ~WALLY_TX_FLAG_USE_WITNESS;
+    }
 
     if (n > len) {
         *written = n;
@@ -2348,13 +2363,16 @@ int wally_tx_to_hex(const struct wally_tx *tx, uint32_t flags,
 
 int wally_tx_get_txid(const struct wally_tx *tx, unsigned char *bytes_out, size_t len)
 {
+    uint32_t flags = WALLY_TX_FLAG_ALLOW_PARTIAL;
     size_t is_elements = 0;
 
 #ifdef BUILD_ELEMENTS
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 #endif
-    return tx_to_hex_or_txid(tx, 0, NULL, bytes_out, len, is_elements);
+    if (!is_elements)
+        flags |= WALLY_TX_FLAG_PRE_BIP144;
+    return tx_to_hex_or_txid(tx, flags, NULL, bytes_out, len, is_elements);
 }
 
 static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
@@ -2380,10 +2398,12 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
     p += uint32_from_le_bytes(p, &tmp_tx.version);
 
-    if (is_elements)
+    if (is_elements) {
+        if (flags & WALLY_TX_FLAG_PRE_BIP144)
+            return WALLY_EINVAL; /* No pre-BIP 144 serialisation for elements */
         *expect_witnesses = *p++ != 0;
-    else {
-        if (*p == 0) {
+    } else {
+        if (!(flags & WALLY_TX_FLAG_PRE_BIP144) && *p == 0) {
             /* BIP 144 extended serialization */
             if (p[1] != 0x1)
                 return WALLY_EINVAL; /* Invalid witness flag */

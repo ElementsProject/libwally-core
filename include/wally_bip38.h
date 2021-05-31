@@ -29,8 +29,6 @@ extern "C" {
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting raw BIP38 address.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip38_raw_from_private_key(
     const unsigned char *bytes,
@@ -50,8 +48,6 @@ WALLY_CORE_API int bip38_raw_from_private_key(
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param output: Destination for the resulting BIP38 address.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip38_from_private_key(
     const unsigned char *bytes,
@@ -71,8 +67,6 @@ WALLY_CORE_API int bip38_from_private_key(
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip38_raw_to_private_key(
     const unsigned char *bytes,
@@ -92,8 +86,6 @@ WALLY_CORE_API int bip38_raw_to_private_key(
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
  * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip38_to_private_key(
     const char *bip38,

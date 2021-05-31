@@ -28,8 +28,6 @@ extern "C" {
  * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
  * :param bytes_out: Destination for the resulting Asset Generator.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``ASSET_GENERATOR_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_generator_from_bytes(
     const unsigned char *asset,
@@ -53,8 +51,6 @@ WALLY_CORE_API int wally_asset_generator_from_bytes(
  * :param vbf_len: Length of ``vbf`` in bytes. Must be (``values_len`` - 1) * ``BLINDING_FACTOR_LEN``.
  * :param bytes_out: Buffer to receive the final value blinding factor.
  * :param len: Length of ``bytes_out``. Must be ``BLINDING_FACTOR_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_final_vbf(
     const uint64_t *values,
@@ -77,8 +73,6 @@ WALLY_CORE_API int wally_asset_final_vbf(
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param bytes_out: Buffer to receive value commitment.
  * :param len: Length of ``bytes_out``. Must be ``ASSET_COMMITMENT_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_value_commitment(
     uint64_t value,
@@ -91,8 +85,6 @@ WALLY_CORE_API int wally_asset_value_commitment(
 
 /*
  * As per wally_asset_rangeproof with a user provided nonce.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
     uint64_t value,
@@ -144,8 +136,6 @@ WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
  * :param bytes_out: Buffer to receive rangeproof.
  * :param len: Length of ``bytes_out``. See ``ASSET_RANGEPROOF_MAX_LEN``.
  * :param written: Number of bytes actually written to ``bytes_out``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t value,
@@ -202,8 +192,6 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
  * :param bytes_out: Buffer to receive surjection proof.
  * :param bytes_out_len: Length of ``bytes_out``. See `wally_asset_surjectionproof_size`.
  * :param written: Number of bytes actually written to ``bytes_out``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_surjectionproof(
     const unsigned char *output_asset,
@@ -244,8 +232,6 @@ WALLY_CORE_API int wally_asset_surjectionproof(
  * :param vbf_out: Buffer to receive asset blinding factor.
  * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
  * :param value_out: Destination for unblinded transaction output value.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_unblind_with_nonce(
     const unsigned char *nonce_hash,
@@ -288,8 +274,6 @@ WALLY_CORE_API int wally_asset_unblind_with_nonce(
  * :param vbf_out: Buffer to receive asset blinding factor.
  * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
  * :param value_out: Destination for unblinded transaction output value.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_unblind(
     const unsigned char *pub_key,
@@ -337,8 +321,6 @@ WALLY_CORE_API int wally_asset_blinding_key_from_seed(
  * :param script_len: Length of ``script``.
  * :param bytes_out: Buffer to receive blinding key.
  * :param len: Length of ``bytes_out``. Must be ``EC_PRIVATE_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
     const unsigned char *bytes,
@@ -375,8 +357,6 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof_size(
  * :param bytes_out: Destination for the resulting whitelist proof.
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Number of bytes actually written to ``bytes_out``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_asset_pak_whitelistproof(
     const unsigned char *online_keys,
