@@ -6,12 +6,14 @@ on:
     - cmake_build
     - cfd-develop
     - dlc-develop
+    - cfd-stable-*
     - feature/*
   pull_request:
     branches:
     - cmake_build
     - cfd-develop
     - dlc-develop
+    - cfd-stable-*
     - feature/*
 
 jobs:
