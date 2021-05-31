@@ -538,6 +538,7 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->unknowns);
 
 #ifdef BUILD_ELEMENTS
+        clear_and_free(output->blinding_pubkey, output->blinding_pubkey_len);
         clear_and_free(output->value_commitment, output->value_commitment_len);
         clear_and_free(output->vbf, output->vbf_len);
         clear_and_free(output->asset_commitment, output->asset_commitment_len);
@@ -1303,7 +1304,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     int ret;
     size_t i, key_len;
     struct wally_psbt *result = NULL;
-    uint32_t flags = 0;
+    uint32_t flags = 0, pre144flag = WALLY_TX_FLAG_PRE_BIP144;
 
     TX_CHECK_OUTPUT;
 
@@ -1319,6 +1320,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             goto fail;
         }
         flags |= WALLY_TX_FLAG_USE_ELEMENTS;
+        pre144flag = 0;
 #else
         ret = WALLY_EINVAL;  /* Invalid Magic */
         goto fail;
@@ -1352,7 +1354,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             pull_subfield_start(&bytes, &len,
                                 pull_varint(&bytes, &len),
                                 &val, &val_max);
-            ret = wally_tx_from_bytes(val, val_max, flags, &tx);
+            ret = wally_tx_from_bytes(val, val_max, flags | pre144flag, &tx);
             if (ret == WALLY_OK) {
                 ret = psbt_set_global_tx(result, tx, false);
                 if (ret != WALLY_OK)
@@ -1722,7 +1724,10 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
 
     /* Global tx */
     push_psbt_key(&cursor, &max, PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
-    push_length_and_tx(&cursor, &max, psbt->tx, WALLY_TX_FLAG_ALLOW_PARTIAL);
+    ret = push_length_and_tx(&cursor, &max, psbt->tx,
+                             WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144);
+    if (ret != WALLY_OK)
+        return ret;
 
     /* version */
     if (psbt->version > 0) {

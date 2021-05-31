@@ -33,7 +33,7 @@ class TransactionTests(unittest.TestCase):
             (utf8(''), 0, tx_out), # Empty hex
             (utf8('00'*5), 0, tx_out), # Short hex
             (TX_FAKE_HEX, 0, None), # Empty output
-            (TX_FAKE_HEX, 8, tx_out), # Unsupported flag
+            (TX_FAKE_HEX, 16, tx_out), # Unsupported flag
             (TX_WITNESS_HEX[:11]+utf8('0')+TX_WITNESS_HEX[12:], 0, tx_out), # Invalid witness flag
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_from_hex(*args))
@@ -84,7 +84,7 @@ class TransactionTests(unittest.TestCase):
             vsize = (weight + 3) // 4
             self.assertEqual((WALLY_OK, length), wally_tx_get_length(byref(tx), 0))
             self.assertEqual((WALLY_OK, length_with_witness), wally_tx_get_length(byref(tx), 1))
-            self.assertEqual((WALLY_EINVAL, 0), wally_tx_get_length(byref(tx), 8)) # Unsupported flag
+            self.assertEqual((WALLY_EINVAL, 0), wally_tx_get_length(byref(tx), 16)) # Unsupported flag
             self.assertEqual((WALLY_OK, weight), wally_tx_get_weight(byref(tx)))
             self.assertEqual((WALLY_OK, vsize), wally_tx_get_vsize(byref(tx)))
             self.assertEqual((WALLY_OK, vsize), wally_tx_vsize_from_weight(weight))
@@ -228,7 +228,7 @@ class TransactionTests(unittest.TestCase):
             (tx, 0, script, 0, 1, 1, 0, out, out_len), # Invalid script length
             (tx, 0, script, script_len, MAX_SATOSHI+1, 1, 1, out, out_len), # Invalid amount (only with segwit)
             (tx, 0, script, script_len, 1, 0x100, 0, out, out_len), # Invalid sighash
-            (tx, 0, script, script_len, 1, 1, 8, out, out_len), # Invalid flags
+            (tx, 0, script, script_len, 1, 1, 16, out, out_len), # Invalid flags
             (tx, 0, script, script_len, 1, 1, 0, None, out_len), # Empty bytes
             (tx, 0, script, script_len, 1, 1, 0, out, 31), # Short len
             ]:

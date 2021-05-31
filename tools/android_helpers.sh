@@ -79,8 +79,8 @@ function android_get_configure_flags() {
 
     local strip_tool=$(android_get_build_tool $arch $toolsdir "unused" "strip")
     local host=$(basename $strip_tool | sed 's/-strip$//')
-    local args="--host=$host --enable-swig-java --disable-swig-python " \
-        "--enable-elements --enable-endomorphism --enable-ecmult-static-precomputation"
+    local args="--host=$host --enable-swig-java --disable-swig-python \
+--enable-elements --enable-endomorphism --enable-ecmult-static-precomputation"
     case $arch in
        arm*) args="$args --with-asm=auto";;
        x86_64) args="$args --with-asm=x86_64";;

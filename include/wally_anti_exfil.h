@@ -22,8 +22,6 @@ extern "C" {
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``WALLY_HOST_COMMITMENT_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ae_host_commit_from_bytes(
     const unsigned char *entropy,
@@ -46,8 +44,6 @@ WALLY_CORE_API int wally_ae_host_commit_from_bytes(
  * :param s2c_opening_out: Destination for the resulting opening information.
  * :param s2c_opening_out_len: The length of ``s2c_opening_out`` in bytes. Must be
  *|    ``WALLY_S2C_OPENING_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
     const unsigned char *priv_key,
@@ -72,8 +68,6 @@ WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ae_sig_from_bytes(
     const unsigned char *priv_key,
@@ -101,8 +95,6 @@ WALLY_CORE_API int wally_ae_sig_from_bytes(
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param sig: The compact signature of the message in ``bytes``.
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int wally_ae_verify(
     const unsigned char *pub_key,
