@@ -79,7 +79,7 @@ WALLY_CORE_API int bip32_key_free(
 
 #ifndef SWIG
 /**
- * .. note:: This function requires external locking if called from multiple threads.
+ * Initialize a key.
  */
 WALLY_CORE_API int bip32_key_init(
     uint32_t version,
@@ -99,7 +99,7 @@ WALLY_CORE_API int bip32_key_init(
 #endif
 
 /**
- * .. note:: This function requires external locking if called from multiple threads.
+ * As per `bip32_key_init`, but allocates the key.
  */
 WALLY_CORE_API int bip32_key_init_alloc(
     uint32_t version,
@@ -133,8 +133,6 @@ WALLY_CORE_API int bip32_key_init_alloc(
  *|     indicating mainnet or testnet/regtest respectively.
  * :param flags: Either ``BIP32_FLAG_SKIP_HASH`` to skip hash160 calculation, or 0.
  * :param output: Destination for the resulting master extended key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes,
@@ -146,8 +144,6 @@ WALLY_CORE_API int bip32_key_from_seed(
 
 /**
  * As per `bip32_key_from_seed`, but allocates the key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_seed_alloc(
@@ -180,8 +176,6 @@ WALLY_CORE_API int bip32_key_serialize(
  * :param bytes: Storage holding the serialized key.
  * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
  * :param output: Destination for the resulting extended key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip32_key_unserialize(
     const unsigned char *bytes,
@@ -212,8 +206,6 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
  *|       You can not derive a private child extended key from a public
  *|       parent extended key.
  * :param output: Destination for the resulting child extended key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip32_key_from_parent(
     const struct ext_key *hdkey,
@@ -224,8 +216,6 @@ WALLY_CORE_API int bip32_key_from_parent(
 
 /**
  * As per `bip32_key_from_parent`, but allocates the key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_parent_alloc(
@@ -243,8 +233,6 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  * :param child_path_len: The number of child numbers in ``child_path``.
  * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
     const struct ext_key *hdkey,
@@ -256,8 +244,6 @@ WALLY_CORE_API int bip32_key_from_parent_path(
 
 /**
  * As per `bip32_key_from_parent_path`, but allocates the key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_parent_path_alloc(
@@ -277,8 +263,6 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param child_path_len: The number of child numbers in ``child_path``.
  * :param bytes_out: Destination for the resulting pub tweak.
  * :param len: Length of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  */
 WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
     const struct ext_key *hdkey,
@@ -290,8 +274,6 @@ WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
 
 /**
  * As per `bip32_key_with_tweak_from_parent_path`, but allocates the key.
- *
- * .. note:: This function requires external locking if called from multiple threads.
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_with_tweak_from_parent_path_alloc(

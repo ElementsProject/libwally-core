@@ -220,9 +220,17 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 }
 %typemap (in) const struct NAME * {
     $1 = $input == Py_None ? NULL : PyCapsule_GetPointer($input, "struct NAME *");
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+        %argument_fail(-1, "(NAME)", $symname, $argnum);
+    }
 }
 %typemap (in) struct NAME * {
     $1 = $input == Py_None ? NULL : PyCapsule_GetPointer($input, "struct NAME *");
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+        %argument_fail(-1, "(NAME)", $symname, $argnum);
+    }
 }
 %enddef
 
