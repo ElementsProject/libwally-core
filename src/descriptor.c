@@ -814,7 +814,7 @@ static int verify_miniscript_thresh(struct miniscript_node_t *node, struct minis
         return WALLY_EINVAL;
 
     k = (uint32_t) top->number;
-    if (k <= 1)
+    if (k < 1)
         return WALLY_EINVAL;
 
     child = top->next;
@@ -841,7 +841,7 @@ static int verify_miniscript_thresh(struct miniscript_node_t *node, struct minis
         child = child->next;
     }
 
-    if (k >= count)
+    if (k > count)
         return WALLY_EINVAL;
 
     node->type_properties = MINISCRIPT_TYPE_B | MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_U;

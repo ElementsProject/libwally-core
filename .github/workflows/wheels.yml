@@ -4,6 +4,8 @@ on:
   push:
     branches-ignore:
     - feature/*
+    - cfd-develop
+    - cfd-stable-*
   pull_request:
     branches-ignore:
     - cfd-develop
