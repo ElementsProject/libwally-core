@@ -7,13 +7,16 @@
 #include <include/wally_bip39.h>
 #include <include/wally_crypto.h>
 
+#include "data/wordlists/english.c"
+
+#ifndef BUILD_MINIMAL
 #include "data/wordlists/chinese_simplified.c"
 #include "data/wordlists/chinese_traditional.c"
-#include "data/wordlists/english.c"
 #include "data/wordlists/french.c"
 #include "data/wordlists/italian.c"
 #include "data/wordlists/spanish.c"
 #include "data/wordlists/japanese.c"
+#endif
 
 /* Maximum length including up to 2 bytes for checksum */
 #define BIP39_ENTROPY_LEN_MAX (BIP39_ENTROPY_LEN_320 + sizeof(unsigned char) * 2)
@@ -22,17 +25,24 @@ static const struct {
     const char name[4];
     const struct words *words;
 } lookup[] = {
-    { "en", &en_words}, { "es", &es_words}, { "fr", &fr_words},
+    { "en", &en_words},
+#ifndef BUILD_MINIMAL
+    { "es", &es_words}, { "fr", &fr_words},
     { "it", &it_words}, { "jp", &jp_words}, { "zhs", &zhs_words},
     { "zht", &zht_words},
     /* FIXME: Should 'zh' map to traditional or simplified? */
+#endif
 };
 
 int bip39_get_languages(char **output)
 {
     if (!output)
         return WALLY_EINVAL;
+#ifndef BUILD_MINIMAL
     *output = wally_strdup("en es fr it jp zhs zht");
+#else
+    *output = wally_strdup("en");
+#endif
     return *output ? WALLY_OK : WALLY_ENOMEM;
 }
 

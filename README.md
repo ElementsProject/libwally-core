@@ -62,6 +62,8 @@ $ brew install swig
 
 - `--enable-debug`. Enables debugging information and disables compiler
    optimisations (default: no).
+- `--enable-minimal`. Minimises library size and memory requirements to target
+   embedded or resource-constrained environments (default: no).
 - `--enable-export-all`. Export all functions from the wally shared library.
    Ordinarily only API functions are exported. (default: no). Enable this
    if you want to test the internal functions of the library or are planning
