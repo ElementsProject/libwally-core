@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Windows Build Deps
         if: runner.os == 'Windows'
-        run: choco install swig --version=3.0.7 --no-progress -y
+        run: choco install swig --version=3.0.7 --no-progress --allow-downgrade -y
 
       - name: Generate Windows SWIG Files
         if: runner.os == 'Windows'
