@@ -26,6 +26,10 @@
 #include <include/wally_crypto.h>
 #include "script.h"
 
+typedef int bech32_checksum_t;
+const bech32_checksum_t BECH32_CHECKSUM_UNKNOWN = 0;
+const bech32_checksum_t BECH32_CHECKSUM_BECH32 = 1;
+const bech32_checksum_t BECH32_CHECKSUM_BECH32M = 0x2bc830a3;
 
 static uint32_t bech32_polymod_step(uint32_t pre) {
     uint8_t b = pre >> 25;
@@ -50,7 +54,7 @@ static const int8_t charset_rev[128] = {
     1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1
 };
 
-static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, size_t max_input_len) {
+static int bech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, size_t max_input_len, bech32_checksum_t chksum) {
     uint32_t chk = 1;
     size_t i = 0;
     while (hrp[i] != 0) {
@@ -78,7 +82,7 @@ static int bech32_encode(char *output, const char *hrp, const uint8_t *data, siz
     for (i = 0; i < 6; ++i) {
         chk = bech32_polymod_step(chk);
     }
-    chk ^= 1;
+    chk ^= chksum;
     for (i = 0; i < 6; ++i) {
         *(output++) = charset[(chk >> ((5 - i) * 5)) & 0x1f];
     }
@@ -86,28 +90,28 @@ static int bech32_encode(char *output, const char *hrp, const uint8_t *data, siz
     return 1;
 }
 
-static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input, size_t max_input_len) {
+static bech32_checksum_t bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input, size_t max_input_len) {
     uint32_t chk = 1;
     size_t i;
     size_t input_len = strlen(input);
     size_t hrp_len;
     int have_lower = 0, have_upper = 0;
     if (input_len < 8 || input_len > max_input_len) {
-        return 0;
+        return BECH32_CHECKSUM_UNKNOWN;
     }
     *data_len = 0;
     while (*data_len < input_len && input[(input_len - 1) - *data_len] != '1') {
         ++(*data_len);
     }
-    if (1 + *data_len >= input_len || *data_len < 6) {
-        return 0;
-    }
     hrp_len = input_len - (1 + *data_len);
+    if (1 + *data_len >= input_len || *data_len < 6) {
+        return BECH32_CHECKSUM_UNKNOWN;
+    }
     *(data_len) -= 6;
     for (i = 0; i < hrp_len; ++i) {
         int ch = input[i];
         if (ch < 33 || ch > 126) {
-            return 0;
+            return BECH32_CHECKSUM_UNKNOWN;
         }
         if (ch >= 'a' && ch <= 'z') {
             have_lower = 1;
@@ -129,7 +133,7 @@ static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char 
         if (input[i] >= 'a' && input[i] <= 'z') have_lower = 1;
         if (input[i] >= 'A' && input[i] <= 'Z') have_upper = 1;
         if (v == -1) {
-            return 0;
+            return BECH32_CHECKSUM_UNKNOWN;
         }
         chk = bech32_polymod_step(chk) ^ v;
         if (i + 6 < input_len) {
@@ -138,9 +142,13 @@ static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char 
         ++i;
     }
     if (have_lower && have_upper) {
-        return 0;
+        return BECH32_CHECKSUM_UNKNOWN;
     }
-    return chk == 1;
+    if ((int)chk == BECH32_CHECKSUM_BECH32 || (int)chk == BECH32_CHECKSUM_BECH32M) {
+        return chk;
+    } else {
+        return BECH32_CHECKSUM_UNKNOWN;
+    }
 }
 
 static int convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits, int pad) {
@@ -168,13 +176,14 @@ static int convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t
 static int segwit_addr_encode(char *output, const char *hrp, int witver, const uint8_t *witprog, size_t witprog_len) {
     uint8_t data[65];
     size_t datalen = 0;
+    const bech32_checksum_t chksum = witver ? BECH32_CHECKSUM_BECH32M : BECH32_CHECKSUM_BECH32;
     if (witver < 0 || witver > 16) goto fail;
     if (witver == 0 && witprog_len != 20 && witprog_len != 32) goto fail;
     if (witprog_len < 2 || witprog_len > 40) goto fail;
     data[0] = witver;
     convert_bits(data + 1, &datalen, 5, witprog, witprog_len, 8, 1);
     ++datalen;
-    return bech32_encode(output, hrp, data, datalen, 90);
+    return bech32_encode(output, hrp, data, datalen, 90, chksum);
 fail:
     wally_clear_2(data, sizeof(data), (void *)witprog, witprog_len);
     return 0;
@@ -184,10 +193,13 @@ static int segwit_addr_decode(int *witver, uint8_t *witdata, size_t *witdata_len
     uint8_t data[84];
     char hrp_actual[84];
     size_t data_len;
-    if (!bech32_decode(hrp_actual, data, &data_len, addr, 90)) goto fail;
+    bech32_checksum_t chksum = BECH32_CHECKSUM_UNKNOWN;
+    if ((chksum = bech32_decode(hrp_actual, data, &data_len, addr, 90)) == BECH32_CHECKSUM_UNKNOWN) goto fail;
     if (data_len == 0 || data_len > 65) goto fail;
     if (strncmp(hrp, hrp_actual, 84) != 0) goto fail;
     if (data[0] > 16) goto fail;
+    if (data[0] == 0 && chksum != BECH32_CHECKSUM_BECH32) goto fail;
+    if (data[0] > 0 && chksum != BECH32_CHECKSUM_BECH32M) goto fail;
     *witdata_len = 0;
     if (!convert_bits(witdata, witdata_len, 8, data + 1, data_len - 1, 5, 0)) goto fail;
     if (*witdata_len < 2 || *witdata_len > 40) goto fail;
@@ -206,6 +218,7 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
     char result[90];
     size_t push_size;
     int ret;
+    uint8_t witver;
 
     if (output)
         *output = 0;
@@ -213,15 +226,18 @@ int wally_addr_segwit_from_bytes(const unsigned char *bytes, size_t bytes_len,
     if (!addr_family || flags || !bytes || !bytes_len || !output)
         return WALLY_EINVAL;
 
-    if (bytes[0] != 0)
-        return WALLY_EINVAL; /* Only v0 witness programs are currently allowed */
+    witver = bytes[0];
+    if (witver != OP_0 && witver != OP_1)
+        return WALLY_EINVAL;
+        
+    witver &= 0x0F; /* Convert OP_0 -> 0, OP_1 -> 1 etc */
 
     ret = script_get_push_size_from_bytes(bytes + 1, bytes_len - 1, &push_size);
-    if (ret != WALLY_OK || (push_size != HASH160_LEN && push_size != SHA256_LEN))
+    if (ret != WALLY_OK || (witver == 0 && push_size != HASH160_LEN && push_size != SHA256_LEN))
         return WALLY_EINVAL;
 
     result[0] = '\0';
-    if (!segwit_addr_encode(result, addr_family, 0, bytes + 2, bytes_len - 2))
+    if (!segwit_addr_encode(result, addr_family, witver, bytes + 2, bytes_len - 2))
         return WALLY_ERROR;
 
     *output = wally_strdup(result);
