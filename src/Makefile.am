@@ -273,14 +273,16 @@ test_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_tx_LDADD += $(PYTHON_LIBS)
-endifTESTS += test_descriptor
+endif
+TESTS += test_descriptor
 noinst_PROGRAMS += test_descriptor
 test_descriptor_SOURCES = ctest/test_descriptor.c
 test_descriptor_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_descriptor_LDADD += $(PYTHON_LIBS)
-endifif BUILD_ELEMENTS
+endif
+if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
 test_elements_tx_SOURCES = ctest/test_elements_tx.c
