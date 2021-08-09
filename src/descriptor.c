@@ -74,6 +74,7 @@ size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out);
 #define DESCRIPTOR_KEY_VALUE_MAX_LENGTH     130
 #define DESCRIPTOR_NUMBER_BYTE_MAX_LENGTH   18
 #define DESCRIPTOR_MIN_SIZE 20
+#define XONLY_PUBLIC_KEY_LEN 32
 
 #define DESCRIPTOR_CHECKSUM_LENGTH  8
 
@@ -192,6 +193,7 @@ struct miniscript_node_t {
     uint32_t network_type;
     bool is_derive;
     bool is_uncompress_key;
+    bool is_xonly_key;
 };
 
 struct multisig_sort_data_t {
@@ -812,7 +814,7 @@ static int verify_miniscript_thresh(struct miniscript_node_t *node, struct minis
         return WALLY_EINVAL;
 
     k = (uint32_t) top->number;
-    if (k <= 1)
+    if (k < 1)
         return WALLY_EINVAL;
 
     child = top->next;
@@ -839,7 +841,7 @@ static int verify_miniscript_thresh(struct miniscript_node_t *node, struct minis
         child = child->next;
     }
 
-    if (k >= count)
+    if (k > count)
         return WALLY_EINVAL;
 
     node->type_properties = MINISCRIPT_TYPE_B | MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_U;
@@ -1058,6 +1060,8 @@ static int generate_by_miniscript_pk_h(
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
 
     if (!node->child || (script_len < WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1) || (parent && !parent->info))
+        return WALLY_EINVAL;
+    if (node->child->is_xonly_key)
         return WALLY_EINVAL;
 
     ret = generate_script_from_miniscript(node->child, node, derive_child_num, pubkey, sizeof(pubkey), &child_write_len);
@@ -2450,9 +2454,11 @@ static int generate_script_from_miniscript(
     /* value data */
     if ((node->kind & DESCRIPTOR_KIND_RAW) || (node->kind == DESCRIPTOR_KIND_PUBLIC_KEY)) {
         ret = wally_hex_to_bytes(node->data, script, script_len, write_len);
-        if (((ret == WALLY_OK)) && (node->kind == DESCRIPTOR_KIND_PUBLIC_KEY) &&
-            (*write_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)) {
-            node->is_uncompress_key = true;
+        if (((ret == WALLY_OK)) && (node->kind == DESCRIPTOR_KIND_PUBLIC_KEY)) {
+            if (*write_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+                node->is_uncompress_key = true;
+            else if (*write_len == XONLY_PUBLIC_KEY_LEN)
+                node->is_xonly_key = true;
         }
     } else if (node->kind == DESCRIPTOR_KIND_NUMBER) {
         ret = generate_script_from_number(node->number, parent, script, script_len, write_len);
@@ -2484,8 +2490,13 @@ static int generate_script_from_miniscript(
         }
         if (ret == WALLY_OK) {
             if ((output_len == EC_PRIVATE_KEY_LEN + 2) && (privkey[EC_PRIVATE_KEY_LEN + 1] == 1)) {
-                memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
-                *write_len = EC_PUBLIC_KEY_LEN;
+                if (node->is_xonly_key) {
+                    memcpy(script, &pubkey[1], XONLY_PUBLIC_KEY_LEN);
+                    *write_len = XONLY_PUBLIC_KEY_LEN;
+                } else {
+                    memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
+                    *write_len = EC_PUBLIC_KEY_LEN;
+                }
             } else {
                 ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
                                                      EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
@@ -2547,8 +2558,13 @@ static int generate_script_from_miniscript(
 
             memcpy(&extkey, &derive_extkey, sizeof(extkey));
         }
-        memcpy(script, extkey.pub_key, EC_PUBLIC_KEY_LEN);
-        *write_len = EC_PUBLIC_KEY_LEN;
+        if (node->is_xonly_key) {
+            memcpy(script, &extkey.pub_key[1], XONLY_PUBLIC_KEY_LEN);
+            *write_len = XONLY_PUBLIC_KEY_LEN;
+        } else {
+            memcpy(script, extkey.pub_key, EC_PUBLIC_KEY_LEN);
+            *write_len = EC_PUBLIC_KEY_LEN;
+        }
     } else {
         return WALLY_EINVAL;
     }
@@ -2801,6 +2817,7 @@ static int analyze_miniscript_addr(
 
 static int analyze_miniscript_key(
     const struct address_script_t *addr_item,
+    uint32_t flags,
     struct miniscript_node_t *node,
     struct miniscript_node_t *parent_node)
 {
@@ -2842,13 +2859,25 @@ static int analyze_miniscript_key(
     }
 
     /* check key (public key) */
-    if ((str_len == EC_PUBLIC_KEY_LEN * 2) || (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)) {
+    if (((flags & WALLY_MINISCRIPT_TAPSCRIPT) == 0) &&
+        ((str_len == EC_PUBLIC_KEY_LEN * 2) || (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2))) {
         ret = wally_hex_to_bytes(node->data, pubkey, sizeof(pubkey), &buf_len);
         if (ret == WALLY_OK) {
             node->kind = DESCRIPTOR_KIND_PUBLIC_KEY;
             if (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)
                 node->is_uncompress_key = true;
             return wally_ec_public_key_verify(pubkey, buf_len);
+        }
+    }
+    else if (((flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0) &&
+        (str_len == XONLY_PUBLIC_KEY_LEN * 2)) {
+        ret = wally_hex_to_bytes(node->data, pubkey, sizeof(pubkey), &buf_len);
+        if (ret == WALLY_OK) {
+            node->kind = DESCRIPTOR_KIND_PUBLIC_KEY;
+            node->is_xonly_key = true;
+            memmove(pubkey + 1, pubkey, buf_len);
+            pubkey[0] = 2;
+            return wally_ec_public_key_verify(pubkey, buf_len + 1);
         }
     }
 
@@ -2862,8 +2891,13 @@ static int analyze_miniscript_key(
         if ((buf_len == EC_PRIVATE_KEY_LEN + 1) ||
             ((buf_len == EC_PRIVATE_KEY_LEN + 2) && (privkey_bytes[EC_PRIVATE_KEY_LEN + 1] == 0x01))) {
             node->kind = DESCRIPTOR_KIND_PRIVATE_KEY;
-            if (buf_len == EC_PRIVATE_KEY_LEN + 1)
+            if (buf_len == EC_PRIVATE_KEY_LEN + 1) {
                 node->is_uncompress_key = true;
+                if ((flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0)
+                    return WALLY_EINVAL;
+            }
+            if ((flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0)
+                node->is_xonly_key = true;
             return wally_ec_private_key_verify(&privkey_bytes[1], EC_PRIVATE_KEY_LEN);
         }
         return WALLY_EINVAL;
@@ -2925,6 +2959,8 @@ static int analyze_miniscript_key(
         }
     }
 
+    if ((flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0)
+        node->is_xonly_key = true;
     if (node->derive_path && node->derive_path[0] != '\0')
         ret = convert_bip32_path_to_array(node->derive_path,
                                           NULL,
@@ -2941,6 +2977,7 @@ static int analyze_miniscript_value(
     const char **key_value_array,
     size_t array_len,
     uint32_t *network,
+    uint32_t flags,
     struct miniscript_node_t *node,
     struct miniscript_node_t *parent_node)
 {
@@ -3025,7 +3062,7 @@ static int analyze_miniscript_value(
         return WALLY_OK;
     }
 
-    return analyze_miniscript_key(addr_item, node, parent_node);
+    return analyze_miniscript_key(addr_item, flags, node, parent_node);
 }
 
 static int analyze_miniscript(
@@ -3035,6 +3072,7 @@ static int analyze_miniscript(
     size_t array_len,
     uint32_t target,
     uint32_t *network,
+    uint32_t flags,
     struct miniscript_node_t *prev_node,
     struct miniscript_node_t *parent_node,
     struct miniscript_node_t **generate_node,
@@ -3140,6 +3178,7 @@ static int analyze_miniscript(
                                      array_len,
                                      target,
                                      network,
+                                     flags,
                                      prev_child,
                                      node,
                                      &child,
@@ -3163,6 +3202,7 @@ static int analyze_miniscript(
                                        key_value_array,
                                        array_len,
                                        network,
+                                       flags,
                                        node,
                                        parent_node);
 
@@ -3323,7 +3363,8 @@ static int parse_miniscript(
     size_t write_len;
     struct miniscript_node_t *top_node = NULL;
 
-    if (flags || !miniscript || (array_len && (!key_name_array || !key_value_array)) ||
+    if (((flags & ~0x1) != 0) ||
+        !miniscript || (array_len && (!key_name_array || !key_value_array)) ||
         (!array_len && (key_name_array || key_value_array)) ||
         check_ascii_string(miniscript, DESCRIPTOR_LIMIT_LENGTH))
         return WALLY_EINVAL;
@@ -3340,7 +3381,8 @@ static int parse_miniscript(
     }
 
     ret = analyze_miniscript(miniscript, key_name_array, key_value_array, array_len,
-                             target, network, NULL, NULL, &top_node, script_ignore_checksum);
+                             target, network, flags,
+                             NULL, NULL, &top_node, script_ignore_checksum);
     if ((ret == WALLY_OK) && (target & DESCRIPTOR_KIND_DESCRIPTOR) &&
         (!top_node->info || !(top_node->info->kind & DESCRIPTOR_KIND_DESCRIPTOR)))
         ret = WALLY_EINVAL;

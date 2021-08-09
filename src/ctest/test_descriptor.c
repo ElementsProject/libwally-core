@@ -37,6 +37,12 @@ struct wally_miniscript_test {
     const char *p2wsh_scriptpubkey;
 };
 
+struct wally_miniscript_taproot_test {
+    const char *miniscript;
+    const char *scriptpubkey;
+    uint32_t flags;
+};
+
 struct wally_descriptor_test {
     const char *name;
     const char *descriptor;
@@ -246,6 +252,24 @@ struct wally_miniscript_test g_miniscript_test_table[] = {
         "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
         "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
         "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
+    },
+};
+
+struct wally_miniscript_taproot_test g_miniscript_taproot_test_table[] = {
+    {
+        "c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)",
+        "20daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac",
+        WALLY_MINISCRIPT_TAPSCRIPT
+    },
+    {
+        "c:pk_k([bd16bee5/0]xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/1)",
+        "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac",
+        WALLY_MINISCRIPT_TAPSCRIPT
+    },
+    {
+        "c:pk_k(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
+        "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
+        WALLY_MINISCRIPT_TAPSCRIPT
     },
 };
 
@@ -861,7 +885,8 @@ struct wally_descriptor_err_test g_address_err_test_table[] = {
 static bool check_parse_miniscript(const char *function, const char *descriptor,
                                    const char *expected,
                                    const char **key_name_list,
-                                   const char **key_value_list, size_t list_num)
+                                   const char **key_value_list, size_t list_num,
+                                   uint32_t flags)
 {
     size_t written = 0;
     unsigned char script[520];
@@ -869,7 +894,6 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
     int ret;
     bool is_success = false;
     uint32_t index = 0;
-    uint32_t flag = 0;
 
     ret = wally_descriptor_parse_miniscript(
         descriptor,
@@ -877,7 +901,7 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
         key_value_list,
         list_num,
         index,
-        flag,
+        flags,
         script,
         sizeof(script),
         &written);
@@ -1175,6 +1199,7 @@ int main(void)
     size_t index;
     size_t miniscript_ref_max = sizeof(g_miniscript_ref_test_table) / sizeof(struct wally_miniscript_ref_test);
     size_t miniscript_max = sizeof(g_miniscript_test_table) / sizeof(struct wally_miniscript_test);
+    size_t miniscript_tr_max = sizeof(g_miniscript_taproot_test_table) / sizeof(struct wally_miniscript_taproot_test);
     size_t desc_max = sizeof(g_descriptor_test_table) / sizeof(struct wally_descriptor_test);
     size_t desc_depth_max = sizeof(g_descriptor_depth_test_table) / sizeof(struct wally_descriptor_depth_test);
     size_t addr_max = sizeof(g_descriptor_address_test_table) / sizeof(struct wally_descriptor_address_test);
@@ -1187,7 +1212,7 @@ int main(void)
                 g_miniscript_ref_test_table[index].miniscript,
                 g_miniscript_ref_test_table[index].miniscript,
                 g_miniscript_ref_test_table[index].scriptpubkey,
-                NULL, NULL, 0)) {
+                NULL, NULL, 0, 0)) {
             printf("[%s] test failed!\n", g_miniscript_ref_test_table[index].miniscript);
             tests_ok = false;
         }
@@ -1198,8 +1223,20 @@ int main(void)
                 g_miniscript_test_table[index].name,
                 g_miniscript_test_table[index].descriptor,
                 g_miniscript_test_table[index].scriptpubkey,
-                NULL, NULL, 0)) {
+                NULL, NULL, 0, 0)) {
             printf("[%s] test failed!\n", g_miniscript_test_table[index].name);
+            tests_ok = false;
+        }
+    }
+
+    for (index = 0; index < miniscript_tr_max; ++index) {
+        if (!check_parse_miniscript(
+                g_miniscript_taproot_test_table[index].miniscript,
+                g_miniscript_taproot_test_table[index].miniscript,
+                g_miniscript_taproot_test_table[index].scriptpubkey,
+                NULL, NULL, 0,
+                g_miniscript_taproot_test_table[index].flags)) {
+            printf("[%s] test failed!\n", g_miniscript_taproot_test_table[index].miniscript);
             tests_ok = false;
         }
     }
