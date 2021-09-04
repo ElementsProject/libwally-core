@@ -35,7 +35,7 @@ And can be used from:
 # Initialise the libsecp sources (Needs to be run only once)
 $ git submodule init
 $ git submodule sync --recursive
-$ git submodule update --init --recursive`
+$ git submodule update --init --recursive
 
 # Build
 $ ./tools/autogen.sh
