@@ -170,7 +170,7 @@ $ source $HOME/emsdk/emsdk_env.sh
 # Optionally set the list of wally functions to export to wasm (default: all)
 $ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',...]"
 
-`# Build
+# Build
 $ ./tools/build_wasm.sh [--enable-elements]
 ```
 
