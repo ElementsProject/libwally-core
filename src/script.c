@@ -734,7 +734,7 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
     /* The script we create is:
      *     <recovery_pubkey> OP_CHECKSIGVERIFY
      *     <main_pubkey> OP_CHECKSIG OP_IFDUP OP_NOTIF
-     *         <CSV_BLOCLK> OP_CHECKSEQUENCEVERIFY
+     *         <CSV_BLOCK> OP_CHECKSEQUENCEVERIFY
      * OP_ENDIF
      * Solved by:
      * 1) The stack containing the main and and recovery signatures.
