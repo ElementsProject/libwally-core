@@ -78,7 +78,8 @@ static bool is_p2pkh(unsigned char version)
     return version == WALLY_ADDRESS_VERSION_P2PKH_MAINNET ||
            version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET ||
            version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID ||
-           version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST;
+           version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST ||
+           version == WALLY_ADDRESS_VERSION_P2PKH_LIQUID_TESTNET;
 }
 
 static bool is_p2sh(unsigned char version)
@@ -86,7 +87,8 @@ static bool is_p2sh(unsigned char version)
     return version == WALLY_ADDRESS_VERSION_P2SH_MAINNET ||
            version == WALLY_ADDRESS_VERSION_P2SH_TESTNET ||
            version == WALLY_ADDRESS_VERSION_P2SH_LIQUID ||
-           version == WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST;
+           version == WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST ||
+           version == WALLY_ADDRESS_VERSION_P2SH_LIQUID_TESTNET;
 }
 
 static int network_from_addr_version(uint32_t version, uint32_t *network)
@@ -107,6 +109,10 @@ static int network_from_addr_version(uint32_t version, uint32_t *network)
     case WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST:
     case WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST:
         *network = WALLY_NETWORK_LIQUID_REGTEST;
+        break;
+    case WALLY_ADDRESS_VERSION_P2PKH_LIQUID_TESTNET:
+    case WALLY_ADDRESS_VERSION_P2SH_LIQUID_TESTNET:
+        *network = WALLY_NETWORK_LIQUID_TESTNET;
         break;
     default:
         return WALLY_EINVAL;
@@ -170,6 +176,9 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
         case WALLY_NETWORK_LIQUID_REGTEST:
             bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST;
             break;
+        case WALLY_NETWORK_LIQUID_TESTNET:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_LIQUID_TESTNET;
+            break;
         default:
             return WALLY_EINVAL;
         }
@@ -188,6 +197,9 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
             break;
         case WALLY_NETWORK_LIQUID_REGTEST:
             bytes[0] = WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST;
+            break;
+        case WALLY_NETWORK_LIQUID_TESTNET:
+            bytes[0] = WALLY_ADDRESS_VERSION_P2SH_LIQUID_TESTNET;
             break;
         default:
             return WALLY_EINVAL;

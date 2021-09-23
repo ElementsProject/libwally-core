@@ -14,11 +14,13 @@ struct ext_key;
 
 #define WALLY_CA_PREFIX_LIQUID 0x0c /** Liquid v1 confidential address prefix */
 #define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
+#define WALLY_CA_PREFIX_LIQUID_TESTNET 0x17 /** Liquid v1 confidential address prefix for testnet */
 
 #define WALLY_NETWORK_BITCOIN_MAINNET 0x01 /** Bitcoin mainnet */
 #define WALLY_NETWORK_BITCOIN_TESTNET 0x02 /** Bitcoin testnet */
 #define WALLY_NETWORK_LIQUID 0x03 /** Liquid v1 */
 #define WALLY_NETWORK_LIQUID_REGTEST 0x04 /** Liquid v1 regtest */
+#define WALLY_NETWORK_LIQUID_TESTNET 0x05 /** Liquid v1 testnet */
 
 #define WALLY_ADDRESS_TYPE_P2PKH 0x01       /** P2PKH address ("1...") */
 #define WALLY_ADDRESS_TYPE_P2SH_P2WPKH 0x02 /** P2SH-P2WPKH wrapped SegWit address ("3...") */
@@ -28,10 +30,12 @@ struct ext_key;
 #define WALLY_ADDRESS_VERSION_P2PKH_TESTNET 0x6F /** P2PKH address on testnet */
 #define WALLY_ADDRESS_VERSION_P2PKH_LIQUID 0x39 /** P2PKH address on liquid v1 */
 #define WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST 0xEB /** P2PKH address on liquid v1 regtest */
+#define WALLY_ADDRESS_VERSION_P2PKH_LIQUID_TESTNET 0x24 /** P2PKH address on liquid v1 testnet */
 #define WALLY_ADDRESS_VERSION_P2SH_MAINNET 0x05 /** P2SH address on mainnet */
 #define WALLY_ADDRESS_VERSION_P2SH_TESTNET 0xC4 /** P2SH address on testnet */
 #define WALLY_ADDRESS_VERSION_P2SH_LIQUID 0x27 /** P2SH address on liquid v1 */
 #define WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST 0x4B /** P2SH address on liquid v1 regtest */
+#define WALLY_ADDRESS_VERSION_P2SH_LIQUID_TESTNET 0x13 /** P2SH address on liquid v1 testnet */
 #define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
 #define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 

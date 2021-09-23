@@ -19,6 +19,7 @@ NETWORK_BITCOIN_MAINNET = 0x01
 NETWORK_BITCOIN_TESTNET = 0x02
 NETWORK_LIQUID_MAINNET  = 0x03
 NETWORK_LIQUID_REGTEST  = 0x04
+NETWORK_LIQUID_TESTNET  = 0x05
 
 
 # Vector from test_bip32.py. We only need an xpub to derive addresses.
@@ -157,6 +158,7 @@ class AddressTests(unittest.TestCase):
         """Check that addresses can be converted to and from scriptpubkeys for Liquid"""
         for addr, scriptpubkey, network in [
             ('XYtnYoGoSeE9ouMEVi6mfeujhjT2VnJncA', 'a914ec51ffb65120594389733bf8625f542446d97f7987', NETWORK_LIQUID_REGTEST),
+            ('8ijSaT49UHvpdmcAuHkKPEPJBKMoLog6do', 'a9142f470bcda2c4818fd47b25b2d7ec95fda56ffca287', NETWORK_LIQUID_TESTNET),
             ('H5nswXhfo8AMt159sgA5FWT35De34hVR4o', 'a914f80278b2011573a2ac59c83fadf929b0fc57ad0187', NETWORK_LIQUID_MAINNET),
         ]:
             out, out_len = make_cbuffer('00' * (100))
