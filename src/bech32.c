@@ -26,6 +26,8 @@
 #include <include/wally_crypto.h>
 #include "script.h"
 
+static const uint32_t bech32_check_val = 1;
+static const uint32_t bech32m_check_val = 0x2bc830a3;
 
 static uint32_t bech32_polymod_step(uint32_t pre) {
     uint8_t b = pre >> 25;
@@ -78,7 +80,7 @@ static int bech32_encode(char *output, const char *hrp, const uint8_t *data, siz
     for (i = 0; i < 6; ++i) {
         chk = bech32_polymod_step(chk);
     }
-    chk ^= (is_bech32m) ? 0x2bc830a3 : 1;
+    chk ^= (is_bech32m) ? bech32m_check_val : bech32_check_val;
     for (i = 0; i < 6; ++i) {
         *(output++) = charset[(chk >> ((5 - i) * 5)) & 0x1f];
     }
@@ -140,8 +142,8 @@ static int bech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char 
     if (have_lower && have_upper) {
         return 0;
     }
-    if (is_bech32m != NULL) *is_bech32m = (chk == 0x2bc830a3);
-    return (chk == 1) || (chk == 0x2bc830a3);
+    if (is_bech32m != NULL) *is_bech32m = (chk == bech32m_check_val);
+    return (chk == bech32_check_val) || (chk == bech32m_check_val);
 }
 
 static int convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits, int pad) {

@@ -7,18 +7,72 @@
 #include <stdbool.h>
 #include <string.h>
 
-static const char *elements_bech32 = "ert1qu6ssk77c466kg3x9wd82dqkd9udddykyfykm9k";
-static const char *elements_confidential_key = "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800";
-static const char *elements_blech32 = "el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqpe4ppdaa3t44v3zv2u6w56pv6tc666fvgzaclqjnkz0sd";
+struct wally_blech32_test {
+    const char *address;
+    const char *addr_family;
+    const char *confidential_key;
+    const char *confidential_address;
+    const char *confidential_addr_family;
+};
 
-// OP_HASH160 29b1ec079a9c6a45a4e9ab38c3aa3e0ad3dc61f0 OP_EQUALVERIFY
-// 332a30b8b2753e64b1d0ebc951c057f0d9c29992d11118794c0fa1c6d2357ca6
-static const char *elements_witness_script = "0020332a30b8b2753e64b1d0ebc951c057f0d9c29992d11118794c0fa1c6d2357ca6";
-static const char *elements_script_bech32 = "ert1qxv4rpw9jw5lxfvwsa0y4rszh7rvu9xvj6yg3s72vp7sud5340jnquagp6g";
-static const char *elements_script_blech32 = "el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqqve2xzutyaf7vjcap67f28q90uxec2ve95g3rpu5crapcmfr2l9xl5jzazvcpysz";
+/*
+pk=02409b4d18429c6e5cbc0bd59c63b8fe7055f603190c8deed6a644bc95c9772e48
+script=OP_HASH160 dc4af3ea14b0592621514e2bd4a0e083c7fac2f2 OP_EQUALVERIFY
+  -> a914dc4af3ea14b0592621514e2bd4a0e083c7fac2f288
+tr hash=409b4d18429c6e5cbc0bd59c63b8fe7055f603190c8deed6a644bc95c9772e48
+*/
 
+static struct wally_blech32_test g_blech32_test_table[] = {
+    {   /* p2wpkh testnet */
+        "ert1qm39086s5kpvjvg23fc4afg8qs0rl4shjygphsr",
+        "ert",
+        "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800",
+        "el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqphz2704pfvzeycs4zn3t6jswpq78ltp0yd23jxpdekpau",
+        "el"
+    },
+    {   /* p2wsh testnet */
+        "ert1qgs3lcwxkawtwvmrhrdww65m2vvmkl9367t54xh990dpmc09mehqs89mfu7",
+        "ert",
+        "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800",
+        "el1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqq3prlsudd6ukuek8wx6ua4fk5cehd7tr4uhf2dw2276rhs7thnwpxqzalk28qxgj",
+        "el"
+    },
+    {   /* p2wpkh liquidv1 */
+        "ex1qm39086s5kpvjvg23fc4afg8qs0rl4shj76t00e",
+        "ex",
+        "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800",
+        "lq1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqphz2704pfvzeycs4zn3t6jswpq78ltp0yxz3p90nf3npx",
+        "lq"
+    },
+    {   /* p2wsh liquidv1 */
+        "ex1qgs3lcwxkawtwvmrhrdww65m2vvmkl9367t54xh990dpmc09mehqssgyt6f",
+        "ex",
+        "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800",
+        "lq1qqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqq3prlsudd6ukuek8wx6ua4fk5cehd7tr4uhf2dw2276rhs7thnwp0vuhrqfhrklz",
+        "lq"
+    },
+    {   /* p2tr testnet */
+        "ert1pgzd56xzzn3h9e0qt6kwx8w87wp2lvqcepjx7a44xgj7ftjth9eyq0lx3wm",
+        "ert",
+        "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800",
+        "el1pqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqqsymf5vy98rwtj7qh4vuvwu0uuz47cp3jrydamt2v39ujhyhwtjgyxxut0a8e8ju",
+        "el"
+    },
+    {   /* p2tr liquidv1 */
+        "ex1pgzd56xzzn3h9e0qt6kwx8w87wp2lvqcepjx7a44xgj7ftjth9eyqcjengv",
+        "ex",
+        "03a398eed59a2368563bbd2bc68a7ccdbbd6dcbf43b298edc810d22edb6d761800",
+        "lq1pqw3e3mk4ng3ks43mh54udznuekaadh9lgwef3mwgzrfzakmdwcvqqsymf5vy98rwtj7qh4vuvwu0uuz47cp3jrydamt2v39ujhyhwtjgd2ckhe7h6h9v",
+        "lq"
+    },
+};
 
-static bool check_confidential_addr_from_addr_segwit_pubkey(void)
+static bool check_confidential_addr_from_addr_segwit(
+    const char *address,
+    const char *addr_family,
+    const char *confidential_addr_family,
+    const char *confidential_key,
+    const char *expect_confidential_address)
 {
     size_t written = 0;
     unsigned char pub_key[EC_PUBLIC_KEY_LEN];
@@ -26,7 +80,7 @@ static bool check_confidential_addr_from_addr_segwit_pubkey(void)
     int ret;
     bool is_success = false;
 
-    ret = wally_hex_to_bytes(elements_confidential_key,
+    ret = wally_hex_to_bytes(confidential_key,
                              pub_key, EC_PUBLIC_KEY_LEN, &written);
     if (ret != WALLY_OK)
         return false;
@@ -34,105 +88,44 @@ static bool check_confidential_addr_from_addr_segwit_pubkey(void)
     if (written != EC_PUBLIC_KEY_LEN)
         return false;
 
-    ret = wally_confidential_addr_from_addr_segwit(elements_bech32,
-                                                   "ert", "el", pub_key, EC_PUBLIC_KEY_LEN, &blech32);
+    ret = wally_confidential_addr_from_addr_segwit(
+        address, addr_family, confidential_addr_family, pub_key, EC_PUBLIC_KEY_LEN, &blech32);
     if (ret != WALLY_OK)
         return false;
 
-    if (strncmp(blech32, elements_blech32, strlen(elements_blech32) + 1) == 0)
+    if (strncmp(blech32, expect_confidential_address, strlen(expect_confidential_address) + 1) == 0)
         is_success = true;
 
     wally_free_string(blech32);
     return is_success;
 }
 
-static bool check_confidential_addr_from_addr_segwit_script(void)
-{
-    size_t written = 0;
-    unsigned char pub_key[EC_PUBLIC_KEY_LEN];
-    unsigned char witness_script[SHA256_LEN + 2];
-    char bech32_address[91];
-    char *blech32 = NULL;
-    char *bech32 = NULL;
-    int ret;
-    bool is_success = false;
-
-    ret = wally_hex_to_bytes(elements_confidential_key,
-                             pub_key, EC_PUBLIC_KEY_LEN, &written);
-    if (ret != WALLY_OK)
-        return false;
-
-    if (written != EC_PUBLIC_KEY_LEN)
-        return false;
-
-    ret = wally_hex_to_bytes(elements_witness_script,
-                             witness_script, SHA256_LEN + 2, &written);
-    if (ret != WALLY_OK)
-        return false;
-
-    if (written != (SHA256_LEN + 2))
-        return false;
-
-    ret = wally_addr_segwit_from_bytes(witness_script, written,
-                                       "ert", 0, &bech32);
-    if (ret != WALLY_OK)
-        return false;
-
-    strcpy(bech32_address, bech32);
-    wally_free_string(bech32);
-
-    if (strcmp(bech32_address, elements_script_bech32) != 0)
-        return false;
-
-    ret = wally_confidential_addr_from_addr_segwit(bech32_address,
-                                                   "ert", "el", pub_key, EC_PUBLIC_KEY_LEN, &blech32);
-    if (ret != WALLY_OK)
-        return false;
-
-    if (strncmp(blech32, elements_script_blech32, strlen(elements_script_blech32) + 1) == 0)
-        is_success = true;
-
-    wally_free_string(blech32);
-    return is_success;
-}
-
-static bool check_confidential_addr_to_addr_segwit_pubkey(void)
+static bool check_confidential_addr_to_addr_segwit(
+    const char *address,
+    const char *confidential_addr_family,
+    const char *addr_family,
+    const char *expect_address)
 {
     char *bech32 = NULL;
     int ret;
     bool is_success = false;
 
-    ret = wally_confidential_addr_to_addr_segwit(elements_blech32,
-                                                 "el", "ert", &bech32);
+    ret = wally_confidential_addr_to_addr_segwit(
+        address, confidential_addr_family, addr_family, &bech32);
     if (ret != WALLY_OK)
         return false;
 
-    if (strcmp(bech32, elements_bech32) == 0)
+    if (strcmp(bech32, expect_address) == 0)
         is_success = true;
 
     wally_free_string(bech32);
     return is_success;
 }
 
-static bool check_confidential_addr_to_addr_segwit_script(void)
-{
-    char *bech32 = NULL;
-    int ret;
-    bool is_success = false;
-
-    ret = wally_confidential_addr_to_addr_segwit(elements_script_blech32,
-                                                 "el", "ert", &bech32);
-    if (ret != WALLY_OK)
-        return false;
-
-    if (strcmp(bech32, elements_script_bech32) == 0)
-        is_success = true;
-
-    wally_free_string(bech32);
-    return is_success;
-}
-
-static bool check_confidential_addr_segwit_to_ec_public_key_pubkey(void)
+static bool check_confidential_addr_segwit_to_ec_public_key(
+    const char *address,
+    const char *confidential_addr_family,
+    const char *expect_confidential_key)
 {
     char *pub_key_str = NULL;
     unsigned char pub_key[EC_PUBLIC_KEY_LEN];
@@ -140,7 +133,7 @@ static bool check_confidential_addr_segwit_to_ec_public_key_pubkey(void)
     bool is_success = false;
 
     ret = wally_confidential_addr_segwit_to_ec_public_key(
-        elements_blech32, "el", pub_key, EC_PUBLIC_KEY_LEN);
+        address, confidential_addr_family, pub_key, EC_PUBLIC_KEY_LEN);
     if (ret != WALLY_OK)
         return false;
 
@@ -148,70 +141,45 @@ static bool check_confidential_addr_segwit_to_ec_public_key_pubkey(void)
     if (ret != WALLY_OK)
         return false;
 
-    if (strcmp(pub_key_str, elements_confidential_key) == 0)
+    if (strcmp(pub_key_str, expect_confidential_key) == 0)
         is_success = true;
 
     wally_free_string(pub_key_str);
     return is_success;
 }
-
-static bool check_confidential_addr_segwit_to_ec_public_key_script(void)
-{
-    char *pub_key_str = NULL;
-    unsigned char pub_key[EC_PUBLIC_KEY_LEN];
-    int ret;
-    bool is_success = false;
-
-    ret = wally_confidential_addr_segwit_to_ec_public_key(
-        elements_script_blech32, "el", pub_key, EC_PUBLIC_KEY_LEN);
-    if (ret != WALLY_OK)
-        return false;
-
-    ret = wally_hex_from_bytes(pub_key, EC_PUBLIC_KEY_LEN, &pub_key_str);
-    if (ret != WALLY_OK)
-        return false;
-
-    if (strcmp(pub_key_str, elements_confidential_key) == 0)
-        is_success = true;
-
-    wally_free_string(pub_key_str);
-    return is_success;
-}
-
-
 
 int main(void)
 {
     bool tests_ok = true;
+    size_t max = sizeof(g_blech32_test_table) / sizeof(struct wally_blech32_test);
 
-    if (!check_confidential_addr_from_addr_segwit_pubkey()) {
-        printf("check_confidential_addr_from_addr_segwit(pubkey) test failed!\n");
-        tests_ok = false;
-    }
+    for (size_t idx = 0; idx < max; ++idx) {
+        if (!check_confidential_addr_from_addr_segwit(
+            g_blech32_test_table[idx].address,
+            g_blech32_test_table[idx].addr_family,
+            g_blech32_test_table[idx].confidential_addr_family,
+            g_blech32_test_table[idx].confidential_key,
+            g_blech32_test_table[idx].confidential_address)) {
+            printf("check_confidential_addr_from_addr_segwit test failed!(%zu)\n", idx);
+            tests_ok = false;
+        }
 
-    if (!check_confidential_addr_from_addr_segwit_script()) {
-        printf("check_confidential_addr_from_addr_segwit(script) test failed!\n");
-        tests_ok = false;
-    }
+        if (!check_confidential_addr_to_addr_segwit(
+            g_blech32_test_table[idx].confidential_address,
+            g_blech32_test_table[idx].confidential_addr_family,
+            g_blech32_test_table[idx].addr_family,
+            g_blech32_test_table[idx].address)) {
+            printf("check_confidential_addr_to_addr_segwit test failed!(%zu)\n", idx);
+            tests_ok = false;
+        }
 
-    if (!check_confidential_addr_to_addr_segwit_pubkey()) {
-        printf("check_confidential_addr_to_addr_segwit(pubkey) test failed!\n");
-        tests_ok = false;
-    }
-
-    if (!check_confidential_addr_to_addr_segwit_script()) {
-        printf("check_confidential_addr_to_addr_segwit(script) test failed!\n");
-        tests_ok = false;
-    }
-
-    if (!check_confidential_addr_segwit_to_ec_public_key_pubkey()) {
-        printf("check_confidential_addr_segwit_to_ec_public_key(pubkey) test failed!\n");
-        tests_ok = false;
-    }
-
-    if (!check_confidential_addr_segwit_to_ec_public_key_script()) {
-        printf("check_confidential_addr_segwit_to_ec_public_key(script) test failed!\n");
-        tests_ok = false;
+        if (!check_confidential_addr_segwit_to_ec_public_key(
+            g_blech32_test_table[idx].confidential_address,
+            g_blech32_test_table[idx].confidential_addr_family,
+            g_blech32_test_table[idx].confidential_key)) {
+            printf("check_confidential_addr_segwit_to_ec_public_key test failed!(%zu)\n", idx);
+            tests_ok = false;
+        }
     }
 
     return tests_ok ? 0 : 1;
