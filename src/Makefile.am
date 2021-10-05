@@ -41,10 +41,9 @@ else
 libswig_python_la_LIBADD = $(PYTHON_LIBS)
 endif # PYTHON_MANYLINUX
 
-# We must sed the wrapper to workaround SWIGs odd library naming conventions
+# Append our extra wrapper code to the package
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_GEN_FLAGS) -outdir swig_python -o $@ $< && \
-    $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
     rm swig_python/wallycore.py
 
@@ -54,12 +53,15 @@ clean-swig-python:
 	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore/__init__.py
 clean-local: clean-swig-python
 
+# Python requires the shared library to be named _wallycore.so
+# for 'import' to work.
+platform_dso_ext = so
 if IS_OSX
-# Python requires the shared library have a .so extension for 'import'
-.libs/libwallycore.so:
-	$(AM_V_at)ln -s libwallycore.dylib .libs/libwallycore.so
-SWIG_PYTHON_TEST_DEPS = .libs/libwallycore.so
+platform_dso_ext = dylib
 endif
+.libs/_wallycore.so:
+	$(AM_V_at)ln -s libwallycore.$(platform_dso_ext) .libs/_wallycore.so
+SWIG_PYTHON_TEST_DEPS = .libs/_wallycore.so
 
 endif # USE_SWIG_PYTHON
 
