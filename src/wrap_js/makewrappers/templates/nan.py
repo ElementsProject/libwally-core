@@ -1,4 +1,12 @@
 TEMPLATE='''#include <string>
+#if __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type"
+#endif
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 #include <nan.h>
 #include <ccan/ccan/endian/endian.h>
 
@@ -14,7 +22,6 @@ TEMPLATE='''#include <string>
 #include "../include/wally_script.h"
 #include "../include/wally_transaction.h"
 #include <vector>
-#include <sstream>
 
 namespace {
 
@@ -120,6 +127,7 @@ static uint32_t GetUInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
     return value;
 }
 
+#ifdef BUILD_ELEMENTS
 static int32_t GetInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
 {
     int value = 0;
@@ -136,6 +144,7 @@ static int32_t GetInt32(Nan::NAN_METHOD_ARGS_TYPE info, int n, int& ret)
     }
     return value;
 }
+#endif
 
 // uint64_t values are expected as an 8 byte buffer of big endian bytes
 struct LocalUInt64 : public LocalBuffer {
@@ -237,14 +246,6 @@ static LocalObject AllocateBuffer(unsigned char* ptr, uint32_t size, uint32_t al
             res = buff.ToLocalChecked();
     }
     return res;
-}
-
-template<typename T>
-static std::string ToString(T t) {
-
-  std::stringstream ss;
-  ss << t;
-  return ss.str();
 }
 
 static v8::Local<v8::Object> CreateWallyTxWitnessStack(wally_tx_witness_stack *witness_stack, int ret)
@@ -404,7 +405,14 @@ NAN_MODULE_INIT(Init) {
     !!nan_decl!!
 }
 
-NODE_MODULE(wallycore, Init)'''
+NODE_MODULE(wallycore, Init)
+
+#if __clang__
+#pragma clang diagnostic pop
+#endif
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif'''
 
 def _generate_nan(funcname, f):
     input_args = []
@@ -495,7 +503,7 @@ def _generate_nan(funcname, f):
             postprocessing.extend([
                 'v8::Local<v8::String> str_res;',
                 'if (ret == WALLY_OK) {',
-                '    str_res = Nan::New<v8::String>(std::string(result_ptr)).ToLocalChecked();',
+                '    str_res = Nan::New<v8::String>(result_ptr, -1).ToLocalChecked();',
                 '    wally_free_string(result_ptr);',
                 '    if (!IsValid(str_res))',
                 '        ret = WALLY_ENOMEM;',
@@ -512,8 +520,10 @@ def _generate_nan(funcname, f):
             args.append('res_size')
             args.append('&out_size')
             postprocessing.extend([
-                'if (ret != WALLY_OK)',
+                'if (ret != WALLY_OK || out_size > res_size) {',
                 '    FreeMemory(reinterpret_cast<char *>(res_ptr), res_size);',
+                '    ret = ret == WALLY_OK ? WALLY_ERROR : ret;',
+                '}',
                 'LocalObject res = AllocateBuffer(res_ptr, out_size, res_size, ret);',
             ])
         elif arg == 'out_bytes_fixedsized':
