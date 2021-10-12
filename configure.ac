@@ -117,6 +117,9 @@ AC_ARG_ENABLE(builtin-memset,
 AC_ARG_ENABLE(minimal,
     AS_HELP_STRING([--enable-minimal],[enable minimal size/memory footprint build (default: no)]),
     [minimal=$enableval], [minimal=no])
+AC_ARG_ENABLE(secp256k1-tests,
+    AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
+    [secp256k1_tests=$enableval], [secp256k1_tests=no])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
 AM_CONDITIONAL([BUILD_MINIMAL], [test "x$minimal" == "xyes"])
@@ -420,6 +423,11 @@ if test "x$debug" == "xyes"; then
     secp_asm="--with-asm=no"
 fi
 
+secp256k1_test_opt="--disable-tests"
+if test "x$secp256k1_tests" == "xyes"; then
+    secp256k1_test_opt="--enable-tests"
+fi
+
 if test x"$cross_compiling" = "xyes"; then
     # For cross compiling we assume the users host O/S Java install is not
     # usable and that they have provided suitable FLAGS/LDFLAGS
@@ -432,7 +440,7 @@ export ARFLAGS
 export AR_FLAGS
 export LD
 export LDFLAGS
-ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-ecdsa-s2c --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-openssl-tests=no --enable-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
+ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-ecdsa-s2c --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator ${secp256k1_test_opt} --enable-openssl-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 
