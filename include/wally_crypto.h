@@ -99,7 +99,7 @@ WALLY_CORE_API int wally_aes_cbc(
 /**
  * SHA-256(m)
  *
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
@@ -113,7 +113,7 @@ WALLY_CORE_API int wally_sha256(
 /**
  * SHA-256(m) midstate
  *
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
@@ -125,9 +125,9 @@ WALLY_CORE_API int wally_sha256_midstate(
     size_t len);
 
 /**
- * SHA-256(SHA-256(m)) (double SHA-256)
+ * SHA-256(SHA-256(m)) (double SHA-256).
  *
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
@@ -139,9 +139,9 @@ WALLY_CORE_API int wally_sha256d(
     size_t len);
 
 /**
- * SHA-512(m)
+ * SHA-512(m).
  *
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA512_LEN``.
@@ -156,9 +156,9 @@ WALLY_CORE_API int wally_sha512(
 #define RIPEMD160_LEN 20
 
 /**
- * RIPEMD-160(m)
+ * RIPEMD-160(m).
  *
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``RIPEMD160_LEN``.
@@ -173,9 +173,9 @@ WALLY_CORE_API int wally_ripemd160(
 #define HASH160_LEN 20
 
 /**
- * RIPEMD-160(SHA-256(m))
+ * RIPEMD-160(SHA-256(m)).
  *
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting hash.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``HASH160_LEN``.
@@ -194,11 +194,11 @@ WALLY_CORE_API int wally_hash160(
 #define HMAC_SHA512_LEN 64
 
 /**
- * Compute an HMAC using SHA-256
+ * Compute an HMAC using SHA-256.
  *
- * :param key: The key for the hash
+ * :param key: The key for the hash.
  * :param key_len: The length of ``key`` in bytes.
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting HMAC.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``HMAC_SHA256_LEN``.
@@ -212,11 +212,11 @@ WALLY_CORE_API int wally_hmac_sha256(
     size_t len);
 
 /**
- * Compute an HMAC using SHA-512
+ * Compute an HMAC using SHA-512.
  *
- * :param key: The key for the hash
+ * :param key: The key for the hash.
  * :param key_len: The length of ``key`` in bytes.
- * :param bytes: The message to hash
+ * :param bytes: The message to hash.
  * :param bytes_len: The length of ``bytes`` in bytes.
  * :param bytes_out: Destination for the resulting HMAC.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``HMAC_SHA512_LEN``.
@@ -511,7 +511,7 @@ WALLY_CORE_API int wally_format_bitcoin_message(
 
 /**
  *
- * Compute an EC Diffie-Hellman secret in constant time
+ * Compute an EC Diffie-Hellman secret in constant time.
  *
  * :param pub_key: The public key.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.

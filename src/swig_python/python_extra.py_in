@@ -43,6 +43,7 @@ sha256_midstate = _wrap_bin(sha256_midstate, SHA256_LEN)
 sha256d = _wrap_bin(sha256d, SHA256_LEN)
 sha512 = _wrap_bin(sha512, SHA512_LEN)
 hash160 = _wrap_bin(hash160, HASH160_LEN)
+ripemd160 = _wrap_bin(ripemd160, RIPEMD160_LEN)
 hmac_sha256 = _wrap_bin(hmac_sha256, HMAC_SHA256_LEN)
 hmac_sha512 = _wrap_bin(hmac_sha512, HMAC_SHA512_LEN)
 

@@ -374,6 +374,7 @@ for f in (
     ('wally_psbt_sign', c_int, [POINTER(wally_psbt), c_void_p, c_ulong, c_uint]),
     ('wally_psbt_to_base64', c_int, [POINTER(wally_psbt), c_uint, c_char_p_p]),
     ('wally_psbt_to_bytes', c_int, [POINTER(wally_psbt), c_uint, c_void_p, c_ulong, c_ulong_p]),
+    ('wally_ripemd160', c_int, [c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_s2c_commitment_verify', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_uint]),
     ('wally_s2c_sig_from_bytes', c_int, [c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_script_push_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),

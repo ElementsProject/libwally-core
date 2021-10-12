@@ -774,6 +774,12 @@ inline int psbt_to_bytes(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out,
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class BYTES, class BYTES_OUT>
+inline int ripemd160(const BYTES& bytes, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ripemd160(bytes.data(), bytes.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class SIG, class S2C_DATA, class S2C_OPENING>
 inline int s2c_commitment_verify(const SIG& sig, const S2C_DATA& s2c_data, const S2C_OPENING& s2c_opening, uint32_t flags) {
     int ret = ::wally_s2c_commitment_verify(sig.data(), sig.size(), s2c_data.data(), s2c_data.size(), s2c_opening.data(), s2c_opening.size(), flags);
