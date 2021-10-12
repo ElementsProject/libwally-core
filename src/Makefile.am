@@ -55,10 +55,15 @@ clean-local: clean-swig-python
 
 # Python requires the shared library to be named _wallycore.so
 # for 'import' to work.
-platform_dso_ext = so
 if IS_OSX
 platform_dso_ext = dylib
-endif
+else
+if IS_MINGW
+platform_dso_ext = dll
+else
+platform_dso_ext = so
+endif # IS_MINGW
+endif # IS_OSX
 .libs/_wallycore.so:
 	$(AM_V_at)ln -s libwallycore.$(platform_dso_ext) .libs/_wallycore.so
 SWIG_PYTHON_TEST_DEPS = .libs/_wallycore.so
@@ -221,6 +226,14 @@ libwallycore_la_INCLUDES = \
     include/wally_script.h \
     include/wally_symmetric.h \
     include/wally_transaction.h
+
+if SHARED_BUILD_ENABLED
+if IS_MINGW
+libwallycore_la_LDFLAGS = -no-undefined
+else
+libwallycore_la_LDFLAGS = 
+endif
+endif # SHARED_BUILD_ENABLED
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
