@@ -368,17 +368,19 @@ endif
 if USE_JS_WRAPPERS
 if BUILD_ELEMENTS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_assets.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_confidential_address.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_unblind.js
 endif
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_aes.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_base58.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bech32.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_binding.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip32.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip38.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip39.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_hash.js
-	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_script.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 endif
 endif # SHARED_BUILD_ENABLED
 endif # RUN_TESTS
