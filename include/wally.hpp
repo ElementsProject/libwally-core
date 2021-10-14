@@ -1269,6 +1269,13 @@ inline int witness_program_from_bytes(const BYTES& bytes, uint32_t flags, BYTES_
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class BYTES, class BYTES_OUT>
+inline int witness_program_from_bytes_and_version(const BYTES& bytes, uint32_t version, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_witness_program_from_bytes_and_version(bytes.data(), bytes.size(), version, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 #ifdef BUILD_ELEMENTS
 template <class HDKEY, class CHILD_PATH>
 inline int bip32_key_with_tweak_from_parent_path(const HDKEY& hdkey, const CHILD_PATH& child_path, uint32_t flags, struct ext_key* output) {

@@ -28,7 +28,7 @@ extern "C" {
 #define WALLY_MAX_OP_RETURN_LEN 80 /* Maximum length of OP_RETURN data push */
 
 #define WALLY_SCRIPTSIG_P2PKH_MAX_LEN 140 /** [SIG+SIGHASH] [PUBKEY] */
-#define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
+#define WALLY_WITNESSSCRIPT_MAX_LEN   42 /** (PUSH OF)0 [Up to 40 bytes of data] */
 
 #define WALLY_SCRIPT_VARINT_MAX_SIZE 9
 
@@ -558,6 +558,30 @@ WALLY_CORE_API int wally_varbuff_to_bytes(
 WALLY_CORE_API int wally_witness_program_from_bytes(
     const unsigned char *bytes,
     size_t bytes_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create a segwit witness program from a script or hash using witness version.
+ *
+ * :param bytes: Script or hash bytes to create a witness program from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param version: Witness version to create a witness program from.
+ *|    Specify a value of 16 or less.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to hash
+ *|    the input script before using it. ``WALLY_SCRIPT_AS_PUSH`` to generate
+ *|    a push of the generated script as used for the scriptSig in p2sh-p2wpkh
+ *|    and p2sh-p2wsh.
+ * :param bytes_out: Destination for the resulting witness program.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_witness_program_from_bytes_and_version(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t version,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,

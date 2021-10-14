@@ -134,6 +134,7 @@ scriptsig_p2pkh_from_sig = _wrap_bin(scriptsig_p2pkh_from_sig, WALLY_SCRIPTSIG_P
 scriptsig_p2pkh_from_der = _wrap_bin(scriptsig_p2pkh_from_der, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, resize=True)
 
 witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
+witness_program_from_bytes_and_version = _wrap_bin(witness_program_from_bytes_and_version, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
 
 addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)
 address_to_scriptpubkey = _wrap_bin(address_to_scriptpubkey, 21 + 4, resize=True)

@@ -372,6 +372,7 @@ if BUILD_ELEMENTS
 endif
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_aes.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_base58.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bech32.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip32.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip38.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip39.js

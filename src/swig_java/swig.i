@@ -829,6 +829,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(wally_wif_to_address);
 %returns_string(wally_scriptpubkey_to_address);
 %returns_size_t(wally_witness_program_from_bytes);
+%returns_size_t(wally_witness_program_from_bytes_and_version);
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
 %returns_size_t(wally_asset_pak_whitelistproof_size);
