@@ -295,14 +295,6 @@ test_elements_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_elements_tx_LDADD += $(PYTHON_LIBS)
 endif
-TESTS += test_blech32
-noinst_PROGRAMS += test_blech32
-test_blech32_SOURCES = ctest/test_blech32.c
-test_blech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
-test_blech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_blech32_LDADD += $(PYTHON_LIBS)
-endif
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)

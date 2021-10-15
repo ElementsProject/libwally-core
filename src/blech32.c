@@ -28,6 +28,9 @@
 
 #ifdef BUILD_ELEMENTS
 
+#define CHECKSUM_BLECH32 0x1
+#define CHECKSUM_BLECH32M 0x455972a3350f7a1ull
+
 static uint64_t blech32_polymod_step(uint64_t pre) {
     uint8_t b = pre >> 55;
     return ((pre & 0x7fffffffffffffULL) << 5) ^
@@ -53,7 +56,7 @@ static const int8_t blech32_charset_rev[128] = {
 
 #define WALLY_BLECH32_MAXLEN ((size_t) 1000)
 
-static int blech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, size_t max_input_len) {
+static int blech32_encode(char *output, const char *hrp, const uint8_t *data, size_t data_len, size_t max_input_len, bool is_blech32m) {
     uint64_t chk = 1;
     size_t i = 0;
     while (hrp[i] != 0) {
@@ -81,7 +84,7 @@ static int blech32_encode(char *output, const char *hrp, const uint8_t *data, si
     for (i = 0; i < 12; ++i) {
         chk = blech32_polymod_step(chk);
     }
-    chk ^= 1;
+    chk ^= is_blech32m ? CHECKSUM_BLECH32M : CHECKSUM_BLECH32;
     for (i = 0; i < 12; ++i) {
         *(output++) = blech32_charset[(chk >> ((11 - i) * 5)) & 0x1f];
     }
@@ -89,7 +92,7 @@ static int blech32_encode(char *output, const char *hrp, const uint8_t *data, si
     return 1;
 }
 
-static int blech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input, size_t max_input_len) {
+static int blech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char *input, size_t max_input_len, bool *is_blech32m) {
     uint64_t chk = 1;
     size_t i;
     size_t input_len = strlen(input);
@@ -143,7 +146,8 @@ static int blech32_decode(char *hrp, uint8_t *data, size_t *data_len, const char
     if (have_lower && have_upper) {
         return 0;
     }
-    return chk == 1;
+    *is_blech32m = chk == CHECKSUM_BLECH32M;
+    return chk == CHECKSUM_BLECH32 || chk == CHECKSUM_BLECH32M;
 }
 
 static int blech32_convert_bits(uint8_t *out, size_t *outlen, int outbits, const uint8_t *in, size_t inlen, int inbits, int pad) {
@@ -168,28 +172,31 @@ static int blech32_convert_bits(uint8_t *out, size_t *outlen, int outbits, const
     return 1;
 }
 
-static int blech32_addr_encode(char *output, const char *hrp, int witver, const uint8_t *witprog, size_t witprog_len) {
+static int blech32_addr_encode(char *output, const char *hrp, uint8_t witver, const uint8_t *witprog, size_t witprog_len) {
     uint8_t data[WALLY_BLECH32_MAXLEN];
     size_t datalen = 0;
-    if (witver < 0 || witver > 16) goto fail;
+    if (witver > 16) goto fail;
     if (witver == 0 && witprog_len != 53 && witprog_len != 65) goto fail;
     if (witprog_len < 2 || witprog_len > 65) goto fail;
     data[0] = witver;
     blech32_convert_bits(data + 1, &datalen, 5, witprog, witprog_len, 8, 1);
     ++datalen;
-    return blech32_encode(output, hrp, data, datalen, WALLY_BLECH32_MAXLEN);
+    return blech32_encode(output, hrp, data, datalen, WALLY_BLECH32_MAXLEN, witver != 0);
 fail:
     wally_clear_2(data, sizeof(data), (void *)witprog, witprog_len);
     return 0;
 }
 
-static int blech32_addr_decode(int *witver, uint8_t *witdata, size_t *witdata_len, const char *hrp, const char *addr) {
+static int blech32_addr_decode(uint8_t *witver, uint8_t *witdata, size_t *witdata_len, const char *hrp, const char *addr) {
     uint8_t data[WALLY_BLECH32_MAXLEN];
     char hrp_actual[WALLY_BLECH32_MAXLEN];
     size_t data_len;
-    if (!blech32_decode(hrp_actual, data, &data_len, addr, WALLY_BLECH32_MAXLEN)) goto fail;
+    bool is_blech32m = false;
+    if (!blech32_decode(hrp_actual, data, &data_len, addr, WALLY_BLECH32_MAXLEN, &is_blech32m)) goto fail;
     if (data_len == 0 || data_len > (WALLY_BLECH32_MAXLEN - 4)) goto fail;
     if (strncmp(hrp, hrp_actual, WALLY_BLECH32_MAXLEN - 5) != 0) goto fail;
+    if (data[0] == 0 && is_blech32m) goto fail;
+    if (data[0] != 0 && !is_blech32m) goto fail;
     if (data[0] > 16) goto fail;
     *witdata_len = 0;
     if (!blech32_convert_bits(witdata, witdata_len, 8, data + 1, data_len - 1, 5, 0)) goto fail;
@@ -210,9 +217,9 @@ int wally_confidential_addr_to_addr_segwit(
 {
     unsigned char buf[WALLY_BLECH32_MAXLEN];
     unsigned char *hash_bytes_p = &buf[EC_PUBLIC_KEY_LEN - 2];
-    int witver = 0;
     size_t written = 0;
     int ret;
+    uint8_t witver;
 
     if (output)
         *output = NULL;
@@ -222,11 +229,11 @@ int wally_confidential_addr_to_addr_segwit(
 
     if (!blech32_addr_decode(&witver, buf, &written, confidential_addr_family, address))
         ret = WALLY_EINVAL;
-    else if (witver != 0 || (written != 53 && written != 65))
-        ret = WALLY_EINVAL;    /* Only v0 witness programs are currently allowed */
+    else if (written != 53 && written != 65)
+        ret = WALLY_EINVAL;
     else {
         written = written - EC_PUBLIC_KEY_LEN + 2;
-        hash_bytes_p[0] = (unsigned char) witver;
+        hash_bytes_p[0] = value_to_op_n(witver);
         hash_bytes_p[1] = (unsigned char) (written - 2);
         ret = wally_addr_segwit_from_bytes(hash_bytes_p, written,
                                            addr_family, 0, output);
@@ -243,17 +250,16 @@ int wally_confidential_addr_segwit_to_ec_public_key(
     size_t len)
 {
     unsigned char buf[WALLY_BLECH32_MAXLEN];
-    int witver = 0;
     size_t written = 0;
     int ret = WALLY_OK;
+    uint8_t witver;
 
     if (!address || !bytes_out || !confidential_addr_family || len != EC_PUBLIC_KEY_LEN)
         return WALLY_EINVAL;
 
-    /* Only v0 witness programs are currently allowed */
     if (!blech32_addr_decode(&witver, buf, &written, confidential_addr_family, address))
         ret = WALLY_EINVAL;
-    else if (witver != 0 || (written != 53 && written != 65))
+    else if (written != 53 && written != 65)
         ret = WALLY_EINVAL;
     else
         memcpy(bytes_out, buf, EC_PUBLIC_KEY_LEN);
@@ -275,6 +281,7 @@ int wally_confidential_addr_from_addr_segwit(
     unsigned char *hash_bytes_p = &buf[EC_PUBLIC_KEY_LEN - 2];
     size_t written = SHA256_LEN + 2;
     int ret;
+    size_t witver;
 
     if (output)
         *output = NULL;
@@ -284,25 +291,32 @@ int wally_confidential_addr_from_addr_segwit(
         strlen(confidential_addr_family) >= WALLY_BLECH32_MAXLEN)
         return WALLY_EINVAL;
 
-    /* get v0 witness programs script */
+    /* get witness program's script */
     ret = wally_addr_segwit_to_bytes(address, addr_family, 0,
                                      hash_bytes_p, written, &written);
     if (ret == WALLY_OK) {
-        if ((written != (HASH160_LEN + 2)) && (written != (SHA256_LEN + 2)))
+        if ((written != (HASH160_LEN + 2)) && (written != (SHA256_LEN + 2))) {
             ret = WALLY_EINVAL;
-        else {
-            /* Copy the confidentialKey / v0 witness programs */
-            memcpy(buf, pub_key, pub_key_len);
-            written -= 2;   /* ignore witnessVersion & hashSize */
-            written += EC_PUBLIC_KEY_LEN;
-            if (!blech32_addr_encode(result, confidential_addr_family, 0, buf, written))
-                return WALLY_ERROR;
-
-            *output = wally_strdup(result);
-            ret = (*output) ? WALLY_OK : WALLY_ENOMEM;
+            goto done;
         }
+
+        if (!script_is_op_n(hash_bytes_p[0], true, &witver)) {
+            ret = WALLY_EINVAL;
+            goto done;
+        }
+
+        /* Copy the confidentialKey / witness program */
+        memcpy(buf, pub_key, pub_key_len);
+        written -= 2;   /* ignore witnessVersion & hashSize */
+        written += EC_PUBLIC_KEY_LEN;
+        if (!blech32_addr_encode(result, confidential_addr_family, witver & 0xff, buf, written))
+            return WALLY_ERROR;
+
+        *output = wally_strdup(result);
+        ret = (*output) ? WALLY_OK : WALLY_ENOMEM;
     }
 
+done:
     wally_clear(buf, sizeof(buf));
     wally_clear(result, sizeof(result));
     return ret;
