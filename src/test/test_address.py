@@ -129,7 +129,7 @@ class AddressTests(unittest.TestCase):
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_legacy']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
+        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
 
         # Get address for P2PKH scriptPubKey
         ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
@@ -141,7 +141,7 @@ class AddressTests(unittest.TestCase):
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_p2sh_segwit']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
+        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
 
         # Get address for P2SH scriptPubKey
         ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
@@ -152,7 +152,7 @@ class AddressTests(unittest.TestCase):
         out, out_len = make_cbuffer('00' * (100))
         ret, written = wally_addr_segwit_to_bytes(utf8(vec[path]['address_segwit']), utf8(bech32_prefix), 0, out, out_len)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
+        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
 
     def test_address_scriptpubkey_liquid(self):
         """Check that addresses can be converted to and from scriptpubkeys for Liquid"""
@@ -164,7 +164,7 @@ class AddressTests(unittest.TestCase):
             out, out_len = make_cbuffer('00' * (100))
             ret, written = wally_address_to_scriptpubkey(utf8(addr), network, out, out_len)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(hexlify(out[0:written]), utf8(scriptpubkey))
+            self.assertEqual(h(out[0:written]), utf8(scriptpubkey))
 
             ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
             self.assertEqual(ret, WALLY_OK)

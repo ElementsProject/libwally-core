@@ -26,20 +26,20 @@ class CATests(unittest.TestCase):
                     self.data = h.digest()
 
             def key(self):
-                return self.data[32:64]
+                return h(self.data[32:64])
 
         seed = create_string_buffer(64)
         bip39_mnemonic_to_seed(b' '.join([b'all'] * 12), b'', seed, 64)
         root = Slip21Node(seed = seed)
-        self.assertEqual(root.key(), unhexlify('dbf12b44133eaab506a740f6565cc117228cbf1dd70635cfa8ddfdc9af734756'))
+        self.assertEqual(root.key(), utf8('dbf12b44133eaab506a740f6565cc117228cbf1dd70635cfa8ddfdc9af734756'))
         root.derive_path([b'SLIP-0077'])
-        master_blinding_key = root.key()
+        master_blinding_key_hex = root.key()
 
         out = create_string_buffer(64)
         ret = wally_asset_blinding_key_from_seed(seed, 64, out, 64)
         self.assertEqual(ret, WALLY_OK)
         _, out_hex = wally_hex_from_bytes(out[32:], 32)
-        self.assertEqual(hexlify(master_blinding_key), utf8(out_hex))
+        self.assertEqual(master_blinding_key_hex, utf8(out_hex))
 
         unconfidential_addr = '2dpWh6jbhAowNsQ5agtFzi7j6nKscj6UnEr'
         script, _ = make_cbuffer('76a914a579388225827d9f2fe9014add644487808c695d88ac')
