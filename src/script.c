@@ -312,7 +312,8 @@ static bool scriptpubkey_is_p2pkh(const unsigned char *bytes, size_t bytes_len)
 {
     return bytes_len == WALLY_SCRIPTPUBKEY_P2PKH_LEN &&
            bytes[0] == OP_DUP && bytes[1] == OP_HASH160 &&
-           bytes[2] == 20 && bytes[23] == OP_EQUALVERIFY &&
+           bytes[2] == 20 && /* HASH160 */
+           bytes[23] == OP_EQUALVERIFY &&
            bytes[24] == OP_CHECKSIG;
 }
 
@@ -320,22 +321,29 @@ static bool scriptpubkey_is_p2sh(const unsigned char *bytes, size_t bytes_len)
 {
     return bytes_len == WALLY_SCRIPTPUBKEY_P2SH_LEN &&
            bytes[0] == OP_HASH160 &&
-           bytes[1] == 20 &&
+           bytes[1] == 20 && /* HASH160 */
            bytes[22] == OP_EQUAL;
 }
 
 static bool scriptpubkey_is_p2wpkh(const unsigned char *bytes, size_t bytes_len)
 {
     return bytes_len == WALLY_SCRIPTPUBKEY_P2WPKH_LEN &&
-           bytes[0] == 0 &&
-           bytes[1] == 20;
+           bytes[0] == OP_0 && /* Segwit v0 */
+           bytes[1] == 20; /* HASH160 */
 }
 
 static bool scriptpubkey_is_p2wsh(const unsigned char *bytes, size_t bytes_len)
 {
     return bytes_len == WALLY_SCRIPTPUBKEY_P2WSH_LEN &&
-           bytes[0] == 0 &&
-           bytes[1] == 32;
+           bytes[0] == OP_0 && /* Segwit v0 */
+           bytes[1] == 32; /* SHA256 */
+}
+
+static bool scriptpubkey_is_p2tr(const unsigned char *bytes, size_t bytes_len)
+{
+    return bytes_len == WALLY_SCRIPTPUBKEY_P2TR_LEN &&
+           bytes[0] == OP_1 && /* Segwit v1 */
+           bytes[1] == 32; /* X-ONLY-PUBKEY */
 }
 
 static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_len)
@@ -400,9 +408,12 @@ int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
             return WALLY_OK;
         }
         break;
-    case WALLY_SCRIPTPUBKEY_P2WSH_LEN:
+    case WALLY_SCRIPTPUBKEY_P2WSH_LEN: /* Also WALLY_SCRIPTPUBKEY_P2TR_LEN */
         if (scriptpubkey_is_p2wsh(bytes, bytes_len)) {
             *written = WALLY_SCRIPT_TYPE_P2WSH;
+            return WALLY_OK;
+        } else if (scriptpubkey_is_p2tr(bytes, bytes_len)) {
+            *written = WALLY_SCRIPT_TYPE_P2TR;
             return WALLY_OK;
         }
         break;

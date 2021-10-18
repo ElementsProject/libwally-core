@@ -1,10 +1,14 @@
 import unittest
 from util import *
 
+SCRIPT_TYPE_UNKNOWN = 0x0
 SCRIPT_TYPE_OP_RETURN = 0x1
 SCRIPT_TYPE_P2PKH = 0x2
 SCRIPT_TYPE_P2SH = 0x4
+SCRIPT_TYPE_P2WPKH = 0x8
+SCRIPT_TYPE_P2WSH = 0x10
 SCRIPT_TYPE_MULTISIG = 0x20
+SCRIPT_TYPE_P2TR = 0x40
 
 SCRIPT_MULTISIG_SORTED = 0x8
 
@@ -45,9 +49,20 @@ class ScriptTests(unittest.TestCase):
         # Test invalid args, we test results with the functions that make scripts
         in_, in_len = make_cbuffer('00' * 16)
         for b, b_len in [(None, in_len), (in_, 0)]:
-            ret, written = wally_scriptpubkey_get_type(b, b_len)
+            ret, typ = wally_scriptpubkey_get_type(b, b_len)
             self.assertEqual(ret, WALLY_EINVAL)
-            self.assertEqual(written, 0)
+            self.assertEqual(typ, SCRIPT_TYPE_UNKNOWN)
+
+        # Segwit scripts
+        segwit_cases = [
+            [ '0014' + ('33' * 20), SCRIPT_TYPE_P2WPKH ],
+            [ '0020' + ('33' * 32), SCRIPT_TYPE_P2WSH ],
+            [ '5120' + ('33' * 32), SCRIPT_TYPE_P2TR ],
+        ]
+        for script_hex, expected_type in segwit_cases:
+            script, script_len = make_cbuffer(script_hex)
+            ret, typ = wally_scriptpubkey_get_type(script, script_len)
+            self.assertEqual((ret, typ), (WALLY_OK, expected_type))
 
     def test_scriptpubkey_op_return_from_bytes(self):
         """Tests for creating OP_RETURN scriptPubKeys"""
