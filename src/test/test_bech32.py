@@ -66,9 +66,11 @@ class Bech32Tests(unittest.TestCase):
     def decode(self, addr, family):
         out, out_len = make_cbuffer('00' * WALLY_WITNESSSCRIPT_MAX_LEN)
         ret, written = wally_addr_segwit_to_bytes(utf8(addr), utf8(family), 0, out, out_len)
+        ver_ret, ver = wally_addr_segwit_get_version(utf8(addr), utf8(family), 0)
+        self.assertEqual(ret, ver_ret)
         if ret != WALLY_OK:
-            return ret, None
-        return ret, h(out[:written])
+            return ret, None, ver
+        return ret, h(out[:written]), ver
 
     def test_segwit_address(self):
         """Tests for encoding and decoding segwit addresses"""
@@ -79,8 +81,9 @@ class Bech32Tests(unittest.TestCase):
             # Decode the address
             family, script_ver, script_hex = data[0], data[1], data[2]
 
-            ret, result_script_hex = self.decode(addr, family)
+            ret, result_script_hex, result_ver = self.decode(addr, family)
             self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(result_ver, script_ver)
             self.assertEqual(result_script_hex, utf8(script_hex))
 
             # Encode the script and make sure the address matches
@@ -91,8 +94,9 @@ class Bech32Tests(unittest.TestCase):
 
         # Invalid cases
         for family, addr in invalid_cases:
-            ret, result_script_hex = self.decode(addr, family)
+            ret, result_script_hex, result_ver = self.decode(addr, family)
             self.assertEqual(ret, WALLY_EINVAL)
+            self.assertEqual(result_ver, 0)
 
         out, out_len = make_cbuffer('00' * (32 + 2))
         bad = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg'

@@ -75,6 +75,21 @@ WALLY_CORE_API int wally_addr_segwit_to_bytes(
     size_t *written);
 
 /**
+ * Get the segwit version of a segwit native address.
+ *
+ * :param addr: Address to fetch the witness program from.
+ * :param addr_family: Address family to generate, e.g. "bc" or "tb".
+ * :param flags: For future use. Must be 0.
+ * :param written: Destination for the segwit version from 0 to 16 inclusive.
+ */
+WALLY_CORE_API int wally_addr_segwit_get_version(
+    const char *addr,
+    const char *addr_family,
+    uint32_t flags,
+    size_t *written);
+
+
+/**
  * Infer a scriptPubKey from an address.
  *
  * :param addr: Base58 encoded address to infer the scriptPubKey from.

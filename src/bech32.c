@@ -265,3 +265,17 @@ int wally_addr_segwit_to_bytes(const char *addr, const char *addr_family,
     wally_clear(decoded, sizeof(decoded));
     return ret;
 }
+
+int wally_addr_segwit_get_version(const char *addr, const char *addr_family,
+                                  uint32_t flags, size_t *written)
+{
+    unsigned char witness_program[WALLY_WITNESSSCRIPT_MAX_LEN];
+    int ret = wally_addr_segwit_to_bytes(addr, addr_family, flags,
+                                         witness_program, sizeof(witness_program),
+                                         written);
+    if (ret == WALLY_OK && !script_is_op_n(witness_program[0], true, written)) {
+        *written = 0;
+        ret = WALLY_EINVAL;
+    }
+    return ret;
+}

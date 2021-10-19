@@ -414,6 +414,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_string(wally_addr_segwit_from_bytes);
+%returns_size_t(wally_addr_segwit_get_version);
 %returns_size_t(wally_addr_segwit_to_bytes);
 %returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);

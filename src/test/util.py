@@ -245,6 +245,7 @@ for f in (
     ('bip39_mnemonic_to_seed', c_int, [c_char_p, c_char_p, c_void_p, c_ulong, c_ulong_p]),
     ('bip39_mnemonic_validate', c_int, [c_void_p, c_char_p]),
     ('wally_addr_segwit_from_bytes', c_int, [c_void_p, c_ulong, c_char_p, c_uint, c_char_p_p]),
+    ('wally_addr_segwit_get_version', c_int, [c_char_p, c_char_p, c_uint, c_ulong_p]),
     ('wally_addr_segwit_to_bytes', c_int, [c_char_p, c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_address_to_scriptpubkey', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_ae_host_commit_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong]),

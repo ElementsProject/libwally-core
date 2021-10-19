@@ -229,6 +229,12 @@ inline int addr_segwit_from_bytes(const BYTES& bytes, const ADDR_FAMILY& addr_fa
     return ret;
 }
 
+template <class ADDR, class ADDR_FAMILY>
+inline int addr_segwit_get_version(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, size_t* written) {
+    int ret = ::wally_addr_segwit_get_version(detail::get_p(addr), detail::get_p(addr_family), flags, written);
+    return ret;
+}
+
 template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
 inline int addr_segwit_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
