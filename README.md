@@ -79,6 +79,8 @@ $ brew install swig
    for the Java interface definition (default: no).
 - `--enable-elements`. Enables support for [Elements](https://elementsproject.org/)
    features, including [Liquid](https://blockstream.com/liquid/) support.
+- `--enabled-standard-secp`. Excludes support for features that are unavailable in
+   the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
 - `--enable-js-wrappers`. Enable the Node.js and Cordova Javascript wrappers.
    This currently requires python to be available at build time (default: no).
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will

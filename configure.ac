@@ -118,6 +118,9 @@ AC_ARG_ENABLE(tests,
 AC_ARG_ENABLE(elements,
     AS_HELP_STRING([--enable-elements],[enable elements tx code (default: no)]),
     [elements=$enableval], [elements=no])
+AC_ARG_ENABLE(standard-secp,
+    AS_HELP_STRING([--enable-standard-secp],[enable compiling with standard libsecp256k1 (default: no)]),
+    [standard_secp=$enableval], [standard_secp=no])
 AC_ARG_ENABLE(builtin-memset,
     AS_HELP_STRING([--enable-builtin-memset],[disable to add -fno-builtin-memset to compiler flags. helps with explicit_bzero/memset being elided on Linux clang 7.0.1 and up (default: yes)]),
     [builtin_memset=$enableval], [builtin_memset=yes])
@@ -129,6 +132,7 @@ AC_ARG_ENABLE(secp256k1-tests,
     [secp256k1_tests=$enableval], [secp256k1_tests=no])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
+AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" == "xyes"])
 AM_CONDITIONAL([BUILD_MINIMAL], [test "x$minimal" == "xyes"])
 
 AC_C_BIGENDIAN()
@@ -167,6 +171,12 @@ fi
 
 if test "x$elements" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DBUILD_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_ELEMENTS=1"])
+fi
+if test "x$standard_secp" == "xyes"; then
+    if test "x$elements" == "xyes"; then
+        AC_MSG_FAILURE([ERROR: Elements cannot be enabled with standard libsecp256k1])
+    fi
+    AX_CHECK_COMPILE_FLAG([-DBUILD_STANDARD_SECP=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_STANDARD_SECP=1"])
 fi
 
 if test "x$minimal" == "xyes"; then

@@ -1,4 +1,5 @@
 #include "internal.h"
+#ifdef BUILD_ELEMENTS
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
 #include <include/wally_elements.h>
@@ -10,7 +11,6 @@
 #include "src/secp256k1/include/secp256k1_whitelist.h"
 #include <stdbool.h>
 
-#ifdef BUILD_ELEMENTS
 
 static const unsigned char LABEL_STR[] = {
     'S', 'L', 'I', 'P', '-', '0', '0', '7', '7'

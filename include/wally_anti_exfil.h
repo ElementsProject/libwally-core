@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#ifndef BUILD_STANDARD_SECP
+
 /** The length of the commitment to the host provided randomness */
 #define WALLY_HOST_COMMITMENT_LEN 32
 
@@ -108,6 +110,8 @@ WALLY_CORE_API int wally_ae_verify(
     uint32_t flags,
     const unsigned char *sig,
     size_t sig_len);
+
+#endif /* ndef BUILD_STANDARD_SECP */
 
 #ifdef __cplusplus
 }
