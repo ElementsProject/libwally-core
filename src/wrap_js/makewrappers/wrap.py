@@ -77,13 +77,6 @@ FUNCS = [
         'const_char[wif]', 'out_bool_by_size_t'
     ])),
 
-    ('wally_wif_to_bytes', F([
-        'const_char[wif]', 'uint32_t[prefix]', 'uint32_t[flags]', 'out_bytes_fixedsized'
-    ], out_size='32')),
-    ('wally_wif_is_uncompressed', F([
-        'const_char[wif]', 'out_bool_by_size_t'
-    ])),
-
     # AES:
     ('wally_aes', F([
         'const_bytes[key]', 'const_bytes[bytes]', 'uint32_t[flags]',

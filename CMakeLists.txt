@@ -739,8 +739,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
@@ -761,8 +759,6 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
