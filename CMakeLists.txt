@@ -1613,45 +1613,6 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
-set(TEST_BLECH32_NAME ctest_blech32)
-add_executable(${TEST_BLECH32_NAME} src/ctest/test_blech32.c)
-target_compile_options(${TEST_BLECH32_NAME}
-  PRIVATE
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /source-charset:utf-8 /wd4251,
-      -Wall -Wextra -Wno-unused-function
-      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
-    >
-)
-target_compile_definitions(${TEST_BLECH32_NAME}
-  PRIVATE
-    ${ELEMENTS_COMP_OPT}
-)
-target_include_directories(${TEST_BLECH32_NAME}
-  PRIVATE
-    ${CONFIG_HEADER_DIRECTORY}
-    .
-    src
-    src/ccan
-    src/secp256k1
-    src/secp256k1/src
-    ${SECP256K_OUTPUT_PATH}
-)
-target_link_directories(${TEST_BLECH32_NAME}  PRIVATE ./ )
-target_link_libraries(${TEST_BLECH32_NAME}
-  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
-  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
-  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
-  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
-  PRIVATE
-    ${TEST_WALY_LIB}
-)
-add_test(
-  NAME ${TEST_BLECH32_NAME}
-  COMMAND $<TARGET_FILE:${TEST_BLECH32_NAME}>
-  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
-)
 endif()
 endif((ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
 
@@ -1953,6 +1914,8 @@ add_test(NAME js_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TE
 
 add_test(NAME js_test_aes      COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_aes.js )
 add_test(NAME js_test_base58   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_base58.js )
+add_test(NAME js_test_bech32   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bech32.js )
+add_test(NAME js_test_binding  COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_binding.js )
 add_test(NAME js_test_bip32    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip32.js )
 add_test(NAME js_test_bip38    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip38.js )
 add_test(NAME js_test_bip39    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip39.js )
@@ -1961,6 +1924,8 @@ add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/te
 add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
 if(ENABLE_ELEMENTS)
 add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
+add_test(NAME js_test_confidential_addres
+                               COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
 add_test(NAME js_test_unblind  COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_unblind.js )
 add_test(NAME js_test_confidential_address
     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
