@@ -54,9 +54,25 @@ hash160_cases = [
       '53190BD5877616554E72253D4CDD2D37E1AA0D73' ],
 ]
 
+ripemd160_cases = [
+    # https://homes.esat.kuleuven.be/~bosselae/ripemd160.html
+    [ '',               '9c1185a5c5e9fc54612808977ee8f548b2258d31' ],
+    [ 'a',              '0bdc9d2d256b3ee9daae347be6f4dc835a467ffe' ],
+    [ 'abc',            '8eb208f7e05d987a9b044a8e98c6b087f15a0bfc' ],
+    [ 'message digest', '5d0689ef49d2fae572b881b123a85ffa21595f36' ],
+    [ 'abcdefghijklmnopqrstuvwxyz',
+      'f71c27109c692c1b56bbdceb5b9d2865b3708dbc' ],
+    [ 'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq',
+      '12a053384a9c0c88e405a06c27dcf49ada62eb2b' ],
+    [ 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+       'b0e20b6e3116640286ed3a87a5713079b21f5189' ],
+    [ '1234567890' * 8, '9b752e45573d4b39f4dbd3323cab82bf63326bfb' ],
+    [ 'a' * 1000000,    '52783243c1697bdbe16d37f97f68f08325dc1528' ],
+]
+
 class HashTests(unittest.TestCase):
 
-    SHA256_LEN, SHA512_LEN, HASH160_LEN = 32, 64, 20
+    SHA256_LEN, SHA512_LEN, HASH160_LEN, RIPEMD160_LEN = 32, 64, 20, 20
 
     def make_outbuf(self, fn, aligned=True):
         buf_len = self.SHA256_LEN
@@ -64,6 +80,8 @@ class HashTests(unittest.TestCase):
             buf_len = self.SHA512_LEN
         elif fn == wally_hash160:
             buf_len = self.HASH160_LEN
+        elif fn == wally_ripemd160:
+            buf_len = self.RIPEMD160_LEN
         offset = 0 if aligned else 1
         buf = create_string_buffer(buf_len + offset)
         return byref(buf, offset), buf_len
@@ -103,9 +121,17 @@ class HashTests(unittest.TestCase):
                 self.assertEqual(result, utf8(expected.lower()))
 
 
+    def test_ripemd_vectors(self):
+        for in_msg, expected in ripemd160_cases:
+            msg = h(utf8(in_msg)).decode('utf-8')
+            for aligned in [True, False]:
+                result = self.do_hash(wally_ripemd160, utf8(msg), aligned)
+                self.assertEqual(result, utf8(expected.lower()))
+
+
     def test_invalid_args(self):
         in_bytes, in_bytes_len = make_cbuffer(h(utf8('abc')))
-        for fn in [wally_sha256, wally_sha512, wally_sha256d, wally_hash160]:
+        for fn in [wally_sha256, wally_sha512, wally_sha256d, wally_hash160, wally_ripemd160]:
             buf, buf_len = self.make_outbuf(fn)
             for args in [(None,     in_bytes_len, buf,  buf_len),
                          (in_bytes, in_bytes_len, None, buf_len),

@@ -35,7 +35,7 @@ And can be used from:
 # Initialise the libsecp sources (Needs to be run only once)
 $ git submodule init
 $ git submodule sync --recursive
-$ git submodule update --init --recursive`
+$ git submodule update --init --recursive
 
 # Build
 $ ./tools/autogen.sh
@@ -62,6 +62,8 @@ $ brew install swig
 
 - `--enable-debug`. Enables debugging information and disables compiler
    optimisations (default: no).
+- `--enable-minimal`. Minimises library size and memory requirements to target
+   embedded or resource-constrained environments (default: no).
 - `--enable-export-all`. Export all functions from the wally shared library.
    Ordinarily only API functions are exported. (default: no). Enable this
    if you want to test the internal functions of the library or are planning
@@ -104,7 +106,7 @@ installed.
 For non-development use, you can install wally with `pip` as follows:
 
 ```
-pip install wallycore==0.8.3
+pip install wallycore==0.8.4
 ```
 
 For python development, you can build and install wally using:
@@ -124,7 +126,7 @@ You can also install the binary [wally releases](https://github.com/ElementsProj
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.3-cp37-cp37m-linux_x86_64.whl
+pip install wallycore-0.8.4-cp37-cp37m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
@@ -170,7 +172,7 @@ $ source $HOME/emsdk/emsdk_env.sh
 # Optionally set the list of wally functions to export to wasm (default: all)
 $ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',...]"
 
-`# Build
+# Build
 $ ./tools/build_wasm.sh [--enable-elements]
 ```
 

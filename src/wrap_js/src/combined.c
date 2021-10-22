@@ -31,6 +31,7 @@
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
+#undef SECP256K1_BUILD
 #include "src/secp256k1/src/secp256k1.c"
 #include "ccan/ccan/crypto/sha256/sha256.c"
 
@@ -40,7 +41,7 @@ void wally_silence_unused_warnings(void)
     assert_bip32_assumptions();
     assert_bip38_assumptions();
     assert_tx_assumptions();
-    secp256k1_fe_inv_all_var(NULL, NULL, 0);
+    secp256k1_fe_inv_var(NULL, NULL);
     secp256k1_ge_set_all_gej_var(NULL, NULL, 0);
     secp256k1_gej_has_quad_y_var(NULL);
     secp256k1_ge_is_valid_var(NULL);

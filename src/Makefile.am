@@ -42,10 +42,9 @@ else
 libswig_python_la_LIBADD = $(PYTHON_LIBS)
 endif # PYTHON_MANYLINUX
 
-# We must sed the wrapper to workaround SWIGs odd library naming conventions
+# Append our extra wrapper code to the package
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_GEN_FLAGS) -outdir swig_python -o $@ $< && \
-    $(GNU_SED) -i 's/_wallycore/libwallycore/g' swig_python/wallycore.py $@ && \
     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
     rm swig_python/wallycore.py
 
@@ -55,12 +54,20 @@ clean-swig-python:
 	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore/__init__.py
 clean-local: clean-swig-python
 
+# Python requires the shared library to be named _wallycore.so
+# for 'import' to work.
 if IS_OSX
-# Python requires the shared library have a .so extension for 'import'
-.libs/libwallycore.so:
-	$(AM_V_at)ln -s libwallycore.dylib .libs/libwallycore.so
-SWIG_PYTHON_TEST_DEPS = .libs/libwallycore.so
-endif
+platform_dso_ext = dylib
+else
+if IS_MINGW
+platform_dso_ext = dll
+else
+platform_dso_ext = so
+endif # IS_MINGW
+endif # IS_OSX
+.libs/_wallycore.so:
+	$(AM_V_at)ln -s libwallycore.$(platform_dso_ext) .libs/_wallycore.so
+SWIG_PYTHON_TEST_DEPS = .libs/_wallycore.so
 
 endif # USE_SWIG_PYTHON
 
@@ -336,14 +343,6 @@ test_elements_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_elements_tx_LDADD += $(PYTHON_LIBS)
 endif
-TESTS += test_blech32
-noinst_PROGRAMS += test_blech32
-test_blech32_SOURCES = ctest/test_blech32.c
-test_blech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
-test_blech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_blech32_LDADD += $(PYTHON_LIBS)
-endif
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
@@ -410,16 +409,19 @@ endif
 if USE_JS_WRAPPERS
 if BUILD_ELEMENTS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_assets.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_confidential_address.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_unblind.js
 endif
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_aes.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_base58.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bech32.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_binding.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip32.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip38.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_bip39.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_hash.js
-	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_script.js
+	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
 endif
 endif # SHARED_BUILD_ENABLED
 endif # RUN_TESTS

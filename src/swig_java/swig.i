@@ -414,6 +414,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(bip39_mnemonic_validate);
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_string(wally_addr_segwit_from_bytes);
+%returns_size_t(wally_addr_segwit_get_version);
 %returns_size_t(wally_addr_segwit_to_bytes);
 %returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
@@ -601,6 +602,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_sign);
 %returns_string(wally_psbt_to_base64);
 %returns_size_t(wally_psbt_to_bytes);
+%returns_array_(wally_ripemd160, 3, 4, RIPEMD160_LEN);
 %returns_size_t(wally_script_push_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt);
@@ -828,6 +830,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(wally_wif_to_address);
 %returns_string(wally_scriptpubkey_to_address);
 %returns_size_t(wally_witness_program_from_bytes);
+%returns_size_t(wally_witness_program_from_bytes_and_version);
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
 %returns_size_t(wally_asset_pak_whitelistproof_size);
