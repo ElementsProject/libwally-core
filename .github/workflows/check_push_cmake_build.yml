@@ -24,8 +24,10 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        os: [macos-11, ubuntu-20.04]
-        node: [14, 16]
+#        os: [macos-11, ubuntu-20.04]
+        os: [ubuntu-20.04]
+#        node: [14, 16]
+        node: [14]
         exclude:
           - os: macos-11
             node: 14
