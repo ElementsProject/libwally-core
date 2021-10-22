@@ -24,11 +24,11 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        os: [macos-10.15, ubuntu-18.04]
-        node: [12, 14]
+        os: [macos-11, ubuntu-20.04]
+        node: [14, 16]
         exclude:
-          - os: macos-10.15
-            node: 12
+          - os: macos-11
+            node: 14
 
 # windows has illegal AES result.
     steps:
@@ -59,7 +59,7 @@ jobs:
             os: windows-2019
             generator: MSYS Makefiles
           - type: apple
-            os: macos-10.15
+            os: macos-11
             generator: Unix Makefiles
           - type: ubuntu-20.04
             os: ubuntu-20.04
@@ -156,8 +156,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-10.15, ubuntu-18.04]
-        go-version: [1.14.x, 1.15.x]
+        os: [macos-11, ubuntu-20.04]
+        go-version: [1.15.x, 1.16.x]
 
     steps:
     - name: setup go
