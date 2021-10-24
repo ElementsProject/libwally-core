@@ -174,7 +174,7 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
 }
 
 int wally_ripemd160(const unsigned char *bytes, size_t bytes_len,
-                  unsigned char *bytes_out, size_t len)
+                    unsigned char *bytes_out, size_t len)
 {
     struct ripemd160 ripemd;
     const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));

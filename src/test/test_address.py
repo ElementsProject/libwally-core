@@ -19,6 +19,7 @@ NETWORK_BITCOIN_MAINNET = 0x01
 NETWORK_BITCOIN_TESTNET = 0x02
 NETWORK_LIQUID_MAINNET  = 0x03
 NETWORK_LIQUID_REGTEST  = 0x04
+NETWORK_LIQUID_TESTNET  = 0x05
 
 
 # Vector from test_bip32.py. We only need an xpub to derive addresses.
@@ -128,7 +129,7 @@ class AddressTests(unittest.TestCase):
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_legacy']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
+        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
 
         # Get address for P2PKH scriptPubKey
         ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
@@ -140,7 +141,7 @@ class AddressTests(unittest.TestCase):
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_p2sh_segwit']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
+        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
 
         # Get address for P2SH scriptPubKey
         ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
@@ -151,18 +152,19 @@ class AddressTests(unittest.TestCase):
         out, out_len = make_cbuffer('00' * (100))
         ret, written = wally_addr_segwit_to_bytes(utf8(vec[path]['address_segwit']), utf8(bech32_prefix), 0, out, out_len)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(hexlify(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
+        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
 
     def test_address_scriptpubkey_liquid(self):
         """Check that addresses can be converted to and from scriptpubkeys for Liquid"""
         for addr, scriptpubkey, network in [
             ('XYtnYoGoSeE9ouMEVi6mfeujhjT2VnJncA', 'a914ec51ffb65120594389733bf8625f542446d97f7987', NETWORK_LIQUID_REGTEST),
+            ('8ijSaT49UHvpdmcAuHkKPEPJBKMoLog6do', 'a9142f470bcda2c4818fd47b25b2d7ec95fda56ffca287', NETWORK_LIQUID_TESTNET),
             ('H5nswXhfo8AMt159sgA5FWT35De34hVR4o', 'a914f80278b2011573a2ac59c83fadf929b0fc57ad0187', NETWORK_LIQUID_MAINNET),
         ]:
             out, out_len = make_cbuffer('00' * (100))
             ret, written = wally_address_to_scriptpubkey(utf8(addr), network, out, out_len)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(hexlify(out[0:written]), utf8(scriptpubkey))
+            self.assertEqual(h(out[0:written]), utf8(scriptpubkey))
 
             ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
             self.assertEqual(ret, WALLY_OK)

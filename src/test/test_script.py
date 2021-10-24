@@ -1,10 +1,14 @@
 import unittest
 from util import *
 
+SCRIPT_TYPE_UNKNOWN = 0x0
 SCRIPT_TYPE_OP_RETURN = 0x1
 SCRIPT_TYPE_P2PKH = 0x2
 SCRIPT_TYPE_P2SH = 0x4
+SCRIPT_TYPE_P2WPKH = 0x8
+SCRIPT_TYPE_P2WSH = 0x10
 SCRIPT_TYPE_MULTISIG = 0x20
+SCRIPT_TYPE_P2TR = 0x40
 
 SCRIPT_MULTISIG_SORTED = 0x8
 
@@ -45,9 +49,20 @@ class ScriptTests(unittest.TestCase):
         # Test invalid args, we test results with the functions that make scripts
         in_, in_len = make_cbuffer('00' * 16)
         for b, b_len in [(None, in_len), (in_, 0)]:
-            ret, written = wally_scriptpubkey_get_type(b, b_len)
+            ret, typ = wally_scriptpubkey_get_type(b, b_len)
             self.assertEqual(ret, WALLY_EINVAL)
-            self.assertEqual(written, 0)
+            self.assertEqual(typ, SCRIPT_TYPE_UNKNOWN)
+
+        # Segwit scripts
+        segwit_cases = [
+            [ '0014' + ('33' * 20), SCRIPT_TYPE_P2WPKH ],
+            [ '0020' + ('33' * 32), SCRIPT_TYPE_P2WSH ],
+            [ '5120' + ('33' * 32), SCRIPT_TYPE_P2TR ],
+        ]
+        for script_hex, expected_type in segwit_cases:
+            script, script_len = make_cbuffer(script_hex)
+            ret, typ = wally_scriptpubkey_get_type(script, script_len)
+            self.assertEqual((ret, typ), (WALLY_OK, expected_type))
 
     def test_scriptpubkey_op_return_from_bytes(self):
         """Tests for creating OP_RETURN scriptPubKeys"""
@@ -72,8 +87,9 @@ class ScriptTests(unittest.TestCase):
         ]
         for args, exp_script in valid_args:
             ret = wally_scriptpubkey_op_return_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_OK, len(exp_script) / 2))
-            self.assertEqual(args[3][:ret[1]], unhexlify(exp_script))
+            exp_script, exp_script_len = make_cbuffer(exp_script)
+            self.assertEqual(ret, (WALLY_OK, exp_script_len))
+            self.assertEqual(args[3][:ret[1]], exp_script)
             ret = wally_scriptpubkey_get_type(out, ret[1])
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_OP_RETURN))
 
@@ -103,7 +119,8 @@ class ScriptTests(unittest.TestCase):
         for args, exp_script in valid_args:
             ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
-            self.assertEqual(args[3], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(args[3], exp_script)
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
 
@@ -130,7 +147,8 @@ class ScriptTests(unittest.TestCase):
         for args, exp_script in valid_args:
             ret = wally_scriptpubkey_p2sh_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2SH_LEN))
-            self.assertEqual(args[3], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(args[3], exp_script)
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2SH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2SH))
 
@@ -176,7 +194,8 @@ class ScriptTests(unittest.TestCase):
             script_len = 3 + (pubkeys_len // 33 * (33 + 1))
             ret = wally_scriptpubkey_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
-            self.assertEqual(out[:script_len], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(out[:script_len], exp_script)
             # Check the script is identified by scriptpubkey_get_type
             ret = wally_scriptpubkey_get_type(out, script_len)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_MULTISIG))
@@ -214,7 +233,8 @@ class ScriptTests(unittest.TestCase):
             script_len = 2 * (33 + 1) + 9 + 1 + csv_len
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
-            self.assertEqual(args[4][:script_len], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(args[4][:script_len], exp_script)
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*args)
             self.assertEqual(ret, (WALLY_OK, script_len - 3))
             # Check a too-short output buffer
@@ -253,7 +273,8 @@ class ScriptTests(unittest.TestCase):
             script_len = 3 * (33 + 1) + 13 + 1 + csv_len
             ret = wally_scriptpubkey_csv_2of3_then_2_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
-            self.assertEqual(args[4][:script_len], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(args[4][:script_len], exp_script)
             # Check a too-short output buffer
             short_out, short_out_len = make_cbuffer('00' * (script_len - 1))
             short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len)
@@ -285,7 +306,8 @@ class ScriptTests(unittest.TestCase):
         for args, exp_script in valid_args:
             ret = wally_scriptsig_p2pkh_from_der(*args)
             self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 2))
-            self.assertEqual(args[4][:(args[1] + args[3] + 2)], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(args[4][:(args[1] + args[3] + 2)], exp_script)
 
         # From sig
         # Invalid args
@@ -348,7 +370,8 @@ class ScriptTests(unittest.TestCase):
         for args, exp_script in valid_args:
             ret = wally_scriptsig_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, 73 + 72 * args[5]))
-            self.assertEqual(out[:(73 + 72 * args[5])], unhexlify(exp_script))
+            exp_script, _ = make_cbuffer(exp_script)
+            self.assertEqual(out[:(73 + 72 * args[5])], exp_script)
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""
@@ -399,12 +422,13 @@ class ScriptTests(unittest.TestCase):
         for value, expected in valid_cases:
             ret, written = wally_varint_to_bytes(value, out, out_len)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(written, len(expected) // 2)
-            self.assertEqual(out[:written], unhexlify(expected))
+            expected, expected_len = make_cbuffer(expected)
+            self.assertEqual(written, expected_len)
+            self.assertEqual(out[:written], expected)
 
             ret, written = wally_varint_get_length(value)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(written, expected_len)
 
     def test_varbuff_to_bytes(self):
         varint_size = 3
@@ -430,7 +454,7 @@ class ScriptTests(unittest.TestCase):
         ret, written = wally_varbuff_to_bytes(in_, in_len, out, out_len)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(written, varbuff_len)
-        self.assertEqual(out[:written], unhexlify("fdfd00" + 'aa' * 253))
+        self.assertEqual(out[:written], make_cbuffer("fdfd00" + 'aa' * 253)[0])
 
     def test_wally_witness_program_from_bytes(self):
         valid_cases = [('00' * 20, 0, '0014'+'00'*20),
@@ -443,7 +467,7 @@ class ScriptTests(unittest.TestCase):
             in_, in_len = make_cbuffer(data)
             ret, written = wally_witness_program_from_bytes(in_, in_len, flags, out, out_len)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(out[:written], unhexlify(exp_program))
+            self.assertEqual(out[:written], make_cbuffer(exp_program)[0])
 
         invalid_cases = [('00' * 50, 0), # Invalid unhashed length
                 ]

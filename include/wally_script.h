@@ -16,19 +16,21 @@ extern "C" {
 #define WALLY_SCRIPT_TYPE_P2WPKH    0x8
 #define WALLY_SCRIPT_TYPE_P2WSH     0x10
 #define WALLY_SCRIPT_TYPE_MULTISIG  0x20
+#define WALLY_SCRIPT_TYPE_P2TR      0x40
 
 /* Standard script lengths */
 #define WALLY_SCRIPTPUBKEY_P2PKH_LEN  25 /** OP_DUP OP_HASH160 [HASH160] OP_EQUALVERIFY OP_CHECKSIG */
 #define WALLY_SCRIPTPUBKEY_P2SH_LEN   23 /** OP_HASH160 [HASH160] OP_EQUAL */
 #define WALLY_SCRIPTPUBKEY_P2WPKH_LEN 22 /** OP_0 [HASH160] */
 #define WALLY_SCRIPTPUBKEY_P2WSH_LEN  34 /** OP_0 [SHA256] */
+#define WALLY_SCRIPTPUBKEY_P2TR_LEN   34 /** OP_1 [X-ONLY-PUBKEY] */
 
 #define WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN 83 /** OP_RETURN [80 bytes of data] */
 
 #define WALLY_MAX_OP_RETURN_LEN 80 /* Maximum length of OP_RETURN data push */
 
 #define WALLY_SCRIPTSIG_P2PKH_MAX_LEN 140 /** [SIG+SIGHASH] [PUBKEY] */
-#define WALLY_WITNESSSCRIPT_MAX_LEN   35 /** (PUSH OF)0 [SHA256] */
+#define WALLY_WITNESSSCRIPT_MAX_LEN   42 /** (PUSH OF)0 [Up to 40 bytes of data] */
 
 #define WALLY_SCRIPT_VARINT_MAX_SIZE 9
 
@@ -568,7 +570,7 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
  *
  * :param bytes: Script or hash bytes to create a witness program from.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param witness_version: Witness Version to create a witness program from.
+ * :param version: Witness version to create a witness program from.
  *|    Specify a value of 16 or less.
  * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to hash
  *|    the input script before using it. ``WALLY_SCRIPT_AS_PUSH`` to generate
@@ -578,10 +580,10 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
-WALLY_CORE_API int wally_witness_program_from_bytes_using_version(
+WALLY_CORE_API int wally_witness_program_from_bytes_and_version(
     const unsigned char *bytes,
     size_t bytes_len,
-    uint8_t witness_version,
+    uint32_t version,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,

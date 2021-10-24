@@ -229,6 +229,12 @@ inline int addr_segwit_from_bytes(const BYTES& bytes, const ADDR_FAMILY& addr_fa
     return ret;
 }
 
+template <class ADDR, class ADDR_FAMILY>
+inline int addr_segwit_get_version(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, size_t* written) {
+    int ret = ::wally_addr_segwit_get_version(detail::get_p(addr), detail::get_p(addr_family), flags, written);
+    return ret;
+}
+
 template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
 inline int addr_segwit_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
@@ -774,6 +780,12 @@ inline int psbt_to_bytes(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out,
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class BYTES, class BYTES_OUT>
+inline int ripemd160(const BYTES& bytes, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ripemd160(bytes.data(), bytes.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class SIG, class S2C_DATA, class S2C_OPENING>
 inline int s2c_commitment_verify(const SIG& sig, const S2C_DATA& s2c_data, const S2C_OPENING& s2c_opening, uint32_t flags) {
     int ret = ::wally_s2c_commitment_verify(sig.data(), sig.size(), s2c_data.data(), s2c_data.size(), s2c_opening.data(), s2c_opening.size(), flags);
@@ -1260,6 +1272,13 @@ template <class BYTES, class BYTES_OUT>
 inline int witness_program_from_bytes(const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
     int ret = ::wally_witness_program_from_bytes(bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class BYTES, class BYTES_OUT>
+inline int witness_program_from_bytes_and_version(const BYTES& bytes, uint32_t version, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_witness_program_from_bytes_and_version(bytes.data(), bytes.size(), version, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 

@@ -1,6 +1,5 @@
 import unittest
 from util import *
-from binascii import unhexlify
 
 PBKDF2_HMAC_SHA256_LEN, PBKDF2_HMAC_SHA512_LEN = 32, 64
 
@@ -9,7 +8,7 @@ class PBKDF2Case(object):
         # Format: HMAC_SHA_TYPE, PASSWORD, SALT, COST, EXPECTED
         self.typ = int(items[0])
         assert self.typ in [256, 512]
-        self.passwd = unhexlify(items[1])
+        self.passwd, self.passwd_len = make_cbuffer(items[1])
         self.salt = items[2]
         self.cost = int(items[3])
         self.expected, self.expected_len = make_cbuffer(items[4])
@@ -58,7 +57,7 @@ class PBKDF2Tests(unittest.TestCase):
                 continue
 
             salt, salt_len = make_cbuffer(case.salt)
-            ret = fn(case.passwd, len(case.passwd), salt, salt_len,
+            ret = fn(case.passwd, case.passwd_len, salt, salt_len,
                      0, case.cost, out_buf, out_len)
 
             self.assertEqual(ret, 0)

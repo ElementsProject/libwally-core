@@ -14,11 +14,13 @@ struct ext_key;
 
 #define WALLY_CA_PREFIX_LIQUID 0x0c /** Liquid v1 confidential address prefix */
 #define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
+#define WALLY_CA_PREFIX_LIQUID_TESTNET 0x17 /** Liquid v1 confidential address prefix for testnet */
 
 #define WALLY_NETWORK_BITCOIN_MAINNET 0x01 /** Bitcoin mainnet */
 #define WALLY_NETWORK_BITCOIN_TESTNET 0x02 /** Bitcoin testnet */
 #define WALLY_NETWORK_LIQUID 0x03 /** Liquid v1 */
 #define WALLY_NETWORK_LIQUID_REGTEST 0x04 /** Liquid v1 regtest */
+#define WALLY_NETWORK_LIQUID_TESTNET 0x05 /** Liquid v1 testnet */
 
 #define WALLY_ADDRESS_TYPE_P2PKH 0x01       /** P2PKH address ("1...") */
 #define WALLY_ADDRESS_TYPE_P2SH_P2WPKH 0x02 /** P2SH-P2WPKH wrapped SegWit address ("3...") */
@@ -28,18 +30,21 @@ struct ext_key;
 #define WALLY_ADDRESS_VERSION_P2PKH_TESTNET 0x6F /** P2PKH address on testnet */
 #define WALLY_ADDRESS_VERSION_P2PKH_LIQUID 0x39 /** P2PKH address on liquid v1 */
 #define WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST 0xEB /** P2PKH address on liquid v1 regtest */
+#define WALLY_ADDRESS_VERSION_P2PKH_LIQUID_TESTNET 0x24 /** P2PKH address on liquid v1 testnet */
 #define WALLY_ADDRESS_VERSION_P2SH_MAINNET 0x05 /** P2SH address on mainnet */
 #define WALLY_ADDRESS_VERSION_P2SH_TESTNET 0xC4 /** P2SH address on testnet */
 #define WALLY_ADDRESS_VERSION_P2SH_LIQUID 0x27 /** P2SH address on liquid v1 */
 #define WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST 0x4B /** P2SH address on liquid v1 regtest */
+#define WALLY_ADDRESS_VERSION_P2SH_LIQUID_TESTNET 0x13 /** P2SH address on liquid v1 testnet */
 #define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
 #define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 
 /**
- * Create a segwit native address from a v0 witness program.
+ * Create a segwit native address from a v0 or later witness program.
  *
  * :param bytes: Witness program bytes, including the version and data push opcode.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be 20 or 32 if script_version is 0.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be ``HASH160_LEN``
+ *|    or ``SHA256_LEN`` for v0 witness programs.
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting segwit native address string.
@@ -68,6 +73,21 @@ WALLY_CORE_API int wally_addr_segwit_to_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Get the segwit version of a segwit native address.
+ *
+ * :param addr: Address to fetch the witness program from.
+ * :param addr_family: Address family to generate, e.g. "bc" or "tb".
+ * :param flags: For future use. Must be 0.
+ * :param written: Destination for the segwit version from 0 to 16 inclusive.
+ */
+WALLY_CORE_API int wally_addr_segwit_get_version(
+    const char *addr,
+    const char *addr_family,
+    uint32_t flags,
+    size_t *written);
+
 
 /**
  * Infer a scriptPubKey from an address.
@@ -256,7 +276,7 @@ WALLY_CORE_API int wally_confidential_addr_from_addr(
  * Extract the segwit native address from a confidential address.
  *
  * :param address: The blech32 encoded confidential address to extract the address from.
- * :param confidential_addr_family: The confidential address family to generate.
+ * :param confidential_addr_family: The confidential address family of ``address``.
  * :param addr_family: The address family to generate.
  * :param output: Destination for the resulting address string.
  *|    The string returned should be freed using `wally_free_string`.
@@ -271,7 +291,7 @@ WALLY_CORE_API int wally_confidential_addr_to_addr_segwit(
  * Extract the blinding public key from a segwit confidential address.
  *
  * :param address: The blech32 encoded confidential address to extract the public key from.
- * :param confidential_addr_family: The confidential address prefix byte.
+ * :param confidential_addr_family: The confidential address family of ``address``.
  * :param bytes_out: Destination for the public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
  */
@@ -282,7 +302,7 @@ WALLY_CORE_API int wally_confidential_addr_segwit_to_ec_public_key(
     size_t len);
 
 /**
- * Create a confidential address from an segwit native and blinding public key.
+ * Create a confidential address from a segwit native address and blinding public key.
  *
  * :param address: The bech32 encoded address to make confidential.
  * :param addr_family: The address family to generate.

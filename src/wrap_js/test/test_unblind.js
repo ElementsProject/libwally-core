@@ -9,7 +9,7 @@ test('unblind', function(t) {
 	t.plan(6);
     wally.wally_tx_from_hex(
         blinded_tx_hex, wally.WALLY_TX_FLAG_USE_WITNESS + wally.WALLY_TX_FLAG_USE_ELEMENTS
-    
+
     ).then((tx) => {
         t.equal(8478, tx.weight);
         t.equal(2120, tx.vsize);
@@ -23,7 +23,7 @@ test('unblind', function(t) {
             output.scriptPubKey,
             output.asset
         );
-    
+
     }).then((unblind) => {
         console.log(Buffer.from(unblind[0]));
         let asset = Buffer.from(unblind[0]);
@@ -38,7 +38,7 @@ test('unblind', function(t) {
         t.equal("f38611eb688e6fcd06f25e2faf52b9f98364dc14c379ab085f1b57d56b4b1a6f", asset.toString('hex'));
 		t.equal("f44af3a58cae34a79c5f4f51304af0b6131188965c31148b601497345218cfda", asset_blind_factor.toString('hex'));
 		t.equal("664db2ad785de59c92e1d70c23c3d2804613de2cdef0e545c66cb66214093dc8", value_blind_factor.toString('hex'));
-		t.equal("0000000001f78a40", value.toString('hex')); 
+		t.equal("0000000001f78a40", value.toString('hex'));
     });
 
 })

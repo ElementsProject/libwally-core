@@ -43,6 +43,7 @@ sha256_midstate = _wrap_bin(sha256_midstate, SHA256_LEN)
 sha256d = _wrap_bin(sha256d, SHA256_LEN)
 sha512 = _wrap_bin(sha512, SHA512_LEN)
 hash160 = _wrap_bin(hash160, HASH160_LEN)
+ripemd160 = _wrap_bin(ripemd160, RIPEMD160_LEN)
 hmac_sha256 = _wrap_bin(hmac_sha256, HMAC_SHA256_LEN)
 hmac_sha512 = _wrap_bin(hmac_sha512, HMAC_SHA512_LEN)
 
@@ -133,6 +134,7 @@ scriptsig_p2pkh_from_sig = _wrap_bin(scriptsig_p2pkh_from_sig, WALLY_SCRIPTSIG_P
 scriptsig_p2pkh_from_der = _wrap_bin(scriptsig_p2pkh_from_der, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, resize=True)
 
 witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
+witness_program_from_bytes_and_version = _wrap_bin(witness_program_from_bytes_and_version, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
 
 addr_segwit_to_bytes = _wrap_bin(addr_segwit_to_bytes, 32 + 2, resize=True)
 address_to_scriptpubkey = _wrap_bin(address_to_scriptpubkey, 21 + 4, resize=True)
