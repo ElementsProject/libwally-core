@@ -1425,7 +1425,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                                 &val, &val_max);
             result->version = pull_le32(&val, &val_max);
             subfield_nomore_end(&bytes, &len, val, val_max);
-            if (result->version > WALLY_PSBT_HIGHEST_VERSION) {
+            if (result->version > WALLY_PSBT_HIGHEST_VERSION || result->version == 1) {
                 ret = WALLY_EINVAL;    /* Unsupported version number */
                 goto fail;
             }
@@ -1447,26 +1447,27 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         ret = WALLY_EINVAL; /* Missing global separator */
         goto fail;
     }
-
-    if (!result->tx) {
-        ret = WALLY_EINVAL; /* No global tx */
-        goto fail;
-    }
-
-    /* Read inputs */
-    for (i = 0; i < result->tx->num_inputs; ++i) {
-        ret = pull_psbt_input(&bytes, &len, flags, &result->inputs[i]);
-        if (ret != WALLY_OK)
+    if (result->version == 0) {
+        if (!result->tx) {
+            ret = WALLY_EINVAL; /* No global tx */
             goto fail;
-    }
+        }
 
-    /* Read outputs */
-    for (i = 0; i < result->tx->num_outputs; ++i) {
-        ret = pull_psbt_output(&bytes, &len, &result->outputs[i]);
-        if (ret != WALLY_OK)
-            goto fail;
-    }
+        /* Read inputs */
+        for (i = 0; i < result->tx->num_inputs; ++i) {
+            ret = pull_psbt_input(&bytes, &len, flags, &result->inputs[i]);
+            if (ret != WALLY_OK)
+                goto fail;
+        }
 
+        /* Read outputs */
+        for (i = 0; i < result->tx->num_outputs; ++i) {
+            ret = pull_psbt_output(&bytes, &len, &result->outputs[i]);
+            if (ret != WALLY_OK)
+                goto fail;
+        }
+
+    }
     /* If we ran out of data anywhere, fail. */
     if (!bytes) {
         ret = WALLY_EINVAL;
@@ -1769,12 +1770,14 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     tx_flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
     push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
 
-    /* Global tx */
-    push_psbt_key(&cursor, &max, PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
-    ret = push_length_and_tx(&cursor, &max, psbt->tx,
-                             WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144);
-    if (ret != WALLY_OK)
-        return ret;
+    if (psbt->version == 0) {
+        /* Global tx */
+        push_psbt_key(&cursor, &max, PSBT_GLOBAL_UNSIGNED_TX, NULL, 0);
+        ret = push_length_and_tx(&cursor, &max, psbt->tx,
+                                WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144);
+        if (ret != WALLY_OK)
+            return ret;
+    }
 
     /* version */
     if (psbt->version > 0) {

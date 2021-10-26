@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 /* PSBT Version number */
-#define WALLY_PSBT_HIGHEST_VERSION 0
+#define WALLY_PSBT_HIGHEST_VERSION 2
 
 /* Ignore scriptsig and witness when adding an input */
 #define WALLY_PSBT_FLAG_NON_FINAL 0x1
