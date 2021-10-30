@@ -230,7 +230,7 @@ WALLY_CORE_API int wally_base64_from_bytes(
  * :param str_in: Base64 encoded string to decode.
  * :param flags: Must be 0.
  * :param bytes_out: Destination for converted binary data.
- * :param len: The length of ``bytes_out`` in bytes. See ``wally_base64_get_maximum_length`.
+ * :param len: The length of ``bytes_out`` in bytes. See ``wally_base64_get_maximum_length``.
  * :param written: Destination for the length of the decoded bytes.
  */
 WALLY_CORE_API int wally_base64_to_bytes(
