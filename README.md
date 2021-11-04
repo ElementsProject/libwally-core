@@ -230,7 +230,7 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js_wrappers --enable-coverage --enable-elements
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js-wrappers --enable-coverage --enable-elements
 $ make
 $ ./tools/coverage.sh clean
 $ make check
