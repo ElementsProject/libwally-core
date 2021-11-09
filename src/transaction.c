@@ -156,7 +156,7 @@ static bool is_valid_elements_tx(const struct wally_tx *tx)
     return true;
 }
 
-bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
+bool clone_data(void **dst, const void *src, size_t len)
 {
     if (!len) {
         *dst = NULL;
@@ -166,6 +166,11 @@ bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
     if (*dst)
         memcpy(*dst, src, len);
     return *dst != NULL;
+}
+
+bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
+{
+    return clone_data((void **)dst, src, len);
 }
 
 void *realloc_array(const void *src, size_t old_n, size_t new_n, size_t size)
