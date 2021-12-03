@@ -298,6 +298,19 @@ inline int base58_get_length(const STR_IN& str_in, size_t* written) {
     return ret;
 }
 
+template <class STR_IN>
+inline int base58_n_get_length(const STR_IN& str_in, size_t str_len, size_t* written) {
+    int ret = ::wally_base58_n_get_length(detail::get_p(str_in), str_len, written);
+    return ret;
+}
+
+template <class STR_IN, class BYTES_OUT>
+inline int base58_n_to_bytes(const STR_IN& str_in, size_t str_len, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_base58_n_to_bytes(detail::get_p(str_in), str_len, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class STR_IN, class BYTES_OUT>
 inline int base58_to_bytes(const STR_IN& str_in, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;

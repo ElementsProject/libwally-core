@@ -40,6 +40,8 @@ class Base58Tests(unittest.TestCase):
         # Check that just computing the size returns us the actual size
         ret, bin_len = wally_base58_get_length(utf8(str_in))
         self.assertEqual(ret, WALLY_OK)
+        ret, bin_len = wally_base58_n_get_length(utf8(str_in), len(utf8(str_in)))
+        self.assertEqual(ret, WALLY_OK)
         if flags == self.FLAG_CHECKSUM:
             bin_len -= self.CHECKSUM_LEN
         self.assertEqual(bin_len, buf_len)
@@ -130,6 +132,9 @@ class Base58Tests(unittest.TestCase):
                    'E936B711A7A98DF4097156B9FC9B344EB'
         self.assertEqual(ret, utf8(expected))
 
+        # Invalid args: _n
+        ret, _ = wally_base58_n_to_bytes(utf8('16Ho7Hs'), 0, 0, buf, buf_len)
+        self.assertEqual(ret, WALLY_EINVAL) # Invalid length
 
     def test_from_bytes(self):
 

@@ -253,14 +253,19 @@ cleanup:
 }
 
 
-int wally_base58_get_length(const char *str_in, size_t *written)
+int wally_base58_n_get_length(const char *str_in, size_t str_len, size_t *written)
 {
-    return base58_decode(str_in, strlen(str_in), NULL, written);
+    return base58_decode(str_in, str_len, NULL, written);
 }
 
-int wally_base58_to_bytes(const char *str_in, uint32_t flags,
-                          unsigned char *bytes_out, size_t len,
-                          size_t *written)
+int wally_base58_get_length(const char *str_in, size_t *written)
+{
+    return base58_decode(str_in, str_in ? strlen(str_in) : 0, NULL, written);
+}
+
+int wally_base58_n_to_bytes(const char *str_in, size_t str_len, uint32_t flags,
+                            unsigned char *bytes_out, size_t len,
+                            size_t *written)
 {
     size_t offset;
     uint32_t checksum;
@@ -277,7 +282,7 @@ int wally_base58_to_bytes(const char *str_in, uint32_t flags,
         return WALLY_EINVAL; /* No room for checksum */
 
     *written = len;
-    ret = base58_decode(str_in, strlen(str_in), bytes_out, written);
+    ret = base58_decode(str_in, str_len, bytes_out, written);
     if (!ret && *written > len)
         return WALLY_OK; /* not enough space, return required amount */
 
@@ -299,4 +304,12 @@ int wally_base58_to_bytes(const char *str_in, uint32_t flags,
         *written -= BASE58_CHECKSUM_LEN;
     }
     return ret;
+}
+
+int wally_base58_to_bytes(const char *str_in, uint32_t flags,
+                          unsigned char *bytes_out, size_t len,
+                          size_t *written)
+{
+    return wally_base58_n_to_bytes(str_in, str_in ? strlen(str_in) : 0, flags,
+                                   bytes_out, len, written);
 }

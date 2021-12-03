@@ -268,6 +268,8 @@ for f in (
     ('wally_asset_value_commitment', c_int, [c_uint64, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong]),
     ('wally_base58_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('wally_base58_get_length', c_int, [c_char_p, c_ulong_p]),
+    ('wally_base58_n_get_length', c_int, [c_char_p, c_ulong, c_ulong_p]),
+    ('wally_base58_n_to_bytes', c_int, [c_char_p, c_ulong, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_base58_to_bytes', c_int, [c_char_p, c_uint, c_void_p, c_ulong, c_ulong_p]),
     ('wally_base64_from_bytes', c_int, [c_void_p, c_ulong, c_uint, c_char_p_p]),
     ('wally_base64_get_maximum_length', c_int, [c_char_p, c_uint, c_ulong_p]),

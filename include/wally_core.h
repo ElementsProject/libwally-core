@@ -218,6 +218,19 @@ WALLY_CORE_API int wally_base58_to_bytes(
     size_t *written);
 
 /**
+ * Decode a known-length base 58 encoded string back into into binary data.
+ *
+ * See `wally_base58_to_bytes`.
+ */
+WALLY_CORE_API int wally_base58_n_to_bytes(
+    const char *str_in,
+    size_t str_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
  * Return the length of a base 58 encoded string once decoded into bytes.
  *
  * Returns the exact number of bytes that would be required to store ``str_in``
@@ -236,6 +249,16 @@ WALLY_CORE_API int wally_base58_to_bytes(
  */
 WALLY_CORE_API int wally_base58_get_length(
     const char *str_in,
+    size_t *written);
+
+/**
+ * Return the length of a known-length base 58 encoded string once decoded into bytes.
+ *
+ * See `wally_base58_get_length`.
+ */
+WALLY_CORE_API int wally_base58_n_get_length(
+    const char *str_in,
+    size_t str_len,
     size_t *written);
 
 /**
