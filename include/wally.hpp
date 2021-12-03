@@ -450,10 +450,28 @@ inline int hex_from_bytes(const BYTES& bytes, char** output) {
 }
 
 template <class HEX, class BYTES_OUT>
+inline int hex_n_to_bytes(const HEX& hex, size_t hex_len, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_hex_n_to_bytes(detail::get_p(hex), hex_len, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class HEX>
+inline int hex_n_verify(const HEX& hex, size_t hex_len) {
+    int ret = ::wally_hex_n_verify(detail::get_p(hex), hex_len);
+    return ret;
+}
+
+template <class HEX, class BYTES_OUT>
 inline int hex_to_bytes(const HEX& hex, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
     int ret = ::wally_hex_to_bytes(detail::get_p(hex), bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+inline int hex_verify(const char* hex) {
+    int ret = ::wally_hex_verify(hex);
+    return ret;
 }
 
 template <class KEY, class BYTES, class BYTES_OUT>

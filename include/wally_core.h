@@ -117,6 +117,23 @@ WALLY_CORE_API int wally_secp_randomize(
     size_t bytes_len);
 
 /**
+ * Verify that a hexadecimal string is valid.
+ *
+ * :param hex: String to verify.
+ */
+WALLY_CORE_API int wally_hex_verify(
+    const char *hex);
+
+/**
+ * Verify that a known-length hexadecimal string is valid.
+ *
+ * See `wally_hex_verify`.
+ */
+WALLY_CORE_API int wally_hex_n_verify(
+    const char *hex,
+    size_t hex_len);
+
+/**
  * Convert bytes to a (lower-case) hexadecimal string.
  *
  * :param bytes: Bytes to convert.
@@ -139,6 +156,18 @@ WALLY_CORE_API int wally_hex_from_bytes(
  */
 WALLY_CORE_API int wally_hex_to_bytes(
     const char *hex,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Convert a known-length hexadecimal string to bytes.
+ *
+ * See `wally_hex_to_bytes`.
+ */
+WALLY_CORE_API int wally_hex_n_to_bytes(
+    const char *hex,
+    size_t hex_len,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);

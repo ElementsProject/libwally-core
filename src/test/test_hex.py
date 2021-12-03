@@ -3,13 +3,30 @@ from util import *
 
 class HexTests(unittest.TestCase):
 
+    def test_hex_verify(self):
+        # Valid inputs
+        self.assertEqual(wally_hex_verify(utf8('00')), WALLY_OK)
+
+        # Bad inputs
+        self.assertEqual(wally_hex_verify(None),       WALLY_EINVAL) # NULL hex
+        self.assertEqual(wally_hex_verify(''),         WALLY_EINVAL) # Empty hex
+        self.assertEqual(wally_hex_verify(utf8('a')),  WALLY_EINVAL) # Odd length input
+        self.assertEqual(wally_hex_verify(utf8('xy')), WALLY_EINVAL) # Non-hex
+
+        self.assertEqual(wally_hex_n_verify(None, 2),       WALLY_EINVAL) # NULL hex
+        self.assertEqual(wally_hex_n_verify(utf8('00'), 0), WALLY_EINVAL) # 0 Length
+        self.assertEqual(wally_hex_n_verify(utf8('00'), 1), WALLY_EINVAL) # Odd Length
+
     def test_hex_to_bytes(self):
         LEN = 4
         buf, buf_len = make_cbuffer('00' * LEN)
 
         for i in range(256):
             for s in ("%02X" % i, "%02x" % i): # Upper/Lower
-                ret, written = wally_hex_to_bytes(utf8(s * LEN), buf, buf_len)
+                hex_ = utf8(s * LEN)
+                ret, written = wally_hex_to_bytes(hex_, buf, buf_len)
+                self.assertEqual((ret, written), (WALLY_OK, LEN))
+                ret, written = wally_hex_n_to_bytes(hex_, len(hex_), buf, buf_len)
                 self.assertEqual((ret, written), (WALLY_OK, LEN))
 
         # Bad inputs
@@ -18,6 +35,8 @@ class HexTests(unittest.TestCase):
                           (utf8('000'), buf,  buf_len),
                           (utf8('00'),  buf,  0)]:
             ret, written = wally_hex_to_bytes(s, b, l)
+            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+            ret, written = wally_hex_n_to_bytes(s, len(s) if s else 0, b, l)
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
         for l in (1,    # Too small, returns the required length

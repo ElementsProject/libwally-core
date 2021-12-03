@@ -459,7 +459,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_format_bitcoin_message);
 %returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);
+%returns_size_t(wally_hex_n_to_bytes);
+%returns_void__(wally_hex_n_verify);
 %returns_size_t(wally_hex_to_bytes);
+%returns_void__(wally_hex_verify);
 %returns_array_(wally_hmac_sha256, 5, 6, HMAC_SHA256_LEN);
 %returns_array_(wally_hmac_sha512, 5, 6, HMAC_SHA512_LEN);
 %returns_void__(wally_init);
