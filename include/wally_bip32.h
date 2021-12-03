@@ -308,6 +308,16 @@ WALLY_CORE_API int bip32_key_to_base58(
 WALLY_CORE_API int bip32_key_from_base58(
     const char *base58,
     struct ext_key *output);
+
+/**
+ * Convert a known-length base58 encoded extended key to an extended key.
+ *
+ * See `bip32_key_from_base58`.
+ */
+WALLY_CORE_API int bip32_key_from_base58_n(
+    const char *base58,
+    size_t base58_len,
+    struct ext_key *output);
 #endif
 
 /**
@@ -317,6 +327,16 @@ WALLY_CORE_API int bip32_key_from_base58(
  */
 WALLY_CORE_API int bip32_key_from_base58_alloc(
     const char *base58,
+    struct ext_key **output);
+
+/**
+ * As per `bip32_key_from_base58_n`, but allocates the key.
+ *
+ * .. note:: The returned key should be freed with `bip32_key_free`.
+ */
+WALLY_CORE_API int bip32_key_from_base58_n_alloc(
+    const char *base58,
+    size_t base58_len,
     struct ext_key **output);
 
 /**

@@ -215,6 +215,8 @@ for f in (
     ('bip32_key_free', c_int, [POINTER(ext_key)]),
     ('bip32_key_from_base58', c_int, [c_char_p, POINTER(ext_key)]),
     ('bip32_key_from_base58_alloc', c_int, [c_char_p, POINTER(POINTER(ext_key))]),
+    ('bip32_key_from_base58_n', c_int, [c_char_p, c_ulong, POINTER(ext_key)]),
+    ('bip32_key_from_base58_n_alloc', c_int, [c_char_p, c_ulong, POINTER(POINTER(ext_key))]),
     ('bip32_key_from_parent', c_int, [POINTER(ext_key), c_uint, c_uint, POINTER(ext_key)]),
     ('bip32_key_from_parent_alloc', c_int, [POINTER(ext_key), c_uint, c_uint, POINTER(POINTER(ext_key))]),
     ('bip32_key_from_parent_path', c_int, [POINTER(ext_key), c_uint_p, c_ulong, c_uint, POINTER(ext_key)]),

@@ -411,11 +411,24 @@ class BIP32Tests(unittest.TestCase):
 
             ret, out = bip32_key_to_base58(key, flag)
             self.assertEqual(ret, WALLY_OK)
+            out = utf8(out)
 
             key_out = POINTER(ext_key)()
-            self.assertEqual(bip32_key_from_base58_alloc(utf8(out), byref(key_out)), WALLY_OK)
+            self.assertEqual(bip32_key_from_base58_alloc(out, byref(key_out)), WALLY_OK)
             self.assertEqual(bip32_key_serialize(key_out, flag, buf, buf_len), WALLY_OK)
             self.assertEqual(h(buf).upper(), exp_hex)
+
+            self.assertEqual(bip32_key_from_base58_n_alloc(out, len(out), byref(key_out)), WALLY_OK)
+
+            # Bad args: _n
+            bad_args = [
+                (None, len(out), byref(key_out)), # NULL input
+                (out,  0,        byref(key_out)), # 0 length input
+                (out,  0,        None),           # NULL output
+            ]
+            for base58, base58_len, output in bad_args:
+                ret = bip32_key_from_base58_n_alloc(base58, base58_len, output)
+                self.assertEqual(ret, WALLY_EINVAL) # 0 length Input
 
     def test_strip_private_key(self):
         self.assertEqual(bip32_key_strip_private_key(None), WALLY_EINVAL)

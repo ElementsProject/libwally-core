@@ -60,6 +60,18 @@ inline int bip32_key_from_base58_alloc(const BASE58& base58, struct ext_key** ou
     return ret;
 }
 
+template <class BASE58>
+inline int bip32_key_from_base58_n(const BASE58& base58, size_t base58_len, struct ext_key* output) {
+    int ret = ::bip32_key_from_base58_n(detail::get_p(base58), base58_len, output);
+    return ret;
+}
+
+template <class BASE58>
+inline int bip32_key_from_base58_n_alloc(const BASE58& base58, size_t base58_len, struct ext_key** output) {
+    int ret = ::bip32_key_from_base58_n_alloc(detail::get_p(base58), base58_len, output);
+    return ret;
+}
+
 template <class HDKEY>
 inline int bip32_key_from_parent(const HDKEY& hdkey, uint32_t child_num, uint32_t flags, struct ext_key* output) {
     int ret = ::bip32_key_from_parent(detail::get_p(hdkey), child_num, flags, output);

@@ -375,6 +375,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(bip32_key_free);
 %returns_struct(bip32_key_from_base58_alloc, ext_key);
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
+%returns_struct(bip32_key_from_base58_n_alloc, ext_key);
+%rename("bip32_key_from_base58_n") bip32_key_from_base58_n_alloc;
 %returns_struct(bip32_key_from_parent_alloc, ext_key);
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %returns_struct(bip32_key_from_parent_path_alloc, ext_key);

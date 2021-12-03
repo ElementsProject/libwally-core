@@ -729,14 +729,15 @@ int bip32_key_to_base58(const struct ext_key *hdkey,
     return ret;
 }
 
-int bip32_key_from_base58(const char *base58,
-                          struct ext_key *output)
+int bip32_key_from_base58_n(const char *base58, size_t base58_len,
+                            struct ext_key *output)
 {
     int ret;
     unsigned char bytes[BIP32_SERIALIZED_LEN + BASE58_CHECKSUM_LEN];
     size_t written;
 
-    if ((ret = wally_base58_to_bytes(base58, BASE58_FLAG_CHECKSUM, bytes, sizeof(bytes), &written)))
+    if ((ret = wally_base58_n_to_bytes(base58, base58_len, BASE58_FLAG_CHECKSUM,
+                                       bytes, sizeof(bytes), &written)))
         return ret;
 
     if (written != BIP32_SERIALIZED_LEN)
@@ -748,18 +749,30 @@ int bip32_key_from_base58(const char *base58,
     return ret;
 }
 
-int bip32_key_from_base58_alloc(const char *base58,
-                                struct ext_key **output)
+int bip32_key_from_base58(const char *base58,
+                          struct ext_key *output)
+{
+    return bip32_key_from_base58_n(base58, base58 ? strlen(base58) : 0, output);
+}
+
+int bip32_key_from_base58_n_alloc(const char *base58, size_t base58_len,
+                                  struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
-    ret = bip32_key_from_base58(base58, *output);
+    ret = bip32_key_from_base58_n(base58, base58_len, *output);
     if (ret != WALLY_OK) {
         wally_free(*output);
         *output = 0;
     }
     return ret;
+}
+
+int bip32_key_from_base58_alloc(const char *base58,
+                                struct ext_key **output)
+{
+    return bip32_key_from_base58_n_alloc(base58, base58 ? strlen(base58) : 0, output);
 }
 
 int bip32_key_strip_private_key(struct ext_key *key_out)
