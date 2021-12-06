@@ -65,9 +65,13 @@ class Bech32Tests(unittest.TestCase):
 
     def decode(self, addr, family):
         out, out_len = make_cbuffer('00' * WALLY_WITNESSSCRIPT_MAX_LEN)
-        ret, written = wally_addr_segwit_to_bytes(utf8(addr), utf8(family), 0, out, out_len)
-        ver_ret, ver = wally_addr_segwit_get_version(utf8(addr), utf8(family), 0)
+        addr, family = utf8(addr), utf8(family)
+        ret, written = wally_addr_segwit_to_bytes(addr, family, 0, out, out_len)
+        ret_n, written_n = wally_addr_segwit_n_to_bytes(addr, len(addr), family, len(family), 0, out, out_len)
+        ver_ret, ver = wally_addr_segwit_get_version(addr, family, 0)
+        ver_ret_n, ver_n = wally_addr_segwit_n_get_version(addr, len(addr), family, len(family), 0)
         self.assertEqual(ret, ver_ret)
+        self.assertEqual(ret_n, ver_ret_n)
         if ret != WALLY_OK:
             return ret, None, ver
         return ret, h(out[:written]), ver
@@ -99,10 +103,29 @@ class Bech32Tests(unittest.TestCase):
             self.assertEqual(result_ver, 0)
 
         out, out_len = make_cbuffer('00' * (32 + 2))
-        bad = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg'
-        ret, written = wally_addr_segwit_to_bytes(utf8(bad), utf8('tb'), 0, out, out_len)
+        bad = utf8('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg')
+        tb = utf8('tb')
+        ret, written = wally_addr_segwit_to_bytes(bad, tb, 0, out, out_len)
+        self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+        ret, written = wally_addr_segwit_n_to_bytes(bad, len(bad), tb, len(tb), 0, out, out_len)
         self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
+        # _n versions: bad lengths
+        addr = 'BC1SW50QGDZ25J'
+        family, _, _ = valid_cases[addr]
+        addr, family = utf8(addr), utf8(family)
+
+        ret, written = wally_addr_segwit_n_to_bytes(addr, 0,
+                                                    family, len(family), 0, out, out_len)
+        self.assertEqual((ret, written), (WALLY_EINVAL, 0)) # Bad addr length
+        ret, written = wally_addr_segwit_n_to_bytes(addr, len(addr),
+                                                    family, 0, 0, out, out_len)
+        self.assertEqual((ret, written), (WALLY_EINVAL, 0)) # Bad family length
+
+        ret, ver = wally_addr_segwit_n_get_version(addr, 0, family, len(family), 0)
+        self.assertEqual(ret, WALLY_EINVAL) # Bad addr length
+        ret, ver = wally_addr_segwit_n_get_version(addr, len(addr), family, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL) # Bad family length
 
 if __name__ == '__main__':
     unittest.main()

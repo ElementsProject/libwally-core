@@ -247,6 +247,19 @@ inline int addr_segwit_get_version(const ADDR& addr, const ADDR_FAMILY& addr_fam
     return ret;
 }
 
+template <class ADDR, class ADDR_FAMILY>
+inline int addr_segwit_n_get_version(const ADDR& addr, size_t addr_len, const ADDR_FAMILY& addr_family, size_t addr_family_len, uint32_t flags, size_t* written) {
+    int ret = ::wally_addr_segwit_n_get_version(detail::get_p(addr), addr_len, detail::get_p(addr_family), addr_family_len, flags, written);
+    return ret;
+}
+
+template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
+inline int addr_segwit_n_to_bytes(const ADDR& addr, size_t addr_len, const ADDR_FAMILY& addr_family, size_t addr_family_len, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_addr_segwit_n_to_bytes(detail::get_p(addr), addr_len, detail::get_p(addr_family), addr_family_len, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
 inline int addr_segwit_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
