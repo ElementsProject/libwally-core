@@ -127,7 +127,7 @@ class CATests(unittest.TestCase):
         for addr, conf_key, conf_addr in segwit_valid_cases:
             conf_key, conf_key_len = make_cbuffer(conf_key)
 
-            # Convert the seqwit address to a confidential address
+            # Convert the segwit address to a confidential address
             args = [addr, hrp(addr), hrp(conf_addr), conf_key, conf_key_len]
             ret, blech32 = wally_confidential_addr_from_addr_segwit(*args)
             self.assertEqual((ret, blech32), (WALLY_OK, conf_addr))
