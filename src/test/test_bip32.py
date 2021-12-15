@@ -8,6 +8,7 @@ VER_TEST_PUBLIC = 0x043587CF
 VER_TEST_PRIVATE = 0x04358394
 
 FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC, FLAG_SKIP_HASH, = 0x0, 0x1, 0x2
+FLAG_KEY_TWEAK_SUM, FLAG_STR_WILDCARD, FLAG_STR_BARE = 0x4, 0x8, 0x10
 ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH
 BIP32_SERIALIZED_LEN = 78
 BIP32_FLAG_SKIP_HASH = 0x2
@@ -145,9 +146,19 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK)
 
         # Verify that path derivation matches also
-        p_key_out = self.derive_key_by_path(parent, [child_num], flags)
+        p_key_out, p_str_key_out = self.derive_key_by_path(parent, [child_num], flags)
         self.compare_keys(p_key_out, key_out, flags)
+        self.compare_keys(p_str_key_out, key_out, flags)
         return key_out
+
+    def child_num_to_str(self, child_num):
+        indicator, v = '', child_num
+        if child_num >= 0x80000000:
+            indicator, v = 'h', child_num - 0x80000000
+        return '/' + str(v) + indicator
+
+    def path_to_str(self, path):
+        return utf8('m' + ''.join(self.child_num_to_str(v) for v in path))
 
     def path_to_c(self, path):
         c_path = (c_uint * len(path))()
@@ -155,13 +166,22 @@ class BIP32Tests(unittest.TestCase):
             c_path[i] = n
         return c_path
 
+    def str_to_path(self, path_str, wildcard):
+        path = path_str.replace('*h', str(2147483648 + wildcard))
+        path = path.replace('*', str(wildcard)).replace('m/', '').split('/')
+        return [int(v) for v in path]
+
     def derive_key_by_path(self, parent, path, flags, expected=WALLY_OK):
-        key_out = ext_key()
+        key_out, str_key_out = ext_key(), ext_key()
         c_path = self.path_to_c(path)
         ret = bip32_key_from_parent_path(byref(parent), c_path, len(path),
                                          flags, byref(key_out))
         self.assertEqual(ret, expected)
-        return key_out
+        str_path = self.path_to_str(path)
+        ret = bip32_key_from_parent_path_str(byref(parent), str_path, 0,
+                                             flags, byref(str_key_out))
+        self.assertEqual(ret, expected)
+        return key_out, str_key_out
 
     def compare_keys(self, key, expected, flags):
         self.assertEqual(h(key.chain_code), h(expected.chain_code))
@@ -365,8 +385,9 @@ class BIP32Tests(unittest.TestCase):
                                 (FLAG_KEY_PRIVATE,                  priv_priv),
                                 (FLAG_KEY_PUBLIC  | FLAG_SKIP_HASH, pub_pub),
                                 (FLAG_KEY_PRIVATE | FLAG_SKIP_HASH, priv_priv)]:
-            path_derived = self.derive_key_by_path(master, [1, 1], flags)
+            path_derived, str_derived = self.derive_key_by_path(master, [1, 1], flags)
             self.compare_keys(path_derived, expected, flags)
+            self.compare_keys(str_derived, expected, flags)
 
     def test_key_from_parent_invalid(self):
         master, pub, priv = self.create_master_pub_priv()
@@ -381,22 +402,88 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_parent(key, 1, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
 
-        m = byref(master)
-        c_path = self.path_to_c([1, 1])
-        cases = [(None, len(c_path), FLAG_KEY_PRIVATE,   key_out), # Null parent
-                 (m,    len(c_path), FLAG_KEY_PRIVATE,   None),    # Null output key
-                 (m,    len(c_path), ~ALL_DEFINED_FLAGS, key_out), # Invalid flags
-                 (m,     0,          FLAG_KEY_PRIVATE,   key_out)] # Bad path length
+        m, path_, long_ = byref(master), [1, 1], [1] * 256
+        def get_paths(path):
+            return (self.path_to_c(path), self.path_to_str(path)) if path else (None, None)
 
-        for key, plen, flags, key_out in cases:
+        cases = [(None, path_, len(path_), FLAG_KEY_PRIVATE,   key_out), # Null parent
+                 (m,    path_, len(path_), FLAG_KEY_PRIVATE,   None),    # Null output key
+                 (m,    path_, len(path_), ~ALL_DEFINED_FLAGS, key_out), # Invalid flags
+                 (m,    None,  len(path_), FLAG_KEY_PRIVATE,   key_out), # NULL path
+                 (m,    path_, 0,          FLAG_KEY_PRIVATE,   key_out), # Bad path length
+                 (m,    long_, len(long_), FLAG_KEY_PRIVATE,   key_out)] # Path too long
+
+        for key, path, plen, flags, key_out in cases:
+            c_path, str_path = get_paths(path)
             ret = bip32_key_from_parent_path(key, c_path, plen, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
+            plen = len(str_path) if str_path and plen else plen
+            ret = bip32_key_from_parent_path_str_n(key, str_path, plen, 0, flags, key_out)
+            self.assertEqual(ret, WALLY_EINVAL)
 
+        c_path, str_path = get_paths(path_)
         master.depth = 0xff # Cant derive from a parent of depth 255
         ret = bip32_key_from_parent(m, 5, FLAG_KEY_PUBLIC, key_out)
         self.assertEqual(ret, WALLY_EINVAL)
         ret = bip32_key_from_parent_path(m, c_path, len(c_path), FLAG_KEY_PUBLIC, key_out)
         self.assertEqual(ret, WALLY_EINVAL)
+        ret = bip32_key_from_parent_path_str_n(m, str_path, len(str_path), 0, FLAG_KEY_PUBLIC, key_out)
+        self.assertEqual(ret, WALLY_EINVAL)
+
+        # String paths: Invalid cases
+        master.depth = 0
+        B, W = FLAG_STR_BARE, FLAG_STR_WILDCARD
+        cases = [('m',            0, 0),          # Empty resulting path (1)
+                 ('m/',           0, 0),          # Empty resulting path (2)
+                 ('/',            0, 0),          # Empty resulting path (3)
+                 ('//',           0, 0),          # Trailing slash (1)
+                 ('/1/',          0, 0),          # Trailing slash (2)
+                 ('m/1',          B, 0),          # Non-bare path (1)
+                 ('/1',           B, 0),          # Non-bare path (2)
+                 ('/1//1',        0, 0),          # Missing number (1)
+                 ('/1/h',         0, 0),          # Missing number (2)
+                 ('/h',           0, 0),          # Missing number (3)
+                 ('h',            B, 0),          # Missing number (bare)
+                 ('/h1',          0, 0),          # Invalid hardened indicator position
+                 ('m/2147483648', 0, 0),          # Child num too large
+                 ('/*',           0, 0),          # Wildcard without flag
+                 ('/*/*',         W, 0),          # More than one wildcard
+                 ('/1*',          W, 0),          # Invalid wildcard position (1)
+                 ('/*1',          W, 0),          # Invalid wildcard position (2)
+                 ('/*',           W, 2147483648)] # Hardened wildcard
+
+        for path, flags, wildcard in cases:
+            flags = flags | FLAG_KEY_PRIVATE
+            ret = bip32_key_from_parent_path_str_n(m, path, len(path), wildcard, flags, key_out)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        # After stripping the parents' private key, hardened path derivation fails
+        self.assertEqual(bip32_key_strip_private_key(m), WALLY_OK)
+        ret = bip32_key_from_parent_path_str_n(m, 'm/1h', len('m/1h'), 0, FLAG_KEY_PUBLIC, key_out)
+        self.assertEqual(ret, WALLY_EINVAL)
+
+    def test_wildcard(self):
+        master, pub, priv = self.create_master_pub_priv()
+        m = byref(master)
+        flags = FLAG_STR_WILDCARD | FLAG_KEY_PRIVATE
+        key_out, int_key_out = ext_key(), ext_key()
+        cases = [('m/1/*',    55),
+                 ('m/*',      55),
+                 ('m/1/*/1',  55),
+                 ('m/1/*h',   55),
+                 ('m/*h',     55),
+                 ('m/1/*h/1', 55)]
+
+        for path, wildcard in cases:
+            ret = bip32_key_from_parent_path_str(m, path, wildcard, flags, byref(key_out))
+            self.assertEqual(ret, WALLY_OK)
+
+            # Verify the result matches a key derived using the non-string version
+            path = self.str_to_path(path, wildcard)
+            c_path = self.path_to_c(path)
+            ret = bip32_key_from_parent_path(m, c_path, len(path), flags, byref(int_key_out))
+            self.assertEqual(ret, WALLY_OK)
+            self.compare_keys(key_out, int_key_out, flags)
 
     def test_free_invalid(self):
         self.assertEqual(WALLY_EINVAL, bip32_key_free(None))

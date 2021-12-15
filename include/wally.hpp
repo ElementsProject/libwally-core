@@ -96,6 +96,30 @@ inline int bip32_key_from_parent_path_alloc(const HDKEY& hdkey, const CHILD_PATH
     return ret;
 }
 
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str(const HDKEY& hdkey, const PATH_STR& path_str, uint32_t child_num, uint32_t flags, struct ext_key* output) {
+    int ret = ::bip32_key_from_parent_path_str(detail::get_p(hdkey), detail::get_p(path_str), child_num, flags, output);
+    return ret;
+}
+
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str_alloc(const HDKEY& hdkey, const PATH_STR& path_str, uint32_t child_num, uint32_t flags, struct ext_key** output) {
+    int ret = ::bip32_key_from_parent_path_str_alloc(detail::get_p(hdkey), detail::get_p(path_str), child_num, flags, output);
+    return ret;
+}
+
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str_n(const HDKEY& hdkey, const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t flags, struct ext_key* output) {
+    int ret = ::bip32_key_from_parent_path_str_n(detail::get_p(hdkey), detail::get_p(path_str), path_str_len, child_num, flags, output);
+    return ret;
+}
+
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str_n_alloc(const HDKEY& hdkey, const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t flags, struct ext_key** output) {
+    int ret = ::bip32_key_from_parent_path_str_n_alloc(detail::get_p(hdkey), detail::get_p(path_str), path_str_len, child_num, flags, output);
+    return ret;
+}
+
 template <class BYTES>
 inline int bip32_key_from_seed(const BYTES& bytes, uint32_t version, uint32_t flags, struct ext_key* output) {
     int ret = ::bip32_key_from_seed(bytes.data(), bytes.size(), version, flags, output);

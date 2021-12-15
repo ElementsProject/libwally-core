@@ -339,6 +339,8 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
+%rename("bip32_key_from_parent_path_str") bip32_key_from_parent_path_str_alloc;
+%rename("bip32_key_from_parent_path_str_n") bip32_key_from_parent_path_str_n_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;

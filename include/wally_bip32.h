@@ -21,6 +21,9 @@ extern "C" {
 /** Child number of the first hardened child */
 #define BIP32_INITIAL_HARDENED_CHILD 0x80000000
 
+/** The maximum number of path elements allowed in a path */
+#define BIP32_PATH_MAX_LEN 255
+
 /** Indicate that we want to derive a private key in `bip32_key_from_parent` */
 #define BIP32_FLAG_KEY_PRIVATE 0x0
 /** Indicate that we want to derive a public key in `bip32_key_from_parent` */
@@ -30,6 +33,10 @@ extern "C" {
 /** Indicate that we want the pub tweak to be added to the calculation when deriving a key in `bip32_key_from_parent` */
 /** Only used with elements */
 #define BIP32_FLAG_KEY_TWEAK_SUM 0x4
+/** Allow a wildcard ``*`` or ``*'``/``*h`` in path string expressions */
+#define BIP32_FLAG_STR_WILDCARD 0x8
+/** Do not allow a leading ``m``/``M`` or ``/`` in path string expressions */
+#define BIP32_FLAG_STR_BARE 0x10
 
 /** Version codes for extended keys */
 #define BIP32_VER_MAIN_PUBLIC  0x0488B21E
@@ -231,7 +238,7 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  * :param hdkey: The parent extended key.
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
- * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating the type of derivation wanted.
+ * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
@@ -250,6 +257,60 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     const struct ext_key *hdkey,
     const uint32_t *child_path,
     size_t child_path_len,
+    uint32_t flags,
+    struct ext_key **output);
+
+#ifndef SWIG
+/**
+ * Create a new child extended key from a parent extended key and a path string.
+ *
+ * :param hdkey: The parent extended key.
+ * :param path_str: The BIP32 path string of child numbers to create.
+ * :param child_num: The child number to use if ``path_str`` contains a ``*`` wildcard.
+ * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
+ * :param output: Destination for the resulting child extended key.
+ */
+int bip32_key_from_parent_path_str(
+    const struct ext_key *hdkey,
+    const char *path_str,
+    uint32_t child_num,
+    uint32_t flags,
+    struct ext_key *output);
+
+/**
+ * Create a new child extended key from a parent extended key and a known-length path string.
+ *
+ * See `bip32_key_from_parent_path_str`.
+ */
+int bip32_key_from_parent_path_str_n(
+    const struct ext_key *hdkey,
+    const char *path_str,
+    size_t path_str_len,
+    uint32_t child_num,
+    uint32_t flags,
+    struct ext_key *output);
+#endif
+
+/**
+ * As per `bip32_key_from_parent_path_str`, but allocates the key.
+ * .. note:: The returned key should be freed with `bip32_key_free`.
+ */
+int bip32_key_from_parent_path_str_alloc(
+    const struct ext_key *hdkey,
+    const char *path_str,
+    uint32_t child_num,
+    uint32_t flags,
+    struct ext_key **output);
+
+/**
+ * As per `bip32_key_from_parent_path_str_n`, but allocates the key.
+ * .. note:: The returned key should be freed with `bip32_key_free`.
+ */
+int bip32_key_from_parent_path_str_n_alloc(
+    const struct ext_key *hdkey,
+    const char *path_str,
+    size_t path_str_len,
+    uint32_t child_num,
     uint32_t flags,
     struct ext_key **output);
 
