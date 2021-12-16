@@ -633,10 +633,8 @@ int bip32_key_from_parent_path(const struct ext_key *hdkey,
                                const uint32_t *child_path, size_t child_path_len,
                                uint32_t flags, struct ext_key *key_out)
 {
-    /* Optimization: We can skip hash calculations for internal nodes */
-    uint32_t derivation_flags = flags | BIP32_FLAG_SKIP_HASH;
     struct ext_key tmp[2];
-    size_t i, tmp_idx = 0;
+    size_t i, tmp_idx = 0, private_until = 0;
     int ret;
 
     if (flags & ~BIP32_ALL_DEFINED_FLAGS)
@@ -645,14 +643,34 @@ int bip32_key_from_parent_path(const struct ext_key *hdkey,
     if (!hdkey || !child_path || !child_path_len || child_path_len > BIP32_PATH_MAX_LEN || !key_out)
         return WALLY_EINVAL;
 
+    if (flags & BIP32_FLAG_KEY_PUBLIC) {
+        /* Public derivation: Check for intermediate hardened keys */
+        for (i = 0; i < child_path_len; ++i) {
+            if (child_is_hardened(child_path[i]))
+                private_until = i + 1; /* Derive privately until this index */
+        }
+        if (private_until && !key_is_private(hdkey))
+            return WALLY_EINVAL; /* Unsupported derivation */
+    }
+
     for (i = 0; i < child_path_len; ++i) {
         struct ext_key *derived = &tmp[tmp_idx];
+        uint32_t derivation_flags = flags;
+
+        if (private_until && i < private_until - 1) {
+            /* Derive privately until we reach the last hardened child */
+            derivation_flags &= ~BIP32_FLAG_KEY_PUBLIC;
+            derivation_flags |= BIP32_FLAG_KEY_PRIVATE;
+        }
+        if (i + 2 < child_path_len)
+            derivation_flags |= BIP32_FLAG_SKIP_HASH; /* Skip hash for internal keys */
+
 #ifdef BUILD_ELEMENTS
         if (flags & BIP32_FLAG_KEY_TWEAK_SUM)
-            memcpy(derived->pub_key_tweak_sum, hdkey->pub_key_tweak_sum, sizeof(hdkey->pub_key_tweak_sum));
+            memcpy(derived->pub_key_tweak_sum,
+                   hdkey->pub_key_tweak_sum, sizeof(hdkey->pub_key_tweak_sum));
 #endif /* BUILD_ELEMENTS */
-        if (i + 2 >= child_path_len)
-            derivation_flags = flags; /* Use callers flags for the final derivations */
+
         ret = bip32_key_from_parent(hdkey, child_path[i], derivation_flags, derived);
         if (ret != WALLY_OK)
             break;

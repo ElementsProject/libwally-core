@@ -14,6 +14,7 @@ ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH | \
     FLAG_KEY_TWEAK_SUM | FLAG_STR_WILDCARD | FLAG_STR_BARE | FLAG_ALLOW_UPPER
 BIP32_SERIALIZED_LEN = 78
 BIP32_FLAG_SKIP_HASH = 0x2
+EMPTY_PRIV_KEY = utf8('01' + ('00') * 32)
 
 # These vectors are expressed in binary rather than base 58. The spec base 58
 # representation just obfuscates the data we are validating. For example, the
@@ -169,7 +170,8 @@ class BIP32Tests(unittest.TestCase):
         return c_path
 
     def str_to_path(self, path_str, wildcard):
-        path = path_str.replace('*h', str(2147483648 + wildcard))
+        path = path_str.replace('1h', '2147483649')
+        path = path.replace('*h', str(2147483648 + wildcard))
         path = path.replace('*', str(wildcard)).replace('m/', '').split('/')
         return [int(v) for v in path]
 
@@ -428,6 +430,10 @@ class BIP32Tests(unittest.TestCase):
         # Derive the same child public and private keys from master
         priv = self.derive_key(master, 1, FLAG_KEY_PRIVATE)
         pub = self.derive_key(master, 1, FLAG_KEY_PUBLIC)
+        # Verify both derviation types resulted in the same pubkey
+        self.assertEqual(h(priv.pub_key), h(pub.pub_key))
+        # Verify that the public derivation does not contain a private key
+        self.assertEqual(h(pub.priv_key), EMPTY_PRIV_KEY)
         return master, pub, priv
 
     def test_public_derivation_identities(self):
@@ -533,33 +539,55 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_parent_path_str_n(m, path, len(path), wildcard, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
 
-        # After stripping the parents' private key, hardened path derivation fails
+        # Hardened derivation is possible from a full key
+        fn = lambda f: bip32_key_from_parent_path_str_n(m, 'm/1h/1h', 7, 0, f, key_out)
+        self.assertEqual(fn(FLAG_KEY_PRIVATE), WALLY_OK)
+        self.assertEqual(fn(FLAG_KEY_PUBLIC), WALLY_OK)
+        # After stripping the parents' private key, hardened derivation fails
         self.assertEqual(bip32_key_strip_private_key(m), WALLY_OK)
-        ret = bip32_key_from_parent_path_str_n(m, 'm/1h', len('m/1h'), 0, FLAG_KEY_PUBLIC, key_out)
-        self.assertEqual(ret, WALLY_EINVAL)
+        self.assertEqual(fn(FLAG_KEY_PRIVATE), WALLY_EINVAL)
+        self.assertEqual(fn(FLAG_KEY_PUBLIC), WALLY_EINVAL)
 
     def test_wildcard(self):
         master, pub, priv = self.create_master_pub_priv()
         m = byref(master)
-        flags = FLAG_STR_WILDCARD | FLAG_KEY_PRIVATE
         key_out, int_key_out = ext_key(), ext_key()
-        cases = [('m/1/*',    55),
-                 ('m/*',      55),
-                 ('m/1/*/1',  55),
-                 ('m/1/*h',   55),
-                 ('m/*h',     55),
-                 ('m/1/*h/1', 55)]
+        cases = [('m/1/*',     55),
+                 ('m/*',       55),
+                 ('m/1/*/1',   55),
+                 ('m/1h/*',    55),
+                 ('m/1h/*/1',  55),
+                 ('m/1h/*/1h', 55),
+                 ('m/1/*h',    55),
+                 ('m/*h',      55),
+                 ('m/1/*h/1',  55),
+                 ('m/1/*h/1h', 55),
+                 ('m/*h/1h/1h/1/1', 55)]
 
         for path, wildcard in cases:
-            ret = bip32_key_from_parent_path_str(m, path, wildcard, flags, byref(key_out))
-            self.assertEqual(ret, WALLY_OK)
-
-            # Verify the result matches a key derived using the non-string version
-            path = self.str_to_path(path, wildcard)
-            c_path = self.path_to_c(path)
-            ret = bip32_key_from_parent_path(m, c_path, len(path), flags, byref(int_key_out))
-            self.assertEqual(ret, WALLY_OK)
-            self.compare_keys(key_out, int_key_out, flags)
+            pub_key_hex = ''
+            for flag in [FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC]:
+                flags = flag | FLAG_STR_WILDCARD | FLAG_SKIP_HASH
+                ret = bip32_key_from_parent_path_str(m, path, wildcard, flags, byref(key_out))
+                self.assertEqual(ret, WALLY_OK)
+                if flag == FLAG_KEY_PRIVATE:
+                    pub_key_hex = h(key_out.pub_key)
+                else:
+                    # Check that public derivation computed the same pubkey
+                    # that private derivation did.
+                    self.assertEqual(pub_key_hex, h(key_out.pub_key))
+                    # Check that public derivation did not return a private key
+                    self.assertEqual(h(key_out.priv_key), EMPTY_PRIV_KEY)
+                # Verify the result matches a key derived using the non-string version
+                int_path = self.str_to_path(path, wildcard)
+                path_len = len(int_path)
+                c_path = self.path_to_c(int_path)
+                ret = bip32_key_from_parent_path(m, c_path, path_len, flags, byref(int_key_out))
+                self.assertEqual(ret, WALLY_OK)
+                self.compare_keys(key_out, int_key_out, flags)
+                self.assertEqual(pub_key_hex, h(key_out.pub_key))
+                if flag != FLAG_KEY_PRIVATE:
+                    self.assertEqual(h(key_out.priv_key), EMPTY_PRIV_KEY)
 
     def test_free_invalid(self):
         self.assertEqual(WALLY_EINVAL, bip32_key_free(None))

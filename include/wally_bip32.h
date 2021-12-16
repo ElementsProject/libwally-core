@@ -270,6 +270,9 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  * :param child_path_len: The number of child numbers in ``child_path``.
  * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
+ *
+ * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
+ *           must be an extended private key or this function will fail.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
     const struct ext_key *hdkey,
@@ -299,6 +302,9 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param child_num: The child number to use if ``path_str`` contains a ``*`` wildcard.
  * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
+ *
+ * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
+ *           must be an extended private key or this function will fail.
  */
 WALLY_CORE_API int bip32_key_from_parent_path_str(
     const struct ext_key *hdkey,
