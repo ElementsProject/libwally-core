@@ -37,6 +37,8 @@ extern "C" {
 #define BIP32_FLAG_STR_WILDCARD 0x8
 /** Do not allow a leading ``m``/``M`` or ``/`` in path string expressions */
 #define BIP32_FLAG_STR_BARE 0x10
+/** Allow upper as well as lower case 'M'/'H' in path string expressions */
+#define BIP32_FLAG_ALLOW_UPPER 0x20
 
 /** Version codes for extended keys */
 #define BIP32_VER_MAIN_PUBLIC  0x0488B21E

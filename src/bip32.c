@@ -13,7 +13,8 @@
                                  BIP32_FLAG_SKIP_HASH | \
                                  BIP32_FLAG_KEY_TWEAK_SUM | \
                                  BIP32_FLAG_STR_WILDCARD | \
-                                 BIP32_FLAG_STR_BARE)
+                                 BIP32_FLAG_STR_BARE | \
+                                 BIP32_FLAG_ALLOW_UPPER)
 
 static const unsigned char HMAC_KEY[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
@@ -75,9 +76,9 @@ static bool version_is_mainnet(uint32_t ver)
     return ver == BIP32_VER_MAIN_PRIVATE || ver == BIP32_VER_MAIN_PUBLIC;
 }
 
-static bool is_hardened_indicator(char c)
+static bool is_hardened_indicator(char c, bool allow_upper)
 {
-    return c == '\'' || c == 'h' || c == 'H';
+    return c == '\'' || c == 'h' || (allow_upper && c == 'H');
 }
 
 static int path_from_string_n(const char *str, size_t str_len,
@@ -85,6 +86,7 @@ static int path_from_string_n(const char *str, size_t str_len,
                               uint32_t *child_path, uint32_t child_path_len,
                               size_t *written)
 {
+    const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
     size_t start, i = 0;
     uint64_t v;
 
@@ -97,7 +99,7 @@ static int path_from_string_n(const char *str, size_t str_len,
         if (i < str_len && str[i] == '/')
             goto fail; /* bare path must start with a number */
     } else {
-        if (i < str_len && (str[i] == 'm' || str[i] == 'M'))
+        if (i < str_len && (str[i] == 'm' || (allow_upper && str[i] == 'M')))
             ++i; /* Skip */
         if (i < str_len && str[i] == '/')
             ++i; /* Skip */
@@ -117,7 +119,7 @@ static int path_from_string_n(const char *str, size_t str_len,
             /* No number found */
             if (str[i] == '/') {
                 if (i && (str[i - 1] < '0' || str[i - 1] > '9') &&
-                    !is_hardened_indicator(str[i - 1]) && str[i - 1] != '*')
+                    !is_hardened_indicator(str[i - 1], allow_upper) && str[i - 1] != '*')
                     goto fail; /* Only valid after number/wildcard/hardened indicator */
                 ++i;
                 if (i == str_len || str[i] == '/')
@@ -137,7 +139,7 @@ static int path_from_string_n(const char *str, size_t str_len,
             v = child_num; /* Use the given child number for the wildcard value */
         }
 
-        if (is_hardened_indicator(str[i])) {
+        if (is_hardened_indicator(str[i], allow_upper)) {
             v |= BIP32_INITIAL_HARDENED_CHILD;
             ++i;
         }

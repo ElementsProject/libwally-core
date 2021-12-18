@@ -9,7 +9,9 @@ VER_TEST_PRIVATE = 0x04358394
 
 FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC, FLAG_SKIP_HASH, = 0x0, 0x1, 0x2
 FLAG_KEY_TWEAK_SUM, FLAG_STR_WILDCARD, FLAG_STR_BARE = 0x4, 0x8, 0x10
-ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH
+FLAG_ALLOW_UPPER = 0x20
+ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH | \
+    FLAG_KEY_TWEAK_SUM | FLAG_STR_WILDCARD | FLAG_STR_BARE | FLAG_ALLOW_UPPER
 BIP32_SERIALIZED_LEN = 78
 BIP32_FLAG_SKIP_HASH = 0x2
 
@@ -181,6 +183,13 @@ class BIP32Tests(unittest.TestCase):
         ret = bip32_key_from_parent_path_str(byref(parent), str_path, 0,
                                              flags, byref(str_key_out))
         self.assertEqual(ret, expected)
+        if expected == WALLY_OK:
+            # Verify that upper case is allowed with FLAG_ALLOW_UPPER
+            str_path = str_path.upper()
+            flags |= FLAG_ALLOW_UPPER
+            ret = bip32_key_from_parent_path_str(byref(parent), str_path, 0,
+                                                 flags, byref(str_key_out))
+            self.assertEqual(ret, expected)
         return key_out, str_key_out
 
     def compare_keys(self, key, expected, flags):
@@ -487,7 +496,7 @@ class BIP32Tests(unittest.TestCase):
             self.assertEqual(ret, WALLY_EINVAL)
 
         c_path, str_path = get_paths(path_)
-        master.depth = 0xff # Cant derive from a parent of depth 255
+        master.depth = 0xff # Can't derive from a parent of depth 255
         ret = bip32_key_from_parent(m, 5, FLAG_KEY_PUBLIC, key_out)
         self.assertEqual(ret, WALLY_EINVAL)
         ret = bip32_key_from_parent_path(m, c_path, len(c_path), FLAG_KEY_PUBLIC, key_out)
@@ -501,6 +510,8 @@ class BIP32Tests(unittest.TestCase):
         cases = [('m',            0, 0),          # Empty resulting path (1)
                  ('m/',           0, 0),          # Empty resulting path (2)
                  ('/',            0, 0),          # Empty resulting path (3)
+                 ('M/1',          0, 0),          # Uppercase M without flag
+                 ('m/1H',         0, 0),          # Uppercase H without flag
                  ('//',           0, 0),          # Trailing slash (1)
                  ('/1/',          0, 0),          # Trailing slash (2)
                  ('m/1',          B, 0),          # Non-bare path (1)
