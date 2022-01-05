@@ -351,6 +351,13 @@
       return get_keypath_path(psbt_get_input_keypath(psbt, idx, sub_idx));
   }
 
+  public final static byte[] psbt_get_input_previous_txid(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_previous_txid_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_previous_txid(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static byte[] psbt_get_input_redeem_script(Object psbt, long idx) {
       final byte[] buf = new byte[psbt_get_input_redeem_script_len(psbt, idx)];
       if (buf.length == 0) return buf;
@@ -398,6 +405,13 @@
       final byte[] buf = new byte[psbt_get_output_redeem_script_len(psbt, idx)];
       if (buf.length == 0) return buf;
       final int len = psbt_get_output_redeem_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_script(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 

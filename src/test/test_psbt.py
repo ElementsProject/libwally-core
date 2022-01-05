@@ -35,16 +35,25 @@ class PSBTTests(unittest.TestCase):
 
         for creator in creators:
             psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(0, 2, 2, 0, psbt))
+            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(creator['version'], 2, 3, 0, psbt))
 
             tx = pointer(wally_tx())
             self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))
+            index = 0
             for txin in creator['inputs']:
                 tx_in = pointer(wally_tx_input())
                 txid, txid_len = make_cbuffer(txin['txid'])
                 ret = wally_tx_input_init_alloc(txid[::-1], txid_len, txin['vout'], 0xffffffff, None, 0, None, tx_in)
                 self.assertEqual(WALLY_OK, ret)
-                self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
+
+                if (creator['version'] == 0):
+                    self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
+                else:
+                    self.assertEqual(WALLY_OK, wally_psbt_add_input_at(psbt, index, 0, tx_in))
+
+                index += 1
+
+            index = 0
             for txout in creator['outputs']:
                 addr = txout['addr']
                 amt = txout['amt']
@@ -53,9 +62,16 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(WALLY_OK, ret)
                 output = pointer(wally_tx_output())
                 self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(amt, spk, written, output))
-                self.assertEqual(WALLY_OK, wally_tx_add_output(tx, output))
+                if (creator['version'] == 0):
+                    self.assertEqual(WALLY_OK, wally_tx_add_output(tx, output))
+                else:
+                    self.assertEqual(WALLY_OK, wally_psbt_add_output_at(psbt, index, 0, output))
 
-            self.assertEqual(WALLY_OK, wally_psbt_set_global_tx(psbt, tx))
+                index += 1
+
+            if (creator['version'] == 0):
+                self.assertEqual(WALLY_OK, wally_psbt_set_global_tx(psbt, tx))
+
             ret, ser = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
             self.assertEqual(creator['result'], ser)
@@ -166,7 +182,7 @@ class PSBTTests(unittest.TestCase):
     def test_v20dot1_changes(self):
         """See https://github.com/ElementsProject/libwally-core/issues/213
            Verify that core v20.1 changes to address the segwit fee attack now work"""
-        b64 = "cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBBYAFIsieXd6AAeP8TXHKZ329Z0nuSeZIgYD/ajyzV90ghQ+0zIO2mVSd3fGYhvwYjakGCY4WNYxoeYEiyJ5dwABAHICAAAAAfezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAAAAAAD9////AhAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHHcIAAAAAAAAWABSUD3a8pIYaaLvKdZxoEPFfo8vlDwAAAAABASAQJwAAAAAAABepFFyX1J/5zWzQ/mvkIah58gksvaD5hwEEFgAUyRIBhZwlI4RLT6NDHluovlrN3iAiBgIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPATJEgGFACICAq8h+ABETC5Tczuts3xhCtXAzIEUHM5iMugvwFMrtCc4EBK06cYAAACAAQAAgMMAAIAAAA=="
+        b64 = 'cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBBYAFIsieXd6AAeP8TXHKZ329Z0nuSeZIgYD/ajyzV90ghQ+0zIO2mVSd3fGYhvwYjakGCY4WNYxoeYEiyJ5dwABAHICAAAAAfezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAAAAAAD9////AhAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHHcIAAAAAAAAWABSUD3a8pIYaaLvKdZxoEPFfo8vlDwAAAAABASAQJwAAAAAAABepFFyX1J/5zWzQ/mvkIah58gksvaD5hwEEFgAUyRIBhZwlI4RLT6NDHluovlrN3iAiBgIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPATJEgGFACICAq8h+ABETC5Tczuts3xhCtXAzIEUHM5iMugvwFMrtCc4EBK06cYAAACAAQAAgMMAAIAAAA=='
         psbt = pointer(wally_psbt())
         self.assertEqual(wally_psbt_from_base64(b64.encode('utf-8'), psbt), WALLY_OK)
         buf, buf_len = make_cbuffer('00'*32)
@@ -177,9 +193,80 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(wally_psbt_finalize(psbt), WALLY_OK)
         ret, new64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(ret, WALLY_OK)
-        expected_b64 = "cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBxcWABSLInl3egAHj/E1xymd9vWdJ7knmQEIawJHMEQCIAkPXe9sdpRjSDTjJ0gIrpwGGIWJby9xSd1rS9hPe1f0AiAJgqR7PL3G/MXyUu4KZdS1Z2O14fjxstF43k634u+4GAEhA/2o8s1fdIIUPtMyDtplUnd3xmIb8GI2pBgmOFjWMaHmAAEAcgIAAAAB97Oqk3E4gOTA0WF9lUti+6FDGqao08nCXJduFzxy4s8AAAAAAP3///8CECcAAAAAAAAXqRRcl9Sf+c1s0P5r5CGoefIJLL2g+YcdwgAAAAAAABYAFJQPdrykhhpou8p1nGgQ8V+jy+UPAAAAAAEBIBAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHAQcXFgAUyRIBhZwlI4RLT6NDHluovlrN3iABCGsCRzBEAiAOzRsNZ+2Et+VGCY/nXWO7WxGI3u39kpi025cUaJXQJgIgL6KtMqPfAwXGktQFWr9SNnOrHF2xjvKQI2VdeuQbxt0BIQIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPAAiAgKvIfgAREwuU3M7rbN8YQrVwMyBFBzOYjLoL8BTK7QnOBAStOnGAAAAgAEAAIDDAACAAAA="
+        expected_b64 = 'cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBxcWABSLInl3egAHj/E1xymd9vWdJ7knmQEIawJHMEQCIAkPXe9sdpRjSDTjJ0gIrpwGGIWJby9xSd1rS9hPe1f0AiAJgqR7PL3G/MXyUu4KZdS1Z2O14fjxstF43k634u+4GAEhA/2o8s1fdIIUPtMyDtplUnd3xmIb8GI2pBgmOFjWMaHmAAEAcgIAAAAB97Oqk3E4gOTA0WF9lUti+6FDGqao08nCXJduFzxy4s8AAAAAAP3///8CECcAAAAAAAAXqRRcl9Sf+c1s0P5r5CGoefIJLL2g+YcdwgAAAAAAABYAFJQPdrykhhpou8p1nGgQ8V+jy+UPAAAAAAEBIBAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHAQcXFgAUyRIBhZwlI4RLT6NDHluovlrN3iABCGsCRzBEAiAOzRsNZ+2Et+VGCY/nXWO7WxGI3u39kpi025cUaJXQJgIgL6KtMqPfAwXGktQFWr9SNnOrHF2xjvKQI2VdeuQbxt0BIQIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPAAiAgKvIfgAREwuU3M7rbN8YQrVwMyBFBzOYjLoL8BTK7QnOBAStOnGAAAAgAEAAIDDAACAAAA='
         self.assertEqual(new64.encode('utf-8'), expected_b64.encode('utf-8'))
 
+    def test_psbt(self):
+        """Test creating and modifying various PSBT fields"""
+        tx = pointer(wally_tx())
+        self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))
+
+        psbt = pointer(wally_psbt())
+        for ver, result in [
+            (0, 'cHNidP8A'),
+            (1, None),
+            (2, 'cHNidP8B+wQCAAAAAQIEAgAAAAEEAQABBQEAAA=='),
+            (3, None) ]:
+            ret = wally_psbt_init_alloc(ver, 0, 0, 0, psbt)
+            self.assertEqual(ret, WALLY_OK if result else WALLY_EINVAL)
+            if result:
+                ret = wally_psbt_to_base64(psbt, 0)
+                self.assertEqual(wally_psbt_to_base64(psbt, 0), (WALLY_OK, result))
+
+                # Global tx can only be set on a version 0 PSBT
+                ret = wally_psbt_set_global_tx(psbt, tx)
+                self.assertEqual(ret, WALLY_OK if ver == 0 else WALLY_EINVAL)
+
+        wally_psbt_init_alloc(2, 0, 0, 0, psbt)
+
+        self.assertEqual(wally_psbt_set_tx_version(psbt, 123), WALLY_OK)
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAA==', base64)
+
+        self.assertEqual(wally_psbt_set_fallback_locktime(psbt, 456), WALLY_OK)
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEDBMgBAAABBAEAAQUBAAA=', base64)
+
+        self.assertEqual(wally_psbt_clear_fallback_locktime(psbt), WALLY_OK)
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAA==', base64)
+
+        self.assertEqual(wally_psbt_set_tx_modifiable_flags(psbt, 3), WALLY_OK)
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAQYBAwA=', base64)
+
+        #create an input
+
+        tx_input = pointer(wally_tx_input())
+
+        txhash, txhash_len = make_cbuffer('e7f25add4560021c77c4944f92739025fddbf99816d79c06d219268ca9f4b7e7')
+        ret = wally_tx_input_init_alloc(txhash, txhash_len, 5, 6, b'\x59', 1, None, tx_input)
+        self.assertEqual(WALLY_OK, ret)
+        ret = wally_psbt_add_input_at(psbt, 0, 0, tx_input)
+        self.assertEqual(WALLY_OK, ret)
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEAAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAAA==', base64)
+
+        ret = wally_psbt_input_set_required_lockheight(psbt.contents.inputs[0], 499999999)
+        self.assertEqual(WALLY_OK, ret)
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEAAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQA=', base64)
+
+        tx_output = pointer(wally_tx_output())
+
+        wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_output)
+        self.assertEqual(WALLY_OK, ret)
+        ret = wally_psbt_add_output_at(psbt, 0, 0, tx_output)
+        self.assertEqual(WALLY_OK, ret)
+
+        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQABAwjSBAAAAAAAAAEEAllZAA==', base64)
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,13 +9,24 @@ extern "C" {
 #endif
 
 /* PSBT Version number */
-#define WALLY_PSBT_HIGHEST_VERSION 0
+#define WALLY_PSBT_VERSION_0 0x0
+#define WALLY_PSBT_VERSION_2 0x2
+#define WALLY_PSBT_HIGHEST_VERSION 0x2
 
 /* Ignore scriptsig and witness when adding an input */
 #define WALLY_PSBT_FLAG_NON_FINAL 0x1
 
 /* Key prefix for proprietary keys in our unknown maps */
 #define PSBT_PROPRIETARY_TYPE 0xFC
+
+/* Transaction flags indicating modifiable fields */
+#define WALLY_PSBT_TXMOD_INPUTS 0x1 /* Inputs can be modified */
+#define WALLY_PSBT_TXMOD_OUTPUTS 0x2 /* Outputs can be modified */
+#define WALLY_PSBT_TXMOD_SINGLE 0x4 /* SIGHASH_SINGLE signature is present */
+
+/* ID flags indicating unique id calculation */
+#define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
+#define WALLY_PSBT_ID_NO_LOCKTIME 0x2 /* Set locktime to 0 before calculating id */
 
 #ifdef SWIG
 struct wally_map;
@@ -54,6 +65,12 @@ struct wally_psbt_input {
     struct wally_map signatures;
     struct wally_map unknowns;
     uint32_t sighash;
+    unsigned char *previous_txid;
+    size_t previous_txid_len;
+    uint32_t output_index;
+    uint32_t sequence;
+    uint32_t required_locktime; /* Required tx locktime or 0 if not given */
+    uint32_t required_lockheight; /* Required tx lockheight or 0 if not given */
 #ifdef BUILD_ELEMENTS
     uint64_t value;
     uint32_t has_value;
@@ -81,6 +98,10 @@ struct wally_psbt_output {
     size_t witness_script_len;
     struct wally_map keypaths;
     struct wally_map unknowns;
+    uint64_t amount;
+    uint32_t has_amount;
+    unsigned char *script;
+    size_t script_len;
 #ifdef BUILD_ELEMENTS
     unsigned char *blinding_pubkey;
     size_t blinding_pubkey_len;
@@ -113,6 +134,10 @@ struct wally_psbt {
     size_t outputs_allocation_len;
     struct wally_map unknowns;
     uint32_t version;
+    uint32_t tx_version;
+    uint32_t fallback_locktime;
+    uint32_t has_fallback_locktime;
+    uint32_t tx_modifiable_flags;
 };
 #endif /* SWIG */
 
@@ -395,6 +420,83 @@ WALLY_CORE_API int wally_psbt_input_set_sighash(
     struct wally_psbt_input *input,
     uint32_t sighash);
 
+
+/**
+ * Set the sequence number in an input.
+ *
+ * :param input: The input to update.
+ * :param sequence: The sequence number for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_sequence(
+    struct wally_psbt_input *input,
+    uint32_t sequence);
+
+/**
+ * Clear the sequence number in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_sequence(
+    struct wally_psbt_input *input);
+
+/**
+ * Set the required lock time in an input.
+ *
+ * :param input: The input to update.
+ * :param required_locktime: The required locktime for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_required_locktime(
+    struct wally_psbt_input *input,
+    uint32_t required_locktime);
+
+/**
+ * Clear the required lock time in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_required_locktime(
+    struct wally_psbt_input *input);
+
+/**
+ * Set the required lock height in an input.
+ *
+ * :param input: The input to update.
+ * :param required_lockheight: The required locktime for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_required_lockheight(
+    struct wally_psbt_input *input,
+    uint32_t required_lockheight);
+
+/**
+ * Clear the required lock height in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_required_lockheight(
+    struct wally_psbt_input *input);
+
+/**
+ * Set the previous txid in an input.
+ *
+ * :param input: The input to update.
+ * :param txhash: The previous hash for this input.
+ * :param txhash_len: Length of ``txhash`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_previous_txid(
+    struct wally_psbt_input *input,
+    const unsigned char *txhash,
+    size_t txhash_len);
+
+/**
+ * Set the output index in an input.
+ *
+ * :param input: The input to update.
+ * :param index: The index of the spent output for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_output_index(
+    struct wally_psbt_input *input,
+    uint32_t index);
+
 /**
  * Set the redeem_script in an output.
  *
@@ -488,12 +590,42 @@ WALLY_CORE_API int wally_psbt_output_find_unknown(
     const unsigned char *key,
     size_t key_len,
     size_t *written);
+
+/**
+ * Set the amount in an output.
+ *
+ * :param output: The output to update.
+ * :param amount: The amount for this output.
+ */
+WALLY_CORE_API int wally_psbt_output_set_amount(
+    struct wally_psbt_output *output,
+    uint64_t amount);
+
+/**
+ * Clear the amount in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_amount(
+    struct wally_psbt_output *output);
+
+/**
+ * Set the script in an output.
+ *
+ * :param output: The output to update.
+ * :param script: The script for this output.
+ * :param script_len: Length of ``script`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_script(
+    struct wally_psbt_output *output,
+    const unsigned char *script,
+    size_t script_len);
 #endif /* SWIG */
 
 /**
  * Allocate and initialize a new PSBT.
  *
- * :param version: The version of the PSBT. Must be 0.
+ * :param version: The version of the PSBT. Must be WALLY_PSBT_VERSION_0 or WALLY_PSBT_VERSION_0.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
@@ -517,6 +649,23 @@ WALLY_CORE_API int wally_psbt_free(
 #endif /* SWIG_PYTHON */
 
 /**
+ * Return the BIP-370 unique id of a PSBT.
+ *
+ * :param psbt: The PSBT to compute the id of.
+ * :param flags: WALLY_PSBT_ID_ flags to change the id calculation, or
+ *|   pass 0 to compute a BIP-370 compatible id.
+ * :param bytes_out: Destination for the id.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ *
+ * .. note:: The id is expensive to compute.
+ */
+WALLY_CORE_API int wally_psbt_get_id(
+    const struct wally_psbt *psbt,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Determine if all PSBT inputs are finalized.
  *
  * :param psbt: The PSBT to check.
@@ -532,16 +681,69 @@ WALLY_CORE_API int wally_psbt_is_finalized(
  * :param psbt: The PSBT to set the transaction for.
  * :param tx: The transaction to set.
  *
- * The global transaction can only be set on a newly created PSBT. After this
- * call completes the PSBT will have empty inputs and outputs for each input
- * and output in the transaction ``tx`` given.
+ * The global transaction can only be set on a newly created version 0 PSBT.
+ * After this call completes the PSBT will have empty inputs and outputs for
+ * each input and output in the transaction ``tx`` given.
  */
 WALLY_CORE_API int wally_psbt_set_global_tx(
     struct wally_psbt *psbt,
     const struct wally_tx *tx);
 
 /**
- * Add a transaction input to PBST at a given position.
+ * Set the transaction version for a PSBT.
+ *
+ * :param psbt: The PSBT to set the transaction version for. Must be a v2 PSBT.
+ * :param version: The version to use for the transaction. Must be at least 2.
+ */
+WALLY_CORE_API int wally_psbt_set_tx_version(
+    struct wally_psbt *psbt,
+    uint32_t tx_version);
+
+/**
+ * Get the transaction version of a PSBT.
+ *
+ * :param psbt: The PSBT to get the transaction version for. Must be v2 PSBT.
+ * :param written: Destination for the PSBT's transaction version.
+ *
+ * .. note:: Returns the default version 2 if none has been explicitly set.
+ */
+WALLY_CORE_API int wally_psbt_get_tx_version(
+    const struct wally_psbt *psbt,
+    size_t *written);
+
+/**
+ * Set the fallback locktime for a PSBT.
+ *
+ * :param psbt: The PSBT to set the fallback locktime for.
+ * :param locktime: The fallback locktime to set.
+ *
+ * Sets the fallback locktime field in the transaction.
+ * Cannot be set on V0 PSBTs.
+ */
+WALLY_CORE_API int wally_psbt_set_fallback_locktime(
+    struct wally_psbt *psbt,
+    uint32_t locktime);
+
+/**
+ * Clear the fallback locktime for a PSBT.
+ *
+ * :param psbt: The PSBT to update.
+ */
+WALLY_CORE_API int wally_psbt_clear_fallback_locktime(
+    struct wally_psbt *psbt);
+
+/**
+ * Set the transaction modifiable flags for a PSBT.
+ *
+ * :param psbt: The PSBT to set the flags for.
+ * :param flags: WALLY_PSBT_TXMOD_ flags indicating what can be modified.
+ */
+WALLY_CORE_API int wally_psbt_set_tx_modifiable_flags(
+    struct wally_psbt *psbt,
+    uint32_t flags);
+
+/**
+ * Add a transaction input to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the input to.
  * :param index: The zero-based index of the position to add the input at.
@@ -555,7 +757,7 @@ WALLY_CORE_API int wally_psbt_add_input_at(
     const struct wally_tx_input *input);
 
 /**
- * Remove a transaction input from a PBST.
+ * Remove a transaction input from a PSBT.
  *
  * :param psbt: The PSBT to remove the input from.
  * :param index: The zero-based index of the input to remove.
@@ -565,7 +767,7 @@ WALLY_CORE_API int wally_psbt_remove_input(
     uint32_t index);
 
 /**
- * Add a transaction output to PBST at a given position.
+ * Add a transaction output to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the output to.
  * :param index: The zero-based index of the position to add the output at.
@@ -579,7 +781,7 @@ WALLY_CORE_API int wally_psbt_add_output_at(
     const struct wally_tx_output *output);
 
 /**
- * Remove a transaction output from a PBST.
+ * Remove a transaction output from a PSBT.
  *
  * :param psbt: The PSBT to remove the output from.
  * :param index: The zero-based index of the output to remove.

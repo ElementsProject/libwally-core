@@ -7,7 +7,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdbool.h>
-#include <ccan/str/hex/hex.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -74,18 +73,20 @@ static unsigned char *cliff(size_t *size)
 static void test_psbt_read(const struct psbt_test *test,
                            unsigned char *p, size_t plen)
 {
-    size_t i;
+    unsigned char buff[8192];
+    size_t written, i;
 
-    /* It can fit, otherwise adjust cliff() */
-    assert(hex_data_size(strlen(test->hex)) <= plen);
+    /* It can fit, otherwise adjust buff and/or cliff() */
+    if (wally_base64_to_bytes(test->base64, 0, buff, sizeof(buff), &written) != WALLY_OK ||
+        written > sizeof(buff) || written > plen)
+        abort();
 
     /* Unpack right next to the cliff */
-    for (i = 0; i <= hex_data_size(strlen(test->hex)); i++) {
+    for (i = 0; i <= written; i++) {
         struct wally_psbt *psbt;
         size_t bit;
 
-        if (!hex_decode(test->hex, i * 2, p + plen - i, i))
-            abort();
+        memcpy(p + plen - i, buff, i);
 
         /* Try it raw: probably will fail. */
         if (wally_psbt_from_bytes(p + plen - i, i, &psbt) == WALLY_OK)

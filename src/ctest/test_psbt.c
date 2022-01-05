@@ -60,11 +60,11 @@ int main(void)
                  written, len);
         }
 
-        if (wally_hex_from_bytes(bytes, len, &output) != WALLY_OK)
-            fail("Failed to convert psbt bytes to hex");
+        if (wally_base64_from_bytes(bytes, len, 0, &output) != WALLY_OK)
+            fail("Failed to convert psbt bytes to base64");
 
-        if (strcmp(output, valid_psbts[i].hex) != 0)
-            fail("psbt[%zi] bytes %s not %s", i, output, valid_psbts[i].hex);
+        if (strcmp(output, base64_in) != 0)
+            fail("psbt[%zi] base64 %s not %s", i, output, base64_in);
 
         wally_free_string(output);
         free(bytes);

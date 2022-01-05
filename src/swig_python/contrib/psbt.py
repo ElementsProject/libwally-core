@@ -2,7 +2,8 @@
 import unittest
 from wallycore import *
 
-SAMPLE = "cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA"
+SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
+SAMPLE_V2 = 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
 
 
 class PSBTTests(unittest.TestCase):
@@ -17,6 +18,16 @@ class PSBTTests(unittest.TestCase):
         fn(psbt, 0, valid_value) # Set
         fn(psbt, 0, null_value) # Un-set
         self._try_invalid(fn, psbt, valid_value)
+
+    def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value):
+        self._try_invalid(setfn, psbt, valid_value)
+        setfn(psbt, 0, valid_value) # Set
+        self._try_invalid(getfn, psbt)
+        ret = getfn(psbt, 0) # Get
+        self.assertEqual(valid_value, ret)
+        if clearfn:
+            self._try_invalid(clearfn, psbt)
+            clearfn(psbt, 0)
 
     def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None):
         self._try_set(setfn, psbt, valid_value, null_value)
@@ -44,6 +55,7 @@ class PSBTTests(unittest.TestCase):
 
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
+        psbt2 = psbt_from_base64(SAMPLE_V2)
 
         # Roundtrip to/from bytes
         psbt_bytes = psbt_to_bytes(psbt, 0)
@@ -66,6 +78,22 @@ class PSBTTests(unittest.TestCase):
         # Combining with ourselves shouldn't change the PSBT
         psbt_combine(psbt, psbt)
         self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
+
+        # Unique ID
+        psbt_set_fallback_locktime(psbt2, 0xfffffffd)
+        self.assertRaises(ValueError, lambda: psbt_get_id(None, 0))     # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_id(psbt, 0xff))  # Unknown flags
+        for p, flags, expected_id in [
+            (psbt,  0x0, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
+            (psbt,  0x1, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
+            (psbt,  0x2, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
+            (psbt,  0x3, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
+            (psbt2, 0x0, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
+            (psbt2, 0x1, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
+            (psbt2, 0x2, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
+            (psbt2, 0x3, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056')
+            ]:
+            self.assertEqual(hex_from_bytes(psbt_get_id(p, flags)), expected_id)
 
         # Test setters
         dummy_tx = psbt_get_global_tx(psbt)
@@ -101,6 +129,45 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_unknowns)
         map_add(dummy_unknowns, dummy_pubkey, dummy_fingerprint)
         self.assertEqual(map_find(dummy_unknowns, dummy_pubkey), 1)
+
+        # V2: Global Tx Version
+        self.assertRaises(ValueError, lambda: psbt_get_tx_version(None)) # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_tx_version(psbt)), # V0, unsupported
+        self.assertEqual(psbt_get_tx_version(psbt2), 123)
+
+        self.assertRaises(ValueError, lambda: psbt_set_tx_version(None, 3)) # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_set_tx_version(psbt, 3)) # V0, unsupported
+        self.assertRaises(ValueError, lambda: psbt_set_tx_version(psbt2, 1)) # Must be >=2
+
+        psbt_set_tx_version(psbt2, 3)
+        self.assertEqual(psbt_get_tx_version(psbt2), 3)
+
+        # V2: Fallback Locktime
+        self.assertRaises(ValueError, lambda: psbt_get_fallback_locktime(None))  # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_fallback_locktime(psbt)), # V0, unsupported
+
+        self.assertRaises(ValueError, lambda: psbt_set_fallback_locktime(None, 0xfffffffe))  # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_set_fallback_locktime(psbt, 0xfffffffe)), # V0, unsupported
+
+        self.assertRaises(ValueError, lambda: psbt_has_fallback_locktime(None))  # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_has_fallback_locktime(psbt)), # V0, unsupported
+
+        self.assertRaises(ValueError, lambda: psbt_clear_fallback_locktime(None))  # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_clear_fallback_locktime(psbt)), # V0, unsupported
+
+        psbt_set_fallback_locktime(psbt2, 0xfffffffd)
+        self.assertEqual(psbt_get_fallback_locktime(psbt2), 0xfffffffd)
+        self.assertTrue(psbt_has_fallback_locktime(psbt2))
+
+        psbt_clear_fallback_locktime(psbt2)
+        self.assertFalse(psbt_has_fallback_locktime(psbt2))
+
+        # V2: Modifiable flags
+        self.assertRaises(ValueError, lambda: psbt_set_tx_modifiable_flags(psbt, 3))    # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_set_tx_modifiable_flags(psbt2, 255)) # Bad flags
+        self.assertRaises(ValueError, lambda: psbt_get_tx_modifiable_flags(psbt))       # Non v2 PSBT
+        psbt_set_tx_modifiable_flags(psbt2, 1)
+        self.assertEqual(psbt_get_tx_modifiable_flags(psbt2), 1)
 
         #
         # Inputs
@@ -141,6 +208,43 @@ class PSBTTests(unittest.TestCase):
         self._try_set(psbt_set_input_sighash, psbt, 0xff, 0x0)
         self.assertEqual(psbt_get_input_sighash(psbt, 0), 0)
         self._try_invalid(psbt_get_input_sighash, psbt)
+
+        # V2: Previous txid
+        self.assertRaises(ValueError, lambda: psbt_set_input_previous_txid(psbt, 0, dummy_bytes)) # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_set_input_previous_txid(psbt2, 0, dummy_pubkey)) # Bad Length
+        self._try_get_set_b(psbt_set_input_previous_txid,
+                            psbt_get_input_previous_txid,
+                            psbt_get_input_previous_txid_len, psbt2, dummy_bytes)
+
+        # V2: Output Index
+        self.assertRaises(ValueError, lambda: psbt_set_input_output_index(psbt, 0, 1234)) # Non v2 PSBT
+        self._try_get_set_i(psbt_set_input_output_index,
+                            None,
+                            psbt_get_input_output_index, psbt2, 1234)
+
+        # V2: Sequence
+        self.assertRaises(ValueError, lambda: psbt_set_input_sequence(psbt, 0, 1234)) # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_input_sequence(psbt, 0))       # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_clear_input_sequence(psbt, 0))     # Non v2 PSBT
+        self._try_get_set_i(psbt_set_input_sequence,
+                            psbt_clear_input_sequence,
+                            psbt_get_input_sequence, psbt2, 1234)
+        # If no sequence is present, it defaults to final (0xffffffff)
+        psbt_clear_input_sequence(psbt2, 0)
+        self.assertEqual(psbt_get_input_sequence(psbt2, 0), 0xffffffff)
+
+        # V2: Required Lock Height/Time
+        heightfns = (psbt_get_input_required_lockheight, psbt_set_input_required_lockheight,
+            psbt_has_input_required_lockheight, psbt_clear_input_required_lockheight)
+        timefns = (psbt_get_input_required_locktime, psbt_set_input_required_locktime,
+            psbt_has_input_required_locktime, psbt_clear_input_required_locktime)
+        for g_fn, s_fn, h_fn, c_fn, v in [(*heightfns, 1234), (*timefns, 500000001)]:
+            self.assertRaises(ValueError, lambda: s_fn(psbt, 0, v))  # Non v2 PSBT
+            self.assertRaises(ValueError, lambda: s_fn(psbt2, 0, 0)) # Zero value
+            self.assertRaises(ValueError, lambda: g_fn(psbt, 0))     # Non v2 PSBT
+            self.assertRaises(ValueError, lambda: h_fn(psbt, 0))     # Non v2 PSBT
+            self.assertRaises(ValueError, lambda: c_fn(psbt, 0))     # Non v2 PSBT
+            self._try_get_set_i(s_fn, c_fn, g_fn, psbt2, v)
 
         if is_elements_build():
             self._try_set(psbt_set_input_value, psbt, 1234567, 0)
@@ -217,6 +321,23 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_output_surjectionproof,
                                 psbt_get_output_surjectionproof,
                                 psbt_get_output_surjectionproof_len, psbt, dummy_bytes)
+
+        # V2: Amount
+        self.assertRaises(ValueError, lambda: psbt_set_output_amount(psbt, 0, 1234)) # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_output_amount(psbt, 0))       # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_has_output_amount(psbt, 0))       # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_clear_output_amount(psbt, 0))     # Non v2 PSBT
+        self._try_get_set_i(psbt_set_output_amount,
+                            psbt_clear_output_amount,
+                            psbt_get_output_amount, psbt2, 1234)
+
+        # V2: Script
+        self.assertRaises(ValueError, lambda: psbt_set_output_script(psbt, 0, dummy_bytes)) # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_output_script(psbt, 0))              # Non v2 PSBT
+        self.assertRaises(ValueError, lambda: psbt_get_output_script_len(psbt, 0))          # Non v2 PSBT
+        self._try_get_set_b(psbt_set_output_script,
+                            psbt_get_output_script,
+                            psbt_get_output_script_len, psbt2, dummy_bytes)
 
 
 if __name__ == '__main__':

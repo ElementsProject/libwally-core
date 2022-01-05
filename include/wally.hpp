@@ -629,6 +629,11 @@ inline int psbt_add_output_at(const PSBT& psbt, uint32_t index, uint32_t flags, 
     return ret;
 }
 
+inline int psbt_clear_fallback_locktime(struct wally_psbt* psbt) {
+    int ret = ::wally_psbt_clear_fallback_locktime(psbt);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_clone_alloc(const PSBT& psbt, uint32_t flags, struct wally_psbt** output) {
     int ret = ::wally_psbt_clone_alloc(detail::get_p(psbt), flags, output);
@@ -669,9 +674,21 @@ inline int psbt_from_bytes(const BYTES& bytes, struct wally_psbt** output) {
     return ret;
 }
 
+template <class PSBT, class BYTES_OUT>
+inline int psbt_get_id(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_psbt_get_id(detail::get_p(psbt), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
     int ret = ::wally_psbt_get_length(detail::get_p(psbt), flags, written);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_get_tx_version(const PSBT& psbt, size_t* written) {
+    int ret = ::wally_psbt_get_tx_version(detail::get_p(psbt), written);
     return ret;
 }
 
@@ -689,6 +706,21 @@ inline int psbt_input_add_keypath_item(const INPUT& input, const PUB_KEY& pub_ke
 template <class INPUT, class PUB_KEY, class SIG>
 inline int psbt_input_add_signature(const INPUT& input, const PUB_KEY& pub_key, const SIG& sig) {
     int ret = ::wally_psbt_input_add_signature(detail::get_p(input), pub_key.data(), pub_key.size(), sig.data(), sig.size());
+    return ret;
+}
+
+inline int psbt_input_clear_required_lockheight(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_required_lockheight(input);
+    return ret;
+}
+
+inline int psbt_input_clear_required_locktime(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_required_locktime(input);
+    return ret;
+}
+
+inline int psbt_input_clear_sequence(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_sequence(input);
     return ret;
 }
 
@@ -737,9 +769,39 @@ inline int psbt_input_set_keypaths(const INPUT& input, const struct wally_map* m
     return ret;
 }
 
+template <class INPUT>
+inline int psbt_input_set_output_index(const INPUT& input, uint32_t index) {
+    int ret = ::wally_psbt_input_set_output_index(detail::get_p(input), index);
+    return ret;
+}
+
+template <class INPUT, class TXHASH>
+inline int psbt_input_set_previous_txid(const INPUT& input, const TXHASH& txhash) {
+    int ret = ::wally_psbt_input_set_previous_txid(detail::get_p(input), txhash.data(), txhash.size());
+    return ret;
+}
+
 template <class INPUT, class SCRIPT>
 inline int psbt_input_set_redeem_script(const INPUT& input, const SCRIPT& script) {
     int ret = ::wally_psbt_input_set_redeem_script(detail::get_p(input), script.data(), script.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_required_lockheight(const INPUT& input, uint32_t required_lockheight) {
+    int ret = ::wally_psbt_input_set_required_lockheight(detail::get_p(input), required_lockheight);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_required_locktime(const INPUT& input, uint32_t required_locktime) {
+    int ret = ::wally_psbt_input_set_required_locktime(detail::get_p(input), required_locktime);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_sequence(const INPUT& input, uint32_t sequence) {
+    int ret = ::wally_psbt_input_set_sequence(detail::get_p(input), sequence);
     return ret;
 }
 
@@ -797,6 +859,11 @@ inline int psbt_output_add_keypath_item(const OUTPUT& output, const PUB_KEY& pub
     return ret;
 }
 
+inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_amount(output);
+    return ret;
+}
+
 template <class OUTPUT, class PUB_KEY>
 inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key, size_t* written = 0) {
     size_t n;
@@ -812,6 +879,12 @@ inline int psbt_output_find_unknown(const OUTPUT& output, const KEY& key, size_t
 }
 
 template <class OUTPUT>
+inline int psbt_output_set_amount(const OUTPUT& output, uint64_t amount) {
+    int ret = ::wally_psbt_output_set_amount(detail::get_p(output), amount);
+    return ret;
+}
+
+template <class OUTPUT>
 inline int psbt_output_set_keypaths(const OUTPUT& output, const struct wally_map* map_in) {
     int ret = ::wally_psbt_output_set_keypaths(detail::get_p(output), map_in);
     return ret;
@@ -820,6 +893,12 @@ inline int psbt_output_set_keypaths(const OUTPUT& output, const struct wally_map
 template <class OUTPUT, class SCRIPT>
 inline int psbt_output_set_redeem_script(const OUTPUT& output, const SCRIPT& script) {
     int ret = ::wally_psbt_output_set_redeem_script(detail::get_p(output), script.data(), script.size());
+    return ret;
+}
+
+template <class OUTPUT, class SCRIPT>
+inline int psbt_output_set_script(const OUTPUT& output, const SCRIPT& script) {
+    int ret = ::wally_psbt_output_set_script(detail::get_p(output), script.data(), script.size());
     return ret;
 }
 
@@ -848,8 +927,26 @@ inline int psbt_remove_output(const PSBT& psbt, uint32_t index) {
 }
 
 template <class PSBT>
+inline int psbt_set_fallback_locktime(const PSBT& psbt, uint32_t locktime) {
+    int ret = ::wally_psbt_set_fallback_locktime(detail::get_p(psbt), locktime);
+    return ret;
+}
+
+template <class PSBT>
 inline int psbt_set_global_tx(const PSBT& psbt, const struct wally_tx* tx) {
     int ret = ::wally_psbt_set_global_tx(detail::get_p(psbt), tx);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_tx_modifiable_flags(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_set_tx_modifiable_flags(detail::get_p(psbt), flags);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_tx_version(const PSBT& psbt, uint32_t tx_version) {
+    int ret = ::wally_psbt_set_tx_version(detail::get_p(psbt), tx_version);
     return ret;
 }
 
