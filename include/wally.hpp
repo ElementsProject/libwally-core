@@ -132,6 +132,18 @@ inline int bip32_key_from_seed_alloc(const BYTES& bytes, uint32_t version, uint3
     return ret;
 }
 
+template <class BYTES, class HMAC_KEY>
+inline int bip32_key_from_seed_custom(const BYTES& bytes, uint32_t version, const HMAC_KEY& hmac_key, uint32_t flags, struct ext_key* output) {
+    int ret = ::bip32_key_from_seed_custom(bytes.data(), bytes.size(), version, hmac_key.data(), hmac_key.size(), flags, output);
+    return ret;
+}
+
+template <class BYTES, class HMAC_KEY>
+inline int bip32_key_from_seed_custom_alloc(const BYTES& bytes, uint32_t version, const HMAC_KEY& hmac_key, uint32_t flags, struct ext_key** output) {
+    int ret = ::bip32_key_from_seed_custom_alloc(bytes.data(), bytes.size(), version, hmac_key.data(), hmac_key.size(), flags, output);
+    return ret;
+}
+
 template <class HDKEY, class BYTES_OUT>
 inline int bip32_key_get_fingerprint(const HDKEY& hdkey, BYTES_OUT& bytes_out) {
     int ret = ::bip32_key_get_fingerprint(detail::get_p(hdkey), bytes_out.data(), bytes_out.size());

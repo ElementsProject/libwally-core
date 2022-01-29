@@ -227,6 +227,8 @@ for f in (
     ('bip32_key_from_parent_path_str_n_alloc', c_int, [POINTER(ext_key), c_char_p, c_ulong, c_uint, c_uint, POINTER(POINTER(ext_key))]),
     ('bip32_key_from_seed', c_int, [c_void_p, c_ulong, c_uint, c_uint, POINTER(ext_key)]),
     ('bip32_key_from_seed_alloc', c_int, [c_void_p, c_ulong, c_uint, c_uint, POINTER(POINTER(ext_key))]),
+    ('bip32_key_from_seed_custom', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_uint, POINTER(ext_key)]),
+    ('bip32_key_from_seed_custom_alloc', c_int, [c_void_p, c_ulong, c_uint, c_void_p, c_ulong, c_uint, POINTER(POINTER(ext_key))]),
     ('bip32_key_get_fingerprint', c_int, [POINTER(ext_key), c_void_p, c_ulong]),
     ('bip32_key_init', c_int, [c_uint, c_uint, c_uint, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, POINTER(ext_key)]),
     ('bip32_key_init_alloc', c_int, [c_uint, c_uint, c_uint, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, c_void_p, c_ulong, POINTER(POINTER(ext_key))]),

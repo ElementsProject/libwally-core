@@ -279,6 +279,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* generator, size_t generator_len);
 %pybuffer_nullable_binary(const unsigned char* genesis_blockhash, size_t genesis_blockhash_len);
 %pybuffer_nullable_binary(const unsigned char* hash160, size_t hash160_len);
+%pybuffer_nullable_binary(const unsigned char* hmac_key, size_t hmac_key_len);
 %pybuffer_nullable_binary(const unsigned char* inflation_keys, size_t inflation_keys_len);
 %pybuffer_nullable_binary(const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char* issuance_amount, size_t issuance_amount_len);
@@ -337,11 +338,13 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_opaque_struct(words);
 
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
+%rename("bip32_key_from_base58_n") bip32_key_from_base58_n_alloc;
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
 %rename("bip32_key_from_parent_path_str") bip32_key_from_parent_path_str_alloc;
 %rename("bip32_key_from_parent_path_str_n") bip32_key_from_parent_path_str_n_alloc;
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
+%rename("bip32_key_from_seed_custom") bip32_key_from_seed_custom_alloc;
 %rename("bip32_key_init") bip32_key_init_alloc;
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 %rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;

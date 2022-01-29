@@ -271,6 +271,27 @@ class BIP32Tests(unittest.TestCase):
         for ver, flags, expected in ver_cases:
             ret = bip32_key_from_seed(seed, seed_len, ver, flags, byref(key_out))
             self.assertEqual(ret, expected)
+            ret = bip32_key_from_seed_custom(seed, seed_len, ver, None, 0, flags, byref(key_out))
+            self.assertEqual(ret, expected)
+
+        # Other invalid args
+        ver, flags = VER_MAIN_PRIVATE, FLAG_SKIP_HASH
+        cases = [
+            (None, seed_len, ver, None, 0, flags, byref(key_out)), # NULL seed
+            (seed, 0,        ver, None, 0, flags, byref(key_out)), # Empty seed
+            (seed, seed_len, 0x1, None, 0, flags, byref(key_out)), # Invalid version
+            (seed, seed_len, ver, seed, 0, flags, byref(key_out)), # 0-length hmac key
+            (seed, seed_len, ver, None, 1, flags, byref(key_out)), # NULL hmac key
+            (seed, seed_len, ver, None, 0, 0x1,   byref(key_out)), # Invalid flags
+            (seed, seed_len, ver, None, 0, flags, None)]           # NULL output
+        for case in cases:
+            if not case[3] and not case[4]:
+                # Not testing hmac key, test non-custom call
+                ret = bip32_key_from_seed(case[0], case[1], case[2], case[5], case[6])
+                self.assertEqual(ret, WALLY_EINVAL)
+            ret = bip32_key_from_seed_custom(*case)
+            self.assertEqual(ret, WALLY_EINVAL)
+
 
     def test_key_init(self):
         # Note we test bip32_key_init_alloc: it calls bip32_key_init internally

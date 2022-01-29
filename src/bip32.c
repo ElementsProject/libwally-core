@@ -16,7 +16,7 @@
                                  BIP32_FLAG_STR_WILDCARD | \
                                  BIP32_FLAG_STR_BARE)
 
-static const unsigned char SEED[] = {
+static const unsigned char HMAC_KEY[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
 };
 
@@ -207,18 +207,24 @@ static bool is_valid_seed_len(size_t len) {
            len == BIP32_ENTROPY_LEN_128;
 }
 
-int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
-                        uint32_t version, uint32_t flags,
-                        struct ext_key *key_out)
+int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
+                               uint32_t version,
+                               const unsigned char *hmac_key, size_t hmac_key_len,
+                               uint32_t flags, struct ext_key *key_out)
 {
     const secp256k1_context *ctx;
     struct sha512 sha;
 
     if (!bytes || !is_valid_seed_len(bytes_len) ||
         !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) ||
+        (hmac_key == NULL) != (hmac_key_len == 0) ||
         (flags & ~BIP32_FLAG_SKIP_HASH) || !key_out)
         return WALLY_EINVAL;
 
+    if (!hmac_key) {
+        hmac_key = HMAC_KEY; /* Use the default BIP32 hmac key */
+        hmac_key_len = sizeof(HMAC_KEY);
+    }
     wally_clear(key_out, sizeof(*key_out));
     key_out->version = version;
 
@@ -226,7 +232,7 @@ int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
         return WALLY_ENOMEM;
 
     /* Generate private key and chain code */
-    hmac_sha512_impl(&sha, SEED, sizeof(SEED), bytes, bytes_len);
+    hmac_sha512_impl(&sha, hmac_key, hmac_key_len, bytes, bytes_len);
 
     /* Check that the generated private key is valid */
     if (!secp256k1_ec_seckey_verify(ctx, sha.u.u8)) {
@@ -253,6 +259,14 @@ int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
+int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
+                        uint32_t version, uint32_t flags,
+                        struct ext_key *key_out)
+{
+    return bip32_key_from_seed_custom(bytes, bytes_len, version,
+                                      NULL, 0, flags, key_out);
+}
+
 #define ALLOC_KEY() \
     if (!output) \
         return WALLY_EINVAL; \
@@ -260,19 +274,29 @@ int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
     if (!*output) \
         return WALLY_ENOMEM
 
-int bip32_key_from_seed_alloc(const unsigned char *bytes, size_t bytes_len,
-                              uint32_t version, uint32_t flags,
-                              struct ext_key **output)
+int bip32_key_from_seed_custom_alloc(const unsigned char *bytes, size_t bytes_len,
+                                     uint32_t version,
+                                     const unsigned char *hmac_key, size_t hmac_key_len,
+                                     uint32_t flags, struct ext_key **output)
 {
     int ret;
 
     ALLOC_KEY();
-    ret = bip32_key_from_seed(bytes, bytes_len, version, flags, *output);
+    ret = bip32_key_from_seed_custom(bytes, bytes_len, version,
+                                     hmac_key, hmac_key_len, flags, *output);
     if (ret != WALLY_OK) {
         wally_free((void *)*output);
         *output = NULL;
     }
     return ret;
+}
+
+int bip32_key_from_seed_alloc(const unsigned char *bytes, size_t bytes_len,
+                              uint32_t version, uint32_t flags,
+                              struct ext_key **output)
+{
+    return bip32_key_from_seed_custom_alloc(bytes, bytes_len, version,
+                                            NULL, 0, flags, output);
 }
 
 static unsigned char *copy_out(unsigned char *dest,

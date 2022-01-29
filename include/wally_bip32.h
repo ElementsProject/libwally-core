@@ -75,8 +75,8 @@ struct ext_key {
 
 #ifndef SWIG_PYTHON
 /**
- * Free a key allocated by `bip32_key_from_seed_alloc`
- * or `bip32_key_unserialize_alloc`.
+ * Free a key allocated by `bip32_key_from_seed_alloc`,
+ * `bip32_key_from_seed_custom` or `bip32_key_unserialize_alloc`.
  *
  * :param hdkey: Key to free.
  */
@@ -138,8 +138,24 @@ WALLY_CORE_API int bip32_key_init_alloc(
  *|     ``BIP32_ENTROPY_LEN_256`` or ``BIP32_ENTROPY_LEN_512``.
  * :param version: Either ``BIP32_VER_MAIN_PRIVATE`` or ``BIP32_VER_TEST_PRIVATE``,
  *|     indicating mainnet or testnet/regtest respectively.
+ * :param hmac_key: Custom data to HMAC-SHA512 with `bytes` before creating the key. Pass
+ *|             NULL to use the default BIP32 key of "Bitcoin seed".
+ * :param hmac_key_len: Size of ``hmac_key`` in bytes, or 0 if ``hmac_key`` is NULL.
  * :param flags: Either ``BIP32_FLAG_SKIP_HASH`` to skip hash160 calculation, or 0.
  * :param output: Destination for the resulting master extended key.
+ */
+WALLY_CORE_API int bip32_key_from_seed_custom(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t version,
+    const unsigned char *hmac_key,
+    size_t hmac_key_len,
+    uint32_t flags,
+    struct ext_key *output);
+
+/**
+ * As per `bip32_key_from_seed_custom` With the default BIP32 seed.
+ * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes,
@@ -148,6 +164,19 @@ WALLY_CORE_API int bip32_key_from_seed(
     uint32_t flags,
     struct ext_key *output);
 #endif
+
+/**
+ * As per `bip32_key_from_seed_custom`, but allocates the key.
+ * .. note:: The returned key should be freed with `bip32_key_free`.
+ */
+WALLY_CORE_API int bip32_key_from_seed_custom_alloc(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t version,
+    const unsigned char *hmac_key,
+    size_t hmac_key_len,
+    uint32_t flags,
+    struct ext_key **output);
 
 /**
  * As per `bip32_key_from_seed`, but allocates the key.
