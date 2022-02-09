@@ -292,6 +292,50 @@ class BIP32Tests(unittest.TestCase):
             ret = bip32_key_from_seed_custom(*case)
             self.assertEqual(ret, WALLY_EINVAL)
 
+    def test_key_from_seed_custom(self):
+        seed_hex = ('1EBF38D0B1FC10AC12059141276C1B8B'
+                    '7A410BA43D04BBE9F3A371D884A30440'
+                    '0B6A39FDA34E5B282A3717663FB33795'
+                    '4DF3DADF802A4CBA3D008D5E2988F70A')
+        seed, seed_len = make_cbuffer(seed_hex)
+        key_out = ext_key()
+
+        ver, flags = VER_MAIN_PRIVATE, 0
+        cases = [('Bitcoin seed',   '0488ADE40000000000000000002FB77E25CD3E2'
+                                    'E034BCBAFA1F81EC7E4CAF927B06C87DB296F11'
+                                    '86208315525E00CA18C524148649DFD1126D8D9'
+                                    '8B2DDB696181F25F4A6031713783B541AA14D02'),
+
+                 ('Nist256p1 seed', '0488ADE400000000000000000075C34EB4C3F4E'
+                                    'BC771C8A431B8F5516D6B5881DE5200898CCABF'
+                                    '93ACF877A57C00607D6DF3D1C7FC3371FA0CA34'
+                                    'E3D1F52E87885A74A3E21A991CBDB67EFA34803'),
+
+                 ('ed25519 seed',   '0488ADE400000000000000000041A8BB1828138'
+                                    '6DC1E958E481A2577C111893D66BB5790F91065'
+                                    'E1E56BEFAD7500EF2D5DA0A37454A826131CF57'
+                                    'A5B97ECD0DCD18F0D1B74C7678617F873749C77')]
+
+        # cases[0] should match the default, as should passing 'None'
+        custom_data = cases[0][0].encode()
+        default_key_out = ext_key()
+        ret = bip32_key_from_seed(seed, seed_len, ver, flags, byref(default_key_out))
+        self.assertEqual(ret, WALLY_OK)
+
+        for data, len_ in [(custom_data, len(custom_data)), (None, 0)]:
+            ret = bip32_key_from_seed_custom(seed, seed_len, ver, custom_data, len(custom_data), flags, byref(key_out))
+            self.assertEqual(ret, WALLY_OK)
+            self.compare_keys(key_out, default_key_out, flags)
+
+        for case in cases:
+            custom_data = case[0].encode()
+            ret = bip32_key_from_seed_custom(seed, seed_len, ver, custom_data, len(custom_data), flags, byref(key_out))
+            self.assertEqual(ret, WALLY_OK)
+
+            expected, expected_len = make_cbuffer(case[1])
+            ret, expected_key = self.unserialize_key(expected, expected_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.compare_keys(key_out, expected_key, flags)
 
     def test_key_init(self):
         # Note we test bip32_key_init_alloc: it calls bip32_key_init internally
