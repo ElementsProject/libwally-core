@@ -155,7 +155,6 @@ WALLY_CORE_API int bip32_key_from_seed_custom(
 
 /**
  * As per `bip32_key_from_seed_custom` With the default BIP32 seed.
- * .. note:: The returned key should be freed with `bip32_key_free`.
  */
 WALLY_CORE_API int bip32_key_from_seed(
     const unsigned char *bytes,
