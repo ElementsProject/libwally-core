@@ -50,7 +50,7 @@ test('addr segwit to bytes', function (t) {
     wally.wally_addr_segwit_to_bytes(
       testCase[0], testCase[1], flags
     ).then(function(d) {
-      t.equal(new Buffer(d).toString('hex'),
+      t.equal(Buffer.from(d).toString('hex'),
       testCase[3],
         'addr_segwit_to_bytes('+testCase[0]+','+testCase[1]+')');
     })
@@ -58,7 +58,7 @@ test('addr segwit to bytes', function (t) {
 
   valid_cases.forEach(function(testCase) {
     wally.wally_addr_segwit_from_bytes(
-      new Buffer(testCase[3], 'hex'), testCase[1], flags
+      Buffer.from(testCase[3], 'hex'), testCase[1], flags
     ).then(function(d) {
       t.equal(d.toLowerCase(), testCase[0].toLowerCase(),
         'addr_segwit_from_bytes('+testCase[3]+','+testCase[1]+')');
@@ -68,12 +68,12 @@ test('addr segwit to bytes', function (t) {
   fail_cases.forEach(function(testCase) {
     t.throws(function() {
       wally.wally_addr_segwit_to_bytes(testCase[0], testCase[1], 0);
-    }, new TypeError());
+    }, /TypeError/);
   });
 
   fail_cases.forEach(function(testCase) {
     t.throws(function() {
-      wally.wally_addr_segwit_from_bytes(new Buffer(testCase[3], 'hex'), testCase[1], 0);
-    }, new TypeError());
+      wally.wally_addr_segwit_from_bytes(Buffer.from(testCase[3], 'hex'), testCase[1], 0);
+    }, /TypeError/);
   });
 });
