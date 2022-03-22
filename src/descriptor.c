@@ -372,6 +372,14 @@ int check_type_properties(uint32_t property)
     return WALLY_OK;
 }
 
+static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
+{
+    return ((primary & MINISCRIPT_PROPERTY_G) && (secondary & MINISCRIPT_PROPERTY_H)) ||
+        ((primary & MINISCRIPT_PROPERTY_H) && (secondary & MINISCRIPT_PROPERTY_G)) ||
+        ((primary & MINISCRIPT_PROPERTY_I) && (secondary & MINISCRIPT_PROPERTY_J)) ||
+        ((primary & MINISCRIPT_PROPERTY_J) && (secondary & MINISCRIPT_PROPERTY_I));
+}
+
 static int verify_descriptor_sh(struct miniscript_node_t *node, struct miniscript_node_t *parent)
 {
     if (parent || (get_child_list_count(node) != node->info->inner_num) || !node->child->info)
@@ -607,6 +615,8 @@ static uint32_t verify_miniscript_andor_property(uint32_t x_property, uint32_t y
     prop |= (x_property | (y_property & z_property)) & MINISCRIPT_PROPERTY_O;
     prop |= y_property & z_property & MINISCRIPT_PROPERTY_U;
     prop |= z_property & MINISCRIPT_PROPERTY_D;
+    prop |= (x_property | y_property | z_property) & (MINISCRIPT_PROPERTY_G | MINISCRIPT_PROPERTY_H |
+                                         MINISCRIPT_PROPERTY_I | MINISCRIPT_PROPERTY_J);
     if ((x_property & MINISCRIPT_PROPERTY_S) || (y_property & MINISCRIPT_PROPERTY_F)) {
         prop |= z_property & MINISCRIPT_PROPERTY_F;
         prop |= x_property & z_property & MINISCRIPT_PROPERTY_E;
@@ -616,6 +626,9 @@ static uint32_t verify_miniscript_andor_property(uint32_t x_property, uint32_t y
         prop |= x_property & y_property & z_property & MINISCRIPT_PROPERTY_M;
     }
     prop |= z_property & (x_property | y_property) & MINISCRIPT_PROPERTY_S;
+    if ((x_property & y_property & z_property & MINISCRIPT_PROPERTY_K) &&
+        !has_two_different_lock_states(x_property, y_property))
+        prop |= MINISCRIPT_PROPERTY_K;
     return prop;
 }
 
@@ -663,10 +676,7 @@ static uint32_t verify_miniscript_and_v_property(uint32_t x_property, uint32_t y
     if ((y_property & MINISCRIPT_PROPERTY_F) || (x_property & MINISCRIPT_PROPERTY_S))
         prop |= MINISCRIPT_PROPERTY_F;
     if ((x_property & y_property & MINISCRIPT_PROPERTY_K) &&
-        !(((x_property & MINISCRIPT_PROPERTY_G) && (y_property & MINISCRIPT_PROPERTY_H)) ||
-          ((x_property & MINISCRIPT_PROPERTY_H) && (y_property & MINISCRIPT_PROPERTY_G)) ||
-          ((x_property & MINISCRIPT_PROPERTY_I) && (y_property & MINISCRIPT_PROPERTY_J)) ||
-          ((x_property & MINISCRIPT_PROPERTY_J) && (y_property & MINISCRIPT_PROPERTY_I))))
+        !has_two_different_lock_states(x_property, y_property))
         prop |= MINISCRIPT_PROPERTY_K;
     if (!(prop & MINISCRIPT_TYPE_MASK))
         return 0;
@@ -716,10 +726,7 @@ static int verify_miniscript_and_b(struct miniscript_node_t *node, struct minisc
         !(~y_prop & (MINISCRIPT_PROPERTY_S | MINISCRIPT_PROPERTY_F)))
         node->type_properties |= MINISCRIPT_PROPERTY_F;
     if ((x_prop & y_prop & MINISCRIPT_PROPERTY_K) &&
-        !(((x_prop & MINISCRIPT_PROPERTY_G) && (y_prop & MINISCRIPT_PROPERTY_H)) ||
-          ((x_prop & MINISCRIPT_PROPERTY_H) && (y_prop & MINISCRIPT_PROPERTY_G)) ||
-          ((x_prop & MINISCRIPT_PROPERTY_I) && (y_prop & MINISCRIPT_PROPERTY_J)) ||
-          ((x_prop & MINISCRIPT_PROPERTY_J) && (y_prop & MINISCRIPT_PROPERTY_I))))
+        !has_two_different_lock_states(x_prop, y_prop))
         node->type_properties |= MINISCRIPT_PROPERTY_K;
     return WALLY_OK;
 }
@@ -896,18 +903,13 @@ static int verify_miniscript_thresh(struct miniscript_node_t *node, struct minis
             ++num_s;
         if ((child->type_properties) & MINISCRIPT_PROPERTY_Z)
             args += (~(child->type_properties) & MINISCRIPT_PROPERTY_O) ? 2 : 1;
-        if ((child->type_properties) & MINISCRIPT_PROPERTY_Z)
-            args += (~(child->type_properties) & MINISCRIPT_PROPERTY_O) ? 2 : 1;
 
         tmp_acc_tl = ((acc_tl | child->type_properties) & (MINISCRIPT_PROPERTY_G |
                 MINISCRIPT_PROPERTY_H | MINISCRIPT_PROPERTY_I | MINISCRIPT_PROPERTY_J));
         if (((acc_tl & child->type_properties) & MINISCRIPT_PROPERTY_K) &&
             ((k <= 1) ||
              ((k > 1) &&
-             !(((acc_tl & MINISCRIPT_PROPERTY_G) && (child->type_properties & MINISCRIPT_PROPERTY_H)) ||
-               ((acc_tl & MINISCRIPT_PROPERTY_H) && (child->type_properties & MINISCRIPT_PROPERTY_G)) ||
-               ((acc_tl & MINISCRIPT_PROPERTY_I) && (child->type_properties & MINISCRIPT_PROPERTY_J)) ||
-               ((acc_tl & MINISCRIPT_PROPERTY_J) && (child->type_properties & MINISCRIPT_PROPERTY_I))))))
+             !has_two_different_lock_states(acc_tl, child->type_properties))))
             tmp_acc_tl |= MINISCRIPT_PROPERTY_K;
 
         ++count;

@@ -149,13 +149,16 @@ struct wally_miniscript_ref_test g_miniscript_ref_test_table[] = {
     {"thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),ac:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556),altv:after(1000000000),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac6c936b6300670400ca9a3bb16951686c936b6300670164b16951686c935287"},
     {"thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670164b16951686c935287"},
     {"thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac7c2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac935187"},
-    // {"thresh(3,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", ""},
-    // {"thresh(0,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", ""},
     {"after(100)", "0164b1"},
     {"after(1000000000)", "0400ca9a3bb1"},
     {"or_b(l:after(100),al:after(1000000000))", "6300670164b1686b6300670400ca9a3bb1686c9b"},
-    // {"and_b(after(100),a:after(1000000000))", ""},
+    {"and_b(after(100),a:after(1000000000))", "0164b16b0400ca9a3bb16c9a"},
     {"thresh(2,ltv:after(1000000000),altv:after(100),a:pk(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65))", "6300670400ca9a3bb16951686b6300670164b16951686c936b2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6c935287"},
+};
+
+struct wally_miniscript_ref_test g_miniscript_err_test_table[] = {
+    {"thresh(3,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", ""},
+    {"thresh(0,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", ""},
 };
 
 struct wally_miniscript_test g_miniscript_test_table[] = {
@@ -937,6 +940,50 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
     return is_success;
 }
 
+static bool check_parse_miniscript_error(
+        const char *function, const char *descriptor,
+        const char *expected,
+        const char **key_name_list,
+        const char **key_value_list, size_t list_num,
+        uint32_t flags)
+{
+    size_t written = 0;
+    unsigned char script[520];
+    char *hex = NULL;
+    int ret;
+    bool is_success = false;
+    uint32_t index = 0;
+
+    ret = wally_descriptor_parse_miniscript(
+        descriptor,
+        key_name_list,
+        key_value_list,
+        list_num,
+        index,
+        flags,
+        script,
+        sizeof(script),
+        &written);
+    if (ret == WALLY_EINVAL) {
+        return true;
+    } else if (ret != WALLY_OK) {
+        printf("wally_descriptor_parse_miniscript NG[%d]\n", ret);
+        return false;
+    }
+
+    ret = wally_hex_from_bytes(script, written, &hex);
+    if (ret != WALLY_OK) {
+        printf("wally_hex_from_bytes NG[%d]\n", ret);
+        return false;
+    }
+
+    printf("%s:\n  Input: %s\n  Output: %s\n  Expect: %d\n",
+            function, descriptor, hex, WALLY_EINVAL);
+
+    wally_free_string(hex);
+    return false;
+}
+
 static bool check_descriptor_to_scriptpubkey(const char *function,
                                              const char *descriptor,
                                              const char *expected,
@@ -1209,6 +1256,7 @@ int main(void)
     bool tests_ok = true;
     size_t index;
     size_t miniscript_ref_max = sizeof(g_miniscript_ref_test_table) / sizeof(struct wally_miniscript_ref_test);
+    size_t miniscript_err_max = sizeof(g_miniscript_err_test_table) / sizeof(struct wally_miniscript_ref_test);
     size_t miniscript_max = sizeof(g_miniscript_test_table) / sizeof(struct wally_miniscript_test);
     size_t miniscript_tr_max = sizeof(g_miniscript_taproot_test_table) / sizeof(struct wally_miniscript_taproot_test);
     size_t desc_max = sizeof(g_descriptor_test_table) / sizeof(struct wally_descriptor_test);
@@ -1225,6 +1273,17 @@ int main(void)
                 g_miniscript_ref_test_table[index].scriptpubkey,
                 NULL, NULL, 0, 0)) {
             printf("[%s] test failed!\n", g_miniscript_ref_test_table[index].miniscript);
+            tests_ok = false;
+        }
+    }
+
+    for (index = 0; index < miniscript_err_max; ++index) {
+        if (!check_parse_miniscript_error(
+                g_miniscript_err_test_table[index].miniscript,
+                g_miniscript_err_test_table[index].miniscript,
+                g_miniscript_err_test_table[index].scriptpubkey,
+                NULL, NULL, 0, 0)) {
+            printf("[%s] test failed!\n", g_miniscript_err_test_table[index].miniscript);
             tests_ok = false;
         }
     }
