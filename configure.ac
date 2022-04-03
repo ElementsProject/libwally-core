@@ -27,67 +27,16 @@ case $host in
 esac
 AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" == "xyes"])
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
-saved_cflags="$CFLAGS"
-LT_INIT([disable-static])
-CFLAGS="$saved_cflags"
+# Require Automake 1.11.2 for AM_PROG_AR
+AM_INIT_AUTOMAKE([1.11.2 foreign subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_PROG_CC
-
-# Prefer the compilers native ar/ranlib if available
-# We have to manually loop to test these as autoconf inexplicably does
-# not provide an AC_PATH_TOOLS macro for this purpose.
-candidate_ars="ar"
-candidate_ranlibs="ranlib"
-case $CC in
-*gcc*)
-    candidate_ars="gcc-ar ar"
-    candidate_ranlibs="gcc-ranlib ranlib"
-    ;;
-*clang*)
-    ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1)
-    candidate_ars="llvm-ar-$ver llvm-ar ar"
-    candidate_ranlibs="llvm-ranlib-$ver llvm-ranlib ranlib"
-    ;;
-esac
-
-if test "x$is_osx" == "xyes"; then
-    candidate_ars="libtool $candidate_ars"
-    CCDIR=`dirname $CC`
-    if test x"$CCDIR" != x"."; then
-        if test -x $CCDIR/libtool; then
-            # Use libtool from the same directory as our clang
-            AR=$CCDIR/libtool
-            candidate_ars=""
-        fi
-    fi
-fi
-
-if test -n "$candidate_ars"; then
-    for candidate in $candidate_ars; do
-        AC_PATH_TOOL(AR, $candidate)
-        if test "x$HAVE_AR" == "xyes"; then
-            break
-        fi
-    done
-fi
-case $AR in
-*libtool)
-    ARFLAGS="-static -o"
-    AR_FLAGS="-static -o"
-    AC_SUBST([ARFLAGS])
-    AC_SUBST([AR_FLAGS])
-    ;;
-esac
-
-for candidate in $candidate_ranlibs; do
-    AC_PATH_TOOL(RANLIB, $candidate)
-    if test "x$HAVE_RANLIB" == "xyes"; then
-        break
-    fi
-done
+AM_PROG_AR
+#saved_cflags="$CFLAGS"
+LT_INIT([disable-static])
+#CFLAGS="$saved_cflags"
 
 AC_SUBST([AR])
 AC_SUBST([RANLIB])
