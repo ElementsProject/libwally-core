@@ -614,7 +614,7 @@ int wally_asset_pak_whitelistproof(
     }
 
     if (secp256k1_whitelist_sign(ctx, &sig, online_secp_keys, offline_secp_keys, num_keys,
-                                 &pubkey, online_priv_key, summed_key, key_index, NULL, NULL) &&
+                                 &pubkey, online_priv_key, summed_key, key_index) &&
         secp256k1_whitelist_verify(ctx, &sig, online_secp_keys, offline_secp_keys, num_keys, &pubkey) &&
         secp256k1_whitelist_signature_serialize(ctx, bytes_out, &sig_size, &sig)) {
         ret = WALLY_OK;
