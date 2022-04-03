@@ -21,7 +21,7 @@ static secp256k1_context *global_ctx = NULL;
 
 int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
 {
-    return secp256k1_ec_privkey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
+    return secp256k1_ec_seckey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
 }
 
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
