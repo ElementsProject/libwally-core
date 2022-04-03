@@ -16,5 +16,5 @@ if [ "$TRAVIS_OS_NAME" = "windows" ]; then
     npm --version
     npm i -g yarn
 
-    sed -e 's/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H" \]/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H", "USE_ECMULT_STATIC_PRECOMPUTATION", "ECMULT_WINDOW_SIZE=16" \]/g' src/wrap_js/binding.gyp.tmpl > src/wrap_js/binding.gyp
+    sed -e 's/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H" \]/"defines": \[ "SWIG_JAVASCRIPT_BUILD", "HAVE_CONFIG_H", "USE_ECMULT_STATIC_PRECOMPUTATION", "ECMULT_WINDOW_SIZE=15" \]/g' src/wrap_js/binding.gyp.tmpl > src/wrap_js/binding.gyp
 fi
