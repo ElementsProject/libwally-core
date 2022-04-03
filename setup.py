@@ -31,7 +31,7 @@ define_macros=[
     ]
 if is_windows:
     define_macros.append(('USE_ECMULT_STATIC_PRECOMPUTATION', None))
-    define_macros.append(('ECMULT_WINDOW_SIZE', 16))
+    define_macros.append(('ECMULT_WINDOW_SIZE', 15))
 
 include_dirs=[
     './',
