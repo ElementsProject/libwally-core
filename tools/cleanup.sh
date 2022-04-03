@@ -32,7 +32,7 @@ rm -f src/swig_java/*java
 rm -f src/swig_java/*jar
 rm -rf src/swig_java/src/com/blockstream/libwally
 rm -f src/swig_python/wallycore.py
-rm -f src/swig_python/wallycore/__init__.py
+rm -f src/swig_python/wallycore/__init__.py*
 rm -f src/swig_python/swig_python_wrap.c
 rm -f src/wrap_js/binding.gyp
 rm -rf src/wrap_js/build
@@ -47,6 +47,7 @@ rm -rf src/wrap_js/cordovaplugin/jniLibs/
 rm -f src/wrap_js/wally.js
 rm -rf src/.libs
 rm -f src/secp256k1/build-aux/ltmain.sh-e
+rm -f tools/build-aux/ar-lib
 rm -f tools/build-aux/compile
 rm -f tools/build-aux/config.guess
 rm -f tools/build-aux/config.sub
