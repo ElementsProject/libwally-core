@@ -1,10 +1,28 @@
 """setuptools config for wallycore """
 from setuptools import setup, Extension
 import platform
-import os,distutils.sysconfig
+import os,sys,copy,distutils.sysconfig, logging
 
-print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {}'.format(os.environ))
-print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {}'.format(distutils.sysconfig.get_config_vars()))
+CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux --enable-ecmult-static-precomputation --enable-elements --disable-tests'
+
+#logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+#log = logging.getLogger()
+#log.info('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {}'.format(os.environ))
+#log.info('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {}'.format(distutils.sysconfig.get_config_vars()))
+
+distutils_env = distutils.sysconfig.get_config_vars()
+configure_env = copy.deepcopy(os.environ)
+
+if os.environ.get('GITHUB_ACTION') and os.environ.get('RUNNER_OS') == 'macOS' and \
+    os.environ.get('RUNNER_ARCH') == 'X64' and os.environ.get('ARCHFLAGS','').endswith(' arm64'):
+    # This is a github CI cross-compile for macOS M1
+    #configure_env['CFLAGS'] = '-march arm64'
+    #configure_env['LDFLAGS'] = '-march arm64'
+    CONFIGURE_ARGS += ' --host x86_64-apple-darwin --target arm64-apple-macos'
+    if 'PY_CFLAGS' in distutils_env:
+        configure_env['CFLAGS'] = distutils_env['PY_CFLAGS']
+        configure_env['LDFLAGS'] = distutils_env['PY_LDFLAGS']
+
 
 is_windows = platform.system() == "Windows"
 
@@ -19,11 +37,11 @@ if not is_windows:
     abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 
     def call(cmd):
-        subprocess.check_call(cmd.split(' '), cwd=abs_path)
+        subprocess.check_call(cmd.split(' '), cwd=abs_path, env=configure_env)
 
     call('./tools/cleanup.sh')
     call('./tools/autogen.sh')
-    call('./configure --enable-swig-python --enable-python-manylinux --enable-ecmult-static-precomputation --enable-elements --disable-tests')
+    call('./configure {}'.format(CONFIGURE_ARGS))
     call('make -j{}'.format(multiprocessing.cpu_count()))
 
 define_macros=[
