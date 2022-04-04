@@ -236,7 +236,8 @@ endif
 endif # SHARED_BUILD_ENABLED
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
-libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
+libwallycore_la_LIBADD = secp256k1/src/libsecp256k1_la-secp256k1.o secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult_gen.o secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult.o $(noinst_LTLIBRARIES)
+#$(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1
 
