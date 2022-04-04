@@ -1,6 +1,10 @@
 """setuptools config for wallycore """
 from setuptools import setup, Extension
 import platform
+import os,distutils.sysconfig
+
+print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {}'.format(os.environ))
+print('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {}'.format(distutils.sysconfig.get_config_vars()))
 
 is_windows = platform.system() == "Windows"
 
