@@ -51,6 +51,7 @@ jobs:
         uses: pypa/cibuildwheel@v2.1.2
         env:
           CIBW_SKIP: cp36-*
+          CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
 
       - name: Install qemu aarch64
         if: runner.os == 'Linux'
