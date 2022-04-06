@@ -171,11 +171,6 @@ AC_SUBST([NOOPT_CFLAGS])
 AC_SUBST([NOALIAS_CFLAGS])
 AC_SUBST([NOBUILTIN_CFLAGS])
 
-# Under OSX the compiler accepts this flag but the linker then fails.
-if test "x$is_osx" != "xyes"; then
-    AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
-fi
-
 # SWIG versions vary in generated code quality; skip warnings
 SWIG_WARN_CFLAGS="-fno-strict-aliasing"
 AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-shadow"])
@@ -246,18 +241,18 @@ fi
 #        target and so won't force all object files in the library to be
 #        included in ours - despite the fact that we are making a shared
 #        library and linking to a static one. This is broken and we work
-#        around it by hacking the whole-archive flags into the _LDADD variable
-#        for wallycore.
+#        around it by hacking the secp objects directly into the library
+#        via the _LDADD variable for wallycore.
+#        We previously achieved this by adding the libsecp256k1.a archive,
+#        but changes to libtool and apples linkers mean that
+#        archives-within-archives no longer work.
 #        Because automake tries to police its users very strictly and fails
 #        hard when flags are passed in this way, we have to substitute the
 #        flags here.
 #        Because libtool both intercepts -Wl and arbitrarily re-orders its
 #        command line inputs, we have to concoct a single expression to
 #        enforce linking that cannot be split, hence the below expression.
-LIBADD_SECP256K1="secp256k1/.libs/libsecp256k1.a"
-if test "x$whole_archive" == "xyes"; then
-    LIBADD_SECP256K1="-Wl,--whole-archive,secp256k1/.libs/libsecp256k1.a,--no-whole-archive"
-fi
+LIBADD_SECP256K1="-Wl,secp256k1/src/libsecp256k1_la-secp256k1.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult_gen.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult.${OBJEXT}"
 AC_SUBST([LIBADD_SECP256K1])
 
 #
