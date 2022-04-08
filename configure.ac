@@ -79,6 +79,9 @@ AC_ARG_ENABLE(minimal,
 AC_ARG_ENABLE(secp256k1-tests,
     AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
     [secp256k1_tests=$enableval], [secp256k1_tests=no])
+AC_ARG_ENABLE(asm,
+    AS_HELP_STRING([--enable-asm],[enable assembly language implementations (default: yes)]),
+    [asm=$enableval], [asm=yes])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
 AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" == "xyes"])
@@ -206,17 +209,19 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],[[return posix_memalign(
 
 AC_CHECK_FUNCS([memset_s explicit_bzero explicit_memset])
 
-AC_MSG_CHECKING(whether we can use inline asm code)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-]], [[
-int a = 42;
-int *pnt = &a;
-__asm__ __volatile__ ("" : : "r"(pnt) : "memory");
-]])],
-  [AC_MSG_RESULT(yes)
-   AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])],
-  [AC_MSG_RESULT(no)]
-)
+if test "x$asm" == "xyes"; then
+    AC_MSG_CHECKING(whether we can use inline asm code)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    ]], [[
+    int a = 42;
+    int *pnt = &a;
+    __asm__ __volatile__ ("" : : "r"(pnt) : "memory");
+    ]])],
+      [AC_MSG_RESULT(yes)
+       AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])],
+      [AC_MSG_RESULT(no)]
+    )
+fi
 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
@@ -381,6 +386,9 @@ AC_CONFIG_FILES([
 ])
 
 secp_asm="--with-asm=auto"
+if test "x$asm" == "xno"; then
+    secp_asm="--with-asm=no"
+fi
 if test "x$debug" == "xyes"; then
     secp_asm="--with-asm=no"
 fi
