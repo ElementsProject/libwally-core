@@ -62,6 +62,7 @@ src/swig_python/wallycore/wallycore.egg-info
 tools/build-aux/m4/l*.m4
 tools/build-aux/test-driver
 tools/build-aux/*-e
+tools/build-aux/ar-lib
 src/secp256k1/build-aux/*-e
 src/secp256k1/test-suite.log
 src/secp256k1/*.log
