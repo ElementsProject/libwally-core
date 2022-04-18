@@ -4,17 +4,9 @@ on:
   push:
     branches:
     - master
-    branches-ignore:
-    - feature/*
-    - cfd-develop
-    - cfd-stable-*
   pull_request:
     branches:
     - master
-    branches-ignore:
-    - cfd-develop
-    - cfd-stable-*
-    - feature/*
 
 jobs:
   build_wheels:
