@@ -3,6 +3,8 @@
 #include <include/wally_anti_exfil.h>
 #include <stdbool.h>
 
+#ifndef BUILD_STANDARD_SECP
+
 WALLY_CORE_API int wally_ae_host_commit_from_bytes(
     const unsigned char *entropy,
     size_t entropy_len,
@@ -127,3 +129,5 @@ WALLY_CORE_API int wally_ae_verify(
     wally_clear_3(&pub_secp, sizeof(pub_secp), &sig_secp, sizeof(sig_secp), &opening_secp, sizeof(opening_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
+
+#endif /* ndef BUILD_STANDARD_SECP */

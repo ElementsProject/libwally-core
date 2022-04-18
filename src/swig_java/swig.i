@@ -222,6 +222,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* genesis_blockhash, size_t genesis_blockhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* hash160, size_t hash160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* hmac_key, size_t hmac_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys, size_t inflation_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* issuance_amount, size_t issuance_amount_len) };
@@ -375,12 +376,20 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(bip32_key_free);
 %returns_struct(bip32_key_from_base58_alloc, ext_key);
 %rename("bip32_key_from_base58") bip32_key_from_base58_alloc;
+%returns_struct(bip32_key_from_base58_n_alloc, ext_key);
+%rename("bip32_key_from_base58_n") bip32_key_from_base58_n_alloc;
 %returns_struct(bip32_key_from_parent_alloc, ext_key);
 %rename("bip32_key_from_parent") bip32_key_from_parent_alloc;
 %returns_struct(bip32_key_from_parent_path_alloc, ext_key);
 %rename("bip32_key_from_parent_path") bip32_key_from_parent_path_alloc;
+%returns_struct(bip32_key_from_parent_path_str_alloc, ext_key);
+%rename("bip32_key_from_parent_path_str") bip32_key_from_parent_path_str_alloc;
+%returns_struct(bip32_key_from_parent_path_str_n_alloc, ext_key);
+%rename("bip32_key_from_parent_path_str_n") bip32_key_from_parent_path_str_n_alloc;
 %returns_struct(bip32_key_from_seed_alloc, ext_key);
 %rename("bip32_key_from_seed") bip32_key_from_seed_alloc;
+%returns_struct(bip32_key_from_seed_custom_alloc, ext_key);
+%rename("bip32_key_from_seed_custom") bip32_key_from_seed_custom_alloc;
 %returns_array_(bip32_key_get_chain_code, 2, 3, member_size(ext_key, chain_code));
 %returns_size_t(bip32_key_get_child_num);
 %returns_size_t(bip32_key_get_depth);
@@ -415,6 +424,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(bip39_mnemonic_to_seed);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_get_version);
+%returns_size_t(wally_addr_segwit_n_get_version);
+%returns_size_t(wally_addr_segwit_n_to_bytes);
 %returns_size_t(wally_addr_segwit_to_bytes);
 %returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
@@ -433,6 +444,8 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_string(wally_base58_from_bytes);
 %returns_size_t(wally_base58_to_bytes);
 %returns_size_t(wally_base58_get_length);
+%returns_size_t(wally_base58_n_get_length);
+%returns_size_t(wally_base58_n_to_bytes);
 %returns_string(wally_base64_from_bytes);
 %returns_size_t(wally_base64_to_bytes);
 %returns_size_t(wally_base64_get_maximum_length);
@@ -459,7 +472,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_format_bitcoin_message);
 %returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);
+%returns_size_t(wally_hex_n_to_bytes);
+%returns_void__(wally_hex_n_verify);
 %returns_size_t(wally_hex_to_bytes);
+%returns_void__(wally_hex_verify);
 %returns_array_(wally_hmac_sha256, 5, 6, HMAC_SHA256_LEN);
 %returns_array_(wally_hmac_sha512, 5, 6, HMAC_SHA512_LEN);
 %returns_void__(wally_init);

@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.8.4])
+AC_INIT([libwallycore],[0.8.5])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -27,67 +27,16 @@ case $host in
 esac
 AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" == "xyes"])
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
-saved_cflags="$CFLAGS"
-LT_INIT([disable-static])
-CFLAGS="$saved_cflags"
+# Require Automake 1.11.2 for AM_PROG_AR
+AM_INIT_AUTOMAKE([1.11.2 foreign subdir-objects])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_PROG_CC
-
-# Prefer the compilers native ar/ranlib if available
-# We have to manually loop to test these as autoconf inexplicably does
-# not provide an AC_PATH_TOOLS macro for this purpose.
-candidate_ars="ar"
-candidate_ranlibs="ranlib"
-case $CC in
-*gcc*)
-    candidate_ars="gcc-ar ar"
-    candidate_ranlibs="gcc-ranlib ranlib"
-    ;;
-*clang*)
-    ver=$($CC --version | head -n 1 | cut -d' '  -f3 | cut -d'.' -f1)
-    candidate_ars="llvm-ar-$ver llvm-ar ar"
-    candidate_ranlibs="llvm-ranlib-$ver llvm-ranlib ranlib"
-    ;;
-esac
-
-if test "x$is_osx" == "xyes"; then
-    candidate_ars="libtool $candidate_ars"
-    CCDIR=`dirname $CC`
-    if test x"$CCDIR" != x"."; then
-        if test -x $CCDIR/libtool; then
-            # Use libtool from the same directory as our clang
-            AR=$CCDIR/libtool
-            candidate_ars=""
-        fi
-    fi
-fi
-
-if test -n "$candidate_ars"; then
-    for candidate in $candidate_ars; do
-        AC_PATH_TOOL(AR, $candidate)
-        if test "x$HAVE_AR" == "xyes"; then
-            break
-        fi
-    done
-fi
-case $AR in
-*libtool)
-    ARFLAGS="-static -o"
-    AR_FLAGS="-static -o"
-    AC_SUBST([ARFLAGS])
-    AC_SUBST([AR_FLAGS])
-    ;;
-esac
-
-for candidate in $candidate_ranlibs; do
-    AC_PATH_TOOL(RANLIB, $candidate)
-    if test "x$HAVE_RANLIB" == "xyes"; then
-        break
-    fi
-done
+AM_PROG_AR
+#saved_cflags="$CFLAGS"
+LT_INIT([disable-static])
+#CFLAGS="$saved_cflags"
 
 AC_SUBST([AR])
 AC_SUBST([RANLIB])
@@ -118,6 +67,9 @@ AC_ARG_ENABLE(tests,
 AC_ARG_ENABLE(elements,
     AS_HELP_STRING([--enable-elements],[enable elements tx code (default: no)]),
     [elements=$enableval], [elements=no])
+AC_ARG_ENABLE(standard-secp,
+    AS_HELP_STRING([--enable-standard-secp],[enable compiling with standard libsecp256k1 (default: no)]),
+    [standard_secp=$enableval], [standard_secp=no])
 AC_ARG_ENABLE(builtin-memset,
     AS_HELP_STRING([--enable-builtin-memset],[disable to add -fno-builtin-memset to compiler flags. helps with explicit_bzero/memset being elided on Linux clang 7.0.1 and up (default: yes)]),
     [builtin_memset=$enableval], [builtin_memset=yes])
@@ -127,8 +79,12 @@ AC_ARG_ENABLE(minimal,
 AC_ARG_ENABLE(secp256k1-tests,
     AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
     [secp256k1_tests=$enableval], [secp256k1_tests=no])
+AC_ARG_ENABLE(asm,
+    AS_HELP_STRING([--enable-asm],[enable assembly language implementations (default: yes)]),
+    [asm=$enableval], [asm=yes])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
+AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" == "xyes"])
 AM_CONDITIONAL([BUILD_MINIMAL], [test "x$minimal" == "xyes"])
 
 AC_C_BIGENDIAN()
@@ -167,6 +123,12 @@ fi
 
 if test "x$elements" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DBUILD_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_ELEMENTS=1"])
+fi
+if test "x$standard_secp" == "xyes"; then
+    if test "x$elements" == "xyes"; then
+        AC_MSG_FAILURE([ERROR: Elements cannot be enabled with standard libsecp256k1])
+    fi
+    AX_CHECK_COMPILE_FLAG([-DBUILD_STANDARD_SECP=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_STANDARD_SECP=1"])
 fi
 
 if test "x$minimal" == "xyes"; then
@@ -212,11 +174,6 @@ AC_SUBST([NOOPT_CFLAGS])
 AC_SUBST([NOALIAS_CFLAGS])
 AC_SUBST([NOBUILTIN_CFLAGS])
 
-# Under OSX the compiler accepts this flag but the linker then fails.
-if test "x$is_osx" != "xyes"; then
-    AX_CHECK_COMPILE_FLAG([-Wl,--whole-archive], [whole_archive=yes])
-fi
-
 # SWIG versions vary in generated code quality; skip warnings
 SWIG_WARN_CFLAGS="-fno-strict-aliasing"
 AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-shadow"])
@@ -252,17 +209,19 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],[[return posix_memalign(
 
 AC_CHECK_FUNCS([memset_s explicit_bzero explicit_memset])
 
-AC_MSG_CHECKING(whether we can use inline asm code)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-]], [[
-int a = 42;
-int *pnt = &a;
-__asm__ __volatile__ ("" : : "r"(pnt) : "memory");
-]])],
-  [AC_MSG_RESULT(yes)
-   AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])],
-  [AC_MSG_RESULT(no)]
-)
+if test "x$asm" == "xyes"; then
+    AC_MSG_CHECKING(whether we can use inline asm code)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    ]], [[
+    int a = 42;
+    int *pnt = &a;
+    __asm__ __volatile__ ("" : : "r"(pnt) : "memory");
+    ]])],
+      [AC_MSG_RESULT(yes)
+       AC_DEFINE([HAVE_INLINE_ASM], [1], [inline asm code can be used])],
+      [AC_MSG_RESULT(no)]
+    )
+fi
 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
 
@@ -287,18 +246,18 @@ fi
 #        target and so won't force all object files in the library to be
 #        included in ours - despite the fact that we are making a shared
 #        library and linking to a static one. This is broken and we work
-#        around it by hacking the whole-archive flags into the _LDADD variable
-#        for wallycore.
+#        around it by hacking the secp objects directly into the library
+#        via the _LDADD variable for wallycore.
+#        We previously achieved this by adding the libsecp256k1.a archive,
+#        but changes to libtool and apples linkers mean that
+#        archives-within-archives no longer work.
 #        Because automake tries to police its users very strictly and fails
 #        hard when flags are passed in this way, we have to substitute the
 #        flags here.
 #        Because libtool both intercepts -Wl and arbitrarily re-orders its
 #        command line inputs, we have to concoct a single expression to
 #        enforce linking that cannot be split, hence the below expression.
-LIBADD_SECP256K1="secp256k1/.libs/libsecp256k1.a"
-if test "x$whole_archive" == "xyes"; then
-    LIBADD_SECP256K1="-Wl,--whole-archive,secp256k1/.libs/libsecp256k1.a,--no-whole-archive"
-fi
+LIBADD_SECP256K1="-Wl,secp256k1/src/libsecp256k1_la-secp256k1.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult_gen.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult.${OBJEXT}"
 AC_SUBST([LIBADD_SECP256K1])
 
 #
@@ -432,6 +391,9 @@ AC_CONFIG_FILES([
 ])
 
 secp_asm="--with-asm=auto"
+if test "x$asm" == "xno"; then
+    secp_asm="--with-asm=no"
+fi
 if test "x$debug" == "xyes"; then
     secp_asm="--with-asm=no"
 fi

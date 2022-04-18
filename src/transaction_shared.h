@@ -11,6 +11,7 @@ extern "C" {
     if (!*output) return WALLY_ENOMEM; \
     result = (typ *) *output;
 
+bool clone_data(void **dst, const void *src, size_t len);
 bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 int replace_bytes(const unsigned char *bytes, size_t bytes_len,
                   unsigned char **bytes_out, size_t *bytes_len_out);

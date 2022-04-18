@@ -64,6 +64,8 @@ $ brew install swig
    optimisations (default: no).
 - `--enable-minimal`. Minimises library size and memory requirements to target
    embedded or resource-constrained environments (default: no).
+- `--enable-asm`. Enables fast assembly language implementations where available.
+   (default: enabled for non-debug builds).
 - `--enable-export-all`. Export all functions from the wally shared library.
    Ordinarily only API functions are exported. (default: no). Enable this
    if you want to test the internal functions of the library or are planning
@@ -79,6 +81,8 @@ $ brew install swig
    for the Java interface definition (default: no).
 - `--enable-elements`. Enables support for [Elements](https://elementsproject.org/)
    features, including [Liquid](https://blockstream.com/liquid/) support.
+- `--enabled-standard-secp`. Excludes support for features that are unavailable in
+   the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
 - `--enable-js-wrappers`. Enable the Node.js and Cordova Javascript wrappers.
    This currently requires python to be available at build time (default: no).
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
@@ -106,7 +110,7 @@ installed.
 For non-development use, you can install wally with `pip` as follows:
 
 ```
-pip install wallycore==0.8.4
+pip install wallycore==0.8.5
 ```
 
 For python development, you can build and install wally using:
@@ -126,7 +130,7 @@ You can also install the binary [wally releases](https://github.com/ElementsProj
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.4-cp37-cp37m-linux_x86_64.whl
+pip install wallycore-0.8.5-cp39-cp39m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
@@ -228,7 +232,7 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js_wrappers --enable-coverage --enable-elements
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js-wrappers --enable-coverage --enable-elements
 $ make
 $ ./tools/coverage.sh clean
 $ make check

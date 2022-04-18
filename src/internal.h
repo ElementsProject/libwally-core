@@ -4,7 +4,9 @@
 #include <include/wally_core.h>
 #include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_recovery.h"
+#ifndef BUILD_STANDARD_SECP
 #include "secp256k1/include/secp256k1_ecdsa_s2c.h"
+#endif
 #include <config.h>
 #if defined(HAVE_MEMSET_S)
 #define __STDC_WANT_LIB_EXT1__ 1

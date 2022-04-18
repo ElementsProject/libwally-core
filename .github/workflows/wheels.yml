@@ -2,11 +2,15 @@ name: Build
 
 on: 
   push:
+    branches:
+    - master
     branches-ignore:
     - feature/*
     - cfd-develop
     - cfd-stable-*
   pull_request:
+    branches:
+    - master
     branches-ignore:
     - cfd-develop
     - cfd-stable-*
@@ -44,9 +48,18 @@ jobs:
         if: runner.os == 'Windows' && matrix.aarch64_version == 'cp36-*'
         uses: pypa/cibuildwheel@v1.11.0
 
-      - name: Build Linux/macOS Wheels
+      - name: Build Obsolete Linux/macOS Wheels
         if: runner.os != 'Windows' && matrix.aarch64_version == 'cp36-*'
+        uses: pypa/cibuildwheel@v2.1.1
+        env:
+          CIBW_BUILD: cp36-*
+
+      - name: Build Linux/macOS Wheels
+        if: runner.os != 'Windows' && matrix.aarch64_version == 'cp37-*'
         uses: pypa/cibuildwheel@v2.1.2
+        env:
+          CIBW_SKIP: cp36-*
+          CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
 
       - name: Install qemu aarch64
         if: runner.os == 'Linux'

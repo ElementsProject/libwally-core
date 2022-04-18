@@ -375,6 +375,7 @@ int wally_format_bitcoin_message(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
+#ifndef BUILD_STANDARD_SECP
 int wally_s2c_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
                              const unsigned char *bytes, size_t bytes_len,
                              const unsigned char *s2c_data, size_t s2c_data_len,
@@ -438,3 +439,4 @@ int wally_s2c_commitment_verify(const unsigned char *sig, size_t sig_len,
     wally_clear_2(&sig_secp, sizeof(sig_secp), &opening_secp, sizeof(opening_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
+#endif /* ndef BUILD_STANDARD_SECP */

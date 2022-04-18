@@ -60,6 +60,18 @@ inline int bip32_key_from_base58_alloc(const BASE58& base58, struct ext_key** ou
     return ret;
 }
 
+template <class BASE58>
+inline int bip32_key_from_base58_n(const BASE58& base58, size_t base58_len, struct ext_key* output) {
+    int ret = ::bip32_key_from_base58_n(detail::get_p(base58), base58_len, output);
+    return ret;
+}
+
+template <class BASE58>
+inline int bip32_key_from_base58_n_alloc(const BASE58& base58, size_t base58_len, struct ext_key** output) {
+    int ret = ::bip32_key_from_base58_n_alloc(detail::get_p(base58), base58_len, output);
+    return ret;
+}
+
 template <class HDKEY>
 inline int bip32_key_from_parent(const HDKEY& hdkey, uint32_t child_num, uint32_t flags, struct ext_key* output) {
     int ret = ::bip32_key_from_parent(detail::get_p(hdkey), child_num, flags, output);
@@ -84,6 +96,30 @@ inline int bip32_key_from_parent_path_alloc(const HDKEY& hdkey, const CHILD_PATH
     return ret;
 }
 
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str(const HDKEY& hdkey, const PATH_STR& path_str, uint32_t child_num, uint32_t flags, struct ext_key* output) {
+    int ret = ::bip32_key_from_parent_path_str(detail::get_p(hdkey), detail::get_p(path_str), child_num, flags, output);
+    return ret;
+}
+
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str_alloc(const HDKEY& hdkey, const PATH_STR& path_str, uint32_t child_num, uint32_t flags, struct ext_key** output) {
+    int ret = ::bip32_key_from_parent_path_str_alloc(detail::get_p(hdkey), detail::get_p(path_str), child_num, flags, output);
+    return ret;
+}
+
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str_n(const HDKEY& hdkey, const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t flags, struct ext_key* output) {
+    int ret = ::bip32_key_from_parent_path_str_n(detail::get_p(hdkey), detail::get_p(path_str), path_str_len, child_num, flags, output);
+    return ret;
+}
+
+template <class HDKEY, class PATH_STR>
+inline int bip32_key_from_parent_path_str_n_alloc(const HDKEY& hdkey, const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t flags, struct ext_key** output) {
+    int ret = ::bip32_key_from_parent_path_str_n_alloc(detail::get_p(hdkey), detail::get_p(path_str), path_str_len, child_num, flags, output);
+    return ret;
+}
+
 template <class BYTES>
 inline int bip32_key_from_seed(const BYTES& bytes, uint32_t version, uint32_t flags, struct ext_key* output) {
     int ret = ::bip32_key_from_seed(bytes.data(), bytes.size(), version, flags, output);
@@ -93,6 +129,18 @@ inline int bip32_key_from_seed(const BYTES& bytes, uint32_t version, uint32_t fl
 template <class BYTES>
 inline int bip32_key_from_seed_alloc(const BYTES& bytes, uint32_t version, uint32_t flags, struct ext_key** output) {
     int ret = ::bip32_key_from_seed_alloc(bytes.data(), bytes.size(), version, flags, output);
+    return ret;
+}
+
+template <class BYTES, class HMAC_KEY>
+inline int bip32_key_from_seed_custom(const BYTES& bytes, uint32_t version, const HMAC_KEY& hmac_key, uint32_t flags, struct ext_key* output) {
+    int ret = ::bip32_key_from_seed_custom(bytes.data(), bytes.size(), version, hmac_key.data(), hmac_key.size(), flags, output);
+    return ret;
+}
+
+template <class BYTES, class HMAC_KEY>
+inline int bip32_key_from_seed_custom_alloc(const BYTES& bytes, uint32_t version, const HMAC_KEY& hmac_key, uint32_t flags, struct ext_key** output) {
+    int ret = ::bip32_key_from_seed_custom_alloc(bytes.data(), bytes.size(), version, hmac_key.data(), hmac_key.size(), flags, output);
     return ret;
 }
 
@@ -235,6 +283,19 @@ inline int addr_segwit_get_version(const ADDR& addr, const ADDR_FAMILY& addr_fam
     return ret;
 }
 
+template <class ADDR, class ADDR_FAMILY>
+inline int addr_segwit_n_get_version(const ADDR& addr, size_t addr_len, const ADDR_FAMILY& addr_family, size_t addr_family_len, uint32_t flags, size_t* written) {
+    int ret = ::wally_addr_segwit_n_get_version(detail::get_p(addr), addr_len, detail::get_p(addr_family), addr_family_len, flags, written);
+    return ret;
+}
+
+template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
+inline int addr_segwit_n_to_bytes(const ADDR& addr, size_t addr_len, const ADDR_FAMILY& addr_family, size_t addr_family_len, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_addr_segwit_n_to_bytes(detail::get_p(addr), addr_len, detail::get_p(addr_family), addr_family_len, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class ADDR, class ADDR_FAMILY, class BYTES_OUT>
 inline int addr_segwit_to_bytes(const ADDR& addr, const ADDR_FAMILY& addr_family, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
@@ -296,6 +357,19 @@ template <class STR_IN>
 inline int base58_get_length(const STR_IN& str_in, size_t* written) {
     int ret = ::wally_base58_get_length(detail::get_p(str_in), written);
     return ret;
+}
+
+template <class STR_IN>
+inline int base58_n_get_length(const STR_IN& str_in, size_t str_len, size_t* written) {
+    int ret = ::wally_base58_n_get_length(detail::get_p(str_in), str_len, written);
+    return ret;
+}
+
+template <class STR_IN, class BYTES_OUT>
+inline int base58_n_to_bytes(const STR_IN& str_in, size_t str_len, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_base58_n_to_bytes(detail::get_p(str_in), str_len, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
 template <class STR_IN, class BYTES_OUT>
@@ -450,10 +524,28 @@ inline int hex_from_bytes(const BYTES& bytes, char** output) {
 }
 
 template <class HEX, class BYTES_OUT>
+inline int hex_n_to_bytes(const HEX& hex, size_t hex_len, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_hex_n_to_bytes(detail::get_p(hex), hex_len, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class HEX>
+inline int hex_n_verify(const HEX& hex, size_t hex_len) {
+    int ret = ::wally_hex_n_verify(detail::get_p(hex), hex_len);
+    return ret;
+}
+
+template <class HEX, class BYTES_OUT>
 inline int hex_to_bytes(const HEX& hex, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
     int ret = ::wally_hex_to_bytes(detail::get_p(hex), bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+inline int hex_verify(const char* hex) {
+    int ret = ::wally_hex_verify(hex);
+    return ret;
 }
 
 template <class KEY, class BYTES, class BYTES_OUT>

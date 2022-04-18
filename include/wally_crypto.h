@@ -471,6 +471,7 @@ WALLY_CORE_API int wally_ec_sig_verify(
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_RECOVERABLE_LEN``.
  * :param bytes_out: Destination for recovered public key.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ *
  * .. note:: The successful recovery of the public key guarantees the correctness of the signature.
  */
 WALLY_CORE_API int wally_ec_sig_to_public_key(
