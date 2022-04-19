@@ -1400,6 +1400,9 @@ add_test(
 ####################
 # test for C(secp256k1)
 ####################
+if(ENABLE_SHARED)
+# do nothing
+else() # not ENABLE_SHARED
 if(ENABLE_SECP256K1_TEST AND ${ENABLE_SECP256K1_TEST})
 set(TEST_SECP256K1_NAME ctest_secp256k1)
 set(TEST_SECP256K1_FILES
@@ -1407,7 +1410,6 @@ set(TEST_SECP256K1_FILES
     ${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h
     src/secp256k1/include/secp256k1.h
     src/secp256k1/include/secp256k1_recovery.h
-    ${ECMULT_STATIC_CONTEXT_H}
 )
 add_executable(${TEST_SECP256K1_NAME} ${TEST_SECP256K1_FILES})
 target_compile_options(${TEST_SECP256K1_NAME}
@@ -1438,13 +1440,61 @@ target_link_libraries(${TEST_SECP256K1_NAME}
   PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
   PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
   PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
 )
 add_test(
   NAME ${TEST_SECP256K1_NAME}
   COMMAND $<TARGET_FILE:${TEST_SECP256K1_NAME}>
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
+
+set(TEST_SECP256K1_ENHAUSTIVE_NAME ctest_secp256k1_exhaustive)
+set(TEST_SECP256K1_ENHAUSTIVE_FILES
+    src/secp256k1/src/tests_exhaustive.c
+    ${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h
+    src/secp256k1/include/secp256k1.h
+    src/secp256k1/include/secp256k1_recovery.h
+)
+add_executable(${TEST_SECP256K1_ENHAUSTIVE_NAME} ${TEST_SECP256K1_ENHAUSTIVE_FILES})
+target_compile_options(${TEST_SECP256K1_ENHAUSTIVE_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
+)
+target_compile_definitions(${TEST_SECP256K1_ENHAUSTIVE_NAME}
+  PRIVATE
+    SECP256K1_BUILD
+    HAVE_CONFIG_H
+)
+target_include_directories(${TEST_SECP256K1_ENHAUSTIVE_NAME}
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src/secp256k1
+    src/secp256k1/include
+    src/secp256k1/src
+)
+target_link_directories(${TEST_SECP256K1_ENHAUSTIVE_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_SECP256K1_ENHAUSTIVE_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
+)
+add_test(
+  NAME ${TEST_SECP256K1_ENHAUSTIVE_NAME}
+  COMMAND $<TARGET_FILE:${TEST_SECP256K1_ENHAUSTIVE_NAME}>
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
+)
 endif(ENABLE_SECP256K1_TEST AND ${ENABLE_SECP256K1_TEST})
+endif() # not ENABLE_SHARED
 
 ####################
 # test for C(Elements)
