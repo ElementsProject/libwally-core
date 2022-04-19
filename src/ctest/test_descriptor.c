@@ -159,6 +159,7 @@ struct wally_miniscript_ref_test g_miniscript_ref_test_table[] = {
 struct wally_miniscript_ref_test g_miniscript_err_test_table[] = {
     {"thresh(3,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", ""},
     {"thresh(0,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", ""},
+    {"thresh(3,pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),s:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),s:pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),sln:older(12960))", ""},
 };
 
 struct wally_miniscript_test g_miniscript_test_table[] = {
@@ -182,13 +183,6 @@ struct wally_miniscript_test g_miniscript_test_table[] = {
         "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
         "and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960)))",
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
-    },
-    {
-        "miniscript - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "thresh(3,c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),sc:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),sc:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),sdv:older(12960))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c766302a032b26968935387",
-        "thresh(3,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3),sdv:older(12960))",
-        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70"
     },
     {
         "miniscript - The BOLT #3 to_local policy",
@@ -231,13 +225,6 @@ struct wally_miniscript_test g_miniscript_test_table[] = {
         "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
         "and_v(v:pk(key_user),or_d(pk(key_service),older(12960)))",
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
-    },
-    {
-        "miniscript(2) - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "thresh(3,pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),s:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),s:pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),sdv:older(12960))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c766302a032b26968935387",
-        "thresh(3,pk(key_1),s:pk(key_2),s:pk(key_3),sdv:older(12960))",
-        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70"
     },
     {
         "miniscript(2) - The BOLT #3 to_local policy",
@@ -444,12 +431,6 @@ struct wally_descriptor_test g_descriptor_test_table[] = {
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced",
         NULL,
         "7sxzh689"
-    },{
-        "descriptor - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "wsh(thresh(3,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3),sdv:older(12960)))",
-        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70",
-        NULL,
-        "vvsamau0"
     },{
         "descriptor - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",
@@ -686,12 +667,6 @@ struct wally_descriptor_address_test g_descriptor_address_test_table[] = {
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
         "bc1qzfjfgmrxd9vdj530v0wdely9jsda6kunpzc7d35xj6zh2phkenkstn6ur7"
-    },{
-        "address - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "wsh(thresh(3,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3),sdv:older(12960)))",
-        0,
-        WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1q4v64r0kxyvfsyx9fefw6pcadhq4c260ezd26fqm98fyl9gkadecqy9uufs"
     },{
         "address - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",

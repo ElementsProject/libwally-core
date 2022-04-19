@@ -1023,7 +1023,7 @@ static int verify_miniscript_wrapper_d(struct miniscript_node_t *node, struct mi
     node->type_properties &= ~need_type;
     node->type_properties |= MINISCRIPT_TYPE_B;
     node->type_properties &= MINISCRIPT_TYPE_MASK | MINISCRIPT_PROPERTY_M | MINISCRIPT_PROPERTY_S;
-    node->type_properties |= MINISCRIPT_PROPERTY_N | MINISCRIPT_PROPERTY_U |
+    node->type_properties |= MINISCRIPT_PROPERTY_N |
                              MINISCRIPT_PROPERTY_D | MINISCRIPT_PROPERTY_X |
                              MINISCRIPT_PROPERTY_G | MINISCRIPT_PROPERTY_H |
                              MINISCRIPT_PROPERTY_I | MINISCRIPT_PROPERTY_J |
