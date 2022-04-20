@@ -1645,12 +1645,8 @@ add_test(NAME test_base64       COMMAND ${PYTHON_BIN} test/test_base64.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_bech32       COMMAND ${PYTHON_BIN} test/test_bech32.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
-if(MSVC)
-# skip bip32 test (for error)
-else()
 add_test(NAME test_bip32        COMMAND ${PYTHON_BIN} test/test_bip32.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
-endif()
 add_test(NAME test_bip38        COMMAND ${PYTHON_BIN} test/test_bip38.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_bip39        COMMAND ${PYTHON_BIN} test/test_bip39.py
@@ -1683,10 +1679,8 @@ add_test(NAME test_wordlist     COMMAND ${PYTHON_BIN} test/test_wordlist.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_descriptor   COMMAND ${PYTHON_BIN} test/test_descriptor.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
-if(NOT PY_TEST_IGNORE)
 add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
-endif(NOT PY_TEST_IGNORE)
 
 if(ENABLE_ELEMENTS)
 add_test(NAME test_elements           COMMAND ${PYTHON_BIN} test/test_elements.py
@@ -1695,12 +1689,10 @@ add_test(NAME test_pset               COMMAND ${PYTHON_BIN} test/test_pset.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_confidential_addr  COMMAND ${PYTHON_BIN} test/test_confidential_addr.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
-if(NOT PY_TEST_IGNORE)
 add_test(NAME test_pegin              COMMAND ${PYTHON_BIN} test/test_pegin.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_pegout             COMMAND ${PYTHON_BIN} test/test_pegout.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
-endif(NOT PY_TEST_IGNORE)
 endif() # ENABLE_ELEMENTS
 endif() # ${ENABLE_SHARED} AND ${INSTALL_WALLYCORE}
 
