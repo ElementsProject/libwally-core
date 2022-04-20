@@ -22,9 +22,9 @@ wally_free_string.restype, wally_free_string.argtypes = None, [c_char_p]
 
 WALLY_OK, WALLY_ERROR, WALLY_EINVAL, WALLY_ENOMEM = 0, -1, -2, -3
 
-_malloc_fn_t = CFUNCTYPE(c_void_p, c_ulong)
+_malloc_fn_t = CFUNCTYPE(c_void_p, c_size_t)
 _free_fn_t = CFUNCTYPE(c_void_p)
-_bzero_fn_t = CFUNCTYPE(c_void_p, c_ulong)
+_bzero_fn_t = CFUNCTYPE(c_void_p, c_size_t)
 _ec_nonce_fn_t = CFUNCTYPE(c_int, c_void_p, c_void_p, c_void_p, c_void_p, c_void_p, c_uint)
 _secp_context_fn_t = CFUNCTYPE(c_void_p)
 
@@ -46,9 +46,9 @@ class ext_key(Structure):
                 ('depth', c_ubyte),
                 ('pad1', c_ubyte * 10),
                 ('priv_key', c_ubyte * 33),
-                ('child_num', c_uint),
+                ('child_num', c_uint32),
                 ('hash160', c_ubyte * 20),
-                ('version', c_uint),
+                ('version', c_uint32),
                 ('pad2', c_ubyte * 3),
                 ('pub_key', c_ubyte * 33),
                 ('pub_key_tweak_sum', c_ubyte * 32)]
@@ -78,8 +78,8 @@ class wally_tx_witness_stack(Structure):
 
 class wally_tx_input(Structure):
     _fields_ = [('txhash', c_ubyte * 32),
-                ('index', c_uint),
-                ('sequence', c_uint),
+                ('index', c_uint32),
+                ('sequence', c_uint32),
                 ('script', c_void_p),
                 ('script_len', c_size_t),
                 ('witness',  POINTER(wally_tx_witness_stack)),
@@ -120,84 +120,84 @@ class wally_tx(Structure):
                 ('inputs_allocation_len', c_size_t),
                 ('outputs', POINTER(wally_tx_output)),
                 ('num_outputs', c_size_t),
-                ('outputs_allocation_len', c_size_t),]
+                ('outputs_allocation_len', c_size_t)]
 
 class wally_map_item(Structure):
     _fields_ = [('key', c_void_p),
-                ('key_len', c_ulong),
+                ('key_len', c_size_t),
                 ('value', c_void_p),
-                ('value_len', c_ulong)]
+                ('value_len', c_size_t)]
 
 class wally_map(Structure):
     _fields_ = [('items', POINTER(wally_map_item)),
-                ('num_items', c_ulong),
-                ('items_allocation_len', c_ulong)]
+                ('num_items', c_size_t),
+                ('items_allocation_len', c_size_t)]
 
 class wally_psbt_input(Structure):
     _fields_ = [('utxo', POINTER(wally_tx)),
                 ('witness_utxo', POINTER(wally_tx_output)),
                 ('redeem_script', c_void_p),
-                ('redeem_script_len', c_ulong),
+                ('redeem_script_len', c_size_t),
                 ('witness_script', c_void_p),
-                ('witness_script_len', c_ulong),
+                ('witness_script_len', c_size_t),
                 ('final_scriptsig', c_void_p),
-                ('final_scriptsig_len', c_ulong),
+                ('final_scriptsig_len', c_size_t),
                 ('final_witness', POINTER(wally_tx_witness_stack)),
                 ('keypaths', wally_map),
                 ('signatures', wally_map),
                 ('unknowns', wally_map),
-                ('sighash', c_ulong),
+                ('sighash', c_uint32),
                 ('value', c_uint64),
-                ('has_value', c_ulong),
+                ('has_value', c_uint32),
                 ('vbf', c_void_p),
-                ('vbf_len', c_ulong),
+                ('vbf_len', c_size_t),
                 ('asset', c_void_p),
-                ('asset_len', c_ulong),
+                ('asset_len', c_size_t),
                 ('abf', c_void_p),
-                ('abf_len', c_ulong),
+                ('abf_len', c_size_t),
                 ('pegin_tx', POINTER(wally_tx)),
                 ('txoutproof', c_void_p),
-                ('txoutproof_len', c_ulong),
+                ('txoutproof_len', c_size_t),
                 ('genesis_blockhash', c_void_p),
-                ('genesis_blockhash_len', c_ulong),
+                ('genesis_blockhash_len', c_size_t),
                 ('claim_script', c_void_p),
-                ('claim_script_len', c_ulong)]
+                ('claim_script_len', c_size_t)]
 
 class wally_psbt_output(Structure):
     _fields_ = [('redeem_script', c_void_p),
-                ('redeem_script_len', c_ulong),
+                ('redeem_script_len', c_size_t),
                 ('witness_script', c_void_p),
-                ('witness_script_len', c_ulong),
+                ('witness_script_len', c_size_t),
                 ('keypaths', wally_map),
                 ('unknowns', wally_map),
                 ('blinding_pubkey', c_ubyte * 65),
-                ('has_blinding_pubkey', c_ulong),
+                ('blinding_pubkey_len', c_size_t),
                 ('value_commitment', c_void_p),
-                ('value_commitment_len', c_ulong),
+                ('value_commitment_len', c_size_t),
                 ('vbf', c_void_p),
-                ('vbf_len', c_ulong),
+                ('vbf_len', c_size_t),
                 ('asset_commitment', c_void_p),
-                ('asset_commitment_len', c_ulong),
+                ('asset_commitment_len', c_size_t),
                 ('abf', c_void_p),
-                ('abf_len', c_ulong),
+                ('abf_len', c_size_t),
                 ('nonce', c_void_p),
-                ('nonce_len', c_ulong),
+                ('nonce_len', c_size_t),
                 ('rangeproof', c_void_p),
-                ('rangeproof_len', c_ulong),
+                ('rangeproof_len', c_size_t),
                 ('surjectionproof', c_void_p),
-                ('surjectionproof_len', c_ulong)]
+                ('surjectionproof_len', c_size_t)]
 
 class wally_psbt(Structure):
     _fields_ = [('magic', c_ubyte * 5),
                 ('tx', POINTER(wally_tx)),
                 ('inputs', POINTER(wally_psbt_input)),
-                ('num_inputs', c_ulong),
-                ('inputs_allocation_len', c_ulong),
+                ('num_inputs', c_size_t),
+                ('inputs_allocation_len', c_size_t),
                 ('outputs', POINTER(wally_psbt_output)),
-                ('num_outputs', c_ulong),
-                ('outputs_allocation_len', c_ulong),
+                ('num_outputs', c_size_t),
+                ('outputs_allocation_len', c_size_t),
                 ('unknowns', POINTER(wally_map)),
-                ('version', c_ulong)]
+                ('version', c_uint32)]
 
 for f in (
     # Internal functions
