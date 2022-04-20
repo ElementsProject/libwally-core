@@ -71,10 +71,10 @@ def is_int_buffer(func, arg, n, num_args):
 def gen_python_cffi(funcs):
     typemap = {
         u'int'           : u'c_int',
-        u'size_t*'       : u'c_ulong_p',
-        u'size_t'        : u'c_ulong',
+        u'size_t*'       : u'c_size_t_p',
+        u'size_t'        : u'c_size_t',
         u'uint32_t*'     : u'c_uint_p',
-        u'uint32_t'      : u'c_uint',
+        u'uint32_t'      : u'c_uint32',
         u'uint64_t*'     : u'c_uint64_p',
         u'uint64_t'      : u'c_uint64',
         u'void**'        : u'POINTER(c_void_p)',
