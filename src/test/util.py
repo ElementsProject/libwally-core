@@ -69,58 +69,58 @@ c_uint_p = POINTER(c_uint)
 
 class wally_tx_witness_item(Structure):
     _fields_ = [('witness', c_void_p),
-                ('len', c_ulong)]
+                ('len', c_size_t)]
 
 class wally_tx_witness_stack(Structure):
     _fields_ = [('items', POINTER(wally_tx_witness_item)),
-                ('num_items', c_ulong),
-                ('items_allocation_len', c_ulong)]
+                ('num_items', c_size_t),
+                ('items_allocation_len', c_size_t)]
 
 class wally_tx_input(Structure):
     _fields_ = [('txhash', c_ubyte * 32),
                 ('index', c_uint),
                 ('sequence', c_uint),
                 ('script', c_void_p),
-                ('script_len', c_ulong),
+                ('script_len', c_size_t),
                 ('witness',  POINTER(wally_tx_witness_stack)),
                 ('features', c_ubyte),
                 ('blinding_nonce', c_ubyte * 32),
                 ('entropy', c_ubyte * 32),
                 ('issuance_amount', c_void_p),
-                ('issuance_amount_len', c_ulong),
+                ('issuance_amount_len', c_size_t),
                 ('inflation_keys', c_void_p),
-                ('inflation_keys_len', c_ulong),
+                ('inflation_keys_len', c_size_t),
                 ('issuance_amount_rangeproof', c_void_p),
-                ('issuance_amount_rangeproof_len', c_ulong),
+                ('issuance_amount_rangeproof_len', c_size_t),
                 ('inflation_keys_rangeproof', c_void_p),
-                ('inflation_keys_rangeproof_len', c_ulong),
+                ('inflation_keys_rangeproof_len', c_size_t),
                 ('pegin_witness', POINTER(wally_tx_witness_stack))]
 
 class wally_tx_output(Structure):
     _fields_ = [('satoshi', c_uint64),
                 ('script', c_void_p),
-                ('script_len', c_ulong),
+                ('script_len', c_size_t),
                 ('features', c_ubyte),
                 ('asset', c_void_p),
-                ('asset_len', c_ulong),
+                ('asset_len', c_size_t),
                 ('value', c_void_p),
-                ('value_len', c_ulong),
+                ('value_len', c_size_t),
                 ('nonce', c_void_p),
-                ('nonce_len', c_ulong),
+                ('nonce_len', c_size_t),
                 ('surjectionproof', c_void_p),
-                ('surjectionproof_len', c_ulong),
+                ('surjectionproof_len', c_size_t),
                 ('rangeproof', c_void_p),
-                ('rangeproof_len', c_ulong)]
+                ('rangeproof_len', c_size_t)]
 
 class wally_tx(Structure):
-    _fields_ = [('version', c_uint),
-                ('locktime', c_uint),
+    _fields_ = [('version', c_uint32),
+                ('locktime', c_uint32),
                 ('inputs', POINTER(wally_tx_input)),
-                ('num_inputs', c_ulong),
-                ('inputs_allocation_len', c_ulong),
+                ('num_inputs', c_size_t),
+                ('inputs_allocation_len', c_size_t),
                 ('outputs', POINTER(wally_tx_output)),
-                ('num_outputs', c_ulong),
-                ('outputs_allocation_len', c_ulong),]
+                ('num_outputs', c_size_t),
+                ('outputs_allocation_len', c_size_t),]
 
 class wally_map_item(Structure):
     _fields_ = [('key', c_void_p),

@@ -298,7 +298,7 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
  */
-int bip32_key_from_parent_path_str(
+WALLY_CORE_API int bip32_key_from_parent_path_str(
     const struct ext_key *hdkey,
     const char *path_str,
     uint32_t child_num,
@@ -310,7 +310,7 @@ int bip32_key_from_parent_path_str(
  *
  * See `bip32_key_from_parent_path_str`.
  */
-int bip32_key_from_parent_path_str_n(
+WALLY_CORE_API int bip32_key_from_parent_path_str_n(
     const struct ext_key *hdkey,
     const char *path_str,
     size_t path_str_len,
@@ -323,7 +323,7 @@ int bip32_key_from_parent_path_str_n(
  * As per `bip32_key_from_parent_path_str`, but allocates the key.
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
-int bip32_key_from_parent_path_str_alloc(
+WALLY_CORE_API int bip32_key_from_parent_path_str_alloc(
     const struct ext_key *hdkey,
     const char *path_str,
     uint32_t child_num,
@@ -334,7 +334,7 @@ int bip32_key_from_parent_path_str_alloc(
  * As per `bip32_key_from_parent_path_str_n`, but allocates the key.
  * .. note:: The returned key should be freed with `bip32_key_free`.
  */
-int bip32_key_from_parent_path_str_n_alloc(
+WALLY_CORE_API int bip32_key_from_parent_path_str_n_alloc(
     const struct ext_key *hdkey,
     const char *path_str,
     size_t path_str_len,
