@@ -46,9 +46,9 @@ for arch in $ARCH_LIST; do
     android_build_wally $arch $toolsdir $api $useropts
 
     # Copy and strip the build result
-    mkdir -p $PWD/release/lib/$arch
-    STRIP_TOOL=$(android_get_build_tool $arch $toolsdir $api "strip")
-    $STRIP_TOOL -o $PWD/release/lib/$arch/libwallycore.so $PWD/src/.libs/libwallycore.so
+    archdir=$PWD/release/lib/$arch
+    mkdir -p $archdir
+    $toolsdir/bin/llvm-strip -o $archdir/libwallycore.so $PWD/src/.libs/libwallycore.so
 done
 
 # Copy headers and Java wrapper
