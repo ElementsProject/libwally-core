@@ -3,8 +3,8 @@ from setuptools import setup, Extension
 import copy, os, platform
 import distutils.sysconfig
 
-CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux --enable-ecmult-static-precomputation'
-CONFIGURE_ARGS += ' --enable-elements --disable-swig-java --disable-tests --disable-dependency-tracking'
+CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux --enable-elements'
+CONFIGURE_ARGS += ' --disable-swig-java --disable-tests --disable-dependency-tracking'
 
 distutils_env = distutils.sysconfig.get_config_vars()
 configure_env = copy.deepcopy(os.environ)
