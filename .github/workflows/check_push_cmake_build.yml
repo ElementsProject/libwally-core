@@ -52,29 +52,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        type: [msvc, msvc2019, msys, apple, apple-11, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
+        os: [windows-2022, windows-2019, macos-12, macos-11, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
+        generator: ['Unix Makefiles']
         include:
-          - type: msvc
-            os: windows-2022
-            generator: Visual Studio 17 2022
-          - type: msvc2019
-            os: windows-2019
-            generator: Visual Studio 16 2019
-          - type: msys
-            os: windows-2022
-            generator: MSYS Makefiles
-          - type: apple
-            os: macos-12
-            generator: Unix Makefiles
-          - type: apple-11
-            os: macos-11
-            generator: Unix Makefiles
-          - type: ubuntu-20.04
-            os: ubuntu-20.04
-            generator: Unix Makefiles
-          - type: ubuntu-18.04
-            os: ubuntu-18.04
-            generator: Unix Makefiles
+          - os: windows-2022
+            generator: 'Visual Studio 17 2022'
+          - os: windows-2019
+            generator: 'Visual Studio 16 2019'
+          - os: windows-2019
+            generator: 'MSYS Makefiles'
+        exclude:
+          - os: windows-2022
+            generator: 'Unix Makefiles'
+          - os: windows-2019
+            generator: 'Unix Makefiles'
 
     steps:
     - uses: actions/checkout@v2
@@ -98,7 +89,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-11, windows-2022, ubuntu-20.04]
+#        os: [macos-10.15, windows-2022, ubuntu-20.04]
+        os: [ubuntu-20.04]
         target: [python, java]
         java: [8.0.x, 11.0.x, 13]
         exclude:
@@ -106,14 +98,6 @@ jobs:
             java: 11.0.x
           - target: python
             java: 13
-          - os: windows-2022
-            target: python
-          - os: macos-10.15
-            target: python
-          - os: windows-2022
-            target: java
-          - os: macos-10.15
-            target: java
 
     steps:
     - uses: actions/checkout@v2

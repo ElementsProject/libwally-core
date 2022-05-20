@@ -78,10 +78,15 @@ set(IS_ENABLE_SHARED  TRUE)
 else() # not ENABLE_SHARED
 set(IS_ENABLE_SHARED  FALSE)
 endif()
-if(WIN_MINGW)
-set(IS_WIN_MINGW  TRUE)
-else() # not WIN_MINGW
-set(IS_WIN_MINGW  FALSE)
+
+if(WIN32)
+if(MSVC)
+set(WIN_MINGW  FALSE)
+else()
+set(WIN_MINGW  TRUE)
+endif()
+else()
+set(WIN_MINGW  FALSE)
 endif()
 
 if(ENABLE_SWIG_JAVA)
@@ -1618,18 +1623,9 @@ endif()
 # test with Python
 ####################
 ## error occurred on mingw
-if(WIN32)
-if(MSVC)
-set(WIN_MINGW  FALSE)
-else()
-set(WIN_MINGW  TRUE)
-endif()
-else()
-set(WIN_MINGW  FALSE)
-endif()
 
 ## error occurred on windows
-if(${IS_ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT ${IS_WIN_MINGW}))
+if(${IS_ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT ${WIN_MINGW}))
 #if(WIN32)
 #set(PY_TEST_IGNORE  TRUE)
 #else()
