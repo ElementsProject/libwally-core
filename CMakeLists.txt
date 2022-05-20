@@ -557,7 +557,7 @@ add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
 )
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
