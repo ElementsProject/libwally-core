@@ -26,8 +26,8 @@ jobs:
       matrix:
 #        os: [macos-11, ubuntu-20.04]
         os: [ubuntu-20.04]
-#        node: [14, 16]
-        node: [14]
+        node: [14, 16]
+#        node: [14]
         exclude:
           - os: macos-11
             node: 14
@@ -52,7 +52,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        type: [msvc, msvc2019, msys, apple, ubuntu-20.04, ubuntu-18.04]
+        type: [msvc, msvc2019, msys, apple, apple-11, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
         include:
           - type: msvc
             os: windows-2022
@@ -64,6 +64,9 @@ jobs:
             os: windows-2022
             generator: MSYS Makefiles
           - type: apple
+            os: macos-12
+            generator: Unix Makefiles
+          - type: apple-11
             os: macos-11
             generator: Unix Makefiles
           - type: ubuntu-20.04
@@ -95,7 +98,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-10.15, windows-2022, ubuntu-18.04]
+        os: [macos-11, windows-2022, ubuntu-20.04]
         target: [python, java]
         java: [8.0.x, 11.0.x, 13]
         exclude:
