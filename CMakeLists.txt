@@ -30,6 +30,7 @@ option(GENERATE_WALLY "generate the wally.xxx library (ON or OFF. default:ON)" O
 option(ENABLE_EMSCRIPTEN "enable EMSCRIPTEN (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SECP256K1_TEST "enable secp256k1 test (ON or OFF. default:OFF)" OFF)
 option(EXCLUDE_WALLYCORE_LIB "exclude wallycore lib (ON or OFF. default:OFF)" OFF)
+option(STD_CPP_VERSION "c++ version (11/14/17/20. default:14)" "14")
 
 if(NOT EXCLUDE_GENERATE_WALLY)
 set(EXCLUDE_GENERATE_WALLY  FALSE)
@@ -71,6 +72,28 @@ else()
 set(ENABLE_DEBUG  FALSE)
 set(RPATH_TARGET  "Release")
 endif() # CMAKE_BUILD_TYPE
+
+if(ENABLE_SHARED)
+set(IS_ENABLE_SHARED  TRUE)
+else() # not ENABLE_SHARED
+set(IS_ENABLE_SHARED  FALSE)
+endif()
+
+if(WIN32)
+if(MSVC)
+set(WIN_MINGW  FALSE)
+else()
+set(WIN_MINGW  TRUE)
+endif()
+else()
+set(WIN_MINGW  FALSE)
+endif()
+
+if(ENABLE_SWIG_JAVA)
+set(IS_ENABLE_SWIG_JAVA  TRUE)
+else() # not ENABLE_SWIG_JAVA
+set(IS_ENABLE_SWIG_JAVA  FALSE)
+endif()
 
 ####################
 # common setting
@@ -557,7 +580,12 @@ add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
 )
 endif()
 
+if(${STD_CPP_VERSION})
+set(CMAKE_CXX_STANDARD  ${STD_CPP_VERSION})
+message(STATUS "[STD_CPP_VERSION] ${STD_CPP_VERSION}")
+else()
 set(CMAKE_CXX_STANDARD 14)
+endif()
 add_library(${NODE_LIBRARY_NAME} SHARED)
 target_sources(${NODE_LIBRARY_NAME}
   PRIVATE
@@ -1156,7 +1184,7 @@ endif()
 set(TEST_WALY_LIB  ${WALLY_PROJECT_NAME})
 # set(TEST_WALY_LIB  ${WALLYCORE_NAME})
 
-if((ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
+if((IS_ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
 message(STATUS "skip c test.")
 else()
 set(TEST_BECH32_NAME ctest_bech32)
@@ -1595,23 +1623,14 @@ endif()
 # test with Python
 ####################
 ## error occurred on mingw
-if(WIN32)
-if(MSVC)
-set(WIN_MINGW  FALSE)
-else()
-set(WIN_MINGW  TRUE)
-endif()
-else()
-set(WIN_MINGW  FALSE)
-endif()
 
 ## error occurred on windows
-if(${ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT ${WIN_MINGW}))
-if(WIN32)
-set(PY_TEST_IGNORE  TRUE)
-else()
-set(PY_TEST_IGNORE  FALSE)
-endif()
+if(${IS_ENABLE_SHARED} AND ${INSTALL_WALLYCORE} AND (NOT ${WIN_MINGW}))
+#if(WIN32)
+#set(PY_TEST_IGNORE  TRUE)
+#else()
+#set(PY_TEST_IGNORE  FALSE)
+#endif()
 set(PY_TEST_DIR ${WALLY_ROOT_BINARY_DIR}/wally_test/src/.libs)
 set(PY_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/test)
 
@@ -1699,7 +1718,7 @@ endif() # ${ENABLE_SHARED} AND ${INSTALL_WALLYCORE}
 ####################
 # test for Java
 ####################
-if(${ENABLE_SWIG_JAVA} AND ${ENABLE_SHARED})
+if(${IS_ENABLE_SWIG_JAVA} AND ${IS_ENABLE_SHARED})
 project (swig_java_test NONE)
 set(SWIG_JAVA_TEST_PACKAGE_DIR ${SWIG_JAVA_OUTPUT_DIR}/src/com/blockstream/test)
 set(CMAKE_JAVA_COMPILE_FLAGS "-source" "${JAVAC_TARGET}" "-target" "${JAVAC_TARGET}")
