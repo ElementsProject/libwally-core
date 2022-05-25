@@ -35,7 +35,7 @@ int main(void)
         struct wally_psbt *psbt, *psbt_clone;
         char *output;
         unsigned char *bytes;
-        size_t len, written;
+        size_t is_elements, len, written;
 
         if (wally_psbt_from_base64(base64_in, &psbt) != WALLY_OK)
             fail("Failed to parse psbt %s", base64_in);
@@ -67,20 +67,27 @@ int main(void)
             fail("psbt[%zi] base64 %s not %s", i, output, base64_in);
 
         wally_free_string(output);
+        output = NULL;
         free(bytes);
 
         /* combining with a copy of ourselves should be a no-op */
         if (wally_psbt_from_base64(base64_in, &psbt_clone) != WALLY_OK)
             fail("Failed to parse psbt clone %s", base64_in);
 
-        if (wally_psbt_combine(psbt_clone, psbt) != WALLY_OK)
-            fail("Failed to combine psbts %s", base64_in);
+        if (wally_psbt_is_elements(psbt_clone, &is_elements) != WALLY_OK)
+            fail("Failed to check PSET status %s", base64_in);
 
-        if (wally_psbt_to_base64(psbt_clone, 0, &output) != WALLY_OK)
-            fail("Failed to base64 psbt combined %s", base64_in);
+        if (!is_elements) {
+            /* FIXME: combine for elements */
+            if (wally_psbt_combine(psbt_clone, psbt) != WALLY_OK)
+                fail("Failed to combine psbts %s", base64_in);
 
-        if (strcmp(output, base64_in) != 0)
-            fail("psbt combine %s turned into %s?", base64_in, output);
+            if (wally_psbt_to_base64(psbt_clone, 0, &output) != WALLY_OK)
+                fail("Failed to base64 psbt combined %s", base64_in);
+
+            if (strcmp(output, base64_in) != 0)
+                fail("psbt combine %s turned into %s?", base64_in, output);
+        }
 
         wally_free_string(output);
         wally_psbt_free(psbt_clone);

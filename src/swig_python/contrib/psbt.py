@@ -80,6 +80,31 @@ class PSBTTests(unittest.TestCase):
         self._try_invalid(findfn, psbt, map_val)
         self.assertEqual(findfn(psbt, 0, valid_item), 1)
 
+    def _try_get_set_global_i(self, setfn, clearfn, getfn, psbt, valid_value):
+        self._throws(setfn, None, valid_value) # Null PSBT
+        setfn(psbt, valid_value) # Set
+        self._throws(getfn, None) # Null PSBT
+        ret = getfn(psbt) # Get
+        self.assertEqual(valid_value, ret)
+        if clearfn:
+            clearfn(psbt)
+
+    def _try_get_set_global_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt, valid_value, valid_item):
+        self._throws(setfn, None, valid_value) # Null PSBT
+        self._throws(setfn, psbt, None) # Null PSBT
+        self._throws(sizefn, None) # Null PSBT
+        self.assertEqual(sizefn(psbt), 0)
+        setfn(psbt, valid_value) # Set
+        self.assertEqual(sizefn(psbt), 1) # 1 item in the map
+        if lenfn:
+            self._throws(lenfn, None, 0) # Null PSBT
+        map_val = getfn(psbt, 0)
+        self.assertTrue(len(map_val) > 0)
+        if lenfn:
+            self.assertEqual(lenfn(psbt, 0), len(map_val))
+        self._throws(findfn, None, map_val) # Null PSBT
+        self.assertEqual(findfn(psbt, valid_item), 1)
+
     def test_add_remove(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
@@ -208,43 +233,47 @@ class PSBTTests(unittest.TestCase):
         map_add(dummy_unknowns, dummy_unknown_key, dummy_fingerprint)
         self.assertEqual(map_find(dummy_unknowns, dummy_unknown_key), 1)
 
+        dummy_offsets = map_init(1, None)
+        self.assertIsNotNone(dummy_offsets)
+        map_add(dummy_offsets, dummy_bytes, None)
+
         # V2: Global Tx Version
-        self._throws(psbt_get_tx_version, None) # NULL PSBT
-        self._throws(psbt_get_tx_version, psbt), # V0, unsupported
-        self.assertEqual(psbt_get_tx_version(psbt2), 123)
-
-        self._throws(psbt_set_tx_version, None, 3)  # NULL PSBT
-        self._throws(psbt_set_tx_version, psbt, 3)  # V0, unsupported
         self._throws(psbt_set_tx_version, psbt2, 1) # Must be >=2
+        self._throws(psbt_set_tx_version, psbt, 3)  # V0, unsupported
 
-        psbt_set_tx_version(psbt2, 3)
-        self.assertEqual(psbt_get_tx_version(psbt2), 3)
+        self._try_get_set_global_i(psbt_set_fallback_locktime,
+                                   psbt_clear_fallback_locktime,
+                                   psbt_get_fallback_locktime, psbt2, 3)
 
         # V2: Fallback Locktime
-        self._throws(psbt_get_fallback_locktime, None)    # NULL PSBT
-        self._throws(psbt_get_fallback_locktime, psbt),   # V0, unsupported
-        self._throws(psbt_set_fallback_locktime, None, 0xfffffffe)  # NULL PSBT
         self._throws(psbt_set_fallback_locktime, psbt, 0xfffffffe), # V0, unsupported
-        self._throws(psbt_has_fallback_locktime, None)    # NULL PSBT
         self._throws(psbt_has_fallback_locktime, psbt),   # V0, unsupported
-        self._throws(psbt_clear_fallback_locktime, None)  # NULL PSBT
         self._throws(psbt_clear_fallback_locktime, psbt), # V0, unsupported
 
-        psbt_set_fallback_locktime(psbt2, 0xfffffffd)
-        self.assertEqual(psbt_get_fallback_locktime(psbt2), 0xfffffffd)
-        self.assertTrue(psbt_has_fallback_locktime(psbt2))
-
-        psbt_clear_fallback_locktime(psbt2)
-        self.assertFalse(psbt_has_fallback_locktime(psbt2))
+        self._try_get_set_global_i(psbt_set_fallback_locktime,
+                                   psbt_clear_fallback_locktime,
+                                   psbt_get_fallback_locktime, psbt2, 0xfffffffd)
 
         # V2: Modifiable flags
-        self._throws(psbt_set_tx_modifiable_flags, None, 3)    # NULL PSBT
-        self._throws(psbt_set_tx_modifiable_flags, psbt, 3)    # Non v2 PSBT
-        self._throws(psbt_set_tx_modifiable_flags, psbt2, 255) # Bad flags
-        self._throws(psbt_get_tx_modifiable_flags, None)       # NULL PSBT
-        self._throws(psbt_get_tx_modifiable_flags, psbt)       # Non v2 PSBT
-        psbt_set_tx_modifiable_flags(psbt2, 1)
-        self.assertEqual(psbt_get_tx_modifiable_flags(psbt2), 1)
+        self._throws(psbt_set_tx_modifiable_flags, psbt, 3)     # Non v2 PSBT
+        self._throws(psbt_get_tx_modifiable_flags, psbt)        # Non v2 PSBT
+        self._throws(psbt_set_tx_modifiable_flags, psbt2, 255)  # Invalid Value
+
+        self._try_get_set_global_i(psbt_set_tx_modifiable_flags, None,
+                                   psbt_get_tx_modifiable_flags, psbt2, 1)
+
+        if is_elements_build():
+            # Scalar Offsets
+            self._try_get_set_global_m(psbt_set_global_scalars,
+                                       psbt_get_global_scalars_size,
+                                       None,
+                                       psbt_get_global_scalar,
+                                       psbt_find_global_scalar,
+                                       psbt2, dummy_offsets, dummy_bytes)
+
+            # Elements TX Modifiable Flags
+            self._try_get_set_global_i(psbt_set_pset_modifiable_flags, None,
+                                       psbt_get_pset_modifiable_flags, psbt2, 1)
 
         #
         # Inputs

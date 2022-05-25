@@ -5,7 +5,11 @@
 - PSBT: PSBT v2 support has been added and the ABI has changed slightly as a result.
   Users will need to recompile their applications and change function names and
   arguments in the cases listed below:
+- PSBT_PROPRIETARY_TYPE has been renamed to WALLY_PSBT_PROPRIETARY_TYPE to respect
+  wallys namespace.
 - psbt_init_alloc has changed its definition and now has a new flags argument.
+  Passing `WALLY_PSBT_INIT_PSET` to this function will create an Elements
+  PSET instead of a PSBT (version must be passed as 2 in this case).
 - psbt_add_input_at has been renamed to psbt_add_tx_input_at.
 - psbt_add_output_at has been renamed to psbt_add_tx_output_at.
 - wally_map initialization functions now take a verification function

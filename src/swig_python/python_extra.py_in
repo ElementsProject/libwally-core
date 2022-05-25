@@ -275,5 +275,6 @@ if is_elements_build():
         return len(rs)
     elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, _epcsfb_len_fn, resize=True)
 
+    psbt_get_global_scalar = _wrap_bin(psbt_get_global_scalar, WALLY_SCALAR_OFFSET_LEN)
 
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC

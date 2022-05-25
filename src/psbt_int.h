@@ -16,6 +16,13 @@ WALLY_CORE_API int wally_psbt_get_num_outputs(const struct wally_psbt *psbt, siz
 WALLY_CORE_API int wally_psbt_get_fallback_locktime(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_has_fallback_locktime(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_get_tx_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
+#ifdef BUILD_ELEMENTS
+WALLY_CORE_API int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written);
+WALLY_CORE_API int wally_psbt_get_global_scalar(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
+WALLY_CORE_API int wally_psbt_get_pset_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
+
+WALLY_CORE_API int wally_psbt_set_global_scalars(struct wally_psbt *psbt, const struct wally_map *map_in);
+#endif /* BUILD_ELEMENTS */
 
 /* Inputs */
 WALLY_CORE_API int wally_psbt_get_input_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx **output);

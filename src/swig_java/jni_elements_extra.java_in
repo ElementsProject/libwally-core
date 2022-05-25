@@ -55,6 +55,12 @@
       return buf;
   }
 
+  public final static byte[] psbt_get_global_scalar(Object psbt, long idx) {
+      final byte[] buf = new byte[WALLY_SCALAR_OFFSET_LEN];
+      psbt_get_global_scalar(psbt, idx, buf);
+      return buf;
+  }
+
   public final static byte[] tx_confidential_value_from_satoshi(long satoshi) {
       return tx_confidential_value_from_satoshi(satoshi, null);
   }

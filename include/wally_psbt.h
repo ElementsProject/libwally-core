@@ -14,20 +14,27 @@ extern "C" {
 #define WALLY_PSBT_VERSION_2 0x2
 #define WALLY_PSBT_HIGHEST_VERSION 0x2
 
+/* Create an elements PSET */
+#define WALLY_PSBT_INIT_PSET 0x1
+
 /* Ignore scriptsig and witness when adding an input */
 #define WALLY_PSBT_FLAG_NON_FINAL 0x1
 
 /* Key prefix for proprietary keys in our unknown maps */
-#define PSBT_PROPRIETARY_TYPE 0xFC
+#define WALLY_PSBT_PROPRIETARY_TYPE 0xFC
 
 /* Transaction flags indicating modifiable fields */
 #define WALLY_PSBT_TXMOD_INPUTS 0x1 /* Inputs can be modified */
 #define WALLY_PSBT_TXMOD_OUTPUTS 0x2 /* Outputs can be modified */
 #define WALLY_PSBT_TXMOD_SINGLE 0x4 /* SIGHASH_SINGLE signature is present */
 
+#define WALLY_PSET_TXMOD_UNBLINDED 0x1 /* Elements: transaction is not blinded. */
+
 /* ID flags indicating unique id calculation */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
 #define WALLY_PSBT_ID_NO_LOCKTIME 0x2 /* Set locktime to 0 before calculating id */
+
+#define WALLY_SCALAR_OFFSET_LEN 32 /* Length of a PSET scalar offset */
 
 #ifdef SWIG
 struct wally_psbt_input;
@@ -88,6 +95,10 @@ struct wally_psbt {
     uint32_t fallback_locktime;
     uint32_t has_fallback_locktime;
     uint32_t tx_modifiable_flags;
+#ifdef BUILD_ELEMENTS
+    struct wally_map global_scalars;
+    uint32_t pset_modifiable_flags;
+#endif /* BUILD_ELEMENTS */
 };
 #endif /* SWIG */
 
@@ -498,7 +509,7 @@ WALLY_CORE_API int wally_psbt_output_set_script(
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
- * :param flags: Flags controlling psbt creation. Must be 0.
+ * :param flags: Flags controlling psbt creation. Must be 0 or WALLY_PSBT_INIT_PSET.
  * :param output: Destination for the resulting PSBT output.
  */
 WALLY_CORE_API int wally_psbt_init_alloc(
@@ -639,6 +650,55 @@ WALLY_CORE_API int wally_psbt_clear_fallback_locktime(
 WALLY_CORE_API int wally_psbt_set_tx_modifiable_flags(
     struct wally_psbt *psbt,
     uint32_t flags);
+
+#ifdef BUILD_ELEMENTS
+/**
+ * Set the scalar offsets in a PSBT.
+ *
+ * :param psbt: The psbt to update. Must be a PSET.
+ * :param map_in: The scalar offsets for this PSBT.
+ */
+WALLY_CORE_API int wally_psbt_set_global_scalars(
+    struct wally_psbt *psbt,
+    const struct wally_map *map_in);
+
+/**
+ * Add a scalar offset to a PSBT.
+ *
+ * :param psbt: The PSBT to add to. Must be a PSET.
+ * :param scalar: The scalar offset to add.
+ * :param scalar_len: The length of the scalar offset. Must be 32.
+ */
+WALLY_CORE_API int wally_psbt_add_global_scalar(
+    struct wally_psbt *psbt,
+    const unsigned char *scalar,
+    size_t scalar_len);
+
+/**
+ * Find a scalar offset in a PSBT.
+ *
+ * :param psbt: The PSBT to find in. Must be a PSET.
+ * :param scalar: The scalar offset to find.
+ * :param scalar_len: The length of the scalar offset. Must be 32.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_psbt_find_global_scalar(
+    struct wally_psbt *psbt,
+    const unsigned char *scalar,
+    size_t scalar_len,
+    size_t *written);
+
+/**
+ * Set the Elements transaction modifiable flags for a PSBT.
+ *
+ * :param psbt: The PSBT to set the flags for.
+ * :param flags: PSBT_ELEMENTS_TX_MODIFIABLE_FLAGS_ flags indicating what can be modified.
+ */
+WALLY_CORE_API int wally_psbt_set_pset_modifiable_flags(
+    struct wally_psbt *psbt,
+    uint32_t flags);
+#endif /* BUILD_ELEMENTS */
 
 /**
  * Add a transaction input to a PSBT at a given position.

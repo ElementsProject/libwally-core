@@ -4,6 +4,7 @@ from util import *
 
 FLAG_GRIND_R = 0x4
 MOD_NONE = 0
+INIT_PSET = 1
 
 with open(root_dir + 'src/data/psbt.json', 'r') as f:
     JSON = json.load(f)
@@ -242,6 +243,17 @@ class PSBTTests(unittest.TestCase):
     def test_invalid_args(self):
         """Test invalid arguments to various PSBT functions"""
         psbt = pointer(wally_psbt())
+
+        # init
+        cases = [
+            (1, 0, 0, 0, 0, psbt), # Invalid version
+            (0, 0, 0, 0, 0xff, psbt), # Invalid flags
+            (2, 0, 0, 0, 0xff, psbt), # Invalid flags (v2)
+            (0, 0, 0, 0, INIT_PSET, psbt), # v0 PSET
+            (0, 0, 0, 0, 0, None), # NULL dest
+        ]
+        for args in cases:
+            self.assertEqual(WALLY_EINVAL, wally_psbt_init_alloc(*args))
 
         # psbt_from_base64
         src_base64 = JSON['valid'][0]['psbt']

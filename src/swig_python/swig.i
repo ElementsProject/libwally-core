@@ -307,6 +307,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* s2c_data, size_t s2c_data_len);
 %pybuffer_nullable_binary(const unsigned char* s2c_opening, size_t s2c_opening_len);
 %pybuffer_nullable_binary(const unsigned char* salt, size_t salt_len);
+%pybuffer_nullable_binary(const unsigned char* scalar, size_t scalar_len);
 %pybuffer_nullable_binary(const unsigned char* script, size_t script_len);
 %pybuffer_nullable_binary(const unsigned char* scriptpubkey, size_t scriptpubkey_len);
 %pybuffer_nullable_binary(const unsigned char* sig, size_t sig_len);
@@ -351,7 +352,6 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 %rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
 %rename("psbt_clone") wally_psbt_clone_alloc;
-%rename("psbt_elements_init") wally_psbt_elements_init_alloc;
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
 %rename("psbt_get_input_final_witness") wally_psbt_get_input_final_witness_alloc;
 %rename("psbt_get_input_utxo") wally_psbt_get_input_utxo_alloc;
