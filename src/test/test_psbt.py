@@ -1,135 +1,142 @@
-import binascii
 import json
 import unittest
 from util import *
 
 FLAG_GRIND_R = 0x4
 
+with open(root_dir + 'src/data/psbt.json', 'r') as f:
+    JSON = json.load(f)
+
+
 class PSBTTests(unittest.TestCase):
 
-    def test_serialization(self):
-        """Testing serialization and deserialization"""
-        with open(root_dir + 'src/data/psbt.json', 'r') as f:
-            d = json.load(f)
-            invalids = d['invalid']
-            valids = d['valid']
-            creators = d['creator']
-            signers = d['signer']
-            inval_signers = d['inval_signer']
-            combiners = d['combiner']
-            finalizers = d['finalizer']
-            extractors = d['extractor']
+    def parse_b64(self, src_b64, expected=WALLY_OK):
+        psbt = pointer(wally_psbt())
+        ret = wally_psbt_from_base64(src_b64, psbt)
+        self.assertEqual(ret, expected, "{0}".format(src_b64))
+        return psbt
 
-        for invalid in invalids:
-            ret = wally_psbt_from_base64(utf8(invalid['psbt']), pointer(wally_psbt()))
-            self.assertEqual(ret, WALLY_EINVAL)
+    def test_invalid(self):
+        """Test deserializing invalid PSBTs"""
+        for case in JSON['invalid']:
+            wally_psbt_free(self.parse_b64(case['psbt'], WALLY_EINVAL))
 
-        for valid in valids:
-            psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(valid['psbt'].encode('utf-8'), psbt))
-            ret, reser = wally_psbt_to_base64(psbt, 0)
-            self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(valid['psbt'], reser)
+    def test_valid(self):
+        """Test deserializing and roundtripping valid PSBTs"""
+        buf, buf_len = make_cbuffer('00' * 4096)
+
+        for case in JSON['valid']:
+            psbt = self.parse_b64(case['psbt'])
+
+            ret, b64_out = wally_psbt_to_base64(psbt, 0)
+            self.assertEqual((ret, b64_out), (WALLY_OK, case['psbt']))
+
             ret, length = wally_psbt_get_length(psbt, 0)
-            self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(length, valid['len'])
+            self.assertEqual(ret, WALLY_OK)
 
-        for creator in creators:
-            psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(creator['version'], 2, 3, 0, psbt))
+            ret, written = wally_psbt_to_bytes(psbt, 0, buf, buf_len)
+            self.assertEqual((ret, written), (WALLY_OK, length))
+            wally_psbt_free(psbt)
+
+    def test_creator_role(self):
+        """Test the PSBT creator role"""
+        psbt = pointer(wally_psbt())
+
+        for case in JSON['creator']:
+            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(case['version'], 2, 3, 0, psbt))
 
             tx = pointer(wally_tx())
             self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))
-            index = 0
-            for txin in creator['inputs']:
+
+            for i, txin in enumerate(case['inputs']):
                 tx_in = pointer(wally_tx_input())
                 txid, txid_len = make_cbuffer(txin['txid'])
                 ret = wally_tx_input_init_alloc(txid[::-1], txid_len, txin['vout'], 0xffffffff, None, 0, None, tx_in)
                 self.assertEqual(WALLY_OK, ret)
 
-                if (creator['version'] == 0):
+                if (case['version'] == 0):
                     self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
                 else:
-                    self.assertEqual(WALLY_OK, wally_psbt_add_input_at(psbt, index, 0, tx_in))
+                    self.assertEqual(WALLY_OK, wally_psbt_add_input_at(psbt, i, 0, tx_in))
 
-                index += 1
-
-            index = 0
-            for txout in creator['outputs']:
-                addr = txout['addr']
-                amt = txout['amt']
+            for i, txout in enumerate(case['outputs']):
+                address, satoshi = txout['address'], txout['satoshi']
                 spk, spk_len = make_cbuffer('00' * (32 + 2))
-                ret, written = wally_addr_segwit_to_bytes(addr.encode('utf-8'), 'bcrt'.encode('utf-8'), 0, spk, spk_len)
+                ret, written = wally_addr_segwit_to_bytes(address, 'bcrt', 0, spk, spk_len)
                 self.assertEqual(WALLY_OK, ret)
                 output = pointer(wally_tx_output())
-                self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(amt, spk, written, output))
-                if (creator['version'] == 0):
+                self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(satoshi, spk, written, output))
+                if (case['version'] == 0):
                     self.assertEqual(WALLY_OK, wally_tx_add_output(tx, output))
                 else:
-                    self.assertEqual(WALLY_OK, wally_psbt_add_output_at(psbt, index, 0, output))
+                    self.assertEqual(WALLY_OK, wally_psbt_add_output_at(psbt, i, 0, output))
 
-                index += 1
-
-            if (creator['version'] == 0):
+            if (case['version'] == 0):
                 self.assertEqual(WALLY_OK, wally_psbt_set_global_tx(psbt, tx))
 
-            ret, ser = wally_psbt_to_base64(psbt, 0)
-            self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(creator['result'], ser)
+            ret, b64 = wally_psbt_to_base64(psbt, 0)
+            self.assertEqual((ret, b64), (WALLY_OK, case['result']))
+            wally_psbt_free(psbt)
 
-        for combiner in combiners:
-            psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(combiner['combine'][0].encode('utf-8'), psbt))
-            for src_b64 in combiner['combine'][1:]:
-                src = pointer(wally_psbt())
-                self.assertEqual(WALLY_OK, wally_psbt_from_base64(src_b64.encode('utf-8'), src))
+    def test_combiner_role(self):
+        """Test the PSBT combiner role"""
+        for case in JSON['combiner']:
+            psbt = self.parse_b64(case['psbts'][0])
+            for src_b64 in case['psbts'][1:]:
+                src = self.parse_b64(src_b64)
                 self.assertEqual(WALLY_OK, wally_psbt_combine(psbt, src))
-                self.assertEqual(WALLY_OK, wally_psbt_free(src))
-            ret, psbt_b64 = wally_psbt_to_base64(psbt, 0)
-            self.assertEqual(combiner['result'], psbt_b64)
+                wally_psbt_free(src)
+            ret, b64 = wally_psbt_to_base64(psbt, 0)
+            self.assertEqual((ret, b64), (WALLY_OK, case['result']))
+            wally_psbt_free(psbt)
 
-        for signer in signers:
-            psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(signer['psbt'].encode('utf-8'), psbt))
-            for priv in signer['privkeys']:
-                buf, buf_len = make_cbuffer('00'*32)
-                self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
-                self.assertEqual(WALLY_OK, wally_psbt_sign(psbt, buf, buf_len, FLAG_GRIND_R))
+    def do_sign(self, b64, wifs, expected=WALLY_OK):
+        priv_key, priv_key_len = make_cbuffer('00'*32)
+        psbt = self.parse_b64(b64)
+        for wif in wifs:
+            self.assertEqual(WALLY_OK, wally_wif_to_bytes(wif, 0xEF, 0, priv_key, priv_key_len))
+            self.assertEqual(expected, wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R))
+        return psbt
 
-            ret, reser = wally_psbt_to_base64(psbt, 0)
+    def test_signer_role(self):
+        """Test the PSBT signer role"""
+        for case in JSON['signer']:
+            psbt = self.do_sign(case['psbt'], case['privkeys'])
+
+            # Check that we can roundtrip the signed PSBT (some bugs only appear here)
+            ret, b64_out = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
-            # Check that we can *demarshal* the signed PSBT (some bugs only appear here)
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(reser, psbt))
-            self.assertEqual(signer['result'], reser)
+            wally_psbt_free(psbt)
+            psbt = self.parse_b64(b64_out)
+            self.assertEqual(case['result'], b64_out)
+            wally_psbt_free(psbt)
 
-        for inval_signer in inval_signers:
-            psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(inval_signer['psbt'].encode('utf-8'), psbt))
+        for case in JSON['invalid_signer']:
+            psbt = self.do_sign(case['psbt'], case['privkeys'], WALLY_EINVAL)
+            wally_psbt_free(psbt)
 
-            for priv in inval_signer['privkeys']:
-                buf, buf_len = make_cbuffer('00'*32)
-                self.assertEqual(WALLY_OK, wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len))
-                self.assertEqual(WALLY_EINVAL, wally_psbt_sign(psbt, buf, buf_len, FLAG_GRIND_R))
-
-        for finalizer in finalizers:
-            psbt = pointer(wally_psbt())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(finalizer['finalize'].encode('utf-8'), psbt))
+    def test_finalizer_role(self):
+        """Test the PSBT finalizer role"""
+        for case in JSON['finalizer']:
+            psbt = self.parse_b64(case['psbt'])
             self.assertEqual(WALLY_OK, wally_psbt_finalize(psbt))
             ret, is_finalized = wally_psbt_is_finalized(psbt)
+            self.assertEqual((ret, is_finalized), (WALLY_OK, 1))
+            ret, b64_out = wally_psbt_to_base64(psbt, 0)
             self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(1, is_finalized)
-            ret, reser = wally_psbt_to_base64(psbt, 0)
-            self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(finalizer['result'], reser)
+            self.assertEqual(case['result'], b64_out)
+            wally_psbt_free(psbt)
 
-        for extractor in extractors:
-            psbt = pointer(wally_psbt())
+    def test_extractor_role(self):
+        """Test the PSBT extractor role"""
+        for case in JSON['extractor']:
+            psbt = self.parse_b64(case['psbt'])
             tx = pointer(wally_tx())
-            self.assertEqual(WALLY_OK, wally_psbt_from_base64(extractor['extract'].encode('utf-8'), psbt))
             self.assertEqual(WALLY_OK, wally_psbt_extract(psbt, tx))
-            ret, reser = wally_tx_to_hex(tx, 1)
-            self.assertEqual(WALLY_OK, ret)
-            self.assertEqual(extractor['result'], reser)
+            ret, tx_hex = wally_tx_to_hex(tx, 1)
+            self.assertEqual((ret, tx_hex), (WALLY_OK, case['result']))
+            wally_tx_free(tx)
+            wally_psbt_free(psbt)
 
     def test_map(self):
         """Test PSBT map helper functions"""
@@ -184,18 +191,17 @@ class PSBTTests(unittest.TestCase):
         """See https://github.com/ElementsProject/libwally-core/issues/213
            Verify that core v20.1 changes to address the segwit fee attack now work"""
         b64 = 'cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBBYAFIsieXd6AAeP8TXHKZ329Z0nuSeZIgYD/ajyzV90ghQ+0zIO2mVSd3fGYhvwYjakGCY4WNYxoeYEiyJ5dwABAHICAAAAAfezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAAAAAAD9////AhAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHHcIAAAAAAAAWABSUD3a8pIYaaLvKdZxoEPFfo8vlDwAAAAABASAQJwAAAAAAABepFFyX1J/5zWzQ/mvkIah58gksvaD5hwEEFgAUyRIBhZwlI4RLT6NDHluovlrN3iAiBgIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPATJEgGFACICAq8h+ABETC5Tczuts3xhCtXAzIEUHM5iMugvwFMrtCc4EBK06cYAAACAAQAAgMMAAIAAAA=='
-        psbt = pointer(wally_psbt())
-        self.assertEqual(wally_psbt_from_base64(b64.encode('utf-8'), psbt), WALLY_OK)
+        psbt = self.parse_b64(b64)
         buf, buf_len = make_cbuffer('00'*32)
         for priv in ['cTatuMdjH4YA4F1pAm11QdbCt88T8t2TTMoAvVGzAxWAWmQZtkBZ',
                      'cR5yyo2g1SzzwCw2QAREzF7XhYuXZS9SzTTf8A9qerri9EXZcRYS']:
-            self.assertEqual(wally_wif_to_bytes(priv.encode('utf-8'), 0xEF, 0, buf, buf_len), WALLY_OK)
+            self.assertEqual(wally_wif_to_bytes(priv, 0xEF, 0, buf, buf_len), WALLY_OK)
             self.assertEqual(wally_psbt_sign(psbt, buf, buf_len, FLAG_GRIND_R), WALLY_OK)
         self.assertEqual(wally_psbt_finalize(psbt), WALLY_OK)
         ret, new64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(ret, WALLY_OK)
         expected_b64 = 'cHNidP8BAJoCAAAAAvezqpNxOIDkwNFhfZVLYvuhQxqmqNPJwlyXbhc8cuLPAQAAAAD9////krlOMdd9VVzPWn5+oadTb4C3NnUFWA3tF6cb1RiI4JAAAAAAAP3///8CESYAAAAAAAAWABQn/PFABd2EW5RsCUvJitAYNshf9BAnAAAAAAAAFgAUFpodxCngMIyYnbJ1mhpDwQykN4cAAAAAAAEAiQIAAAABfRJscM0GWu793LYoAX15Mnj+dVr0G7yvRMBeWSmvPpQAAAAAFxYAFESkW2FnrJlkwmQZjTXL1IVM95lW/f///wK76QAAAAAAABYAFB33sq8WtoOlpvUpCvoWbxJJl5rhECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcAAAAAAQEgECcAAAAAAAAXqRTFhAlcZBMRkG4iAustDT6iSw6wkIcBBxcWABSLInl3egAHj/E1xymd9vWdJ7knmQEIawJHMEQCIAkPXe9sdpRjSDTjJ0gIrpwGGIWJby9xSd1rS9hPe1f0AiAJgqR7PL3G/MXyUu4KZdS1Z2O14fjxstF43k634u+4GAEhA/2o8s1fdIIUPtMyDtplUnd3xmIb8GI2pBgmOFjWMaHmAAEAcgIAAAAB97Oqk3E4gOTA0WF9lUti+6FDGqao08nCXJduFzxy4s8AAAAAAP3///8CECcAAAAAAAAXqRRcl9Sf+c1s0P5r5CGoefIJLL2g+YcdwgAAAAAAABYAFJQPdrykhhpou8p1nGgQ8V+jy+UPAAAAAAEBIBAnAAAAAAAAF6kUXJfUn/nNbND+a+QhqHnyCSy9oPmHAQcXFgAUyRIBhZwlI4RLT6NDHluovlrN3iABCGsCRzBEAiAOzRsNZ+2Et+VGCY/nXWO7WxGI3u39kpi025cUaJXQJgIgL6KtMqPfAwXGktQFWr9SNnOrHF2xjvKQI2VdeuQbxt0BIQIs+YA2N8B5O6nF4SgVEG765xfHZFKrLiKbjZuo8/9vPAAiAgKvIfgAREwuU3M7rbN8YQrVwMyBFBzOYjLoL8BTK7QnOBAStOnGAAAAgAEAAIDDAACAAAA='
-        self.assertEqual(new64.encode('utf-8'), expected_b64.encode('utf-8'))
+        self.assertEqual(new64, expected_b64)
 
     def test_psbt(self):
         """Test creating and modifying various PSBT fields"""

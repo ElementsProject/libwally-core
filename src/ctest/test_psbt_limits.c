@@ -109,6 +109,11 @@ static void test_psbt_write(const struct psbt_test *test,
     size_t i, psbt_len, written;
     struct wally_psbt *psbt;
 
+#ifndef BUILD_ELEMENTS
+    if (test->is_pset)
+        return;
+#endif
+
     if (wally_psbt_from_base64(test->base64, &psbt) != WALLY_OK)
         abort();
 
