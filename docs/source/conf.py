@@ -4,7 +4,9 @@
 SCANNING, DOCS, FUNC = 1, 2, 3
 
 from os import getenv
+# DUMP_FUNCS/DUMP_INTERNAL are used by tools/build_wrappers.py to auto-generate wrapper code
 DUMP_FUNCS = getenv("WALLY_DOC_DUMP_FUNCS") is not None
+DUMP_INTERNAL = DUMP_FUNCS and getenv("WALLY_DOC_DUMP_INTERNAL") is not None
 
 def get_doc_lines(l):
     if l.startswith('.. '):
@@ -34,9 +36,17 @@ def output_func(docs, func):
 def extract_docs(infile, outfile):
 
     lines = [l.strip() for l in open(infile).readlines()]
-    title = infile.split('wally_')[1][:-2].title().replace('_', '-') + ' Functions'
+    if DUMP_INTERNAL:
+        title = 'unused'
+    else:
+        title = infile.split('wally_')[1][:-2].title().replace('_', '-') + ' Functions'
     title_markup = '=' * len(title)
     output, current, func, state = [title, title_markup, ''], [], '', SCANNING
+
+    if DUMP_INTERNAL:
+        # Internal header: Expect each function on a single line
+        lines = [l for l in lines if l.startswith('WALLY_CORE_API')]
+        state = FUNC
 
     for l in lines:
         if state == SCANNING:
@@ -55,16 +65,23 @@ def extract_docs(infile, outfile):
             func += l
             if ');' in func:
                 output.extend(output_func(current, func))
-                state = SCANNING
+                if DUMP_INTERNAL:
+                    current, func = '', ''
+                else:
+                    state = SCANNING
     with open(outfile, 'w') as f:
         f.write('\n'.join(output))
 
 # Generate the documentation source files
-for m in [
-    'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt',
-    'symmetric', 'transaction', 'elements', 'anti_exfil'
-    ]:
-    extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
+if DUMP_INTERNAL:
+    for m in ['bip32_int', 'psbt_int', 'transaction_int']:
+        extract_docs('../../src/%s.h' % m, '%s.rst' % m)
+else:
+    for m in [
+        'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt',
+        'symmetric', 'transaction', 'elements', 'anti_exfil'
+        ]:
+        extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
 # -- General configuration ------------------------------------------------
 

@@ -84,6 +84,7 @@ docs/source/script.rst
 docs/source/symmetric.rst
 docs/source/transaction.rst
 docs/source/elements.rst
+docs/source/*_int.rst
 .idea/
 
 # ctags
