@@ -21,7 +21,8 @@ class PSBTTests(unittest.TestCase):
             extractors = d['extractor']
 
         for invalid in invalids:
-            self.assertEqual(WALLY_EINVAL, wally_psbt_from_base64(invalid.encode('utf-8'), pointer(wally_psbt())))
+            ret = wally_psbt_from_base64(utf8(invalid['psbt']), pointer(wally_psbt()))
+            self.assertEqual(ret, WALLY_EINVAL)
 
         for valid in valids:
             psbt = pointer(wally_psbt())
