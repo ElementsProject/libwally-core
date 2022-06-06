@@ -876,53 +876,48 @@ int wally_psbt_add_input_at(struct wally_psbt *psbt,
                             uint32_t index, uint32_t flags,
                             const struct wally_tx_input *input)
 {
-    struct wally_tx_input tmp;
+    struct wally_tx_input tx_input;
     int ret = WALLY_OK;
 
-    if (!psbt || ((psbt->version == PSBT_0) && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)) ||
-        (flags & ~WALLY_PSBT_FLAG_NON_FINAL) ||
-        index > psbt->num_inputs || !input)
+    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)) ||
+        (flags & ~WALLY_PSBT_FLAG_NON_FINAL) || index > psbt->num_inputs || !input)
         return WALLY_EINVAL;
 
-    memcpy(&tmp, input, sizeof(tmp));
+    memcpy(&tx_input, input, sizeof(tx_input));
     if (flags & WALLY_PSBT_FLAG_NON_FINAL) {
         /* Clear scriptSig and witness before adding */
-        tmp.script = NULL;
-        tmp.script_len = 0;
-        tmp.witness = NULL;
+        tx_input.script = NULL;
+        tx_input.script_len = 0;
+        tx_input.witness = NULL;
     }
 
-    if (psbt->tx) {
-        ret = wally_tx_add_input_at(psbt->tx, index, &tmp);
-        wally_clear(&tmp, sizeof(tmp));
-    }
+    if (psbt->version == PSBT_0)
+        ret = wally_tx_add_input_at(psbt->tx, index, &tx_input);
 
     if (ret == WALLY_OK) {
-        if (psbt->num_inputs >= psbt->inputs_allocation_len) {
+        if (psbt->num_inputs >= psbt->inputs_allocation_len)
             ret = array_grow((void *)&psbt->inputs, psbt->num_inputs,
-                             &psbt->inputs_allocation_len,
-                             sizeof(struct wally_psbt_input));
-            if (ret != WALLY_OK) {
-                wally_tx_remove_input(psbt->tx, index);
-                return ret;
+                             &psbt->inputs_allocation_len, sizeof(*psbt->inputs));
+
+        if (ret == WALLY_OK) {
+            struct wally_psbt_input *dst = psbt->inputs + index;
+            memmove(dst + 1, dst, (psbt->num_inputs - index) * sizeof(*psbt->inputs));
+            wally_clear(dst, sizeof(*dst));
+            psbt->num_inputs += 1;
+
+            if (psbt->version == PSBT_2) {
+                ret = replace_bytes(input->txhash, WALLY_TXHASH_LEN,
+                                    &dst->previous_txid, &dst->previous_txid_len);
+                if (ret == WALLY_OK) {
+                    dst->previous_txid_len = WALLY_TXHASH_LEN;
+                    dst->output_index = input->index;
+                    dst->sequence = input->sequence;
+                } else
+                    wally_psbt_remove_input(psbt, index);
             }
         }
-
-        memmove(psbt->inputs + index + 1, psbt->inputs + index,
-                (psbt->num_inputs - index) * sizeof(struct wally_psbt_input));
-        wally_clear(psbt->inputs + index, sizeof(struct wally_psbt_input));
-
-        if (psbt->version == PSBT_2) {
-            if ((ret = replace_bytes(input->txhash, WALLY_TXHASH_LEN, &psbt->inputs[index].previous_txid, &psbt->inputs[index].previous_txid_len)) != WALLY_OK) {
-                wally_psbt_remove_input(psbt, index);
-                return ret;
-            }
-
-            psbt->inputs[index].previous_txid_len = WALLY_TXHASH_LEN;
-            psbt->inputs[index].output_index = input->index;
-            psbt->inputs[index].sequence = input->sequence;
-        }
-        psbt->num_inputs += 1;
+        if (ret != WALLY_OK && psbt->version == PSBT_0)
+            wally_tx_remove_input(psbt->tx, index);
     }
     return ret;
 }
@@ -931,14 +926,17 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
 {
     int ret = WALLY_OK;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)))
-        ret = WALLY_EINVAL;
-    else if (psbt->tx)
+    if (!psbt || index >= psbt->num_inputs ||
+        (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)))
+        return WALLY_EINVAL;
+
+    if (psbt->version == PSBT_0)
         ret = wally_tx_remove_input(psbt->tx, index);
     if (ret == WALLY_OK) {
-        psbt_input_free(&psbt->inputs[index], false);
-        memmove(psbt->inputs + index, psbt->inputs + index + 1,
-                (psbt->num_inputs - index - 1) * sizeof(struct wally_psbt_input));
+        struct wally_psbt_input *to_remove = psbt->inputs + index;
+        psbt_input_free(to_remove, false);
+        memmove(to_remove, to_remove + 1,
+                (psbt->num_inputs - index - 1) * sizeof(*to_remove));
         psbt->num_inputs -= 1;
     }
     return ret;
@@ -954,33 +952,32 @@ int wally_psbt_add_output_at(struct wally_psbt *psbt,
         flags || index > psbt->num_outputs || !output)
         return WALLY_EINVAL;
 
-    if (psbt->tx)
+    if (psbt->version == PSBT_0)
         ret = wally_tx_add_output_at(psbt->tx, index, output);
 
     if (ret == WALLY_OK) {
-        if (psbt->num_outputs >= psbt->outputs_allocation_len) {
+        if (psbt->num_outputs >= psbt->outputs_allocation_len)
             ret = array_grow((void *)&psbt->outputs, psbt->num_outputs,
-                             &psbt->outputs_allocation_len,
-                             sizeof(struct wally_psbt_output));
-            if (ret != WALLY_OK) {
-                wally_tx_remove_output(psbt->tx, index);
-                return ret;
+                             &psbt->outputs_allocation_len, sizeof(*psbt->outputs));
+
+        if (ret == WALLY_OK) {
+            struct wally_psbt_output *dst = psbt->outputs + index;
+            memmove(dst + 1, dst, (psbt->num_outputs - index) * sizeof(*psbt->outputs));
+            wally_clear(dst, sizeof(*dst));
+            psbt->num_outputs += 1;
+
+            if (psbt->version == PSBT_2) {
+                ret = replace_bytes(output->script, output->script_len,
+                                    &dst->script, &dst->script_len);
+                if (ret == WALLY_OK) {
+                    dst->amount = output->satoshi;
+                    dst->has_amount = 1u;
+                } else
+                    wally_psbt_remove_output(psbt, index);
             }
         }
-
-        memmove(psbt->outputs + index + 1, psbt->outputs + index,
-                (psbt->num_outputs - index) * sizeof(struct wally_psbt_output));
-        wally_clear(psbt->outputs + index, sizeof(struct wally_psbt_output));
-
-        if (psbt->version == PSBT_2) {
-            if ((ret = replace_bytes(output->script, output->script_len, &psbt->outputs[index].script, &psbt->outputs[index].script_len)) != WALLY_OK) {
-                wally_psbt_remove_output(psbt, index);
-                return ret;
-            }
-            psbt->outputs[index].amount = output->satoshi;
-            psbt->outputs[index].has_amount = 1u;
-        }
-        psbt->num_outputs += 1;
+        if (ret != WALLY_OK && psbt->version == PSBT_0)
+            wally_tx_remove_output(psbt->tx, index);
     }
     return ret;
 }
@@ -989,19 +986,21 @@ int wally_psbt_remove_output(struct wally_psbt *psbt, uint32_t index)
 {
     int ret = WALLY_OK;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_outputs != psbt->num_outputs)))
-        ret = WALLY_EINVAL;
-    else if (psbt->tx)
+    if (!psbt || index >= psbt->num_outputs ||
+        (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_outputs != psbt->num_outputs)))
+        return WALLY_EINVAL;
+
+    if (psbt->version == PSBT_0)
         ret = wally_tx_remove_output(psbt->tx, index);
     if (ret == WALLY_OK) {
-        psbt_output_free(&psbt->outputs[index], false);
-        memmove(psbt->outputs + index, psbt->outputs + index + 1,
-                (psbt->num_outputs - index - 1) * sizeof(struct wally_psbt_output));
+        struct wally_psbt_output *to_remove = psbt->outputs + index;
+        psbt_output_free(to_remove, false);
+        memmove(to_remove, to_remove + 1,
+                (psbt->num_outputs - index - 1) * sizeof(*to_remove));
         psbt->num_outputs -= 1;
     }
     return ret;
 }
-
 
 /* Stricter version of pull_subfield_end which insists there's nothing left. */
 static void subfield_nomore_end(const unsigned char **cursor, size_t *max,
