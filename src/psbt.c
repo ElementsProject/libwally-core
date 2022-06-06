@@ -374,6 +374,23 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
     return ret;
 }
 
+static bool psbt_is_valid(const struct wally_psbt *psbt)
+{
+    if (!psbt)
+        return false;
+    if (psbt->version == PSBT_0) {
+        /* v0 may have a tx; number of PSBT in/outputs must match */
+        if ((psbt->tx ? psbt->tx->num_inputs  : 0) != psbt->num_inputs ||
+            (psbt->tx ? psbt->tx->num_outputs  : 0) != psbt->num_outputs)
+            return false;
+    } else {
+        /* v2 must not have a tx */
+        if (psbt->version != PSBT_2 || psbt->tx)
+            return false;
+    }
+    return true;
+}
+
 /* Set a struct member on a parent struct */
 #define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, const struct STRUCT_TYPE *p) { \
@@ -807,7 +824,7 @@ int wally_psbt_is_finalized(const struct wally_psbt *psbt,
 
     if (written)
         *written = 0;
-    if (!psbt || !written)
+    if (!psbt_is_valid(psbt) || !written)
         return WALLY_EINVAL;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -827,7 +844,7 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
     size_t i;
     int ret;
 
-    if (!psbt || psbt->tx || psbt->num_inputs || psbt->num_outputs || !tx || psbt->version)
+    if (!psbt_is_valid(psbt) || !tx || psbt->tx || psbt->version != PSBT_0)
         return WALLY_EINVAL; /* PSBT must be v0 and completely empty */
 
     for (i = 0; i < tx->num_inputs; ++i)
@@ -879,7 +896,7 @@ int wally_psbt_add_input_at(struct wally_psbt *psbt,
     struct wally_tx_input tx_input;
     int ret = WALLY_OK;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)) ||
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
         (flags & ~WALLY_PSBT_FLAG_NON_FINAL) || index > psbt->num_inputs || !input)
         return WALLY_EINVAL;
 
@@ -926,8 +943,8 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
 {
     int ret = WALLY_OK;
 
-    if (!psbt || index >= psbt->num_inputs ||
-        (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)))
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
+        index >= psbt->num_inputs)
         return WALLY_EINVAL;
 
     if (psbt->version == PSBT_0)
@@ -948,7 +965,7 @@ int wally_psbt_add_output_at(struct wally_psbt *psbt,
 {
     int ret = WALLY_OK;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_outputs != psbt->num_outputs)) ||
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
         flags || index > psbt->num_outputs || !output)
         return WALLY_EINVAL;
 
@@ -986,8 +1003,8 @@ int wally_psbt_remove_output(struct wally_psbt *psbt, uint32_t index)
 {
     int ret = WALLY_OK;
 
-    if (!psbt || index >= psbt->num_outputs ||
-        (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_outputs != psbt->num_outputs)))
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
+        index >= psbt->num_outputs)
         return WALLY_EINVAL;
 
     if (psbt->version == PSBT_0)
@@ -2117,7 +2134,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     if (written)
         *written = 0;
 
-    if (flags != 0 || !written)
+    if (!psbt_is_valid(psbt) || flags || !written)
         return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
@@ -2227,11 +2244,9 @@ int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **o
 {
     unsigned char *buff;
     size_t len, written;
-    int ret = WALLY_OK;
+    int ret;
 
     TX_CHECK_OUTPUT;
-    if (!psbt)
-        return WALLY_EINVAL;
 
     if ((ret = wally_psbt_get_length(psbt, flags, &len)) != WALLY_OK)
         return ret;
@@ -2490,7 +2505,7 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
     size_t is_elements, i;
     int ret;
 
-    if (!psbt || (flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
+    if (!psbt_is_valid(psbt) || (flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_elements)) == WALLY_OK) {
@@ -2515,7 +2530,7 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
     unsigned char id[WALLY_TXHASH_LEN], src_id[WALLY_TXHASH_LEN];
     int ret;
 
-    if (!psbt || !src || psbt->version != src->version)
+    if (!psbt_is_valid(psbt) || !psbt_is_valid(src) || psbt->version != src->version)
         return WALLY_EINVAL;
 
     if ((ret = wally_psbt_get_id(psbt, 0, id, sizeof(id))) != WALLY_OK)
@@ -2542,7 +2557,7 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
 
     if (output)
         *output = NULL;
-    if (!psbt || flags || !output)
+    if (!psbt_is_valid(psbt) || flags || !output)
         return WALLY_EINVAL;
 
 #ifdef BUILD_ELEMENTS
@@ -2677,10 +2692,9 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     int ret;
     struct wally_tx *tx;
 
-    if (!psbt || (psbt->version == PSBT_0 && !psbt->tx) || !key || key_len != EC_PRIVATE_KEY_LEN ||
-        (flags & ~EC_FLAGS_ALL)) {
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
+        !key || key_len != EC_PRIVATE_KEY_LEN || (flags & ~EC_FLAGS_ALL))
         return WALLY_EINVAL;
-    }
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_elements)) != WALLY_OK)
         return ret;
@@ -2979,11 +2993,10 @@ fail:
 int wally_psbt_finalize(struct wally_psbt *psbt)
 {
     size_t is_elements, i;
+    struct wally_tx *tx;
     int ret;
 
-    struct wally_tx *tx;
-
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || psbt->tx->num_inputs != psbt->num_inputs)))
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_elements)) != WALLY_OK)
@@ -3071,9 +3084,8 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 
     TX_CHECK_OUTPUT;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->tx || !psbt->num_inputs || !psbt->num_outputs ||
-                                              psbt->tx->num_inputs != psbt->num_inputs ||
-                                              psbt->tx->num_outputs != psbt->num_outputs)))
+    if (!psbt_is_valid(psbt) ||
+        (psbt->version == PSBT_0 && (!psbt->tx || !psbt->num_inputs || !psbt->num_outputs)))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &result, &is_elements)) != WALLY_OK)
@@ -3124,6 +3136,8 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 
 int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 {
+    if (written)
+        *written = 0;
     if (!psbt || !written)
         return WALLY_EINVAL;
 
