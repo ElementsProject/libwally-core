@@ -410,6 +410,18 @@
     {
       "comment": "PSBT V2 all output fields",
       "psbt": "cHNidP8B+wQCAAAAAQIEAgAAAAEEAQABBQEBAAEDCAECAAAAAAAAAQQFAQIDBAUA"
+    },
+    {
+      "comment": "PSBT v0 (rust-bitcoin: trivial_psbt())",
+      "psbt": "cHNidP8BAAoCAAAAAAAAAAAAAA=="
+    },
+    {
+      "comment": "PSBT v0 (rust-bitcoin: psbt_uncompressed_key())",
+      "psbt": "cHNidP8BADMCAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////wD/////AAAAAAAAQgIEuw1dDMo257nID2O8BMEkC6u4O80oA+96yLbir1lCkdrsKB6FbJjSEMWrFN/Vgodh+O59X0XKIa0+TEtBt0ejoEcwRAIgT2fir7dhQtRPrliiSV0zo0GdqibNDbjQTzRStjKJrA8CIBB2Kp+2fpTMXK2QJvbcmf9/Bw9CeNMPvH0Mhp3TjH/nAQA="
+    },
+    {
+      "comment": "PSBT v0 (rust-bitcoin: deserialize_and_serialize_psbt_with_two_partial_sigs)",
+      "psbt": "cHNidP8BAIkCAAAAASB66YXXh9/mFD1cWPrXnMcQXg55n88DO38roX5i17MgAAAAAAD/////AlY9AwAAAAAAIgAgGYmVNLmgEQQ8DdV8P/mjgcNSLF8nxqQjGQhbVspUOh1q3AIAAAAAACIAIGGLR6B+vsyk4VbtsbnqfCS97gE5/ASSN5Zf/a9W1e5zAAAAAAABASuAGgYAAAAAACIAIBFI6T6TFeN9vtISG+UjklevNa3AP/38XZFLCDr6RNq4IgICX+c3E3bVPPiieDkXwovzC9aQsKTUogdpAJPKK5IO4HZHMEQCIAfgazYuiZEqvUZh9HlFQwc5sAaoXRsqFsAdwaS9B6yrAiBhV216qDSYi3q5TvIdjuvZlupZ6iBSmhmxXwyc6+PYrAEiAgKz/pNTACCoKU8OUn4z+9/xhPBH62taFVijUvYsKZcvikcwRAIgAnh/km1oF1BEMe4oEYO4EZtoRb+qa++uReE7bUMMnS8CIChZ8UmmzSauLwOhB+fzPH2Rcw2t4wX+B3uuZ3tdRJUqAQEFR1IhArP+k1MAIKgpTw5SfjP73/GE8Efra1oVWKNS9iwply+KIQJf5zcTdtU8+KJ4ORfCi/ML1pCwpNSiB2kAk8orkg7gdlKuAAEBR1IhAoPvdlN/LViuOqOkvYrkHD8jDMrf+xoL08pQTYcc/wXnIQNT15zAyxOW9M4njQBfFtlI4Cpq7J7REJ8TdH7LFQeze1KuAAEBR1IhArOTckF3e2Zl4NaU5S+cGxiEM2Qd+FLab8Qhh7XYo2ijIQNM3UdPAcxap/+DSti8yIKofoVK/8d1SGvCqfYuj0m9eFKuAA=="
     }
   ],
   "creator": [
