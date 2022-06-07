@@ -8,6 +8,9 @@ SAMPLE_V2 = 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAAEOIAECAwQFBgcICQoLDA0ODxAREhM
 
 class PSBTTests(unittest.TestCase):
 
+    def _throws(self, fn, psbt, *args):
+        self.assertRaises(ValueError, lambda: fn(psbt, *args))
+
     def _try_invalid(self, fn, psbt, *args):
         with self.assertRaises(ValueError):
             fn(None, 0, *args) # Null PSBT
@@ -201,6 +204,17 @@ class PSBTTests(unittest.TestCase):
                             psbt_get_input_signature,
                             psbt_find_input_signature,
                             psbt, dummy_signatures, dummy_pubkey)
+        for p in [psbt, psbt2]:
+            self._try_invalid(psbt_add_input_signature, p, dummy_pubkey, dummy_sig)
+            self._try_invalid(psbt_add_input_signature, p, dummy_pubkey, dummy_sig)
+            self._throws(psbt_add_input_signature, p, 0, None, dummy_sig)            # NULL pubkey
+            self._throws(psbt_add_input_signature, p, 0, dummy_sig, dummy_sig)       # Invalid pubkey
+            self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, None)         # NULL sig
+            self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_pubkey) # Invalid sig
+            psbt_set_input_sighash(p, 0, 0x3)
+            self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig)    # Incompatible sighash
+            psbt_set_input_sighash(p, 0, 0x0)
+            psbt_add_input_signature(p, 0, dummy_pubkey, dummy_sig)                  # Compatable, works
         self._try_get_set_m(psbt_set_input_unknowns,
                             psbt_get_input_unknowns_size,
                             psbt_get_input_unknown_len,

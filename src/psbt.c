@@ -437,8 +437,8 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
                              &parent->NAME, &parent->NAME ## _len); \
     }
 
-/* Set/find in and add a vap value member on a parent struct */
-#define SET_MAP(PARENT, NAME, KEY_FN, VAL_FN) \
+/* Set/find in and add a map value member on a parent struct */
+#define SET_MAP(PARENT, NAME, KEY_FN, VAL_FN, ADD_POST) \
     int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
         if (!parent) return WALLY_EINVAL; \
         return map_assign(map_in, &parent->NAME ## s, KEY_FN, VAL_FN); \
@@ -450,11 +450,11 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
         if (!parent) return WALLY_EINVAL; \
         return wally_map_find(&parent->NAME ## s, key, key_len, written); \
     } \
-    int PARENT ## _add_ ## NAME(struct PARENT *parent, \
-                                const unsigned char *key, size_t key_len, \
-                                const unsigned char *value, size_t value_len) { \
+    int PARENT ## _add_ ## NAME ## ADD_POST(struct PARENT *parent, \
+                                            const unsigned char *key, size_t key_len, \
+                                            const unsigned char *value, size_t value_len) { \
         if (!parent) return WALLY_EINVAL; \
-        return wally_map_add(&parent->NAME ## s, key, key_len, value, value_len); \
+        return map_add(&parent->NAME ## s, key, key_len, value, value_len, false, KEY_FN, VAL_FN, true); \
     }
 
 /* Add a keypath to parent structs keyoaths member */
@@ -489,10 +489,21 @@ SET_BYTES(wally_psbt_input, witness_script)
 SET_BYTES(wally_psbt_input, final_scriptsig)
 SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
-SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify, NULL)
+SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify, NULL,)
 ADD_KEYPATH(wally_psbt_input)
-SET_MAP(wally_psbt_input, signature, wally_ec_public_key_verify, der_sig_verify)
-SET_MAP(wally_psbt_input, unknown, NULL, NULL)
+SET_MAP(wally_psbt_input, signature, wally_ec_public_key_verify, der_sig_verify, _internal)
+int wally_psbt_input_add_signature(struct wally_psbt_input *input,
+                                   const unsigned char *pub_key, size_t pub_key_len,
+                                   const unsigned char *sig, size_t sig_len)
+{
+    if (input && input->sighash && sig && sig_len) {
+        if (input->sighash != sig[sig_len - 1])
+            return WALLY_EINVAL; /* Incompatible sighash */
+    }
+    return wally_psbt_input_add_signature_internal(input, pub_key, pub_key_len,
+                                                   sig, sig_len);
+}
+SET_MAP(wally_psbt_input, unknown, NULL, NULL,)
 SET_BYTES_N(wally_psbt_input, previous_txid, WALLY_TXHASH_LEN)
 
 int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighash)
@@ -618,9 +629,9 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 
 SET_BYTES(wally_psbt_output, redeem_script)
 SET_BYTES(wally_psbt_output, witness_script)
-SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify, NULL)
+SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify, NULL,)
 ADD_KEYPATH(wally_psbt_output)
-SET_MAP(wally_psbt_output, unknown, NULL, NULL)
+SET_MAP(wally_psbt_output, unknown, NULL, NULL,)
 
 int wally_psbt_output_set_amount(struct wally_psbt_output *output, uint64_t amount)
 {
@@ -3356,6 +3367,16 @@ PSBT_SET_B(input, final_scriptsig, PSBT_0)
 PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
 PSBT_SET_S(input, keypaths, wally_map)
 PSBT_SET_S(input, signatures, wally_map)
+int wally_psbt_add_input_signature(struct wally_psbt *psbt, size_t index,
+                                   const unsigned char *pub_key, size_t pub_key_len,
+                                   const unsigned char *sig, size_t sig_len)
+{
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    if (!p)
+        return WALLY_EINVAL;
+    return wally_psbt_input_add_signature(p, pub_key, pub_key_len, sig, sig_len);
+}
+
 PSBT_SET_S(input, unknowns, wally_map)
 PSBT_SET_I(input, sighash, uint32_t, PSBT_0)
 PSBT_SET_B(input, previous_txid, PSBT_2)

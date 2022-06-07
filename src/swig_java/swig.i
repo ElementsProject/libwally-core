@@ -491,6 +491,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_psbt_add_input_at);
+%returns_void__(wally_psbt_add_input_signature);
 %returns_void__(wally_psbt_add_output_at);
 %returns_void__(wally_psbt_clear_fallback_locktime);
 %returns_void__(wally_psbt_clear_input_required_lockheight);

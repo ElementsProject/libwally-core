@@ -534,6 +534,7 @@ for f in (
     ('bip32_key_get_pub_key', c_int, [POINTER(ext_key), c_void_p, c_size_t]),
     ('bip32_key_get_pub_key_tweak_sum', c_int, [POINTER(ext_key), c_void_p, c_size_t]),
     ('bip32_key_get_version', c_int, [POINTER(ext_key), c_size_t_p]),
+    ('wally_psbt_add_input_signature', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_psbt_clear_input_required_lockheight', c_int, [POINTER(wally_psbt), c_size_t]),
     ('wally_psbt_clear_input_required_locktime', c_int, [POINTER(wally_psbt), c_size_t]),
     ('wally_psbt_clear_input_sequence', c_int, [POINTER(wally_psbt), c_size_t]),
