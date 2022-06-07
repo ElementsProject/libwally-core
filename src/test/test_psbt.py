@@ -183,19 +183,27 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(wally_map_free(None), WALLY_OK) # Null is OK
 
         # Add and find each key
-        for k, l, i in [(key1, key1_len, 1),
-                        (key2, key2_len, 2),
-                        (key3, key3_len, 3)]:
-            self.assertEqual(wally_map_add(m, k, l, val, val_len), WALLY_OK)
+        cases = [(key1, key1_len, val, val_len,   1, 1),
+                 (key2, key2_len, val, val_len,   2, 2),
+                 (key3, key3_len, val, val_len,   3, 3),
+                 (key2, key2_len, val, val_len,   2, 3), # Duplicate Key/Value
+                 (key2, key2_len, val, val_len-1, 2, 3)] # Duplicate Key/New Value
+        for case in cases:
+            k, l, v, vl, i, n = case
+            self.assertEqual(wally_map_add(m, k, l, v, vl), WALLY_OK)
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
+            self.assertEqual(m.contents.num_items, n)
+            # Adding an existing key ignores the new value without error.
+            vl = vl + 1 if case == cases[-1] else vl
+            self.assertEqual(m.contents.items[n-1].value_len, vl)
 
         # Sort
         self.assertEqual(wally_map_sort(m, 0), WALLY_OK)
 
         # Verify sort order
-        for k, l, i in [(key1, key1_len, 3),
-                        (key2, key2_len, 2),
-                        (key3, key3_len, 1)]:
+        for k, l, vl, i in [(key1, key1_len, val_len, 3),
+                            (key2, key2_len, val_len, 2),
+                            (key3, key3_len, val_len, 1)]:
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
