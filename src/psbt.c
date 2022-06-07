@@ -391,6 +391,11 @@ static bool psbt_is_valid(const struct wally_psbt *psbt)
     return true;
 }
 
+static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
+{
+    return psbt && (psbt->version == PSBT_0 || ((psbt->tx_modifiable_flags & flags) == flags));
+}
+
 /* Set a struct member on a parent struct */
 #define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, const struct STRUCT_TYPE *p) { \
@@ -702,8 +707,11 @@ int wally_psbt_init_alloc(uint32_t version, size_t inputs_allocation_len,
     }
 
     result->version = version;
-    if (version == PSBT_2)
-        result->tx_version = 2u; /* v2 default to the minimum tx version 2 */
+    if (version == PSBT_2) {
+        result->tx_version = 2u; /* Minimum tx version is 2 */
+        /* Both inputs and outputs can be added to a newly created PSBT */
+        result->tx_modifiable_flags = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS;
+    }
 
     memcpy(result->magic, PSBT_MAGIC, sizeof(PSBT_MAGIC));
     result->inputs_allocation_len = inputs_allocation_len;
@@ -900,6 +908,9 @@ int wally_psbt_add_input_at(struct wally_psbt *psbt,
         (flags & ~WALLY_PSBT_FLAG_NON_FINAL) || index > psbt->num_inputs || !input)
         return WALLY_EINVAL;
 
+    if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
+        return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
+
     memcpy(&tx_input, input, sizeof(tx_input));
     if (flags & WALLY_PSBT_FLAG_NON_FINAL) {
         /* Clear scriptSig and witness before adding */
@@ -947,6 +958,9 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
         index >= psbt->num_inputs)
         return WALLY_EINVAL;
 
+    if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
+        return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
+
     if (psbt->version == PSBT_0)
         ret = wally_tx_remove_input(psbt->tx, index);
     if (ret == WALLY_OK) {
@@ -968,6 +982,9 @@ int wally_psbt_add_output_at(struct wally_psbt *psbt,
     if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
         flags || index > psbt->num_outputs || !output)
         return WALLY_EINVAL;
+
+    if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_OUTPUTS))
+        return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
 
     if (psbt->version == PSBT_0)
         ret = wally_tx_add_output_at(psbt->tx, index, output);
@@ -1006,6 +1023,9 @@ int wally_psbt_remove_output(struct wally_psbt *psbt, uint32_t index)
     if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
         index >= psbt->num_outputs)
         return WALLY_EINVAL;
+
+    if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_OUTPUTS))
+        return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
 
     if (psbt->version == PSBT_0)
         ret = wally_tx_remove_output(psbt->tx, index);

@@ -58,6 +58,8 @@ class PSBTTests(unittest.TestCase):
         psbt2 = psbt_from_base64(SAMPLE_V2)
 
         # Roundtrip to/from bytes
+        self.assertRaises(ValueError, lambda: psbt_to_bytes(None, 0))    # NULL PSBT
+        self.assertRaises(ValueError, lambda: psbt_to_bytes(psbt, 0xff)) # Bad flags
         psbt_bytes = psbt_to_bytes(psbt, 0)
         psbt_tmp = psbt_from_bytes(psbt_bytes)
         self.assertEqual(hex_from_bytes(psbt_bytes),
