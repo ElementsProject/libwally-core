@@ -12,17 +12,15 @@ class PSBTTests(unittest.TestCase):
         self.assertRaises(ValueError, lambda: fn(psbt, *args))
 
     def _try_invalid(self, fn, psbt, *args):
-        with self.assertRaises(ValueError):
-            fn(None, 0, *args) # Null PSBT
-        with self.assertRaises(ValueError):
-            fn(psbt, 1, *args) # Invalid index
+        self._throws(fn, None, 0, *args) # Null PSBT
+        self._throws(fn, psbt, 1, *args) # Invalid index
 
     def _try_set(self, fn, psbt, valid_value, null_value=None):
         fn(psbt, 0, valid_value) # Set
         fn(psbt, 0, null_value) # Un-set
         self._try_invalid(fn, psbt, valid_value)
 
-    def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value):
+    def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value, invalid_value=None):
         self._try_invalid(setfn, psbt, valid_value)
         setfn(psbt, 0, valid_value) # Set
         self._try_invalid(getfn, psbt)
@@ -31,6 +29,8 @@ class PSBTTests(unittest.TestCase):
         if clearfn:
             self._try_invalid(clearfn, psbt)
             clearfn(psbt, 0)
+        if invalid_value is not None:
+            self._throws(setfn, psbt, 0, invalid_value)
 
     def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None):
         self._try_set(setfn, psbt, valid_value, null_value)
@@ -68,8 +68,6 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(hex_from_bytes(psbt_bytes),
                          hex_from_bytes(psbt_to_bytes(psbt_tmp, 0)))
 
-        self.assertIsNotNone(psbt_get_global_tx(psbt))
-
         for fn, ret in [(psbt_get_version, 0),
                         (psbt_get_num_inputs, 1),
                         (psbt_get_num_outputs, 1)]:
@@ -86,8 +84,9 @@ class PSBTTests(unittest.TestCase):
 
         # Unique ID
         psbt_set_fallback_locktime(psbt2, 0xfffffffd)
-        self.assertRaises(ValueError, lambda: psbt_get_id(None, 0))     # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_id(psbt, 0xff))  # Unknown flags
+        self._throws(psbt_get_id, None, 0)      # NULL PSBT
+        self._throws(psbt_get_id, psbt, 0xff)   # Unknown flags
+        self._throws(psbt_get_id, psbt2, 0xff)  # Unknown flags, v2
         for p, flags, expected_id in [
             (psbt,  0x0, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
             (psbt,  0x1, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
@@ -101,8 +100,12 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(hex_from_bytes(psbt_get_id(p, flags)), expected_id)
 
         # Test setters
+        self._throws(psbt_get_global_tx, None)  # NULL PSBT
+        self._throws(psbt_get_global_tx, psbt2) # V2, unsupported
         dummy_tx = psbt_get_global_tx(psbt)
         self.assertIsNotNone(dummy_tx)
+        self._throws(psbt_set_global_tx, None, dummy_tx)  # NULL PSBT
+        self._throws(psbt_set_global_tx, psbt2, dummy_tx) # V2, unsupported
 
         dummy_txout = tx_output_init(1234567, bytearray(b'\x00' * 33))
 
@@ -136,29 +139,26 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(map_find(dummy_unknowns, dummy_pubkey), 1)
 
         # V2: Global Tx Version
-        self.assertRaises(ValueError, lambda: psbt_get_tx_version(None)) # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_tx_version(psbt)), # V0, unsupported
+        self._throws(psbt_get_tx_version, None) # NULL PSBT
+        self._throws(psbt_get_tx_version, psbt), # V0, unsupported
         self.assertEqual(psbt_get_tx_version(psbt2), 123)
 
-        self.assertRaises(ValueError, lambda: psbt_set_tx_version(None, 3)) # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_set_tx_version(psbt, 3)) # V0, unsupported
-        self.assertRaises(ValueError, lambda: psbt_set_tx_version(psbt2, 1)) # Must be >=2
+        self._throws(psbt_set_tx_version, None, 3)  # NULL PSBT
+        self._throws(psbt_set_tx_version, psbt, 3)  # V0, unsupported
+        self._throws(psbt_set_tx_version, psbt2, 1) # Must be >=2
 
         psbt_set_tx_version(psbt2, 3)
         self.assertEqual(psbt_get_tx_version(psbt2), 3)
 
         # V2: Fallback Locktime
-        self.assertRaises(ValueError, lambda: psbt_get_fallback_locktime(None))  # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_fallback_locktime(psbt)), # V0, unsupported
-
-        self.assertRaises(ValueError, lambda: psbt_set_fallback_locktime(None, 0xfffffffe))  # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_set_fallback_locktime(psbt, 0xfffffffe)), # V0, unsupported
-
-        self.assertRaises(ValueError, lambda: psbt_has_fallback_locktime(None))  # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_has_fallback_locktime(psbt)), # V0, unsupported
-
-        self.assertRaises(ValueError, lambda: psbt_clear_fallback_locktime(None))  # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_clear_fallback_locktime(psbt)), # V0, unsupported
+        self._throws(psbt_get_fallback_locktime, None)    # NULL PSBT
+        self._throws(psbt_get_fallback_locktime, psbt),   # V0, unsupported
+        self._throws(psbt_set_fallback_locktime, None, 0xfffffffe)  # NULL PSBT
+        self._throws(psbt_set_fallback_locktime, psbt, 0xfffffffe), # V0, unsupported
+        self._throws(psbt_has_fallback_locktime, None)    # NULL PSBT
+        self._throws(psbt_has_fallback_locktime, psbt),   # V0, unsupported
+        self._throws(psbt_clear_fallback_locktime, None)  # NULL PSBT
+        self._throws(psbt_clear_fallback_locktime, psbt), # V0, unsupported
 
         psbt_set_fallback_locktime(psbt2, 0xfffffffd)
         self.assertEqual(psbt_get_fallback_locktime(psbt2), 0xfffffffd)
@@ -168,43 +168,45 @@ class PSBTTests(unittest.TestCase):
         self.assertFalse(psbt_has_fallback_locktime(psbt2))
 
         # V2: Modifiable flags
-        self.assertRaises(ValueError, lambda: psbt_set_tx_modifiable_flags(psbt, 3))    # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_set_tx_modifiable_flags(psbt2, 255)) # Bad flags
-        self.assertRaises(ValueError, lambda: psbt_get_tx_modifiable_flags(psbt))       # Non v2 PSBT
+        self._throws(psbt_set_tx_modifiable_flags, None, 3)    # NULL PSBT
+        self._throws(psbt_set_tx_modifiable_flags, psbt, 3)    # Non v2 PSBT
+        self._throws(psbt_set_tx_modifiable_flags, psbt2, 255) # Bad flags
+        self._throws(psbt_get_tx_modifiable_flags, None)       # NULL PSBT
+        self._throws(psbt_get_tx_modifiable_flags, psbt)       # Non v2 PSBT
         psbt_set_tx_modifiable_flags(psbt2, 1)
         self.assertEqual(psbt_get_tx_modifiable_flags(psbt2), 1)
 
         #
         # Inputs
         #
-        self._try_set(psbt_set_input_utxo, psbt, dummy_tx)
-        self._try_invalid(psbt_get_input_utxo, psbt)
-        self._try_set(psbt_set_input_witness_utxo, psbt, dummy_txout)
-        self._try_invalid(psbt_get_input_witness_utxo, psbt)
-        self._try_get_set_b(psbt_set_input_redeem_script,
-                            psbt_get_input_redeem_script,
-                            psbt_get_input_redeem_script_len, psbt, dummy_bytes)
-        self._try_get_set_b(psbt_set_input_witness_script,
-                            psbt_get_input_witness_script,
-                            psbt_get_input_witness_script_len, psbt, dummy_bytes)
-        self._try_get_set_b(psbt_set_input_final_scriptsig,
-                            psbt_get_input_final_scriptsig,
-                            psbt_get_input_final_scriptsig_len, psbt, dummy_bytes)
-        self._try_set(psbt_set_input_final_witness, psbt, dummy_witness)
-        self._try_invalid(psbt_get_input_final_witness, psbt)
-        self._try_get_set_m(psbt_set_input_keypaths,
-                            psbt_get_input_keypaths_size,
-                            psbt_get_input_keypath_len,
-                            psbt_get_input_keypath,
-                            psbt_find_input_keypath,
-                            psbt, dummy_keypaths, dummy_pubkey)
-        self._try_get_set_m(psbt_set_input_signatures,
-                            psbt_get_input_signatures_size,
-                            psbt_get_input_signature_len,
-                            psbt_get_input_signature,
-                            psbt_find_input_signature,
-                            psbt, dummy_signatures, dummy_pubkey)
         for p in [psbt, psbt2]:
+            self._try_set(psbt_set_input_utxo, p, dummy_tx)
+            self._try_invalid(psbt_get_input_utxo, p)
+            self._try_set(psbt_set_input_witness_utxo, p, dummy_txout)
+            self._try_invalid(psbt_get_input_witness_utxo, p)
+            self._try_get_set_b(psbt_set_input_redeem_script,
+                                psbt_get_input_redeem_script,
+                                psbt_get_input_redeem_script_len, p, dummy_bytes)
+            self._try_get_set_b(psbt_set_input_witness_script,
+                                psbt_get_input_witness_script,
+                                psbt_get_input_witness_script_len, p, dummy_bytes)
+            self._try_get_set_b(psbt_set_input_final_scriptsig,
+                                psbt_get_input_final_scriptsig,
+                                psbt_get_input_final_scriptsig_len, p, dummy_bytes)
+            self._try_set(psbt_set_input_final_witness, p, dummy_witness)
+            self._try_invalid(psbt_get_input_final_witness, p)
+            self._try_get_set_m(psbt_set_input_keypaths,
+                                psbt_get_input_keypaths_size,
+                                psbt_get_input_keypath_len,
+                                psbt_get_input_keypath,
+                                psbt_find_input_keypath,
+                                p, dummy_keypaths, dummy_pubkey)
+            self._try_get_set_m(psbt_set_input_signatures,
+                                psbt_get_input_signatures_size,
+                                psbt_get_input_signature_len,
+                                psbt_get_input_signature,
+                                psbt_find_input_signature,
+                                p, dummy_signatures, dummy_pubkey)
             self._try_invalid(psbt_add_input_signature, p, dummy_pubkey, dummy_sig)
             self._try_invalid(psbt_add_input_signature, p, dummy_pubkey, dummy_sig)
             self._throws(psbt_add_input_signature, p, 0, None, dummy_sig)            # NULL pubkey
@@ -215,33 +217,35 @@ class PSBTTests(unittest.TestCase):
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig)    # Incompatible sighash
             psbt_set_input_sighash(p, 0, 0x0)
             psbt_add_input_signature(p, 0, dummy_pubkey, dummy_sig)                  # Compatable, works
-        self._try_get_set_m(psbt_set_input_unknowns,
-                            psbt_get_input_unknowns_size,
-                            psbt_get_input_unknown_len,
-                            psbt_get_input_unknown,
-                            psbt_find_input_unknown,
-                            psbt, dummy_unknowns, dummy_pubkey)
-        self._try_set(psbt_set_input_sighash, psbt, 0xff, 0x0)
-        self.assertEqual(psbt_get_input_sighash(psbt, 0), 0)
-        self._try_invalid(psbt_get_input_sighash, psbt)
+            self._try_get_set_m(psbt_set_input_unknowns,
+                                psbt_get_input_unknowns_size,
+                                psbt_get_input_unknown_len,
+                                psbt_get_input_unknown,
+                                psbt_find_input_unknown,
+                                p, dummy_unknowns, dummy_pubkey)
+            self._try_get_set_i(psbt_set_input_sighash, None,
+                                psbt_get_input_sighash, p, 0xff) # FIXME 0x100 as invalid_value should fail
 
         # V2: Previous txid
-        self.assertRaises(ValueError, lambda: psbt_set_input_previous_txid(psbt, 0, dummy_bytes)) # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_set_input_previous_txid(psbt2, 0, dummy_pubkey)) # Bad Length
+        self._throws(psbt_set_input_previous_txid, psbt, 0, dummy_bytes) # Non v2 PSBT
+        self._throws(psbt_set_input_previous_txid, psbt2, 0, dummy_sig)  # Bad Length
+        self._throws(psbt_get_input_previous_txid, psbt, 0)              # Non v2 PSBT
+        self._throws(psbt_get_input_previous_txid_len, psbt, 0)          # Non v2 PSBT
         self._try_get_set_b(psbt_set_input_previous_txid,
                             psbt_get_input_previous_txid,
                             psbt_get_input_previous_txid_len, psbt2, dummy_bytes)
 
         # V2: Output Index
-        self.assertRaises(ValueError, lambda: psbt_set_input_output_index(psbt, 0, 1234)) # Non v2 PSBT
+        self._throws(psbt_set_input_output_index, psbt, 0, 1234) # Non v2 PSBT
+        self._throws(psbt_get_input_output_index, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_input_output_index,
                             None,
                             psbt_get_input_output_index, psbt2, 1234)
 
         # V2: Sequence
-        self.assertRaises(ValueError, lambda: psbt_set_input_sequence(psbt, 0, 1234)) # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_input_sequence(psbt, 0))       # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_clear_input_sequence(psbt, 0))     # Non v2 PSBT
+        self._throws(psbt_set_input_sequence, psbt, 0, 1234) # Non v2 PSBT
+        self._throws(psbt_clear_input_sequence, psbt, 0)     # Non v2 PSBT
+        self._throws(psbt_get_input_sequence, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_input_sequence,
                             psbt_clear_input_sequence,
                             psbt_get_input_sequence, psbt2, 1234)
@@ -255,11 +259,11 @@ class PSBTTests(unittest.TestCase):
         timefns = (psbt_get_input_required_locktime, psbt_set_input_required_locktime,
             psbt_has_input_required_locktime, psbt_clear_input_required_locktime)
         for g_fn, s_fn, h_fn, c_fn, v in [(*heightfns, 1234), (*timefns, 500000001)]:
-            self.assertRaises(ValueError, lambda: s_fn(psbt, 0, v))  # Non v2 PSBT
-            self.assertRaises(ValueError, lambda: s_fn(psbt2, 0, 0)) # Zero value
-            self.assertRaises(ValueError, lambda: g_fn(psbt, 0))     # Non v2 PSBT
-            self.assertRaises(ValueError, lambda: h_fn(psbt, 0))     # Non v2 PSBT
-            self.assertRaises(ValueError, lambda: c_fn(psbt, 0))     # Non v2 PSBT
+            self._throws(s_fn, psbt, 0, v)  # Non v2 PSBT
+            self._throws(s_fn, psbt2, 0, 0) # Zero value
+            self._throws(g_fn, psbt, 0)     # Non v2 PSBT
+            self._throws(h_fn, psbt, 0)     # Non v2 PSBT
+            self._throws(c_fn, psbt, 0)     # Non v2 PSBT
             self._try_get_set_i(s_fn, c_fn, g_fn, psbt2, v)
 
         if is_elements_build():
@@ -294,63 +298,67 @@ class PSBTTests(unittest.TestCase):
         #
         # Outputs
         #
-        self._try_get_set_b(psbt_set_output_redeem_script,
-                            psbt_get_output_redeem_script,
-                            psbt_get_output_redeem_script_len, psbt, dummy_bytes)
-        self._try_get_set_b(psbt_set_output_witness_script,
-                            psbt_get_output_witness_script,
-                            psbt_get_output_witness_script_len, psbt, dummy_bytes)
-        self._try_get_set_m(psbt_set_output_keypaths,
-                            psbt_get_output_keypaths_size,
-                            psbt_get_output_keypath_len,
-                            psbt_get_output_keypath,
-                            psbt_find_output_keypath,
-                            psbt, dummy_keypaths, dummy_pubkey)
-        self._try_get_set_m(psbt_set_output_unknowns,
-                            psbt_get_output_unknowns_size,
-                            psbt_get_output_unknown_len,
-                            psbt_get_output_unknown,
-                            psbt_find_output_unknown,
-                            psbt, dummy_unknowns, dummy_pubkey)
-        if is_elements_build():
-            self._try_get_set_b(psbt_set_output_blinding_pubkey,
-                                psbt_get_output_blinding_pubkey,
-                                psbt_get_output_blinding_pubkey_len, psbt, dummy_pubkey)
-            self._try_get_set_b(psbt_set_output_value_commitment,
-                                psbt_get_output_value_commitment,
-                                psbt_get_output_value_commitment_len, psbt, dummy_commitment)
-            self._try_get_set_b(psbt_set_output_vbf,
-                                psbt_get_output_vbf,
-                                psbt_get_output_vbf_len, psbt, dummy_bf)
-            self._try_get_set_b(psbt_set_output_asset_commitment,
-                                psbt_get_output_asset_commitment,
-                                psbt_get_output_asset_commitment_len, psbt, dummy_commitment)
-            self._try_get_set_b(psbt_set_output_abf,
-                                psbt_get_output_abf,
-                                psbt_get_output_abf_len, psbt, dummy_bf)
-            self._try_get_set_b(psbt_set_output_nonce,
-                                psbt_get_output_nonce,
-                                psbt_get_output_nonce_len, psbt, dummy_nonce)
-            self._try_get_set_b(psbt_set_output_rangeproof,
-                                psbt_get_output_rangeproof,
-                                psbt_get_output_rangeproof_len, psbt, dummy_bytes)
-            self._try_get_set_b(psbt_set_output_surjectionproof,
-                                psbt_get_output_surjectionproof,
-                                psbt_get_output_surjectionproof_len, psbt, dummy_bytes)
+        for p in [psbt, psbt2]:
+            self._try_get_set_b(psbt_set_output_redeem_script,
+                                psbt_get_output_redeem_script,
+                                psbt_get_output_redeem_script_len, p, dummy_bytes)
+            self._try_get_set_b(psbt_set_output_witness_script,
+                                psbt_get_output_witness_script,
+                                psbt_get_output_witness_script_len, p, dummy_bytes)
+            self._try_get_set_m(psbt_set_output_keypaths,
+                                psbt_get_output_keypaths_size,
+                                psbt_get_output_keypath_len,
+                                psbt_get_output_keypath,
+                                psbt_find_output_keypath,
+                                p, dummy_keypaths, dummy_pubkey)
+            self._try_get_set_m(psbt_set_output_unknowns,
+                                psbt_get_output_unknowns_size,
+                                psbt_get_output_unknown_len,
+                                psbt_get_output_unknown,
+                                psbt_find_output_unknown,
+                                p, dummy_unknowns, dummy_pubkey)
+            if is_elements_build():
+                self._try_get_set_b(psbt_set_output_blinding_pubkey,
+                                    psbt_get_output_blinding_pubkey,
+                                    psbt_get_output_blinding_pubkey_len, p, dummy_pubkey)
+                self._try_get_set_b(psbt_set_output_value_commitment,
+                                    psbt_get_output_value_commitment,
+                                    psbt_get_output_value_commitment_len, p, dummy_commitment)
+                self._try_get_set_b(psbt_set_output_vbf,
+                                    psbt_get_output_vbf,
+                                    psbt_get_output_vbf_len, p, dummy_bf)
+                self._try_get_set_b(psbt_set_output_asset_commitment,
+                                    psbt_get_output_asset_commitment,
+                                    psbt_get_output_asset_commitment_len, p, dummy_commitment)
+                self._try_get_set_b(psbt_set_output_abf,
+                                    psbt_get_output_abf,
+                                    psbt_get_output_abf_len, p, dummy_bf)
+                self._try_get_set_b(psbt_set_output_nonce,
+                                    psbt_get_output_nonce,
+                                    psbt_get_output_nonce_len, p, dummy_nonce)
+                self._try_get_set_b(psbt_set_output_rangeproof,
+                                    psbt_get_output_rangeproof,
+                                    psbt_get_output_rangeproof_len, p, dummy_bytes)
+                self._try_get_set_b(psbt_set_output_surjectionproof,
+                                    psbt_get_output_surjectionproof,
+                                    psbt_get_output_surjectionproof_len, p, dummy_bytes)
 
         # V2: Amount
-        self.assertRaises(ValueError, lambda: psbt_set_output_amount(psbt, 0, 1234)) # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_output_amount(psbt, 0))       # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_has_output_amount(psbt, 0))       # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_clear_output_amount(psbt, 0))     # Non v2 PSBT
+        self._throws(psbt_set_output_amount, psbt, 0, 1234)   # Non v2 PSBT
+        self._throws(psbt_get_output_amount, psbt, 0)         # Non v2 PSBT
+        self._throws(psbt_has_output_amount, None, 0)         # NULL PSBT
+        self._throws(psbt_has_output_amount, psbt, 0)         # Non v2 PSBT
+        self._throws(psbt_has_output_amount, psbt2, 1)        # Invalid Index
+        self.assertEqual(psbt_has_output_amount(psbt2, 0), 1) # Non v2 PSBT
+        self._throws(psbt_clear_output_amount, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_output_amount,
                             psbt_clear_output_amount,
                             psbt_get_output_amount, psbt2, 1234)
 
         # V2: Script
-        self.assertRaises(ValueError, lambda: psbt_set_output_script(psbt, 0, dummy_bytes)) # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_output_script(psbt, 0))              # Non v2 PSBT
-        self.assertRaises(ValueError, lambda: psbt_get_output_script_len(psbt, 0))          # Non v2 PSBT
+        self._throws(psbt_set_output_script, psbt, 0, dummy_bytes) # Non v2 PSBT
+        self._throws(psbt_get_output_script, psbt, 0)              # Non v2 PSBT
+        self._throws(psbt_get_output_script_len, psbt, 0)          # Non v2 PSBT
         self._try_get_set_b(psbt_set_output_script,
                             psbt_get_output_script,
                             psbt_get_output_script_len, psbt2, dummy_bytes)
