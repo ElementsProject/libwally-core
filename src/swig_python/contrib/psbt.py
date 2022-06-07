@@ -110,7 +110,7 @@ class PSBTTests(unittest.TestCase):
         dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
-        dummy_sig = bytearray(b'\x00' * 72)
+        dummy_sig = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50dcc5a0af4ba2b9efcf022100fd8d53c6be9b3f68c74eed559cca314e718df437b5c5c57668c5930e1414050201')
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)

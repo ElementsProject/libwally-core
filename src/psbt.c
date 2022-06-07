@@ -227,14 +227,16 @@ static int map_add(struct wally_map *map_in,
                    const unsigned char *key, size_t key_len,
                    const unsigned char *value, size_t value_len,
                    bool take_value,
-                   int (*check_fn)(const unsigned char *key, size_t key_len),
+                   int (*key_fn)(const unsigned char *key, size_t key_len),
+                   int (*val_fn)(const unsigned char *val, size_t val_len),
                    bool ignore_dups)
 {
     size_t is_found;
     int ret;
 
     if (!map_in || !key || BYTES_INVALID(key, key_len) ||
-        (check_fn && check_fn(key, key_len) != WALLY_OK) ||
+        (key_fn && key_fn(key, key_len) != WALLY_OK) ||
+        (val_fn && val_fn(value, value_len) != WALLY_OK) ||
         BYTES_INVALID(value, value_len))
         return WALLY_EINVAL;
 
@@ -274,7 +276,7 @@ int wally_map_add(struct wally_map *map_in,
                   const unsigned char *key, size_t key_len,
                   const unsigned char *value, size_t value_len)
 {
-    return map_add(map_in, key, key_len, value, value_len, false, NULL, true);
+    return map_add(map_in, key, key_len, value, value_len, false, NULL, NULL, true);
 }
 
 int wally_map_add_keypath_item(struct wally_map *map_in,
@@ -303,7 +305,7 @@ int wally_map_add_keypath_item(struct wally_map *map_in,
                &tmp, sizeof(tmp));
     }
 
-    ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, NULL, true);
+    ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, NULL, NULL, true);
     if (ret != WALLY_OK)
         clear_and_free(value, value_len);
     return ret;
@@ -334,7 +336,8 @@ int wally_map_sort(struct wally_map *map_in, uint32_t flags)
 }
 
 static int map_extend(struct wally_map *dst, const struct wally_map *src,
-                      int (*check_fn)(const unsigned char *key, size_t key_len))
+                      int (*key_fn)(const unsigned char *key, size_t key_len),
+                      int (*val_fn)(const unsigned char *val, size_t val_len))
 {
     int ret = WALLY_OK;
     size_t i;
@@ -343,13 +346,14 @@ static int map_extend(struct wally_map *dst, const struct wally_map *src,
         for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
             ret = map_add(dst, src->items[i].key, src->items[i].key_len,
                           src->items[i].value, src->items[i].value_len,
-                          false, check_fn, true);
+                          false, key_fn, val_fn, true);
     }
     return ret;
 }
 
 static int map_assign(const struct wally_map *src, struct wally_map *dst,
-                      int (*check_fn)(const unsigned char *key, size_t key_len))
+                      int (*key_fn)(const unsigned char *key, size_t key_len),
+                      int (*val_fn)(const unsigned char *val, size_t val_len))
 {
     struct wally_map result;
     size_t i;
@@ -362,7 +366,7 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
         for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
             ret = map_add(&result, src->items[i].key, src->items[i].key_len,
                           src->items[i].value, src->items[i].value_len,
-                          false, check_fn, true);
+                          false, key_fn, val_fn, true);
     }
 
     if (ret != WALLY_OK)
@@ -372,6 +376,15 @@ static int map_assign(const struct wally_map *src, struct wally_map *dst,
         memcpy(dst, &result, sizeof(result));
     }
     return ret;
+}
+
+/* Verify a DER encoded ECDSA sig plus sighash byte */
+static int der_sig_verify(const unsigned char *der, size_t der_len)
+{
+    unsigned char sig[EC_SIGNATURE_LEN];
+    if (der_len)
+        return wally_ec_sig_from_der(der, der_len - 1, sig, sizeof(sig));
+    return WALLY_EINVAL;
 }
 
 static bool psbt_is_valid(const struct wally_psbt *psbt)
@@ -425,10 +438,10 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
     }
 
 /* Set/find in and add a vap value member on a parent struct */
-#define SET_MAP(PARENT, NAME, CHECK_FN) \
+#define SET_MAP(PARENT, NAME, KEY_FN, VAL_FN) \
     int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
         if (!parent) return WALLY_EINVAL; \
-        return map_assign(map_in, &parent->NAME ## s, CHECK_FN); \
+        return map_assign(map_in, &parent->NAME ## s, KEY_FN, VAL_FN); \
     } \
     int PARENT ## _find_ ## NAME(struct PARENT *parent, \
                                  const unsigned char *key, size_t key_len, \
@@ -476,10 +489,10 @@ SET_BYTES(wally_psbt_input, witness_script)
 SET_BYTES(wally_psbt_input, final_scriptsig)
 SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
-SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify)
+SET_MAP(wally_psbt_input, keypath, wally_ec_public_key_verify, NULL)
 ADD_KEYPATH(wally_psbt_input)
-SET_MAP(wally_psbt_input, signature, wally_ec_public_key_verify)
-SET_MAP(wally_psbt_input, unknown, NULL)
+SET_MAP(wally_psbt_input, signature, wally_ec_public_key_verify, der_sig_verify)
+SET_MAP(wally_psbt_input, unknown, NULL, NULL)
 SET_BYTES_N(wally_psbt_input, previous_txid, WALLY_TXHASH_LEN)
 
 int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighash)
@@ -605,9 +618,9 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 
 SET_BYTES(wally_psbt_output, redeem_script)
 SET_BYTES(wally_psbt_output, witness_script)
-SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify)
+SET_MAP(wally_psbt_output, keypath, wally_ec_public_key_verify, NULL)
 ADD_KEYPATH(wally_psbt_output)
-SET_MAP(wally_psbt_output, unknown, NULL)
+SET_MAP(wally_psbt_output, unknown, NULL, NULL)
 
 int wally_psbt_output_set_amount(struct wally_psbt_output *output, uint64_t amount)
 {
@@ -1066,7 +1079,8 @@ static uint32_t pull_le32_subfield(const unsigned char **cursor, size_t *max)
 static int pull_map(const unsigned char **cursor, size_t *max,
                     const unsigned char *key, size_t key_len,
                     struct wally_map *map_in,
-                    int (*check_fn)(const unsigned char *key, size_t key_len))
+                    int (*key_fn)(const unsigned char *key, size_t key_len),
+                    int (*val_fn)(const unsigned char *val, size_t val_len))
 {
     const unsigned char *val;
     size_t val_len;
@@ -1076,7 +1090,7 @@ static int pull_map(const unsigned char **cursor, size_t *max,
     val_len = pull_varlength(cursor, max);
     val = pull_skip(cursor, max, val_len);
 
-    return map_add(map_in, key, key_len, val, val_len, false, check_fn, false);
+    return map_add(map_in, key, key_len, val, val_len, false, key_fn, val_fn, false);
 }
 
 /* Rewind cursor to prekey, and append unknown key/value to unknowns */
@@ -1100,7 +1114,7 @@ static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
     val_len = pull_varlength(cursor, max);
     val = pull_skip(cursor, max, val_len);
 
-    return map_add(unknowns, key, key_len, val, val_len, false, NULL, false);
+    return map_add(unknowns, key, key_len, val, val_len, false, NULL, NULL, false);
 }
 
 #ifdef BUILD_ELEMENTS
@@ -1298,7 +1312,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
         }
         case PSBT_IN_PARTIAL_SIG: {
             ret = pull_map(cursor, max, key, key_len, &result->signatures,
-                           wally_ec_public_key_verify);
+                           wally_ec_public_key_verify, der_sig_verify);
             if (ret != WALLY_OK)
                 return ret;
             break;
@@ -1319,7 +1333,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             break;
         case PSBT_IN_BIP32_DERIVATION:
             if ((ret = pull_map(cursor, max, key, key_len, &result->keypaths,
-                                wally_ec_public_key_verify)) != WALLY_OK)
+                                wally_ec_public_key_verify, NULL)) != WALLY_OK)
                 return ret;
             break;
         case PSBT_IN_FINAL_SCRIPTSIG:
@@ -1507,7 +1521,7 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
             break;
         case PSBT_OUT_BIP32_DERIVATION:
             if ((ret = pull_map(cursor, max, key, key_len, &result->keypaths,
-                                wally_ec_public_key_verify)) != WALLY_OK)
+                                wally_ec_public_key_verify, NULL)) != WALLY_OK)
                 return ret;
             break;
         case PSBT_OUT_AMOUNT:
@@ -2333,11 +2347,11 @@ static int combine_inputs(struct wally_psbt_input *dst,
     if (!dst->final_witness && src->final_witness &&
         (ret = wally_psbt_input_set_final_witness(dst, src->final_witness)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify, NULL)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&dst->signatures, &src->signatures, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->signatures, &src->signatures, wally_ec_public_key_verify, der_sig_verify)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
+    if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL, NULL)) != WALLY_OK)
         return ret;
     if (!dst->sighash && src->sighash)
         dst->sighash = src->sighash;
@@ -2378,9 +2392,9 @@ static int combine_outputs(struct wally_psbt_output *dst,
     COMBINE_BYTES(output, redeem_script);
     COMBINE_BYTES(output, witness_script);
 
-    if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify)) != WALLY_OK)
+    if ((ret = map_extend(&dst->keypaths, &src->keypaths, wally_ec_public_key_verify, NULL)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL)) != WALLY_OK)
+    if ((ret = map_extend(&dst->unknowns, &src->unknowns, NULL, NULL)) != WALLY_OK)
         return ret;
 
     if (!dst->has_amount && src->has_amount) {
@@ -2427,7 +2441,7 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
 
     if (ret == WALLY_OK)
-        ret = map_extend(&psbt->unknowns, &src->unknowns, NULL);
+        ret = map_extend(&psbt->unknowns, &src->unknowns, NULL, NULL);
 
     return ret;
 }
