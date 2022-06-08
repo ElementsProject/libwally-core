@@ -21,9 +21,6 @@
  */
 static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for sighash */
 
-/* Mask for the actual sighash bits */
-#define SIGHASH_MASK 0x1f
-
 /* Bytes of stack space to use to avoid allocations for tx serializing */
 #define TX_STACK_SIZE 2048
 
@@ -1615,10 +1612,11 @@ static int tx_get_lengths(const struct wally_tx *tx,
                           size_t *witness_count, bool is_elements)
 {
     size_t n, i, j;
-    const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_rangeproof = opts && opts->sighash & WALLY_SIGHASH_RANGEPROOF;
-    const bool sh_none = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    const unsigned char sighash = opts ? opts->sighash : 0;
+    const bool anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
+    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
 
     *witness_count = 0;
 
@@ -1861,17 +1859,17 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
     size_t is_elements = 0;
-    const bool anyonecanpay = opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
-#ifdef BUILD_ELEMENTS
-    const bool sh_rangeproof = opts->sighash & WALLY_SIGHASH_RANGEPROOF;
-#endif
-    const bool sh_none = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    const unsigned char sighash = opts ? opts->sighash : 0;
+    const bool anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
+    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out, *output_p;
     int ret = WALLY_OK;
 
     (void)flags;
     (void)len;
+    (void)sh_rangeproof;
 
 #ifdef BUILD_ELEMENTS
     if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
@@ -2110,13 +2108,14 @@ static int tx_to_bytes(const struct wally_tx *tx,
                        bool is_elements)
 {
     size_t n, i, j, witness_count;
-    const bool anyonecanpay = opts && opts->sighash & WALLY_SIGHASH_ANYONECANPAY;
-#ifdef BUILD_ELEMENTS
-    const bool sh_rangeproof = opts && opts->sighash & WALLY_SIGHASH_RANGEPROOF;
-#endif
-    const bool sh_none = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = opts && (opts->sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    const unsigned char sighash = opts ? opts->sighash : 0;
+    const bool anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
+    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out;
+
+    (void)sh_rangeproof;
 
     if (written)
         *written = 0;
@@ -2834,7 +2833,7 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
         return WALLY_ERROR; /* FIXME: Not implemented yet */
 
     if (index >= tx->num_inputs ||
-        (index >= tx->num_outputs && (sighash & SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)) {
+        (index >= tx->num_outputs && (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)) {
         if (!(flags & WALLY_TX_FLAG_USE_WITNESS)) {
             memset(bytes_out, 0, SHA256_LEN);
             bytes_out[0] = 0x1;
