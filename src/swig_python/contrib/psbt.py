@@ -118,8 +118,11 @@ class PSBTTests(unittest.TestCase):
         dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
-        dummy_sig = SIG_BYTES + bytearray(b'\x01')
-        dummy_sig_0 = SIG_BYTES + bytearray(b'\x00')
+        dummy_sig = SIG_BYTES + bytearray(b'\x01')      # SIGHASH_ALL
+        dummy_sig_0 = SIG_BYTES + bytearray(b'\x00')    # Invalid sighash 0
+        dummy_sig_none = SIG_BYTES + bytearray(b'\x02') # SIGHASH_NONE
+        dummy_sig_acp = SIG_BYTES + bytearray(b'\x80')  # SIGHASH_ANYONECANPAY
+        dummy_sig_sacp = SIG_BYTES + bytearray(b'\x83') # SIGHASH_SINGLE|SIGHASH_ANYONECANPAY
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
@@ -224,6 +227,24 @@ class PSBTTests(unittest.TestCase):
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig)    # Incompatible sighash
             psbt_set_input_sighash(p, 0, 0x0)
             psbt_add_input_signature(p, 0, dummy_pubkey, dummy_sig)                  # Compatible, works
+            self.assertEqual(psbt_get_input_signatures_size(p, 0), 1)
+            # Test setting various sighash types and resulting modifiable flags for v2
+            PSBT_TXMOD_BOTH = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS
+            PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
+            for sig, modflags in [
+                (dummy_sig,       0),                        # ALL -> Neither are modifiable
+                (dummy_sig_none,  WALLY_PSBT_TXMOD_OUTPUTS), # NONE -> Outputs remain modifiable
+                (dummy_sig_acp,   WALLY_PSBT_TXMOD_INPUTS),  # ANYONECANPAY -> Inputs remain modifiable
+                # SINGLE | ANYONECANPAY -> Inputs remain modifiable and SINGLE flags set
+                (dummy_sig_sacp,  PSBT_TXMOD_INP_SINGLE),
+                ]:
+                psbt_set_input_signatures(p, 0, empty_signatures)
+                if p == psbt2:
+                    psbt_set_tx_modifiable_flags(p, PSBT_TXMOD_BOTH)
+                psbt_add_input_signature(p, 0, dummy_pubkey, sig)
+                if p == psbt2:
+                    self.assertEqual(psbt_get_tx_modifiable_flags(p), modflags)
+
             self._try_get_set_m(psbt_set_input_unknowns,
                                 psbt_get_input_unknowns_size,
                                 psbt_get_input_unknown_len,

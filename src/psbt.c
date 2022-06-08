@@ -3385,9 +3385,21 @@ int wally_psbt_add_input_signature(struct wally_psbt *psbt, size_t index,
                                    const unsigned char *sig, size_t sig_len)
 {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    int ret;
     if (!p)
         return WALLY_EINVAL;
-    return wally_psbt_input_add_signature(p, pub_key, pub_key_len, sig, sig_len);
+    ret = wally_psbt_input_add_signature(p, pub_key, pub_key_len, sig, sig_len);
+    if (ret == WALLY_OK && psbt->version == PSBT_2) {
+        /* Update tx_modifiable_flags based on what the signature covers */
+        const unsigned char sighash = sig[sig_len - 1];
+        if (!(sighash & WALLY_SIGHASH_ANYONECANPAY))
+            psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_INPUTS;
+        if ((sighash & WALLY_SIGHASH_MASK) != WALLY_SIGHASH_NONE)
+            psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_OUTPUTS;
+        if ((sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)
+            psbt->tx_modifiable_flags |= WALLY_PSBT_TXMOD_SINGLE;
+    }
+    return ret;
 }
 
 PSBT_SET_S(input, unknowns, wally_map)
