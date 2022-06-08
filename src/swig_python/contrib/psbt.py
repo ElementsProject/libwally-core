@@ -101,6 +101,11 @@ class PSBTTests(unittest.TestCase):
             ]:
             self.assertEqual(hex_from_bytes(psbt_get_id(p, flags)), expected_id)
 
+        # Locktime calculation
+        self._throws(psbt_get_locktime, None)  # NULL PSBT
+        self._throws(psbt_get_locktime, psbt)  # V0, unsupported
+        self.assertEqual(psbt_get_locktime(psbt2), 0xfffffffd) # Returns fallback set above
+
         # Test setters
         self._throws(psbt_get_global_tx, None)  # NULL PSBT
         self._throws(psbt_get_global_tx, psbt2) # V2, unsupported

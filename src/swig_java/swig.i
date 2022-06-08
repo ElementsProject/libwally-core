@@ -563,6 +563,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %rename("psbt_get_input_witness_utxo") wally_psbt_get_input_witness_utxo_alloc;
 %returns_size_t(wally_psbt_get_fallback_locktime);
 %returns_size_t(wally_psbt_get_length);
+%returns_size_t(wally_psbt_get_locktime);
 %returns_size_t(wally_psbt_get_num_inputs);
 %returns_size_t(wally_psbt_get_num_outputs);
 %returns_size_t(wally_psbt_get_output_abf);

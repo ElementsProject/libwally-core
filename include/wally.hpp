@@ -692,6 +692,12 @@ inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
 }
 
 template <class PSBT>
+inline int psbt_get_locktime(const PSBT& psbt, size_t* written) {
+    int ret = ::wally_psbt_get_locktime(detail::get_p(psbt), written);
+    return ret;
+}
+
+template <class PSBT>
 inline int psbt_get_tx_version(const PSBT& psbt, size_t* written) {
     int ret = ::wally_psbt_get_tx_version(detail::get_p(psbt), written);
     return ret;

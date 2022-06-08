@@ -2470,10 +2470,15 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
     return ret;
 }
 
-static int psbt_calculate_locktime(const struct wally_psbt *psbt, uint32_t *locktime)
+int wally_psbt_get_locktime(const struct wally_psbt *psbt, size_t *locktime)
 {
     bool only_locktime = false, only_lockheight = false;
     uint32_t max_locktime = 0, max_lockheight = 0;
+
+    if (locktime)
+        *locktime = 0;
+    if (!psbt_is_valid(psbt) || psbt->version != PSBT_2 || !locktime)
+        return WALLY_EINVAL;
 
     for (size_t i = 0; i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *pi = &psbt->inputs[i];
@@ -2511,7 +2516,7 @@ static int psbt_calculate_locktime(const struct wally_psbt *psbt, uint32_t *lock
 
 static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, size_t *is_elements)
 {
-    uint32_t locktime;
+    size_t locktime;
     size_t i;
     int ret;
 
@@ -2532,7 +2537,7 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
         return wally_tx_clone_alloc(psbt->tx, 0, tx);
     }
 
-    ret = psbt_calculate_locktime(psbt, &locktime);
+    ret = wally_psbt_get_locktime(psbt, &locktime);
     if (ret == WALLY_OK)
         ret = wally_tx_init_alloc(psbt->tx_version, locktime, psbt->num_inputs, psbt->num_outputs, tx);
 

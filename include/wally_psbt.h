@@ -675,6 +675,18 @@ WALLY_CORE_API int wally_psbt_get_id(
     size_t len);
 
 /**
+ * Return the calculated transaction lock time of a PSBT.
+ *
+ * :param psbt: The PSBT to compute the lock time of. Must be a v2 PSBT.
+ * :param written: Destination for the calculated transaction lock time.
+ *
+ * .. note:: The calculated lock time may change as the PSBT is modified.
+ */
+WALLY_CORE_API int wally_psbt_get_locktime(
+    const struct wally_psbt *psbt,
+    size_t *written);
+
+/**
  * Determine if all PSBT inputs are finalized.
  *
  * :param psbt: The PSBT to check.
