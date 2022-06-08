@@ -131,6 +131,7 @@ class PSBTTests(unittest.TestCase):
         map_add_keypath_item(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
         self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
 
+        empty_signatures = map_init(0)
         dummy_signatures = map_init(0)
         self.assertIsNotNone(dummy_signatures)
         map_add(dummy_signatures, dummy_pubkey, dummy_sig)
@@ -217,16 +218,19 @@ class PSBTTests(unittest.TestCase):
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, None)         # NULL sig
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_pubkey) # Invalid sig
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig_0)  # Invalid signature sighash
+            psbt_set_input_signatures(p, 0, empty_signatures)
+            self.assertEqual(psbt_get_input_signatures_size(p, 0), 0)
             psbt_set_input_sighash(p, 0, 0x3)
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig)    # Incompatible sighash
             psbt_set_input_sighash(p, 0, 0x0)
-            psbt_add_input_signature(p, 0, dummy_pubkey, dummy_sig)                  # Compatable, works
+            psbt_add_input_signature(p, 0, dummy_pubkey, dummy_sig)                  # Compatible, works
             self._try_get_set_m(psbt_set_input_unknowns,
                                 psbt_get_input_unknowns_size,
                                 psbt_get_input_unknown_len,
                                 psbt_get_input_unknown,
                                 psbt_find_input_unknown,
                                 p, dummy_unknowns, dummy_pubkey)
+            psbt_set_input_signatures(p, 0, empty_signatures)
             self._try_get_set_i(psbt_set_input_sighash, None,
                                 psbt_get_input_sighash, p, 0xff) # FIXME 0x100 as invalid_value should fail
 

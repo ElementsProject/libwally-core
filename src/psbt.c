@@ -509,8 +509,20 @@ SET_BYTES_N(wally_psbt_input, previous_txid, WALLY_TXHASH_LEN)
 
 int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighash)
 {
+    size_t i;
+
     if (!input)
         return WALLY_EINVAL;
+    if (sighash) {
+        for (i = 0; i < input->signatures.num_items; ++i) {
+            const struct wally_map_item *item = &input->signatures.items[i];
+            if (!item->value || !item->value_len ||
+                sighash != item->value[item->value_len - 1]) {
+                /* Cannot set a sighash that is incompatible with existing sigs */
+                return WALLY_EINVAL;
+            }
+        }
+    }
     input->sighash = sighash;
     return WALLY_OK;
 }
