@@ -2895,18 +2895,20 @@ cleanup:
     return ret;
 }
 
+static const struct wally_map_item *get_sig(const struct wally_psbt_input *input,
+                                            size_t i, size_t n)
+{
+    return input->signatures.num_items != n ? NULL : &input->signatures.items[i];
+}
+
 static bool finalize_p2pkh(struct wally_psbt_input *input)
 {
     unsigned char script[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
     size_t script_len;
-    const struct wally_map_item *sig;
+    const struct wally_map_item *sig = get_sig(input, 0, 1);
 
-    if (input->signatures.num_items != 1)
-        return false; /* Must be single key, single sig */
-
-    sig = &input->signatures.items[0];
-
-    if (wally_scriptsig_p2pkh_from_der(sig->key, sig->key_len,
+    if (!sig ||
+        wally_scriptsig_p2pkh_from_der(sig->key, sig->key_len,
                                        sig->value, sig->value_len,
                                        script, sizeof(script),
                                        &script_len) != WALLY_OK)
@@ -2943,19 +2945,21 @@ static bool finalize_p2sh_wrapped(struct wally_psbt_input *input)
 
 static bool finalize_p2wpkh(struct wally_psbt_input *input)
 {
-    const struct wally_map_item *sig;
+    const struct wally_map_item *sig = get_sig(input, 0, 1);
 
-    if (input->signatures.num_items != 1)
-        return false; /* Must be single key, single sig */
-
-    sig = &input->signatures.items[0];
-
-    if (wally_witness_p2wpkh_from_der(sig->key, sig->key_len,
+    if (!sig ||
+        wally_witness_p2wpkh_from_der(sig->key, sig->key_len,
                                       sig->value, sig->value_len,
                                       &input->final_witness) != WALLY_OK)
         return false;
 
     return input->redeem_script ? finalize_p2sh_wrapped(input) : true;
+}
+
+static bool finalize_p2wsh(struct wally_psbt_input *input)
+{
+    (void)input;
+    return false; /* TODO */
 }
 
 static bool finalize_multisig(struct wally_psbt_input *input,
@@ -3108,6 +3112,10 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             break;
         case WALLY_SCRIPT_TYPE_P2WPKH:
             if (!finalize_p2wpkh(input))
+                continue;
+            break;
+        case WALLY_SCRIPT_TYPE_P2WSH:
+            if (!finalize_p2wsh(input))
                 continue;
             break;
         case WALLY_SCRIPT_TYPE_MULTISIG:
