@@ -338,6 +338,7 @@ for f in (
     ('wally_is_elements_build', c_int, [c_size_t_p]),
     ('wally_map_add', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_add_keypath_item', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t, c_uint_p, c_size_t]),
+    ('wally_map_clear', c_int, [POINTER(wally_map)]),
     ('wally_map_find', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_size_t_p]),
     ('wally_map_free', c_int, [POINTER(wally_map)]),
     ('wally_map_init_alloc', c_int, [c_size_t, POINTER(POINTER(wally_map))]),

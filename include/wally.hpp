@@ -582,6 +582,11 @@ inline int map_add_keypath_item(const MAP_IN& map_in, const PUB_KEY& pub_key, co
     return ret;
 }
 
+inline int map_clear(struct wally_map* map_in) {
+    int ret = ::wally_map_clear(map_in);
+    return ret;
+}
+
 template <class MAP_IN, class KEY>
 inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     size_t n;

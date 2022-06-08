@@ -193,6 +193,15 @@ WALLY_CORE_API int wally_map_add(
     size_t value_len);
 
 /**
+ * Remove all entries from a map.
+ *
+ * :param map_in: The map to clear.
+ */
+WALLY_CORE_API int wally_map_clear(
+    struct wally_map *map_in);
+
+
+/**
  * Convert and add a pubkey/keypath to a map.
  *
  * :param map_in: The map to add to.
