@@ -996,12 +996,24 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
         return WALLY_EINVAL;
 
     if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
-        return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
+        return WALLY_EINVAL;
 
     if (psbt->version == PSBT_0)
         ret = wally_tx_remove_input(psbt->tx, index);
     if (ret == WALLY_OK) {
         struct wally_psbt_input *to_remove = psbt->inputs + index;
+        bool need_single = false;
+        size_t i;
+        if (psbt->version == PSBT_2 &&
+            (to_remove->sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE) {
+            /* Remove SINGLE from tx modifiable flags if no longer needed */
+            for (i = 0; i < psbt->num_inputs && !need_single; ++i) {
+                need_single |= i != index &&
+                               (psbt->inputs[i].sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+            }
+            if (!need_single)
+                psbt->tx_modifiable_flags &= ~WALLY_PSBT_TXMOD_SINGLE;
+        }
         psbt_input_free(to_remove, false);
         memmove(to_remove, to_remove + 1,
                 (psbt->num_inputs - index - 1) * sizeof(*to_remove));

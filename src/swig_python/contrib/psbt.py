@@ -2,6 +2,9 @@
 import unittest
 from wallycore import *
 
+PSBT_TXMOD_BOTH = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS
+PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
+
 SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50dcc5a0af4ba2b9efcf022100fd8d53c6be9b3f68c74eed559cca314e718df437b5c5c57668c5930e14140502')
 
 SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
@@ -49,22 +52,36 @@ class PSBTTests(unittest.TestCase):
         setfn(psbt, 0, valid_value) # Set
         self.assertEqual(sizefn(psbt, 0), 1) # 1 item in the map
         self._try_invalid(lenfn, psbt, 0)
-        with self.assertRaises(ValueError):
-            lenfn(psbt, 0, 1) # Invalid subindex
+        self._throws(lenfn, psbt, 0, 1) # Invalid subindex
         map_val = getfn(psbt, 0, 0)
         self.assertTrue(len(map_val) > 0)
         self.assertEqual(lenfn(psbt, 0, 0), len(map_val))
         self._try_invalid(findfn, psbt, map_val)
         self.assertEqual(findfn(psbt, 0, valid_item), 1)
 
+    def test_add_remove(self):
+        psbt = psbt_from_base64(SAMPLE)
+        psbt2 = psbt_from_base64(SAMPLE_V2)
+
+        for p in [psbt, psbt2]:
+            self._throws(psbt_remove_input, None, 1) # NULL PSBT
+            self._throws(psbt_remove_input, p, 1)    # Invalid index
+            if p == psbt2:
+               # Removing the last SIGHASH_SINGLE input removes PSBT_TXMOD_SINGLE
+               psbt_set_tx_modifiable_flags(p, PSBT_TXMOD_BOTH | WALLY_PSBT_TXMOD_SINGLE)
+               psbt_set_input_sighash(p, 0, WALLY_SIGHASH_SINGLE)
+            psbt_remove_input(p, 0)
+            if p == psbt2:
+               self.assertEqual(psbt_get_tx_modifiable_flags(p), PSBT_TXMOD_BOTH)
+            self._throws(psbt_remove_input, p, 0)    # Invalid index
 
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
 
         # Roundtrip to/from bytes
-        self.assertRaises(ValueError, lambda: psbt_to_bytes(None, 0))    # NULL PSBT
-        self.assertRaises(ValueError, lambda: psbt_to_bytes(psbt, 0xff)) # Bad flags
+        self._throws(psbt_to_bytes, None, 0)    # NULL PSBT
+        self._throws(psbt_to_bytes, psbt, 0xff) # Bad flags
         psbt_bytes = psbt_to_bytes(psbt, 0)
         psbt_tmp = psbt_from_bytes(psbt_bytes)
         self.assertEqual(hex_from_bytes(psbt_bytes),
@@ -74,8 +91,7 @@ class PSBTTests(unittest.TestCase):
                         (psbt_get_num_inputs, 1),
                         (psbt_get_num_outputs, 1)]:
             self.assertEqual(fn(psbt), ret)
-            with self.assertRaises(ValueError):
-                fn(None) # Null PSBT
+            self._throws(fn, None) # Null PSBT
 
         # Conversion to base64 should round trip
         self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
@@ -228,14 +244,12 @@ class PSBTTests(unittest.TestCase):
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig_0)  # Invalid signature sighash
             psbt_set_input_signatures(p, 0, empty_signatures)
             self.assertEqual(psbt_get_input_signatures_size(p, 0), 0)
-            psbt_set_input_sighash(p, 0, 0x3)
+            psbt_set_input_sighash(p, 0, WALLY_SIGHASH_SINGLE)
             self._throws(psbt_add_input_signature, p, 0, dummy_pubkey, dummy_sig)    # Incompatible sighash
             psbt_set_input_sighash(p, 0, 0x0)
             psbt_add_input_signature(p, 0, dummy_pubkey, dummy_sig)                  # Compatible, works
             self.assertEqual(psbt_get_input_signatures_size(p, 0), 1)
             # Test setting various sighash types and resulting modifiable flags for v2
-            PSBT_TXMOD_BOTH = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS
-            PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
             for sig, modflags in [
                 (dummy_sig,       0),                        # ALL -> Neither are modifiable
                 (dummy_sig_none,  WALLY_PSBT_TXMOD_OUTPUTS), # NONE -> Outputs remain modifiable
