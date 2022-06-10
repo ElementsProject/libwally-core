@@ -43,14 +43,23 @@ class PSBTTests(unittest.TestCase):
     def test_valid(self):
         """Test deserializing and roundtripping valid PSBTs"""
         buf, buf_len = make_cbuffer('00' * 4096)
+        _, is_elements_build = wally_is_elements_build()
+        clone = pointer(wally_psbt())
 
         for case in JSON['valid']:
-            psbt = self.parse_base64(case['psbt'])
+            if case.get('is_pset', False) and not is_elements_build:
+                continue # No Elements support, skip this test case
 
+            psbt = self.parse_base64(case['psbt'])
             self.assertEqual(self.to_base64(psbt), case['psbt'])
+
+            ret = wally_psbt_clone_alloc(psbt, 0, clone)
+            self.assertEqual(self.to_base64(clone), case['psbt'])
+            wally_psbt_free(clone)
 
             ret, length = wally_psbt_get_length(psbt, 0)
             self.assertEqual(ret, WALLY_OK)
+
 
             ret, written = wally_psbt_to_bytes(psbt, 0, buf, buf_len)
             self.assertEqual((ret, written), (WALLY_OK, length))
@@ -286,6 +295,26 @@ class PSBTTests(unittest.TestCase):
         ret, base64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(WALLY_OK, ret)
         self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQABAwjSBAAAAAAAAAEEAllZAA==', base64)
+
+    def test_invalid_args(self):
+        """Test invalid arguments to various PSBT functions"""
+        psbt = pointer(wally_psbt())
+
+        # psbt_from_base64
+        src_base64 = JSON['valid'][0]['psbt']
+        for args in [(None,       psbt),  # NULL base64
+                     ('',         psbt),  # Invalid flags
+                     (src_base64, None)]: # NULL dest
+            self.assertEqual(WALLY_EINVAL, wally_psbt_from_base64(*args))
+
+        self.assertEqual(WALLY_OK, wally_psbt_from_base64(JSON['valid'][0]['psbt'], psbt))
+
+        # psbt_clone_alloc
+        clone = pointer(wally_psbt())
+        for args in [(None, 0x0, clone), # NULL src
+                     (psbt, 0x1, clone), # Invalid flags
+                     (psbt, 0x0, None)]: # NULL dest
+            self.assertEqual(WALLY_EINVAL, wally_psbt_clone_alloc(*args))
 
 if __name__ == '__main__':
     unittest.main()
