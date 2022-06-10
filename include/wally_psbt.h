@@ -133,6 +133,7 @@ struct wally_psbt {
     size_t num_outputs;
     size_t outputs_allocation_len;
     struct wally_map unknowns;
+    struct wally_map global_xpubs;
     uint32_t version;
     uint32_t tx_version;
     uint32_t fallback_locktime;

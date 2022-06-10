@@ -207,6 +207,7 @@ class wally_psbt(Structure):
                 ('num_outputs', c_size_t),
                 ('outputs_allocation_len', c_size_t),
                 ('unknowns', wally_map),
+                ('global_xpubs', wally_map),
                 ('version', c_uint32),
                 ('tx_version', c_uint32),
                 ('fallback_locktime', c_uint32),

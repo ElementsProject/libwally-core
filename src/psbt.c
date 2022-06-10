@@ -31,6 +31,7 @@
 #define PSBT_SEPARATOR 0x00
 
 #define PSBT_GLOBAL_UNSIGNED_TX 0x00
+#define PSBT_GLOBAL_XPUB 0x01
 #define PSBT_GLOBAL_TX_VERSION 0x02
 #define PSBT_GLOBAL_FALLBACK_LOCKTIME 0x03
 #define PSBT_GLOBAL_INPUT_COUNT 0x04
@@ -279,19 +280,57 @@ int wally_map_add(struct wally_map *map_in,
     return map_add(map_in, key, key_len, value, value_len, false, NULL, NULL, true);
 }
 
+static int keypath_key_verify(const unsigned char *key, size_t key_len, struct ext_key *key_out)
+{
+    int ret = WALLY_EINVAL;
+
+    key_out->version = 0; /* If non-0 on return, we have a bip32 key */
+
+    if (key_len == EC_PUBLIC_KEY_LEN || key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+        ret = wally_ec_public_key_verify(key, key_len);
+    else if (key_len == BIP32_SERIALIZED_LEN) {
+        ret = bip32_key_unserialize(key, key_len, key_out);
+        if (ret == WALLY_OK &&
+            (key_out->version == BIP32_VER_MAIN_PRIVATE ||
+             key_out->version == BIP32_VER_TEST_PRIVATE))
+            ret = WALLY_EINVAL; /* Must be a public key, not private */
+        if (ret != WALLY_OK)
+            abort();
+    }
+    return ret;
+}
+
+static int keypath_verify(const unsigned char *key, size_t key_len, const unsigned char *val, size_t val_len)
+{
+    struct ext_key extkey;
+
+    (void)val;
+    if (keypath_key_verify(key, key_len, &extkey) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    if (extkey.version &&
+        extkey.depth != (val_len - BIP32_KEY_FINGERPRINT_LEN) / sizeof(uint32_t))
+        return WALLY_EINVAL;     /* Depth does not match path length */
+
+    return WALLY_OK;
+}
+
 int wally_map_add_keypath_item(struct wally_map *map_in,
                                const unsigned char *pub_key, size_t pub_key_len,
                                const unsigned char *fingerprint, size_t fingerprint_len,
                                const uint32_t *path, size_t path_len)
 {
+    struct ext_key extkey;
     unsigned char *value;
     size_t value_len, i;
     int ret;
 
-    if (!map_in ||
-        (wally_ec_public_key_verify(pub_key, pub_key_len) != WALLY_OK) ||
+    if (!map_in || keypath_key_verify(pub_key, pub_key_len, &extkey) != WALLY_OK ||
         !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
         BYTES_INVALID(path, path_len))
+        return WALLY_EINVAL;
+
+    if (extkey.version && extkey.depth != path_len)
         return WALLY_EINVAL;
 
     value_len = fingerprint_len + path_len * sizeof(uint32_t);
@@ -308,6 +347,7 @@ int wally_map_add_keypath_item(struct wally_map *map_in,
     ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, NULL, NULL, true);
     if (ret != WALLY_OK)
         clear_and_free(value, value_len);
+    wally_clear(&extkey, sizeof(extkey));
     return ret;
 }
 
@@ -789,6 +829,7 @@ int wally_psbt_free(struct wally_psbt *psbt)
 
         wally_free(psbt->outputs);
         wally_map_clear(&psbt->unknowns);
+        wally_map_clear(&psbt->global_xpubs);
         clear_and_free(psbt, sizeof(*psbt));
     }
     return WALLY_OK;
@@ -1116,7 +1157,8 @@ static int pull_map(const unsigned char **cursor, size_t *max,
                     const unsigned char *key, size_t key_len,
                     struct wally_map *map_in,
                     int (*key_fn)(const unsigned char *key, size_t key_len),
-                    int (*val_fn)(const unsigned char *val, size_t val_len))
+                    int (*val_fn)(const unsigned char *val, size_t val_len),
+                    int (*check_fn)(const unsigned char *key, size_t key_len, const unsigned char *val, size_t val_len))
 {
     const unsigned char *val;
     size_t val_len;
@@ -1126,6 +1168,8 @@ static int pull_map(const unsigned char **cursor, size_t *max,
     val_len = pull_varlength(cursor, max);
     val = pull_skip(cursor, max, val_len);
 
+    if (check_fn && check_fn(key, key_len, val, val_len) != WALLY_OK)
+        return WALLY_EINVAL;
     return map_add(map_in, key, key_len, val, val_len, false, key_fn, val_fn, false);
 }
 
@@ -1348,7 +1392,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
         }
         case PSBT_IN_PARTIAL_SIG: {
             ret = pull_map(cursor, max, key, key_len, &result->signatures,
-                           wally_ec_public_key_verify, der_sig_verify);
+                           wally_ec_public_key_verify, der_sig_verify, NULL);
             if (ret != WALLY_OK)
                 return ret;
             break;
@@ -1369,7 +1413,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             break;
         case PSBT_IN_BIP32_DERIVATION:
             if ((ret = pull_map(cursor, max, key, key_len, &result->keypaths,
-                                wally_ec_public_key_verify, NULL)) != WALLY_OK)
+                                wally_ec_public_key_verify, NULL, NULL)) != WALLY_OK)
                 return ret;
             break;
         case PSBT_IN_FINAL_SCRIPTSIG:
@@ -1557,7 +1601,7 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
             break;
         case PSBT_OUT_BIP32_DERIVATION:
             if ((ret = pull_map(cursor, max, key, key_len, &result->keypaths,
-                                wally_ec_public_key_verify, NULL)) != WALLY_OK)
+                                wally_ec_public_key_verify, NULL, NULL)) != WALLY_OK)
                 return ret;
             break;
         case PSBT_OUT_AMOUNT:
@@ -1704,6 +1748,13 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             if (ret != WALLY_OK)
                 goto fail;
             pull_subfield_end(&bytes, &len, val, val_max);
+            break;
+        }
+        case PSBT_GLOBAL_XPUB: {
+            ret = pull_map(&bytes, &len, key, key_len, &result->global_xpubs,
+                           NULL, NULL, keypath_verify);
+            if (ret != WALLY_OK)
+                goto fail;
             break;
         }
         case PSBT_GLOBAL_VERSION: {
@@ -2221,6 +2272,8 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
         if (ret != WALLY_OK)
             return ret;
     }
+    /* Global XPubs */
+    push_typed_map(&cursor, &max, PSBT_GLOBAL_XPUB, &psbt->global_xpubs);
 
     if (psbt->version == PSBT_2) {
         size_t n;
@@ -2478,6 +2531,9 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 
     if (ret == WALLY_OK)
         ret = map_extend(&psbt->unknowns, &src->unknowns, NULL, NULL);
+
+    if (ret == WALLY_OK)
+        ret = map_extend(&psbt->global_xpubs, &src->global_xpubs, NULL, NULL);
 
     return ret;
 }
