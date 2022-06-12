@@ -314,35 +314,6 @@ class PSBTTests(unittest.TestCase):
             self._throws(c_fn, psbt, 0)     # Non v2 PSBT
             self._try_get_set_i(s_fn, c_fn, g_fn, psbt2, v)
 
-        if is_elements_build():
-            self._try_set(psbt_set_input_value, psbt, 1234567, 0)
-            self._try_invalid(psbt_has_input_value, psbt)
-            self._try_invalid(psbt_get_input_value, psbt)
-            self._try_invalid(psbt_clear_input_value, psbt)
-            self.assertEqual(psbt_has_input_value(psbt, 0), 1)
-            psbt_clear_input_value(psbt, 0)
-            self.assertEqual(psbt_has_input_value(psbt, 0), 0)
-            self._try_get_set_b(psbt_set_input_vbf,
-                                psbt_get_input_vbf,
-                                psbt_get_input_vbf_len, psbt, dummy_bf)
-            self._try_get_set_b(psbt_set_input_asset,
-                                psbt_get_input_asset,
-                                psbt_get_input_asset_len, psbt, dummy_asset)
-            self._try_get_set_b(psbt_set_input_abf,
-                                psbt_get_input_abf,
-                                psbt_get_input_abf_len, psbt, dummy_bf)
-            self._try_set(psbt_set_input_pegin_tx, psbt, dummy_tx)
-            self._try_invalid(psbt_get_input_pegin_tx, psbt)
-            self._try_get_set_b(psbt_set_input_txoutproof,
-                                psbt_get_input_txoutproof,
-                                psbt_get_input_txoutproof_len, psbt, dummy_bytes)
-            self._try_get_set_b(psbt_set_input_genesis_blockhash,
-                                psbt_get_input_genesis_blockhash,
-                                psbt_get_input_genesis_blockhash_len, psbt, dummy_bytes)
-            self._try_get_set_b(psbt_set_input_claim_script,
-                                psbt_get_input_claim_script,
-                                psbt_get_input_claim_script_len, psbt, dummy_bytes)
-
         #
         # Outputs
         #
@@ -365,31 +336,6 @@ class PSBTTests(unittest.TestCase):
                                 psbt_get_output_unknown,
                                 psbt_find_output_unknown,
                                 p, dummy_unknowns, dummy_pubkey)
-            if is_elements_build():
-                self._try_get_set_b(psbt_set_output_blinding_pubkey,
-                                    psbt_get_output_blinding_pubkey,
-                                    psbt_get_output_blinding_pubkey_len, p, dummy_pubkey)
-                self._try_get_set_b(psbt_set_output_value_commitment,
-                                    psbt_get_output_value_commitment,
-                                    psbt_get_output_value_commitment_len, p, dummy_commitment)
-                self._try_get_set_b(psbt_set_output_vbf,
-                                    psbt_get_output_vbf,
-                                    psbt_get_output_vbf_len, p, dummy_bf)
-                self._try_get_set_b(psbt_set_output_asset_commitment,
-                                    psbt_get_output_asset_commitment,
-                                    psbt_get_output_asset_commitment_len, p, dummy_commitment)
-                self._try_get_set_b(psbt_set_output_abf,
-                                    psbt_get_output_abf,
-                                    psbt_get_output_abf_len, p, dummy_bf)
-                self._try_get_set_b(psbt_set_output_nonce,
-                                    psbt_get_output_nonce,
-                                    psbt_get_output_nonce_len, p, dummy_nonce)
-                self._try_get_set_b(psbt_set_output_rangeproof,
-                                    psbt_get_output_rangeproof,
-                                    psbt_get_output_rangeproof_len, p, dummy_bytes)
-                self._try_get_set_b(psbt_set_output_surjectionproof,
-                                    psbt_get_output_surjectionproof,
-                                    psbt_get_output_surjectionproof_len, p, dummy_bytes)
 
         # V2: Amount
         self._throws(psbt_set_output_amount, psbt, 0, 1234)   # Non v2 PSBT

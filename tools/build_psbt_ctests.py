@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Generate the PSBT c-test header file src/ctest/psbts.h
 import json
 

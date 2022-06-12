@@ -67,26 +67,6 @@
 #define PSBT_OUT_AMOUNT 0x03
 #define PSBT_OUT_SCRIPT 0x04
 
-#ifdef BUILD_ELEMENTS
-#define PSET_IN_VALUE 0x00
-#define PSET_IN_VALUE_BLINDER 0x01
-#define PSET_IN_ASSET 0x02
-#define PSET_IN_ASSET_BLINDER 0x03
-#define PSET_IN_PEG_IN_TX 0x04
-#define PSET_IN_TXOUT_PROOF 0x05
-#define PSET_IN_GENESIS_HASH 0x06
-#define PSET_IN_CLAIM_SCRIPT 0x07
-
-#define PSET_OUT_VALUE_COMMITMENT 0x00
-#define PSET_OUT_VALUE_BLINDER 0x01
-#define PSET_OUT_ASSET_COMMITMENT 0x02
-#define PSET_OUT_ASSET_BLINDER 0x03
-#define PSET_OUT_RANGE_PROOF 0x04
-#define PSET_OUT_SURJECTION_PROOF 0x05
-#define PSET_OUT_BLINDING_PUBKEY 0x06
-#define PSET_OUT_NONCE_COMMITMENT 0x07
-#endif /* BUILD ELEMENTS */
-
 #define PSBT_0 WALLY_PSBT_VERSION_0
 #define PSBT_2 WALLY_PSBT_VERSION_2
 
@@ -95,15 +75,6 @@
 
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
-
-#ifdef BUILD_ELEMENTS
-static const uint8_t PSET_KEY_PREFIX[8] = {'e', 'l', 'e', 'm', 'e', 'n', 't', 's'};
-
-static bool is_elements_prefix(const unsigned char *key, size_t key_len) {
-    return key_len == sizeof(PSET_KEY_PREFIX) &&
-           memcmp(key, PSET_KEY_PREFIX, key_len) == 0;
-}
-#endif /* BUILD_ELEMENTS */
 
 static int tx_clone_alloc(const struct wally_tx *src, struct wally_tx **dst) {
     return wally_tx_clone_alloc(src, 0, dst);
@@ -620,35 +591,6 @@ int wally_psbt_input_clear_required_lockheight(struct wally_psbt_input *input)
     return WALLY_OK;
 }
 
-#ifdef BUILD_ELEMENTS
-int wally_psbt_input_set_value(struct wally_psbt_input *input, uint64_t value)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    input->value = value;
-    input->has_value = 1u;
-    return WALLY_OK;
-}
-
-int wally_psbt_input_clear_value(struct wally_psbt_input *input)
-{
-    if (!input)
-        return WALLY_EINVAL;
-    input->value = 0;
-    input->has_value = 0;
-    return WALLY_OK;
-}
-
-SET_BYTES_N(wally_psbt_input, vbf, BLINDING_FACTOR_LEN)
-SET_BYTES_N(wally_psbt_input, asset, ASSET_TAG_LEN)
-SET_BYTES_N(wally_psbt_input, abf, BLINDING_FACTOR_LEN)
-SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx,
-           tx_clone_alloc, wally_tx_free)
-SET_BYTES(wally_psbt_input, txoutproof)
-SET_BYTES_N(wally_psbt_input, genesis_blockhash, SHA256_LEN)
-SET_BYTES(wally_psbt_input, claim_script)
-#endif /* BUILD_ELEMENTS */
-
 static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 {
     if (input) {
@@ -662,16 +604,6 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_map_clear(&input->signatures);
         wally_map_clear(&input->unknowns);
         clear_and_free(input->previous_txid, input->previous_txid_len);
-
-#ifdef BUILD_ELEMENTS
-        clear_and_free(input->vbf, input->vbf_len);
-        clear_and_free(input->asset, input->asset_len);
-        clear_and_free(input->abf, input->abf_len);
-        wally_tx_free(input->pegin_tx);
-        clear_and_free(input->txoutproof, input->txoutproof_len);
-        clear_and_free(input->genesis_blockhash, input->genesis_blockhash_len);
-        clear_and_free(input->claim_script, input->claim_script_len);
-#endif /* BUILD_ELEMENTS */
 
         wally_clear(input, sizeof(*input));
         if (free_parent)
@@ -706,30 +638,6 @@ int wally_psbt_output_clear_amount(struct wally_psbt_output *output)
 
 SET_BYTES(wally_psbt_output, script)
 
-#ifdef BUILD_ELEMENTS
-int wally_psbt_output_set_blinding_pubkey(struct wally_psbt_output *output,
-                                          const unsigned char *pub_key,
-                                          size_t pub_key_len)
-{
-    int ret;
-    if (!output || BYTES_INVALID(pub_key, pub_key_len))
-        return WALLY_EINVAL;
-    if (pub_key &&
-        (ret = wally_ec_public_key_verify(pub_key, pub_key_len)) != WALLY_OK)
-        return ret;
-    return replace_bytes(pub_key, pub_key_len,
-                         &output->blinding_pubkey, &output->blinding_pubkey_len);
-}
-
-SET_BYTES_N(wally_psbt_output, value_commitment, ASSET_COMMITMENT_LEN)
-SET_BYTES_N(wally_psbt_output, vbf, BLINDING_FACTOR_LEN)
-SET_BYTES_N(wally_psbt_output, asset_commitment, ASSET_COMMITMENT_LEN)
-SET_BYTES_N(wally_psbt_output, abf, BLINDING_FACTOR_LEN)
-SET_BYTES_N(wally_psbt_output, nonce, WALLY_TX_ASSET_CT_NONCE_LEN)
-SET_BYTES(wally_psbt_output, rangeproof)
-SET_BYTES(wally_psbt_output, surjectionproof)
-#endif/* BUILD_ELEMENTS */
-
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
 {
     if (output) {
@@ -738,18 +646,6 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->keypaths);
         wally_map_clear(&output->unknowns);
         clear_and_free(output->script, output->script_len);
-
-#ifdef BUILD_ELEMENTS
-        clear_and_free(output->blinding_pubkey, output->blinding_pubkey_len);
-        clear_and_free(output->value_commitment, output->value_commitment_len);
-        clear_and_free(output->vbf, output->vbf_len);
-        clear_and_free(output->asset_commitment, output->asset_commitment_len);
-        clear_and_free(output->abf, output->abf_len);
-        clear_and_free(output->nonce, output->nonce_len);
-        clear_and_free(output->rangeproof, output->rangeproof_len);
-        clear_and_free(output->surjectionproof, output->surjectionproof_len);
-#endif /* BUILD_ELEMENTS */
-
         wally_clear(output, sizeof(*output));
         if (free_parent)
             wally_free(output);
@@ -796,24 +692,6 @@ int wally_psbt_init_alloc(uint32_t version, size_t inputs_allocation_len,
     result->tx = NULL;
     return WALLY_OK;
 }
-
-#ifdef BUILD_ELEMENTS
-int wally_psbt_elements_init_alloc(
-    uint32_t version,
-    size_t inputs_allocation_len,
-    size_t outputs_allocation_len,
-    size_t global_unknowns_allocation_len,
-    struct wally_psbt **output)
-{
-    int ret = wally_psbt_init_alloc(version, inputs_allocation_len,
-                                    outputs_allocation_len,
-                                    global_unknowns_allocation_len, output);
-    if (ret == WALLY_OK)
-        memcpy((*output)->magic, PSET_MAGIC, sizeof(PSET_MAGIC));
-
-    return ret;
-}
-#endif /* BUILD_ELEMENTS */
 
 int wally_psbt_free(struct wally_psbt *psbt)
 {
@@ -1197,86 +1075,6 @@ static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
     return map_add(unknowns, key, key_len, val, val_len, false, NULL, NULL, false);
 }
 
-#ifdef BUILD_ELEMENTS
-static size_t push_elements_bytes_size(const struct wally_tx_output *out)
-{
-    size_t size = 0;
-    size += out->asset_len == 0 ? 1 : out->asset_len;
-    size += out->value_len == 0 ? 1 : out->value_len;
-    size += out->nonce_len == 0 ? 1 : out->nonce_len;
-    size += out->script_len == 0 ? 1 : out->script_len + 1;
-    return size;
-}
-
-static void push_elements_bytes(unsigned char **cursor, size_t *max,
-                                unsigned char *value, size_t val_len)
-{
-    unsigned char empty = 0;
-    push_bytes(cursor, max, value ? value : &empty, value ? val_len : sizeof(empty));
-}
-
-static int pull_elements_confidential(const unsigned char **cursor, size_t *max,
-                                      const unsigned char **value, size_t *val_len,
-                                      size_t prefixA, size_t prefixB,
-                                      size_t prefixed_size, size_t explicit_size)
-{
-    /* First byte is always the 'version' which tells you what the value is */
-    const uint8_t type = peek_u8(cursor, max);
-    size_t size;
-
-    if (type == 0) {
-        /* Empty, Pop off the type */
-        pull_u8(cursor, max);
-        *value = NULL;
-        *val_len = 0;
-        return WALLY_OK;
-    }
-
-    if (type == 1)
-        size = explicit_size;
-    else if (type == prefixA || type == prefixB)
-        size = prefixed_size;
-    else
-        return WALLY_EINVAL;
-
-    *value = pull_skip(cursor, max, size);
-    if (!*cursor)
-        return WALLY_EINVAL;
-    *val_len = size;
-    return WALLY_OK;
-}
-
-/* Either returns a 33-byte commitment to a confidential value, or
- * a 64-bit explicit value. */
-static int pull_confidential_value(const unsigned char **cursor, size_t *max,
-                                   const unsigned char **value, size_t *val_len)
-
-{
-    return pull_elements_confidential(cursor, max, value, val_len,
-                                      WALLY_TX_ASSET_CT_VALUE_PREFIX_A, WALLY_TX_ASSET_CT_VALUE_PREFIX_B,
-                                      WALLY_TX_ASSET_CT_VALUE_LEN, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN);
-}
-
-static int pull_confidential_asset(const unsigned char **cursor, size_t *max,
-                                   const unsigned char **asset, size_t *asset_len)
-
-{
-    return pull_elements_confidential(cursor, max, asset, asset_len,
-                                      WALLY_TX_ASSET_CT_ASSET_PREFIX_A, WALLY_TX_ASSET_CT_ASSET_PREFIX_B,
-                                      WALLY_TX_ASSET_CT_ASSET_LEN, WALLY_TX_ASSET_CT_ASSET_LEN);
-}
-
-static int pull_nonce(const unsigned char **cursor, size_t *max,
-                      const unsigned char **nonce, size_t *nonce_len)
-
-{
-    return pull_elements_confidential(cursor, max, nonce, nonce_len,
-                                      WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B,
-                                      WALLY_TX_ASSET_CT_NONCE_LEN, WALLY_TX_ASSET_CT_NONCE_LEN);
-}
-
-#endif /* BUILD_ELEMENTS */
-
 static void fetch_varlength_ptr(const unsigned char **dst, size_t *len,
                                 const unsigned char **cursor, size_t *max)
 {
@@ -1347,35 +1145,6 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             /* Start parsing the value field. */
             pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                 &val, &val_max);
-#ifdef BUILD_ELEMENTS
-            if (flags & WALLY_TX_FLAG_USE_ELEMENTS) {
-                const unsigned char *asset, *value, *nonce;
-                size_t asset_len, value_len, nonce_len;
-                if ((ret = pull_confidential_asset(&val, &val_max, &asset, &asset_len)) != WALLY_OK)
-                    return ret;
-                if ((ret = pull_confidential_value(&val, &val_max, &value, &value_len)) != WALLY_OK)
-                    return ret;
-                if ((ret = pull_nonce(&val, &val_max, &nonce, &nonce_len)) != WALLY_OK)
-                    return ret;
-
-                script_len = pull_varint(&val, &val_max);
-                script = pull_skip(&val, &val_max, script_len);
-                if (!script || !script_len)
-                    return WALLY_EINVAL;
-
-                ret = wally_tx_elements_output_init_alloc(script, script_len,
-                                                          asset, asset_len,
-                                                          value, value_len,
-                                                          nonce, nonce_len,
-                                                          NULL, 0, NULL, 0,
-                                                          &result->witness_utxo);
-                if (ret != WALLY_OK)
-                    return ret;
-
-                subfield_nomore_end(cursor, max, val, val_max);
-                break;
-            }
-#endif /* BUILD_ELEMENTS */
 
             amount = pull_le64(&val, &val_max);
             script_len = pull_varint(&val, &val_max);
@@ -1489,74 +1258,6 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 return WALLY_EINVAL;
             break;
         }
-#ifdef BUILD_ELEMENTS
-        case PSBT_PROPRIETARY_TYPE: {
-            const uint64_t id_len = pull_varlength(&key, &key_len);
-
-            if (!is_elements_prefix(key, id_len))
-                goto unknown_type;
-
-            /* Skip the elements_id prefix */
-            pull_skip(&key, &key_len, sizeof(PSET_KEY_PREFIX));
-
-            switch (pull_varint(&key, &key_len)) {
-            case PSET_IN_VALUE: {
-                if (result->has_value)
-                    return WALLY_EINVAL; /* Duplicate value */
-
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                /* Start parsing the value field. */
-                pull_subfield_start(cursor, max, pull_varint(cursor, max),
-                                    &val, &val_max);
-                result->value = pull_le64(&val, &val_max);
-                subfield_nomore_end(cursor, max, val, val_max);
-                result->has_value = true;
-                break;
-            }
-            case PSET_IN_VALUE_BLINDER:
-                PSBT_PULL_B(input, vbf);
-                break;
-            case PSET_IN_ASSET:
-                PSBT_PULL_B(input, asset);
-                break;
-            case PSET_IN_ASSET_BLINDER:
-                PSBT_PULL_B(input, abf);
-                break;
-            case PSET_IN_PEG_IN_TX: {
-                if (result->pegin_tx)
-                    return WALLY_EINVAL; /* Duplicate value */
-
-                subfield_nomore_end(cursor, max, key, key_len);
-
-                /* Start parsing the value field. */
-                pull_subfield_start(cursor, max,
-                                    pull_varint(cursor, max),
-                                    &val, &val_max);
-
-                ret = wally_tx_from_bytes(val, val_max, flags, &result->pegin_tx);
-                if (ret != WALLY_OK)
-                    return ret;
-
-                pull_subfield_end(cursor, max, val, val_max);
-                break;
-            }
-            case PSET_IN_TXOUT_PROOF:
-                PSBT_PULL_B(input, txoutproof);
-                break;
-            case PSET_IN_GENESIS_HASH:
-                PSBT_PULL_B(input, genesis_blockhash);
-                break;
-            case PSET_IN_CLAIM_SCRIPT:
-                PSBT_PULL_B(input, claim_script);
-                break;
-            default:
-                goto unknown_type;
-            }
-            break;
-        }
-unknown_type:
-#endif /* BUILD_ELEMENTS */
         default: {
             /* Unknown case without elements or for unknown proprietary types */
             ret = pull_unknown_key_value(cursor, max, pre_key, &result->unknowns);
@@ -1620,55 +1321,12 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
         case PSBT_OUT_SCRIPT:
             PSBT_PULL_B(output, script);
             break;
-#ifdef BUILD_ELEMENTS
-        case PSBT_PROPRIETARY_TYPE: {
-            const uint64_t id_len = pull_varlength(&key, &key_len);
-
-            if (!is_elements_prefix(key, id_len))
-                goto unknown_type;
-
-            /* Skip the elements_id prefix */
-            pull_skip(&key, &key_len, sizeof(PSET_KEY_PREFIX));
-
-            switch (pull_varint(&key, &key_len)) {
-            case PSET_OUT_VALUE_COMMITMENT:
-                PSBT_PULL_B(output, value_commitment);
-                break;
-            case PSET_OUT_VALUE_BLINDER:
-                PSBT_PULL_B(output, vbf);
-                break;
-            case PSET_OUT_ASSET_COMMITMENT:
-                PSBT_PULL_B(output, asset_commitment);
-                break;
-            case PSET_OUT_ASSET_BLINDER:
-                PSBT_PULL_B(output, abf);
-                break;
-            case PSET_OUT_RANGE_PROOF:
-                PSBT_PULL_B(output, rangeproof);
-                break;
-            case PSET_OUT_SURJECTION_PROOF:
-                PSBT_PULL_B(output, surjectionproof);
-                break;
-            case PSET_OUT_BLINDING_PUBKEY:
-                PSBT_PULL_B(output, blinding_pubkey);
-                break;
-            case PSET_OUT_NONCE_COMMITMENT:
-                PSBT_PULL_B(output, nonce);
-                break;
-            default:
-                goto unknown_type;
-            }
-            break;
-        }
-unknown_type:
-#endif /* BUILD_ELEMENTS */
-        default: {
+        default:
             /* Unknown case without elements or for unknown proprietary types */
             ret = pull_unknown_key_value(cursor, max, pre_key, &result->unknowns);
             if (ret != WALLY_OK)
                 return ret;
             break;
-        }
         }
         pre_key = *cursor;
     }
@@ -1699,17 +1357,8 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         goto fail;
     }
     if (memcmp(magic, PSBT_MAGIC, sizeof(PSBT_MAGIC)) != 0 ) {
-#ifdef BUILD_ELEMENTS
-        if (memcmp(magic, PSET_MAGIC, sizeof(PSET_MAGIC)) != 0) {
-            ret = WALLY_EINVAL;  /* Invalid Magic */
-            goto fail;
-        }
-        flags |= WALLY_TX_FLAG_USE_ELEMENTS;
-        pre144flag = 0;
-#else
         ret = WALLY_EINVAL;  /* Invalid Magic */
         goto fail;
-#endif /* BUILD_ELEMENTS */
     }
 
     /* Make the wally_psbt */
@@ -1942,34 +1591,6 @@ static void push_psbt_key(unsigned char **cursor, size_t *max,
     push_bytes(cursor, max, extra, extra_len);
 }
 
-#ifdef BUILD_ELEMENTS
-/* Common case of pushing elements proprietary type keys */
-static void push_elements_key(unsigned char **cursor, size_t *max,
-                              uint64_t type)
-{
-    push_varint(cursor, max, varint_get_length(PSBT_PROPRIETARY_TYPE)
-                + varint_get_length(sizeof(PSET_KEY_PREFIX))
-                + sizeof(PSET_KEY_PREFIX) + varint_get_length(type));
-    push_varint(cursor, max, PSBT_PROPRIETARY_TYPE);
-    push_varbuff(cursor, max, PSET_KEY_PREFIX, sizeof(PSET_KEY_PREFIX));
-    push_varint(cursor, max, type);
-}
-
-static void push_elements_varbuff(unsigned char **cursor, size_t *max,
-                                  uint64_t type,
-                                  const unsigned char *bytes, size_t bytes_len)
-{
-    /* Note that due to dummy mallocs, bytes can be non-NULL while
-     * bytes_len is 0. This represents a present-but-empty varbuff.
-     */
-    if (bytes) {
-        push_elements_key(cursor, max, type);
-        push_varbuff(cursor, max, bytes, bytes_len);
-    }
-}
-
-#endif /* BUILD_ELEMENTS */
-
 static int push_length_and_tx(unsigned char **cursor, size_t *max,
                               const struct wally_tx *tx, uint32_t flags)
 {
@@ -2033,15 +1654,8 @@ static void push_typed_le32(unsigned char **cursor, size_t *max,
 static void push_typed_le64(unsigned char **cursor, size_t *max,
                             uint64_t type, uint64_t value, bool is_elements)
 {
-#ifdef BUILD_ELEMENTS
-    if (is_elements)
-        push_elements_key(cursor, max, type);
-    else
-        push_psbt_key(cursor, max, type, NULL, 0);
-#else
     (void)is_elements;
     push_psbt_key(cursor, max, type, NULL, 0);
-#endif
     push_varint(cursor, max, sizeof(value));
     push_le64(cursor, max, value);
 }
@@ -2075,33 +1689,6 @@ static int push_psbt_input(const struct wally_psbt *psbt,
     }
 
     /* Witness utxo */
-#ifdef BUILD_ELEMENTS
-    if ((flags & WALLY_TX_FLAG_USE_ELEMENTS) && input->witness_utxo) {
-        struct wally_tx_output *utxo = input->witness_utxo;
-        const size_t buff_len = push_elements_bytes_size(utxo);
-        size_t remaining = buff_len;
-        unsigned char buff[1024], *buff_p = buff, *ptr;
-
-        if (buff_len > sizeof(buff) && !(buff_p = wally_malloc(buff_len)))
-            return WALLY_ENOMEM;
-        ptr = buff_p;
-
-        /* Push the asset, value, nonce, then scriptpubkey */
-        push_psbt_key(cursor, max, PSBT_IN_WITNESS_UTXO, NULL, 0);
-
-        push_elements_bytes(&ptr, &remaining, utxo->asset, utxo->asset_len);
-        push_elements_bytes(&ptr, &remaining, utxo->value, utxo->value_len);
-        push_elements_bytes(&ptr, &remaining, utxo->nonce, utxo->nonce_len);
-        push_varbuff(&ptr, &remaining, utxo->script, utxo->script_len);
-
-        if (!remaining)
-            push_varbuff(cursor, max, buff_p, buff_len);
-        if (buff_p != buff)
-            clear_and_free(buff_p, buff_len);
-        if (remaining)
-            return WALLY_ERROR; /* Should not happen! */
-    } else
-#endif /* BUILD_ELEMENTS */
     if (input->witness_utxo) {
         unsigned char wit_bytes[50], *w = wit_bytes; /* Witness outputs can be no larger than 50 bytes as specified in BIP 141 */
         size_t wit_max = sizeof(wit_bytes);
@@ -2165,32 +1752,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
         if (input->required_lockheight)
             push_typed_le32(cursor, max, PSBT_IN_REQUIRED_HEIGHT_LOCKTIME, input->required_lockheight);
     }
-#ifdef BUILD_ELEMENTS
-    /* Confidential Assets blinding data */
-    if (input->has_value)
-        push_typed_le64(cursor, max, PSET_IN_VALUE, input->value, true);
 
-    push_elements_varbuff(cursor, max, PSET_IN_VALUE_BLINDER,
-                          input->vbf, input->vbf_len);
-    push_elements_varbuff(cursor, max, PSET_IN_ASSET,
-                          input->asset, input->asset_len);
-    push_elements_varbuff(cursor, max, PSET_IN_ASSET_BLINDER,
-                          input->abf, input->abf_len);
-    /* Peg ins */
-    if (input->pegin_tx) {
-        push_elements_key(cursor, max, PSET_IN_PEG_IN_TX);
-        if ((ret = push_length_and_tx(cursor, max,
-                                      input->pegin_tx,
-                                      WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
-            return ret;
-    }
-    push_elements_varbuff(cursor, max, PSET_IN_TXOUT_PROOF,
-                          input->txoutproof, input->txoutproof_len);
-    push_elements_varbuff(cursor, max, PSET_IN_GENESIS_HASH,
-                          input->genesis_blockhash, input->genesis_blockhash_len);
-    push_elements_varbuff(cursor, max, PSET_IN_CLAIM_SCRIPT,
-                          input->claim_script, input->claim_script_len);
-#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     push_map(cursor, max, &input->unknowns);
     /* Separator */
@@ -2218,24 +1780,6 @@ static int push_psbt_output(const struct wally_psbt *psbt,
         push_typed_varbuff(cursor, max, PSBT_OUT_SCRIPT, output->script, output->script_len);
     }
 
-#ifdef BUILD_ELEMENTS
-    push_elements_varbuff(cursor, max, PSET_OUT_VALUE_COMMITMENT,
-                          output->value_commitment, output->value_commitment_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_VALUE_BLINDER,
-                          output->vbf, output->vbf_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_ASSET_COMMITMENT,
-                          output->asset_commitment, output->asset_commitment_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_ASSET_BLINDER,
-                          output->abf, output->abf_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_RANGE_PROOF,
-                          output->rangeproof, output->rangeproof_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_SURJECTION_PROOF,
-                          output->surjectionproof, output->surjectionproof_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_BLINDING_PUBKEY,
-                          output->blinding_pubkey, output->blinding_pubkey_len);
-    push_elements_varbuff(cursor, max, PSET_OUT_NONCE_COMMITMENT,
-                          output->nonce, output->nonce_len);
-#endif /* BUILD_ELEMENTS */
     /* Unknowns */
     push_map(cursor, max, &output->unknowns);
     /* Separator */
@@ -2456,20 +2000,6 @@ static int combine_inputs(struct wally_psbt_input *dst,
     if (!dst->required_lockheight && src->required_lockheight)
         dst->required_lockheight = src->required_lockheight;
 
-#ifdef BUILD_ELEMENTS
-    if (!dst->has_value && src->has_value) {
-        dst->value = src->value;
-        dst->has_value = true;
-    }
-    COMBINE_BYTES(input, vbf);
-    COMBINE_BYTES(input, asset);
-    COMBINE_BYTES(input, abf);
-    if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
-        return ret;
-    COMBINE_BYTES(input, txoutproof);
-    COMBINE_BYTES(input, genesis_blockhash);
-    COMBINE_BYTES(input, claim_script);
-#endif
     return WALLY_OK;
 }
 
@@ -2492,16 +2022,6 @@ static int combine_outputs(struct wally_psbt_output *dst,
     }
     COMBINE_BYTES(output, script);
 
-#ifdef BUILD_ELEMENTS
-    COMBINE_BYTES(output, blinding_pubkey);
-    COMBINE_BYTES(output, value_commitment);
-    COMBINE_BYTES(output, vbf);
-    COMBINE_BYTES(output, asset_commitment);
-    COMBINE_BYTES(output, abf);
-    COMBINE_BYTES(output, nonce);
-    COMBINE_BYTES(output, rangeproof);
-    COMBINE_BYTES(output, surjectionproof);
-#endif
     return WALLY_OK;
 }
 #undef COMBINE_BYTES
@@ -2594,10 +2114,8 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
     if ((ret = wally_psbt_is_elements(psbt, is_elements)) != WALLY_OK)
         return ret;
 
-#ifndef BUILD_ELEMENTS
     if (*is_elements)
         return WALLY_EINVAL;
-#endif /* ndef BUILD_ELEMENTS */
 
     if (psbt->version == PSBT_0) {
         if (!psbt->tx)
@@ -2680,9 +2198,6 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
                            struct wally_psbt **output)
 {
-#ifdef BUILD_ELEMENTS
-    size_t is_elements;
-#endif /* BUILD_ELEMENTS */
     size_t i;
     int ret;
 
@@ -2691,18 +2206,6 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
     if (!psbt_is_valid(psbt) || flags || !output)
         return WALLY_EINVAL;
 
-#ifdef BUILD_ELEMENTS
-    if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
-        return ret;
-
-    if (is_elements)
-        ret = wally_psbt_elements_init_alloc(psbt->version,
-                                             psbt->inputs_allocation_len,
-                                             psbt->outputs_allocation_len,
-                                             psbt->unknowns.items_allocation_len,
-                                             output);
-    else
-#endif /* BUILD_ELEMENTS */
     ret = wally_psbt_init_alloc(psbt->version,
                                 psbt->inputs_allocation_len,
                                 psbt->outputs_allocation_len,
@@ -2921,17 +2424,6 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                 goto cleanup;
             }
 
-#ifdef BUILD_ELEMENTS
-            if (is_elements)
-                ret = wally_tx_get_elements_signature_hash(tx, i,
-                                                           scriptcode, scriptcode_len,
-                                                           input->witness_utxo->value,
-                                                           input->witness_utxo->value_len,
-                                                           sighash,
-                                                           WALLY_TX_FLAG_USE_WITNESS,
-                                                           signature_hash, SHA256_LEN);
-            else
-#endif /* BUILD_ELEMENTS */
             ret = wally_tx_get_btc_signature_hash(tx, i,
                                                   scriptcode, scriptcode_len,
                                                   input->witness_utxo->satoshi,
@@ -3503,36 +2995,6 @@ int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t i
     return wally_psbt_input_clear_required_lockheight(psbt_get_input(psbt, index));
 }
 
-#ifdef BUILD_ELEMENTS
-int wally_psbt_has_input_value(const struct wally_psbt *psbt, size_t index, size_t *written) {
-    struct wally_psbt_input *p = psbt_get_input(psbt, index);
-    if (written) *written = 0;
-    if (!p || !written) return WALLY_EINVAL;
-    *written = p->has_value ? 1 : 0;
-    return WALLY_OK;
-}
-PSBT_GET_I(input, value, uint64_t, PSBT_0)
-PSBT_GET_B(input, vbf, PSBT_0)
-PSBT_GET_B(input, asset, PSBT_0)
-PSBT_GET_B(input, abf, PSBT_0)
-PSBT_GET_S(input, pegin_tx, wally_tx, tx_clone_alloc)
-PSBT_GET_B(input, txoutproof, PSBT_0)
-PSBT_GET_B(input, genesis_blockhash, PSBT_0)
-PSBT_GET_B(input, claim_script, PSBT_0)
-
-PSBT_SET_I(input, value, uint64_t, PSBT_0)
-int wally_psbt_clear_input_value(struct wally_psbt *psbt, size_t index) {
-    return wally_psbt_input_clear_value(psbt_get_input(psbt, index));
-}
-PSBT_SET_B(input, vbf, PSBT_0)
-PSBT_SET_B(input, asset, PSBT_0)
-PSBT_SET_B(input, abf, PSBT_0)
-PSBT_SET_S(input, pegin_tx, wally_tx)
-PSBT_SET_B(input, txoutproof, PSBT_0)
-PSBT_SET_B(input, genesis_blockhash, PSBT_0)
-PSBT_SET_B(input, claim_script, PSBT_0)
-#endif /* BUILD_ELEMENTS */
-
 PSBT_GET_B(output, redeem_script, PSBT_0)
 PSBT_GET_B(output, witness_script, PSBT_0)
 PSBT_GET_M(output, keypath)
@@ -3557,24 +3019,5 @@ int wally_psbt_clear_output_amount(struct wally_psbt *psbt, size_t index) {
     return wally_psbt_output_clear_amount(psbt_get_output(psbt, index));
 }
 PSBT_SET_B(output, script, PSBT_2)
-#ifdef BUILD_ELEMENTS
-PSBT_GET_B(output, blinding_pubkey, PSBT_0)
-PSBT_GET_B(output, value_commitment, PSBT_0)
-PSBT_GET_B(output, vbf, PSBT_0)
-PSBT_GET_B(output, asset_commitment, PSBT_0)
-PSBT_GET_B(output, abf, PSBT_0)
-PSBT_GET_B(output, nonce, PSBT_0)
-PSBT_GET_B(output, rangeproof, PSBT_0)
-PSBT_GET_B(output, surjectionproof, PSBT_0)
-
-PSBT_SET_B(output, blinding_pubkey, PSBT_0)
-PSBT_SET_B(output, value_commitment, PSBT_0)
-PSBT_SET_B(output, vbf, PSBT_0)
-PSBT_SET_B(output, asset_commitment, PSBT_0)
-PSBT_SET_B(output, abf, PSBT_0)
-PSBT_SET_B(output, nonce, PSBT_0)
-PSBT_SET_B(output, rangeproof, PSBT_0)
-PSBT_SET_B(output, surjectionproof, PSBT_0)
-#endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */

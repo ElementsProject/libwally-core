@@ -326,7 +326,6 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if BUILD_ELEMENTS
-	$(AM_V_at)$(PYTHON_TEST) test/test_pset.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py

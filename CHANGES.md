@@ -1,5 +1,8 @@
 # Changes
 
+## Version 0.8.5
+- Support for PSET v0 (Elements) has been removed.
+
 ## Version 0.8.2
 
 - struct wally_operations has changed to hold the size of the struct
