@@ -656,13 +656,14 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
 int wally_psbt_init_alloc(uint32_t version, size_t inputs_allocation_len,
                           size_t outputs_allocation_len,
                           size_t global_unknowns_allocation_len,
+                          uint32_t flags,
                           struct wally_psbt **output)
 {
     struct wally_psbt *result;
     int ret;
 
     TX_CHECK_OUTPUT;
-    if (version != PSBT_0 && version != PSBT_2)
+    if ((version != PSBT_0 && version != PSBT_2) || flags)
         return WALLY_EINVAL; /* Only versions 0 and 2 are specified/supported */
     TX_OUTPUT_ALLOC(struct wally_psbt);
 
@@ -1362,7 +1363,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     }
 
     /* Make the wally_psbt */
-    if ((ret = wally_psbt_init_alloc(0, 0, 0, 8, &result)) != WALLY_OK)
+    if ((ret = wally_psbt_init_alloc(0, 0, 0, 8, 0, &result)) != WALLY_OK)
         goto fail;
 
     /* Set the magic */
@@ -2210,7 +2211,7 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
                                 psbt->inputs_allocation_len,
                                 psbt->outputs_allocation_len,
                                 psbt->unknowns.items_allocation_len,
-                                output);
+                                0, output);
     if (ret == WALLY_OK) {
         (*output)->num_inputs = psbt->num_inputs;
         (*output)->num_outputs = psbt->num_outputs;

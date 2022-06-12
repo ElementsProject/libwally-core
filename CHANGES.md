@@ -1,7 +1,11 @@
 # Changes
 
-## Version 0.8.5
+## Version 0.8.6
 - Support for PSET v0 (Elements) has been removed.
+- PSBT: PSBT v2 support has been added and the ABI has changed slightly as a result.
+  Users will need to recompile their applications and/or change function names and
+  arguments in the cases listed below:
+- psbt_init_alloc has changed its definition and now has a new flags argument.
 
 ## Version 0.8.2
 

@@ -329,7 +329,7 @@ for f in (
     ('wally_psbt_get_length', c_int, [POINTER(wally_psbt), c_uint32, c_size_t_p]),
     ('wally_psbt_get_locktime', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_get_tx_version', c_int, [POINTER(wally_psbt), c_size_t_p]),
-    ('wally_psbt_init_alloc', c_int, [c_uint32, c_size_t, c_size_t, c_size_t, POINTER(POINTER(wally_psbt))]),
+    ('wally_psbt_init_alloc', c_int, [c_uint32, c_size_t, c_size_t, c_size_t, c_uint32, POINTER(POINTER(wally_psbt))]),
     ('wally_psbt_input_add_keypath_item', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t, c_uint_p, c_size_t]),
     ('wally_psbt_input_add_signature', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_psbt_input_clear_required_lockheight', c_int, [POINTER(wally_psbt_input)]),

@@ -604,6 +604,7 @@ WALLY_CORE_API int wally_psbt_output_set_script(
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
+ * :param flags: Flags controlling psbt creation. Must be 0.
  * :param output: Destination for the resulting PSBT output.
  */
 WALLY_CORE_API int wally_psbt_init_alloc(
@@ -611,6 +612,7 @@ WALLY_CORE_API int wally_psbt_init_alloc(
     size_t inputs_allocation_len,
     size_t outputs_allocation_len,
     size_t global_unknowns_allocation_len,
+    uint32_t flags,
     struct wally_psbt **output);
 
 #ifndef SWIG_PYTHON

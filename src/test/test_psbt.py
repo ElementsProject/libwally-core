@@ -70,7 +70,7 @@ class PSBTTests(unittest.TestCase):
         psbt = pointer(wally_psbt())
 
         for case in JSON['creator']:
-            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(case['version'], 2, 3, 0, psbt))
+            self.assertEqual(WALLY_OK, wally_psbt_init_alloc(case['version'], 2, 3, 0, 0, psbt))
 
             tx = pointer(wally_tx())
             self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 2, 2, tx))
@@ -243,7 +243,7 @@ class PSBTTests(unittest.TestCase):
             (1, None),
             (2, 'cHNidP8B+wQCAAAAAQIEAgAAAAEEAQABBQEAAA=='),
             (3, None) ]:
-            ret = wally_psbt_init_alloc(ver, 0, 0, 0, psbt)
+            ret = wally_psbt_init_alloc(ver, 0, 0, 0, 0, psbt)
             self.assertEqual(ret, WALLY_OK if result else WALLY_EINVAL)
             if result:
                 self.assertEqual(self.to_base64(psbt, MOD_NONE), result)
@@ -253,7 +253,7 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(ret, WALLY_OK if ver == 0 else WALLY_EINVAL)
 
         # Create a v2 PSBT
-        wally_psbt_init_alloc(2, 0, 0, 0, psbt)
+        wally_psbt_init_alloc(2, 0, 0, 0, 0, psbt)
 
         self.assertEqual(wally_psbt_set_tx_version(psbt, 123), WALLY_OK)
         self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAA==')

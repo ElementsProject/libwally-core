@@ -703,8 +703,8 @@ inline int psbt_get_tx_version(const PSBT& psbt, size_t* written) {
     return ret;
 }
 
-inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_t outputs_allocation_len, size_t global_unknowns_allocation_len, struct wally_psbt** output) {
-    int ret = ::wally_psbt_init_alloc(version, inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, output);
+inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_t outputs_allocation_len, size_t global_unknowns_allocation_len, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_init_alloc(version, inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, flags, output);
     return ret;
 }
 
