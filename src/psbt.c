@@ -854,9 +854,9 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
-int wally_psbt_add_input_at(struct wally_psbt *psbt,
-                            uint32_t index, uint32_t flags,
-                            const struct wally_tx_input *input)
+int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
+                               uint32_t index, uint32_t flags,
+                               const struct wally_tx_input *input)
 {
     struct wally_tx_input tx_input;
     int ret = WALLY_OK;
@@ -942,9 +942,9 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
     return ret;
 }
 
-int wally_psbt_add_output_at(struct wally_psbt *psbt,
-                             uint32_t index, uint32_t flags,
-                             const struct wally_tx_output *output)
+int wally_psbt_add_tx_output_at(struct wally_psbt *psbt,
+                                uint32_t index, uint32_t flags,
+                                const struct wally_tx_output *output)
 {
     int ret = WALLY_OK;
 

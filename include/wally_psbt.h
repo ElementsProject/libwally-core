@@ -739,7 +739,7 @@ WALLY_CORE_API int wally_psbt_set_tx_modifiable_flags(
  * :param flags: Flags controlling input insertion. Must be 0 or ``WALLY_PSBT_FLAG_NON_FINAL``.
  * :param input: The transaction input to add.
  */
-WALLY_CORE_API int wally_psbt_add_input_at(
+WALLY_CORE_API int wally_psbt_add_tx_input_at(
     struct wally_psbt *psbt,
     uint32_t index,
     uint32_t flags,
@@ -763,7 +763,7 @@ WALLY_CORE_API int wally_psbt_remove_input(
  * :param flags: Flags controlling output insertion. Must be 0.
  * :param output: The transaction output to add.
  */
-WALLY_CORE_API int wally_psbt_add_output_at(
+WALLY_CORE_API int wally_psbt_add_tx_output_at(
     struct wally_psbt *psbt,
     uint32_t index,
     uint32_t flags,

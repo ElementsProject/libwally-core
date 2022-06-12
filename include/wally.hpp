@@ -623,14 +623,14 @@ inline int pbkdf2_hmac_sha512(const PASS& pass, const SALT& salt, uint32_t flags
 }
 
 template <class PSBT>
-inline int psbt_add_input_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_input* input) {
-    int ret = ::wally_psbt_add_input_at(detail::get_p(psbt), index, flags, input);
+inline int psbt_add_tx_input_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_input* input) {
+    int ret = ::wally_psbt_add_tx_input_at(detail::get_p(psbt), index, flags, input);
     return ret;
 }
 
 template <class PSBT>
-inline int psbt_add_output_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_output* output) {
-    int ret = ::wally_psbt_add_output_at(detail::get_p(psbt), index, flags, output);
+inline int psbt_add_tx_output_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_output* output) {
+    int ret = ::wally_psbt_add_tx_output_at(detail::get_p(psbt), index, flags, output);
     return ret;
 }
 

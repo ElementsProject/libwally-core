@@ -6,6 +6,8 @@
   Users will need to recompile their applications and/or change function names and
   arguments in the cases listed below:
 - psbt_init_alloc has changed its definition and now has a new flags argument.
+- psbt_add_input_at has been renamed to psbt_add_tx_input_at.
+- psbt_add_output_at has been renamed to psbt_add_tx_output_at.
 
 ## Version 0.8.2
 

@@ -84,7 +84,7 @@ class PSBTTests(unittest.TestCase):
                 if (case['version'] == 0):
                     self.assertEqual(WALLY_OK, wally_tx_add_input(tx, tx_in))
                 else:
-                    self.assertEqual(WALLY_OK, wally_psbt_add_input_at(psbt, i, 0, tx_in))
+                    self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, i, 0, tx_in))
 
             for i, txout in enumerate(case['outputs']):
                 address, satoshi = txout['address'], txout['satoshi']
@@ -96,7 +96,7 @@ class PSBTTests(unittest.TestCase):
                 if (case['version'] == 0):
                     self.assertEqual(WALLY_OK, wally_tx_add_output(tx, output))
                 else:
-                    self.assertEqual(WALLY_OK, wally_psbt_add_output_at(psbt, i, 0, output))
+                    self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, i, 0, output))
 
             if (case['version'] == 0):
                 self.assertEqual(WALLY_OK, wally_psbt_set_global_tx(psbt, tx))
@@ -273,7 +273,7 @@ class PSBTTests(unittest.TestCase):
         txhash, txhash_len = make_cbuffer('e7f25add4560021c77c4944f92739025fddbf99816d79c06d219268ca9f4b7e7')
         ret = wally_tx_input_init_alloc(txhash, txhash_len, 5, 6, b'\x59', 1, None, tx_input)
         self.assertEqual(WALLY_OK, ret)
-        ret = wally_psbt_add_input_at(psbt, 0, 0, tx_input)
+        ret = wally_psbt_add_tx_input_at(psbt, 0, 0, tx_input)
         self.assertEqual(WALLY_OK, ret)
         ret, base64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(WALLY_OK, ret)
@@ -289,7 +289,7 @@ class PSBTTests(unittest.TestCase):
 
         wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_output)
         self.assertEqual(WALLY_OK, ret)
-        ret = wally_psbt_add_output_at(psbt, 0, 0, tx_output)
+        ret = wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output)
         self.assertEqual(WALLY_OK, ret)
 
         ret, base64 = wally_psbt_to_base64(psbt, 0)
