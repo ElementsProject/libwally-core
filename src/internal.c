@@ -405,6 +405,15 @@ void clear_and_free_bytes(unsigned char **p, size_t *len)
     }
 }
 
+bool mem_is_zero(const void *mem, size_t len)
+{
+    size_t i;
+    for (i = 0; i < len; ++i)
+        if (((const unsigned char *)mem)[i])
+            return false;
+    return true;
+}
+
 static bool wally_init_done = false;
 
 int wally_init(uint32_t flags)

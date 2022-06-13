@@ -52,6 +52,7 @@ struct wally_map {
 
 /** A PSBT input */
 struct wally_psbt_input {
+    unsigned char txhash[WALLY_TXHASH_LEN]; /* 'previous txid' */
     struct wally_tx *utxo;
     struct wally_tx_output *witness_utxo;
     unsigned char *redeem_script;
@@ -65,8 +66,6 @@ struct wally_psbt_input {
     struct wally_map signatures;
     struct wally_map unknowns;
     uint32_t sighash;
-    unsigned char *previous_txid;
-    size_t previous_txid_len;
     uint32_t output_index;
     uint32_t sequence;
     uint32_t required_locktime; /* Required tx locktime or 0 if not given */
@@ -455,7 +454,7 @@ WALLY_CORE_API int wally_psbt_input_clear_required_lockheight(
  *
  * :param input: The input to update.
  * :param txhash: The previous hash for this input.
- * :param txhash_len: Length of ``txhash`` in bytes.
+ * :param txhash_len: Length of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
  */
 WALLY_CORE_API int wally_psbt_input_set_previous_txid(
     struct wally_psbt_input *input,

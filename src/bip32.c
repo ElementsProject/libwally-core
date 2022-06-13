@@ -7,7 +7,6 @@
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
 #include "bip32_int.h"
-#include <stdbool.h>
 
 #define BIP32_ALL_DEFINED_FLAGS (BIP32_FLAG_KEY_PRIVATE | \
                                  BIP32_FLAG_KEY_PUBLIC | \
@@ -56,15 +55,6 @@ static void assert_bip32_assumptions(void)
                  BIP32_FLAG_KEY_PUBLIC != 3u);
 }
 /* LCOV_EXCL_STOP */
-
-static bool mem_is_zero(const void *mem, size_t len)
-{
-    size_t i;
-    for (i = 0; i < len; ++i)
-        if (((const unsigned char *)mem)[i])
-            return false;
-    return true;
-}
 
 static bool child_is_hardened(uint32_t child_num)
 {

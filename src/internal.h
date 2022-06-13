@@ -11,6 +11,7 @@
 #if defined(HAVE_MEMSET_S)
 #define __STDC_WANT_LIB_EXT1__ 1
 #endif
+#include <stdbool.h>
 #include <string.h>
 
 /* Fetch an internal secp context */
@@ -41,6 +42,8 @@ void wally_clear_4(void *p, size_t len, void *p2, size_t len2,
 
 void clear_and_free(void *p, size_t len);
 void clear_and_free_bytes(unsigned char **p, size_t *len);
+
+bool mem_is_zero(const void *mem, size_t len);
 
 /* Fetch our internal operations function pointers */
 const struct wally_operations *wally_ops(void);

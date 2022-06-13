@@ -20,27 +20,45 @@ class PSBTTests(unittest.TestCase):
         self._throws(fn, None, 0, *args) # Null PSBT
         self._throws(fn, psbt, 1, *args) # Invalid index
 
-    def _try_set(self, fn, psbt, valid_value, null_value=None):
+    def _round_trip(self, psbt):
+        psbt_bytes = psbt_to_bytes(psbt, 0)
+        deserialized = psbt_from_bytes(psbt_bytes)
+        new_bytes = psbt_to_bytes(deserialized, 0)
+        self.assertEqual(psbt_bytes, new_bytes)
+
+    def _try_set(self, fn, psbt, valid_value, null_value=None, mandatory=False):
+        self._round_trip(psbt)
         fn(psbt, 0, valid_value) # Set
+        self._round_trip(psbt)
         fn(psbt, 0, null_value) # Un-set
+        if mandatory:
+            fn(psbt, 0, valid_value) # Set
+        else:
+            self._round_trip(psbt)
         self._try_invalid(fn, psbt, valid_value)
 
-    def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value, invalid_value=None):
+    def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value, invalid_value=None, mandatory=False):
         self._try_invalid(setfn, psbt, valid_value)
         setfn(psbt, 0, valid_value) # Set
+        self._round_trip(psbt)
         self._try_invalid(getfn, psbt)
         ret = getfn(psbt, 0) # Get
         self.assertEqual(valid_value, ret)
         if clearfn:
             self._try_invalid(clearfn, psbt)
             clearfn(psbt, 0)
+            if mandatory:
+                setfn(psbt, 0, valid_value) # Set Again
+            else:
+                self._round_trip(psbt)
         if invalid_value is not None:
             self._throws(setfn, psbt, 0, invalid_value)
 
-    def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None):
-        self._try_set(setfn, psbt, valid_value, null_value)
+    def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None, mandatory=False):
+        self._try_set(setfn, psbt, valid_value, null_value, mandatory)
         setfn(psbt, 0, valid_value) # Set
-        self._try_invalid(lenfn, psbt)
+        if lenfn:
+            self._try_invalid(lenfn, psbt)
         self._try_invalid(getfn, psbt)
         ret = getfn(psbt, 0) # Get
         self.assertEqual(valid_value, ret)
@@ -155,6 +173,7 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_witness)
 
         dummy_bytes = bytearray(b'\x00' * 32)
+        dummy_txid = bytearray(b'\x33' * 32)
         dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
@@ -182,8 +201,9 @@ class PSBTTests(unittest.TestCase):
 
         dummy_unknowns = map_init(1)
         self.assertIsNotNone(dummy_unknowns)
-        map_add(dummy_unknowns, dummy_pubkey, dummy_fingerprint)
-        self.assertEqual(map_find(dummy_unknowns, dummy_pubkey), 1)
+        dummy_unknown_key = bytearray(b'\x55' * 32)
+        map_add(dummy_unknowns, dummy_unknown_key, dummy_fingerprint)
+        self.assertEqual(map_find(dummy_unknowns, dummy_unknown_key), 1)
 
         # V2: Global Tx Version
         self._throws(psbt_get_tx_version, None) # NULL PSBT
@@ -288,19 +308,18 @@ class PSBTTests(unittest.TestCase):
                                 psbt_get_input_unknown_len,
                                 psbt_get_input_unknown,
                                 psbt_find_input_unknown,
-                                p, dummy_unknowns, dummy_pubkey)
+                                p, dummy_unknowns, dummy_unknown_key)
             psbt_set_input_signatures(p, 0, empty_signatures)
             self._try_get_set_i(psbt_set_input_sighash, None,
                                 psbt_get_input_sighash, p, 0xff) # FIXME 0x100 as invalid_value should fail
 
         # V2: Previous txid
-        self._throws(psbt_set_input_previous_txid, psbt, 0, dummy_bytes) # Non v2 PSBT
+        self._throws(psbt_set_input_previous_txid, psbt, 0, dummy_txid) # Non v2 PSBT
         self._throws(psbt_set_input_previous_txid, psbt2, 0, dummy_sig)  # Bad Length
         self._throws(psbt_get_input_previous_txid, psbt, 0)              # Non v2 PSBT
-        self._throws(psbt_get_input_previous_txid_len, psbt, 0)          # Non v2 PSBT
         self._try_get_set_b(psbt_set_input_previous_txid,
                             psbt_get_input_previous_txid,
-                            psbt_get_input_previous_txid_len, psbt2, dummy_bytes)
+                            None, psbt2, dummy_txid, mandatory=True)
 
         # V2: Output Index
         self._throws(psbt_set_input_output_index, psbt, 0, 1234) # Non v2 PSBT
@@ -354,7 +373,7 @@ class PSBTTests(unittest.TestCase):
                                 psbt_get_output_unknown_len,
                                 psbt_get_output_unknown,
                                 psbt_find_output_unknown,
-                                p, dummy_unknowns, dummy_pubkey)
+                                p, dummy_unknowns, dummy_unknown_key)
 
         # V2: Amount
         self._throws(psbt_set_output_amount, psbt, 0, 1234)   # Non v2 PSBT
@@ -366,7 +385,7 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_clear_output_amount, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_output_amount,
                             psbt_clear_output_amount,
-                            psbt_get_output_amount, psbt2, 1234)
+                            psbt_get_output_amount, psbt2, 1234, mandatory=True)
 
         # V2: Script
         self._throws(psbt_set_output_script, psbt, 0, dummy_bytes) # Non v2 PSBT
@@ -374,7 +393,7 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_get_output_script_len, psbt, 0)          # Non v2 PSBT
         self._try_get_set_b(psbt_set_output_script,
                             psbt_get_output_script,
-                            psbt_get_output_script_len, psbt2, dummy_bytes)
+                            psbt_get_output_script_len, psbt2, dummy_bytes, mandatory=True)
 
 
 if __name__ == '__main__':

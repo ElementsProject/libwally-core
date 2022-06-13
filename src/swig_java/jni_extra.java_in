@@ -352,10 +352,8 @@
   }
 
   public final static byte[] psbt_get_input_previous_txid(Object psbt, long idx) {
-      final byte[] buf = new byte[psbt_get_input_previous_txid_len(psbt, idx)];
-      if (buf.length == 0) return buf;
-      final int len = psbt_get_input_previous_txid(psbt, idx, buf);
-      return checkBuffer(buf, len);
+      final byte[] buf = new byte[WALLY_TXHASH_LEN];
+      return psbt_get_input_previous_txid(psbt, idx, buf);
   }
 
   public final static byte[] psbt_get_input_redeem_script(Object psbt, long idx) {

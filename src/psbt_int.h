@@ -40,8 +40,7 @@ WALLY_CORE_API int wally_psbt_find_input_unknown(const struct wally_psbt *psbt, 
 WALLY_CORE_API int wally_psbt_get_input_unknown(const struct wally_psbt *psbt, size_t index, size_t subindex, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_unknown_len(const struct wally_psbt *psbt, size_t index, size_t subindex, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_sighash(const struct wally_psbt *psbt, size_t index, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_previous_txid_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written);

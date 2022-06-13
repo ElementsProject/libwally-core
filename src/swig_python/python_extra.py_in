@@ -178,7 +178,7 @@ psbt_get_input_final_scriptsig = _wrap_bin(psbt_get_input_final_scriptsig, psbt_
 psbt_get_input_keypath = _wrap_bin(psbt_get_input_keypath, psbt_get_input_keypath_len, resize=True)
 psbt_get_input_signature = _wrap_bin(psbt_get_input_signature, psbt_get_input_signature_len, resize=True)
 psbt_get_input_unknown = _wrap_bin(psbt_get_input_unknown, psbt_get_input_unknown_len, resize=True)
-psbt_get_input_previous_txid = _wrap_bin(psbt_get_input_previous_txid, psbt_get_input_previous_txid_len, resize=True)
+psbt_get_input_previous_txid = _wrap_bin(psbt_get_input_previous_txid, WALLY_TXHASH_LEN)
 
 psbt_get_output_keypath = _wrap_bin(psbt_get_output_keypath, psbt_get_output_keypath_len, resize=True)
 psbt_get_output_redeem_script = _wrap_bin(psbt_get_output_redeem_script, psbt_get_output_redeem_script_len, resize=True)

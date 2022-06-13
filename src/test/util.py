@@ -134,7 +134,8 @@ class wally_map(Structure):
                 ('items_allocation_len', c_size_t)]
 
 class wally_psbt_input(Structure):
-    _fields_ = [('utxo', POINTER(wally_tx)),
+    _fields_ = [('txhash', c_ubyte * 32),
+                ('utxo', POINTER(wally_tx)),
                 ('witness_utxo', POINTER(wally_tx_output)),
                 ('redeem_script', c_void_p),
                 ('redeem_script_len', c_size_t),
@@ -147,8 +148,6 @@ class wally_psbt_input(Structure):
                 ('signatures', wally_map),
                 ('unknowns', wally_map),
                 ('sighash', c_uint32),
-                ('previous_txid', c_void_p),
-                ('previous_txid_len', c_size_t),
                 ('output_index', c_uint32),
                 ('sequence', c_uint32),
                 ('required_locktime', c_uint32),
@@ -508,8 +507,7 @@ for f in (
     ('wally_psbt_get_input_keypath_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_keypaths_size', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_output_index', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
-    ('wally_psbt_get_input_previous_txid', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_size_t_p]),
-    ('wally_psbt_get_input_previous_txid_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
+    ('wally_psbt_get_input_previous_txid', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t]),
     ('wally_psbt_get_input_redeem_script', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_redeem_script_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_required_lockheight', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),

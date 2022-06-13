@@ -528,8 +528,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_input_keypath);
 %returns_size_t(wally_psbt_get_input_keypath_len);
 %returns_size_t(wally_psbt_get_input_output_index);
-%returns_size_t(wally_psbt_get_input_previous_txid);
-%returns_size_t(wally_psbt_get_input_previous_txid_len);
+%returns_array_(wally_psbt_get_input_previous_txid, 3, 4, WALLY_TXHASH_LEN);
 %returns_size_t(wally_psbt_get_input_required_lockheight);
 %returns_size_t(wally_psbt_get_input_required_locktime);
 %returns_size_t(wally_psbt_get_input_sequence);
