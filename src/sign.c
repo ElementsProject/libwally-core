@@ -5,7 +5,6 @@
 #include "secp256k1/include/secp256k1_schnorr.h"
 #endif
 #include "ccan/ccan/build_assert/build_assert.h"
-#include <stdbool.h>
 
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
 

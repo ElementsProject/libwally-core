@@ -1,7 +1,6 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
 #include <include/wally_anti_exfil.h>
-#include <stdbool.h>
 
 #ifndef BUILD_STANDARD_SECP
 

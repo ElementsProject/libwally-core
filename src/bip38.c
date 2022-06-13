@@ -6,7 +6,6 @@
 #include "ccan/ccan/build_assert/build_assert.h"
 #include <include/wally_bip38.h>
 #include <include/wally_crypto.h>
-#include <stdbool.h>
 
 #define BIP38_FLAG_DEFAULT   (0x40 | 0x80)
 #define BIP38_FLAG_COMPRESSED 0x20

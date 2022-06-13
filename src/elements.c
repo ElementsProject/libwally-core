@@ -9,7 +9,6 @@
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
 #include "src/secp256k1/include/secp256k1_whitelist.h"
-#include <stdbool.h>
 
 
 static const unsigned char LABEL_STR[] = {

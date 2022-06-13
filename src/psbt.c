@@ -5,7 +5,6 @@
 #include <include/wally_psbt.h>
 
 #include <limits.h>
-#include <stdbool.h>
 #include "transaction_shared.h"
 #include "psbt_int.h"
 #include "script_int.h"

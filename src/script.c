@@ -8,7 +8,6 @@
 #include <include/wally_transaction.h>
 
 #include <limits.h>
-#include <stdbool.h>
 #include "script_int.h"
 
 /* varint tags and limits */

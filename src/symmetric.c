@@ -2,7 +2,6 @@
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
 #include <include/wally_symmetric.h>
-#include <stdbool.h>
 
 #define LABEL_SIZE 64
 

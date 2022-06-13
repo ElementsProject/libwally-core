@@ -6,7 +6,6 @@
 #include <include/wally_transaction.h>
 
 #include <limits.h>
-#include <stdbool.h>
 #include "transaction_int.h"
 #include "transaction_shared.h"
 #include "script_int.h"
