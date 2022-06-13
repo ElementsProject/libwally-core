@@ -78,35 +78,37 @@ class PSBTTests(unittest.TestCase):
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
+        clones = []
 
         # Roundtrip to/from bytes
         self._throws(psbt_to_bytes, None, 0)    # NULL PSBT
         self._throws(psbt_to_bytes, psbt, 0xff) # Bad flags
-        psbt_bytes = psbt_to_bytes(psbt, 0)
-        psbt_tmp = psbt_from_bytes(psbt_bytes)
-        self.assertEqual(hex_from_bytes(psbt_bytes),
-                         hex_from_bytes(psbt_to_bytes(psbt_tmp, 0)))
+        for p in [psbt, psbt2]:
+            psbt_bytes = psbt_to_bytes(p, 0)
+            psbt_tmp = psbt_from_bytes(psbt_bytes)
+            self.assertEqual(hex_from_bytes(psbt_bytes),
+                             hex_from_bytes(psbt_to_bytes(psbt_tmp, 0)))
 
-        for fn, ret in [(psbt_get_version, 0),
-                        (psbt_get_num_inputs, 1),
-                        (psbt_get_num_outputs, 1)]:
-            self.assertEqual(fn(psbt), ret)
-            self._throws(fn, None) # Null PSBT
+            for fn, ret in [(psbt_get_version, 0 if p == psbt else 2),
+                            (psbt_get_num_inputs, 1),
+                            (psbt_get_num_outputs, 1)]:
+                self.assertEqual(fn(p), ret)
+                self._throws(fn, None) # Null PSBT
 
-        # Conversion to base64 should round trip
-        self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
+            sample = SAMPLE if p == psbt else SAMPLE_V2
 
-        # Combining with ourselves shouldn't change the PSBT
-        psbt_combine(psbt, psbt)
-        self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
+            # Conversion to base64 should round trip
+            self.assertEqual(psbt_to_base64(p, 0), sample)
 
-        # Cloning shouldn't change the PSBT
-        self._throws(psbt_clone, None, 0)     # NULL PSBT
-        self._throws(psbt_clone, psbt, 0xff)  # Invalid flags
-        clone = psbt_clone(psbt, 0)
-        self.assertEqual(psbt_to_base64(clone, 0), SAMPLE)
-        clone2 = psbt_clone(psbt2, 0)
-        self.assertEqual(psbt_to_base64(clone2, 0), SAMPLE_V2)
+            # Combining with ourselves shouldn't change the PSBT
+            psbt_combine(p, p)
+            self.assertEqual(psbt_to_base64(p, 0), sample)
+
+            # Cloning shouldn't change the PSBT
+            self._throws(psbt_clone, None, 0)  # NULL PSBT
+            self._throws(psbt_clone, p, 0xff)  # Invalid flags
+            clones.append(psbt_clone(p, 0))
+            self.assertEqual(psbt_to_base64(clones[-1], 0), sample)
 
         # Upgrade/downgrade versions
         self._throws(psbt_set_version, None, 0, 0)     # NULL PSBT
@@ -115,7 +117,7 @@ class PSBTTests(unittest.TestCase):
         # Upgrading v0 to v2 is not yet supported
         self.assertRaises(RuntimeError, lambda: psbt_set_version(psbt, 0, 2))
         # Downgrade v2 to v0
-        psbt_set_version(clone2, 0, 0)
+        psbt_set_version(clones[1], 0, 0)
 
         # Unique ID
         psbt_set_fallback_locktime(psbt2, 0xfffffffd)
