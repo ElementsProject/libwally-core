@@ -40,6 +40,7 @@ void wally_clear_4(void *p, size_t len, void *p2, size_t len2,
                    void *p3, size_t len3, void *p4, size_t len4);
 
 void clear_and_free(void *p, size_t len);
+void clear_and_free_bytes(unsigned char **p, size_t *len);
 
 /* Fetch our internal operations function pointers */
 const struct wally_operations *wally_ops(void);

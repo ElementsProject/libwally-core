@@ -396,6 +396,15 @@ void clear_and_free(void *p, size_t len)
     }
 }
 
+void clear_and_free_bytes(unsigned char **p, size_t *len)
+{
+    if (p && len) {
+        clear_and_free(*p, *len);
+        *p = NULL;
+        *len = 0;
+    }
+}
+
 static bool wally_init_done = false;
 
 int wally_init(uint32_t flags)

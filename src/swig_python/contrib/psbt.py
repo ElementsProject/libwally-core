@@ -100,6 +100,23 @@ class PSBTTests(unittest.TestCase):
         psbt_combine(psbt, psbt)
         self.assertEqual(psbt_to_base64(psbt, 0), SAMPLE)
 
+        # Cloning shouldn't change the PSBT
+        self._throws(psbt_clone, None, 0)     # NULL PSBT
+        self._throws(psbt_clone, psbt, 0xff)  # Invalid flags
+        clone = psbt_clone(psbt, 0)
+        self.assertEqual(psbt_to_base64(clone, 0), SAMPLE)
+        clone2 = psbt_clone(psbt2, 0)
+        self.assertEqual(psbt_to_base64(clone2, 0), SAMPLE_V2)
+
+        # Upgrade/downgrade versions
+        self._throws(psbt_set_version, None, 0, 0)     # NULL PSBT
+        self._throws(psbt_set_version, psbt2, 0xff, 0) # Unknown flags
+        self._throws(psbt_set_version, psbt2, 0, 3)    # Unknown version
+        # Upgrading v0 to v2 is not yet supported
+        self.assertRaises(RuntimeError, lambda: psbt_set_version(psbt, 0, 2))
+        # Downgrade v2 to v0
+        psbt_set_version(clone2, 0, 0)
+
         # Unique ID
         psbt_set_fallback_locktime(psbt2, 0xfffffffd)
         self._throws(psbt_get_id, None, 0)      # NULL PSBT

@@ -605,6 +605,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_output_witness_script);
 %returns_void__(wally_psbt_set_tx_modifiable_flags);
 %returns_void__(wally_psbt_set_tx_version);
+%returns_void__(wally_psbt_set_version);
 %returns_void__(wally_psbt_sign);
 %returns_string(wally_psbt_to_base64);
 %returns_size_t(wally_psbt_to_bytes);

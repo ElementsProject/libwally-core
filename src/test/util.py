@@ -372,6 +372,7 @@ for f in (
     ('wally_psbt_set_global_tx', c_int, [POINTER(wally_psbt), POINTER(wally_tx)]),
     ('wally_psbt_set_tx_modifiable_flags', c_int, [POINTER(wally_psbt), c_uint32]),
     ('wally_psbt_set_tx_version', c_int, [POINTER(wally_psbt), c_uint32]),
+    ('wally_psbt_set_version', c_int, [POINTER(wally_psbt), c_uint32, c_uint32]),
     ('wally_psbt_sign', c_int, [POINTER(wally_psbt), c_void_p, c_size_t, c_uint32]),
     ('wally_psbt_to_base64', c_int, [POINTER(wally_psbt), c_uint32, c_char_p_p]),
     ('wally_psbt_to_bytes', c_int, [POINTER(wally_psbt), c_uint32, c_void_p, c_size_t, c_size_t_p]),

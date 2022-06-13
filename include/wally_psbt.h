@@ -626,6 +626,21 @@ WALLY_CORE_API int wally_psbt_free(
 #endif /* SWIG_PYTHON */
 
 /**
+ * Set the version for a PSBT.
+ *
+ * :param psbt: The PSBT to set the version for.
+ * :param flags: Flags controlling the version upgrade/downgrade. Must be 0.
+ * :param version: The version to use for the PSBT. Must be WALLY_PSBT_VERSION_0
+ *|    or WALLY_PSBT_VERSION_2.
+ *
+ * .. note:: This call converts the PSBT in place to the specified version.
+ */
+WALLY_CORE_API int wally_psbt_set_version(
+    struct wally_psbt *psbt,
+    uint32_t flags,
+    uint32_t version);
+
+/**
  * Return the BIP-370 unique id of a PSBT.
  *
  * :param psbt: The PSBT to compute the id of.

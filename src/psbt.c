@@ -228,16 +228,16 @@ static int map_add(struct wally_map *map_in,
 
         if (!clone_bytes(&new_item->key, key, key_len))
             return WALLY_ENOMEM;
+        new_item->key_len = key_len;
+
         if (value) {
             if (take_value)
                 new_item->value = (unsigned char *)value;
             else if (!clone_bytes(&new_item->value, value, value_len)) {
-                clear_and_free(new_item->key, key_len);
-                new_item->key = NULL;
+                clear_and_free_bytes(&new_item->key, &new_item->key_len);
                 return WALLY_ENOMEM;
             }
         }
-        new_item->key_len = key_len;
         new_item->value_len = value_len;
         map_in->num_items++;
     }
@@ -2149,9 +2149,62 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
     return ret;
 }
 
+static int psbt_v0_to_v2(struct wally_psbt *psbt)
+{
+    /* FIXME: Upgrade is not yet implemented */
+    (void)psbt;
+    return WALLY_ERROR;
+}
+
+static int psbt_v2_to_v0(struct wally_psbt *psbt)
+{
+    struct wally_tx *tx;
+    size_t is_elements, i;
+    int ret = psbt_build_tx(psbt, &tx, &is_elements);
+
+    if (ret != WALLY_OK)
+        return ret;
+
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        struct wally_psbt_input *pi = &psbt->inputs[i];
+        clear_and_free_bytes(&pi->previous_txid, &pi->previous_txid_len);
+        pi->output_index = 0;
+        pi->sequence = 0;
+        pi->required_locktime = 0;
+        pi->required_lockheight = 0;
+    }
+
+    for (i = 0; i < psbt->num_outputs; ++i) {
+        struct wally_psbt_output *po = &psbt->outputs[i];
+        po->amount = 0;
+        po->has_amount = false;
+        clear_and_free_bytes(&po->script, &po->script_len);
+    }
+
+    psbt->version = PSBT_0;
+    psbt->tx_version = 0;
+    psbt->fallback_locktime = 0;
+    psbt->has_fallback_locktime = false;
+    psbt->tx_modifiable_flags = 0;
+    return WALLY_OK;
+}
+
+int wally_psbt_set_version(struct wally_psbt *psbt,
+                           uint32_t flags,
+                           uint32_t version)
+{
+    if (!psbt_is_valid(psbt) || flags || (version != PSBT_0 && version != PSBT_2))
+        return WALLY_EINVAL;
+
+    if (psbt->version == version)
+        return WALLY_OK; /* No-op */
+
+    return psbt->version == PSBT_0 ? psbt_v0_to_v2(psbt) : psbt_v2_to_v0(psbt);
+}
+
 int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned char *bytes_out, size_t len)
 {
-    struct wally_tx *tx = NULL;
+    struct wally_tx *tx;
     size_t is_elements, i;
     int ret;
 
@@ -2693,12 +2746,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         }
 
         /* Clear non-final things */
-        clear_and_free(input->redeem_script, input->redeem_script_len);
-        input->redeem_script_len = 0;
-        input->redeem_script = NULL;
-        clear_and_free(input->witness_script, input->witness_script_len);
-        input->witness_script_len = 0;
-        input->witness_script = NULL;
+        clear_and_free_bytes(&input->redeem_script, &input->redeem_script_len);
+        clear_and_free_bytes(&input->witness_script, &input->witness_script_len);
         wally_map_clear(&input->keypaths);
         wally_map_clear(&input->signatures);
         input->sighash = 0;
@@ -2710,7 +2759,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
 
 int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 {
-    struct wally_tx *result = NULL;
+    struct wally_tx *result;
     size_t is_elements, i;
     int ret;
 
