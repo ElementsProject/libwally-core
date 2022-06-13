@@ -135,6 +135,8 @@ class wally_map(Structure):
 
 class wally_psbt_input(Structure):
     _fields_ = [('txhash', c_ubyte * 32),
+                ('index', c_uint32),
+                ('sequence', c_uint32),
                 ('utxo', POINTER(wally_tx)),
                 ('witness_utxo', POINTER(wally_tx_output)),
                 ('redeem_script', c_void_p),
@@ -148,8 +150,6 @@ class wally_psbt_input(Structure):
                 ('signatures', wally_map),
                 ('unknowns', wally_map),
                 ('sighash', c_uint32),
-                ('output_index', c_uint32),
-                ('sequence', c_uint32),
                 ('required_locktime', c_uint32),
                 ('required_lockheight', c_uint32)]
 

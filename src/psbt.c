@@ -552,7 +552,7 @@ int wally_psbt_input_set_output_index(struct wally_psbt_input *input, uint32_t i
 {
     if (!input)
         return WALLY_EINVAL;
-    input->output_index = index;
+    input->index = index;
     return WALLY_OK;
 }
 
@@ -900,7 +900,7 @@ int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
 
             if (psbt->version == PSBT_2) {
                 memcpy(dst->txhash, input->txhash, WALLY_TXHASH_LEN);
-                dst->output_index = input->index;
+                dst->index = input->index;
                 dst->sequence = input->sequence;
             }
         }
@@ -1237,7 +1237,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
 
             found_output_index = true;
             subfield_nomore_end(cursor, max, key, key_len);
-            result->output_index = pull_le32_subfield(cursor, max);
+            result->index = pull_le32_subfield(cursor, max);
             break;
         }
         case PSBT_IN_SEQUENCE: {
@@ -1749,7 +1749,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
         push_typed_varbuff(cursor, max, PSBT_IN_PREVIOUS_TXID,
                            input->txhash, sizeof(input->txhash));
 
-        push_typed_le32(cursor, max, PSBT_IN_OUTPUT_INDEX, input->output_index);
+        push_typed_le32(cursor, max, PSBT_IN_OUTPUT_INDEX, input->index);
 
         if (input->sequence != WALLY_TX_SEQUENCE_FINAL)
             push_typed_le32(cursor, max, PSBT_IN_SEQUENCE, input->sequence);
@@ -1999,7 +1999,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
     if (mem_is_zero(dst->txhash, WALLY_TXHASH_LEN)) {
         /* Note we only copy the output index if we copied the txhash */
         memcpy(dst->txhash, src->txhash, WALLY_TXHASH_LEN);
-        dst->output_index = src->output_index;
+        dst->index = src->index;
     }
     if (dst->sequence == WALLY_TX_SEQUENCE_FINAL && src->sequence != WALLY_TX_SEQUENCE_FINAL)
         dst->sequence = src->sequence;
@@ -2138,7 +2138,7 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *pi = &psbt->inputs[i];
         ret = wally_tx_add_raw_input(*tx, pi->txhash, WALLY_TXHASH_LEN,
-                                     pi->output_index, pi->sequence, NULL, 0, NULL, 0);
+                                     pi->index, pi->sequence, NULL, 0, NULL, 0);
     }
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i) {
@@ -2174,7 +2174,7 @@ static int psbt_v2_to_v0(struct wally_psbt *psbt)
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *pi = &psbt->inputs[i];
-        pi->output_index = 0;
+        pi->index = 0;
         pi->sequence = 0;
         pi->required_locktime = 0;
         pi->required_lockheight = 0;
@@ -2976,7 +2976,16 @@ int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t ind
     return WALLY_OK;
 }
 
-PSBT_GET_I(input, output_index, size_t, PSBT_2)
+int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t index,
+                                      size_t *written)
+{
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    if (written) *written = 0;
+    if (!p || psbt->version != PSBT_2) return WALLY_EINVAL;
+    *written = p->index;
+    return WALLY_OK;
+}
+
 PSBT_GET_I(input, sequence, size_t, PSBT_2)
 int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written) {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);

@@ -53,6 +53,8 @@ struct wally_map {
 /** A PSBT input */
 struct wally_psbt_input {
     unsigned char txhash[WALLY_TXHASH_LEN]; /* 'previous txid' */
+    uint32_t index;
+    uint32_t sequence;
     struct wally_tx *utxo;
     struct wally_tx_output *witness_utxo;
     unsigned char *redeem_script;
@@ -66,8 +68,6 @@ struct wally_psbt_input {
     struct wally_map signatures;
     struct wally_map unknowns;
     uint32_t sighash;
-    uint32_t output_index;
-    uint32_t sequence;
     uint32_t required_locktime; /* Required tx locktime or 0 if not given */
     uint32_t required_lockheight; /* Required tx lockheight or 0 if not given */
 };
