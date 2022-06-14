@@ -29,6 +29,7 @@ del swig_import_helper
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_map.h"
 #include "../include/wally_psbt.h"
 #include "psbt_int.h"
 #include "../include/wally_script.h"
@@ -313,6 +314,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* summed_key, size_t summed_key_len);
 %pybuffer_nullable_binary(const unsigned char* surjectionproof, size_t surjectionproof_len);
 %pybuffer_nullable_binary(const unsigned char* txhash, size_t txhash_len);
+%pybuffer_nullable_binary(const unsigned char* val, size_t val_len);
 %pybuffer_nullable_binary(const unsigned char* value, size_t value_len);
 %pybuffer_nullable_binary(const unsigned char* vbf, size_t vbf_len);
 %pybuffer_nullable_binary(const unsigned char* whitelistproof, size_t whitelistproof_len);
@@ -376,6 +378,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_script.h"
+%include "../include/wally_map.h"
 %include "../include/wally_psbt.h"
 %include "psbt_int.h"
 %include "../include/wally_symmetric.h"

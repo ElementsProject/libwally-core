@@ -83,6 +83,7 @@ def gen_python_cffi(funcs, internal_only):
         u'unsigned char*': u'c_void_p',
         u'char**'        : u'c_char_p_p',
         u'char*'         : u'c_char_p',
+        u'wally_map_verify_fn_t' : u'c_void_p',
         }
     def map_arg(arg, n, num_args):
         argtype = arg.type[6:] if arg.is_const else arg.type # Strip const

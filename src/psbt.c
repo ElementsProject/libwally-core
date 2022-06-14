@@ -5,7 +5,6 @@
 #include <include/wally_psbt.h>
 
 #include <limits.h>
-#include "transaction_shared.h"
 #include "psbt_int.h"
 #include "script_int.h"
 #include "script.h"
@@ -93,298 +92,6 @@ static bool is_matching_txid(const struct wally_tx *tx,
 
     ret = memcmp(src_txid, txid, txid_len) == 0;
     wally_clear(src_txid, sizeof(src_txid));
-    return ret;
-}
-
-static int array_grow(void **src, size_t num_items, size_t *allocation_len,
-                      size_t item_size)
-{
-    if (num_items == *allocation_len) {
-        /* Array is full, allocate more space */
-        const size_t n = (*allocation_len == 0 ? 1 : *allocation_len) * 2;
-        void *p = realloc_array(*src, *allocation_len, n, item_size);
-        if (!p)
-            return WALLY_ENOMEM;
-        /* Free and replace the old array with the new enlarged copy */
-        clear_and_free(*src, num_items * item_size);
-        *src = p;
-        *allocation_len = n;
-    }
-    return WALLY_OK;
-}
-
-int wally_map_init(size_t allocation_len, struct wally_map *output)
-{
-    if (!output)
-        return WALLY_EINVAL;
-
-    wally_clear(output, sizeof(*output));
-    if (allocation_len) {
-        output->items = wally_calloc(allocation_len * sizeof(*output->items));
-        if (!output->items)
-            return WALLY_ENOMEM;
-    }
-    output->items_allocation_len = allocation_len;
-    return WALLY_OK;
-}
-
-int wally_map_init_alloc(size_t allocation_len, struct wally_map **output)
-{
-    struct wally_map *result;
-    int ret;
-
-    TX_CHECK_OUTPUT;
-    TX_OUTPUT_ALLOC(struct wally_map);
-
-    ret = wally_map_init(allocation_len, result);
-    if (ret != WALLY_OK) {
-        wally_free(result);
-        *output = NULL;
-    }
-    return ret;
-}
-
-int wally_map_clear(struct wally_map *map_in)
-{
-    size_t i;
-
-    if (!map_in)
-        return WALLY_EINVAL;
-    for (i = 0; i < map_in->num_items; ++i) {
-        clear_and_free(map_in->items[i].key, map_in->items[i].key_len);
-        clear_and_free(map_in->items[i].value, map_in->items[i].value_len);
-    }
-    clear_and_free(map_in->items, map_in->num_items * sizeof(*map_in->items));
-    wally_clear(map_in, sizeof(*map_in));
-    return WALLY_OK;
-}
-
-int wally_map_free(struct wally_map *map_in)
-{
-    if (map_in) {
-        wally_map_clear(map_in);
-        wally_free(map_in);
-    }
-    return WALLY_OK;
-}
-
-int wally_map_find(const struct wally_map *map_in,
-                   const unsigned char *key, size_t key_len,
-                   size_t *written)
-{
-    size_t i;
-
-    if (written)
-        *written = 0;
-
-    if (!map_in || !key || BYTES_INVALID(key, key_len) || !written)
-        return WALLY_EINVAL;
-
-    for (i = 0; i < map_in->num_items; ++i) {
-        const struct wally_map_item *item = &map_in->items[i];
-
-        if (key_len == item->key_len && memcmp(key, item->key, key_len) == 0) {
-            *written = i + 1; /* Found */
-            break;
-        }
-    }
-    return WALLY_OK;
-}
-
-/* Note: If take_value is true and this errors, the caller must
- * free `value`. By design this only happens with calls internal
- * to this source file. */
-static int map_add(struct wally_map *map_in,
-                   const unsigned char *key, size_t key_len,
-                   const unsigned char *value, size_t value_len,
-                   bool take_value,
-                   int (*key_fn)(const unsigned char *key, size_t key_len),
-                   int (*val_fn)(const unsigned char *val, size_t val_len),
-                   bool ignore_dups)
-{
-    size_t is_found;
-    int ret;
-
-    if (!map_in || !key || BYTES_INVALID(key, key_len) ||
-        (key_fn && key_fn(key, key_len) != WALLY_OK) ||
-        (val_fn && val_fn(value, value_len) != WALLY_OK) ||
-        BYTES_INVALID(value, value_len))
-        return WALLY_EINVAL;
-
-    if ((ret = wally_map_find(map_in, key, key_len, &is_found)) != WALLY_OK)
-        return ret;
-
-    if (is_found) {
-        if (ignore_dups && take_value)
-            clear_and_free((unsigned char *)value, value_len);
-        return ignore_dups ? WALLY_OK : WALLY_EINVAL;
-    }
-
-    ret = array_grow((void *)&map_in->items, map_in->num_items,
-                     &map_in->items_allocation_len, sizeof(struct wally_map_item));
-    if (ret == WALLY_OK) {
-        struct wally_map_item *new_item = map_in->items + map_in->num_items;
-
-        if (!clone_bytes(&new_item->key, key, key_len))
-            return WALLY_ENOMEM;
-        new_item->key_len = key_len;
-
-        if (value) {
-            if (take_value)
-                new_item->value = (unsigned char *)value;
-            else if (!clone_bytes(&new_item->value, value, value_len)) {
-                clear_and_free_bytes(&new_item->key, &new_item->key_len);
-                return WALLY_ENOMEM;
-            }
-        }
-        new_item->value_len = value_len;
-        map_in->num_items++;
-    }
-    return ret;
-}
-
-int wally_map_add(struct wally_map *map_in,
-                  const unsigned char *key, size_t key_len,
-                  const unsigned char *value, size_t value_len)
-{
-    return map_add(map_in, key, key_len, value, value_len, false, NULL, NULL, true);
-}
-
-static int keypath_key_verify(const unsigned char *key, size_t key_len, struct ext_key *key_out)
-{
-    int ret = WALLY_EINVAL;
-
-    key_out->version = 0; /* If non-0 on return, we have a bip32 key */
-
-    if (key_len == EC_PUBLIC_KEY_LEN || key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
-        ret = wally_ec_public_key_verify(key, key_len);
-    else if (key_len == BIP32_SERIALIZED_LEN) {
-        ret = bip32_key_unserialize(key, key_len, key_out);
-        if (ret == WALLY_OK &&
-            (key_out->version == BIP32_VER_MAIN_PRIVATE ||
-             key_out->version == BIP32_VER_TEST_PRIVATE))
-            ret = WALLY_EINVAL; /* Must be a public key, not private */
-        if (ret != WALLY_OK)
-            abort();
-    }
-    return ret;
-}
-
-static int keypath_verify(const unsigned char *key, size_t key_len, const unsigned char *val, size_t val_len)
-{
-    struct ext_key extkey;
-
-    (void)val;
-    if (keypath_key_verify(key, key_len, &extkey) != WALLY_OK)
-        return WALLY_EINVAL;
-
-    if (extkey.version &&
-        extkey.depth != (val_len - BIP32_KEY_FINGERPRINT_LEN) / sizeof(uint32_t))
-        return WALLY_EINVAL;     /* Depth does not match path length */
-
-    return WALLY_OK;
-}
-
-int wally_map_add_keypath_item(struct wally_map *map_in,
-                               const unsigned char *pub_key, size_t pub_key_len,
-                               const unsigned char *fingerprint, size_t fingerprint_len,
-                               const uint32_t *path, size_t path_len)
-{
-    struct ext_key extkey;
-    unsigned char *value;
-    size_t value_len, i;
-    int ret;
-
-    if (!map_in || keypath_key_verify(pub_key, pub_key_len, &extkey) != WALLY_OK ||
-        !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
-        BYTES_INVALID(path, path_len))
-        return WALLY_EINVAL;
-
-    if (extkey.version && extkey.depth != path_len)
-        return WALLY_EINVAL;
-
-    value_len = fingerprint_len + path_len * sizeof(uint32_t);
-    if (!(value = wally_malloc(value_len)))
-        return WALLY_ENOMEM;
-
-    memcpy(value, fingerprint, fingerprint_len);
-    for (i = 0; i < path_len; ++i) {
-        leint32_t tmp = cpu_to_le32(path[i]);
-        memcpy(value + fingerprint_len + i * sizeof(uint32_t),
-               &tmp, sizeof(tmp));
-    }
-
-    ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, NULL, NULL, true);
-    if (ret != WALLY_OK)
-        clear_and_free(value, value_len);
-    wally_clear(&extkey, sizeof(extkey));
-    return ret;
-}
-
-static int map_item_compare(const void *lhs, const void *rhs)
-{
-    const struct wally_map_item *l = lhs, *r = rhs;
-    const size_t min_len = l->key_len < r->key_len ? l->key_len : r->key_len;
-    int cmp;
-
-    cmp = memcmp(l->key, r->key, min_len);
-    if (cmp == 0) {
-        /* Equal up to the min length, longest key is greater. If we have
-         * duplicate keys somehow, the resulting order is undefined */
-        cmp = l->key_len < r->key_len ? -1 : 1;
-    }
-    return cmp;
-}
-
-int wally_map_sort(struct wally_map *map_in, uint32_t flags)
-{
-    if (!map_in || flags)
-        return WALLY_EINVAL;
-
-    qsort(map_in->items, map_in->num_items, sizeof(struct wally_map_item), map_item_compare);
-    return WALLY_OK;
-}
-
-static int map_extend(struct wally_map *dst, const struct wally_map *src,
-                      int (*key_fn)(const unsigned char *key, size_t key_len),
-                      int (*val_fn)(const unsigned char *val, size_t val_len))
-{
-    int ret = WALLY_OK;
-    size_t i;
-
-    if (src) {
-        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = map_add(dst, src->items[i].key, src->items[i].key_len,
-                          src->items[i].value, src->items[i].value_len,
-                          false, key_fn, val_fn, true);
-    }
-    return ret;
-}
-
-static int map_assign(const struct wally_map *src, struct wally_map *dst,
-                      int (*key_fn)(const unsigned char *key, size_t key_len),
-                      int (*val_fn)(const unsigned char *val, size_t val_len))
-{
-    struct wally_map result;
-    size_t i;
-    int ret = WALLY_OK;
-
-    if (!src)
-        ret = wally_map_init(0, &result);
-    else {
-        ret = wally_map_init(src->items_allocation_len, &result);
-        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = map_add(&result, src->items[i].key, src->items[i].key_len,
-                          src->items[i].value, src->items[i].value_len,
-                          false, key_fn, val_fn, true);
-    }
-
-    if (ret != WALLY_OK)
-        wally_map_clear(&result);
-    else {
-        wally_map_clear(dst);
-        memcpy(dst, &result, sizeof(result));
-    }
     return ret;
 }
 
@@ -600,6 +307,22 @@ int wally_psbt_input_clear_required_lockheight(struct wally_psbt_input *input)
     return WALLY_OK;
 }
 
+static int pubkey_sig_verify(const unsigned char *key, size_t key_len,
+                             const unsigned char *val, size_t val_len)
+{
+    int ret = wally_ec_public_key_verify(key, key_len);
+    if (ret == WALLY_OK)
+        ret = der_sig_verify(val, val_len);
+    return ret;
+}
+
+static void psbt_input_init(struct wally_psbt_input *input)
+{
+    wally_map_init(0, wally_keypath_public_key_verify, &input->keypaths);
+    wally_map_init(0, pubkey_sig_verify, &input->signatures);
+    wally_map_init(0, NULL, &input->unknowns);
+}
+
 static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 {
     if (input) {
@@ -645,6 +368,12 @@ int wally_psbt_output_clear_amount(struct wally_psbt_output *output)
 
 SET_BYTES(wally_psbt_output, script)
 
+static void psbt_output_init(struct wally_psbt_output *output)
+{
+    wally_map_init(0, wally_keypath_public_key_verify, &output->keypaths);
+    wally_map_init(0, NULL, &output->unknowns);
+}
+
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
 {
     if (output) {
@@ -669,17 +398,19 @@ int wally_psbt_init_alloc(uint32_t version, size_t inputs_allocation_len,
     struct wally_psbt *result;
     int ret;
 
-    TX_CHECK_OUTPUT;
+    OUTPUT_CHECK;
     if ((version != PSBT_0 && version != PSBT_2) || flags)
         return WALLY_EINVAL; /* Only versions 0 and 2 are specified/supported */
-    TX_OUTPUT_ALLOC(struct wally_psbt);
+    OUTPUT_ALLOC(struct wally_psbt);
 
     if (inputs_allocation_len)
         result->inputs = wally_calloc(inputs_allocation_len * sizeof(struct wally_psbt_input));
     if (outputs_allocation_len)
         result->outputs = wally_calloc(outputs_allocation_len * sizeof(struct wally_psbt_output));
 
-    ret = wally_map_init(global_unknowns_allocation_len, &result->unknowns);
+    ret = wally_map_init(global_unknowns_allocation_len, NULL, &result->unknowns);
+    if (ret == WALLY_OK)
+        ret = wally_map_init(0, wally_keypath_bip32_verify, &result->global_xpubs);
 
     if (ret != WALLY_OK ||
         (inputs_allocation_len && !result->inputs) || (outputs_allocation_len && !result->outputs)) {
@@ -723,7 +454,7 @@ int wally_psbt_free(struct wally_psbt *psbt)
 
 int wally_psbt_get_global_tx_alloc(const struct wally_psbt *psbt, struct wally_tx **output)
 {
-    TX_CHECK_OUTPUT;
+    OUTPUT_CHECK;
     if (!psbt || psbt->version != PSBT_0)
         return WALLY_EINVAL;
     if (!psbt->tx)
@@ -826,11 +557,17 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
     if (do_clone && (ret = tx_clone_alloc(tx, &new_tx)) != WALLY_OK)
         return ret;
 
-    if (psbt->inputs_allocation_len < tx->num_inputs)
+    if (psbt->inputs_allocation_len < tx->num_inputs) {
         new_inputs = wally_calloc(tx->num_inputs * sizeof(struct wally_psbt_input));
+        for (i = 0; i < tx->num_inputs; ++i)
+            psbt_input_init(&new_inputs[i]);
+    }
 
-    if (psbt->outputs_allocation_len < tx->num_outputs)
+    if (psbt->outputs_allocation_len < tx->num_outputs) {
         new_outputs = wally_calloc(tx->num_outputs * sizeof(struct wally_psbt_output));
+        for (i = 0; i < tx->num_outputs; ++i)
+            psbt_output_init(&new_outputs[i]);
+    }
 
     if ((psbt->inputs_allocation_len < tx->num_inputs && !new_inputs) ||
         (psbt->outputs_allocation_len < tx->num_outputs && !new_outputs)) {
@@ -895,6 +632,7 @@ int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
             struct wally_psbt_input *dst = psbt->inputs + index;
             memmove(dst + 1, dst, (psbt->num_inputs - index) * sizeof(*psbt->inputs));
             wally_clear(dst, sizeof(*dst));
+            psbt_input_init(dst);
             psbt->num_inputs += 1;
 
             if (psbt->version == PSBT_2) {
@@ -1357,7 +1095,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
          found_tx_version = false, found_fallback_locktime = false,
          found_tx_modifiable_flags = false;
 
-    TX_CHECK_OUTPUT;
+    OUTPUT_CHECK;
 
     magic = pull_skip(&bytes, &len, sizeof(PSBT_MAGIC));
     if (!magic) {
@@ -1409,7 +1147,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         }
         case PSBT_GLOBAL_XPUB: {
             ret = pull_map(&bytes, &len, key, key_len, &result->global_xpubs,
-                           NULL, NULL, keypath_verify);
+                           NULL, NULL, wally_keypath_bip32_verify);
             if (ret != WALLY_OK)
                 goto fail;
             break;
@@ -1537,9 +1275,13 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     if (!result->tx) {
         result->num_inputs = input_count;
         result->inputs = wally_calloc(result->num_inputs * sizeof(struct wally_psbt_input));
+        for (i = 0; i < result->num_inputs; ++i)
+            psbt_input_init(&result->inputs[i]);
 
         result->num_outputs = output_count;
         result->outputs = wally_calloc(result->num_outputs * sizeof(struct wally_psbt_output));
+        for (i = 0; i < result->num_outputs; ++i)
+            psbt_output_init(&result->outputs[i]);
 
         if (!result->inputs || !result->outputs) {
             ret = WALLY_ENOMEM;
@@ -1885,7 +1627,7 @@ int wally_psbt_from_base64(const char *base64, struct wally_psbt **output)
     size_t max_len, written;
     int ret;
 
-    TX_CHECK_OUTPUT;
+    OUTPUT_CHECK;
     if ((ret = wally_base64_get_maximum_length(base64, 0, &max_len)) != WALLY_OK)
         return ret;
 
@@ -1920,7 +1662,7 @@ int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **o
     size_t len, written;
     int ret;
 
-    TX_CHECK_OUTPUT;
+    OUTPUT_CHECK;
 
     if ((ret = wally_psbt_get_length(psbt, flags, &len)) != WALLY_OK)
         return ret;
@@ -2276,8 +2018,10 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
         (*output)->tx_version = psbt->tx_version;
         /* fallback_locktime will be copied by psbt_combine() below */
         (*output)->tx_modifiable_flags = psbt->tx_modifiable_flags;
-        for (i = 0; i < psbt->num_inputs; i++)
+        for (i = 0; i < psbt->num_inputs; i++) {
+            psbt_input_init(&(*output)->inputs[i]);
             (*output)->inputs[i].sequence = WALLY_TX_SEQUENCE_FINAL;
+        }
         ret = psbt_combine(*output, psbt);
 
         if (ret == WALLY_OK && psbt->tx)
@@ -2768,7 +2512,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
     size_t is_elements, i;
     int ret;
 
-    TX_CHECK_OUTPUT;
+    OUTPUT_CHECK;
 
     if (!psbt_is_valid(psbt) ||
         (psbt->version == PSBT_0 && (!psbt->tx || !psbt->num_inputs || !psbt->num_outputs)))

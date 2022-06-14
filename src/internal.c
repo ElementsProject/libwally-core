@@ -446,6 +446,72 @@ void wally_secp_context_free(struct secp256k1_context_struct *ctx)
         secp256k1_context_destroy(ctx);
 }
 
+bool clone_data(void **dst, const void *src, size_t len)
+{
+    if (!len) {
+        *dst = NULL;
+        return true;
+    }
+    *dst = wally_malloc(len);
+    if (*dst)
+        memcpy(*dst, src, len);
+    return *dst != NULL;
+}
+
+bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
+{
+    return clone_data((void **)dst, src, len);
+}
+
+int replace_bytes(const unsigned char *bytes, size_t bytes_len,
+                  unsigned char **bytes_out, size_t *bytes_len_out)
+{
+    unsigned char *new_bytes = NULL;
+
+    if (BYTES_INVALID(bytes, bytes_len) || BYTES_INVALID(*bytes_out, *bytes_len_out))
+        return WALLY_EINVAL;
+
+    /* TODO: Avoid reallocation if new bytes is smaller than the existing one */
+    if (!clone_bytes(&new_bytes, bytes, bytes_len))
+        return WALLY_ENOMEM;
+
+    clear_and_free(*bytes_out, *bytes_len_out);
+    *bytes_out = new_bytes;
+    *bytes_len_out = bytes_len;
+    return WALLY_OK;
+}
+
+
+
+void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
+{
+    unsigned char *p = wally_malloc(new_n * size);
+    if (!p)
+        return NULL;
+    if (src)
+        memcpy(p, src, old_n * size);
+    wally_clear(p + old_n * size, (new_n - old_n) * size);
+    return p;
+}
+
+int array_grow(void **src, size_t num_items, size_t *allocation_len,
+               size_t item_size)
+{
+    if (num_items == *allocation_len) {
+        /* Array is full, allocate more space */
+        const size_t n = (*allocation_len == 0 ? 1 : *allocation_len) * 2;
+        void *p = array_realloc(*src, *allocation_len, n, item_size);
+        if (!p)
+            return WALLY_ENOMEM;
+        /* Free and replace the old array with the new enlarged copy */
+        clear_and_free(*src, num_items * item_size);
+        *src = p;
+        *allocation_len = n;
+    }
+    return WALLY_OK;
+}
+
+
 #ifdef __ANDROID__
 #define malloc(size) wally_malloc(size)
 #define free(ptr) wally_free(ptr)

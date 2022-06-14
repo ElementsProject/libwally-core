@@ -188,18 +188,18 @@ class PSBTTests(unittest.TestCase):
             dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
 
-        dummy_keypaths = map_init(0)
+        dummy_keypaths = map_init(0, None) # TODO: keypath map init
         self.assertIsNotNone(dummy_keypaths)
         map_add_keypath_item(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
         self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
 
-        empty_signatures = map_init(0)
-        dummy_signatures = map_init(0)
+        empty_signatures = map_init(0, None)
+        dummy_signatures = map_init(0, None) # TODO: pubkey to sig map init
         self.assertIsNotNone(dummy_signatures)
         map_add(dummy_signatures, dummy_pubkey, dummy_sig)
         self.assertEqual(map_find(dummy_signatures, dummy_pubkey), 1)
 
-        dummy_unknowns = map_init(1)
+        dummy_unknowns = map_init(1, None)
         self.assertIsNotNone(dummy_unknowns)
         dummy_unknown_key = bytearray(b'\x55' * 32)
         map_add(dummy_unknowns, dummy_unknown_key, dummy_fingerprint)

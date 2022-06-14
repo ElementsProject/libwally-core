@@ -8,6 +8,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_map.h"
 #include "../include/wally_psbt.h"
 #include "psbt_int.h"
 #include "../include/wally_script.h"
@@ -256,6 +257,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* val, size_t val_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* value, size_t value_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* vbf, size_t vbf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* whitelistproof, size_t whitelistproof_len) };
@@ -481,11 +483,17 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_init);
 %rename("_is_elements_build") wally_is_elements_build;
 %returns_size_t(_is_elements_build);
+%returns_void__(wally_keypath_bip32_verify);
+%returns_void__(wally_keypath_public_key_verify);
 %returns_void__(wally_map_add);
 %returns_void__(wally_map_add_keypath_item);
 %returns_void__(wally_map_clear);
 %returns_size_t(wally_map_find);
 %returns_void__(wally_map_free)
+%returns_struct(wally_map_keypath_bip32_init_alloc, wally_map);
+%rename("map_keypath_bip32_init") wally_map_keypath_bip32_init_alloc;
+%returns_struct(wally_map_keypath_public_key_init_alloc, wally_map);
+%rename("map_keypath_public_key_init") wally_map_keypath_public_key_init_alloc;
 %returns_struct(wally_map_init_alloc, wally_map);
 %rename("map_init") wally_map_init_alloc;
 %returns_void__(wally_map_sort);
@@ -859,6 +867,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_map.h"
 %include "../include/wally_psbt.h"
 %include "psbt_int.h"
 %include "../include/wally_script.h"

@@ -570,6 +570,18 @@ inline int is_elements_build(size_t* written) {
     return ret;
 }
 
+template <class KEY, class VAL>
+inline int keypath_bip32_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_keypath_bip32_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
+template <class KEY, class VAL>
+inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_keypath_public_key_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
 template <class MAP_IN, class KEY, class VALUE>
 inline int map_add(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
     int ret = ::wally_map_add(detail::get_p(map_in), key.data(), key.size(), value.data(), value.size());
@@ -596,6 +608,11 @@ inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
 
 inline int map_free(struct wally_map* map_in) {
     int ret = ::wally_map_free(map_in);
+    return ret;
+}
+
+inline int map_init(size_t allocation_len, struct wally_map* output) {
+    int ret = ::wally_map_init(allocation_len, output);
     return ret;
 }
 
@@ -1626,6 +1643,16 @@ inline int elements_pegout_script_from_bytes(const GENESIS_BLOCKHASH& genesis_bl
 
 inline int elements_pegout_script_size(size_t genesis_blockhash_len, size_t mainchain_script_len, size_t sub_pubkey_len, size_t whitelistproof_len, size_t* written) {
     int ret = ::wally_elements_pegout_script_size(genesis_blockhash_len, mainchain_script_len, sub_pubkey_len, whitelistproof_len, written);
+    return ret;
+}
+
+inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_keypath_bip32_init_alloc(allocation_len, output);
+    return ret;
+}
+
+inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_keypath_public_key_init_alloc(allocation_len, output);
     return ret;
 }
 

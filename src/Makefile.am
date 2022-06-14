@@ -196,6 +196,7 @@ libwallycore_la_SOURCES = \
     hex.c \
     hmac.c \
     internal.c \
+    map.c \
     mnemonic.c \
     pbkdf2.c \
     psbt.c \
@@ -222,6 +223,7 @@ libwallycore_la_INCLUDES = \
     include/wally_core.h \
     include/wally_crypto.h \
     include/wally_elements.h \
+    include/wally_map.h \
     include/wally_psbt.h \
     include/wally_script.h \
     include/wally_symmetric.h \
@@ -315,6 +317,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_internal.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_map.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py

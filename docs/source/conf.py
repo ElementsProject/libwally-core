@@ -78,8 +78,8 @@ if DUMP_INTERNAL:
         extract_docs('../../src/%s.h' % m, '%s.rst' % m)
 else:
     for m in [
-        'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'script', 'psbt',
-        'symmetric', 'transaction', 'elements', 'anti_exfil'
+        'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'map',
+        'script', 'psbt', 'symmetric', 'transaction', 'elements', 'anti_exfil'
         ]:
         extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 

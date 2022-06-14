@@ -66,4 +66,36 @@ char *wally_strdup(const char *str);
 #define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))
 #define BYTES_INVALID_N(p, len, siz) ((p != NULL) != (len == siz))
 
+/* Check and allocate output parameters */
+#define OUTPUT_CHECK if (!output) return WALLY_EINVAL; else *output = NULL
+#define OUTPUT_ALLOC(typ) \
+    *output = wally_calloc(sizeof(typ)); \
+    if (!*output) return WALLY_ENOMEM; \
+    result = (typ *) *output;
+
+/* Helpers for operating on byte buffers */
+bool clone_data(void **dst, const void *src, size_t len);
+bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
+int replace_bytes(const unsigned char *bytes, size_t bytes_len,
+                  unsigned char **bytes_out, size_t *bytes_len_out);
+void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size);
+
+int array_grow(void **src, size_t num_items, size_t *allocation_len,
+               size_t item_size);
+
+/* FIXME: remove these */
+struct wally_map;
+int map_extend(struct wally_map *dst, const struct wally_map *src,
+               int (*key_fn)(const unsigned char *key, size_t key_len),
+               int (*val_fn)(const unsigned char *val, size_t val_len));
+int map_add(struct wally_map *map_in,
+            const unsigned char *key, size_t key_len,
+            const unsigned char *value, size_t value_len,
+            bool take_value,
+            int (*key_fn)(const unsigned char *key, size_t key_len),
+            int (*val_fn)(const unsigned char *val, size_t val_len),
+            bool ignore_dups);
+int map_assign(const struct wally_map *src, struct wally_map *dst,
+               int (*key_fn)(const unsigned char *key, size_t key_len),
+               int (*val_fn)(const unsigned char *val, size_t val_len));
 #endif /* LIBWALLY_INTERNAL_H */

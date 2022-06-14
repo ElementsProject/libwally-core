@@ -131,7 +131,8 @@ class wally_map_item(Structure):
 class wally_map(Structure):
     _fields_ = [('items', POINTER(wally_map_item)),
                 ('num_items', c_size_t),
-                ('items_allocation_len', c_size_t)]
+                ('items_allocation_len', c_size_t),
+                ('verify_fn', c_void_p)]
 
 class wally_psbt_input(Structure):
     _fields_ = [('txhash', c_ubyte * 32),
@@ -305,12 +306,17 @@ for f in (
     ('wally_hmac_sha512', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_init', c_int, [c_uint32]),
     ('wally_is_elements_build', c_int, [c_size_t_p]),
+    ('wally_keypath_bip32_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_keypath_public_key_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_add', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_add_keypath_item', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t, c_uint_p, c_size_t]),
     ('wally_map_clear', c_int, [POINTER(wally_map)]),
     ('wally_map_find', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_size_t_p]),
     ('wally_map_free', c_int, [POINTER(wally_map)]),
-    ('wally_map_init_alloc', c_int, [c_size_t, POINTER(POINTER(wally_map))]),
+    ('wally_map_init', c_int, [c_size_t, c_void_p, POINTER(wally_map)]),
+    ('wally_map_init_alloc', c_int, [c_size_t, c_void_p, POINTER(POINTER(wally_map))]),
+    ('wally_map_keypath_bip32_init_alloc', c_int, [c_size_t, POINTER(POINTER(wally_map))]),
+    ('wally_map_keypath_public_key_init_alloc', c_int, [c_size_t, POINTER(POINTER(wally_map))]),
     ('wally_map_sort', c_int, [POINTER(wally_map), c_uint32]),
     ('wally_pbkdf2_hmac_sha256', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),

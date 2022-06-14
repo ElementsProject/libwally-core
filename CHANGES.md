@@ -3,11 +3,13 @@
 ## Version 0.8.6
 - Support for PSET v0 (Elements) has been removed.
 - PSBT: PSBT v2 support has been added and the ABI has changed slightly as a result.
-  Users will need to recompile their applications and/or change function names and
+  Users will need to recompile their applications and change function names and
   arguments in the cases listed below:
 - psbt_init_alloc has changed its definition and now has a new flags argument.
 - psbt_add_input_at has been renamed to psbt_add_tx_input_at.
 - psbt_add_output_at has been renamed to psbt_add_tx_output_at.
+- wally_map initialisation functions now take a verififaction function
+  as an extra parameter.
 
 ## Version 0.8.2
 

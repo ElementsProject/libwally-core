@@ -1,8 +1,9 @@
 #ifndef LIBWALLY_CORE_PSBT_H
 #define LIBWALLY_CORE_PSBT_H
 
-#include "wally_transaction.h"
 #include "wally_bip32.h"
+#include "wally_map.h"
+#include "wally_transaction.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,26 +30,10 @@ extern "C" {
 #define WALLY_PSBT_ID_NO_LOCKTIME 0x2 /* Set locktime to 0 before calculating id */
 
 #ifdef SWIG
-struct wally_map;
 struct wally_psbt_input;
 struct wally_psbt_output;
 struct wally_psbt;
 #else
-
-/** A map item */
-struct wally_map_item {
-    unsigned char *key;
-    size_t key_len;
-    unsigned char *value;
-    size_t value_len;
-};
-
-/** A map of key,value pairs */
-struct wally_map {
-    struct wally_map_item *items;
-    size_t num_items;
-    size_t items_allocation_len;
-};
 
 /** A PSBT input */
 struct wally_psbt_input {
@@ -105,96 +90,6 @@ struct wally_psbt {
     uint32_t tx_modifiable_flags;
 };
 #endif /* SWIG */
-
-/**
- * Allocate and initialize a new map.
- *
- * :param allocation_len: The number of items to allocate.
- * :param output: Destination for the new map.
- */
-WALLY_CORE_API int wally_map_init_alloc(
-    size_t allocation_len,
-    struct wally_map **output);
-
-#ifndef SWIG_PYTHON
-/**
- * Free a map allocated by `wally_map_init_alloc`.
- *
- * :param map_in: The map to free.
- */
-WALLY_CORE_API int wally_map_free(
-    struct wally_map *map_in);
-#endif /* SWIG_PYTHON */
-
-/**
- * Find an item in a map.
- *
- * :param map_in: The map to find ``key`` in.
- * :param key: The key to find.
- * :param key_len: Length of ``key`` in bytes.
- * :param written: On success, set to zero if the item is not found, otherwise
- *|    the index of the item plus one.
- */
-WALLY_CORE_API int wally_map_find(
-    const struct wally_map *map_in,
-    const unsigned char *key,
-    size_t key_len,
-    size_t *written);
-
-/**
- * Add an item to a map.
- *
- * :param map_in: The map to add to.
- * :param key: The key to add.
- * :param key_len: Length of ``key`` in bytes.
- * :param value: The value to add.
- * :param value_len: Length of ``value`` in bytes.
- */
-WALLY_CORE_API int wally_map_add(
-    struct wally_map *map_in,
-    const unsigned char *key,
-    size_t key_len,
-    const unsigned char *value,
-    size_t value_len);
-
-/**
- * Remove all entries from a map.
- *
- * :param map_in: The map to clear.
- */
-WALLY_CORE_API int wally_map_clear(
-    struct wally_map *map_in);
-
-
-/**
- * Convert and add a pubkey/keypath to a map.
- *
- * :param map_in: The map to add to.
- * :param pub_key: The pubkey to add.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
- * :param fingerprint: The master key fingerprint for the pubkey.
- * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
- * :param child_path: The BIP32 derivation path for the pubkey.
- * :param child_path_len: The number of items in ``child_path``.
- */
-WALLY_CORE_API int wally_map_add_keypath_item(
-    struct wally_map *map_in,
-    const unsigned char *pub_key,
-    size_t pub_key_len,
-    const unsigned char *fingerprint,
-    size_t fingerprint_len,
-    const uint32_t *child_path,
-    size_t child_path_len);
-
-/**
- * Sort the items in a map.
- *
- * :param map_in: The map to sort.
- * :param flags: Flags controlling sorting. Must be 0.
- */
-WALLY_CORE_API int wally_map_sort(
-    struct wally_map *map_in,
-    uint32_t flags);
 
 #ifndef SWIG
 /**
