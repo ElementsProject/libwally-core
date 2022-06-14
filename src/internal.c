@@ -97,7 +97,7 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes, bytes_len);
+    sha256(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -126,7 +126,7 @@ int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
 
     sha256_init(&ctx);
     sha256_update(&ctx, bytes, bytes_len);
-    sha256_midstate(&ctx, aligned ? (struct sha256 *)bytes_out : &sha);
+    sha256_midstate(&ctx, aligned ? (void *)bytes_out : (void *)&sha);
     wally_clear(&ctx, sizeof(ctx));
 
     if (!aligned) {
@@ -146,7 +146,7 @@ int wally_sha256d(const unsigned char *bytes, size_t bytes_len,
         return WALLY_EINVAL;
 
     sha256(&sha_1, bytes, bytes_len);
-    sha256(aligned ? (struct sha256 *)bytes_out : &sha_2, &sha_1, sizeof(sha_1));
+    sha256(aligned ? (void *)bytes_out : (void *)&sha_2, &sha_1, sizeof(sha_1));
     if (!aligned) {
         memcpy(bytes_out, &sha_2, sizeof(sha_2));
         wally_clear(&sha_2, sizeof(sha_2));
@@ -164,7 +164,7 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA512_LEN)
         return WALLY_EINVAL;
 
-    sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes, bytes_len);
+    sha512(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -183,7 +183,7 @@ int wally_ripemd160(const unsigned char *bytes, size_t bytes_len,
 
     BUILD_ASSERT(sizeof(ripemd) == RIPEMD160_LEN);
 
-    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, bytes, bytes_len);
+    ripemd160(aligned ? (void *)bytes_out : (void *)&ripemd, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
         wally_clear(&ripemd, sizeof(ripemd));
@@ -206,7 +206,7 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
     if (wally_sha256(bytes, bytes_len, buff, sizeof(buff)) != WALLY_OK)
         return WALLY_EINVAL;
 
-    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &buff, sizeof(buff));
+    ripemd160(aligned ? (void *)bytes_out : (void *)&ripemd, &buff, sizeof(buff));
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
         wally_clear(&ripemd, sizeof(ripemd));
