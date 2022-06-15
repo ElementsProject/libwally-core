@@ -588,6 +588,12 @@ inline int map_add(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
     return ret;
 }
 
+template <class MAP_IN>
+inline int map_assign(const MAP_IN& map_in, const struct wally_map* source) {
+    int ret = ::wally_map_assign(detail::get_p(map_in), source);
+    return ret;
+}
+
 inline int map_clear(struct wally_map* map_in) {
     int ret = ::wally_map_clear(map_in);
     return ret;

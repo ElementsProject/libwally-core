@@ -149,7 +149,7 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
 #define SET_MAP(PARENT, NAME, ADD_POST) \
     int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
         if (!parent) return WALLY_EINVAL; \
-        return map_assign(map_in, &parent->NAME ## s); \
+        return wally_map_assign(&parent->NAME ## s, map_in); \
     } \
     int PARENT ## _find_ ## NAME(struct PARENT *parent, \
                                  const unsigned char *key, size_t key_len, \

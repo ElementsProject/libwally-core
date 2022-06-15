@@ -182,16 +182,21 @@ int wally_map_combine(struct wally_map *map_in,
     return ret;
 }
 
-int map_assign(const struct wally_map *src, struct wally_map *dst)
+int wally_map_assign(struct wally_map *map_in,
+                     const struct wally_map *src)
 {
     struct wally_map result;
     size_t allocation_len = src ? src->items_allocation_len : 0;
     int ret;
 
-    ret = wally_map_init(allocation_len, dst->verify_fn, &result);
+    if (!map_in || !src)
+        return WALLY_EINVAL;
+    if (map_in == src)
+        return WALLY_OK;
+    ret = wally_map_init(allocation_len, map_in->verify_fn, &result);
     if (ret == WALLY_OK && (ret = wally_map_combine(&result, src)) == WALLY_OK) {
-        wally_map_clear(dst);
-        memcpy(dst, &result, sizeof(result));
+        wally_map_clear(map_in);
+        memcpy(map_in, &result, sizeof(result));
     } else
         wally_map_clear(&result);
     return ret;

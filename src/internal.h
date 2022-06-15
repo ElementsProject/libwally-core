@@ -83,11 +83,9 @@ void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size);
 int array_grow(void **src, size_t num_items, size_t *allocation_len,
                size_t item_size);
 
-/* FIXME: remove these */
 struct wally_map;
 int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,
             const unsigned char *value, size_t value_len,
             bool take_value, bool ignore_dups);
-int map_assign(const struct wally_map *src, struct wally_map *dst);
 #endif /* LIBWALLY_INTERNAL_H */

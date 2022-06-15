@@ -136,6 +136,18 @@ WALLY_CORE_API int wally_map_combine(
     struct wally_map *map_in,
     const struct wally_map *source);
 
+/**
+ * Replace a maps contents with another map.
+ *
+ * :param map_in: the destination to combine into.
+ * :param source: the source to copy items from.
+ *
+ * .. note:: If this call fails, `map_in` is left untouched.
+ */
+WALLY_CORE_API int wally_map_assign(
+    struct wally_map *map_in,
+    const struct wally_map *source);
+
 #ifndef SWIG
 /**
  * Verify a PSBT keypath keyed by a serialized bip32 extended public key.
