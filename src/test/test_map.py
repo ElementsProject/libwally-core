@@ -61,6 +61,32 @@ class MapTests(unittest.TestCase):
                             (key3, key3_len, val_len, 1)]:
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
 
+        # Assign
+        new_key, new_key_len = make_cbuffer('ffffffffff')
+        clone = pointer(wally_map())
+        self.assertEqual(wally_map_init_alloc(0, None, clone), WALLY_OK)
+        self.assertEqual(wally_map_assign(None, m), WALLY_EINVAL)     # No dest map
+        self.assertEqual(wally_map_assign(clone, None), WALLY_EINVAL) # No src map
+        self.assertEqual(wally_map_assign(clone, clone), WALLY_OK)    # Assign to self: no-op
+        self.assertEqual(wally_map_add(clone, new_key, new_key_len, v, vl), WALLY_OK)
+        # Assign over the map; the exiting entry is deleted
+        self.assertEqual(wally_map_assign(clone, m), WALLY_OK)
+        self.assertEqual(wally_map_find(clone, new_key, new_key_len), (WALLY_OK, 0))
+
+        # Re-create clone to test combining
+        self.assertEqual(wally_map_free(clone), WALLY_OK);
+        self.assertEqual(wally_map_init_alloc(0, None, clone), WALLY_OK)
+        self.assertEqual(wally_map_add(clone, new_key, new_key_len, v, vl), WALLY_OK)
+
+        # Combine
+        self.assertEqual(wally_map_combine(None, m), WALLY_EINVAL) # No dest map
+        self.assertEqual(wally_map_combine(m, None), WALLY_OK)     # No src: no-op
+        num_items = m.contents.num_items
+        self.assertEqual(wally_map_combine(m, m), WALLY_OK)        # Combine w/self: no-op
+        self.assertEqual(m.contents.num_items, num_items)
+        self.assertEqual(wally_map_combine(m, clone), WALLY_OK)
+        self.assertEqual(m.contents.num_items, num_items + 1)      # Added the clone item
+
         self.assertEqual(wally_map_free(m), WALLY_OK)
 
     def test_keypath_map(self):
