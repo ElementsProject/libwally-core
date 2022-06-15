@@ -85,7 +85,6 @@ int array_grow(void **src, size_t num_items, size_t *allocation_len,
 
 /* FIXME: remove these */
 struct wally_map;
-int map_extend(const struct wally_map *src, struct wally_map *dst);
 int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,
             const unsigned char *value, size_t value_len,

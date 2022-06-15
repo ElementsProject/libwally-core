@@ -758,7 +758,7 @@ WALLY_CORE_API int wally_psbt_to_base64(
  */
 WALLY_CORE_API int wally_psbt_combine(
     struct wally_psbt *psbt,
-    const struct wally_psbt *src);
+    const struct wally_psbt *source);
 
 /**
  * Clone a PSBT into a newly allocated copy.

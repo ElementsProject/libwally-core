@@ -593,6 +593,12 @@ inline int map_clear(struct wally_map* map_in) {
     return ret;
 }
 
+template <class MAP_IN>
+inline int map_combine(const MAP_IN& map_in, const struct wally_map* source) {
+    int ret = ::wally_map_combine(detail::get_p(map_in), source);
+    return ret;
+}
+
 template <class MAP_IN, class KEY>
 inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     size_t n;
@@ -673,8 +679,8 @@ inline int psbt_clone_alloc(const PSBT& psbt, uint32_t flags, struct wally_psbt*
 }
 
 template <class PSBT>
-inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* src) {
-    int ret = ::wally_psbt_combine(detail::get_p(psbt), src);
+inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* source) {
+    int ret = ::wally_psbt_combine(detail::get_p(psbt), source);
     return ret;
 }
 

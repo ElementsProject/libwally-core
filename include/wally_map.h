@@ -88,6 +88,9 @@ WALLY_CORE_API int wally_map_clear(
  * :param key_len: Length of ``key`` in bytes.
  * :param value: The value to add.
  * :param value_len: Length of ``value`` in bytes.
+ *
+ * .. note:: If the key given is already in the map, this call succeeds
+ *|    without altering the map.
  */
 WALLY_CORE_API int wally_map_add(
     struct wally_map *map_in,
@@ -120,6 +123,18 @@ WALLY_CORE_API int wally_map_find(
 WALLY_CORE_API int wally_map_sort(
     struct wally_map *map_in,
     uint32_t flags);
+
+/**
+ * Combine the items from a source map into another map.
+ *
+ * :param map_in: the destination to combine into.
+ * :param source: the source to copy items from.
+ *
+ * .. note:: If this call fails, `map_in` may be left partially updated.
+ */
+WALLY_CORE_API int wally_map_combine(
+    struct wally_map *map_in,
+    const struct wally_map *source);
 
 #ifndef SWIG
 /**

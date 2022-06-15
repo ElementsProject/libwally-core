@@ -87,7 +87,7 @@ int wally_map_find(const struct wally_map *map_in,
 
 /* Note: If take_value is true and this errors, the caller must
  * free `value`. By design this only happens with calls internal
- * to this source file. */
+ * to the library. */
 int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,
             const unsigned char *val, size_t val_len,
@@ -164,14 +164,19 @@ int wally_map_sort(struct wally_map *map_in, uint32_t flags)
     return WALLY_OK;
 }
 
-int map_extend(const struct wally_map *src, struct wally_map *dst)
+int wally_map_combine(struct wally_map *map_in,
+                      const struct wally_map *src)
 {
     int ret = WALLY_OK;
     size_t i;
 
+    if (!map_in)
+        return WALLY_EINVAL;
+    if (map_in == src)
+        return WALLY_OK;
     if (src) {
         for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = wally_map_add(dst, src->items[i].key, src->items[i].key_len,
+            ret = wally_map_add(map_in, src->items[i].key, src->items[i].key_len,
                                 src->items[i].value, src->items[i].value_len);
     }
     return ret;
@@ -184,7 +189,7 @@ int map_assign(const struct wally_map *src, struct wally_map *dst)
     int ret;
 
     ret = wally_map_init(allocation_len, dst->verify_fn, &result);
-    if (ret == WALLY_OK && (ret = map_extend(src, &result)) == WALLY_OK) {
+    if (ret == WALLY_OK && (ret = wally_map_combine(&result, src)) == WALLY_OK) {
         wally_map_clear(dst);
         memcpy(dst, &result, sizeof(result));
     } else

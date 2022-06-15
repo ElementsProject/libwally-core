@@ -1719,11 +1719,11 @@ static int combine_inputs(struct wally_psbt_input *dst,
     if (!dst->final_witness && src->final_witness &&
         (ret = wally_psbt_input_set_final_witness(dst, src->final_witness)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->keypaths, &dst->keypaths)) != WALLY_OK)
+    if ((ret = wally_map_combine(&dst->keypaths, &src->keypaths)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->signatures, &dst->signatures)) != WALLY_OK)
+    if ((ret = wally_map_combine(&dst->signatures, &src->signatures)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->unknowns, &dst->unknowns)) != WALLY_OK)
+    if ((ret = wally_map_combine(&dst->unknowns, &src->unknowns)) != WALLY_OK)
         return ret;
     if (!dst->sighash && src->sighash)
         dst->sighash = src->sighash;
@@ -1750,9 +1750,9 @@ static int combine_outputs(struct wally_psbt_output *dst,
     COMBINE_BYTES(output, redeem_script);
     COMBINE_BYTES(output, witness_script);
 
-    if ((ret = map_extend(&src->keypaths, &dst->keypaths)) != WALLY_OK)
+    if ((ret = wally_map_combine(&dst->keypaths, &src->keypaths)) != WALLY_OK)
         return ret;
-    if ((ret = map_extend(&src->unknowns, &dst->unknowns)) != WALLY_OK)
+    if ((ret = wally_map_combine(&dst->unknowns, &src->unknowns)) != WALLY_OK)
         return ret;
 
     if (!dst->has_amount && src->has_amount) {
@@ -1789,10 +1789,10 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
 
     if (ret == WALLY_OK)
-        ret = map_extend(&src->unknowns, &psbt->unknowns);
+        ret = wally_map_combine(&psbt->unknowns, &src->unknowns);
 
     if (ret == WALLY_OK)
-        ret = map_extend(&src->global_xpubs, &psbt->global_xpubs);
+        ret = wally_map_combine(&psbt->global_xpubs, &src->global_xpubs);
 
     return ret;
 }

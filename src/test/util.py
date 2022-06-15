@@ -310,6 +310,7 @@ for f in (
     ('wally_keypath_public_key_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_add', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_clear', c_int, [POINTER(wally_map)]),
+    ('wally_map_combine', c_int, [POINTER(wally_map), POINTER(wally_map)]),
     ('wally_map_find', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_size_t_p]),
     ('wally_map_free', c_int, [POINTER(wally_map)]),
     ('wally_map_init', c_int, [c_size_t, c_void_p, POINTER(wally_map)]),
