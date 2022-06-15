@@ -85,17 +85,10 @@ int array_grow(void **src, size_t num_items, size_t *allocation_len,
 
 /* FIXME: remove these */
 struct wally_map;
-int map_extend(struct wally_map *dst, const struct wally_map *src,
-               int (*key_fn)(const unsigned char *key, size_t key_len),
-               int (*val_fn)(const unsigned char *val, size_t val_len));
+int map_extend(const struct wally_map *src, struct wally_map *dst);
 int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,
             const unsigned char *value, size_t value_len,
-            bool take_value,
-            int (*key_fn)(const unsigned char *key, size_t key_len),
-            int (*val_fn)(const unsigned char *val, size_t val_len),
-            bool ignore_dups);
-int map_assign(const struct wally_map *src, struct wally_map *dst,
-               int (*key_fn)(const unsigned char *key, size_t key_len),
-               int (*val_fn)(const unsigned char *val, size_t val_len));
+            bool take_value, bool ignore_dups);
+int map_assign(const struct wally_map *src, struct wally_map *dst);
 #endif /* LIBWALLY_INTERNAL_H */

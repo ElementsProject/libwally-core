@@ -90,19 +90,15 @@ int wally_map_find(const struct wally_map *map_in,
  * to this source file. */
 int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,
-            const unsigned char *value, size_t value_len,
-            bool take_value,
-            int (*key_fn)(const unsigned char *key, size_t key_len),
-            int (*val_fn)(const unsigned char *val, size_t val_len),
-            bool ignore_dups)
+            const unsigned char *val, size_t val_len,
+            bool take_value, bool ignore_dups)
 {
     size_t is_found;
     int ret;
 
     if (!map_in || !key || BYTES_INVALID(key, key_len) ||
-        (key_fn && key_fn(key, key_len) != WALLY_OK) ||
-        (val_fn && val_fn(value, value_len) != WALLY_OK) ||
-        BYTES_INVALID(value, value_len))
+        BYTES_INVALID(val, val_len) ||
+        (map_in->verify_fn && map_in->verify_fn(key, key_len, val, val_len) != WALLY_OK))
         return WALLY_EINVAL;
 
     if ((ret = wally_map_find(map_in, key, key_len, &is_found)) != WALLY_OK)
@@ -110,7 +106,7 @@ int map_add(struct wally_map *map_in,
 
     if (is_found) {
         if (ignore_dups && take_value)
-            clear_and_free((unsigned char *)value, value_len);
+            clear_and_free((unsigned char *)val, val_len);
         return ignore_dups ? WALLY_OK : WALLY_EINVAL;
     }
 
@@ -123,15 +119,15 @@ int map_add(struct wally_map *map_in,
             return WALLY_ENOMEM;
         new_item->key_len = key_len;
 
-        if (value) {
+        if (val) {
             if (take_value)
-                new_item->value = (unsigned char *)value;
-            else if (!clone_bytes(&new_item->value, value, value_len)) {
+                new_item->value = (unsigned char *)val;
+            else if (!clone_bytes(&new_item->value, val, val_len)) {
                 clear_and_free_bytes(&new_item->key, &new_item->key_len);
                 return WALLY_ENOMEM;
             }
         }
-        new_item->value_len = value_len;
+        new_item->value_len = val_len;
         map_in->num_items++;
     }
     return ret;
@@ -141,7 +137,7 @@ int wally_map_add(struct wally_map *map_in,
                   const unsigned char *key, size_t key_len,
                   const unsigned char *value, size_t value_len)
 {
-    return map_add(map_in, key, key_len, value, value_len, false, NULL, NULL, true);
+    return map_add(map_in, key, key_len, value, value_len, false, true);
 }
 
 static int map_item_compare(const void *lhs, const void *rhs)
@@ -168,46 +164,31 @@ int wally_map_sort(struct wally_map *map_in, uint32_t flags)
     return WALLY_OK;
 }
 
-int map_extend(struct wally_map *dst, const struct wally_map *src,
-               int (*key_fn)(const unsigned char *key, size_t key_len),
-               int (*val_fn)(const unsigned char *val, size_t val_len))
+int map_extend(const struct wally_map *src, struct wally_map *dst)
 {
     int ret = WALLY_OK;
     size_t i;
 
     if (src) {
         for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = map_add(dst, src->items[i].key, src->items[i].key_len,
-                          src->items[i].value, src->items[i].value_len,
-                          false, key_fn, val_fn, true);
+            ret = wally_map_add(dst, src->items[i].key, src->items[i].key_len,
+                                src->items[i].value, src->items[i].value_len);
     }
     return ret;
 }
 
-int map_assign(const struct wally_map *src, struct wally_map *dst,
-               int (*key_fn)(const unsigned char *key, size_t key_len),
-               int (*val_fn)(const unsigned char *val, size_t val_len))
+int map_assign(const struct wally_map *src, struct wally_map *dst)
 {
     struct wally_map result;
-    size_t i;
-    int ret = WALLY_OK;
+    size_t allocation_len = src ? src->items_allocation_len : 0;
+    int ret;
 
-    if (!src)
-        ret = wally_map_init(0, dst->verify_fn, &result);
-    else {
-        ret = wally_map_init(src->items_allocation_len, src->verify_fn, &result);
-        for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = map_add(&result, src->items[i].key, src->items[i].key_len,
-                          src->items[i].value, src->items[i].value_len,
-                          false, key_fn, val_fn, true);
-    }
-
-    if (ret != WALLY_OK)
-        wally_map_clear(&result);
-    else {
+    ret = wally_map_init(allocation_len, dst->verify_fn, &result);
+    if (ret == WALLY_OK && (ret = map_extend(src, &result)) == WALLY_OK) {
         wally_map_clear(dst);
         memcpy(dst, &result, sizeof(result));
-    }
+    } else
+        wally_map_clear(&result);
     return ret;
 }
 
@@ -310,7 +291,7 @@ int wally_map_add_keypath_item(struct wally_map *map_in,
                &tmp, sizeof(tmp));
     }
 
-    ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, NULL, NULL, true);
+    ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, true);
     if (ret != WALLY_OK)
         clear_and_free(value, value_len);
     wally_clear(&extkey, sizeof(extkey));
