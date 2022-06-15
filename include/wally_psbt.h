@@ -204,7 +204,7 @@ WALLY_CORE_API int wally_psbt_input_find_keypath(
  * :param child_path: The BIP32 derivation path for the pubkey.
  * :param child_path_len: The number of items in ``child_path``.
  */
-WALLY_CORE_API int wally_psbt_input_add_keypath_item(
+WALLY_CORE_API int wally_psbt_input_keypath_add(
     struct wally_psbt_input *input,
     const unsigned char *pub_key,
     size_t pub_key_len,
@@ -426,7 +426,7 @@ WALLY_CORE_API int wally_psbt_output_find_keypath(
  * :param child_path: The BIP32 derivation path for the pubkey.
  * :param child_path_len: The number of items in ``child_path``.
  */
-WALLY_CORE_API int wally_psbt_output_add_keypath_item(
+WALLY_CORE_API int wally_psbt_output_keypath_add(
     struct wally_psbt_output *output,
     const unsigned char *pub_key,
     size_t pub_key_len,

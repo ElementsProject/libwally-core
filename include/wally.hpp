@@ -588,12 +588,6 @@ inline int map_add(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
     return ret;
 }
 
-template <class MAP_IN, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
-inline int map_add_keypath_item(const MAP_IN& map_in, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
-    int ret = ::wally_map_add_keypath_item(detail::get_p(map_in), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
-    return ret;
-}
-
 inline int map_clear(struct wally_map* map_in) {
     int ret = ::wally_map_clear(map_in);
     return ret;
@@ -618,6 +612,22 @@ inline int map_init(size_t allocation_len, struct wally_map* output) {
 
 inline int map_init_alloc(size_t allocation_len, struct wally_map** output) {
     int ret = ::wally_map_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int map_keypath_add(const MAP_IN& map_in, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_map_keypath_add(detail::get_p(map_in), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
+}
+
+inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_keypath_bip32_init_alloc(allocation_len, output);
+    return ret;
+}
+
+inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_keypath_public_key_init_alloc(allocation_len, output);
     return ret;
 }
 
@@ -725,12 +735,6 @@ inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_
     return ret;
 }
 
-template <class INPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
-inline int psbt_input_add_keypath_item(const INPUT& input, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
-    int ret = ::wally_psbt_input_add_keypath_item(detail::get_p(input), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
-    return ret;
-}
-
 template <class INPUT, class PUB_KEY, class SIG>
 inline int psbt_input_add_signature(const INPUT& input, const PUB_KEY& pub_key, const SIG& sig) {
     int ret = ::wally_psbt_input_add_signature(detail::get_p(input), pub_key.data(), pub_key.size(), sig.data(), sig.size());
@@ -776,6 +780,12 @@ inline int psbt_input_find_unknown(const INPUT& input, const KEY& key, size_t* w
 template <class INPUT>
 inline int psbt_input_is_finalized(const INPUT& input, size_t* written) {
     int ret = ::wally_psbt_input_is_finalized(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_input_keypath_add(const INPUT& input, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_input_keypath_add(detail::get_p(input), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
     return ret;
 }
 
@@ -881,12 +891,6 @@ inline int psbt_is_finalized(const PSBT& psbt, size_t* written) {
     return ret;
 }
 
-template <class OUTPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
-inline int psbt_output_add_keypath_item(const OUTPUT& output, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
-    int ret = ::wally_psbt_output_add_keypath_item(detail::get_p(output), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
-    return ret;
-}
-
 inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
     int ret = ::wally_psbt_output_clear_amount(output);
     return ret;
@@ -904,6 +908,12 @@ inline int psbt_output_find_unknown(const OUTPUT& output, const KEY& key, size_t
     size_t n;
     int ret = ::wally_psbt_output_find_unknown(detail::get_p(output), key.data(), key.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_output_keypath_add(const OUTPUT& output, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_output_keypath_add(detail::get_p(output), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
 }
 
 template <class OUTPUT>
@@ -1643,16 +1653,6 @@ inline int elements_pegout_script_from_bytes(const GENESIS_BLOCKHASH& genesis_bl
 
 inline int elements_pegout_script_size(size_t genesis_blockhash_len, size_t mainchain_script_len, size_t sub_pubkey_len, size_t whitelistproof_len, size_t* written) {
     int ret = ::wally_elements_pegout_script_size(genesis_blockhash_len, mainchain_script_len, sub_pubkey_len, whitelistproof_len, written);
-    return ret;
-}
-
-inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map** output) {
-    int ret = ::wally_map_keypath_bip32_init_alloc(allocation_len, output);
-    return ret;
-}
-
-inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally_map** output) {
-    int ret = ::wally_map_keypath_public_key_init_alloc(allocation_len, output);
     return ret;
 }
 

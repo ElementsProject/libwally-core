@@ -152,26 +152,6 @@ WALLY_CORE_API int wally_keypath_public_key_verify(
 #endif /* SWIG */
 
 /**
- * Convert and add a pubkey/keypath to a map.
- *
- * :param map_in: The map to add to.
- * :param pub_key: The pubkey to add.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``EC_PUBLIC_KEY_LEN``.
- * :param fingerprint: The master key fingerprint for the pubkey.
- * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
- * :param child_path: The BIP32 derivation path for the pubkey.
- * :param child_path_len: The number of items in ``child_path``.
- */
-WALLY_CORE_API int wally_map_add_keypath_item(
-    struct wally_map *map_in,
-    const unsigned char *pub_key,
-    size_t pub_key_len,
-    const unsigned char *fingerprint,
-    size_t fingerprint_len,
-    const uint32_t *child_path,
-    size_t child_path_len);
-
-/**
  * Allocate and initialize a new BIP32 keypath map.
  *
  * :param allocation_len: The number of items to allocate space for.
@@ -190,6 +170,29 @@ WALLY_CORE_API int wally_map_keypath_bip32_init_alloc(
 WALLY_CORE_API int wally_map_keypath_public_key_init_alloc(
     size_t allocation_len,
     struct wally_map **output);
+
+/**
+ * Convert and add a public key and path to a keypath map.
+ *
+ * :param map_in: The keypath map to add to.
+ * :param pub_key: The public key or extended public key to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``BIP32_SERIALIZED_LEN``
+ *|    for an extended bip32 public key, or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
+ *|    or ``EC_PUBLIC_KEY_LEN`` for a public key.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ */
+WALLY_CORE_API int wally_map_keypath_add(
+    struct wally_map *map_in,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
 
 #ifdef __cplusplus
 }

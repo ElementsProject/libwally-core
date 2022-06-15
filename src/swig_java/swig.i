@@ -486,7 +486,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_keypath_bip32_verify);
 %returns_void__(wally_keypath_public_key_verify);
 %returns_void__(wally_map_add);
-%returns_void__(wally_map_add_keypath_item);
+%returns_void__(wally_map_keypath_add);
 %returns_void__(wally_map_clear);
 %returns_size_t(wally_map_find);
 %returns_void__(wally_map_free)

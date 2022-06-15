@@ -165,16 +165,16 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
         return wally_map_add(&parent->NAME ## s, key, key_len, value, value_len); \
     }
 
-/* Add a keypath to parent structs keyoaths member */
+/* Add a keypath to parent structs keypaths member */
 #define ADD_KEYPATH(PARENT) \
-    int PARENT ## _add_keypath_item(struct PARENT *parent, \
-                                    const unsigned char *pub_key, size_t pub_key_len, \
-                                    const unsigned char *fingerprint, size_t fingerprint_len, \
-                                    const uint32_t *child_path, size_t child_path_len) { \
+    int PARENT ## _keypath_add(struct PARENT *parent, \
+                               const unsigned char *pub_key, size_t pub_key_len, \
+                               const unsigned char *fingerprint, size_t fingerprint_len, \
+                               const uint32_t *child_path, size_t child_path_len) { \
         if (!parent) return WALLY_EINVAL; \
-        return wally_map_add_keypath_item(&parent->keypaths, pub_key, pub_key_len, \
-                                          fingerprint, fingerprint_len, \
-                                          child_path, child_path_len); \
+        return wally_map_keypath_add(&parent->keypaths, pub_key, pub_key_len, \
+                                     fingerprint, fingerprint_len, \
+                                     child_path, child_path_len); \
     }
 
 int wally_psbt_input_is_finalized(const struct wally_psbt_input *input,

@@ -8,8 +8,16 @@
 - psbt_init_alloc has changed its definition and now has a new flags argument.
 - psbt_add_input_at has been renamed to psbt_add_tx_input_at.
 - psbt_add_output_at has been renamed to psbt_add_tx_output_at.
-- wally_map initialisation functions now take a verififaction function
+- wally_map initialization functions now take a verification function
   as an extra parameter.
+- New functions wally_map_keypath_bip32_init_alloc and
+  wally_map_keypath_public_key_init_alloc for initializing BIP32 and public key
+  keypath maps have been added.
+- wally_map_add_keypath_item has been renamed to wally_map_keypath_add.
+  This call must only be made on a keypath initialized map.
+- The input and output variants wally_psbt_input_add_keypath_item and
+  wally_psbt_output_add_keypath_item have also been renamed to
+  wally_psbt_input_keypath_add and wally_psbt_output_keypath_add.
 
 ## Version 0.8.2
 

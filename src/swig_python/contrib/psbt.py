@@ -188,9 +188,9 @@ class PSBTTests(unittest.TestCase):
             dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
 
-        dummy_keypaths = map_init(0, None) # TODO: keypath map init
+        dummy_keypaths = map_keypath_public_key_init(1)
         self.assertIsNotNone(dummy_keypaths)
-        map_add_keypath_item(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
+        map_keypath_add(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
         self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
 
         empty_signatures = map_init(0, None)

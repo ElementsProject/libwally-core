@@ -262,23 +262,22 @@ int wally_map_keypath_public_key_init_alloc(size_t allocation_len, struct wally_
     return wally_map_init_alloc(allocation_len, wally_keypath_public_key_verify, output);
 }
 
-int wally_map_add_keypath_item(struct wally_map *map_in,
-                               const unsigned char *pub_key, size_t pub_key_len,
-                               const unsigned char *fingerprint, size_t fingerprint_len,
-                               const uint32_t *path, size_t path_len)
+int wally_map_keypath_add(struct wally_map *map_in,
+                          const unsigned char *pub_key, size_t pub_key_len,
+                          const unsigned char *fingerprint, size_t fingerprint_len,
+                          const uint32_t *path, size_t path_len)
 {
-    struct ext_key extkey;
     unsigned char *value;
     size_t value_len, i;
     int ret;
 
-    if (!map_in || keypath_key_verify(pub_key, pub_key_len, &extkey) != WALLY_OK ||
-        !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
+    if (!map_in || !fingerprint || fingerprint_len != BIP32_KEY_FINGERPRINT_LEN ||
         BYTES_INVALID(path, path_len))
         return WALLY_EINVAL;
 
-    if (extkey.version && extkey.depth != path_len)
-        return WALLY_EINVAL;
+    if (map_in->verify_fn != wally_keypath_public_key_verify &&
+        map_in->verify_fn != wally_keypath_bip32_verify)
+        return WALLY_EINVAL; /* Not a keypath map */
 
     value_len = fingerprint_len + path_len * sizeof(uint32_t);
     if (!(value = wally_malloc(value_len)))
@@ -294,6 +293,5 @@ int wally_map_add_keypath_item(struct wally_map *map_in,
     ret = map_add(map_in, pub_key, pub_key_len, value, value_len, true, true);
     if (ret != WALLY_OK)
         clear_and_free(value, value_len);
-    wally_clear(&extkey, sizeof(extkey));
     return ret;
 }
