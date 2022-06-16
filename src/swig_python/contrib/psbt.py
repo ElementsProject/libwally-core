@@ -26,15 +26,18 @@ class PSBTTests(unittest.TestCase):
         new_bytes = psbt_to_bytes(deserialized, 0)
         self.assertEqual(psbt_bytes, new_bytes)
 
-    def _try_set(self, fn, psbt, valid_value, null_value=None, mandatory=False):
+    def _try_set(self, fn, psbt, valid_value, null_value=None, mandatory=False, allow_null=True):
         self._round_trip(psbt)
         fn(psbt, 0, valid_value) # Set
         self._round_trip(psbt)
-        fn(psbt, 0, null_value) # Un-set
-        if mandatory:
-            fn(psbt, 0, valid_value) # Set
+        if allow_null:
+            fn(psbt, 0, null_value) # Un-set
+            if mandatory:
+                fn(psbt, 0, valid_value) # Set
+            else:
+                self._round_trip(psbt)
         else:
-            self._round_trip(psbt)
+            self._throws(fn, psbt, 0, null_value)
         self._try_invalid(fn, psbt, valid_value)
 
     def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value, invalid_value=None, mandatory=False):
@@ -63,10 +66,10 @@ class PSBTTests(unittest.TestCase):
         ret = getfn(psbt, 0) # Get
         self.assertEqual(valid_value, ret)
 
-    def _try_get_set_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt, valid_value, valid_item):
-        self._try_set(setfn, psbt, valid_value, None)
+    def _try_get_set_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt,
+                       valid_value, valid_item):
+        self._try_set(setfn, psbt, valid_value, None, allow_null=False)
         self._try_invalid(sizefn, psbt)
-        self.assertEqual(sizefn(psbt, 0), 0)
         setfn(psbt, 0, valid_value) # Set
         self.assertEqual(sizefn(psbt, 0), 1) # 1 item in the map
         self._try_invalid(lenfn, psbt, 0)
