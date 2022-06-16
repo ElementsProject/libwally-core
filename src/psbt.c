@@ -771,6 +771,21 @@ static uint32_t pull_le32_subfield(const unsigned char **cursor, size_t *max)
     return ret;
 }
 
+static void pull_varlength_buff(const unsigned char **cursor, size_t *max,
+                                const unsigned char **dst, size_t *len)
+{
+    *len = pull_varlength(cursor, max);
+    *dst = pull_skip(cursor, max, *len);
+}
+
+static void pull_varint_buff(const unsigned char **cursor, size_t *max,
+                             const unsigned char **dst, size_t *len)
+{
+    uint64_t varint_len = pull_varint(cursor, max);
+    *len = varint_len;
+    *dst = pull_skip(cursor, max, varint_len);
+}
+
 static int pull_map(const unsigned char **cursor, size_t *max,
                     const unsigned char *key, size_t key_len,
                     struct wally_map *map_in)
@@ -779,8 +794,7 @@ static int pull_map(const unsigned char **cursor, size_t *max,
     size_t val_len;
 
     pull_subfield_end(cursor, max, key, key_len);
-    val_len = pull_varlength(cursor, max);
-    val = pull_skip(cursor, max, val_len);
+    pull_varlength_buff(cursor, max, &val, &val_len);
     return map_add(map_in, key, key_len, val, val_len, false, false);
 }
 
@@ -800,19 +814,10 @@ static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
     *max += (*cursor - pre_key);
     *cursor = pre_key;
 
-    key_len = pull_varlength(cursor, max);
-    key = pull_skip(cursor, max, key_len);
-    val_len = pull_varlength(cursor, max);
-    val = pull_skip(cursor, max, val_len);
+    pull_varlength_buff(cursor, max, &key, &key_len);
+    pull_varlength_buff(cursor, max, &val, &val_len);
 
     return map_add(unknowns, key, key_len, val, val_len, false, false);
-}
-
-static void fetch_varlength_ptr(const unsigned char **dst, size_t *len,
-                                const unsigned char **cursor, size_t *max)
-{
-    *len = pull_varlength(cursor, max);
-    *dst = pull_skip(cursor, max, *len);
 }
 
 /* Pull and set a variable length byte buffer */
@@ -820,7 +825,7 @@ static void fetch_varlength_ptr(const unsigned char **dst, size_t *len,
     if (result->name) \
         return WALLY_EINVAL; /* Duplicate value */ \
     subfield_nomore_end(cursor, max, key, key_len); \
-    fetch_varlength_ptr(&vl_p, &vl_len, cursor, max); \
+    pull_varlength_buff(cursor, max, &vl_p, &vl_len); \
     if (!vl_len) \
         result->name = wally_malloc(1); /* TODO: handle empty values more elegantly */ \
     else if ((ret = wally_psbt_ ## typ ## _set_ ## name(result, vl_p, vl_len)) != WALLY_OK) \
@@ -867,8 +872,9 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             break;
         }
         case PSBT_IN_WITNESS_UTXO: {
-            uint64_t amount, script_len;
+            uint64_t satoshi;
             const unsigned char *script;
+            size_t script_len;
 
             if (result->witness_utxo)
                 return WALLY_EINVAL; /* Duplicate value */
@@ -879,12 +885,11 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             pull_subfield_start(cursor, max, pull_varint(cursor, max),
                                 &val, &val_max);
 
-            amount = pull_le64(&val, &val_max);
-            script_len = pull_varint(&val, &val_max);
-            script = pull_skip(&val, &val_max, script_len);
+            satoshi = pull_le64(&val, &val_max);
+            pull_varint_buff(&val, &val_max, &script, &script_len);
             if (!script || !script_len)
                 return WALLY_EINVAL;
-            ret = wally_tx_output_init_alloc(amount, script, script_len,
+            ret = wally_tx_output_init_alloc(satoshi, script, script_len,
                                              &result->witness_utxo);
             if (ret != WALLY_OK)
                 return ret;
@@ -937,10 +942,11 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 return ret;
 
             for (i = 0; i < num_witnesses; ++i) {
-                uint64_t witness_len = pull_varint(&val, &val_max);
+                const unsigned char *witness;
+                size_t witness_len;
+                pull_varint_buff(&val, &val_max, &witness, &witness_len);
                 ret = wally_tx_witness_stack_set(result->final_witness, i,
-                                                 pull_skip(&val, &val_max, witness_len),
-                                                 witness_len);
+                                                 witness, witness_len);
                 if (ret != WALLY_OK)
                     return ret;
             }
@@ -953,7 +959,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
 
             found_previous_txid = true;
             subfield_nomore_end(cursor, max, key, key_len);
-            fetch_varlength_ptr(&vl_p, &vl_len, cursor, max);
+            pull_varlength_buff(cursor, max, &vl_p, &vl_len);
             if (vl_len != WALLY_TXHASH_LEN)
                 return WALLY_EINVAL;
             memcpy(result->txhash, vl_p, WALLY_TXHASH_LEN);
