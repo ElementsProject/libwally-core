@@ -70,8 +70,7 @@ char *wally_strdup(const char *str);
 #define OUTPUT_CHECK if (!output) return WALLY_EINVAL; else *output = NULL
 #define OUTPUT_ALLOC(typ) \
     *output = wally_calloc(sizeof(typ)); \
-    if (!*output) return WALLY_ENOMEM; \
-    result = (typ *) *output;
+    if (!*output) return WALLY_ENOMEM
 
 /* Helpers for operating on byte buffers */
 bool clone_data(void **dst, const void *src, size_t len);

@@ -24,15 +24,14 @@ int wally_map_init(size_t allocation_len, wally_map_verify_fn_t verify_fn, struc
 
 int wally_map_init_alloc(size_t allocation_len, wally_map_verify_fn_t verify_fn, struct wally_map **output)
 {
-    struct wally_map *result;
     int ret;
 
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_map);
 
-    ret = wally_map_init(allocation_len, verify_fn, result);
+    ret = wally_map_init(allocation_len, verify_fn, *output);
     if (ret != WALLY_OK) {
-        wally_free(result);
+        wally_free(*output);
         *output = NULL;
     }
     return ret;
