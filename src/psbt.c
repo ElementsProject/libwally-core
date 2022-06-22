@@ -863,6 +863,17 @@ static uint32_t pull_le32_subfield(const unsigned char **cursor, size_t *max)
     return ret;
 }
 
+static uint64_t pull_le64_subfield(const unsigned char **cursor, size_t *max)
+{
+    const unsigned char *val;
+    size_t val_len;
+    uint64_t ret;
+    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
+    ret = pull_le64(&val, &val_len);
+    subfield_nomore_end(cursor, max, val, val_len);
+    return ret;
+}
+
 static uint64_t pull_varint_subfield(const unsigned char **cursor, size_t *max)
 {
     const unsigned char *val;
@@ -1147,8 +1158,8 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                             const unsigned char **cursor, size_t *max,
                             struct wally_psbt_output *result)
 {
-    size_t key_len, val_len;
-    const unsigned char *pre_key = *cursor, *val_p;
+    size_t key_len;
+    const unsigned char *pre_key = *cursor;
     uint64_t mandatory = psbt->version == PSBT_0 ? PSBT_OUT_MANDATORY_V0 : PSBT_OUT_MANDATORY_V2;
     uint64_t disallowed = psbt->version == PSBT_0 ? PSBT_OUT_DISALLOWED_V0 : PSBT_OUT_DISALLOWED_V2;
     uint64_t keyset = 0;
@@ -1187,15 +1198,7 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                 ret = pull_map(cursor, max, key, key_len, &result->keypaths);
                 break;
             case PSBT_OUT_AMOUNT:
-                pull_subfield_start(cursor, max, pull_varint(cursor, max), &val_p, &val_len);
-
-                if (val_len != sizeof(result->amount))
-                    ret = WALLY_EINVAL;
-                else {
-                    result->amount = pull_le64(&val_p, &val_len);
-                    result->has_amount = 1u;
-                }
-                pull_subfield_end(cursor, max, val_p, val_len);
+                ret = wally_psbt_output_set_amount(result, pull_le64_subfield(cursor, max));
                 break;
             case PSBT_OUT_SCRIPT:
                 ret = pull_output_varbuf(cursor, max, result,
