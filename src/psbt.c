@@ -938,6 +938,8 @@ static int pull_tx(const unsigned char **cursor, size_t *max,
     size_t val_len;
     int ret;
 
+    if (*tx_out)
+        ret = WALLY_EINVAL; /* Duplicate */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     ret = wally_tx_from_bytes(val, val_len, tx_flags, tx_out);
     pull_subfield_end(cursor, max, val, val_len);
@@ -952,6 +954,8 @@ static int pull_tx_output(const unsigned char **cursor, size_t *max,
     uint64_t satoshi;
     int ret;
 
+    if (*txout_out)
+        ret = WALLY_EINVAL; /* Duplicate */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     satoshi = pull_le64(&val, &val_len);
     pull_varint_buff(&val, &val_len, &script, &script_len);
@@ -969,6 +973,9 @@ static int pull_witness(const unsigned char **cursor, size_t *max,
     size_t val_len;
     uint64_t num_witnesses, i;
     int ret;
+
+    if (*witness_out)
+        ret = WALLY_EINVAL; /* Duplicate */
 
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     num_witnesses = pull_varint(&val, &val_len);
@@ -1078,16 +1085,10 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
 
             switch (field_type) {
             case PSBT_IN_NON_WITNESS_UTXO:
-                if (result->utxo)
-                    ret = WALLY_EINVAL; /* Duplicate */
-                else
-                    ret = pull_tx(cursor, max, tx_flags, &result->utxo);
+                ret = pull_tx(cursor, max, tx_flags, &result->utxo);
                 break;
             case PSBT_IN_WITNESS_UTXO:
-                if (result->witness_utxo)
-                    ret = WALLY_EINVAL; /* Duplicate */
-                else
-                    ret = pull_tx_output(cursor, max, &result->witness_utxo);
+                ret = pull_tx_output(cursor, max, &result->witness_utxo);
                 break;
             case PSBT_IN_PARTIAL_SIG:
                 ret = pull_map(cursor, max, key, key_len, &result->signatures);
@@ -1111,17 +1112,11 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                                         wally_psbt_input_set_final_scriptsig);
                 break;
             case PSBT_IN_FINAL_SCRIPTWITNESS:
-                if (result->final_witness)
-                    ret = WALLY_EINVAL; /* Duplicate */
-                else
-                    ret = pull_witness(cursor, max, &result->final_witness);
+                ret = pull_witness(cursor, max, &result->final_witness);
                 break;
             case PSBT_IN_PREVIOUS_TXID:
                 pull_varlength_buff(cursor, max, &val_p, &val_len);
-                if (val_len != WALLY_TXHASH_LEN)
-                    ret = WALLY_EINVAL;
-                else
-                    memcpy(result->txhash, val_p, WALLY_TXHASH_LEN);
+                ret = wally_psbt_input_set_previous_txid(result, val_p, val_len);
                 break;
             case PSBT_IN_OUTPUT_INDEX:
                 result->index = pull_le32_subfield(cursor, max);
