@@ -104,14 +104,44 @@ struct wally_psbt {
 
 #ifndef SWIG
 /**
- * Determine if a PSBT input is finalized.
+ * Set the previous txid in an input.
  *
- * :param input: The input to check.
- * :param written: On success, set to one if the input is finalized, otherwise zero.
+ * :param input: The input to update.
+ * :param txhash: The previous hash for this input.
+ * :param txhash_len: Length of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
  */
-WALLY_CORE_API int wally_psbt_input_is_finalized(
-    const struct wally_psbt_input *input,
-    size_t *written);
+WALLY_CORE_API int wally_psbt_input_set_previous_txid(
+    struct wally_psbt_input *input,
+    const unsigned char *txhash,
+    size_t txhash_len);
+
+/**
+ * Set the output index in an input.
+ *
+ * :param input: The input to update.
+ * :param index: The index of the spent output for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_output_index(
+    struct wally_psbt_input *input,
+    uint32_t index);
+
+/**
+ * Set the sequence number in an input.
+ *
+ * :param input: The input to update.
+ * :param sequence: The sequence number for this input.
+ */
+WALLY_CORE_API int wally_psbt_input_set_sequence(
+    struct wally_psbt_input *input,
+    uint32_t sequence);
+
+/**
+ * Clear the sequence number in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_sequence(
+    struct wally_psbt_input *input);
 
 /**
  * Set the utxo in an input.
@@ -300,25 +330,6 @@ WALLY_CORE_API int wally_psbt_input_set_sighash(
     struct wally_psbt_input *input,
     uint32_t sighash);
 
-
-/**
- * Set the sequence number in an input.
- *
- * :param input: The input to update.
- * :param sequence: The sequence number for this input.
- */
-WALLY_CORE_API int wally_psbt_input_set_sequence(
-    struct wally_psbt_input *input,
-    uint32_t sequence);
-
-/**
- * Clear the sequence number in an input.
- *
- * :param input: The input to update.
- */
-WALLY_CORE_API int wally_psbt_input_clear_sequence(
-    struct wally_psbt_input *input);
-
 /**
  * Set the required lock time in an input.
  *
@@ -356,26 +367,14 @@ WALLY_CORE_API int wally_psbt_input_clear_required_lockheight(
     struct wally_psbt_input *input);
 
 /**
- * Set the previous txid in an input.
+ * Determine if a PSBT input is finalized.
  *
- * :param input: The input to update.
- * :param txhash: The previous hash for this input.
- * :param txhash_len: Length of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param input: The input to check.
+ * :param written: On success, set to one if the input is finalized, otherwise zero.
  */
-WALLY_CORE_API int wally_psbt_input_set_previous_txid(
-    struct wally_psbt_input *input,
-    const unsigned char *txhash,
-    size_t txhash_len);
-
-/**
- * Set the output index in an input.
- *
- * :param input: The input to update.
- * :param index: The index of the spent output for this input.
- */
-WALLY_CORE_API int wally_psbt_input_set_output_index(
-    struct wally_psbt_input *input,
-    uint32_t index);
+WALLY_CORE_API int wally_psbt_input_is_finalized(
+    const struct wally_psbt_input *input,
+    size_t *written);
 
 /**
  * Set the redeem_script in an output.
