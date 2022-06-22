@@ -997,19 +997,19 @@ static int pull_unknown_key_value(const unsigned char **cursor, size_t *max,
 
 static uint64_t pull_field_type(const unsigned char **cursor, size_t *max,
                                 const unsigned char **key, size_t *key_len,
-                                bool *is_pset)
+                                bool is_pset, bool *is_pset_ft)
 {
     uint64_t field_type;
-    *is_pset = false;
+    *is_pset_ft = false;
     pull_subfield_start(cursor, max, *key_len, key, key_len);
     field_type = pull_varint(key, key_len);
 #ifdef BUILD_ELEMENTS
-    if (field_type == WALLY_PSBT_PROPRIETARY_TYPE) {
+    if (is_pset && field_type == WALLY_PSBT_PROPRIETARY_TYPE) {
         const size_t pset_key_len = pull_varlength(key, key_len);
         if (is_pset_key(*key, pset_key_len)) {
             pull_skip(key, key_len, PSET_PREFIX_LEN);
             field_type = pull_varint(key, key_len);
-            *is_pset = true;
+            *is_pset_ft = true;
         }
     }
 #endif /* BUILD_ELEMENTS */
@@ -1228,6 +1228,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     size_t *max = &len, i, key_len, input_count = 0, output_count = 0;
     uint32_t tx_flags = 0, pre144flag = WALLY_TX_FLAG_PRE_BIP144;
     uint64_t mandatory, disallowed, keyset = 0;
+    bool is_pset = false;
     int ret = WALLY_OK;
 
     OUTPUT_CHECK;
@@ -1238,6 +1239,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         return WALLY_EINVAL;
 
     if (memcmp((*output)->magic, PSBT_MAGIC, sizeof(PSBT_MAGIC))) {
+        is_pset = true;
         tx_flags |= WALLY_TX_FLAG_USE_ELEMENTS; /* Elements PSET */
         pre144flag = 0;
     }
@@ -1251,12 +1253,12 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     pre_key = *cursor;
     while (ret == WALLY_OK && (key_len = pull_varlength(cursor, max)) != 0) {
         const unsigned char *key;
-        bool is_pset;
-        uint64_t field_type = pull_field_type(cursor, max, &key, &key_len, &is_pset);
+        bool is_pset_ft;
+        uint64_t field_type = pull_field_type(cursor, max, &key, &key_len, is_pset, &is_pset_ft);
         uint64_t field_bit;
         bool is_known;
 
-        if (is_pset) {
+        if (is_pset_ft) {
             is_known = field_type <= PSET_GLOBAL_MAX;
             if (is_known) {
                 field_type = PSET_FT(field_type);
@@ -1341,6 +1343,11 @@ unknown:
 
     mandatory = (*output)->version == PSBT_0 ? PSBT_GLOBAL_MANDATORY_V0 : PSBT_GLOBAL_MANDATORY_V2;
     disallowed = (*output)->version == PSBT_0 ? PSBT_GLOBAL_DISALLOWED_V0 : PSBT_GLOBAL_DISALLOWED_V2;
+    if (!is_pset) {
+        /* PSBT: Remove mandatory/disallowed PSET fields */
+        mandatory &= PSBT_FT_MASK;
+        disallowed &= PSBT_FT_MASK;
+    }
     if (mandatory && (keyset & mandatory) != mandatory)
         ret = WALLY_EINVAL; /* Mandatory field is missing*/
     else if (disallowed && (keyset & disallowed))

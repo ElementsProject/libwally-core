@@ -18,6 +18,8 @@
  */
 #define PSBT_FT(k) (((uint64_t)1) << ((uint64_t)k))
 #define PSET_FT(k) (PSBT_FT(k) << ((uint64_t)32))
+/* Mask to apply to bitsets below to exclude PSET fields */
+#define PSBT_FT_MASK ((uint64_t)0xffffffff)
 
 #define PSBT_SEPARATOR 0x00
 
