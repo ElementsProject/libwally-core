@@ -9,6 +9,7 @@ SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50
 
 SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
 SAMPLE_V2 = 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+SAMPLE_PSET = 'cHNldP8B+wQCAAAAAQIEAgAAAAEEAQABBQEAB/wEcHNldAEBAQA='
 
 
 class PSBTTests(unittest.TestCase):
@@ -83,11 +84,13 @@ class PSBTTests(unittest.TestCase):
     def _try_get_set_global_i(self, setfn, clearfn, getfn, psbt, valid_value):
         self._throws(setfn, None, valid_value) # Null PSBT
         setfn(psbt, valid_value) # Set
+        self._round_trip(psbt)
         self._throws(getfn, None) # Null PSBT
         ret = getfn(psbt) # Get
         self.assertEqual(valid_value, ret)
         if clearfn:
             clearfn(psbt)
+            self._round_trip(psbt)
 
     def _try_get_set_global_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt, valid_value, valid_item):
         self._throws(setfn, None, valid_value) # Null PSBT
@@ -95,6 +98,7 @@ class PSBTTests(unittest.TestCase):
         self._throws(sizefn, None) # Null PSBT
         self.assertEqual(sizefn(psbt), 0)
         setfn(psbt, valid_value) # Set
+        self._round_trip(psbt)
         self.assertEqual(sizefn(psbt), 1) # 1 item in the map
         if lenfn:
             self._throws(lenfn, None, 0) # Null PSBT
@@ -124,7 +128,12 @@ class PSBTTests(unittest.TestCase):
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
+        pset2 = psbt_from_base64(SAMPLE_PSET)
         clones = []
+
+        self._throws(psbt_is_elements, None) # NULL PSBT
+        for p, is_pset in [(psbt, False), (psbt2, False), (pset2, True)]:
+            self.assertEqual(psbt_is_elements(p), is_pset)
 
         # Roundtrip to/from bytes
         self._throws(psbt_to_bytes, None, 0)    # NULL PSBT
@@ -269,11 +278,11 @@ class PSBTTests(unittest.TestCase):
                                        None,
                                        psbt_get_global_scalar,
                                        psbt_find_global_scalar,
-                                       psbt2, dummy_offsets, dummy_bytes)
+                                       pset2, dummy_offsets, dummy_bytes)
 
             # Elements TX Modifiable Flags
             self._try_get_set_global_i(psbt_set_pset_modifiable_flags, None,
-                                       psbt_get_pset_modifiable_flags, psbt2, 1)
+                                       psbt_get_pset_modifiable_flags, pset2, 1)
 
         #
         # Inputs
