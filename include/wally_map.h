@@ -111,6 +111,50 @@ WALLY_CORE_API int wally_map_add_integer(
     size_t value_len);
 
 /**
+ * Add an item to a map, replacing it if already present.
+ *
+ * See `wally_map_add`.
+ */
+WALLY_CORE_API int wally_map_replace(
+    struct wally_map *map_in,
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *value,
+    size_t value_len);
+
+/**
+ * Add an item to a map keyed by an integer, replacing it if already present.
+ *
+ * See `wally_map_add_integer`.
+ */
+WALLY_CORE_API int wally_map_replace_integer(
+    struct wally_map *map_in,
+    uint32_t key,
+    const unsigned char *value,
+    size_t value_len);
+
+/**
+ * Remove an item from a map.
+ *
+ * :param map_in: The map to remove from.
+ * :param key: The key to add.
+ * :param key_len: Length of ``key`` in bytes.
+ */
+WALLY_CORE_API int wally_map_remove(
+    struct wally_map *map_in,
+    const unsigned char *key,
+    size_t key_len);
+
+/**
+ * Remove an item from a map keyed by an integer.
+ *
+ * See `wally_map_remove_integer`.
+ */
+WALLY_CORE_API int wally_map_remove_integer(
+    struct wally_map *map_in,
+    uint32_t key);
+
+/**
  * Find an item in a map.
  *
  * :param map_in: The map to find ``key`` in.
@@ -151,7 +195,7 @@ WALLY_CORE_API int wally_map_sort(
  * :param map_in: the destination to combine into.
  * :param source: the source to copy items from.
  *
- * .. note:: If this call fails, `map_in` may be left partially updated.
+ * .. note:: If this call fails, ``map_in`` may be left partially updated.
  */
 WALLY_CORE_API int wally_map_combine(
     struct wally_map *map_in,
@@ -163,7 +207,7 @@ WALLY_CORE_API int wally_map_combine(
  * :param map_in: the destination to combine into.
  * :param source: the source to copy items from.
  *
- * .. note:: If this call fails, `map_in` is left untouched.
+ * .. note:: If this call fails, ``map_in`` is left untouched.
  */
 WALLY_CORE_API int wally_map_assign(
     struct wally_map *map_in,

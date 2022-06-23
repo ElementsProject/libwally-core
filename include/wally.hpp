@@ -655,6 +655,30 @@ inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally
     return ret;
 }
 
+template <class MAP_IN, class KEY>
+inline int map_remove(const MAP_IN& map_in, const KEY& key) {
+    int ret = ::wally_map_remove(detail::get_p(map_in), key.data(), key.size());
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_remove_integer(const MAP_IN& map_in, uint32_t key) {
+    int ret = ::wally_map_remove_integer(detail::get_p(map_in), key);
+    return ret;
+}
+
+template <class MAP_IN, class KEY, class VALUE>
+inline int map_replace(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
+    int ret = ::wally_map_replace(detail::get_p(map_in), key.data(), key.size(), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_replace_integer(const MAP_IN& map_in, uint32_t key, const VALUE& value) {
+    int ret = ::wally_map_replace_integer(detail::get_p(map_in), key, value.data(), value.size());
+    return ret;
+}
+
 template <class MAP_IN>
 inline int map_sort(const MAP_IN& map_in, uint32_t flags) {
     int ret = ::wally_map_sort(detail::get_p(map_in), flags);

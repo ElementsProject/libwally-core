@@ -14,7 +14,7 @@ class MapTests(unittest.TestCase):
         key1, key1_len = make_cbuffer('505050')
         key2, key2_len = make_cbuffer('40404040')
         key3, key3_len = make_cbuffer('404040')
-        val, val_len = make_cbuffer('ffffffff')
+        val, val_len = make_cbuffer('ff'*64)
 
         # Check invalid args
         self.assertEqual(wally_map_init_alloc(0, None, None), WALLY_EINVAL)
@@ -26,11 +26,13 @@ class MapTests(unittest.TestCase):
                      (m,    key1, key1_len, None, val_len), # Null value
                      (m,    key1, key1_len, val,  0)]:      # 0 length value
             self.assertEqual(wally_map_add(*args), WALLY_EINVAL)
+            self.assertEqual(wally_map_replace(*args), WALLY_EINVAL)
 
         for args in [(None, 1, val,  val_len), # Null map
                      (m,    1, None, val_len), # Null value
                      (m,    1, val,  0)]:      # 0 length value
             self.assertEqual(wally_map_add_integer(*args), WALLY_EINVAL)
+            self.assertEqual(wally_map_replace_integer(*args), WALLY_EINVAL)
 
         for args in [(None, key1, key1_len), # Null map
                      (m,    None, key1_len), # Null key
@@ -55,8 +57,10 @@ class MapTests(unittest.TestCase):
             self.assertEqual(wally_map_add(m, k, l, v, vl), WALLY_OK)
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
             self.assertEqual(m.contents.num_items, n)
+            # Replace the item with shorter key
+            self.assertEqual(wally_map_replace(m, k, l, v, vl - 1), WALLY_OK)
             # Adding an existing key ignores the new value without error.
-            vl = vl + 1 if case == cases[-1] else vl
+            vl = vl if case == cases[-1] else vl - 1
             self.assertEqual(m.contents.items[n-1].value_len, vl)
 
         # Find an integer key with no integers in the map
@@ -71,15 +75,24 @@ class MapTests(unittest.TestCase):
                             (key3, key3_len, val_len, 1)]:
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
 
-        # Add and find two integer keys
+        # Add and find two integer keys, then replace them
         for i in [9, 5]:
-            self.assertEqual(wally_map_add_integer(m, i, val, val_len), WALLY_OK)
+            self.assertEqual(wally_map_add_integer(m, i, val, i * 2), WALLY_OK)
             self.assertEqual(wally_map_find_integer(m, i), (WALLY_OK, m.contents.num_items))
+            self.assertEqual(m.contents.items[m.contents.num_items - 1].value_len, i * 2)
+            self.assertEqual(wally_map_replace_integer(m, i, val, val_len), WALLY_OK)
+            self.assertEqual(m.contents.items[m.contents.num_items - 1].value_len, val_len)
+
+        # Replacing an item that doesn't exist adds it
+        num_items = m.contents.num_items
+        self.assertEqual(wally_map_replace_integer(m, 10, val, val_len-1), WALLY_OK)
+        self.assertEqual(m.contents.num_items, num_items + 1)
 
         # Sort again, integer keys sort before byte keys
         self.assertEqual(wally_map_sort(m, 0), WALLY_OK)
-        self.assertEqual(wally_map_find_integer(m, 5), (WALLY_OK, 1))
-        self.assertEqual(wally_map_find_integer(m, 9), (WALLY_OK, 2))
+        self.assertEqual(wally_map_find_integer(m, 5),  (WALLY_OK, 1))
+        self.assertEqual(wally_map_find_integer(m, 9),  (WALLY_OK, 2))
+        self.assertEqual(wally_map_find_integer(m, 10), (WALLY_OK, 3))
 
         # Assign
         new_key, new_key_len = make_cbuffer('ffffffffff')
@@ -106,6 +119,23 @@ class MapTests(unittest.TestCase):
         self.assertEqual(m.contents.num_items, num_items)
         self.assertEqual(wally_map_combine(m, clone), WALLY_OK)
         self.assertEqual(m.contents.num_items, num_items + 1)      # Added the clone item
+
+        # Remove
+        for args in [(None, key1, key1_len), # Null map
+                     (m,    None, key1_len), # Null key
+                     (m,    key1, 0)]:       # 0 length key
+            self.assertEqual(wally_map_remove(*args), WALLY_EINVAL)
+        self.assertEqual(wally_map_remove_integer(None, 1), WALLY_EINVAL)
+
+        # Returns OK if key is not present
+        self.assertEqual(wally_map_remove(m, key1, key1_len - 1), WALLY_OK)
+        self.assertEqual(wally_map_remove_integer(m, 50), WALLY_OK)
+
+        num_items = m.contents.num_items
+        self.assertEqual(wally_map_remove(m, key2, key2_len), WALLY_OK)
+        self.assertEqual(m.contents.num_items, num_items - 1) # Removed key2
+        self.assertEqual(wally_map_remove_integer(m, 5), WALLY_OK)
+        self.assertEqual(m.contents.num_items, num_items - 2) # Removed 5
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 

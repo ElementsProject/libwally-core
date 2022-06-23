@@ -172,6 +172,66 @@ int wally_map_add_integer(struct wally_map *map_in, uint32_t key,
     return map_add(map_in, NULL, key, value, value_len, false, true);
 }
 
+static int map_remove(struct wally_map *map_in, const unsigned char *key, size_t key_len)
+{
+    size_t index;
+    int ret = map_find(map_in, key, key_len, &index);
+    if (ret == WALLY_OK && index) {
+        struct wally_map_item *to_remove = map_in->items + index - 1;
+        if (to_remove->key)
+            clear_and_free_bytes(&to_remove->key, &to_remove->key_len);
+        clear_and_free_bytes(&to_remove->value, &to_remove->value_len);
+        memmove(to_remove, to_remove + 1,
+                (map_in->num_items - index) * sizeof(*to_remove));
+        map_in->num_items -= 1;
+    }
+    return ret;
+}
+
+int wally_map_remove(struct wally_map *map_in,
+                     const unsigned char *key, size_t key_len)
+{
+    if (!key)
+        return WALLY_EINVAL;
+    return map_remove(map_in, key, key_len);
+}
+
+int wally_map_remove_integer(struct wally_map *map_in, uint32_t key)
+{
+    return map_remove(map_in, NULL, key);
+}
+
+static int map_replace(struct wally_map *map_in,
+                       const unsigned char *key, size_t key_len,
+                       const unsigned char *value, size_t value_len)
+{
+    size_t index;
+    int ret = map_find(map_in, key, key_len, &index);
+    if (ret == WALLY_OK) {
+        if (index) {
+            struct wally_map_item *to_replace = map_in->items + index - 1;
+            ret = replace_bytes(value, value_len, &to_replace->value, &to_replace->value_len);
+        } else
+            ret = map_add(map_in, key, key_len, value, value_len, false, true);
+    }
+    return ret;
+}
+
+int wally_map_replace(struct wally_map *map_in,
+                      const unsigned char *key, size_t key_len,
+                      const unsigned char *value, size_t value_len)
+{
+    if (!key)
+        return WALLY_EINVAL;
+    return map_replace(map_in, key, key_len, value, value_len);
+}
+
+int wally_map_replace_integer(struct wally_map *map_in, uint32_t key,
+                              const unsigned char *value, size_t value_len)
+{
+    return map_replace(map_in, NULL, key, value, value_len);
+}
+
 static int map_item_compare(const void *lhs, const void *rhs)
 {
     const struct wally_map_item *l = lhs, *r = rhs;

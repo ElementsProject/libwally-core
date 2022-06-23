@@ -501,6 +501,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %rename("map_keypath_public_key_init") wally_map_keypath_public_key_init_alloc;
 %returns_struct(wally_map_init_alloc, wally_map);
 %rename("map_init") wally_map_init_alloc;
+%returns_void__(wally_map_remove);
+%returns_void__(wally_map_remove_integer);
+%returns_void__(wally_map_replace);
+%returns_void__(wally_map_replace_integer);
 %returns_void__(wally_map_sort);
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
