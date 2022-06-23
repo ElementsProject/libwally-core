@@ -100,6 +100,17 @@ WALLY_CORE_API int wally_map_add(
     size_t value_len);
 
 /**
+ * Add an item to a map keyed by an integer.
+ *
+ * As per `wally_map_add`, using an integer key.
+ */
+WALLY_CORE_API int wally_map_add_integer(
+    struct wally_map *map_in,
+    uint32_t key,
+    const unsigned char *value,
+    size_t value_len);
+
+/**
  * Find an item in a map.
  *
  * :param map_in: The map to find ``key`` in.
@@ -112,6 +123,16 @@ WALLY_CORE_API int wally_map_find(
     const struct wally_map *map_in,
     const unsigned char *key,
     size_t key_len,
+    size_t *written);
+
+/**
+ * Find an item in a map keyed by an integer.
+ *
+ * As per `wally_map_find`, using an integer key.
+ */
+WALLY_CORE_API int wally_map_find_integer(
+    const struct wally_map *map_in,
+    uint32_t key,
     size_t *written);
 
 /**

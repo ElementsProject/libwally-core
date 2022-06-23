@@ -44,7 +44,8 @@ int wally_map_clear(struct wally_map *map_in)
     if (!map_in)
         return WALLY_EINVAL;
     for (i = 0; i < map_in->num_items; ++i) {
-        clear_and_free(map_in->items[i].key, map_in->items[i].key_len);
+        if (map_in->items[i].key)
+            clear_and_free(map_in->items[i].key, map_in->items[i].key_len);
         clear_and_free(map_in->items[i].value, map_in->items[i].value_len);
     }
     clear_and_free(map_in->items, map_in->num_items * sizeof(*map_in->items));
@@ -61,27 +62,48 @@ int wally_map_free(struct wally_map *map_in)
     return WALLY_OK;
 }
 
-int wally_map_find(const struct wally_map *map_in,
-                   const unsigned char *key, size_t key_len,
-                   size_t *written)
+static int map_find(const struct wally_map *map_in,
+                    const unsigned char *key, size_t key_len,
+                    size_t *written)
 {
     size_t i;
 
     if (written)
         *written = 0;
 
-    if (!map_in || !key || BYTES_INVALID(key, key_len) || !written)
+    if (!map_in || (key && !key_len) || !written)
         return WALLY_EINVAL;
 
     for (i = 0; i < map_in->num_items; ++i) {
         const struct wally_map_item *item = &map_in->items[i];
 
-        if (key_len == item->key_len && memcmp(key, item->key, key_len) == 0) {
-            *written = i + 1; /* Found */
+        if (key_len != item->key_len || !key != !item->key) {
+            /* A byte or integer key that doesn't match, or
+             * mismatched byte vs integer key
+             */
+            continue;
+        }
+        if (!key || !memcmp(key, item->key, key_len)) {
+            *written = i + 1; /* Matching byte or integer key */
             break;
         }
     }
     return WALLY_OK;
+}
+
+int wally_map_find(const struct wally_map *map_in,
+                   const unsigned char *key, size_t key_len,
+                   size_t *written)
+{
+    if (!key)
+        return WALLY_EINVAL;
+    return map_find(map_in, key, key_len, written);
+}
+
+int wally_map_find_integer(const struct wally_map *map_in,
+                           uint32_t key, size_t *written)
+{
+    return map_find(map_in, NULL, key, written);
 }
 
 /* Note: If take_value is true and this errors, the caller must
@@ -95,12 +117,11 @@ int map_add(struct wally_map *map_in,
     size_t is_found;
     int ret;
 
-    if (!map_in || !key || BYTES_INVALID(key, key_len) ||
-        BYTES_INVALID(val, val_len) ||
+    if (!map_in || (key && !key_len) || BYTES_INVALID(val, val_len) ||
         (map_in->verify_fn && map_in->verify_fn(key, key_len, val, val_len) != WALLY_OK))
         return WALLY_EINVAL;
 
-    if ((ret = wally_map_find(map_in, key, key_len, &is_found)) != WALLY_OK)
+    if ((ret = map_find(map_in, key, key_len, &is_found)) != WALLY_OK)
         return ret;
 
     if (is_found) {
@@ -114,8 +135,12 @@ int map_add(struct wally_map *map_in,
     if (ret == WALLY_OK) {
         struct wally_map_item *new_item = map_in->items + map_in->num_items;
 
-        if (!clone_bytes(&new_item->key, key, key_len))
-            return WALLY_ENOMEM;
+        if (!key) {
+            /* Integer key */
+            if (new_item->key)
+                clear_and_free_bytes(&new_item->key, &new_item->key_len);
+        } else if (!clone_bytes(&new_item->key, key, key_len))
+            return WALLY_ENOMEM; /* Failed to allocate byte key */
         new_item->key_len = key_len;
 
         if (val) {
@@ -136,7 +161,15 @@ int wally_map_add(struct wally_map *map_in,
                   const unsigned char *key, size_t key_len,
                   const unsigned char *value, size_t value_len)
 {
+    if (!key)
+        return WALLY_EINVAL;
     return map_add(map_in, key, key_len, value, value_len, false, true);
+}
+
+int wally_map_add_integer(struct wally_map *map_in, uint32_t key,
+                          const unsigned char *value, size_t value_len)
+{
+    return map_add(map_in, NULL, key, value, value_len, false, true);
 }
 
 static int map_item_compare(const void *lhs, const void *rhs)
@@ -145,6 +178,13 @@ static int map_item_compare(const void *lhs, const void *rhs)
     const size_t min_len = l->key_len < r->key_len ? l->key_len : r->key_len;
     int cmp;
 
+    if (!l->key != !r->key)
+        return !l->key ? -1 : 1; /* Integer vs byte key: ints sort first */
+
+    if (!l->key)
+        return (l->key_len > r->key_len) - (l->key_len < r->key_len); /* Integers */
+
+    /* Byte keys */
     cmp = memcmp(l->key, r->key, min_len);
     if (cmp == 0) {
         /* Equal up to the min length, longest key is greater. If we have
@@ -175,8 +215,9 @@ int wally_map_combine(struct wally_map *map_in,
         return WALLY_OK;
     if (src) {
         for (i = 0; ret == WALLY_OK && i < src->num_items; ++i)
-            ret = wally_map_add(map_in, src->items[i].key, src->items[i].key_len,
-                                src->items[i].value, src->items[i].value_len);
+            ret = map_add(map_in, src->items[i].key, src->items[i].key_len,
+                          src->items[i].value, src->items[i].value_len,
+                          false, true);
     }
     return ret;
 }
@@ -212,6 +253,9 @@ static int keypath_key_verify(const unsigned char *key, size_t key_len, struct e
     int ret = WALLY_EINVAL;
 
     key_out->version = 0; /* If non-0 on return, we have a bip32 key */
+
+    if (!key)
+        return ret;
 
     /* Allow pubkeys, compressed pubkeys, or bip32 extended pubkeys */
     if (key_len == EC_PUBLIC_KEY_LEN || key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)

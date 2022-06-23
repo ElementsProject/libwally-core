@@ -27,10 +27,17 @@ class MapTests(unittest.TestCase):
                      (m,    key1, key1_len, val,  0)]:      # 0 length value
             self.assertEqual(wally_map_add(*args), WALLY_EINVAL)
 
+        for args in [(None, 1, val,  val_len), # Null map
+                     (m,    1, None, val_len), # Null value
+                     (m,    1, val,  0)]:      # 0 length value
+            self.assertEqual(wally_map_add_integer(*args), WALLY_EINVAL)
+
         for args in [(None, key1, key1_len), # Null map
                      (m,    None, key1_len), # Null key
                      (m,    key1, 0)]:       # 0 length key
             self.assertEqual(wally_map_find(*args), (WALLY_EINVAL, 0))
+
+        self.assertEqual(wally_map_find_integer(None, 1), (WALLY_EINVAL, 0)) # Null map
 
         self.assertEqual(wally_map_sort(None, 0), WALLY_EINVAL) # Null map
         self.assertEqual(wally_map_sort(m, 1),    WALLY_EINVAL) # Invalid flags
@@ -52,6 +59,9 @@ class MapTests(unittest.TestCase):
             vl = vl + 1 if case == cases[-1] else vl
             self.assertEqual(m.contents.items[n-1].value_len, vl)
 
+        # Find an integer key with no integers in the map
+        self.assertEqual(wally_map_find_integer(m, 1), (WALLY_OK, 0))
+
         # Sort
         self.assertEqual(wally_map_sort(m, 0), WALLY_OK)
 
@@ -60,6 +70,16 @@ class MapTests(unittest.TestCase):
                             (key2, key2_len, val_len, 2),
                             (key3, key3_len, val_len, 1)]:
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
+
+        # Add and find two integer keys
+        for i in [9, 5]:
+            self.assertEqual(wally_map_add_integer(m, i, val, val_len), WALLY_OK)
+            self.assertEqual(wally_map_find_integer(m, i), (WALLY_OK, m.contents.num_items))
+
+        # Sort again, integer keys sort before byte keys
+        self.assertEqual(wally_map_sort(m, 0), WALLY_OK)
+        self.assertEqual(wally_map_find_integer(m, 5), (WALLY_OK, 1))
+        self.assertEqual(wally_map_find_integer(m, 9), (WALLY_OK, 2))
 
         # Assign
         new_key, new_key_len = make_cbuffer('ffffffffff')

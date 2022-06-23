@@ -487,10 +487,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_keypath_bip32_verify);
 %returns_void__(wally_keypath_public_key_verify);
 %returns_void__(wally_map_add);
+%returns_void__(wally_map_add_integer);
 %returns_void__(wally_map_assign);
 %returns_void__(wally_map_clear);
 %returns_void__(wally_map_combine);
 %returns_size_t(wally_map_find);
+%returns_size_t(wally_map_find_integer);
 %returns_void__(wally_map_free)
 %returns_void__(wally_map_keypath_add);
 %returns_struct(wally_map_keypath_bip32_init_alloc, wally_map);

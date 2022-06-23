@@ -588,6 +588,12 @@ inline int map_add(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
     return ret;
 }
 
+template <class MAP_IN, class VALUE>
+inline int map_add_integer(const MAP_IN& map_in, uint32_t key, const VALUE& value) {
+    int ret = ::wally_map_add_integer(detail::get_p(map_in), key, value.data(), value.size());
+    return ret;
+}
+
 template <class MAP_IN>
 inline int map_assign(const MAP_IN& map_in, const struct wally_map* source) {
     int ret = ::wally_map_assign(detail::get_p(map_in), source);
@@ -610,6 +616,12 @@ inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     size_t n;
     int ret = ::wally_map_find(detail::get_p(map_in), key.data(), key.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class MAP_IN>
+inline int map_find_integer(const MAP_IN& map_in, uint32_t key, size_t* written) {
+    int ret = ::wally_map_find_integer(detail::get_p(map_in), key, written);
+    return ret;
 }
 
 inline int map_free(struct wally_map* map_in) {
