@@ -62,6 +62,14 @@ struct wally_psbt_input {
     uint32_t sighash;
     uint32_t required_locktime; /* Required tx locktime or 0 if not given */
     uint32_t required_lockheight; /* Required tx lockheight or 0 if not given */
+#ifdef BUILD_ELEMENTS
+    uint64_t issuance_amount; /* Issuance amount, or 0 if not given */
+    uint64_t inflation_keys; /* Number of reissuance tokens, or 0 if none given */
+    uint64_t pegin_amount; /* Peg-in amount, or 0 if none given */
+    struct wally_tx *pegin_tx;
+    struct wally_tx_witness_stack *pegin_witness;
+    struct wally_map pset_fields; /* Commitments/scripts/proofs etc */
+#endif /* BUILD_ELEMENTS */
 };
 
 /** A PSBT output */
@@ -200,14 +208,14 @@ WALLY_CORE_API int wally_psbt_input_set_final_scriptsig(
     size_t final_scriptsig_len);
 
 /**
- * Set the final_witness in an input.
+ * Set the final witness in an input.
  *
  * :param input: The input to update.
- * :param final_witness: The witness stack for the input, or NULL if no witness is present.
+ * :param witness: The witness stack for the input, or NULL if not present.
  */
 WALLY_CORE_API int wally_psbt_input_set_final_witness(
     struct wally_psbt_input *input,
-    const struct wally_tx_witness_stack *final_witness);
+    const struct wally_tx_witness_stack *witness);
 
 /**
  * Set the keypaths in an input.
@@ -365,6 +373,627 @@ WALLY_CORE_API int wally_psbt_input_set_required_lockheight(
  */
 WALLY_CORE_API int wally_psbt_input_clear_required_lockheight(
     struct wally_psbt_input *input);
+
+#ifdef BUILD_ELEMENTS
+/**
+ * Set the unblinded token issuance amount in an input.
+ *
+ * :param input: The input to update.
+ * :param amount: The issuance amount.
+ *
+ * .. note:: Setting the amount to zero indicates no issuance.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount(
+    struct wally_psbt_input *input,
+    uint64_t amount);
+
+/**
+ * Set the unblinded number of inflation (reissuance) keys in an input.
+ *
+ * :param input: The input to update.
+ * :param value: The number of inflation keys.
+ */
+WALLY_CORE_API int wally_psbt_input_set_inflation_keys(
+    struct wally_psbt_input *input,
+    uint64_t value);
+
+/**
+ * Set the peg-in amount in an input.
+ *
+ * :param input: The input to update.
+ * :param amount: The peg-in amount.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_amount(
+    struct wally_psbt_input *input,
+    uint64_t amount);
+
+/**
+ * Set the peg-in transaction in an input.
+ *
+ * :param input: The input to update.
+ * :param tx: The (non witness) peg-in transaction for this input if it exists.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_tx(
+    struct wally_psbt_input *input,
+    const struct wally_tx *tx);
+
+/**
+ * Set the peg-in witness in an input.
+ *
+ * :param input: The input to update.
+ * :param witness: The peg-in witness stack for the input, or NULL if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_witness(
+    struct wally_psbt_input *input,
+    const struct wally_tx_witness_stack *witness);
+
+/**
+ * Get the peg-in transaction output proof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the peg-in transaction output proof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_TXOUT_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_pegin_txout_proof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a peg-in transaction output proof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_pegin_txout_proof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the peg-in transaction output proof in an input.
+ *
+ * :param input: The input to update.
+ * :param txout_proof: The peg-in transaction output proof.
+ * :param txout_proof_len: Size of ``txout_proof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_txout_proof(
+    struct wally_psbt_input *input,
+    const unsigned char *txout_proof,
+    size_t txout_proof_len);
+
+/**
+ * Clear the peg-in transaction output proof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_pegin_txout_proof(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the peg-in genesis blockhash from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the peg-in genesis blockhash.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a peg-in genesis blockhash from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_GENESIS``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the peg-in genesis blockhash in an input.
+ *
+ * :param input: The input to update.
+ * :param genesis_blockhash: The peg-in genesis blockhash.
+ * :param genesis_blockhash_len: Size of ``genesis_blockhash`` in bytes. Must
+ *|    be ``WALLY_TXHASH_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_genesis_blockhash(
+    struct wally_psbt_input *input,
+    const unsigned char *genesis_blockhash,
+    size_t genesis_blockhash_len);
+
+/**
+ * Clear the peg-in genesis blockhash in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_pegin_genesis_blockhash(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the peg-in claim script from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the peg-in claim script.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_CLAIM_SCRIPT``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_pegin_claim_script(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a peg-in claim script from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_pegin_claim_script_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the peg-in claim script in an input.
+ *
+ * :param input: The input to update.
+ * :param script: The peg-in claim script.
+ * :param script_len: Size of ``script`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_pegin_claim_script(
+    struct wally_psbt_input *input,
+    const unsigned char *script,
+    size_t script_len);
+
+/**
+ * Clear the peg-in claim script in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_pegin_claim_script(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the blinded token issuance amount from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the blinded issuance amount.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``ASSET_COMMITMENT_LEN``.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_amount_commitment(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a blinded token issuance amount from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_amount_commitment_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the blinded token issuance amount in an input.
+ *
+ * :param input: The input to update.
+ * :param commitment: The blinded issuance amount commitment.
+ * :param commitment_len: Size of ``commitment`` in bytes. Must
+ *|    be ``ASSET_COMMITMENT_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_commitment(
+    struct wally_psbt_input *input,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Clear the blinded token issuance amount in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_commitment(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the issuance amount rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the issuance amount rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_VALUE_RANGEPROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_amount_rangeproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the issuance amount rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_amount_rangeproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the issuance amount rangeproof in an input.
+ *
+ * :param input: The input to update.
+ * :param rangeproof: The issuance amount rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the issuance amount rangeproof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_rangeproof(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the asset issuance blinding nonce from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the asset issuance blinding nonce.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_blinding_nonce(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a asset issuance blinding nonce from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_blinding_nonce_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the asset issuance blinding nonce in an input.
+ *
+ * :param input: The input to update.
+ * :param nonce: Asset issuance or revelation blinding nonce.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_blinding_nonce(
+    struct wally_psbt_input *input,
+    const unsigned char *nonce,
+    size_t nonce_len);
+
+/**
+ * Clear the asset issuance blinding nonce in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_issuance_blinding_nonce(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the asset issuance entropy from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the asset issuance entropy.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_asset_entropy(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a asset issuance entropy from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_asset_entropy_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the asset issuance entropy in an input.
+ *
+ * :param input: The input to update.
+ * :param entropy: The asset issuance entropy.
+ * :param entropy_len: Size of ``entropy`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_asset_entropy(
+    struct wally_psbt_input *input,
+    const unsigned char *entropy,
+    size_t entropy_len);
+
+/**
+ * Clear the asset issuance entropy in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_issuance_asset_entropy(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the issuance amount blinding rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the issuance amount blinding rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLIND_VALUE_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_amount_blinding_rangeproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a issuance amount blinding rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_issuance_amount_blinding_rangeproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the issuance amount blinding rangeproof in an input.
+ *
+ * :param input: The input to update.
+ * :param rangeproof: The issuance amount blinding rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_issuance_amount_blinding_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the issuance amount blinding rangeproof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_blinding_rangeproof(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the blinded number of reissuance tokens from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the blinded number of reissuance tokens.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``ASSET_COMMITMENT_LEN``.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_INFLATION_KEYS_COMMITMENT``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_inflation_keys_commitment(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the blinded number of reissuance tokens from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_inflation_keys_commitment_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the blinded number of reissuance tokens in an input.
+ *
+ * :param input: The input to update.
+ * :param commitment: The blinded number of reissuance tokens.
+ * :param commitment_len: Size of ``commitment`` in bytes. Must
+ *|    be ``ASSET_COMMITMENT_LEN``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_inflation_keys_commitment(
+    struct wally_psbt_input *input,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Clear the blinded number of reissuance tokens in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_inflation_keys_commitment(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the reissuance tokens rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the reissuance tokens rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_INFLATION_KEYS_RANGEPROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_inflation_keys_rangeproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a reissuance tokens rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_inflation_keys_rangeproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the reissuance tokens rangeproof in an input.
+ *
+ * :param input: The input to update.
+ * :param rangeproof: The reissuance tokens rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_inflation_keys_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the reissuance tokens rangeproof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_inflation_keys_rangeproof(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the reissuance tokens blinding rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the reissuance tokens blinding rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_inflation_keys_blinding_rangeproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a reissuance tokens blinding rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_inflation_keys_blinding_rangeproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the reissuance tokens blinding rangeproof in an input.
+ *
+ * :param input: The input to update.
+ * :param rangeproof: The reissuance tokens blinding rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_inflation_keys_blinding_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the reissuance tokens blinding rangeproof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_inflation_keys_blinding_rangeproof(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the UTXO rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the UTXO rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_UTXO_RANGEPROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_utxo_rangeproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of a UTXO rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_utxo_rangeproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the UTXO rangeproof in an input.
+ *
+ * :param input: The input to update.
+ * :param rangeproof: The UTXO rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_utxo_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the UTXO rangeproof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_utxo_rangeproof(
+    struct wally_psbt_input *input);
+#endif /* BUILD_ELEMENTS */
 
 /**
  * Determine if a PSBT input is finalized.

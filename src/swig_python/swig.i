@@ -315,6 +315,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* summed_key, size_t summed_key_len);
 %pybuffer_nullable_binary(const unsigned char* surjectionproof, size_t surjectionproof_len);
 %pybuffer_nullable_binary(const unsigned char* txhash, size_t txhash_len);
+%pybuffer_nullable_binary(const unsigned char* txout_proof, size_t txout_proof_len);
 %pybuffer_nullable_binary(const unsigned char* val, size_t val_len);
 %pybuffer_nullable_binary(const unsigned char* value, size_t value_len);
 %pybuffer_nullable_binary(const unsigned char* vbf, size_t vbf_len);

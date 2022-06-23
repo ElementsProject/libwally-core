@@ -20,8 +20,6 @@ WALLY_CORE_API int wally_psbt_get_tx_modifiable_flags(const struct wally_psbt *p
 WALLY_CORE_API int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_get_global_scalar(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_psbt_get_pset_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
-
-WALLY_CORE_API int wally_psbt_set_global_scalars(struct wally_psbt *psbt, const struct wally_map *map_in);
 #endif /* BUILD_ELEMENTS */
 
 /* Inputs */
@@ -74,6 +72,63 @@ WALLY_CORE_API int wally_psbt_has_input_required_locktime(const struct wally_psb
 WALLY_CORE_API int wally_psbt_set_input_required_lockheight(struct wally_psbt *psbt, size_t index, uint32_t lockheight);
 WALLY_CORE_API int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt, size_t index, size_t *written);
+#ifdef BUILD_ELEMENTS
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_pegin_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_pegin_txout_proof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_pegin_txout_proof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_pegin_genesis_blockhash(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_pegin_genesis_blockhash_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_pegin_claim_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_pegin_claim_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_commitment(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_commitment_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_blinding_nonce(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_blinding_nonce_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_asset_entropy(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_asset_entropy_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_blinding_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_issuance_amount_blinding_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys_commitment(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys_commitment_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys_blinding_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_inflation_keys_blinding_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_utxo_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_utxo_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+
+WALLY_CORE_API int wally_psbt_set_input_issuance_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
+WALLY_CORE_API int wally_psbt_set_input_inflation_keys(struct wally_psbt *psbt, size_t index, uint64_t amount);
+WALLY_CORE_API int wally_psbt_set_input_pegin_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
+WALLY_CORE_API int wally_psbt_set_input_pegin_txout_proof(struct wally_psbt *psbt, size_t index, const unsigned char *txout_proof, size_t txout_proof_len);
+WALLY_CORE_API int wally_psbt_clear_input_pegin_txout_proof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_pegin_genesis_blockhash(struct wally_psbt *psbt, size_t index, const unsigned char *genesis_blockhash, size_t genesis_blockhash_len);
+WALLY_CORE_API int wally_psbt_clear_input_pegin_genesis_blockhash(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_pegin_claim_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
+WALLY_CORE_API int wally_psbt_clear_input_pegin_claim_script(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_issuance_amount_commitment(struct wally_psbt *psbt, size_t index, const unsigned char *commitment, size_t commitment_len);
+WALLY_CORE_API int wally_psbt_clear_input_issuance_amount_commitment(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_issuance_amount_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_issuance_amount_rangeproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_issuance_blinding_nonce(struct wally_psbt *psbt, size_t index, const unsigned char *nonce, size_t nonce_len);
+WALLY_CORE_API int wally_psbt_clear_input_issuance_blinding_nonce(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_issuance_asset_entropy(struct wally_psbt *psbt, size_t index, const unsigned char *entropy, size_t entropy_len);
+WALLY_CORE_API int wally_psbt_clear_input_issuance_asset_entropy(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_issuance_amount_blinding_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_issuance_amount_blinding_rangeproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_inflation_keys_commitment(struct wally_psbt *psbt, size_t index, const unsigned char *commitment, size_t commitment_len);
+WALLY_CORE_API int wally_psbt_clear_input_inflation_keys_commitment(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_inflation_keys_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_inflation_keys_rangeproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_inflation_keys_blinding_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_inflation_keys_blinding_rangeproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_utxo_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_utxo_rangeproof(struct wally_psbt *psbt, size_t index);
+#endif /* BUILD_ELEMENTS */
 
 /* Outputs */
 WALLY_CORE_API int wally_psbt_get_output_redeem_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);

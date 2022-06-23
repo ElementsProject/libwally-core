@@ -844,8 +844,8 @@ inline int psbt_input_set_final_scriptsig(const INPUT& input, const FINAL_SCRIPT
 }
 
 template <class INPUT>
-inline int psbt_input_set_final_witness(const INPUT& input, const struct wally_tx_witness_stack* final_witness) {
-    int ret = ::wally_psbt_input_set_final_witness(detail::get_p(input), final_witness);
+inline int psbt_input_set_final_witness(const INPUT& input, const struct wally_tx_witness_stack* witness) {
+    int ret = ::wally_psbt_input_set_final_witness(detail::get_p(input), witness);
     return ret;
 }
 
@@ -1715,6 +1715,324 @@ inline int psbt_find_global_scalar(const PSBT& psbt, const SCALAR& scalar, size_
     size_t n;
     int ret = ::wally_psbt_find_global_scalar(detail::get_p(psbt), scalar.data(), scalar.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(scalar.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+inline int psbt_input_clear_inflation_keys_blinding_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_inflation_keys_blinding_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_inflation_keys_commitment(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_inflation_keys_commitment(input);
+    return ret;
+}
+
+inline int psbt_input_clear_inflation_keys_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_inflation_keys_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_amount_blinding_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount_blinding_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_amount_commitment(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount_commitment(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_amount_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_asset_entropy(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_asset_entropy(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_blinding_nonce(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_blinding_nonce(input);
+    return ret;
+}
+
+inline int psbt_input_clear_pegin_claim_script(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_claim_script(input);
+    return ret;
+}
+
+inline int psbt_input_clear_pegin_genesis_blockhash(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_genesis_blockhash(input);
+    return ret;
+}
+
+inline int psbt_input_clear_pegin_txout_proof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_txout_proof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_utxo_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_utxo_rangeproof(input);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_inflation_keys_blinding_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_inflation_keys_blinding_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_inflation_keys_blinding_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_inflation_keys_blinding_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_inflation_keys_commitment(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_inflation_keys_commitment(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_inflation_keys_commitment_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_inflation_keys_commitment_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_inflation_keys_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_inflation_keys_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_inflation_keys_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_inflation_keys_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_amount_blinding_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_amount_blinding_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_amount_blinding_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_amount_blinding_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_amount_commitment(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_amount_commitment(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_amount_commitment_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_amount_commitment_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_amount_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_amount_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_amount_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_amount_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_asset_entropy(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_asset_entropy(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_asset_entropy_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_asset_entropy_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_blinding_nonce(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_blinding_nonce(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_blinding_nonce_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_blinding_nonce_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_pegin_claim_script(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_pegin_claim_script(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_pegin_claim_script_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_pegin_claim_script_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_pegin_genesis_blockhash(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_pegin_genesis_blockhash(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_pegin_genesis_blockhash_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_pegin_genesis_blockhash_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_pegin_txout_proof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_pegin_txout_proof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_pegin_txout_proof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_pegin_txout_proof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_utxo_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_utxo_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_utxo_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_utxo_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_inflation_keys(const INPUT& input, uint64_t value) {
+    int ret = ::wally_psbt_input_set_inflation_keys(detail::get_p(input), value);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_inflation_keys_blinding_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_inflation_keys_blinding_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class COMMITMENT>
+inline int psbt_input_set_inflation_keys_commitment(const INPUT& input, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_input_set_inflation_keys_commitment(detail::get_p(input), commitment.data(), commitment.size());
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_inflation_keys_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_inflation_keys_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_issuance_amount(const INPUT& input, uint64_t amount) {
+    int ret = ::wally_psbt_input_set_issuance_amount(detail::get_p(input), amount);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_issuance_amount_blinding_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_issuance_amount_blinding_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class COMMITMENT>
+inline int psbt_input_set_issuance_amount_commitment(const INPUT& input, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_input_set_issuance_amount_commitment(detail::get_p(input), commitment.data(), commitment.size());
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_issuance_amount_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_issuance_amount_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class ENTROPY>
+inline int psbt_input_set_issuance_asset_entropy(const INPUT& input, const ENTROPY& entropy) {
+    int ret = ::wally_psbt_input_set_issuance_asset_entropy(detail::get_p(input), entropy.data(), entropy.size());
+    return ret;
+}
+
+template <class INPUT, class NONCE>
+inline int psbt_input_set_issuance_blinding_nonce(const INPUT& input, const NONCE& nonce) {
+    int ret = ::wally_psbt_input_set_issuance_blinding_nonce(detail::get_p(input), nonce.data(), nonce.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_pegin_amount(const INPUT& input, uint64_t amount) {
+    int ret = ::wally_psbt_input_set_pegin_amount(detail::get_p(input), amount);
+    return ret;
+}
+
+template <class INPUT, class SCRIPT>
+inline int psbt_input_set_pegin_claim_script(const INPUT& input, const SCRIPT& script) {
+    int ret = ::wally_psbt_input_set_pegin_claim_script(detail::get_p(input), script.data(), script.size());
+    return ret;
+}
+
+template <class INPUT, class GENESIS_BLOCKHASH>
+inline int psbt_input_set_pegin_genesis_blockhash(const INPUT& input, const GENESIS_BLOCKHASH& genesis_blockhash) {
+    int ret = ::wally_psbt_input_set_pegin_genesis_blockhash(detail::get_p(input), genesis_blockhash.data(), genesis_blockhash.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_pegin_tx(const INPUT& input, const struct wally_tx* tx) {
+    int ret = ::wally_psbt_input_set_pegin_tx(detail::get_p(input), tx);
+    return ret;
+}
+
+template <class INPUT, class TXOUT_PROOF>
+inline int psbt_input_set_pegin_txout_proof(const INPUT& input, const TXOUT_PROOF& txout_proof) {
+    int ret = ::wally_psbt_input_set_pegin_txout_proof(detail::get_p(input), txout_proof.data(), txout_proof.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_tx_witness_stack* witness) {
+    int ret = ::wally_psbt_input_set_pegin_witness(detail::get_p(input), witness);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_utxo_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_utxo_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
 }
 
 template <class PSBT>

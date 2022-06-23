@@ -9,7 +9,7 @@ SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50
 
 SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
 SAMPLE_V2 = 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
-SAMPLE_PSET = 'cHNldP8B+wQCAAAAAQIEAgAAAAEEAQABBQEAB/wEcHNldAEBAQA='
+SAMPLE_PSET = 'cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAQYBAwf8BHBzZXQBAQEAAQ4gnfxmKMJsWJn+G9PcM4Zlv9VdetoQ9iIJc98tOG3sEnYBDwQBAAAAARAE////AAA='
 
 
 class PSBTTests(unittest.TestCase):
@@ -222,8 +222,9 @@ class PSBTTests(unittest.TestCase):
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
-            dummy_commitment = bytearray(b'\x00' * ASSET_COMMITMENT_LEN)
+            dummy_commitment = bytearray(b'\x44' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
+            dummy_nonce = bytearray(b'\x77' * ASSET_TAG_LEN)
 
         dummy_keypaths = map_keypath_public_key_init(1)
         self.assertIsNotNone(dummy_keypaths)
@@ -354,6 +355,9 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_i(psbt_set_input_sighash, None,
                                 psbt_get_input_sighash, p, 0xff) # FIXME 0x100 as invalid_value should fail
 
+        #
+        # Inputs: PSBT V2
+        #
         # V2: Previous txid
         self._throws(psbt_set_input_previous_txid, psbt, 0, dummy_txid) # Non v2 PSBT
         self._throws(psbt_set_input_previous_txid, psbt2, 0, dummy_sig)  # Bad Length
@@ -392,6 +396,75 @@ class PSBTTests(unittest.TestCase):
             self._throws(h_fn, psbt, 0)     # Non v2 PSBT
             self._throws(c_fn, psbt, 0)     # Non v2 PSBT
             self._try_get_set_i(s_fn, c_fn, g_fn, psbt2, v)
+
+        #
+        # Inputs: PSET
+        #
+        if is_elements_build():
+            # PSET: Unblinded issuance amount/inflation keys/pegin amount
+            for setfn, getfn in [
+                (psbt_set_input_issuance_amount, psbt_get_input_issuance_amount),
+                (psbt_set_input_inflation_keys,  psbt_get_input_inflation_keys),
+                (psbt_set_input_pegin_amount, psbt_get_input_pegin_amount)]:
+                self._throws(setfn, psbt, 0, 1234) # Non v2 PSBT
+                self._throws(getfn, psbt, 0)       # Non v2 PSBT
+                self._try_get_set_i(setfn, None, getfn, pset2, 1234)
+
+            cases = [
+                # PSET: blinded issuance amount (issuance amount commitment)
+                (psbt_set_input_issuance_amount_commitment,
+                 psbt_get_input_issuance_amount_commitment,
+                 psbt_clear_input_issuance_amount_commitment, dummy_commitment, dummy_txid),
+                # PSET: blinded issuance amount rangeproof
+                (psbt_set_input_issuance_amount_rangeproof, psbt_get_input_issuance_amount_rangeproof,
+                 psbt_clear_input_issuance_amount_rangeproof, dummy_bytes, None),
+                # PSET: issuance blinding nonce
+                (psbt_set_input_issuance_blinding_nonce,
+                 psbt_get_input_issuance_blinding_nonce,
+                 psbt_clear_input_issuance_blinding_nonce, dummy_nonce, dummy_commitment),
+                # PSET: issuance blinding entropy
+                (psbt_set_input_issuance_asset_entropy,
+                 psbt_get_input_issuance_asset_entropy,
+                 psbt_clear_input_issuance_asset_entropy, dummy_nonce, dummy_commitment),
+                # PSET: blinded issuance amount value rangeproof
+                #       (Confusing: this proves the blinded issuance amount matches
+                #        the unblinded amount, for constructors/blinders use)
+                (psbt_set_input_issuance_amount_blinding_rangeproof,
+                 psbt_get_input_issuance_amount_blinding_rangeproof,
+                 psbt_clear_input_issuance_amount_blinding_rangeproof, dummy_bytes, None),
+                # PSET: peg-in claim script
+                (psbt_set_input_pegin_claim_script, psbt_get_input_pegin_claim_script,
+                 psbt_clear_input_pegin_claim_script, dummy_bytes, None),
+                # PSET: peg-in genesis blockhash
+                (psbt_set_input_pegin_genesis_blockhash, psbt_get_input_pegin_genesis_blockhash,
+                 psbt_clear_input_pegin_genesis_blockhash, dummy_txid, dummy_commitment),
+                # PSET: peg-in txout proof
+                (psbt_set_input_pegin_txout_proof, psbt_get_input_pegin_txout_proof,
+                 psbt_clear_input_pegin_txout_proof, dummy_bytes, None),
+                # PSET: blinded number of inflation keys (issuance keys commitment)
+                (psbt_set_input_inflation_keys_commitment, psbt_get_input_inflation_keys_commitment,
+                 psbt_clear_input_inflation_keys_commitment, dummy_commitment, dummy_txid),
+                # PSET: blinded inflation keys rangeproof
+                (psbt_set_input_inflation_keys_rangeproof, psbt_get_input_inflation_keys_rangeproof,
+                 psbt_clear_input_inflation_keys_rangeproof, dummy_bytes, None),
+                # PSET: blidned inflation keys value rangeproof
+                #       (Confusing: this proves the number of blinded reissuance tokens
+                #        matches the unblinded number, for constructors/blinders use)
+                (psbt_set_input_inflation_keys_blinding_rangeproof,
+                 psbt_get_input_inflation_keys_blinding_rangeproof,
+                 psbt_clear_input_inflation_keys_blinding_rangeproof, dummy_bytes, None),
+                # PSET: utxo rangeproof
+                (psbt_set_input_utxo_rangeproof, psbt_get_input_utxo_rangeproof,
+                 psbt_clear_input_utxo_rangeproof, dummy_bytes, None),
+            ]
+            for setfn, getfn, clearfn, valid_value, invalid_value in cases:
+                self._throws(setfn, psbt, 0, valid_value)       # Non v2 PSBT
+                if invalid_value:
+                    self._throws(setfn, psbt, 0, invalid_value) # Invalid value
+                self._throws(getfn, psbt, 0)                    # Non v2 PSBT
+                self._throws(getfn, psbt, 0)                    # Non v2 PSBT
+                self._throws(clearfn, psbt, 0)                  # Non v2 PSBT
+                self._try_get_set_b(setfn, getfn, clearfn, pset2, valid_value)
 
         #
         # Outputs

@@ -131,17 +131,50 @@
 #define PSET_IN_MAX PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF
 
 /* Input PSBT/PSET fields that can be repeated */
-#define PSBT_IN_REPEATABLE 0x44 /* keys which can appear more than once */
+#define PSBT_IN_REPEATABLE (PSBT_FT(PSBT_IN_PARTIAL_SIG) | \
+                            PSBT_FT(PSBT_IN_BIP32_DERIVATION))
+
 /* Input PSBT/PSET fields that contain data in their keys */
-#define PSBT_IN_HAVE_KEYDATA 0x3c44 /* keys with keydata */
+#define PSBT_IN_HAVE_KEYDATA (PSBT_FT(PSBT_IN_PARTIAL_SIG) | \
+                              PSBT_FT(PSBT_IN_BIP32_DERIVATION) | \
+                              PSBT_FT(PSBT_IN_RIPEMD160) | \
+                              PSBT_FT(PSBT_IN_SHA256) | \
+                              PSBT_FT(PSBT_IN_HASH160) | \
+                              PSBT_FT(PSBT_IN_HASH256))
+
 /* Input PSBT/PSET fields that must be present in v0 */
-#define PSBT_IN_MANDATORY_V0 0x0 /* Required keys for v0 */
+#define PSBT_IN_MANDATORY_V0 0x0
+
 /* Input PSBT/PSET fields that must be present in v2 */
-#define PSBT_IN_MANDATORY_V2 0xc000 /* Required keys for v2 */
+#define PSBT_IN_MANDATORY_V2 (PSBT_FT(PSBT_IN_PREVIOUS_TXID) | \
+                              PSBT_FT(PSBT_IN_OUTPUT_INDEX))
+
 /* Input PSBT/PSET fields that must *not* be present in v0 */
-#define PSBT_IN_DISALLOWED_V0 0x7c000 /* Disallowed keys for v0 */
+#define PSBT_IN_DISALLOWED_V0 (PSBT_FT(PSBT_IN_PREVIOUS_TXID) | \
+                               PSBT_FT(PSBT_IN_OUTPUT_INDEX) | \
+                               PSBT_FT(PSBT_IN_SEQUENCE) | \
+                               PSBT_FT(PSBT_IN_REQUIRED_TIME_LOCKTIME) | \
+                               PSBT_FT(PSBT_IN_REQUIRED_HEIGHT_LOCKTIME) | \
+                               PSET_FT(PSET_IN_ISSUANCE_VALUE) | \
+                               PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT) | \
+                               PSET_FT(PSET_IN_ISSUANCE_VALUE_RANGEPROOF) | \
+                               PSET_FT(PSET_IN_ISSUANCE_KEYS_RANGEPROOF) | \
+                               PSET_FT(PSET_IN_PEG_IN_TX) | \
+                               PSET_FT(PSET_IN_PEG_IN_TXOUT_PROOF) | \
+                               PSET_FT(PSET_IN_PEG_IN_GENESIS) | \
+                               PSET_FT(PSET_IN_PEG_IN_CLAIM_SCRIPT) | \
+                               PSET_FT(PSET_IN_PEG_IN_VALUE) | \
+                               PSET_FT(PSET_IN_PEG_IN_WITNESS) | \
+                               PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS) | \
+                               PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT) | \
+                               PSET_FT(PSET_IN_ISSUANCE_BLINDING_NONCE) | \
+                               PSET_FT(PSET_IN_ISSUANCE_ASSET_ENTROPY) | \
+                               PSET_FT(PSET_IN_UTXO_RANGEPROOF) | \
+                               PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF) | \
+                               PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF))
+
 /* Input PSBT/PSET fields that must *not* be present in v2 */
-#define PSBT_IN_DISALLOWED_V2 0x0 /* Disallowed keys for v2 */
+#define PSBT_IN_DISALLOWED_V2 0x0
 
 /* The minimum allowed timestamp in PSBT_IN_REQUIRED_TIME_LOCKTIME */
 #define PSBT_LOCKTIME_MIN_TIMESTAMP 500000000
