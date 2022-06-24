@@ -363,53 +363,248 @@
       "is_pset": true
     },
     {
-      "comment": "PSET Invalid Issuance Size",
+      "comment": "PSET Invalid Input Issuance Size",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQACQECAAAAAAAAAAA=",
       "is_pset": true
     },
     {
-      "comment": "PSET Duplicate Issuance Value",
+      "comment": "PSET Duplicate Input Issuance Value",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQACAECAAAAAAAAB/wEcHNldAAIAQIAAAAAAAAA",
       "is_pset": true
     },
     {
-      "comment": "PSET Invalid Value Commitment Size",
+      "comment": "PSET Invalid Input Issuance Value Commitment Size",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQBCQECAAAAAAAAAAA=",
       "is_pset": true
     },
     {
-      "comment": "Duplicate Value Commitment",
+      "comment": "Duplicate Input Issuance Value Commitment",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQBIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQf8BHBzZXQBIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
       "is_pset": true
     },
     {
-      "comment": "Duplicate Value Range Proof",
+      "comment": "Duplicate Input Issuance Value Range Proof",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQCIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQf8BHBzZXQCIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
       "is_pset": true
     },
     {
-      "comment": "Duplicate Inflation Keys Commitment",
+      "comment": "Duplicate Input Issuance Inflation Keys Commitment",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQDIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQf8BHBzZXQDIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
       "is_pset": true
     },
     {
-      "comment": "PSET Invalid Inflation Keys Size",
+      "comment": "PSET Invalid Input Issuance Inflation Keys Size",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQKCQECAQAAAAAAAAA=",
       "is_pset": true
     },
     {
-      "comment": "Duplicate Inflation Keys",
+      "comment": "Duplicate Input Issuance Inflation Keys",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQKCAIBAAAAAAAAB/wEcHNldAoIAgEAAAAAAAAA",
       "is_pset": true
     },
     {
-      "comment": "PSET Invalid Inflation Keys Commitment Size",
+      "comment": "PSET Invalid Input Issuance Inflation Keys Commitment Size",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQLIgIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMA",
       "is_pset": true
     },
     {
-      "comment": "Duplicate Inflation Keys Commitment",
+      "comment": "Duplicate Input Issuance Inflation Keys Commitment",
       "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQLIQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIgf8BHBzZXQLIQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIgA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Input Issuance Blinding Nonce Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQMIQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIgA=",
+      "is_pset": true
+    },
+    {
+      "comment": "Duplicate Input Issuance Blinding Nonce Commitment",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQMIAIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAwgAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Input Issuance Asset Entropy Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQNIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "Duplicate Input Issuance Asset Entropy Commitment",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQNIAIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldA0gAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEA",
+      "is_pset": true
+    },
+    {
+      "comment": "Duplicate Input Issuance Blind Value Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQPIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQf8BHBzZXQPIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "Duplicate Input Inflation Keys Blind Value Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQQIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQf8BHBzZXQQIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Issuance Value + Issuance Value Commitment, No Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQACAECAAAAAAAAB/wEcHNldAEhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Inflation Keys Value + Inflation Keys Commitment, No Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQKCAIBAAAAAAAAB/wEcHNldAshAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Invalid Pegin Tx",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQECAIBAAAAAAAAAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate Pegin Tx",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQE/R8BAgAAAAH16xqTeqsQOCTmMZBFTe+sAzi3UnCrerLbbeA/y+HT/QIAAACKRzBEAiACIfMVZwUvOHXEbIhh9wFCMI2TXYyQqLi2mpxjNf21IgIgd55k8mIOHU/FNyDA1XKhihroPGihBfB+VoRC04gq3kIBQQRxRvDg/LMTmUfPC+uHD+JRkwyhDUVFeT0xAz6AG1IZq/VsEaPPNAbKWQ5MFLDat0nSCGKzrcRwkVPCgMKni+EM/////wOAOAEAAAAAABepFNih72PEFcC4gUIUrRuLK3ARw6XWhzmyBAAAAAAAF6kU0nidl3pX+5vqx/b4XdrIU82HckeHeiyvRAAAAAAZdqkUQ4STgxIuu4ooJoqJcAyfcjZjtbiIrAAAAAAH/ARwc2V0BP0fAQIAAAAB9esak3qrEDgk5jGQRU3vrAM4t1Jwq3qy223gP8vh0/0CAAAAikcwRAIgAiHzFWcFLzh1xGyIYfcBQjCNk12MkKi4tpqcYzX9tSICIHeeZPJiDh1PxTcgwNVyoYoa6DxooQXwflaEQtOIKt5CAUEEcUbw4PyzE5lHzwvrhw/iUZMMoQ1FRXk9MQM+gBtSGav1bBGjzzQGylkOTBSw2rdJ0ghis63EcJFTwoDCp4vhDP////8DgDgBAAAAAAAXqRTYoe9jxBXAuIFCFK0biytwEcOl1oc5sgQAAAAAABepFNJ4nZd6V/ub6sf2+F3ayFPNh3JHh3osr0QAAAAAGXapFEOEk4MSLruKKCaKiXAMn3I2Y7W4iKwAAAAAAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate Pegin Txoutproof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQFCAECAwQFBgcIB/wEcHNldAUIAQIDBAUGBwgA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Invalid Genesis Hash",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQGCAECAwQFBgcIAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate Genesis Hash",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQGIAECAwQFBgcICQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJB/wEcHNldAYgAQIDBAUGBwgJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate Claim Script",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQHIAECAwQFBgcICQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJB/wEcHNldAcgAQIDBAUGBwgJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Pegin Value",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQIIAECAwQFBgcICQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate Pegin Value",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQICAECAwQFBgcIB/wEcHNldAgIAQIDBAUGBwgA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Invalid Pegin Witness",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQJBgIHAQIDBAA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate Pegin Witness",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQJBgIBAQIDBAf8BHBzZXQJBgIBAQIDBAA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Input Duplicate UTXO Rangeproof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAf8BHBzZXQOBgIBAQIDBAf8BHBzZXQOBgIBAQIDBAA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Output Value + Commitment + No Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAEhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Output Asset + Commitment + No Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAIgAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAH/ARwc2V0AyECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Output Value + Proof + No Commitment",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAEhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Output Asset + Proof + No Commitment",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAIgAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAH/ARwc2V0CgUBAgMEBQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Value Commitment Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQQBAQf8BHBzZXQBIgABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Value Commitment",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQQBAQf8BHBzZXQBIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQf8BHBzZXQBIQECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Asset Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAIhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Asset",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAIgAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEH/ARwc2V0AiACAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Asset Commitment Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAMiAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Asset Commitment",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAMhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAMhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Rangeproof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAQhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAQhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Surjection Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAUhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAUhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Blinding Pubkey Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAYiAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Blinding Pubkey",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAYhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAYhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Nonce Size",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAciAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gIQA=",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Nonce",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAchAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAchAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhAA==",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Invalid Blinder Index",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAgIAQIDBAUGBwgA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Blinder Index",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAgEAQIDBAf8BHBzZXQIBAECAwQA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Blind Value Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAEhAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhB/wEcHNldAkEAQIDBAf8BHBzZXQJBAECAwQA",
+      "is_pset": true
+    },
+    {
+      "comment": "PSET Duplicate Blind Asset Proof",
+      "psbt": "cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwABDiABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fIAEPBAEAAAAAAQMIAQAAAAAAAAABBAEBB/wEcHNldAIgAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAH/ARwc2V0AyEAAQMDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAH/ARwc2V0CgQBAgMEB/wEcHNldAoEAQIDBAA=",
       "is_pset": true
     }
   ],
