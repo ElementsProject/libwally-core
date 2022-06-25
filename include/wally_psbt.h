@@ -84,6 +84,11 @@ struct wally_psbt_output {
     uint32_t has_amount;
     unsigned char *script;
     size_t script_len;
+#ifdef BUILD_ELEMENTS
+    uint32_t blinder_index; /* Index of the input whose owner should blind this output */
+    uint32_t has_blinder_index;
+    struct wally_map pset_fields; /* Commitments/pubkeys/proofs etc */
+#endif /* BUILD_ELEMENTS */
 };
 
 /** A partially signed bitcoin transaction */
@@ -1128,6 +1133,449 @@ WALLY_CORE_API int wally_psbt_output_set_script(
     struct wally_psbt_output *output,
     const unsigned char *script,
     size_t script_len);
+
+#ifdef BUILD_ELEMENTS
+/**
+ * Set the input blinder index in an output.
+ *
+ * :param output: The output to update.
+ * :param index: The input blinder index for this output.
+ */
+WALLY_CORE_API int wally_psbt_output_set_blinder_index(
+    struct wally_psbt_output *output,
+    uint32_t index);
+
+/**
+ * Clear the input blinder index from an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_blinder_index(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the blinded asset value from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the blinded asset value.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_VALUE_COMMITMENT``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_value_commitment(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the blinded asset value from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_value_commitment_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinded asset value in an output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The blinded asset value.
+ * :param commitment_len: Size of ``commitment`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_value_commitment(
+    struct wally_psbt_output *output,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Clear the blinded asset value in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_value_commitment(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the asset tag from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the asset tag.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the asset tag from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the asset tag in an output.
+ *
+ * :param output: The output to update.
+ * :param asset: The asset tag.
+ * :param asset_len: Size of ``asset`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_asset(
+    struct wally_psbt_output *output,
+    const unsigned char *asset,
+    size_t asset_len);
+
+/**
+ * Clear the asset tag in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_asset(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the blinded asset tag from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the blinded asset tag.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET_COMMITMENT``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_commitment(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the blinded asset tag from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_commitment_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinded asset tag in an output.
+ *
+ * :param output: The output to update.
+ * :param commitment: The blinded asset tag.
+ * :param commitment_len: Size of ``commitment`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_asset_commitment(
+    struct wally_psbt_output *output,
+    const unsigned char *commitment,
+    size_t commitment_len);
+
+/**
+ * Clear the blinded asset tag in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_asset_commitment(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the output value range proof from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the output value range proof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_VALUE_RANGEPROOF``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_value_rangeproof(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the output value range proof from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_value_rangeproof_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the output value range proof in an output.
+ *
+ * :param output: The output to update.
+ * :param rangeproof: The output value range proof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_value_rangeproof(
+    struct wally_psbt_output *output,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the output value range proof in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_value_rangeproof(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the asset surjection proof from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the asset surjection proof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET_SURJECTION_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_surjectionproof(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the asset surjection proof from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_surjectionproof_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the asset surjection proof in an output.
+ *
+ * :param output: The output to update.
+ * :param surjectionproof: The asset surjection proof.
+ * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_asset_surjectionproof(
+    struct wally_psbt_output *output,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len);
+
+/**
+ * Clear the asset surjection proof in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_asset_surjectionproof(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the blinding public key from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the blinding public key.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_BLINDING_PUBKEY``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_blinding_public_key(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the blinding public key from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_blinding_public_key_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the blinding public key in an output.
+ *
+ * :param output: The output to update.
+ * :param pub_key: The blinding public key.
+ * :param pub_key_len: Size of ``pub_key`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_blinding_public_key(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
+ * Clear the blinding public key in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_blinding_public_key(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the ephemeral ECDH public key from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the ephemeral ECDH public key.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ECDH_PUBKEY``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_ecdh_public_key(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the ephemeral ECDH public key from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_ecdh_public_key_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the ephemeral ECDH public key in an output.
+ *
+ * :param output: The output to update.
+ * :param pub_key: The ephemeral ECDH public key.
+ * :param pub_key_len: Size of ``pub_key`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_ecdh_public_key(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
+ * Clear the ephemeral ECDH public key in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_ecdh_public_key(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the asset value blinding rangeproof from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the asset value blinding rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_value_blinding_rangeproof(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the asset value blinding rangeproof from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_value_blinding_rangeproof_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the asset value blinding rangeproof in an output.
+ *
+ * :param output: The output to update.
+ * :param rangeproof: The asset value blinding rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_value_blinding_rangeproof(
+    struct wally_psbt_output *output,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the asset value blinding rangeproof in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_value_blinding_rangeproof(
+    struct wally_psbt_output *output);
+
+/**
+ * Get the asset tag blinding surjection proof from an output.
+ *
+ * :param output: The output to get from.
+ * :param bytes_out: Destination for the asset tag blinding surjection proof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_BLIND_ASSET_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_blinding_surjectionproof(
+    const struct wally_psbt_output *output,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the asset tag blinding surjection proof from an output.
+ *
+ * :param output: The output to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_output_get_asset_blinding_surjectionproof_len(
+    const struct wally_psbt_output *output,
+    size_t *written);
+
+/**
+ * Set the asset tag blinding surjection proof in an output.
+ *
+ * :param output: The output to update.
+ * :param surjectionproof: The asset tag blinding surjection proof.
+ * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_output_set_asset_blinding_surjectionproof(
+    struct wally_psbt_output *output,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len);
+
+/**
+ * Clear the asset tag blinding surjection proof in an output.
+ *
+ * :param output: The output to update.
+ */
+WALLY_CORE_API int wally_psbt_output_clear_asset_blinding_surjectionproof(
+    struct wally_psbt_output *output);
+#endif /* BUILD_ELEMENTS */
 #endif /* SWIG */
 
 /**

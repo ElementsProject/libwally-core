@@ -331,6 +331,49 @@ static int pset_map_input_field_verify(const unsigned char *key, size_t key_len,
     return key ? WALLY_EINVAL : pset_input_field_verify(key_len, val, val_len);
 }
 
+static int pset_output_field_verify(uint32_t field_type,
+                                    const unsigned char *val, size_t val_len)
+{
+    if (!val || !val_len)
+        return WALLY_EINVAL;
+    switch (field_type) {
+    case PSET_OUT_ASSET:
+        /* 32 byte asset id */
+        if (val_len != ASSET_TAG_LEN)
+            return WALLY_EINVAL;
+        break;
+    case PSET_OUT_VALUE_COMMITMENT:
+    case PSET_OUT_ASSET_COMMITMENT:
+        /* 33 byte commitments */
+        if (val_len != ASSET_COMMITMENT_LEN)
+            return WALLY_EINVAL;
+        break;
+    case PSET_OUT_BLINDING_PUBKEY:
+    case PSET_OUT_ECDH_PUBKEY:
+        /* 33 byte compressed pubkeys */
+        if (val_len != EC_PUBLIC_KEY_LEN)
+            return WALLY_EINVAL; /* Uncompressed keys are not allowed */
+        return wally_ec_public_key_verify(val, val_len);
+        break;
+    case PSET_OUT_VALUE_RANGEPROOF:
+    case PSET_OUT_ASSET_SURJECTION_PROOF:
+    case PSET_OUT_BLIND_VALUE_PROOF:
+    case PSET_OUT_BLIND_ASSET_PROOF:
+        /* Byte sequences of varying lengths */
+        break;
+    default:
+        return WALLY_EINVAL;
+    }
+    return WALLY_OK;
+}
+
+static int pset_map_output_field_verify(const unsigned char *key, size_t key_len,
+                                        const unsigned char *val, size_t val_len)
+{
+    return key ? WALLY_EINVAL : pset_output_field_verify(key_len, val, val_len);
+}
+
+
 static int pset_field_get_len(const struct wally_map *map_in,
                               uint32_t type, size_t *written)
 {
@@ -356,8 +399,13 @@ static int pset_field_get(const struct wally_map *map_in, uint32_t type,
 
     if (written)
         *written = 0;
-    if (!map_in || !bytes_out || !map_in->verify_fn ||
-        map_in->verify_fn(NULL, type, bytes_out, len) != WALLY_OK || !written)
+    if (!map_in || !bytes_out || !map_in->verify_fn || !written)
+        return WALLY_EINVAL;
+    if (map_in->verify_fn == pset_map_output_field_verify &&
+        (type == PSET_OUT_BLINDING_PUBKEY || type == PSET_OUT_ECDH_PUBKEY)) {
+        if (len != EC_PUBLIC_KEY_LEN)
+            return WALLY_EINVAL; /* Pubkey: check length only, not content */
+    } else if (map_in->verify_fn(NULL, type, bytes_out, len) != WALLY_OK)
         return WALLY_EINVAL;
     ret = wally_map_find_integer(map_in, type, &index);
     if (ret == WALLY_OK && index) {
@@ -503,10 +551,43 @@ int wally_psbt_output_clear_amount(struct wally_psbt_output *output)
 
 SET_BYTES(wally_psbt_output, script)
 
+#ifdef BUILD_ELEMENTS
+int wally_psbt_output_set_blinder_index(struct wally_psbt_output *output, uint32_t index)
+{
+    if (!output)
+        return WALLY_EINVAL;
+    output->blinder_index = index;
+    output->has_blinder_index = 1u;
+    return WALLY_OK;
+}
+
+int wally_psbt_output_clear_blinder_index(struct wally_psbt_output *output)
+{
+    if (!output)
+        return WALLY_EINVAL;
+    output->blinder_index = 0;
+    output->has_blinder_index = 0;
+    return WALLY_OK;
+}
+
+PSET_INNER_FIELD(output, value_commitment, PSET_OUT_VALUE_COMMITMENT)
+PSET_INNER_FIELD(output, asset, PSET_OUT_ASSET)
+PSET_INNER_FIELD(output, asset_commitment, PSET_OUT_ASSET_COMMITMENT)
+PSET_INNER_FIELD(output, value_rangeproof, PSET_OUT_VALUE_RANGEPROOF)
+PSET_INNER_FIELD(output, asset_surjectionproof, PSET_OUT_ASSET_SURJECTION_PROOF)
+PSET_INNER_FIELD(output, blinding_public_key, PSET_OUT_BLINDING_PUBKEY)
+PSET_INNER_FIELD(output, ecdh_public_key, PSET_OUT_ECDH_PUBKEY)
+PSET_INNER_FIELD(output, value_blinding_rangeproof, PSET_OUT_BLIND_VALUE_PROOF)
+PSET_INNER_FIELD(output, asset_blinding_surjectionproof, PSET_OUT_BLIND_ASSET_PROOF)
+#endif /* BUILD_ELEMENTS */
+
 static void psbt_output_init(struct wally_psbt_output *output)
 {
     wally_map_init(0, wally_keypath_public_key_verify, &output->keypaths);
     wally_map_init(0, NULL, &output->unknowns);
+#ifdef BUILD_ELEMENTS
+    wally_map_init(0, pset_map_output_field_verify, &output->pset_fields);
+#endif /* BUILD_ELEMENTS */
 }
 
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
@@ -517,6 +598,9 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->keypaths);
         wally_map_clear(&output->unknowns);
         clear_and_free(output->script, output->script_len);
+#ifdef BUILD_ELEMENTS
+        wally_map_clear(&output->pset_fields);
+#endif /* BUILD_ELEMENTS */
 
         wally_clear(output, sizeof(*output));
         if (free_parent)
@@ -1368,29 +1452,49 @@ unknown:
 
 static int pull_psbt_output(const struct wally_psbt *psbt,
                             const unsigned char **cursor, size_t *max,
-                            struct wally_psbt_output *result)
+                            uint32_t tx_flags, struct wally_psbt_output *result)
 {
-    size_t key_len;
-    const unsigned char *pre_key = *cursor;
+    size_t key_len, val_len;
+    const unsigned char *pre_key = *cursor, *val_p;
+    const bool is_pset = (tx_flags & WALLY_TX_FLAG_USE_ELEMENTS) != 0;
     uint64_t mandatory = psbt->version == PSBT_0 ? PSBT_OUT_MANDATORY_V0 : PSBT_OUT_MANDATORY_V2;
     uint64_t disallowed = psbt->version == PSBT_0 ? PSBT_OUT_DISALLOWED_V0 : PSBT_OUT_DISALLOWED_V2;
     uint64_t keyset = 0;
     int ret = WALLY_OK;
 
+    if (!is_pset) {
+        /* PSBT: Remove mandatory/disallowed PSET fields */
+        mandatory &= PSBT_FT_MASK;
+        disallowed &= PSBT_FT_MASK;
+    }
+
     /* Read key value pairs */
     while (ret == WALLY_OK && (key_len = pull_varlength(cursor, max)) != 0) {
-        uint64_t field_type;
         const unsigned char *key;
+        bool is_pset_ft;
+        uint64_t field_type = pull_field_type(cursor, max, &key, &key_len, is_pset, &is_pset_ft);
+        const uint64_t raw_field_type = field_type;
+        uint64_t field_bit;
+        bool is_known;
 
-        /* Start parsing key */
-        pull_subfield_start(cursor, max, key_len, &key, &key_len);
+        if (is_pset_ft) {
+            is_known = field_type <= PSET_OUT_MAX;
+            if (is_known) {
+                field_type = PSET_FT(field_type);
+                field_bit = field_type;
+            }
+        } else {
+            is_known = field_type <= PSBT_OUT_MAX;
+            if (is_known)
+                field_bit = PSBT_FT(field_type);
+        }
 
         /* Process based on type */
-        field_type = pull_varint(&key, &key_len);
-        if (field_type <= PSBT_OUT_MAX) {
-            const uint64_t field_bit = 1 << field_type;
-            if (keyset & field_bit && (!(field_bit & PSBT_OUT_REPEATABLE)))
-                return WALLY_EINVAL; /* Duplicate value */
+        if (is_known) {
+            if (keyset & field_bit && (!(field_bit & PSBT_OUT_REPEATABLE))) {
+                ret = WALLY_EINVAL; /* Duplicate value */
+                break;
+            }
             keyset |= field_bit;
             if (field_bit & PSBT_OUT_HAVE_KEYDATA)
                 pull_subfield_end(cursor, max, key, key_len);
@@ -1416,6 +1520,25 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                 ret = pull_output_varbuf(cursor, max, result,
                                          wally_psbt_output_set_script);
                 break;
+#ifdef BUILD_ELEMENTS
+            case PSET_FT(PSET_OUT_BLINDER_INDEX):
+                result->blinder_index = pull_le32_subfield(cursor, max);
+                result->has_blinder_index = 1u;
+                break;
+            case PSET_FT(PSET_OUT_VALUE_COMMITMENT):
+            case PSET_FT(PSET_OUT_ASSET):
+            case PSET_FT(PSET_OUT_ASSET_COMMITMENT):
+            case PSET_FT(PSET_OUT_VALUE_RANGEPROOF):
+            case PSET_FT(PSET_OUT_ASSET_SURJECTION_PROOF):
+            case PSET_FT(PSET_OUT_BLINDING_PUBKEY):
+            case PSET_FT(PSET_OUT_ECDH_PUBKEY):
+            case PSET_FT(PSET_OUT_BLIND_VALUE_PROOF):
+            case PSET_FT(PSET_OUT_BLIND_ASSET_PROOF):
+                pull_varlength_buff(cursor, max, &val_p, &val_len);
+                ret = wally_map_add_integer(&result->pset_fields, raw_field_type,
+                                            val_p, val_len);
+                break;
+#endif /* BUILD_ELEMENTS */
             default:
                 goto unknown;
             }
@@ -1590,7 +1713,7 @@ unknown:
 
     /* Read outputs */
     for (i = 0; ret == WALLY_OK && i < (*output)->num_outputs; ++i)
-        ret = pull_psbt_output(*output, cursor, max, (*output)->outputs + i);
+        ret = pull_psbt_output(*output, cursor, max, tx_flags, (*output)->outputs + i);
 
     if (ret == WALLY_OK && !*cursor)
         ret = WALLY_EINVAL; /* Ran out of data */
@@ -1695,9 +1818,9 @@ static void push_psbt_varbuff(unsigned char **cursor, size_t *max,
 }
 
 static void push_psbt_le32(unsigned char **cursor, size_t *max,
-                           uint64_t type, uint32_t value)
+                           uint64_t type, bool is_elements, uint32_t value)
 {
-    push_psbt_key(cursor, max, type, NULL, 0);
+    push_key(cursor, max, type, is_elements, NULL, 0);
     push_varint(cursor, max, sizeof(value));
     push_le32(cursor, max, value);
 }
@@ -1774,7 +1897,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
     push_psbt_map(cursor, max, PSBT_IN_PARTIAL_SIG, false, &input->signatures);
     /* Sighash type */
     if (input->sighash)
-        push_psbt_le32(cursor, max, PSBT_IN_SIGHASH_TYPE, input->sighash);
+        push_psbt_le32(cursor, max, PSBT_IN_SIGHASH_TYPE, false, input->sighash);
 
     /* Redeem script */
     push_psbt_varbuff(cursor, max, PSBT_IN_REDEEM_SCRIPT, false,
@@ -1798,16 +1921,17 @@ static int push_psbt_input(const struct wally_psbt *psbt,
         push_psbt_varbuff(cursor, max, PSBT_IN_PREVIOUS_TXID, false,
                           input->txhash, sizeof(input->txhash));
 
-        push_psbt_le32(cursor, max, PSBT_IN_OUTPUT_INDEX, input->index);
+        push_psbt_le32(cursor, max, PSBT_IN_OUTPUT_INDEX, false, input->index);
 
         if (input->sequence != WALLY_TX_SEQUENCE_FINAL)
-            push_psbt_le32(cursor, max, PSBT_IN_SEQUENCE, input->sequence);
+            push_psbt_le32(cursor, max, PSBT_IN_SEQUENCE, false, input->sequence);
 
         if (input->required_locktime)
-            push_psbt_le32(cursor, max, PSBT_IN_REQUIRED_TIME_LOCKTIME, input->required_locktime);
+            push_psbt_le32(cursor, max, PSBT_IN_REQUIRED_TIME_LOCKTIME, false, input->required_locktime);
 
         if (input->required_lockheight)
-            push_psbt_le32(cursor, max, PSBT_IN_REQUIRED_HEIGHT_LOCKTIME, input->required_lockheight);
+            push_psbt_le32(cursor, max, PSBT_IN_REQUIRED_HEIGHT_LOCKTIME, false, input->required_lockheight);
+
 #ifdef BUILD_ELEMENTS
         /* Loop to write the fields out in a consistent order */
         /* FIXME: This could be made more efficient */
@@ -1865,6 +1989,11 @@ static int push_psbt_output(const struct wally_psbt *psbt,
                             unsigned char **cursor, size_t *max,
                             const struct wally_psbt_output *output)
 {
+#ifdef BUILD_ELEMENTS
+    uint64_t ft;
+    size_t index;
+    int ret;
+#endif
     /* Redeem script */
     push_psbt_varbuff(cursor, max, PSBT_OUT_REDEEM_SCRIPT, false,
                       output->redeem_script, output->redeem_script_len);
@@ -1881,6 +2010,27 @@ static int push_psbt_output(const struct wally_psbt *psbt,
         push_psbt_varbuff(cursor, max, PSBT_OUT_SCRIPT, false,
                           output->script, output->script_len);
     }
+
+#ifdef BUILD_ELEMENTS
+    /* Loop to write the fields out in a consistent order */
+    /* FIXME: This could be made more efficient */
+    for (ft = PSET_OUT_VALUE_COMMITMENT; ft <= PSET_OUT_MAX; ++ft) {
+        switch (ft) {
+            if (output->has_blinder_index)
+                push_psbt_le32(cursor, max, ft, true, output->blinder_index);
+            break;
+        default:
+            ret = wally_map_find_integer(&output->pset_fields, ft, &index);
+            if (ret != WALLY_OK)
+                return ret;
+            if (index) {
+                const struct wally_map_item *item = output->pset_fields.items + index - 1;
+                push_psbt_varbuff(cursor, max, ft, true, item->value, item->value_len);
+            }
+            break;
+        }
+    }
+#endif /* BUILD_ELEMENTS */
 
     /* Unknowns */
     push_map(cursor, max, &output->unknowns);
@@ -1925,11 +2075,11 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
         size_t n;
         unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
 
-        push_psbt_le32(&cursor, &max, PSBT_GLOBAL_VERSION, psbt->version);
-        push_psbt_le32(&cursor, &max, PSBT_GLOBAL_TX_VERSION, psbt->tx_version);
+        push_psbt_le32(&cursor, &max, PSBT_GLOBAL_VERSION, false, psbt->version);
+        push_psbt_le32(&cursor, &max, PSBT_GLOBAL_TX_VERSION, false, psbt->tx_version);
 
         if (psbt->has_fallback_locktime)
-            push_psbt_le32(&cursor, &max, PSBT_GLOBAL_FALLBACK_LOCKTIME, psbt->fallback_locktime);
+            push_psbt_le32(&cursor, &max, PSBT_GLOBAL_FALLBACK_LOCKTIME, false, psbt->fallback_locktime);
 
         push_psbt_key(&cursor, &max, PSBT_GLOBAL_INPUT_COUNT, NULL, 0);
         n = varint_to_bytes(psbt->num_inputs, buf);
@@ -2147,6 +2297,12 @@ static int combine_outputs(struct wally_psbt_output *dst,
         dst->has_amount = src->has_amount;
     }
     COMBINE_BYTES(output, script);
+#ifdef BUILD_ELEMENTS
+    if (!dst->has_blinder_index && src->has_blinder_index)
+        dst->blinder_index = src->blinder_index;
+    if ((ret = wally_map_combine(&dst->pset_fields, &src->pset_fields)) != WALLY_OK)
+        return ret;
+#endif /* BUILD_ELEMENTS */
 
     return WALLY_OK;
 }
@@ -3263,5 +3419,33 @@ int wally_psbt_clear_output_amount(struct wally_psbt *psbt, size_t index) {
     return wally_psbt_output_clear_amount(psbt_get_output(psbt, index));
 }
 PSBT_SET_B(output, script, PSBT_2)
+
+
+#ifdef BUILD_ELEMENTS
+PSBT_GET_I(output, blinder_index, uint32_t, PSBT_2)
+int wally_psbt_has_output_blinder_index(const struct wally_psbt *psbt, size_t index, size_t *written) {
+    struct wally_psbt_output *p = psbt_get_output(psbt, index);
+    if (written) *written = 0;
+    if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;
+    *written = p->has_blinder_index ? 1 : 0;
+    return WALLY_OK;
+}
+
+PSBT_SET_I(output, blinder_index, uint32_t, PSBT_2)
+int wally_psbt_clear_output_blinder_index(struct wally_psbt *psbt, size_t index) {
+    if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
+    return wally_psbt_output_clear_blinder_index(psbt_get_output(psbt, index));
+}
+
+PSET_FIELD(output, value_commitment)
+PSET_FIELD(output, asset)
+PSET_FIELD(output, asset_commitment)
+PSET_FIELD(output, value_rangeproof)
+PSET_FIELD(output, asset_surjectionproof)
+PSET_FIELD(output, blinding_public_key)
+PSET_FIELD(output, ecdh_public_key)
+PSET_FIELD(output, value_blinding_rangeproof)
+PSET_FIELD(output, asset_blinding_surjectionproof)
+#endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */

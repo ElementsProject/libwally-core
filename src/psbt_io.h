@@ -143,7 +143,7 @@
                               PSBT_FT(PSBT_IN_HASH256))
 
 /* Input PSBT/PSET fields that must be present in v0 */
-#define PSBT_IN_MANDATORY_V0 0x0
+#define PSBT_IN_MANDATORY_V0 ((uint64_t)0)
 
 /* Input PSBT/PSET fields that must be present in v2 */
 #define PSBT_IN_MANDATORY_V2 (PSBT_FT(PSBT_IN_PREVIOUS_TXID) | \
@@ -174,7 +174,7 @@
                                PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF))
 
 /* Input PSBT/PSET fields that must *not* be present in v2 */
-#define PSBT_IN_DISALLOWED_V2 0x0
+#define PSBT_IN_DISALLOWED_V2 ((uint64_t)0)
 
 /* The minimum allowed timestamp in PSBT_IN_REQUIRED_TIME_LOCKTIME */
 #define PSBT_LOCKTIME_MIN_TIMESTAMP 500000000
@@ -201,16 +201,33 @@
 #define PSET_OUT_MAX PSET_OUT_BLIND_ASSET_PROOF
 
 /* Output PSBT/PSET fields that can be repeated */
-#define PSBT_OUT_REPEATABLE 0x4
+#define PSBT_OUT_REPEATABLE PSBT_FT(PSBT_OUT_BIP32_DERIVATION)
+
 /* Output PSBT/PSET fields that contain data in their keys */
-#define PSBT_OUT_HAVE_KEYDATA 0x4
+#define PSBT_OUT_HAVE_KEYDATA PSBT_FT(PSBT_OUT_BIP32_DERIVATION)
+
 /* Output PSBT/PSET fields that must be present in v0 */
-#define PSBT_OUT_MANDATORY_V0 0x0
+#define PSBT_OUT_MANDATORY_V0 ((uint64_t)0)
+
 /* Output PSBT/PSET fields that must be present in v2 */
-#define PSBT_OUT_MANDATORY_V2 0x18
+#define PSBT_OUT_MANDATORY_V2 (PSBT_FT(PSBT_OUT_AMOUNT) | \
+                               PSBT_FT(PSBT_OUT_SCRIPT))
+
 /* Output PSBT/PSET fields that must *not* be present in v0 */
-#define PSBT_OUT_DISALLOWED_V0 0x18
+#define PSBT_OUT_DISALLOWED_V0 (PSBT_FT(PSBT_OUT_AMOUNT) | \
+                                PSBT_FT(PSBT_OUT_SCRIPT) | \
+                                PSET_FT(PSET_OUT_VALUE_COMMITMENT) | \
+                                PSET_FT(PSET_OUT_ASSET) | \
+                                PSET_FT(PSET_OUT_ASSET_COMMITMENT) | \
+                                PSET_FT(PSET_OUT_VALUE_RANGEPROOF) | \
+                                PSET_FT(PSET_OUT_ASSET_SURJECTION_PROOF) | \
+                                PSET_FT(PSET_OUT_BLINDING_PUBKEY) | \
+                                PSET_FT(PSET_OUT_ECDH_PUBKEY) | \
+                                PSET_FT(PSET_OUT_BLINDER_INDEX) | \
+                                PSET_FT(PSET_OUT_BLIND_VALUE_PROOF) | \
+                                PSET_FT(PSET_OUT_BLIND_ASSET_PROOF))
+
 /* Output PSBT/PSET fields that must *not* be present in v2 */
-#define PSBT_OUT_DISALLOWED_V2 0x0
+#define PSBT_OUT_DISALLOWED_V2 ((uint64_t)0)
 
 #endif /* LIBWALLY_CORE_PSBT_IO_H */

@@ -9,7 +9,7 @@ SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50
 
 SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
 SAMPLE_V2 = 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
-SAMPLE_PSET = 'cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEAAQYBAwf8BHBzZXQBAQEAAQ4gnfxmKMJsWJn+G9PcM4Zlv9VdetoQ9iIJc98tOG3sEnYBDwQBAAAAARAE////AAA='
+SAMPLE_PSET = 'cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwf8BHBzZXQBAQEAAQ4gnfxmKMJsWJn+G9PcM4Zlv9VdetoQ9iIJc98tOG3sEnYBDwQBAAAAARAE////AAABAwjwPc0dAAAAAAEEFgAUezoAv9wU0neVwrdJAdCdpu8TNXkA'
 
 
 class PSBTTests(unittest.TestCase):
@@ -211,7 +211,7 @@ class PSBTTests(unittest.TestCase):
 
         dummy_bytes = bytearray(b'\x00' * 32)
         dummy_txid = bytearray(b'\x33' * 32)
-        dummy_pubkey = bytearray(b'\x02'* EC_PUBLIC_KEY_LEN)
+        dummy_pubkey = hex_to_bytes('038575eb35e18fb168a913d8b49af50204f4f73627f6f7884f1be11e354664de8b')
         dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
         dummy_path = [1234, 1234, 1234]
         dummy_sig = SIG_BYTES + bytearray(b'\x01')      # SIGHASH_ALL
@@ -489,6 +489,9 @@ class PSBTTests(unittest.TestCase):
                                 psbt_find_output_unknown,
                                 p, dummy_unknowns, dummy_unknown_key)
 
+        #
+        # Outputs: PSBT V2
+        #
         # V2: Amount
         self._throws(psbt_set_output_amount, psbt, 0, 1234)   # Non v2 PSBT
         self._throws(psbt_get_output_amount, psbt, 0)         # Non v2 PSBT
@@ -509,6 +512,49 @@ class PSBTTests(unittest.TestCase):
                             psbt_get_output_script,
                             psbt_get_output_script_len, psbt2, dummy_bytes, mandatory=True)
 
+        #
+        # Outputs: PSET
+        #
+        if is_elements_build():
+            # PSET: Blinder index
+            for setfn, getfn in [
+                (psbt_set_output_blinder_index, psbt_get_output_blinder_index)]:
+                self._throws(setfn, psbt, 0, 1234) # Non v2 PSBT
+                self._throws(getfn, psbt, 0)       # Non v2 PSBT
+                self._try_get_set_i(setfn, None, getfn, pset2, 1234)
+
+            cases = [
+                # PSET: blinded issuance amount (issuance amount commitment)
+                (psbt_set_output_value_commitment, psbt_get_output_value_commitment,
+                 psbt_clear_output_value_commitment, dummy_commitment, dummy_txid),
+                (psbt_set_output_asset, psbt_get_output_asset,
+                 psbt_clear_output_asset, dummy_asset, dummy_commitment),
+                (psbt_set_output_asset_commitment, psbt_get_output_asset_commitment,
+                 psbt_clear_output_asset_commitment, dummy_commitment, dummy_txid),
+                (psbt_set_output_value_rangeproof, psbt_get_output_value_rangeproof,
+                 psbt_clear_output_value_rangeproof, dummy_bytes, None),
+                (psbt_set_output_asset_surjectionproof,
+                 psbt_get_output_asset_surjectionproof,
+                 psbt_clear_output_asset_surjectionproof, dummy_bytes, None),
+                (psbt_set_output_blinding_public_key, psbt_get_output_blinding_public_key,
+                 psbt_clear_output_blinding_public_key, dummy_pubkey, dummy_sig),
+                (psbt_set_output_ecdh_public_key, psbt_get_output_ecdh_public_key,
+                 psbt_clear_output_ecdh_public_key, dummy_pubkey, dummy_sig),
+                (psbt_set_output_value_blinding_rangeproof,
+                 psbt_get_output_value_blinding_rangeproof,
+                 psbt_clear_output_value_blinding_rangeproof, dummy_bytes, None),
+                (psbt_set_output_asset_blinding_surjectionproof,
+                 psbt_get_output_asset_blinding_surjectionproof,
+                 psbt_clear_output_asset_blinding_surjectionproof, dummy_bytes, None),
+            ]
+            for setfn, getfn, clearfn, valid_value, invalid_value in cases:
+                self._throws(setfn, psbt, 0, valid_value)       # Non v2 PSBT
+                if invalid_value:
+                    self._throws(setfn, psbt, 0, invalid_value) # Invalid value
+                self._throws(getfn, psbt, 0)                    # Non v2 PSBT
+                self._throws(getfn, psbt, 0)                    # Non v2 PSBT
+                self._throws(clearfn, psbt, 0)                  # Non v2 PSBT
+                self._try_get_set_b(setfn, getfn, clearfn, pset2, valid_value)
 
 if __name__ == '__main__':
     unittest.main()

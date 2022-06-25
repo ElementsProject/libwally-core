@@ -289,4 +289,14 @@ if is_elements_build():
     psbt_get_input_inflation_keys_blinding_rangeproof = _wrap_bin(psbt_get_input_inflation_keys_blinding_rangeproof, psbt_get_input_inflation_keys_blinding_rangeproof_len, resize=True)
     psbt_get_input_utxo_rangeproof = _wrap_bin(psbt_get_input_utxo_rangeproof, psbt_get_input_utxo_rangeproof_len, resize=True)
 
+    psbt_get_output_value_commitment = _wrap_bin(psbt_get_output_value_commitment, psbt_get_output_value_commitment_len, resize=True)
+    psbt_get_output_asset = _wrap_bin(psbt_get_output_asset, psbt_get_output_asset_len, resize=True)
+    psbt_get_output_asset_commitment = _wrap_bin(psbt_get_output_asset_commitment, psbt_get_output_asset_commitment_len, resize=True)
+    psbt_get_output_value_rangeproof = _wrap_bin(psbt_get_output_value_rangeproof, psbt_get_output_value_rangeproof_len, resize=True)
+    psbt_get_output_asset_surjectionproof = _wrap_bin(psbt_get_output_asset_surjectionproof, psbt_get_output_asset_surjectionproof_len, resize=True)
+    psbt_get_output_blinding_public_key = _wrap_bin(psbt_get_output_blinding_public_key, psbt_get_output_blinding_public_key_len, resize=True)
+    psbt_get_output_ecdh_public_key = _wrap_bin(psbt_get_output_ecdh_public_key, psbt_get_output_ecdh_public_key_len, resize=True)
+    psbt_get_output_value_blinding_rangeproof = _wrap_bin(psbt_get_output_value_blinding_rangeproof, psbt_get_output_value_blinding_rangeproof_len, resize=True)
+    psbt_get_output_asset_blinding_surjectionproof = _wrap_bin(psbt_get_output_asset_blinding_surjectionproof, psbt_get_output_asset_blinding_surjectionproof_len, resize=True)
+
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC
