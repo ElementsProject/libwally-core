@@ -27,15 +27,17 @@ class PSBTTests(unittest.TestCase):
         new_bytes = psbt_to_bytes(deserialized, 0)
         self.assertEqual(psbt_bytes, new_bytes)
 
-    def _try_set(self, fn, psbt, valid_value, null_value=None, mandatory=False, allow_null=True):
-        self._round_trip(psbt)
+    def _try_set(self, fn, psbt, valid_value, null_value=None, mandatory=False, allow_null=True, roundtrip=True):
+        if roundtrip:
+            self._round_trip(psbt)
         fn(psbt, 0, valid_value) # Set
-        self._round_trip(psbt)
+        if roundtrip:
+            self._round_trip(psbt)
         if allow_null:
             fn(psbt, 0, null_value) # Un-set
             if mandatory:
                 fn(psbt, 0, valid_value) # Set
-            else:
+            elif roundtrip:
                 self._round_trip(psbt)
         else:
             self._throws(fn, psbt, 0, null_value)
@@ -58,9 +60,11 @@ class PSBTTests(unittest.TestCase):
         if invalid_value is not None:
             self._throws(setfn, psbt, 0, invalid_value)
 
-    def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None, mandatory=False):
-        self._try_set(setfn, psbt, valid_value, null_value, mandatory)
+    def _try_get_set_b(self, setfn, getfn, lenfn, psbt, valid_value, null_value=None, mandatory=False, roundtrip=True):
+        self._try_set(setfn, psbt, valid_value, null_value, mandatory, roundtrip=roundtrip)
         setfn(psbt, 0, valid_value) # Set
+        if roundtrip:
+            self._round_trip(psbt)
         if lenfn:
             self._try_invalid(lenfn, psbt)
         self._try_invalid(getfn, psbt)
@@ -410,6 +414,10 @@ class PSBTTests(unittest.TestCase):
                 self._throws(getfn, psbt, 0)       # Non v2 PSBT
                 self._try_get_set_i(setfn, None, getfn, pset2, 1234)
 
+            # Clear amounts to allow round-tripping
+            psbt_set_input_issuance_amount(pset2, 0, 0)
+            psbt_set_input_inflation_keys(pset2, 0, 0)
+
             cases = [
                 # PSET: blinded issuance amount (issuance amount commitment)
                 (psbt_set_input_issuance_amount_commitment,
@@ -554,7 +562,16 @@ class PSBTTests(unittest.TestCase):
                 self._throws(getfn, psbt, 0)                    # Non v2 PSBT
                 self._throws(getfn, psbt, 0)                    # Non v2 PSBT
                 self._throws(clearfn, psbt, 0)                  # Non v2 PSBT
-                self._try_get_set_b(setfn, getfn, clearfn, pset2, valid_value)
+                is_commitment_fn = setfn in [psbt_set_output_value_commitment,
+                                             psbt_set_output_asset_commitment,
+                                             psbt_set_output_value_blinding_rangeproof,
+                                             psbt_set_output_asset_blinding_surjectionproof]
+                self._try_get_set_b(setfn, getfn, clearfn, pset2, valid_value,
+                                    roundtrip=not is_commitment_fn)
+                if is_commitment_fn:
+                    clearfn(pset2, 0)
+                else:
+                    self._round_trip(pset2)
 
 if __name__ == '__main__':
     unittest.main()

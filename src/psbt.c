@@ -579,6 +579,27 @@ PSET_INNER_FIELD(output, blinding_public_key, PSET_OUT_BLINDING_PUBKEY)
 PSET_INNER_FIELD(output, ecdh_public_key, PSET_OUT_ECDH_PUBKEY)
 PSET_INNER_FIELD(output, value_blinding_rangeproof, PSET_OUT_BLIND_VALUE_PROOF)
 PSET_INNER_FIELD(output, asset_blinding_surjectionproof, PSET_OUT_BLIND_ASSET_PROOF)
+
+/* Verify that unblinded values, their commitment, and commitment proof
+ * are provided/elided where required.
+ * TODO: Check proofs here?
+ */
+static bool pset_check_commitment(uint64_t keyset, uint64_t value_bit,
+                                  uint64_t commitment_bit, uint64_t proof_bit)
+{
+    if ((keyset & proof_bit) && !(keyset & commitment_bit))
+        return false; /* explicit rangeproof without commitment value */
+    if (keyset & commitment_bit) {
+        if (!(keyset & value_bit))
+            return true; /* Value has been removed */
+        if (!(keyset & proof_bit))
+            return false; /* value and commitment without range/surjection proof */
+    } else if (!(keyset & value_bit) && value_bit == PSBT_FT(PSBT_OUT_AMOUNT)) {
+        /* No output amount value, commitment or proof - invalid amount */
+        return false;
+    }
+    return true;
+}
 #endif /* BUILD_ELEMENTS */
 
 static void psbt_output_init(struct wally_psbt_output *output)
@@ -1447,6 +1468,18 @@ unknown:
     else if (disallowed && (keyset & disallowed))
         ret = WALLY_EINVAL; /* Disallowed field present */
 
+#ifdef BUILD_ELEMENTS
+    if (ret == WALLY_OK && is_pset) {
+        if (!pset_check_commitment(keyset, PSET_FT(PSET_IN_ISSUANCE_VALUE),
+                                   PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT),
+                                   PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF)) ||
+            !pset_check_commitment(keyset, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS),
+                                   PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
+                                   PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF)))
+            ret = WALLY_EINVAL;
+    }
+#endif /* BUILD_ELEMENTS */
+
     return ret;
 }
 
@@ -1548,11 +1581,30 @@ unknown:
         }
         pre_key = *cursor;
     }
+#ifdef BUILD_ELEMENTS
+    if (is_pset) {
+        /* Amount must be removed if commitments are present; therefore
+         * unlike PSBT v2 it is not unconditionally mandatory */
+        mandatory &= ~PSBT_FT(PSBT_OUT_AMOUNT);
+    }
+#endif /* BUILD_ELEMENTS */
 
     if (mandatory && (keyset & mandatory) != mandatory)
         ret = WALLY_EINVAL; /* Mandatory field is missing*/
     else if (disallowed && (keyset & disallowed))
         ret = WALLY_EINVAL; /* Disallowed field present */
+
+#ifdef BUILD_ELEMENTS
+    if (ret == WALLY_OK && is_pset) {
+        if (!pset_check_commitment(keyset, PSBT_FT(PSBT_OUT_AMOUNT),
+                                   PSET_FT(PSET_OUT_VALUE_COMMITMENT),
+                                   PSET_FT(PSET_OUT_BLIND_VALUE_PROOF)) ||
+            !pset_check_commitment(keyset, PSET_FT(PSET_OUT_ASSET),
+                                   PSET_FT(PSET_OUT_ASSET_COMMITMENT),
+                                   PSET_FT(PSET_OUT_BLIND_ASSET_PROOF)))
+            ret = WALLY_EINVAL;
+    }
+#endif /* BUILD_ELEMENTS */
 
     return ret;
 }
