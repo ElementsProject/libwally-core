@@ -64,6 +64,26 @@ WALLY_CORE_API int wally_asset_final_vbf(
     size_t len);
 
 /**
+ * Compute the scalar offset used for blinding a confidential transaction.
+ *
+ * :param value: The transaction input value in satoshi.
+ * :param abf: Asset blinding factor.
+ * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param vbf: Value blinding factor.
+ * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param bytes_out: Destination to receive the scalar offset.
+ * :param len: Length of ``bytes_out``. Must be ``EC_SCALAR_LEN``.
+ */
+WALLY_CORE_API int wally_asset_scalar_offset(
+    uint64_t value,
+    const unsigned char *abf,
+    size_t abf_len,
+    const unsigned char *vbf,
+    size_t vbf_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Calculate the value commitment for a transaction output.
  *
  * :param value: Output value in satoshi.

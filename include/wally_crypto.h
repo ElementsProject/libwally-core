@@ -300,6 +300,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_SIGNATURE_DER_MAX_LEN 72
 /** The maximum encoded length of a DER encoded signature created with EC_FLAG_GRIND_R */
 #define EC_SIGNATURE_DER_MAX_LOW_R_LEN 71
+/** The length of a secp256k1 scalar value */
+#define EC_SCALAR_LEN 32
 
 /** Indicates that a signature using ECDSA/secp256k1 is required */
 #define EC_FLAG_ECDSA 0x1
@@ -479,6 +481,79 @@ WALLY_CORE_API int wally_ec_sig_to_public_key(
     size_t bytes_len,
     const unsigned char *sig,
     size_t sig_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Verify that a secp256k1 scalar value is valid.
+ *
+ * :param scalar: The starting scalar to have a value added to.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ */
+WALLY_CORE_API int wally_ec_scalar_verify(
+    const unsigned char *scalar,
+    size_t scalar_len);
+
+/**
+ * Add one secp256k1 scalar from another modulo the secp256k1 group size.
+ *
+ * :param scalar: The starting scalar to have a value added to.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param operand: The scalar to subtract from ``scalar``.
+ * :param operand_len: The length of ``operand`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param bytes_out: Destination for the resulting scalar.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SCALAR_LEN``.
+ *
+ * .. note:: Computes (scalar + operand) % G. Returns ``WALLY_ERROR`` if
+ *|    either input is not zero or within the secp256k1 group order G.
+ */
+WALLY_CORE_API int wally_ec_scalar_add(
+    const unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Subtract one secp256k1 scalar from another modulo the secp256k1 group size.
+ *
+ * :param scalar: The starting scalar to have a value subtract from.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param operand: The scalar to subtract from ``scalar``.
+ * :param operand_len: The length of ``operand`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param bytes_out: Destination for the resulting scalar.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SCALAR_LEN``.
+ *
+ * .. note:: Computes (scalar - operand) % G. Returns ``WALLY_ERROR`` if
+ *|    either input is not zero or within the secp256k1 group order G.
+ */
+WALLY_CORE_API int wally_ec_scalar_subtract(
+    const unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Multiply one secp256k1 scalar by another modulo the secp256k1 group size.
+ *
+ * :param scalar: The starting scalar to multiply.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param operand: The scalar to multiply ``scalar`` by.
+ * :param operand_len: The length of ``operand`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param bytes_out: Destination for the resulting scalar.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SCALAR_LEN``.
+ *
+ * .. note:: Computes (scalar * operand) % G. Returns ``WALLY_ERROR`` if
+ *|    either input is not zero or within the secp256k1 group order G.
+ */
+WALLY_CORE_API int wally_ec_scalar_multiply(
+    const unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len,
     unsigned char *bytes_out,
     size_t len);
 

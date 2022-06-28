@@ -9,6 +9,7 @@
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
 #include "src/secp256k1/include/secp256k1_whitelist.h"
+#include "ccan/ccan/endian/endian.h"
 
 
 static const unsigned char LABEL_STR[] = {
@@ -113,6 +114,26 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
 cleanup:
     clear_and_free(abf_p, values_len * sizeof(unsigned char *));
     clear_and_free(vbf_p, values_len * sizeof(unsigned char *));
+    return ret;
+}
+
+int wally_asset_scalar_offset(uint64_t value,
+                              const unsigned char *abf, size_t abf_len,
+                              const unsigned char *vbf, size_t vbf_len,
+                              unsigned char *bytes_out, size_t len)
+{
+    beint64_t tweak[4] = { 0, 0, 0, cpu_to_be64(value) };
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret;
+
+    if (bytes_out && len)
+        wally_clear(bytes_out, len);
+
+    /* Compute value * asset_blinder + value_blinder */
+    ret = wally_ec_scalar_multiply((unsigned char *)&tweak[0], sizeof(tweak),
+                                   abf, abf_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        ret = wally_ec_scalar_add(tmp, sizeof(tmp), vbf, vbf_len, bytes_out, len);
     return ret;
 }
 

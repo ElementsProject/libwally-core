@@ -174,6 +174,18 @@
       return ec_sig_to_public_key(jarg1, jarg2, null);
   }
 
+  public final static byte[] ec_scalar_add(byte[] jarg1, byte[] jarg2) {
+      return ec_scalar_add(jarg1, jarg2, null);
+  }
+
+  public final static byte[] ec_scalar_multiply(byte[] jarg1, byte[] jarg2) {
+      return ec_scalar_multiply(jarg1, jarg2, null);
+  }
+
+  public final static byte[] ec_scalar_subtract(byte[] jarg1, byte[] jarg2) {
+      return ec_scalar_subtract(jarg1, jarg2, null);
+  }
+
   public final static byte[] tx_get_input_txhash(Object jarg1, long jarg2) {
         return tx_get_input_txhash(jarg1, jarg2, null);
   }

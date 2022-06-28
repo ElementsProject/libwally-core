@@ -9,6 +9,10 @@
       return asset_final_vbf(jarg1, jarg2, jarg3, jarg4, null);
   }
 
+  public final static byte[] asset_scalar_offset(long jarg1, byte[] jarg2, byte[] jarg3) {
+      return asset_scalar_offset(jarg1, jarg2, jarg3, null);
+  }
+
   public final static byte[] asset_value_commitment(long jarg1, byte[] jarg2, byte[] jarg3) {
       return asset_value_commitment(jarg1, jarg2, jarg3, null);
   }

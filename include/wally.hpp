@@ -451,6 +451,30 @@ inline int ec_public_key_verify(const PUB_KEY& pub_key) {
     return ret;
 }
 
+template <class SCALAR, class OPERAND, class BYTES_OUT>
+inline int ec_scalar_add(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_scalar_add(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND, class BYTES_OUT>
+inline int ec_scalar_multiply(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_scalar_multiply(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND, class BYTES_OUT>
+inline int ec_scalar_subtract(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_scalar_subtract(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR>
+inline int ec_scalar_verify(const SCALAR& scalar) {
+    int ret = ::wally_ec_scalar_verify(scalar.data(), scalar.size());
+    return ret;
+}
+
 template <class PRIV_KEY, class BYTES, class BYTES_OUT>
 inline int ec_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size());
@@ -1617,6 +1641,12 @@ inline int asset_rangeproof(uint64_t value, const PUB_KEY& pub_key, const PRIV_K
     size_t n;
     int ret = ::wally_asset_rangeproof(value, pub_key.data(), pub_key.size(), priv_key.data(), priv_key.size(), asset.data(), asset.size(), abf.data(), abf.size(), vbf.data(), vbf.size(), commitment.data(), commitment.size(), extra.data(), extra.size(), generator.data(), generator.size(), min_value, exp, min_bits, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class ABF, class VBF, class BYTES_OUT>
+inline int asset_scalar_offset(uint64_t value, const ABF& abf, const VBF& vbf, BYTES_OUT& bytes_out) {
+    int ret = ::wally_asset_scalar_offset(value, abf.data(), abf.size(), vbf.data(), vbf.size(), bytes_out.data(), bytes_out.size());
+    return ret;
 }
 
 template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES, class ASSET, class ABF, class GENERATOR, class BYTES_OUT>

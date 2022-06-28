@@ -72,6 +72,9 @@ ec_sig_from_der = _wrap_bin(ec_sig_from_der, EC_SIGNATURE_LEN)
 ec_sig_normalize = _wrap_bin(ec_sig_normalize, EC_SIGNATURE_LEN)
 ec_sig_to_der = _wrap_bin(ec_sig_to_der, EC_SIGNATURE_DER_MAX_LEN, resize=True)
 ec_sig_to_public_key = _wrap_bin(ec_sig_to_public_key, EC_PUBLIC_KEY_LEN)
+ec_scalar_add = _wrap_bin(ec_scalar_add, EC_SCALAR_LEN)
+ec_scalar_multiply = _wrap_bin(ec_scalar_multiply, EC_SCALAR_LEN)
+ec_scalar_subtract = _wrap_bin(ec_scalar_subtract, EC_SCALAR_LEN)
 ecdh = _wrap_bin(ecdh, SHA256_LEN)
 
 def base58check_from_bytes(buf):
@@ -205,6 +208,7 @@ ae_sig_from_bytes = _wrap_bin(ae_sig_from_bytes, EC_SIGNATURE_LEN)
 if is_elements_build():
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)
+    asset_scalar_offset = _wrap_bin(asset_scalar_offset, EC_SCALAR_LEN)
     asset_value_commitment = _wrap_bin(asset_value_commitment, ASSET_COMMITMENT_LEN)
     asset_rangeproof_with_nonce = _wrap_bin(asset_rangeproof_with_nonce, ASSET_RANGEPROOF_MAX_LEN, resize=True)
     asset_rangeproof = _wrap_bin(asset_rangeproof, ASSET_RANGEPROOF_MAX_LEN, resize=True)

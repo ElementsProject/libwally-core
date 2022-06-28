@@ -70,6 +70,10 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ec_public_key_from_private_key' \
 ,'_wally_ec_public_key_negate' \
 ,'_wally_ec_public_key_verify' \
+,'_wally_ec_scalar_add' \
+,'_wally_ec_scalar_multiply' \
+,'_wally_ec_scalar_subtract' \
+,'_wally_ec_scalar_verify' \
 ,'_wally_ec_sig_from_bytes' \
 ,'_wally_ec_sig_from_der' \
 ,'_wally_ec_sig_normalize' \
@@ -266,6 +270,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_pak_whitelistproof' \
 ,'_wally_asset_pak_whitelistproof_size' \
 ,'_wally_asset_rangeproof' \
+,'_wally_asset_scalar_offset' \
 ,'_wally_asset_surjectionproof' \
 ,'_wally_asset_surjectionproof_size' \
 ,'_wally_asset_unblind' \

@@ -22,12 +22,14 @@ const secp256k1_context *secp_ctx(void);
 #define pubkey_create     secp256k1_ec_pubkey_create
 #define pubkey_tweak_add  secp256k1_ec_pubkey_tweak_add
 
-int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak);
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n);
 int pubkey_negate(secp256k1_pubkey *pubkey);
 int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t inputlen);
 int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags);
 int seckey_verify(const unsigned char *seckey);
+int seckey_negate(unsigned char *seckey);
+int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak);
+int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak);
 
 #define PUBKEY_COMPRESSED   SECP256K1_EC_COMPRESSED
 #define PUBKEY_UNCOMPRESSED SECP256K1_EC_UNCOMPRESSED

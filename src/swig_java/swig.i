@@ -237,6 +237,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* online_keys, size_t online_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* online_priv_key, size_t online_priv_key_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* operand, size_t operand_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* output_abf, size_t output_abf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* output_asset, size_t output_asset_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* output_generator, size_t output_generator_len) };
@@ -438,6 +439,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
 %returns_size_t(wally_asset_rangeproof_with_nonce);
 %returns_size_t(wally_asset_rangeproof);
+%returns_array_(wally_asset_scalar_offset, 6, 7, EC_SCALAR_LEN);
 %returns_size_t(wally_asset_surjectionproof_size);
 %returns_size_t(wally_asset_surjectionproof);
 %returns_uint64(wally_asset_unblind_with_nonce);
@@ -470,6 +472,10 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_array_(wally_ec_sig_normalize, 3, 4, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
 %returns_size_t(wally_ec_sig_to_der);
+%returns_array_(wally_ec_scalar_add, 5, 6, EC_SCALAR_LEN);
+%returns_array_(wally_ec_scalar_multiply, 5, 6, EC_SCALAR_LEN);
+%returns_array_(wally_ec_scalar_subtract, 5, 6, EC_SCALAR_LEN);
+%returns_void__(wally_ec_scalar_verify);
 %returns_array_(wally_ec_sig_to_public_key, 5, 6, EC_PUBLIC_KEY_LEN);
 %returns_void__(wally_ec_sig_verify);
 %returns_array_(wally_ecdh, 5, 6, SHA256_LEN);

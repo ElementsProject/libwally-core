@@ -18,11 +18,6 @@
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
 
-int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
-{
-    return secp256k1_ec_seckey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
-}
-
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
 {
     return secp256k1_ec_pubkey_combine(secp256k1_context_no_precomp, pubnonce, pubnonces, n);
@@ -46,6 +41,21 @@ int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_p
 int seckey_verify(const unsigned char *seckey)
 {
     return secp256k1_ec_seckey_verify(secp256k1_context_no_precomp, seckey);
+}
+
+int seckey_negate(unsigned char *seckey)
+{
+    return secp256k1_ec_seckey_negate(secp256k1_context_no_precomp, seckey);
+}
+
+int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
+{
+    return secp256k1_ec_seckey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
+}
+
+int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak)
+{
+    return secp256k1_ec_seckey_tweak_mul(secp256k1_context_no_precomp, seckey, tweak);
 }
 
 #ifndef SWIG
