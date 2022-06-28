@@ -61,6 +61,153 @@
       return buf;
   }
 
+  public final static byte[] psbt_get_input_issuance_amount_commitment(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_amount_commitment_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_issuance_amount_commitment(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_issuance_amount_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_amount_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_issuance_amount_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_issuance_blinding_nonce(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_blinding_nonce_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_issuance_blinding_nonce(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_issuance_asset_entropy(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_asset_entropy_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_issuance_asset_entropy(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_issuance_amount_blinding_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_issuance_amount_blinding_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_issuance_amount_blinding_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_pegin_claim_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_claim_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_pegin_claim_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_pegin_genesis_blockhash(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_genesis_blockhash_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_pegin_genesis_blockhash(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_pegin_txout_proof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_pegin_txout_proof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_pegin_txout_proof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_inflation_keys_commitment(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_inflation_keys_commitment_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_inflation_keys_commitment(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_inflation_keys_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_inflation_keys_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_inflation_keys_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_inflation_keys_blinding_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_inflation_keys_blinding_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_inflation_keys_blinding_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_utxo_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_utxo_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_utxo_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_value_commitment(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_value_commitment_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_value_commitment(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_asset(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_asset_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_asset(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_asset_commitment(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_asset_commitment_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_asset_commitment(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_value_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_value_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_value_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_asset_surjectionproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_asset_surjectionproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_asset_surjectionproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_blinding_public_key(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_blinding_public_key_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_blinding_public_key(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_ecdh_public_key(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_ecdh_public_key_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_ecdh_public_key(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_value_blinding_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_value_blinding_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_value_blinding_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_asset_blinding_surjectionproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_asset_blinding_surjectionproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_asset_blinding_surjectionproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static byte[] tx_confidential_value_from_satoshi(long satoshi) {
       return tx_confidential_value_from_satoshi(satoshi, null);
   }
