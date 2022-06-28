@@ -54,6 +54,9 @@ class Func(object):
         self.args = [Arg(d) for d in definition.split(u', ')]
         self.is_elements = self.name not in non_elements
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 
 def is_array(func, arg, n, num_args, types):
     return arg.type in types and n != num_args -1 and \
@@ -215,8 +218,9 @@ def gen_wally_hpp(funcs):
 
 
 def gen_wasm_exports(funcs):
-    exports = ','.join([f"'_{func.name}'" for func in funcs if not func.is_elements])
-    elements_exports = ','.join([f"'_{func.name}'" for func in funcs if func.is_elements])
+    funcs = sorted(funcs)
+    exports = ','.join([f"'_{func.name}' \\\n" for func in funcs if not func.is_elements])
+    elements_exports = ','.join([f"'_{func.name}' \\\n" for func in funcs if func.is_elements])
 
     text = [
         f"EXPORTED_FUNCTIONS=\"['_malloc','_free',{exports}\"",
