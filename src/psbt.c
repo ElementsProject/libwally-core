@@ -863,7 +863,7 @@ int wally_psbt_set_pset_modifiable_flags(struct wally_psbt *psbt, uint32_t flags
 {
     if (!psbt_is_valid(psbt) || psbt->version == PSBT_0 || flags & ~PSET_TXMOD_ALL_FLAGS)
         return WALLY_EINVAL;
-    psbt->pset_modifiable_flags = flags;
+    psbt->pset_modifiable_flags = flags & ~WALLY_PSET_TXMOD_RESERVED;
     return WALLY_OK;
 }
 
@@ -1685,7 +1685,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     /* Reset modifiable flags for loaded PSBTs */
     (*output)->tx_modifiable_flags = 0;
 #ifdef BUILD_ELEMENTS
-    (*output)->tx_modifiable_flags = 0;
+    (*output)->pset_modifiable_flags = 0;
 #endif /* BUILD_ELEMENTS */
 
     /* Read globals first */
@@ -1772,6 +1772,8 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
             }
             case PSET_FT(PSET_GLOBAL_TX_MODIFIABLE):
                 (*output)->pset_modifiable_flags = pull_u8_subfield(cursor, max);
+                /* Ignore the reserved flag if set */
+                (*output)->pset_modifiable_flags &= ~WALLY_PSET_TXMOD_RESERVED;
                 if ((*output)->pset_modifiable_flags & ~PSET_TXMOD_ALL_FLAGS)
                     ret = WALLY_EINVAL; /* Invalid flags */
                 break;

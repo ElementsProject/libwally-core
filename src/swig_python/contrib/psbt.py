@@ -85,16 +85,19 @@ class PSBTTests(unittest.TestCase):
         self._try_invalid(findfn, psbt, map_val)
         self.assertEqual(findfn(psbt, 0, valid_item), 1)
 
-    def _try_get_set_global_i(self, setfn, clearfn, getfn, psbt, valid_value):
+    def _try_get_set_global_i(self, setfn, clearfn, getfn, psbt, valid_value, roundtrip=True):
         self._throws(setfn, None, valid_value) # Null PSBT
         setfn(psbt, valid_value) # Set
-        self._round_trip(psbt)
+        if roundtrip:
+            self._round_trip(psbt)
         self._throws(getfn, None) # Null PSBT
         ret = getfn(psbt) # Get
-        self.assertEqual(valid_value, ret)
+        if roundtrip:
+            self.assertEqual(valid_value, ret)
         if clearfn:
             clearfn(psbt)
-            self._round_trip(psbt)
+            if roundtrip:
+                self._round_trip(psbt)
 
     def _try_get_set_global_m(self, setfn, sizefn, lenfn, getfn, findfn, psbt, valid_value, valid_item):
         self._throws(setfn, None, valid_value) # Null PSBT
@@ -287,8 +290,12 @@ class PSBTTests(unittest.TestCase):
                                        pset2, dummy_offsets, dummy_bytes)
 
             # Elements TX Modifiable Flags
+            # Bit 0 is isgnored and not serialized hence roundtrip=False
             self._try_get_set_global_i(psbt_set_pset_modifiable_flags, None,
-                                       psbt_get_pset_modifiable_flags, pset2, 1)
+                                       psbt_get_pset_modifiable_flags, pset2, 1,
+                                       roundtrip=False)
+            psbt_set_pset_modifiable_flags(pset2, 1)
+            self.assertEqual(psbt_get_pset_modifiable_flags(pset2), 0) # Ignored
 
         #
         # Inputs

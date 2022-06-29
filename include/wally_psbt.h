@@ -28,7 +28,7 @@ extern "C" {
 #define WALLY_PSBT_TXMOD_OUTPUTS 0x2 /* Outputs can be modified */
 #define WALLY_PSBT_TXMOD_SINGLE 0x4 /* SIGHASH_SINGLE signature is present */
 
-#define WALLY_PSET_TXMOD_UNBLINDED 0x1 /* Elements: transaction is not blinded. */
+#define WALLY_PSET_TXMOD_RESERVED 0x1 /* Elements: Reserved: not used and ignored if set */
 
 /* ID flags indicating unique id calculation */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */

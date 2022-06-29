@@ -725,7 +725,9 @@
     {
       "comment": "PSET Version TX Modifiable",
       "psbt": "cHNldP8BAgQCAAAAAQQBAAEFAQAH/ARwc2V0AQEBAfsEAgAAAAA=",
-      "is_pset": true
+      "is_pset": true,
+      "can_round_trip": false,
+      "explaination": "Bit zero is ignored and is not round-tripped"
     },
     {
       "comment": "PSET w/ All Issuance Fields",
