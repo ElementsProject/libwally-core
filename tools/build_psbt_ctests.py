@@ -4,12 +4,10 @@ import json
 
 def dump(cases):
     for case in cases:
-        if case.get('is_pset'):
-            print('#ifdef BUILD_ELEMENTS')
         print('    /* {} */'.format(case['comment']))
-        print('    {{"{}"}},'.format(case['psbt']))
-        if case.get('is_pset'):
-            print('#endif /* BUILD_ELEMENTS */')
+        round_trip = 'true' if case.get('can_round_trip', True) else 'false'
+        is_pset = 'true' if case.get('is_pset', False) else 'false'
+        print('    {{"{}", {}, {}}},'.format(case['psbt'], is_pset, round_trip))
         if case != cases[-1]:
             print()
 
@@ -19,6 +17,8 @@ with open('src/data/psbt.json', 'r') as f:
 print('''/* Generated file - do not edit! */
 struct psbt_test {
     const char *base64;
+    const bool is_pset;
+    const bool can_round_trip;
 };
 
 static const struct psbt_test invalid_psbts[] =

@@ -44,7 +44,7 @@ static bool is_pset_key(const unsigned char *key, size_t key_len)
 static int scalar_verify(const unsigned char *key, size_t key_len,
                          const unsigned char *val, size_t val_len)
 {
-    return key && key_len == WALLY_SCALAR_OFFSET_LEN && !val && !val_len ? WALLY_OK : WALLY_EINVAL;
+    return !val && !val_len ? wally_ec_scalar_verify(key, key_len) : WALLY_EINVAL;
 }
 #endif /* BUILD_ELEMENTS */
 
@@ -1186,9 +1186,9 @@ static void pull_varint_buff(const unsigned char **cursor, size_t *max,
     *dst = pull_skip(cursor, max, varint_len);
 }
 
-static int pull_map(const unsigned char **cursor, size_t *max,
-                    const unsigned char *key, size_t key_len,
-                    struct wally_map *map_in)
+static int pull_map_item(const unsigned char **cursor, size_t *max,
+                         const unsigned char *key, size_t key_len,
+                         struct wally_map *map_in)
 {
     const unsigned char *val;
     size_t val_len;
@@ -1377,7 +1377,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_tx_output(cursor, max, &result->witness_utxo);
                 break;
             case PSBT_IN_PARTIAL_SIG:
-                ret = pull_map(cursor, max, key, key_len, &result->signatures);
+                ret = pull_map_item(cursor, max, key, key_len, &result->signatures);
                 break;
             case PSBT_IN_SIGHASH_TYPE:
                 result->sighash = pull_le32_subfield(cursor, max);
@@ -1391,7 +1391,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                                         wally_psbt_input_set_witness_script);
                 break;
             case PSBT_IN_BIP32_DERIVATION:
-                ret = pull_map(cursor, max, key, key_len, &result->keypaths);
+                ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
                 break;
             case PSBT_IN_FINAL_SCRIPTSIG:
                 ret = pull_input_varbuf(cursor, max, result,
@@ -1544,7 +1544,7 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                                          wally_psbt_output_set_witness_script);
                 break;
             case PSBT_OUT_BIP32_DERIVATION:
-                ret = pull_map(cursor, max, key, key_len, &result->keypaths);
+                ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
                 break;
             case PSBT_OUT_AMOUNT:
                 ret = wally_psbt_output_set_amount(result, pull_le64_subfield(cursor, max));
@@ -1685,7 +1685,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                     wally_tx_free(tx);
                 break;
             case PSBT_GLOBAL_XPUB:
-                ret = pull_map(cursor, max, key, key_len, &(*output)->global_xpubs);
+                ret = pull_map_item(cursor, max, key, key_len, &(*output)->global_xpubs);
                 break;
             case PSBT_GLOBAL_VERSION:
                 (*output)->version = pull_le32_subfield(cursor, max);
@@ -1711,9 +1711,15 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                     ret = WALLY_EINVAL; /* Invalid flags */
                 break;
 #ifdef BUILD_ELEMENTS
-            case PSET_FT(PSET_GLOBAL_SCALAR):
-                ret = pull_map(cursor, max, key, key_len, &(*output)->global_scalars);
+            case PSET_FT(PSET_GLOBAL_SCALAR): {
+                const unsigned char *workaround;
+                size_t workaround_len;
+
+                /* Work around an elements bug with scalars */
+                pull_varlength_buff(cursor, max, &workaround, &workaround_len);
+                ret = map_add(&(*output)->global_scalars, key, key_len, NULL, 0, false, false);
                 break;
+            }
             case PSET_FT(PSET_GLOBAL_TX_MODIFIABLE):
                 (*output)->pset_modifiable_flags = pull_u8_subfield(cursor, max);
                 if ((*output)->pset_modifiable_flags & ~PSET_TXMOD_ALL_FLAGS)

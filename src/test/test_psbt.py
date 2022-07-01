@@ -51,16 +51,26 @@ class PSBTTests(unittest.TestCase):
             if case.get('is_pset', False) and not is_elements_build:
                 continue # No Elements support, skip this test case
 
+            # Cases that test workarounds for elements serialization bugs
+            # don't directly round trip, as wally doesn't reproduce those bugs
+            can_round_trip = case.get('can_round_trip', True)
+
             psbt = self.parse_base64(case['psbt'])
-            self.assertEqual(self.to_base64(psbt), case['psbt'])
+            serialized = self.to_base64(psbt)
+            expected = case['psbt']
+            if not can_round_trip:
+                # Make sure the good serialization can round-trip
+                good_psbt = self.parse_base64(serialized)
+                expected = self.to_base64(good_psbt)
+                wally_psbt_free(good_psbt)
+            self.assertEqual(serialized, expected)
 
             ret = wally_psbt_clone_alloc(psbt, 0, clone)
-            self.assertEqual(self.to_base64(clone), case['psbt'])
+            self.assertEqual(self.to_base64(clone), serialized)
             wally_psbt_free(clone)
 
             ret, length = wally_psbt_get_length(psbt, 0)
             self.assertEqual(ret, WALLY_OK)
-
 
             ret, written = wally_psbt_to_bytes(psbt, 0, buf, buf_len)
             self.assertEqual((ret, written), (WALLY_OK, length))

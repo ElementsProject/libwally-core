@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <wally_psbt.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -37,14 +38,21 @@ int main(void)
         unsigned char *bytes;
         size_t is_elements, len, written;
 
+#ifndef BUILD_ELEMENTS
+        if (valid_psbts[i].is_pset)
+            continue;
+#endif /* ndef BUILD_ELEMENTS */
+
         if (wally_psbt_from_base64(base64_in, &psbt) != WALLY_OK)
             fail("Failed to parse psbt %s", base64_in);
 
         if (wally_psbt_to_base64(psbt, 0, &output) != WALLY_OK)
             fail("Failed to base64 psbt %s", base64_in);
 
-        if (strcmp(output, base64_in) != 0)
-            fail("psbt %s turned into %s?", base64_in, output);
+        if (valid_psbts[i].can_round_trip) {
+            if (strcmp(output, base64_in) != 0)
+                fail("psbt %s turned into %s?", base64_in, output);
+        }
 
         wally_free_string(output);
 
@@ -55,16 +63,16 @@ int main(void)
         if (wally_psbt_to_bytes(psbt, 0, bytes, len, &written) != WALLY_OK)
             fail("psbt %s could not to_bytes?", base64_in);
 
-        if (len != written) {
-            fail("psbt %s to_bytes to %zu not %zu?", base64_in,
-                 written, len);
-        }
+        if (len != written)
+            fail("psbt %s to_bytes to %zu not %zu?", base64_in, written, len);
 
         if (wally_base64_from_bytes(bytes, len, 0, &output) != WALLY_OK)
             fail("Failed to convert psbt bytes to base64");
 
-        if (strcmp(output, base64_in) != 0)
-            fail("psbt[%zi] base64 %s not %s", i, output, base64_in);
+        if (valid_psbts[i].can_round_trip) {
+            if (strcmp(output, base64_in) != 0)
+                fail("psbt[%zi] base64 %s not %s", i, output, base64_in);
+        }
 
         wally_free_string(output);
         output = NULL;
@@ -85,8 +93,10 @@ int main(void)
             if (wally_psbt_to_base64(psbt_clone, 0, &output) != WALLY_OK)
                 fail("Failed to base64 psbt combined %s", base64_in);
 
-            if (strcmp(output, base64_in) != 0)
-                fail("psbt combine %s turned into %s?", base64_in, output);
+            if (valid_psbts[i].can_round_trip) {
+                if (strcmp(output, base64_in) != 0)
+                    fail("psbt combine %s turned into %s?", base64_in, output);
+            }
         }
 
         wally_free_string(output);
@@ -99,8 +109,10 @@ int main(void)
         if (wally_psbt_to_base64(psbt_clone, 0, &output) != WALLY_OK)
             fail("Failed to base64 psbt clone %s", base64_in);
 
-        if (strcmp(output, base64_in) != 0)
-            fail("psbt clone %s turned into %s?", base64_in, output);
+        if (valid_psbts[i].can_round_trip) {
+            if (strcmp(output, base64_in) != 0)
+                fail("psbt clone %s turned into %s?", base64_in, output);
+        }
 
         wally_free_string(output);
         wally_psbt_free(psbt_clone);
