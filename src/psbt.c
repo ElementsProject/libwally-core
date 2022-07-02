@@ -1212,17 +1212,64 @@ static int pull_tx(const unsigned char **cursor, size_t *max,
     return ret;
 }
 
+#ifdef BUILD_ELEMENTS
+typedef size_t (*commitment_len_fn_t)(const unsigned char *);
+
+static bool pull_commitment(const unsigned char **cursor, size_t *max,
+                            const unsigned char **dst, size_t *len,
+                            commitment_len_fn_t len_fn)
+{
+    if (!*cursor || !*max)
+        return false;
+
+    *len = len_fn(*cursor);
+    if (*len == 1u && **cursor)
+        return false; /* NULL commitment must have a zero prefix */
+    if (!(*dst = pull_skip(cursor, max, *len)))
+        return false;
+    if (*len == 1u) {
+        *dst = NULL; /* NULL commitment */
+        *len = 0;
+    }
+    return true;
+}
+#endif /* BUILD_ELEMENTS */
+
 static int pull_tx_output(const unsigned char **cursor, size_t *max,
-                          struct wally_tx_output **txout_out)
+                          bool is_pset, struct wally_tx_output **txout_out)
 {
     const unsigned char *val, *script;
     size_t val_len, script_len;
     uint64_t satoshi;
     int ret;
 
+    (void)is_pset;
     if (*txout_out)
-        ret = WALLY_EINVAL; /* Duplicate */
+        return WALLY_EINVAL; /* Duplicate */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
+
+#ifdef BUILD_ELEMENTS
+    if (is_pset) {
+        const unsigned char *asset, *value, *nonce;
+        size_t asset_len, value_len, nonce_len;
+
+        if (!pull_commitment(&val, &val_len, &asset, &asset_len,
+                             confidential_asset_length_from_bytes) ||
+            !pull_commitment(&val, &val_len, &value, &value_len,
+                             confidential_value_length_from_bytes) ||
+            !pull_commitment(&val, &val_len, &nonce, &nonce_len,
+                             confidential_nonce_length_from_bytes))
+            return WALLY_EINVAL;
+
+        /* Note unlike non-Elements, script can be empty for fee outputs */
+        pull_varint_buff(&val, &val_len, &script, &script_len);
+        ret = wally_tx_elements_output_init_alloc(script, script_len, asset, asset_len,
+                                                  value, value_len, nonce, nonce_len,
+                                                  NULL, 0, NULL, 0, txout_out);
+        subfield_nomore_end(cursor, max, val, val_len);
+        return ret;
+    }
+#endif /* BUILD_ELEMENTS */
     satoshi = pull_le64(&val, &val_len);
     pull_varint_buff(&val, &val_len, &script, &script_len);
     if (!script || !script_len)
@@ -1374,7 +1421,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_tx(cursor, max, tx_flags, &result->utxo);
                 break;
             case PSBT_IN_WITNESS_UTXO:
-                ret = pull_tx_output(cursor, max, &result->witness_utxo);
+                ret = pull_tx_output(cursor, max, is_pset, &result->witness_utxo);
                 break;
             case PSBT_IN_PARTIAL_SIG:
                 ret = pull_map_item(cursor, max, key, key_len, &result->signatures);
@@ -1914,17 +1961,50 @@ static void push_psbt_map(unsigned char **cursor, size_t *max,
     }
 }
 
+#ifdef BUILD_ELEMENTS
+static bool push_commitment(unsigned char **cursor, size_t *max,
+                            const unsigned char *commitment, size_t commitment_len)
+{
+    if (!BYTES_VALID(commitment, commitment_len))
+        return false;
+    if (!commitment)
+        push_u8(cursor, max, 0); /* NULL commitment */
+    else
+        push_bytes(cursor, max, commitment, commitment_len);
+    return true;
+}
+#endif /* BUILD_ELEMENTS */
+
+static int push_tx_output(unsigned char **cursor, size_t *max,
+                          bool is_pset, const struct wally_tx_output *txout)
+{
+#ifdef BUILD_ELEMENTS
+    if (is_pset) {
+        if (!push_commitment(cursor, max, txout->asset, txout->asset_len) ||
+            !push_commitment(cursor, max, txout->value, txout->value_len) ||
+            !push_commitment(cursor, max, txout->nonce, txout->nonce_len))
+            return WALLY_EINVAL;
+        push_varbuff(cursor, max, txout->script, txout->script_len);
+    } else
+#endif /* BUILD_ELEMENTS */
+    {
+        (void)is_pset;
+        push_le64(cursor, max, txout->satoshi);
+        push_varbuff(cursor, max, txout->script, txout->script_len);
+    }
+    return WALLY_OK;
+}
+
 static int push_psbt_input(const struct wally_psbt *psbt,
-                           unsigned char **cursor, size_t *max, uint32_t flags,
+                           unsigned char **cursor, size_t *max, uint32_t tx_flags,
                            const struct wally_psbt_input *input)
 {
 #ifdef BUILD_ELEMENTS
     uint64_t ft;
     size_t index;
 #endif
+    const bool is_pset = (tx_flags & WALLY_TX_FLAG_USE_ELEMENTS) != 0;
     int ret;
-
-    (void)flags;
 
     /* Non witness utxo */
     if (input->utxo) {
@@ -1937,20 +2017,19 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 
     /* Witness utxo */
     if (input->witness_utxo) {
-        unsigned char wit_bytes[50], *w = wit_bytes; /* Witness outputs can be no larger than 50 bytes as specified in BIP 141 */
-        size_t wit_max = sizeof(wit_bytes);
-
+        size_t txout_len = 0;
         push_psbt_key(cursor, max, PSBT_IN_WITNESS_UTXO, NULL, 0);
-
-        push_le64(&w, &wit_max, input->witness_utxo->satoshi);
-        push_varbuff(&w, &wit_max,
-                     input->witness_utxo->script,
-                     input->witness_utxo->script_len);
-        if (!w)
-            return WALLY_EINVAL;
-
-        push_varbuff(cursor, max, wit_bytes, w - wit_bytes);
+        /* Push the txout length then its contents */
+        ret = push_tx_output(NULL, &txout_len, is_pset, input->witness_utxo);
+        if (ret == WALLY_OK) {
+            push_varint(cursor, max, txout_len);
+            ret = push_tx_output(cursor, max, is_pset,
+                                 input->witness_utxo);
+        }
+        if (ret != WALLY_OK)
+            return ret;
     }
+
     /* Partial sigs */
     push_psbt_map(cursor, max, PSBT_IN_PARTIAL_SIG, false, &input->signatures);
     /* Sighash type */
@@ -2044,7 +2123,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 }
 
 static int push_psbt_output(const struct wally_psbt *psbt,
-                            unsigned char **cursor, size_t *max,
+                            unsigned char **cursor, size_t *max, bool is_pset,
                             const struct wally_psbt_output *output)
 {
 #ifdef BUILD_ELEMENTS
@@ -2062,7 +2141,7 @@ static int push_psbt_output(const struct wally_psbt *psbt,
     push_psbt_map(cursor, max, PSBT_OUT_BIP32_DERIVATION, false, &output->keypaths);
 
     if (psbt->version == PSBT_2) {
-        if (!output->has_amount || !output->script || !output->script_len)
+        if (!output->has_amount || (!is_pset && (!output->script || !output->script_len)))
             return WALLY_EINVAL; /* Must be provided */
         push_psbt_le64(cursor, max, PSBT_OUT_AMOUNT, false, output->amount);
         push_psbt_varbuff(cursor, max, PSBT_OUT_SCRIPT, false,
@@ -2177,7 +2256,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     }
     for (i = 0; i < psbt->num_outputs; ++i) {
         const struct wally_psbt_output *output = &psbt->outputs[i];
-        if ((ret = push_psbt_output(psbt, &cursor, &max, output)) != WALLY_OK)
+        if ((ret = push_psbt_output(psbt, &cursor, &max, !!is_elements, output)) != WALLY_OK)
             return ret;
     }
 
