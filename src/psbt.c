@@ -300,7 +300,7 @@ static int pset_input_field_verify(uint32_t field_type,
     case PSET_IN_ISSUANCE_VALUE_COMMITMENT:
     case PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT:
         /* 33 byte commitments */
-        if (val_len != ASSET_COMMITMENT_LEN)
+        if (confidential_value_length_from_bytes(val) != WALLY_TX_ASSET_CT_LEN)
             return WALLY_EINVAL;
         break;
     case PSET_IN_ISSUANCE_VALUE_RANGEPROOF:
@@ -334,6 +334,7 @@ static int pset_map_input_field_verify(const unsigned char *key, size_t key_len,
 static int pset_output_field_verify(uint32_t field_type,
                                     const unsigned char *val, size_t val_len)
 {
+    size_t len;
     if (!val || !val_len)
         return WALLY_EINVAL;
     switch (field_type) {
@@ -343,9 +344,13 @@ static int pset_output_field_verify(uint32_t field_type,
             return WALLY_EINVAL;
         break;
     case PSET_OUT_VALUE_COMMITMENT:
+        len = confidential_value_length_from_bytes(val);
+        if (len != WALLY_TX_ASSET_CT_VALUE_LEN && len != WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
+            return WALLY_EINVAL;
+        break;
     case PSET_OUT_ASSET_COMMITMENT:
         /* 33 byte commitments */
-        if (val_len != ASSET_COMMITMENT_LEN)
+        if (confidential_asset_length_from_bytes(val) != WALLY_TX_ASSET_CT_LEN)
             return WALLY_EINVAL;
         break;
     case PSET_OUT_BLINDING_PUBKEY:
@@ -400,12 +405,6 @@ static int pset_field_get(const struct wally_map *map_in, uint32_t type,
     if (written)
         *written = 0;
     if (!map_in || !bytes_out || !map_in->verify_fn || !written)
-        return WALLY_EINVAL;
-    if (map_in->verify_fn == pset_map_output_field_verify &&
-        (type == PSET_OUT_BLINDING_PUBKEY || type == PSET_OUT_ECDH_PUBKEY)) {
-        if (len != EC_PUBLIC_KEY_LEN)
-            return WALLY_EINVAL; /* Pubkey: check length only, not content */
-    } else if (map_in->verify_fn(NULL, type, bytes_out, len) != WALLY_OK)
         return WALLY_EINVAL;
     ret = wally_map_find_integer(map_in, type, &index);
     if (ret == WALLY_OK && index) {

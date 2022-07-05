@@ -230,7 +230,9 @@ class PSBTTests(unittest.TestCase):
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
-            dummy_commitment = bytearray(b'\x44' * ASSET_COMMITMENT_LEN)
+            dummy_asset_commitment = bytearray(b'\x0a' * ASSET_COMMITMENT_LEN)
+            dummy_value_commitment = bytearray(b'\x08' * WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
+            dummy_nonce_commitment = bytearray(b'\x02' * ASSET_COMMITMENT_LEN)
             dummy_asset = bytearray(b'\x00' * ASSET_TAG_LEN)
             dummy_nonce = bytearray(b'\x77' * ASSET_TAG_LEN)
 
@@ -430,18 +432,18 @@ class PSBTTests(unittest.TestCase):
                 # PSET: blinded issuance amount (issuance amount commitment)
                 (psbt_set_input_issuance_amount_commitment,
                  psbt_get_input_issuance_amount_commitment,
-                 psbt_clear_input_issuance_amount_commitment, dummy_commitment, dummy_txid),
+                 psbt_clear_input_issuance_amount_commitment, dummy_value_commitment, dummy_asset_commitment),
                 # PSET: blinded issuance amount rangeproof
                 (psbt_set_input_issuance_amount_rangeproof, psbt_get_input_issuance_amount_rangeproof,
                  psbt_clear_input_issuance_amount_rangeproof, dummy_bytes, None),
                 # PSET: issuance blinding nonce
                 (psbt_set_input_issuance_blinding_nonce,
                  psbt_get_input_issuance_blinding_nonce,
-                 psbt_clear_input_issuance_blinding_nonce, dummy_nonce, dummy_commitment),
+                 psbt_clear_input_issuance_blinding_nonce, dummy_nonce, dummy_nonce_commitment),
                 # PSET: issuance blinding entropy
                 (psbt_set_input_issuance_asset_entropy,
                  psbt_get_input_issuance_asset_entropy,
-                 psbt_clear_input_issuance_asset_entropy, dummy_nonce, dummy_commitment),
+                 psbt_clear_input_issuance_asset_entropy, dummy_nonce, dummy_asset_commitment),
                 # PSET: blinded issuance amount value rangeproof
                 #       (Confusing: this proves the blinded issuance amount matches
                 #        the unblinded amount, for constructors/blinders use)
@@ -453,13 +455,13 @@ class PSBTTests(unittest.TestCase):
                  psbt_clear_input_pegin_claim_script, dummy_bytes, None),
                 # PSET: peg-in genesis blockhash
                 (psbt_set_input_pegin_genesis_blockhash, psbt_get_input_pegin_genesis_blockhash,
-                 psbt_clear_input_pegin_genesis_blockhash, dummy_txid, dummy_commitment),
+                 psbt_clear_input_pegin_genesis_blockhash, dummy_txid, dummy_asset_commitment),
                 # PSET: peg-in txout proof
                 (psbt_set_input_pegin_txout_proof, psbt_get_input_pegin_txout_proof,
                  psbt_clear_input_pegin_txout_proof, dummy_bytes, None),
                 # PSET: blinded number of inflation keys (issuance keys commitment)
                 (psbt_set_input_inflation_keys_commitment, psbt_get_input_inflation_keys_commitment,
-                 psbt_clear_input_inflation_keys_commitment, dummy_commitment, dummy_txid),
+                 psbt_clear_input_inflation_keys_commitment, dummy_value_commitment, dummy_asset_commitment),
                 # PSET: blinded inflation keys rangeproof
                 (psbt_set_input_inflation_keys_rangeproof, psbt_get_input_inflation_keys_rangeproof,
                  psbt_clear_input_inflation_keys_rangeproof, dummy_bytes, None),
@@ -542,11 +544,11 @@ class PSBTTests(unittest.TestCase):
             cases = [
                 # PSET: blinded issuance amount (issuance amount commitment)
                 (psbt_set_output_value_commitment, psbt_get_output_value_commitment,
-                 psbt_clear_output_value_commitment, dummy_commitment, dummy_txid),
+                 psbt_clear_output_value_commitment, dummy_value_commitment, dummy_asset_commitment),
                 (psbt_set_output_asset, psbt_get_output_asset,
-                 psbt_clear_output_asset, dummy_asset, dummy_commitment),
+                 psbt_clear_output_asset, dummy_asset, dummy_asset_commitment),
                 (psbt_set_output_asset_commitment, psbt_get_output_asset_commitment,
-                 psbt_clear_output_asset_commitment, dummy_commitment, dummy_txid),
+                 psbt_clear_output_asset_commitment, dummy_asset_commitment, dummy_value_commitment),
                 (psbt_set_output_value_rangeproof, psbt_get_output_value_rangeproof,
                  psbt_clear_output_value_rangeproof, dummy_bytes, None),
                 (psbt_set_output_asset_surjectionproof,
