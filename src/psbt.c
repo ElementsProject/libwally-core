@@ -1225,9 +1225,8 @@ static bool pull_commitment(const unsigned char **cursor, size_t *max,
     if (!*cursor || !*max)
         return false;
 
-    *len = len_fn(*cursor);
-    if (*len == 1u && **cursor)
-        return false; /* NULL commitment must have a zero prefix */
+    if (!(*len = len_fn(*cursor)))
+        return false; /* Invalid commitment */
     if (!(*dst = pull_skip(cursor, max, *len)))
         return false;
     if (*len == 1u) {

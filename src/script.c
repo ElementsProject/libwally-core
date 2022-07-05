@@ -188,23 +188,20 @@ static size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
     return len;
 }
 
-static size_t confidential_commitment_length_from_bytes(const unsigned char *bytes,
-                                                        bool ct_value)
+static size_t get_commitment_len(const unsigned char *bytes,
+                                 unsigned char prefixA, unsigned char prefixB)
 {
-    if (bytes) {
-        switch (*bytes) {
-        case 1:
-            return ct_value ? WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN : WALLY_TX_ASSET_CT_LEN;
-        case WALLY_TX_ASSET_CT_VALUE_PREFIX_A:
-        case WALLY_TX_ASSET_CT_VALUE_PREFIX_B:
-        case WALLY_TX_ASSET_CT_ASSET_PREFIX_A:
-        case WALLY_TX_ASSET_CT_ASSET_PREFIX_B:
-        case WALLY_TX_ASSET_CT_NONCE_PREFIX_A:
-        case WALLY_TX_ASSET_CT_NONCE_PREFIX_B:
-            return WALLY_TX_ASSET_CT_LEN;
-        }
+    if (!bytes || !*bytes)
+        return sizeof(uint8_t); /* Null commitment */
+    if (*bytes == 1) {
+        /* Explicit value (unblinded) */
+        if (prefixA == WALLY_TX_ASSET_CT_VALUE_PREFIX_A)
+            return WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN; /* uint64 value */
+        return WALLY_TX_ASSET_CT_LEN; /* 32 byte asset tag, or nonce */
     }
-    return sizeof(uint8_t);
+    if (*bytes == prefixA || *bytes == prefixB)
+        return WALLY_TX_ASSET_CT_LEN; /* 32 byte commitment */
+    return 0; /* Invalid serialization */
 }
 
 static size_t confidential_commitment_varint_from_bytes(const unsigned char *bytes,
@@ -230,17 +227,17 @@ static size_t confidential_commitment_varint_from_bytes(const unsigned char *byt
 
 size_t confidential_asset_length_from_bytes(const unsigned char *bytes)
 {
-    return confidential_commitment_length_from_bytes(bytes, false);
+    return get_commitment_len(bytes, WALLY_TX_ASSET_CT_ASSET_PREFIX_A, WALLY_TX_ASSET_CT_ASSET_PREFIX_B);
 }
 
 size_t confidential_value_length_from_bytes(const unsigned char *bytes)
 {
-    return confidential_commitment_length_from_bytes(bytes, true);
+    return get_commitment_len(bytes, WALLY_TX_ASSET_CT_VALUE_PREFIX_A, WALLY_TX_ASSET_CT_VALUE_PREFIX_B);
 }
 
 size_t confidential_nonce_length_from_bytes(const unsigned char *bytes)
 {
-    return confidential_commitment_length_from_bytes(bytes, false);
+    return get_commitment_len(bytes, WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B);
 }
 
 size_t confidential_asset_varint_from_bytes(const unsigned char *bytes, uint64_t *v)

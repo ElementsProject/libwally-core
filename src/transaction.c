@@ -1545,6 +1545,47 @@ int wally_tx_get_witness_count(const struct wally_tx *tx, size_t *written)
     return WALLY_OK;
 }
 
+static int get_txout_commitments_size(const struct wally_tx_output *output,
+                                      size_t *written)
+{
+#ifdef BUILD_ELEMENTS
+    size_t c_n;
+
+    if (!(*written = confidential_asset_length_from_bytes(output->asset)))
+        return WALLY_EINVAL;
+    if (!(c_n = confidential_value_length_from_bytes(output->value)))
+        return WALLY_EINVAL;
+    *written += c_n;
+    if (!(c_n = confidential_nonce_length_from_bytes(output->nonce)))
+        return WALLY_EINVAL;
+    *written += c_n;
+#else
+    (void)output;
+    *written = 0;
+#endif
+    return WALLY_OK;
+}
+
+static int get_txin_issuance_size(const struct wally_tx_input *input,
+                                  size_t *written)
+{
+    *written = 0;
+#ifdef BUILD_ELEMENTS
+    if (input->features & WALLY_TX_IS_ISSUANCE) {
+        size_t c_n;
+
+        if (!(*written = confidential_value_length_from_bytes(input->issuance_amount)))
+            return WALLY_EINVAL;
+        if (!(c_n = confidential_value_length_from_bytes(input->inflation_keys)))
+            return WALLY_EINVAL;
+        *written = *written + c_n + sizeof(input->blinding_nonce) + sizeof(input->entropy);
+    }
+#else
+    (void)input;
+#endif
+    return WALLY_OK;
+}
+
 /* We compute the size of the witness separately so we can compute vsize
  * without iterating the transaction twice with different flags.
  */
@@ -1570,24 +1611,30 @@ static int tx_get_lengths(const struct wally_tx *tx,
             return WALLY_ERROR; /* Segwit tx hashing uses bip143 opts member */
 
         if (opts->bip143) {
+            size_t issuance_size, amount_size = sizeof(uint64_t);
+
             *base_size = sizeof(uint32_t) + /* version */
                          SHA256_LEN + /* hash prevouts */
                          SHA256_LEN + /* hash sequence */
                          WALLY_TXHASH_LEN + sizeof(uint32_t) + /* outpoint + index */
                          varbuff_get_length(opts->script_len) + /* script */
-                         (is_elements ? confidential_value_length_from_bytes(opts->value) + SHA256_LEN :
-                          sizeof(uint64_t)) + /* amount */
                          sizeof(uint32_t) + /* input sequence */
                          SHA256_LEN + /* hash outputs */
                          ((is_elements && sh_rangeproof) ? SHA256_LEN : 0) + /* rangeproof */
                          sizeof(uint32_t) + /* nlocktime */
                          sizeof(uint32_t); /* tx sighash */
-#ifdef BUILD_ELEMENTS
-            if (tx->inputs[opts->index].features & WALLY_TX_IS_ISSUANCE)
-                *base_size += 2 * WALLY_TX_ASSET_TAG_LEN +
-                              confidential_value_length_from_bytes(tx->inputs[opts->index].issuance_amount) +
-                              confidential_value_length_from_bytes(tx->inputs[opts->index].inflation_keys);
-#endif
+
+            if (is_elements) {
+                /* Amount, possibly blinded */
+                if (!(amount_size = confidential_value_length_from_bytes(opts->value)))
+                    return WALLY_EINVAL;
+                amount_size += SHA256_LEN; /* TODO: Comment what this represents */
+            }
+            *base_size += amount_size;
+
+            if (get_txin_issuance_size(tx->inputs + opts->index, &issuance_size) != WALLY_OK)
+                return WALLY_EINVAL;
+            *base_size += issuance_size;
             *witness_size = 0;
             return WALLY_OK;
         }
@@ -1611,6 +1658,8 @@ static int tx_get_lengths(const struct wally_tx *tx,
         n += sizeof(uint8_t); /* witness flag */
     for (i = 0; i < tx->num_inputs; ++i) {
         const struct wally_tx_input *input = tx->inputs + i;
+        size_t issuance_size = 0;
+
         if (anyonecanpay && i != opts->index)
             continue; /* anyonecanpay only signs the given index */
 
@@ -1618,14 +1667,9 @@ static int tx_get_lengths(const struct wally_tx *tx,
              sizeof(input->index) +
              sizeof(input->sequence);
 
-#ifdef BUILD_ELEMENTS
-        if (input->features & WALLY_TX_IS_ISSUANCE) {
-            n += sizeof(input->blinding_nonce) +
-                 sizeof(input->entropy) +
-                 confidential_value_length_from_bytes(input->issuance_amount) +
-                 confidential_value_length_from_bytes(input->inflation_keys);
-        }
-#endif
+        if (get_txin_issuance_size(input, &issuance_size) != WALLY_OK)
+            return WALLY_EINVAL;
+        n += issuance_size;
 
         if (opts) {
             if (i == opts->index)
@@ -1646,11 +1690,10 @@ static int tx_get_lengths(const struct wally_tx *tx,
                 n += sizeof(EMPTY_OUTPUT);
             else {
                 if (is_elements && (output->features & WALLY_TX_IS_ELEMENTS)) {
-#ifdef BUILD_ELEMENTS
-                    n += confidential_asset_length_from_bytes(output->asset) +
-                         confidential_value_length_from_bytes(output->value) +
-                         confidential_nonce_length_from_bytes(output->nonce);
-#endif
+                    size_t commit_size;
+                    if (get_txout_commitments_size(output, &commit_size) != WALLY_OK)
+                        return WALLY_EINVAL;
+                    n += commit_size;
                 } else
                     n += sizeof(output->satoshi);
                 n += varbuff_get_length(output->script_len);
@@ -1825,19 +1868,19 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     if (sh_none || (sh_single && opts->index >= tx->num_outputs))
         outputs_size = 0;
     else if (sh_single) {
+        const struct wally_tx_output *output = tx->outputs + opts->index;
         if (!is_elements)
             outputs_size = sizeof(uint64_t) +
-                           varbuff_get_length(tx->outputs[opts->index].script_len);
+                           varbuff_get_length(output->script_len);
 #ifdef BUILD_ELEMENTS
         else {
-            outputs_size = confidential_asset_length_from_bytes(tx->outputs[opts->index].asset) +
-                           confidential_value_length_from_bytes(tx->outputs[opts->index].value) +
-                           confidential_nonce_length_from_bytes(tx->outputs[opts->index].nonce) +
-                           varbuff_get_length(tx->outputs[opts->index].script_len);
+            if ((ret = get_txout_commitments_size(output, &outputs_size)) != WALLY_OK)
+                goto error;
+            outputs_size += varbuff_get_length(output->script_len);
 
             if (sh_rangeproof) {
-                rangeproof_size = varbuff_get_length(tx->outputs[opts->index].rangeproof_len) +
-                                  varbuff_get_length(tx->outputs[opts->index].surjectionproof_len);
+                rangeproof_size = varbuff_get_length(output->rangeproof_len) +
+                                  varbuff_get_length(output->surjectionproof_len);
             }
         }
 #else
@@ -1847,36 +1890,38 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     } else {
         outputs_size = 0;
         for (i = 0; i < tx->num_outputs; ++i) {
+            const struct wally_tx_output *output = tx->outputs + i;
             if (!is_elements)
                 outputs_size += sizeof(uint64_t);
 #ifdef BUILD_ELEMENTS
             else {
-                outputs_size += confidential_asset_length_from_bytes(tx->outputs[i].asset) +
-                                confidential_value_length_from_bytes(tx->outputs[i].value) +
-                                confidential_nonce_length_from_bytes(tx->outputs[i].nonce);
+                size_t commit_size;
+                if ((ret = get_txout_commitments_size(output, &commit_size)) != WALLY_OK)
+                    goto error;
+                outputs_size += commit_size;
 
                 if (sh_rangeproof) {
-                    rangeproof_size += varbuff_get_length(tx->outputs[i].rangeproof_len) +
-                                       varbuff_get_length(tx->outputs[i].surjectionproof_len);
+                    rangeproof_size += varbuff_get_length(output->rangeproof_len) +
+                                       varbuff_get_length(output->surjectionproof_len);
                 }
             }
 #else
             else
                 return WALLY_EINVAL;
 #endif
-            outputs_size += varbuff_get_length(tx->outputs[i].script_len);
+            outputs_size += varbuff_get_length(output->script_len);
         }
     }
 
 #ifdef BUILD_ELEMENTS
     if (is_elements && !anyonecanpay) {
         for (i = 0; i < tx->num_inputs; ++i) {
-            if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE)
-                issuances_size +=
-                    2 * WALLY_TX_ASSET_TAG_LEN +
-                    confidential_value_length_from_bytes(tx->inputs[i].issuance_amount) +
-                    confidential_value_length_from_bytes(tx->inputs[i].inflation_keys);
-            else
+            if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
+                size_t issuance_size;
+                if (get_txin_issuance_size(tx->inputs + i, &issuance_size) != WALLY_OK)
+                    return WALLY_EINVAL;
+                issuances_size += issuance_size;
+            } else
                 issuances_size += 1;
         }
     }
