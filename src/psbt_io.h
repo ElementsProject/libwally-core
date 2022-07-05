@@ -114,14 +114,14 @@
 #define PSET_IN_ISSUANCE_VALUE 0x00
 #define PSET_IN_ISSUANCE_VALUE_COMMITMENT 0x01
 #define PSET_IN_ISSUANCE_VALUE_RANGEPROOF 0x02
-#define PSET_IN_ISSUANCE_KEYS_RANGEPROOF 0x03
+#define PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF 0x03
 #define PSET_IN_PEG_IN_TX 0x04
 #define PSET_IN_PEG_IN_TXOUT_PROOF 0x05
-#define PSET_IN_PEG_IN_GENESIS 0x06
+#define PSET_IN_PEG_IN_GENESIS_HASH 0x06
 #define PSET_IN_PEG_IN_CLAIM_SCRIPT 0x07
 #define PSET_IN_PEG_IN_VALUE 0x08
 #define PSET_IN_PEG_IN_WITNESS 0x09
-#define PSET_IN_ISSUANCE_INFLATION_KEYS 0x0a
+#define PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT 0x0a
 #define PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT 0x0b
 #define PSET_IN_ISSUANCE_BLINDING_NONCE 0x0c
 #define PSET_IN_ISSUANCE_ASSET_ENTROPY 0x0d
@@ -158,14 +158,14 @@
                                PSET_FT(PSET_IN_ISSUANCE_VALUE) | \
                                PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT) | \
                                PSET_FT(PSET_IN_ISSUANCE_VALUE_RANGEPROOF) | \
-                               PSET_FT(PSET_IN_ISSUANCE_KEYS_RANGEPROOF) | \
+                               PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF) | \
                                PSET_FT(PSET_IN_PEG_IN_TX) | \
                                PSET_FT(PSET_IN_PEG_IN_TXOUT_PROOF) | \
-                               PSET_FT(PSET_IN_PEG_IN_GENESIS) | \
+                               PSET_FT(PSET_IN_PEG_IN_GENESIS_HASH) | \
                                PSET_FT(PSET_IN_PEG_IN_CLAIM_SCRIPT) | \
                                PSET_FT(PSET_IN_PEG_IN_VALUE) | \
                                PSET_FT(PSET_IN_PEG_IN_WITNESS) | \
-                               PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS) | \
+                               PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT) | \
                                PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT) | \
                                PSET_FT(PSET_IN_ISSUANCE_BLINDING_NONCE) | \
                                PSET_FT(PSET_IN_ISSUANCE_ASSET_ENTROPY) | \
@@ -188,6 +188,7 @@
 #define PSBT_OUT_MAX PSBT_OUT_SCRIPT
 
 /* Outputs: PSET */
+#define PSET_OUT_UNUSED_ZERO 0x00 /* Unused, WTF */
 #define PSET_OUT_VALUE_COMMITMENT 0x01
 #define PSET_OUT_ASSET 0x02
 #define PSET_OUT_ASSET_COMMITMENT 0x03

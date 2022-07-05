@@ -195,7 +195,7 @@ class PSBTTests(unittest.TestCase):
         for ver, result in [
             (0, 'cHNidP8A'),
             (1, None),
-            (2, 'cHNidP8B+wQCAAAAAQIEAgAAAAEEAQABBQEAAA=='),
+            (2, 'cHNidP8BAgQCAAAAAQQBAAEFAQAB+wQCAAAAAA=='),
             (3, None) ]:
             ret = wally_psbt_init_alloc(ver, 0, 0, 0, 0, psbt)
             self.assertEqual(ret, WALLY_OK if result else WALLY_EINVAL)
@@ -210,16 +210,16 @@ class PSBTTests(unittest.TestCase):
         wally_psbt_init_alloc(2, 0, 0, 0, 0, psbt)
 
         self.assertEqual(wally_psbt_set_tx_version(psbt, 123), WALLY_OK)
-        self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAA==')
+        self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8BAgR7AAAAAQQBAAEFAQAB+wQCAAAAAA==')
 
         self.assertEqual(wally_psbt_set_fallback_locktime(psbt, 456), WALLY_OK)
-        self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8B+wQCAAAAAQIEewAAAAEDBMgBAAABBAEAAQUBAAA=')
+        self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8BAgR7AAAAAQMEyAEAAAEEAQABBQEAAfsEAgAAAAA=')
 
         self.assertEqual(wally_psbt_clear_fallback_locktime(psbt), WALLY_OK)
-        self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAA==')
+        self.assertEqual(self.to_base64(psbt, MOD_NONE), 'cHNidP8BAgR7AAAAAQQBAAEFAQAB+wQCAAAAAA==')
 
         self.assertEqual(wally_psbt_set_tx_modifiable_flags(psbt, 3), WALLY_OK)
-        self.assertEqual(self.to_base64(psbt), 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQABBQEAAQYBAwA=')
+        self.assertEqual(self.to_base64(psbt), 'cHNidP8BAgR7AAAAAQQBAAEFAQABBgEDAfsEAgAAAAA=')
 
         # Create an input
         tx_input = pointer(wally_tx_input())
@@ -231,13 +231,13 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(WALLY_OK, ret)
         ret, base64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(WALLY_OK, ret)
-        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEAAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAAA==', base64)
+        self.assertEqual('cHNidP8BAgR7AAAAAQQBAQEFAQABBgEDAfsEAgAAAAABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAAA==', base64)
 
         ret = wally_psbt_input_set_required_lockheight(psbt.contents.inputs[0], 499999999)
         self.assertEqual(WALLY_OK, ret)
         ret, base64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(WALLY_OK, ret)
-        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEAAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQA=', base64)
+        self.assertEqual('cHNidP8BAgR7AAAAAQQBAQEFAQABBgEDAfsEAgAAAAABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQA=', base64)
 
         tx_output = pointer(wally_tx_output())
 
@@ -248,7 +248,7 @@ class PSBTTests(unittest.TestCase):
 
         ret, base64 = wally_psbt_to_base64(psbt, 0)
         self.assertEqual(WALLY_OK, ret)
-        self.assertEqual('cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAQYBAwABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQABAwjSBAAAAAAAAAEEAllZAA==', base64)
+        self.assertEqual('cHNidP8BAgR7AAAAAQQBAQEFAQEBBgEDAfsEAgAAAAABDiDn8lrdRWACHHfElE+Sc5Al/dv5mBbXnAbSGSaMqfS35wEPBAUAAAABEAQGAAAAARIE/2TNHQABAwjSBAAAAAAAAAEEAllZAA==', base64)
 
     def test_invalid_args(self):
         """Test invalid arguments to various PSBT functions"""

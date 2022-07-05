@@ -8,8 +8,8 @@ PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
 SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50dcc5a0af4ba2b9efcf022100fd8d53c6be9b3f68c74eed559cca314e718df437b5c5c57668c5930e14140502')
 
 SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
-SAMPLE_V2 = 'cHNidP8B+wQCAAAAAQIEewAAAAEEAQEBBQEBAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
-SAMPLE_PSET = 'cHNldP8B+wQCAAAAAQIEAgAAAAEEAQEBBQEBAQYBAwf8BHBzZXQBAQEAAQ4gnfxmKMJsWJn+G9PcM4Zlv9VdetoQ9iIJc98tOG3sEnYBDwQBAAAAARAE////AAABAwjwPc0dAAAAAAEEFgAUezoAv9wU0neVwrdJAdCdpu8TNXkA'
+SAMPLE_V2 = 'cHNidP8BAgR7AAAAAQQBAQEFAQEB+wQCAAAAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+SAMPLE_PSET = 'cHNldP8BAgQCAAAAAQQBAQEFAQEBBgEDAfsEAgAAAAABDiCd/GYowmxYmf4b09wzhmW/1V162hD2Iglz3y04bewSdgEPBAEAAAABEAT///8AAAEDCPA9zR0AAAAAAQQWABR7OgC/3BTSd5XCt0kB0J2m7xM1eQf8BHBzZXQCIHd3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3AA=='
 
 
 class PSBTTests(unittest.TestCase):
@@ -132,12 +132,13 @@ class PSBTTests(unittest.TestCase):
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
-        pset2 = psbt_from_base64(SAMPLE_PSET)
+        pset2 = psbt_from_base64(SAMPLE_PSET) if is_elements_build() else None
         clones = []
 
         self._throws(psbt_is_elements, None) # NULL PSBT
         for p, is_pset in [(psbt, False), (psbt2, False), (pset2, True)]:
-            self.assertEqual(psbt_is_elements(p), is_pset)
+            if p:
+                self.assertEqual(psbt_is_elements(p), is_pset)
 
         # Roundtrip to/from bytes
         self._throws(psbt_to_bytes, None, 0)    # NULL PSBT
@@ -566,8 +567,9 @@ class PSBTTests(unittest.TestCase):
                                              psbt_set_output_asset_commitment,
                                              psbt_set_output_value_blinding_rangeproof,
                                              psbt_set_output_asset_blinding_surjectionproof]
+                is_mandatory_fn = setfn in [psbt_set_output_asset]
                 self._try_get_set_b(setfn, getfn, clearfn, pset2, valid_value,
-                                    roundtrip=not is_commitment_fn)
+                                    mandatory=is_mandatory_fn, roundtrip=not is_commitment_fn)
                 if is_commitment_fn:
                     clearfn(pset2, 0)
                 else:

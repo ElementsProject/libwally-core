@@ -500,7 +500,7 @@ WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash(
  * :param input: The input to get from.
  * :param written: Destination for the length, or zero if not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_GENESIS``.
+ * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_GENESIS_HASH``.
  */
 WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash_len(
     const struct wally_psbt_input *input,
