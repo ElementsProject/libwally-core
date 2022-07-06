@@ -290,45 +290,6 @@ static int pubkey_sig_verify(const unsigned char *key, size_t key_len,
     return ret;
 }
 
-typedef int (*psbt_hash_fn_t)(const unsigned char *, size_t, unsigned char *, size_t);
-
-static int hash_verify(const unsigned char *key, size_t key_len,
-                       const unsigned char *val, size_t val_len,
-                       psbt_hash_fn_t hash_fn, size_t hash_len)
-{
-    unsigned char buff[SHA256_LEN];
-
-    if (key_len == hash_len &&
-        hash_fn(val, val_len, buff, hash_len) == WALLY_OK &&
-        !memcmp(key, buff, hash_len))
-        return WALLY_OK; /* Provided key is the correct hash of the preimage */
-    return WALLY_EINVAL; /* Invalid key */
-}
-
-static int preimage_field_verify(const unsigned char *key, size_t key_len,
-                                 const unsigned char *val, size_t val_len)
-{
-    /* Preimages are stored keyed by the preimage type + hash, with
-     * the preimage as the data. This allows us to iterate the map keys
-     * in order when serializing, to match the core output ordering.
-     */
-    if (key && key_len) {
-        switch (key[0]) {
-        case PSBT_IN_RIPEMD160:
-            return hash_verify(key + 1, key_len - 1, val, val_len, wally_ripemd160, RIPEMD160_LEN);
-        case PSBT_IN_SHA256:
-            return hash_verify(key + 1, key_len - 1, val, val_len, wally_sha256, SHA256_LEN);
-        case PSBT_IN_HASH160:
-            return hash_verify(key + 1, key_len - 1, val, val_len, wally_hash160, HASH160_LEN);
-        case PSBT_IN_HASH256:
-            return hash_verify(key + 1, key_len - 1, val, val_len, wally_sha256d, SHA256_LEN);
-        default:
-            break;
-        }
-    }
-    return WALLY_EINVAL;
-}
-
 static int psbt_input_field_verify(uint32_t field_type,
                                    const unsigned char *val, size_t val_len)
 {
@@ -584,7 +545,7 @@ static void psbt_input_init(struct wally_psbt_input *input)
     wally_map_init(0, wally_keypath_public_key_verify, &input->keypaths);
     wally_map_init(0, pubkey_sig_verify, &input->signatures);
     wally_map_init(0, NULL, &input->unknowns);
-    wally_map_init(0, preimage_field_verify, &input->preimages);
+    wally_map_init(0, wally_map_hash_preimage_verify, &input->preimages);
     wally_map_init(0, psbt_map_input_field_verify, &input->psbt_fields);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_input_field_verify, &input->pset_fields);
@@ -1294,6 +1255,17 @@ static int pull_map_item(const unsigned char **cursor, size_t *max,
     return map_add(map_in, key, key_len, val_len ? val : NULL, val_len, false, false);
 }
 
+static int pull_preimage(const unsigned char **cursor, size_t *max,
+                         size_t type, const unsigned char *key, size_t key_len,
+                         struct wally_map *map_in)
+{
+    const unsigned char *val;
+    size_t val_len;
+
+    pull_varlength_buff(cursor, max, &val, &val_len);
+    return map_add_preimage_and_hash(map_in, key, key_len, val, val_len, type, false);
+}
+
 static int pull_tx(const unsigned char **cursor, size_t *max,
                    uint32_t tx_flags, struct wally_tx **tx_out)
 {
@@ -1542,6 +1514,12 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 break;
             case PSBT_IN_FINAL_SCRIPTWITNESS:
                 ret = pull_witness(cursor, max, &result->final_witness);
+                break;
+            case PSBT_IN_RIPEMD160:
+            case PSBT_IN_SHA256:
+            case PSBT_IN_HASH160:
+            case PSBT_IN_HASH256:
+                ret = pull_preimage(cursor, max, field_type, key, key_len, &result->preimages);
                 break;
             case PSBT_IN_POR_COMMITMENT:
             case PSBT_IN_TAP_KEY_SIG:
@@ -2083,6 +2061,20 @@ static void push_psbt_map(unsigned char **cursor, size_t *max,
     }
 }
 
+static int push_preimages(unsigned char **cursor, size_t *max,
+                          const struct wally_map *map_in)
+{
+    size_t i;
+    for (i = 0; i < map_in->num_items; ++i) {
+        const struct wally_map_item *item = map_in->items + i;
+        const uint64_t type = item->key[0];
+
+        push_key(cursor, max, type, false, item->key + 1, item->key_len - 1);
+        push_varbuff(cursor, max, item->value, item->value_len);
+    }
+    return WALLY_OK;
+}
+
 #ifdef BUILD_ELEMENTS
 static bool push_commitment(unsigned char **cursor, size_t *max,
                             const unsigned char *commitment, size_t commitment_len)
@@ -2195,10 +2187,8 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                                      false, &input->psbt_fields)) != WALLY_OK)
         return ret;
 
-    /* FIXME: PSBT_IN_RIPEMD160 */
-    /* FIXME: PSBT_IN_SHA256  */
-    /* FIXME: PSBT_IN_HASH160 */
-    /* FIXME: PSBT_IN_HASH256 */
+    if ((ret = push_preimages(cursor, max, &input->preimages)) != WALLY_OK)
+        return ret;
 
     if (psbt->version == PSBT_2) {
         if (mem_is_zero(input->txhash, WALLY_TXHASH_LEN))

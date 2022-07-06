@@ -89,4 +89,8 @@ int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,
             const unsigned char *value, size_t value_len,
             bool take_value, bool ignore_dups);
+int map_add_preimage_and_hash(struct wally_map *map_in,
+                              const unsigned char *key, size_t key_len,
+                              const unsigned char *val, size_t val_len,
+                              size_t type, bool skip_verify);
 #endif /* LIBWALLY_INTERNAL_H */

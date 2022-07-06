@@ -653,6 +653,12 @@ inline int map_free(struct wally_map* map_in) {
     return ret;
 }
 
+template <class KEY, class VAL>
+inline int map_hash_preimage_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_map_hash_preimage_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
 inline int map_init(size_t allocation_len, struct wally_map* output) {
     int ret = ::wally_map_init(allocation_len, output);
     return ret;
@@ -676,6 +682,35 @@ inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map*
 
 inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally_map** output) {
     int ret = ::wally_map_keypath_public_key_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_hash160_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_hash160_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+inline int map_preimage_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_preimage_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_ripemd160_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_ripemd160_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_sha256_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_sha256_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_sha256d_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_sha256d_add(detail::get_p(map_in), value.data(), value.size());
     return ret;
 }
 

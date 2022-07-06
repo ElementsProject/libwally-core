@@ -104,11 +104,17 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_find' \
 ,'_wally_map_find_integer' \
 ,'_wally_map_free' \
+,'_wally_map_hash_preimage_verify' \
 ,'_wally_map_init' \
 ,'_wally_map_init_alloc' \
 ,'_wally_map_keypath_add' \
 ,'_wally_map_keypath_bip32_init_alloc' \
 ,'_wally_map_keypath_public_key_init_alloc' \
+,'_wally_map_preimage_hash160_add' \
+,'_wally_map_preimage_init_alloc' \
+,'_wally_map_preimage_ripemd160_add' \
+,'_wally_map_preimage_sha256_add' \
+,'_wally_map_preimage_sha256d_add' \
 ,'_wally_map_remove' \
 ,'_wally_map_remove_integer' \
 ,'_wally_map_replace' \

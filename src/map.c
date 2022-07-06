@@ -3,6 +3,7 @@
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
 #include <include/wally_map.h>
+#include "psbt_io.h"
 
 #include <ccan/endian/endian.h>
 
@@ -407,4 +408,126 @@ int wally_map_keypath_add(struct wally_map *map_in,
     if (ret != WALLY_OK)
         clear_and_free(value, value_len);
     return ret;
+}
+
+typedef int (*psbt_hash_fn_t)(const unsigned char *, size_t, unsigned char *, size_t);
+
+static int hash_verify(const unsigned char *key, size_t key_len,
+                       const unsigned char *val, size_t val_len,
+                       psbt_hash_fn_t hash_fn, size_t hash_len)
+{
+    unsigned char buff[SHA256_LEN];
+
+    if (key_len == hash_len &&
+        hash_fn(val, val_len, buff, hash_len) == WALLY_OK &&
+        !memcmp(key, buff, hash_len))
+        return WALLY_OK; /* Provided key is the correct hash of the preimage */
+    return WALLY_EINVAL; /* Invalid key */
+}
+
+int wally_map_hash_preimage_verify(const unsigned char *key, size_t key_len,
+                                   const unsigned char *val, size_t val_len)
+{
+    /* Preimages are stored keyed by the preimage type + hash, with
+     * the preimage as the data. This allows us to iterate the map keys
+     * in order when serializing, to match the output ordering from core.
+     */
+    if (key && key_len) {
+        switch (key[0]) {
+        case PSBT_IN_RIPEMD160:
+            return hash_verify(key + 1, key_len - 1, val, val_len, wally_ripemd160, RIPEMD160_LEN);
+        case PSBT_IN_SHA256:
+            return hash_verify(key + 1, key_len - 1, val, val_len, wally_sha256, SHA256_LEN);
+        case PSBT_IN_HASH160:
+            return hash_verify(key + 1, key_len - 1, val, val_len, wally_hash160, HASH160_LEN);
+        case PSBT_IN_HASH256:
+            return hash_verify(key + 1, key_len - 1, val, val_len, wally_sha256d, SHA256_LEN);
+        default:
+            break;
+        }
+    }
+    return WALLY_EINVAL;
+}
+
+int wally_map_preimage_init_alloc(size_t allocation_len, struct wally_map **output)
+{
+    return wally_map_init_alloc(allocation_len, wally_map_hash_preimage_verify, output);
+}
+
+int map_add_preimage_and_hash(struct wally_map *map_in,
+                              const unsigned char *key, size_t key_len,
+                              const unsigned char *val, size_t val_len,
+                              size_t type, bool skip_verify)
+{
+    unsigned char tmp[SHA256_LEN + 1];
+    wally_map_verify_fn_t verify_fn;
+    int ret;
+
+    if (!map_in || !key || !val || !val_len)
+        return WALLY_EINVAL;
+
+    if (type == PSBT_IN_RIPEMD160 || type == PSBT_IN_HASH160) {
+        if (key_len != RIPEMD160_LEN)
+            return WALLY_EINVAL;
+    } else if (type == PSBT_IN_SHA256 || type == PSBT_IN_HASH256) {
+        if (key_len != SHA256_LEN)
+            return WALLY_EINVAL;
+    } else
+        return WALLY_EINVAL;
+
+    /* Make a copy of the key, prefixed by the type */
+    tmp[0] = type & 0xff;
+    memcpy(tmp + 1, key, key_len);
+    verify_fn = map_in->verify_fn;
+
+    if (skip_verify)
+        map_in->verify_fn = NULL; /* Don't recalculate known-good hashes */
+
+    ret = map_add(map_in, tmp, key_len + 1, val, val_len, false, false);
+
+    if (skip_verify)
+        map_in->verify_fn = verify_fn;
+
+    return ret;
+}
+
+static int preimage_add(struct wally_map *map_in,
+                        const unsigned char *val, size_t val_len,
+                        size_t type, psbt_hash_fn_t hash_fn, size_t len)
+{
+    unsigned char tmp[SHA256_LEN];
+
+    if (!map_in || !val || !val_len)
+        return WALLY_EINVAL;
+    if (hash_fn(val, val_len, tmp, len) != WALLY_OK)
+        return WALLY_EINVAL;
+    return map_add_preimage_and_hash(map_in, tmp, len, val, val_len, type, true);
+}
+
+int wally_map_preimage_ripemd160_add(struct wally_map *map_in,
+                                     const unsigned char *val, size_t val_len)
+{
+    return preimage_add(map_in, val, val_len, PSBT_IN_RIPEMD160,
+                        wally_ripemd160, RIPEMD160_LEN);
+}
+
+int wally_map_preimage_sha256_add(struct wally_map *map_in,
+                                  const unsigned char *val, size_t val_len)
+{
+    return preimage_add(map_in, val, val_len, PSBT_IN_SHA256,
+                        wally_sha256, SHA256_LEN);
+}
+
+int wally_map_preimage_hash160_add(struct wally_map *map_in,
+                                   const unsigned char *val, size_t val_len)
+{
+    return preimage_add(map_in, val, val_len, PSBT_IN_HASH160,
+                        wally_hash160, HASH160_LEN);
+}
+
+int wally_map_preimage_sha256d_add(struct wally_map *map_in,
+                                   const unsigned char *val, size_t val_len)
+{
+    return preimage_add(map_in, val, val_len, PSBT_IN_HASH256,
+                        wally_sha256d, SHA256_LEN);
 }

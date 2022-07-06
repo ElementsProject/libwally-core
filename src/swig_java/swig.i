@@ -501,6 +501,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_map_find);
 %returns_size_t(wally_map_find_integer);
 %returns_void__(wally_map_free)
+%returns_void__(wally_map_hash_preimage_verify)
 %returns_void__(wally_map_keypath_add);
 %returns_struct(wally_map_keypath_bip32_init_alloc, wally_map);
 %rename("map_keypath_bip32_init") wally_map_keypath_bip32_init_alloc;
@@ -508,6 +509,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %rename("map_keypath_public_key_init") wally_map_keypath_public_key_init_alloc;
 %returns_struct(wally_map_init_alloc, wally_map);
 %rename("map_init") wally_map_init_alloc;
+%returns_struct(wally_map_preimage_init_alloc, wally_map);
+%rename("map_preimage_init") wally_map_preimage_init_alloc;
+%returns_void__(wally_map_preimage_hash160_add);
+%returns_void__(wally_map_preimage_ripemd160_add);
+%returns_void__(wally_map_preimage_sha256_add);
+%returns_void__(wally_map_preimage_sha256d_add);
 %returns_void__(wally_map_remove);
 %returns_void__(wally_map_remove_integer);
 %returns_void__(wally_map_replace);

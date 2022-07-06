@@ -286,6 +286,82 @@ WALLY_CORE_API int wally_map_keypath_add(
     size_t child_path_len);
 
 
+/**
+ * Verify a preimage map key and value pair.
+ *
+ * :param key: The preimage hash, prefixed by a hash type byte.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param val: The preimage data hashed to produce ``key``.
+ * :param val_len: Length of ``val`` in bytes.
+ *
+ * .. note:: Multiple preimage types are stored in the same map, prefixed by
+ *|    a leading byte. The exact format of storage is implementation dependent
+ *|    and may change in the future.
+ */
+WALLY_CORE_API int wally_map_hash_preimage_verify(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *val,
+    size_t val_len);
+
+/**
+ * Allocate and initialize a new preimage map.
+ *
+ * :param allocation_len: The number of items to allocate space for.
+ * :param output: Destination for the new map.
+ */
+WALLY_CORE_API int wally_map_preimage_init_alloc(
+    size_t allocation_len,
+    struct wally_map **output);
+
+/**
+ * Add a ripemd160 preimage to a preimage map.
+ *
+ * :param map_in: The preimage map to add to.
+ * :param value: The data to store.
+ * :param value_len: Length of ``value`` in bytes.
+ */
+WALLY_CORE_API int wally_map_preimage_ripemd160_add(
+    struct wally_map *map_in,
+    const unsigned char *value,
+    size_t value_len);
+
+/**
+ * Add a sha256 preimage to a preimage map.
+ *
+ * :param map_in: The preimage map to add to.
+ * :param value: The data to store.
+ * :param value_len: Length of ``value`` in bytes.
+ */
+WALLY_CORE_API int wally_map_preimage_sha256_add(
+    struct wally_map *map_in,
+    const unsigned char *value,
+    size_t value_len);
+
+/**
+ * Add a hash160 preimage to a preimage map.
+ *
+ * :param map_in: The preimage map to add to.
+ * :param value: The data to store.
+ * :param value_len: Length of ``value`` in bytes.
+ */
+WALLY_CORE_API int wally_map_preimage_hash160_add(
+    struct wally_map *map_in,
+    const unsigned char *value,
+    size_t value_len);
+
+/**
+ * Add a sha256d preimage to a preimage map.
+ *
+ * :param map_in: The preimage map to add to.
+ * :param value: The data to store.
+ * :param value_len: Length of ``value`` in bytes.
+ */
+WALLY_CORE_API int wally_map_preimage_sha256d_add(
+    struct wally_map *map_in,
+    const unsigned char *value,
+    size_t value_len);
+
 #ifdef __cplusplus
 }
 #endif

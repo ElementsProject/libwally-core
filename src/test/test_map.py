@@ -222,5 +222,21 @@ class MapTests(unittest.TestCase):
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 
+    def test_preimage_map(self):
+        """Test preimage map functions"""
+        m = pointer(wally_map())
+        self.assertEqual(wally_map_preimage_init_alloc(0, None), WALLY_EINVAL)
+        self.assertEqual(wally_map_preimage_init_alloc(0, m), WALLY_OK)
+
+        data, data_len = make_cbuffer('00' * 50) # Arbitrary data
+
+        for fn in [wally_map_preimage_ripemd160_add, wally_map_preimage_sha256_add,
+                   wally_map_preimage_hash160_add, wally_map_preimage_sha256d_add]:
+            for args in [(None, data, data_len), # NULL map
+                         (m, None, data_len),    # NULL data
+                         (m, data, 0)]:          # Zero length data
+                self.assertEqual(fn(*args), WALLY_EINVAL)
+
+
 if __name__ == '__main__':
     unittest.main()
