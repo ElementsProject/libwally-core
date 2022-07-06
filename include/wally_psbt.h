@@ -62,13 +62,15 @@ struct wally_psbt_input {
     uint32_t sighash;
     uint32_t required_locktime; /* Required tx locktime or 0 if not given */
     uint32_t required_lockheight; /* Required tx lockheight or 0 if not given */
+    struct wally_map preimages; /* Preimage hash to data keyed by PSBT keytype + hash */
+    struct wally_map psbt_fields; /* Binary fields keyed by PSBT keytype */
 #ifdef BUILD_ELEMENTS
     uint64_t issuance_amount; /* Issuance amount, or 0 if not given */
     uint64_t inflation_keys; /* Number of reissuance tokens, or 0 if none given */
     uint64_t pegin_amount; /* Peg-in amount, or 0 if none given */
     struct wally_tx *pegin_tx;
     struct wally_tx_witness_stack *pegin_witness;
-    struct wally_map pset_fields; /* Commitments/scripts/proofs etc */
+    struct wally_map pset_fields; /* Commitments/scripts/proofs etc keyed by PSET keytype*/
 #endif /* BUILD_ELEMENTS */
 };
 
@@ -84,10 +86,11 @@ struct wally_psbt_output {
     uint32_t has_amount;
     unsigned char *script;
     size_t script_len;
+    struct wally_map psbt_fields; /* Binary fields keyed by PSBT keytype */
 #ifdef BUILD_ELEMENTS
     uint32_t blinder_index; /* Index of the input whose owner should blind this output */
     uint32_t has_blinder_index;
-    struct wally_map pset_fields; /* Commitments/pubkeys/proofs etc */
+    struct wally_map pset_fields; /* Commitments/pubkeys/proofs etc keyed by PSET keytype*/
 #endif /* BUILD_ELEMENTS */
 };
 

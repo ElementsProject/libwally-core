@@ -153,6 +153,8 @@ class wally_psbt_input(Structure):
                 ('sighash', c_uint32),
                 ('required_locktime', c_uint32),
                 ('required_lockheight', c_uint32),
+                ('preimages', wally_map),
+                ('psbt_fields', wally_map),
                 ('issuance_amount', c_uint64),
                 ('inflation_keys', c_uint64),
                 ('pegin_amount', c_uint64),
@@ -171,6 +173,7 @@ class wally_psbt_output(Structure):
                 ('has_amount', c_uint32),
                 ('script', c_void_p),
                 ('script_len', c_size_t),
+                ('psbt_fields', wally_map),
                 ('blinder_index', c_uint32),
                 ('has_blinder_index', c_uint32),
                 ('pset_fields', wally_map)]
