@@ -663,6 +663,7 @@ static void psbt_output_init(struct wally_psbt_output *output)
     wally_map_init(0, wally_keypath_public_key_verify, &output->keypaths);
     wally_map_init(0, NULL, &output->unknowns);
     wally_map_init(0, psbt_map_output_field_verify, &output->psbt_fields);
+    wally_map_init(0, NULL, &output->taproot_tree);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_output_field_verify, &output->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -677,6 +678,7 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->unknowns);
         clear_and_free(output->script, output->script_len);
         wally_map_clear(&output->psbt_fields);
+        wally_map_clear(&output->taproot_tree);
 #ifdef BUILD_ELEMENTS
         wally_map_clear(&output->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -1689,9 +1691,15 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                                          wally_psbt_output_set_script);
                 break;
             case PSBT_OUT_TAP_INTERNAL_KEY:
-            case PSBT_OUT_TAP_TREE:
                 pull_varlength_buff(cursor, max, &val_p, &val_len);
                 ret = wally_map_add_integer(&result->psbt_fields, raw_field_type,
+                                            val_p, val_len);
+                break;
+            case PSBT_OUT_TAP_TREE:
+                pull_varlength_buff(cursor, max, &val_p, &val_len);
+                /* Add the leaf to the map keyed by its (1-based) position */
+                ret = wally_map_add_integer(&result->taproot_tree,
+                                            result->taproot_tree.num_items + 1,
                                             val_p, val_len);
                 break;
             case PSBT_OUT_TAP_BIP32_DERIVATION:
@@ -2110,11 +2118,11 @@ static int push_tx_output(unsigned char **cursor, size_t *max,
 }
 
 static int push_varbuff_from_map(unsigned char **cursor, size_t *max,
-                                 uint64_t type, bool is_elements,
+                                 uint64_t type, uint32_t key, bool is_elements,
                                  const struct wally_map *map_in)
 {
     size_t index;
-    int ret = wally_map_find_integer(map_in, type, &index);
+    int ret = wally_map_find_integer(map_in, key, &index);
     if (ret == WALLY_OK && index) {
         const struct wally_map_item *item = map_in->items + index - 1;
         push_psbt_varbuff(cursor, max, type, is_elements,
@@ -2184,6 +2192,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                            false, input->final_witness);
 
     if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_POR_COMMITMENT,
+                                     PSBT_IN_POR_COMMITMENT,
                                      false, &input->psbt_fields)) != WALLY_OK)
         return ret;
 
@@ -2208,6 +2217,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
             push_psbt_le32(cursor, max, PSBT_IN_REQUIRED_HEIGHT_LOCKTIME, false, input->required_lockheight);
 
         if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_KEY_SIG,
+                                         PSBT_IN_TAP_KEY_SIG,
                                          false, &input->psbt_fields)) != WALLY_OK)
             return ret;
 
@@ -2216,9 +2226,11 @@ static int push_psbt_input(const struct wally_psbt *psbt,
         /* FIXME: PSBT_IN_TAP_BIP32_DERIVATION */
 
         if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_INTERNAL_KEY,
+                                         PSBT_IN_TAP_INTERNAL_KEY,
                                          false, &input->psbt_fields)) != WALLY_OK)
             return ret;
         if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_MERKLE_ROOT,
+                                         PSBT_IN_TAP_MERKLE_ROOT,
                                          false, &input->psbt_fields)) != WALLY_OK)
             return ret;
 
@@ -2251,7 +2263,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                     push_psbt_le64(cursor, max, ft, true, input->inflation_keys);
                 break;
             default:
-                ret = push_varbuff_from_map(cursor, max, ft, true,
+                ret = push_varbuff_from_map(cursor, max, ft, ft, true,
                                             &input->pset_fields);
                 if (ret != WALLY_OK)
                     return ret;
@@ -2276,6 +2288,7 @@ static int push_psbt_output(const struct wally_psbt *psbt,
     uint64_t ft;
     int ret;
 #endif
+    size_t i;
     unsigned char dummy = 0;
 
     /* Redeem script */
@@ -2293,17 +2306,23 @@ static int push_psbt_output(const struct wally_psbt *psbt,
 
         if (output->has_amount)
             push_psbt_le64(cursor, max, PSBT_OUT_AMOUNT, false, output->amount);
+
         /* Core/Elements always write the script; if missing its written as empty */
         push_psbt_varbuff(cursor, max, PSBT_OUT_SCRIPT, false,
                           output->script ? output->script : &dummy,
                           output->script_len);
 
         if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_INTERNAL_KEY,
+                                         PSBT_OUT_TAP_INTERNAL_KEY,
                                          false, &output->psbt_fields)) != WALLY_OK)
             return ret;
-        if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_TREE,
-                                         false, &output->psbt_fields)) != WALLY_OK)
-            return ret;
+
+        for (i = 0; i < output->taproot_tree.num_items; ++i) {
+            ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_TREE, i + 1,
+                                        false, &output->taproot_tree);
+            if (ret != WALLY_OK)
+                return ret;
+        }
 
         /* FIXME: PSBT_OUT_TAP_BIP32_DERIVATION */
 
@@ -2315,7 +2334,7 @@ static int push_psbt_output(const struct wally_psbt *psbt,
                     push_psbt_le32(cursor, max, ft, true, output->blinder_index);
                 break;
             default:
-                ret = push_varbuff_from_map(cursor, max, ft, true,
+                ret = push_varbuff_from_map(cursor, max, ft, ft, true,
                                             &output->pset_fields);
                 if (ret != WALLY_OK)
                     return ret;
@@ -2601,6 +2620,10 @@ static int combine_outputs(struct wally_psbt_output *dst,
     COMBINE_BYTES(output, script);
 
     if ((ret = wally_map_combine(&dst->psbt_fields, &src->psbt_fields)) != WALLY_OK)
+        return ret;
+
+    if (!dst->taproot_tree.num_items && src->taproot_tree.num_items &&
+        (ret = wally_map_combine(&dst->taproot_tree, &src->taproot_tree)) != WALLY_OK)
         return ret;
 
 #ifdef BUILD_ELEMENTS

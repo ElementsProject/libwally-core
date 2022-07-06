@@ -87,6 +87,9 @@ struct wally_psbt_output {
     unsigned char *script;
     size_t script_len;
     struct wally_map psbt_fields; /* Binary fields keyed by PSBT keytype */
+    /* Map of 1-based position to taproot leaf script, in depth first order.
+    * TODO: replace this with actual TR representaion when TR implemented */
+    struct wally_map taproot_tree;
 #ifdef BUILD_ELEMENTS
     uint32_t blinder_index; /* Index of the input whose owner should blind this output */
     uint32_t has_blinder_index;

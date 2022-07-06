@@ -174,6 +174,7 @@ class wally_psbt_output(Structure):
                 ('script', c_void_p),
                 ('script_len', c_size_t),
                 ('psbt_fields', wally_map),
+                ('taproot_leaves', c_void_p),
                 ('blinder_index', c_uint32),
                 ('has_blinder_index', c_uint32),
                 ('pset_fields', wally_map)]
