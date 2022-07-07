@@ -329,6 +329,7 @@ for f in (
     ('wally_is_elements_build', c_int, [c_size_t_p]),
     ('wally_keypath_bip32_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_keypath_public_key_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_keypath_xonly_public_key_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_add', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_add_integer', c_int, [POINTER(wally_map), c_uint32, c_void_p, c_size_t]),
     ('wally_map_assign', c_int, [POINTER(wally_map), POINTER(wally_map)]),

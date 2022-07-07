@@ -241,6 +241,20 @@ WALLY_CORE_API int wally_keypath_public_key_verify(
     size_t key_len,
     const unsigned char *val,
     size_t val_len);
+
+/**
+ * Verify a PSBT keypath keyed by an x-only public key.
+ *
+ * :param key: Public key bytes.
+ * :param key_len: Length of ``key`` in bytes. Must be ``EC_XONLY_PUBLIC_KEY_LEN``,
+ * :param val: The 4 byte PSBT serialized master key fingerprint followed by the serialized path.
+ * :param val_len: Length of ``val`` in bytes.
+ */
+WALLY_CORE_API int wally_keypath_xonly_public_key_verify(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *val,
+    size_t val_len);
 #endif /* SWIG */
 
 /**

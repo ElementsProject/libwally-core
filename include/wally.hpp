@@ -612,6 +612,12 @@ inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
     return ret;
 }
 
+template <class KEY, class VAL>
+inline int keypath_xonly_public_key_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_keypath_xonly_public_key_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
 template <class MAP_IN, class KEY, class VALUE>
 inline int map_add(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
     int ret = ::wally_map_add(detail::get_p(map_in), key.data(), key.size(), value.data(), value.size());

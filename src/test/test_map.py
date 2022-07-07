@@ -11,9 +11,11 @@ class MapTests(unittest.TestCase):
         """Test map functions"""
         m = pointer(wally_map())
         # Test keys. Once sorted we expect order k3, k2, k1
+        empty, empty_len = None, 0
         key1, key1_len = make_cbuffer('505050')
         key2, key2_len = make_cbuffer('40404040')
         key3, key3_len = make_cbuffer('404040')
+        key4, key4_len = make_cbuffer('6060606060')
         val, val_len = make_cbuffer('ff'*64)
 
         # Check invalid args
@@ -93,6 +95,10 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_find_integer(m, 5),  (WALLY_OK, 1))
         self.assertEqual(wally_map_find_integer(m, 9),  (WALLY_OK, 2))
         self.assertEqual(wally_map_find_integer(m, 10), (WALLY_OK, 3))
+
+        # Add an empty value
+        self.assertEqual(wally_map_add(m, key4, key4_len, empty, empty_len), WALLY_OK)
+        self.assertEqual(wally_map_find(m, key4, key4_len), (WALLY_OK, m.contents.num_items))
 
         # Assign
         new_key, new_key_len = make_cbuffer('ffffffffff')

@@ -307,8 +307,8 @@ int wally_map_assign(struct wally_map *map_in,
  * PSBT keypath support.
  * - Global XPubs are keyed by bip32 extended keys.
  * - Input/Output keypaths are keyed by raw pubkeys.
+ * - Taproot keypaths are keyed by x-only pubkeys.
  */
-
 static int keypath_key_verify(const unsigned char *key, size_t key_len, struct ext_key *key_out)
 {
     int ret = WALLY_EINVAL;
@@ -318,10 +318,15 @@ static int keypath_key_verify(const unsigned char *key, size_t key_len, struct e
     if (!key)
         return ret;
 
-    /* Allow pubkeys, compressed pubkeys, or bip32 extended pubkeys */
-    if (key_len == EC_PUBLIC_KEY_LEN || key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+    if (key_len == EC_XONLY_PUBLIC_KEY_LEN) {
+        /* X-only pubkey */
+        ret = wally_ec_xonly_public_key_verify(key, key_len);
+    } else if (key_len == EC_PUBLIC_KEY_LEN ||
+               key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+        /* Compressed or uncompressed pubkey */
         ret = wally_ec_public_key_verify(key, key_len);
-    else if (key_len == BIP32_SERIALIZED_LEN) {
+    } else if (key_len == BIP32_SERIALIZED_LEN) {
+        /* BIP32 extended pubkey */
         ret = bip32_key_unserialize(key, key_len, key_out);
         if (ret == WALLY_OK &&
             (key_out->version == BIP32_VER_MAIN_PRIVATE ||
@@ -359,7 +364,21 @@ int wally_keypath_public_key_verify(const unsigned char *key, size_t key_len,
 {
     struct ext_key extkey;
 
-    if (keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
+    if (key_len == EC_XONLY_PUBLIC_KEY_LEN ||
+        keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
+        extkey.version ||
+        keypath_path_verify(val, val_len, &extkey) != WALLY_OK)
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
+int wally_keypath_xonly_public_key_verify(const unsigned char *key, size_t key_len,
+                                          const unsigned char *val, size_t val_len)
+{
+    struct ext_key extkey;
+
+    if (key_len != EC_XONLY_PUBLIC_KEY_LEN ||
+        keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
         extkey.version ||
         keypath_path_verify(val, val_len, &extkey) != WALLY_OK)
         return WALLY_EINVAL;

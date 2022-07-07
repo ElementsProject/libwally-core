@@ -97,6 +97,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_is_elements_build' \
 ,'_wally_keypath_bip32_verify' \
 ,'_wally_keypath_public_key_verify' \
+,'_wally_keypath_xonly_public_key_verify' \
 ,'_wally_map_add' \
 ,'_wally_map_add_integer' \
 ,'_wally_map_assign' \
