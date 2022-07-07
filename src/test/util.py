@@ -309,6 +309,7 @@ for f in (
     ('wally_ec_sig_to_der', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_ec_sig_to_public_key', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_sig_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
+    ('wally_ec_xonly_public_key_verify', c_int, [c_void_p, c_size_t]),
     ('wally_ecdh', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_elements_pegin_contract_script_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_elements_pegout_script_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),

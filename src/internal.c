@@ -33,6 +33,11 @@ int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t in
     return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, inputlen);
 }
 
+int xpubkey_parse(secp256k1_xonly_pubkey *pubkey, const unsigned char *input)
+{
+    return secp256k1_xonly_pubkey_parse(secp256k1_context_no_precomp, pubkey, input);
+}
+
 int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags)
 {
     return secp256k1_ec_pubkey_serialize(secp256k1_context_no_precomp, output, outputlen, pubkey, flags);

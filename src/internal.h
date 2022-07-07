@@ -4,6 +4,7 @@
 #include <include/wally_core.h>
 #include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_recovery.h"
+#include "secp256k1/include/secp256k1_extrakeys.h"
 #ifndef BUILD_STANDARD_SECP
 #include "secp256k1/include/secp256k1_ecdsa_s2c.h"
 #endif
@@ -25,6 +26,7 @@ const secp256k1_context *secp_ctx(void);
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n);
 int pubkey_negate(secp256k1_pubkey *pubkey);
 int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t inputlen);
+int xpubkey_parse(secp256k1_xonly_pubkey *pubkey, const unsigned char *input);
 int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags);
 int seckey_verify(const unsigned char *seckey);
 int seckey_negate(unsigned char *seckey);

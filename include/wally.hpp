@@ -512,6 +512,12 @@ inline int ec_sig_verify(const PUB_KEY& pub_key, const BYTES& bytes, uint32_t fl
     return ret;
 }
 
+template <class PUB_KEY>
+inline int ec_xonly_public_key_verify(const PUB_KEY& pub_key) {
+    int ret = ::wally_ec_xonly_public_key_verify(pub_key.data(), pub_key.size());
+    return ret;
+}
+
 template <class PUB_KEY, class PRIV_KEY, class BYTES_OUT>
 inline int ecdh(const PUB_KEY& pub_key, const PRIV_KEY& priv_key, BYTES_OUT& bytes_out) {
     int ret = ::wally_ecdh(pub_key.data(), pub_key.size(), priv_key.data(), priv_key.size(), bytes_out.data(), bytes_out.size());

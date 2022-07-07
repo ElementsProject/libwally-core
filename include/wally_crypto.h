@@ -288,6 +288,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_PRIVATE_KEY_LEN 32
 /** The length of a public key used for EC signing */
 #define EC_PUBLIC_KEY_LEN 33
+/** The length of an x-only public key used for EC signing */
+#define EC_XONLY_PUBLIC_KEY_LEN 32
 /** The length of an uncompressed public key */
 #define EC_PUBLIC_KEY_UNCOMPRESSED_LEN 65
 /** The length of a message hash to EC sign */
@@ -333,6 +335,16 @@ WALLY_CORE_API int wally_ec_private_key_verify(
  *|    ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
  */
 WALLY_CORE_API int wally_ec_public_key_verify(
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
+ * Verify that an x-only public key is valid.
+ *
+ * :param pub_key: The x-only public key to validate.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_XONLY_PUBLIC_KEY_LEN``.
+ */
+WALLY_CORE_API int wally_ec_xonly_public_key_verify(
     const unsigned char *pub_key,
     size_t pub_key_len);
 
