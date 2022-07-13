@@ -64,6 +64,11 @@ struct wally_psbt_input {
     uint32_t required_lockheight; /* Required tx lockheight or 0 if not given */
     struct wally_map preimages; /* Preimage hash to data keyed by PSBT keytype + hash */
     struct wally_map psbt_fields; /* Binary fields keyed by PSBT keytype */
+    struct wally_map taproot_leaf_signatures;
+    struct wally_map taproot_leaf_scripts;
+    /* Hashes and paths for taproot bip32 derivation path */
+    struct wally_map taproot_leaf_hashes;
+    struct wally_map taproot_leaf_paths;
 #ifdef BUILD_ELEMENTS
     uint64_t issuance_amount; /* Issuance amount, or 0 if not given */
     uint64_t inflation_keys; /* Number of reissuance tokens, or 0 if none given */
@@ -90,6 +95,9 @@ struct wally_psbt_output {
     /* Map of 1-based position to taproot leaf script, in depth first order.
     * TODO: replace this with actual TR representaion when TR implemented */
     struct wally_map taproot_tree;
+    /* Hashes and paths for taproot bip32 derivation path */
+    struct wally_map taproot_leaf_hashes;
+    struct wally_map taproot_leaf_paths;
 #ifdef BUILD_ELEMENTS
     uint32_t blinder_index; /* Index of the input whose owner should blind this output */
     uint32_t has_blinder_index;

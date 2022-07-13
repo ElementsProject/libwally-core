@@ -547,6 +547,10 @@ static void psbt_input_init(struct wally_psbt_input *input)
     wally_map_init(0, NULL, &input->unknowns);
     wally_map_init(0, wally_map_hash_preimage_verify, &input->preimages);
     wally_map_init(0, psbt_map_input_field_verify, &input->psbt_fields);
+    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_signatures);
+    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_scripts);
+    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_hashes);
+    wally_map_init(0, wally_keypath_xonly_public_key_verify, &input->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_input_field_verify, &input->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -566,6 +570,10 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_map_clear(&input->unknowns);
         wally_map_clear(&input->preimages);
         wally_map_clear(&input->psbt_fields);
+        wally_map_clear(&input->taproot_leaf_signatures);
+        wally_map_clear(&input->taproot_leaf_scripts);
+        wally_map_clear(&input->taproot_leaf_hashes);
+        wally_map_clear(&input->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS
         wally_tx_free(input->pegin_tx);
         wally_tx_witness_stack_free(input->pegin_witness);
@@ -664,6 +672,8 @@ static void psbt_output_init(struct wally_psbt_output *output)
     wally_map_init(0, NULL, &output->unknowns);
     wally_map_init(0, psbt_map_output_field_verify, &output->psbt_fields);
     wally_map_init(0, NULL, &output->taproot_tree);
+    wally_map_init(0, NULL /* FIXME */, &output->taproot_leaf_hashes);
+    wally_map_init(0, wally_keypath_xonly_public_key_verify, &output->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_output_field_verify, &output->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -679,6 +689,8 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         clear_and_free(output->script, output->script_len);
         wally_map_clear(&output->psbt_fields);
         wally_map_clear(&output->taproot_tree);
+        wally_map_clear(&output->taproot_leaf_hashes);
+        wally_map_clear(&output->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS
         wally_map_clear(&output->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -1404,17 +1416,94 @@ static uint64_t pull_field_type(const unsigned char **cursor, size_t *max,
     *is_pset_ft = false;
     pull_subfield_start(cursor, max, *key_len, key, key_len);
     field_type = pull_varint(key, key_len);
-#ifdef BUILD_ELEMENTS
     if (is_pset && field_type == WALLY_PSBT_PROPRIETARY_TYPE) {
+#ifdef BUILD_ELEMENTS
         const size_t pset_key_len = pull_varlength(key, key_len);
         if (is_pset_key(*key, pset_key_len)) {
             pull_skip(key, key_len, PSET_PREFIX_LEN);
             field_type = pull_varint(key, key_len);
             *is_pset_ft = true;
         }
-    }
 #endif /* BUILD_ELEMENTS */
+    }
     return field_type;
+}
+
+static int pull_taproot_leaf_signature(const unsigned char **cursor, size_t *max,
+                                       const unsigned char **key, size_t *key_len,
+                                       struct wally_map *leaf_sigs)
+{
+    /* TODO: use schnorr/taproot constants here */
+    const unsigned char *val, *xonly_hash;
+    size_t val_len;
+
+    /* key = x-only pubkey + leaf hash */
+    if (*key_len != 64u || !(xonly_hash = pull_skip(key, key_len, *key_len)))
+        return WALLY_EINVAL;
+    subfield_nomore_end(cursor, max, *key, *key_len);
+
+    pull_varlength_buff(cursor, max, &val, &val_len);
+    if (!val || (val_len != 64u && val_len != 65))
+        return WALLY_EINVAL; /* Invalid signature length */
+    return map_add(leaf_sigs, xonly_hash, 64u, val, val_len, false, false);
+}
+
+static bool is_valid_control_block_len(size_t ctrl_len)
+{
+    return ctrl_len >= 33u && ctrl_len <= 33u + 128u * 32u &&
+           ((ctrl_len - 33u) % 32u) == 0;
+}
+
+static int pull_taproot_leaf_script(const unsigned char **cursor, size_t *max,
+                                    const unsigned char **key, size_t *key_len,
+                                    struct wally_map *leaf_scripts)
+{
+    /* TODO: use taproot constants here */
+    const unsigned char *ctrl, *val;
+    size_t ctrl_len = *key_len, val_len;
+
+    ctrl = pull_skip(key, key_len, ctrl_len);
+    if (!ctrl || !is_valid_control_block_len(ctrl_len))
+        return WALLY_EINVAL;
+    subfield_nomore_end(cursor, max, *key, *key_len);
+
+    pull_varlength_buff(cursor, max, &val, &val_len);
+    if (!val || !val_len)
+        return WALLY_EINVAL;
+
+    return map_add(leaf_scripts, ctrl, ctrl_len, val, val_len, false, false);
+}
+
+static int pull_taproot_derivation(const unsigned char **cursor, size_t *max,
+                                   const unsigned char **key, size_t *key_len,
+                                   struct wally_map *leaf_hashes,
+                                   struct wally_map *leaf_paths)
+{
+    const unsigned char *xonly = *key, *hashes, *val;
+    size_t xonly_len = *key_len, num_hashes, hashes_len, val_len;
+    int ret;
+
+    if ((ret = wally_ec_xonly_public_key_verify(xonly, xonly_len)) != WALLY_OK)
+        return ret;
+    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
+    num_hashes = pull_varint(&val, &val_len);
+    hashes_len = num_hashes * SHA256_LEN;
+    if (!(hashes = pull_skip(&val, &val_len, hashes_len)))
+        return WALLY_EINVAL;
+
+    if (val_len < sizeof(uint32_t) || val_len % sizeof(uint32_t))
+        return WALLY_EINVAL; /* Invalid fingerprint + path */
+
+    ret = map_add(leaf_hashes, xonly, xonly_len,
+                  hashes_len ? hashes : NULL, hashes_len, false, false);
+    if (ret == WALLY_OK) {
+        ret = map_add(leaf_paths, xonly, xonly_len, val, val_len, false, false);
+        if (ret == WALLY_OK) {
+            pull_skip(&val, &val_len, val_len);
+            subfield_nomore_end(cursor, max, val, val_len);
+        }
+    }
+    return ret;
 }
 
 static struct wally_psbt *pull_psbt(const unsigned char **cursor, size_t *max)
@@ -1548,10 +1637,17 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = wally_psbt_input_set_required_lockheight(result, pull_le32_subfield(cursor, max));
                 break;
             case PSBT_IN_TAP_SCRIPT_SIG:
+                ret = pull_taproot_leaf_signature(cursor, max, &key, &key_len,
+                                                  &result->taproot_leaf_signatures);
+                break;
             case PSBT_IN_TAP_LEAF_SCRIPT:
+                ret = pull_taproot_leaf_script(cursor, max, &key, &key_len,
+                                               &result->taproot_leaf_scripts);
+                break;
             case PSBT_IN_TAP_BIP32_DERIVATION:
-                /* FIXME: */
-                goto unknown;
+                ret = pull_taproot_derivation(cursor, max, &key, &key_len,
+                                              &result->taproot_leaf_hashes,
+                                              &result->taproot_leaf_paths);
                 break;
 #ifdef BUILD_ELEMENTS
             case PSET_FT(PSET_IN_ISSUANCE_VALUE):
@@ -1703,8 +1799,9 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                                             val_p, val_len);
                 break;
             case PSBT_OUT_TAP_BIP32_DERIVATION:
-                /* FIXME */
-                goto unknown;
+                ret = pull_taproot_derivation(cursor, max, &key, &key_len,
+                                              &result->taproot_leaf_hashes,
+                                              &result->taproot_leaf_paths);
                 break;
 #ifdef BUILD_ELEMENTS
             case PSET_FT(PSET_OUT_BLINDER_INDEX):
@@ -2083,6 +2180,77 @@ static int push_preimages(unsigned char **cursor, size_t *max,
     return WALLY_OK;
 }
 
+static int push_taproot_leaf_signatures(unsigned char **cursor, size_t *max, size_t ft,
+                                        const struct wally_map *leaf_sigs)
+{
+    size_t i;
+
+    for (i = 0; i < leaf_sigs->num_items; ++i) {
+        const struct wally_map_item *item = leaf_sigs->items + i;
+        push_key(cursor, max, ft, false, item->key, item->key_len);
+        push_varbuff(cursor, max, item->value, item->value_len);
+    }
+    return WALLY_OK;
+}
+
+static int push_taproot_leaf_scripts(unsigned char **cursor, size_t *max, size_t ft,
+                                     const struct wally_map *leaf_scripts)
+{
+    size_t i;
+
+    for (i = 0; i < leaf_scripts->num_items; ++i) {
+        const struct wally_map_item *item = leaf_scripts->items + i;
+
+        if (!is_valid_control_block_len(item->key_len) || !item->value_len)
+            return WALLY_EINVAL;
+
+        push_key(cursor, max, ft, false, item->key, item->key_len);
+        push_varbuff(cursor, max, item->value, item->value_len);
+    }
+    return WALLY_OK;
+}
+
+static size_t get_taproot_derivation_size(size_t num_hashes, size_t path_len)
+{
+    return varint_get_length(num_hashes) + num_hashes * SHA256_LEN +
+           sizeof(uint32_t) + path_len * sizeof(uint32_t);
+}
+
+static int push_taproot_derivation(unsigned char **cursor, size_t *max, size_t ft,
+                                   const struct wally_map *leaf_hashes,
+                                   const struct wally_map *leaf_paths)
+{
+    size_t i, index, num_hashes, num_children;
+    const struct wally_map_item *hashes, *path;
+    int ret;
+
+    for (i = 0; i < leaf_paths->num_items; ++i) {
+        /* Find the hashes to write with this xonly keys path */
+        path = leaf_paths->items + i;
+        if (path->value_len < sizeof(uint32_t) || path->value_len % sizeof(uint32_t))
+            return WALLY_EINVAL; /* Invalid fingerprint + path */
+
+        ret = wally_map_find(leaf_hashes, path->key, path->key_len, &index);
+        if (ret != WALLY_OK || !index)
+            return WALLY_EINVAL; /* Corresponding hashes not found */
+
+        hashes = leaf_hashes->items + index - 1;
+        num_hashes = hashes->value_len / SHA256_LEN;
+        num_children = path->value_len / sizeof(uint32_t) - 1;
+
+        /* Key is the x-only pubkey */
+        push_key(cursor, max, ft, false, path->key, path->key_len);
+        /* Compute and write the length of the associated data */
+        push_varint(cursor, max, get_taproot_derivation_size(num_hashes, num_children));
+        /* <hashes len> <leaf hash>* */
+        push_varint(cursor, max, num_hashes); /* Not the length as BIP371 suggests */
+        push_bytes(cursor, max, hashes->value, hashes->value_len);
+        /* <4 byte fingerprint> <32-bit uint>* */
+        push_bytes(cursor, max, path->value, path->value_len);
+    }
+    return WALLY_OK;
+}
+
 #ifdef BUILD_ELEMENTS
 static bool push_commitment(unsigned char **cursor, size_t *max,
                             const unsigned char *commitment, size_t commitment_len)
@@ -2215,26 +2383,40 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 
         if (input->required_lockheight)
             push_psbt_le32(cursor, max, PSBT_IN_REQUIRED_HEIGHT_LOCKTIME, false, input->required_lockheight);
+    }
 
-        if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_KEY_SIG,
-                                         PSBT_IN_TAP_KEY_SIG,
-                                         false, &input->psbt_fields)) != WALLY_OK)
-            return ret;
+    if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_KEY_SIG,
+                                     PSBT_IN_TAP_KEY_SIG,
+                                     false, &input->psbt_fields)) != WALLY_OK)
+        return ret;
 
-        /* FIXME: PSBT_IN_TAP_SCRIPT_SIG */
-        /* FIXME: PSBT_IN_TAP_LEAF_SCRIPT */
-        /* FIXME: PSBT_IN_TAP_BIP32_DERIVATION */
+    if ((ret = push_taproot_leaf_signatures(cursor, max, PSBT_IN_TAP_SCRIPT_SIG,
+                                            &input->taproot_leaf_signatures)) != WALLY_OK)
+        return ret;
 
-        if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_INTERNAL_KEY,
-                                         PSBT_IN_TAP_INTERNAL_KEY,
-                                         false, &input->psbt_fields)) != WALLY_OK)
+    if ((ret = push_taproot_leaf_scripts(cursor, max, PSBT_IN_TAP_LEAF_SCRIPT,
+                                         &input->taproot_leaf_scripts)) != WALLY_OK)
+        return ret;
+
+    if (input->taproot_leaf_hashes.num_items) {
+        ret = push_taproot_derivation(cursor, max, PSBT_IN_TAP_BIP32_DERIVATION,
+                                      &input->taproot_leaf_hashes,
+                                      &input->taproot_leaf_paths);
+        if (ret != WALLY_OK)
             return ret;
-        if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_MERKLE_ROOT,
-                                         PSBT_IN_TAP_MERKLE_ROOT,
-                                         false, &input->psbt_fields)) != WALLY_OK)
-            return ret;
+    }
+
+    if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_INTERNAL_KEY,
+                                     PSBT_IN_TAP_INTERNAL_KEY,
+                                     false, &input->psbt_fields)) != WALLY_OK)
+        return ret;
+    if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_TAP_MERKLE_ROOT,
+                                     PSBT_IN_TAP_MERKLE_ROOT,
+                                     false, &input->psbt_fields)) != WALLY_OK)
+        return ret;
 
 #ifdef BUILD_ELEMENTS
+    if (is_pset && psbt->version == PSBT_2) {
         for (ft = PSET_IN_ISSUANCE_VALUE; ft <= PSET_IN_MAX; ++ft) {
             switch (ft) {
             case PSET_IN_ISSUANCE_VALUE:
@@ -2270,8 +2452,8 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                 break;
             }
         }
-#endif /* BUILD_ELEMENTS */
     }
+#endif /* BUILD_ELEMENTS */
 
     /* Unknowns */
     push_map(cursor, max, &input->unknowns);
@@ -2286,10 +2468,10 @@ static int push_psbt_output(const struct wally_psbt *psbt,
 {
 #ifdef BUILD_ELEMENTS
     uint64_t ft;
-    int ret;
 #endif
     size_t i;
     unsigned char dummy = 0;
+    int ret;
 
     /* Redeem script */
     push_psbt_varbuff(cursor, max, PSBT_OUT_REDEEM_SCRIPT, false,
@@ -2311,22 +2493,30 @@ static int push_psbt_output(const struct wally_psbt *psbt,
         push_psbt_varbuff(cursor, max, PSBT_OUT_SCRIPT, false,
                           output->script ? output->script : &dummy,
                           output->script_len);
+    }
 
-        if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_INTERNAL_KEY,
-                                         PSBT_OUT_TAP_INTERNAL_KEY,
-                                         false, &output->psbt_fields)) != WALLY_OK)
+    if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_INTERNAL_KEY,
+                                     PSBT_OUT_TAP_INTERNAL_KEY,
+                                     false, &output->psbt_fields)) != WALLY_OK)
+        return ret;
+
+    for (i = 0; i < output->taproot_tree.num_items; ++i) {
+        ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_TREE, i + 1,
+                                    false, &output->taproot_tree);
+        if (ret != WALLY_OK)
             return ret;
+    }
 
-        for (i = 0; i < output->taproot_tree.num_items; ++i) {
-            ret = push_varbuff_from_map(cursor, max, PSBT_OUT_TAP_TREE, i + 1,
-                                        false, &output->taproot_tree);
-            if (ret != WALLY_OK)
-                return ret;
-        }
-
-        /* FIXME: PSBT_OUT_TAP_BIP32_DERIVATION */
+    if (output->taproot_leaf_hashes.num_items) {
+        ret = push_taproot_derivation(cursor, max, PSBT_OUT_TAP_BIP32_DERIVATION,
+                                      &output->taproot_leaf_hashes,
+                                      &output->taproot_leaf_paths);
+        if (ret != WALLY_OK)
+            return ret;
+    }
 
 #ifdef BUILD_ELEMENTS
+    if (is_pset && psbt->version == PSBT_2) {
         for (ft = PSET_OUT_VALUE_COMMITMENT; ft <= PSET_OUT_MAX; ++ft) {
             switch (ft) {
             case PSET_OUT_BLINDER_INDEX:
@@ -2341,8 +2531,8 @@ static int push_psbt_output(const struct wally_psbt *psbt,
                 break;
             }
         }
-#endif /* BUILD_ELEMENTS */
     }
+#endif /* BUILD_ELEMENTS */
 
     /* Unknowns */
     push_map(cursor, max, &output->unknowns);
@@ -2531,6 +2721,13 @@ static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
     return WALLY_OK;
 }
 
+static int combine_map_if_empty(struct wally_map *dst, const struct wally_map *src)
+{
+    if (!dst->num_items && src->num_items)
+        return wally_map_combine(dst, src);
+    return WALLY_OK;
+}
+
 static int combine_inputs(struct wally_psbt_input *dst,
                           const struct wally_psbt_input *src)
 {
@@ -2579,6 +2776,18 @@ static int combine_inputs(struct wally_psbt_input *dst,
         return ret;
     if ((ret = wally_map_combine(&dst->psbt_fields, &src->psbt_fields)) != WALLY_OK)
         return ret;
+    if ((ret = combine_map_if_empty(&dst->taproot_leaf_signatures, &src->taproot_leaf_signatures)) != WALLY_OK)
+        return ret;
+    if ((ret = combine_map_if_empty(&dst->taproot_leaf_scripts, &src->taproot_leaf_scripts)) != WALLY_OK)
+        return ret;
+    if (!dst->taproot_leaf_hashes.num_items && !dst->taproot_leaf_paths.num_items &&
+        src->taproot_leaf_hashes.num_items && src->taproot_leaf_paths.num_items) {
+        ret = wally_map_combine(&dst->taproot_leaf_hashes, &src->taproot_leaf_hashes);
+        if (ret == WALLY_OK)
+            ret = wally_map_combine(&dst->taproot_leaf_paths, &src->taproot_leaf_paths);
+        if (ret != WALLY_OK)
+            return ret;
+    }
 #ifdef BUILD_ELEMENTS
     if (!dst->issuance_amount && src->issuance_amount)
         dst->issuance_amount = src->issuance_amount;
@@ -2622,9 +2831,17 @@ static int combine_outputs(struct wally_psbt_output *dst,
     if ((ret = wally_map_combine(&dst->psbt_fields, &src->psbt_fields)) != WALLY_OK)
         return ret;
 
-    if (!dst->taproot_tree.num_items && src->taproot_tree.num_items &&
-        (ret = wally_map_combine(&dst->taproot_tree, &src->taproot_tree)) != WALLY_OK)
+    if ((ret = combine_map_if_empty(&dst->taproot_tree, &src->taproot_tree)) != WALLY_OK)
         return ret;
+
+    if (!dst->taproot_leaf_hashes.num_items && !dst->taproot_leaf_paths.num_items &&
+        src->taproot_leaf_hashes.num_items && src->taproot_leaf_paths.num_items) {
+        ret = wally_map_combine(&dst->taproot_leaf_hashes, &src->taproot_leaf_hashes);
+        if (ret == WALLY_OK)
+            ret = wally_map_combine(&dst->taproot_leaf_paths, &src->taproot_leaf_paths);
+        if (ret != WALLY_OK)
+            return ret;
+    }
 
 #ifdef BUILD_ELEMENTS
     if (!dst->has_blinder_index && src->has_blinder_index) {
