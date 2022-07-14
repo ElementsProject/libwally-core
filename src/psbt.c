@@ -151,6 +151,73 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
                                      child_path, child_path_len); \
     }
 
+static int map_field_get_len(const struct wally_map *map_in,
+                             uint32_t type, size_t *written)
+{
+    size_t index;
+    int ret;
+
+    if (written)
+        *written = 0;
+    if (!map_in || !written)
+        return WALLY_EINVAL;
+    ret = wally_map_find_integer(map_in, type, &index);
+    if (ret == WALLY_OK && index)
+        *written = map_in->items[index - 1].value_len; /* Found */
+    return ret;
+}
+
+static int map_field_get(const struct wally_map *map_in, uint32_t type,
+                         unsigned char *bytes_out, size_t len,
+                         size_t *written)
+{
+    size_t index;
+    int ret;
+
+    if (written)
+        *written = 0;
+    if (!map_in || !bytes_out || !written)
+        return WALLY_EINVAL;
+    ret = wally_map_find_integer(map_in, type, &index);
+    if (ret == WALLY_OK && index) {
+        /* Found */
+        const struct wally_map_item *item = map_in->items + index - 1;
+        *written = item->value_len;
+        if (len >= item->value_len)
+            memcpy(bytes_out, item->value, item->value_len);
+    }
+    return ret;
+}
+
+static int map_field_set(struct wally_map *map_in, uint32_t type,
+                         const unsigned char *val, size_t val_len)
+{
+    if (!map_in || BYTES_INVALID(val, val_len))
+        return WALLY_EINVAL;
+
+    if (!val)
+        return wally_map_remove_integer(map_in, type);
+    return wally_map_replace_integer(map_in, type, val, val_len);
+}
+
+/* Methods for a binary buffer field from a PSET input/output */
+#define MAP_INNER_FIELD(typ, name, FT, mapname) \
+    int wally_psbt_ ## typ ## _get_ ## name ## _len(const struct wally_psbt_ ## typ *p, \
+                                                    size_t * written) { \
+        return map_field_get_len(p ? &p->mapname : NULL, FT, written); \
+    } \
+    int wally_psbt_ ## typ ## _get_ ## name(const struct wally_psbt_ ## typ *p, \
+                                            unsigned char *bytes_out, size_t len, size_t * written) { \
+        return map_field_get(p ? &p->mapname : NULL, FT, bytes_out, len, written); \
+    } \
+    int wally_psbt_ ## typ ## _clear_ ## name(struct wally_psbt_ ## typ *p) { \
+        return wally_map_remove_integer(p ? &p->mapname : NULL, FT); \
+    } \
+    int wally_psbt_ ## typ ## _set_ ## name(struct wally_psbt_ ## typ *p, \
+                                            const unsigned char *value, size_t value_len) { \
+        return map_field_set(p ? &p->mapname : NULL, FT, value, value_len); \
+    }
+
 int wally_psbt_input_is_finalized(const struct wally_psbt_input *input,
                                   size_t *written)
 {
@@ -428,56 +495,6 @@ static int pset_map_output_field_verify(const unsigned char *key, size_t key_len
     return key ? WALLY_EINVAL : pset_output_field_verify(key_len, val, val_len);
 }
 
-
-static int pset_field_get_len(const struct wally_map *map_in,
-                              uint32_t type, size_t *written)
-{
-    size_t index;
-    int ret;
-
-    if (written)
-        *written = 0;
-    if (!map_in || !written)
-        return WALLY_EINVAL;
-    ret = wally_map_find_integer(map_in, type, &index);
-    if (ret == WALLY_OK && index)
-        *written = map_in->items[index - 1].value_len; /* Found */
-    return ret;
-}
-
-static int pset_field_get(const struct wally_map *map_in, uint32_t type,
-                          unsigned char *bytes_out, size_t len,
-                          size_t *written)
-{
-    size_t index;
-    int ret;
-
-    if (written)
-        *written = 0;
-    if (!map_in || !bytes_out || !map_in->verify_fn || !written)
-        return WALLY_EINVAL;
-    ret = wally_map_find_integer(map_in, type, &index);
-    if (ret == WALLY_OK && index) {
-        /* Found */
-        const struct wally_map_item *item = map_in->items + index - 1;
-        *written = item->value_len;
-        if (len >= item->value_len)
-            memcpy(bytes_out, item->value, item->value_len);
-    }
-    return ret;
-}
-
-static int pset_field_set(struct wally_map *map_in, uint32_t type,
-                          const unsigned char *val, size_t val_len)
-{
-    if (!map_in || BYTES_INVALID(val, val_len))
-        return WALLY_EINVAL;
-
-    if (!val)
-        return wally_map_remove_integer(map_in, type);
-    return wally_map_replace_integer(map_in, type, val, val_len);
-}
-
 int wally_psbt_input_set_issuance_amount(struct wally_psbt_input *input,
                                          uint64_t amount)
 {
@@ -508,36 +525,18 @@ SET_STRUCT(wally_psbt_input, pegin_tx, wally_tx, tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, pegin_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 
-/* Methods for a binary buffer field from a PSET input/output */
-#define PSET_INNER_FIELD(typ, name, FT) \
-    int wally_psbt_ ## typ ## _get_ ## name ## _len(const struct wally_psbt_ ## typ *p, \
-                                                    size_t * written) { \
-        return pset_field_get_len(p ? &p->pset_fields : NULL, FT, written); \
-    } \
-    int wally_psbt_ ## typ ## _get_ ## name(const struct wally_psbt_ ## typ *p, \
-                                            unsigned char *bytes_out, size_t len, size_t * written) { \
-        return pset_field_get(p ? &p->pset_fields : NULL, FT, bytes_out, len, written); \
-    } \
-    int wally_psbt_ ## typ ## _clear_ ## name(struct wally_psbt_ ## typ *p) { \
-        return wally_map_remove_integer(p ? &p->pset_fields : NULL, FT); \
-    } \
-    int wally_psbt_ ## typ ## _set_ ## name(struct wally_psbt_ ## typ *p, \
-                                            const unsigned char *value, size_t value_len) { \
-        return pset_field_set(p ? &p->pset_fields : NULL, FT, value, value_len); \
-    }
-
-PSET_INNER_FIELD(input, issuance_amount_commitment, PSET_IN_ISSUANCE_VALUE_COMMITMENT)
-PSET_INNER_FIELD(input, issuance_amount_rangeproof, PSET_IN_ISSUANCE_VALUE_RANGEPROOF)
-PSET_INNER_FIELD(input, issuance_blinding_nonce, PSET_IN_ISSUANCE_BLINDING_NONCE)
-PSET_INNER_FIELD(input, issuance_asset_entropy, PSET_IN_ISSUANCE_ASSET_ENTROPY)
-PSET_INNER_FIELD(input, issuance_amount_blinding_rangeproof, PSET_IN_ISSUANCE_BLIND_VALUE_PROOF)
-PSET_INNER_FIELD(input, pegin_claim_script, PSET_IN_PEG_IN_CLAIM_SCRIPT)
-PSET_INNER_FIELD(input, pegin_genesis_blockhash, PSET_IN_PEG_IN_GENESIS_HASH)
-PSET_INNER_FIELD(input, pegin_txout_proof, PSET_IN_PEG_IN_TXOUT_PROOF)
-PSET_INNER_FIELD(input, inflation_keys_commitment, PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT)
-PSET_INNER_FIELD(input, inflation_keys_rangeproof, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF)
-PSET_INNER_FIELD(input, inflation_keys_blinding_rangeproof, PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF)
-PSET_INNER_FIELD(input, utxo_rangeproof, PSET_IN_UTXO_RANGEPROOF)
+MAP_INNER_FIELD(input, issuance_amount_commitment, PSET_IN_ISSUANCE_VALUE_COMMITMENT, pset_fields)
+MAP_INNER_FIELD(input, issuance_amount_rangeproof, PSET_IN_ISSUANCE_VALUE_RANGEPROOF, pset_fields)
+MAP_INNER_FIELD(input, issuance_blinding_nonce, PSET_IN_ISSUANCE_BLINDING_NONCE, pset_fields)
+MAP_INNER_FIELD(input, issuance_asset_entropy, PSET_IN_ISSUANCE_ASSET_ENTROPY, pset_fields)
+MAP_INNER_FIELD(input, issuance_amount_blinding_rangeproof, PSET_IN_ISSUANCE_BLIND_VALUE_PROOF, pset_fields)
+MAP_INNER_FIELD(input, pegin_claim_script, PSET_IN_PEG_IN_CLAIM_SCRIPT, pset_fields)
+MAP_INNER_FIELD(input, pegin_genesis_blockhash, PSET_IN_PEG_IN_GENESIS_HASH, pset_fields)
+MAP_INNER_FIELD(input, pegin_txout_proof, PSET_IN_PEG_IN_TXOUT_PROOF, pset_fields)
+MAP_INNER_FIELD(input, inflation_keys_commitment, PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT, pset_fields)
+MAP_INNER_FIELD(input, inflation_keys_rangeproof, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF, pset_fields)
+MAP_INNER_FIELD(input, inflation_keys_blinding_rangeproof, PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF, pset_fields)
+MAP_INNER_FIELD(input, utxo_rangeproof, PSET_IN_UTXO_RANGEPROOF, pset_fields)
 #endif /* BUILD_ELEMENTS */
 
 static void psbt_input_init(struct wally_psbt_input *input)
@@ -631,15 +630,15 @@ int wally_psbt_output_clear_blinder_index(struct wally_psbt_output *output)
     return WALLY_OK;
 }
 
-PSET_INNER_FIELD(output, value_commitment, PSET_OUT_VALUE_COMMITMENT)
-PSET_INNER_FIELD(output, asset, PSET_OUT_ASSET)
-PSET_INNER_FIELD(output, asset_commitment, PSET_OUT_ASSET_COMMITMENT)
-PSET_INNER_FIELD(output, value_rangeproof, PSET_OUT_VALUE_RANGEPROOF)
-PSET_INNER_FIELD(output, asset_surjectionproof, PSET_OUT_ASSET_SURJECTION_PROOF)
-PSET_INNER_FIELD(output, blinding_public_key, PSET_OUT_BLINDING_PUBKEY)
-PSET_INNER_FIELD(output, ecdh_public_key, PSET_OUT_ECDH_PUBKEY)
-PSET_INNER_FIELD(output, value_blinding_rangeproof, PSET_OUT_BLIND_VALUE_PROOF)
-PSET_INNER_FIELD(output, asset_blinding_surjectionproof, PSET_OUT_BLIND_ASSET_PROOF)
+MAP_INNER_FIELD(output, value_commitment, PSET_OUT_VALUE_COMMITMENT, pset_fields)
+MAP_INNER_FIELD(output, asset, PSET_OUT_ASSET, pset_fields)
+MAP_INNER_FIELD(output, asset_commitment, PSET_OUT_ASSET_COMMITMENT, pset_fields)
+MAP_INNER_FIELD(output, value_rangeproof, PSET_OUT_VALUE_RANGEPROOF, pset_fields)
+MAP_INNER_FIELD(output, asset_surjectionproof, PSET_OUT_ASSET_SURJECTION_PROOF, pset_fields)
+MAP_INNER_FIELD(output, blinding_public_key, PSET_OUT_BLINDING_PUBKEY, pset_fields)
+MAP_INNER_FIELD(output, ecdh_public_key, PSET_OUT_ECDH_PUBKEY, pset_fields)
+MAP_INNER_FIELD(output, value_blinding_rangeproof, PSET_OUT_BLIND_VALUE_PROOF, pset_fields)
+MAP_INNER_FIELD(output, asset_blinding_surjectionproof, PSET_OUT_BLIND_ASSET_PROOF, pset_fields)
 
 /* Verify that unblinded values, their commitment, and commitment proof
  * are provided/elided where required.
@@ -3785,6 +3784,30 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
         return wally_psbt_ ## typ ## _set_ ## name(psbt_get_ ## typ(psbt, index), p); \
     }
 
+/* Methods for a binary fields */
+#define PSBT_FIELD(typ, name, ver) \
+    int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, \
+                                                    size_t index, size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written || (ver && psbt->version != ver)) return WALLY_EINVAL; \
+        return wally_psbt_ ## typ ## _get_ ## name ## _len(p, written); \
+    } \
+    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
+                                            unsigned char *bytes_out, size_t len, size_t *written) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (written) *written = 0; \
+        if (!p || !written || (ver && psbt->version != ver)) return WALLY_EINVAL; \
+        return wally_psbt_ ## typ ## _get_ ## name(p, bytes_out, len, written); \
+    } \
+    int wally_psbt_clear_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index) { \
+        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        if (!p || (ver && psbt->version != ver)) return WALLY_EINVAL; \
+        return wally_psbt_ ## typ ## _clear_ ## name(p); \
+    } \
+    PSBT_SET_B(typ, name, ver)
+
+
 PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
 PSBT_GET_B(input, redeem_script, PSBT_0)
@@ -3899,29 +3922,6 @@ int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t i
 }
 
 #ifdef BUILD_ELEMENTS
-/* Methods for a binary buffer field from a PSET */
-#define PSET_FIELD(typ, name) \
-    int wally_psbt_get_ ## typ ## _ ## name ## _len(const struct wally_psbt *psbt, \
-                                                    size_t index, size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written || (psbt->version != PSBT_2)) return WALLY_EINVAL; \
-        return wally_psbt_ ## typ ## _get_ ## name ## _len(p, written); \
-    } \
-    int wally_psbt_get_ ## typ ## _ ## name(const struct wally_psbt *psbt, size_t index, \
-                                            unsigned char *bytes_out, size_t len, size_t *written) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (written) *written = 0; \
-        if (!p || !written || (psbt->version != PSBT_2)) return WALLY_EINVAL; \
-        return wally_psbt_ ## typ ## _get_ ## name(p, bytes_out, len, written); \
-    } \
-    int wally_psbt_clear_ ## typ ## _ ## name(struct wally_psbt *psbt, size_t index) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
-        if (!p || psbt->version != PSBT_2) return WALLY_EINVAL; \
-        return wally_psbt_ ## typ ## _clear_ ## name(p); \
-    } \
-    PSBT_SET_B(typ, name, PSBT_2)
-
 PSBT_GET_I(input, issuance_amount, uint64_t, PSBT_2)
 PSBT_GET_I(input, inflation_keys, uint64_t, PSBT_2)
 PSBT_GET_I(input, pegin_amount, uint64_t, PSBT_2)
@@ -3930,18 +3930,18 @@ PSBT_SET_I(input, issuance_amount, uint64_t, PSBT_2)
 PSBT_SET_I(input, inflation_keys, uint64_t, PSBT_2)
 PSBT_SET_I(input, pegin_amount, uint64_t, PSBT_2)
 
-PSET_FIELD(input, issuance_amount_commitment)
-PSET_FIELD(input, issuance_amount_rangeproof)
-PSET_FIELD(input, issuance_blinding_nonce)
-PSET_FIELD(input, issuance_asset_entropy)
-PSET_FIELD(input, issuance_amount_blinding_rangeproof)
-PSET_FIELD(input, pegin_claim_script)
-PSET_FIELD(input, pegin_genesis_blockhash)
-PSET_FIELD(input, pegin_txout_proof)
-PSET_FIELD(input, inflation_keys_commitment)
-PSET_FIELD(input, inflation_keys_rangeproof)
-PSET_FIELD(input, inflation_keys_blinding_rangeproof)
-PSET_FIELD(input, utxo_rangeproof)
+PSBT_FIELD(input, issuance_amount_commitment, PSBT_2)
+PSBT_FIELD(input, issuance_amount_rangeproof, PSBT_2)
+PSBT_FIELD(input, issuance_blinding_nonce, PSBT_2)
+PSBT_FIELD(input, issuance_asset_entropy, PSBT_2)
+PSBT_FIELD(input, issuance_amount_blinding_rangeproof, PSBT_2)
+PSBT_FIELD(input, pegin_claim_script, PSBT_2)
+PSBT_FIELD(input, pegin_genesis_blockhash, PSBT_2)
+PSBT_FIELD(input, pegin_txout_proof, PSBT_2)
+PSBT_FIELD(input, inflation_keys_commitment, PSBT_2)
+PSBT_FIELD(input, inflation_keys_rangeproof, PSBT_2)
+PSBT_FIELD(input, inflation_keys_blinding_rangeproof, PSBT_2)
+PSBT_FIELD(input, utxo_rangeproof, PSBT_2)
 #endif /* BUILD_ELEMENTS */
 
 PSBT_GET_B(output, redeem_script, PSBT_0)
@@ -3986,15 +3986,15 @@ int wally_psbt_clear_output_blinder_index(struct wally_psbt *psbt, size_t index)
     return wally_psbt_output_clear_blinder_index(psbt_get_output(psbt, index));
 }
 
-PSET_FIELD(output, value_commitment)
-PSET_FIELD(output, asset)
-PSET_FIELD(output, asset_commitment)
-PSET_FIELD(output, value_rangeproof)
-PSET_FIELD(output, asset_surjectionproof)
-PSET_FIELD(output, blinding_public_key)
-PSET_FIELD(output, ecdh_public_key)
-PSET_FIELD(output, value_blinding_rangeproof)
-PSET_FIELD(output, asset_blinding_surjectionproof)
+PSBT_FIELD(output, value_commitment, PSBT_2)
+PSBT_FIELD(output, asset, PSBT_2)
+PSBT_FIELD(output, asset_commitment, PSBT_2)
+PSBT_FIELD(output, value_rangeproof, PSBT_2)
+PSBT_FIELD(output, asset_surjectionproof, PSBT_2)
+PSBT_FIELD(output, blinding_public_key, PSBT_2)
+PSBT_FIELD(output, ecdh_public_key, PSBT_2)
+PSBT_FIELD(output, value_blinding_rangeproof, PSBT_2)
+PSBT_FIELD(output, asset_blinding_surjectionproof, PSBT_2)
 #endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */
