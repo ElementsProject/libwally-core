@@ -140,8 +140,6 @@ class wally_psbt_input(Structure):
                 ('sequence', c_uint32),
                 ('utxo', POINTER(wally_tx)),
                 ('witness_utxo', POINTER(wally_tx_output)),
-                ('redeem_script', c_void_p),
-                ('redeem_script_len', c_size_t),
                 ('witness_script', c_void_p),
                 ('witness_script_len', c_size_t),
                 ('final_scriptsig', c_void_p),
