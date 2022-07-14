@@ -179,6 +179,32 @@ WALLY_CORE_API int wally_map_find_integer(
     uint32_t key,
     size_t *written);
 
+#ifndef SWIG
+/**
+ * Find an item in a map.
+ *
+ * :param map_in: The map to find ``key`` in.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ *
+ * .. note:: This is a non-standard call for low-level use. It returns the
+ *|    map item directly without copying, or NULL if not found/an error occurs.
+ */
+WALLY_CORE_API const struct wally_map_item *wally_map_get(
+    const struct wally_map *map_in,
+    const unsigned char *key,
+    size_t key_len);
+
+/**
+ * Find an item in a map keyed by an integer.
+ *
+ * As per `wally_map_get`, using an integer key.
+ */
+WALLY_CORE_API const struct wally_map_item *wally_map_get_integer(
+    const struct wally_map *map_in,
+    uint32_t key);
+#endif
+
 /**
  * Sort the items in a map.
  *

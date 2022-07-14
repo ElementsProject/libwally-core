@@ -107,6 +107,27 @@ int wally_map_find_integer(const struct wally_map *map_in,
     return map_find(map_in, NULL, key, written);
 }
 
+static const struct wally_map_item *map_get(const struct wally_map *map_in,
+                                            const unsigned char *key, size_t key_len)
+{
+    size_t index;
+    if (map_find(map_in, key, key_len, &index) == WALLY_OK && index)
+        return &map_in->items[index - 1];
+    return NULL; /* Not found/Invalid */
+}
+
+const struct wally_map_item *wally_map_get(const struct wally_map *map_in,
+                                           const unsigned char *key, size_t key_len)
+{
+    return key ? map_get(map_in, key, key_len) : NULL;
+}
+
+const struct wally_map_item *wally_map_get_integer(const struct wally_map *map_in,
+                                                   uint32_t key)
+{
+    return map_get(map_in, NULL, key);
+}
+
 /* Note: If take_value is true and this errors, the caller must
  * free `value`. By design this only happens with calls internal
  * to the library. */
