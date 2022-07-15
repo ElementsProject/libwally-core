@@ -49,8 +49,6 @@ struct wally_psbt_input {
     uint32_t sequence;
     struct wally_tx *utxo;
     struct wally_tx_output *witness_utxo;
-    unsigned char *final_scriptsig;
-    size_t final_scriptsig_len;
     struct wally_tx_witness_stack *final_witness;
     struct wally_map keypaths;
     struct wally_map signatures;

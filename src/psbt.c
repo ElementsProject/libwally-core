@@ -225,7 +225,9 @@ int wally_psbt_input_is_finalized(const struct wally_psbt_input *input,
         *written = 0;
     if (!input || !written)
         return WALLY_EINVAL;
-    *written = input->final_scriptsig || input->final_witness ? 1 : 0;
+    if (input->final_witness ||
+        wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG))
+        *written = 1;
     return WALLY_OK;
 }
 
@@ -235,7 +237,7 @@ SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
            wally_tx_output_clone_alloc, wally_tx_output_free)
 MAP_INNER_FIELD(input, redeem_script, PSBT_IN_REDEEM_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(input, witness_script, PSBT_IN_WITNESS_SCRIPT, psbt_fields)
-SET_BYTES(wally_psbt_input, final_scriptsig)
+MAP_INNER_FIELD(input, final_scriptsig, PSBT_IN_FINAL_SCRIPTSIG, psbt_fields)
 SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
            wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack_free)
 SET_MAP(wally_psbt_input, keypath,)
@@ -364,6 +366,7 @@ static int psbt_input_field_verify(uint32_t field_type,
         switch (field_type) {
         case PSBT_IN_REDEEM_SCRIPT:
         case PSBT_IN_WITNESS_SCRIPT:
+        case PSBT_IN_FINAL_SCRIPTSIG:
         case PSBT_IN_POR_COMMITMENT:
             /* Scripts, or UTF-8 proof of reserves message */
             return val_len ? WALLY_OK : WALLY_EINVAL;
@@ -562,7 +565,6 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
     if (input) {
         wally_tx_free(input->utxo);
         wally_tx_output_free(input->witness_utxo);
-        clear_and_free(input->final_scriptsig, input->final_scriptsig_len);
         wally_tx_witness_stack_free(input->final_witness);
         wally_map_clear(&input->keypaths);
         wally_map_clear(&input->signatures);
@@ -949,7 +951,8 @@ int wally_psbt_is_finalized(const struct wally_psbt *psbt,
         return WALLY_EINVAL;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
-        if (!psbt->inputs[i].final_scriptsig && !psbt->inputs[i].final_witness)
+        if (!psbt->inputs[i].final_witness &&
+            !wally_map_get_integer(&psbt->inputs[i].psbt_fields, PSBT_IN_FINAL_SCRIPTSIG))
             return WALLY_OK; /* Non fully finalized */
     }
     /* We are finalized if we have inputs since they are all finalized */
@@ -1227,16 +1230,6 @@ static void pull_varlength_buff(const unsigned char **cursor, size_t *max,
 {
     *len = pull_varlength(cursor, max);
     *dst = pull_skip(cursor, max, *len);
-}
-
-static int pull_input_varbuf(const unsigned char **cursor, size_t *max,
-                             struct wally_psbt_input *input,
-                             int (*set_fn)(struct wally_psbt_input *, const unsigned char *, size_t))
-{
-    const unsigned char *val;
-    size_t val_len;
-    pull_varlength_buff(cursor, max, &val, &val_len);
-    return val_len ? set_fn(input, val, val_len) : WALLY_OK;
 }
 
 static int pull_output_varbuf(const unsigned char **cursor, size_t *max,
@@ -1587,18 +1580,8 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             case PSBT_IN_SIGHASH_TYPE:
                 result->sighash = pull_le32_subfield(cursor, max);
                 break;
-            case PSBT_IN_REDEEM_SCRIPT:
-            case PSBT_IN_WITNESS_SCRIPT:
-                pull_varlength_buff(cursor, max, &val_p, &val_len);
-                ret = wally_map_add_integer(&result->psbt_fields, raw_field_type,
-                                            val_p, val_len);
-                break;
             case PSBT_IN_BIP32_DERIVATION:
                 ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
-                break;
-            case PSBT_IN_FINAL_SCRIPTSIG:
-                ret = pull_input_varbuf(cursor, max, result,
-                                        wally_psbt_input_set_final_scriptsig);
                 break;
             case PSBT_IN_FINAL_SCRIPTWITNESS:
                 ret = pull_witness(cursor, max, &result->final_witness);
@@ -1609,6 +1592,9 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             case PSBT_IN_HASH256:
                 ret = pull_preimage(cursor, max, field_type, key, key_len, &result->preimages);
                 break;
+            case PSBT_IN_REDEEM_SCRIPT:
+            case PSBT_IN_WITNESS_SCRIPT:
+            case PSBT_IN_FINAL_SCRIPTSIG:
             case PSBT_IN_POR_COMMITMENT:
             case PSBT_IN_TAP_KEY_SIG:
             case PSBT_IN_TAP_INTERNAL_KEY:
@@ -2305,6 +2291,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 #endif
     const bool is_pset = (tx_flags & WALLY_TX_FLAG_USE_ELEMENTS) != 0;
     int ret;
+    const struct wally_map_item *final_scriptsig;
 
     /* Non witness utxo */
     if (input->utxo) {
@@ -2329,7 +2316,8 @@ static int push_psbt_input(const struct wally_psbt *psbt,
             return ret;
     }
 
-    if (!input->final_scriptsig && !input->final_witness) {
+    final_scriptsig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG);
+    if (!input->final_witness && !final_scriptsig) {
         /* Partial sigs */
         push_psbt_map(cursor, max, PSBT_IN_PARTIAL_SIG, false, &input->signatures);
         /* Sighash type */
@@ -2350,10 +2338,9 @@ static int push_psbt_input(const struct wally_psbt *psbt,
         push_psbt_map(cursor, max, PSBT_IN_BIP32_DERIVATION, false, &input->keypaths);
     }
 
-    /* Final scriptSig */
-    if (input->final_scriptsig)
+    if (final_scriptsig)
         push_psbt_varbuff(cursor, max, PSBT_IN_FINAL_SCRIPTSIG, false,
-                          input->final_scriptsig, input->final_scriptsig_len);
+                          final_scriptsig->value, final_scriptsig->value_len);
 
     /* Final scriptWitness */
     if (input->final_witness)
@@ -2753,8 +2740,6 @@ static int combine_inputs(struct wally_psbt_input *dst,
         if (ret != WALLY_OK)
             return ret;
     }
-
-    COMBINE_BYTES(input, final_scriptsig);
 
     if (!dst->final_witness && src->final_witness &&
         (ret = wally_psbt_input_set_final_witness(dst, src->final_witness)) != WALLY_OK)
@@ -3371,34 +3356,27 @@ static bool finalize_p2pkh(struct wally_psbt_input *input)
                                        &script_len) != WALLY_OK)
         return false;
 
-    if (!clone_bytes(&input->final_scriptsig, script, script_len))
-        return false;
-    input->final_scriptsig_len = script_len;
-    return true;
+    return wally_psbt_input_set_final_scriptsig(input, script, script_len) == WALLY_OK;
 }
 
 static bool finalize_p2sh_wrapped(struct wally_psbt_input *input)
 {
-    const struct wally_map_item *redeem_script;
-    unsigned char *script = NULL;
-    size_t script_len, push_len;
-
     /* P2SH wrapped witness: add scriptSig pushing the redeemScript */
+    const struct wally_map_item *redeem_script;
     redeem_script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
     if (redeem_script) {
-        script_len = script_get_push_size(redeem_script->value_len);
-        if ((script = wally_malloc(script_len)) != NULL &&
-            wally_script_push_from_bytes(redeem_script->value,
+        unsigned char script[WALLY_SCRIPTSIG_MAX_LEN + 1];
+        size_t script_len;
+        if (wally_script_push_from_bytes(redeem_script->value,
                                          redeem_script->value_len, 0,
-                                         script, script_len,
-                                         &push_len) == WALLY_OK) {
-            input->final_scriptsig = script;
-            input->final_scriptsig_len = push_len;
+                                         script, sizeof(script),
+                                         &script_len) == WALLY_OK &&
+            script_len <= sizeof(script) &&
+            wally_psbt_input_set_final_scriptsig(input,
+                                                 script, script_len) == WALLY_OK)
             return true;
-        }
     }
     /* Failed: clear caller-created witness stack before returning */
-    wally_free(script);
     wally_tx_witness_stack_free(input->final_witness);
     input->final_witness = NULL;
     return false;
@@ -3493,21 +3471,15 @@ static bool finalize_multisig(struct wally_psbt_input *input,
         if (is_p2sh && !finalize_p2sh_wrapped(input))
             goto fail;
     } else {
-        size_t max_len = n_found * (EC_SIGNATURE_DER_MAX_LEN + 2) + out_script_len;
-        unsigned char *script = wally_malloc(max_len);
+        unsigned char script[WALLY_SCRIPTSIG_MAX_LEN];
         size_t script_len;
 
-        if (!script ||
-            wally_scriptsig_multisig_from_bytes(out_script, out_script_len,
+        if (wally_scriptsig_multisig_from_bytes(out_script, out_script_len,
                                                 sigs, n_found * EC_SIGNATURE_LEN,
                                                 sighashes, n_found, 0,
-                                                script, max_len,
-                                                &script_len) != WALLY_OK) {
-            wally_free(script);
+                                                script, sizeof(script), &script_len) != WALLY_OK ||
+            wally_psbt_input_set_final_scriptsig(input, script, script_len) != WALLY_OK)
             goto fail;
-        }
-        input->final_scriptsig = script;
-        input->final_scriptsig_len = script_len;
     }
     ret = true;
 fail:
@@ -3538,7 +3510,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         size_t out_script_len, type;
         bool is_witness = false, is_p2sh = false;
 
-        if (input->final_scriptsig || input->final_witness)
+        if (input->final_witness ||
+            wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG))
             continue; /* Already finalized */
 
         /* Note that if we patch libwally to supply the non-witness utxo tx field (tx) for
@@ -3622,25 +3595,27 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
     for (i = 0; i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *tx_input = &result->inputs[i];
+        const struct wally_map_item *final_scriptsig;
 
-        if (!input->final_scriptsig && !input->final_witness) {
+        final_scriptsig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG);
+
+        if (!input->final_witness && !final_scriptsig) {
             ret = WALLY_EINVAL;
             break;
         }
 
-        if (input->final_scriptsig) {
+        if (final_scriptsig) {
             if (tx_input->script) {
                 /* Our global tx shouldn't have a scriptSig */
                 ret = WALLY_EINVAL;
                 break;
             }
             if (!clone_bytes(&tx_input->script,
-                             input->final_scriptsig,
-                             input->final_scriptsig_len)) {
+                             final_scriptsig->value, final_scriptsig->value_len)) {
                 ret = WALLY_ENOMEM;
                 break;
             }
-            tx_input->script_len = input->final_scriptsig_len;
+            tx_input->script_len = final_scriptsig->value_len;
         }
         if (input->final_witness) {
             if (tx_input->witness) {
@@ -3825,7 +3800,7 @@ PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
 PSBT_FIELD(input, redeem_script, PSBT_0)
 PSBT_FIELD(input, witness_script, PSBT_0)
-PSBT_GET_B(input, final_scriptsig, PSBT_0)
+PSBT_FIELD(input, final_scriptsig, PSBT_0)
 PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_M(input, keypath)
 PSBT_GET_M(input, signature)
@@ -3886,7 +3861,6 @@ int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt, size
 
 PSBT_SET_S(input, utxo, wally_tx)
 PSBT_SET_S(input, witness_utxo, wally_tx_output)
-PSBT_SET_B(input, final_scriptsig, PSBT_0)
 PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
 PSBT_SET_S(input, keypaths, wally_map)
 PSBT_SET_S(input, signatures, wally_map)
