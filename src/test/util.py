@@ -161,11 +161,7 @@ class wally_psbt_input(Structure):
                 ('pset_fields', wally_map)]
 
 class wally_psbt_output(Structure):
-    _fields_ = [('redeem_script', c_void_p),
-                ('redeem_script_len', c_size_t),
-                ('witness_script', c_void_p),
-                ('witness_script_len', c_size_t),
-                ('keypaths', wally_map),
+    _fields_ = [('keypaths', wally_map),
                 ('unknowns', wally_map),
                 ('amount', c_uint64),
                 ('has_amount', c_uint32),

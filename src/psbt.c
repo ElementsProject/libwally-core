@@ -394,6 +394,10 @@ static int psbt_output_field_verify(uint32_t field_type,
                                     const unsigned char *val, size_t val_len)
 {
     switch (field_type) {
+    case PSBT_OUT_REDEEM_SCRIPT:
+    case PSBT_OUT_WITNESS_SCRIPT:
+        /* Scripts */
+        return val_len ? WALLY_OK : WALLY_EINVAL;
     case PSBT_OUT_TAP_INTERNAL_KEY:
         /* 32 byte x-only pubkey */
         return val && val_len == SHA256_LEN ? WALLY_OK : WALLY_EINVAL;
@@ -587,8 +591,8 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
     return WALLY_OK;
 }
 
-SET_BYTES(wally_psbt_output, redeem_script)
-SET_BYTES(wally_psbt_output, witness_script)
+MAP_INNER_FIELD(output, redeem_script, PSBT_OUT_REDEEM_SCRIPT, psbt_fields)
+MAP_INNER_FIELD(output, witness_script, PSBT_OUT_WITNESS_SCRIPT, psbt_fields)
 SET_MAP(wally_psbt_output, keypath,)
 ADD_KEYPATH(wally_psbt_output)
 SET_MAP(wally_psbt_output, unknown,)
@@ -683,8 +687,6 @@ static void psbt_output_init(struct wally_psbt_output *output)
 static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
 {
     if (output) {
-        clear_and_free(output->redeem_script, output->redeem_script_len);
-        clear_and_free(output->witness_script, output->witness_script_len);
         wally_map_clear(&output->keypaths);
         wally_map_clear(&output->unknowns);
         clear_and_free(output->script, output->script_len);
@@ -1751,14 +1753,6 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                 subfield_nomore_end(cursor, max, key, key_len);
 
             switch (field_type) {
-            case PSBT_OUT_REDEEM_SCRIPT:
-                ret = pull_output_varbuf(cursor, max, result,
-                                         wally_psbt_output_set_redeem_script);
-                break;
-            case PSBT_OUT_WITNESS_SCRIPT:
-                ret = pull_output_varbuf(cursor, max, result,
-                                         wally_psbt_output_set_witness_script);
-                break;
             case PSBT_OUT_BIP32_DERIVATION:
                 ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
                 break;
@@ -1769,6 +1763,8 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                 ret = pull_output_varbuf(cursor, max, result,
                                          wally_psbt_output_set_script);
                 break;
+            case PSBT_OUT_REDEEM_SCRIPT:
+            case PSBT_OUT_WITNESS_SCRIPT:
             case PSBT_OUT_TAP_INTERNAL_KEY:
                 pull_varlength_buff(cursor, max, &val_p, &val_len);
                 ret = wally_map_add_integer(&result->psbt_fields, raw_field_type,
@@ -2461,12 +2457,16 @@ static int push_psbt_output(const struct wally_psbt *psbt,
     unsigned char dummy = 0;
     int ret;
 
-    /* Redeem script */
-    push_psbt_varbuff(cursor, max, PSBT_OUT_REDEEM_SCRIPT, false,
-                      output->redeem_script, output->redeem_script_len);
-    /* Witness script */
-    push_psbt_varbuff(cursor, max, PSBT_OUT_WITNESS_SCRIPT, false,
-                      output->witness_script, output->witness_script_len);
+    if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_REDEEM_SCRIPT,
+                                     PSBT_OUT_REDEEM_SCRIPT,
+                                     false, &output->psbt_fields)) != WALLY_OK)
+        return ret;
+
+    if ((ret = push_varbuff_from_map(cursor, max, PSBT_OUT_WITNESS_SCRIPT,
+                                     PSBT_OUT_WITNESS_SCRIPT,
+                                     false, &output->psbt_fields)) != WALLY_OK)
+        return ret;
+
     /* Keypaths */
     push_psbt_map(cursor, max, PSBT_OUT_BIP32_DERIVATION, false, &output->keypaths);
 
@@ -2796,10 +2796,7 @@ static int combine_inputs(struct wally_psbt_input *dst,
 static int combine_outputs(struct wally_psbt_output *dst,
                            const struct wally_psbt_output *src)
 {
-    int ret = WALLY_OK;
-
-    COMBINE_BYTES(output, redeem_script);
-    COMBINE_BYTES(output, witness_script);
+    int ret;
 
     if ((ret = wally_map_combine(&dst->keypaths, &src->keypaths)) != WALLY_OK)
         return ret;
@@ -3929,8 +3926,8 @@ PSBT_FIELD(input, inflation_keys_blinding_rangeproof, PSBT_2)
 PSBT_FIELD(input, utxo_rangeproof, PSBT_2)
 #endif /* BUILD_ELEMENTS */
 
-PSBT_GET_B(output, redeem_script, PSBT_0)
-PSBT_GET_B(output, witness_script, PSBT_0)
+PSBT_FIELD(output, redeem_script, PSBT_0)
+PSBT_FIELD(output, witness_script, PSBT_0)
 PSBT_GET_M(output, keypath)
 PSBT_GET_M(output, unknown)
 PSBT_GET_I(output, amount, uint64_t, PSBT_2)
@@ -3943,8 +3940,6 @@ int wally_psbt_has_output_amount(const struct wally_psbt *psbt, size_t index, si
 }
 PSBT_GET_B(output, script, PSBT_2)
 
-PSBT_SET_B(output, redeem_script, PSBT_0)
-PSBT_SET_B(output, witness_script, PSBT_0)
 PSBT_SET_S(output, keypaths, wally_map)
 PSBT_SET_S(output, unknowns, wally_map)
 PSBT_SET_I(output, amount, uint64_t, PSBT_2)

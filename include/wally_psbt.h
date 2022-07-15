@@ -75,10 +75,6 @@ struct wally_psbt_input {
 
 /** A PSBT output */
 struct wally_psbt_output {
-    unsigned char *redeem_script;
-    size_t redeem_script_len;
-    unsigned char *witness_script;
-    size_t witness_script_len;
     struct wally_map keypaths;
     struct wally_map unknowns;
     uint64_t amount;
