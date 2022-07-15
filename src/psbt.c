@@ -103,22 +103,6 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
         return ret; \
     }
 
-/* Set a variable length bytes member on a parent struct */
-#define SET_BYTES(PARENT, NAME) \
-    int PARENT ## _set_ ## NAME(struct PARENT *parent, const unsigned char *bytes, size_t len) { \
-        if (!parent) return WALLY_EINVAL; \
-        return replace_bytes(bytes, len, \
-                             &parent->NAME, &parent->NAME ## _len); \
-    }
-
-/* Set a fixed length bytes member on a parent struct */
-#define SET_BYTES_N(PARENT, NAME, SIZE) \
-    int PARENT ## _set_ ## NAME(struct PARENT *parent, const unsigned char *bytes, size_t len) { \
-        if (!parent || BYTES_INVALID_N(bytes, len, SIZE)) return WALLY_EINVAL; \
-        return replace_bytes(bytes, len, \
-                             &parent->NAME, &parent->NAME ## _len); \
-    }
-
 /* Set/find in and add a map value member on a parent struct */
 #define SET_MAP(PARENT, NAME, ADD_POST) \
     int PARENT ## _set_ ## NAME ## s(struct PARENT *parent, const struct wally_map *map_in) { \
@@ -615,7 +599,14 @@ int wally_psbt_output_clear_amount(struct wally_psbt_output *output)
     return WALLY_OK;
 }
 
-SET_BYTES(wally_psbt_output, script)
+int wally_psbt_output_set_script(struct wally_psbt_output *output,
+                                 const unsigned char *bytes, size_t len)
+{
+    if (!output)
+        return WALLY_EINVAL;
+    return replace_bytes(bytes, len, &output->script, &output->script_len);
+}
+
 
 #ifdef BUILD_ELEMENTS
 int wally_psbt_output_set_blinder_index(struct wally_psbt_output *output, uint32_t index)
