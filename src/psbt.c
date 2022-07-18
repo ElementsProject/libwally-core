@@ -640,7 +640,7 @@ MAP_INNER_FIELD(output, asset_blinding_surjectionproof, PSET_OUT_BLIND_ASSET_PRO
 static int psbt_output_get_blinding_state(const struct wally_psbt_output *output, uint64_t *written)
 {
     const struct wally_map_item *p;
-    uint64_t ft;
+    uint32_t ft;
 
     *written = 0;
     for (ft = PSET_OUT_VALUE_COMMITMENT; ft <= PSET_OUT_ECDH_PUBKEY; ++ft) {
@@ -2316,9 +2316,6 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                            unsigned char **cursor, size_t *max, uint32_t tx_flags,
                            const struct wally_psbt_input *input)
 {
-#ifdef BUILD_ELEMENTS
-    uint64_t ft;
-#endif
     const bool is_pset = (tx_flags & WALLY_TX_FLAG_USE_ELEMENTS) != 0;
     int ret;
     const struct wally_map_item *final_scriptsig;
@@ -2435,6 +2432,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 
 #ifdef BUILD_ELEMENTS
     if (is_pset && psbt->version == PSBT_2) {
+        uint32_t ft;
         for (ft = PSET_IN_ISSUANCE_VALUE; ft <= PSET_IN_MAX; ++ft) {
             switch (ft) {
             case PSET_IN_ISSUANCE_VALUE:
@@ -2484,9 +2482,6 @@ static int push_psbt_output(const struct wally_psbt *psbt,
                             unsigned char **cursor, size_t *max, bool is_pset,
                             const struct wally_psbt_output *output)
 {
-#ifdef BUILD_ELEMENTS
-    uint64_t ft;
-#endif
     size_t i;
     unsigned char dummy = 0;
     int ret;
@@ -2539,6 +2534,7 @@ static int push_psbt_output(const struct wally_psbt *psbt,
 
 #ifdef BUILD_ELEMENTS
     if (is_pset && psbt->version == PSBT_2) {
+        uint32_t ft;
         for (ft = PSET_OUT_VALUE_COMMITMENT; ft <= PSET_OUT_MAX; ++ft) {
             switch (ft) {
             case PSET_OUT_BLINDER_INDEX:
@@ -2725,13 +2721,6 @@ done:
     return ret;
 }
 
-#define COMBINE_BYTES(typ, member)  do { \
-        if (!dst->member && src->member) { \
-            ret = wally_psbt_ ## typ ## _set_ ## member(dst, src->member, src->member ## _len); \
-            if (ret != WALLY_OK) \
-                return ret; \
-        } } while (0)
-
 static int combine_txs(struct wally_tx **dst, struct wally_tx *src)
 {
     if (!dst)
@@ -2750,20 +2739,63 @@ static int combine_map_if_empty(struct wally_map *dst, const struct wally_map *s
     return WALLY_OK;
 }
 
-static int combine_inputs(struct wally_psbt_input *dst,
-                          const struct wally_psbt_input *src)
+#ifdef BUILD_ELEMENTS
+static int combine_map_item(struct wally_map *dst, const struct wally_map *src, uint32_t ft)
+{
+    if (!wally_map_get_integer(dst, ft)) {
+        const struct wally_map_item *src_item;
+        if ((src_item = wally_map_get_integer(src, ft)))
+            return wally_map_add_integer(dst, ft, src_item->value, src_item->value_len);
+    }
+    return WALLY_OK;
+}
+
+static int merge_value_commitment(struct wally_map *dst_fields, uint64_t *dst_amount,
+                                  const struct wally_map *src_fields, uint64_t src_amount,
+                                  uint32_t ft, bool for_clone)
+{
+    const struct wally_map_item *dst_commitment, *src_commitment;
+    bool have_dst_commitment, have_src_commitment;
+    int ret;
+
+    dst_commitment = wally_map_get_integer(dst_fields, ft);
+    have_dst_commitment = dst_commitment && dst_commitment->value_len != 1u;
+    src_commitment = wally_map_get_integer(src_fields, ft);
+    have_src_commitment = src_commitment && src_commitment->value_len != 1u;
+
+    if (for_clone || (!*dst_amount && !have_dst_commitment && src_amount)) {
+        /* We don't have an amount or a commitment for one, copy source amount */
+        *dst_amount = src_amount;
+    }
+    if (!have_dst_commitment && have_src_commitment) {
+        /* Source has an amount commitment, copy it and clear our value */
+        ret = wally_map_replace_integer(dst_fields, ft,
+                                        src_commitment->value, src_commitment->value_len);
+        if (ret != WALLY_OK)
+            return ret;
+        if (!for_clone) {
+            /* Not cloning: clear the amount when we have a committment to it */
+            *dst_amount = 0;
+        }
+    }
+    return WALLY_OK;
+}
+#endif /* BUILD_ELEMENTS */
+
+static int combine_input(struct wally_psbt_input *dst,
+                         const struct wally_psbt_input *src,
+                         bool is_pset, bool for_clone)
 {
     int ret;
 
-    if (mem_is_zero(dst->txhash, WALLY_TXHASH_LEN)) {
-        /* Note we only copy the output index if we copied the txhash */
+    if (for_clone && mem_is_zero(dst->txhash, WALLY_TXHASH_LEN)) {
         memcpy(dst->txhash, src->txhash, WALLY_TXHASH_LEN);
         dst->index = src->index;
     } else if (memcmp(dst->txhash, src->txhash, WALLY_TXHASH_LEN) ||
                dst->index != src->index)
-        return WALLY_EINVAL;
+        return WALLY_EINVAL; /* Mismatched inputs */
 
-    if (dst->sequence == WALLY_TX_SEQUENCE_FINAL && src->sequence != WALLY_TX_SEQUENCE_FINAL)
+    if (dst->sequence == WALLY_TX_SEQUENCE_FINAL)
         dst->sequence = src->sequence;
 
     if ((ret = combine_txs(&dst->utxo, src->utxo)) != WALLY_OK)
@@ -2803,75 +2835,154 @@ static int combine_inputs(struct wally_psbt_input *dst,
         ret = wally_map_combine(&dst->taproot_leaf_hashes, &src->taproot_leaf_hashes);
         if (ret == WALLY_OK)
             ret = wally_map_combine(&dst->taproot_leaf_paths, &src->taproot_leaf_paths);
-        if (ret != WALLY_OK)
-            return ret;
     }
+    if (ret == WALLY_OK && is_pset) {
 #ifdef BUILD_ELEMENTS
-    if (!dst->issuance_amount && src->issuance_amount)
-        dst->issuance_amount = src->issuance_amount;
-    if (!dst->inflation_keys && src->inflation_keys)
-        dst->inflation_keys = src->inflation_keys;
-    if (!dst->pegin_amount && src->pegin_amount)
-        dst->pegin_amount = src->pegin_amount;
+        uint32_t ft;
+        ret = merge_value_commitment(&dst->pset_fields, &dst->issuance_amount,
+                                     &src->pset_fields, src->issuance_amount,
+                                     PSET_IN_ISSUANCE_VALUE_COMMITMENT, for_clone);
+        if (ret == WALLY_OK)
+            ret = merge_value_commitment(&dst->pset_fields, &dst->inflation_keys,
+                                         &src->pset_fields, src->inflation_keys,
+                                         PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT, for_clone);
+        if (ret == WALLY_OK && !dst->pegin_amount && src->pegin_amount)
+            dst->pegin_amount = src->pegin_amount;
 
-    if ((ret = combine_txs(&dst->pegin_tx, src->pegin_tx)) != WALLY_OK)
-        return ret;
+        if (ret == WALLY_OK)
+            ret = combine_txs(&dst->pegin_tx, src->pegin_tx);
 
-    if (!dst->pegin_witness && src->pegin_witness &&
-        (ret = wally_psbt_input_set_pegin_witness(dst, src->pegin_witness)) != WALLY_OK)
-        return ret;
-    if ((ret = wally_map_combine(&dst->pset_fields, &src->pset_fields)) != WALLY_OK)
-        return ret;
+        if (ret == WALLY_OK && !dst->pegin_witness && src->pegin_witness)
+            ret = wally_psbt_input_set_pegin_witness(dst, src->pegin_witness);
+
+        for (ft = 0; ret == WALLY_OK && ft <= PSET_IN_MAX; ++ft) {
+            if (PSET_IN_MERGEABLE & PSET_FT(ft))
+                ret = combine_map_item(&dst->pset_fields, &src->pset_fields, ft);
+        }
 #endif /* BUILD_ELEMENTS */
-
-    return WALLY_OK;
+    }
+    return ret;
 }
 
-static int combine_outputs(struct wally_psbt_output *dst,
-                           const struct wally_psbt_output *src)
+static int combine_output(struct wally_psbt_output *dst,
+                          const struct wally_psbt_output *src,
+                          bool is_pset, bool for_clone)
 {
-    int ret;
+    int ret = WALLY_OK;
+#ifdef BUILD_ELEMENTS
+    size_t dst_asset, src_asset = 0;
 
-    if ((ret = wally_map_combine(&dst->keypaths, &src->keypaths)) != WALLY_OK)
+    ret = wally_map_find_integer(&dst->pset_fields, PSET_OUT_ASSET, &dst_asset);
+    if (ret == WALLY_OK)
+        ret = wally_map_find_integer(&src->pset_fields, PSET_OUT_ASSET, &src_asset);
+    if (ret != WALLY_OK)
         return ret;
-    if ((ret = wally_map_combine(&dst->unknowns, &src->unknowns)) != WALLY_OK)
-        return ret;
+#endif
 
-    if (!dst->has_amount && src->has_amount) {
-        dst->amount = src->amount;
-        dst->has_amount = src->has_amount;
+    if (for_clone) {
+        /* Copy amount, script (and asset, for elements) */
+        if (!dst->has_amount && src->has_amount) {
+            dst->amount = src->amount;
+            dst->has_amount = src->has_amount;
+        }
+        if (!dst->script && src->script)
+            ret = wally_psbt_output_set_script(dst, src->script, src->script_len);
+#ifdef BUILD_ELEMENTS
+        if (ret == WALLY_OK && is_pset && src_asset) {
+            const struct wally_map_item *src_p = src->pset_fields.items + src_asset - 1;
+            ret = wally_map_replace_integer(&dst->pset_fields, PSET_OUT_ASSET,
+                                            src_p->value, src_p->value_len);
+        }
+#endif
+    } else {
+        /* Ensure amount, script (and asset, for elements) match */
+        if (dst->has_amount != src->has_amount || dst->amount != src->amount ||
+            dst->script_len != src->script_len ||
+            memcmp(dst->script, src->script, src->script_len))
+            ret = WALLY_EINVAL; /* Mismatched amount or script */
+        else if (is_pset) {
+#ifdef BUILD_ELEMENTS
+            const struct wally_map_item *src_p = src->pset_fields.items + src_asset - 1;
+            const struct wally_map_item *dst_p = dst->pset_fields.items + dst_asset - 1;
+            if (!dst_asset || !src_asset ||
+                dst_p->value_len != WALLY_TX_ASSET_TAG_LEN ||
+                src_p->value_len != WALLY_TX_ASSET_TAG_LEN ||
+                memcmp(dst_p->value, src_p->value, WALLY_TX_ASSET_TAG_LEN)) {
+                ret = WALLY_EINVAL; /* Mismatched asset */
+            }
+#endif
+        }
     }
-    COMBINE_BYTES(output, script);
 
-    if ((ret = wally_map_combine(&dst->psbt_fields, &src->psbt_fields)) != WALLY_OK)
-        return ret;
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->keypaths, &src->keypaths);
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->unknowns, &src->unknowns);
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->psbt_fields, &src->psbt_fields);
+    if (ret == WALLY_OK)
+        ret = combine_map_if_empty(&dst->taproot_tree, &src->taproot_tree);
 
-    if ((ret = combine_map_if_empty(&dst->taproot_tree, &src->taproot_tree)) != WALLY_OK)
-        return ret;
-
-    if (!dst->taproot_leaf_hashes.num_items && !dst->taproot_leaf_paths.num_items &&
+    if (ret == WALLY_OK &&
+        !dst->taproot_leaf_hashes.num_items && !dst->taproot_leaf_paths.num_items &&
         src->taproot_leaf_hashes.num_items && src->taproot_leaf_paths.num_items) {
         ret = wally_map_combine(&dst->taproot_leaf_hashes, &src->taproot_leaf_hashes);
         if (ret == WALLY_OK)
             ret = wally_map_combine(&dst->taproot_leaf_paths, &src->taproot_leaf_paths);
-        if (ret != WALLY_OK)
-            return ret;
     }
 
 #ifdef BUILD_ELEMENTS
-    if (!dst->has_blinder_index && src->has_blinder_index) {
-        dst->blinder_index = src->blinder_index;
-        dst->has_blinder_index = src->has_blinder_index;
+    if (ret == WALLY_OK && is_pset) {
+        uint64_t dst_state, src_state;
+
+        if (for_clone) {
+            if (!dst->has_blinder_index && src->has_blinder_index) {
+                dst->blinder_index = src->blinder_index;
+                dst->has_blinder_index = src->has_blinder_index;
+            }
+            return wally_map_combine(&dst->pset_fields, &src->pset_fields);
+        }
+
+        ret = psbt_output_get_blinding_state(dst, &dst_state);
+        if (ret == WALLY_OK)
+            ret = psbt_output_get_blinding_state(src, &src_state);
+
+        if (ret == WALLY_OK && PSET_BLINDING_STATE_REQUIRED(dst_state) &&
+            PSET_BLINDING_STATE_REQUIRED(src_state)) {
+            /* Both outputs require blinding */
+            if (!dst->blinder_index || dst->blinder_index != src->blinder_index ||
+                !map_find_equal_integer(&dst->pset_fields, &src->pset_fields,
+                                        PSET_OUT_BLINDING_PUBKEY))
+                ret = WALLY_EINVAL; /* Blinding index/pubkey do not match */
+        }
+
+        if (ret == WALLY_OK && PSET_BLINDING_STATE_FULL(src_state)) {
+            /* The source is fully blinded, either copy or verify the fields */
+            uint32_t ft;
+            for (ft = PSET_OUT_VALUE_COMMITMENT; ret == WALLY_OK && ft <= PSET_OUT_ASSET_SURJECTION_PROOF; ++ft) {
+                if (!(PSET_OUT_BLINDING_FIELDS & PSET_FT(ft)))
+                    continue;
+                if (PSET_BLINDING_STATE_FULL(dst_state)) {
+                    /* Both fully blinded: verify */
+                    if (!map_find_equal_integer(&dst->pset_fields, &src->pset_fields, ft))
+                        ret = WALLY_EINVAL; /* Fields do not match */
+                } else {
+                    /* Copy (overwriting if present) */
+                    const struct wally_map_item *from;
+                    from = wally_map_get_integer(&src->pset_fields, ft);
+                    ret = wally_map_replace_integer(&dst->pset_fields, ft,
+                                                    from->value, from->value_len);
+                }
+            }
+        }
     }
-    if ((ret = wally_map_combine(&dst->pset_fields, &src->pset_fields)) != WALLY_OK)
-        return ret;
 #endif /* BUILD_ELEMENTS */
 
-    return WALLY_OK;
+    return ret;
 }
-#undef COMBINE_BYTES
 
-static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
+static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
+                        bool is_pset, bool for_clone)
 {
     size_t i;
     int ret = WALLY_OK;
@@ -2884,15 +2995,14 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         psbt->has_fallback_locktime = src->has_fallback_locktime;
     }
 
-    /* Note that we do not alter the modifiable flags when combining,
-     * since combining can not add or remove inputs.
-     */
+    /* Take any extra flags from the source psbt that we don't have  */
+    psbt->tx_modifiable_flags |= src->tx_modifiable_flags;
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
-        ret = combine_inputs(&psbt->inputs[i], &src->inputs[i]);
+        ret = combine_input(&psbt->inputs[i], &src->inputs[i], is_pset, for_clone);
 
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
-        ret = combine_outputs(&psbt->outputs[i], &src->outputs[i]);
+        ret = combine_output(&psbt->outputs[i], &src->outputs[i], is_pset, for_clone);
 
     if (ret == WALLY_OK)
         ret = wally_map_combine(&psbt->unknowns, &src->unknowns);
@@ -2901,8 +3011,10 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         ret = wally_map_combine(&psbt->global_xpubs, &src->global_xpubs);
 
 #ifdef BUILD_ELEMENTS
-    if ((ret = wally_map_combine(&psbt->global_scalars, &src->global_scalars)) != WALLY_OK)
-        return ret;
+    if (ret == WALLY_OK && is_pset) {
+        psbt->pset_modifiable_flags |= src->pset_modifiable_flags;
+        ret = wally_map_combine(&psbt->global_scalars, &src->global_scalars);
+    }
 #endif /* BUILD_ELEMENTS */
 
     return ret;
@@ -3079,19 +3191,24 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
 int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
     unsigned char id[WALLY_TXHASH_LEN], src_id[WALLY_TXHASH_LEN];
+    size_t is_elements;
     int ret;
 
     if (!psbt_is_valid(psbt) || !psbt_is_valid(src) || psbt->version != src->version)
         return WALLY_EINVAL;
 
+    if (psbt == src)
+        return WALLY_OK; /* Combine with self: no-op */
+
     if ((ret = wally_psbt_get_id(psbt, 0, id, sizeof(id))) != WALLY_OK)
         return ret;
 
-    if ((ret = wally_psbt_get_id(src, 0, src_id, sizeof(src_id))) == WALLY_OK) {
+    if ((ret = wally_psbt_get_id(src, 0, src_id, sizeof(src_id))) == WALLY_OK &&
+        (ret = wally_psbt_is_elements(psbt, &is_elements)) == WALLY_OK) {
         if (memcmp(src_id, id, sizeof(id)) != 0)
             ret = WALLY_EINVAL; /* Cannot combine different txs */
         else
-            ret = psbt_combine(psbt, src);
+            ret = psbt_combine(psbt, src, !!is_elements, false);
     }
     wally_clear_2(id, sizeof(id), src_id, sizeof(src_id));
     return ret;
@@ -3100,7 +3217,7 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
                            struct wally_psbt **output)
 {
-    size_t is_elements = 0;
+    size_t is_elements;
     int ret;
 
     OUTPUT_CHECK;
@@ -3117,13 +3234,10 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
                                     output);
     if (ret == WALLY_OK) {
         (*output)->tx_version = psbt->tx_version;
-        /* fallback_locktime will be copied by psbt_combine() */
-        (*output)->tx_modifiable_flags = psbt->tx_modifiable_flags;
-#ifdef BUILD_ELEMENTS
-        (*output)->pset_modifiable_flags = psbt->pset_modifiable_flags;
-#endif /* BUILD_ELEMENTS*/
         psbt_claim_allocated_inputs(*output, psbt->num_inputs, psbt->num_outputs);
-        ret = psbt_combine(*output, psbt);
+        (*output)->tx_modifiable_flags = 0;
+        (*output)->pset_modifiable_flags = 0;
+        ret = psbt_combine(*output, psbt, !!is_elements, true);
 
         if (ret == WALLY_OK && psbt->tx)
             ret = tx_clone_alloc(psbt->tx, &(*output)->tx);

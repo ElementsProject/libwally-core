@@ -185,6 +185,19 @@
 /* Input PSBT/PSET fields that must *not* be present in v2 */
 #define PSBT_IN_DISALLOWED_V2 ((uint64_t)0)
 
+/* Input PSET fields that are trivially mergable, i.e. can be
+ * copied when merging if missing the the destination input. */
+#define PSET_IN_MERGEABLE (PSET_FT(PSET_IN_ISSUANCE_VALUE_RANGEPROOF) | \
+                           PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF) | \
+                           PSET_FT(PSET_IN_PEG_IN_TXOUT_PROOF) | \
+                           PSET_FT(PSET_IN_PEG_IN_GENESIS_HASH) | \
+                           PSET_FT(PSET_IN_PEG_IN_CLAIM_SCRIPT) | \
+                           PSET_FT(PSET_IN_ISSUANCE_BLINDING_NONCE) | \
+                           PSET_FT(PSET_IN_ISSUANCE_ASSET_ENTROPY) | \
+                           PSET_FT(PSET_IN_UTXO_RANGEPROOF) | \
+                           PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF) | \
+                           PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF))
+
 /* The minimum allowed timestamp in PSBT_IN_REQUIRED_TIME_LOCKTIME */
 #define PSBT_LOCKTIME_MIN_TIMESTAMP 500000000
 

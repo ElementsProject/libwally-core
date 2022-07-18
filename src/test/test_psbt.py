@@ -66,6 +66,7 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(serialized, expected)
 
             ret = wally_psbt_clone_alloc(psbt, 0, clone)
+            self.assertEqual(ret, WALLY_OK)
             self.assertEqual(self.to_base64(clone), serialized)
             wally_psbt_free(clone)
 
