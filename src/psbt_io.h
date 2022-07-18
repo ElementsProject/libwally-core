@@ -244,4 +244,21 @@
 /* Output PSBT/PSET fields that must *not* be present in v2 */
 #define PSBT_OUT_DISALLOWED_V2 ((uint64_t)0)
 
+/* Fields that must be present for an output to be considered fully blinded */
+#define PSET_OUT_BLINDING_FIELDS (PSET_FT(PSET_OUT_VALUE_COMMITMENT) | \
+                                  PSET_FT(PSET_OUT_ASSET_COMMITMENT) | \
+                                  PSET_FT(PSET_OUT_VALUE_RANGEPROOF) | \
+                                  PSET_FT(PSET_OUT_ASSET_SURJECTION_PROOF) | \
+                                  PSET_FT(PSET_OUT_BLINDING_PUBKEY) | \
+                                  PSET_FT(PSET_OUT_ECDH_PUBKEY))
+
+/* Blinding is required if we have a blinding pubkey */
+#define PSET_BLINDING_STATE_REQUIRED(state) ((state & PSET_FT(PSET_OUT_BLINDING_PUBKEY)) != 0)
+/* We are fully blinded if we have all blinding fields */
+#define PSET_BLINDING_STATE_FULL(state) ((state & PSET_OUT_BLINDING_FIELDS) == PSET_OUT_BLINDING_FIELDS)
+/* We are partially blinded if we have any other blinding field than just the blinding pubkey */
+#define PSET_BLINDING_STATE_PARTIAL(state) (PSET_BLINDING_STATE_REQUIRED(state) && \
+                                            !PSET_BLINDING_STATE_FULL(state) && \
+                                            (state & PSET_OUT_BLINDING_FIELDS) != PSET_FT(PSET_OUT_BLINDING_PUBKEY))
+
 #endif /* LIBWALLY_CORE_PSBT_IO_H */

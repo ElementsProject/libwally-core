@@ -647,6 +647,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_psbt_get_output_blinder_index);
 %returns_size_t(wally_psbt_get_output_blinding_public_key);
 %returns_size_t(wally_psbt_get_output_blinding_public_key_len);
+%returns_size_t(wally_psbt_get_output_blinding_status);
 %returns_size_t(wally_psbt_get_output_ecdh_public_key);
 %returns_size_t(wally_psbt_get_output_ecdh_public_key_len);
 %returns_size_t(wally_psbt_get_output_keypath);

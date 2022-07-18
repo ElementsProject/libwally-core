@@ -199,6 +199,7 @@ WALLY_CORE_API int wally_psbt_set_output_value_blinding_rangeproof(struct wally_
 WALLY_CORE_API int wally_psbt_clear_output_value_blinding_rangeproof(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_output_asset_blinding_surjectionproof(struct wally_psbt *psbt, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
 WALLY_CORE_API int wally_psbt_clear_output_asset_blinding_surjectionproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_get_output_blinding_status(const struct wally_psbt *output, size_t index, uint32_t flags, size_t *written);
 #endif /* BUILD_ELEMENTS */
 #ifdef __cplusplus
 }

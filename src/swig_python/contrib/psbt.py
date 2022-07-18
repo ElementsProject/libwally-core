@@ -584,5 +584,15 @@ class PSBTTests(unittest.TestCase):
                 else:
                     self._round_trip(pset2)
 
+            # Blinding status
+            fn = psbt_get_output_blinding_status
+            self._throws(fn, psbt, 0, 0)  # Non v2 PSBT
+            self._throws(fn, psbt2, 3, 0) # Bad output index
+            self._throws(fn, psbt2, 0, 1) # Unknown flag
+            self.assertEqual(fn(psbt2, 0, 0), WALLY_PSET_BLINDED_NONE)
+            self.assertEqual(fn(pset2, 0, 0), WALLY_PSET_BLINDED_PARTIAL)
+            psbt_clear_output_blinding_public_key(pset2, 0)
+            self.assertEqual(fn(pset2, 0, 0), WALLY_PSET_BLINDED_NONE)
+
 if __name__ == '__main__':
     unittest.main()

@@ -368,6 +368,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_psbt_output_get_asset_surjectionproof_len' \
 ,'_wally_psbt_output_get_blinding_public_key' \
 ,'_wally_psbt_output_get_blinding_public_key_len' \
+,'_wally_psbt_output_get_blinding_status' \
 ,'_wally_psbt_output_get_ecdh_public_key' \
 ,'_wally_psbt_output_get_ecdh_public_key_len' \
 ,'_wally_psbt_output_get_value_blinding_rangeproof' \

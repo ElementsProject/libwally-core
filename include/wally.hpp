@@ -2227,6 +2227,12 @@ inline int psbt_output_get_blinding_public_key_len(const OUTPUT& output, size_t*
     return ret;
 }
 
+template <class OUTPUT>
+inline int psbt_output_get_blinding_status(const OUTPUT& output, uint32_t flags, size_t* written) {
+    int ret = ::wally_psbt_output_get_blinding_status(detail::get_p(output), flags, written);
+    return ret;
+}
+
 template <class OUTPUT, class BYTES_OUT>
 inline int psbt_output_get_ecdh_public_key(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;

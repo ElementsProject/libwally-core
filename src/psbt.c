@@ -637,6 +637,49 @@ MAP_INNER_FIELD(output, ecdh_public_key, PSET_OUT_ECDH_PUBKEY, pset_fields)
 MAP_INNER_FIELD(output, value_blinding_rangeproof, PSET_OUT_BLIND_VALUE_PROOF, pset_fields)
 MAP_INNER_FIELD(output, asset_blinding_surjectionproof, PSET_OUT_BLIND_ASSET_PROOF, pset_fields)
 
+static int psbt_output_get_blinding_state(const struct wally_psbt_output *output, uint64_t *written)
+{
+    const struct wally_map_item *p;
+    uint64_t ft;
+
+    *written = 0;
+    for (ft = PSET_OUT_VALUE_COMMITMENT; ft <= PSET_OUT_ECDH_PUBKEY; ++ft) {
+        if (PSET_OUT_BLINDING_FIELDS & PSET_FT(ft)) {
+            if ((p = wally_map_get_integer(&output->pset_fields, ft))) {
+                *written |= PSET_FT(ft);
+                if ((ft == PSET_OUT_BLINDING_PUBKEY || ft == PSET_OUT_ECDH_PUBKEY) &&
+                    wally_ec_public_key_verify(p->value, p->value_len) != WALLY_OK)
+                    return WALLY_ERROR; /* Invalid */
+            }
+        }
+    }
+    return WALLY_OK;
+}
+
+int wally_psbt_output_get_blinding_status(const struct wally_psbt_output *output,
+                                          uint32_t flags, size_t *written)
+{
+    uint64_t state;
+
+    if (written)
+        *written = WALLY_PSET_BLINDED_NONE;
+    if (!output || flags || !written)
+        return WALLY_EINVAL;
+
+    if (psbt_output_get_blinding_state(output, &state) != WALLY_OK)
+        return WALLY_ERROR;
+
+    if (PSET_BLINDING_STATE_REQUIRED(state)) {
+        if (PSET_BLINDING_STATE_FULL(state))
+            *written = WALLY_PSET_BLINDED_FULL;
+        else if (PSET_BLINDING_STATE_PARTIAL(state))
+            *written = WALLY_PSET_BLINDED_PARTIAL;
+        else
+            *written = WALLY_PSET_BLINDED_REQUIRED;
+    }
+    return WALLY_OK;
+}
+
 /* Verify that unblinded values, their commitment, and commitment proof
  * are provided/elided where required.
  * TODO: Check proofs here?
@@ -3966,6 +4009,13 @@ PSBT_FIELD(output, blinding_public_key, PSBT_2)
 PSBT_FIELD(output, ecdh_public_key, PSBT_2)
 PSBT_FIELD(output, value_blinding_rangeproof, PSBT_2)
 PSBT_FIELD(output, asset_blinding_surjectionproof, PSBT_2)
+int wally_psbt_get_output_blinding_status(const struct wally_psbt *psbt, size_t index, uint32_t flags, size_t *written)
+{
+    struct wally_psbt_output *p = psbt_get_output(psbt, index);
+    if (written) *written = WALLY_PSET_BLINDED_NONE;
+    if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;
+    return wally_psbt_output_get_blinding_status(p, flags, written);
+}
 #endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */

@@ -34,6 +34,12 @@ extern "C" {
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
 #define WALLY_PSBT_ID_NO_LOCKTIME 0x2 /* Set locktime to 0 before calculating id */
 
+/* Output blinding status */
+#define WALLY_PSET_BLINDED_NONE     0x0 /* Unblinded */
+#define WALLY_PSET_BLINDED_REQUIRED 0x1 /* Blinding key present with no other blinding data */
+#define WALLY_PSET_BLINDED_PARTIAL  0x2 /* Blinding key present with partial blinding data */
+#define WALLY_PSET_BLINDED_FULL     0x4 /* Blinding key present with full blinding data */
+
 #define WALLY_SCALAR_OFFSET_LEN 32 /* Length of a PSET scalar offset */
 
 #ifdef SWIG
@@ -1579,6 +1585,24 @@ WALLY_CORE_API int wally_psbt_output_set_asset_blinding_surjectionproof(
  */
 WALLY_CORE_API int wally_psbt_output_clear_asset_blinding_surjectionproof(
     struct wally_psbt_output *output);
+
+/**
+ * Get the blinding status of an output.
+ *
+ * :param output: The output to get the blinding status from.
+ * :param flags: Flags controlling the checks to perform. Must be 0.
+ * :param written: Destination for the blinding status: ``WALLY_PSET_BLINDED_NONE``
+ *|    if unblinded, ``WALLY_PSET_BLINDED_REQUIRED`` if only the blinding public
+ *|    key is present, ``WALLY_PSET_BLINDED_FULL`` or ``WALLY_PSET_BLINDED_PARTIAL``
+ *|    if the blinding public key and all or only some blinding fields respectively
+ *|    are present.
+ *
+ * .. note:: Returns WALLY_ERROR if the value or asset tag blinding key is invalid.
+ */
+WALLY_CORE_API int wally_psbt_output_get_blinding_status(
+    const struct wally_psbt_output *output,
+    uint32_t flags,
+    size_t *written);
 #endif /* BUILD_ELEMENTS */
 #endif /* SWIG */
 
