@@ -2075,12 +2075,12 @@ static void push_pset_key(unsigned char **cursor, size_t *max,
 #endif /* BUILD_ELEMENTS */
 
 static void push_key(unsigned char **cursor, size_t *max,
-                     uint64_t type, bool is_elements,
+                     uint64_t type, bool is_pset,
                      const void *extra, size_t extra_len)
 {
-    (void)is_elements;
+    (void)is_pset;
 #ifdef BUILD_ELEMENTS
-    if (is_elements)
+    if (is_pset)
         push_pset_key(cursor, max, type, extra, extra_len);
     else
 #endif
@@ -2119,39 +2119,39 @@ static void push_witness_stack_impl(unsigned char **cursor, size_t *max,
 }
 
 static void push_witness_stack(unsigned char **cursor, size_t *max,
-                               uint64_t type, bool is_elements,
+                               uint64_t type, bool is_pset,
                                const struct wally_tx_witness_stack *witness)
 {
     size_t wit_len = 0;
     push_witness_stack_impl(NULL, &wit_len, witness); /* calculate length */
 
-    push_key(cursor, max, type, is_elements, NULL, 0);
+    push_key(cursor, max, type, is_pset, NULL, 0);
     push_varint(cursor, max, wit_len);
     push_witness_stack_impl(cursor, max, witness);
 }
 
 static void push_psbt_varbuff(unsigned char **cursor, size_t *max,
-                              uint64_t type, bool is_elements,
+                              uint64_t type, bool is_pset,
                               const unsigned char *bytes, size_t bytes_len)
 {
     if (bytes) {
-        push_key(cursor, max, type, is_elements, NULL, 0);
+        push_key(cursor, max, type, is_pset, NULL, 0);
         push_varbuff(cursor, max, bytes, bytes_len);
     }
 }
 
 static void push_psbt_le32(unsigned char **cursor, size_t *max,
-                           uint64_t type, bool is_elements, uint32_t value)
+                           uint64_t type, bool is_pset, uint32_t value)
 {
-    push_key(cursor, max, type, is_elements, NULL, 0);
+    push_key(cursor, max, type, is_pset, NULL, 0);
     push_varint(cursor, max, sizeof(value));
     push_le32(cursor, max, value);
 }
 
 static void push_psbt_le64(unsigned char **cursor, size_t *max,
-                           uint64_t type, bool is_elements, uint64_t value)
+                           uint64_t type, bool is_pset, uint64_t value)
 {
-    push_key(cursor, max, type, is_elements, NULL, 0);
+    push_key(cursor, max, type, is_pset, NULL, 0);
     push_varint(cursor, max, sizeof(value));
     push_le64(cursor, max, value);
 }
@@ -2168,13 +2168,13 @@ static void push_map(unsigned char **cursor, size_t *max,
 }
 
 static void push_psbt_map(unsigned char **cursor, size_t *max,
-                          uint64_t type, bool is_elements,
+                          uint64_t type, bool is_pset,
                           const struct wally_map *map_in)
 {
     size_t i;
     for (i = 0; i < map_in->num_items; ++i) {
         const struct wally_map_item *item = map_in->items + i;
-        push_key(cursor, max, type, is_elements, item->key, item->key_len);
+        push_key(cursor, max, type, is_pset, item->key, item->key_len);
         push_varbuff(cursor, max, item->value, item->value_len);
     }
 }
@@ -2299,14 +2299,14 @@ static int push_tx_output(unsigned char **cursor, size_t *max,
 }
 
 static int push_varbuff_from_map(unsigned char **cursor, size_t *max,
-                                 uint64_t type, uint32_t key, bool is_elements,
+                                 uint64_t type, uint32_t key, bool is_pset,
                                  const struct wally_map *map_in)
 {
     size_t index;
     int ret = wally_map_find_integer(map_in, key, &index);
     if (ret == WALLY_OK && index) {
         const struct wally_map_item *item = map_in->items + index - 1;
-        push_psbt_varbuff(cursor, max, type, is_elements,
+        push_psbt_varbuff(cursor, max, type, is_pset,
                           item->value, item->value_len);
     }
     return ret;
@@ -2564,7 +2564,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
                         size_t *written)
 {
     unsigned char *cursor = bytes_out;
-    size_t max = len, i, is_elements;
+    size_t max = len, i, is_pset;
     uint32_t tx_flags;
     int ret;
 
@@ -2574,10 +2574,10 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     if (!psbt_is_valid(psbt) || flags || !written)
         return WALLY_EINVAL;
 
-    if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
+    if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
         return ret;
 
-    tx_flags = is_elements ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
+    tx_flags = is_pset ? WALLY_TX_FLAG_USE_ELEMENTS : 0;
     push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
 
     /* Global tx */
@@ -2641,7 +2641,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     }
     for (i = 0; i < psbt->num_outputs; ++i) {
         const struct wally_psbt_output *output = &psbt->outputs[i];
-        if ((ret = push_psbt_output(psbt, &cursor, &max, !!is_elements, output)) != WALLY_OK)
+        if ((ret = push_psbt_output(psbt, &cursor, &max, !!is_pset, output)) != WALLY_OK)
             return ret;
     }
 
@@ -3064,19 +3064,19 @@ int wally_psbt_get_locktime(const struct wally_psbt *psbt, size_t *locktime)
     return WALLY_OK;
 }
 
-static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, size_t *is_elements)
+static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, size_t *is_pset)
 {
     size_t locktime;
     size_t i;
     int ret;
 
     *tx = NULL;
-    *is_elements = 0;
+    *is_pset = 0;
 
-    if ((ret = wally_psbt_is_elements(psbt, is_elements)) != WALLY_OK)
+    if ((ret = wally_psbt_is_elements(psbt, is_pset)) != WALLY_OK)
         return ret;
 
-    if (*is_elements)
+    if (*is_pset)
         return WALLY_EINVAL;
 
     if (psbt->version == PSBT_0) {
@@ -3120,8 +3120,8 @@ static int psbt_v0_to_v2(struct wally_psbt *psbt)
 static int psbt_v2_to_v0(struct wally_psbt *psbt)
 {
     struct wally_tx *tx;
-    size_t is_elements, i;
-    int ret = psbt_build_tx(psbt, &tx, &is_elements);
+    size_t is_pset, i;
+    int ret = psbt_build_tx(psbt, &tx, &is_pset);
 
     if (ret != WALLY_OK)
         return ret;
@@ -3165,13 +3165,13 @@ int wally_psbt_set_version(struct wally_psbt *psbt,
 int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned char *bytes_out, size_t len)
 {
     struct wally_tx *tx;
-    size_t is_elements, i;
+    size_t is_pset, i;
     int ret;
 
     if (!psbt_is_valid(psbt) || (flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_elements)) == WALLY_OK) {
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) == WALLY_OK) {
         if (flags & WALLY_PSBT_ID_NO_LOCKTIME) {
             /* Set locktime to 0. This can be useful to compute an ID
              * that doesn't change even if the input locktimes are changing */
@@ -3191,7 +3191,7 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
 int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 {
     unsigned char id[WALLY_TXHASH_LEN], src_id[WALLY_TXHASH_LEN];
-    size_t is_elements;
+    size_t is_pset;
     int ret;
 
     if (!psbt_is_valid(psbt) || !psbt_is_valid(src) || psbt->version != src->version)
@@ -3204,11 +3204,11 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
         return ret;
 
     if ((ret = wally_psbt_get_id(src, 0, src_id, sizeof(src_id))) == WALLY_OK &&
-        (ret = wally_psbt_is_elements(psbt, &is_elements)) == WALLY_OK) {
+        (ret = wally_psbt_is_elements(psbt, &is_pset)) == WALLY_OK) {
         if (memcmp(src_id, id, sizeof(id)) != 0)
             ret = WALLY_EINVAL; /* Cannot combine different txs */
         else
-            ret = psbt_combine(psbt, src, !!is_elements, false);
+            ret = psbt_combine(psbt, src, !!is_pset, false);
     }
     wally_clear_2(id, sizeof(id), src_id, sizeof(src_id));
     return ret;
@@ -3217,27 +3217,29 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
 int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
                            struct wally_psbt **output)
 {
-    size_t is_elements;
+    size_t is_pset;
     int ret;
 
     OUTPUT_CHECK;
     if (!psbt_is_valid(psbt) || flags || !output)
         return WALLY_EINVAL;
 
-    ret = wally_psbt_is_elements(psbt, &is_elements);
+    ret = wally_psbt_is_elements(psbt, &is_pset);
     if (ret == WALLY_OK)
         ret = wally_psbt_init_alloc(psbt->version,
                                     psbt->inputs_allocation_len,
                                     psbt->outputs_allocation_len,
                                     psbt->unknowns.items_allocation_len,
-                                    is_elements ? WALLY_PSBT_INIT_PSET : 0,
+                                    is_pset ? WALLY_PSBT_INIT_PSET : 0,
                                     output);
     if (ret == WALLY_OK) {
         (*output)->tx_version = psbt->tx_version;
         psbt_claim_allocated_inputs(*output, psbt->num_inputs, psbt->num_outputs);
         (*output)->tx_modifiable_flags = 0;
+#ifdef BUILD_ELEMENTS
         (*output)->pset_modifiable_flags = 0;
-        ret = psbt_combine(*output, psbt, !!is_elements, true);
+#endif
+        ret = psbt_combine(*output, psbt, !!is_pset, true);
 
         if (ret == WALLY_OK && psbt->tx)
             ret = tx_clone_alloc(psbt->tx, &(*output)->tx);
@@ -3342,7 +3344,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     const size_t pubkey_len = sizeof(pubkey), full_pubkey_len = sizeof(full_pubkey);
     unsigned char wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
-    size_t is_elements, i;
+    size_t is_pset, i;
     int ret;
     struct wally_tx *tx;
 
@@ -3350,7 +3352,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         !key || key_len != EC_PRIVATE_KEY_LEN || (flags & ~EC_FLAGS_ALL))
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_elements)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) != WALLY_OK)
         return ret;
 
     /* Get the pubkey */
@@ -3634,14 +3636,14 @@ fail:
 
 int wally_psbt_finalize(struct wally_psbt *psbt)
 {
-    size_t is_elements, i;
+    size_t is_pset, i;
     struct wally_tx *tx;
     int ret;
 
     if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_elements)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -3725,7 +3727,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
 int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 {
     struct wally_tx *result;
-    size_t is_elements, i;
+    size_t is_pset, i;
     int ret;
 
     OUTPUT_CHECK;
@@ -3734,7 +3736,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
         (psbt->version == PSBT_0 && (!psbt->tx || !psbt->num_inputs || !psbt->num_outputs)))
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &result, &is_elements)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &result, &is_pset)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
