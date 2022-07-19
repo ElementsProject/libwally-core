@@ -128,6 +128,18 @@ const struct wally_map_item *wally_map_get_integer(const struct wally_map *map_i
     return map_get(map_in, NULL, key);
 }
 
+/* Returns LHS item if key is present in both maps and value is the same */
+const struct wally_map_item *map_find_equal_integer(const struct wally_map *lhs,
+                                                    const struct wally_map *rhs,
+                                                    uint32_t key)
+{
+    const struct wally_map_item *l = wally_map_get_integer(lhs, key);
+    const struct wally_map_item *r = wally_map_get_integer(rhs, key);
+    if (l && r && l->value_len == r->value_len && !memcmp(l->value, r->value, r->value_len))
+        return l;
+    return NULL;
+}
+
 /* Note: If take_value is true and this errors, the caller must
  * free `value`. By design this only happens with calls internal
  * to the library. */

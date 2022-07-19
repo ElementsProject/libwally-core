@@ -95,4 +95,7 @@ int map_add_preimage_and_hash(struct wally_map *map_in,
                               const unsigned char *key, size_t key_len,
                               const unsigned char *val, size_t val_len,
                               size_t type, bool skip_verify);
+const struct wally_map_item *map_find_equal_integer(const struct wally_map *lhs,
+                                                    const struct wally_map *rhs,
+                                                    uint32_t key);
 #endif /* LIBWALLY_INTERNAL_H */
