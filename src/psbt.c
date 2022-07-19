@@ -3066,12 +3066,14 @@ int wally_psbt_get_locktime(const struct wally_psbt *psbt, size_t *locktime)
 
 static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, size_t *is_pset)
 {
-    size_t locktime;
-    size_t i;
+    size_t locktime, i;
     int ret;
 
     *tx = NULL;
     *is_pset = 0;
+
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
+        return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, is_pset)) != WALLY_OK)
         return ret;
@@ -3079,11 +3081,8 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
     if (*is_pset)
         return WALLY_EINVAL;
 
-    if (psbt->version == PSBT_0) {
-        if (!psbt->tx)
-            return WALLY_EINVAL;
+    if (psbt->version == PSBT_0)
         return wally_tx_clone_alloc(psbt->tx, 0, tx);
-    }
 
     ret = wally_psbt_get_locktime(psbt, &locktime);
     if (ret == WALLY_OK)
@@ -3168,7 +3167,7 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
     size_t is_pset, i;
     int ret;
 
-    if (!psbt_is_valid(psbt) || (flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
+    if ((flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) == WALLY_OK) {
@@ -3348,8 +3347,7 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     int ret;
     struct wally_tx *tx;
 
-    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
-        !key || key_len != EC_PRIVATE_KEY_LEN || (flags & ~EC_FLAGS_ALL))
+    if (!key || key_len != EC_PRIVATE_KEY_LEN || (flags & ~EC_FLAGS_ALL))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) != WALLY_OK)
@@ -3640,9 +3638,6 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
     struct wally_tx *tx;
     int ret;
 
-    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
-        return WALLY_EINVAL;
-
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) != WALLY_OK)
         return ret;
 
@@ -3732,8 +3727,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 
     OUTPUT_CHECK;
 
-    if (!psbt_is_valid(psbt) ||
-        (psbt->version == PSBT_0 && (!psbt->tx || !psbt->num_inputs || !psbt->num_outputs)))
+    if ((psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &result, &is_pset)) != WALLY_OK)
