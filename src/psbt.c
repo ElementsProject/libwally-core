@@ -696,8 +696,11 @@ static bool pset_check_commitment(uint64_t keyset, uint64_t value_bit,
     if (keyset & commitment_bit) {
         if (!(keyset & value_bit))
             return true; /* Value has been removed */
+#if 0
+        /* FIXME: require explicit value proofs - elements doesn't currently */
         if (!(keyset & proof_bit))
             return false; /* value and commitment without range/surjection proof */
+#endif
     } else if (!(keyset & value_bit) && is_mandatory) {
         /* No value, commitment or proof - invalid */
         return false;
