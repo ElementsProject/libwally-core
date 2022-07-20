@@ -1005,7 +1005,7 @@ int wally_tx_elements_output_init_alloc(
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_tx_output);
 
-    ret = tx_elements_output_init(-1, script, script_len,
+    ret = tx_elements_output_init(MAX_INVALID_SATOSHI, script, script_len,
                                   asset, asset_len,
                                   value, value_len,
                                   nonce, nonce_len,
@@ -1437,7 +1437,8 @@ int wally_tx_add_elements_raw_output(
 {
     if (!tx)
         return WALLY_EINVAL;
-    return tx_add_elements_raw_output_at(tx, tx->num_outputs, -1,
+    return tx_add_elements_raw_output_at(tx, tx->num_outputs,
+                                         MAX_INVALID_SATOSHI,
                                          script, script_len,
                                          asset, asset_len,
                                          value, value_len,
@@ -1457,7 +1458,8 @@ int wally_tx_add_elements_raw_output_at(
     const unsigned char *rangeproof, size_t rangeproof_len,
     uint32_t flags)
 {
-    return tx_add_elements_raw_output_at(tx, index, -1,
+    return tx_add_elements_raw_output_at(tx, index,
+                                         MAX_INVALID_SATOSHI,
                                          script, script_len,
                                          asset, asset_len,
                                          value, value_len,
@@ -2618,7 +2620,7 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
     p += varint_from_bytes(p, &tmp);
     for (i = 0; i < num_outputs; ++i) {
         const unsigned char *script, *asset = NULL, *value = NULL, *nonce = NULL;
-        uint64_t satoshi = -1, script_len, asset_len = 0, value_len = 0, nonce_len = 0;
+        uint64_t satoshi = MAX_INVALID_SATOSHI, script_len, asset_len = 0, value_len = 0, nonce_len = 0;
         if (is_elements) {
             asset = p;
             p += confidential_asset_varint_from_bytes(p, &asset_len);
@@ -3429,3 +3431,4 @@ int wally_tx_clone_alloc(const struct wally_tx *tx, uint32_t flags, struct wally
 
     return ret;
 }
+#undef MAX_INVALID_SATOSHI
