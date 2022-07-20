@@ -141,6 +141,67 @@ class PSBTTests(unittest.TestCase):
                self.assertEqual(psbt_get_tx_modifiable_flags(p), PSBT_TXMOD_BOTH)
             self._throws(psbt_remove_input, p, 0)    # Invalid index
 
+    def test_add_remove_tx_items(self):
+        txhash = hex_to_bytes('11' * 32)
+        script = hex_to_bytes('0014b9bb6d06d82d2e4d9f9e8e6a9d23dacd715e81')
+        value = 1234
+        if is_elements_build():
+            asset = hex_to_bytes('77' * 32)
+            explicit_asset = hex_to_bytes('01' + '77' * 32)
+            blinded_asset = hex_to_bytes('0a' + '77' * 32) # Dummy value
+            explicit_value = tx_confidential_value_from_satoshi(1234)
+            blinded_value = hex_to_bytes('08' + '55' * 32) # Dummy value
+
+        # Inputs: BTC
+        psbt2 = psbt_init(2, 0, 0, 0, 0)
+        tx_input = tx_input_init(txhash, 1, 0xffffffff, script, None)
+        psbt_add_tx_input_at(psbt2, 0, 0, tx_input)
+        self.assertEqual(psbt_get_input_previous_txid(psbt2, 0), txhash)
+        self.assertEqual(psbt_get_input_output_index(psbt2, 0), 1)
+        self.assertEqual(psbt_get_input_sequence(psbt2, 0), 0xffffffff)
+
+        # FIXME: Issuance Fields
+        # FIXME: Pegin Fields
+
+        # Outputs: BTC
+        psbt2 = psbt_init(2, 0, 0, 0, 0)
+        tx_output = tx_output_init(1234, script)
+        psbt_add_tx_output_at(psbt2, 0, 0, tx_output)
+        self.assertEqual(psbt_get_output_amount(psbt2, 0), 1234)
+        self.assertEqual(psbt_get_output_script(psbt2, 0), script)
+
+        if is_elements_build():
+            # Outputs: Elements
+            # Unblinded
+            pset2 = psbt_init(2, 0, 0, 0, WALLY_PSBT_INIT_PSET)
+            tx_output = tx_elements_output_init(script, explicit_asset, explicit_value)
+            psbt_add_tx_output_at(pset2, 0, 0, tx_output)
+            # txout has explicit value/asset: Expect the values
+            # set and no commitments in the PSET
+            self.assertEqual(psbt_has_output_amount(pset2, 0), 1)
+            self.assertEqual(psbt_get_output_amount(pset2, 0), 1234)
+            self.assertEqual(psbt_get_output_value_commitment_len(pset2, 0), 0)
+            self.assertEqual(psbt_get_output_value_commitment(pset2, 0), None)
+            self.assertEqual(psbt_get_output_script(pset2, 0), script)
+            self.assertEqual(psbt_get_output_asset(pset2, 0), asset)
+            self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), 0)
+            self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), None)
+
+            # Blinded
+            pset2 = psbt_init(2, 0, 0, 0, WALLY_PSBT_INIT_PSET)
+            tx_output = tx_elements_output_init(script, blinded_asset, blinded_value)
+            psbt_add_tx_output_at(pset2, 0, 0, tx_output)
+            # txout has blinded value/asset, expect no values
+            # and the commitments set in the PSET
+            self.assertEqual(psbt_has_output_amount(pset2, 0), 0)
+            self.assertEqual(psbt_get_output_amount(pset2, 0), 0)
+            self.assertEqual(psbt_get_output_value_commitment_len(pset2, 0), len(blinded_value))
+            self.assertEqual(psbt_get_output_value_commitment(pset2, 0), blinded_value)
+            self.assertEqual(psbt_get_output_script(pset2, 0), script)
+            self.assertEqual(psbt_get_output_asset(pset2, 0), None)
+            self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), len(blinded_asset))
+            self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), blinded_asset)
+
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)

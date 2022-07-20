@@ -32,6 +32,8 @@
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
+#define MAX_INVALID_SATOSHI ((uint64_t) -1)
+
 #ifdef BUILD_ELEMENTS
 /* The PSET key prefix is the same as the first 4 PSET magic bytes */
 #define PSET_PREFIX_LEN 4u
@@ -1060,52 +1062,157 @@ int wally_psbt_set_global_tx(struct wally_psbt *psbt, const struct wally_tx *tx)
     return psbt_set_global_tx(psbt, (struct wally_tx *)tx, true);
 }
 
+#ifdef BUILD_ELEMENTS
+static int add_commitment(const unsigned char *value, size_t value_len,
+                          uint32_t ft, uint32_t ft_commitment,
+                          struct wally_map *map_in)
+{
+    if (value_len <= 1)
+        return WALLY_OK; /* Empty or null commitment */
+    if (*value == 0x1) {
+        /* Asset isn't blinded: add it as the non-commitment field */
+        return wally_map_add_integer(map_in, ft, value + 1, value_len - 1);
+    }
+    return wally_map_add_integer(map_in, ft_commitment, value, value_len);
+}
+
+static int add_commitment_amount(const unsigned char *value, size_t value_len,
+                                 uint32_t ft_commitment,
+                                 uint64_t *amount, uint32_t *has_amount,
+                                 struct wally_map *map_in)
+{
+    *amount = 0;
+    *has_amount = 0;
+    if (value_len <= 1)
+        return WALLY_OK; /* Empty or null commitment */
+    if (*value == 0x1) {
+        /* Asset isn't blinded: add the explicit value and mark it present */
+        if (wally_tx_confidential_value_to_satoshi(value, value_len, amount) != WALLY_OK)
+            return WALLY_EINVAL;
+        *has_amount = *value != 0;
+        return WALLY_OK;
+    }
+    return wally_map_add_integer(map_in, ft_commitment, value, value_len);
+}
+
+static int psbt_input_from_tx_input_issuance(const struct wally_tx_input *txin,
+                                             struct wally_psbt_input *dst)
+{
+    uint32_t has_amount;
+    int ret = add_commitment_amount(txin->issuance_amount, txin->issuance_amount_len,
+                                    PSET_IN_ISSUANCE_VALUE_COMMITMENT,
+                                    &dst->issuance_amount, &has_amount,
+                                    &dst->pset_fields);
+    if (ret == WALLY_OK && txin->issuance_amount_rangeproof)
+        ret = wally_map_add_integer(&dst->pset_fields, PSET_IN_ISSUANCE_VALUE_RANGEPROOF,
+                                    txin->issuance_amount_rangeproof,
+                                    txin->issuance_amount_rangeproof_len);
+    if (ret == WALLY_OK)
+        ret = add_commitment_amount(txin->inflation_keys, txin->inflation_keys_len,
+                                    PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT,
+                                    &dst->inflation_keys, &has_amount,
+                                    &dst->pset_fields);
+    if (ret == WALLY_OK && txin->inflation_keys_rangeproof)
+        ret = wally_map_add_integer(&dst->pset_fields, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF,
+                                    txin->inflation_keys_rangeproof,
+                                    txin->inflation_keys_rangeproof_len);
+    if (ret == WALLY_OK && !mem_is_zero(txin->blinding_nonce, sizeof(txin->blinding_nonce)))
+        ret = wally_map_add_integer(&dst->pset_fields, PSET_IN_ISSUANCE_BLINDING_NONCE,
+                                    txin->blinding_nonce, sizeof(txin->blinding_nonce));
+    if (ret == WALLY_OK && !mem_is_zero(txin->entropy, sizeof(txin->entropy)))
+        ret = wally_map_add_integer(&dst->pset_fields, PSET_IN_ISSUANCE_ASSET_ENTROPY,
+                                    txin->entropy, sizeof(txin->entropy));
+    return ret;
+}
+
+static int psbt_input_from_tx_input_pegin(const struct wally_tx_input *txin,
+                                          struct wally_psbt_input *dst)
+{
+    (void)txin;
+    (void)dst;
+    return WALLY_ERROR; /* FIXME: Implment peg-in fields */
+}
+#endif /* BUILD_ELEMENTS */
+
+static int psbt_input_from_tx_input(struct wally_psbt *psbt,
+                                    const struct wally_tx_input *txin,
+                                    bool is_pset, struct wally_psbt_input *dst)
+{
+    int ret = WALLY_OK;
+
+    psbt_input_init(dst);
+    if (psbt->version == PSBT_0)
+        return WALLY_OK; /* Nothing to do */
+
+    memcpy(dst->txhash, txin->txhash, WALLY_TXHASH_LEN);
+    dst->index = txin->index;
+    dst->sequence = txin->sequence;
+
+    if (psbt->version == PSBT_2) {
+        if (is_pset) {
+#ifdef BUILD_ELEMENTS
+            if (txin->features & WALLY_TX_IS_ISSUANCE)
+                ret = psbt_input_from_tx_input_issuance(txin, dst);
+            if (ret == WALLY_OK && txin->features & WALLY_TX_IS_PEGIN)
+                ret = psbt_input_from_tx_input_pegin(txin, dst);
+#endif /* BUILD_ELEMENTS */
+        }
+    }
+    if (ret != WALLY_OK)
+        psbt_input_free(dst, false);
+    return ret;
+}
+
 int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
                                uint32_t index, uint32_t flags,
-                               const struct wally_tx_input *input)
+                               const struct wally_tx_input *txin)
 {
-    struct wally_tx_input tx_input;
+    struct wally_tx_input txin_copy;
+    size_t is_pset;
     int ret = WALLY_OK;
 
     if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
-        (flags & ~WALLY_PSBT_FLAG_NON_FINAL) || index > psbt->num_inputs || !input)
+        (flags & ~WALLY_PSBT_FLAG_NON_FINAL) || index > psbt->num_inputs || !txin)
         return WALLY_EINVAL;
 
     if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
         return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
 
-    memcpy(&tx_input, input, sizeof(tx_input));
+    if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
+        return ret;
+
+    if (psbt->num_inputs >= psbt->inputs_allocation_len &&
+        (ret = array_grow((void *)&psbt->inputs, psbt->num_inputs,
+                          &psbt->inputs_allocation_len,
+                          sizeof(*psbt->inputs))) != WALLY_OK)
+        return ret;
+
+    memcpy(&txin_copy, txin, sizeof(*txin));
     if (flags & WALLY_PSBT_FLAG_NON_FINAL) {
         /* Clear scriptSig and witness before adding */
-        tx_input.script = NULL;
-        tx_input.script_len = 0;
-        tx_input.witness = NULL;
+        txin_copy.script = NULL;
+        txin_copy.script_len = 0;
+        txin_copy.witness = NULL;
     }
 
     if (psbt->version == PSBT_0)
-        ret = wally_tx_add_input_at(psbt->tx, index, &tx_input);
+        ret = wally_tx_add_input_at(psbt->tx, index, &txin_copy);
 
     if (ret == WALLY_OK) {
-        if (psbt->num_inputs >= psbt->inputs_allocation_len)
-            ret = array_grow((void *)&psbt->inputs, psbt->num_inputs,
-                             &psbt->inputs_allocation_len, sizeof(*psbt->inputs));
+        struct wally_psbt_input tmp, *dst = psbt->inputs + index;
 
+        ret = psbt_input_from_tx_input(psbt, &txin_copy, !!is_pset, &tmp);
         if (ret == WALLY_OK) {
-            struct wally_psbt_input *dst = psbt->inputs + index;
             memmove(dst + 1, dst, (psbt->num_inputs - index) * sizeof(*psbt->inputs));
-            wally_clear(dst, sizeof(*dst));
-            psbt_input_init(dst);
+            memcpy(dst, &tmp, sizeof(tmp));
+            wally_clear(&tmp, sizeof(tmp));
             psbt->num_inputs += 1;
-
-            if (psbt->version == PSBT_2) {
-                memcpy(dst->txhash, input->txhash, WALLY_TXHASH_LEN);
-                dst->index = input->index;
-                dst->sequence = input->sequence;
-            }
         }
-        if (ret != WALLY_OK && psbt->version == PSBT_0)
-            wally_tx_remove_input(psbt->tx, index);
     }
+
+    if (ret != WALLY_OK && psbt->version == PSBT_0)
+        wally_tx_remove_input(psbt->tx, index);
+    wally_clear(&txin_copy, sizeof(txin_copy));
     return ret;
 }
 
@@ -1118,7 +1225,7 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
         return WALLY_EINVAL;
 
     if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
-        return WALLY_EINVAL;
+        return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
 
     if (psbt->version == PSBT_0)
         ret = wally_tx_remove_input(psbt->tx, index);
@@ -1144,46 +1251,89 @@ int wally_psbt_remove_input(struct wally_psbt *psbt, uint32_t index)
     return ret;
 }
 
+static int psbt_output_from_tx_output(struct wally_psbt *psbt,
+                                      const struct wally_tx_output *txout,
+                                      bool is_pset, struct wally_psbt_output *dst)
+{
+    int ret;
+
+    psbt_output_init(dst);
+    if (psbt->version == PSBT_0)
+        return WALLY_OK; /* Nothing to do */
+
+    ret = replace_bytes(txout->script, txout->script_len,
+                        &dst->script, &dst->script_len);
+    if (ret == WALLY_OK) {
+        /* Note we check for wallys sentinel indicating no explicit satoshi */
+        dst->has_amount = txout->satoshi != MAX_INVALID_SATOSHI;
+        dst->amount = dst->has_amount ? txout->satoshi : 0;
+        if (is_pset) {
+#ifdef BUILD_ELEMENTS
+            ret = add_commitment(txout->asset, txout->asset_len,
+                                 PSET_OUT_ASSET, PSET_OUT_ASSET_COMMITMENT,
+                                 &dst->pset_fields);
+            if (ret == WALLY_OK)
+                ret = add_commitment_amount(txout->value, txout->value_len,
+                                            PSET_OUT_VALUE_COMMITMENT,
+                                            &dst->amount, &dst->has_amount,
+                                            &dst->pset_fields);
+            if (ret == WALLY_OK && txout->nonce_len)
+                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_BLINDING_PUBKEY,
+                                            txout->nonce, txout->nonce_len);
+            if (ret == WALLY_OK && txout->surjectionproof_len)
+                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_ASSET_SURJECTION_PROOF,
+                                            txout->surjectionproof, txout->surjectionproof_len);
+            if (ret == WALLY_OK && txout->rangeproof_len)
+                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_VALUE_RANGEPROOF,
+                                            txout->rangeproof, txout->rangeproof_len);
+#endif /* BUILD_ELEMENTS */
+        }
+    }
+    if (ret != WALLY_OK)
+        psbt_output_free(dst, false);
+    return ret;
+}
+
 int wally_psbt_add_tx_output_at(struct wally_psbt *psbt,
                                 uint32_t index, uint32_t flags,
-                                const struct wally_tx_output *output)
+                                const struct wally_tx_output *txout)
 {
+    size_t is_pset;
     int ret = WALLY_OK;
 
     if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx) ||
-        flags || index > psbt->num_outputs || !output)
+        flags || index > psbt->num_outputs || !txout)
         return WALLY_EINVAL;
 
     if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_OUTPUTS))
         return WALLY_EINVAL; /* FIXME: WALLY_PSBT_TXMOD_SINGLE */
 
+    if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
+        return ret;
+
+    if (psbt->num_outputs >= psbt->outputs_allocation_len &&
+        (ret = array_grow((void *)&psbt->outputs, psbt->num_outputs,
+                          &psbt->outputs_allocation_len,
+                          sizeof(*psbt->outputs))) != WALLY_OK)
+        return ret;
+
     if (psbt->version == PSBT_0)
-        ret = wally_tx_add_output_at(psbt->tx, index, output);
+        ret = wally_tx_add_output_at(psbt->tx, index, txout);
 
     if (ret == WALLY_OK) {
-        if (psbt->num_outputs >= psbt->outputs_allocation_len)
-            ret = array_grow((void *)&psbt->outputs, psbt->num_outputs,
-                             &psbt->outputs_allocation_len, sizeof(*psbt->outputs));
+        struct wally_psbt_output tmp, *dst = psbt->outputs + index;
 
+        ret = psbt_output_from_tx_output(psbt, txout, !!is_pset, &tmp);
         if (ret == WALLY_OK) {
-            struct wally_psbt_output *dst = psbt->outputs + index;
             memmove(dst + 1, dst, (psbt->num_outputs - index) * sizeof(*psbt->outputs));
-            wally_clear(dst, sizeof(*dst));
+            memcpy(dst, &tmp, sizeof(tmp));
+            wally_clear(&tmp, sizeof(tmp));
             psbt->num_outputs += 1;
-
-            if (psbt->version == PSBT_2) {
-                ret = replace_bytes(output->script, output->script_len,
-                                    &dst->script, &dst->script_len);
-                if (ret == WALLY_OK) {
-                    dst->amount = output->satoshi;
-                    dst->has_amount = 1u;
-                } else
-                    wally_psbt_remove_output(psbt, index);
-            }
         }
-        if (ret != WALLY_OK && psbt->version == PSBT_0)
-            wally_tx_remove_output(psbt->tx, index);
     }
+
+    if (ret != WALLY_OK && psbt->version == PSBT_0)
+        wally_tx_remove_output(psbt->tx, index);
     return ret;
 }
 
@@ -4131,6 +4281,7 @@ int wally_psbt_get_output_blinding_status(const struct wally_psbt *psbt, size_t 
     if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;
     return wally_psbt_output_get_blinding_status(p, flags, written);
 }
+#undef MAX_INVALID_SATOSHI
 #endif /* BUILD_ELEMENTS */
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */
