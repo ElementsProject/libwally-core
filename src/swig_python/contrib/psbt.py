@@ -201,10 +201,10 @@ class PSBTTests(unittest.TestCase):
             (psbt,  0x1, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
             (psbt,  0x2, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
             (psbt,  0x3, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
-            (psbt2, 0x0, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
-            (psbt2, 0x1, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
-            (psbt2, 0x2, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
-            (psbt2, 0x3, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056')
+            (psbt2, 0x0, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
+            (psbt2, 0x1, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
+            (psbt2, 0x2, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
+            (psbt2, 0x3, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063')
             ]:
             self.assertEqual(hex_from_bytes(psbt_get_id(p, flags)), expected_id)
 

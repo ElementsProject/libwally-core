@@ -27,7 +27,7 @@
  */
 
 /* All allowed flags for wally_psbt_get_id() */
-#define PSBT_ID_ALL_FLAGS (WALLY_PSBT_ID_AS_V2 | WALLY_PSBT_ID_NO_LOCKTIME)
+#define PSBT_ID_ALL_FLAGS (WALLY_PSBT_ID_AS_V2 | WALLY_PSBT_ID_USE_LOCKTIME)
 
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
@@ -3171,9 +3171,9 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) == WALLY_OK) {
-        if (flags & WALLY_PSBT_ID_NO_LOCKTIME) {
-            /* Set locktime to 0. This can be useful to compute an ID
-             * that doesn't change even if the input locktimes are changing */
+        if (!(flags & WALLY_PSBT_ID_USE_LOCKTIME)) {
+            /* Set locktime to 0. This is what core/Elements do,
+             * although the specs aren't fixed to describe this yet */
             tx->locktime = 0;
         }
         if (psbt->version == PSBT_2 || (flags & WALLY_PSBT_ID_AS_V2)) {

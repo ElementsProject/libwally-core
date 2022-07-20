@@ -32,7 +32,7 @@ extern "C" {
 
 /* ID flags indicating unique id calculation */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
-#define WALLY_PSBT_ID_NO_LOCKTIME 0x2 /* Set locktime to 0 before calculating id */
+#define WALLY_PSBT_ID_USE_LOCKTIME 0x2 /* Do not set locktime to 0 before calculating id */
 
 /* Output blinding status */
 #define WALLY_PSET_BLINDED_NONE     0x0 /* Unblinded */
