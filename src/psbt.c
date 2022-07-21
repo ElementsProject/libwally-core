@@ -534,6 +534,7 @@ MAP_INNER_FIELD(input, utxo_rangeproof, PSET_IN_UTXO_RANGEPROOF, pset_fields)
 
 static void psbt_input_init(struct wally_psbt_input *input)
 {
+    wally_clear(input, sizeof(*input));
     wally_map_init(0, wally_keypath_public_key_verify, &input->keypaths);
     wally_map_init(0, pubkey_sig_verify, &input->signatures);
     wally_map_init(0, NULL, &input->unknowns);
@@ -707,6 +708,7 @@ static bool pset_check_commitment(uint64_t keyset, uint64_t value_bit,
 
 static void psbt_output_init(struct wally_psbt_output *output)
 {
+    wally_clear(output, sizeof(*output));
     wally_map_init(0, wally_keypath_public_key_verify, &output->keypaths);
     wally_map_init(0, NULL, &output->unknowns);
     wally_map_init(0, psbt_map_output_field_verify, &output->psbt_fields);
@@ -1015,13 +1017,13 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
         return ret;
 
     if (psbt->inputs_allocation_len < tx->num_inputs) {
-        new_inputs = wally_calloc(tx->num_inputs * sizeof(struct wally_psbt_input));
+        new_inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
         for (i = 0; i < tx->num_inputs; ++i)
             psbt_input_init(&new_inputs[i]);
     }
 
     if (psbt->outputs_allocation_len < tx->num_outputs) {
-        new_outputs = wally_calloc(tx->num_outputs * sizeof(struct wally_psbt_output));
+        new_outputs = wally_malloc(tx->num_outputs * sizeof(struct wally_psbt_output));
         for (i = 0; i < tx->num_outputs; ++i)
             psbt_output_init(&new_outputs[i]);
     }
