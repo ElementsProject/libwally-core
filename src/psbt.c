@@ -3219,9 +3219,117 @@ int wally_psbt_get_locktime(const struct wally_psbt *psbt, size_t *locktime)
     return WALLY_OK;
 }
 
-static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, size_t *is_pset)
+#define BUILD_ITEM(n, ft) const struct wally_map_item *n = wally_map_get_integer(&src->pset_fields, ft)
+#define BUILD_PARAM(n) n ? n->value : NULL, n ? n->value_len : 0
+
+static int psbt_build_input(const struct wally_psbt_input *src,
+                            bool is_pset, bool unblinded, struct wally_tx *tx)
 {
-    size_t locktime, i;
+    if (is_pset) {
+#ifndef BUILD_ELEMENTS
+        (void)unblinded;
+        return WALLY_EINVAL;
+#else
+        BUILD_ITEM(issuance_blinding_nonce, PSET_IN_ISSUANCE_BLINDING_NONCE);
+        BUILD_ITEM(issuance_asset_entropy, PSET_IN_ISSUANCE_ASSET_ENTROPY);
+        BUILD_ITEM(issuance_amount_commitment, PSET_IN_ISSUANCE_VALUE_COMMITMENT);
+        BUILD_ITEM(inflation_keys_commitment, PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT);
+        unsigned char issuance_amount[WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN];
+        unsigned char inflation_keys[WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN];
+        struct wally_map_item issuance_amount_item = { NULL, 0, issuance_amount, sizeof(issuance_amount) };
+        struct wally_map_item inflation_keys_item = { NULL, 0, inflation_keys, sizeof(inflation_keys) };
+
+        if (unblinded && src->issuance_amount && src->inflation_keys) {
+            /* Use the unblinded amounts */
+            if (wally_tx_confidential_value_from_satoshi(src->issuance_amount,
+                                                         issuance_amount,
+                                                         sizeof(issuance_amount)) != WALLY_OK ||
+                wally_tx_confidential_value_from_satoshi(src->inflation_keys,
+                                                         inflation_keys,
+                                                         sizeof(inflation_keys)) != WALLY_OK)
+                return WALLY_EINVAL;
+            issuance_amount_commitment = &issuance_amount_item;
+            inflation_keys_commitment = &inflation_keys_item;
+        }
+
+        return wally_tx_add_elements_raw_input(tx,
+                                               src->txhash, WALLY_TXHASH_LEN,
+                                               src->index, src->sequence, NULL, 0, NULL,
+                                               BUILD_PARAM(issuance_blinding_nonce),
+                                               BUILD_PARAM(issuance_asset_entropy),
+                                               BUILD_PARAM(issuance_amount_commitment),
+                                               BUILD_PARAM(inflation_keys_commitment),
+                                               NULL, 0, NULL, 0, NULL, 0);
+#endif /* BUILD_ELEMENTS */
+    }
+    return wally_tx_add_raw_input(tx, src->txhash, WALLY_TXHASH_LEN,
+                                  src->index, src->sequence, NULL, 0, NULL, 0);
+}
+
+static int psbt_build_output(const struct wally_psbt_output *src,
+                             bool is_pset, bool unblinded, struct wally_tx *tx)
+{
+    if (is_pset) {
+#ifndef BUILD_ELEMENTS
+        (void)unblinded;
+        return WALLY_EINVAL;
+#else
+        BUILD_ITEM(value_commitment, PSET_OUT_VALUE_COMMITMENT);
+        BUILD_ITEM(value_rangeproof, PSET_OUT_VALUE_RANGEPROOF);
+        BUILD_ITEM(asset, PSET_OUT_ASSET);
+        BUILD_ITEM(asset_commitment, PSET_OUT_ASSET_COMMITMENT);
+        BUILD_ITEM(asset_surjectionproof, PSET_OUT_ASSET_SURJECTION_PROOF);
+        BUILD_ITEM(ecdh_public_key, PSET_OUT_ECDH_PUBKEY);
+        unsigned char value[WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN];
+        unsigned char asset_u[WALLY_TX_ASSET_CT_ASSET_LEN];
+        struct wally_map_item value_item = { NULL, 0, value, sizeof(value) };
+        struct wally_map_item asset_u_item = { NULL, 0, asset_u, sizeof(asset_u) };
+
+        if (unblinded || (src->has_amount && !value_commitment)) {
+            /* FIXME: Check the blind value proof */
+            /* Use the unblinded amount */
+            if (wally_tx_confidential_value_from_satoshi(src->amount,
+                                                         value, sizeof(value)) != WALLY_OK)
+                return WALLY_EINVAL;
+            value_commitment = &value_item;
+            value_rangeproof = NULL;
+        }
+
+        if (unblinded || !asset_commitment) {
+            /* FIXME: Check the blind asset proof */
+            if (!asset)
+                asset_commitment = NULL;
+            else {
+                asset_u[0] = 0x1; /* Use the unblinded asset */
+                if (asset->value_len != WALLY_TX_ASSET_TAG_LEN)
+                    return WALLY_EINVAL;
+                memcpy(asset_u + 1, asset->value, asset->value_len);
+                asset_commitment = &asset_u_item;
+            }
+            asset_surjectionproof = NULL;
+        }
+
+        if (unblinded)
+            ecdh_public_key = NULL;
+
+        return wally_tx_add_elements_raw_output(tx,
+                                                src->script, src->script_len,
+                                                BUILD_PARAM(asset_commitment),
+                                                BUILD_PARAM(value_commitment),
+                                                BUILD_PARAM(ecdh_public_key),
+                                                BUILD_PARAM(asset_surjectionproof),
+                                                BUILD_PARAM(value_rangeproof), 0);
+#endif /* BUILD_ELEMENTS */
+    }
+    if (!src->has_amount)
+        return WALLY_EINVAL;
+    return wally_tx_add_raw_output(tx, src->amount, src->script, src->script_len, 0);
+}
+
+static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx,
+                         bool *is_pset, bool unblinded)
+{
+    size_t is_elements, locktime, i;
     int ret;
 
     *tx = NULL;
@@ -3230,11 +3338,9 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
     if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
         return WALLY_EINVAL;
 
-    if ((ret = wally_psbt_is_elements(psbt, is_pset)) != WALLY_OK)
+    if ((ret = wally_psbt_is_elements(psbt, &is_elements)) != WALLY_OK)
         return ret;
-
-    if (*is_pset)
-        return WALLY_EINVAL;
+    *is_pset = !!is_elements;
 
     if (psbt->version == PSBT_0)
         return wally_tx_clone_alloc(psbt->tx, 0, tx);
@@ -3243,19 +3349,11 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx, si
     if (ret == WALLY_OK)
         ret = wally_tx_init_alloc(psbt->tx_version, locktime, psbt->num_inputs, psbt->num_outputs, tx);
 
-    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
-        const struct wally_psbt_input *pi = &psbt->inputs[i];
-        ret = wally_tx_add_raw_input(*tx, pi->txhash, WALLY_TXHASH_LEN,
-                                     pi->index, pi->sequence, NULL, 0, NULL, 0);
-    }
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
+        ret = psbt_build_input(psbt->inputs + i, *is_pset, unblinded, *tx);
 
-    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i) {
-        const struct wally_psbt_output *po = &psbt->outputs[i];
-        if (!po->has_amount)
-            ret = WALLY_EINVAL;
-        else
-            ret = wally_tx_add_raw_output(*tx, po->amount, po->script, po->script_len, 0);
-    }
+    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i)
+        ret = psbt_build_output(psbt->outputs + i, *is_pset, unblinded, *tx);
 
     if (ret != WALLY_OK) {
         wally_tx_free(*tx);
@@ -3274,11 +3372,14 @@ static int psbt_v0_to_v2(struct wally_psbt *psbt)
 static int psbt_v2_to_v0(struct wally_psbt *psbt)
 {
     struct wally_tx *tx;
-    size_t is_pset, i;
-    int ret = psbt_build_tx(psbt, &tx, &is_pset);
+    size_t i;
+    bool is_pset;
+    int ret = psbt_build_tx(psbt, &tx, &is_pset, false);
 
     if (ret != WALLY_OK)
         return ret;
+    if (is_pset)
+        return WALLY_EINVAL;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *pi = &psbt->inputs[i];
@@ -3319,13 +3420,14 @@ int wally_psbt_set_version(struct wally_psbt *psbt,
 int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned char *bytes_out, size_t len)
 {
     struct wally_tx *tx;
-    size_t is_pset, i;
+    size_t i;
+    bool is_pset;
     int ret;
 
     if ((flags & ~PSBT_ID_ALL_FLAGS) || !bytes_out || len != WALLY_TXHASH_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) == WALLY_OK) {
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, true)) == WALLY_OK) {
         if (!(flags & WALLY_PSBT_ID_USE_LOCKTIME)) {
             /* Set locktime to 0. This is what core/Elements do,
              * although the specs aren't fixed to describe this yet */
@@ -3498,14 +3600,15 @@ int wally_psbt_sign(struct wally_psbt *psbt,
     unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     const size_t pubkey_len = sizeof(pubkey), full_pubkey_len = sizeof(full_pubkey);
     unsigned char wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
-    size_t is_pset, i;
+    size_t i;
+    bool is_pset;
     int ret;
     struct wally_tx *tx;
 
     if (!key || key_len != EC_PRIVATE_KEY_LEN || (flags & ~EC_FLAGS_ALL))
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false)) != WALLY_OK)
         return ret;
 
     /* Get the pubkey */
@@ -3789,11 +3892,12 @@ fail:
 
 int wally_psbt_finalize(struct wally_psbt *psbt)
 {
-    size_t is_pset, i;
+    size_t i;
     struct wally_tx *tx;
+    bool is_pset;
     int ret;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_pset)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
@@ -3877,7 +3981,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
 int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 {
     struct wally_tx *result;
-    size_t is_pset, i;
+    size_t i;
+    bool is_pset;
     int ret;
 
     OUTPUT_CHECK;
@@ -3885,7 +3990,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
     if ((psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)))
         return WALLY_EINVAL;
 
-    if ((ret = psbt_build_tx(psbt, &result, &is_pset)) != WALLY_OK)
+    if ((ret = psbt_build_tx(psbt, &result, &is_pset, false)) != WALLY_OK)
         return ret;
 
     for (i = 0; i < psbt->num_inputs; ++i) {

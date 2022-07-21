@@ -163,7 +163,12 @@ class PSBTTests(unittest.TestCase):
 
     def test_extractor_role(self):
         """Test the PSBT extractor role"""
+        _, is_elements_build = wally_is_elements_build()
+
         for case in JSON['extractor']:
+            if case.get('is_pset', False) and not is_elements_build:
+                continue # No Elements support, skip this test case
+
             psbt = self.parse_base64(case['psbt'])
             tx = pointer(wally_tx())
             self.assertEqual(WALLY_OK, wally_psbt_extract(psbt, tx))
