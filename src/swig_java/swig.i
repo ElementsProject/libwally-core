@@ -480,6 +480,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_ec_sig_verify);
 %returns_void__(wally_ec_xonly_public_key_verify);
 %returns_array_(wally_ecdh, 5, 6, SHA256_LEN);
+%returns_size_t(wally_explicit_rangeproof);
 %returns_size_t(wally_format_bitcoin_message);
 %returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);

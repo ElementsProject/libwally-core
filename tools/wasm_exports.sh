@@ -278,6 +278,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_pak_whitelistproof' \
 ,'_wally_asset_pak_whitelistproof_size' \
 ,'_wally_asset_rangeproof' \
+,'_wally_asset_rangeproof_with_nonce' \
 ,'_wally_asset_scalar_offset' \
 ,'_wally_asset_surjectionproof' \
 ,'_wally_asset_surjectionproof_size' \
@@ -293,6 +294,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_elements_pegin_contract_script_from_bytes' \
 ,'_wally_elements_pegout_script_from_bytes' \
 ,'_wally_elements_pegout_script_size' \
+,'_wally_explicit_rangeproof' \
 ,'_wally_psbt_add_global_scalar' \
 ,'_wally_psbt_find_global_scalar' \
 ,'_wally_psbt_input_clear_inflation_keys_blinding_rangeproof' \

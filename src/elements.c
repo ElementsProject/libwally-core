@@ -177,6 +177,7 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
     secp256k1_generator gen;
     secp256k1_pedersen_commitment commit;
     unsigned char message[ASSET_TAG_LEN * 2];
+    const bool is_explicit = value == min_value && exp == -1 && !min_bits;
     int ret = WALLY_EINVAL;
 
     if (written)
@@ -185,14 +186,20 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
-        !asset || asset_len != ASSET_TAG_LEN ||
-        !abf || abf_len != BLINDING_FACTOR_LEN ||
-        !vbf || vbf_len != BLINDING_FACTOR_LEN ||
-        !bytes_out || len < ASSET_RANGEPROOF_MAX_LEN || !written ||
-        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+    if (is_explicit) {
+        if (asset || asset_len || abf || abf_len || extra || extra_len ||
+            len < ASSET_EXPLICIT_RANGEPROOF_MAX_LEN)
+            goto cleanup;
+    } else {
         /* FIXME: Is there an upper size limit on the extra commitment? */
-        (extra_len && !extra) ||
+        if (!asset || asset_len != ASSET_TAG_LEN ||
+            !abf || abf_len != BLINDING_FACTOR_LEN ||
+            BYTES_INVALID(extra, extra_len) || len < ASSET_RANGEPROOF_MAX_LEN)
+            goto cleanup;
+    }
+    if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
+        !vbf || vbf_len != BLINDING_FACTOR_LEN || !bytes_out || !written ||
+        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         min_value > 0x7ffffffffffffffful ||
         exp < -1 || exp > 18 ||
         min_bits < 0 || min_bits > 64 ||
@@ -200,13 +207,16 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
         goto cleanup;
 
     /* Create the rangeproof message */
-    memcpy(message, asset, ASSET_TAG_LEN);
-    memcpy(message + ASSET_TAG_LEN, abf, ASSET_TAG_LEN);
+    if (!is_explicit) {
+        memcpy(message, asset, ASSET_TAG_LEN);
+        memcpy(message + ASSET_TAG_LEN, abf, BLINDING_FACTOR_LEN);
+    }
 
     *written = ASSET_RANGEPROOF_MAX_LEN;
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, min_value, &commit,
                                   vbf, nonce_hash, exp, min_bits, value,
-                                  message, sizeof(message),
+                                  is_explicit ? NULL : message,
+                                  is_explicit ? 0 : sizeof(message),
                                   extra, extra_len,
                                   &gen))
         ret = WALLY_OK;
@@ -253,6 +263,19 @@ int wally_asset_rangeproof(uint64_t value,
 
     wally_clear(nonce_hash, sizeof(nonce_hash));
     return ret;
+}
+
+int wally_explicit_rangeproof(uint64_t value,
+                              const unsigned char *nonce, size_t nonce_len,
+                              const unsigned char *vbf, size_t vbf_len,
+                              const unsigned char *commitment, size_t commitment_len,
+                              const unsigned char *generator, size_t generator_len,
+                              unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_asset_rangeproof_with_nonce(value, nonce, nonce_len, NULL, 0, NULL, 0,
+                                             vbf, vbf_len, commitment, commitment_len, NULL, 0,
+                                             generator, generator_len, value, -1, 0,
+                                             bytes_out, len, written);
 }
 
 int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce_hash_len,

@@ -19,9 +19,9 @@ UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN = make_cbuffer('0b9d043d6
 # value commitment
 UNBLIND_VALUE_COMMITMENT, UNBLIND_VALUE_COMMITMENT_LEN = make_cbuffer('09b67565b370abf41d81fe0ed6378e7228e9ae01d1b72b69582f83db1fca522148')
 
-UNBLINDED_ASSET = make_cbuffer('25b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a')[0]
-UNBLINDED_ABF = make_cbuffer('3f2f58e80fbe77e8aad8268f1baebc3548c777ba8271f99ce73210ad993d907d')[0]
-UNBLINDED_VBF = make_cbuffer('51f109e34d0282b6efac36d118131060f7f79b867b67a95bebd087eda2ccd796')[0]
+UNBLINDED_ASSET, UNBLINDED_ASSET_LEN = make_cbuffer('25b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a')
+UNBLINDED_ABF, UNBLINDED_ABF_LEN = make_cbuffer('3f2f58e80fbe77e8aad8268f1baebc3548c777ba8271f99ce73210ad993d907d')
+UNBLINDED_VBF, UNBLINDED_VBF_LEN = make_cbuffer('51f109e34d0282b6efac36d118131060f7f79b867b67a95bebd087eda2ccd796')
 
 # TODO: expand these tests a little bit...
 class ElementsTests(unittest.TestCase):
@@ -68,6 +68,47 @@ class ElementsTests(unittest.TestCase):
         ret, value_out = wally_asset_unblind_with_nonce(*args)
         self.assertEqual((ret, value_out, asset_out, abf_out, vbf_out),
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
+
+    def test_blinding(self):
+
+        # asset_generator_from_bytes
+        generator, generator_len = make_cbuffer('00' * 33)
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, UNBLIND_ASSET_COMMITMENT))
+
+        # asset_value_commitment
+        value_commitment, value_commitment_len = make_cbuffer('00' * 33)
+        ret = wally_asset_value_commitment(80000000, UNBLINDED_VBF, len(UNBLINDED_VBF),
+                                           generator, generator_len,
+                                           value_commitment, value_commitment_len)
+        self.assertEqual((ret, value_commitment), (WALLY_OK, UNBLIND_VALUE_COMMITMENT))
+
+        # asset_rangeproof
+        rangeproof, rangeproof_len = make_cbuffer('00' * 5134)
+        ret, written = wally_asset_rangeproof(80000000, UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                                              UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                                              UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                              UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                              UNBLINDED_VBF, UNBLINDED_VBF_LEN,
+                                              value_commitment, value_commitment_len,
+                                              None, 0, generator, generator_len,
+                                              1, 0, 52, rangeproof, rangeproof_len)
+        self.assertEqual(ret, WALLY_OK)
+        rangeproof_len = written
+
+        # explicit_rangeproof
+        out_proof, out_proof_len = make_cbuffer('00' * 73)
+        nonce, nonce_len = make_cbuffer('44' * 32) # Random, in normal usage
+
+        ret, written = wally_explicit_rangeproof(80000000, nonce, nonce_len,
+                                                 UNBLINDED_VBF, len(UNBLINDED_VBF),
+                                                 UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
+                                                 generator, generator_len,
+                                                 out_proof, out_proof_len)
+        self.assertEqual((ret, written), (WALLY_OK, 73))
+
 
 if __name__ == '__main__':
     _, val = wally_is_elements_build()

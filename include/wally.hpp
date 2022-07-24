@@ -1690,6 +1690,13 @@ inline int asset_rangeproof(uint64_t value, const PUB_KEY& pub_key, const PRIV_K
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class NONCE_HASH, class ASSET, class ABF, class VBF, class COMMITMENT, class EXTRA, class GENERATOR, class BYTES_OUT>
+inline int asset_rangeproof_with_nonce(uint64_t value, const NONCE_HASH& nonce_hash, const ASSET& asset, const ABF& abf, const VBF& vbf, const COMMITMENT& commitment, const EXTRA& extra, const GENERATOR& generator, uint64_t min_value, int exp, int min_bits, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_asset_rangeproof_with_nonce(value, nonce_hash.data(), nonce_hash.size(), asset.data(), asset.size(), abf.data(), abf.size(), vbf.data(), vbf.size(), commitment.data(), commitment.size(), extra.data(), extra.size(), generator.data(), generator.size(), min_value, exp, min_bits, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class ABF, class VBF, class BYTES_OUT>
 inline int asset_scalar_offset(uint64_t value, const ABF& abf, const VBF& vbf, BYTES_OUT& bytes_out) {
     int ret = ::wally_asset_scalar_offset(value, abf.data(), abf.size(), vbf.data(), vbf.size(), bytes_out.data(), bytes_out.size());
@@ -1779,6 +1786,13 @@ inline int elements_pegout_script_from_bytes(const GENESIS_BLOCKHASH& genesis_bl
 inline int elements_pegout_script_size(size_t genesis_blockhash_len, size_t mainchain_script_len, size_t sub_pubkey_len, size_t whitelistproof_len, size_t* written) {
     int ret = ::wally_elements_pegout_script_size(genesis_blockhash_len, mainchain_script_len, sub_pubkey_len, whitelistproof_len, written);
     return ret;
+}
+
+template <class NONCE, class VBF, class COMMITMENT, class GENERATOR, class BYTES_OUT>
+inline int explicit_rangeproof(uint64_t value, const NONCE& nonce, const VBF& vbf, const COMMITMENT& commitment, const GENERATOR& generator, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_explicit_rangeproof(value, nonce.data(), nonce.size(), vbf.data(), vbf.size(), commitment.data(), commitment.size(), generator.data(), generator.size(), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
 template <class PSBT, class SCALAR>

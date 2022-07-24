@@ -17,7 +17,8 @@ extern "C" {
 
 #define ASSET_COMMITMENT_LEN 33 /** Length of an Asset Value Commitment */
 
-#define ASSET_RANGEPROOF_MAX_LEN 5134 /** Maximum length of an Asset Range Proof */
+#define ASSET_RANGEPROOF_MAX_LEN 5134 /** Maximum length of an Asset Value Range Proof */
+#define ASSET_EXPLICIT_RANGEPROOF_MAX_LEN 73 /** Maximum length of an Explicit Asset Value Range Proof */
 
 /**
  * Create a blinded Asset Generator from an Asset Tag and Asset Blinding Factor.
@@ -103,32 +104,6 @@ WALLY_CORE_API int wally_asset_value_commitment(
     unsigned char *bytes_out,
     size_t len);
 
-/*
- * As per wally_asset_rangeproof with a user provided nonce.
- */
-WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
-    uint64_t value,
-    const unsigned char *nonce_hash,
-    size_t nonce_hash_len,
-    const unsigned char *asset,
-    size_t asset_len,
-    const unsigned char *abf,
-    size_t abf_len,
-    const unsigned char *vbf,
-    size_t vbf_len,
-    const unsigned char *commitment,
-    size_t commitment_len,
-    const unsigned char *extra,
-    size_t extra_len,
-    const unsigned char *generator,
-    size_t generator_len,
-    uint64_t min_value,
-    int exp,
-    int min_bits,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written);
-
 /**
  * Generate a rangeproof for a transaction output.
  *
@@ -157,6 +132,34 @@ WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
  * :param len: Length of ``bytes_out``. See ``ASSET_RANGEPROOF_MAX_LEN``.
  * :param written: Number of bytes actually written to ``bytes_out``.
  */
+WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
+    uint64_t value,
+    const unsigned char *nonce_hash,
+    size_t nonce_hash_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *abf,
+    size_t abf_len,
+    const unsigned char *vbf,
+    size_t vbf_len,
+    const unsigned char *commitment,
+    size_t commitment_len,
+    const unsigned char *extra,
+    size_t extra_len,
+    const unsigned char *generator,
+    size_t generator_len,
+    uint64_t min_value,
+    int exp,
+    int min_bits,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Generate a transaction output rangeproof from a blinding public key and ephemeral private key.
+ *
+ * Generates a nonce using SHA256(ECDH(pub_key, priv_key) and calls `wally_asset_rangeproof_with_nonce`.
+ */
 WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t value,
     const unsigned char *pub_key,
@@ -178,6 +181,26 @@ WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t min_value,
     int exp,
     int min_bits,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Generate a transaction output explicit value rangeproof.
+ *
+ * The nonce for this function should be randomly generated.
+ * See `wally_asset_rangeproof_with_nonce`.
+ */
+WALLY_CORE_API int wally_explicit_rangeproof(
+    uint64_t value,
+    const unsigned char *nonce,
+    size_t nonce_len,
+    const unsigned char *vbf,
+    size_t vbf_len,
+    const unsigned char *commitment,
+    size_t commitment_len,
+    const unsigned char *generator,
+    size_t generator_len,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
