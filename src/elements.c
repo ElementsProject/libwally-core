@@ -278,6 +278,27 @@ int wally_explicit_rangeproof(uint64_t value,
                                              bytes_out, len, written);
 }
 
+int wally_explicit_rangeproof_verify(const unsigned char *rangeproof, size_t rangeproof_len,
+                                     uint64_t value,
+                                     const unsigned char *commitment, size_t commitment_len,
+                                     const unsigned char *generator, size_t generator_len)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    secp256k1_pedersen_commitment commit;
+    secp256k1_generator gen;
+    uint64_t min_v, max_v;
+
+    if (!rangeproof || rangeproof_len > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN ||
+        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    if (!secp256k1_rangeproof_verify(ctx, &min_v, &max_v, &commit,
+                                     rangeproof, rangeproof_len, NULL, 0, &gen))
+        return WALLY_EINVAL;
+    return value == min_v ? WALLY_OK : WALLY_EINVAL;
+}
+
 int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce_hash_len,
                                    const unsigned char *proof, size_t proof_len,
                                    const unsigned char *commitment, size_t commitment_len,

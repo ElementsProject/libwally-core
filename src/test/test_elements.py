@@ -70,6 +70,7 @@ class ElementsTests(unittest.TestCase):
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
     def test_blinding(self):
+        value = 80000000
 
         # asset_generator_from_bytes
         generator, generator_len = make_cbuffer('00' * 33)
@@ -80,14 +81,14 @@ class ElementsTests(unittest.TestCase):
 
         # asset_value_commitment
         value_commitment, value_commitment_len = make_cbuffer('00' * 33)
-        ret = wally_asset_value_commitment(80000000, UNBLINDED_VBF, len(UNBLINDED_VBF),
+        ret = wally_asset_value_commitment(value, UNBLINDED_VBF, len(UNBLINDED_VBF),
                                            generator, generator_len,
                                            value_commitment, value_commitment_len)
         self.assertEqual((ret, value_commitment), (WALLY_OK, UNBLIND_VALUE_COMMITMENT))
 
         # asset_rangeproof
         rangeproof, rangeproof_len = make_cbuffer('00' * 5134)
-        ret, written = wally_asset_rangeproof(80000000, UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+        ret, written = wally_asset_rangeproof(value, UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
                                               UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
                                               UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
                                               UNBLINDED_ABF, UNBLINDED_ABF_LEN,
@@ -99,15 +100,25 @@ class ElementsTests(unittest.TestCase):
         rangeproof_len = written
 
         # explicit_rangeproof
-        out_proof, out_proof_len = make_cbuffer('00' * 73)
+        explicit_proof, explicit_proof_len = make_cbuffer('00' * 73)
         nonce, nonce_len = make_cbuffer('44' * 32) # Random, in normal usage
 
-        ret, written = wally_explicit_rangeproof(80000000, nonce, nonce_len,
+        ret, written = wally_explicit_rangeproof(value, nonce, nonce_len,
                                                  UNBLINDED_VBF, len(UNBLINDED_VBF),
                                                  UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
                                                  generator, generator_len,
-                                                 out_proof, out_proof_len)
+                                                 explicit_proof, explicit_proof_len)
         self.assertEqual((ret, written), (WALLY_OK, 73))
+
+        # explicit_rangeproof_verify
+        for v, expected in [
+            (value + 1, WALLY_EINVAL),
+            (value,     WALLY_OK),
+            (value - 1, WALLY_EINVAL)]:
+            ret = wally_explicit_rangeproof_verify(explicit_proof, explicit_proof_len, v,
+                                                   UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
+                                                   generator, generator_len)
+            self.assertEqual(ret, expected)
 
 
 if __name__ == '__main__':

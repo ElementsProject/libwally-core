@@ -295,6 +295,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_elements_pegout_script_from_bytes' \
 ,'_wally_elements_pegout_script_size' \
 ,'_wally_explicit_rangeproof' \
+,'_wally_explicit_rangeproof_verify' \
 ,'_wally_psbt_add_global_scalar' \
 ,'_wally_psbt_find_global_scalar' \
 ,'_wally_psbt_input_clear_inflation_keys_blinding_rangeproof' \

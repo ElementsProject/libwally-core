@@ -1795,6 +1795,12 @@ inline int explicit_rangeproof(uint64_t value, const NONCE& nonce, const VBF& vb
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class RANGEPROOF, class COMMITMENT, class GENERATOR>
+inline int explicit_rangeproof_verify(const RANGEPROOF& rangeproof, uint64_t value, const COMMITMENT& commitment, const GENERATOR& generator) {
+    int ret = ::wally_explicit_rangeproof_verify(rangeproof.data(), rangeproof.size(), value, commitment.data(), commitment.size(), generator.data(), generator.size());
+    return ret;
+}
+
 template <class PSBT, class SCALAR>
 inline int psbt_add_global_scalar(const PSBT& psbt, const SCALAR& scalar) {
     int ret = ::wally_psbt_add_global_scalar(detail::get_p(psbt), scalar.data(), scalar.size());

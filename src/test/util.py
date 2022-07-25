@@ -312,6 +312,7 @@ for f in (
     ('wally_elements_pegout_script_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_elements_pegout_script_size', c_int, [c_size_t, c_size_t, c_size_t, c_size_t, c_size_t_p]),
     ('wally_explicit_rangeproof', c_int, [c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_explicit_rangeproof_verify', c_int, [c_void_p, c_size_t, c_uint64, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_format_bitcoin_message', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_free_string', c_int, [c_char_p]),
     ('wally_get_operations', c_int, [POINTER(wally_operations)]),

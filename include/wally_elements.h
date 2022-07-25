@@ -206,6 +206,26 @@ WALLY_CORE_API int wally_explicit_rangeproof(
     size_t *written);
 
 /**
+ * Verify an explicit value rangeproof proves a given value.
+ *
+ * :param rangeproof: The explicit value rangeproof to validate.
+ * :param rangeproof_len: Length of ``rangeproof`` in bytes.
+ * :param value: The expected value that the explicit rangeproof proves.
+ * :param commitment: Value commitment from `wally_asset_value_commitment`.
+ * :param commitment_len: Length of ``commitment``. Must be ``ASSET_COMMITMENT_LEN``.
+ * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
+ * :param generator_len: Length of ``generator`. Must be ``ASSET_GENERATOR_LEN``.
+ */
+WALLY_CORE_API int wally_explicit_rangeproof_verify(
+    const unsigned char *rangeproof,
+    size_t rangeproof_len,
+    uint64_t value,
+    const unsigned char *commitment,
+    size_t commitment_len,
+    const unsigned char *generator,
+    size_t generator_len);
+
+/**
  * Return the required buffer size for receiving a surjection proof
  *
  * :param num_inputs: Number of transaction inputs.
