@@ -82,7 +82,7 @@ class ElementsTests(unittest.TestCase):
         # asset_value_commitment
         value_commitment, value_commitment_len = make_cbuffer('00' * 33)
         ret = wally_asset_value_commitment(value, UNBLINDED_VBF, len(UNBLINDED_VBF),
-                                           generator, generator_len,
+                                           UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
                                            value_commitment, value_commitment_len)
         self.assertEqual((ret, value_commitment), (WALLY_OK, UNBLIND_VALUE_COMMITMENT))
 
@@ -93,8 +93,9 @@ class ElementsTests(unittest.TestCase):
                                               UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
                                               UNBLINDED_ABF, UNBLINDED_ABF_LEN,
                                               UNBLINDED_VBF, UNBLINDED_VBF_LEN,
-                                              value_commitment, value_commitment_len,
-                                              None, 0, generator, generator_len,
+                                              UNBLIND_VALUE_COMMITMENT, UNBLIND_VALUE_COMMITMENT_LEN,
+                                              None, 0,
+                                              UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
                                               1, 0, 52, rangeproof, rangeproof_len)
         self.assertEqual(ret, WALLY_OK)
         rangeproof_len = written
@@ -106,7 +107,7 @@ class ElementsTests(unittest.TestCase):
         ret, written = wally_explicit_rangeproof(value, nonce, nonce_len,
                                                  UNBLINDED_VBF, len(UNBLINDED_VBF),
                                                  UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
-                                                 generator, generator_len,
+                                                 UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
                                                  explicit_proof, explicit_proof_len)
         self.assertEqual((ret, written), (WALLY_OK, 73))
 
@@ -117,8 +118,41 @@ class ElementsTests(unittest.TestCase):
             (value - 1, WALLY_EINVAL)]:
             ret = wally_explicit_rangeproof_verify(explicit_proof, explicit_proof_len, v,
                                                    UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
-                                                   generator, generator_len)
+                                                   UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN)
             self.assertEqual(ret, expected)
+
+        # asset_surjectionproof_size
+        ret, expected_proof_len = wally_asset_surjectionproof_size(1)
+        self.assertEqual((ret, expected_proof_len), (WALLY_OK, 67))
+
+        # asset_surjectionproof
+        output_abf, output_abf_len = make_cbuffer('91' * 32)
+        output_generator, output_generator_len = make_cbuffer('00' * 33)
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               output_abf, output_abf_len,
+                                               output_generator, output_generator_len)
+        self.assertEqual(ret, WALLY_OK)
+
+        entropy, entropy_len = make_cbuffer('34' * 32)
+        surjectionproof, surjectionproof_len = make_cbuffer('00' * expected_proof_len)
+        ret, written = wally_asset_surjectionproof(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                                   output_abf, output_abf_len,
+                                                   output_generator, output_generator_len,
+                                                   entropy, entropy_len,
+                                                   UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                                   UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                                   UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                                   surjectionproof, surjectionproof_len)
+        self.assertEqual((ret, written), (WALLY_OK, expected_proof_len))
+
+        # explicit_surjectionproof
+        ASSET_EXPLICIT_SURJECTIONPROOF_LEN = 67
+        explicit_sjproof, explicit_sjproof_len = make_cbuffer('00' * ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+        ret = wally_explicit_surjectionproof(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                             output_abf, output_abf_len,
+                                             generator, generator_len,
+                                             explicit_sjproof, explicit_sjproof_len)
+        self.assertEqual(ret, WALLY_OK)
 
 
 if __name__ == '__main__':

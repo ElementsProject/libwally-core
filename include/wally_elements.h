@@ -20,6 +20,8 @@ extern "C" {
 #define ASSET_RANGEPROOF_MAX_LEN 5134 /** Maximum length of an Asset Value Range Proof */
 #define ASSET_EXPLICIT_RANGEPROOF_MAX_LEN 73 /** Maximum length of an Explicit Asset Value Range Proof */
 
+#define ASSET_EXPLICIT_SURJECTIONPROOF_LEN 67 /** Length of an Explicit Asset Surjection Proof */
+
 /**
  * Create a blinded Asset Generator from an Asset Tag and Asset Blinding Factor.
  *
@@ -236,7 +238,7 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
     size_t *written);
 
 /**
- * Generate a surjection proof for a transaction output
+ * Generate a transaction output asset surjection proof.
  *
  * :param output_asset: asset id for the output.
  * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
@@ -274,6 +276,28 @@ WALLY_CORE_API int wally_asset_surjectionproof(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Generate an explicit transaction output asset surjection proof.
+ *
+ * :param output_asset: asset id for the output.
+ * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_abf: Asset blinding factor for the output. Generated randomly for each output.
+ * :param output_abf_len: Length of ``output_abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
+ * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param bytes_out: Buffer to receive surjection proof.
+ * :param bytes_out_len: Length of ``bytes_out``. Must be ``ASSET_EXPLICIT_SURJECTIONPROOF_LEN``.
+ */
+WALLY_CORE_API int wally_explicit_surjectionproof(
+    const unsigned char *output_asset,
+    size_t output_asset_len,
+    const unsigned char *output_abf,
+    size_t output_abf_len,
+    const unsigned char *output_generator,
+    size_t output_generator_len,
+    unsigned char *bytes_out,
+    size_t len);
 
 /**
  * Unblind a confidential transaction output.

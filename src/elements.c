@@ -394,15 +394,15 @@ int wally_asset_surjectionproof_size(size_t num_inputs, size_t *written)
     return WALLY_OK;
 }
 
-int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
-                                const unsigned char *output_abf, size_t output_abf_len,
-                                const unsigned char *output_generator, size_t output_generator_len,
-                                const unsigned char *bytes, size_t bytes_len,
-                                const unsigned char *asset, size_t asset_len,
-                                const unsigned char *abf, size_t abf_len,
-                                const unsigned char *generator, size_t generator_len,
-                                unsigned char *bytes_out, size_t len,
-                                size_t *written)
+static int surjproof_impl(const unsigned char *output_asset, size_t output_asset_len,
+                          const unsigned char *output_abf, size_t output_abf_len,
+                          const unsigned char *output_generator, size_t output_generator_len,
+                          const unsigned char *bytes, size_t bytes_len,
+                          const unsigned char *asset, size_t asset_len,
+                          const unsigned char *abf, size_t abf_len,
+                          const unsigned char *generator, size_t generator_len,
+                          unsigned char *bytes_out, size_t len,
+                          size_t *written, size_t n_attempts)
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_generator gen;
@@ -449,7 +449,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
                                               (const secp256k1_fixed_asset_tag *)asset,
                                               num_inputs, num_used,
                                               (const secp256k1_fixed_asset_tag *)output_asset,
-                                              100, bytes)) {
+                                              n_attempts, bytes)) {
         ret = WALLY_ERROR; /* Caller must retry with different entropy/outputs */
         goto cleanup;
     }
@@ -470,6 +470,55 @@ cleanup:
     wally_clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
     if (generators)
         clear_and_free(generators, num_inputs * sizeof(secp256k1_generator));
+    return ret;
+}
+
+int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
+                                const unsigned char *output_abf, size_t output_abf_len,
+                                const unsigned char *output_generator, size_t output_generator_len,
+                                const unsigned char *bytes, size_t bytes_len,
+                                const unsigned char *asset, size_t asset_len,
+                                const unsigned char *abf, size_t abf_len,
+                                const unsigned char *generator, size_t generator_len,
+                                unsigned char *bytes_out, size_t len,
+                                size_t *written)
+{
+    return surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                          output_generator, output_generator_len, bytes, bytes_len,
+                          asset, asset_len, abf, abf_len, generator, generator_len,
+                          bytes_out, len, written, 100);
+}
+
+int wally_explicit_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
+                                   const unsigned char *output_abf, size_t output_abf_len,
+                                   const unsigned char *output_generator, size_t output_generator_len,
+                                   unsigned char *bytes_out, size_t len)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    const unsigned char dummy_entropy[32] = { 0 };
+    unsigned char asset_generator[ASSET_GENERATOR_LEN];
+    secp256k1_generator asset_gen;
+    size_t written;
+    int ret;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+    if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
+        len != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+        return WALLY_EINVAL;
+    if (!secp256k1_generator_generate(ctx, &asset_gen, output_asset))
+        return WALLY_ERROR;
+
+    secp256k1_generator_serialize(ctx, asset_generator, &asset_gen); /* Never fails */
+    ret = surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                         output_generator, output_generator_len,
+                         dummy_entropy, sizeof(dummy_entropy),
+                         output_asset, output_asset_len,
+                         dummy_entropy, sizeof(dummy_entropy),
+                         asset_generator, sizeof(asset_generator),
+                         bytes_out, len, &written, 1);
+    if (ret == WALLY_OK && written != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+        ret = WALLY_ERROR; /* Should never happen */
     return ret;
 }
 

@@ -1801,6 +1801,12 @@ inline int explicit_rangeproof_verify(const RANGEPROOF& rangeproof, uint64_t val
     return ret;
 }
 
+template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES_OUT>
+inline int explicit_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTPUT_ABF& output_abf, const OUTPUT_GENERATOR& output_generator, BYTES_OUT& bytes_out) {
+    int ret = ::wally_explicit_surjectionproof(output_asset.data(), output_asset.size(), output_abf.data(), output_abf.size(), output_generator.data(), output_generator.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class PSBT, class SCALAR>
 inline int psbt_add_global_scalar(const PSBT& psbt, const SCALAR& scalar) {
     int ret = ::wally_psbt_add_global_scalar(detail::get_p(psbt), scalar.data(), scalar.size());
