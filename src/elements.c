@@ -522,6 +522,31 @@ int wally_explicit_surjectionproof(const unsigned char *output_asset, size_t out
     return ret;
 }
 
+int wally_explicit_surjectionproof_verify(
+    const unsigned char *surjectionproof, size_t surjectionproof_len,
+    const unsigned char *output_asset, size_t output_asset_len,
+    const unsigned char *output_generator, size_t output_generator_len)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    secp256k1_surjectionproof sjp;
+    secp256k1_generator asset_gen, blinded_asset_gen;
+    int ret = WALLY_EINVAL;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+    if (surjectionproof && surjectionproof_len &&
+        secp256k1_surjectionproof_parse(ctx, &sjp, surjectionproof, surjectionproof_len) &&
+        output_asset && output_asset_len == ASSET_TAG_LEN &&
+        secp256k1_generator_generate(ctx, &asset_gen, output_asset) &&
+        get_generator(ctx, output_generator, output_generator_len, &blinded_asset_gen) == WALLY_OK) {
+        ret = secp256k1_surjectionproof_verify(ctx, &sjp, &asset_gen,
+                                               1, &blinded_asset_gen) ? WALLY_OK : WALLY_ERROR;
+    }
+    wally_clear_3(&sjp, sizeof(sjp), &asset_gen, sizeof(asset_gen),
+                  &blinded_asset_gen, sizeof(blinded_asset_gen));
+    return ret;
+}
+
 int wally_confidential_addr_to_addr(
     const char *address,
     uint32_t prefix,

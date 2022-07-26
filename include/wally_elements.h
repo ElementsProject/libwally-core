@@ -300,6 +300,24 @@ WALLY_CORE_API int wally_explicit_surjectionproof(
     size_t len);
 
 /**
+ * Verify an explicit asset surjection proof proves a given asset.
+ *
+ * :param surjectionproof: The explicit asset surjection proof.
+ * :param surjectionproof_len: Length of ``surjectionproof``.
+ * :param output_asset: The unblinded asset we expect ``surjectionproof`` to prove.
+ * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
+ * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ */
+WALLY_CORE_API int wally_explicit_surjectionproof_verify(
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len,
+    const unsigned char *output_asset,
+    size_t output_asset_len,
+    const unsigned char *output_generator,
+    size_t output_generator_len);
+
+/**
  * Unblind a confidential transaction output.
  *
  * :param nonce_hash: SHA-256 hash of the generated nonce.

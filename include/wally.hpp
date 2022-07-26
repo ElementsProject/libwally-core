@@ -1807,6 +1807,12 @@ inline int explicit_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTP
     return ret;
 }
 
+template <class SURJECTIONPROOF, class OUTPUT_ASSET, class OUTPUT_GENERATOR>
+inline int explicit_surjectionproof_verify(const SURJECTIONPROOF& surjectionproof, const OUTPUT_ASSET& output_asset, const OUTPUT_GENERATOR& output_generator) {
+    int ret = ::wally_explicit_surjectionproof_verify(surjectionproof.data(), surjectionproof.size(), output_asset.data(), output_asset.size(), output_generator.data(), output_generator.size());
+    return ret;
+}
+
 template <class PSBT, class SCALAR>
 inline int psbt_add_global_scalar(const PSBT& psbt, const SCALAR& scalar) {
     int ret = ::wally_psbt_add_global_scalar(detail::get_p(psbt), scalar.data(), scalar.size());
