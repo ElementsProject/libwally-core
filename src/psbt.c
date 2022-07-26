@@ -3,9 +3,9 @@
 #include <include/wally_elements.h>
 #include <include/wally_script.h>
 #include <include/wally_psbt.h>
+#include <include/wally_psbt_members.h>
 
 #include <limits.h>
-#include "psbt_int.h"
 #include "psbt_io.h"
 #include "script_int.h"
 #include "script.h"
@@ -4049,8 +4049,6 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
     return WALLY_OK;
 }
 
-#if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
-
 static struct wally_psbt_input *psbt_get_input(const struct wally_psbt *psbt, size_t index)
 {
     return psbt && index < psbt->num_inputs ? &psbt->inputs[index] : NULL;
@@ -4388,5 +4386,3 @@ int wally_psbt_get_output_blinding_status(const struct wally_psbt *psbt, size_t 
 }
 #undef MAX_INVALID_SATOSHI
 #endif /* BUILD_ELEMENTS */
-
-#endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */

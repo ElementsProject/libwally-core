@@ -1,7 +1,7 @@
-#ifndef LIBWALLY_CORE_PSBT_INT_H
-#define LIBWALLY_CORE_PSBT_INT_H 1
+#ifndef LIBWALLY_CORE_PSBT_MEMBERS_H
+#define LIBWALLY_CORE_PSBT_MEMBERS_H 1
 
-#if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined(SWIG_JAVASCRIPT_BUILD)
+/* Accessors for PSBT/PSET members */
 
 #ifdef __cplusplus
 extern "C" {
@@ -205,6 +205,4 @@ WALLY_CORE_API int wally_psbt_get_output_blinding_status(const struct wally_psbt
 }
 #endif
 
-#endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD */
-
-#endif /* LIBWALLY_CORE_PSBT_INT_H */
+#endif /* LIBWALLY_CORE_PSBT_MEMBERS_H */

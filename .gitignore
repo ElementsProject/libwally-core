@@ -81,6 +81,7 @@ docs/source/core.rst
 docs/source/crypto.rst
 docs/source/map.rst
 docs/source/psbt.rst
+docs/source/psbt_members.rst
 docs/source/script.rst
 docs/source/symmetric.rst
 docs/source/transaction.rst
