@@ -17,18 +17,20 @@ static const unsigned char LABEL_STR[] = {
     'S', 'L', 'I', 'P', '-', '0', '0', '7', '7'
 };
 
-static int get_generator(const secp256k1_context *ctx,
-                         const unsigned char *generator, size_t generator_len,
-                         secp256k1_generator *dest) {
+static int parse_generator(const secp256k1_context *ctx,
+                           const unsigned char *generator, size_t generator_len,
+                           secp256k1_generator *dest)
+{
     if (!generator || generator_len != ASSET_GENERATOR_LEN ||
         !secp256k1_generator_parse(ctx, dest, generator))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
 
-static int get_commitment(const secp256k1_context *ctx,
-                          const unsigned char *commitment, size_t commitment_len,
-                          secp256k1_pedersen_commitment *dest) {
+static int parse_commitment(const secp256k1_context *ctx,
+                            const unsigned char *commitment, size_t commitment_len,
+                            secp256k1_pedersen_commitment *dest)
+{
     if (!commitment || commitment_len != ASSET_COMMITMENT_LEN ||
         !secp256k1_pedersen_commitment_parse(ctx, dest, commitment))
         return WALLY_EINVAL;
@@ -179,7 +181,7 @@ int wally_asset_value_commitment(uint64_t value,
         return WALLY_ENOMEM;
 
     if (!vbf || vbf_len != ASSET_TAG_LEN || !bytes_out || len != ASSET_COMMITMENT_LEN ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         return WALLY_EINVAL;
 
     ok = secp256k1_pedersen_commit(ctx, &commit, vbf, value, &gen) &&
@@ -227,11 +229,11 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
     }
     if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
         !vbf || vbf_len != BLINDING_FACTOR_LEN || !bytes_out || !written ||
-        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+        parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         min_value > 0x7ffffffffffffffful ||
         exp < -1 || exp > 18 ||
         min_bits < 0 || min_bits > 64 ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
 
     /* Create the rangeproof message */
@@ -317,8 +319,8 @@ int wally_explicit_rangeproof_verify(const unsigned char *rangeproof, size_t ran
     uint64_t min_v, max_v;
 
     if (!rangeproof || rangeproof_len > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN ||
-        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (!secp256k1_rangeproof_verify(ctx, &min_v, &max_v, &commit,
@@ -350,9 +352,9 @@ int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce
 
     if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
         !proof || !proof_len ||
-        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+        parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         (extra_len && !extra) ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
         !abf_out || abf_out_len != BLINDING_FACTOR_LEN ||
         !vbf_out || vbf_out_len != BLINDING_FACTOR_LEN || !value_out)
@@ -449,7 +451,7 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
 
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
         !output_abf || output_abf_len != BLINDING_FACTOR_LEN ||
-        get_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
+        parse_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
         !bytes || bytes_len != 32u ||
         !asset || !num_inputs || (asset_len % ASSET_TAG_LEN != 0) ||
         !abf || abf_len != num_inputs * BLINDING_FACTOR_LEN ||
@@ -469,7 +471,7 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
     }
     for (i = 0; i < num_inputs; ++i) {
         const unsigned char *src = generator + i * ASSET_GENERATOR_LEN;
-        if (get_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK)
+        if (parse_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK)
             goto cleanup;
     }
 
@@ -566,7 +568,7 @@ int wally_explicit_surjectionproof_verify(
         secp256k1_surjectionproof_parse(ctx, &sjp, surjectionproof, surjectionproof_len) &&
         output_asset && output_asset_len == ASSET_TAG_LEN &&
         secp256k1_generator_generate(ctx, &asset_gen, output_asset) &&
-        get_generator(ctx, output_generator, output_generator_len, &blinded_asset_gen) == WALLY_OK) {
+        parse_generator(ctx, output_generator, output_generator_len, &blinded_asset_gen) == WALLY_OK) {
         ret = secp256k1_surjectionproof_verify(ctx, &sjp, &asset_gen,
                                                1, &blinded_asset_gen) ? WALLY_OK : WALLY_ERROR;
     }
