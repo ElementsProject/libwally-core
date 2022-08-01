@@ -5,8 +5,6 @@ def _wrap_bin(fn, length, resize=False):
     """ Wrap functions that take an output buffer to create/return it """
     def wrapped(*args):
         n = length(*args) if callable(length) else length
-        if not n:
-            return None
         buf = bytearray(n)
         ret = fn(*list(args)+[buf])
         if resize:

@@ -181,11 +181,11 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(psbt_has_output_amount(pset2, 0), 1)
             self.assertEqual(psbt_get_output_amount(pset2, 0), 1234)
             self.assertEqual(psbt_get_output_value_commitment_len(pset2, 0), 0)
-            self.assertEqual(psbt_get_output_value_commitment(pset2, 0), None)
+            self.assertTrue(not psbt_get_output_value_commitment(pset2, 0))
             self.assertEqual(psbt_get_output_script(pset2, 0), script)
             self.assertEqual(psbt_get_output_asset(pset2, 0), asset)
             self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), 0)
-            self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), None)
+            self.assertTrue(not psbt_get_output_asset_commitment(pset2, 0))
 
             # Blinded
             pset2 = psbt_init(2, 0, 0, 0, WALLY_PSBT_INIT_PSET)
@@ -198,7 +198,7 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(psbt_get_output_value_commitment_len(pset2, 0), len(blinded_value))
             self.assertEqual(psbt_get_output_value_commitment(pset2, 0), blinded_value)
             self.assertEqual(psbt_get_output_script(pset2, 0), script)
-            self.assertEqual(psbt_get_output_asset(pset2, 0), None)
+            self.assertTrue(not psbt_get_output_asset(pset2, 0))
             self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), len(blinded_asset))
             self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), blinded_asset)
 
