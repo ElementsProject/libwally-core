@@ -385,6 +385,17 @@ int wally_ec_scalar_add(const unsigned char *scalar, size_t scalar_len,
     return seckey_tweak_add(bytes_out, operand) ? WALLY_OK : WALLY_ERROR;
 }
 
+int wally_ec_scalar_add_to(unsigned char *scalar, size_t scalar_len,
+                           const unsigned char *operand, size_t operand_len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret = wally_ec_scalar_add(scalar, scalar_len, operand, operand_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        memcpy(scalar, tmp, scalar_len);
+    wally_clear(tmp, sizeof(tmp));
+    return ret;
+}
+
 int wally_ec_scalar_subtract(const unsigned char *scalar, size_t scalar_len,
                              const unsigned char *operand, size_t operand_len,
                              unsigned char *bytes_out, size_t len)
@@ -423,6 +434,17 @@ int wally_ec_scalar_subtract(const unsigned char *scalar, size_t scalar_len,
     return seckey_tweak_add(bytes_out, tmp) ? WALLY_OK : WALLY_ERROR;
 }
 
+int wally_ec_scalar_subtract_from(unsigned char *scalar, size_t scalar_len,
+                                  const unsigned char *operand, size_t operand_len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret = wally_ec_scalar_subtract(scalar, scalar_len, operand, operand_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        memcpy(scalar, tmp, scalar_len);
+    wally_clear(tmp, sizeof(tmp));
+    return ret;
+}
+
 int wally_ec_scalar_multiply(const unsigned char *scalar, size_t scalar_len,
                              const unsigned char *operand, size_t operand_len,
                              unsigned char *bytes_out, size_t len)
@@ -446,6 +468,17 @@ int wally_ec_scalar_multiply(const unsigned char *scalar, size_t scalar_len,
 
     memcpy(bytes_out, scalar, len);
     return seckey_tweak_mul(bytes_out, operand) ? WALLY_OK : WALLY_ERROR;
+}
+
+int wally_ec_scalar_multiply_by(unsigned char *scalar, size_t scalar_len,
+                                const unsigned char *operand, size_t operand_len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret = wally_ec_scalar_multiply(scalar, scalar_len, operand, operand_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        memcpy(scalar, tmp, scalar_len);
+    wally_clear(tmp, sizeof(tmp));
+    return ret;
 }
 
 static inline size_t varint_len(size_t bytes_len) {

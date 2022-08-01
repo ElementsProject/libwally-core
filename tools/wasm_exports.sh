@@ -71,8 +71,11 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ec_public_key_negate' \
 ,'_wally_ec_public_key_verify' \
 ,'_wally_ec_scalar_add' \
+,'_wally_ec_scalar_add_to' \
 ,'_wally_ec_scalar_multiply' \
+,'_wally_ec_scalar_multiply_by' \
 ,'_wally_ec_scalar_subtract' \
+,'_wally_ec_scalar_subtract_from' \
 ,'_wally_ec_scalar_verify' \
 ,'_wally_ec_sig_from_bytes' \
 ,'_wally_ec_sig_from_der' \

@@ -457,15 +457,33 @@ inline int ec_scalar_add(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT
     return ret;
 }
 
+template <class SCALAR, class OPERAND>
+inline int ec_scalar_add_to(SCALAR& scalar, const OPERAND& operand) {
+    int ret = ::wally_ec_scalar_add_to(scalar.data(), scalar.size(), operand.data(), operand.size());
+    return ret;
+}
+
 template <class SCALAR, class OPERAND, class BYTES_OUT>
 inline int ec_scalar_multiply(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_scalar_multiply(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
     return ret;
 }
 
+template <class SCALAR, class OPERAND>
+inline int ec_scalar_multiply_by(SCALAR& scalar, const OPERAND& operand) {
+    int ret = ::wally_ec_scalar_multiply_by(scalar.data(), scalar.size(), operand.data(), operand.size());
+    return ret;
+}
+
 template <class SCALAR, class OPERAND, class BYTES_OUT>
 inline int ec_scalar_subtract(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_scalar_subtract(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND>
+inline int ec_scalar_subtract_from(SCALAR& scalar, const OPERAND& operand) {
+    int ret = ::wally_ec_scalar_subtract_from(scalar.data(), scalar.size(), operand.data(), operand.size());
     return ret;
 }
 
