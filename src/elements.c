@@ -525,28 +525,28 @@ int wally_explicit_surjectionproof(const unsigned char *output_asset, size_t out
     const secp256k1_context *ctx = secp_ctx();
     const unsigned char dummy_entropy[32] = { 0 };
     unsigned char asset_generator[ASSET_GENERATOR_LEN];
-    secp256k1_generator asset_gen;
     size_t written;
     int ret;
 
     if (!ctx)
         return WALLY_ENOMEM;
-    if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
-        len != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+    if (output_asset_len != ASSET_TAG_LEN || len != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
         return WALLY_EINVAL;
-    if (!secp256k1_generator_generate(ctx, &asset_gen, output_asset))
-        return WALLY_ERROR;
 
-    secp256k1_generator_serialize(ctx, asset_generator, &asset_gen); /* Never fails */
-    ret = surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
-                         output_generator, output_generator_len,
-                         dummy_entropy, sizeof(dummy_entropy),
-                         output_asset, output_asset_len,
-                         dummy_entropy, sizeof(dummy_entropy),
-                         asset_generator, sizeof(asset_generator),
-                         bytes_out, len, &written, 1);
+    ret = wally_asset_generator_from_bytes(output_asset, output_asset_len, NULL, 0,
+                                           asset_generator, sizeof(asset_generator));
+    if (ret == WALLY_OK)
+        ret = surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                             output_generator, output_generator_len,
+                             dummy_entropy, sizeof(dummy_entropy),
+                             output_asset, output_asset_len,
+                             dummy_entropy, sizeof(dummy_entropy),
+                             asset_generator, sizeof(asset_generator),
+                             bytes_out, len, &written, 1);
     if (ret == WALLY_OK && written != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
         ret = WALLY_ERROR; /* Should never happen */
+
+    wally_clear(asset_generator, sizeof(asset_generator));
     return ret;
 }
 
