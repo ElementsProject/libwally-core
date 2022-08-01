@@ -69,15 +69,37 @@ class ElementsTests(unittest.TestCase):
         self.assertEqual((ret, value_out, asset_out, abf_out, vbf_out),
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
-    def test_blinding(self):
-        value = 80000000
-
-        # asset_generator_from_bytes
+    def test_asset_generator_from_bytes(self):
         generator, generator_len = make_cbuffer('00' * 33)
+
+        # Blind the unblinded asset with its blinding factor
         ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
                                                UNBLINDED_ABF, UNBLINDED_ABF_LEN,
                                                generator, generator_len)
         self.assertEqual((ret, generator), (WALLY_OK, UNBLIND_ASSET_COMMITMENT))
+
+        # Parse the blinded commitment directly as a generator
+        ret = wally_asset_generator_from_bytes(UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                               None, 0,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, UNBLIND_ASSET_COMMITMENT))
+
+        # Create an unblinded generator from the asset
+        expected, expected_len = make_cbuffer('0a73d9600e05986acd3c0c6521e72a198b0155e8a79d335035ff0432f26163f17e')
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               None, 0,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, expected))
+
+        # Create an unblinded generator from an explicit asset commitment
+        tag, tag_len = make_cbuffer(h(bytearray([0x1]) + UNBLINDED_ASSET))
+        ret = wally_asset_generator_from_bytes(tag, tag_len,
+                                               None, 0,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, expected))
+
+    def test_blinding(self):
+        value = 80000000
 
         # asset_value_commitment
         value_commitment, value_commitment_len = make_cbuffer('00' * 33)

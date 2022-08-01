@@ -5,6 +5,7 @@
 #include <include/wally_elements.h>
 #include <include/wally_crypto.h>
 #include <include/wally_symmetric.h>
+#include <include/wally_transaction.h>
 #include "secp256k1/include/secp256k1_generator.h"
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
@@ -55,16 +56,43 @@ int wally_asset_generator_from_bytes(const unsigned char *asset, size_t asset_le
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_generator gen;
+    int secp_ret;
 
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!asset || asset_len != ASSET_TAG_LEN || !abf || abf_len != BLINDING_FACTOR_LEN ||
-        !bytes_out || len != ASSET_GENERATOR_LEN)
+    if (!asset || !bytes_out || len != ASSET_GENERATOR_LEN)
         return WALLY_EINVAL;
 
-    if (!secp256k1_generator_generate_blinded(ctx, &gen, asset, abf))
-        return WALLY_ERROR; /* Invalid entropy; caller should try again */
+    if (asset_len == ASSET_COMMITMENT_LEN) {
+        if (abf || abf_len)
+            return WALLY_EINVAL;
+        if (*asset == 1) {
+            /* Explicit asset */
+            secp_ret = secp256k1_generator_generate(ctx, &gen, asset + 1);
+        } else if (*asset != WALLY_TX_ASSET_CT_ASSET_PREFIX_A &&
+                   *asset != WALLY_TX_ASSET_CT_ASSET_PREFIX_B) {
+            return WALLY_EINVAL; /* Invalid commitment prefix */
+        } else {
+            /* Confidential asset commitment */
+            secp_ret = secp256k1_generator_parse(ctx, &gen, asset);
+        }
+    } else {
+        if (asset_len != ASSET_TAG_LEN)
+            return WALLY_EINVAL; /* Invalid asset id */
+        if (abf && abf_len == BLINDING_FACTOR_LEN) {
+            /* Asset tag plus blinding factor */
+            secp_ret = secp256k1_generator_generate_blinded(ctx, &gen, asset, abf);
+        } else if (abf || abf_len)
+            return WALLY_EINVAL; /* Invalid blinding factor */
+        else {
+            /* Asset tag without blinding factor */
+            secp_ret = secp256k1_generator_generate(ctx, &gen, asset);
+        }
+    }
+
+    if (!secp_ret)
+        return WALLY_ERROR; /* Invalid asset/entropy; caller should try again */
 
     secp256k1_generator_serialize(ctx, bytes_out, &gen); /* Never fails */
     wally_clear(&gen, sizeof(gen));

@@ -23,12 +23,12 @@ extern "C" {
 #define ASSET_EXPLICIT_SURJECTIONPROOF_LEN 67 /** Length of an Explicit Asset Surjection Proof */
 
 /**
- * Create a blinded Asset Generator from an Asset Tag and Asset Blinding Factor.
+ * Create an Asset Generator from an either an asset commitment or asset tag plus blinding factor.
  *
- * :param asset: Asset Tag to create a blinding generator for.
- * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
- * :param abf: Asset Blinding Factor (Random entropy to blind with).
- * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * :param asset: Asset Commitment or Tag to create a generator for.
+ * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_COMMITMENT_LEN`` or ``ASSET_TAG_LEN``.
+ * :param abf: Asset Blinding Factor (Random entropy to blind with). Must be NULL when ``asset`` is a commitment.
+ * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN`` if ``abf`` is non-NULL.
  * :param bytes_out: Destination for the resulting Asset Generator.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``ASSET_GENERATOR_LEN``.
  */
