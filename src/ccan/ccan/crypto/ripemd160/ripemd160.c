@@ -287,7 +287,7 @@ static void add(struct ripemd160_ctx *ctx, const void *p, size_t len)
 	while (len >= 64) {
 		/* Process full chunks directly from the source. */
 		if (alignment_ok(data, sizeof(uint32_t)))
-			Transform(ctx->s, (const uint32_t *)data);
+			Transform(ctx->s, (const uint32_t *)((void*)data));
 		else {
 			memcpy(ctx->buf.u8, data, sizeof(ctx->buf));
 			Transform(ctx->s, ctx->buf.u32);

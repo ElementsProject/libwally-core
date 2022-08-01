@@ -9,6 +9,10 @@
 
 #include "psbts.h"
 
+/* Ignore test logging compiler warnings */
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+
 static void fail(const char *fmt, ...)
 {
     va_list args;
