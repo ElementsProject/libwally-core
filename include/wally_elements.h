@@ -54,7 +54,7 @@ WALLY_CORE_API int wally_asset_generator_from_bytes(
  *|    address using `wally_confidential_addr_to_ec_public_key`. If ``priv_key``
  *|    is invalid, then ``WALLY_ERROR`` is returned.
  * .. note:: The computation can also be performed with the private key
- *|    corresponding to ``pub_key`` and the public key corresponding to
+ *|    corresponding to ``pub_key`` and the public key corresponding
  *|    to ``priv_key`` giving the same result.
  */
 WALLY_CORE_API int wally_ecdh_nonce_hash(
