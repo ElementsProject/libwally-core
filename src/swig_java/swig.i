@@ -533,6 +533,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_add_input_signature);
 %returns_void__(wally_psbt_add_tx_output_at);
 %returns_void__(wally_psbt_add_global_scalar);
+%returns_void__(wally_psbt_blind);
 %returns_void__(wally_psbt_clear_fallback_locktime);
 %returns_void__(wally_psbt_clear_input_issuance_asset_entropy);
 %returns_void__(wally_psbt_clear_input_inflation_keys_commitment);

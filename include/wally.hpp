@@ -798,6 +798,12 @@ inline int psbt_add_tx_output_at(const PSBT& psbt, uint32_t index, uint32_t flag
     return ret;
 }
 
+template <class PSBT, class VALUES, class VBFS, class ASSETS, class ABFS, class ENTROPY>
+inline int psbt_blind(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t flags) {
+    int ret = ::wally_psbt_blind(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), flags);
+    return ret;
+}
+
 inline int psbt_clear_fallback_locktime(struct wally_psbt* psbt) {
     int ret = ::wally_psbt_clear_fallback_locktime(psbt);
     return ret;

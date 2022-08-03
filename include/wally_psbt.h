@@ -1949,12 +1949,34 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
     struct wally_psbt **output);
 
 /**
+ * Blind a PSBT.
+ *
+ * :param psbt: PSBT to blind. Directly modifies this PSBT.
+ * :param values: Integer map of input index to value for the callers inputs.
+ * :param vbfs: Integer map of input index to value blinding factor for the callers inputs.
+ * :param assets: Integer map of input index to asset tags for the callers inputs.
+ * :param abfs: Integer map of input index to asset blinding factors for the callers inputs.
+ * :param entropy: Random entropy for asset and blinding factor generation.
+ * :param entropy_len: Size of ``entropy`` in bytes.
+ * :param flags: Flags controlling blinding. Must be 0.
+ */
+WALLY_CORE_API int wally_psbt_blind(
+    struct wally_psbt *psbt,
+    const struct wally_map *values,
+    const struct wally_map *vbfs,
+    const struct wally_map *assets,
+    const struct wally_map *abfs,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    uint32_t flags);
+
+/**
  * Sign a PSBT using the simple signer algorithm.
  *
  * :param psbt: PSBT to sign. Directly modifies this PSBT.
  * :param key: Private key to sign PSBT with.
- * :param key_len: Length of key in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
- * :param flags: Flags controlling sigining. Must be 0 or EC_FLAG_GRIND_R.
+ * :param key_len: Length of ``key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
  *
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the simple signer algorithm.

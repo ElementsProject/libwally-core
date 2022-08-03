@@ -4045,6 +4045,292 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
     return ret;
 }
 
+static const struct wally_tx_output *psbt_input_utxo(const struct wally_psbt_input *in)
+{
+    if (in) {
+        if (in->utxo && in->index < in->utxo->num_outputs)
+            return &in->utxo->outputs[in->index];
+        if (in->witness_utxo)
+            return in->witness_utxo;
+        /* TODO: Pegin */
+    }
+    return NULL;
+}
+
+#ifdef BUILD_ELEMENTS
+static int compute_final_vbf(struct wally_psbt *psbt,
+                             const unsigned char *input_scalar,
+                             unsigned char *output_scalar,
+                             unsigned char *vbf)
+{
+    size_t i;
+    int ret = wally_ec_scalar_subtract_from(output_scalar, EC_SCALAR_LEN,
+                                            input_scalar, EC_SCALAR_LEN);
+    if (ret == WALLY_OK) {
+        ret = wally_ec_scalar_subtract_from(vbf, EC_SCALAR_LEN,
+                                            output_scalar, EC_SCALAR_LEN);
+        for (i = 0; ret == WALLY_OK && i < psbt->global_scalars.num_items; ++i) {
+            const struct wally_map_item *scalar = psbt->global_scalars.items + i;
+            ret = wally_ec_scalar_subtract_from(vbf, EC_SCALAR_LEN,
+                                                scalar->key, scalar->key_len);
+        }
+    }
+    if (ret == WALLY_OK && mem_is_zero(vbf, EC_SCALAR_LEN))
+        ret = WALLY_ERROR;
+    if (ret == WALLY_OK)
+        ret = wally_map_clear(&psbt->global_scalars);
+    return ret;
+}
+#endif /* BUILD_ELEMENTS */
+
+int wally_psbt_blind(struct wally_psbt *psbt,
+                     const struct wally_map *values,
+                     const struct wally_map *vbfs,
+                     const struct wally_map *assets,
+                     const struct wally_map *abfs,
+                     const unsigned char *entropy,
+                     size_t entropy_len,
+                     uint32_t flags)
+{
+#ifdef BUILD_ELEMENTS
+    const secp256k1_context *ctx = secp_ctx();
+    unsigned char *fixed_input_tags, *ephemeral_input_tags, *input_abfs;
+    unsigned char input_scalar[EC_SCALAR_LEN] = { 0 }, output_scalar[EC_SCALAR_LEN] = { 0 };
+    unsigned char *output_statuses; /* Blinding status of each output */
+    size_t i, num_to_blind = 0, num_blinded = 0;
+    bool did_find_input = false, did_blind_output = false, did_blind_last = false;
+    int ret = WALLY_OK;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+#endif /* BUILD_ELEMENTS */
+
+    if (!psbt_is_valid(psbt) || !psbt->num_inputs || !psbt->num_outputs ||
+        !values || !vbfs || !assets || !abfs || flags ||
+        !entropy || !entropy_len || entropy_len % BLINDING_FACTOR_LEN)
+        return WALLY_EINVAL;
+#ifndef BUILD_ELEMENTS
+    return WALLY_OK; /* No-op */
+#else
+    output_statuses = wally_calloc(psbt->num_outputs * sizeof(unsigned char));
+    fixed_input_tags = wally_calloc(psbt->num_inputs * ASSET_TAG_LEN);
+    ephemeral_input_tags = wally_calloc(psbt->num_inputs * ASSET_GENERATOR_LEN);
+    input_abfs = wally_calloc(psbt->num_inputs * BLINDING_FACTOR_LEN);
+    if (!output_statuses || !fixed_input_tags || !ephemeral_input_tags || !input_abfs) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+
+    /* Compute the input data needed to blind our outputs */
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+        /* TODO: Handle issuance */
+        const struct wally_psbt_input *in = psbt->inputs + i;
+        const struct wally_tx_output *utxo = psbt_input_utxo(in);
+        unsigned char *ephemeral_input_tag = ephemeral_input_tags + i * ASSET_GENERATOR_LEN;
+        const struct wally_map_item *value;
+
+        if (!utxo || !utxo->asset || utxo->asset_len != WALLY_TX_ASSET_CT_ASSET_LEN)
+            ret = WALLY_EINVAL; /* UTXO not found */
+        else
+            ret = wally_asset_generator_from_bytes(utxo->asset, utxo->asset_len, NULL, 0,
+                                                   ephemeral_input_tag, ASSET_GENERATOR_LEN);
+        if (ret != WALLY_OK)
+            goto done;
+
+        if ((value = wally_map_get_integer(values, i)) != NULL) {
+            const struct wally_map_item *asset = wally_map_get_integer(assets, i);
+            const struct wally_map_item *abf = wally_map_get_integer(abfs, i);
+            const struct wally_map_item *vbf = wally_map_get_integer(vbfs, i);
+            unsigned char tmp[EC_SCALAR_LEN];
+            uint64_t satoshi;
+
+            did_find_input = true; /* This input belongs to us */
+            ret = wally_tx_confidential_value_to_satoshi(value->value, value->value_len,
+                                                         &satoshi);
+            if (ret != WALLY_OK ||
+                !asset || asset->value_len != ASSET_TAG_LEN ||
+                !abf || abf->value_len != BLINDING_FACTOR_LEN ||
+                !vbf || vbf->value_len != BLINDING_FACTOR_LEN) {
+                ret = WALLY_EINVAL;
+                goto done;
+            }
+
+            memcpy(fixed_input_tags + i * ASSET_TAG_LEN, asset->value, asset->value_len);
+            memcpy(input_abfs + i * BLINDING_FACTOR_LEN, abf->value, abf->value_len);
+            /* Compute the input scalar */
+            ret = wally_asset_scalar_offset(satoshi, abf->value, abf->value_len,
+                                            vbf->value, vbf->value_len, tmp, sizeof(tmp));
+            if (ret == WALLY_OK)
+                ret = wally_ec_scalar_add_to(input_scalar, sizeof(input_scalar),
+                                             tmp, sizeof(tmp));
+        } else {
+            /* Not ours: use the UTXO asset commitment and leave asset blinder as 0 */
+            memcpy(fixed_input_tags + i * ASSET_TAG_LEN,
+                   utxo->asset + 1, utxo->asset_len - 1);
+        }
+    }
+
+    /* Compute which outputs need blinding */
+    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i) {
+        uint64_t status;
+        ret = wally_psbt_output_get_blinding_status(psbt->outputs + i, 0, &status);
+        if (ret == WALLY_OK) {
+            output_statuses[i] = status & 0xff; /* Store as char to reduce memory use */
+            num_blinded += status == WALLY_PSET_BLINDED_FULL ? 1 : 0;
+            num_to_blind += status == WALLY_PSET_BLINDED_NONE ? 0 : 1;
+        }
+    }
+    if (ret != WALLY_OK || !num_to_blind || num_to_blind == num_blinded)
+        goto done; /* Something failed, or there is nothing to do */
+
+    if (!did_find_input) {
+        ret = WALLY_EINVAL; /* No matching inputs found, so no output can be blinded */
+        goto done;
+    }
+
+    /* Blind each output that needs it */
+    for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i) {
+        struct wally_psbt_output *out = psbt->outputs + i;
+        const unsigned char *abf = entropy;
+        const unsigned char *vbf = entropy + BLINDING_FACTOR_LEN;
+        const unsigned char *ephemeral_key = vbf + BLINDING_FACTOR_LEN;
+        const unsigned char *surjectionproof_seed = ephemeral_key + BLINDING_FACTOR_LEN;
+        const struct wally_map_item *p = wally_map_get_integer(&out->pset_fields, PSET_OUT_ASSET);
+        const unsigned char *asset = p && p->value_len == ASSET_TAG_LEN ? p->value : NULL;
+        unsigned char tmp[EC_SCALAR_LEN];
+        unsigned char asset_commitment[ASSET_COMMITMENT_LEN];
+        unsigned char value_commitment[ASSET_COMMITMENT_LEN];
+        unsigned char vbf_buf[EC_SCALAR_LEN];
+
+        if (output_statuses[i] == WALLY_PSET_BLINDED_FULL) {
+            /* TODO: This is Elements logic, treating an existing blinded output as ours */
+            did_blind_output = true;
+            continue;
+        }
+
+        if (!out->has_blinder_index || !wally_map_get_integer(values, out->blinder_index))
+            continue; /* Not our output */
+
+        if (!asset || !out->has_amount || entropy_len < BLINDING_FACTOR_LEN * 4) {
+            ret = WALLY_EINVAL; /* Missing asset, value, or insufficient entropy */
+            goto done;
+        }
+        entropy += BLINDING_FACTOR_LEN * 4;
+        entropy_len -= BLINDING_FACTOR_LEN * 4;
+
+        /* Compute the output scalar */
+        ret = wally_asset_scalar_offset(out->amount, abf, BLINDING_FACTOR_LEN,
+                                        vbf, BLINDING_FACTOR_LEN, tmp, sizeof(tmp));
+        if (ret == WALLY_OK)
+            ret = wally_ec_scalar_add_to(output_scalar, sizeof(output_scalar),
+                                         tmp, sizeof(tmp));
+
+        if (++num_blinded == num_to_blind) {
+            memcpy(vbf_buf, vbf, sizeof(vbf_buf));
+            vbf = vbf_buf;
+            ret = compute_final_vbf(psbt, input_scalar, output_scalar, vbf_buf);
+            did_blind_last = ret == WALLY_OK;
+        }
+
+        if (ret == WALLY_OK)
+            ret = wally_asset_generator_from_bytes(asset, ASSET_TAG_LEN,
+                                                   abf, BLINDING_FACTOR_LEN,
+                                                   asset_commitment, ASSET_COMMITMENT_LEN);
+        if (ret == WALLY_OK)
+            ret = wally_psbt_output_set_asset_commitment(out, asset_commitment,
+                                                         ASSET_COMMITMENT_LEN);
+        if (ret == WALLY_OK)
+            ret = wally_asset_value_commitment(out->amount, vbf, BLINDING_FACTOR_LEN,
+                                               asset_commitment, ASSET_COMMITMENT_LEN,
+                                               value_commitment, ASSET_COMMITMENT_LEN);
+        if (ret == WALLY_OK)
+            ret = wally_psbt_output_set_value_commitment(out, value_commitment,
+                                                         ASSET_COMMITMENT_LEN);
+        if (ret == WALLY_OK) {
+            const struct wally_map_item *blinding_pubkey;
+            unsigned char rangeproof[ASSET_RANGEPROOF_MAX_LEN];
+            size_t rangeproof_len;
+            blinding_pubkey = wally_map_get_integer(&out->pset_fields, PSET_OUT_BLINDING_PUBKEY);
+            ret = wally_asset_rangeproof(out->amount,
+                                         blinding_pubkey->value, blinding_pubkey->value_len,
+                                         ephemeral_key, EC_PRIVATE_KEY_LEN,
+                                         asset, ASSET_TAG_LEN,
+                                         abf, BLINDING_FACTOR_LEN,
+                                         vbf, BLINDING_FACTOR_LEN,
+                                         value_commitment, ASSET_COMMITMENT_LEN,
+                                         out->script, out->script_len,
+                                         asset_commitment, ASSET_COMMITMENT_LEN,
+                                         1, 0, 52,
+                                         rangeproof, sizeof(rangeproof),
+                                         &rangeproof_len);
+            if (ret == WALLY_OK)
+                ret = wally_psbt_output_set_value_rangeproof(out, rangeproof,
+                                                             rangeproof_len);
+        }
+
+        /* FIXME: explicit value rangeproof */
+
+        if (ret == WALLY_OK) {
+            /* FIXME: When issuance is implemented, the input array lengths
+             * may be different than psbt->num_inputs * X as passed here */
+            unsigned char surjectionproof[ASSET_SURJECTIONPROOF_MAX_LEN];
+            size_t surjectionproof_len;
+            ret = wally_asset_surjectionproof(asset, ASSET_TAG_LEN,
+                                              abf, BLINDING_FACTOR_LEN,
+                                              asset_commitment, ASSET_COMMITMENT_LEN,
+                                              surjectionproof_seed, 32u,
+                                              fixed_input_tags, psbt->num_inputs * ASSET_TAG_LEN,
+                                              input_abfs, psbt->num_inputs * BLINDING_FACTOR_LEN,
+                                              ephemeral_input_tags, psbt->num_inputs * ASSET_GENERATOR_LEN,
+                                              surjectionproof, sizeof(surjectionproof),
+                                              &surjectionproof_len);
+            if (ret == WALLY_OK) {
+                if (surjectionproof_len > sizeof(surjectionproof))
+                    ret = WALLY_EINVAL; /* Should never happen */
+                ret = wally_psbt_output_set_asset_surjectionproof(out, surjectionproof,
+                                                                  surjectionproof_len);
+            }
+        }
+
+        /* FIXME: Create explicit asset surjection proof */
+
+        if (ret == WALLY_OK) {
+            unsigned char pubkey[EC_PUBLIC_KEY_LEN];
+            ret = wally_ec_public_key_from_private_key(ephemeral_key, EC_PRIVATE_KEY_LEN,
+                                                       pubkey, sizeof(pubkey));
+            if (ret == WALLY_OK)
+                ret = wally_psbt_output_set_ecdh_public_key(out, pubkey, sizeof(pubkey));
+        }
+
+        if (ret == WALLY_OK) {
+            did_blind_output = true;
+        } else {
+            /* FIXME: Delete blinding fields */
+            break;
+        }
+    }
+
+    if (ret == WALLY_OK && !did_blind_output) {
+        ret = WALLY_EINVAL; /* We had outputs to blind but didn't blind anything */
+        goto done;
+    }
+
+    if (ret == WALLY_OK && !did_blind_last && !mem_is_zero(output_scalar, EC_SCALAR_LEN)) {
+        ret = wally_ec_scalar_subtract_from(output_scalar, EC_SCALAR_LEN,
+                                            input_scalar, EC_SCALAR_LEN);
+        if (ret == WALLY_OK)
+            ret = wally_map_add(&psbt->global_scalars, output_scalar, EC_SCALAR_LEN, NULL, 0);
+    }
+
+done:
+    clear_and_free(output_statuses, psbt->num_outputs * sizeof(unsigned char));
+    clear_and_free(fixed_input_tags, psbt->num_inputs * ASSET_TAG_LEN);
+    clear_and_free(ephemeral_input_tags, psbt->num_inputs * ASSET_GENERATOR_LEN);
+    clear_and_free(input_abfs, psbt->num_inputs * BLINDING_FACTOR_LEN);
+    return ret;
+#endif /* BUILD_ELEMENTS */
+}
+
 int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 {
     if (written)
