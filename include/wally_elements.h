@@ -20,6 +20,8 @@ extern "C" {
 #define ASSET_RANGEPROOF_MAX_LEN 5134 /** Maximum length of an Asset Value Range Proof */
 #define ASSET_EXPLICIT_RANGEPROOF_MAX_LEN 73 /** Maximum length of an Explicit Asset Value Range Proof */
 
+/* Size of proof with 256 inputs and 3 used inputs */
+#define ASSET_SURJECTIONPROOF_MAX_LEN 162 /** Maximum length of a wally-produced Asset Surjection Proof */
 #define ASSET_EXPLICIT_SURJECTIONPROOF_LEN 67 /** Length of an Explicit Asset Surjection Proof */
 
 /**

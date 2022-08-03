@@ -418,7 +418,7 @@ int wally_asset_surjectionproof_size(size_t num_inputs, size_t *written)
     size_t num_used = num_inputs > 3 ? 3 : num_inputs;
     if (written)
         *written = 0;
-    if (!num_inputs || !written)
+    if (!num_inputs || num_inputs > SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS || !written)
         return WALLY_EINVAL;
     *written = SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used);
     return WALLY_OK;
@@ -439,7 +439,7 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
     secp256k1_surjectionproof proof;
     secp256k1_generator *generators = NULL;
     const size_t num_inputs = asset_len / ASSET_TAG_LEN;
-    size_t num_used = num_inputs > 3 ? 3 : num_inputs;
+    const size_t num_used = num_inputs > 3 ? 3 : num_inputs;
     size_t actual_index, i;
     int ret = WALLY_EINVAL;
 
@@ -452,11 +452,13 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
         !output_abf || output_abf_len != BLINDING_FACTOR_LEN ||
         parse_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
-        !bytes || bytes_len != 32u ||
-        !asset || !num_inputs || (asset_len % ASSET_TAG_LEN != 0) ||
+        !bytes || bytes_len != 32u || !asset ||
+        !num_inputs || num_inputs > SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS ||
+        (asset_len % ASSET_TAG_LEN != 0) ||
         !abf || abf_len != num_inputs * BLINDING_FACTOR_LEN ||
         !generator || generator_len != num_inputs * ASSET_GENERATOR_LEN ||
-        !bytes_out || len != SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
+        !bytes_out ||
+        len < SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
         !written)
         goto cleanup;
 
