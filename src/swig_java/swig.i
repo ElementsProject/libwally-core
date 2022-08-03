@@ -481,6 +481,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_ec_sig_verify);
 %returns_void__(wally_ec_xonly_public_key_verify);
 %returns_array_(wally_ecdh, 5, 6, SHA256_LEN);
+%returns_array_(wally_ecdh_nonce_hash, 5, 6, SHA256_LEN);
 %returns_size_t(wally_explicit_rangeproof);
 %returns_void__(wally_explicit_rangeproof_verify);
 %returns_array_(wally_explicit_surjectionproof, 7, 8, ASSET_EXPLICIT_SURJECTIONPROOF_LEN);

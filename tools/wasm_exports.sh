@@ -294,6 +294,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_confidential_addr_to_addr' \
 ,'_wally_confidential_addr_to_addr_segwit' \
 ,'_wally_confidential_addr_to_ec_public_key' \
+,'_wally_ecdh_nonce_hash' \
 ,'_wally_elements_pegin_contract_script_from_bytes' \
 ,'_wally_elements_pegout_script_from_bytes' \
 ,'_wally_elements_pegout_script_size' \

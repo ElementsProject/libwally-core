@@ -1787,6 +1787,12 @@ inline int confidential_addr_to_ec_public_key(const ADDRESS& address, uint32_t p
     return ret;
 }
 
+template <class PUB_KEY, class PRIV_KEY, class BYTES_OUT>
+inline int ecdh_nonce_hash(const PUB_KEY& pub_key, const PRIV_KEY& priv_key, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ecdh_nonce_hash(pub_key.data(), pub_key.size(), priv_key.data(), priv_key.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class REDEEM_SCRIPT, class SCRIPT, class BYTES_OUT>
 inline int elements_pegin_contract_script_from_bytes(const REDEEM_SCRIPT& redeem_script, const SCRIPT& script, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;

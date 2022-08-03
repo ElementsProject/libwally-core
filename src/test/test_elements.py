@@ -47,9 +47,20 @@ class ElementsTests(unittest.TestCase):
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
     def test_asset_unblind_with_nonce(self):
+        out_nonce_hash, _ = make_cbuffer('00'*32)
+        ret = wally_ecdh_nonce_hash(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                                    UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                                    out_nonce_hash, len(out_nonce_hash))
+        self.assertEqual(ret, WALLY_OK)
+
         out_nonce, _ = make_cbuffer('00'*32)
-        wally_ecdh(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN, UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN, out_nonce, len(out_nonce))
-        wally_sha256(out_nonce, 32, out_nonce, 32);
+        ret = wally_ecdh(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                         UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                         out_nonce, len(out_nonce))
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(wally_sha256(out_nonce, 32, out_nonce, 32), WALLY_OK)
+        # ecdh_nonce_hash helper and manual hashing of the nonce must match
+        self.assertEqual(out_nonce, out_nonce_hash)
 
         asset_out, _ = make_cbuffer('00' * 32)
         abf_out, _ = make_cbuffer('00' * 32)

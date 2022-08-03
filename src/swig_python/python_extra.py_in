@@ -206,6 +206,7 @@ ae_signer_commit_from_bytes = _wrap_bin(ae_signer_commit_from_bytes, WALLY_S2C_O
 ae_sig_from_bytes = _wrap_bin(ae_sig_from_bytes, EC_SIGNATURE_LEN)
 
 if is_elements_build():
+    ecdh_nonce_hash = _wrap_bin(ecdh_nonce_hash, SHA256_LEN)
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, ASSET_TAG_LEN)
     asset_scalar_offset = _wrap_bin(asset_scalar_offset, EC_SCALAR_LEN)

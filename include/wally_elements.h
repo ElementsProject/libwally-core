@@ -41,6 +41,31 @@ WALLY_CORE_API int wally_asset_generator_from_bytes(
     size_t len);
 
 /**
+ * Generate a rangeproof nonce hash via SHA256(ECDH(pub_key, priv_key).
+ *
+ * :param pub_key: Public blinding key.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
+ * :param priv_key: Ephemeral (randomly generated) private key.
+ * :param priv_key_len: Length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes_out: Destination for the resulting nonce hash.
+ * :param len: Length of ``bytes_out``. Must be ``SHA256_LEN``.
+ *
+ * .. note:: The public blinding key can be retrieved from a confidential
+ *|    address using `wally_confidential_addr_to_ec_public_key`. If ``priv_key``
+ *|    is invalid, then ``WALLY_ERROR`` is returned.
+ * .. note:: The computation can also be performed with the private key
+ *|    corresponding to ``pub_key`` and the public key corresponding to
+ *|    to ``priv_key`` giving the same result.
+ */
+WALLY_CORE_API int wally_ecdh_nonce_hash(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Generate the final value blinding factor required for blinding a confidential transaction.
  *
  * :param values: Array of transaction input values in satoshi
@@ -110,10 +135,8 @@ WALLY_CORE_API int wally_asset_value_commitment(
  * Generate a rangeproof for a transaction output.
  *
  * :param value: Value of the output in satoshi.
- * :param pub_key: Public blinding key for the output. See `wally_confidential_addr_to_ec_public_key`.
- * :param pub_key_len: Length of ``pub_key``. Must be ``EC_PUBLIC_KEY_LEN``
- * :param priv_key: Pivate ephemeral key. Should be randomly generated for each output.
- * :param priv_key_length: Length of ``priv_key``.
+ * :param nonce_hash: Nonce for rangeproof generation, usually from ``wally_ecdh_nonce_hash``.
+ * :param nonce_hash_len: Length of ``nonce_hash``. Must be ``SHA256_LEN``.
  * :param asset: Asset id of output.
  * :param asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
  * :param abf: Asset blinding factor. Randomly generated for each output.
@@ -158,9 +181,10 @@ WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
     size_t *written);
 
 /**
- * Generate a transaction output rangeproof from a blinding public key and ephemeral private key.
+ * Generate a rangeproof for a transaction output.
  *
- * Generates a nonce using SHA256(ECDH(pub_key, priv_key) and calls `wally_asset_rangeproof_with_nonce`.
+ * This convenience function generates a nonce hash with `wally_ecdh_nonce_hash`
+ * and then calls `wally_asset_rangeproof_with_nonce`.
  */
 WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t value,
@@ -188,7 +212,7 @@ WALLY_CORE_API int wally_asset_rangeproof(
     size_t *written);
 
 /**
- * Generate a transaction output explicit value rangeproof.
+ * Generate an explicit value rangeproof.
  *
  * The nonce for this function should be randomly generated.
  * See `wally_asset_rangeproof_with_nonce`.

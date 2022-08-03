@@ -37,7 +37,7 @@ static int parse_commitment(const secp256k1_context *ctx,
     return WALLY_OK;
 }
 
-static int get_nonce_hash(const unsigned char *pub_key, size_t pub_key_len,
+int wally_ecdh_nonce_hash(const unsigned char *pub_key, size_t pub_key_len,
                           const unsigned char *priv_key, size_t priv_key_len,
                           unsigned char *bytes_out, size_t len)
 {
@@ -180,7 +180,7 @@ int wally_asset_value_commitment(uint64_t value,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!vbf || vbf_len != ASSET_TAG_LEN || !bytes_out || len != ASSET_COMMITMENT_LEN ||
+    if (!vbf || vbf_len != BLINDING_FACTOR_LEN || !bytes_out || len != ASSET_COMMITMENT_LEN ||
         parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         return WALLY_EINVAL;
 
@@ -277,8 +277,8 @@ int wally_asset_rangeproof(uint64_t value,
     unsigned char nonce_hash[SHA256_LEN];
     int ret;
 
-    ret = get_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
-                         nonce_hash, sizeof(nonce_hash));
+    ret = wally_ecdh_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
+                                nonce_hash, sizeof(nonce_hash));
     if (ret == WALLY_OK)
         ret = wally_asset_rangeproof_with_nonce(value,
                                                 nonce_hash, sizeof(nonce_hash),
@@ -396,8 +396,8 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
     unsigned char nonce_hash[SHA256_LEN];
     int ret;
 
-    ret = get_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
-                         nonce_hash, sizeof(nonce_hash));
+    ret = wally_ecdh_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
+                                nonce_hash, sizeof(nonce_hash));
     if (ret == WALLY_OK)
         ret = wally_asset_unblind_with_nonce(nonce_hash, sizeof(nonce_hash),
                                              proof, proof_len,
