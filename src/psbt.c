@@ -221,6 +221,13 @@ SET_STRUCT(wally_psbt_input, utxo, wally_tx,
            tx_clone_alloc, wally_tx_free)
 SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
            wally_tx_output_clone_alloc, wally_tx_output_free)
+int wally_psbt_input_set_witness_utxo_from_tx(struct wally_psbt_input *input,
+                                              const struct wally_tx *utxo, uint32_t index)
+{
+    if (!utxo || index >= utxo->num_outputs)
+        return WALLY_EINVAL;
+    return wally_psbt_input_set_witness_utxo(input, utxo->outputs + index);
+}
 MAP_INNER_FIELD(input, redeem_script, PSBT_IN_REDEEM_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(input, witness_script, PSBT_IN_WITNESS_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(input, final_scriptsig, PSBT_IN_FINAL_SCRIPTSIG, psbt_fields)
@@ -4260,6 +4267,12 @@ int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt, size
 
 PSBT_SET_S(input, utxo, wally_tx)
 PSBT_SET_S(input, witness_utxo, wally_tx_output)
+int wally_psbt_set_input_witness_utxo_from_tx(struct wally_psbt *psbt, size_t index,
+                                              const struct wally_tx *utxo, uint32_t utxo_index)
+{
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    return wally_psbt_input_set_witness_utxo_from_tx(p, utxo, utxo_index);
+}
 PSBT_SET_S(input, final_witness, wally_tx_witness_stack)
 PSBT_SET_S(input, keypaths, wally_map)
 PSBT_SET_S(input, signatures, wally_map)

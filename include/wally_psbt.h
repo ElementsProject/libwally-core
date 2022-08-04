@@ -187,6 +187,18 @@ WALLY_CORE_API int wally_psbt_input_set_witness_utxo(
     const struct wally_tx_output *witness_utxo);
 
 /**
+ * Set the witness_utxo in an input from a transaction output.
+ *
+ * :param input: The input to update.
+ * :param utxo: The transaction containing the output to add.
+ * :param index: The output index in `utxo` to add.
+ */
+WALLY_CORE_API int wally_psbt_input_set_witness_utxo_from_tx(
+    struct wally_psbt_input *input,
+    const struct wally_tx *utxo,
+    uint32_t index);
+
+/**
  * Set the redeem_script in an input.
  *
  * :param input: The input to update.

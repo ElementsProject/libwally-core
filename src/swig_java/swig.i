@@ -733,6 +733,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_set_input_value);
 %returns_void__(wally_psbt_set_input_witness_script);
 %returns_void__(wally_psbt_set_input_witness_utxo);
+%returns_void__(wally_psbt_set_input_witness_utxo_from_tx);
 %returns_void__(wally_psbt_set_output_amount);
 %returns_void__(wally_psbt_set_output_asset);
 %returns_void__(wally_psbt_set_output_asset_blinding_surjectionproof);

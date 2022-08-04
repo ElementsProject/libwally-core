@@ -53,6 +53,8 @@ WALLY_CORE_API int wally_psbt_get_input_required_lockheight(const struct wally_p
 
 WALLY_CORE_API int wally_psbt_set_input_utxo(struct wally_psbt *psbt, size_t index, const struct wally_tx *utxo);
 WALLY_CORE_API int wally_psbt_set_input_witness_utxo(struct wally_psbt *psbt, size_t index, const struct wally_tx_output *witness_utxo);
+WALLY_CORE_API int wally_psbt_set_input_witness_utxo_from_tx(struct wally_psbt *psbt, size_t index, const struct wally_tx *utxo, uint32_t utxo_index);
+
 WALLY_CORE_API int wally_psbt_set_input_redeem_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_psbt_set_input_witness_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_psbt_set_input_final_scriptsig(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);

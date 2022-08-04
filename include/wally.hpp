@@ -1016,6 +1016,12 @@ inline int psbt_input_set_witness_utxo(const INPUT& input, const struct wally_tx
     return ret;
 }
 
+template <class INPUT, class UTXO>
+inline int psbt_input_set_witness_utxo_from_tx(const INPUT& input, const UTXO& utxo, uint32_t index) {
+    int ret = ::wally_psbt_input_set_witness_utxo_from_tx(detail::get_p(input), detail::get_p(utxo), index);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_is_elements(const PSBT& psbt, size_t* written) {
     int ret = ::wally_psbt_is_elements(detail::get_p(psbt), written);
