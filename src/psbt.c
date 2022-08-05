@@ -4307,7 +4307,16 @@ int wally_psbt_blind(struct wally_psbt *psbt,
             }
         }
 
-        /* FIXME: Create explicit asset surjection proof */
+        if (ret == WALLY_OK) {
+            unsigned char surjectionproof[ASSET_EXPLICIT_SURJECTIONPROOF_LEN];
+            ret = wally_explicit_surjectionproof(asset, ASSET_TAG_LEN,
+                                                 abf, BLINDING_FACTOR_LEN,
+                                                 asset_commitment, ASSET_COMMITMENT_LEN,
+                                                 surjectionproof, sizeof(surjectionproof));
+            if (ret == WALLY_OK)
+                ret = wally_psbt_output_set_asset_blinding_surjectionproof(out, surjectionproof,
+                                                                           sizeof(surjectionproof));
+        }
 
         if (ret == WALLY_OK) {
             unsigned char pubkey[EC_PUBLIC_KEY_LEN];
