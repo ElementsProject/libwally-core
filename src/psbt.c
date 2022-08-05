@@ -4194,13 +4194,15 @@ int wally_psbt_blind(struct wally_psbt *psbt,
         const unsigned char *abf = entropy;
         const unsigned char *vbf = entropy + BLINDING_FACTOR_LEN;
         const unsigned char *ephemeral_key = vbf + BLINDING_FACTOR_LEN;
-        const unsigned char *surjectionproof_seed = ephemeral_key + BLINDING_FACTOR_LEN;
+        const unsigned char *explicit_rangeproof_seed = ephemeral_key + BLINDING_FACTOR_LEN;
+        const unsigned char *surjectionproof_seed = explicit_rangeproof_seed + BLINDING_FACTOR_LEN;
         const struct wally_map_item *p = wally_map_get_integer(&out->pset_fields, PSET_OUT_ASSET);
         const unsigned char *asset = p && p->value_len == ASSET_TAG_LEN ? p->value : NULL;
         unsigned char tmp[EC_SCALAR_LEN];
         unsigned char asset_commitment[ASSET_COMMITMENT_LEN];
         unsigned char value_commitment[ASSET_COMMITMENT_LEN];
         unsigned char vbf_buf[EC_SCALAR_LEN];
+        const size_t entropy_per_output = 5;
 
         if (output_statuses[i] == WALLY_PSET_BLINDED_FULL) {
             /* TODO: This is Elements logic, treating an existing blinded output as ours */
@@ -4211,12 +4213,12 @@ int wally_psbt_blind(struct wally_psbt *psbt,
         if (!out->has_blinder_index || !wally_map_get_integer(values, out->blinder_index))
             continue; /* Not our output */
 
-        if (!asset || !out->has_amount || entropy_len < BLINDING_FACTOR_LEN * 4) {
+        if (!asset || !out->has_amount || entropy_len < BLINDING_FACTOR_LEN * entropy_per_output) {
             ret = WALLY_EINVAL; /* Missing asset, value, or insufficient entropy */
             goto done;
         }
-        entropy += BLINDING_FACTOR_LEN * 4;
-        entropy_len -= BLINDING_FACTOR_LEN * 4;
+        entropy += BLINDING_FACTOR_LEN * entropy_per_output;
+        entropy_len -= BLINDING_FACTOR_LEN * entropy_per_output;
 
         /* Compute the output scalar */
         ret = wally_asset_scalar_offset(out->amount, abf, BLINDING_FACTOR_LEN,
@@ -4268,7 +4270,20 @@ int wally_psbt_blind(struct wally_psbt *psbt,
                                                              rangeproof_len);
         }
 
-        /* FIXME: explicit value rangeproof */
+        if (ret == WALLY_OK) {
+            unsigned char rangeproof[ASSET_EXPLICIT_RANGEPROOF_MAX_LEN];
+            size_t rangeproof_len;
+            ret = wally_explicit_rangeproof(out->amount,
+                                            explicit_rangeproof_seed, BLINDING_FACTOR_LEN,
+                                            vbf, BLINDING_FACTOR_LEN,
+                                            value_commitment, ASSET_COMMITMENT_LEN,
+                                            asset_commitment, ASSET_COMMITMENT_LEN,
+                                            rangeproof, sizeof(rangeproof),
+                                            &rangeproof_len);
+            if (ret == WALLY_OK)
+                ret = wally_psbt_output_set_value_blinding_rangeproof(out, rangeproof,
+                                                                      rangeproof_len);
+        }
 
         if (ret == WALLY_OK) {
             /* FIXME: When issuance is implemented, the input array lengths
