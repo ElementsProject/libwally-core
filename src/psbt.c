@@ -1006,7 +1006,7 @@ int wally_psbt_is_finalized(const struct wally_psbt *psbt,
             return WALLY_OK; /* Non fully finalized */
     }
     /* We are finalized if we have inputs since they are all finalized */
-    *written = psbt->num_inputs > 0 ?  1 : 0;
+    *written = psbt->num_inputs ?  1 : 0;
     return WALLY_OK;
 }
 
@@ -3924,7 +3924,7 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
 
         /* Note that if we patch libwally to supply the non-witness utxo tx field (tx) for
         * witness inputs also, we'll need a different way to signal p2sh-p2wpkh scripts */
-        if (input->witness_utxo && input->witness_utxo->script_len > 0) {
+        if (input->witness_utxo && input->witness_utxo->script_len) {
             out_script = input->witness_utxo->script;
             out_script_len = input->witness_utxo->script_len;
             is_witness = true;
@@ -3994,7 +3994,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
 
     OUTPUT_CHECK;
 
-    if ((psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)))
+    if (!psbt || (psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &result, &is_pset, false)) != WALLY_OK)
