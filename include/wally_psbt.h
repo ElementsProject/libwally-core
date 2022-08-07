@@ -1948,6 +1948,7 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
     uint32_t flags,
     struct wally_psbt **output);
 
+#ifndef SWIG
 /**
  * Blind a PSBT.
  *
@@ -1957,8 +1958,12 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
  * :param assets: Integer map of input index to asset tags for the callers inputs.
  * :param abfs: Integer map of input index to asset blinding factors for the callers inputs.
  * :param entropy: Random entropy for asset and blinding factor generation.
- * :param entropy_len: Size of ``entropy`` in bytes.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be a multiple
+ *|    of 5 * ``BLINDING_FACTOR_LEN`` for each non-fee output to be blinded, with
+ *|    an additional 2 * ``BLINDING_FACTOR_LEN`` bytes for any issuance outputs.
  * :param flags: Flags controlling blinding. Must be 0.
+ * :param output: Destination for a map of integer output index to the
+ *|    ephemeral private key used to blind the output. Ignored if NULL.
  */
 WALLY_CORE_API int wally_psbt_blind(
     struct wally_psbt *psbt,
@@ -1968,7 +1973,25 @@ WALLY_CORE_API int wally_psbt_blind(
     const struct wally_map *abfs,
     const unsigned char *entropy,
     size_t entropy_len,
-    uint32_t flags);
+    uint32_t flags,
+    struct wally_map *output);
+#endif
+
+/**
+ * Blind a PSBT.
+ *
+ * As per `wally_psbt_blind`, but allocates the ``output`` map.
+ */
+WALLY_CORE_API int wally_psbt_blind_alloc(
+    struct wally_psbt *psbt,
+    const struct wally_map *values,
+    const struct wally_map *vbfs,
+    const struct wally_map *assets,
+    const struct wally_map *abfs,
+    const unsigned char *entropy,
+    size_t entropy_len,
+    uint32_t flags,
+    struct wally_map **output);
 
 /**
  * Sign a PSBT using the simple signer algorithm.

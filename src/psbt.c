@@ -4089,8 +4089,8 @@ int wally_psbt_blind(struct wally_psbt *psbt,
                      const struct wally_map *assets,
                      const struct wally_map *abfs,
                      const unsigned char *entropy,
-                     size_t entropy_len,
-                     uint32_t flags)
+                     size_t entropy_len, uint32_t flags,
+                     struct wally_map *ephemeral_keys_out)
 {
 #ifdef BUILD_ELEMENTS
     const secp256k1_context *ctx = secp_ctx();
@@ -4322,8 +4322,14 @@ int wally_psbt_blind(struct wally_psbt *psbt,
             unsigned char pubkey[EC_PUBLIC_KEY_LEN];
             ret = wally_ec_public_key_from_private_key(ephemeral_key, EC_PRIVATE_KEY_LEN,
                                                        pubkey, sizeof(pubkey));
-            if (ret == WALLY_OK)
+            if (ret == WALLY_OK) {
                 ret = wally_psbt_output_set_ecdh_public_key(out, pubkey, sizeof(pubkey));
+                if (ret == WALLY_OK && ephemeral_keys_out) {
+                    /* Return the ephemeral private key for this output */
+                    ret = wally_map_add_integer(ephemeral_keys_out, i,
+                                                ephemeral_key, EC_PRIVATE_KEY_LEN);
+                }
+            }
         }
 
         if (ret == WALLY_OK) {
@@ -4347,12 +4353,35 @@ int wally_psbt_blind(struct wally_psbt *psbt,
     }
 
 done:
+    if (ret != WALLY_OK)
+        wally_map_clear(ephemeral_keys_out);
     clear_and_free(output_statuses, psbt->num_outputs * sizeof(unsigned char));
     clear_and_free(fixed_input_tags, psbt->num_inputs * ASSET_TAG_LEN);
     clear_and_free(ephemeral_input_tags, psbt->num_inputs * ASSET_GENERATOR_LEN);
     clear_and_free(input_abfs, psbt->num_inputs * BLINDING_FACTOR_LEN);
     return ret;
 #endif /* BUILD_ELEMENTS */
+}
+
+int wally_psbt_blind_alloc(struct wally_psbt *psbt,
+                           const struct wally_map *values,
+                           const struct wally_map *vbfs,
+                           const struct wally_map *assets,
+                           const struct wally_map *abfs,
+                           const unsigned char *entropy,
+                           size_t entropy_len, uint32_t flags,
+                           struct wally_map **output)
+{
+    int ret;
+
+    OUTPUT_CHECK;
+    OUTPUT_ALLOC(struct wally_map);
+    ret = wally_psbt_blind(psbt, values, vbfs, assets, abfs, entropy, entropy_len, flags, *output);
+    if (ret != WALLY_OK) {
+        wally_map_free(*output);
+        *output = NULL;
+    }
+    return ret;
 }
 
 int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)

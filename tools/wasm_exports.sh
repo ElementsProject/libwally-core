@@ -130,6 +130,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_add_tx_input_at' \
 ,'_wally_psbt_add_tx_output_at' \
 ,'_wally_psbt_blind' \
+,'_wally_psbt_blind_alloc' \
 ,'_wally_psbt_clear_fallback_locktime' \
 ,'_wally_psbt_clone_alloc' \
 ,'_wally_psbt_combine' \
