@@ -17,6 +17,7 @@ class MapTests(unittest.TestCase):
         key3, key3_len = make_cbuffer('404040')
         key4, key4_len = make_cbuffer('6060606060')
         val, val_len = make_cbuffer('ff'*64)
+        out, out_len = make_cbuffer('00'*128)
 
         # Check invalid args
         self.assertEqual(wally_map_init_alloc(0, None, None), WALLY_EINVAL)
@@ -61,6 +62,7 @@ class MapTests(unittest.TestCase):
             self.assertEqual(m.contents.num_items, n)
             # Replace the item with shorter key
             self.assertEqual(wally_map_replace(m, k, l, v, vl - 1), WALLY_OK)
+            self.assertEqual(wally_map_get_item_length(m, i - 1), (WALLY_OK, vl - 1))
             # Adding an existing key ignores the new value without error.
             vl = vl if case == cases[-1] else vl - 1
             self.assertEqual(m.contents.items[n-1].value_len, vl)
@@ -99,6 +101,20 @@ class MapTests(unittest.TestCase):
         # Add an empty value
         self.assertEqual(wally_map_add(m, key4, key4_len, empty, empty_len), WALLY_OK)
         self.assertEqual(wally_map_find(m, key4, key4_len), (WALLY_OK, m.contents.num_items))
+
+        # Getter
+        self.assertEqual(wally_map_get_item_length(None, 0), (WALLY_EINVAL, 0)) # Null map
+        self.assertEqual(wally_map_get_item_length(m, 7), (WALLY_EINVAL, 0)) # Bad index
+        self.assertEqual(wally_map_get_item_length(m, 6), (WALLY_OK, 0)) # Zero length is OK
+
+        for args in [(None, 0, out,   out_len),  # Null map
+                     (m,    7, out,   out_len),  # Bad index
+                     (m,    0, None,  out_len),  # Null output
+                     (m,    0, out,   0)]:       # Empty output
+            self.assertEqual(wally_map_get_item(*args), (WALLY_EINVAL, 0))
+
+        self.assertEqual(wally_map_get_item(m, 0, out, out_len), (WALLY_OK, 64))
+        self.assertEqual(out[:64], val)
 
         # Assign
         new_key, new_key_len = make_cbuffer('ffffffffff')

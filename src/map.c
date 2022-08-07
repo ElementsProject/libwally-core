@@ -128,6 +128,32 @@ const struct wally_map_item *wally_map_get_integer(const struct wally_map *map_i
     return map_get(map_in, NULL, key);
 }
 
+int wally_map_get_item_length(const struct wally_map *map_in,
+                              size_t index, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!map_in || index >= map_in->num_items || !written)
+        return WALLY_EINVAL;
+    *written = map_in->items[index].value_len;
+    return WALLY_OK;
+}
+
+int wally_map_get_item(const struct wally_map *map_in,
+                       size_t index, unsigned char *bytes_out, size_t len,
+                       size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!map_in || index >= map_in->num_items || !bytes_out || !len ||
+        !written || !map_in->items[index].value)
+        return WALLY_EINVAL;
+    *written = map_in->items[index].value_len;
+    if (*written <= len)
+        memcpy(bytes_out, map_in->items[index].value, *written);
+    return WALLY_OK;
+}
+
 /* Returns LHS item if key is present in both maps and value is the same */
 const struct wally_map_item *map_find_equal_integer(const struct wally_map *lhs,
                                                     const struct wally_map *rhs,

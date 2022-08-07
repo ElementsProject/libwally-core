@@ -683,6 +683,19 @@ inline int map_free(struct wally_map* map_in) {
     return ret;
 }
 
+template <class MAP_IN, class BYTES_OUT>
+inline int map_get_item(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_map_get_item(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class MAP_IN>
+inline int map_get_item_length(const MAP_IN& map_in, size_t index, size_t* written) {
+    int ret = ::wally_map_get_item_length(detail::get_p(map_in), index, written);
+    return ret;
+}
+
 template <class KEY, class VAL>
 inline int map_hash_preimage_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_map_hash_preimage_verify(key.data(), key.size(), val.data(), val.size());

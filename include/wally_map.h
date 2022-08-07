@@ -206,6 +206,34 @@ WALLY_CORE_API const struct wally_map_item *wally_map_get_integer(
 #endif
 
 /**
+ * Get the length of an item in a map.
+ *
+ * :param map_in: The map to return the item length from.
+ * :param index: The zero-based index of the item whose length to return.
+ * :param written: Destination for the length of the item in bytes.
+ */
+WALLY_CORE_API int wally_map_get_item_length(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
+
+/**
+ * Return an item from a map.
+ *
+ * :param map_in: The map to return the item from.
+ * :param index: The zero-based index of the item to return.
+ * :param bytes_out: Destination for the resulting data.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_map_get_item(
+    const struct wally_map *map_in,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
  * Sort the items in a map.
  *
  * :param map_in: The map to sort.
