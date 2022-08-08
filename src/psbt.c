@@ -3711,6 +3711,17 @@ int wally_psbt_sign(struct wally_psbt *psbt,
                 goto cleanup;
             }
 
+#ifdef BUILD_ELEMENTS
+            if (is_pset)
+                ret = wally_tx_get_elements_signature_hash(tx, i,
+                                                           scriptcode, scriptcode_len,
+                                                           input->witness_utxo->value,
+                                                           input->witness_utxo->value_len,
+                                                           sighash,
+                                                           WALLY_TX_FLAG_USE_WITNESS,
+                                                           signature_hash, SHA256_LEN);
+            else
+#endif /* BUILD_ELEMENTS */
             ret = wally_tx_get_btc_signature_hash(tx, i,
                                                   scriptcode, scriptcode_len,
                                                   input->witness_utxo->satoshi,
@@ -3720,9 +3731,10 @@ int wally_psbt_sign(struct wally_psbt *psbt,
             if (ret != WALLY_OK)
                 goto cleanup;
         } else if (input->utxo) {
-            if (!is_matching_txid(input->utxo,
+            if (is_pset ||
+                !is_matching_txid(input->utxo,
                                   txin->txhash, sizeof(txin->txhash))) {
-                ret = WALLY_EINVAL; /* prevout doesn't match this input */
+                ret = WALLY_EINVAL; /* Non segwit Elements, or prevout doesn't match input */
                 goto cleanup;
             }
 
