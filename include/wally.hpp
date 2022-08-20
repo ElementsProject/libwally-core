@@ -812,14 +812,14 @@ inline int psbt_add_tx_output_at(const PSBT& psbt, uint32_t index, uint32_t flag
 }
 
 template <class PSBT, class VALUES, class VBFS, class ASSETS, class ABFS, class ENTROPY>
-inline int psbt_blind(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t flags, struct wally_map* output) {
-    int ret = ::wally_psbt_blind(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), flags, output);
+inline int psbt_blind(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t output_index, uint32_t flags, struct wally_map* output) {
+    int ret = ::wally_psbt_blind(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), output_index, flags, output);
     return ret;
 }
 
 template <class PSBT, class VALUES, class VBFS, class ASSETS, class ABFS, class ENTROPY>
-inline int psbt_blind_alloc(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t flags, struct wally_map** output) {
-    int ret = ::wally_psbt_blind_alloc(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), flags, output);
+inline int psbt_blind_alloc(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t output_index, uint32_t flags, struct wally_map** output) {
+    int ret = ::wally_psbt_blind_alloc(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), output_index, flags, output);
     return ret;
 }
 

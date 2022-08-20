@@ -40,6 +40,8 @@ extern "C" {
 #define WALLY_PSET_BLINDED_PARTIAL  0x2 /* Blinding key present with partial blinding data */
 #define WALLY_PSET_BLINDED_FULL     0x4 /* Blinding key present with full blinding data */
 
+#define WALLY_PSET_BLIND_ALL 0xffffffff /* Blind all outputs in wally_psbt_blind */
+
 #define WALLY_SCALAR_OFFSET_LEN 32 /* Length of a PSET scalar offset */
 
 #ifdef SWIG
@@ -1961,6 +1963,7 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
  * :param entropy_len: Size of ``entropy`` in bytes. Must be a multiple
  *|    of 5 * ``BLINDING_FACTOR_LEN`` for each non-fee output to be blinded, with
  *|    an additional 2 * ``BLINDING_FACTOR_LEN`` bytes for any issuance outputs.
+ * :param output_index: The zero based index of the output to blind, or ``WALLY_PSET_BLIND_ALL``.
  * :param flags: Flags controlling blinding. Must be 0.
  * :param output: Destination for a map of integer output index to the
  *|    ephemeral private key used to blind the output. Ignored if NULL.
@@ -1973,6 +1976,7 @@ WALLY_CORE_API int wally_psbt_blind(
     const struct wally_map *abfs,
     const unsigned char *entropy,
     size_t entropy_len,
+    uint32_t output_index,
     uint32_t flags,
     struct wally_map *output);
 #endif
@@ -1990,6 +1994,7 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
     const struct wally_map *abfs,
     const unsigned char *entropy,
     size_t entropy_len,
+    uint32_t output_index,
     uint32_t flags,
     struct wally_map **output);
 

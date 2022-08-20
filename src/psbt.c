@@ -4100,8 +4100,8 @@ int wally_psbt_blind(struct wally_psbt *psbt,
                      const struct wally_map *vbfs,
                      const struct wally_map *assets,
                      const struct wally_map *abfs,
-                     const unsigned char *entropy,
-                     size_t entropy_len, uint32_t flags,
+                     const unsigned char *entropy, size_t entropy_len,
+                     uint32_t output_index, uint32_t flags,
                      struct wally_map *ephemeral_keys_out)
 {
 #ifdef BUILD_ELEMENTS
@@ -4119,11 +4119,15 @@ int wally_psbt_blind(struct wally_psbt *psbt,
 
     if (!psbt_is_valid(psbt) || !psbt->num_inputs || !psbt->num_outputs ||
         !values || !vbfs || !assets || !abfs || flags ||
-        !entropy || !entropy_len || entropy_len % BLINDING_FACTOR_LEN)
+        (output_index != WALLY_PSET_BLIND_ALL && output_index >= psbt->num_outputs) ||
+        !entropy || !entropy_len)
         return WALLY_EINVAL;
 #ifndef BUILD_ELEMENTS
+    (void)ephemeral_keys_out;
     return WALLY_OK; /* No-op */
 #else
+    if (entropy_len % BLINDING_FACTOR_LEN)
+        return WALLY_EINVAL;
     output_statuses = wally_calloc(psbt->num_outputs * sizeof(unsigned char));
     fixed_input_tags = wally_calloc(psbt->num_inputs * ASSET_TAG_LEN);
     ephemeral_input_tags = wally_calloc(psbt->num_inputs * ASSET_GENERATOR_LEN);
@@ -4215,6 +4219,9 @@ int wally_psbt_blind(struct wally_psbt *psbt,
         unsigned char value_commitment[ASSET_COMMITMENT_LEN];
         unsigned char vbf_buf[EC_SCALAR_LEN];
         const size_t entropy_per_output = 5;
+
+        if (output_index != WALLY_PSET_BLIND_ALL && output_index != i)
+            continue; /* We havent been asked to blind this output */
 
         if (output_statuses[i] == WALLY_PSET_BLINDED_FULL) {
             /* TODO: This is Elements logic, treating an existing blinded output as ours */
@@ -4380,15 +4387,16 @@ int wally_psbt_blind_alloc(struct wally_psbt *psbt,
                            const struct wally_map *vbfs,
                            const struct wally_map *assets,
                            const struct wally_map *abfs,
-                           const unsigned char *entropy,
-                           size_t entropy_len, uint32_t flags,
+                           const unsigned char *entropy, size_t entropy_len,
+                           uint32_t output_index, uint32_t flags,
                            struct wally_map **output)
 {
     int ret;
 
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_map);
-    ret = wally_psbt_blind(psbt, values, vbfs, assets, abfs, entropy, entropy_len, flags, *output);
+    ret = wally_psbt_blind(psbt, values, vbfs, assets, abfs,
+                           entropy, entropy_len, output_index, flags, *output);
     if (ret != WALLY_OK) {
         wally_map_free(*output);
         *output = NULL;
