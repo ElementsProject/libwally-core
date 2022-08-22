@@ -309,4 +309,9 @@ if is_elements_build():
     psbt_get_output_value_blinding_rangeproof = _wrap_bin(psbt_get_output_value_blinding_rangeproof, psbt_get_output_value_blinding_rangeproof_len, resize=True)
     psbt_get_output_asset_blinding_surjectionproof = _wrap_bin(psbt_get_output_asset_blinding_surjectionproof, psbt_get_output_asset_blinding_surjectionproof_len, resize=True)
 
+# Work around SWIG wrapping unisgned constants
+# See https://github.com/swig/swig/issues/1287
+BIP32_INITIAL_HARDENED_CHILD = 0x80000000
+WALLY_PSET_BLIND_ALL = 0xffffffff
 WALLY_SATOSHI_MAX = WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC
+WALLY_TX_SEQUENCE_FINAL = 0xffffffff
