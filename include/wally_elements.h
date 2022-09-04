@@ -70,10 +70,10 @@ WALLY_CORE_API int wally_ecdh_nonce_hash(
 /**
  * Generate the final value blinding factor required for blinding a confidential transaction.
  *
- * :param values: Array of transaction input values in satoshi
+ * :param values: Array of values in satoshi
  * :param values_len: Length of ``values``, also the number of elements in all three of the input arrays, which is equal
  *|     to ``num_inputs`` plus the number of outputs.
- * :param num_inputs: Number of elements in the input arrays that represent transaction inputs. The number of outputs is
+ * :param num_inputs: Number of elements in the input arrays that represent inputs. The number of outputs is
  *|     implicitly ``values_len`` - ``num_inputs``.
  * :param abf:  Array of bytes representing ``values_len`` asset blinding factors.
  * :param abf_len: Length of ``abf`` in bytes. Must be ``values_len`` * ``BLINDING_FACTOR_LEN``.
@@ -96,7 +96,7 @@ WALLY_CORE_API int wally_asset_final_vbf(
 /**
  * Compute the scalar offset used for blinding a confidential transaction.
  *
- * :param value: The transaction input value in satoshi.
+ * :param value: The value in satoshi.
  * :param abf: Asset blinding factor.
  * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN``.
  * :param vbf: Value blinding factor.
@@ -114,7 +114,7 @@ WALLY_CORE_API int wally_asset_scalar_offset(
     size_t len);
 
 /**
- * Calculate the value commitment for a transaction output.
+ * Calculate a value commitment.
  *
  * :param value: Output value in satoshi.
  * :param vbf: Value Blinding Factor.
@@ -134,7 +134,7 @@ WALLY_CORE_API int wally_asset_value_commitment(
     size_t len);
 
 /**
- * Generate a rangeproof for a transaction output.
+ * Generate a rangeproof using a nonce.
  *
  * :param value: Value of the output in satoshi.
  * :param nonce_hash: Nonce for rangeproof generation, usually from ``wally_ecdh_nonce_hash``.
@@ -183,7 +183,7 @@ WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
     size_t *written);
 
 /**
- * Generate a rangeproof for a transaction output.
+ * Generate a rangeproof.
  *
  * This convenience function generates a nonce hash with `wally_ecdh_nonce_hash`
  * and then calls `wally_asset_rangeproof_with_nonce`.
@@ -256,7 +256,7 @@ WALLY_CORE_API int wally_explicit_rangeproof_verify(
 /**
  * Return the required buffer size for receiving a surjection proof
  *
- * :param num_inputs: Number of transaction inputs.
+ * :param num_inputs: Number of inputs.
  * :param written: Destination for the surjection proof size.
  */
 WALLY_CORE_API int wally_asset_surjectionproof_size(
@@ -264,7 +264,7 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
     size_t *written);
 
 /**
- * Generate a transaction output asset surjection proof.
+ * Generate an asset surjection proof.
  *
  * :param output_asset: asset id for the output.
  * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
@@ -276,9 +276,9 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
  * :param bytes_len: Length of ``bytes``. Must be 32.
  * :param asset: Array of input asset tags.
  * :param asset_len: Length of ``asset`. Must be ``ASSET_TAG_LEN`` * number of inputs.
- * :param abf: Array of asset blinding factors from the transaction inputs.
+ * :param abf: Array of input asset blinding factors.
  * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN`` * number of inputs.
- * :param generator: Array of asset generators from transaction inputs.
+ * :param generator: Array of input asset generators.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN`` * number of inputs.
  * :param bytes_out: Buffer to receive surjection proof.
  * :param bytes_out_len: Length of ``bytes_out``. See `wally_asset_surjectionproof_size`.
@@ -304,7 +304,7 @@ WALLY_CORE_API int wally_asset_surjectionproof(
     size_t *written);
 
 /**
- * Generate an explicit transaction output asset surjection proof.
+ * Generate an explicit asset surjection proof.
  *
  * :param output_asset: asset id for the output.
  * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
