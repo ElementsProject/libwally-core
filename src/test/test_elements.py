@@ -195,6 +195,15 @@ class ElementsTests(unittest.TestCase):
                                                         output_generator, output_generator_len)
             self.assertEqual(ret, expected)
 
+        # wally_asset_scalar_offset
+        SCALAR_OFFSET_LEN = 32
+        offset, offset_len = make_cbuffer('00' * SCALAR_OFFSET_LEN)
+        ret = wally_asset_scalar_offset(value, UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                        UNBLINDED_VBF, UNBLINDED_VBF_LEN, offset, offset_len);
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(h(offset),
+                         utf8('4e5f3ca8aa2048eeacc8c300e3d63ca92048f407264352bee2fb15bd44349c45'))
+        self.assertEqual(wally_ec_scalar_verify(offset, offset_len), WALLY_OK)
 
 if __name__ == '__main__':
     _, val = wally_is_elements_build()

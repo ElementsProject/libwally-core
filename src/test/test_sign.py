@@ -132,6 +132,16 @@ class SignTests(unittest.TestCase):
             ret = wally_ec_public_key_decompress(p, p_len, o, o_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
+        # wally_ec_xonly_public_key_verify
+        pub_key = pub_key[1:]
+        pub_bad, pub_bad[1:]
+        for pub, pub_len in [(None, len(pub_key)),     # Null pub_key
+                             (pub_key, 31),            # Wrong pub_key len
+                             (pub_bad, len(pub_key))]: # Bad public key
+            self.assertEqual(wally_ec_xonly_public_key_verify(pub, pub_len), WALLY_EINVAL)
+        self.assertEqual(wally_ec_xonly_public_key_verify(pub_key, len(pub_key)), WALLY_OK)
+
+
         # wally_ec_sig_to_der
         sig, _ = make_cbuffer('13' * EC_SIGNATURE_LEN)
         out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_DER_MAX_LEN)
