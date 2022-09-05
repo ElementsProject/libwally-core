@@ -24,6 +24,8 @@ def output_func(docs, func):
     is_variable_buffer_ret = 'unsigned char *bytes_out, size_t len, size_t *written' in func
     for l in docs:
         ret.extend(get_doc_lines(l))
+    if ret[-1] != '':
+        ret.append('')
     if is_normal_ret:
         if is_variable_buffer_ret:
             ret.append('   :return: See :ref:`variable-length-output-buffers`')
