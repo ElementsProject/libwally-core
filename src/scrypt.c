@@ -33,7 +33,7 @@ static void PBKDF2_SHA256(const unsigned char *pass, size_t pass_len,
 }
 
 /* Include a suitable smix function/functions */
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#if !defined(__ARM_ARCH_ISA_A64) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
 # include <arm_neon.h>
 # include "scrypt/crypto_scrypt_smix_neon.c"
 # if !defined(__ANDROID__)
