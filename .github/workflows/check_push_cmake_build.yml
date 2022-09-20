@@ -34,7 +34,7 @@ jobs:
 
 # windows has illegal AES result.
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: setup-node
@@ -52,7 +52,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2022, windows-2019, macos-12, macos-11, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04]
+        os: [windows-2022, windows-2019, macos-12, macos-11, ubuntu-22.04, ubuntu-20.04]
         generator: ['Unix Makefiles']
         include:
           - os: windows-2022
@@ -68,12 +68,22 @@ jobs:
             generator: 'Unix Makefiles'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: setup python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+        architecture: x64
     - name: cmake-generate
+      if: "matrix.generator == 'Unix Makefiles' || matrix.generator == 'MSYS Makefiles'"
       run: |
         cmake -S . -B build -G "${{ matrix.generator }}" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/"
+    - name: cmake-generate-vs
+      if: "matrix.generator != 'Unix Makefiles' && matrix.generator != 'MSYS Makefiles'"
+      run: |
+        cmake -S . -B build -G "${{ matrix.generator }}" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;\$\${ORIGIN}/;\${ORIGIN}/"
     - name: cmake-build
       run: |
         cmake --version
@@ -89,35 +99,33 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-#        os: [macos-10.15, windows-2022, ubuntu-20.04]
-        os: [ubuntu-20.04]
+#        os: [macos-12, windows-2022, ubuntu-22.04]
+        os: [ubuntu-22.04]
         target: [python, java]
-        java: [8.0.x, 11.0.x, 13]
+        java: ['8.0', '11.0', '17']
         exclude:
           - target: python
-            java: 11.0.x
+            java: '8.0'
           - target: python
-            java: 13
+            java: '11.0'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: setup python
       if: matrix.target == 'python'
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: '3.x'
         architecture: x64
     - name: setup java
       if: matrix.target == 'java'
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v3
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
-    - name: ubuntu-install-swig
-      if: matrix.os == 'ubuntu-18.04'
-      run: sudo apt install swig
+        distribution: 'temurin'
     - name: cmake-generate-python-config
       if: matrix.os != 'windows-2022' && matrix.target == 'python'
       run: |
@@ -125,7 +133,7 @@ jobs:
     - name: cmake-generate-windows-python-config
       if: matrix.os == 'windows-2022' && matrix.target == 'python'
       run: |
-        cmake -S . -B build -G "Visual Studio 16 2019" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+        cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
     - name: cmake-generate-java-config
       if: matrix.os != 'windows-2022' && matrix.target == 'java'
       run: |
@@ -133,7 +141,7 @@ jobs:
     - name: cmake-generate-windows-java-config
       if: matrix.os == 'windows-2022' && matrix.target == 'java'
       run: |
-        cmake -S . -B build -G "Visual Studio 16 2019" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+        cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
     - name: cmake-build
       run: |
         cmake --version
@@ -147,16 +155,18 @@ jobs:
     timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-11, ubuntu-20.04]
-        go-version: [1.15.x, 1.16.x]
+        os: [macos-12, ubuntu-22.04]
+        go-version: ['~1.15.0']
+#        go-version: ['~1.15.0', '~1.16.0']
 
     steps:
     - name: setup go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: cmake-generate
@@ -186,13 +196,15 @@ jobs:
         go test
       shell: bash
     - name: go_test-mac
-      if: matrix.os == 'macos-10.15'
+      if: matrix.os == 'macos-12'
       run: |
         cd build
         sudo make install
         cd ..
+        go mod download
         LD_LIBRARY_PATH=/usr/local/lib go test
     - name: go_test
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-22.04'
       run: |
+        go mod download
         LD_LIBRARY_PATH=./build/Release go test
