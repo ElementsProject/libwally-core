@@ -20,10 +20,10 @@ apt-get install -yqq nodejs yarn
 cd /opt && curl -sSO https://dl.google.com/android/repository/${NDK_FILENAME}
 unzip -qq ${NDK_FILENAME}
 rm ${NDK_FILENAME}
-git clone https://github.com/juj/emsdk.git
+git clone https://github.com/emscripten-core/emsdk
 cd emsdk
-./emsdk install 2.0.9
-./emsdk activate 2.0.9
+./emsdk install 3.1.20
+./emsdk activate 3.1.20
 source ./emsdk_env.sh
 
 apt-get remove --purge curl unzip -yqq

@@ -24,15 +24,16 @@ export CFLAGS="-fno-stack-protector"
 emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $ENABLE_ELEMENTS --disable-tests --enable-export-all
 emmake make -j $num_jobs
 
+EMCC_OPTIONS="$EMCC_OPTIONS -s MODULARIZE=1 -s EXPORT_NAME=InitWally -s WASM_BIGINT"
 : ${OPTIMIZATION_LEVEL:=3}
-: ${EXTRA_EXPORTED_RUNTIME_METHODS:="['getValue', 'UTF8ToString', 'ccall']"}
+: ${EXPORTED_RUNTIME_METHODS:='cwrap,ccall,malloc,getValue,UTF8ToString'}
 # Get the list of functions to export
 source ./tools/wasm_exports.sh
 
 mkdir -p wally_dist
 
 emcc -O$OPTIMIZATION_LEVEL \
-    -s "EXTRA_EXPORTED_RUNTIME_METHODS=$EXTRA_EXPORTED_RUNTIME_METHODS" \
+    -s "EXPORTED_RUNTIME_METHODS=$EXPORTED_RUNTIME_METHODS" \
     -s "EXPORTED_FUNCTIONS=$EXPORTED_FUNCTIONS" \
     -s FILESYSTEM=0 \
     $EMCC_OPTIONS \
