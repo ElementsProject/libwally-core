@@ -2,7 +2,10 @@ import assert from 'assert'
 
 import * as Wally from './index.js'
 import { bytesToHex, hexToBytes } from './index.js'
-import { WALLY_NETWORK_BITCOIN_MAINNET, WALLY_ADDRESS_VERSION_WIF_MAINNET, WALLY_WIF_FLAG_COMPRESSED } from './index.js'
+import {
+    WALLY_NETWORK_BITCOIN_MAINNET, WALLY_ADDRESS_VERSION_WIF_MAINNET, WALLY_WIF_FLAG_COMPRESSED,
+    BIP32_FLAG_KEY_PUBLIC,
+} from './index.js'
 
 assert.equal(Wally.wally_hex_verify('00'), true)
 assert.throws(_ => Wally.wally_hex_verify('001'), 'WALLY_EINVAL')
@@ -29,5 +32,20 @@ assert.equal(Wally.wally_tx_get_witness_count(tx2), 1)
 assert.equal(bytesToHex(Wally.wally_tx_get_txid(tx1)), bytesToHex(Wally.wally_tx_get_txid(tx2)))
 Wally.wally_tx_free(tx1)
 Wally.wally_tx_free(tx2)
+
+// BIP 32
+// Tests the use of Uint32Array arguments
+
+const hdkey_bs58 = 'xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU'
+const hdkey = Wally.bip32_key_from_base58(hdkey_bs58)
+assert.equal(Wally.bip32_key_to_base58(hdkey, BIP32_FLAG_KEY_PUBLIC), hdkey_bs58)
+
+const hdkey_child = Wally.bip32_key_from_parent_path(hdkey, [7, 0], BIP32_FLAG_KEY_PUBLIC)
+assert.equal(Wally.bip32_key_to_base58(hdkey_child, BIP32_FLAG_KEY_PUBLIC),
+    'xpub6EsQ4V9aBsTisnb7dmpDC14Z6uHQEUKXSio6HdoxRuWsLBn8XGVFMVXEBad5Ey2pnG3B28oeTLeYscNcKi55XEi6Ru1pPSjHeeHoAic8x5B')
+
+Wally.bip32_key_free(hdkey)
+Wally.bip32_key_free(hdkey_child)
+
 
 console.log('Tests passed.')

@@ -40,19 +40,34 @@ types.String = {
     free_ptr: ptr => wally_free_string(ptr),
 }
 
-// Bytes array
-// Passed to C as two arguments, the pointer and its length.
-// Represented in JS as a Uint8Array.
-types.Bytes = {
+// Array of integers. Used for byte buffers and 32/64 bits numbers.
+// Passed to C as two arguments, the pointer and the array length.
+// Represented in JS as the IntArrayType, which is a Uint{8,32,64}Array.
+types.NumArray = IntArrayType => ({
     wasm_types: ['array', 'number'],
-    to_wasm: uint8arr => ({
-        args: [uint8arr, uint8arr.length]
-    }),
+    to_wasm: int_arr => {
+        if (Array.isArray(int_arr)) {
+            // Try coercing standard Arrays into the expected IntArrayType.
+            // This will fail if the array values don't match the int type.
+            int_arr = new IntArrayType(int_arr)
+        } else if (!(int_arr instanceof IntArrayType)) {
+            throw new WallyArrayNumTypeError(int_arr, IntArrayType)
+        }
+
+        return {
+            args: [int_arr, int_arr.length]
+        }
+    },
 
     read_ptr_sized: (ptr, size) =>
-        new Uint8Array(Module.HEAP8.subarray(ptr, ptr + size)),
+        new IntArrayType(Module.HEAP8.subarray(ptr, ptr + size)),
+
     free_ptr: ptr => Module._free(ptr),
-}
+})
+
+types.Bytes = types.NumArray(Uint8Array)
+types.Num32Array = types.NumArray(Uint32Array)
+types.Num64Array = types.NumArray(BigInt64Array)
 
 // An opaque reference returned via DestPtrPtr that can be handed back to libwally
 types.OpaqueRef = {
@@ -178,6 +193,12 @@ export class WallyVarLenError extends Error {
     }
 }
 
+export class WallyArrayNumTypeError extends Error {
+    constructor(given_value, expected_type) {
+        super(`Expected an ${expected_type.name} array, not ${given_value}`)
+    }
+}
+
 //
 // Functions
 //
@@ -286,3 +307,25 @@ export const wally_tx_get_txid = wrap('wally_tx_get_txid', [
 export const wally_free_string = wrap('wally_free_string', [types.OpaqueRef])
 
 export const wally_tx_free = wrap('wally_tx_free', [types.OpaqueRef])
+
+export const bip32_key_from_base58 = wrap('bip32_key_from_base58_alloc', [
+    types.String,
+    types.DestPtrPtr(types.OpaqueRef),
+])
+
+export const bip32_key_from_parent_path = wrap('bip32_key_from_parent_path_alloc', [
+    types.OpaqueRef,
+    types.Num32Array,
+    types.Number,
+    types.DestPtrPtr(types.OpaqueRef),
+])
+
+export const bip32_key_to_base58 = wrap('bip32_key_to_base58', [
+    types.OpaqueRef,
+    types.Number,
+    types.DestPtrPtr(types.String),
+])
+
+export const bip32_key_free = wrap('bip32_key_free', [
+    types.OpaqueRef,
+])
