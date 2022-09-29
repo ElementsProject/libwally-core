@@ -330,16 +330,17 @@ def gen_wasm_package(funcs):
     func_names = set([ func.name for func in funcs ])
 
     def export_name(func_name):
-        # Strip 'wally_' prefix to keep things DRY (everything is already namespaced under the package)
-        if func_name.startswith('wally_'):
-            return func_name[6:]
 
         # Strip the '_alloc' suffix (this is typically what the user wants)
         if func_name.endswith("_alloc"):
-            return func_name[0:-6]
+            func_name = func_name[0:-6]
         # Add '_noalloc' suffix to the non-alloc variation (should be used rarely)
-        if f"{func_name}_alloc" in func_names:
-            return f"{func_name}_noalloc"
+        elif f"{func_name}_alloc" in func_names:
+            func_name = f"{func_name}_noalloc"
+
+        # Strip 'wally_' prefix to keep things DRY (everything is already namespaced under the package)
+        if func_name.startswith('wally_'):
+            func_name = func_name[6:]
 
         return func_name
 
