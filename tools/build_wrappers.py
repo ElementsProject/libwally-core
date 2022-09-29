@@ -255,7 +255,7 @@ def gen_wasm_package(funcs):
         'wally_map_verify_fn_t' : 'T.OpaqueRef', # as the argument to `wally_map_init`
     }
 
-    # Arrays are represented as two arguments - the first identified by this map, followed by an FOO_len argument
+    # Arrays are represented as two arguments - the first identified by this map, followed by a FOO_len argument
     typemap_arrays = {
          'const unsigned char*' : 'T.Bytes',
          'const uint32_t*'      : 'T.Uint32Array',
@@ -330,14 +330,18 @@ def gen_wasm_package(funcs):
     func_names = set([ func.name for func in funcs ])
 
     def export_name(func_name):
+        # Strip 'wally_' prefix to keep things DRY (everything is already namespaced under the package)
+        if func_name.startswith('wally_'):
+            return func_name[6:]
+
         # Strip the '_alloc' suffix (this is typically what the user wants)
         if func_name.endswith("_alloc"):
             return func_name[0:-6]
         # Add '_noalloc' suffix to the non-alloc variation (should be used rarely)
-        elif f"{func_name}_alloc" in func_names:
+        if f"{func_name}_alloc" in func_names:
             return f"{func_name}_noalloc"
-        else:
-            return func_name
+
+        return func_name
 
     jscode = [
         f"export const {export_name(func.name)} = wrap('{func.name}', [{', '.join(map_args(func))}]);"
