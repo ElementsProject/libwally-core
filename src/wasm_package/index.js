@@ -14,22 +14,22 @@ export const WasmModule = Module
 const types = {}
 
 // Number types
-types.Number = {
+types.Number = (llvm_ir_type, size) => ({
     wasm_type: 'number',
     to_wasm: num => ({ args: [num] }),
 
-    read_ptr: function (ptr) { return Module.getValue(ptr, this.llvm_type) },
+    read_ptr: ptr => Module.getValue(ptr, llvm_ir_type),
     free_ptr: ptr => Module._free(ptr),
-
-    llvm_type: 'i32',
-    fixed_size: 4,
-}
-types.Numberi8 = { ...types.Number, llvm_type: 'i8', fixed_size: 1 }
-types.Numberi16 = { ...types.Number, llvm_type: 'i16', fixed_size: 2 }
-types.Numberi32 = types.Number
-types.Numberi64 = { ...types.Number, llvm_type: 'i64', fixed_size: 8 }
-types.NumberFloat = { ...types.Number, llvm_type: 'float', fixed_size: 4 }
-types.NumberDouble = { ...types.Number, llvm_type: 'double', fixed_size: 8 }
+    malloc: _ => Module._malloc(size),
+})
+// Currently only Int32 and Int64 are needed for libwally, but its easy enough to
+// make the others available too in case they're needed later.
+types.Int8 = types.Number('i8', 1)
+types.Int16 = types.Number('i16', 2)
+types.Int32 = types.Number('i32', 4)
+types.Int64 = types.Number('i64', 8)
+types.Float = types.Number('float', 4)
+types.Double = types.Number('double', 8)
 
 // UTF-8 null-terminated string
 types.String = {
@@ -43,7 +43,7 @@ types.String = {
 // Array of integers. Used for byte buffers and 32/64 bits numbers.
 // Passed to C as two arguments, the pointer and the array length.
 // Represented in JS as the IntArrayType, which is a Uint{8,32,64}Array.
-types.NumArray = IntArrayType => ({
+types.IntArray = IntArrayType => ({
     wasm_types: ['array', 'number'],
     to_wasm: int_arr => {
         if (Array.isArray(int_arr)) {
@@ -65,9 +65,9 @@ types.NumArray = IntArrayType => ({
     free_ptr: ptr => Module._free(ptr),
 })
 
-types.Bytes = types.NumArray(Uint8Array)
-types.Num32Array = types.NumArray(Uint32Array)
-types.Num64Array = types.NumArray(BigInt64Array)
+types.Bytes = types.IntArray(Uint8Array)
+types.Uint32Array = types.IntArray(Uint32Array)
+types.Uint64Array = types.IntArray(BigUint64Array)
 
 // An opaque reference returned via DestPtrPtr that can be handed back to libwally
 types.OpaqueRef = {
@@ -87,7 +87,7 @@ types.DestPtr = type => ({
     no_user_args: true,
     wasm_type: 'number',
     to_wasm: _ => {
-        const dest_ptr = Module._malloc(type.fixed_size)
+        const dest_ptr = type.malloc()
         return {
             args: [dest_ptr],
             return: _ => type.read_ptr(dest_ptr),
@@ -252,26 +252,26 @@ function wrap(func_name, args_types) {
 
 export const wally_address_to_scriptpubkey = wrap('wally_address_to_scriptpubkey', [
     types.String,
-    types.Number,
+    types.Int32,
     types.DestPtrVarLen(100),
 ])
 
 
 export const wally_wif_is_uncompressed = wrap('wally_wif_is_uncompressed', [
     types.String,
-    types.DestPtr(types.Number)
+    types.DestPtr(types.Int32)
 ])
 
 export const wally_wif_from_bytes = wrap('wally_wif_from_bytes', [
     types.Bytes, // private key
-    types.Number, // prefix
-    types.Number, // flags
+    types.Int32, // prefix
+    types.Int32, // flags
     types.DestPtrPtr(types.String)
 ])
 
 export const bip39_get_word = wrap('bip39_get_word', [
     types.OpaqueRef,
-    types.Number,
+    types.Int32,
     types.DestPtrPtr(types.String)
 ])
 export const bip39_mnemonic_from_bytes = wrap('bip39_mnemonic_from_bytes', [
@@ -285,18 +285,18 @@ export const wally_hex_verify = wrap('wally_hex_verify', [types.String])
 
 export const wally_tx_from_bytes = wrap('wally_tx_from_bytes', [
     types.Bytes,
-    types.Number,
+    types.Int32,
     types.DestPtrPtr(types.OpaqueRef),
 ])
 export const wally_tx_from_hex = wrap('wally_tx_from_hex', [
     types.String,
-    types.Number,
+    types.Int32,
     types.DestPtrPtr(types.OpaqueRef),
 ])
 
 export const wally_tx_get_witness_count = wrap('wally_tx_get_witness_count', [
     types.OpaqueRef,
-    types.DestPtr(types.Number),
+    types.DestPtr(types.Int32),
 ])
 
 export const wally_tx_get_txid = wrap('wally_tx_get_txid', [
@@ -315,14 +315,14 @@ export const bip32_key_from_base58 = wrap('bip32_key_from_base58_alloc', [
 
 export const bip32_key_from_parent_path = wrap('bip32_key_from_parent_path_alloc', [
     types.OpaqueRef,
-    types.Num32Array,
-    types.Number,
+    types.Uint32Array,
+    types.Int32,
     types.DestPtrPtr(types.OpaqueRef),
 ])
 
 export const bip32_key_to_base58 = wrap('bip32_key_to_base58', [
     types.OpaqueRef,
-    types.Number,
+    types.Int32,
     types.DestPtrPtr(types.String),
 ])
 
