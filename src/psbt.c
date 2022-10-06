@@ -4188,7 +4188,7 @@ int wally_psbt_blind(struct wally_psbt *psbt,
 
     /* Compute which outputs need blinding */
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i) {
-        uint64_t status;
+        size_t status;
         ret = wally_psbt_output_get_blinding_status(psbt->outputs + i, 0, &status);
         if (ret == WALLY_OK) {
             output_statuses[i] = status & 0xff; /* Store as char to reduce memory use */
