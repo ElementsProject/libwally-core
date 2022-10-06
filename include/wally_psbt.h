@@ -193,7 +193,7 @@ WALLY_CORE_API int wally_psbt_input_set_witness_utxo(
  *
  * :param input: The input to update.
  * :param utxo: The transaction containing the output to add.
- * :param index: The output index in `utxo` to add.
+ * :param index: The output index in ``utxo`` to add.
  */
 WALLY_CORE_API int wally_psbt_input_set_witness_utxo_from_tx(
     struct wally_psbt_input *input,

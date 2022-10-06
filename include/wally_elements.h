@@ -431,7 +431,7 @@ WALLY_CORE_API int wally_asset_unblind(
  * Generate a master blinding key from a seed as specified in SLIP-0077.
  *
  * :param bytes: Seed value. See :c:func:`bip39_mnemonic_to_seed`.
- * :param bytes_len: Length of ``seed``. Must be one of ``BIP32_ENTROPY_LEN_128``, ``BIP32_ENTROPY_LEN_256`` or
+ * :param bytes_len: Length of ``bytes``. Must be one of ``BIP32_ENTROPY_LEN_128``, ``BIP32_ENTROPY_LEN_256`` or
  *|     ``BIP32_ENTROPY_LEN_512``.
  * :param bytes_out: Buffer to receive master blinding key. The master blinding key can be used to generate blinding
  *|     keys for specific outputs by passing it to `wally_asset_blinding_key_to_ec_private_key`.

@@ -385,7 +385,7 @@ WALLY_CORE_API int wally_tx_add_raw_input(
     uint32_t flags);
 
 /**
- * Add a transaction input to a transaction in a goven position.
+ * Add a transaction input to a transaction in a given position.
  *
  * :param tx: The transaction to add the input to.
  * :param index: The zero-based index of the position to add the input at.

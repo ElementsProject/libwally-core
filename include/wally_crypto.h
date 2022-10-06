@@ -643,7 +643,7 @@ WALLY_CORE_API int wally_format_bitcoin_message(
  * :param bytes_out: Destination for the shared secret.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
  *
- * .. note:: If `priv_key` is invalid, this call returns ``WALLY_ERROR``.
+ * .. note:: If ``priv_key`` is invalid, this call returns ``WALLY_ERROR``.
  */
 WALLY_CORE_API int wally_ecdh(
     const unsigned char *pub_key,
