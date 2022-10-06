@@ -65,6 +65,27 @@
       return buf;
   }
 
+  public final static byte[] psbt_get_input_amount_rangeproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_amount_rangeproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_amount_rangeproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_asset(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_asset_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_asset(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_asset_surjectionproof(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_asset_surjectionproof_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_asset_surjectionproof(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static byte[] psbt_get_input_issuance_amount_commitment(Object psbt, long idx) {
       final byte[] buf = new byte[psbt_get_input_issuance_amount_commitment_len(psbt, idx)];
       if (buf.length == 0) return buf;

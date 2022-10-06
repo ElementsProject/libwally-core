@@ -78,6 +78,8 @@ struct wally_psbt_input {
     struct wally_tx *pegin_tx;
     struct wally_tx_witness_stack *pegin_witness;
     struct wally_map pset_fields; /* Commitments/scripts/proofs etc keyed by PSET keytype*/
+    uint64_t amount; /* Explicit amount (not normally present, used for mixed-creator txs) */
+    uint32_t has_amount;
 #endif /* BUILD_ELEMENTS */
 };
 
@@ -405,6 +407,159 @@ WALLY_CORE_API int wally_psbt_input_clear_required_lockheight(
 
 #ifdef BUILD_ELEMENTS
 /**
+ * Set the unblinded amount in an input.
+ *
+ * :param input: The input to update.
+ * :param amount: The amount of the input.
+ *
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_EXPLICIT_VALUE``.
+ */
+WALLY_CORE_API int wally_psbt_input_set_amount(
+    struct wally_psbt_input *input,
+    uint64_t amount);
+
+/**
+ * Get the explicit amount rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the explicit amount rangeproof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_VALUE_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_amount_rangeproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the explicit amount rangeproof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_amount_rangeproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the explicit amount rangeproof in an input.
+ *
+ * :param input: The input to update.
+ * :param rangeproof: The explicit amount rangeproof.
+ * :param rangeproof_len: Size of ``rangeproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_amount_rangeproof(
+    struct wally_psbt_input *input,
+    const unsigned char *rangeproof,
+    size_t rangeproof_len);
+
+/**
+ * Clear the explicit amount rangeproof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_amount_rangeproof(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the explicit asset tag from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the explicit asset tag.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_EXPLICIT_ASSET``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_asset(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the explicit asset tag from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_asset_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the explicit asset tag in an input.
+ *
+ * :param input: The input to update.
+ * :param asset: The explicit asset tag.
+ * :param asset_len: Size of ``asset`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_asset(
+    struct wally_psbt_input *input,
+    const unsigned char *asset,
+    size_t asset_len);
+
+/**
+ * Clear the explicit asset tag in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_asset(
+    struct wally_psbt_input *input);
+
+/**
+ * Get the explicit asset surjection proof from an input.
+ *
+ * :param input: The input to get from.
+ * :param bytes_out: Destination for the explicit asset surjection proof.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written
+ *|    to ``bytes_out``. Will be zero if the value is not present.
+ *
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ASSET_PROOF``.
+ */
+WALLY_CORE_API int wally_psbt_input_get_asset_surjectionproof(
+    const struct wally_psbt_input *input,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the explicit asset surjection proof from an input.
+ *
+ * :param input: The input to get from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_input_get_asset_surjectionproof_len(
+    const struct wally_psbt_input *input,
+    size_t *written);
+
+/**
+ * Set the explicit asset surjection proof in an input.
+ *
+ * :param input: The input to update.
+ * :param surjectionproof: The explicit asset surjection proof.
+ * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
+ */
+WALLY_CORE_API int wally_psbt_input_set_asset_surjectionproof(
+    struct wally_psbt_input *input,
+    const unsigned char *surjectionproof,
+    size_t surjectionproof_len);
+
+/**
+ * Clear the explicit asset surjection proof in an input.
+ *
+ * :param input: The input to update.
+ */
+WALLY_CORE_API int wally_psbt_input_clear_asset_surjectionproof(
+    struct wally_psbt_input *input);
+
+/**
  * Set the unblinded token issuance amount in an input.
  *
  * :param input: The input to update.
@@ -465,7 +620,7 @@ WALLY_CORE_API int wally_psbt_input_set_pegin_witness(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_TXOUT_PROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_TXOUT_PROOF``.
  */
 WALLY_CORE_API int wally_psbt_input_get_pegin_txout_proof(
     const struct wally_psbt_input *input,
@@ -524,7 +679,7 @@ WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash(
  * :param input: The input to get from.
  * :param written: Destination for the length, or zero if not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_GENESIS_HASH``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_GENESIS_HASH``.
  */
 WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash_len(
     const struct wally_psbt_input *input,
@@ -560,7 +715,7 @@ WALLY_CORE_API int wally_psbt_input_clear_pegin_genesis_blockhash(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_CLAIM_SCRIPT``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_PEG_IN_CLAIM_SCRIPT``.
  */
 WALLY_CORE_API int wally_psbt_input_get_pegin_claim_script(
     const struct wally_psbt_input *input,
@@ -607,7 +762,7 @@ WALLY_CORE_API int wally_psbt_input_clear_pegin_claim_script(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT``.
  */
 WALLY_CORE_API int wally_psbt_input_get_issuance_amount_commitment(
     const struct wally_psbt_input *input,
@@ -655,7 +810,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_commitment(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_VALUE_RANGEPROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_VALUE_RANGEPROOF``.
  */
 WALLY_CORE_API int wally_psbt_input_get_issuance_amount_rangeproof(
     const struct wally_psbt_input *input,
@@ -702,7 +857,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_rangeproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE``.
  */
 WALLY_CORE_API int wally_psbt_input_get_issuance_blinding_nonce(
     const struct wally_psbt_input *input,
@@ -749,7 +904,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_blinding_nonce(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY``.
  */
 WALLY_CORE_API int wally_psbt_input_get_issuance_asset_entropy(
     const struct wally_psbt_input *input,
@@ -796,7 +951,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_asset_entropy(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLIND_VALUE_PROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLIND_VALUE_PROOF``.
  */
 WALLY_CORE_API int wally_psbt_input_get_issuance_amount_blinding_rangeproof(
     const struct wally_psbt_input *input,
@@ -843,7 +998,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_blinding_rangeproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_INFLATION_KEYS_COMMITMENT``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_INFLATION_KEYS_COMMITMENT``.
  */
 WALLY_CORE_API int wally_psbt_input_get_inflation_keys_commitment(
     const struct wally_psbt_input *input,
@@ -891,7 +1046,7 @@ WALLY_CORE_API int wally_psbt_input_clear_inflation_keys_commitment(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_INFLATION_KEYS_RANGEPROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_INFLATION_KEYS_RANGEPROOF``.
  */
 WALLY_CORE_API int wally_psbt_input_get_inflation_keys_rangeproof(
     const struct wally_psbt_input *input,
@@ -938,7 +1093,7 @@ WALLY_CORE_API int wally_psbt_input_clear_inflation_keys_rangeproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF``.
  */
 WALLY_CORE_API int wally_psbt_input_get_inflation_keys_blinding_rangeproof(
     const struct wally_psbt_input *input,
@@ -985,7 +1140,7 @@ WALLY_CORE_API int wally_psbt_input_clear_inflation_keys_blinding_rangeproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_IN_UTXO_RANGEPROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_IN_UTXO_RANGEPROOF``.
  */
 WALLY_CORE_API int wally_psbt_input_get_utxo_rangeproof(
     const struct wally_psbt_input *input,
@@ -1186,7 +1341,7 @@ WALLY_CORE_API int wally_psbt_output_clear_blinder_index(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_VALUE_COMMITMENT``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_VALUE_COMMITMENT``.
  */
 WALLY_CORE_API int wally_psbt_output_get_value_commitment(
     const struct wally_psbt_output *output,
@@ -1233,7 +1388,7 @@ WALLY_CORE_API int wally_psbt_output_clear_value_commitment(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET``.
  */
 WALLY_CORE_API int wally_psbt_output_get_asset(
     const struct wally_psbt_output *output,
@@ -1280,7 +1435,7 @@ WALLY_CORE_API int wally_psbt_output_clear_asset(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET_COMMITMENT``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET_COMMITMENT``.
  */
 WALLY_CORE_API int wally_psbt_output_get_asset_commitment(
     const struct wally_psbt_output *output,
@@ -1327,7 +1482,7 @@ WALLY_CORE_API int wally_psbt_output_clear_asset_commitment(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_VALUE_RANGEPROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_VALUE_RANGEPROOF``.
  */
 WALLY_CORE_API int wally_psbt_output_get_value_rangeproof(
     const struct wally_psbt_output *output,
@@ -1374,7 +1529,7 @@ WALLY_CORE_API int wally_psbt_output_clear_value_rangeproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET_SURJECTION_PROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_ASSET_SURJECTION_PROOF``.
  */
 WALLY_CORE_API int wally_psbt_output_get_asset_surjectionproof(
     const struct wally_psbt_output *output,
@@ -1421,7 +1576,7 @@ WALLY_CORE_API int wally_psbt_output_clear_asset_surjectionproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_BLINDING_PUBKEY``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_BLINDING_PUBKEY``.
  */
 WALLY_CORE_API int wally_psbt_output_get_blinding_public_key(
     const struct wally_psbt_output *output,
@@ -1468,7 +1623,7 @@ WALLY_CORE_API int wally_psbt_output_clear_blinding_public_key(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_ECDH_PUBKEY``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_ECDH_PUBKEY``.
  */
 WALLY_CORE_API int wally_psbt_output_get_ecdh_public_key(
     const struct wally_psbt_output *output,
@@ -1515,7 +1670,7 @@ WALLY_CORE_API int wally_psbt_output_clear_ecdh_public_key(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF``.
  */
 WALLY_CORE_API int wally_psbt_output_get_value_blinding_rangeproof(
     const struct wally_psbt_output *output,
@@ -1562,7 +1717,7 @@ WALLY_CORE_API int wally_psbt_output_clear_value_blinding_rangeproof(
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
- * .. note:: this operates on the PSET field ``PSBT_ELEMENTS_OUT_BLIND_ASSET_PROOF``.
+ * .. note:: This operates on the PSET field ``PSBT_ELEMENTS_OUT_BLIND_ASSET_PROOF``.
  */
 WALLY_CORE_API int wally_psbt_output_get_asset_blinding_surjectionproof(
     const struct wally_psbt_output *output,

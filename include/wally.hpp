@@ -1881,6 +1881,21 @@ inline int psbt_find_global_scalar(const PSBT& psbt, const SCALAR& scalar, size_
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(scalar.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+inline int psbt_input_clear_amount_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_amount_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_asset(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_asset(input);
+    return ret;
+}
+
+inline int psbt_input_clear_asset_surjectionproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_asset_surjectionproof(input);
+    return ret;
+}
+
 inline int psbt_input_clear_inflation_keys_blinding_rangeproof(struct wally_psbt_input* input) {
     int ret = ::wally_psbt_input_clear_inflation_keys_blinding_rangeproof(input);
     return ret;
@@ -1938,6 +1953,45 @@ inline int psbt_input_clear_pegin_txout_proof(struct wally_psbt_input* input) {
 
 inline int psbt_input_clear_utxo_rangeproof(struct wally_psbt_input* input) {
     int ret = ::wally_psbt_input_clear_utxo_rangeproof(input);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_amount_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_amount_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_amount_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_amount_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_asset(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_asset(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_asset_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_asset_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_asset_surjectionproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_asset_surjectionproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_asset_surjectionproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_asset_surjectionproof_len(detail::get_p(input), written);
     return ret;
 }
 
@@ -2094,6 +2148,30 @@ inline int psbt_input_get_utxo_rangeproof(const INPUT& input, BYTES_OUT& bytes_o
 template <class INPUT>
 inline int psbt_input_get_utxo_rangeproof_len(const INPUT& input, size_t* written) {
     int ret = ::wally_psbt_input_get_utxo_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_amount(const INPUT& input, uint64_t amount) {
+    int ret = ::wally_psbt_input_set_amount(detail::get_p(input), amount);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_amount_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_amount_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class ASSET>
+inline int psbt_input_set_asset(const INPUT& input, const ASSET& asset) {
+    int ret = ::wally_psbt_input_set_asset(detail::get_p(input), asset.data(), asset.size());
+    return ret;
+}
+
+template <class INPUT, class SURJECTIONPROOF>
+inline int psbt_input_set_asset_surjectionproof(const INPUT& input, const SURJECTIONPROOF& surjectionproof) {
+    int ret = ::wally_psbt_input_set_asset_surjectionproof(detail::get_p(input), surjectionproof.data(), surjectionproof.size());
     return ret;
 }
 

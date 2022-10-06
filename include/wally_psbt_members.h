@@ -75,6 +75,13 @@ WALLY_CORE_API int wally_psbt_set_input_required_lockheight(struct wally_psbt *p
 WALLY_CORE_API int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt, size_t index, size_t *written);
 #ifdef BUILD_ELEMENTS
+WALLY_CORE_API int wally_psbt_get_input_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_amount_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_amount_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_asset(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_asset_len(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_asset_surjectionproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_asset_surjectionproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_issuance_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
 WALLY_CORE_API int wally_psbt_get_input_inflation_keys(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
 WALLY_CORE_API int wally_psbt_get_input_pegin_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
@@ -103,6 +110,14 @@ WALLY_CORE_API int wally_psbt_get_input_inflation_keys_blinding_rangeproof_len(c
 WALLY_CORE_API int wally_psbt_get_input_utxo_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_utxo_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 
+WALLY_CORE_API int wally_psbt_set_input_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
+WALLY_CORE_API int wally_psbt_clear_input_amount(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_amount_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_amount_rangeproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_asset(struct wally_psbt *psbt, size_t index, const unsigned char *asset, size_t asset_len);
+WALLY_CORE_API int wally_psbt_clear_input_asset(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_input_asset_surjectionproof(struct wally_psbt *psbt, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
+WALLY_CORE_API int wally_psbt_clear_input_asset_surjectionproof(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_input_issuance_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
 WALLY_CORE_API int wally_psbt_set_input_inflation_keys(struct wally_psbt *psbt, size_t index, uint64_t amount);
 WALLY_CORE_API int wally_psbt_set_input_pegin_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);

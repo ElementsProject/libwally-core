@@ -93,6 +93,11 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
     return psbt && (psbt->version == PSBT_0 || ((psbt->tx_modifiable_flags & flags) == flags));
 }
 
+static bool utxo_has_explicit_value(const struct wally_tx_output *utxo)
+{
+    return utxo && utxo->value && utxo->value_len && utxo->value[0] == 1u;
+}
+
 /* Set a struct member on a parent struct */
 #define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, const struct STRUCT_TYPE *p) { \
@@ -219,8 +224,21 @@ int wally_psbt_input_is_finalized(const struct wally_psbt_input *input,
 
 SET_STRUCT(wally_psbt_input, utxo, wally_tx,
            tx_clone_alloc, wally_tx_free)
-SET_STRUCT(wally_psbt_input, witness_utxo, wally_tx_output,
-           wally_tx_output_clone_alloc, wally_tx_output_free)
+int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input, const struct wally_tx_output *utxo)
+{
+    int ret = WALLY_OK;
+    struct wally_tx_output *new_p = NULL;
+    if (!input)
+        return WALLY_EINVAL;
+    if (input->has_amount && utxo_has_explicit_value(utxo))
+        return WALLY_EINVAL; /* UTXO value is already explicit */
+    if (utxo && (ret = wally_tx_output_clone_alloc(utxo, &new_p)) != WALLY_OK)
+        return ret;
+    wally_tx_output_free(input->witness_utxo);
+    input->witness_utxo = new_p;
+    return ret;
+}
+
 int wally_psbt_input_set_witness_utxo_from_tx(struct wally_psbt_input *input,
                                               const struct wally_tx *utxo, uint32_t index)
 {
@@ -429,12 +447,15 @@ static int pset_input_field_verify(uint32_t field_type,
     case PSET_IN_UTXO_RANGEPROOF:
     case PSET_IN_ISSUANCE_BLIND_VALUE_PROOF:
     case PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF:
+    case PSET_IN_VALUE_PROOF:
+    case PSET_IN_ASSET_PROOF:
         /* Byte sequences of varying lengths */
         break;
     case PSET_IN_PEG_IN_GENESIS_HASH:
     case PSET_IN_ISSUANCE_BLINDING_NONCE:
     case PSET_IN_ISSUANCE_ASSET_ENTROPY:
-        /* 32 byte hash or entropy */
+    case PSET_IN_EXPLICIT_ASSET:
+        /* 32 byte hash, entropy, or asset */
         if (val_len != SHA256_LEN)
             return WALLY_EINVAL;
         break;
@@ -497,6 +518,26 @@ static int pset_map_output_field_verify(const unsigned char *key, size_t key_len
     return key ? WALLY_EINVAL : pset_output_field_verify(key_len, val, val_len);
 }
 
+int wally_psbt_input_set_amount(struct wally_psbt_input *input, uint64_t amount)
+{
+    if (!input)
+        return WALLY_EINVAL;
+    if (utxo_has_explicit_value(input->witness_utxo))
+        return WALLY_EINVAL; /* UTXO value is already explicit */
+    input->amount = amount;
+    input->has_amount = 1u;
+    return WALLY_OK;
+}
+
+int wally_psbt_input_clear_amount(struct wally_psbt_input *input)
+{
+    if (!input)
+        return WALLY_EINVAL;
+    input->amount = 0;
+    input->has_amount = 0;
+    return WALLY_OK;
+}
+
 int wally_psbt_input_set_issuance_amount(struct wally_psbt_input *input,
                                          uint64_t amount)
 {
@@ -538,6 +579,9 @@ MAP_INNER_FIELD(input, pegin_txout_proof, PSET_IN_PEG_IN_TXOUT_PROOF, pset_field
 MAP_INNER_FIELD(input, inflation_keys_commitment, PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT, pset_fields)
 MAP_INNER_FIELD(input, inflation_keys_rangeproof, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF, pset_fields)
 MAP_INNER_FIELD(input, inflation_keys_blinding_rangeproof, PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF, pset_fields)
+MAP_INNER_FIELD(input, amount_rangeproof, PSET_IN_VALUE_PROOF, pset_fields)
+MAP_INNER_FIELD(input, asset, PSET_IN_EXPLICIT_ASSET, pset_fields)
+MAP_INNER_FIELD(input, asset_surjectionproof, PSET_IN_ASSET_PROOF, pset_fields)
 MAP_INNER_FIELD(input, utxo_rangeproof, PSET_IN_UTXO_RANGEPROOF, pset_fields)
 #endif /* BUILD_ELEMENTS */
 
@@ -1137,7 +1181,7 @@ static int psbt_input_from_tx_input_pegin(const struct wally_tx_input *txin,
 {
     (void)txin;
     (void)dst;
-    return WALLY_ERROR; /* FIXME: Implment peg-in fields */
+    return WALLY_ERROR; /* FIXME: Implement peg-in fields */
 }
 #endif /* BUILD_ELEMENTS */
 
@@ -1831,6 +1875,9 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                                               &result->taproot_leaf_paths);
                 break;
 #ifdef BUILD_ELEMENTS
+            case PSET_FT(PSET_IN_EXPLICIT_VALUE):
+                ret = wally_psbt_input_set_amount(result, pull_le64_subfield(cursor, max));
+                break;
             case PSET_FT(PSET_IN_ISSUANCE_VALUE):
                 ret = wally_psbt_input_set_issuance_amount(result,
                                                            pull_le64_subfield(cursor, max));
@@ -1861,6 +1908,9 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
             case PSET_FT(PSET_IN_UTXO_RANGEPROOF):
             case PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF):
             case PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF):
+            case PSET_FT(PSET_IN_VALUE_PROOF):
+            case PSET_FT(PSET_IN_EXPLICIT_ASSET):
+            case PSET_FT(PSET_IN_ASSET_PROOF):
                 pull_varlength_buff(cursor, max, &val_p, &val_len);
                 ret = wally_map_add_integer(&result->pset_fields, raw_field_type,
                                             val_p, val_len);
@@ -1891,6 +1941,17 @@ unknown:
                                    PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
                                    PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF)))
             ret = WALLY_EINVAL;
+    }
+    if (ret == WALLY_OK && is_pset) {
+        /* For explict value and asset, we must have value + proof if we have either */
+        uint64_t bits = PSET_FT(PSET_IN_EXPLICIT_VALUE) | PSET_FT(PSET_IN_VALUE_PROOF);
+        if ((keyset & bits) && ((keyset & bits) != bits))
+            ret = WALLY_EINVAL;
+        else {
+            bits = PSET_FT(PSET_IN_EXPLICIT_ASSET) | PSET_FT(PSET_IN_ASSET_PROOF);
+            if ((keyset & bits) && ((keyset & bits) != bits))
+                ret = WALLY_EINVAL;
+        }
     }
 #endif /* BUILD_ELEMENTS */
 
@@ -2597,6 +2658,11 @@ static int push_psbt_input(const struct wally_psbt *psbt,
         uint32_t ft;
         for (ft = PSET_IN_ISSUANCE_VALUE; ft <= PSET_IN_MAX; ++ft) {
             switch (ft) {
+            case PSET_IN_EXPLICIT_VALUE:
+                /* Note we only output an explicit value if we have its proof */
+                if (input->has_amount && wally_map_get_integer(&input->pset_fields, PSET_IN_VALUE_PROOF))
+                    push_psbt_le64(cursor, max, ft, true, input->amount);
+                break;
             case PSET_IN_ISSUANCE_VALUE:
                 if (input->issuance_amount)
                     push_psbt_le64(cursor, max, ft, true, input->issuance_amount);
@@ -3001,9 +3067,16 @@ static int combine_input(struct wally_psbt_input *dst,
     if (ret == WALLY_OK && is_pset) {
 #ifdef BUILD_ELEMENTS
         uint32_t ft;
-        ret = merge_value_commitment(&dst->pset_fields, &dst->issuance_amount,
-                                     &src->pset_fields, src->issuance_amount,
-                                     PSET_IN_ISSUANCE_VALUE_COMMITMENT, for_clone);
+        if (ret == WALLY_OK && !dst->has_amount && src->has_amount) {
+            dst->amount = src->amount;
+            dst->has_amount = 1u;
+        }
+
+        if (ret == WALLY_OK)
+            ret = merge_value_commitment(&dst->pset_fields, &dst->issuance_amount,
+                                         &src->pset_fields, src->issuance_amount,
+                                         PSET_IN_ISSUANCE_VALUE_COMMITMENT, for_clone);
+
         if (ret == WALLY_OK)
             ret = merge_value_commitment(&dst->pset_fields, &dst->inflation_keys,
                                          &src->pset_fields, src->inflation_keys,
@@ -4678,14 +4751,23 @@ int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t i
 }
 
 #ifdef BUILD_ELEMENTS
+PSBT_GET_I(input, amount, uint64_t, PSBT_2)
+int wally_psbt_clear_input_amount(struct wally_psbt *psbt, size_t index) {
+    if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
+    return wally_psbt_input_clear_amount(psbt_get_input(psbt, index));
+}
 PSBT_GET_I(input, issuance_amount, uint64_t, PSBT_2)
 PSBT_GET_I(input, inflation_keys, uint64_t, PSBT_2)
 PSBT_GET_I(input, pegin_amount, uint64_t, PSBT_2)
 
+PSBT_SET_I(input, amount, uint64_t, PSBT_2)
 PSBT_SET_I(input, issuance_amount, uint64_t, PSBT_2)
 PSBT_SET_I(input, inflation_keys, uint64_t, PSBT_2)
 PSBT_SET_I(input, pegin_amount, uint64_t, PSBT_2)
 
+PSBT_FIELD(input, amount_rangeproof, PSBT_2)
+PSBT_FIELD(input, asset, PSBT_2)
+PSBT_FIELD(input, asset_surjectionproof, PSBT_2)
 PSBT_FIELD(input, issuance_amount_commitment, PSBT_2)
 PSBT_FIELD(input, issuance_amount_rangeproof, PSBT_2)
 PSBT_FIELD(input, issuance_blinding_nonce, PSBT_2)

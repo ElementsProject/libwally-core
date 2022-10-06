@@ -286,6 +286,9 @@ if is_elements_build():
     elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, _epcsfb_len_fn, resize=True)
 
     psbt_get_global_scalar = _wrap_bin(psbt_get_global_scalar, WALLY_SCALAR_OFFSET_LEN)
+    psbt_get_input_amount_rangeproof = _wrap_bin(psbt_get_input_amount_rangeproof, psbt_get_input_amount_rangeproof_len, resize=True)
+    psbt_get_input_asset = _wrap_bin(psbt_get_input_asset, psbt_get_input_asset_len, resize=True)
+    psbt_get_input_asset_surjectionproof = _wrap_bin(psbt_get_input_asset_surjectionproof, psbt_get_input_asset_surjectionproof_len, resize=True)
     psbt_get_input_issuance_amount_commitment = _wrap_bin(psbt_get_input_issuance_amount_commitment, psbt_get_input_issuance_amount_commitment_len, resize=True)
     psbt_get_input_issuance_amount_rangeproof = _wrap_bin(psbt_get_input_issuance_amount_rangeproof, psbt_get_input_issuance_amount_rangeproof_len, resize=True)
     psbt_get_input_issuance_blinding_nonce = _wrap_bin(psbt_get_input_issuance_blinding_nonce, psbt_get_input_issuance_blinding_nonce_len, resize=True)

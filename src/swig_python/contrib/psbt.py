@@ -283,6 +283,11 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_set_global_tx, psbt2, dummy_tx) # V2, unsupported
 
         dummy_txout = tx_output_init(1234567, bytearray(b'\x00' * 33))
+        if is_elements_build():
+            # Txout with blinded asset and value
+            dummy_pset_txout = tx_elements_output_init(b'0000', b'\x0a' * 33, b'\x08' * 33)
+            # Txout with unblinded asset and value
+            dummy_pset_explicit_txout = tx_elements_output_init(b'0000', b'\x01' * 33, b'\x01' * 9)
 
         dummy_witness = tx_witness_stack_init(5)
         self.assertIsNotNone(dummy_witness)
@@ -479,8 +484,9 @@ class PSBTTests(unittest.TestCase):
         # Inputs: PSET
         #
         if is_elements_build():
-            # PSET: Unblinded issuance amount/inflation keys/pegin amount
+            # PSET: Explicit amount/issuance amount/inflation keys/pegin amount
             for setfn, getfn in [
+                (psbt_set_input_amount, psbt_get_input_amount),
                 (psbt_set_input_issuance_amount, psbt_get_input_issuance_amount),
                 (psbt_set_input_inflation_keys,  psbt_get_input_inflation_keys),
                 (psbt_set_input_pegin_amount, psbt_get_input_pegin_amount)]:
@@ -488,11 +494,43 @@ class PSBTTests(unittest.TestCase):
                 self._throws(getfn, psbt, 0)       # Non v2 PSBT
                 self._try_get_set_i(setfn, None, getfn, pset2, 1234)
 
+            # Explicit amount
+            self._throws(psbt_clear_input_amount, psbt, 0) # Non v2 PSBT
+            self._throws(psbt_clear_input_amount, pset2, 1) # Invalid Index
+            psbt_clear_input_amount(pset2, 0)
+            # Test when it is OK to set an explicit amount
+            for txout, is_ok in [
+                (None,                      True), # Missing, OK
+                (dummy_txout,               True), # No UTXO value, OK
+                (dummy_pset_txout,          True), # Confidential UTXO value, OK
+                (dummy_pset_explicit_txout, False) # Explicit UTXO value, Not allowed
+                ]:
+                # Set amount when UTXO is present
+                psbt_set_input_witness_utxo(pset2, 0, txout)
+                if is_ok:
+                    psbt_set_input_amount(pset2, 0, 1234)
+                else:
+                    self._throws(psbt_set_input_amount, pset2, 0, 1234)
+                # Set UTXO when amount is present
+                psbt_clear_input_amount(pset2, 0)
+                psbt_set_input_witness_utxo(pset2, 0, None)
+                psbt_set_input_amount(pset2, 0, 1234)
+                if is_ok:
+                    psbt_set_input_witness_utxo(pset2, 0, txout)
+                else:
+                    self._throws(psbt_set_input_witness_utxo, pset2, 0, txout)
+                psbt_clear_input_amount(pset2, 0)
+                psbt_set_input_witness_utxo(pset2, 0, None)
+
             # Clear amounts to allow round-tripping
             psbt_set_input_issuance_amount(pset2, 0, 0)
             psbt_set_input_inflation_keys(pset2, 0, 0)
+            psbt_set_input_pegin_amount(pset2, 0, 0)
 
             cases = [
+                ('amount_rangeproof',                   dummy_blind_value, None),
+                ('asset',                               dummy_asset,       dummy_blind_asset),
+                ('asset_surjectionproof',               dummy_bytes,       None),
                 ('issuance_amount_commitment',          dummy_blind_value, dummy_blind_asset),
                 ('issuance_amount_rangeproof',          dummy_bytes,       None),
                 ('issuance_blinding_nonce',             dummy_nonce,       dummy_nonce),
@@ -514,7 +552,11 @@ class PSBTTests(unittest.TestCase):
                     self._throws(setfn, psbt, 0, invalid_value) # Invalid value
                 for func in getfn, lenfn, clearfn:
                     self._throws(func, psbt, 0)                 # Non v2 PSBT
-                self._try_get_set_b(setfn, getfn, lenfn, pset2, valid_value)
+                is_explicit_fn = field in ['amount_rangeproof', 'asset', 'asset_surjectionproof']
+                self._try_get_set_b(setfn, getfn, lenfn, pset2, valid_value,
+                                    roundtrip=not is_explicit_fn)
+                if is_explicit_fn:
+                    clearfn(pset2, 0) # Clear value to allow next fields to round-trip
 
         #
         # Outputs

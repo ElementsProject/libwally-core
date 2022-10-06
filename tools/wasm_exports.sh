@@ -309,6 +309,9 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_explicit_surjectionproof_verify' \
 ,'_wally_psbt_add_global_scalar' \
 ,'_wally_psbt_find_global_scalar' \
+,'_wally_psbt_input_clear_amount_rangeproof' \
+,'_wally_psbt_input_clear_asset' \
+,'_wally_psbt_input_clear_asset_surjectionproof' \
 ,'_wally_psbt_input_clear_inflation_keys_blinding_rangeproof' \
 ,'_wally_psbt_input_clear_inflation_keys_commitment' \
 ,'_wally_psbt_input_clear_inflation_keys_rangeproof' \
@@ -321,6 +324,12 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_psbt_input_clear_pegin_genesis_blockhash' \
 ,'_wally_psbt_input_clear_pegin_txout_proof' \
 ,'_wally_psbt_input_clear_utxo_rangeproof' \
+,'_wally_psbt_input_get_amount_rangeproof' \
+,'_wally_psbt_input_get_amount_rangeproof_len' \
+,'_wally_psbt_input_get_asset' \
+,'_wally_psbt_input_get_asset_len' \
+,'_wally_psbt_input_get_asset_surjectionproof' \
+,'_wally_psbt_input_get_asset_surjectionproof_len' \
 ,'_wally_psbt_input_get_inflation_keys_blinding_rangeproof' \
 ,'_wally_psbt_input_get_inflation_keys_blinding_rangeproof_len' \
 ,'_wally_psbt_input_get_inflation_keys_commitment' \
@@ -345,6 +354,10 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_psbt_input_get_pegin_txout_proof_len' \
 ,'_wally_psbt_input_get_utxo_rangeproof' \
 ,'_wally_psbt_input_get_utxo_rangeproof_len' \
+,'_wally_psbt_input_set_amount' \
+,'_wally_psbt_input_set_amount_rangeproof' \
+,'_wally_psbt_input_set_asset' \
+,'_wally_psbt_input_set_asset_surjectionproof' \
 ,'_wally_psbt_input_set_inflation_keys' \
 ,'_wally_psbt_input_set_inflation_keys_blinding_rangeproof' \
 ,'_wally_psbt_input_set_inflation_keys_commitment' \

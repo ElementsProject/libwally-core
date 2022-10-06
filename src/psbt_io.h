@@ -134,7 +134,11 @@
 #define PSET_IN_UTXO_RANGEPROOF 0x0e
 #define PSET_IN_ISSUANCE_BLIND_VALUE_PROOF 0x0f
 #define PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF 0x10
-#define PSET_IN_MAX PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF
+#define PSET_IN_EXPLICIT_VALUE 0x11
+#define PSET_IN_VALUE_PROOF 0x12
+#define PSET_IN_EXPLICIT_ASSET 0x13
+#define PSET_IN_ASSET_PROOF 0x14
+#define PSET_IN_MAX PSET_IN_ASSET_PROOF
 
 /* Input PSBT/PSET fields that contain data in their keys */
 #define PSBT_IN_HAVE_KEYDATA (PSBT_FT(PSBT_IN_PARTIAL_SIG) | \
@@ -180,7 +184,11 @@
                                PSET_FT(PSET_IN_ISSUANCE_ASSET_ENTROPY) | \
                                PSET_FT(PSET_IN_UTXO_RANGEPROOF) | \
                                PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF) | \
-                               PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF))
+                               PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF) | \
+                               PSET_FT(PSET_IN_EXPLICIT_VALUE) | \
+                               PSET_FT(PSET_IN_VALUE_PROOF) | \
+                               PSET_FT(PSET_IN_EXPLICIT_ASSET) | \
+                               PSET_FT(PSET_IN_ASSET_PROOF))
 
 /* Input PSBT/PSET fields that must *not* be present in v2 */
 #define PSBT_IN_DISALLOWED_V2 ((uint64_t)0)
@@ -196,7 +204,11 @@
                            PSET_FT(PSET_IN_ISSUANCE_ASSET_ENTROPY) | \
                            PSET_FT(PSET_IN_UTXO_RANGEPROOF) | \
                            PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF) | \
-                           PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF))
+                           PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF) | \
+                           PSET_FT(PSET_IN_EXPLICIT_VALUE) | \
+                           PSET_FT(PSET_IN_VALUE_PROOF) | \
+                           PSET_FT(PSET_IN_EXPLICIT_ASSET) | \
+                           PSET_FT(PSET_IN_ASSET_PROOF))
 
 /* The minimum allowed timestamp in PSBT_IN_REQUIRED_TIME_LOCKTIME */
 #define PSBT_LOCKTIME_MIN_TIMESTAMP 500000000
