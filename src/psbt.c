@@ -4445,7 +4445,7 @@ int wally_psbt_blind(struct wally_psbt *psbt,
     for (i = 0; ret == WALLY_OK && i < psbt->num_outputs; ++i) {
         struct wally_psbt_output *out = psbt->outputs + i;
         const unsigned char *abf = entropy;
-        const unsigned char *vbf = entropy + BLINDING_FACTOR_LEN;
+        const unsigned char *vbf = abf + BLINDING_FACTOR_LEN;
         const unsigned char *ephemeral_key = vbf + BLINDING_FACTOR_LEN;
         const unsigned char *explicit_rangeproof_seed = ephemeral_key + BLINDING_FACTOR_LEN;
         const unsigned char *surjectionproof_seed = explicit_rangeproof_seed + BLINDING_FACTOR_LEN;
