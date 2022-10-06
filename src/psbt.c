@@ -2118,6 +2118,10 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
+        const uint32_t strict_flags = flags | WALLY_PSBT_PARSE_FLAG_STRICT;
+        /* Commitment key isn't used for PSET_IN_EXPLICIT_VALUE/ASSET */
+        const uint64_t unused_key = 0xffffffff;
+
         /* Explicit values are only valid if we have an input UTXO */
 #define PSET_UTXO_BITS (PSET_FT(PSBT_IN_NON_WITNESS_UTXO) | PSET_FT(PSBT_IN_WITNESS_UTXO))
 
@@ -2128,21 +2132,10 @@ unknown:
                               PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT,
                               PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF, flags) ||
             !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_EXPLICIT_VALUE),
-                              PSET_UTXO_BITS, PSET_IN_VALUE_PROOF, flags) ||
+                              unused_key, PSET_IN_VALUE_PROOF, strict_flags) ||
             !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_EXPLICIT_ASSET),
-                              PSET_UTXO_BITS, PSET_IN_ASSET_PROOF, flags))
+                              unused_key, PSET_IN_ASSET_PROOF, strict_flags))
             ret = WALLY_EINVAL;
-    }
-    if (ret == WALLY_OK && is_pset) {
-        /* For explict value and asset, we must have value + proof if we have either */
-        uint64_t bits = PSET_FT(PSET_IN_EXPLICIT_VALUE) | PSET_FT(PSET_IN_VALUE_PROOF);
-        if ((keyset & bits) && ((keyset & bits) != bits))
-            ret = WALLY_EINVAL;
-        else {
-            bits = PSET_FT(PSET_IN_EXPLICIT_ASSET) | PSET_FT(PSET_IN_ASSET_PROOF);
-            if ((keyset & bits) && ((keyset & bits) != bits))
-                ret = WALLY_EINVAL;
-        }
     }
 #endif /* BUILD_ELEMENTS */
     (void)flags; /* For non-elements builds */
