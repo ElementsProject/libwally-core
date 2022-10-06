@@ -108,6 +108,27 @@ static bool utxo_has_explicit_asset(const struct wally_tx_output *utxo)
 }
 #endif /* BUILD_ELEMENTS */
 
+static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *psbt,
+                                                     const struct wally_psbt_input *input)
+{
+    if (psbt && input) {
+        if (input->witness_utxo)
+            return input->witness_utxo;
+        if (input->utxo) {
+            if (psbt->version == PSBT_2 && input->index < input->utxo->num_outputs)
+                return &input->utxo->outputs[input->index];
+            if (psbt->tx && psbt->num_inputs == psbt->tx->num_inputs) {
+                /* Get the UTXO output index from the global tx */
+                size_t input_index = input - psbt->inputs;
+                size_t output_index = psbt->tx->inputs[input_index].index;
+                if (output_index < input->utxo->num_outputs)
+                    return &input->utxo->outputs[output_index];
+            }
+        }
+    }
+    return NULL;
+}
+
 /* Set a struct member on a parent struct */
 #define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
     int PARENT ## _set_ ## NAME(struct PARENT *parent, const struct STRUCT_TYPE *p) { \
@@ -3700,30 +3721,19 @@ static int psbt_input_sign(struct wally_psbt_input *input,
 }
 
 /* Get the script to sign with */
-static bool input_get_scriptcode(const struct wally_psbt_input *input,
-                                 uint32_t input_index,
+static bool input_get_scriptcode(const struct wally_psbt *psbt,
+                                 const struct wally_psbt_input *input,
                                  const unsigned char **script,
                                  size_t *script_len)
 {
     const struct wally_map_item *redeem_script;
-    const struct wally_tx_output *utxo = NULL;
-    const struct wally_tx_output *out;
+    const struct wally_tx_output *utxo = utxo_from_input(psbt, input);
 
-    if (!input || !script || !script_len)
+    if (!utxo || !script || !script_len)
         return false;
 
     *script = NULL;
     *script_len = 0;
-
-    if (input->utxo) {
-        if (input_index >= input->utxo->num_outputs)
-            return false; /* Invalid input index */
-        utxo = &input->utxo->outputs[input_index];
-    }
-
-    out = input->witness_utxo ? input->witness_utxo : utxo;
-    if (!out)
-        return false; /* No prevout to get the script from */
 
     redeem_script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
     if (redeem_script) {
@@ -3737,7 +3747,7 @@ static bool input_get_scriptcode(const struct wally_psbt_input *input,
                                                &p2sh_len) != WALLY_OK)
             return false;
 
-        if (out->script_len != p2sh_len || memcmp(p2sh, out->script, p2sh_len))
+        if (utxo->script_len != p2sh_len || memcmp(p2sh, utxo->script, p2sh_len))
             return false; /* Script mismatch */
 
         *script = redeem_script->value;
@@ -3745,8 +3755,8 @@ static bool input_get_scriptcode(const struct wally_psbt_input *input,
         return true;
     }
 
-    *script = out->script;
-    *script_len = out->script_len;
+    *script = utxo->script;
+    *script_len = utxo->script_len;
     return true;
 }
 
@@ -3806,9 +3816,9 @@ int wally_psbt_sign(struct wally_psbt *psbt,
             continue; /* Already got a partial sig for this pubkey on this input */
 
         /* From this point, any failure to sign returns an error, since we
-        * have the key to sign this input we are expected to be able to */
-
-        if (!input_get_scriptcode(input, txin->index, &scriptcode, &scriptcode_len)) {
+         * have the key to sign this input we are expected to be able to
+         */
+        if (!input_get_scriptcode(psbt, input, &scriptcode, &scriptcode_len)) {
             ret = WALLY_EINVAL; /* Couldn't find the script to sign with */
             goto cleanup;
         }
@@ -4206,18 +4216,6 @@ int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
     return ret;
 }
 
-static const struct wally_tx_output *psbt_input_utxo(const struct wally_psbt_input *in)
-{
-    if (in) {
-        if (in->utxo && in->index < in->utxo->num_outputs)
-            return &in->utxo->outputs[in->index];
-        if (in->witness_utxo)
-            return in->witness_utxo;
-        /* TODO: Pegin */
-    }
-    return NULL;
-}
-
 #ifdef BUILD_ELEMENTS
 static int compute_final_vbf(struct wally_psbt *psbt,
                              const unsigned char *input_scalar,
@@ -4290,7 +4288,7 @@ int wally_psbt_blind(struct wally_psbt *psbt,
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         /* TODO: Handle issuance */
         const struct wally_psbt_input *in = psbt->inputs + i;
-        const struct wally_tx_output *utxo = psbt_input_utxo(in);
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, in);
         unsigned char *ephemeral_input_tag = ephemeral_input_tags + i * ASSET_GENERATOR_LEN;
         const struct wally_map_item *value;
 
