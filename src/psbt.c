@@ -824,27 +824,124 @@ int wally_psbt_output_get_blinding_status(const struct wally_psbt_output *output
 }
 
 /* Verify that unblinded values, their commitment, and commitment proof
- * are provided/elided where required.
- * TODO: Check proofs here?
+ * are provided/elided where required, and proofs are valid if provided.
  */
-static bool pset_check_proof(uint64_t keyset, uint64_t value_bit,
-                             uint64_t commitment_bit, uint64_t proof_bit, uint32_t flags)
+static bool pset_check_proof(const struct wally_psbt *psbt,
+                             const struct wally_psbt_input *in,
+                             const struct wally_psbt_output *out,
+                             uint64_t value_bit,
+                             uint64_t commitment_key, uint64_t proof_key, uint32_t flags)
 {
-    bool is_mandatory = value_bit == PSBT_FT(PSBT_OUT_AMOUNT) ||
-                        value_bit == PSET_FT(PSET_OUT_ASSET);
+    const bool is_mandatory = !!out; /* Both output commitments/values are mandatory */
+    const bool is_utxo_value = in && (value_bit == PSET_FT(PSET_IN_EXPLICIT_VALUE));
+    const bool is_utxo_asset = in && (value_bit == PSET_FT(PSET_IN_EXPLICIT_ASSET));
+    const struct wally_map *pset_fields = out ? &out->pset_fields : &in->pset_fields;
+    const struct wally_map_item *item, *proof;
+    struct wally_map_item commitment, asset;
+    uint64_t value;
+    bool has_value = false, has_explicit = false, do_verify = true;;
+    int ret;
 
-    if ((keyset & proof_bit) && !(keyset & commitment_bit))
-        return false; /* explicit rangeproof without commitment value */
-    if (keyset & commitment_bit) {
-        if (!(keyset & value_bit))
-            return true; /* Value has been removed */
-        if ((flags & WALLY_PSBT_PARSE_FLAG_STRICT) && !(keyset & proof_bit))
+    wally_clear(&commitment, sizeof(commitment));
+    wally_clear(&asset, sizeof(asset));
+
+    /* Get the explicit proof, if any */
+    proof = wally_map_get_integer(pset_fields, proof_key);
+
+    /* Get the unblinded asset or value and its commitment, if any.
+     * For value rangeproofs, also get the asset commitment: 'asset' is
+     * - The unblinded asset value for asset surjection proofs, or
+     * - The asset commitment, for value rangeproofs.
+     */
+    if (is_utxo_value || is_utxo_asset) {
+        /* Get explicit value and commitments from the inputs UTXO */
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, in);
+        has_value = is_utxo_value && in->has_amount;
+        value = in->amount;
+        if (utxo) {
+            if (is_utxo_value) {
+                commitment.value = utxo->value;
+                commitment.value_len = utxo->value_len;
+                asset.value = utxo->asset;
+                asset.value_len = utxo->asset_len;
+                has_explicit = has_value;
+            } else {
+                commitment.value = utxo->asset;
+                commitment.value_len = utxo->asset_len;
+                if ((item = wally_map_get_integer(pset_fields, PSET_IN_EXPLICIT_ASSET)) != NULL) {
+                    memcpy(&asset, item, sizeof(asset));
+                    has_explicit = true;
+                }
+            }
+        }
+    } else {
+        /* Get commitment from the PSET fields map */
+        if ((item = wally_map_get_integer(pset_fields, commitment_key)) != NULL)
+            memcpy(&commitment, item, sizeof(commitment));
+
+        if (in) {
+            /* Input issuance/re-issuance proofs */
+            if (value_bit == PSET_FT(PSET_IN_ISSUANCE_VALUE))
+                value = in->issuance_amount;
+            else
+                value = in->inflation_keys; /* PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT) */
+            has_value = value != 0;
+            has_explicit = has_value;
+            /* FIXME: Elements doesn't currently ever generate or validate issuance
+             *        proofs; its not immediately clear what the asset commitment
+             *        should be for the rangeproof either */
+            do_verify = false;
+        } else {
+            /* Output value/asset proofs */
+            if (value_bit == PSBT_FT(PSBT_OUT_AMOUNT)) {
+                value = out->amount;
+                has_value = out->has_amount;
+                has_explicit = has_value;
+                if ((item = wally_map_get_integer(pset_fields, PSET_OUT_ASSET_COMMITMENT)) != NULL)
+                    memcpy(&asset, item, sizeof(asset));
+            } else {
+                /* PSET_FT(PSET_OUT_ASSET) */
+                if ((item = wally_map_get_integer(pset_fields, PSET_OUT_ASSET)) != NULL) {
+                    memcpy(&asset, item, sizeof(asset));
+                    has_explicit = true;
+                }
+            }
+        }
+    }
+
+    if (proof && !commitment.value)
+        return false; /* Proof without commitment value */
+    if (commitment.value) {
+        if (!has_explicit)
+            return true; /* Explicit value has been removed, nothing to prove */
+        if (!proof && (flags & WALLY_PSBT_PARSE_FLAG_STRICT))
             return false; /* value and commitment without range/surjection proof */
-    } else if (!(keyset & value_bit) && is_mandatory) {
-        /* No value, commitment or proof - invalid */
+    } else if (!has_explicit && is_mandatory) {
+        /* No value, commitment or proof for a mandatory field - invalid */
         return false;
     }
-    return true;
+
+    if (!proof || !commitment.value || !has_explicit)
+        return true; /* Nothing to validate */
+
+    /* Validate the proof */
+    if (has_value) {
+        if (!do_verify) {
+            ret = WALLY_OK;
+        } else if (!asset.value || !asset.value_len) {
+            /* For value rangeproofs, the asset commitment is mandatory
+             * to allow verification, although the PSET spec misses this */
+            ret = WALLY_EINVAL;
+        } else
+            ret = wally_explicit_rangeproof_verify(proof->value, proof->value_len, value,
+                                                   commitment.value, commitment.value_len,
+                                                   asset.value, asset.value_len);
+    } else {
+        ret = wally_explicit_surjectionproof_verify(proof->value, proof->value_len,
+                                                    asset.value, asset.value_len,
+                                                    commitment.value, commitment.value_len);
+    }
+    return ret == WALLY_OK;
 }
 #endif /* BUILD_ELEMENTS */
 
@@ -2024,16 +2121,16 @@ unknown:
         /* Explicit values are only valid if we have an input UTXO */
 #define PSET_UTXO_BITS (PSET_FT(PSBT_IN_NON_WITNESS_UTXO) | PSET_FT(PSBT_IN_WITNESS_UTXO))
 
-        if (!pset_check_proof(keyset, PSET_FT(PSET_IN_ISSUANCE_VALUE),
-                              PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT),
-                              PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF), flags) ||
-            !pset_check_proof(keyset, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
-                              PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
-                              PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF), flags) ||
-            !pset_check_proof(keyset, PSET_UTXO_BITS, PSET_FT(PSET_IN_EXPLICIT_VALUE),
-                              PSET_FT(PSET_IN_VALUE_PROOF), flags) ||
-            !pset_check_proof(keyset, PSET_UTXO_BITS, PSET_FT(PSET_IN_EXPLICIT_ASSET),
-                              PSET_FT(PSET_IN_ASSET_PROOF), flags))
+        if (!pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_ISSUANCE_VALUE),
+                              PSET_IN_ISSUANCE_VALUE_COMMITMENT,
+                              PSET_IN_ISSUANCE_BLIND_VALUE_PROOF, flags) ||
+            !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
+                              PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT,
+                              PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF, flags) ||
+            !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_EXPLICIT_VALUE),
+                              PSET_UTXO_BITS, PSET_IN_VALUE_PROOF, flags) ||
+            !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_EXPLICIT_ASSET),
+                              PSET_UTXO_BITS, PSET_IN_ASSET_PROOF, flags))
             ret = WALLY_EINVAL;
     }
     if (ret == WALLY_OK && is_pset) {
@@ -2177,12 +2274,12 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
-        if (!pset_check_proof(keyset, PSBT_FT(PSBT_OUT_AMOUNT),
-                              PSET_FT(PSET_OUT_VALUE_COMMITMENT),
-                              PSET_FT(PSET_OUT_BLIND_VALUE_PROOF), flags) ||
-            !pset_check_proof(keyset, PSET_FT(PSET_OUT_ASSET),
-                              PSET_FT(PSET_OUT_ASSET_COMMITMENT),
-                              PSET_FT(PSET_OUT_BLIND_ASSET_PROOF), flags))
+        if (!pset_check_proof(psbt, NULL, result, PSBT_FT(PSBT_OUT_AMOUNT),
+                              PSET_OUT_VALUE_COMMITMENT,
+                              PSET_OUT_BLIND_VALUE_PROOF, flags) ||
+            !pset_check_proof(psbt, NULL, result, PSET_FT(PSET_OUT_ASSET),
+                              PSET_OUT_ASSET_COMMITMENT,
+                              PSET_OUT_BLIND_ASSET_PROOF, flags))
             ret = WALLY_EINVAL;
     }
 #endif /* BUILD_ELEMENTS */
