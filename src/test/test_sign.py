@@ -301,6 +301,8 @@ class SignTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, wally_s2c_commitment_verify(*args))
 
     def test_scalar(self):
+        _, is_elements_build = wally_is_elements_build()
+
         zero_hex = '00' * EC_SCALAR_LEN
         scalar_hex = '3d41893225bf4c2ba903d157cd97dd2f6d330272e08a120f497f0dc0618d3fd1'
         zero, scalar, bad = self.cbufferize([zero_hex, scalar_hex, 'FF' * EC_SCALAR_LEN])
@@ -327,7 +329,7 @@ class SignTests(unittest.TestCase):
 
         self.assertEqual(add(None, zero), (WALLY_EINVAL, zero_hex))
         self.assertEqual(add(zero, None), (WALLY_EINVAL, zero_hex))
-        self.assertEqual(add(zero, bad), (WALLY_ERROR, zero_hex)) # WALLY_ERROR = scalar not in G
+        self.assertEqual(add(zero, bad), (WALLY_ERROR, zero_hex)) # WALLY_ERROR = scalar not in n
         self.assertEqual(add(bad, zero), (WALLY_ERROR, zero_hex))
         self.assertEqual(add(zero, zero), (WALLY_OK, zero_hex))
         self.assertEqual(add(zero, scalar), (WALLY_OK, scalar_hex))
@@ -336,6 +338,16 @@ class SignTests(unittest.TestCase):
         self.assertEqual(add(negative, scalar), (WALLY_OK, zero_hex))
         self.assertEqual(add(scalar, zero), (WALLY_OK, scalar_hex))
         self.assertEqual(add(scalar, negative), (WALLY_OK, zero_hex))
+
+        # Test scalar addition identity to asset_final_vbf
+        def add_by_final_vbf(a_hex, b_hex):
+            values = (c_uint64 * 3)(1, 2, 3)
+            abfs, abfs_len = make_cbuffer('00' * 32 * 3)
+            vbfs, vbfs_len = make_cbuffer(a_hex + b_hex)
+            ret = wally_asset_final_vbf(values, 3, 2, abfs, abfs_len, vbfs, vbfs_len, out, out_len)
+            return ret, wally_hex_from_bytes(out, out_len)[1]
+        if is_elements_build:
+            self.assertEqual(add(scalar, scalar), add_by_final_vbf(scalar_hex, scalar_hex))
 
         self.assertEqual(sub(None, zero), (WALLY_EINVAL, zero_hex))
         self.assertEqual(sub(zero, None), (WALLY_EINVAL, zero_hex))
