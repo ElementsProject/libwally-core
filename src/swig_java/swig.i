@@ -583,6 +583,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_psbt_free)
 %returns_struct(wally_psbt_from_base64, wally_psbt);
 %returns_struct(wally_psbt_from_bytes, wally_psbt);
+%returns_void__(wally_psbt_generate_input_explicit_proofs);
 %returns_size_t(wally_psbt_get_pset_modifiable_flags);
 %returns_struct(wally_psbt_get_global_tx_alloc, wally_tx);
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;

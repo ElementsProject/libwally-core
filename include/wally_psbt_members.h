@@ -145,6 +145,7 @@ WALLY_CORE_API int wally_psbt_set_input_inflation_keys_blinding_rangeproof(struc
 WALLY_CORE_API int wally_psbt_clear_input_inflation_keys_blinding_rangeproof(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_input_utxo_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
 WALLY_CORE_API int wally_psbt_clear_input_utxo_rangeproof(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_generate_input_explicit_proofs(struct wally_psbt *psbt, size_t index, uint64_t satoshi, const unsigned char *asset, size_t asset_len, const unsigned char *abf, size_t abf_len, const unsigned char *vbf, size_t vbf_len, const unsigned char *entropy, size_t entropy_len);
 #endif /* BUILD_ELEMENTS */
 
 /* Outputs */

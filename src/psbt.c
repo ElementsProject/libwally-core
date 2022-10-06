@@ -93,10 +93,17 @@ static bool psbt_can_modify(const struct wally_psbt *psbt, uint32_t flags)
     return psbt && (psbt->version == PSBT_0 || ((psbt->tx_modifiable_flags & flags) == flags));
 }
 
+#ifdef BUILD_ELEMENTS
 static bool utxo_has_explicit_value(const struct wally_tx_output *utxo)
 {
     return utxo && utxo->value && utxo->value_len && utxo->value[0] == 1u;
 }
+
+static bool utxo_has_explicit_asset(const struct wally_tx_output *utxo)
+{
+    return utxo && utxo->asset && utxo->asset_len && utxo->asset[0] == 1u;
+}
+#endif /* BUILD_ELEMENTS */
 
 /* Set a struct member on a parent struct */
 #define SET_STRUCT(PARENT, NAME, STRUCT_TYPE, CLONE_FN, FREE_FN) \
@@ -230,8 +237,10 @@ int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input, const stru
     struct wally_tx_output *new_p = NULL;
     if (!input)
         return WALLY_EINVAL;
+#ifdef BUILD_ELEMENTS
     if (input->has_amount && utxo_has_explicit_value(utxo))
         return WALLY_EINVAL; /* UTXO value is already explicit */
+#endif
     if (utxo && (ret = wally_tx_output_clone_alloc(utxo, &new_p)) != WALLY_OK)
         return ret;
     wally_tx_output_free(input->witness_utxo);
@@ -528,6 +537,62 @@ int wally_psbt_input_set_amount(struct wally_psbt_input *input, uint64_t amount)
     input->has_amount = 1u;
     return WALLY_OK;
 }
+
+#ifdef BUILD_ELEMENTS
+int wally_psbt_input_generate_explicit_proofs(
+    struct wally_psbt_input *input,
+    uint64_t satoshi,
+    const unsigned char *asset, size_t asset_len,
+    const unsigned char *abf, size_t abf_len,
+    const unsigned char *vbf, size_t vbf_len,
+    const unsigned char *entropy, size_t entropy_len)
+{
+    const struct wally_tx_output *utxo = input ? input->witness_utxo : 0;
+    unsigned char proof[ASSET_SURJECTIONPROOF_MAX_LEN]; /* > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN */
+    size_t proof_len;
+    int ret;
+
+    if (!utxo || utxo_has_explicit_value(utxo) || utxo_has_explicit_asset(utxo))
+        return WALLY_EINVAL; /* No UTXO, or UTXO value/asset already explicit */
+
+    /* Generate the explicit proofs and set them in the input */
+    ret = wally_explicit_rangeproof(satoshi, entropy, entropy_len,
+                                    vbf, vbf_len,
+                                    utxo->value, utxo->value_len,
+                                    utxo->asset, utxo->asset_len,
+                                    proof, sizeof(proof), &proof_len);
+    if (ret == WALLY_OK) {
+        if (proof_len > sizeof(proof))
+            ret = WALLY_ERROR; /* Should never happen */
+        else
+            ret = wally_psbt_input_set_amount_rangeproof(input, proof, proof_len);
+        if (ret == WALLY_OK)
+            ret = wally_psbt_input_set_amount(input, satoshi);
+    }
+    if (ret == WALLY_OK) {
+        proof_len = ASSET_EXPLICIT_SURJECTIONPROOF_LEN;
+        ret = wally_explicit_surjectionproof(asset, asset_len,
+                                             abf, abf_len,
+                                             utxo->asset, utxo->asset_len,
+                                             proof, proof_len);
+    }
+    if (ret == WALLY_OK) {
+        ret = wally_psbt_input_set_asset_surjectionproof(input, proof, proof_len);
+        if (ret == WALLY_OK)
+            ret = wally_psbt_input_set_asset(input, asset, asset_len);
+    }
+
+    if (ret != WALLY_OK) {
+        input->amount = 0;
+        input->has_amount = 0;
+        wally_psbt_input_clear_amount_rangeproof(input);
+        wally_psbt_input_clear_asset(input);
+        wally_psbt_input_clear_asset_surjectionproof(input);
+    }
+    wally_clear(proof, sizeof(proof));
+    return ret;
+}
+#endif /* BUILD_ELEMENTS */
 
 int wally_psbt_input_clear_amount(struct wally_psbt_input *input)
 {
@@ -4780,6 +4845,21 @@ PSBT_FIELD(input, inflation_keys_commitment, PSBT_2)
 PSBT_FIELD(input, inflation_keys_rangeproof, PSBT_2)
 PSBT_FIELD(input, inflation_keys_blinding_rangeproof, PSBT_2)
 PSBT_FIELD(input, utxo_rangeproof, PSBT_2)
+int wally_psbt_generate_input_explicit_proofs(
+    struct wally_psbt *psbt, size_t index,
+    uint64_t satoshi,
+    const unsigned char *asset, size_t asset_len,
+    const unsigned char *abf, size_t abf_len,
+    const unsigned char *vbf, size_t vbf_len,
+    const unsigned char *entropy, size_t entropy_len)
+{
+    if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
+    return wally_psbt_input_generate_explicit_proofs(psbt_get_input(psbt, index), satoshi,
+                                                     asset, asset_len,
+                                                     abf, abf_len,
+                                                     vbf, vbf_len,
+                                                     entropy, entropy_len);
+}
 #endif /* BUILD_ELEMENTS */
 
 PSBT_FIELD(output, redeem_script, PSBT_0)

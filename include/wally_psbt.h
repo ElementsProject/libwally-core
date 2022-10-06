@@ -1177,6 +1177,30 @@ WALLY_CORE_API int wally_psbt_input_set_utxo_rangeproof(
  */
 WALLY_CORE_API int wally_psbt_input_clear_utxo_rangeproof(
     struct wally_psbt_input *input);
+
+/**
+ * Generate explicit proofs and unblinded values from an inputs witness UTXO.
+ *
+ * :param input: The input to update.
+ * :param nonce_hash: The blinding nonce for the inputs witness UTXO.
+ * :param nonce_hash_len: Size of ``nonce_hash`` in bytes. Must be ``SHA256_LEN``.
+ * :param entropy: Random entropy for explicit range proof generation.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ *
+ * .. note:: This function exposes the unblinded asset and value in the PSET,
+ *           which is only appropriate in certain multi-party protocols.
+ */
+WALLY_CORE_API int wally_psbt_input_generate_explicit_proofs(
+    struct wally_psbt_input *input,
+    uint64_t satoshi,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *abf,
+    size_t abf_len,
+    const unsigned char *vbf,
+    size_t vbf_len,
+    const unsigned char *entropy,
+    size_t entropy_len);
 #endif /* BUILD_ELEMENTS */
 
 /**

@@ -1956,6 +1956,12 @@ inline int psbt_input_clear_utxo_rangeproof(struct wally_psbt_input* input) {
     return ret;
 }
 
+template <class INPUT, class ASSET, class ABF, class VBF, class ENTROPY>
+inline int psbt_input_generate_explicit_proofs(const INPUT& input, uint64_t satoshi, const ASSET& asset, const ABF& abf, const VBF& vbf, const ENTROPY& entropy) {
+    int ret = ::wally_psbt_input_generate_explicit_proofs(detail::get_p(input), satoshi, asset.data(), asset.size(), abf.data(), abf.size(), vbf.data(), vbf.size(), entropy.data(), entropy.size());
+    return ret;
+}
+
 template <class INPUT, class BYTES_OUT>
 inline int psbt_input_get_amount_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;

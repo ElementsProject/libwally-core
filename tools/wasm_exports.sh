@@ -324,6 +324,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_psbt_input_clear_pegin_genesis_blockhash' \
 ,'_wally_psbt_input_clear_pegin_txout_proof' \
 ,'_wally_psbt_input_clear_utxo_rangeproof' \
+,'_wally_psbt_input_generate_explicit_proofs' \
 ,'_wally_psbt_input_get_amount_rangeproof' \
 ,'_wally_psbt_input_get_amount_rangeproof_len' \
 ,'_wally_psbt_input_get_asset' \
