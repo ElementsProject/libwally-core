@@ -803,8 +803,8 @@ int wally_psbt_output_get_blinding_status(const struct wally_psbt_output *output
  * are provided/elided where required.
  * TODO: Check proofs here?
  */
-static bool pset_check_commitment(uint64_t keyset, uint64_t value_bit,
-                                  uint64_t commitment_bit, uint64_t proof_bit)
+static bool pset_check_proof(uint64_t keyset, uint64_t value_bit,
+                             uint64_t commitment_bit, uint64_t proof_bit, bool strict)
 {
     bool is_mandatory = value_bit == PSBT_FT(PSBT_OUT_AMOUNT) ||
                         value_bit == PSET_FT(PSET_OUT_ASSET);
@@ -814,11 +814,8 @@ static bool pset_check_commitment(uint64_t keyset, uint64_t value_bit,
     if (keyset & commitment_bit) {
         if (!(keyset & value_bit))
             return true; /* Value has been removed */
-#if 0
-        /* FIXME: require explicit value proofs - elements doesn't currently */
-        if (!(keyset & proof_bit))
+        if (strict && !(keyset & proof_bit))
             return false; /* value and commitment without range/surjection proof */
-#endif
     } else if (!(keyset & value_bit) && is_mandatory) {
         /* No value, commitment or proof - invalid */
         return false;
@@ -1999,12 +1996,21 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
-        if (!pset_check_commitment(keyset, PSET_FT(PSET_IN_ISSUANCE_VALUE),
-                                   PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT),
-                                   PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF)) ||
-            !pset_check_commitment(keyset, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
-                                   PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
-                                   PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF)))
+        const bool strict = false; /* FIXME: add a flag to make strict */
+
+        /* Explicit values are only valid if we have an input UTXO */
+#define PSET_UTXO_BITS (PSET_FT(PSBT_IN_NON_WITNESS_UTXO) | PSET_FT(PSBT_IN_WITNESS_UTXO))
+
+        if (!pset_check_proof(keyset, PSET_FT(PSET_IN_ISSUANCE_VALUE),
+                              PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT),
+                              PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF), strict) ||
+            !pset_check_proof(keyset, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
+                              PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
+                              PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF), strict) ||
+            !pset_check_proof(keyset, PSET_UTXO_BITS, PSET_FT(PSET_IN_EXPLICIT_VALUE),
+                              PSET_FT(PSET_IN_VALUE_PROOF), strict) ||
+            !pset_check_proof(keyset, PSET_UTXO_BITS, PSET_FT(PSET_IN_EXPLICIT_ASSET),
+                              PSET_FT(PSET_IN_ASSET_PROOF), strict))
             ret = WALLY_EINVAL;
     }
     if (ret == WALLY_OK && is_pset) {
@@ -2147,12 +2153,14 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
-        if (!pset_check_commitment(keyset, PSBT_FT(PSBT_OUT_AMOUNT),
-                                   PSET_FT(PSET_OUT_VALUE_COMMITMENT),
-                                   PSET_FT(PSET_OUT_BLIND_VALUE_PROOF)) ||
-            !pset_check_commitment(keyset, PSET_FT(PSET_OUT_ASSET),
-                                   PSET_FT(PSET_OUT_ASSET_COMMITMENT),
-                                   PSET_FT(PSET_OUT_BLIND_ASSET_PROOF)))
+        const bool strict = false; /* FIXME: add a flag to make strict */
+
+        if (!pset_check_proof(keyset, PSBT_FT(PSBT_OUT_AMOUNT),
+                              PSET_FT(PSET_OUT_VALUE_COMMITMENT),
+                              PSET_FT(PSET_OUT_BLIND_VALUE_PROOF), strict) ||
+            !pset_check_proof(keyset, PSET_FT(PSET_OUT_ASSET),
+                              PSET_FT(PSET_OUT_ASSET_COMMITMENT),
+                              PSET_FT(PSET_OUT_BLIND_ASSET_PROOF), strict))
             ret = WALLY_EINVAL;
     }
 #endif /* BUILD_ELEMENTS */
