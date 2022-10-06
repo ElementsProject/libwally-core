@@ -48,7 +48,8 @@ class PSBTTests(unittest.TestCase):
         clone = pointer(wally_psbt())
 
         for case in JSON['valid']:
-            if case.get('is_pset', False) and not is_elements_build:
+            is_pset = case.get('is_pset', False)
+            if is_pset and not is_elements_build:
                 continue # No Elements support, skip this test case
 
             # Cases that test workarounds for elements serialization bugs
@@ -56,6 +57,8 @@ class PSBTTests(unittest.TestCase):
             can_round_trip = case.get('can_round_trip', True)
 
             psbt = self.parse_base64(case['psbt'])
+            self.assertEqual(wally_psbt_is_elements(psbt)[1], 1 if is_pset else 0)
+
             serialized = self.to_base64(psbt)
             expected = case['psbt']
             if not can_round_trip:
