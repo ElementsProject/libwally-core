@@ -30,7 +30,7 @@ int main(void)
     for (i = 0; i < sizeof(invalid_psbts) / sizeof(invalid_psbts[0]); i++) {
         struct wally_psbt *psbt;
 
-        if (wally_psbt_from_base64(invalid_psbts[i].base64, &psbt) != WALLY_OK)
+        if (wally_psbt_from_base64(invalid_psbts[i].base64, 0, &psbt) != WALLY_OK)
             continue;
         fail("Should have failed to parse psbt %s", invalid_psbts[i].base64);
     }
@@ -47,7 +47,7 @@ int main(void)
             continue;
 #endif /* ndef BUILD_ELEMENTS */
 
-        if (wally_psbt_from_base64(base64_in, &psbt) != WALLY_OK)
+        if (wally_psbt_from_base64(base64_in, 0, &psbt) != WALLY_OK)
             fail("Failed to parse psbt %s", base64_in);
 
         if (wally_psbt_to_base64(psbt, 0, &output) != WALLY_OK)
@@ -83,7 +83,7 @@ int main(void)
         free(bytes);
 
         /* combining with a copy of ourselves should be a no-op */
-        if (wally_psbt_from_base64(base64_in, &psbt_clone) != WALLY_OK)
+        if (wally_psbt_from_base64(base64_in, 0, &psbt_clone) != WALLY_OK)
             fail("Failed to parse psbt clone %s", base64_in);
 
         if (wally_psbt_is_elements(psbt_clone, &is_elements) != WALLY_OK)

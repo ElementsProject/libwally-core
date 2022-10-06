@@ -857,14 +857,14 @@ inline int psbt_free(struct wally_psbt* psbt) {
 }
 
 template <class BASE64>
-inline int psbt_from_base64(const BASE64& base64, struct wally_psbt** output) {
-    int ret = ::wally_psbt_from_base64(detail::get_p(base64), output);
+inline int psbt_from_base64(const BASE64& base64, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_base64(detail::get_p(base64), flags, output);
     return ret;
 }
 
 template <class BYTES>
-inline int psbt_from_bytes(const BYTES& bytes, struct wally_psbt** output) {
-    int ret = ::wally_psbt_from_bytes(bytes.data(), bytes.size(), output);
+inline int psbt_from_bytes(const BYTES& bytes, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_bytes(bytes.data(), bytes.size(), flags, output);
     return ret;
 }
 

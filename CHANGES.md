@@ -10,6 +10,8 @@
 - psbt_init_alloc has changed its definition and now has a new flags argument.
   Passing `WALLY_PSBT_INIT_PSET` to this function will create an Elements
   PSET instead of a PSBT (version must be passed as 2 in this case).
+- psbt_from_base64 and psbt_from_bytes now take an extra flags parameter. The
+  Java and Python wrappers default this to zero for backwards compatibility.
 - psbt_add_input_at has been renamed to psbt_add_tx_input_at.
 - psbt_add_output_at has been renamed to psbt_add_tx_output_at.
 - wally_map initialization functions now take a verification function

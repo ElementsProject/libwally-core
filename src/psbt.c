@@ -29,6 +29,9 @@
 /* All allowed flags for wally_psbt_get_id() */
 #define PSBT_ID_ALL_FLAGS (WALLY_PSBT_ID_AS_V2 | WALLY_PSBT_ID_USE_LOCKTIME)
 
+/* All allowed flags for wally_psbt_from_[bytes|base64]() */
+#define PSBT_ALL_PARSE_FLAGS (WALLY_PSBT_PARSE_FLAG_STRICT)
+
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
@@ -804,7 +807,7 @@ int wally_psbt_output_get_blinding_status(const struct wally_psbt_output *output
  * TODO: Check proofs here?
  */
 static bool pset_check_proof(uint64_t keyset, uint64_t value_bit,
-                             uint64_t commitment_bit, uint64_t proof_bit, bool strict)
+                             uint64_t commitment_bit, uint64_t proof_bit, uint32_t flags)
 {
     bool is_mandatory = value_bit == PSBT_FT(PSBT_OUT_AMOUNT) ||
                         value_bit == PSET_FT(PSET_OUT_ASSET);
@@ -814,7 +817,7 @@ static bool pset_check_proof(uint64_t keyset, uint64_t value_bit,
     if (keyset & commitment_bit) {
         if (!(keyset & value_bit))
             return true; /* Value has been removed */
-        if (strict && !(keyset & proof_bit))
+        if ((flags & WALLY_PSBT_PARSE_FLAG_STRICT) && !(keyset & proof_bit))
             return false; /* value and commitment without range/surjection proof */
     } else if (!(keyset & value_bit) && is_mandatory) {
         /* No value, commitment or proof - invalid */
@@ -1819,7 +1822,8 @@ static struct wally_psbt *pull_psbt(const unsigned char **cursor, size_t *max)
 
 static int pull_psbt_input(const struct wally_psbt *psbt,
                            const unsigned char **cursor, size_t *max,
-                           uint32_t tx_flags, struct wally_psbt_input *result)
+                           uint32_t tx_flags, uint32_t flags,
+                           struct wally_psbt_input *result)
 {
     size_t key_len, val_len;
     const unsigned char *pre_key = *cursor, *val_p;
@@ -1996,21 +2000,19 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
-        const bool strict = false; /* FIXME: add a flag to make strict */
-
         /* Explicit values are only valid if we have an input UTXO */
 #define PSET_UTXO_BITS (PSET_FT(PSBT_IN_NON_WITNESS_UTXO) | PSET_FT(PSBT_IN_WITNESS_UTXO))
 
         if (!pset_check_proof(keyset, PSET_FT(PSET_IN_ISSUANCE_VALUE),
                               PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT),
-                              PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF), strict) ||
+                              PSET_FT(PSET_IN_ISSUANCE_BLIND_VALUE_PROOF), flags) ||
             !pset_check_proof(keyset, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
                               PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
-                              PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF), strict) ||
+                              PSET_FT(PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF), flags) ||
             !pset_check_proof(keyset, PSET_UTXO_BITS, PSET_FT(PSET_IN_EXPLICIT_VALUE),
-                              PSET_FT(PSET_IN_VALUE_PROOF), strict) ||
+                              PSET_FT(PSET_IN_VALUE_PROOF), flags) ||
             !pset_check_proof(keyset, PSET_UTXO_BITS, PSET_FT(PSET_IN_EXPLICIT_ASSET),
-                              PSET_FT(PSET_IN_ASSET_PROOF), strict))
+                              PSET_FT(PSET_IN_ASSET_PROOF), flags))
             ret = WALLY_EINVAL;
     }
     if (ret == WALLY_OK && is_pset) {
@@ -2025,13 +2027,14 @@ unknown:
         }
     }
 #endif /* BUILD_ELEMENTS */
-
+    (void)flags; /* For non-elements builds */
     return ret;
 }
 
 static int pull_psbt_output(const struct wally_psbt *psbt,
                             const unsigned char **cursor, size_t *max,
-                            uint32_t tx_flags, struct wally_psbt_output *result)
+                            uint32_t tx_flags, uint32_t flags,
+                            struct wally_psbt_output *result)
 {
     size_t key_len, val_len;
     const unsigned char *pre_key = *cursor, *val_p;
@@ -2153,23 +2156,21 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
-        const bool strict = false; /* FIXME: add a flag to make strict */
-
         if (!pset_check_proof(keyset, PSBT_FT(PSBT_OUT_AMOUNT),
                               PSET_FT(PSET_OUT_VALUE_COMMITMENT),
-                              PSET_FT(PSET_OUT_BLIND_VALUE_PROOF), strict) ||
+                              PSET_FT(PSET_OUT_BLIND_VALUE_PROOF), flags) ||
             !pset_check_proof(keyset, PSET_FT(PSET_OUT_ASSET),
                               PSET_FT(PSET_OUT_ASSET_COMMITMENT),
-                              PSET_FT(PSET_OUT_BLIND_ASSET_PROOF), strict))
+                              PSET_FT(PSET_OUT_BLIND_ASSET_PROOF), flags))
             ret = WALLY_EINVAL;
     }
 #endif /* BUILD_ELEMENTS */
-
+    (void)flags; /* For non-elements builds */
     return ret;
 }
 
 int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
-                          struct wally_psbt **output)
+                          uint32_t flags, struct wally_psbt **output)
 {
     const unsigned char **cursor = &bytes;
     const unsigned char *pre_key;
@@ -2180,7 +2181,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     int ret = WALLY_OK;
 
     OUTPUT_CHECK;
-    if (!bytes || len < sizeof(PSBT_MAGIC) || !output)
+    if (!bytes || len < sizeof(PSBT_MAGIC) || (flags & ~PSBT_ALL_PARSE_FLAGS) || !output)
         return WALLY_EINVAL;
 
     if (!(*output = pull_psbt(cursor, max)))
@@ -2328,11 +2329,13 @@ unknown:
 
     /* Read inputs */
     for (i = 0; ret == WALLY_OK && i < (*output)->num_inputs; ++i)
-        ret = pull_psbt_input(*output, cursor, max, tx_flags, (*output)->inputs + i);
+        ret = pull_psbt_input(*output, cursor, max, tx_flags,flags,
+                              (*output)->inputs + i);
 
     /* Read outputs */
     for (i = 0; ret == WALLY_OK && i < (*output)->num_outputs; ++i)
-        ret = pull_psbt_output(*output, cursor, max, tx_flags, (*output)->outputs + i);
+        ret = pull_psbt_output(*output, cursor, max, tx_flags, flags,
+                               (*output)->outputs + i);
 
     if (ret == WALLY_OK && !*cursor)
         ret = WALLY_EINVAL; /* Ran out of data */
@@ -2956,7 +2959,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     return WALLY_OK;
 }
 
-int wally_psbt_from_base64(const char *base64, struct wally_psbt **output)
+int wally_psbt_from_base64(const char *base64, uint32_t flags, struct wally_psbt **output)
 {
     unsigned char *decoded;
     size_t max_len, written;
@@ -2984,7 +2987,7 @@ int wally_psbt_from_base64(const char *base64, struct wally_psbt **output)
     }
 
     /* decode the psbt */
-    ret = wally_psbt_from_bytes(decoded, written, output);
+    ret = wally_psbt_from_bytes(decoded, written, flags, output);
 
 done:
     clear_and_free(decoded, max_len);

@@ -30,6 +30,8 @@ extern "C" {
 
 #define WALLY_PSET_TXMOD_RESERVED 0x1 /* Elements: Reserved: not used and ignored if set */
 
+#define WALLY_PSBT_PARSE_FLAG_STRICT 0x1 /* Parse strictly according to the PSBT/PSET spec */
+
 /* ID flags indicating unique id calculation */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
 #define WALLY_PSBT_ID_USE_LOCKTIME 0x2 /* Do not set locktime to 0 before calculating id */
@@ -2050,11 +2052,13 @@ WALLY_CORE_API int wally_psbt_remove_output(
  *
  * :param bytes: Bytes to create the PSBT from.
  * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param flags: WALLY_PSBT_PARSE_FLAG_ flags controlling deserialization.
  * :param output: Destination for the resulting PSBT.
  */
 WALLY_CORE_API int wally_psbt_from_bytes(
     const unsigned char *bytes,
     size_t bytes_len,
+    uint32_t flags,
     struct wally_psbt **output);
 
 /**
@@ -2089,10 +2093,12 @@ WALLY_CORE_API int wally_psbt_to_bytes(
  * Create a PSBT from its serialized base64 string.
  *
  * :param base64: Base64 string to create the PSBT from.
+ * :param flags: WALLY_PSBT_PARSE_FLAG_ flags controlling deserialization.
  * :param output: Destination for the resulting PSBT.
  */
 WALLY_CORE_API int wally_psbt_from_base64(
     const char *base64,
+    uint32_t flags,
     struct wally_psbt **output);
 
 /**

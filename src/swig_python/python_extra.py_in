@@ -176,6 +176,14 @@ wif_to_public_key = _wrap_bin(wif_to_public_key, _wif_to_public_key_len, resize=
 symmetric_key_from_seed = _wrap_bin(symmetric_key_from_seed, HMAC_SHA512_LEN)
 symmetric_key_from_parent = _wrap_bin(symmetric_key_from_parent, HMAC_SHA512_LEN)
 
+_original_psbt_from_bytes = psbt_from_bytes
+def psbt_from_bytes(bytes, flags=0):
+    return _original_psbt_from_bytes(bytes, flags)
+
+_original_psbt_from_base64 = psbt_from_base64
+def psbt_from_base64(base64, flags=0):
+    return _original_psbt_from_base64(base64, flags)
+
 psbt_get_id = _wrap_bin(psbt_get_id, WALLY_TXHASH_LEN)
 
 psbt_get_input_redeem_script = _wrap_bin(psbt_get_input_redeem_script, psbt_get_input_redeem_script_len, resize=True)

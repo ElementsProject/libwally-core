@@ -341,6 +341,15 @@
       return symmetric_key_from_parent(jarg1, jarg2, jarg3, null);
   }
 
+  public final static Object psbt_from_bytes(byte[] jarg1) {
+      return psbt_from_bytes(jarg1, 0); // Default flags to 0 for back compat.
+  }
+
+  public final static Object psbt_from_base64(String jarg1)
+  {
+      return psbt_from_base64(jarg1, 0); // Default flags to 0 for back compat.
+  }
+
   public final static byte[] psbt_get_input_final_scriptsig(Object psbt, long idx) {
       final byte[] buf = new byte[psbt_get_input_final_scriptsig_len(psbt, idx)];
       if (buf.length == 0) return buf;

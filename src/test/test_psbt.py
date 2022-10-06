@@ -14,7 +14,7 @@ class PSBTTests(unittest.TestCase):
 
     def parse_base64(self, src_base64, expected=WALLY_OK):
         psbt = pointer(wally_psbt())
-        ret = wally_psbt_from_base64(src_base64, psbt)
+        ret = wally_psbt_from_base64(src_base64, 0, psbt)
         self.assertEqual(ret, expected, "{0}".format(src_base64))
         return psbt
 
@@ -273,12 +273,13 @@ class PSBTTests(unittest.TestCase):
 
         # psbt_from_base64
         src_base64 = JSON['valid'][0]['psbt']
-        for args in [(None,       psbt),  # NULL base64
-                     ('',         psbt),  # Invalid flags
-                     (src_base64, None)]: # NULL dest
+        for args in [(None,       0,    psbt),  # NULL base64
+                     ('',         0,    psbt),  # Empty base64
+                     (src_base64, 0xff, psbt),  # Invalid flags
+                     (src_base64, 0,    None)]: # NULL dest
             self.assertEqual(WALLY_EINVAL, wally_psbt_from_base64(*args))
 
-        self.assertEqual(WALLY_OK, wally_psbt_from_base64(JSON['valid'][0]['psbt'], psbt))
+        self.assertEqual(WALLY_OK, wally_psbt_from_base64(JSON['valid'][0]['psbt'], 0, psbt))
 
         # psbt_clone_alloc
         clone = pointer(wally_psbt())
