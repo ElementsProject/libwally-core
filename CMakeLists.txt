@@ -402,6 +402,7 @@ set(LIBWALLY_FILES
     src/hex.c
     src/hmac.c
     src/internal.c
+    src/map.c
     src/mnemonic.c
     src/pbkdf2.c
     src/psbt.c
@@ -437,12 +438,14 @@ set(LIBWALLY_FILES
     include/wally_transaction.h
     include/wally_symmetric.h
     include/wally_psbt.h
+    include/wally_psbt_members.h
+    include/wally_map.h
     src/secp256k1/include/secp256k1.h
     src/secp256k1/include/secp256k1_recovery.h
     src/bip32_int.h
     src/script_int.h
     src/transaction_int.h
-    src/transaction_shared.h
+    src/psbt_io.h
 )
 
 ####################
@@ -1688,6 +1691,8 @@ add_test(NAME test_hmac         COMMAND ${PYTHON_BIN} test/test_hmac.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_internal     COMMAND ${PYTHON_BIN} test/test_internal.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_map          COMMAND ${PYTHON_BIN} test/test_map.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_mnemonic     COMMAND ${PYTHON_BIN} test/test_mnemonic.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_pbkdf2       COMMAND ${PYTHON_BIN} test/test_pbkdf2.py
@@ -1711,8 +1716,6 @@ add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
 
 if(ENABLE_ELEMENTS)
 add_test(NAME test_elements           COMMAND ${PYTHON_BIN} test/test_elements.py
-                                      WORKING_DIRECTORY ${PY_TEST_DIR})
-add_test(NAME test_pset               COMMAND ${PYTHON_BIN} test/test_pset.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_confidential_addr  COMMAND ${PYTHON_BIN} test/test_confidential_addr.py
                                       WORKING_DIRECTORY ${PY_TEST_DIR})

@@ -138,7 +138,7 @@ WALLY_CORE_API int bip32_key_init_alloc(
  *|     ``BIP32_ENTROPY_LEN_256`` or ``BIP32_ENTROPY_LEN_512``.
  * :param version: Either ``BIP32_VER_MAIN_PRIVATE`` or ``BIP32_VER_TEST_PRIVATE``,
  *|     indicating mainnet or testnet/regtest respectively.
- * :param hmac_key: Custom data to HMAC-SHA512 with `bytes` before creating the key. Pass
+ * :param hmac_key: Custom data to HMAC-SHA512 with ``bytes`` before creating the key. Pass
  *|             NULL to use the default BIP32 key of "Bitcoin seed".
  * :param hmac_key_len: Size of ``hmac_key`` in bytes, or 0 if ``hmac_key`` is NULL.
  * :param flags: Either ``BIP32_FLAG_SKIP_HASH`` to skip hash160 calculation, or 0.
@@ -433,7 +433,7 @@ WALLY_CORE_API int bip32_key_from_base58_n_alloc(
  * keys can be derived, and only the public serialization can be created.
  * If the provided key is already public, nothing will be done.
  *
- * :param hdkey: The extended key to covert.
+ * :param hdkey: The extended key to convert.
  */
 WALLY_CORE_API int bip32_key_strip_private_key(
     struct ext_key *hdkey);

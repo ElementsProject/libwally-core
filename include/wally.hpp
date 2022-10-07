@@ -451,6 +451,48 @@ inline int ec_public_key_verify(const PUB_KEY& pub_key) {
     return ret;
 }
 
+template <class SCALAR, class OPERAND, class BYTES_OUT>
+inline int ec_scalar_add(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_scalar_add(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND>
+inline int ec_scalar_add_to(SCALAR& scalar, const OPERAND& operand) {
+    int ret = ::wally_ec_scalar_add_to(scalar.data(), scalar.size(), operand.data(), operand.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND, class BYTES_OUT>
+inline int ec_scalar_multiply(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_scalar_multiply(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND>
+inline int ec_scalar_multiply_by(SCALAR& scalar, const OPERAND& operand) {
+    int ret = ::wally_ec_scalar_multiply_by(scalar.data(), scalar.size(), operand.data(), operand.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND, class BYTES_OUT>
+inline int ec_scalar_subtract(const SCALAR& scalar, const OPERAND& operand, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_scalar_subtract(scalar.data(), scalar.size(), operand.data(), operand.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class SCALAR, class OPERAND>
+inline int ec_scalar_subtract_from(SCALAR& scalar, const OPERAND& operand) {
+    int ret = ::wally_ec_scalar_subtract_from(scalar.data(), scalar.size(), operand.data(), operand.size());
+    return ret;
+}
+
+template <class SCALAR>
+inline int ec_scalar_verify(const SCALAR& scalar) {
+    int ret = ::wally_ec_scalar_verify(scalar.data(), scalar.size());
+    return ret;
+}
+
 template <class PRIV_KEY, class BYTES, class BYTES_OUT>
 inline int ec_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_sig_from_bytes(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size());
@@ -485,6 +527,12 @@ inline int ec_sig_to_public_key(const BYTES& bytes, const SIG& sig, BYTES_OUT& b
 template <class PUB_KEY, class BYTES, class SIG>
 inline int ec_sig_verify(const PUB_KEY& pub_key, const BYTES& bytes, uint32_t flags, const SIG& sig) {
     int ret = ::wally_ec_sig_verify(pub_key.data(), pub_key.size(), bytes.data(), bytes.size(), flags, sig.data(), sig.size());
+    return ret;
+}
+
+template <class PUB_KEY>
+inline int ec_xonly_public_key_verify(const PUB_KEY& pub_key) {
+    int ret = ::wally_ec_xonly_public_key_verify(pub_key.data(), pub_key.size());
     return ret;
 }
 
@@ -570,15 +618,50 @@ inline int is_elements_build(size_t* written) {
     return ret;
 }
 
+template <class KEY, class VAL>
+inline int keypath_bip32_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_keypath_bip32_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
+template <class KEY, class VAL>
+inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_keypath_public_key_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
+template <class KEY, class VAL>
+inline int keypath_xonly_public_key_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_keypath_xonly_public_key_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
 template <class MAP_IN, class KEY, class VALUE>
 inline int map_add(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
     int ret = ::wally_map_add(detail::get_p(map_in), key.data(), key.size(), value.data(), value.size());
     return ret;
 }
 
-template <class MAP_IN, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
-inline int map_add_keypath_item(const MAP_IN& map_in, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
-    int ret = ::wally_map_add_keypath_item(detail::get_p(map_in), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+template <class MAP_IN, class VALUE>
+inline int map_add_integer(const MAP_IN& map_in, uint32_t key, const VALUE& value) {
+    int ret = ::wally_map_add_integer(detail::get_p(map_in), key, value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_assign(const MAP_IN& map_in, const struct wally_map* source) {
+    int ret = ::wally_map_assign(detail::get_p(map_in), source);
+    return ret;
+}
+
+inline int map_clear(struct wally_map* map_in) {
+    int ret = ::wally_map_clear(map_in);
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_combine(const MAP_IN& map_in, const struct wally_map* source) {
+    int ret = ::wally_map_combine(detail::get_p(map_in), source);
     return ret;
 }
 
@@ -589,13 +672,112 @@ inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class MAP_IN>
+inline int map_find_integer(const MAP_IN& map_in, uint32_t key, size_t* written) {
+    int ret = ::wally_map_find_integer(detail::get_p(map_in), key, written);
+    return ret;
+}
+
 inline int map_free(struct wally_map* map_in) {
     int ret = ::wally_map_free(map_in);
     return ret;
 }
 
+template <class MAP_IN, class BYTES_OUT>
+inline int map_get_item(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_map_get_item(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class MAP_IN>
+inline int map_get_item_length(const MAP_IN& map_in, size_t index, size_t* written) {
+    int ret = ::wally_map_get_item_length(detail::get_p(map_in), index, written);
+    return ret;
+}
+
+template <class KEY, class VAL>
+inline int map_hash_preimage_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_map_hash_preimage_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
+inline int map_init(size_t allocation_len, struct wally_map* output) {
+    int ret = ::wally_map_init(allocation_len, output);
+    return ret;
+}
+
 inline int map_init_alloc(size_t allocation_len, struct wally_map** output) {
     int ret = ::wally_map_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int map_keypath_add(const MAP_IN& map_in, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_map_keypath_add(detail::get_p(map_in), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
+}
+
+inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_keypath_bip32_init_alloc(allocation_len, output);
+    return ret;
+}
+
+inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_keypath_public_key_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_hash160_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_hash160_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+inline int map_preimage_init_alloc(size_t allocation_len, struct wally_map** output) {
+    int ret = ::wally_map_preimage_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_ripemd160_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_ripemd160_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_sha256_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_sha256_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_preimage_sha256d_add(const MAP_IN& map_in, const VALUE& value) {
+    int ret = ::wally_map_preimage_sha256d_add(detail::get_p(map_in), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class KEY>
+inline int map_remove(const MAP_IN& map_in, const KEY& key) {
+    int ret = ::wally_map_remove(detail::get_p(map_in), key.data(), key.size());
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_remove_integer(const MAP_IN& map_in, uint32_t key) {
+    int ret = ::wally_map_remove_integer(detail::get_p(map_in), key);
+    return ret;
+}
+
+template <class MAP_IN, class KEY, class VALUE>
+inline int map_replace(const MAP_IN& map_in, const KEY& key, const VALUE& value) {
+    int ret = ::wally_map_replace(detail::get_p(map_in), key.data(), key.size(), value.data(), value.size());
+    return ret;
+}
+
+template <class MAP_IN, class VALUE>
+inline int map_replace_integer(const MAP_IN& map_in, uint32_t key, const VALUE& value) {
+    int ret = ::wally_map_replace_integer(detail::get_p(map_in), key, value.data(), value.size());
     return ret;
 }
 
@@ -618,14 +800,31 @@ inline int pbkdf2_hmac_sha512(const PASS& pass, const SALT& salt, uint32_t flags
 }
 
 template <class PSBT>
-inline int psbt_add_input_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_input* input) {
-    int ret = ::wally_psbt_add_input_at(detail::get_p(psbt), index, flags, input);
+inline int psbt_add_tx_input_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_input* input) {
+    int ret = ::wally_psbt_add_tx_input_at(detail::get_p(psbt), index, flags, input);
     return ret;
 }
 
 template <class PSBT>
-inline int psbt_add_output_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_output* output) {
-    int ret = ::wally_psbt_add_output_at(detail::get_p(psbt), index, flags, output);
+inline int psbt_add_tx_output_at(const PSBT& psbt, uint32_t index, uint32_t flags, const struct wally_tx_output* output) {
+    int ret = ::wally_psbt_add_tx_output_at(detail::get_p(psbt), index, flags, output);
+    return ret;
+}
+
+template <class PSBT, class VALUES, class VBFS, class ASSETS, class ABFS, class ENTROPY>
+inline int psbt_blind(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t output_index, uint32_t flags, struct wally_map* output) {
+    int ret = ::wally_psbt_blind(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), output_index, flags, output);
+    return ret;
+}
+
+template <class PSBT, class VALUES, class VBFS, class ASSETS, class ABFS, class ENTROPY>
+inline int psbt_blind_alloc(const PSBT& psbt, const VALUES& values, const VBFS& vbfs, const ASSETS& assets, const ABFS& abfs, const ENTROPY& entropy, uint32_t output_index, uint32_t flags, struct wally_map** output) {
+    int ret = ::wally_psbt_blind_alloc(detail::get_p(psbt), detail::get_p(values), detail::get_p(vbfs), detail::get_p(assets), detail::get_p(abfs), entropy.data(), entropy.size(), output_index, flags, output);
+    return ret;
+}
+
+inline int psbt_clear_fallback_locktime(struct wally_psbt* psbt) {
+    int ret = ::wally_psbt_clear_fallback_locktime(psbt);
     return ret;
 }
 
@@ -636,8 +835,8 @@ inline int psbt_clone_alloc(const PSBT& psbt, uint32_t flags, struct wally_psbt*
 }
 
 template <class PSBT>
-inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* src) {
-    int ret = ::wally_psbt_combine(detail::get_p(psbt), src);
+inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* source) {
+    int ret = ::wally_psbt_combine(detail::get_p(psbt), source);
     return ret;
 }
 
@@ -658,14 +857,20 @@ inline int psbt_free(struct wally_psbt* psbt) {
 }
 
 template <class BASE64>
-inline int psbt_from_base64(const BASE64& base64, struct wally_psbt** output) {
-    int ret = ::wally_psbt_from_base64(detail::get_p(base64), output);
+inline int psbt_from_base64(const BASE64& base64, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_base64(detail::get_p(base64), flags, output);
     return ret;
 }
 
 template <class BYTES>
-inline int psbt_from_bytes(const BYTES& bytes, struct wally_psbt** output) {
-    int ret = ::wally_psbt_from_bytes(bytes.data(), bytes.size(), output);
+inline int psbt_from_bytes(const BYTES& bytes, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_bytes(bytes.data(), bytes.size(), flags, output);
+    return ret;
+}
+
+template <class PSBT, class BYTES_OUT>
+inline int psbt_get_id(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_psbt_get_id(detail::get_p(psbt), flags, bytes_out.data(), bytes_out.size());
     return ret;
 }
 
@@ -675,20 +880,41 @@ inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
     return ret;
 }
 
-inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_t outputs_allocation_len, size_t global_unknowns_allocation_len, struct wally_psbt** output) {
-    int ret = ::wally_psbt_init_alloc(version, inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, output);
+template <class PSBT>
+inline int psbt_get_locktime(const PSBT& psbt, size_t* written) {
+    int ret = ::wally_psbt_get_locktime(detail::get_p(psbt), written);
     return ret;
 }
 
-template <class INPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
-inline int psbt_input_add_keypath_item(const INPUT& input, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
-    int ret = ::wally_psbt_input_add_keypath_item(detail::get_p(input), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+template <class PSBT>
+inline int psbt_get_tx_version(const PSBT& psbt, size_t* written) {
+    int ret = ::wally_psbt_get_tx_version(detail::get_p(psbt), written);
+    return ret;
+}
+
+inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_t outputs_allocation_len, size_t global_unknowns_allocation_len, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_init_alloc(version, inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, flags, output);
     return ret;
 }
 
 template <class INPUT, class PUB_KEY, class SIG>
 inline int psbt_input_add_signature(const INPUT& input, const PUB_KEY& pub_key, const SIG& sig) {
     int ret = ::wally_psbt_input_add_signature(detail::get_p(input), pub_key.data(), pub_key.size(), sig.data(), sig.size());
+    return ret;
+}
+
+inline int psbt_input_clear_required_lockheight(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_required_lockheight(input);
+    return ret;
+}
+
+inline int psbt_input_clear_required_locktime(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_required_locktime(input);
+    return ret;
+}
+
+inline int psbt_input_clear_sequence(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_sequence(input);
     return ret;
 }
 
@@ -719,6 +945,12 @@ inline int psbt_input_is_finalized(const INPUT& input, size_t* written) {
     return ret;
 }
 
+template <class INPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_input_keypath_add(const INPUT& input, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_input_keypath_add(detail::get_p(input), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
+}
+
 template <class INPUT, class FINAL_SCRIPTSIG>
 inline int psbt_input_set_final_scriptsig(const INPUT& input, const FINAL_SCRIPTSIG& final_scriptsig) {
     int ret = ::wally_psbt_input_set_final_scriptsig(detail::get_p(input), final_scriptsig.data(), final_scriptsig.size());
@@ -726,8 +958,8 @@ inline int psbt_input_set_final_scriptsig(const INPUT& input, const FINAL_SCRIPT
 }
 
 template <class INPUT>
-inline int psbt_input_set_final_witness(const INPUT& input, const struct wally_tx_witness_stack* final_witness) {
-    int ret = ::wally_psbt_input_set_final_witness(detail::get_p(input), final_witness);
+inline int psbt_input_set_final_witness(const INPUT& input, const struct wally_tx_witness_stack* witness) {
+    int ret = ::wally_psbt_input_set_final_witness(detail::get_p(input), witness);
     return ret;
 }
 
@@ -737,9 +969,39 @@ inline int psbt_input_set_keypaths(const INPUT& input, const struct wally_map* m
     return ret;
 }
 
+template <class INPUT>
+inline int psbt_input_set_output_index(const INPUT& input, uint32_t index) {
+    int ret = ::wally_psbt_input_set_output_index(detail::get_p(input), index);
+    return ret;
+}
+
+template <class INPUT, class TXHASH>
+inline int psbt_input_set_previous_txid(const INPUT& input, const TXHASH& txhash) {
+    int ret = ::wally_psbt_input_set_previous_txid(detail::get_p(input), txhash.data(), txhash.size());
+    return ret;
+}
+
 template <class INPUT, class SCRIPT>
 inline int psbt_input_set_redeem_script(const INPUT& input, const SCRIPT& script) {
     int ret = ::wally_psbt_input_set_redeem_script(detail::get_p(input), script.data(), script.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_required_lockheight(const INPUT& input, uint32_t required_lockheight) {
+    int ret = ::wally_psbt_input_set_required_lockheight(detail::get_p(input), required_lockheight);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_required_locktime(const INPUT& input, uint32_t required_locktime) {
+    int ret = ::wally_psbt_input_set_required_locktime(detail::get_p(input), required_locktime);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_sequence(const INPUT& input, uint32_t sequence) {
+    int ret = ::wally_psbt_input_set_sequence(detail::get_p(input), sequence);
     return ret;
 }
 
@@ -779,6 +1041,12 @@ inline int psbt_input_set_witness_utxo(const INPUT& input, const struct wally_tx
     return ret;
 }
 
+template <class INPUT, class UTXO>
+inline int psbt_input_set_witness_utxo_from_tx(const INPUT& input, const UTXO& utxo, uint32_t index) {
+    int ret = ::wally_psbt_input_set_witness_utxo_from_tx(detail::get_p(input), detail::get_p(utxo), index);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_is_elements(const PSBT& psbt, size_t* written) {
     int ret = ::wally_psbt_is_elements(detail::get_p(psbt), written);
@@ -791,9 +1059,8 @@ inline int psbt_is_finalized(const PSBT& psbt, size_t* written) {
     return ret;
 }
 
-template <class OUTPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
-inline int psbt_output_add_keypath_item(const OUTPUT& output, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
-    int ret = ::wally_psbt_output_add_keypath_item(detail::get_p(output), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_amount(output);
     return ret;
 }
 
@@ -811,6 +1078,18 @@ inline int psbt_output_find_unknown(const OUTPUT& output, const KEY& key, size_t
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class OUTPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_output_keypath_add(const OUTPUT& output, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_output_keypath_add(detail::get_p(output), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_set_amount(const OUTPUT& output, uint64_t amount) {
+    int ret = ::wally_psbt_output_set_amount(detail::get_p(output), amount);
+    return ret;
+}
+
 template <class OUTPUT>
 inline int psbt_output_set_keypaths(const OUTPUT& output, const struct wally_map* map_in) {
     int ret = ::wally_psbt_output_set_keypaths(detail::get_p(output), map_in);
@@ -820,6 +1099,12 @@ inline int psbt_output_set_keypaths(const OUTPUT& output, const struct wally_map
 template <class OUTPUT, class SCRIPT>
 inline int psbt_output_set_redeem_script(const OUTPUT& output, const SCRIPT& script) {
     int ret = ::wally_psbt_output_set_redeem_script(detail::get_p(output), script.data(), script.size());
+    return ret;
+}
+
+template <class OUTPUT, class SCRIPT>
+inline int psbt_output_set_script(const OUTPUT& output, const SCRIPT& script) {
+    int ret = ::wally_psbt_output_set_script(detail::get_p(output), script.data(), script.size());
     return ret;
 }
 
@@ -848,8 +1133,32 @@ inline int psbt_remove_output(const PSBT& psbt, uint32_t index) {
 }
 
 template <class PSBT>
+inline int psbt_set_fallback_locktime(const PSBT& psbt, uint32_t locktime) {
+    int ret = ::wally_psbt_set_fallback_locktime(detail::get_p(psbt), locktime);
+    return ret;
+}
+
+template <class PSBT>
 inline int psbt_set_global_tx(const PSBT& psbt, const struct wally_tx* tx) {
     int ret = ::wally_psbt_set_global_tx(detail::get_p(psbt), tx);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_tx_modifiable_flags(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_set_tx_modifiable_flags(detail::get_p(psbt), flags);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_tx_version(const PSBT& psbt, uint32_t tx_version) {
+    int ret = ::wally_psbt_set_tx_version(detail::get_p(psbt), tx_version);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_version(const PSBT& psbt, uint32_t flags, uint32_t version) {
+    int ret = ::wally_psbt_set_version(detail::get_p(psbt), flags, version);
     return ret;
 }
 
@@ -1430,6 +1739,19 @@ inline int asset_rangeproof(uint64_t value, const PUB_KEY& pub_key, const PRIV_K
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class NONCE_HASH, class ASSET, class ABF, class VBF, class COMMITMENT, class EXTRA, class GENERATOR, class BYTES_OUT>
+inline int asset_rangeproof_with_nonce(uint64_t value, const NONCE_HASH& nonce_hash, const ASSET& asset, const ABF& abf, const VBF& vbf, const COMMITMENT& commitment, const EXTRA& extra, const GENERATOR& generator, uint64_t min_value, int exp, int min_bits, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_asset_rangeproof_with_nonce(value, nonce_hash.data(), nonce_hash.size(), asset.data(), asset.size(), abf.data(), abf.size(), vbf.data(), vbf.size(), commitment.data(), commitment.size(), extra.data(), extra.size(), generator.data(), generator.size(), min_value, exp, min_bits, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class ABF, class VBF, class BYTES_OUT>
+inline int asset_scalar_offset(uint64_t value, const ABF& abf, const VBF& vbf, BYTES_OUT& bytes_out) {
+    int ret = ::wally_asset_scalar_offset(value, abf.data(), abf.size(), vbf.data(), vbf.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES, class ASSET, class ABF, class GENERATOR, class BYTES_OUT>
 inline int asset_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTPUT_ABF& output_abf, const OUTPUT_GENERATOR& output_generator, const BYTES& bytes, const ASSET& asset, const ABF& abf, const GENERATOR& generator, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
@@ -1496,6 +1818,12 @@ inline int confidential_addr_to_ec_public_key(const ADDRESS& address, uint32_t p
     return ret;
 }
 
+template <class PUB_KEY, class PRIV_KEY, class BYTES_OUT>
+inline int ecdh_nonce_hash(const PUB_KEY& pub_key, const PRIV_KEY& priv_key, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ecdh_nonce_hash(pub_key.data(), pub_key.size(), priv_key.data(), priv_key.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class REDEEM_SCRIPT, class SCRIPT, class BYTES_OUT>
 inline int elements_pegin_contract_script_from_bytes(const REDEEM_SCRIPT& redeem_script, const SCRIPT& script, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
@@ -1515,19 +1843,329 @@ inline int elements_pegout_script_size(size_t genesis_blockhash_len, size_t main
     return ret;
 }
 
-inline int psbt_elements_init_alloc(uint32_t version, size_t inputs_allocation_len, size_t outputs_allocation_len, size_t global_unknowns_allocation_len, struct wally_psbt** output) {
-    int ret = ::wally_psbt_elements_init_alloc(version, inputs_allocation_len, outputs_allocation_len, global_unknowns_allocation_len, output);
+template <class NONCE, class VBF, class COMMITMENT, class GENERATOR, class BYTES_OUT>
+inline int explicit_rangeproof(uint64_t value, const NONCE& nonce, const VBF& vbf, const COMMITMENT& commitment, const GENERATOR& generator, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_explicit_rangeproof(value, nonce.data(), nonce.size(), vbf.data(), vbf.size(), commitment.data(), commitment.size(), generator.data(), generator.size(), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class RANGEPROOF, class COMMITMENT, class GENERATOR>
+inline int explicit_rangeproof_verify(const RANGEPROOF& rangeproof, uint64_t value, const COMMITMENT& commitment, const GENERATOR& generator) {
+    int ret = ::wally_explicit_rangeproof_verify(rangeproof.data(), rangeproof.size(), value, commitment.data(), commitment.size(), generator.data(), generator.size());
     return ret;
 }
 
-inline int psbt_input_clear_value(struct wally_psbt_input* input) {
-    int ret = ::wally_psbt_input_clear_value(input);
+template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES_OUT>
+inline int explicit_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTPUT_ABF& output_abf, const OUTPUT_GENERATOR& output_generator, BYTES_OUT& bytes_out) {
+    int ret = ::wally_explicit_surjectionproof(output_asset.data(), output_asset.size(), output_abf.data(), output_abf.size(), output_generator.data(), output_generator.size(), bytes_out.data(), bytes_out.size());
     return ret;
 }
 
-template <class INPUT, class ABF>
-inline int psbt_input_set_abf(const INPUT& input, const ABF& abf) {
-    int ret = ::wally_psbt_input_set_abf(detail::get_p(input), abf.data(), abf.size());
+template <class SURJECTIONPROOF, class OUTPUT_ASSET, class OUTPUT_GENERATOR>
+inline int explicit_surjectionproof_verify(const SURJECTIONPROOF& surjectionproof, const OUTPUT_ASSET& output_asset, const OUTPUT_GENERATOR& output_generator) {
+    int ret = ::wally_explicit_surjectionproof_verify(surjectionproof.data(), surjectionproof.size(), output_asset.data(), output_asset.size(), output_generator.data(), output_generator.size());
+    return ret;
+}
+
+template <class PSBT, class SCALAR>
+inline int psbt_add_global_scalar(const PSBT& psbt, const SCALAR& scalar) {
+    int ret = ::wally_psbt_add_global_scalar(detail::get_p(psbt), scalar.data(), scalar.size());
+    return ret;
+}
+
+template <class PSBT, class SCALAR>
+inline int psbt_find_global_scalar(const PSBT& psbt, const SCALAR& scalar, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_find_global_scalar(detail::get_p(psbt), scalar.data(), scalar.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(scalar.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+inline int psbt_input_clear_amount_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_amount_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_asset(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_asset(input);
+    return ret;
+}
+
+inline int psbt_input_clear_asset_surjectionproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_asset_surjectionproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_inflation_keys_blinding_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_inflation_keys_blinding_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_inflation_keys_commitment(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_inflation_keys_commitment(input);
+    return ret;
+}
+
+inline int psbt_input_clear_inflation_keys_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_inflation_keys_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_amount_blinding_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount_blinding_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_amount_commitment(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount_commitment(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_amount_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_amount_rangeproof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_asset_entropy(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_asset_entropy(input);
+    return ret;
+}
+
+inline int psbt_input_clear_issuance_blinding_nonce(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_issuance_blinding_nonce(input);
+    return ret;
+}
+
+inline int psbt_input_clear_pegin_claim_script(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_claim_script(input);
+    return ret;
+}
+
+inline int psbt_input_clear_pegin_genesis_blockhash(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_genesis_blockhash(input);
+    return ret;
+}
+
+inline int psbt_input_clear_pegin_txout_proof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_pegin_txout_proof(input);
+    return ret;
+}
+
+inline int psbt_input_clear_utxo_rangeproof(struct wally_psbt_input* input) {
+    int ret = ::wally_psbt_input_clear_utxo_rangeproof(input);
+    return ret;
+}
+
+template <class INPUT, class ASSET, class ABF, class VBF, class ENTROPY>
+inline int psbt_input_generate_explicit_proofs(const INPUT& input, uint64_t satoshi, const ASSET& asset, const ABF& abf, const VBF& vbf, const ENTROPY& entropy) {
+    int ret = ::wally_psbt_input_generate_explicit_proofs(detail::get_p(input), satoshi, asset.data(), asset.size(), abf.data(), abf.size(), vbf.data(), vbf.size(), entropy.data(), entropy.size());
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_amount_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_amount_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_amount_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_amount_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_asset(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_asset(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_asset_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_asset_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_asset_surjectionproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_asset_surjectionproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_asset_surjectionproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_asset_surjectionproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_inflation_keys_blinding_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_inflation_keys_blinding_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_inflation_keys_blinding_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_inflation_keys_blinding_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_inflation_keys_commitment(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_inflation_keys_commitment(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_inflation_keys_commitment_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_inflation_keys_commitment_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_inflation_keys_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_inflation_keys_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_inflation_keys_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_inflation_keys_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_amount_blinding_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_amount_blinding_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_amount_blinding_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_amount_blinding_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_amount_commitment(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_amount_commitment(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_amount_commitment_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_amount_commitment_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_amount_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_amount_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_amount_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_amount_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_asset_entropy(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_asset_entropy(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_asset_entropy_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_asset_entropy_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_issuance_blinding_nonce(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_issuance_blinding_nonce(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_issuance_blinding_nonce_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_issuance_blinding_nonce_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_pegin_claim_script(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_pegin_claim_script(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_pegin_claim_script_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_pegin_claim_script_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_pegin_genesis_blockhash(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_pegin_genesis_blockhash(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_pegin_genesis_blockhash_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_pegin_genesis_blockhash_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_pegin_txout_proof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_pegin_txout_proof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_pegin_txout_proof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_pegin_txout_proof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT, class BYTES_OUT>
+inline int psbt_input_get_utxo_rangeproof(const INPUT& input, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_input_get_utxo_rangeproof(detail::get_p(input), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class INPUT>
+inline int psbt_input_get_utxo_rangeproof_len(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_utxo_rangeproof_len(detail::get_p(input), written);
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_amount(const INPUT& input, uint64_t amount) {
+    int ret = ::wally_psbt_input_set_amount(detail::get_p(input), amount);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_amount_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_amount_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
     return ret;
 }
 
@@ -1537,45 +2175,296 @@ inline int psbt_input_set_asset(const INPUT& input, const ASSET& asset) {
     return ret;
 }
 
+template <class INPUT, class SURJECTIONPROOF>
+inline int psbt_input_set_asset_surjectionproof(const INPUT& input, const SURJECTIONPROOF& surjectionproof) {
+    int ret = ::wally_psbt_input_set_asset_surjectionproof(detail::get_p(input), surjectionproof.data(), surjectionproof.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_inflation_keys(const INPUT& input, uint64_t value) {
+    int ret = ::wally_psbt_input_set_inflation_keys(detail::get_p(input), value);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_inflation_keys_blinding_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_inflation_keys_blinding_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class COMMITMENT>
+inline int psbt_input_set_inflation_keys_commitment(const INPUT& input, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_input_set_inflation_keys_commitment(detail::get_p(input), commitment.data(), commitment.size());
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_inflation_keys_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_inflation_keys_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_issuance_amount(const INPUT& input, uint64_t amount) {
+    int ret = ::wally_psbt_input_set_issuance_amount(detail::get_p(input), amount);
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_issuance_amount_blinding_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_issuance_amount_blinding_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class COMMITMENT>
+inline int psbt_input_set_issuance_amount_commitment(const INPUT& input, const COMMITMENT& commitment) {
+    int ret = ::wally_psbt_input_set_issuance_amount_commitment(detail::get_p(input), commitment.data(), commitment.size());
+    return ret;
+}
+
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_issuance_amount_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_issuance_amount_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class INPUT, class ENTROPY>
+inline int psbt_input_set_issuance_asset_entropy(const INPUT& input, const ENTROPY& entropy) {
+    int ret = ::wally_psbt_input_set_issuance_asset_entropy(detail::get_p(input), entropy.data(), entropy.size());
+    return ret;
+}
+
+template <class INPUT, class NONCE>
+inline int psbt_input_set_issuance_blinding_nonce(const INPUT& input, const NONCE& nonce) {
+    int ret = ::wally_psbt_input_set_issuance_blinding_nonce(detail::get_p(input), nonce.data(), nonce.size());
+    return ret;
+}
+
+template <class INPUT>
+inline int psbt_input_set_pegin_amount(const INPUT& input, uint64_t amount) {
+    int ret = ::wally_psbt_input_set_pegin_amount(detail::get_p(input), amount);
+    return ret;
+}
+
 template <class INPUT, class SCRIPT>
-inline int psbt_input_set_claim_script(const INPUT& input, const SCRIPT& script) {
-    int ret = ::wally_psbt_input_set_claim_script(detail::get_p(input), script.data(), script.size());
+inline int psbt_input_set_pegin_claim_script(const INPUT& input, const SCRIPT& script) {
+    int ret = ::wally_psbt_input_set_pegin_claim_script(detail::get_p(input), script.data(), script.size());
     return ret;
 }
 
 template <class INPUT, class GENESIS_BLOCKHASH>
-inline int psbt_input_set_genesis_blockhash(const INPUT& input, const GENESIS_BLOCKHASH& genesis_blockhash) {
-    int ret = ::wally_psbt_input_set_genesis_blockhash(detail::get_p(input), genesis_blockhash.data(), genesis_blockhash.size());
+inline int psbt_input_set_pegin_genesis_blockhash(const INPUT& input, const GENESIS_BLOCKHASH& genesis_blockhash) {
+    int ret = ::wally_psbt_input_set_pegin_genesis_blockhash(detail::get_p(input), genesis_blockhash.data(), genesis_blockhash.size());
     return ret;
 }
 
 template <class INPUT>
-inline int psbt_input_set_pegin_tx(const INPUT& input, const struct wally_tx* pegin_tx) {
-    int ret = ::wally_psbt_input_set_pegin_tx(detail::get_p(input), pegin_tx);
+inline int psbt_input_set_pegin_tx(const INPUT& input, const struct wally_tx* tx) {
+    int ret = ::wally_psbt_input_set_pegin_tx(detail::get_p(input), tx);
     return ret;
 }
 
-template <class INPUT, class PROOF>
-inline int psbt_input_set_txoutproof(const INPUT& input, const PROOF& proof) {
-    int ret = ::wally_psbt_input_set_txoutproof(detail::get_p(input), proof.data(), proof.size());
+template <class INPUT, class TXOUT_PROOF>
+inline int psbt_input_set_pegin_txout_proof(const INPUT& input, const TXOUT_PROOF& txout_proof) {
+    int ret = ::wally_psbt_input_set_pegin_txout_proof(detail::get_p(input), txout_proof.data(), txout_proof.size());
     return ret;
 }
 
 template <class INPUT>
-inline int psbt_input_set_value(const INPUT& input, uint64_t value) {
-    int ret = ::wally_psbt_input_set_value(detail::get_p(input), value);
+inline int psbt_input_set_pegin_witness(const INPUT& input, const struct wally_tx_witness_stack* witness) {
+    int ret = ::wally_psbt_input_set_pegin_witness(detail::get_p(input), witness);
     return ret;
 }
 
-template <class INPUT, class VBF>
-inline int psbt_input_set_vbf(const INPUT& input, const VBF& vbf) {
-    int ret = ::wally_psbt_input_set_vbf(detail::get_p(input), vbf.data(), vbf.size());
+template <class INPUT, class RANGEPROOF>
+inline int psbt_input_set_utxo_rangeproof(const INPUT& input, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_input_set_utxo_rangeproof(detail::get_p(input), rangeproof.data(), rangeproof.size());
     return ret;
 }
 
-template <class OUTPUT, class ABF>
-inline int psbt_output_set_abf(const OUTPUT& output, const ABF& abf) {
-    int ret = ::wally_psbt_output_set_abf(detail::get_p(output), abf.data(), abf.size());
+inline int psbt_output_clear_asset(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_asset(output);
+    return ret;
+}
+
+inline int psbt_output_clear_asset_blinding_surjectionproof(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_asset_blinding_surjectionproof(output);
+    return ret;
+}
+
+inline int psbt_output_clear_asset_commitment(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_asset_commitment(output);
+    return ret;
+}
+
+inline int psbt_output_clear_asset_surjectionproof(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_asset_surjectionproof(output);
+    return ret;
+}
+
+inline int psbt_output_clear_blinder_index(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_blinder_index(output);
+    return ret;
+}
+
+inline int psbt_output_clear_blinding_public_key(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_blinding_public_key(output);
+    return ret;
+}
+
+inline int psbt_output_clear_ecdh_public_key(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_ecdh_public_key(output);
+    return ret;
+}
+
+inline int psbt_output_clear_value_blinding_rangeproof(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_value_blinding_rangeproof(output);
+    return ret;
+}
+
+inline int psbt_output_clear_value_commitment(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_value_commitment(output);
+    return ret;
+}
+
+inline int psbt_output_clear_value_rangeproof(struct wally_psbt_output* output) {
+    int ret = ::wally_psbt_output_clear_value_rangeproof(output);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_asset(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_asset(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_asset_blinding_surjectionproof(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_asset_blinding_surjectionproof(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_asset_blinding_surjectionproof_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_asset_blinding_surjectionproof_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_asset_commitment(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_asset_commitment(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_asset_commitment_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_asset_commitment_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_asset_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_asset_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_asset_surjectionproof(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_asset_surjectionproof(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_asset_surjectionproof_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_asset_surjectionproof_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_blinding_public_key(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_blinding_public_key(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_blinding_public_key_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_blinding_public_key_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_blinding_status(const OUTPUT& output, uint32_t flags, size_t* written) {
+    int ret = ::wally_psbt_output_get_blinding_status(detail::get_p(output), flags, written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_ecdh_public_key(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_ecdh_public_key(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_ecdh_public_key_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_ecdh_public_key_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_value_blinding_rangeproof(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_value_blinding_rangeproof(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_value_blinding_rangeproof_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_value_blinding_rangeproof_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_value_commitment(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_value_commitment(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_value_commitment_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_value_commitment_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class BYTES_OUT>
+inline int psbt_output_get_value_rangeproof(const OUTPUT& output, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_output_get_value_rangeproof(detail::get_p(output), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT>
+inline int psbt_output_get_value_rangeproof_len(const OUTPUT& output, size_t* written) {
+    int ret = ::wally_psbt_output_get_value_rangeproof_len(detail::get_p(output), written);
+    return ret;
+}
+
+template <class OUTPUT, class ASSET>
+inline int psbt_output_set_asset(const OUTPUT& output, const ASSET& asset) {
+    int ret = ::wally_psbt_output_set_asset(detail::get_p(output), asset.data(), asset.size());
+    return ret;
+}
+
+template <class OUTPUT, class SURJECTIONPROOF>
+inline int psbt_output_set_asset_blinding_surjectionproof(const OUTPUT& output, const SURJECTIONPROOF& surjectionproof) {
+    int ret = ::wally_psbt_output_set_asset_blinding_surjectionproof(detail::get_p(output), surjectionproof.data(), surjectionproof.size());
     return ret;
 }
 
@@ -1585,27 +2474,33 @@ inline int psbt_output_set_asset_commitment(const OUTPUT& output, const COMMITME
     return ret;
 }
 
+template <class OUTPUT, class SURJECTIONPROOF>
+inline int psbt_output_set_asset_surjectionproof(const OUTPUT& output, const SURJECTIONPROOF& surjectionproof) {
+    int ret = ::wally_psbt_output_set_asset_surjectionproof(detail::get_p(output), surjectionproof.data(), surjectionproof.size());
+    return ret;
+}
+
+template <class OUTPUT>
+inline int psbt_output_set_blinder_index(const OUTPUT& output, uint32_t index) {
+    int ret = ::wally_psbt_output_set_blinder_index(detail::get_p(output), index);
+    return ret;
+}
+
 template <class OUTPUT, class PUB_KEY>
-inline int psbt_output_set_blinding_pubkey(const OUTPUT& output, const PUB_KEY& pub_key) {
-    int ret = ::wally_psbt_output_set_blinding_pubkey(detail::get_p(output), pub_key.data(), pub_key.size());
+inline int psbt_output_set_blinding_public_key(const OUTPUT& output, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_output_set_blinding_public_key(detail::get_p(output), pub_key.data(), pub_key.size());
     return ret;
 }
 
-template <class OUTPUT, class NONCE>
-inline int psbt_output_set_nonce(const OUTPUT& output, const NONCE& nonce) {
-    int ret = ::wally_psbt_output_set_nonce(detail::get_p(output), nonce.data(), nonce.size());
+template <class OUTPUT, class PUB_KEY>
+inline int psbt_output_set_ecdh_public_key(const OUTPUT& output, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_output_set_ecdh_public_key(detail::get_p(output), pub_key.data(), pub_key.size());
     return ret;
 }
 
-template <class OUTPUT, class PROOF>
-inline int psbt_output_set_rangeproof(const OUTPUT& output, const PROOF& proof) {
-    int ret = ::wally_psbt_output_set_rangeproof(detail::get_p(output), proof.data(), proof.size());
-    return ret;
-}
-
-template <class OUTPUT, class PROOF>
-inline int psbt_output_set_surjectionproof(const OUTPUT& output, const PROOF& proof) {
-    int ret = ::wally_psbt_output_set_surjectionproof(detail::get_p(output), proof.data(), proof.size());
+template <class OUTPUT, class RANGEPROOF>
+inline int psbt_output_set_value_blinding_rangeproof(const OUTPUT& output, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_output_set_value_blinding_rangeproof(detail::get_p(output), rangeproof.data(), rangeproof.size());
     return ret;
 }
 
@@ -1615,9 +2510,21 @@ inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITME
     return ret;
 }
 
-template <class OUTPUT, class VBF>
-inline int psbt_output_set_vbf(const OUTPUT& output, const VBF& vbf) {
-    int ret = ::wally_psbt_output_set_vbf(detail::get_p(output), vbf.data(), vbf.size());
+template <class OUTPUT, class RANGEPROOF>
+inline int psbt_output_set_value_rangeproof(const OUTPUT& output, const RANGEPROOF& rangeproof) {
+    int ret = ::wally_psbt_output_set_value_rangeproof(detail::get_p(output), rangeproof.data(), rangeproof.size());
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_global_scalars(const PSBT& psbt, const struct wally_map* map_in) {
+    int ret = ::wally_psbt_set_global_scalars(detail::get_p(psbt), map_in);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_set_pset_modifiable_flags(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_set_pset_modifiable_flags(detail::get_p(psbt), flags);
     return ret;
 }
 

@@ -115,6 +115,14 @@ vec_3 = {
     }
 }
 
+def get_test_master_key(vec):
+    seed, seed_len = make_cbuffer(vec['seed'])
+    master = ext_key()
+    ret = bip32_key_from_seed(seed, seed_len,
+                              VER_MAIN_PRIVATE, 0, byref(master))
+    assert(ret == WALLY_OK)
+    return master
+
 class BIP32Tests(unittest.TestCase):
 
     NULL_HASH160 = '00' * 20
@@ -124,14 +132,6 @@ class BIP32Tests(unittest.TestCase):
         key_out = ext_key()
         ret = bip32_key_unserialize(buf, buf_len, byref(key_out))
         return ret, key_out
-
-    def get_test_master_key(self, vec):
-        seed, seed_len = make_cbuffer(vec['seed'])
-        master = ext_key()
-        ret = bip32_key_from_seed(seed, seed_len,
-                                  VER_MAIN_PRIVATE, 0, byref(master))
-        self.assertEqual(ret, WALLY_OK)
-        return master
 
     def get_test_key(self, vec, path, flags):
         buf, buf_len = make_cbuffer(vec[path][flags])
@@ -244,7 +244,7 @@ class BIP32Tests(unittest.TestCase):
             self.assertEqual(ret, expected)
 
         # Check invalid arguments fail
-        master = self.get_test_master_key(vec_1)
+        master = get_test_master_key(vec_1)
         pub = self.derive_key(master, 1, FLAG_KEY_PUBLIC)
         key_out = ext_key()
         cases = [
@@ -380,7 +380,7 @@ class BIP32Tests(unittest.TestCase):
     def do_test_vector(self, vec):
 
         # BIP32 Test vector 1
-        master = self.get_test_master_key(vec)
+        master = get_test_master_key(vec)
 
         # Chain m:
         for flags in [FLAG_KEY_PUBLIC, FLAG_KEY_PRIVATE]:
@@ -415,7 +415,7 @@ class BIP32Tests(unittest.TestCase):
     def create_master_pub_priv(self):
 
         # Start with BIP32 Test vector 1
-        master = self.get_test_master_key(vec_1)
+        master = get_test_master_key(vec_1)
         # Derive the same child public and private keys from master
         priv = self.derive_key(master, 1, FLAG_KEY_PRIVATE)
         pub = self.derive_key(master, 1, FLAG_KEY_PUBLIC)

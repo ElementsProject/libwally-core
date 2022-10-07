@@ -3,7 +3,6 @@
 
 #include <assert.h>
 #include <limits.h>
-#include <stdbool.h>
 #include "pullpush.h"
 
 unsigned char *push_bytes(unsigned char **cursor, size_t *max,

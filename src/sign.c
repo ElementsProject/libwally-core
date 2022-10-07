@@ -5,7 +5,6 @@
 #include "secp256k1/include/secp256k1_schnorr.h"
 #endif
 #include "ccan/ccan/build_assert/build_assert.h"
-#include <stdbool.h>
 
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
 
@@ -52,6 +51,18 @@ int wally_ec_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
     if (!pub_key ||
         !(pub_key_len == EC_PUBLIC_KEY_LEN || pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) ||
         !pubkey_parse(&pub, pub_key, pub_key_len))
+        return WALLY_EINVAL;
+
+    wally_clear(&pub, sizeof(pub));
+    return WALLY_OK;
+}
+
+int wally_ec_xonly_public_key_verify(const unsigned char *pub_key, size_t pub_key_len)
+{
+    secp256k1_xonly_pubkey pub;
+
+    if (!pub_key || pub_key_len != EC_XONLY_PUBLIC_KEY_LEN ||
+        !xpubkey_parse(&pub, pub_key))
         return WALLY_EINVAL;
 
     wally_clear(&pub, sizeof(pub));
@@ -313,6 +324,161 @@ int wally_ec_sig_to_public_key(const unsigned char *bytes, size_t bytes_len,
 
     wally_clear_2(&pub, sizeof(pub), &sig_secp, sizeof(sig_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+#define IS_SCALAR_VALID(s, s_len) (s && s_len == EC_SCALAR_LEN)
+
+int wally_ec_scalar_verify(const unsigned char *scalar, size_t scalar_len)
+{
+    if (!IS_SCALAR_VALID(scalar, scalar_len))
+        return WALLY_EINVAL;
+    return mem_is_zero(scalar, scalar_len) || seckey_verify(scalar) ? WALLY_OK : WALLY_EINVAL;
+}
+
+static bool check_scalar_op_args(const unsigned char *scalar, size_t scalar_len,
+                                 const unsigned char *operand, size_t operand_len,
+                                 unsigned char *bytes_out, size_t len)
+{
+    if (bytes_out && len)
+        wally_clear(bytes_out, len);
+
+    return IS_SCALAR_VALID(scalar, scalar_len) &&
+           IS_SCALAR_VALID(operand, operand_len) &&
+           IS_SCALAR_VALID(bytes_out, len);
+}
+
+int wally_ec_scalar_add(const unsigned char *scalar, size_t scalar_len,
+                        const unsigned char *operand, size_t operand_len,
+                        unsigned char *bytes_out, size_t len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+
+    if (!check_scalar_op_args(scalar, scalar_len, operand, operand_len, bytes_out, len))
+        return WALLY_EINVAL;
+
+    if (mem_is_zero(operand, len)) {
+        /* X + 0 = X */
+        if (!mem_is_zero(scalar, scalar_len) && !seckey_verify(scalar))
+            return WALLY_ERROR; /* Outside the group order */
+        memcpy(bytes_out, scalar, len);
+        return WALLY_OK;
+    }
+
+    if (mem_is_zero(scalar, len)) {
+        /* 0 + X = X */
+        if (!seckey_verify(operand))
+            return WALLY_ERROR; /* Outside the group order */
+        memcpy(bytes_out, operand, len);
+        return WALLY_OK;
+    }
+
+    /* Check for addition of the scalars inverse */
+    memcpy(tmp, operand, len);
+    if (!seckey_negate(tmp))
+        return WALLY_ERROR; /* Outside the group order */
+
+    if (!memcmp(scalar, tmp, len)) {
+        /* X + -X = 0 */
+        return WALLY_OK; /* bytes_out zeroed above */
+    }
+    memcpy(bytes_out, scalar, len);
+    return seckey_tweak_add(bytes_out, operand) ? WALLY_OK : WALLY_ERROR;
+}
+
+int wally_ec_scalar_add_to(unsigned char *scalar, size_t scalar_len,
+                           const unsigned char *operand, size_t operand_len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret = wally_ec_scalar_add(scalar, scalar_len, operand, operand_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        memcpy(scalar, tmp, scalar_len);
+    wally_clear(tmp, sizeof(tmp));
+    return ret;
+}
+
+int wally_ec_scalar_subtract(const unsigned char *scalar, size_t scalar_len,
+                             const unsigned char *operand, size_t operand_len,
+                             unsigned char *bytes_out, size_t len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+
+    if (!check_scalar_op_args(scalar, scalar_len, operand, operand_len, bytes_out, len))
+        return WALLY_EINVAL;
+
+    if (mem_is_zero(operand, len)) {
+        /* X - 0 = X */
+        if (!mem_is_zero(scalar, len) && !seckey_verify(scalar))
+            return WALLY_ERROR; /* Outside the group order */
+        memcpy(bytes_out, scalar, len);
+        return WALLY_OK;
+    }
+
+    if (mem_is_zero(scalar, len)) {
+        /* 0 - X = -X */
+        if (!seckey_verify(operand))
+            return WALLY_ERROR; /* Outside the group order */
+        memcpy(bytes_out, operand, len);
+        return seckey_negate(bytes_out) ? WALLY_OK : WALLY_ERROR;
+    }
+
+    if (!memcmp(scalar, operand, len)) {
+        /* X - X = 0 */
+        return WALLY_OK; /* bytes_out zeroed above */
+    }
+
+    /* Implement as X + (-Y) */
+    memcpy(tmp, operand, len);
+    if (!seckey_negate(tmp))
+        return WALLY_ERROR; /* Outside the group order */
+    memcpy(bytes_out, scalar, len);
+    return seckey_tweak_add(bytes_out, tmp) ? WALLY_OK : WALLY_ERROR;
+}
+
+int wally_ec_scalar_subtract_from(unsigned char *scalar, size_t scalar_len,
+                                  const unsigned char *operand, size_t operand_len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret = wally_ec_scalar_subtract(scalar, scalar_len, operand, operand_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        memcpy(scalar, tmp, scalar_len);
+    wally_clear(tmp, sizeof(tmp));
+    return ret;
+}
+
+int wally_ec_scalar_multiply(const unsigned char *scalar, size_t scalar_len,
+                             const unsigned char *operand, size_t operand_len,
+                             unsigned char *bytes_out, size_t len)
+{
+    if (!check_scalar_op_args(scalar, scalar_len, operand, operand_len, bytes_out, len))
+        return WALLY_EINVAL;
+
+    if (mem_is_zero(operand, len)) {
+        /* X * 0 = 0 */
+        if (!mem_is_zero(scalar, scalar_len) && !seckey_verify(scalar))
+            return WALLY_ERROR; /* Outside the group order */
+        return WALLY_OK; /* bytes_out zeroed above */
+    }
+
+    if (mem_is_zero(scalar, len)) {
+        /* 0 * X = 0 */
+        if (!seckey_verify(operand))
+            return WALLY_ERROR; /* Outside the group order */
+        return WALLY_OK; /* bytes_out zeroed above */
+    }
+
+    memcpy(bytes_out, scalar, len);
+    return seckey_tweak_mul(bytes_out, operand) ? WALLY_OK : WALLY_ERROR;
+}
+
+int wally_ec_scalar_multiply_by(unsigned char *scalar, size_t scalar_len,
+                                const unsigned char *operand, size_t operand_len)
+{
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret = wally_ec_scalar_multiply(scalar, scalar_len, operand, operand_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        memcpy(scalar, tmp, scalar_len);
+    wally_clear(tmp, sizeof(tmp));
+    return ret;
 }
 
 static inline size_t varint_len(size_t bytes_len) {

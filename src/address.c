@@ -1,5 +1,4 @@
 #include "internal.h"
-#include <stdbool.h>
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>

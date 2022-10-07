@@ -5,36 +5,39 @@
 #include <include/wally_elements.h>
 #include <include/wally_crypto.h>
 #include <include/wally_symmetric.h>
+#include <include/wally_transaction.h>
 #include "secp256k1/include/secp256k1_generator.h"
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
 #include "src/secp256k1/include/secp256k1_whitelist.h"
-#include <stdbool.h>
+#include "ccan/ccan/endian/endian.h"
 
 
 static const unsigned char LABEL_STR[] = {
     'S', 'L', 'I', 'P', '-', '0', '0', '7', '7'
 };
 
-static int get_generator(const secp256k1_context *ctx,
-                         const unsigned char *generator, size_t generator_len,
-                         secp256k1_generator *dest) {
+static int parse_generator(const secp256k1_context *ctx,
+                           const unsigned char *generator, size_t generator_len,
+                           secp256k1_generator *dest)
+{
     if (!generator || generator_len != ASSET_GENERATOR_LEN ||
         !secp256k1_generator_parse(ctx, dest, generator))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
 
-static int get_commitment(const secp256k1_context *ctx,
-                          const unsigned char *commitment, size_t commitment_len,
-                          secp256k1_pedersen_commitment *dest) {
+static int parse_commitment(const secp256k1_context *ctx,
+                            const unsigned char *commitment, size_t commitment_len,
+                            secp256k1_pedersen_commitment *dest)
+{
     if (!commitment || commitment_len != ASSET_COMMITMENT_LEN ||
         !secp256k1_pedersen_commitment_parse(ctx, dest, commitment))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
 
-static int get_nonce_hash(const unsigned char *pub_key, size_t pub_key_len,
+int wally_ecdh_nonce_hash(const unsigned char *pub_key, size_t pub_key_len,
                           const unsigned char *priv_key, size_t priv_key_len,
                           unsigned char *bytes_out, size_t len)
 {
@@ -55,16 +58,43 @@ int wally_asset_generator_from_bytes(const unsigned char *asset, size_t asset_le
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_generator gen;
+    int secp_ret;
 
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!asset || asset_len != ASSET_TAG_LEN || !abf || abf_len != BLINDING_FACTOR_LEN ||
-        !bytes_out || len != ASSET_GENERATOR_LEN)
+    if (!asset || !bytes_out || len != ASSET_GENERATOR_LEN)
         return WALLY_EINVAL;
 
-    if (!secp256k1_generator_generate_blinded(ctx, &gen, asset, abf))
-        return WALLY_ERROR; /* Invalid entropy; caller should try again */
+    if (asset_len == ASSET_COMMITMENT_LEN) {
+        if (abf || abf_len)
+            return WALLY_EINVAL;
+        if (*asset == 1) {
+            /* Explicit asset */
+            secp_ret = secp256k1_generator_generate(ctx, &gen, asset + 1);
+        } else if (*asset != WALLY_TX_ASSET_CT_ASSET_PREFIX_A &&
+                   *asset != WALLY_TX_ASSET_CT_ASSET_PREFIX_B) {
+            return WALLY_EINVAL; /* Invalid commitment prefix */
+        } else {
+            /* Confidential asset commitment */
+            secp_ret = secp256k1_generator_parse(ctx, &gen, asset);
+        }
+    } else {
+        if (asset_len != ASSET_TAG_LEN)
+            return WALLY_EINVAL; /* Invalid asset id */
+        if (abf && abf_len == BLINDING_FACTOR_LEN) {
+            /* Asset tag plus blinding factor */
+            secp_ret = secp256k1_generator_generate_blinded(ctx, &gen, asset, abf);
+        } else if (abf || abf_len)
+            return WALLY_EINVAL; /* Invalid blinding factor */
+        else {
+            /* Asset tag without blinding factor */
+            secp_ret = secp256k1_generator_generate(ctx, &gen, asset);
+        }
+    }
+
+    if (!secp_ret)
+        return WALLY_ERROR; /* Invalid asset/entropy; caller should try again */
 
     secp256k1_generator_serialize(ctx, bytes_out, &gen); /* Never fails */
     wally_clear(&gen, sizeof(gen));
@@ -117,6 +147,26 @@ cleanup:
     return ret;
 }
 
+int wally_asset_scalar_offset(uint64_t value,
+                              const unsigned char *abf, size_t abf_len,
+                              const unsigned char *vbf, size_t vbf_len,
+                              unsigned char *bytes_out, size_t len)
+{
+    beint64_t tweak[4] = { 0, 0, 0, cpu_to_be64(value) };
+    unsigned char tmp[EC_SCALAR_LEN];
+    int ret;
+
+    if (bytes_out && len)
+        wally_clear(bytes_out, len);
+
+    /* Compute value * asset_blinder + value_blinder */
+    ret = wally_ec_scalar_multiply((unsigned char *)&tweak[0], sizeof(tweak),
+                                   abf, abf_len, tmp, sizeof(tmp));
+    if (ret == WALLY_OK)
+        ret = wally_ec_scalar_add(tmp, sizeof(tmp), vbf, vbf_len, bytes_out, len);
+    return ret;
+}
+
 int wally_asset_value_commitment(uint64_t value,
                                  const unsigned char *vbf, size_t vbf_len,
                                  const unsigned char *generator, size_t generator_len,
@@ -130,8 +180,8 @@ int wally_asset_value_commitment(uint64_t value,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!vbf || vbf_len != ASSET_TAG_LEN || !bytes_out || len != ASSET_COMMITMENT_LEN ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+    if (!vbf || vbf_len != BLINDING_FACTOR_LEN || !bytes_out || len != ASSET_COMMITMENT_LEN ||
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         return WALLY_EINVAL;
 
     ok = secp256k1_pedersen_commit(ctx, &commit, vbf, value, &gen) &&
@@ -157,6 +207,7 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
     secp256k1_generator gen;
     secp256k1_pedersen_commitment commit;
     unsigned char message[ASSET_TAG_LEN * 2];
+    const bool is_explicit = value == min_value && exp == -1 && !min_bits;
     int ret = WALLY_EINVAL;
 
     if (written)
@@ -165,28 +216,37 @@ int wally_asset_rangeproof_with_nonce(uint64_t value,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
-        !asset || asset_len != ASSET_TAG_LEN ||
-        !abf || abf_len != BLINDING_FACTOR_LEN ||
-        !vbf || vbf_len != BLINDING_FACTOR_LEN ||
-        !bytes_out || len < ASSET_RANGEPROOF_MAX_LEN || !written ||
-        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+    if (is_explicit) {
+        if (asset || asset_len || abf || abf_len || extra || extra_len ||
+            len < ASSET_EXPLICIT_RANGEPROOF_MAX_LEN)
+            goto cleanup;
+    } else {
         /* FIXME: Is there an upper size limit on the extra commitment? */
-        (extra_len && !extra) ||
+        if (!asset || asset_len != ASSET_TAG_LEN ||
+            !abf || abf_len != BLINDING_FACTOR_LEN ||
+            BYTES_INVALID(extra, extra_len) || len < ASSET_RANGEPROOF_MAX_LEN)
+            goto cleanup;
+    }
+    if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
+        !vbf || vbf_len != BLINDING_FACTOR_LEN || !bytes_out || !written ||
+        parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         min_value > 0x7ffffffffffffffful ||
         exp < -1 || exp > 18 ||
         min_bits < 0 || min_bits > 64 ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
         goto cleanup;
 
     /* Create the rangeproof message */
-    memcpy(message, asset, ASSET_TAG_LEN);
-    memcpy(message + ASSET_TAG_LEN, abf, ASSET_TAG_LEN);
+    if (!is_explicit) {
+        memcpy(message, asset, ASSET_TAG_LEN);
+        memcpy(message + ASSET_TAG_LEN, abf, BLINDING_FACTOR_LEN);
+    }
 
     *written = ASSET_RANGEPROOF_MAX_LEN;
     if (secp256k1_rangeproof_sign(ctx, bytes_out, written, min_value, &commit,
                                   vbf, nonce_hash, exp, min_bits, value,
-                                  message, sizeof(message),
+                                  is_explicit ? NULL : message,
+                                  is_explicit ? 0 : sizeof(message),
                                   extra, extra_len,
                                   &gen))
         ret = WALLY_OK;
@@ -217,8 +277,8 @@ int wally_asset_rangeproof(uint64_t value,
     unsigned char nonce_hash[SHA256_LEN];
     int ret;
 
-    ret = get_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
-                         nonce_hash, sizeof(nonce_hash));
+    ret = wally_ecdh_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
+                                nonce_hash, sizeof(nonce_hash));
     if (ret == WALLY_OK)
         ret = wally_asset_rangeproof_with_nonce(value,
                                                 nonce_hash, sizeof(nonce_hash),
@@ -233,6 +293,40 @@ int wally_asset_rangeproof(uint64_t value,
 
     wally_clear(nonce_hash, sizeof(nonce_hash));
     return ret;
+}
+
+int wally_explicit_rangeproof(uint64_t value,
+                              const unsigned char *nonce, size_t nonce_len,
+                              const unsigned char *vbf, size_t vbf_len,
+                              const unsigned char *commitment, size_t commitment_len,
+                              const unsigned char *generator, size_t generator_len,
+                              unsigned char *bytes_out, size_t len, size_t *written)
+{
+    return wally_asset_rangeproof_with_nonce(value, nonce, nonce_len, NULL, 0, NULL, 0,
+                                             vbf, vbf_len, commitment, commitment_len, NULL, 0,
+                                             generator, generator_len, value, -1, 0,
+                                             bytes_out, len, written);
+}
+
+int wally_explicit_rangeproof_verify(const unsigned char *rangeproof, size_t rangeproof_len,
+                                     uint64_t value,
+                                     const unsigned char *commitment, size_t commitment_len,
+                                     const unsigned char *generator, size_t generator_len)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    secp256k1_pedersen_commitment commit;
+    secp256k1_generator gen;
+    uint64_t min_v, max_v;
+
+    if (!rangeproof || rangeproof_len > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN ||
+        parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    if (!secp256k1_rangeproof_verify(ctx, &min_v, &max_v, &commit,
+                                     rangeproof, rangeproof_len, NULL, 0, &gen))
+        return WALLY_EINVAL;
+    return value == min_v ? WALLY_OK : WALLY_EINVAL;
 }
 
 int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce_hash_len,
@@ -258,9 +352,9 @@ int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce
 
     if (!nonce_hash || nonce_hash_len != SHA256_LEN ||
         !proof || !proof_len ||
-        get_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
+        parse_commitment(ctx, commitment, commitment_len, &commit) != WALLY_OK ||
         (extra_len && !extra) ||
-        get_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
+        parse_generator(ctx, generator, generator_len, &gen) != WALLY_OK ||
         !asset_out || asset_out_len != ASSET_TAG_LEN ||
         !abf_out || abf_out_len != BLINDING_FACTOR_LEN ||
         !vbf_out || vbf_out_len != BLINDING_FACTOR_LEN || !value_out)
@@ -302,8 +396,8 @@ int wally_asset_unblind(const unsigned char *pub_key, size_t pub_key_len,
     unsigned char nonce_hash[SHA256_LEN];
     int ret;
 
-    ret = get_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
-                         nonce_hash, sizeof(nonce_hash));
+    ret = wally_ecdh_nonce_hash(pub_key, pub_key_len, priv_key, priv_key_len,
+                                nonce_hash, sizeof(nonce_hash));
     if (ret == WALLY_OK)
         ret = wally_asset_unblind_with_nonce(nonce_hash, sizeof(nonce_hash),
                                              proof, proof_len,
@@ -324,28 +418,28 @@ int wally_asset_surjectionproof_size(size_t num_inputs, size_t *written)
     size_t num_used = num_inputs > 3 ? 3 : num_inputs;
     if (written)
         *written = 0;
-    if (!num_inputs || !written)
+    if (!num_inputs || num_inputs > SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS || !written)
         return WALLY_EINVAL;
     *written = SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used);
     return WALLY_OK;
 }
 
-int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
-                                const unsigned char *output_abf, size_t output_abf_len,
-                                const unsigned char *output_generator, size_t output_generator_len,
-                                const unsigned char *bytes, size_t bytes_len,
-                                const unsigned char *asset, size_t asset_len,
-                                const unsigned char *abf, size_t abf_len,
-                                const unsigned char *generator, size_t generator_len,
-                                unsigned char *bytes_out, size_t len,
-                                size_t *written)
+static int surjproof_impl(const unsigned char *output_asset, size_t output_asset_len,
+                          const unsigned char *output_abf, size_t output_abf_len,
+                          const unsigned char *output_generator, size_t output_generator_len,
+                          const unsigned char *bytes, size_t bytes_len,
+                          const unsigned char *asset, size_t asset_len,
+                          const unsigned char *abf, size_t abf_len,
+                          const unsigned char *generator, size_t generator_len,
+                          unsigned char *bytes_out, size_t len,
+                          size_t *written, size_t n_attempts)
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_generator gen;
     secp256k1_surjectionproof proof;
     secp256k1_generator *generators = NULL;
     const size_t num_inputs = asset_len / ASSET_TAG_LEN;
-    size_t num_used = num_inputs > 3 ? 3 : num_inputs;
+    const size_t num_used = num_inputs > 3 ? 3 : num_inputs;
     size_t actual_index, i;
     int ret = WALLY_EINVAL;
 
@@ -357,12 +451,14 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
 
     if (!output_asset || output_asset_len != ASSET_TAG_LEN ||
         !output_abf || output_abf_len != BLINDING_FACTOR_LEN ||
-        get_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
-        !bytes || bytes_len != 32u ||
-        !asset || !num_inputs || (asset_len % ASSET_TAG_LEN != 0) ||
+        parse_generator(ctx, output_generator, output_generator_len, &gen) != WALLY_OK ||
+        !bytes || bytes_len != 32u || !asset ||
+        !num_inputs || num_inputs > SECP256K1_SURJECTIONPROOF_MAX_N_INPUTS ||
+        (asset_len % ASSET_TAG_LEN != 0) ||
         !abf || abf_len != num_inputs * BLINDING_FACTOR_LEN ||
         !generator || generator_len != num_inputs * ASSET_GENERATOR_LEN ||
-        !bytes_out || len != SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
+        !bytes_out ||
+        len < SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
         !written)
         goto cleanup;
 
@@ -377,7 +473,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
     }
     for (i = 0; i < num_inputs; ++i) {
         const unsigned char *src = generator + i * ASSET_GENERATOR_LEN;
-        if (get_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK)
+        if (parse_generator(ctx, src, ASSET_GENERATOR_LEN, &generators[i]) != WALLY_OK)
             goto cleanup;
     }
 
@@ -385,7 +481,7 @@ int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output
                                               (const secp256k1_fixed_asset_tag *)asset,
                                               num_inputs, num_used,
                                               (const secp256k1_fixed_asset_tag *)output_asset,
-                                              100, bytes)) {
+                                              n_attempts, bytes)) {
         ret = WALLY_ERROR; /* Caller must retry with different entropy/outputs */
         goto cleanup;
     }
@@ -406,6 +502,80 @@ cleanup:
     wally_clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
     if (generators)
         clear_and_free(generators, num_inputs * sizeof(secp256k1_generator));
+    return ret;
+}
+
+int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
+                                const unsigned char *output_abf, size_t output_abf_len,
+                                const unsigned char *output_generator, size_t output_generator_len,
+                                const unsigned char *bytes, size_t bytes_len,
+                                const unsigned char *asset, size_t asset_len,
+                                const unsigned char *abf, size_t abf_len,
+                                const unsigned char *generator, size_t generator_len,
+                                unsigned char *bytes_out, size_t len,
+                                size_t *written)
+{
+    return surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                          output_generator, output_generator_len, bytes, bytes_len,
+                          asset, asset_len, abf, abf_len, generator, generator_len,
+                          bytes_out, len, written, 100);
+}
+
+int wally_explicit_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
+                                   const unsigned char *output_abf, size_t output_abf_len,
+                                   const unsigned char *output_generator, size_t output_generator_len,
+                                   unsigned char *bytes_out, size_t len)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    const unsigned char dummy_entropy[32] = { 0 };
+    unsigned char asset_generator[ASSET_GENERATOR_LEN];
+    size_t written;
+    int ret;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+    if (output_asset_len != ASSET_TAG_LEN || len != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+        return WALLY_EINVAL;
+
+    ret = wally_asset_generator_from_bytes(output_asset, output_asset_len, NULL, 0,
+                                           asset_generator, sizeof(asset_generator));
+    if (ret == WALLY_OK)
+        ret = surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                             output_generator, output_generator_len,
+                             dummy_entropy, sizeof(dummy_entropy),
+                             output_asset, output_asset_len,
+                             dummy_entropy, sizeof(dummy_entropy),
+                             asset_generator, sizeof(asset_generator),
+                             bytes_out, len, &written, 1);
+    if (ret == WALLY_OK && written != ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+        ret = WALLY_ERROR; /* Should never happen */
+
+    wally_clear(asset_generator, sizeof(asset_generator));
+    return ret;
+}
+
+int wally_explicit_surjectionproof_verify(
+    const unsigned char *surjectionproof, size_t surjectionproof_len,
+    const unsigned char *output_asset, size_t output_asset_len,
+    const unsigned char *output_generator, size_t output_generator_len)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    secp256k1_surjectionproof sjp;
+    secp256k1_generator asset_gen, blinded_asset_gen;
+    int ret = WALLY_EINVAL;
+
+    if (!ctx)
+        return WALLY_ENOMEM;
+    if (surjectionproof && surjectionproof_len &&
+        secp256k1_surjectionproof_parse(ctx, &sjp, surjectionproof, surjectionproof_len) &&
+        output_asset && output_asset_len == ASSET_TAG_LEN &&
+        secp256k1_generator_generate(ctx, &asset_gen, output_asset) &&
+        parse_generator(ctx, output_generator, output_generator_len, &blinded_asset_gen) == WALLY_OK) {
+        ret = secp256k1_surjectionproof_verify(ctx, &sjp, &asset_gen,
+                                               1, &blinded_asset_gen) ? WALLY_OK : WALLY_ERROR;
+    }
+    wally_clear_3(&sjp, sizeof(sjp), &asset_gen, sizeof(asset_gen),
+                  &blinded_asset_gen, sizeof(blinded_asset_gen));
     return ret;
 }
 

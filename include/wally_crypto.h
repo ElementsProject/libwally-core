@@ -288,6 +288,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_PRIVATE_KEY_LEN 32
 /** The length of a public key used for EC signing */
 #define EC_PUBLIC_KEY_LEN 33
+/** The length of an x-only public key used for EC signing */
+#define EC_XONLY_PUBLIC_KEY_LEN 32
 /** The length of an uncompressed public key */
 #define EC_PUBLIC_KEY_UNCOMPRESSED_LEN 65
 /** The length of a message hash to EC sign */
@@ -300,6 +302,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_SIGNATURE_DER_MAX_LEN 72
 /** The maximum encoded length of a DER encoded signature created with EC_FLAG_GRIND_R */
 #define EC_SIGNATURE_DER_MAX_LOW_R_LEN 71
+/** The length of a secp256k1 scalar value */
+#define EC_SCALAR_LEN 32
 
 /** Indicates that a signature using ECDSA/secp256k1 is required */
 #define EC_FLAG_ECDSA 0x1
@@ -331,6 +335,16 @@ WALLY_CORE_API int wally_ec_private_key_verify(
  *|    ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
  */
 WALLY_CORE_API int wally_ec_public_key_verify(
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
+ * Verify that an x-only public key is valid.
+ *
+ * :param pub_key: The x-only public key to validate.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_XONLY_PUBLIC_KEY_LEN``.
+ */
+WALLY_CORE_API int wally_ec_xonly_public_key_verify(
     const unsigned char *pub_key,
     size_t pub_key_len);
 
@@ -482,6 +496,114 @@ WALLY_CORE_API int wally_ec_sig_to_public_key(
     unsigned char *bytes_out,
     size_t len);
 
+/**
+ * Verify that a secp256k1 scalar value is valid.
+ *
+ * :param scalar: The starting scalar to have a value added to.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ */
+WALLY_CORE_API int wally_ec_scalar_verify(
+    const unsigned char *scalar,
+    size_t scalar_len);
+
+/**
+ * Add one secp256k1 scalar to another.
+ *
+ * :param scalar: The starting scalar to have a value added to.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param operand: The scalar value to add to ``scalar``.
+ * :param operand_len: The length of ``operand`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param bytes_out: Destination for the resulting scalar.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SCALAR_LEN``.
+ *
+ * .. note:: Computes (scalar + operand) % n. Returns ``WALLY_ERROR`` if
+ *|    either input is not within the secp256k1 group order n.
+ */
+WALLY_CORE_API int wally_ec_scalar_add(
+    const unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Subtract one secp256k1 scalar from another.
+ *
+ * :param scalar: The starting scalar to have a value subtracted from.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param operand: The scalar value to subtract from ``scalar``.
+ * :param operand_len: The length of ``operand`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param bytes_out: Destination for the resulting scalar.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SCALAR_LEN``.
+ *
+ * .. note:: Computes (scalar - operand) % n. Returns ``WALLY_ERROR`` if
+ *|    either input is not within the secp256k1 group order n.
+ */
+WALLY_CORE_API int wally_ec_scalar_subtract(
+    const unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Multiply one secp256k1 scalar by another.
+ *
+ * :param scalar: The starting scalar to multiply.
+ * :param scalar_len: The length of ``scalar`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param operand: The scalar value to multiply ``scalar`` by.
+ * :param operand_len: The length of ``operand`` in bytes. Must be ``EC_SCALAR_LEN``.
+ * :param bytes_out: Destination for the resulting scalar.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SCALAR_LEN``.
+ *
+ * .. note:: Computes (scalar * operand) % n. Returns ``WALLY_ERROR`` if
+ *|    either input is not within the secp256k1 group order n.
+ */
+WALLY_CORE_API int wally_ec_scalar_multiply(
+    const unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+#ifndef SWIG
+/**
+ * Add one secp256k1 scalar to another in place.
+ *
+ * .. note:: As per `wally_ec_scalar_add` with ``scalar`` modified in place.
+ */
+WALLY_CORE_API int wally_ec_scalar_add_to(
+    unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len);
+
+/**
+ * Subtract one secp256k1 scalar from another in place.
+ *
+ * .. note:: As per `wally_ec_scalar_subtract` with ``scalar`` modified in place.
+ */
+WALLY_CORE_API int wally_ec_scalar_subtract_from(
+    unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len);
+
+/**
+ * Multiply one secp256k1 scalar by another in place.
+ *
+ * .. note:: As per `wally_ec_scalar_multiply` with ``scalar`` modified in place.
+ */
+WALLY_CORE_API int wally_ec_scalar_multiply_by(
+    unsigned char *scalar,
+    size_t scalar_len,
+    const unsigned char *operand,
+    size_t operand_len);
+#endif /* SWIG */
+
 /** The maximum size of input message that can be formatted */
 #define BITCOIN_MESSAGE_MAX_LEN (64 * 1024 - 64)
 
@@ -520,6 +642,8 @@ WALLY_CORE_API int wally_format_bitcoin_message(
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param bytes_out: Destination for the shared secret.
  * :param len: The length of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ *
+ * .. note:: If ``priv_key`` is invalid, this call returns ``WALLY_ERROR``.
  */
 WALLY_CORE_API int wally_ecdh(
     const unsigned char *pub_key,

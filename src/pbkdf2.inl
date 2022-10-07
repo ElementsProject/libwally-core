@@ -41,7 +41,7 @@ int SHA_POST(wally_pbkdf2_hmac_)(const unsigned char *pass, size_t pass_len,
 
     /* If bytes out is suitably aligned, we can work on it directly */
     if (alignment_ok(bytes_out, sizeof(SHA_ALIGN_T)))
-        sha_cp = (struct SHA_T *)bytes_out;
+        sha_cp = (void *)bytes_out;
     else
         sha_cp = &d2;
 
