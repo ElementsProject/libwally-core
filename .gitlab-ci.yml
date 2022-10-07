@@ -1,5 +1,5 @@
-buster_release:
-  image: greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f
+bullseye_release:
+  image: greenaddress/wallycore@sha256:5dd8567a5fc3b5244621c16a86d8232660dfdb6785a5ef32885d5fdb045f5226
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -26,19 +26,6 @@ buster_release:
     - tools/build_wasm.sh --enable-elements
     - cd wally_dist && tar cvf wallycore-wasm.tar --remove-files wallycore.html wallycore.js wallycore.wasm
     - gzip -9 wallycore-wasm.tar
-
-linux_py3_debug:
-  when: manual
-  image: greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f
-  tags:
-    - ga
-  before_script:
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-  script:
-    - ./tools/cleanup.sh && ./tools/autogen.sh
-    - WALLY_CONFIGURE="--enable-elements --enable-debug" PYTHON_VERSION=3.7 ./tools/travis_build.sh
-    - WALLY_CONFIGURE="--enable-elements --enable-debug" ./tools/build_js_bindings.sh
 
 manylinux_release:
   image: greenaddress/wallycore@sha256:c3c36a55173eb29e5727dfc9a0417d05ac4c301adea109092fb9a0f7edbba10e
@@ -132,7 +119,7 @@ osx_release:
 #    - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f
+  image: greenaddress/wallycore@sha256:5dd8567a5fc3b5244621c16a86d8232660dfdb6785a5ef32885d5fdb045f5226
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
@@ -162,7 +149,7 @@ package_release:
     when: on_success
   script: cd $CI_PROJECT_DIR/wally_dist && /opt/process_release
   dependencies:
-  - buster_release
+  - bullseye_release
   - manylinux_release
 #  - manylinux_aarch64_release
   - osx_release

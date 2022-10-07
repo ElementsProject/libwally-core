@@ -1,13 +1,13 @@
 #! /usr/bin/env bash
 set -e
 
-export NDK_FILENAME=android-ndk-r21d-linux-x86_64.zip
+export NDK_FILENAME=android-ndk-r23b-linux.zip
 
 dpkg --add-architecture i386
 
 apt-get update -qq
 apt-get upgrade -yqq
-apt-get install git uncrustify python{,3}-distutils-extra python{,3}-dev build-essential libffi-dev swig autoconf libtool pkg-config lib32z1 openjdk-11-jdk ca-certificates-java unzip curl libc6:i386 libc6-dev:i386 libncurses5:i386 libstdc++6:i386 lib32z1 virtualenv python{,3}-setuptools apt-transport-https -yqq
+apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv,-distutils} python{,-dev}-is-python3 clang{,-format,-tidy} git swig openjdk-11-jdk g++-mingw-w64-x86-64 curl -yqq
 update-java-alternatives -s java-1.11.0-openjdk-amd64
 
 curl -sL https://deb.nodesource.com/setup_12.x | bash -
@@ -26,7 +26,7 @@ cd emsdk
 ./emsdk activate 2.0.9
 source ./emsdk_env.sh
 
-apt-get remove --purge curl unzip apt-transport-https -yqq
+apt-get remove --purge curl unzip -yqq
 apt-get -yqq autoremove
 apt-get -yqq clean
 rm -rf /var/lib/apt/lists/* /var/cache/* /tmp/* /usr/share/locale/* /usr/share/man /usr/share/doc /lib/xtables/libip6*
