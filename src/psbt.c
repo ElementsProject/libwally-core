@@ -838,7 +838,7 @@ static bool pset_check_proof(const struct wally_psbt *psbt,
     const struct wally_map *pset_fields = out ? &out->pset_fields : &in->pset_fields;
     const struct wally_map_item *item, *proof;
     struct wally_map_item commitment, asset;
-    uint64_t value;
+    uint64_t value = 0;
     bool has_value = false, has_explicit = false, do_verify = true;;
     int ret;
 
