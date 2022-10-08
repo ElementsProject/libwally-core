@@ -82,6 +82,7 @@ if DUMP_INTERNAL:
 else:
     for m in [
         'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'map',
+        'descriptor',
         'script', 'psbt', 'symmetric', 'transaction', 'elements', 'anti_exfil'
         ]:
         extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)

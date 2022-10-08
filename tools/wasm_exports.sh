@@ -65,6 +65,11 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_bip32_key_to_address' \
 ,'_wally_bzero' \
 ,'_wally_cleanup' \
+,'_wally_descriptor_create_checksum' \
+,'_wally_descriptor_parse_miniscript' \
+,'_wally_descriptor_to_address' \
+,'_wally_descriptor_to_addresses' \
+,'_wally_descriptor_to_scriptpubkey' \
 ,'_wally_ec_private_key_verify' \
 ,'_wally_ec_public_key_decompress' \
 ,'_wally_ec_public_key_from_private_key' \
@@ -86,6 +91,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ec_xonly_public_key_verify' \
 ,'_wally_ecdh' \
 ,'_wally_format_bitcoin_message' \
+,'_wally_free_descriptor_addresses' \
 ,'_wally_free_string' \
 ,'_wally_get_operations' \
 ,'_wally_hash160' \
