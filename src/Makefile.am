@@ -54,7 +54,9 @@ PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHO
 clean-swig-python:
 	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore/__init__.py
 clean-local: clean-swig-python
+endif # USE_SWIG_PYTHON
 
+if RUN_PYTHON_TESTS
 # Python requires the shared library to be named _wallycore.so
 # for 'import' to work.
 if IS_OSX
@@ -66,13 +68,9 @@ else
 platform_dso_ext = so
 endif # IS_MINGW
 endif # IS_OSX
-.libs/_wallycore.so:
-	$(AM_V_at)ln -s libwallycore.$(platform_dso_ext) .libs/_wallycore.so
-SWIG_PYTHON_TEST_DEPS = .libs/_wallycore.so
-
-endif # USE_SWIG_PYTHON
-
-if RUN_PYTHON_TESTS
+.libs/_wallycore.so: .libs/libwallycore.$(platform_dso_ext)
+	$(AM_V_at)ln -sfn libwallycore.$(platform_dso_ext) $@
+PYTHON_TEST_DEPS = .libs/_wallycore.so
 PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 endif
 
@@ -301,10 +299,12 @@ test_elements_tx_LDADD += $(PYTHON_LIBS)
 endif
 endif
 
-check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
+check-local: check-libwallycore check-swig-python check-swig-java check-js-wrappers
 	$(AM_V_at)! grep '^int ' $(top_srcdir)/include/*.h # Missing WALLY_CORE_API
+
 if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
+check-libwallycore: $(PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_TEST) test/test_address.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_anti_exfil.py
@@ -336,7 +336,9 @@ if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_elements.py
 endif
+
 if USE_SWIG_PYTHON
+check-swig-python: $(SWIG_PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/psbt.py
@@ -348,9 +350,15 @@ if BUILD_ELEMENTS
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
 endif
+else # USE_SWIG_PYTHON
+check-swig-python: ;
 endif # USE_SWIG_PYTHON
+else # RUN_PYTHON_TESTS
+check-libwallycore: ;
 endif # RUN_PYTHON_TESTS
+
 if RUN_JAVA_TESTS
+check-swig-java: $(SWIG_JAVA_TEST_DEPS)
 	$(AM_V_at)! grep 'native int wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
 	$(AM_V_at)! grep 'native Object wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
 if BUILD_ELEMENTS
@@ -361,8 +369,12 @@ endif
 	$(AM_V_at)$(JAVA_TEST)test_mnemonic
 	$(AM_V_at)$(JAVA_TEST)test_scripts
 	$(AM_V_at)$(JAVA_TEST)test_tx
-endif
+else # RUN_JAVA_TESTS
+check-swig-java: ;
+endif # RUN_JAVA_TESTS
+
 if USE_JS_WRAPPERS
+check-js-wrappers:
 if BUILD_ELEMENTS
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_assets.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_confidential_address.js
@@ -378,8 +390,13 @@ endif
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_hash.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_script.js
 	$(AM_V_at)wrap_js/node_modules/.bin/tape wrap_js/test/test_scrypt.js
-endif
+else # USE_JS_WRAPPERS
+check-js-wrappers: ;
+endif # USE_JS_WRAPPERS
+
 endif # SHARED_BUILD_ENABLED
+.PHONY: check-libwallycore check-swig-python check-swig-java check-js-wrappers clean-swig-python clean-js-wrappers clean-swig-java cordova-wrappers
+else # RUN_TESTS
+.PHONY: clean-swig-python clean-js-wrappers clean-swig-java cordova-wrappers
 endif # RUN_TESTS
 
-.PHONY: clean-swig-python clean-js-wrappers clean-swig-java cordova-wrappers
