@@ -281,7 +281,7 @@ AC_ARG_ENABLE(swig-python,
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
 
-AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes" -a "x$swig_python" == "xyes"])
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then
