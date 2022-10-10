@@ -443,9 +443,11 @@ set(LIBWALLY_FILES
     src/secp256k1/include/secp256k1.h
     src/secp256k1/include/secp256k1_recovery.h
     src/bip32_int.h
+    src/mnemonic.h
     src/script_int.h
     src/transaction_int.h
     src/psbt_io.h
+    src/wordlist.h
 )
 
 ####################

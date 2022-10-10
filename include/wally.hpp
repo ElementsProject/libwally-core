@@ -421,35 +421,35 @@ inline int cleanup(uint32_t flags) {
     return ret;
 }
 
-template <class DESCRIPTOR>
-inline int descriptor_create_checksum(const DESCRIPTOR& descriptor, const char** key_name_array, const char** key_value_array, size_t array_len, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_create_checksum(detail::get_p(descriptor), key_name_array, key_value_array, array_len, flags, output);
+template <class DESCRIPTOR, class KEY_VALUE_MAP>
+inline int descriptor_create_checksum(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_create_checksum(detail::get_p(descriptor), detail::get_p(key_value_map), flags, output);
     return ret;
 }
 
-template <class MINISCRIPT, class SCRIPT>
-inline int descriptor_parse_miniscript(const MINISCRIPT& miniscript, const char** key_name_array, const char** key_value_array, size_t array_len, uint32_t derive_child_num, uint32_t flags, SCRIPT& script, size_t* written = 0) {
+template <class MINISCRIPT, class KEY_VALUE_MAP, class SCRIPT>
+inline int descriptor_parse_miniscript(const MINISCRIPT& miniscript, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t flags, SCRIPT& script, size_t* written = 0) {
     size_t n;
-    int ret = ::wally_descriptor_parse_miniscript(detail::get_p(miniscript), key_name_array, key_value_array, array_len, derive_child_num, flags, script.data(), script.size(), written ? written : &n);
+    int ret = ::wally_descriptor_parse_miniscript(detail::get_p(miniscript), detail::get_p(key_value_map), derive_child_num, flags, script.data(), script.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(script.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
-template <class DESCRIPTOR>
-inline int descriptor_to_address(const DESCRIPTOR& descriptor, const char** key_name_array, const char** key_value_array, size_t array_len, uint32_t derive_child_num, uint32_t network, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), key_name_array, key_value_array, array_len, derive_child_num, network, flags, output);
+template <class DESCRIPTOR, class KEY_VALUE_MAP>
+inline int descriptor_to_address(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t network, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), detail::get_p(key_value_map), derive_child_num, network, flags, output);
     return ret;
 }
 
-template <class DESCRIPTOR>
-inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, const char** key_name_array, const char** key_value_array, size_t array_len, uint32_t start_child_num, uint32_t end_child_num, uint32_t network, uint32_t flags, struct wally_descriptor_addresses* addresses) {
-    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), key_name_array, key_value_array, array_len, start_child_num, end_child_num, network, flags, addresses);
+template <class DESCRIPTOR, class KEY_VALUE_MAP>
+inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t start_child_num, uint32_t end_child_num, uint32_t network, uint32_t flags, struct wally_descriptor_addresses* addresses) {
+    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), detail::get_p(key_value_map), start_child_num, end_child_num, network, flags, addresses);
     return ret;
 }
 
-template <class DESCRIPTOR, class SCRIPT>
-inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, const char** key_name_array, const char** key_value_array, size_t array_len, uint32_t derive_child_num, uint32_t network, uint32_t target_depth, uint32_t target_index, uint32_t flags, SCRIPT& script, size_t* written = 0) {
+template <class DESCRIPTOR, class KEY_VALUE_MAP, class SCRIPT>
+inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t network, uint32_t target_depth, uint32_t target_index, uint32_t flags, SCRIPT& script, size_t* written = 0) {
     size_t n;
-    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), key_name_array, key_value_array, array_len, derive_child_num, network, target_depth, target_index, flags, script.data(), script.size(), written ? written : &n);
+    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), detail::get_p(key_value_map), derive_child_num, network, target_depth, target_index, flags, script.data(), script.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(script.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 

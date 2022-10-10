@@ -3,6 +3,7 @@
 
 #include "wally_core.h"
 #include "wally_address.h"
+#include "wally_map.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,9 +59,7 @@ WALLY_CORE_API int wally_free_descriptor_addresses(
  */
 WALLY_CORE_API int wally_descriptor_parse_miniscript(
     const char *miniscript,
-    const char **key_name_array,
-    const char **key_value_array,
-    size_t array_len,
+    const struct wally_map *key_value_map,
     uint32_t derive_child_num,
     uint32_t flags,
     unsigned char *script,
@@ -85,9 +84,7 @@ WALLY_CORE_API int wally_descriptor_parse_miniscript(
  */
 WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
     const char *descriptor,
-    const char **key_name_array,
-    const char **key_value_array,
-    size_t array_len,
+    const struct wally_map *key_value_map,
     uint32_t derive_child_num,
     uint32_t network,
     uint32_t target_depth,
@@ -112,9 +109,7 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
  */
 WALLY_CORE_API int wally_descriptor_to_address(
     const char *descriptor,
-    const char **key_name_array,
-    const char **key_value_array,
-    size_t array_len,
+    const struct wally_map *key_value_map,
     uint32_t derive_child_num,
     uint32_t network,
     uint32_t flags,
@@ -136,9 +131,7 @@ WALLY_CORE_API int wally_descriptor_to_address(
  */
 WALLY_CORE_API int wally_descriptor_to_addresses(
     const char *descriptor,
-    const char **key_name_array,
-    const char **key_value_array,
-    size_t array_len,
+    const struct wally_map *key_value_map,
     uint32_t start_child_num,
     uint32_t end_child_num,
     uint32_t network,
@@ -157,9 +150,7 @@ WALLY_CORE_API int wally_descriptor_to_addresses(
  */
 WALLY_CORE_API int wally_descriptor_create_checksum(
     const char *descriptor,
-    const char **key_name_array,
-    const char **key_value_array,
-    size_t array_len,
+    const struct wally_map *key_value_map,
     uint32_t flags,
     char **output);
 
