@@ -399,9 +399,9 @@ class BIP32Tests(unittest.TestCase):
             self.compare_keys(master, expected, flags)
 
         derived = master
-        for path, i in [('m/0H', 0x80000000),
-                        ('m/0H/1', 1),
-                        ('m/0H/1/2H', 0x80000002)]:
+        for path, patharray in [('m/0H', [0x80000000]),
+                                ('m/0H/1', [0x80000000, 1]),
+                                ('m/0H/1/2H', [0x80000000, 1, 0x80000002])]:
 
             if path not in vec:
                 continue
@@ -410,14 +410,23 @@ class BIP32Tests(unittest.TestCase):
             # contains the public and private published vectors. Verify that
             # the public child matches the public vector and has no private
             # key. Finally, check that the child holds the correct parent hash.
+            child = patharray[-1]
             parent160 = derived.hash160
-            derived_pub = self.derive_key(derived, i, FLAG_KEY_PUBLIC)
-            derived = self.derive_key(derived, i, FLAG_KEY_PRIVATE)
+            derived_pub = self.derive_key(derived, child, FLAG_KEY_PUBLIC)
+            derived = self.derive_key(derived, child, FLAG_KEY_PRIVATE)
+
+            # Derive by full path from the master key, and check that yields the
+            # same result as the explicitly stepwise derivation
+            path_derived_pub, _ = self.derive_key_by_path(master, patharray, FLAG_KEY_PUBLIC)
+            path_derived, _ = self.derive_key_by_path(master, patharray, FLAG_KEY_PRIVATE)
+
             for flags in [FLAG_KEY_PUBLIC, FLAG_KEY_PRIVATE]:
                 expected = self.get_test_key(vec, path, flags)
                 self.compare_keys(derived, expected, flags)
+                self.compare_keys(derived, path_derived, flags)
                 if flags & FLAG_KEY_PUBLIC:
                     self.compare_keys(derived_pub, expected, flags)
+                    self.compare_keys(derived_pub, path_derived_pub, flags)
                     # A neutered private key is indicated by
                     # BIP32_FLAG_KEY_PUBLIC (0x1) as its first byte.
                     self.assertEqual(h(derived_pub.priv_key), utf8('01' + '00' * 32))
