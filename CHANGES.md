@@ -1,5 +1,33 @@
 # Changes
 
+## Version 0.8.6
+- Support for PSET v0 (Elements) has been removed.
+- PSBT: PSBT/PSET v2 support has been added. The ABI has changed slightly as a result.
+  Users will need to recompile their applications and change function names and
+  arguments in the cases listed below:
+- PSBT_PROPRIETARY_TYPE has been renamed to WALLY_PSBT_PROPRIETARY_TYPE to respect
+  wallys namespace.
+- psbt_init_alloc has changed its definition and now has a new flags argument.
+  Passing `WALLY_PSBT_INIT_PSET` to this function will create an Elements
+  PSET instead of a PSBT (version must be passed as 2 in this case).
+- psbt_from_base64 and psbt_from_bytes now take an extra flags parameter. The
+  Java and Python wrappers default this to zero for backwards compatibility.
+- psbt_add_input_at has been renamed to psbt_add_tx_input_at.
+- psbt_add_output_at has been renamed to psbt_add_tx_output_at.
+- wally_map initialization functions now take a verification function
+  as an extra parameter.
+- wally_map_add_keypath_item has been renamed to wally_map_keypath_add.
+  This call must only be made on a keypath initialized map.
+- The input and output variants wally_psbt_input_add_keypath_item and
+  wally_psbt_output_add_keypath_item have also been renamed to
+  wally_psbt_input_keypath_add and wally_psbt_output_keypath_add.
+- New functions wally_map_keypath_bip32_init_alloc and
+  wally_map_keypath_public_key_init_alloc for initializing BIP32 and public key
+  keypath maps have been added.
+- Note that PSET support for issuance and peg-in is incomplete at this time and
+  may contain bugs. Users are strongly advised to test their code thoroughly
+  if using these features.
+
 ## Version 0.8.2
 
 - struct wally_operations has changed to hold the size of the struct

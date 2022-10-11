@@ -5,7 +5,6 @@
 #include "ccan/ccan/crypto/sha256/sha256.h"
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include "ccan/ccan/endian/endian.h"
-#include <stdbool.h>
 
 #undef malloc
 #undef free
@@ -18,11 +17,6 @@
 
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
-
-int privkey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
-{
-    return secp256k1_ec_seckey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
-}
 
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
 {
@@ -39,6 +33,11 @@ int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t in
     return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, inputlen);
 }
 
+int xpubkey_parse(secp256k1_xonly_pubkey *pubkey, const unsigned char *input)
+{
+    return secp256k1_xonly_pubkey_parse(secp256k1_context_no_precomp, pubkey, input);
+}
+
 int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags)
 {
     return secp256k1_ec_pubkey_serialize(secp256k1_context_no_precomp, output, outputlen, pubkey, flags);
@@ -47,6 +46,21 @@ int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_p
 int seckey_verify(const unsigned char *seckey)
 {
     return secp256k1_ec_seckey_verify(secp256k1_context_no_precomp, seckey);
+}
+
+int seckey_negate(unsigned char *seckey)
+{
+    return secp256k1_ec_seckey_negate(secp256k1_context_no_precomp, seckey);
+}
+
+int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
+{
+    return secp256k1_ec_seckey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
+}
+
+int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak)
+{
+    return secp256k1_ec_seckey_tweak_mul(secp256k1_context_no_precomp, seckey, tweak);
 }
 
 #ifndef SWIG
@@ -98,7 +112,7 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    sha256(aligned ? (struct sha256 *)bytes_out : &sha, bytes, bytes_len);
+    sha256(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -127,7 +141,7 @@ int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
 
     sha256_init(&ctx);
     sha256_update(&ctx, bytes, bytes_len);
-    sha256_midstate(&ctx, aligned ? (struct sha256 *)bytes_out : &sha);
+    sha256_midstate(&ctx, aligned ? (void *)bytes_out : (void *)&sha);
     wally_clear(&ctx, sizeof(ctx));
 
     if (!aligned) {
@@ -147,7 +161,7 @@ int wally_sha256d(const unsigned char *bytes, size_t bytes_len,
         return WALLY_EINVAL;
 
     sha256(&sha_1, bytes, bytes_len);
-    sha256(aligned ? (struct sha256 *)bytes_out : &sha_2, &sha_1, sizeof(sha_1));
+    sha256(aligned ? (void *)bytes_out : (void *)&sha_2, &sha_1, sizeof(sha_1));
     if (!aligned) {
         memcpy(bytes_out, &sha_2, sizeof(sha_2));
         wally_clear(&sha_2, sizeof(sha_2));
@@ -165,7 +179,7 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA512_LEN)
         return WALLY_EINVAL;
 
-    sha512(aligned ? (struct sha512 *)bytes_out : &sha, bytes, bytes_len);
+    sha512(aligned ? (void *)bytes_out : (void *)&sha, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &sha, sizeof(sha));
         wally_clear(&sha, sizeof(sha));
@@ -184,7 +198,7 @@ int wally_ripemd160(const unsigned char *bytes, size_t bytes_len,
 
     BUILD_ASSERT(sizeof(ripemd) == RIPEMD160_LEN);
 
-    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, bytes, bytes_len);
+    ripemd160(aligned ? (void *)bytes_out : (void *)&ripemd, bytes, bytes_len);
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
         wally_clear(&ripemd, sizeof(ripemd));
@@ -207,7 +221,7 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
     if (wally_sha256(bytes, bytes_len, buff, sizeof(buff)) != WALLY_OK)
         return WALLY_EINVAL;
 
-    ripemd160(aligned ? (struct ripemd160 *)bytes_out : &ripemd, &buff, sizeof(buff));
+    ripemd160(aligned ? (void *)bytes_out : (void *)&ripemd, &buff, sizeof(buff));
     if (!aligned) {
         memcpy(bytes_out, &ripemd, sizeof(ripemd));
         wally_clear(&ripemd, sizeof(ripemd));
@@ -396,6 +410,24 @@ void clear_and_free(void *p, size_t len)
     }
 }
 
+void clear_and_free_bytes(unsigned char **p, size_t *len)
+{
+    if (p && len) {
+        clear_and_free(*p, *len);
+        *p = NULL;
+        *len = 0;
+    }
+}
+
+bool mem_is_zero(const void *mem, size_t len)
+{
+    size_t i;
+    for (i = 0; i < len; ++i)
+        if (((const unsigned char *)mem)[i])
+            return false;
+    return true;
+}
+
 static bool wally_init_done = false;
 
 int wally_init(uint32_t flags)
@@ -428,6 +460,72 @@ void wally_secp_context_free(struct secp256k1_context_struct *ctx)
     if (ctx)
         secp256k1_context_destroy(ctx);
 }
+
+bool clone_data(void **dst, const void *src, size_t len)
+{
+    if (!len) {
+        *dst = NULL;
+        return true;
+    }
+    *dst = wally_malloc(len);
+    if (*dst)
+        memcpy(*dst, src, len);
+    return *dst != NULL;
+}
+
+bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len)
+{
+    return clone_data((void **)dst, src, len);
+}
+
+int replace_bytes(const unsigned char *bytes, size_t bytes_len,
+                  unsigned char **bytes_out, size_t *bytes_len_out)
+{
+    unsigned char *new_bytes = NULL;
+
+    if (BYTES_INVALID(bytes, bytes_len) || BYTES_INVALID(*bytes_out, *bytes_len_out))
+        return WALLY_EINVAL;
+
+    /* TODO: Avoid reallocation if new bytes is smaller than the existing one */
+    if (!clone_bytes(&new_bytes, bytes, bytes_len))
+        return WALLY_ENOMEM;
+
+    clear_and_free(*bytes_out, *bytes_len_out);
+    *bytes_out = new_bytes;
+    *bytes_len_out = bytes_len;
+    return WALLY_OK;
+}
+
+
+
+void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
+{
+    unsigned char *p = wally_malloc(new_n * size);
+    if (!p)
+        return NULL;
+    if (src)
+        memcpy(p, src, old_n * size);
+    wally_clear(p + old_n * size, (new_n - old_n) * size);
+    return p;
+}
+
+int array_grow(void **src, size_t num_items, size_t *allocation_len,
+               size_t item_size)
+{
+    if (num_items == *allocation_len) {
+        /* Array is full, allocate more space */
+        const size_t n = (*allocation_len == 0 ? 1 : *allocation_len) * 2;
+        void *p = array_realloc(*src, *allocation_len, n, item_size);
+        if (!p)
+            return WALLY_ENOMEM;
+        /* Free and replace the old array with the new enlarged copy */
+        clear_and_free(*src, num_items * item_size);
+        *src = p;
+        *allocation_len = n;
+    }
+    return WALLY_OK;
+}
+
 
 #ifdef __ANDROID__
 #define malloc(size) wally_malloc(size)

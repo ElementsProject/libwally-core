@@ -202,7 +202,7 @@ static void add(struct sha512_ctx *ctx, const void *p, size_t len)
 	while (len >= 128) {
 		/* Process full chunks directly from the source. */
 		if (alignment_ok(data, sizeof(uint64_t)))
-			Transform(ctx->s, (const uint64_t *)data);
+			Transform(ctx->s, (const uint64_t *)(void*)(data));
 		else {
 			memcpy(ctx->buf.u8, data, sizeof(ctx->buf));
 			Transform(ctx->s, ctx->buf.u64);

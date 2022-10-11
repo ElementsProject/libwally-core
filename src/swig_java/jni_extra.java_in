@@ -174,6 +174,18 @@
       return ec_sig_to_public_key(jarg1, jarg2, null);
   }
 
+  public final static byte[] ec_scalar_add(byte[] jarg1, byte[] jarg2) {
+      return ec_scalar_add(jarg1, jarg2, null);
+  }
+
+  public final static byte[] ec_scalar_multiply(byte[] jarg1, byte[] jarg2) {
+      return ec_scalar_multiply(jarg1, jarg2, null);
+  }
+
+  public final static byte[] ec_scalar_subtract(byte[] jarg1, byte[] jarg2) {
+      return ec_scalar_subtract(jarg1, jarg2, null);
+  }
+
   public final static byte[] tx_get_input_txhash(Object jarg1, long jarg2) {
         return tx_get_input_txhash(jarg1, jarg2, null);
   }
@@ -329,6 +341,15 @@
       return symmetric_key_from_parent(jarg1, jarg2, jarg3, null);
   }
 
+  public final static Object psbt_from_bytes(byte[] jarg1) {
+      return psbt_from_bytes(jarg1, 0); // Default flags to 0 for back compat.
+  }
+
+  public final static Object psbt_from_base64(String jarg1)
+  {
+      return psbt_from_base64(jarg1, 0); // Default flags to 0 for back compat.
+  }
+
   public final static byte[] psbt_get_input_final_scriptsig(Object psbt, long idx) {
       final byte[] buf = new byte[psbt_get_input_final_scriptsig_len(psbt, idx)];
       if (buf.length == 0) return buf;
@@ -349,6 +370,11 @@
 
   public final static int[] psbt_get_input_keypath_path(Object psbt, long idx, long sub_idx) {
       return get_keypath_path(psbt_get_input_keypath(psbt, idx, sub_idx));
+  }
+
+  public final static byte[] psbt_get_input_previous_txid(Object psbt, long idx) {
+      final byte[] buf = new byte[WALLY_TXHASH_LEN];
+      return psbt_get_input_previous_txid(psbt, idx, buf);
   }
 
   public final static byte[] psbt_get_input_redeem_script(Object psbt, long idx) {
@@ -398,6 +424,13 @@
       final byte[] buf = new byte[psbt_get_output_redeem_script_len(psbt, idx)];
       if (buf.length == 0) return buf;
       final int len = psbt_get_output_redeem_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_output_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_output_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_output_script(psbt, idx, buf);
       return checkBuffer(buf, len);
   }
 

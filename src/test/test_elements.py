@@ -19,9 +19,9 @@ UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN = make_cbuffer('0b9d043d6
 # value commitment
 UNBLIND_VALUE_COMMITMENT, UNBLIND_VALUE_COMMITMENT_LEN = make_cbuffer('09b67565b370abf41d81fe0ed6378e7228e9ae01d1b72b69582f83db1fca522148')
 
-UNBLINDED_ASSET = make_cbuffer('25b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a')[0]
-UNBLINDED_ABF = make_cbuffer('3f2f58e80fbe77e8aad8268f1baebc3548c777ba8271f99ce73210ad993d907d')[0]
-UNBLINDED_VBF = make_cbuffer('51f109e34d0282b6efac36d118131060f7f79b867b67a95bebd087eda2ccd796')[0]
+UNBLINDED_ASSET, UNBLINDED_ASSET_LEN = make_cbuffer('25b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a')
+UNBLINDED_ABF, UNBLINDED_ABF_LEN = make_cbuffer('3f2f58e80fbe77e8aad8268f1baebc3548c777ba8271f99ce73210ad993d907d')
+UNBLINDED_VBF, UNBLINDED_VBF_LEN = make_cbuffer('51f109e34d0282b6efac36d118131060f7f79b867b67a95bebd087eda2ccd796')
 
 # TODO: expand these tests a little bit...
 class ElementsTests(unittest.TestCase):
@@ -47,9 +47,20 @@ class ElementsTests(unittest.TestCase):
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
     def test_asset_unblind_with_nonce(self):
+        out_nonce_hash, _ = make_cbuffer('00'*32)
+        ret = wally_ecdh_nonce_hash(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                                    UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                                    out_nonce_hash, len(out_nonce_hash))
+        self.assertEqual(ret, WALLY_OK)
+
         out_nonce, _ = make_cbuffer('00'*32)
-        wally_ecdh(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN, UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN, out_nonce, len(out_nonce))
-        wally_sha256(out_nonce, 32, out_nonce, 32);
+        ret = wally_ecdh(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                         UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                         out_nonce, len(out_nonce))
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(wally_sha256(out_nonce, 32, out_nonce, 32), WALLY_OK)
+        # ecdh_nonce_hash helper and manual hashing of the nonce must match
+        self.assertEqual(out_nonce, out_nonce_hash)
 
         asset_out, _ = make_cbuffer('00' * 32)
         abf_out, _ = make_cbuffer('00' * 32)
@@ -68,6 +79,131 @@ class ElementsTests(unittest.TestCase):
         ret, value_out = wally_asset_unblind_with_nonce(*args)
         self.assertEqual((ret, value_out, asset_out, abf_out, vbf_out),
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
+
+    def test_asset_generator_from_bytes(self):
+        generator, generator_len = make_cbuffer('00' * 33)
+
+        # Blind the unblinded asset with its blinding factor
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, UNBLIND_ASSET_COMMITMENT))
+
+        # Parse the blinded commitment directly as a generator
+        ret = wally_asset_generator_from_bytes(UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                               None, 0,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, UNBLIND_ASSET_COMMITMENT))
+
+        # Create an unblinded generator from the asset
+        expected, expected_len = make_cbuffer('0a73d9600e05986acd3c0c6521e72a198b0155e8a79d335035ff0432f26163f17e')
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               None, 0,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, expected))
+
+        # Create an unblinded generator from an explicit asset commitment
+        tag, tag_len = make_cbuffer(h(bytearray([0x1]) + UNBLINDED_ASSET))
+        ret = wally_asset_generator_from_bytes(tag, tag_len,
+                                               None, 0,
+                                               generator, generator_len)
+        self.assertEqual((ret, generator), (WALLY_OK, expected))
+
+    def test_blinding(self):
+        value = 80000000
+
+        # asset_value_commitment
+        value_commitment, value_commitment_len = make_cbuffer('00' * 33)
+        ret = wally_asset_value_commitment(value, UNBLINDED_VBF, len(UNBLINDED_VBF),
+                                           UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                           value_commitment, value_commitment_len)
+        self.assertEqual((ret, value_commitment), (WALLY_OK, UNBLIND_VALUE_COMMITMENT))
+
+        # asset_rangeproof
+        rangeproof, rangeproof_len = make_cbuffer('00' * 5134)
+        ret, written = wally_asset_rangeproof(value, UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
+                                              UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
+                                              UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                              UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                              UNBLINDED_VBF, UNBLINDED_VBF_LEN,
+                                              UNBLIND_VALUE_COMMITMENT, UNBLIND_VALUE_COMMITMENT_LEN,
+                                              None, 0,
+                                              UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                              1, 0, 52, rangeproof, rangeproof_len)
+        self.assertEqual(ret, WALLY_OK)
+        rangeproof_len = written
+
+        # explicit_rangeproof
+        explicit_proof, explicit_proof_len = make_cbuffer('00' * 73)
+        nonce, nonce_len = make_cbuffer('44' * 32) # Random, in normal usage
+
+        ret, written = wally_explicit_rangeproof(value, nonce, nonce_len,
+                                                 UNBLINDED_VBF, len(UNBLINDED_VBF),
+                                                 UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
+                                                 UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                                 explicit_proof, explicit_proof_len)
+        self.assertEqual((ret, written), (WALLY_OK, 73))
+
+        # explicit_rangeproof_verify
+        for v, expected in [
+            (value + 1, WALLY_EINVAL),
+            (value,     WALLY_OK),
+            (value - 1, WALLY_EINVAL)]:
+            ret = wally_explicit_rangeproof_verify(explicit_proof, explicit_proof_len, v,
+                                                   UNBLIND_VALUE_COMMITMENT, len(UNBLIND_VALUE_COMMITMENT),
+                                                   UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN)
+            self.assertEqual(ret, expected)
+
+        # asset_surjectionproof_size
+        ret, expected_proof_len = wally_asset_surjectionproof_size(1)
+        self.assertEqual((ret, expected_proof_len), (WALLY_OK, 67))
+
+        # asset_surjectionproof
+        output_abf, output_abf_len = make_cbuffer('91' * 32)
+        output_generator, output_generator_len = make_cbuffer('00' * 33)
+        ret = wally_asset_generator_from_bytes(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                               output_abf, output_abf_len,
+                                               output_generator, output_generator_len)
+        self.assertEqual(ret, WALLY_OK)
+
+        entropy, entropy_len = make_cbuffer('34' * 32)
+        surjectionproof, surjectionproof_len = make_cbuffer('00' * expected_proof_len)
+        ret, written = wally_asset_surjectionproof(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                                   output_abf, output_abf_len,
+                                                   output_generator, output_generator_len,
+                                                   entropy, entropy_len,
+                                                   UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                                   UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                                   UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
+                                                   surjectionproof, surjectionproof_len)
+        self.assertEqual((ret, written), (WALLY_OK, expected_proof_len))
+
+        # explicit_surjectionproof
+        ASSET_EXPLICIT_SURJECTIONPROOF_LEN = 67
+        explicit_sjproof, explicit_sjproof_len = make_cbuffer('00' * ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+        ret = wally_explicit_surjectionproof(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                                             output_abf, output_abf_len,
+                                             output_generator, output_generator_len,
+                                             explicit_sjproof, explicit_sjproof_len)
+        self.assertEqual(ret, WALLY_OK)
+
+        # explicit_surjectionproof_verify
+        for good, expected in [(True, WALLY_OK), (False, WALLY_ERROR)]:
+            asset = UNBLINDED_ASSET if good else UNBLINDED_ABF # Use abf as an example of bad asset
+            ret = wally_explicit_surjectionproof_verify(explicit_sjproof, explicit_sjproof_len,
+                                                        asset, UNBLINDED_ASSET_LEN,
+                                                        output_generator, output_generator_len)
+            self.assertEqual(ret, expected)
+
+        # wally_asset_scalar_offset
+        SCALAR_OFFSET_LEN = 32
+        offset, offset_len = make_cbuffer('00' * SCALAR_OFFSET_LEN)
+        ret = wally_asset_scalar_offset(value, UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                                        UNBLINDED_VBF, UNBLINDED_VBF_LEN, offset, offset_len);
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(h(offset),
+                         utf8('4e5f3ca8aa2048eeacc8c300e3d63ca92048f407264352bee2fb15bd44349c45'))
+        self.assertEqual(wally_ec_scalar_verify(offset, offset_len), WALLY_OK)
 
 if __name__ == '__main__':
     _, val = wally_is_elements_build()

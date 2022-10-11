@@ -3,6 +3,7 @@
 #include <wally_core.h>
 #include <wally_address.h>
 #include <wally_crypto.h>
+#include <wally_map.h>
 #include <wally_descriptor.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -871,6 +872,32 @@ struct wally_descriptor_err_test g_address_err_test_table[] = {
     },
 };
 
+static struct wally_map *create_wmap(const char **key_name_list,
+                                    const char **key_value_list, size_t list_num) {
+    struct wally_map *wmap = NULL;
+    int ret;
+    if (list_num == 0)
+        return NULL;
+    ret = wally_map_init_alloc(list_num, NULL, &wmap);
+    if (ret != WALLY_OK)
+        return NULL;
+
+    for (size_t index = 0; index < list_num; ++index) {
+        ret = wally_map_add(
+            wmap, (const unsigned char *)key_name_list[index], strlen(key_name_list[index])+1,
+            (const unsigned char *)key_value_list[index], strlen(key_value_list[index])+1);
+        if (ret != WALLY_OK) {
+            wally_map_free(wmap);
+            return NULL;
+        }
+    }
+    return wmap;
+}
+
+static void free_wmap(struct wally_map *wmap) {
+    if (wmap) wally_map_free(wmap);
+}
+
 static bool check_parse_miniscript(const char *function, const char *descriptor,
                                    const char *expected,
                                    const char **key_name_list,
@@ -883,17 +910,18 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
     int ret;
     bool is_success = false;
     uint32_t index = 0;
+    struct wally_map *wmap;
 
+    wmap = create_wmap(key_name_list, key_value_list, list_num);
     ret = wally_descriptor_parse_miniscript(
         descriptor,
-        key_name_list,
-        key_value_list,
-        list_num,
+        wmap,
         index,
         flags,
         script,
         sizeof(script),
         &written);
+    free_wmap(wmap);
     if (ret != WALLY_OK) {
         printf("wally_descriptor_parse_miniscript NG[%d]\n", ret);
         return false;
@@ -928,17 +956,18 @@ static bool check_parse_miniscript_error(
     int ret;
     bool is_success = false;
     uint32_t index = 0;
+    struct wally_map *wmap;
 
+    wmap = create_wmap(key_name_list, key_value_list, list_num);
     ret = wally_descriptor_parse_miniscript(
         descriptor,
-        key_name_list,
-        key_value_list,
-        list_num,
+        wmap,
         index,
         flags,
         script,
         sizeof(script),
         &written);
+    free_wmap(wmap);
     if (ret == WALLY_EINVAL) {
         return true;
     } else if (ret != WALLY_OK) {
@@ -976,15 +1005,18 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
     uint32_t desc_index = 0;
     uint32_t flag = 0;
     uint32_t index = 0;
+    struct wally_map *wmap;
     if (bip32_index) {
         index = *bip32_index;
     }
 
-    ret = wally_descriptor_to_scriptpubkey(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_to_scriptpubkey(
+        descriptor,
+        wmap,
         index,
         network,
         desc_depth,
@@ -993,6 +1025,7 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
         script,
         sizeof(script),
         &written);
+    free_wmap(wmap);
     if (ret != WALLY_OK) {
         printf("wally_descriptor_to_scriptpubkey NG[%d]\n", ret);
         return false;
@@ -1004,13 +1037,16 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
         return false;
     }
 
-    ret = wally_descriptor_create_checksum(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_create_checksum(
+        descriptor,
+        wmap,
         flag,
         &checksum);
+    free_wmap(wmap);
     if (ret != WALLY_OK) {
         printf("wally_descriptor_create_checksum NG[%d]\n", ret);
         wally_free_string(hex);
@@ -1042,12 +1078,15 @@ static bool check_descriptor_to_scriptpubkey_depth(const char *function,
     bool is_success = false;
     uint32_t network = 0;
     uint32_t flag = 0;
+    struct wally_map *wmap;
 
-    ret = wally_descriptor_to_scriptpubkey(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_to_scriptpubkey(
+        descriptor,
+        wmap,
         0,
         network,
         depth,
@@ -1056,6 +1095,7 @@ static bool check_descriptor_to_scriptpubkey_depth(const char *function,
         script,
         sizeof(script),
         &written);
+    free_wmap(wmap);
     if (ret != WALLY_OK) {
         printf("wally_descriptor_to_scriptpubkey NG[%d]\n", ret);
         return false;
@@ -1086,16 +1126,20 @@ static bool check_descriptor_to_address(const char *function,
     int ret;
     uint32_t flag = 0;
     bool is_success = false;
+    struct wally_map *wmap;
 
-    ret = wally_descriptor_to_address(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_to_address(
+        descriptor,
+        wmap,
         bip32_index,
         network,
         flag,
         &address);
+    free_wmap(wmap);
     if (ret != WALLY_OK) {
         printf("wally_descriptor_to_address NG[%d]\n", ret);
         return false;
@@ -1123,17 +1167,21 @@ static bool check_descriptor_to_addresses(const char *function,
     uint32_t flag = 0;
     uint32_t index = 0;
     bool is_success = true;
+    struct wally_map *wmap;
 
-    ret = wally_descriptor_to_addresses(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_to_addresses(
+        descriptor,
+        wmap,
         start_index,
         end_index,
         network,
         flag,
         &addresses);
+    free_wmap(wmap);
     if (ret != WALLY_OK) {
         printf("wally_descriptor_to_addresses NG[%d]\n", ret);
         return false;
@@ -1172,12 +1220,15 @@ static bool check_descriptor_scriptpubkey_error(const char *function,
     uint32_t flag = 0;
     uint32_t desc_depth = 0;
     uint32_t desc_index = 0;
+    struct wally_map *wmap;
 
-    ret = wally_descriptor_to_scriptpubkey(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_to_scriptpubkey(
+        descriptor,
+        wmap,
         0,
         network,
         desc_depth,
@@ -1186,6 +1237,7 @@ static bool check_descriptor_scriptpubkey_error(const char *function,
         script,
         sizeof(script),
         &written);
+    free_wmap(wmap);
     if (ret == WALLY_EINVAL) {
         return true;
     } else if (ret != WALLY_OK) {
@@ -1204,16 +1256,20 @@ static bool check_descriptor_address_error(const char *function,
     char *address = NULL;
     int ret;
     uint32_t flag = 0;
+    struct wally_map *wmap;
 
-    ret = wally_descriptor_to_address(
-        descriptor,
+    wmap = create_wmap(
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
-        sizeof(g_miniscript_keyname_list) / sizeof(char *),
+        sizeof(g_miniscript_keyname_list) / sizeof(char *));
+    ret = wally_descriptor_to_address(
+        descriptor,
+        wmap,
         0,
         network,
         flag,
         &address);
+    free_wmap(wmap);
     if (ret == WALLY_EINVAL) {
         return true;
     } else if (ret != WALLY_OK) {

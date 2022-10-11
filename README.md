@@ -110,7 +110,7 @@ installed.
 For non-development use, you can install wally with `pip` as follows:
 
 ```
-pip install wallycore==0.8.5
+pip install wallycore==0.8.6
 ```
 
 For python development, you can build and install wally using:
@@ -130,7 +130,7 @@ You can also install the binary [wally releases](https://github.com/ElementsProj
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.5-cp39-cp39m-linux_x86_64.whl
+pip install wallycore-0.8.6-cp39-cp39m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
@@ -143,7 +143,7 @@ the Android NDK. The script `tools/android_helpers.sh` can be sourced from
 the shell or scripts to make it easier to produce builds:
 
 ```
-$ export ANDROID_HOME=/opt/android-sdk
+$ export ANDROID_NDK=/opt/android-ndk-r23b # r22 is the minimum supported version
 $ . ./tools/android_helpers.sh
 
 $ android_get_arch_list

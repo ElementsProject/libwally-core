@@ -51,7 +51,7 @@ int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
 {
     struct SHA_T sha;
     bool aligned = alignment_ok(bytes_out, sizeof(sha.u.SHA_CTX_MEMBER));
-    struct SHA_T *sha_p = aligned ? (struct SHA_T *)bytes_out : &sha;
+    struct SHA_T *sha_p = aligned ? (void *)bytes_out : (void*)&sha;
 
     if (!key || !key_len || !bytes || !bytes_len ||
         !bytes_out || len != sizeof(struct SHA_T))

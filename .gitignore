@@ -62,6 +62,7 @@ src/swig_python/wallycore/wallycore.egg-info
 tools/build-aux/m4/l*.m4
 tools/build-aux/test-driver
 tools/build-aux/*-e
+tools/build-aux/ar-lib
 src/secp256k1/build-aux/*-e
 src/secp256k1/test-suite.log
 src/secp256k1/*.log
@@ -78,11 +79,14 @@ docs/source/bip38.rst
 docs/source/bip39.rst
 docs/source/core.rst
 docs/source/crypto.rst
+docs/source/map.rst
 docs/source/psbt.rst
+docs/source/psbt_members.rst
 docs/source/script.rst
 docs/source/symmetric.rst
 docs/source/transaction.rst
 docs/source/elements.rst
+docs/source/*_int.rst
 .idea/
 
 # ctags

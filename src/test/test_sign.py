@@ -4,6 +4,7 @@ from util import *
 FLAG_ECDSA, FLAG_SCHNORR, FLAG_GRIND_R, FLAG_RECOVERABLE = 1, 2, 4, 8
 EX_PRIV_KEY_LEN, EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
 EC_SIGNATURE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 72
+EC_SCALAR_LEN = 32
 BITCOIN_MESSAGE_HASH_FLAG = 1
 
 class SignTests(unittest.TestCase):
@@ -26,7 +27,6 @@ class SignTests(unittest.TestCase):
             out_len = blen(out_buf)
         return wally_ec_sig_from_bytes(priv_key, blen(priv_key),
                                        msg, blen(msg), flags, out_buf, out_len)
-
 
     def test_sign_and_verify(self):
         sig, sig2, sig_low_r = self.cbufferize(['00' * EC_SIGNATURE_LEN] * 3)
@@ -131,6 +131,16 @@ class SignTests(unittest.TestCase):
         for p, p_len, o, o_len in cases:
             ret = wally_ec_public_key_decompress(p, p_len, o, o_len)
             self.assertEqual(ret, WALLY_EINVAL)
+
+        # wally_ec_xonly_public_key_verify
+        pub_key = pub_key[1:]
+        pub_bad, pub_bad[1:]
+        for pub, pub_len in [(None, len(pub_key)),     # Null pub_key
+                             (pub_key, 31),            # Wrong pub_key len
+                             (pub_bad, len(pub_key))]: # Bad public key
+            self.assertEqual(wally_ec_xonly_public_key_verify(pub, pub_len), WALLY_EINVAL)
+        self.assertEqual(wally_ec_xonly_public_key_verify(pub_key, len(pub_key)), WALLY_OK)
+
 
         # wally_ec_sig_to_der
         sig, _ = make_cbuffer('13' * EC_SIGNATURE_LEN)
@@ -290,6 +300,73 @@ class SignTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_EINVAL, wally_s2c_commitment_verify(*args))
 
+    def test_scalar(self):
+        _, is_elements_build = wally_is_elements_build()
+
+        zero_hex = '00' * EC_SCALAR_LEN
+        scalar_hex = '3d41893225bf4c2ba903d157cd97dd2f6d330272e08a120f497f0dc0618d3fd1'
+        zero, scalar, bad = self.cbufferize([zero_hex, scalar_hex, 'FF' * EC_SCALAR_LEN])
+        out, out_len = make_cbuffer(zero_hex)
+
+        def add(x, y):
+            ret = wally_ec_scalar_add(x, EC_SCALAR_LEN, y, EC_SCALAR_LEN, out, out_len)
+            return ret, wally_hex_from_bytes(out, out_len)[1]
+
+        def sub(x, y):
+            ret = wally_ec_scalar_subtract(x, EC_SCALAR_LEN, y, EC_SCALAR_LEN, out, out_len)
+            return ret, wally_hex_from_bytes(out, out_len)[1]
+
+        def mul(x, y):
+            ret = wally_ec_scalar_multiply(x, EC_SCALAR_LEN, y, EC_SCALAR_LEN, out, out_len)
+            return ret, wally_hex_from_bytes(out, out_len)[1]
+
+        for fn in [add, sub]:
+            self.assertEqual(fn(None, zero), (WALLY_EINVAL, zero_hex))
+            self.assertEqual(fn(zero, None), (WALLY_EINVAL, zero_hex))
+
+        _, negative_hex = sub(zero, scalar)
+        negative = unhexlify(negative_hex)
+
+        self.assertEqual(add(None, zero), (WALLY_EINVAL, zero_hex))
+        self.assertEqual(add(zero, None), (WALLY_EINVAL, zero_hex))
+        self.assertEqual(add(zero, bad), (WALLY_ERROR, zero_hex)) # WALLY_ERROR = scalar not in n
+        self.assertEqual(add(bad, zero), (WALLY_ERROR, zero_hex))
+        self.assertEqual(add(zero, zero), (WALLY_OK, zero_hex))
+        self.assertEqual(add(zero, scalar), (WALLY_OK, scalar_hex))
+        self.assertEqual(add(zero, negative), (WALLY_OK, negative_hex))
+        self.assertEqual(add(negative, zero), (WALLY_OK, negative_hex))
+        self.assertEqual(add(negative, scalar), (WALLY_OK, zero_hex))
+        self.assertEqual(add(scalar, zero), (WALLY_OK, scalar_hex))
+        self.assertEqual(add(scalar, negative), (WALLY_OK, zero_hex))
+
+        # Test scalar addition identity to asset_final_vbf
+        def add_by_final_vbf(a_hex, b_hex):
+            values = (c_uint64 * 3)(1, 2, 3)
+            abfs, abfs_len = make_cbuffer('00' * 32 * 3)
+            vbfs, vbfs_len = make_cbuffer(a_hex + b_hex)
+            ret = wally_asset_final_vbf(values, 3, 2, abfs, abfs_len, vbfs, vbfs_len, out, out_len)
+            return ret, wally_hex_from_bytes(out, out_len)[1]
+        if is_elements_build:
+            self.assertEqual(add(scalar, scalar), add_by_final_vbf(scalar_hex, scalar_hex))
+
+        self.assertEqual(sub(None, zero), (WALLY_EINVAL, zero_hex))
+        self.assertEqual(sub(zero, None), (WALLY_EINVAL, zero_hex))
+        self.assertEqual(add(zero, bad), (WALLY_ERROR, zero_hex))
+        self.assertEqual(add(bad, zero), (WALLY_ERROR, zero_hex))
+        self.assertEqual(sub(zero, zero), (WALLY_OK, zero_hex))
+        self.assertEqual(sub(zero, scalar), (WALLY_OK, negative_hex))
+        self.assertEqual(sub(zero, negative), (WALLY_OK, scalar_hex))
+        self.assertEqual(sub(negative, zero), (WALLY_OK, negative_hex))
+        self.assertEqual(sub(scalar, zero), (WALLY_OK, scalar_hex))
+        self.assertEqual(sub(scalar, scalar), (WALLY_OK, zero_hex))
+
+        self.assertEqual(mul(None, zero), (WALLY_EINVAL, zero_hex))
+        self.assertEqual(mul(zero, None), (WALLY_EINVAL, zero_hex))
+        self.assertEqual(mul(zero, bad), (WALLY_ERROR, zero_hex))
+        self.assertEqual(mul(bad, zero), (WALLY_ERROR, zero_hex))
+        self.assertEqual(mul(zero, zero), (WALLY_OK, zero_hex))
+        self.assertEqual(mul(zero, scalar), (WALLY_OK, zero_hex))
+        self.assertEqual(mul(zero, negative), (WALLY_OK, zero_hex))
 
 if __name__ == '__main__':
     unittest.main()

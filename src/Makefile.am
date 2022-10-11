@@ -230,6 +230,7 @@ libwallycore_la_SOURCES = \
     hex.c \
     hmac.c \
     internal.c \
+    map.c \
     mnemonic.c \
     pbkdf2.c \
     psbt.c \
@@ -257,6 +258,7 @@ libwallycore_la_INCLUDES = \
     include/wally_crypto.h \
     include/wally_descriptor.h \
     include/wally_elements.h \
+    include/wally_map.h \
     include/wally_psbt.h \
     include/wally_script.h \
     include/wally_symmetric.h \
@@ -346,6 +348,7 @@ endif
 endif
 
 check-local: $(SWIG_PYTHON_TEST_DEPS) $(SWIG_JAVA_TEST_DEPS)
+	$(AM_V_at)! grep '^int ' $(top_srcdir)/include/*.h # Missing WALLY_CORE_API
 if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_address.py
@@ -363,6 +366,7 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_hex.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hmac.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_internal.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_map.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
@@ -374,7 +378,6 @@ if RUN_PYTHON_TESTS
 	$(AM_V_at)$(PYTHON_TEST) test/test_wif.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_wordlist.py
 if BUILD_ELEMENTS
-	$(AM_V_at)$(PYTHON_TEST) test/test_pset.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_confidential_addr.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegin.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pegout.py

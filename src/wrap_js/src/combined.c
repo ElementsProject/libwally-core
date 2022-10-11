@@ -14,6 +14,7 @@
 #include "elements.c"
 #include "hex.c"
 #include "hmac.c"
+#include "map.c"
 #include "mnemonic.c"
 #include "pbkdf2.c"
 #include "pullpush.c"

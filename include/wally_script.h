@@ -30,6 +30,7 @@ extern "C" {
 #define WALLY_MAX_OP_RETURN_LEN 80 /* Maximum length of OP_RETURN data push */
 
 #define WALLY_SCRIPTSIG_P2PKH_MAX_LEN 140 /** [SIG+SIGHASH] [PUBKEY] */
+#define WALLY_SCRIPTSIG_MAX_LEN       520 /** MAX_SCRIPT_ELEMENT_SIZE from core */
 #define WALLY_WITNESSSCRIPT_MAX_LEN   42 /** (PUSH OF)0 [Up to 40 bytes of data] */
 
 #define WALLY_SCRIPT_VARINT_MAX_SIZE 9

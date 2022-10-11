@@ -39,8 +39,10 @@ extern "C" {
 #define WALLY_SIGHASH_NONE         0x02
 #define WALLY_SIGHASH_SINGLE       0x03
 #define WALLY_SIGHASH_FORKID       0x40
-#define WALLY_SIGHASH_RANGEPROOF   0x40  /* for elements */
+#define WALLY_SIGHASH_RANGEPROOF   0x40  /* Liquid/Elements only */
 #define WALLY_SIGHASH_ANYONECANPAY 0x80
+
+#define WALLY_SIGHASH_MASK         0x1f /* Mask for determining ALL/NONE/SINGLE */
 
 #define WALLY_TX_ASSET_CT_VALUE_PREFIX_A 8
 #define WALLY_TX_ASSET_CT_VALUE_PREFIX_B 9
@@ -383,7 +385,7 @@ WALLY_CORE_API int wally_tx_add_raw_input(
     uint32_t flags);
 
 /**
- * Add a transaction input to a transaction in a goven position.
+ * Add a transaction input to a transaction in a given position.
  *
  * :param tx: The transaction to add the input to.
  * :param index: The zero-based index of the position to add the input at.

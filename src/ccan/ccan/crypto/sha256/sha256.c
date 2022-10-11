@@ -210,7 +210,7 @@ static void add(struct sha256_ctx *ctx, const void *p, size_t len)
 		/* Process full chunks directly from the source. */
 		if (alignment_ok(data, sizeof(uint32_t))) {
 			const size_t blocks = len / 64;
-			Transform(ctx->s, (const uint32_t *)data, blocks);
+			Transform(ctx->s, (const uint32_t *)((void*)data), blocks);
 			ctx->bytes += 64 * blocks;
 			data += 64 * blocks;
 			len -= 64 * blocks;

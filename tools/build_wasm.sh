@@ -21,7 +21,7 @@ $PWD/tools/cleanup.sh && $PWD/tools/autogen.sh
 #sed -i 's/WALLY_CORE_API/EMSCRIPTEN_KEEPALIVE/g' include/*.h src/*.h
 
 export CFLAGS="-fno-stack-protector"
-emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $ENABLE_ELEMENTS --disable-ecmult-static-precomputation --disable-tests --enable-export-all
+emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $ENABLE_ELEMENTS --disable-tests --enable-export-all
 emmake make -j $num_jobs
 
 : ${OPTIMIZATION_LEVEL:=3}
