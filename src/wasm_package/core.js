@@ -137,21 +137,24 @@ types.DestPtrVarLen = init_size => ({
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
 
-    to_wasm: _ => {
-        const dest_ptr = Module._malloc(init_size)
+    to_wasm: (_, extra_type_info) => {
+        // Use the expected size if its already known, or try with the initial size which is hopefully large enough
+        const dest_ptr_size = extra_type_info.expected_varlen_size || init_size
+            , dest_ptr = Module._malloc(dest_ptr_size)
             , written_ptr = Module._malloc(4)
-        return {
-            args: [dest_ptr, init_size, written_ptr],
-            return: _ => {
-                // this is named 'written' as in libwally, but can also mean 'expected' when the given buffer is too small
-                const written = Module.getValue(written_ptr, 'i32')
 
-                if (written > init_size) {
-                    // FIXME varlen retry logic
-                    throw new WallyVarLenError(init_size, written)
+        return {
+            args: [dest_ptr, dest_ptr_size, written_ptr],
+            return: _ => {
+                // This contains either the written size when the buffer was large enough, or the expected size when it was not
+                const written_or_expected = Module.getValue(written_ptr, 'i32')
+
+                if (written_or_expected > dest_ptr_size) {
+                    // Caught outside to trigger a retry with the expected size
+                    throw new WallyVarLenError(dest_ptr_size, written_or_expected)
                 }
 
-                return types.Bytes.read_ptr_sized(dest_ptr, written)
+                return types.Bytes.read_ptr_sized(dest_ptr, written_or_expected)
             },
             cleanup: _ => (Module._free(dest_ptr), Module._free(written_ptr)),
         }
@@ -210,39 +213,55 @@ export function wrap(func_name, args_types) {
 
     return function (...args) {
         if (args.length != js_args_num) {
+            // TODO specialized error
             throw new Error(`Invalid number of arguments for ${func_name} (${args.length}, expected ${js_args_num})`)
         }
 
-        const wasm_args = []
-            , returns = []
-            , cleanups = []
+        function run(extra_type_info = {}) {
+            const argsc = [...args] // shallow clone so we can shift()
+                , wasm_args = []
+                , returns = []
+                , cleanups = []
 
-        // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
-        for (const arg_type of args_types) {
-            // Types with `no_user_args` don't use any of the user-provided js args
-            const arg_value = arg_type.no_user_args ? null : args.shift()
+            // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
+            for (const arg_type of args_types) {
+                // Types with `no_user_args` don't use any of the user-provided js args
+                const arg_value = arg_type.no_user_args ? null : argsc.shift()
 
-            const as_wasm = arg_type.to_wasm(arg_value)
+                const as_wasm = arg_type.to_wasm(arg_value, extra_type_info)
 
-            wasm_args.push(...as_wasm.args)
-            if (as_wasm.return) returns.push(as_wasm.return)
-            if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
+                wasm_args.push(...as_wasm.args)
+                if (as_wasm.return) returns.push(as_wasm.return)
+                if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
+            }
+
+            try {
+                const code = wasm_fn(...wasm_args)
+
+                if (code !== WALLY_OK) {
+                    throw new WallyError(code)
+                }
+
+                const results = returns.map(return_fn => return_fn())
+
+                return results.length == 0 ? true // success, but no explicit return value
+                    : results.length == 1 ? results[0]
+                        : results
+            } finally {
+                cleanups.forEach(cleanup_fn => cleanup_fn())
+            }
         }
 
         try {
-            const code = wasm_fn(...wasm_args)
-
-            if (code !== WALLY_OK) {
-                throw new WallyError(code)
+            return run()
+        } catch (err) {
+            // Retry with the expected buffer size when the buffer we provided is too small (but only once)
+            // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
+            if (err instanceof WallyVarLenError) {
+                return run({ expected_varlen_size: err.expected_size })
+            } else {
+                throw err
             }
-
-            const results = returns.map(return_fn => return_fn())
-
-            return results.length == 0 ? true // success, but no explicit return value
-                : results.length == 1 ? results[0]
-                    : results
-        } finally {
-            cleanups.forEach(cleanup_fn => cleanup_fn())
         }
     }
 }
