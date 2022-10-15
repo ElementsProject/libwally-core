@@ -1,13 +1,17 @@
 {
   "name": "libwally-a0",
-  "version": "0.1.0",
+  "version": "0.8.6",
   "description": "JavaScript bindings for libwally",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "node test.js",
-    "update-consts": "./extract-consts.sh ../../include > const.js"
+    "prepare": "./build.sh"
   },
+  "files": [
+    "*.js",
+    "libwally_wasm"
+  ],
   "author": "Nadav Ivgi",
   "license": "MIT"
 }

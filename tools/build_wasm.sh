@@ -12,6 +12,11 @@ if [ -f /proc/cpuinfo ]; then
     num_jobs=$(grep ^processor /proc/cpuinfo | wc -l)
 fi
 
+if ! type -P emcc > /dev/null; then
+    # Setup the emsdk environment if it isn't already
+    source /opt/emsdk/emsdk_env.sh
+fi
+
 $PWD/tools/cleanup.sh && $PWD/tools/autogen.sh
 
 # Note: This doesn't work yet, see https://github.com/emscripten-core/emscripten/issues/6233
