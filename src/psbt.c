@@ -3503,11 +3503,25 @@ static int psbt_build_input(const struct wally_psbt_input *src,
         BUILD_ITEM(inflation_keys_commitment, PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT);
         unsigned char issuance_amount[WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN];
         unsigned char inflation_keys[WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN];
+        BUILD_ITEM(issuance_rangeproof, PSET_IN_ISSUANCE_VALUE_RANGEPROOF);
+        BUILD_ITEM(inflation_keys_rangeproof, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF);
         struct wally_map_item issuance_amount_item = { NULL, 0, issuance_amount, sizeof(issuance_amount) };
         struct wally_map_item inflation_keys_item = { NULL, 0, inflation_keys, sizeof(inflation_keys) };
+        int src_index = src->index;
 
-        if (unblinded && src->issuance_amount && src->inflation_keys) {
-            /* Use the unblinded amounts */
+        if (src->issuance_amount || src->inflation_keys || issuance_amount_commitment || inflation_keys_commitment)
+            src_index |= WALLY_TX_ISSUANCE_FLAG;
+
+        if (src->pegin_amount || src->pegin_witness)
+            src_index |= WALLY_TX_PEGIN_FLAG;
+
+        /* FIXME: Pegin parameters need to be set for pegins to work */
+        /* NOTE: This is an area of PSET that needs improvement */
+
+        if ((src->issuance_amount || src->inflation_keys) &&
+            (unblinded || (!issuance_amount_commitment && !inflation_keys_commitment))) {
+            /* We do not have issuance commitments, or the unblinded flag
+             * has been given: Use the unblinded amounts */
             if (wally_tx_confidential_value_from_satoshi(src->issuance_amount,
                                                          issuance_amount,
                                                          sizeof(issuance_amount)) != WALLY_OK ||
@@ -3521,12 +3535,13 @@ static int psbt_build_input(const struct wally_psbt_input *src,
 
         return wally_tx_add_elements_raw_input(tx,
                                                src->txhash, WALLY_TXHASH_LEN,
-                                               src->index, src->sequence, NULL, 0, NULL,
+                                               src_index, src->sequence, NULL, 0, NULL,
                                                BUILD_PARAM(issuance_blinding_nonce),
                                                BUILD_PARAM(issuance_asset_entropy),
                                                BUILD_PARAM(issuance_amount_commitment),
                                                BUILD_PARAM(inflation_keys_commitment),
-                                               NULL, 0, NULL, 0, NULL, 0);
+                                               BUILD_PARAM(issuance_rangeproof),
+                                               BUILD_PARAM(inflation_keys_rangeproof), NULL, 0);
 #endif /* BUILD_ELEMENTS */
     }
     return wally_tx_add_raw_input(tx, src->txhash, WALLY_TXHASH_LEN,
