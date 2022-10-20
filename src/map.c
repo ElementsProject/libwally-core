@@ -128,6 +128,59 @@ const struct wally_map_item *wally_map_get_integer(const struct wally_map *map_i
     return map_get(map_in, NULL, key);
 }
 
+int wally_map_get_num_items(const struct wally_map *map_in,
+                            size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!map_in || !written)
+        return WALLY_EINVAL;
+    *written = map_in->num_items;
+    return WALLY_OK;
+}
+
+int wally_map_get_item_key_length(const struct wally_map *map_in,
+                                  size_t index, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!map_in || index >= map_in->num_items || !written)
+        return WALLY_EINVAL;
+    *written = map_in->items[index].key ? map_in->items[index].key_len : 0;
+    return WALLY_OK;
+}
+
+int wally_map_get_item_key(const struct wally_map *map_in,
+                           size_t index,
+                           unsigned char *bytes_out, size_t len, size_t *written)
+{
+    int ret = wally_map_get_item_key_length(map_in, index, written);
+    if (ret == WALLY_OK) {
+        const struct wally_map_item *item = &map_in->items[index];
+        if (!bytes_out || !len || !*written) {
+            /* Either no output buffer supplied, or the key is an integer */
+            *written = 0;
+            return !bytes_out || !len ? WALLY_EINVAL : WALLY_ERROR;
+        }
+        if (len >= *written)
+            memcpy(bytes_out, item->key, *written);
+    }
+    return ret;
+}
+
+int wally_map_get_item_integer_key(const struct wally_map *map_in,
+                                   size_t index, size_t *written)
+{
+    int ret = wally_map_get_item_key_length(map_in, index, written);
+    if (ret == WALLY_OK && *written) {
+        *written = 0;
+        return WALLY_ERROR; /* Key is not an integer */
+    } else if (ret == WALLY_OK) {
+        *written = map_in->items[index].key_len;
+    }
+    return ret;
+}
+
 int wally_map_get_item_length(const struct wally_map *map_in,
                               size_t index, size_t *written)
 {

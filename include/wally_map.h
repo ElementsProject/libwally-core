@@ -19,13 +19,13 @@ typedef int (*wally_map_verify_fn_t)(
 
 /** A map item */
 struct wally_map_item {
-    unsigned char *key;
-    size_t key_len;
+    unsigned char *key; /* Pointer to the key data, or NULL if the key is an integer */
+    size_t key_len; /* Length of key, or the integer key if the key is an integer */
     unsigned char *value;
     size_t value_len;
 };
 
-/** A map of key,value pairs */
+/** A map of integer or byte buffer key, to byte buffer value pairs */
 struct wally_map {
     struct wally_map_item *items;
     size_t num_items;
@@ -204,6 +204,62 @@ WALLY_CORE_API const struct wally_map_item *wally_map_get_integer(
     const struct wally_map *map_in,
     uint32_t key);
 #endif
+
+/**
+ * Get the number of key/value items in a map.
+ *
+ * :param map_in: The map to return the number of items from.
+ * :param written: Destination for the number of items.
+ */
+WALLY_CORE_API int wally_map_get_num_items(
+    const struct wally_map *map_in,
+    size_t *written);
+
+/**
+ * Get the length of an items key in a map.
+ *
+ * :param map_in: The map to return the items key length from.
+ * :param index: The zero-based index of the item whose key length to return.
+ * :param written: Destination for the length of the items key in bytes.
+ *
+ * .. note:: Returns 0 if the items key is an integer.
+ */
+WALLY_CORE_API int wally_map_get_item_key_length(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
+
+/**
+ * Return an items key from a map.
+ *
+ * :param map_in: The map to return the items key from.
+ * :param index: The zero-based index of the item whose key to return.
+ * :param bytes_out: Destination for the resulting data.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: Returns ``WALLY_ERROR`` if the items key is an integer.
+ */
+WALLY_CORE_API int wally_map_get_item_key(
+    const struct wally_map *map_in,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Return an items integer key from a map.
+ *
+ * :param map_in: The map to return the items key from.
+ * :param index: The zero-based index of the item whose key to return.
+ * :param written: Destination for the items integer key.
+ *
+ * .. note:: Returns ``WALLY_ERROR`` if the items key is not an integer.
+ */
+WALLY_CORE_API int wally_map_get_item_integer_key(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
 
 /**
  * Get the length of an item in a map.

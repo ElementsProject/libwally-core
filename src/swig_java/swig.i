@@ -508,8 +508,12 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_size_t(wally_map_find);
 %returns_size_t(wally_map_find_integer);
 %returns_void__(wally_map_free)
+%returns_size_t(wally_map_get_item_integer_key);
+%returns_size_t(wally_map_get_item_key);
+%returns_size_t(wally_map_get_item_key_length);
 %returns_size_t(wally_map_get_item_length);
 %returns_size_t(wally_map_get_item);
+%returns_size_t(wally_map_get_num_items);
 %returns_void__(wally_map_hash_preimage_verify)
 %returns_void__(wally_map_keypath_add);
 %returns_struct(wally_map_keypath_bip32_init_alloc, wally_map);

@@ -110,7 +110,11 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_find_integer' \
 ,'_wally_map_free' \
 ,'_wally_map_get_item' \
+,'_wally_map_get_item_integer_key' \
+,'_wally_map_get_item_key' \
+,'_wally_map_get_item_key_length' \
 ,'_wally_map_get_item_length' \
+,'_wally_map_get_num_items' \
 ,'_wally_map_hash_preimage_verify' \
 ,'_wally_map_init' \
 ,'_wally_map_init_alloc' \

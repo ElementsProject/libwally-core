@@ -98,6 +98,26 @@ def _format_bitcoin_message_len_fn(msg, flags):
 format_bitcoin_message = _wrap_bin(format_bitcoin_message, _format_bitcoin_message_len_fn, resize=True)
 
 map_get_item = _wrap_bin(map_get_item, map_get_item_length, resize=True)
+map_get_item_key = _wrap_bin(map_get_item_key, map_get_item_key_length, resize=True)
+
+def map_to_dict(m):
+    ret, i, n = dict(), 0, map_get_num_items(m)
+    while i < n:
+        key_len = map_get_item_key_length(m, i)
+        if key_len:
+            key = bytes(map_get_item_key(m, i))
+        else:
+            key = map_get_item_integer_key(m, i)
+        ret[key] = map_get_item(m, i)
+        i += 1
+    return ret
+
+def map_from_dict(d):
+    ret = map_init(len(d), None)
+    for k, v in d.items():
+        fn = map_add_integer if type(k) is int else map_add
+        fn(ret, k, v)
+    return ret
 
 def _script_push_from_bytes_len_fn(data, flags):
     if flags & WALLY_SCRIPT_HASH160:

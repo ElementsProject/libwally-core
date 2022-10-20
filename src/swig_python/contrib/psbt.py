@@ -315,6 +315,8 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_keypaths)
         map_keypath_add(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
         self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
+        m2d, d2m = map_to_dict, map_from_dict
+        self.assertEqual(m2d(dummy_keypaths), m2d(d2m(m2d(dummy_keypaths))))
 
         empty_signatures = map_init(0, None)
         dummy_signatures = map_init(0, None) # TODO: pubkey to sig map init
