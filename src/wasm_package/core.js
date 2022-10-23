@@ -1,3 +1,4 @@
+import assert from 'assert'
 import InitWallyModule from './libwally_wasm/wallycore.cjs'
 import { WALLY_OK, WALLY_ERROR, WALLY_EINVAL, WALLY_ENOMEM } from './const.js'
 
@@ -35,7 +36,7 @@ types.String = {
     to_wasm: str => ({ args: [str] }),
 
     read_ptr: ptr => Module.UTF8ToString(ptr),
-    free_ptr: ptr => _wally_free_string(ptr),
+    free_ptr: ptr => assert(_wally_free_string(ptr) == WALLY_OK),
 }
 const _wally_free_string = Module.cwrap('wally_free_string', 'number', ['number'])
 
