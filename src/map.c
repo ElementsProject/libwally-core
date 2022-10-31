@@ -541,6 +541,31 @@ int wally_map_keypath_add(struct wally_map *map_in,
     return ret;
 }
 
+int wally_keypath_get_fingerprint(const unsigned char *val, size_t val_len,
+                                  unsigned char *bytes_out, size_t len)
+{
+    if (!val || val_len < len || !bytes_out || len != BIP32_KEY_FINGERPRINT_LEN)
+        return WALLY_EINVAL;
+    memcpy(bytes_out, val, len); /* First 4 bytes are the fingerprint */
+    return WALLY_OK;
+}
+
+int wally_map_keypath_get_item_fingerprint(const struct wally_map *map_in, size_t index,
+                                           unsigned char *bytes_out, size_t len)
+{
+    const struct wally_map_item *item;
+    item = map_in && index < map_in->num_items ? &map_in->items[index] : NULL;
+    if (!item)
+        return WALLY_EINVAL;
+    return wally_keypath_get_fingerprint(item->value, item->value_len, bytes_out, len);
+}
+
+/*
+ * PSBT preimage support.
+ * Preimages are stored keyed by the preimage type + hash, with
+ * the preimage as the data. This allows us to iterate the map keys
+ * in order when serializing, to match the output ordering from core.
+ */
 typedef int (*psbt_hash_fn_t)(const unsigned char *, size_t, unsigned char *, size_t);
 
 static int hash_verify(const unsigned char *key, size_t key_len,
@@ -559,10 +584,6 @@ static int hash_verify(const unsigned char *key, size_t key_len,
 int wally_map_hash_preimage_verify(const unsigned char *key, size_t key_len,
                                    const unsigned char *val, size_t val_len)
 {
-    /* Preimages are stored keyed by the preimage type + hash, with
-     * the preimage as the data. This allows us to iterate the map keys
-     * in order when serializing, to match the output ordering from core.
-     */
     if (key && key_len) {
         switch (key[0]) {
         case PSBT_IN_RIPEMD160:

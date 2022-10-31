@@ -624,6 +624,12 @@ inline int keypath_bip32_verify(const KEY& key, const VAL& val) {
     return ret;
 }
 
+template <class VAL, class BYTES_OUT>
+inline int keypath_get_fingerprint(const VAL& val, BYTES_OUT& bytes_out) {
+    int ret = ::wally_keypath_get_fingerprint(val.data(), val.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class KEY, class VAL>
 inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_keypath_public_key_verify(key.data(), key.size(), val.data(), val.size());
@@ -745,6 +751,12 @@ inline int map_keypath_add(const MAP_IN& map_in, const PUB_KEY& pub_key, const F
 
 inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map** output) {
     int ret = ::wally_map_keypath_bip32_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class BYTES_OUT>
+inline int map_keypath_get_item_fingerprint(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out) {
+    int ret = ::wally_map_keypath_get_item_fingerprint(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size());
     return ret;
 }
 

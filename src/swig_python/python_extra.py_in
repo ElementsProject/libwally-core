@@ -222,6 +222,9 @@ psbt_get_output_script = _wrap_bin(psbt_get_output_script, psbt_get_output_scrip
 
 psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length, resize=True)
 
+keypath_get_fingerprint = _wrap_bin(keypath_get_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
+map_keypath_get_item_fingerprint = _wrap_bin(map_keypath_get_item_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
+
 def _s2c_sig_from_bytes_fn(fn):
     def wrapped(*args):
         buffers = [bytearray(WALLY_S2C_OPENING_LEN), bytearray(EC_SIGNATURE_LEN)]

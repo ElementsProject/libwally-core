@@ -3,6 +3,7 @@ from util import *
 from test_bip32 import get_test_master_key, vec_1
 
 BIP32_LEN = 78 # BIP32_SERIALIZED_LEN
+FP_LEN = 4 # BIP32_KEY_FINGERPRINT_LEN
 FLAG_KEY_PUBLIC = 0x1
 
 class MapTests(unittest.TestCase):
@@ -196,7 +197,7 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_keypath_bip32_init_alloc(0, m), WALLY_OK)
 
         master = get_test_master_key(vec_1)
-        fingerprint, path = (c_ubyte * 4)(), (c_uint * 5)()
+        fingerprint, path = (c_ubyte * FP_LEN)(), (c_uint * 5)()
         path = (c_uint * 5)()
         path[0], path[1], path[2], path[3], path[4] = (0x80000044, 0x80000000, 0x80000000, 0, 1)
 
@@ -231,8 +232,26 @@ class MapTests(unittest.TestCase):
         ]
         for args in cases:
             self.assertEqual(wally_keypath_bip32_verify(*args), WALLY_EINVAL)
-            # TODO: Enable with map function validation
-            #self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+            # Maps created with wally_map_keypath_bip32_init do auto-validation
+            self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+
+        # Valid path
+        self.assertEqual(wally_map_add(m, bip32, bip32_len, kp_path, len(kp_path)), WALLY_OK)
+
+        # Fingerprint
+        out, out_len = (c_ubyte * (FP_LEN + 5 * 4))(), 24
+        cases = [
+            (None,  0, out,  FP_LEN),   # NULL key
+            (m,     1, out,  FP_LEN),   # Bad index
+            (m,     0, None, FP_LEN),   # NULL output
+            (m,     0, out,  FP_LEN-1), # Bad output length
+        ]
+        for args in cases:
+            self.assertEqual(wally_map_keypath_get_item_fingerprint(*args), WALLY_EINVAL)
+
+        ret = wally_map_keypath_get_item_fingerprint(m, 0, out, FP_LEN)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(bytes(out[:FP_LEN]), kp_path[:FP_LEN])
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 

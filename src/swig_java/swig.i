@@ -499,6 +499,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %rename("_is_elements_build") wally_is_elements_build;
 %returns_size_t(_is_elements_build);
 %returns_void__(wally_keypath_bip32_verify);
+%returns_array_(wally_keypath_get_fingerprint, 3, 4, BIP32_KEY_FINGERPRINT_LEN);
 %returns_void__(wally_keypath_public_key_verify);
 %returns_void__(wally_map_add);
 %returns_void__(wally_map_add_integer);
@@ -518,6 +519,7 @@ static jbyteArray create_array(JNIEnv *jenv, const unsigned char* p, size_t len)
 %returns_void__(wally_map_keypath_add);
 %returns_struct(wally_map_keypath_bip32_init_alloc, wally_map);
 %rename("map_keypath_bip32_init") wally_map_keypath_bip32_init_alloc;
+%returns_array_(wally_map_keypath_get_item_fingerprint, 3, 4, BIP32_KEY_FINGERPRINT_LEN);
 %returns_struct(wally_map_keypath_public_key_init_alloc, wally_map);
 %rename("map_keypath_public_key_init") wally_map_keypath_public_key_init_alloc;
 %returns_struct(wally_map_init_alloc, wally_map);

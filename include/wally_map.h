@@ -409,6 +409,35 @@ WALLY_CORE_API int wally_map_keypath_add(
     const uint32_t *child_path,
     size_t child_path_len);
 
+/**
+ * Get the key fingerprint from a PSBT keypath's serialized value.
+ *
+ * :param val: The serialized keypath value as stored in a keypath map.
+ * :param val_len: Length of ``val`` in bytes.
+ * :param bytes_out: Destination for the fingerprint.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ */
+WALLY_CORE_API int wally_keypath_get_fingerprint(
+    const unsigned char *val,
+    size_t val_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Return an item's key fingerprint from a keypath map.
+ *
+ * :param map_in: The map to return the item's fingerprint from.
+ * :param index: The zero-based index of the item whose key fingerprint to return.
+ * :param bytes_out: Destination for the resulting data.
+ * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ *
+ * .. note:: The same key fingerprint may be present in a keypath map more than once.
+ */
+WALLY_CORE_API int wally_map_keypath_get_item_fingerprint(
+    const struct wally_map *map_in,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len);
 
 /**
  * Verify a preimage map key and value pair.
