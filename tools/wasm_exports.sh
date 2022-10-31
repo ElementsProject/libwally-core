@@ -100,6 +100,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_is_elements_build' \
 ,'_wally_keypath_bip32_verify' \
 ,'_wally_keypath_get_fingerprint' \
+,'_wally_keypath_get_path' \
+,'_wally_keypath_get_path_len' \
 ,'_wally_keypath_public_key_verify' \
 ,'_wally_keypath_xonly_public_key_verify' \
 ,'_wally_map_add' \
@@ -122,6 +124,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_keypath_add' \
 ,'_wally_map_keypath_bip32_init_alloc' \
 ,'_wally_map_keypath_get_item_fingerprint' \
+,'_wally_map_keypath_get_item_path' \
+,'_wally_map_keypath_get_item_path_len' \
 ,'_wally_map_keypath_public_key_init_alloc' \
 ,'_wally_map_preimage_hash160_add' \
 ,'_wally_map_preimage_init_alloc' \

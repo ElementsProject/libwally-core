@@ -15,6 +15,16 @@ def _wrap_bin(fn, length, resize=False):
         return (ret, buf) if ret is not None else buf
     return wrapped
 
+def _wrap_int_array(fn, length):
+    """ Wrap functions that take an output integer array to create/return it """
+    def wrapped(*args):
+        n = length(*args) if callable(length) else length
+        out = [None] * n
+        ret = fn(*list(args)+[out])
+        assert ret == len(out) # Input list must be of the correct size
+        return out
+    return wrapped
+
 def _wrap_with_defaults(fn, min_args, max_args):
     """ Wrap functions that take argument defaults """
     def wrapped(*args):
@@ -224,6 +234,8 @@ psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length, resize=True)
 
 keypath_get_fingerprint = _wrap_bin(keypath_get_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
 map_keypath_get_item_fingerprint = _wrap_bin(map_keypath_get_item_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
+keypath_get_path = _wrap_int_array(keypath_get_path, keypath_get_path_len)
+map_keypath_get_item_path = _wrap_int_array(map_keypath_get_item_path, map_keypath_get_item_path_len)
 
 def _s2c_sig_from_bytes_fn(fn):
     def wrapped(*args):

@@ -12,20 +12,16 @@
       return buf;
   }
 
+  private final static int[] checkIntBuffer(final int[] buf, final int len) {
+      if (len != buf.length)
+          throw new RuntimeException("Failed");
+      return buf;
+  }
+
   private final static byte[] get_keypath_fingerprint(final byte[] buf) {
       if (buf.length == 0) return buf;
       final byte[] ret = new byte[4];
       ret[0] = buf[0]; ret[1] = buf[1]; ret[2] = buf[2]; ret[3] = buf[3];
-      return ret;
-  }
-
-  private final static int[] get_keypath_path(final byte[] buf) {
-      final int[] ret = new int[buf.length > 4 ? (buf.length / 4) - 1 : 0];
-      for (int i = 0; i < ret.length; i++) {
-          final int b_idx = (i + 1) * 4;
-          ret[i] = (buf[b_idx + 0] & 0xFF) | (buf[b_idx + 1] & 0xFF) << 8 |
-                   (buf[b_idx + 2] & 0xFF) << 16 | (buf[b_idx + 3] & 0xFF) << 24;
-      }
       return ret;
   }
 
@@ -346,6 +342,17 @@
       return map_init(jarg1, 0);
   }
 
+  public final static byte[] keypath_get_fingerprint(byte[] jarg1) {
+      return keypath_get_fingerprint(jarg1, null);
+  }
+
+  public final static int[] keypath_get_path(byte[] keypath) {
+      final int[] buf = new int[keypath_get_path_len(keypath)];
+      if (buf.length == 0) return buf;
+      final int len = keypath_get_path(keypath, buf);
+      return checkIntBuffer(buf, len);
+  }
+
   public final static Object psbt_from_bytes(byte[] jarg1) {
       return psbt_from_bytes(jarg1, 0); // Default flags to 0 for back compat.
   }
@@ -370,11 +377,11 @@
   }
 
   public final static byte[] psbt_get_input_keypath_fingerprint(Object psbt, long idx, long sub_idx) {
-      return get_keypath_fingerprint(psbt_get_input_keypath(psbt, idx, sub_idx));
+      return keypath_get_fingerprint(psbt_get_input_keypath(psbt, idx, sub_idx));
   }
 
   public final static int[] psbt_get_input_keypath_path(Object psbt, long idx, long sub_idx) {
-      return get_keypath_path(psbt_get_input_keypath(psbt, idx, sub_idx));
+      return keypath_get_path(psbt_get_input_keypath(psbt, idx, sub_idx));
   }
 
   public final static byte[] psbt_get_input_previous_txid(Object psbt, long idx) {
@@ -418,11 +425,11 @@
   }
 
   public final static byte[] psbt_get_output_keypath_fingerprint(Object psbt, long idx, long sub_idx) {
-      return get_keypath_fingerprint(psbt_get_output_keypath(psbt, idx, sub_idx));
+      return keypath_get_fingerprint(psbt_get_output_keypath(psbt, idx, sub_idx));
   }
 
   public final static int[] psbt_get_output_keypath_path(Object psbt, long idx, long sub_idx) {
-      return get_keypath_path(psbt_get_output_keypath(psbt, idx, sub_idx));
+      return keypath_get_path(psbt_get_output_keypath(psbt, idx, sub_idx));
   }
 
   public final static byte[] psbt_get_output_redeem_script(Object psbt, long idx) {

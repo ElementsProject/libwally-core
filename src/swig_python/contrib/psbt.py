@@ -202,6 +202,20 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), len(blinded_asset))
             self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), blinded_asset)
 
+    def check_keypath(self, keypaths, pubkey, fingerprint, path):
+        """Check keypath helper functions"""
+        # The pubkey should be the first and only element
+        self.assertEqual(map_get_num_items(keypaths), 1)
+        self.assertEqual(map_find(keypaths, pubkey), 1)
+        # Test map to python dict conversion and its inverse
+        m2d, d2m = map_to_dict, map_from_dict
+        self.assertEqual(m2d(keypaths), m2d(d2m(m2d(keypaths))))
+        # Test fetching the values out of the map matches what we put in
+        fp_out = map_keypath_get_item_fingerprint(keypaths, 0)
+        self.assertEqual(fingerprint, fp_out)
+        self.assertEqual(map_keypath_get_item_path_len(keypaths, 0), len(path))
+        self.assertEqual(map_keypath_get_item_path(keypaths, 0), path)
+
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
@@ -314,9 +328,7 @@ class PSBTTests(unittest.TestCase):
         dummy_keypaths = map_keypath_public_key_init(1)
         self.assertIsNotNone(dummy_keypaths)
         map_keypath_add(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
-        self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
-        m2d, d2m = map_to_dict, map_from_dict
-        self.assertEqual(m2d(dummy_keypaths), m2d(d2m(m2d(dummy_keypaths))))
+        self.check_keypath(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
 
         empty_signatures = map_init(0, None)
         dummy_signatures = map_init(0, None) # TODO: pubkey to sig map init

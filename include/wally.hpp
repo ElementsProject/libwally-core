@@ -630,6 +630,19 @@ inline int keypath_get_fingerprint(const VAL& val, BYTES_OUT& bytes_out) {
     return ret;
 }
 
+template <class VAL>
+inline int keypath_get_path(const VAL& val, uint32_t* child_path_out, size_t child_path_out_len, size_t* written) {
+    int ret = ::wally_keypath_get_path(val.data(), val.size(), child_path_out, child_path_out_len, written);
+    return ret;
+}
+
+template <class VAL>
+inline int keypath_get_path_len(const VAL& val, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_keypath_get_path_len(val.data(), val.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(val.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class KEY, class VAL>
 inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_keypath_public_key_verify(key.data(), key.size(), val.data(), val.size());
@@ -757,6 +770,18 @@ inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map*
 template <class MAP_IN, class BYTES_OUT>
 inline int map_keypath_get_item_fingerprint(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out) {
     int ret = ::wally_map_keypath_get_item_fingerprint(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_keypath_get_item_path(const MAP_IN& map_in, size_t index, uint32_t* child_path_out, size_t child_path_out_len, size_t* written) {
+    int ret = ::wally_map_keypath_get_item_path(detail::get_p(map_in), index, child_path_out, child_path_out_len, written);
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_keypath_get_item_path_len(const MAP_IN& map_in, size_t index, size_t* written) {
+    int ret = ::wally_map_keypath_get_item_path_len(detail::get_p(map_in), index, written);
     return ret;
 }
 

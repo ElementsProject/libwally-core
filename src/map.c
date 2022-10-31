@@ -560,6 +560,68 @@ int wally_map_keypath_get_item_fingerprint(const struct wally_map *map_in, size_
     return wally_keypath_get_fingerprint(item->value, item->value_len, bytes_out, len);
 }
 
+int wally_keypath_get_path_len(const unsigned char *val, size_t val_len,
+                               size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!val || val_len < BIP32_KEY_FINGERPRINT_LEN || val_len % sizeof(uint32_t))
+        return WALLY_EINVAL;
+    if (val_len > BIP32_KEY_FINGERPRINT_LEN)
+        *written = (val_len / sizeof(uint32_t)) - 1;
+    return WALLY_OK;
+}
+
+int wally_map_keypath_get_item_path_len(const struct wally_map *map_in, size_t index,
+                                        size_t *written)
+{
+    const struct wally_map_item *item;
+    item = map_in && index < map_in->num_items ? &map_in->items[index] : NULL;
+    if (written)
+        *written = 0;
+    if (!item)
+        return WALLY_EINVAL;
+    return wally_keypath_get_path_len(item->value, item->value_len, written);
+}
+
+int wally_keypath_get_path(const unsigned char *val, size_t val_len,
+                           uint32_t *child_path_out, size_t child_path_out_len,
+                           size_t *written)
+{
+    int ret = wally_keypath_get_path_len(val, val_len, written);
+    if (ret == WALLY_OK) {
+        size_t i;
+
+        if (!child_path_out) {
+            *written = 0;
+            return WALLY_EINVAL;
+        } else if (child_path_out_len < *written)
+            return WALLY_OK; /* Return required length to caller */
+
+        val += BIP32_KEY_FINGERPRINT_LEN; /* Skip fingerprint */
+        for (i = 0; i < *written; ++i) {
+            leint32_t tmp;
+            memcpy(&tmp, val + i * sizeof(uint32_t), sizeof(tmp));
+            child_path_out[i] = le32_to_cpu(tmp);
+        }
+    }
+    return ret;
+}
+
+int wally_map_keypath_get_item_path(const struct wally_map *map_in, size_t index,
+                                    uint32_t *child_path_out, size_t child_path_out_len,
+                                    size_t *written)
+{
+    const struct wally_map_item *item;
+    item = map_in && index < map_in->num_items ? &map_in->items[index] : NULL;
+    if (written)
+        *written = 0;
+    if (!item || !child_path_out)
+        return WALLY_EINVAL;
+    return wally_keypath_get_path(item->value, item->value_len,
+                                  child_path_out, child_path_out_len, written);
+}
+
 /*
  * PSBT preimage support.
  * Preimages are stored keyed by the preimage type + hash, with

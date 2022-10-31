@@ -440,6 +440,71 @@ WALLY_CORE_API int wally_map_keypath_get_item_fingerprint(
     size_t len);
 
 /**
+ * Get the path length from a PSBT keypath's serialized value.
+ *
+ * :param val: The serialized keypath value as stored in a keypath map.
+ * :param val_len: Length of ``val`` in bytes.
+ * :param written: Destination for the items path length.
+ */
+WALLY_CORE_API int wally_keypath_get_path_len(
+    const unsigned char *val,
+    size_t val_len,
+    size_t *written);
+
+/**
+ * Get the length of an item's key path from a keypath map.
+ *
+ * :param map_in: The map to return the item's path length from.
+ * :param index: The zero-based index of the item whose path length to return.
+ * :param written: Destination for the items path length.
+ */
+WALLY_CORE_API int wally_map_keypath_get_item_path_len(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get the path from a PSBT keypath's serialized value.
+ *
+ * :param val: The serialized keypath value as stored in a keypath map.
+ * :param val_len: Length of ``val`` in bytes.
+ * :param child_path_out: Destination for the resulting path.
+ * :param child_path_out_len: The number of items in ``child_path_out``.
+ * :param written: Destination for the number of items written to ``child_path_out``.
+ *
+ * .. note:: If The path is longer than ``child_path_out_len``, WALLY_OK is
+ *|    returned and ``written`` contains the length required. It is valid
+ *|    for a path to be zero-length.
+ *
+ * .. note:: This function should be used to read paths from serialized
+ *|    keypath values to prevent endianness issues on big-endian hosts.
+ */
+WALLY_CORE_API int wally_keypath_get_path(
+    const unsigned char *val,
+    size_t val_len,
+    uint32_t *child_path_out,
+    size_t child_path_out_len,
+    size_t *written);
+
+/**
+ * Get the path from a PSBT keypath's serialized value.
+ *
+ * :param map_in: The map to return the item's path from.
+ * :param index: The zero-based index of the item whose path to return.
+ * :param child_path_out: Destination for the resulting path.
+ * :param child_path_out_len: The number of items in ``child_path_out``.
+ * :param written: Destination for the number of items written to ``child_path_out``.
+ *
+ * .. note:: See the notes for `wally_keypath_get_path`.
+ */
+WALLY_CORE_API int wally_map_keypath_get_item_path(
+    const struct wally_map *map_in,
+    size_t index,
+    uint32_t *child_path_out,
+    size_t child_path_out_len,
+    size_t *written);
+
+/**
  * Verify a preimage map key and value pair.
  *
  * :param key: The preimage hash, prefixed by a hash type byte.
