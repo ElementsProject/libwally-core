@@ -278,8 +278,22 @@ def gen_wasm_package(funcs):
 
     # Output buffer length functions implemented on the JS side
     js_buffer_size_fns = {
-        'wally_hex_to_bytes': 'hex_to_bytes_len',
-        'wally_hex_n_to_bytes': 'hex_n_to_bytes_len',
+        'wally_hex_to_bytes': 'hex_to_bytes_len, false',
+        'wally_hex_n_to_bytes': 'hex_n_to_bytes_len, false',
+        'wally_ec_sig_from_bytes': 'ec_sig_from_bytes_len, false',
+        'wally_format_bitcoin_message': 'format_bitcoin_message_len, true',
+        'wally_script_push_from_bytes': 'script_push_from_bytes_len, true',
+        'wally_scriptpubkey_multisig_from_bytes': 'scriptpubkey_multisig_from_bytes_len, true',
+        'wally_scriptsig_multisig_from_bytes': 'scriptsig_multisig_from_bytes_len, true',
+        'wally_wif_to_public_key': 'wif_to_public_key_len, true',
+        'wally_scriptpubkey_csv_2of2_then_1_from_bytes': 'scriptpubkey_csv_2of2_then_1_from_bytes_len, true',
+        'wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt': 'scriptpubkey_csv_2of2_then_1_from_bytes_opt_len, true',
+        'wally_scriptpubkey_csv_2of3_then_2_from_bytes': 'scriptpubkey_csv_2of3_then_2_from_bytes_len, true',
+
+        'wally_asset_surjectionproof': 'asset_surjectionproof_len, true',
+        'wally_asset_pak_whitelistproof': 'asset_pak_whitelistproof_len, false',
+        'wally_elements_pegout_script_from_bytes': 'elements_pegout_script_from_bytes_len, true',
+        'wally_elements_pegin_contract_script_from_bytes': 'elements_pegin_contract_script_from_bytes_len, true',
     }
 
     def map_args(func):
