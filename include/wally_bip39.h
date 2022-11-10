@@ -106,8 +106,7 @@ WALLY_CORE_API int bip39_mnemonic_validate(
  * :param mnemonic: Mnemonic to convert.
  * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed.
  * :param bytes_out: The destination for the binary seed.
- * :param len: The length of ``bytes_out`` in bytes. Currently This must
- *|      be ``BIP39_SEED_LEN_512``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int bip39_mnemonic_to_seed(

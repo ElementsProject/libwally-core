@@ -44,8 +44,7 @@ WALLY_CORE_API int wally_ae_host_commit_from_bytes(
  *|    ``WALLY_HOST_COMMITMENT_LEN``.
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param s2c_opening_out: Destination for the resulting opening information.
- * :param s2c_opening_out_len: The length of ``s2c_opening_out`` in bytes. Must be
- *|    ``WALLY_S2C_OPENING_LEN``.
+ * FIXED_SIZED_OUTPUT(s2c_opening_out_len, s2c_opening_out, WALLY_S2C_OPENING_LEN)
  */
 WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
     const unsigned char *priv_key,

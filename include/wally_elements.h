@@ -313,7 +313,7 @@ WALLY_CORE_API int wally_asset_surjectionproof(
  * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
  * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
  * :param bytes_out: Buffer to receive surjection proof.
- * :param bytes_out_len: Length of ``bytes_out``. Must be ``ASSET_EXPLICIT_SURJECTIONPROOF_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
  */
 WALLY_CORE_API int wally_explicit_surjectionproof(
     const unsigned char *output_asset,
@@ -357,11 +357,11 @@ WALLY_CORE_API int wally_explicit_surjectionproof_verify(
  * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param asset_out: Buffer to receive unblinded asset id.
- * :param asset_out_len: Length of ``asset_out``. Must be ``ASSET_TAG_LEN``.
+ * FIXED_SIZED_OUTPUT(asset_out_len, asset_out, ASSET_TAG_LEN)
  * :param abf_out: Buffer to receive asset blinding factor.
- * :param abf_out_len: Length of ``abf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(abf_out_len, abf_out, BLINDING_FACTOR_LEN)
  * :param vbf_out: Buffer to receive asset blinding factor.
- * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(vbf_out_len, vbf_out, BLINDING_FACTOR_LEN)
  * :param value_out: Destination for unblinded transaction output value.
  */
 WALLY_CORE_API int wally_asset_unblind_with_nonce(
@@ -399,11 +399,11 @@ WALLY_CORE_API int wally_asset_unblind_with_nonce(
  * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param asset_out: Buffer to receive unblinded asset id.
- * :param asset_out_len: Length of ``asset_out``. Must be ``ASSET_TAG_LEN``.
+ * FIXED_SIZED_OUTPUT(asset_out_len, asset_out, ASSET_TAG_LEN)
  * :param abf_out: Buffer to receive asset blinding factor.
- * :param abf_out_len: Length of ``abf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(abf_out_len, abf_out, BLINDING_FACTOR_LEN)
  * :param vbf_out: Buffer to receive asset blinding factor.
- * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(vbf_out_len, vbf_out, BLINDING_FACTOR_LEN)
  * :param value_out: Destination for unblinded transaction output value.
  */
 WALLY_CORE_API int wally_asset_unblind(

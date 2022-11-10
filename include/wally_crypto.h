@@ -248,8 +248,7 @@ WALLY_CORE_API int wally_hmac_sha512(
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
  * :param bytes_out: Destination for the derived pseudorandom key.
- * :param len: The length of ``bytes_out`` in bytes. This must be a multiple
- *|     of ``PBKDF2_HMAC_SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, PBKDF2_HMAC_SHA256_LEN)
  */
 WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
     const unsigned char *pass,
@@ -272,8 +271,7 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha256(
  * :param cost: The cost of the function. The larger this number, the
  *|     longer the key will take to derive.
  * :param bytes_out: Destination for the derived pseudorandom key.
- * :param len: The length of ``bytes_out`` in bytes. This must be a multiple
- *|    of ``PBKDF2_HMAC_SHA512_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, PBKDF2_HMAC_SHA512_LEN)
  */
 WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
     const unsigned char *pass,
@@ -671,8 +669,7 @@ WALLY_CORE_API int wally_ecdh(
  * :param s2c_data_len: The length of ``s2c_data`` in bytes. Must be ``WALLY_S2C_DATA_LEN``.
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param s2c_opening_out: Destination for the resulting opening information.
- * :param s2c_opening_out_len: The length of ``s2c_opening_out`` in bytes. Must be
- *|    ``WALLY_S2C_OPENING_LEN``.
+ * FIXED_SIZED_OUTPUT(s2c_opening_out_len, s2c_opening_out, WALLY_S2C_OPENING_LEN)
  * :param bytes_out: Destination for the resulting compact signature.
  * FIXED_SIZED_OUTPUT(len, bytes_out, EC_SIGNATURE_LEN)
  */
