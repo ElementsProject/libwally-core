@@ -44,12 +44,12 @@ class Arg(object):
             self.is_struct = False
             self.type, self.name = definition.split(' ')
         self.is_const = self.type.startswith(u'const ')
-        self.fixed_sizes = []
+        self.fixed_size = None
 
     def add_metadata(self, m):
         if 'FIXED_SIZED_OUTPUT(' in m:
             parts = [p.strip() for p in m[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
-            self.fixed_sizes.extend(parts[2:])
+            self.fixed_size = parts[2]
         else:
             assert False, 'Unknown metadata format {}'.format(m)
 
@@ -331,9 +331,8 @@ def gen_wasm_package(funcs):
 
                 # Detect output buffer size (fixed or via a length utility function)
                 len_arg = func.args[curr_index + 1]
-                if len_arg.fixed_sizes:
-                    assert len(len_arg.fixed_sizes) == 1, "Fixed sized output buffers with multiple sizes are currently unhandled"
-                    output_buffer_size = f"C.{len_arg.fixed_sizes[0]}"
+                if len_arg.fixed_size:
+                    output_buffer_size = f"C.{len_arg.fixed_size}"
                 elif func.buffer_len_fn:
                     output_buffer_size = f"{export_name(func.buffer_len_fn)}, {'true' if func.buffer_len_is_upper_bound else 'false'}"
                 elif func.name in js_buffer_size_fns:

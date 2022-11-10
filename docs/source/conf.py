@@ -16,13 +16,8 @@ def get_doc_lines(l):
 def preprocess_output_doc_line(l):
     if 'FIXED_SIZED_OUTPUT(' in l:
         parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
-        len_param, param, sizes = parts[0], parts[1], parts[2:]
-        sizes = ['``'+s+'``' for s in sizes]
-        preamble = ':param {}: Size of ``{}``. Must be '.format(len_param, param)
-        if len(sizes) > 1:
-            return l, preamble + 'one of {}.'.format(', '.join(sizes))
-        else:
-            return l, preamble + '{}.'.format(sizes[0])
+        len_param, param, size = parts
+        return l, ':param {}: Size of ``{}``. Must be ``{}``.'.format(len_param, param, size)
     return None, l
 
 def output_func(docs, func):
