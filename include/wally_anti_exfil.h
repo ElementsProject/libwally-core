@@ -23,7 +23,7 @@ extern "C" {
  *|    ``WALLY_S2C_DATA_LEN``.
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param bytes_out: Destination for the resulting compact signature.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``WALLY_HOST_COMMITMENT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_HOST_COMMITMENT_LEN)
  */
 WALLY_CORE_API int wally_ae_host_commit_from_bytes(
     const unsigned char *entropy,
@@ -69,7 +69,7 @@ WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
  * :param entropy_len: The length of ``entropy`` in bytes. Must be ``WALLY_S2C_DATA_LEN``.
  * :param flags: Must be ``EC_FLAG_ECDSA``.
  * :param bytes_out: Destination for the resulting compact signature.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_SIGNATURE_LEN)
  */
 WALLY_CORE_API int wally_ae_sig_from_bytes(
     const unsigned char *priv_key,

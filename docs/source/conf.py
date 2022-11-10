@@ -13,17 +13,30 @@ def get_doc_lines(l):
         return ['   ' + l, '']
     return ['   ' + l]
 
+def preprocess_output_doc_line(l):
+    if 'FIXED_SIZED_OUTPUT(' in l:
+        parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
+        len_param, param, sizes = parts[0], parts[1], parts[2:]
+        sizes = ['``'+s+'``' for s in sizes]
+        preamble = ':param {}: Size of ``{}``. Must be '.format(len_param, param)
+        if len(sizes) > 1:
+            return l, preamble + 'one of {}.'.format(', '.join(sizes))
+        else:
+            return l, preamble + '{}.'.format(sizes[0])
+    return None, l
+
 def output_func(docs, func):
     is_normal_ret = 'WALLY_CORE_API int' in func
     func = func[:-1].replace('WALLY_CORE_API','').strip()
     func = func.replace(',',', ').replace('  ', ' ')
-    if DUMP_FUNCS:
-        # Dump function definitions if requested
-        print ('%s' % func)
     ret = ['.. c:function:: ' + func, '']
     is_variable_buffer_ret = 'unsigned char *bytes_out, size_t len, size_t *written' in func
+    meta = []
     for l in docs:
-        ret.extend(get_doc_lines(l))
+        m, docs = preprocess_output_doc_line(l)
+        ret.extend(get_doc_lines(docs))
+        if m:
+            meta.append(m)
     if ret[-1] != '':
         ret.append('')
     if is_normal_ret:
@@ -33,7 +46,15 @@ def output_func(docs, func):
             ret.append('   :return: See :ref:`error-codes`')
     ret.append('')
     ret.append('')
+    if DUMP_FUNCS:
+        # Dump function definitions/metadata
+        print('%s' % func)
+        for m in meta:
+            print('%s' % m)
     return ret
+
+def preprocess_input_doc_line(l):
+    return l # No-op for now
 
 def extract_docs(infile, outfile):
 
@@ -62,7 +83,8 @@ def extract_docs(infile, outfile):
                 if l.startswith('*|'):
                     current[-1] += ' ' + l[2:].strip()
                 else:
-                    current.append(l[1:].strip())
+                    l = preprocess_input_doc_line(l[1:].strip())
+                    current.append(l)
         else: # FUNC
             func += l
             if ');' in func:

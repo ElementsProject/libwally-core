@@ -197,7 +197,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
  * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param bytes_out: Destination for the serialized key.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_SERIALIZED_LEN)
  */
 WALLY_CORE_API int bip32_key_serialize(
     const struct ext_key *hdkey,
@@ -358,8 +358,8 @@ WALLY_CORE_API int bip32_key_from_parent_path_str_n_alloc(
  * :param hdkey: The parent extended key.
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
- * :param bytes_out: Destination for the resulting pub tweak.
- * :param len: Length of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
+ * :param output: Destination for the resulting key.
  */
 WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
     const struct ext_key *hdkey,
@@ -452,7 +452,7 @@ WALLY_CORE_API int bip32_key_strip_private_key(
  *
  * :param hdkey: The extended key.
  * :param bytes_out: Destination for the fingerprint.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
  */
 WALLY_CORE_API int bip32_key_get_fingerprint(
     struct ext_key *hdkey,

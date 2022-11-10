@@ -44,7 +44,14 @@ class Arg(object):
             self.is_struct = False
             self.type, self.name = definition.split(' ')
         self.is_const = self.type.startswith(u'const ')
+        self.fixed_sizes = []
 
+    def add_metadata(self, m):
+        if 'FIXED_SIZED_OUTPUT(' in m:
+            parts = [p.strip() for p in m[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
+            self.fixed_sizes.extend(parts[2:])
+        else:
+            assert False, 'Unknown metadata format {}'.format(m)
 
 class Func(object):
     def __init__(self, definition, non_elements):
@@ -57,6 +64,11 @@ class Func(object):
     def __lt__(self, other):
         return self.name < other.name
 
+    def add_metadata(self, m):
+        arg_name = m.split('(')[1].split(',')[0].strip()
+        args = [arg for arg in self.args if arg.name == arg_name]
+        assert len(args) == 1, 'invalid metadata reference {}'.format(m)
+        args[0].add_metadata(m)
 
 def is_array(func, arg, n, num_args, types):
     return arg.type in types and n != num_args -1 and \
@@ -369,8 +381,13 @@ if __name__ == "__main__":
     process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=envs)
 
     # Process the lines into func objects for each function
-    funcs = process.stdout.decode('utf-8').split(u'\n')
-    funcs = [Func(f, non_elements) for f in funcs if f.startswith(u'int ')]
+    func_lines = process.stdout.decode('utf-8').split(u'\n')
+    funcs = []
+    for f in func_lines:
+        if f.startswith(u'int '):
+            funcs.append(Func(f, non_elements))
+        elif f.startswith(u'FIXED_SIZED_OUTPUT('):
+            funcs[-1].add_metadata(f)
 
     # Generate the wrapper code
     gen_python_cffi(funcs, internal_only)
