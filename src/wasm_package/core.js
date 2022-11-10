@@ -117,7 +117,7 @@ types.DestPtrPtr = type => ({
     }
 })
 
-// A destination pointer to a Bytes buffer with a known size
+// A destination pointer to an Bytes output buffer with a fixed size (without a `written` argument)
 types.DestPtrSized = size => ({
     no_user_args: true,
     wasm_types: ['number', 'number'],
@@ -131,35 +131,46 @@ types.DestPtrSized = size => ({
     }
 })
 
-// A destination pointer to a variable length Bytes buffer
+// A destination pointer to a variable-length Bytes output buffer (with a `written` argument)
+//
+// `buffer_size_optfn` may contain a fixed size for the output buffer or a function that calculates it.
+// `size_is_upper_bound` allows the returned buffer to be smaller (truncated to the `written` size).
+//
 // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
-types.DestPtrVarLen = init_size => ({
+// Note that the retry mechanism described in the link above is not implemented. Instead, the
+// exact (or maximum) size is figured out in advance, and an error is raised if its insufficient.
+types.DestPtrVarLen = (size_maybefn, size_is_upper_bound = false) => ({
     no_user_args: true,
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
 
-    to_wasm: _ => {
-        const dest_ptr_size = init_size
-            , dest_ptr = Module._malloc(dest_ptr_size)
+    to_wasm: (_, all_args) => {
+
+        const buffer_size = typeof size_maybefn == 'function'
+            ? size_maybefn(...all_args)
+            : size_maybefn
+
+        const dest_ptr = Module._malloc(buffer_size)
             , written_ptr = Module._malloc(4)
 
         return {
-            args: [dest_ptr, dest_ptr_size, written_ptr],
+            args: [dest_ptr, buffer_size, written_ptr],
             return: _ => {
                 // This contains either the written size when the buffer was large enough, or the expected size when it was not
                 const written_or_expected = Module.getValue(written_ptr, 'i32')
 
-                if (written_or_expected > dest_ptr_size) {
-                    throw new WallyVarLenError(dest_ptr_size, written_or_expected)
+                if (written_or_expected == buffer_size) {
+                    return types.Bytes.read_ptr_sized(dest_ptr, buffer_size)
+                } else if (written_or_expected < buffer_size && size_is_upper_bound) {
+                    return types.Bytes.read_ptr_sized(dest_ptr, written_or_expected)
+                } else {
+                    throw new WallyUnexpectedBufferSizeError(buffer_size, written_or_expected)
                 }
-
-                return types.Bytes.read_ptr_sized(dest_ptr, written_or_expected)
             },
             cleanup: _ => (Module._free(dest_ptr), Module._free(written_ptr)),
         }
     }
 })
-
 
 //
 // Utilities
@@ -186,11 +197,11 @@ const ERROR_CODES = {
     [WALLY_ENOMEM]: 'WALLY_ENOMEM',
 }
 
-export class WallyVarLenError extends Error {
-    constructor(given_size, expected_size) {
-        super(`Insufficient output buffer size, ${expected_size} needed but only ${given_size} given`)
+export class WallyUnexpectedBufferSizeError extends Error {
+    constructor(given_size, actual_size) {
+        super(`Unexpected output buffer size ${actual_size}, expected ${given_size}`)
         this.given_size = given_size
-        this.expected_size = expected_size
+        this.actual_size = actual_size
     }
 }
 
@@ -217,12 +228,12 @@ export function wrap(func_name, args_types) {
 
     const js_args_num = args_types.filter(type => !type.no_user_args).length
 
-    return function (...args) {
-        if (args.length != js_args_num) {
-            throw new WallyNumArgsError(func_name, js_args_num, args.length)
+    return function (...all_args) {
+        if (all_args.length != js_args_num) {
+            throw new WallyNumArgsError(func_name, js_args_num, all_args.length)
         }
 
-        const argsc = [...args] // shallow clone so we can shift()
+        const argsc = [...all_args] // shallow clone so we can shift()
             , wasm_args = []
             , returns = []
             , cleanups = []
@@ -230,9 +241,9 @@ export function wrap(func_name, args_types) {
         // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
         for (const arg_type of args_types) {
             // Types with `no_user_args` don't use any of the user-provided js args
-            const arg_value = arg_type.no_user_args ? null : argsc.shift()
+            const this_arg = arg_type.no_user_args ? null : argsc.shift()
 
-            const as_wasm = arg_type.to_wasm(arg_value)
+            const as_wasm = arg_type.to_wasm(this_arg, all_args)
 
             wasm_args.push(...as_wasm.args)
             if (as_wasm.return) returns.push(as_wasm.return)

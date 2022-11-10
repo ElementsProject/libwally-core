@@ -56,9 +56,11 @@ wally.bip32_key_free(hdkey)
 wally.bip32_key_free(hdkey_child)
 
 // Test varlen buffers (https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers)
-const longhex = Array(200).join('00') // large enough (> 100) to require a retry
+const longhex = Array(200).join('00')
 const bytes = wally.hex_to_bytes(longhex)
 assert.equal(bytesToHex(bytes), longhex)
 
+const vbytes = wally.varbuff_to_bytes(hexToBytes('133337'));
+assert.equal(bytesToHex(vbytes), '03133337')
 
 console.log('Tests passed.')
