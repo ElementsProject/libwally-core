@@ -60,6 +60,8 @@ class Func(object):
         # Parse arguments
         self.args = [Arg(d) for d in definition.split(u', ')]
         self.is_elements = self.name not in non_elements
+        self.buffer_len_fn = None
+        self.buffer_len_is_upper_bound = None
 
     def __lt__(self, other):
         return self.name < other.name
@@ -274,6 +276,12 @@ def gen_wasm_package(funcs):
          'const uint64_t*'      : 'T.Uint64Array',
     }
 
+    # Output buffer length functions implemented on the JS side
+    js_buffer_size_fns = {
+        'wally_hex_to_bytes': 'hex_to_bytes_len',
+        'wally_hex_n_to_bytes': 'hex_n_to_bytes_len',
+    }
+
     def map_args(func):
         num_args = len(func.args)
         next_index = 0
@@ -307,10 +315,15 @@ def gen_wasm_package(funcs):
                 # Sanity check to make sure we don't misidentify unrelated arguments
                 assert arg.name.endswith("_out") or arg.name == 'scalar'
 
+                # Detect output buffer size (fixed or via a length utility function)
                 len_arg = func.args[curr_index + 1]
                 if len_arg.fixed_sizes:
                     assert len(len_arg.fixed_sizes) == 1, "Fixed sized output buffers with multiple sizes are currently unhandled"
                     output_buffer_size = f"C.{len_arg.fixed_sizes[0]}"
+                elif func.buffer_len_fn:
+                    output_buffer_size = f"{export_name(func.buffer_len_fn)}, {'true' if func.buffer_len_is_upper_bound else 'false'}"
+                elif func.name in js_buffer_size_fns:
+                    output_buffer_size = js_buffer_size_fns[func.name]
                 else:
                     # XXX Use a default fallback value for now, until all length functions are handled
                     print(f"MISSING output buffer size for {func.name}:{arg.name}")
@@ -358,11 +371,14 @@ def gen_wasm_package(funcs):
 
         return func_name
 
+    # Place functions that depend on the buffer length utility functions last, so that the utility
+    # functions are available to them. Then sort by name.
+    fn_def_order = sorted(funcs, key = lambda f: (f.buffer_len_fn is not None, export_name(f.name)))
+
     jscode = [
         f"export const {export_name(func.name)} = wrap('{func.name}', [{', '.join(map_args(func))}]);"
-        for func in funcs
+        for func in fn_def_order
     ]
-    jscode.sort()
 
     # Inject generated functions into functions.js
     replace_text(u'src/wasm_package/functions.js', jscode,
@@ -390,6 +406,23 @@ if __name__ == "__main__":
             funcs.append(Func(f, non_elements))
         elif f.startswith(u'FIXED_SIZED_OUTPUT('):
             funcs[-1].add_metadata(f)
+
+    # Auto-detect output buffer length function based on the following naming conventions:
+    # - funcname -> funcname_len / funcname_length
+    # - funcname_to_bytes -> funcname_get_length
+    # - funcname_to_bytes -> funcname_get_maximum_length (implies is_upper_bound=true)
+    buffer_len_fns = set([f.name for f in funcs if f.name.endswith('_len') or f.name.endswith('_length')])
+    for f in funcs:
+        if f.name.endswith('_to_bytes'):
+            possible_names = [ f.name[0:-9]+'_get_length', f.name[0:-9]+'_get_maximum_length' ]
+        else:
+            possible_names = [ f.name + '_len', f.name + '_length' ]
+
+        for name in possible_names:
+            if name in buffer_len_fns:
+                f.buffer_len_fn = name
+                f.buffer_len_is_upper_bound = name.endswith('_maximum_length')
+                break
 
     # Generate the wrapper code
     gen_python_cffi(funcs, internal_only)
