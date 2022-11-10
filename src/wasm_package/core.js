@@ -138,9 +138,8 @@ types.DestPtrVarLen = init_size => ({
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
 
-    to_wasm: (_, extra_type_info) => {
-        // Use the expected size if its already known, or try with the initial size which is hopefully large enough
-        const dest_ptr_size = extra_type_info.expected_varlen_size || init_size
+    to_wasm: _ => {
+        const dest_ptr_size = init_size
             , dest_ptr = Module._malloc(dest_ptr_size)
             , written_ptr = Module._malloc(4)
 
@@ -151,7 +150,6 @@ types.DestPtrVarLen = init_size => ({
                 const written_or_expected = Module.getValue(written_ptr, 'i32')
 
                 if (written_or_expected > dest_ptr_size) {
-                    // Caught outside to trigger a retry with the expected size
                     throw new WallyVarLenError(dest_ptr_size, written_or_expected)
                 }
 
@@ -224,51 +222,37 @@ export function wrap(func_name, args_types) {
             throw new WallyNumArgsError(func_name, js_args_num, args.length)
         }
 
-        function run(extra_type_info = {}) {
-            const argsc = [...args] // shallow clone so we can shift()
-                , wasm_args = []
-                , returns = []
-                , cleanups = []
+        const argsc = [...args] // shallow clone so we can shift()
+            , wasm_args = []
+            , returns = []
+            , cleanups = []
 
-            // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
-            for (const arg_type of args_types) {
-                // Types with `no_user_args` don't use any of the user-provided js args
-                const arg_value = arg_type.no_user_args ? null : argsc.shift()
+        // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
+        for (const arg_type of args_types) {
+            // Types with `no_user_args` don't use any of the user-provided js args
+            const arg_value = arg_type.no_user_args ? null : argsc.shift()
 
-                const as_wasm = arg_type.to_wasm(arg_value, extra_type_info)
+            const as_wasm = arg_type.to_wasm(arg_value)
 
-                wasm_args.push(...as_wasm.args)
-                if (as_wasm.return) returns.push(as_wasm.return)
-                if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
-            }
-
-            try {
-                const code = wasm_fn(...wasm_args)
-
-                if (code !== WALLY_OK) {
-                    throw new WallyError(code)
-                }
-
-                const results = returns.map(return_fn => return_fn())
-
-                return results.length == 0 ? true // success, but no explicit return value
-                    : results.length == 1 ? results[0]
-                        : results
-            } finally {
-                cleanups.forEach(cleanup_fn => cleanup_fn())
-            }
+            wasm_args.push(...as_wasm.args)
+            if (as_wasm.return) returns.push(as_wasm.return)
+            if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
         }
 
         try {
-            return run()
-        } catch (err) {
-            // Retry with the expected buffer size when the buffer we provided is too small (but only once)
-            // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
-            if (err instanceof WallyVarLenError) {
-                return run({ expected_varlen_size: err.expected_size })
-            } else {
-                throw err
+            const code = wasm_fn(...wasm_args)
+
+            if (code !== WALLY_OK) {
+                throw new WallyError(code)
             }
+
+            const results = returns.map(return_fn => return_fn())
+
+            return results.length == 0 ? true // success, but no explicit return value
+                : results.length == 1 ? results[0]
+                    : results
+        } finally {
+            cleanups.forEach(cleanup_fn => cleanup_fn())
         }
     }
 }
