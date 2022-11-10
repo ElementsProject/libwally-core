@@ -274,13 +274,6 @@ def gen_wasm_package(funcs):
          'const uint64_t*'      : 'T.Uint64Array',
     }
 
-    # Expected sizes for fixed-size output buffers
-    # TODO extract sizes for all arguments. currently only a few are set to prevent the tests from breaking.
-    out_buffer_sizes = {
-        'wally_tx_get_txid.bytes_out': 'C.WALLY_TXHASH_LEN',
-        'wally_sha256.bytes_out': 'C.SHA256_LEN',
-    }
-
     def map_args(func):
         num_args = len(func.args)
         next_index = 0
@@ -314,15 +307,24 @@ def gen_wasm_package(funcs):
                 # Sanity check to make sure we don't misidentify unrelated arguments
                 assert arg.name.endswith("_out") or arg.name == 'scalar'
 
+                len_arg = func.args[curr_index + 1]
+                if len_arg.fixed_sizes:
+                    assert len(len_arg.fixed_sizes) == 1, "Fixed sized output buffers with multiple sizes are currently unhandled"
+                    output_buffer_size = f"C.{len_arg.fixed_sizes[0]}"
+                else:
+                    # XXX Use a default fallback value for now, until all length functions are handled
+                    print(f"MISSING output buffer size for {func.name}:{arg.name}")
+                    output_buffer_size = 100
+
                 # Variable-length buffers have an additional pointer for the number of bytes written/expected
                 # See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
                 if curr_index < num_args - 2 and func.args[curr_index + 2].type == 'size_t*' and func.args[curr_index + 2].name == 'written':
-                    init_size = 100 # TODO
-                    js_args.append(f'T.DestPtrVarLen({init_size})')
+                    js_args.append(f'T.DestPtrVarLen({output_buffer_size})')
                     next_index = next_index + 2 # skip next two arguments: 'FOO_len' and 'written'
+
+                # Fixed-sized output buffers
                 else:
-                    arg_size = out_buffer_sizes.get(f"{func.name}.{arg.name}", 100) # TODO fail if missing once we have all sizes
-                    js_args.append(f'T.DestPtrSized({arg_size})')
+                    js_args.append(f'T.DestPtrSized({output_buffer_size})')
                     next_index = next_index + 1 # skip next 'FOO_len' argument
 
                 continue
