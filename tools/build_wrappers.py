@@ -45,11 +45,15 @@ class Arg(object):
             self.type, self.name = definition.split(' ')
         self.is_const = self.type.startswith(u'const ')
         self.fixed_size = None
+        self.max_size = None
 
     def add_metadata(self, m):
         if 'FIXED_SIZED_OUTPUT(' in m:
             parts = [p.strip() for p in m[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
             self.fixed_size = parts[2]
+        elif 'MAX_SIZED_OUTPUT(' in m:
+            parts = [p.strip() for p in m[len('MAX_SIZED_OUTPUT('):-1].split(',')]
+            self.max_size = parts[2]
         else:
             assert False, 'Unknown metadata format {}'.format(m)
 
@@ -333,6 +337,8 @@ def gen_wasm_package(funcs):
                 len_arg = func.args[curr_index + 1]
                 if len_arg.fixed_size:
                     output_buffer_size = f"C.{len_arg.fixed_size}"
+                elif len_arg.max_size:
+                    output_buffer_size = f"C.{len_arg.max_size}, true"
                 elif func.buffer_len_fn:
                     output_buffer_size = f"{export_name(func.buffer_len_fn)}, {'true' if func.buffer_len_is_upper_bound else 'false'}"
                 elif func.name in js_buffer_size_fns:
@@ -417,7 +423,7 @@ if __name__ == "__main__":
     for f in func_lines:
         if f.startswith(u'int '):
             funcs.append(Func(f, non_elements))
-        elif f.startswith(u'FIXED_SIZED_OUTPUT('):
+        elif f.startswith(u'FIXED_SIZED_OUTPUT(') or f.startswith(u'MAX_SIZED_OUTPUT('):
             funcs[-1].add_metadata(f)
 
     # Auto-detect output buffer length function based on the following naming conventions:

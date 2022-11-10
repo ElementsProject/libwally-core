@@ -39,6 +39,9 @@ struct ext_key;
 #define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
 #define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 
+#define WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN 34
+#define WALLY_ADDRESS_PUBKEY_MAX_LEN 25
+
 /**
  * Create a segwit native address from a v0 or later witness program.
  *
@@ -63,7 +66,7 @@ WALLY_CORE_API int wally_addr_segwit_from_bytes(
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
  * :param bytes_out: Destination for the resulting scriptPubKey (including the version and data push opcode)
- * :param len: Length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_addr_segwit_to_bytes(
@@ -78,6 +81,8 @@ WALLY_CORE_API int wally_addr_segwit_to_bytes(
  * Get a scriptPubKey containing the witness program from a known-length segwit native address.
  *
  * See `wally_addr_segwit_to_bytes`.
+ *
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN)
  */
 WALLY_CORE_API int wally_addr_segwit_n_to_bytes(
     const char *addr,
@@ -124,7 +129,7 @@ WALLY_CORE_API int wally_addr_segwit_n_get_version(
  * :param network: One of ``WALLY_NETWORK_BITCOIN_MAINNET``, ``WALLY_NETWORK_BITCOIN_TESTNET``,
  *|    ``WALLY_NETWORK_LIQUID``, ``WALLY_NETWORK_LIQUID_REGTEST``.
  * :param bytes_out: Destination for the resulting scriptPubKey
- * :param len: Length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_ADDRESS_PUBKEY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_address_to_scriptpubkey(

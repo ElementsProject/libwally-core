@@ -431,7 +431,7 @@ WALLY_CORE_API int wally_ec_sig_normalize(
  * :param sig: The compact signature to convert.
  * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
  * :param bytes_out: Destination for the resulting DER encoded signature.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_DER_MAX_LEN``.
+ * MAX_SIZED_OUTPUT(len, bytes_out, EC_SIGNATURE_DER_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_ec_sig_to_der(

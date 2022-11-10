@@ -156,7 +156,7 @@ WALLY_CORE_API int wally_asset_value_commitment(
  * :param exp: Exponent value. -1 >= ``exp`` >= 18. Recommended value 0.
  * :param min_bits: 0 >= min_bits >= 64. Recommended value 52.
  * :param bytes_out: Buffer to receive rangeproof.
- * :param len: Length of ``bytes_out``. See ``ASSET_RANGEPROOF_MAX_LEN``.
+ * MAX_SIZED_OUTPUT(len, bytes_out, ASSET_RANGEPROOF_MAX_LEN)
  * :param written: Number of bytes actually written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
@@ -187,6 +187,8 @@ WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
  *
  * This convenience function generates a nonce hash with `wally_ecdh_nonce_hash`
  * and then calls `wally_asset_rangeproof_with_nonce`.
+ *
+ * MAX_SIZED_OUTPUT(len, bytes_out, ASSET_RANGEPROOF_MAX_LEN)
  */
 WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t value,
@@ -218,6 +220,8 @@ WALLY_CORE_API int wally_asset_rangeproof(
  *
  * The nonce for this function should be randomly generated.
  * See `wally_asset_rangeproof_with_nonce`.
+ *
+ * MAX_SIZED_OUTPUT(len, bytes_out, ASSET_EXPLICIT_RANGEPROOF_MAX_LEN)
  */
 WALLY_CORE_API int wally_explicit_rangeproof(
     uint64_t value,

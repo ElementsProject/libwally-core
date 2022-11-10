@@ -18,6 +18,10 @@ def preprocess_output_doc_line(l):
         parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
         len_param, param, size = parts
         return l, ':param {}: Size of ``{}``. Must be ``{}``.'.format(len_param, param, size)
+    elif 'MAX_SIZED_OUTPUT(' in l:
+        parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
+        len_param, param, max_size = parts
+        return l, ':param {}: Size of ``{}``. Passing ``{}`` will ensure the buffer is large enough.'.format(len_param, param, max_size)
     return None, l
 
 def output_func(docs, func):
