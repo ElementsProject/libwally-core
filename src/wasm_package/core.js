@@ -202,6 +202,13 @@ export class WallyArrayNumTypeError extends Error {
     }
 }
 
+export class WallyNumArgsError extends Error {
+    constructor(func_name, num_expected, num_given) {
+        super(`Invalid number of arguments for ${func_name} (${num_given}, expected ${num_expected})`)
+    }
+}
+
+
 //
 // Wrap a libwally WASM function with a high-level JavaScript API
 //
@@ -214,8 +221,7 @@ export function wrap(func_name, args_types) {
 
     return function (...args) {
         if (args.length != js_args_num) {
-            // TODO specialized error
-            throw new Error(`Invalid number of arguments for ${func_name} (${args.length}, expected ${js_args_num})`)
+            throw new WallyNumArgsError(func_name, js_args_num, args.length)
         }
 
         function run(extra_type_info = {}) {
