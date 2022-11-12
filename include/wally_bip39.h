@@ -21,6 +21,9 @@ struct words;
 /** The required size of the output buffer for `bip39_mnemonic_to_seed` */
 #define BIP39_SEED_LEN_512 64
 
+/** Maximum entropy size (including up to 2 bytes for checksum) */
+#define BIP39_ENTROPY_LEN_MAX (BIP39_ENTROPY_LEN_320 + 2)
+
 /** The number of words in a BIP39 compliant wordlist */
 #define BIP39_WORDLIST_LEN 2048
 
@@ -80,7 +83,7 @@ WALLY_CORE_API int bip39_mnemonic_from_bytes(
  * :param w: Word list to use. Pass NULL to use the default English list.
  * :param mnemonic: Mnemonic to convert.
  * :param bytes_out: Where to store the resulting entropy.
- * :param len: The length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, BIP39_ENTROPY_LEN_MAX)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int bip39_mnemonic_to_bytes(

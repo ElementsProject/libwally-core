@@ -18,9 +18,6 @@
 #include "data/wordlists/japanese.c"
 #endif
 
-/* Maximum length including up to 2 bytes for checksum */
-#define BIP39_ENTROPY_LEN_MAX (BIP39_ENTROPY_LEN_320 + sizeof(unsigned char) * 2)
-
 static const struct {
     const char name[4];
     const struct words *words;
