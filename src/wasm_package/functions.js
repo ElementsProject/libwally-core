@@ -6,6 +6,14 @@ import * as C from './const.js'
 const hex_to_bytes_len = hex => hex.length / 2
 const hex_n_to_bytes_len = (_hex, hex_len) => hex_len / 2
 
+const aes_len = (_key, bytes, _flags) =>
+    // ECB mode with no padding - output size is always exactly the same as the input
+    bytes.length
+
+const aes_cbc_len = (_key, bytes, _flags) =>
+    // CBC mode with PKCS#7 padding - output must be padded to the next block size multiply (for the pad length byte)
+    (Math.floor(bytes.length/C.AES_BLOCK_LEN) + 1) * C.AES_BLOCK_LEN
+
 const ec_sig_from_bytes_len = (_priv_key, _bytes, flags) =>
     flags & C.EC_FLAG_RECOVERABLE ? C.EC_SIGNATURE_RECOVERABLE_LEN : C.EC_SIGNATURE_LEN
 
@@ -78,8 +86,8 @@ export const ae_host_commit_from_bytes = wrap('wally_ae_host_commit_from_bytes',
 export const ae_sig_from_bytes = wrap('wally_ae_sig_from_bytes', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(C.EC_SIGNATURE_LEN)]);
 export const ae_signer_commit_from_bytes = wrap('wally_ae_signer_commit_from_bytes', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(C.WALLY_S2C_OPENING_LEN)]);
 export const ae_verify = wrap('wally_ae_verify', [T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Int32, T.Bytes]);
-export const aes = wrap('wally_aes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(100)]);
-export const aes_cbc = wrap('wally_aes_cbc', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrVarLen(100)]);
+export const aes = wrap('wally_aes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(aes_len, false)]);
+export const aes_cbc = wrap('wally_aes_cbc', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrVarLen(aes_cbc_len, true)]);
 export const asset_blinding_key_from_seed = wrap('wally_asset_blinding_key_from_seed', [T.Bytes, T.DestPtrSized(C.HMAC_SHA512_LEN)]);
 export const asset_blinding_key_to_ec_private_key = wrap('wally_asset_blinding_key_to_ec_private_key', [T.Bytes, T.Bytes, T.DestPtrSized(C.EC_PRIVATE_KEY_LEN)]);
 export const asset_final_vbf = wrap('wally_asset_final_vbf', [T.Uint64Array, T.Int32, T.Bytes, T.Bytes, T.DestPtrSized(C.BLINDING_FACTOR_LEN)]);
