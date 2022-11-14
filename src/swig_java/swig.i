@@ -620,6 +620,8 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_psbt_get_input_asset_len);
 %returns_size_t(wally_psbt_get_input_asset_surjectionproof);
 %returns_size_t(wally_psbt_get_input_asset_surjectionproof_len);
+%returns_struct(wally_psbt_get_input_best_utxo_alloc, wally_tx_output);
+%rename("psbt_get_input_best_utxo") wally_psbt_get_input_best_utxo_alloc;
 %returns_size_t(wally_psbt_get_input_redeem_script);
 %returns_size_t(wally_psbt_get_input_redeem_script_len);
 %returns_size_t(wally_psbt_get_input_issuance_asset_entropy);

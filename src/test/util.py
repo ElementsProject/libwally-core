@@ -708,6 +708,7 @@ for f in (
     ('wally_psbt_get_input_asset_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_asset_surjectionproof', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_asset_surjectionproof_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
+    ('wally_psbt_get_input_best_utxo_alloc', c_int, [POINTER(wally_psbt), c_size_t, POINTER(POINTER(wally_tx_output))]),
     ('wally_psbt_get_input_final_scriptsig', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_final_scriptsig_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_final_witness_alloc', c_int, [POINTER(wally_psbt), c_size_t, POINTER(POINTER(wally_tx_witness_stack))]),

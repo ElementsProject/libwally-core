@@ -4776,7 +4776,7 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
 #define PSBT_GET_S(typ, name, structtyp, clonefn) \
     int wally_psbt_get_ ## typ ## _ ## name ## _alloc(const struct wally_psbt *psbt, size_t index, \
                                                       struct structtyp **output) { \
-        struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
+        const struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (output) *output = NULL; \
         if (!p || !output) return WALLY_EINVAL; \
         return clonefn(p->name, output); \
@@ -4815,6 +4815,15 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
 
 PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
+int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index,
+                                         struct wally_tx_output **output)
+{
+    const struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    const struct wally_tx_output *o = p ? utxo_from_input(psbt, p) : NULL;
+    if (output) *output = NULL;
+    if (!o || !output) return WALLY_EINVAL;
+    return wally_tx_output_clone_alloc(o, output);
+}
 PSBT_FIELD(input, redeem_script, PSBT_0)
 PSBT_FIELD(input, witness_script, PSBT_0)
 PSBT_FIELD(input, final_scriptsig, PSBT_0)

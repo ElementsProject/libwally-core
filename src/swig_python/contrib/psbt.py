@@ -7,8 +7,8 @@ PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
 
 SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50dcc5a0af4ba2b9efcf022100fd8d53c6be9b3f68c74eed559cca314e718df437b5c5c57668c5930e14140502')
 
-SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
-SAMPLE_V2 = 'cHNidP8BAgR7AAAAAQQBAQEFAQEB+wQCAAAAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AAAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
+SAMPLE_V2 = 'cHNidP8BAgR7AAAAAQQBAQEFAQEB+wQCAAAAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAAAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
 SAMPLE_PSET = 'cHNldP8BAgQCAAAAAQQBAQEFAQEBBgEDAfsEAgAAAAABDiCd/GYowmxYmf4b09wzhmW/1V162hD2Iglz3y04bewSdgEPBAEAAAABEAT///8AAAEDCPA9zR0AAAAAAQQWABR7OgC/3BTSd5XCt0kB0J2m7xM1eQf8BHBzZXQCIHd3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3AA=='
 
 def wally_fn(name):
@@ -216,6 +216,10 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(map_keypath_get_item_path_len(keypaths, 0), len(path))
         self.assertEqual(map_keypath_get_item_path(keypaths, 0), path)
 
+    def check_txout(self, lhs, rhs):
+        self.assertEqual(tx_output_get_satoshi(lhs), tx_output_get_satoshi(rhs))
+        self.assertEqual(tx_output_get_script(lhs), tx_output_get_script(rhs))
+
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
@@ -272,14 +276,14 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_get_id, psbt, 0xff)   # Unknown flags
         self._throws(psbt_get_id, psbt2, 0xff)  # Unknown flags, v2
         for p, flags, expected_id in [
-            (psbt,  0x0, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
-            (psbt,  0x1, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
-            (psbt,  0x2, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
-            (psbt,  0x3, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
-            (psbt2, 0x0, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
-            (psbt2, 0x1, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
-            (psbt2, 0x2, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
-            (psbt2, 0x3, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063')
+            (psbt,  0x0, 'b8fa752b60d37a5f9087acbc26fe5128dc7bde4afebb94d4f5729023b31ccbf5'),
+            (psbt,  0x1, 'd6929da93f26bba9aac07e6a102417c908793442aa204cdee14b12688fd23300'),
+            (psbt,  0x2, 'b8fa752b60d37a5f9087acbc26fe5128dc7bde4afebb94d4f5729023b31ccbf5'),
+            (psbt,  0x3, 'd6929da93f26bba9aac07e6a102417c908793442aa204cdee14b12688fd23300'),
+            (psbt2, 0x0, '64776fede82963c61511d2591e341b66dd2bc1886cb4994cdebb62bf30034cc5'),
+            (psbt2, 0x1, '64776fede82963c61511d2591e341b66dd2bc1886cb4994cdebb62bf30034cc5'),
+            (psbt2, 0x2, '5002d028b68221039a99886442ca0b6459de328306199fa047e247847f444eb1'),
+            (psbt2, 0x3, '5002d028b68221039a99886442ca0b6459de328306199fa047e247847f444eb1')
             ]:
             self.assertEqual(hex_from_bytes(psbt_get_id(p, flags)), expected_id)
 
@@ -295,6 +299,8 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_tx)
         self._throws(psbt_set_global_tx, None, dummy_tx)  # NULL PSBT
         self._throws(psbt_set_global_tx, psbt2, dummy_tx) # V2, unsupported
+        dummy_tx_txout = tx_output_init(tx_get_output_satoshi(dummy_tx, 0),
+                                        tx_get_output_script(dummy_tx, 0))
 
         dummy_txout = tx_output_init(1234567, bytearray(b'\x00' * 33))
         if is_elements_build():
@@ -396,6 +402,18 @@ class PSBTTests(unittest.TestCase):
             self._try_invalid(psbt_get_input_utxo, p)
             self._try_set(psbt_set_input_witness_utxo, p, dummy_txout)
             self._try_invalid(psbt_get_input_witness_utxo, p)
+            # 'best' UTXO: returns witness UTXO or non-witness UTXO if no witness UTXO
+            self._try_invalid(psbt_get_input_best_utxo, p)
+            self._throws(psbt_get_input_best_utxo, p, 0) # No UTXO present
+            psbt_set_input_utxo(p, 0, dummy_tx)
+            psbt_set_input_witness_utxo(p, 0, dummy_txout)
+            # With both present, returns the witness UTXO
+            self.check_txout(psbt_get_input_best_utxo(p, 0), dummy_txout)
+            # With only the non-witness UTXO present, returns the non-witness UTXO
+            psbt_set_input_witness_utxo(p, 0, None)
+            self.check_txout(psbt_get_input_best_utxo(p, 0), dummy_tx_txout)
+            psbt_set_input_utxo(p, 0, None)
+
             for field in ['redeem_script', 'witness_script', 'final_scriptsig']:
                 setfn, getfn, lenfn, hasfn, clearfn = accessors('input', field)
                 self._try_get_set_b(setfn, getfn, lenfn, p, dummy_bytes)
