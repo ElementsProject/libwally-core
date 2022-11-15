@@ -71,7 +71,7 @@ WALLY_CORE_API int wally_aes(
  * :param iv: Initialisation vector.
  * :param iv_len: Length of ``iv`` in bytes. Must be ``AES_BLOCK_LEN``.
  * :param bytes: Bytes to encrypt/decrypt.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
+ * :param bytes_len: Length of ``bytes`` in bytes. Can be of any length for encryption, must be a multiple of ``AES_BLOCK_LEN`` for decryption.
  * :param flags: AES_FLAG_ constants indicating the desired behavior.
  * :param bytes_out: Destination for the encrypted/decrypted data.
  * :param len: The length of ``bytes_out`` in bytes. Must be a multiple of ``AES_BLOCK_LEN``.
