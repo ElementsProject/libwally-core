@@ -1,7 +1,7 @@
 #ifndef LIBWALLY_CORE_TRANSACTION_INT_H
 #define LIBWALLY_CORE_TRANSACTION_INT_H 1
 
-#if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined(SWIG_JAVASCRIPT_BUILD)
+#if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined(SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
 
 #ifdef __cplusplus
 extern "C" {

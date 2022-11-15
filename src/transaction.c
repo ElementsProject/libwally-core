@@ -3035,7 +3035,7 @@ static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t ind
         return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
     }
 
-#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
+#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
 
 /* Getters for wally_tx_input/wally_tx_output/wally_tx values */
 

@@ -995,7 +995,7 @@ int bip32_key_get_fingerprint(struct ext_key *hdkey,
     return WALLY_OK;
 }
 
-#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
+#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
 
 /* Getters for ext_key values */
 
