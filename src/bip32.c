@@ -199,16 +199,58 @@ static bool is_valid_seed_len(size_t len) {
            len == BIP32_ENTROPY_LEN_128;
 }
 
+/* Wipe a key and return failure for the caller to propigate */
+static int wipe_key_fail(struct ext_key *key_out)
+{
+    wally_clear(key_out, sizeof(*key_out));
+    return WALLY_EINVAL;
+}
+
+int bip32_key_from_private_key(uint32_t version,
+                               const unsigned char *priv_key, size_t priv_key_len,
+                               struct ext_key *key_out)
+{
+    const secp256k1_context *ctx;
+
+    if (key_out)
+        wally_clear(key_out, sizeof(*key_out));
+
+    if (!(ctx = secp_ctx()))
+        return WALLY_ENOMEM;
+
+    if (!version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) ||
+        !priv_key || priv_key_len != EC_PRIVATE_KEY_LEN || !key_out)
+        return WALLY_EINVAL;
+
+    /* Check that the generated private key is valid */
+    if (!secp256k1_ec_seckey_verify(ctx, priv_key)) {
+        return WALLY_ERROR; /* Invalid private key */
+    }
+
+    key_out->version = version;
+    /* Copy the private key and set its prefix */
+    key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
+    memcpy(key_out->priv_key + 1, priv_key, priv_key_len);
+    /* Compute the public key */
+    if (key_compute_pub_key(key_out) != WALLY_OK)
+        return wipe_key_fail(key_out);
+
+    /* Returned key is partial; it must be further initialized for deriving */
+    return WALLY_OK;
+}
+
 int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
                                uint32_t version,
                                const unsigned char *hmac_key, size_t hmac_key_len,
                                uint32_t flags, struct ext_key *key_out)
 {
-    const secp256k1_context *ctx;
     struct sha512 sha;
+    int ret;
+
+    if (key_out)
+        wally_clear(key_out, sizeof(*key_out));
 
     if (!bytes || !is_valid_seed_len(bytes_len) ||
-        !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) ||
         (hmac_key == NULL) != (hmac_key_len == 0) ||
         (flags & ~BIP32_FLAG_SKIP_HASH) || !key_out)
         return WALLY_EINVAL;
@@ -217,38 +259,21 @@ int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
         hmac_key = HMAC_KEY; /* Use the default BIP32 hmac key */
         hmac_key_len = sizeof(HMAC_KEY);
     }
-    wally_clear(key_out, sizeof(*key_out));
-    key_out->version = version;
-
-    if (!(ctx = secp_ctx()))
-        return WALLY_ENOMEM;
 
     /* Generate private key and chain code */
     hmac_sha512_impl(&sha, hmac_key, hmac_key_len, bytes, bytes_len);
 
-    /* Check that the generated private key is valid */
-    if (!secp256k1_ec_seckey_verify(ctx, sha.u.u8)) {
-        wally_clear(&sha, sizeof(sha));
-        return WALLY_ERROR; /* Invalid private key */
+    ret = bip32_key_from_private_key(version, sha.u.u8, EC_PRIVATE_KEY_LEN, key_out);
+    if (ret == WALLY_OK) {
+        /* Copy the chain code and set other members */
+        memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
+        key_out->depth = 0; /* Master key, depth 0 */
+        key_out->child_num = 0;
+        if (!(flags & BIP32_FLAG_SKIP_HASH))
+            key_compute_hash160(key_out);
     }
-
-    /* Copy the private key and set its prefix */
-    key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
-    memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
-    if (key_compute_pub_key(key_out) != WALLY_OK) {
-        wally_clear_2(&sha, sizeof(sha), key_out, sizeof(*key_out));
-        return WALLY_EINVAL;
-    }
-
-    /* Copy the chain code */
-    memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
-
-    key_out->depth = 0; /* Master key, depth 0 */
-    key_out->child_num = 0;
-    if (!(flags & BIP32_FLAG_SKIP_HASH))
-        key_compute_hash160(key_out);
     wally_clear(&sha, sizeof(sha));
-    return WALLY_OK;
+    return ret;
 }
 
 int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
@@ -379,13 +404,6 @@ static const unsigned char *copy_in(void *dest,
 {
     memcpy(dest, src, len);
     return src + len;
-}
-
-/* Wipe a key and return failure for the caller to propigate */
-static int wipe_key_fail(struct ext_key *key_out)
-{
-    wally_clear(key_out, sizeof(*key_out));
-    return WALLY_EINVAL;
 }
 
 int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
