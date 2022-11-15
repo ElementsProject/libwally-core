@@ -238,19 +238,19 @@ export function wrap(func_name, args_types) {
             , returns = []
             , cleanups = []
 
-        // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
-        for (const arg_type of args_types) {
-            // Types with `no_user_args` don't use any of the user-provided js args
-            const this_arg = arg_type.no_user_args ? null : argsc.shift()
-
-            const as_wasm = arg_type.to_wasm(this_arg, all_args)
-
-            wasm_args.push(...as_wasm.args)
-            if (as_wasm.return) returns.push(as_wasm.return)
-            if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
-        }
-
         try {
+            // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
+            for (const arg_type of args_types) {
+                // Types with `no_user_args` don't use any of the user-provided js args
+                const this_arg = arg_type.no_user_args ? null : argsc.shift()
+
+                const as_wasm = arg_type.to_wasm(this_arg, all_args)
+
+                wasm_args.push(...as_wasm.args)
+                if (as_wasm.return) returns.push(as_wasm.return)
+                if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
+            }
+
             const code = wasm_fn(...wasm_args)
 
             if (code !== WALLY_OK) {
