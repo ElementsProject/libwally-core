@@ -823,6 +823,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_void__(wally_psbt_set_tx_version);
 %returns_void__(wally_psbt_set_version);
 %returns_void__(wally_psbt_sign);
+%returns_void__(wally_psbt_sign_bip32);
 %returns_string(wally_psbt_to_base64);
 %returns_size_t(wally_psbt_to_bytes);
 %returns_array_(wally_ripemd160, 3, 4, RIPEMD160_LEN);

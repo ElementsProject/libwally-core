@@ -48,6 +48,8 @@ extern "C" {
 
 #define WALLY_SCALAR_OFFSET_LEN 32 /* Length of a PSET scalar offset */
 
+struct ext_key;
+
 #ifdef SWIG
 struct wally_psbt_input;
 struct wally_psbt_output;
@@ -2187,7 +2189,7 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
     struct wally_map **output);
 
 /**
- * Sign a PSBT using the simple signer algorithm.
+ * Sign PSBT inputs corresponding to a given private key.
  *
  * :param psbt: PSBT to sign. Directly modifies this PSBT.
  * :param key: Private key to sign PSBT with.
@@ -2195,12 +2197,27 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
  * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
  *
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
- *|    for a description of the simple signer algorithm.
+ *|    for a description of the signing algorithm.
  */
 WALLY_CORE_API int wally_psbt_sign(
     struct wally_psbt *psbt,
     const unsigned char *key,
     size_t key_len,
+    uint32_t flags);
+
+/**
+ * Sign PSBT inputs corresponding to a given BIP32 parent key.
+ *
+ * :param psbt: PSBT to sign. Directly modifies this PSBT.
+ * :param hdkey: The parent extended key to derive signing keys from.
+ * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
+ *
+ * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
+ *|    for a description of the signing algorithm.
+ */
+WALLY_CORE_API int wally_psbt_sign_bip32(
+    struct wally_psbt *psbt,
+    const struct ext_key *hdkey,
     uint32_t flags);
 
 /**

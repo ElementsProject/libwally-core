@@ -47,11 +47,6 @@ WALLY_CORE_API int bip32_key_get_version(const struct ext_key *hdkey, size_t *wr
 
 #endif /* SWIG/SWIG_JAVA_BUILD/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
 
-#if !defined(SWIG) && !defined(WASM_BUILD)
-/* Internal: Create a partial bip32 key from a private key (no chaincode, un-derivable) */
-int bip32_key_from_private_key(uint32_t version, const unsigned char *priv_key, size_t priv_key_len, struct ext_key *output);
-#endif /* SWIG/WASM_BUILD */
-
 #ifdef __cplusplus
 }
 #endif

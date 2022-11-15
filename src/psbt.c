@@ -3805,237 +3805,327 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
     return ret;
 }
 
-static int psbt_input_sign(struct wally_psbt_input *input,
-                           const unsigned char *priv_key, size_t priv_key_len,
-                           const unsigned char *pub_key, size_t pub_key_len,
-                           const unsigned char *bytes, size_t bytes_len,
-                           uint32_t flags)
+int wally_psbt_get_input_bip32_key_from_alloc(const struct wally_psbt *psbt,
+                                              size_t index, size_t subindex,
+                                              uint32_t flags,
+                                              const struct ext_key *hdkey,
+                                              struct ext_key **output)
 {
-    unsigned char sig[EC_SIGNATURE_LEN], der[EC_SIGNATURE_DER_MAX_LEN + 1];
-    size_t der_len;
-    uint32_t sighash = input && input->sighash ? input->sighash : WALLY_SIGHASH_ALL;
+    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    size_t sig_idx = 0;
+    int ret;
+    if (output)
+        *output = NULL;
+    if (!inp || flags || !hdkey || !output)
+        return WALLY_EINVAL;
+    /* Find any matching key in the inputs keypaths */
+    ret = wally_map_keypath_get_bip32_key_from_alloc(&inp->keypaths, subindex,
+                                                     hdkey, output);
+    if (ret == WALLY_OK && *output) {
+        /* Found: Make sure we don't have a signature already */
+        ret = wally_map_find_bip32_public_key_from(&inp->signatures, 0,
+                                                   *output, &sig_idx);
+        if (ret == WALLY_OK && sig_idx) {
+            bip32_key_free(*output);
+            *output = NULL;
+        }
+    }
+    return ret;
+}
+
+static bool is_matching_redeem(const unsigned char *scriptpk, size_t scriptpk_len,
+                               const unsigned char *redeem, size_t redeem_len)
+{
+    unsigned char p2sh[WALLY_SCRIPTPUBKEY_P2SH_LEN];
+    size_t p2sh_len;
+    int ret = wally_scriptpubkey_p2sh_from_bytes(redeem, redeem_len,
+                                                 WALLY_SCRIPT_HASH160,
+                                                 p2sh, sizeof(p2sh), &p2sh_len);
+    return ret == WALLY_OK && p2sh_len == scriptpk_len &&
+           !memcmp(p2sh, scriptpk, p2sh_len);
+}
+
+/* Get the scriptpubkey or redeem script from an input */
+static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
+                          const unsigned char **script, size_t *script_len)
+{
+    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
+    const struct wally_map_item *item;
+
+    *script = NULL;
+    *script_len = 0;
+    if (!utxo)
+        return WALLY_EINVAL;
+
+    item = wally_map_get_integer(&inp->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
+    if (item) {
+        if (!is_matching_redeem(utxo->script, utxo->script_len,
+                                item->value, item->value_len))
+            return WALLY_EINVAL;
+        *script = item->value;
+        *script_len = item->value_len;
+    } else {
+        *script = utxo->script;
+        *script_len = utxo->script_len;
+    }
+    return WALLY_OK;
+}
+
+/* FIXME: Expose these */
+int wally_psbt_get_input_scriptcode_len(const struct wally_psbt *psbt,
+                                        size_t index, size_t *written)
+{
+    const unsigned char *p;
+    return written ? get_scriptcode(psbt, index, &p, written) : WALLY_EINVAL;
+}
+
+int wally_psbt_get_input_scriptcode(const struct wally_psbt *psbt,
+                                    size_t index,
+                                    unsigned char *bytes_out, size_t len,
+                                    size_t *written)
+{
+    const unsigned char *p;
+    int ret;
+    if (written)
+        *written = 0;
+    if (!bytes_out || !len || !written)
+        return WALLY_EINVAL;
+    ret = get_scriptcode(psbt, index, &p, written);
+    if (ret == WALLY_OK && *written <= len)
+        memcpy(bytes_out, p, *written);
+    return ret;
+}
+
+static int get_signing_script(const struct wally_psbt *psbt, size_t index,
+                              unsigned char *buff, size_t buff_len, bool is_pset,
+                              const unsigned char *scriptcode, size_t scriptcode_len,
+                              const unsigned char **script, size_t *script_len)
+{
+    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     int ret;
 
-    if (!input || !priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
-        (wally_ec_public_key_verify(pub_key, pub_key_len) != WALLY_OK) ||
-        !bytes || bytes_len != SHA256_LEN || (flags & ~EC_FLAGS_ALL) ||
-        (sighash & 0xffffff00))
+    *script = NULL;
+    *script_len = 0;
+    if (!inp || !buff || buff_len != WALLY_SCRIPTPUBKEY_P2PKH_LEN)
+        return WALLY_EINVAL;
+
+    if (inp->witness_utxo) {
+        /* Segwit input */
+        size_t script_type, written;
+
+        ret = wally_scriptpubkey_get_type(scriptcode, scriptcode_len, &script_type);
+
+        if (ret == WALLY_OK && script_type == WALLY_SCRIPT_TYPE_P2WPKH) {
+            /* P2WPKH */
+            ret = wally_scriptpubkey_p2pkh_from_bytes(&scriptcode[2],
+                                                      HASH160_LEN, 0,
+                                                      buff, buff_len,
+                                                      &written);
+            if (ret != WALLY_OK || written > buff_len)
+                return WALLY_EINVAL;
+            *script = buff; /* Return the scriptpubkey */
+            *script_len = written;
+            return WALLY_OK;
+        }
+
+        if (ret == WALLY_OK && script_type == WALLY_SCRIPT_TYPE_P2WSH) {
+            /* P2WSH */
+            unsigned char p2wsh[WALLY_SCRIPTPUBKEY_P2WSH_LEN];
+            const struct wally_map_item *wit_script;
+
+            if (!(wit_script = wally_map_get_integer(&inp->psbt_fields,
+                                                     PSBT_IN_WITNESS_SCRIPT)))
+                return WALLY_EINVAL;
+            ret = wally_witness_program_from_bytes(wit_script->value,
+                                                   wit_script->value_len,
+                                                   WALLY_SCRIPT_SHA256,
+                                                   p2wsh, sizeof(p2wsh),
+                                                   &written);
+            if (ret != WALLY_OK || written != sizeof(p2wsh) ||
+                written != scriptcode_len || memcmp(p2wsh, scriptcode, written))
+                return WALLY_EINVAL;
+            *script = wit_script->value; /* Return the witness script */
+            *script_len = wit_script->value_len;
+            return WALLY_OK;
+        }
+        return WALLY_EINVAL; /* Unknown scriptPubKey type/not enough info */
+    }
+
+    if (inp->utxo) {
+        /* Non-segwit input */
+        unsigned char txid[WALLY_TXHASH_LEN];
+        if (is_pset)
+            return WALLY_EINVAL; /* Elements doesn't support pre-segwit txs */
+        ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
+        if (ret != WALLY_OK || !is_matching_txid(inp->utxo, txid, sizeof(txid)))
+            return WALLY_EINVAL; /* Prevout doesn't match input */
+        *script = scriptcode;
+        *script_len = scriptcode_len;
+        return WALLY_OK;
+    }
+    return WALLY_EINVAL; /* Missing prevout data in input */
+}
+
+int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
+                                        const struct wally_tx *tx,
+                                        const unsigned char *script, size_t script_len,
+                                        unsigned char *bytes_out, size_t len)
+{
+    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    uint64_t satoshi;
+    uint32_t sighash, flags;
+    size_t is_pset;
+    int ret;
+
+    if (!inp || !tx)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
+        return ret;
+
+    sighash = inp->sighash ? inp->sighash : WALLY_SIGHASH_ALL;
+    if (sighash & 0xffffff00)
+        return WALLY_EINVAL;
+    flags = inp->witness_utxo ? WALLY_TX_FLAG_USE_WITNESS : 0;
+
+    if (is_pset) {
+        if (!inp->witness_utxo)
+            return WALLY_EINVAL; /* Must be segwit */
+#ifdef BUILD_ELEMENTS
+        return wally_tx_get_elements_signature_hash(tx, index,
+                                                    script, script_len,
+                                                    inp->witness_utxo->value,
+                                                    inp->witness_utxo->value_len,
+                                                    sighash, flags, bytes_out, len);
+#else
+        return WALLY_EINVAL; /* Unsupported */
+#endif /* BUILD_ELEMENTS */
+    }
+    satoshi = inp->witness_utxo ? inp->witness_utxo->satoshi : 0;
+    return wally_tx_get_btc_signature_hash(tx, index, script, script_len,
+                                           satoshi, sighash, flags,
+                                           bytes_out, len);
+}
+
+int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
+                                size_t index, size_t subindex,
+                                const unsigned char *txhash, size_t txhash_len,
+                                const struct ext_key *hdkey,
+                                uint32_t flags)
+{
+    unsigned char sig[EC_SIGNATURE_LEN], der[EC_SIGNATURE_DER_MAX_LEN + 1];
+    size_t der_len, pubkey_idx;
+    uint32_t sighash;
+    struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    int ret;
+
+    if (!inp || !hdkey || hdkey->priv_key[0] != BIP32_FLAG_KEY_PRIVATE ||
+        (flags & ~EC_FLAGS_ALL))
+        return WALLY_EINVAL;
+
+    /* Find the public key this signature is for */
+    ret = wally_map_find_bip32_public_key_from(&inp->keypaths, subindex,
+                                               hdkey, &pubkey_idx);
+    if (ret != WALLY_OK || !pubkey_idx)
+        return WALLY_EINVAL; /* Signing pubkey key not found */
+
+    sighash = inp->sighash ? inp->sighash : WALLY_SIGHASH_ALL;
+    if (sighash & 0xffffff00)
         return WALLY_EINVAL;
 
     /* Only grinding flag is relevant */
     flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R);
-    if ((ret = wally_ec_sig_from_bytes(priv_key, priv_key_len,
-                                       bytes, SHA256_LEN, flags,
-                                       sig, sizeof(sig))) != WALLY_OK)
-        return ret;
-
-    if ((ret = wally_ec_sig_to_der(sig, sizeof(sig), der,
-                                   sizeof(der), &der_len)) != WALLY_OK)
-        return ret;
-
-    /* Convert sig to DER, add sighash byte and store in the input */
-    der[der_len++] = sighash & 0xff;
-    ret = wally_psbt_input_add_signature(input, pub_key, pub_key_len,
-                                         der, der_len);
+    /* Compute the sig */
+    ret = wally_ec_sig_from_bytes(hdkey->priv_key + 1, EC_PRIVATE_KEY_LEN,
+                                  txhash, txhash_len, flags, sig, sizeof(sig));
+    if (ret == WALLY_OK) {
+        /* Convert to DER, add sighash byte and store */
+        ret = wally_ec_sig_to_der(sig, sizeof(sig), der, sizeof(der), &der_len);
+        if (ret == WALLY_OK) {
+            const struct wally_map_item *pk;
+            der[der_len++] = sighash & 0xff;
+            pk = &inp->keypaths.items[pubkey_idx - 1];
+            ret = wally_psbt_input_add_signature(inp, pk->key, pk->key_len,
+                                                 der, der_len);
+        }
+    }
     wally_clear_2(sig, sizeof(sig), der, sizeof(der));
     return ret;
 }
 
-/* Get the script to sign with */
-static bool input_get_scriptcode(const struct wally_psbt *psbt,
-                                 const struct wally_psbt_input *input,
-                                 const unsigned char **script,
-                                 size_t *script_len)
+int wally_psbt_sign_bip32(struct wally_psbt *psbt,
+                          const struct ext_key *hdkey, uint32_t flags)
 {
-    const struct wally_map_item *redeem_script;
-    const struct wally_tx_output *utxo = utxo_from_input(psbt, input);
-
-    if (!utxo || !script || !script_len)
-        return false;
-
-    *script = NULL;
-    *script_len = 0;
-
-    redeem_script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
-    if (redeem_script) {
-        unsigned char p2sh[WALLY_SCRIPTPUBKEY_P2SH_LEN];
-        size_t p2sh_len;
-
-        if (wally_scriptpubkey_p2sh_from_bytes(redeem_script->value,
-                                               redeem_script->value_len,
-                                               WALLY_SCRIPT_HASH160,
-                                               p2sh, sizeof(p2sh),
-                                               &p2sh_len) != WALLY_OK)
-            return false;
-
-        if (utxo->script_len != p2sh_len || memcmp(p2sh, utxo->script, p2sh_len))
-            return false; /* Script mismatch */
-
-        *script = redeem_script->value;
-        *script_len = redeem_script->value_len;
-        return true;
-    }
-
-    *script = utxo->script;
-    *script_len = utxo->script_len;
-    return true;
-}
-
-int wally_psbt_sign(struct wally_psbt *psbt,
-                    const unsigned char *key, size_t key_len, uint32_t flags)
-{
-    unsigned char pubkey[EC_PUBLIC_KEY_LEN], full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    const size_t pubkey_len = sizeof(pubkey), full_pubkey_len = sizeof(full_pubkey);
-    unsigned char wpkh_sc[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+    unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
     size_t i;
     bool is_pset;
     int ret;
     struct wally_tx *tx;
 
-    if (!key || key_len != EC_PRIVATE_KEY_LEN || (flags & ~EC_FLAGS_ALL))
+    if (!hdkey || hdkey->priv_key[0] != BIP32_FLAG_KEY_PRIVATE ||
+        (flags & ~EC_FLAGS_ALL))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false)) != WALLY_OK)
         return ret;
 
-    /* Get the pubkey */
-    ret = wally_ec_public_key_from_private_key(key, key_len,
-                                               pubkey, pubkey_len);
-    if (ret == WALLY_OK)
-        ret = wally_ec_public_key_decompress(pubkey, pubkey_len,
-                                             full_pubkey, full_pubkey_len);
-    if (ret != WALLY_OK)
-        goto cleanup;
-
     /* Go through each of the inputs */
-    for (i = 0; i < psbt->num_inputs; ++i) {
-        struct wally_psbt_input *input = &psbt->inputs[i];
-        struct wally_tx_input *txin = &tx->inputs[i];
-        unsigned char signature_hash[SHA256_LEN];
-        const unsigned char *scriptcode;
-        size_t keypath_index = 0, scriptcode_len;
-        uint32_t sighash;
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+        unsigned char txhash[WALLY_TXHASH_LEN];
+        const unsigned char *scriptcode, *script;
+        size_t scriptcode_len, script_len, subindex = 0;
+        struct ext_key *derived = NULL;
 
-        /* See if this input has a keypath matching the pubkey of the private key supplied */
-        ret = wally_map_find(&input->keypaths, full_pubkey, full_pubkey_len, &keypath_index);
-        if (ret == WALLY_OK && !keypath_index)
-            ret = wally_map_find(&input->keypaths, pubkey, pubkey_len, &keypath_index);
-        if (ret != WALLY_OK)
-            continue;
-
-        if (!keypath_index)
-            continue; /* Didn't find a keypath matching this pubkey: skip it */
-        keypath_index -= 1; /* Use 0 based index below */
-
-        /* Make sure we don't already have a sig for this input */
-        size_t is_found;
-        ret = wally_map_find(&input->signatures, full_pubkey, full_pubkey_len, &is_found);
-        if (ret == WALLY_OK && !is_found)
-            ret = wally_map_find(&input->signatures, pubkey, pubkey_len, &is_found);
-
-        if (ret != WALLY_OK || is_found)
-            continue; /* Already got a partial sig for this pubkey on this input */
-
-        /* From this point, any failure to sign returns an error, since we
-         * have the key to sign this input we are expected to be able to
+        /* Get or derive a key for signing this input.
+         * Note that we do not iterate subindex in this loop, so we will not
+         * sign more than one signature that derives from the same parent key.
          */
-        if (!input_get_scriptcode(psbt, input, &scriptcode, &scriptcode_len)) {
-            ret = WALLY_EINVAL; /* Couldn't find the script to sign with */
-            goto cleanup;
-        }
+        ret = wally_psbt_get_input_bip32_key_from_alloc(psbt, i, subindex,
+                                                        0, hdkey, &derived);
+        if (!derived)
+            continue; /* No key to sign with */
 
-        sighash = input->sighash ? input->sighash : WALLY_SIGHASH_ALL;
+        /* Get the scriptpubkey or redeemscript */
+        if (ret == WALLY_OK)
+            ret = get_scriptcode(psbt, i, &scriptcode, &scriptcode_len);
 
-        if (input->witness_utxo) {
-            size_t type;
-            const struct wally_map_item *wit_script;
-            wit_script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_WITNESS_SCRIPT);
+        /* Get the actual script to sign with */
+        if (ret == WALLY_OK)
+            ret = get_signing_script(psbt, i, p2pkh, sizeof(p2pkh),
+                                     is_pset, scriptcode, scriptcode_len,
+                                     &script, &script_len);
 
-            ret = wally_scriptpubkey_get_type(scriptcode, scriptcode_len, &type);
-            if (ret != WALLY_OK)
-                goto cleanup;
-
-            if (type == WALLY_SCRIPT_TYPE_P2WPKH) {
-                ret = wally_scriptpubkey_p2pkh_from_bytes(&scriptcode[2],
-                                                          HASH160_LEN, 0,
-                                                          wpkh_sc, sizeof(wpkh_sc),
-                                                          &scriptcode_len);
-                if (ret != WALLY_OK)
-                    goto cleanup;
-
-                scriptcode = wpkh_sc;
-            } else if (type == WALLY_SCRIPT_TYPE_P2WSH && wit_script) {
-                unsigned char p2wsh[WALLY_SCRIPTPUBKEY_P2WSH_LEN];
-                size_t written;
-
-                ret = wally_witness_program_from_bytes(wit_script->value,
-                                                       wit_script->value_len,
-                                                       WALLY_SCRIPT_SHA256,
-                                                       p2wsh, sizeof(p2wsh),
-                                                       &written);
-                if (ret != WALLY_OK)
-                    goto cleanup;
-
-                if (scriptcode_len != sizeof(p2wsh) ||
-                    memcmp(p2wsh, scriptcode, sizeof(p2wsh))) {
-                    ret = WALLY_EINVAL;
-                    goto cleanup;
-
-                }
-
-                scriptcode = wit_script->value;
-                scriptcode_len = wit_script->value_len;
-            }
-            else {
-                ret = WALLY_EINVAL; /* Unknown scriptPubKey type/not enough info */
-                goto cleanup;
-            }
-
-#ifdef BUILD_ELEMENTS
-            if (is_pset)
-                ret = wally_tx_get_elements_signature_hash(tx, i,
-                                                           scriptcode, scriptcode_len,
-                                                           input->witness_utxo->value,
-                                                           input->witness_utxo->value_len,
-                                                           sighash,
-                                                           WALLY_TX_FLAG_USE_WITNESS,
-                                                           signature_hash, SHA256_LEN);
-            else
-#endif /* BUILD_ELEMENTS */
-            ret = wally_tx_get_btc_signature_hash(tx, i,
-                                                  scriptcode, scriptcode_len,
-                                                  input->witness_utxo->satoshi,
-                                                  sighash,
-                                                  WALLY_TX_FLAG_USE_WITNESS,
-                                                  signature_hash, SHA256_LEN);
-            if (ret != WALLY_OK)
-                goto cleanup;
-        } else if (input->utxo) {
-            if (is_pset ||
-                !is_matching_txid(input->utxo,
-                                  txin->txhash, sizeof(txin->txhash))) {
-                ret = WALLY_EINVAL; /* Non segwit Elements, or prevout doesn't match input */
-                goto cleanup;
-            }
-
-            ret = wally_tx_get_btc_signature_hash(tx, i,
-                                                  scriptcode, scriptcode_len,
-                                                  0, sighash, 0,
-                                                  signature_hash, SHA256_LEN);
-            if (ret != WALLY_OK)
-                goto cleanup;
-        }
-
-        ret = psbt_input_sign(input, key, key_len,
-                              input->keypaths.items[keypath_index].key,
-                              input->keypaths.items[keypath_index].key_len,
-                              signature_hash, SHA256_LEN, flags);
-        if (ret != WALLY_OK)
-            goto cleanup;
+        /* Get the hash to sign */
+        if (ret == WALLY_OK)
+            ret = wally_psbt_get_input_signature_hash(psbt, i, tx,
+                                                      script, script_len,
+                                                      txhash, sizeof(txhash));
+        /* Sign the input */
+        if (ret == WALLY_OK)
+            ret = wally_psbt_sign_input_bip32(psbt, i, subindex,
+                                              txhash, sizeof(txhash),
+                                              hdkey, flags);
+        bip32_key_free(derived);
     }
 
-cleanup:
     wally_tx_free(tx);
+    return ret;
+}
+
+int wally_psbt_sign(struct wally_psbt *psbt,
+                    const unsigned char *priv_key, size_t priv_key_len, uint32_t flags)
+{
+    struct ext_key hdkey;
+    const uint32_t ver = BIP32_VER_MAIN_PRIVATE;
+    int ret;
+
+    /* Build a partial/non-derivable key, and use the bip32 signing impl */
+    ret = psbt ? bip32_key_from_private_key(ver, priv_key, priv_key_len,
+                                            &hdkey) : WALLY_EINVAL;
+    if (ret == WALLY_OK)
+        ret = wally_psbt_sign_bip32(psbt, &hdkey, flags);
+    wally_clear(&hdkey, sizeof(hdkey));
     return ret;
 }
 
