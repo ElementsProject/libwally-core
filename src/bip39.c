@@ -109,7 +109,7 @@ int bip39_mnemonic_from_bytes(const struct words *w,
                               const unsigned char *bytes, size_t bytes_len,
                               char **output)
 {
-    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_MAX];
+    unsigned char tmp_bytes[BIP39_ENTROPY_MAX_LEN];
     size_t checksum, mask;
 
     if (output)
@@ -147,7 +147,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
                             unsigned char *bytes_out, size_t len,
                             size_t *written)
 {
-    unsigned char tmp_bytes[BIP39_ENTROPY_LEN_MAX];
+    unsigned char tmp_bytes[BIP39_ENTROPY_MAX_LEN];
     size_t mask, tmp_len;
     int ret;
 
@@ -199,7 +199,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
 
 int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
 {
-    unsigned char buf[BIP39_ENTROPY_LEN_MAX];
+    unsigned char buf[BIP39_ENTROPY_MAX_LEN];
     size_t len;
     int ret = bip39_mnemonic_to_bytes(w, mnemonic, buf, sizeof(buf), &len);
     wally_clear(buf, sizeof(buf));
