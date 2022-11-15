@@ -118,15 +118,15 @@ types.DestPtrPtr = type => ({
 })
 
 // A destination pointer to an Bytes output buffer with a fixed size (without a `written` argument)
-types.DestPtrSized = size => ({
+types.DestPtrSized = (type, size) => ({
     no_user_args: true,
     wasm_types: ['number', 'number'],
     to_wasm: _ => {
         const dest_ptr = Module._malloc(size)
         return {
             args: [dest_ptr, size],
-            return: _ => types.Bytes.read_ptr_sized(dest_ptr, size),
-            cleanup: _ => types.Bytes.free_ptr(dest_ptr),
+            return: _ => type.read_ptr_sized(dest_ptr, size),
+            cleanup: _ => type.free_ptr(dest_ptr),
         }
     }
 })
@@ -139,7 +139,7 @@ types.DestPtrSized = size => ({
 // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
 // Note that the retry mechanism described in the link above is not implemented. Instead, the
 // exact (or maximum) size is figured out in advance, and an error is raised if its insufficient.
-types.DestPtrVarLen = (size_maybefn, size_is_upper_bound = false) => ({
+types.DestPtrVarLen = (type, size_maybefn, size_is_upper_bound = false) => ({
     no_user_args: true,
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
@@ -160,9 +160,9 @@ types.DestPtrVarLen = (size_maybefn, size_is_upper_bound = false) => ({
                 const written_or_expected = Module.getValue(written_ptr, 'i32')
 
                 if (written_or_expected == buffer_size) {
-                    return types.Bytes.read_ptr_sized(dest_ptr, buffer_size)
+                    return type.read_ptr_sized(dest_ptr, buffer_size)
                 } else if (written_or_expected < buffer_size && size_is_upper_bound) {
-                    return types.Bytes.read_ptr_sized(dest_ptr, written_or_expected)
+                    return type.read_ptr_sized(dest_ptr, written_or_expected)
                 } else {
                     throw new WallyUnexpectedBufferSizeError(buffer_size, written_or_expected)
                 }

@@ -273,11 +273,17 @@ def gen_wasm_package(funcs):
         'wally_map_verify_fn_t' : 'T.OpaqueRef', # as the argument to `wally_map_init`
     }
 
-    # Arrays are represented as two arguments - the first identified by this map, followed by a FOO_len argument
+    # Input arrays (represented as two arguments - the first identified by this map, followed by a FOO_len argument)
     typemap_arrays = {
          'const unsigned char*' : 'T.Bytes',
          'const uint32_t*'      : 'T.Uint32Array',
          'const uint64_t*'      : 'T.Uint64Array',
+    }
+
+    # Output arrays
+    typemap_output_arrays = {
+        'unsigned char*': 'T.Bytes',
+        'uint32_t*': 'T.Uint32Array',
     }
 
     # Output buffer length functions implemented on the JS side
@@ -330,10 +336,13 @@ def gen_wasm_package(funcs):
                 js_args.append('T.OpaqueRef')
                 continue
 
-            # Output pointer to a byte buffer
-            if is_array(func, arg, curr_index, num_args, ['unsigned char*']):
+            # Output pointer to an array
+            if is_array(func, arg, curr_index, num_args, ['unsigned char*', 'uint32_t*']):
                 # Sanity check to make sure we don't misidentify unrelated arguments
                 assert arg.name.endswith("_out") or arg.name == 'scalar'
+
+                # Get the inner array data type
+                array_type = typemap_output_arrays[arg.type]
 
                 # Detect output buffer size (fixed or via a length utility function)
                 len_arg = func.args[curr_index + 1]
@@ -353,12 +362,12 @@ def gen_wasm_package(funcs):
                 # Variable-length buffers have an additional pointer for the number of bytes written/expected
                 # See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
                 if curr_index < num_args - 2 and func.args[curr_index + 2].type == 'size_t*' and func.args[curr_index + 2].name == 'written':
-                    js_args.append(f'T.DestPtrVarLen({output_buffer_size})')
+                    js_args.append(f'T.DestPtrVarLen({array_type}, {output_buffer_size})')
                     next_index = next_index + 2 # skip next two arguments: 'FOO_len' and 'written'
 
                 # Fixed-sized output buffers
                 else:
-                    js_args.append(f'T.DestPtrSized({output_buffer_size})')
+                    js_args.append(f'T.DestPtrSized({array_type}, {output_buffer_size})')
                     next_index = next_index + 1 # skip next 'FOO_len' argument
 
                 continue
