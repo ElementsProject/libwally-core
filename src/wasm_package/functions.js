@@ -21,10 +21,10 @@ const wif_to_public_key_len = (wif, _prefix) =>
     wif_is_uncompressed(wif) ? C.EC_PUBLIC_KEY_UNCOMPRESSED_LEN : C.EC_PUBLIC_KEY_LEN
 
 const scriptpubkey_multisig_from_bytes_len = (pubkeys, _threshold, _flags) =>
-    3 + (pubkeys.length / C.EC_PUBLIC_KEY_LEN | 0) * (C.EC_PUBLIC_KEY_LEN + 1)
+    3 + Math.floor(pubkeys.length / C.EC_PUBLIC_KEY_LEN) * (C.EC_PUBLIC_KEY_LEN + 1)
 
 const scriptsig_multisig_from_bytes_len = (script, sigs, _sighashes, _flags) => {
-    const der_len = (sigs.length / C.EC_SIGNATURE_LEN | 0) * (C.EC_SIGNATURE_DER_MAX_LEN + 2)
+    const der_len = Math.floor(sigs.length / C.EC_SIGNATURE_LEN) * (C.EC_SIGNATURE_DER_MAX_LEN + 2)
         , script_len = script_push_from_bytes_len(script, 0)
     return 1 + der_len + script_len
 }
@@ -64,10 +64,10 @@ const scriptpubkey_csv_2of3_then_2_from_bytes_len = (_pubkeys, _csv_blocks, _fla
 
 
 const asset_surjectionproof_len = (_aid, _ag, _gen, _r, in_aid, _in_abf, _in_ags) =>
-        asset_surjectionproof_size(in_aid.length / ASSET_TAG_LEN | 0)
+        asset_surjectionproof_size(Math.floor(in_aid.length / ASSET_TAG_LEN))
 
 const asset_pak_whitelistproof_len = (_on_keys, off_keys, _idx, _sub_pubkey, _priv_key, _summed_key) =>
-    asset_pak_whitelistproof_size(off_keys.length / EC_PUBLIC_KEY_LEN | 0)
+    asset_pak_whitelistproof_size(Math.floor(off_keys.length / EC_PUBLIC_KEY_LEN))
 
 const elements_pegout_script_from_bytes_len = (bh, mcs, pk, whl, _flag) =>
     elements_pegout_script_size(bh.length, mcs.length, pk.length, whl.length)
