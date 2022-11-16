@@ -122,14 +122,14 @@ types.DestPtrPtr = type => ({
 })
 
 // A destination pointer to an Bytes output buffer with a fixed size (without a `written` argument)
-types.DestPtrSized = (type, size) => ({
+types.DestPtrSized = (type, array_size) => ({
     no_user_args: true,
     wasm_types: ['number', 'number'],
     to_wasm: _ => {
-        const dest_ptr = type.malloc_sized(size)
+        const dest_ptr = type.malloc_sized(array_size)
         return {
-            args: [dest_ptr, size],
-            return: _ => type.read_ptr_sized(dest_ptr, size),
+            args: [dest_ptr, array_size],
+            return: _ => type.read_ptr_sized(dest_ptr, array_size),
             cleanup: _ => type.free_ptr(dest_ptr),
         }
     }
@@ -137,7 +137,7 @@ types.DestPtrSized = (type, size) => ({
 
 // A destination pointer to a variable-length Bytes output buffer (with a `written` argument)
 //
-// `buffer_size_optfn` may contain a fixed size for the output buffer or a function that calculates it.
+// `size_maybefn` may contain a fixed size for the output buffer or a function that calculates it.
 // `size_is_upper_bound` allows the returned buffer to be smaller (truncated to the `written` size).
 //
 // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
@@ -150,25 +150,25 @@ types.DestPtrVarLen = (type, size_maybefn, size_is_upper_bound = false) => ({
 
     to_wasm: (_, all_args) => {
 
-        const buffer_size = typeof size_maybefn == 'function'
+        const array_size = typeof size_maybefn == 'function'
             ? size_maybefn(...all_args)
             : size_maybefn
 
-        const dest_ptr = type.malloc_sized(buffer_size)
+        const dest_ptr = type.malloc_sized(array_size)
             , written_ptr = Module._malloc(4)
 
         return {
-            args: [dest_ptr, buffer_size, written_ptr],
+            args: [dest_ptr, array_size, written_ptr],
             return: _ => {
                 // This contains either the written size when the buffer was large enough, or the expected size when it was not
                 const written_or_expected = Module.getValue(written_ptr, 'i32')
 
-                if (written_or_expected == buffer_size) {
-                    return type.read_ptr_sized(dest_ptr, buffer_size)
-                } else if (written_or_expected < buffer_size && size_is_upper_bound) {
+                if (written_or_expected == array_size) {
+                    return type.read_ptr_sized(dest_ptr, array_size)
+                } else if (written_or_expected < array_size && size_is_upper_bound) {
                     return type.read_ptr_sized(dest_ptr, written_or_expected)
                 } else {
-                    throw new WallyUnexpectedBufferSizeError(buffer_size, written_or_expected)
+                    throw new WallyUnexpectedBufferSizeError(array_size, written_or_expected)
                 }
             },
             cleanup: _ => (Module._free(dest_ptr), Module._free(written_ptr)),
