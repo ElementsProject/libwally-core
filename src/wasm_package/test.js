@@ -67,7 +67,7 @@ assert.equal(bytesToHex(vbytes), '03133337')
 const keypaths = wally.map_keypath_public_key_init(1)
     , dummy_pubkey = wally.hex_to_bytes('038575eb35e18fb168a913d8b49af50204f4f73627f6f7884f1be11e354664de8b')
     , dummy_fingerprint = wally.hex_to_bytes('00112233')
-    , dummy_path = [0,1,2,50,100,120,127] // breaks with >= 128
+    , dummy_path = [0,1,2,50,100,120,127,128,1020,4000,88888]
 
 wally.map_keypath_add(keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
 assert.equal(wally.map_keypath_get_item_path(keypaths, 0).join(','), dummy_path.join(','))

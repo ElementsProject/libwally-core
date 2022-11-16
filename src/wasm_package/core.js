@@ -43,31 +43,35 @@ const _wally_free_string = Module.cwrap('wally_free_string', 'number', ['number'
 // Array of integers. Used for byte buffers and 32/64 bits numbers.
 // Passed to C as two arguments, the pointer and the array length.
 // Represented in JS as the IntArrayType, which is a Uint{8,32,64}Array.
-types.IntArray = IntArrayType => ({
-    wasm_types: ['array', 'number'],
+types.IntArray = (IntArrayType, heap) => ({
+    wasm_types: ['number', 'number'],
     to_wasm: int_arr => {
-        if (Array.isArray(int_arr)) {
-            // Try coercing standard Arrays into the expected IntArrayType.
-            // This will fail if the array values don't match the int type.
-            int_arr = new IntArrayType(int_arr)
-        } else if (!(int_arr instanceof IntArrayType)) {
+        if (!Array.isArray(int_arr) && !(int_arr instanceof IntArrayType)) {
             throw new WallyArrayNumTypeError(int_arr, IntArrayType)
         }
 
+        var arr_ptr = Module._malloc(int_arr.length * IntArrayType.BYTES_PER_ELEMENT);
+        heap.set(int_arr, arr_ptr / IntArrayType.BYTES_PER_ELEMENT)
+
         return {
-            args: [int_arr, int_arr.length]
+            args: [arr_ptr, int_arr.length],
+            cleanup: _ => Module._free(arr_ptr)
         }
     },
 
-    read_ptr_sized: (ptr, size) =>
-        new IntArrayType(Module.HEAP8.subarray(ptr, ptr + size)),
+    malloc_sized: array_size => Module._malloc(array_size * IntArrayType.BYTES_PER_ELEMENT),
+
+    read_ptr_sized: (ptr, array_size) => {
+        const heap_offset = ptr / IntArrayType.BYTES_PER_ELEMENT
+        return new IntArrayType(heap.subarray(heap_offset, heap_offset + array_size))
+    },
 
     free_ptr: ptr => Module._free(ptr),
 })
 
-types.Bytes = types.IntArray(Uint8Array)
-types.Uint32Array = types.IntArray(Uint32Array)
-types.Uint64Array = types.IntArray(BigUint64Array)
+types.Bytes = types.IntArray(Uint8Array, Module.HEAPU8)
+types.Uint32Array = types.IntArray(Uint32Array, Module.HEAPU32)
+types.Uint64Array = types.IntArray(BigUint64Array, Module.HEAPU64)
 
 // An opaque reference returned via DestPtrPtr that can be handed back to libwally
 types.OpaqueRef = {
@@ -122,7 +126,7 @@ types.DestPtrSized = (type, size) => ({
     no_user_args: true,
     wasm_types: ['number', 'number'],
     to_wasm: _ => {
-        const dest_ptr = Module._malloc(size)
+        const dest_ptr = type.malloc_sized(size)
         return {
             args: [dest_ptr, size],
             return: _ => type.read_ptr_sized(dest_ptr, size),
@@ -150,7 +154,7 @@ types.DestPtrVarLen = (type, size_maybefn, size_is_upper_bound = false) => ({
             ? size_maybefn(...all_args)
             : size_maybefn
 
-        const dest_ptr = Module._malloc(buffer_size)
+        const dest_ptr = type.malloc_sized(buffer_size)
             , written_ptr = Module._malloc(4)
 
         return {
