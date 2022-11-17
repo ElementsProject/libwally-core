@@ -310,6 +310,11 @@ def gen_wasm_package(funcs):
         'wally_elements_pegin_contract_script_from_bytes': 'elements_pegin_contract_script_from_bytes_len, true',
     }
 
+    # Exclude scalar functions for in-place modification. We can't hand a mutable pointer of the user-provided Buffer
+    # to WASM, and simulating the in-place behavior in JS would involve copying the Buffer to the WASM memory area
+    # and back out, which defeats the purpose. Non-in-place variants are available for use instead.
+    excluded_funcs = [ 'wally_ec_scalar_add_to', 'wally_ec_scalar_multiply_by', 'wally_ec_scalar_subtract_from' ]
+
     def map_args(func):
         num_args = len(func.args)
         next_index = 0
@@ -410,9 +415,11 @@ def gen_wasm_package(funcs):
 
         return func_name
 
+    # Drop excluded functions
+    fn_included = filter(lambda f: f.name not in excluded_funcs, funcs)
     # Place functions that depend on the buffer length utility functions last, so that the utility
     # functions are available to them. Then sort by name.
-    fn_def_order = sorted(funcs, key = lambda f: (f.buffer_len_fn is not None, export_name(f.name)))
+    fn_def_order = sorted(fn_included, key = lambda f: (f.buffer_len_fn is not None, export_name(f.name)))
 
     jscode = [
         f"export const {export_name(func.name)} = wrap('{func.name}', [{', '.join(map_args(func))}]);"
