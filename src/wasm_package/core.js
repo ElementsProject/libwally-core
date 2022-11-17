@@ -122,9 +122,6 @@ types.DestPtrPtr = type => ({
 })
 
 // A destination pointer to an Bytes output buffer with a fixed size (without a `written` argument)
-//
-// `size_source` may contain a fixed size for the output buffer or the special value `USER_PROVIDED_LEN`
-// to read the size as a user-provided JS argument.
 types.DestPtrSized = (type, size_source) => ({
 
     // Consumes no user-provided JS arguments, unless USER_PROVIDED_LEN is used
@@ -132,8 +129,8 @@ types.DestPtrSized = (type, size_source) => ({
 
     wasm_types: ['number', 'number'],
 
-    to_wasm: this_arg => {
-        const array_size = size_source == USER_PROVIDED_LEN ? this_arg : size_source
+    to_wasm: (this_arg, all_args) => {
+        const array_size = getArraySize(size_source, this_arg, all_args)
             , dest_ptr = type.malloc_sized(array_size)
 
         return {
@@ -148,7 +145,6 @@ export const USER_PROVIDED_LEN = types.USER_PROVIDED_LEN = {}
 
 // A destination pointer to a variable-length Bytes output buffer (with a `written` argument)
 //
-// `size_source` may contain a fixed size for the output buffer or a function that calculates it.
 // `size_is_upper_bound` allows the returned buffer to be smaller (truncated to the `written` size).
 //
 // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
@@ -159,12 +155,9 @@ types.DestPtrVarLen = (type, size_source, size_is_upper_bound = false) => ({
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
 
-    to_wasm: (_, all_args) => {
-        const array_size = typeof size_source == 'function'
-            ? size_source(...all_args)
-            : size_source
-
-        const dest_ptr = type.malloc_sized(array_size)
+    to_wasm: (this_arg, all_args) => {
+        const array_size = getArraySize(size_source, this_arg, all_args)
+            , dest_ptr = type.malloc_sized(array_size)
             , written_ptr = Module._malloc(4)
 
         return {
@@ -185,6 +178,13 @@ types.DestPtrVarLen = (type, size_source, size_is_upper_bound = false) => ({
         }
     }
 })
+
+// `size_source` may be a fixed `Number`, a function that calculates the expected size given `all_args`,
+// or the special value `USER_PROVIDED_LEN` to read the size as a user-provided JS argument.
+const getArraySize = (size_source, this_arg, all_args) =>
+    size_source == USER_PROVIDED_LEN ? this_arg
+  : typeof size_source == 'function' ? size_source(...all_args)
+  : size_source
 
 //
 // Utilities
