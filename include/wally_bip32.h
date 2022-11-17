@@ -24,6 +24,12 @@ extern "C" {
 /** The maximum number of path elements allowed in a path */
 #define BIP32_PATH_MAX_LEN 255
 
+/* Length of a BIP32 chain code  */
+#define WALLY_BIP32_CHAIN_CODE_LEN 32
+
+/* Length of Elements' pubkey tweak sum */
+#define WALLY_BIP32_TWEAK_SUM_LEN 32
+
 /** Indicate that we want to derive a private key in `bip32_key_from_parent` */
 #define BIP32_FLAG_KEY_PRIVATE 0x0
 /** Indicate that we want to derive a public key in `bip32_key_from_parent` */
