@@ -4,7 +4,7 @@ import * as wally from './index.js'
 import { bytesToHex, hexToBytes } from './index.js'
 import {
     WALLY_NETWORK_BITCOIN_MAINNET, WALLY_ADDRESS_VERSION_WIF_MAINNET, WALLY_WIF_FLAG_COMPRESSED,
-    BIP32_FLAG_KEY_PUBLIC,
+    BIP32_FLAG_KEY_PUBLIC, BIP32_INITIAL_HARDENED_CHILD,
 } from './index.js'
 
 // Test simple invocation, with a return code only and no destination pointer
@@ -63,11 +63,11 @@ assert.equal(bytesToHex(bytes), longhex)
 const vbytes = wally.varbuff_to_bytes(hexToBytes('133337'));
 assert.equal(bytesToHex(vbytes), '03133337')
 
-// Test uint32 array return value
+// Test uint32 array as an argument and return value
 const keypaths = wally.map_keypath_public_key_init(1)
     , dummy_pubkey = wally.hex_to_bytes('038575eb35e18fb168a913d8b49af50204f4f73627f6f7884f1be11e354664de8b')
     , dummy_fingerprint = wally.hex_to_bytes('00112233')
-    , dummy_path = [0,1,2,50,100,120,127,128,1020,4000,88888]
+    , dummy_path = [0, 50, 127, 128, 1024, BIP32_INITIAL_HARDENED_CHILD, BIP32_INITIAL_HARDENED_CHILD+1]
 
 wally.map_keypath_add(keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
 assert.equal(wally.map_keypath_get_item_path(keypaths, 0).join(','), dummy_path.join(','))
