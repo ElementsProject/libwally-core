@@ -361,9 +361,7 @@ def gen_wasm_package(funcs):
                     # the user provides the intended output length as an argument to the JS API.
                     output_buffer_size = 'T.USER_PROVIDED_LEN'
                 else:
-                    # XXX Use a default fallback value for now, until all length functions are handled
-                    print(f"MISSING output buffer size for {func.name}:{arg.name}")
-                    output_buffer_size = 100
+                    assert False, f'ERROR: Unknown output array size for {func.name}:{arg.type}'
 
                 # Variable-length buffers have an additional pointer for the number of bytes written/expected
                 # See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers

@@ -65,12 +65,11 @@ def extract_docs(infile, outfile):
     title_markup = '=' * len(title)
     output, current, func, state = [title, title_markup, ''], [], '', SCANNING
 
-    if DUMP_INTERNAL:
-        # Internal header: Expect each function on a single line
-        lines = [l for l in lines if l.startswith('WALLY_CORE_API')]
-        state = FUNC
-
     for l in lines:
+        # Allow one-liner internal functions with no doc comments
+        if DUMP_INTERNAL and state == SCANNING and l.startswith('WALLY_CORE_API'):
+            state = FUNC
+
         if state == SCANNING:
             if l.startswith('/**') and '*/' not in l:
                 current, func, state = [l[3:]], '', DOCS
@@ -90,8 +89,8 @@ def extract_docs(infile, outfile):
                 output.extend(output_func(current, func))
                 if DUMP_INTERNAL:
                     current, func = '', ''
-                else:
-                    state = SCANNING
+                state = SCANNING
+
     with open(outfile, 'w') as f:
         f.write('\n'.join(output))
 

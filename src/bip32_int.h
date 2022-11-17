@@ -6,13 +6,43 @@ extern "C" {
 #endif
 
 #if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined(SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
+
+#define WALLY_BIP32_CHAIN_CODE_LEN 32
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_BIP32_CHAIN_CODE_LEN)
+ */
 WALLY_CORE_API int bip32_key_get_chain_code(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, HASH160_LEN)
+ */
 WALLY_CORE_API int bip32_key_get_parent160(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
+ */
 WALLY_CORE_API int bip32_key_get_priv_key(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, HASH160_LEN)
+ */
 WALLY_CORE_API int bip32_key_get_hash160(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PUBLIC_KEY_LEN)
+ */
 WALLY_CORE_API int bip32_key_get_pub_key(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+
 #ifdef BUILD_ELEMENTS
+
+#define WALLY_BIP32_TWEAK_SUM_LEN 32
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_BIP32_TWEAK_SUM_LEN)
+ */
 WALLY_CORE_API int bip32_key_get_pub_key_tweak_sum(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len);
+
 #endif /* BUILD_ELEMENTS */
 
 WALLY_CORE_API int bip32_key_get_depth(const struct ext_key *hdkey, size_t *written);
