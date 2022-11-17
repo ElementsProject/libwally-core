@@ -351,6 +351,10 @@ def gen_wasm_package(funcs):
                     output_buffer_size = f"{export_name(func.buffer_len_fn)}, {'true' if func.buffer_len_is_upper_bound else 'false'}"
                 elif func.name in js_buffer_size_fns:
                     output_buffer_size = js_buffer_size_fns[func.name]
+                elif func.name == 'wally_scrypt':
+                    # Special-case for wally_scrypt(), the only function with an output buffer where
+                    # the user provides the intended output length as an argument to the JS API.
+                    output_buffer_size = 'T.USER_PROVIDED_LEN'
                 else:
                     # XXX Use a default fallback value for now, until all length functions are handled
                     print(f"MISSING output buffer size for {func.name}:{arg.name}")

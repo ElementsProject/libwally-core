@@ -72,4 +72,9 @@ const keypaths = wally.map_keypath_public_key_init(1)
 wally.map_keypath_add(keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
 assert.equal(wally.map_keypath_get_item_path(keypaths, 0).join(','), dummy_path.join(','))
 
+// Test output buffers with a user-specified length (scrypt is the only instance of this)
+const try_scrypt = size => wally.scrypt(Buffer.from("password"), Buffer.from("NaCl"), 1024, 8, 16, size)
+assert(wally.bytesToHex(try_scrypt(32)), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b373162')
+assert(wally.bytesToHex(try_scrypt(64)), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')
+
 console.log('Tests passed.')

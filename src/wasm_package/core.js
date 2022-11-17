@@ -122,11 +122,20 @@ types.DestPtrPtr = type => ({
 })
 
 // A destination pointer to an Bytes output buffer with a fixed size (without a `written` argument)
-types.DestPtrSized = (type, array_size) => ({
-    no_user_args: true,
+//
+// `size_source` may contain a fixed size for the output buffer or the special value `USER_PROVIDED_LEN`
+// to read the size as a user-provided JS argument.
+types.DestPtrSized = (type, size_source) => ({
+
+    // Consumes no user-provided JS arguments, unless USER_PROVIDED_LEN is used
+    no_user_args: size_source != USER_PROVIDED_LEN,
+
     wasm_types: ['number', 'number'],
-    to_wasm: _ => {
-        const dest_ptr = type.malloc_sized(array_size)
+
+    to_wasm: this_arg => {
+        const array_size = size_source == USER_PROVIDED_LEN ? this_arg : size_source
+            , dest_ptr = type.malloc_sized(array_size)
+
         return {
             args: [dest_ptr, array_size],
             return: _ => type.read_ptr_sized(dest_ptr, array_size),
@@ -135,24 +144,25 @@ types.DestPtrSized = (type, array_size) => ({
     }
 })
 
+export const USER_PROVIDED_LEN = types.USER_PROVIDED_LEN = {}
+
 // A destination pointer to a variable-length Bytes output buffer (with a `written` argument)
 //
-// `size_maybefn` may contain a fixed size for the output buffer or a function that calculates it.
+// `size_source` may contain a fixed size for the output buffer or a function that calculates it.
 // `size_is_upper_bound` allows the returned buffer to be smaller (truncated to the `written` size).
 //
 // See https://wally.readthedocs.io/en/latest/conventions/#variable-length-output-buffers
 // Note that the retry mechanism described in the link above is not implemented. Instead, the
 // exact (or maximum) size is figured out in advance, and an error is raised if its insufficient.
-types.DestPtrVarLen = (type, size_maybefn, size_is_upper_bound = false) => ({
+types.DestPtrVarLen = (type, size_source, size_is_upper_bound = false) => ({
     no_user_args: true,
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
 
     to_wasm: (_, all_args) => {
-
-        const array_size = typeof size_maybefn == 'function'
-            ? size_maybefn(...all_args)
-            : size_maybefn
+        const array_size = typeof size_source == 'function'
+            ? size_source(...all_args)
+            : size_source
 
         const dest_ptr = type.malloc_sized(array_size)
             , written_ptr = Module._malloc(4)
