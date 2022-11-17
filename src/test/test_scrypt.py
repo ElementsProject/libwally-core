@@ -37,17 +37,31 @@ class ScryptTests(unittest.TestCase):
 
     def test_scrypt(self):
 
+        # Invalid arguments
+        pwd, salt, cost, block, p, l, _ = cases[0]
+        pwd, salt = utf8(pwd), utf8(salt)
+        out_buf, out_len = make_cbuffer('0' * l)
+        invalid = [
+            [pwd, len(pwd), salt, len(salt), cost, block, p, None,    out_len], # Null output
+            [pwd, len(pwd), salt, len(salt), cost, block, p, out_buf, 0],       # Empty output
+            [pwd, len(pwd), salt, len(salt), cost, block, p, out_buf, 33],      # Len not % 32
+        ]
+        for c in invalid:
+            ret = wally_scrypt(*c)
+            self.assertEqual(wally_scrypt(*c), WALLY_EINVAL)
+
+        # Test vectors
         for c in cases:
-            passwd, salt, cost, block, parallel, length, expected = c
-            passwd = utf8(passwd)
+            pwd, salt, cost, block, parallel, length, expected = c
+            pwd = utf8(pwd)
             salt = utf8(salt)
             expected = expected.replace(' ', '')
             assert len(expected) == length * 2
             out_buf, out_len = make_cbuffer('0' * len(expected))
 
-            ret = wally_scrypt(passwd, len(passwd), salt, len(salt),
-                         cost, block, parallel, out_buf, out_len)
-            self.assertEqual(ret, 0)
+            ret = wally_scrypt(pwd, len(pwd), salt, len(salt),
+                               cost, block, parallel, out_buf, out_len)
+            self.assertEqual(ret, WALLY_OK)
             self.assertEqual(h(out_buf), utf8(expected))
 
 

@@ -20,7 +20,8 @@ extern "C" {
  * :param block_size: The size of memory blocks required.
  * :param parallelism: Parallelism factor.
  * :param bytes_out: Destination for the derived pseudorandom key.
- * :param len: The length of ``bytes_out`` in bytes.
+ * :param len: The length of ``bytes_out`` in bytes. Must be a non-zero
+ *|    multiple of ``PBKDF2_HMAC_SHA256_LEN``.
  */
 WALLY_CORE_API int wally_scrypt(
     const unsigned char *pass,
