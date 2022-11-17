@@ -448,13 +448,24 @@ static int keypath_key_verify(const unsigned char *key, size_t key_len, struct e
     return ret;
 }
 
+static bool kp_is_valid(const unsigned char *val, size_t val_len)
+{
+    return val && val_len >= BIP32_KEY_FINGERPRINT_LEN &&
+        (val_len - BIP32_KEY_FINGERPRINT_LEN) % sizeof(uint32_t) == 0;
+}
+
+static size_t kp_path_len(size_t val_len)
+{
+    if (val_len == BIP32_KEY_FINGERPRINT_LEN)
+        return 0;
+    return (val_len - BIP32_KEY_FINGERPRINT_LEN) / sizeof(uint32_t);
+}
+
 static int keypath_path_verify(const unsigned char *val, size_t val_len,
                                const struct ext_key *extkey)
 {
-    size_t path_depth = (val_len - BIP32_KEY_FINGERPRINT_LEN) / sizeof(uint32_t);
-
-    if (!val || val_len < BIP32_KEY_FINGERPRINT_LEN || val_len % sizeof(uint32_t) ||
-        (extkey->version && extkey->depth != path_depth))
+    if (!kp_is_valid(val, val_len) ||
+        (extkey->version && extkey->depth != kp_path_len(val_len)))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
@@ -565,10 +576,9 @@ int wally_keypath_get_path_len(const unsigned char *val, size_t val_len,
 {
     if (written)
         *written = 0;
-    if (!val || val_len < BIP32_KEY_FINGERPRINT_LEN || val_len % sizeof(uint32_t))
+    if (!kp_is_valid(val, val_len))
         return WALLY_EINVAL;
-    if (val_len > BIP32_KEY_FINGERPRINT_LEN)
-        *written = (val_len / sizeof(uint32_t)) - 1;
+    *written = kp_path_len(val_len);
     return WALLY_OK;
 }
 
