@@ -66,7 +66,7 @@ WALLY_CORE_API int wally_addr_segwit_from_bytes(
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
  * :param bytes_out: Destination for the resulting scriptPubKey (including the version and data push opcode)
- * :param len: Length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_addr_segwit_to_bytes(
@@ -81,6 +81,8 @@ WALLY_CORE_API int wally_addr_segwit_to_bytes(
  * Get a scriptPubKey containing the witness program from a known-length segwit native address.
  *
  * See `wally_addr_segwit_to_bytes`.
+ *
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN)
  */
 WALLY_CORE_API int wally_addr_segwit_n_to_bytes(
     const char *addr,
@@ -127,7 +129,7 @@ WALLY_CORE_API int wally_addr_segwit_n_get_version(
  * :param network: One of ``WALLY_NETWORK_BITCOIN_MAINNET``, ``WALLY_NETWORK_BITCOIN_TESTNET``,
  *|    ``WALLY_NETWORK_LIQUID``, ``WALLY_NETWORK_LIQUID_REGTEST``.
  * :param bytes_out: Destination for the resulting scriptPubKey
- * :param len: Length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_ADDRESS_PUBKEY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_address_to_scriptpubkey(
@@ -180,7 +182,7 @@ WALLY_CORE_API int wally_wif_from_bytes(
  * :param flags: Pass ``WALLY_WIF_FLAG_COMPRESSED`` if the corresponding pubkey is compressed,
  *|    otherwise ``WALLY_WIF_FLAG_UNCOMPRESSED``.
  * :param bytes_out: Destination for the private key.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
  */
 WALLY_CORE_API int wally_wif_to_bytes(
     const char *wif,
@@ -278,7 +280,7 @@ WALLY_CORE_API int wally_confidential_addr_to_addr(
  * :param address: The base58 encoded confidential address to extract the public key from.
  * :param prefix: The confidential address prefix byte, e.g. ``WALLY_CA_PREFIX_LIQUID``.
  * :param bytes_out: Destination for the public key.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PUBLIC_KEY_LEN)
  */
 WALLY_CORE_API int wally_confidential_addr_to_ec_public_key(
     const char *address,
@@ -323,7 +325,7 @@ WALLY_CORE_API int wally_confidential_addr_to_addr_segwit(
  * :param address: The blech32 encoded confidential address to extract the public key from.
  * :param confidential_addr_family: The confidential address family of ``address``.
  * :param bytes_out: Destination for the public key.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PUBLIC_KEY_LEN)
  */
 WALLY_CORE_API int wally_confidential_addr_segwit_to_ec_public_key(
     const char *address,

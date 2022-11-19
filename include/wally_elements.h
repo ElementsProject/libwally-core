@@ -32,7 +32,7 @@ extern "C" {
  * :param abf: Asset Blinding Factor (Random entropy to blind with). Must be NULL when ``asset`` is a commitment.
  * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN`` if ``abf`` is non-NULL.
  * :param bytes_out: Destination for the resulting Asset Generator.
- * :param len: The length of ``bytes_out`` in bytes. Must be ``ASSET_GENERATOR_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_GENERATOR_LEN)
  */
 WALLY_CORE_API int wally_asset_generator_from_bytes(
     const unsigned char *asset,
@@ -50,7 +50,7 @@ WALLY_CORE_API int wally_asset_generator_from_bytes(
  * :param priv_key: Ephemeral (randomly generated) private key.
  * :param priv_key_len: Length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
  * :param bytes_out: Destination for the resulting nonce hash.
- * :param len: Length of ``bytes_out``. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  *
  * .. note:: The public blinding key can be retrieved from a confidential
  *|    address using `wally_confidential_addr_to_ec_public_key`. If ``priv_key``
@@ -80,7 +80,7 @@ WALLY_CORE_API int wally_ecdh_nonce_hash(
  * :param vbf: Array of bytes representing (``values_len`` - 1) value blinding factors.
  * :param vbf_len: Length of ``vbf`` in bytes. Must be (``values_len`` - 1) * ``BLINDING_FACTOR_LEN``.
  * :param bytes_out: Buffer to receive the final value blinding factor.
- * :param len: Length of ``bytes_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
  */
 WALLY_CORE_API int wally_asset_final_vbf(
     const uint64_t *values,
@@ -102,7 +102,7 @@ WALLY_CORE_API int wally_asset_final_vbf(
  * :param vbf: Value blinding factor.
  * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
  * :param bytes_out: Destination to receive the scalar offset.
- * :param len: Length of ``bytes_out``. Must be ``EC_SCALAR_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_SCALAR_LEN)
  */
 WALLY_CORE_API int wally_asset_scalar_offset(
     uint64_t value,
@@ -122,7 +122,7 @@ WALLY_CORE_API int wally_asset_scalar_offset(
  * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param bytes_out: Buffer to receive value commitment.
- * :param len: Length of ``bytes_out``. Must be ``ASSET_COMMITMENT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_COMMITMENT_LEN)
  */
 WALLY_CORE_API int wally_asset_value_commitment(
     uint64_t value,
@@ -156,7 +156,7 @@ WALLY_CORE_API int wally_asset_value_commitment(
  * :param exp: Exponent value. -1 >= ``exp`` >= 18. Recommended value 0.
  * :param min_bits: 0 >= min_bits >= 64. Recommended value 52.
  * :param bytes_out: Buffer to receive rangeproof.
- * :param len: Length of ``bytes_out``. See ``ASSET_RANGEPROOF_MAX_LEN``.
+ * MAX_SIZED_OUTPUT(len, bytes_out, ASSET_RANGEPROOF_MAX_LEN)
  * :param written: Number of bytes actually written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
@@ -187,6 +187,8 @@ WALLY_CORE_API int wally_asset_rangeproof_with_nonce(
  *
  * This convenience function generates a nonce hash with `wally_ecdh_nonce_hash`
  * and then calls `wally_asset_rangeproof_with_nonce`.
+ *
+ * MAX_SIZED_OUTPUT(len, bytes_out, ASSET_RANGEPROOF_MAX_LEN)
  */
 WALLY_CORE_API int wally_asset_rangeproof(
     uint64_t value,
@@ -218,6 +220,8 @@ WALLY_CORE_API int wally_asset_rangeproof(
  *
  * The nonce for this function should be randomly generated.
  * See `wally_asset_rangeproof_with_nonce`.
+ *
+ * MAX_SIZED_OUTPUT(len, bytes_out, ASSET_EXPLICIT_RANGEPROOF_MAX_LEN)
  */
 WALLY_CORE_API int wally_explicit_rangeproof(
     uint64_t value,
@@ -313,7 +317,7 @@ WALLY_CORE_API int wally_asset_surjectionproof(
  * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
  * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
  * :param bytes_out: Buffer to receive surjection proof.
- * :param bytes_out_len: Length of ``bytes_out``. Must be ``ASSET_EXPLICIT_SURJECTIONPROOF_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
  */
 WALLY_CORE_API int wally_explicit_surjectionproof(
     const unsigned char *output_asset,
@@ -357,11 +361,11 @@ WALLY_CORE_API int wally_explicit_surjectionproof_verify(
  * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param asset_out: Buffer to receive unblinded asset id.
- * :param asset_out_len: Length of ``asset_out``. Must be ``ASSET_TAG_LEN``.
+ * FIXED_SIZED_OUTPUT(asset_out_len, asset_out, ASSET_TAG_LEN)
  * :param abf_out: Buffer to receive asset blinding factor.
- * :param abf_out_len: Length of ``abf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(abf_out_len, abf_out, BLINDING_FACTOR_LEN)
  * :param vbf_out: Buffer to receive asset blinding factor.
- * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(vbf_out_len, vbf_out, BLINDING_FACTOR_LEN)
  * :param value_out: Destination for unblinded transaction output value.
  */
 WALLY_CORE_API int wally_asset_unblind_with_nonce(
@@ -399,11 +403,11 @@ WALLY_CORE_API int wally_asset_unblind_with_nonce(
  * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
  * :param asset_out: Buffer to receive unblinded asset id.
- * :param asset_out_len: Length of ``asset_out``. Must be ``ASSET_TAG_LEN``.
+ * FIXED_SIZED_OUTPUT(asset_out_len, asset_out, ASSET_TAG_LEN)
  * :param abf_out: Buffer to receive asset blinding factor.
- * :param abf_out_len: Length of ``abf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(abf_out_len, abf_out, BLINDING_FACTOR_LEN)
  * :param vbf_out: Buffer to receive asset blinding factor.
- * :param vbf_out_len: Length of ``vbf_out``. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(vbf_out_len, vbf_out, BLINDING_FACTOR_LEN)
  * :param value_out: Destination for unblinded transaction output value.
  */
 WALLY_CORE_API int wally_asset_unblind(
@@ -435,7 +439,7 @@ WALLY_CORE_API int wally_asset_unblind(
  *|     ``BIP32_ENTROPY_LEN_512``.
  * :param bytes_out: Buffer to receive master blinding key. The master blinding key can be used to generate blinding
  *|     keys for specific outputs by passing it to `wally_asset_blinding_key_to_ec_private_key`.
- * :param len: Length of ``bytes_out``. Must be ``HMAC_SHA512_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, HMAC_SHA512_LEN)
  */
 WALLY_CORE_API int wally_asset_blinding_key_from_seed(
     const unsigned char *bytes,
@@ -451,7 +455,7 @@ WALLY_CORE_API int wally_asset_blinding_key_from_seed(
  * :param script: The script pubkey for the confidential output address.
  * :param script_len: Length of ``script``.
  * :param bytes_out: Buffer to receive blinding key.
- * :param len: Length of ``bytes_out``. Must be ``EC_PRIVATE_KEY_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
  */
 WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
     const unsigned char *bytes,

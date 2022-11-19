@@ -760,7 +760,7 @@ WALLY_CORE_API int wally_psbt_input_clear_pegin_claim_script(
  *
  * :param input: The input to get from.
  * :param bytes_out: Destination for the blinded issuance amount.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``ASSET_COMMITMENT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_COMMITMENT_LEN)
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
@@ -855,7 +855,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_rangeproof(
  *
  * :param input: The input to get from.
  * :param bytes_out: Destination for the asset issuance blinding nonce.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
@@ -902,7 +902,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_blinding_nonce(
  *
  * :param input: The input to get from.
  * :param bytes_out: Destination for the asset issuance entropy.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
@@ -996,7 +996,7 @@ WALLY_CORE_API int wally_psbt_input_clear_issuance_amount_blinding_rangeproof(
  *
  * :param input: The input to get from.
  * :param bytes_out: Destination for the blinded number of reissuance tokens.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``ASSET_COMMITMENT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_COMMITMENT_LEN)
  * :param written: Destination for the number of bytes written
  *|    to ``bytes_out``. Will be zero if the value is not present.
  *
@@ -1851,7 +1851,7 @@ WALLY_CORE_API int wally_psbt_set_version(
  * :param flags: WALLY_PSBT_ID_ flags to change the id calculation, or
  *|   pass 0 to compute a BIP-370 compatible id.
  * :param bytes_out: Destination for the id.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  *
  * .. note:: The id is expensive to compute.
  */

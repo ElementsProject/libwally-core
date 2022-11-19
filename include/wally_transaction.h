@@ -538,7 +538,7 @@ WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
  *
  * :param tx: The transaction to compute the txid of.
  * :param bytes_out: Destination for the txid.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  *
  * .. note:: The txid is expensive to compute.
  */
@@ -668,7 +668,7 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
  * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_btc_signature_hash(
     const struct wally_tx *tx,
@@ -701,7 +701,7 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_signature_hash(
     const struct wally_tx *tx,
@@ -1125,7 +1125,7 @@ WALLY_CORE_API int wally_tx_is_elements(
  *
  * :param satoshi: The value in satoshi to convert.
  * :param bytes_out: Destination for the confidential value bytes.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
  */
 WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
     uint64_t satoshi,
@@ -1145,7 +1145,7 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
     uint64_t *value_out);
 
 /**
- * Create a Elements transaction for signing and return its hash.
+ * Create an Elements transaction for signing and return its hash.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -1158,7 +1158,7 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
  * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_elements_signature_hash(
     const struct wally_tx *tx,
@@ -1182,7 +1182,7 @@ WALLY_CORE_API int wally_tx_get_elements_signature_hash(
  * :param contract_hash: The issuer specified Ricardian contract hash.
  * :param contract_hash_len: Size of ``contract hash`` in bytes. Must be ``SHA256_LEN``.
  * :param bytes_out: Destination for the asset entropy.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
     const unsigned char *txhash,
@@ -1199,7 +1199,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
  * :param entropy: The asset entropy.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
  * :param bytes_out: Destination for the asset tag.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
     const unsigned char *entropy,
@@ -1215,7 +1215,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
  * :param flags: ``WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE`` if initial issuance was blinded,
  *|     pass 0 otherwise.
  * :param bytes_out: Destination for the re-issuance token.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_elements_issuance_calculate_reissuance_token(
     const unsigned char *entropy,

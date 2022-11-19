@@ -415,7 +415,7 @@ WALLY_CORE_API int wally_map_keypath_add(
  * :param val: The serialized keypath value as stored in a keypath map.
  * :param val_len: Length of ``val`` in bytes.
  * :param bytes_out: Destination for the fingerprint.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
  */
 WALLY_CORE_API int wally_keypath_get_fingerprint(
     const unsigned char *val,
@@ -429,7 +429,7 @@ WALLY_CORE_API int wally_keypath_get_fingerprint(
  * :param map_in: The map to return the item's fingerprint from.
  * :param index: The zero-based index of the item whose key fingerprint to return.
  * :param bytes_out: Destination for the resulting data.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
  *
  * .. note:: The same key fingerprint may be present in a keypath map more than once.
  */
