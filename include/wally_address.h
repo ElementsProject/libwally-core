@@ -39,6 +39,9 @@ struct ext_key;
 #define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
 #define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 
+#define WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN 34
+#define WALLY_ADDRESS_PUBKEY_MAX_LEN 25
+
 /**
  * Create a segwit native address from a v0 or later witness program.
  *
