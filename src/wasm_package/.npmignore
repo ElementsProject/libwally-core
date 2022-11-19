@@ -1,0 +1,2 @@
+# Intentionally left blank, to override the .gitignore matches
+# The libwally_wasm directory should be kept off git but published to npm.

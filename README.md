@@ -210,8 +210,9 @@ Or to reformat all source files, pass no arguments:
 $ ./tools/uncrustify
 ```
 
-If you have added new API functions in your patch, run `./tools/build_wrappers.py`
-to update the auto-generated support code for various platforms.
+If you have added new API functions in your patch, run `tools/update_generated.sh`
+to update the auto-generated support code for various platforms. This requires
+Python and the `jq` binary.
 
 You should also make sure the existing tests pass and if possible write tests
 covering any new functionality, following the existing style. You can run the

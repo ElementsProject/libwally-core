@@ -1,0 +1,17 @@
+{
+  "name": "wallycore",
+  "version": "0.8.6",
+  "description": "JavaScript bindings for libwally",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js",
+    "prepare": "./build.sh"
+  },
+  "files": [
+    "*.js",
+    "libwally_wasm"
+  ],
+  "author": "Nadav Ivgi",
+  "license": "MIT"
+}

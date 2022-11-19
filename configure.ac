@@ -271,6 +271,15 @@ AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
+
+AC_ARG_ENABLE(wasm-interface,
+    AS_HELP_STRING([--enable-wasm-interface],[enable the WASM interface (default: no)]),
+    [wasm_interface=$enableval], [wasm_interface=no])
+
+if test "x$wasm_interface" == "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-DWASM_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DWASM_BUILD=1"])
+fi
+
 #
 # SWIG
 #
