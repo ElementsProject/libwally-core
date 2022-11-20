@@ -1,5 +1,5 @@
 bullseye_release:
-  image: greenaddress/wallycore@sha256:5dd8567a5fc3b5244621c16a86d8232660dfdb6785a5ef32885d5fdb045f5226
+  image: greenaddress/wallycore@sha256:100ff7b90a676f84357f519f2e4ebebff08277c74da711a70340bc58b118b3a0
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -28,7 +28,7 @@ bullseye_release:
     - gzip -9 wallycore-wasm.tar
 
 manylinux_release:
-  image: greenaddress/wallycore@sha256:c3c36a55173eb29e5727dfc9a0417d05ac4c301adea109092fb9a0f7edbba10e
+  image: greenaddress/wallycore@sha256:100ff7b90a676f84357f519f2e4ebebff08277c74da711a70340bc58b118b3a0
   artifacts:
     expire_in: 1 day
     name: wallycore-bindings
@@ -119,7 +119,7 @@ osx_release:
 #    - tools\msvc\wheel.bat
 
 apidocs:
-  image: greenaddress/wallycore@sha256:5dd8567a5fc3b5244621c16a86d8232660dfdb6785a5ef32885d5fdb045f5226
+  image: greenaddress/wallycore@sha256:100ff7b90a676f84357f519f2e4ebebff08277c74da711a70340bc58b118b3a0
   artifacts:
     expire_in: 14 days
     name: wallycore-apidocs
