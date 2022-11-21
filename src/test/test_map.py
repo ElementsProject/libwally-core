@@ -42,6 +42,8 @@ class MapTests(unittest.TestCase):
                      (m,    None, key1_len), # Null key
                      (m,    key1, 0)]:       # 0 length key
             self.assertEqual(wally_map_find(*args), (WALLY_EINVAL, 0))
+            self.assertEqual(wally_map_find_from(args[0], 0, args[1], args[2]),
+                             (WALLY_EINVAL, 0))
 
         self.assertEqual(wally_map_find_integer(None, 1), (WALLY_EINVAL, 0)) # Null map
 
@@ -61,6 +63,8 @@ class MapTests(unittest.TestCase):
             # Add and find the item
             self.assertEqual(wally_map_add(m, k, l, v, vl), WALLY_OK)
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
+            self.assertEqual(wally_map_find_from(m, 0, k, l), (WALLY_OK, i))
+            self.assertEqual(wally_map_find_from(m, n, k, l), (WALLY_OK, 0)) # Not found
             self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, n))
             # Check its key is as expected
             self.assertEqual(wally_map_get_item_key_length(m, i - 1), (WALLY_OK, l))

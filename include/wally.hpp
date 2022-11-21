@@ -691,6 +691,13 @@ inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class MAP_IN, class KEY>
+inline int map_find_from(const MAP_IN& map_in, size_t index, const KEY& key, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_map_find_from(detail::get_p(map_in), index, key.data(), key.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class MAP_IN>
 inline int map_find_integer(const MAP_IN& map_in, uint32_t key, size_t* written) {
     int ret = ::wally_map_find_integer(detail::get_p(map_in), key, written);

@@ -207,6 +207,8 @@ class PSBTTests(unittest.TestCase):
         # The pubkey should be the first and only element
         self.assertEqual(map_get_num_items(keypaths), 1)
         self.assertEqual(map_find(keypaths, pubkey), 1)
+        self.assertEqual(map_find_from(keypaths, 0, pubkey), 1)
+        self.assertEqual(map_find_from(keypaths, 1, pubkey), 0) # Not found
         # Test map to python dict conversion and its inverse
         m2d, d2m = map_to_dict, map_from_dict
         self.assertEqual(m2d(keypaths), m2d(d2m(m2d(keypaths))))

@@ -63,7 +63,7 @@ int wally_map_free(struct wally_map *map_in)
     return WALLY_OK;
 }
 
-static int map_find(const struct wally_map *map_in,
+static int map_find(const struct wally_map *map_in, size_t index,
                     const unsigned char *key, size_t key_len,
                     size_t *written)
 {
@@ -75,7 +75,7 @@ static int map_find(const struct wally_map *map_in,
     if (!map_in || (key && !key_len) || !written)
         return WALLY_EINVAL;
 
-    for (i = 0; i < map_in->num_items; ++i) {
+    for (i = index; i < map_in->num_items; ++i) {
         const struct wally_map_item *item = &map_in->items[i];
 
         if (key_len != item->key_len || !key != !item->key) {
@@ -92,26 +92,29 @@ static int map_find(const struct wally_map *map_in,
     return WALLY_OK;
 }
 
-int wally_map_find(const struct wally_map *map_in,
-                   const unsigned char *key, size_t key_len,
-                   size_t *written)
+int wally_map_find_from(const struct wally_map *map_in, size_t index,
+                        const unsigned char *key, size_t key_len, size_t *written)
 {
-    if (!key)
-        return WALLY_EINVAL;
-    return map_find(map_in, key, key_len, written);
+    return key ? map_find(map_in, index, key, key_len, written) : WALLY_EINVAL;
+}
+
+int wally_map_find(const struct wally_map *map_in,
+                   const unsigned char *key, size_t key_len, size_t *written)
+{
+    return wally_map_find_from(map_in, 0, key, key_len, written);
 }
 
 int wally_map_find_integer(const struct wally_map *map_in,
                            uint32_t key, size_t *written)
 {
-    return map_find(map_in, NULL, key, written);
+    return map_find(map_in, 0, NULL, key, written);
 }
 
 static const struct wally_map_item *map_get(const struct wally_map *map_in,
                                             const unsigned char *key, size_t key_len)
 {
     size_t index;
-    if (map_find(map_in, key, key_len, &index) == WALLY_OK && index)
+    if (map_find(map_in, 0, key, key_len, &index) == WALLY_OK && index)
         return &map_in->items[index - 1];
     return NULL; /* Not found/Invalid */
 }
@@ -234,7 +237,7 @@ int map_add(struct wally_map *map_in,
         (map_in->verify_fn && map_in->verify_fn(key, key_len, val, val_len) != WALLY_OK))
         return WALLY_EINVAL;
 
-    if ((ret = map_find(map_in, key, key_len, &is_found)) != WALLY_OK)
+    if ((ret = map_find(map_in, 0, key, key_len, &is_found)) != WALLY_OK)
         return ret;
 
     if (is_found) {
@@ -288,7 +291,7 @@ int wally_map_add_integer(struct wally_map *map_in, uint32_t key,
 static int map_remove(struct wally_map *map_in, const unsigned char *key, size_t key_len)
 {
     size_t index;
-    int ret = map_find(map_in, key, key_len, &index);
+    int ret = map_find(map_in, 0, key, key_len, &index);
     if (ret == WALLY_OK && index) {
         struct wally_map_item *to_remove = map_in->items + index - 1;
         if (to_remove->key)
@@ -319,7 +322,7 @@ static int map_replace(struct wally_map *map_in,
                        const unsigned char *value, size_t value_len)
 {
     size_t index;
-    int ret = map_find(map_in, key, key_len, &index);
+    int ret = map_find(map_in, 0, key, key_len, &index);
     if (ret == WALLY_OK) {
         if (index) {
             struct wally_map_item *to_replace = map_in->items + index - 1;

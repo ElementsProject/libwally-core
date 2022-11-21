@@ -522,6 +522,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_void__(wally_map_clear);
 %returns_void__(wally_map_combine);
 %returns_size_t(wally_map_find);
+%returns_size_t(wally_map_find_from);
 %returns_size_t(wally_map_find_integer);
 %returns_void__(wally_map_free)
 %returns_size_t(wally_map_get_item_integer_key);

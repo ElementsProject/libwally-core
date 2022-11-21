@@ -118,6 +118,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_clear' \
 ,'_wally_map_combine' \
 ,'_wally_map_find' \
+,'_wally_map_find_from' \
 ,'_wally_map_find_integer' \
 ,'_wally_map_free' \
 ,'_wally_map_get_item' \

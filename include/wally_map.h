@@ -155,6 +155,23 @@ WALLY_CORE_API int wally_map_remove_integer(
     uint32_t key);
 
 /**
+ * Find an item in a map from a given position onwards.
+ *
+ * :param map_in: The map to find ``key`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_map_find_from(
+    const struct wally_map *map_in,
+    size_t index,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
+
+/**
  * Find an item in a map.
  *
  * :param map_in: The map to find ``key`` in.

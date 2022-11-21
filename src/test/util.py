@@ -344,6 +344,7 @@ for f in (
     ('wally_map_clear', c_int, [POINTER(wally_map)]),
     ('wally_map_combine', c_int, [POINTER(wally_map), POINTER(wally_map)]),
     ('wally_map_find', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_size_t_p]),
+    ('wally_map_find_from', c_int, [POINTER(wally_map), c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_map_find_integer', c_int, [POINTER(wally_map), c_uint32, c_size_t_p]),
     ('wally_map_free', c_int, [POINTER(wally_map)]),
     ('wally_map_get_item', c_int, [POINTER(wally_map), c_size_t, c_void_p, c_size_t, c_size_t_p]),
