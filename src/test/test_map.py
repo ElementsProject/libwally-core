@@ -24,6 +24,9 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_init_alloc(0, None, None), WALLY_EINVAL)
         self.assertEqual(wally_map_init_alloc(0, None, m), WALLY_OK)
 
+        self.assertEqual(wally_map_clear(None), WALLY_EINVAL) # Null map
+        self.assertEqual(wally_map_clear(m), WALLY_OK)
+
         for args in [(None, key1, key1_len, val,  val_len), # Null map
                      (m,    None, key1_len, val,  val_len), # Null key
                      (m,    key1, 0,        val,  val_len), # 0 length key
@@ -301,6 +304,32 @@ class MapTests(unittest.TestCase):
             self.assertEqual(wally_keypath_public_key_verify(*args), WALLY_EINVAL)
             # Maps created with wally_map_keypath_public_key_init do auto-validation
             self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+
+        # BIP32 lookup
+        bip32_invalid = [
+            (None, 0, derived), # Null map
+            (m, 0, None),       # Null key
+        ]
+        # - compressed
+        ret = wally_map_add(m, pub_key, pub_key_len, kp_path, len(kp_path))
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_map_find_bip32_public_key_from(m, 0, derived)
+        self.assertEqual(ret, (WALLY_OK, 1))
+        ret = wally_map_find_bip32_public_key_from(m, 1, derived) # Search after index
+        self.assertEqual(ret, (WALLY_OK, 0))
+        for args in bip32_invalid:
+            self.assertEqual(wally_map_find_bip32_public_key_from(*args), (WALLY_EINVAL, 0))
+        # TODO: x-only
+        # - uncompressed
+        wally_map_clear(m)
+        ret = wally_map_add(m, pub_key_u, pub_key_u_len, kp_path, len(kp_path))
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_map_find_bip32_public_key_from(m, 0, derived)
+        self.assertEqual(ret, (WALLY_OK, 1))
+        ret = wally_map_find_bip32_public_key_from(m, 1, derived) # Search after index
+        self.assertEqual(ret, (WALLY_OK, 0))
+        for args in bip32_invalid:
+            self.assertEqual(wally_map_find_bip32_public_key_from(*args), (WALLY_EINVAL, 0))
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 

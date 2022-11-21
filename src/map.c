@@ -418,6 +418,48 @@ int wally_map_assign(struct wally_map *map_in,
     return ret;
 }
 
+static bool map_contains_key_length(const struct wally_map *map_in,
+                                    size_t index, size_t key_len)
+{
+    size_t i;
+    for (i = index; i < map_in->num_items; ++i) {
+        if (map_in->items[i].key_len == key_len)
+            return true;
+    }
+    return false;
+}
+
+int wally_map_find_bip32_public_key_from(const struct wally_map *map_in, size_t index,
+                                         const struct ext_key *hdkey, size_t *written)
+{
+    int ret;
+
+    if (written)
+        *written = 0;
+
+    if (!map_in || !hdkey || !written)
+        return WALLY_EINVAL;
+
+    /* Try the compressed pubkey */
+    ret = wally_map_find_from(map_in, index, hdkey->pub_key, EC_PUBLIC_KEY_LEN, written);
+    if (ret == WALLY_OK && *written)
+        return ret;
+    /* Try the X-only pubkey */
+    ret = wally_map_find_from(map_in, index, hdkey->pub_key + 1, EC_XONLY_PUBLIC_KEY_LEN, written);
+    if (ret == WALLY_OK && *written)
+        return ret;
+    if (map_contains_key_length(map_in, index, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)) {
+        /* Uncompressed keys present: try the uncompressed pubkey */
+        unsigned char full_pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+        ret = wally_ec_public_key_decompress(hdkey->pub_key, EC_PUBLIC_KEY_LEN,
+                                             full_pubkey, sizeof(full_pubkey));
+        if (ret == WALLY_OK)
+            ret = wally_map_find_from(map_in, index, full_pubkey, sizeof(full_pubkey), written);
+        wally_clear(full_pubkey, sizeof(full_pubkey));
+    }
+    return ret;
+}
+
 /*
  * PSBT keypath support.
  * - Global XPubs are keyed by bip32 extended keys.

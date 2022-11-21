@@ -215,6 +215,7 @@ export const map_assign = wrap('wally_map_assign', [T.OpaqueRef, T.OpaqueRef]);
 export const map_clear = wrap('wally_map_clear', [T.OpaqueRef]);
 export const map_combine = wrap('wally_map_combine', [T.OpaqueRef, T.OpaqueRef]);
 export const map_find = wrap('wally_map_find', [T.OpaqueRef, T.Bytes, T.DestPtr(T.Int32)]);
+export const map_find_bip32_public_key_from = wrap('wally_map_find_bip32_public_key_from', [T.OpaqueRef, T.Int32, T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const map_find_from = wrap('wally_map_find_from', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);
 export const map_find_integer = wrap('wally_map_find_integer', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const map_free = wrap('wally_map_free', [T.OpaqueRef]);

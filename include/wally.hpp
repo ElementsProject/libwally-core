@@ -691,6 +691,12 @@ inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class MAP_IN, class HDKEY>
+inline int map_find_bip32_public_key_from(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, size_t* written) {
+    int ret = ::wally_map_find_bip32_public_key_from(detail::get_p(map_in), index, detail::get_p(hdkey), written);
+    return ret;
+}
+
 template <class MAP_IN, class KEY>
 inline int map_find_from(const MAP_IN& map_in, size_t index, const KEY& key, size_t* written = 0) {
     size_t n;

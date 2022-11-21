@@ -340,6 +340,25 @@ WALLY_CORE_API int wally_map_assign(
     struct wally_map *map_in,
     const struct wally_map *source);
 
+/**
+ * Find an item in a public-key keyed map given a BIP32 derived key.
+ *
+ * :param map_in: The map to find the public key of ``hdkey`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param hdkey: The BIP32 key to find.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ *
+ * .. note:: This function searches for the compressed, x-only and then
+ *|    uncompressed public keys, in order. The caller can determine which
+ *|    by checking the length of the map item when an item is found.
+ */
+WALLY_CORE_API int wally_map_find_bip32_public_key_from(
+    const struct wally_map *map_in,
+    size_t index,
+    const struct ext_key *hdkey,
+    size_t *written);
+
 #ifndef SWIG
 /**
  * Verify a PSBT keypath keyed by a serialized bip32 extended public key.
