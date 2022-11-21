@@ -429,6 +429,9 @@ static bool map_contains_key_length(const struct wally_map *map_in,
     return false;
 }
 
+/*
+ * BIP32 keypath helpers.
+ */
 int wally_map_find_bip32_public_key_from(const struct wally_map *map_in, size_t index,
                                          const struct ext_key *hdkey, size_t *written)
 {
@@ -457,6 +460,70 @@ int wally_map_find_bip32_public_key_from(const struct wally_map *map_in, size_t 
             ret = wally_map_find_from(map_in, index, full_pubkey, sizeof(full_pubkey), written);
         wally_clear(full_pubkey, sizeof(full_pubkey));
     }
+    return ret;
+}
+
+int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
+                                               size_t index, const struct ext_key *hdkey,
+                                               struct ext_key **output)
+{
+    uint32_t path[BIP32_PATH_MAX_LEN];
+    struct ext_key derived;
+    size_t i, path_len, idx = 0;
+    int ret = WALLY_OK;
+
+    OUTPUT_CHECK;
+    if (!map_in || !hdkey)
+        return WALLY_EINVAL;
+
+    if (mem_is_zero(hdkey->chain_code, sizeof(hdkey->chain_code))) {
+        /* Partial key: Just check if its pubkey is present */
+        ret = wally_map_find_bip32_public_key_from(map_in, index, hdkey, &idx);
+    } else {
+        /* Full key. Iterate the keypaths looking for a derivable match */
+        for (i = index; i < map_in->num_items; ++i) {
+            const struct wally_map_item *item = map_in->items + i;
+
+            if (item->value_len >= BIP32_KEY_FINGERPRINT_LEN &&
+                memcmp(item->value, hdkey->hash160, BIP32_KEY_FINGERPRINT_LEN))
+                continue; /* fingerprint mismatch: cannot be our key */
+
+            ret = wally_map_keypath_get_item_path(map_in, i,
+                                                  path, BIP32_PATH_MAX_LEN, &path_len);
+            if (ret != WALLY_OK)
+                break;
+            if (path_len + hdkey->depth > BIP32_PATH_MAX_LEN)
+               continue; /* Path too long, cannot be this key */
+            if (!path_len)
+                memcpy(&derived, hdkey, sizeof(derived)); /* Use directly */
+            else {
+                /* Derive the key to use */
+                ret = bip32_key_from_parent_path(hdkey, path, path_len,
+                                                 BIP32_FLAG_KEY_PRIVATE, &derived);
+            }
+            if (ret == WALLY_OK) {
+                /* Check the derived public key belongs to this item */
+                ret = wally_map_find_bip32_public_key_from(map_in, index, &derived, &idx);
+            }
+            if (ret != WALLY_OK)
+                break;
+            if (idx != i + 1)
+                idx = 0; /* Not found/pubkey doesn't match, keep looking */
+            else {
+                hdkey = &derived; /* Pubkey matches, return it */
+                break;
+            }
+        }
+    }
+    if (ret == WALLY_OK && idx) {
+        /* Found, return the matching key */
+        *output = wally_calloc(sizeof(struct ext_key));
+        if (!*output)
+            ret = WALLY_ENOMEM;
+        else
+            memcpy(*output, hdkey, sizeof(*hdkey));
+    }
+    wally_clear(&derived, sizeof(derived));
     return ret;
 }
 

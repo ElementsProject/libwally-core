@@ -359,6 +359,25 @@ WALLY_CORE_API int wally_map_find_bip32_public_key_from(
     const struct ext_key *hdkey,
     size_t *written);
 
+/**
+ * Return a BIP32 derived key matching the keypath of a parent in a map.
+ *
+ * :param map_in: The map to search for derived keys of ``hdkey`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param hdkey: The BIP32 parent key to derive matches from.
+ * :param output: Destination for the resulting derived key, if any.
+ *
+ * .. note:: This function searches for keys in the map that are children
+ *|    of ``hdkey``. If one is found, the resulting privately derived key
+ *|    is returned. If no key is found, ``*output`` is set to ``NULL`` and
+ *|    WALLY_OK is returned.
+ */
+WALLY_CORE_API int wally_map_keypath_get_bip32_key_from_alloc(
+    const struct wally_map *map_in,
+    size_t index,
+    const struct ext_key *hdkey,
+    struct ext_key **output);
+
 #ifndef SWIG
 /**
  * Verify a PSBT keypath keyed by a serialized bip32 extended public key.

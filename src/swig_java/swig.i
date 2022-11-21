@@ -525,14 +525,16 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_map_find_from);
 %returns_size_t(wally_map_find_bip32_public_key_from);
 %returns_size_t(wally_map_find_integer);
-%returns_void__(wally_map_free)
+%returns_void__(wally_map_free);
+%returns_struct(wally_map_keypath_get_bip32_key_from_alloc, ext_key);
+%rename("map_keypath_get_bip32_key_from") wally_map_keypath_get_bip32_key_from_alloc;
 %returns_size_t(wally_map_get_item_integer_key);
 %returns_size_t(wally_map_get_item_key);
 %returns_size_t(wally_map_get_item_key_length);
 %returns_size_t(wally_map_get_item_length);
 %returns_size_t(wally_map_get_item);
 %returns_size_t(wally_map_get_num_items);
-%returns_void__(wally_map_hash_preimage_verify)
+%returns_void__(wally_map_hash_preimage_verify);
 %returns_void__(wally_map_keypath_add);
 %returns_struct(wally_map_keypath_bip32_init_alloc, wally_map);
 %rename("map_keypath_bip32_init") wally_map_keypath_bip32_init_alloc;
@@ -605,7 +607,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_psbt_find_output_keypath);
 %returns_size_t(wally_psbt_find_output_unknown);
 %returns_size_t(wally_psbt_find_global_scalar);
-%returns_void__(wally_psbt_free)
+%returns_void__(wally_psbt_free);
 %returns_struct(wally_psbt_from_base64, wally_psbt);
 %returns_struct(wally_psbt_from_bytes, wally_psbt);
 %returns_void__(wally_psbt_generate_input_explicit_proofs);
@@ -720,7 +722,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_psbt_get_output_witness_script);
 %returns_size_t(wally_psbt_get_output_witness_script_len);
 %returns_size_t(wally_psbt_get_tx_modifiable_flags);
-%returns_size_t(wally_psbt_get_tx_version)
+%returns_size_t(wally_psbt_get_tx_version);
 %returns_size_t(wally_psbt_get_version);
 %returns_size_t(wally_psbt_has_fallback_locktime);
 %returns_size_t(wally_psbt_has_input_required_lockheight);
@@ -1046,7 +1048,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_void__(wally_ae_verify);
 
 %rename("_cleanup") wally_cleanup;
-%returns_void__(_cleanup)
+%returns_void__(_cleanup);
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"

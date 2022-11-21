@@ -780,6 +780,12 @@ inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map*
     return ret;
 }
 
+template <class MAP_IN, class HDKEY>
+inline int map_keypath_get_bip32_key_from_alloc(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, struct ext_key** output) {
+    int ret = ::wally_map_keypath_get_bip32_key_from_alloc(detail::get_p(map_in), index, detail::get_p(hdkey), output);
+    return ret;
+}
+
 template <class MAP_IN, class BYTES_OUT>
 inline int map_keypath_get_item_fingerprint(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out) {
     int ret = ::wally_map_keypath_get_item_fingerprint(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size());

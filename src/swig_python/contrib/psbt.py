@@ -202,7 +202,7 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), len(blinded_asset))
             self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), blinded_asset)
 
-    def check_keypath(self, keypaths, pubkey, fingerprint, path):
+    def check_keypath(self, keypaths, master, derived, pubkey, fingerprint, path):
         """Check keypath helper functions"""
         # The pubkey should be the first and only element
         self.assertEqual(map_get_num_items(keypaths), 1)
@@ -217,6 +217,11 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(fingerprint, fp_out)
         self.assertEqual(map_keypath_get_item_path_len(keypaths, 0), len(path))
         self.assertEqual(map_keypath_get_item_path(keypaths, 0), path)
+        # Test deriving a matching key from the map
+        key = map_keypath_get_bip32_key_from(keypaths, 0, derived)
+        self.assertEqual(key, None) # No key in the map derived from 'derived'
+        key = map_keypath_get_bip32_key_from(keypaths, 0, master)
+        self.assertEqual(bip32_key_serialize(key, 0), bip32_key_serialize(derived, 0))
 
     def check_txout(self, lhs, rhs):
         self.assertEqual(tx_output_get_satoshi(lhs), tx_output_get_satoshi(rhs))
@@ -314,11 +319,14 @@ class PSBTTests(unittest.TestCase):
         dummy_witness = tx_witness_stack_init(5)
         self.assertIsNotNone(dummy_witness)
 
+        seed = hex_to_bytes('000102030405060708090a0b0c0d0e0f')
+        master = bip32_key_from_seed(seed, BIP32_VER_MAIN_PRIVATE, 0)
+        dummy_path = [1234, 1234, 1234]
+        derived = bip32_key_from_parent_path(master, dummy_path, BIP32_FLAG_KEY_PRIVATE)
         dummy_bytes = bytearray(b'\x00' * 32)
         dummy_txid = bytearray(b'\x33' * 32)
-        dummy_pubkey = hex_to_bytes('038575eb35e18fb168a913d8b49af50204f4f73627f6f7884f1be11e354664de8b')
-        dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
-        dummy_path = [1234, 1234, 1234]
+        dummy_pubkey = bip32_key_get_pub_key(derived)
+        dummy_fingerprint = bip32_key_get_fingerprint(master)
         dummy_sig = SIG_BYTES + bytearray(b'\x01')      # SIGHASH_ALL
         dummy_sig_0 = SIG_BYTES + bytearray(b'\x00')    # Invalid sighash 0
         dummy_sig_none = SIG_BYTES + bytearray(b'\x02') # SIGHASH_NONE
@@ -336,7 +344,8 @@ class PSBTTests(unittest.TestCase):
         dummy_keypaths = map_keypath_public_key_init(1)
         self.assertIsNotNone(dummy_keypaths)
         map_keypath_add(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
-        self.check_keypath(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
+        self.check_keypath(dummy_keypaths, master, derived,
+                           dummy_pubkey, dummy_fingerprint, dummy_path)
 
         empty_signatures = map_init(0, None)
         dummy_signatures = map_init(0, None) # TODO: pubkey to sig map init

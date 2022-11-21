@@ -409,6 +409,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
 %rename("map_init") wally_map_init_alloc;
 %rename("map_keypath_bip32_init") wally_map_keypath_bip32_init_alloc;
+%rename("map_keypath_get_bip32_key_from") wally_map_keypath_get_bip32_key_from_alloc;
 %rename("map_keypath_public_key_init") wally_map_keypath_public_key_init_alloc;
 %rename("%(regex:/^wally_(.+)/\\1/)s", %$isfunction) "";
 
