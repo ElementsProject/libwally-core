@@ -151,7 +151,10 @@ export const USER_PROVIDED_LEN = types.USER_PROVIDED_LEN = {}
 // Note that the retry mechanism described in the link above is not implemented. Instead, the
 // exact (or maximum) size is figured out in advance, and an error is raised if its insufficient.
 types.DestPtrVarLen = (type, size_source, size_is_upper_bound = false) => ({
-    no_user_args: true,
+
+    // Consumes no user-provided JS arguments, unless USER_PROVIDED_LEN is used
+    no_user_args: size_source != USER_PROVIDED_LEN,
+
     // the destination ptr, its size, and the destination ptr for number of bytes written/expected
     wasm_types: ['number', 'number', 'number'],
 
