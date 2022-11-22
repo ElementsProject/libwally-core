@@ -922,8 +922,8 @@ inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* source) {
 }
 
 template <class PSBT>
-inline int psbt_extract(const PSBT& psbt, struct wally_tx** output) {
-    int ret = ::wally_psbt_extract(detail::get_p(psbt), output);
+inline int psbt_extract(const PSBT& psbt, uint32_t flags, struct wally_tx** output) {
+    int ret = ::wally_psbt_extract(detail::get_p(psbt), flags, output);
     return ret;
 }
 

@@ -214,6 +214,10 @@ _original_psbt_from_base64 = psbt_from_base64
 def psbt_from_base64(base64, flags=0):
     return _original_psbt_from_base64(base64, flags)
 
+_original_psbt_extract = psbt_extract
+def psbt_extract(psbt, flags=0):
+    return _original_psbt_extract(psbt, flags)
+
 psbt_get_id = _wrap_bin(psbt_get_id, WALLY_TXHASH_LEN)
 
 psbt_get_input_redeem_script = _wrap_bin(psbt_get_input_redeem_script, psbt_get_input_redeem_script_len, resize=True)

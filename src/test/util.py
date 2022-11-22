@@ -384,7 +384,7 @@ for f in (
     ('wally_psbt_clear_fallback_locktime', c_int, [POINTER(wally_psbt)]),
     ('wally_psbt_clone_alloc', c_int, [POINTER(wally_psbt), c_uint32, POINTER(POINTER(wally_psbt))]),
     ('wally_psbt_combine', c_int, [POINTER(wally_psbt), POINTER(wally_psbt)]),
-    ('wally_psbt_extract', c_int, [POINTER(wally_psbt), POINTER(POINTER(wally_tx))]),
+    ('wally_psbt_extract', c_int, [POINTER(wally_psbt), c_uint32, POINTER(POINTER(wally_tx))]),
     ('wally_psbt_finalize', c_int, [POINTER(wally_psbt)]),
     ('wally_psbt_find_global_scalar', c_int, [POINTER(wally_psbt), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_free', c_int, [POINTER(wally_psbt)]),

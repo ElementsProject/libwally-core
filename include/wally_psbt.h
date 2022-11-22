@@ -32,6 +32,8 @@ extern "C" {
 
 #define WALLY_PSBT_PARSE_FLAG_STRICT 0x1 /* Parse strictly according to the PSBT/PSET spec */
 
+#define WALLY_PSBT_EXTRACT_NON_FINAL 0x1 /* Extract without final scriptsig and witness */
+
 /* ID flags indicating unique id calculation */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
 #define WALLY_PSBT_ID_USE_LOCKTIME 0x2 /* Do not set locktime to 0 before calculating id */
@@ -2212,10 +2214,12 @@ WALLY_CORE_API int wally_psbt_finalize(
  * Extract a network transaction from a finalized PSBT.
  *
  * :param psbt: PSBT to extract from.
+ * :param flags: Flags controlling signing. Must be 0 or WALLY_PSBT_EXTRACT_NON_FINAL.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_psbt_extract(
     const struct wally_psbt *psbt,
+    uint32_t flags,
     struct wally_tx **output);
 
 /**

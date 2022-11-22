@@ -4277,22 +4277,23 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
     return WALLY_OK;
 }
 
-int wally_psbt_extract(const struct wally_psbt *psbt, struct wally_tx **output)
+int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wally_tx **output)
 {
     struct wally_tx *result;
     size_t i;
-    bool is_pset;
+    bool is_pset, for_final = !(flags & WALLY_PSBT_EXTRACT_NON_FINAL);
     int ret;
 
     OUTPUT_CHECK;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)))
+    if (!psbt || (psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)) ||
+        flags & ~WALLY_PSBT_EXTRACT_NON_FINAL)
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &result, &is_pset, false)) != WALLY_OK)
         return ret;
 
-    for (i = 0; i < psbt->num_inputs; ++i) {
+    for (i = 0; for_final && i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = &psbt->inputs[i];
         struct wally_tx_input *tx_input = &result->inputs[i];
         const struct wally_map_item *final_scriptsig;

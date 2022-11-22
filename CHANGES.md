@@ -1,5 +1,9 @@
 # Changes
 
+## Version 0.8.7
+- psbt_extract now takes an extra flags parameter. The Java and Python
+  wrappers default this to zero for backwards compatibility.
+
 ## Version 0.8.6
 - Support for PSET v0 (Elements) has been removed.
 - PSBT: PSBT/PSET v2 support has been added. The ABI has changed slightly as a result.
