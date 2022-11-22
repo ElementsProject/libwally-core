@@ -549,6 +549,7 @@ export const psbt_set_tx_version = wrap('wally_psbt_set_tx_version', [T.OpaqueRe
 export const psbt_set_version = wrap('wally_psbt_set_version', [T.OpaqueRef, T.Int32, T.Int32]);
 export const psbt_sign = wrap('wally_psbt_sign', [T.OpaqueRef, T.Bytes, T.Int32]);
 export const psbt_sign_bip32 = wrap('wally_psbt_sign_bip32', [T.OpaqueRef, T.OpaqueRef, T.Int32]);
+export const psbt_sign_input_bip32 = wrap('wally_psbt_sign_input_bip32', [T.OpaqueRef, T.Int32, T.Int32, T.Bytes, T.OpaqueRef, T.Int32]);
 export const psbt_to_base64 = wrap('wally_psbt_to_base64', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.String)]);
 export const ripemd160 = wrap('wally_ripemd160', [T.Bytes, T.DestPtrSized(T.Bytes, C.RIPEMD160_LEN)]);
 export const s2c_commitment_verify = wrap('wally_s2c_commitment_verify', [T.Bytes, T.Bytes, T.Bytes, T.Int32]);

@@ -2289,6 +2289,26 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
     uint32_t flags);
 
 /**
+ * Sign a single PSBT input with a given BIP32 key.
+ *
+ * :param psbt: PSBT containing the input to sign. Directly modifies this PSBT.
+ * :param index: The zero-based index of the input in the PSBT.
+ * :param subindex: The zero-based index of the keypath to start searching from.
+ * :param txhash: The signature hash to sign, from `wally_psbt_get_input_signature_hash`.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param hdkey: The derived extended key to sign with.
+ * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
+ */
+WALLY_CORE_API int wally_psbt_sign_input_bip32(
+    struct wally_psbt *psbt,
+    size_t index,
+    size_t subindex,
+    const unsigned char *txhash,
+    size_t txhash_len,
+    const struct ext_key *hdkey,
+    uint32_t flags);
+
+/**
  * Finalize a PSBT.
  *
  * :param psbt: PSBT to finalize. Directly modifies this PSBT.

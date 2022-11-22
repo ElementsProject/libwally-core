@@ -1292,6 +1292,12 @@ inline int psbt_sign_bip32(const PSBT& psbt, const HDKEY& hdkey, uint32_t flags)
     return ret;
 }
 
+template <class PSBT, class TXHASH, class HDKEY>
+inline int psbt_sign_input_bip32(const PSBT& psbt, size_t index, size_t subindex, const TXHASH& txhash, const HDKEY& hdkey, uint32_t flags) {
+    int ret = ::wally_psbt_sign_input_bip32(detail::get_p(psbt), index, subindex, txhash.data(), txhash.size(), detail::get_p(hdkey), flags);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_to_base64(const PSBT& psbt, uint32_t flags, char** output) {
     int ret = ::wally_psbt_to_base64(detail::get_p(psbt), flags, output);

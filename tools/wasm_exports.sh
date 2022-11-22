@@ -299,6 +299,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_set_version' \
 ,'_wally_psbt_sign' \
 ,'_wally_psbt_sign_bip32' \
+,'_wally_psbt_sign_input_bip32' \
 ,'_wally_psbt_to_base64' \
 ,'_wally_psbt_to_bytes' \
 ,'_wally_ripemd160' \
