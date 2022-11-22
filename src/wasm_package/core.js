@@ -67,6 +67,8 @@ types.IntArray = (IntArrayType, heap) => ({
     },
 
     free_ptr: ptr => Module._free(ptr),
+
+    init_empty: _ => new IntArrayType,
 })
 
 types.Bytes = types.IntArray(Uint8Array, Module.HEAPU8)
@@ -160,7 +162,16 @@ types.DestPtrVarLen = (type, size_source, size_is_upper_bound = false) => ({
 
     to_wasm: (this_arg, all_args) => {
         const array_size = getArraySize(size_source, this_arg, all_args)
-            , dest_ptr = type.malloc_sized(array_size)
+
+        if (array_size == 0) {
+            return {
+                // We don't have to perform the call, as we already know its going to return an empty buffer.
+                known_return: true,
+                return: _ => type.init_empty(),
+            }
+        }
+
+        const dest_ptr = type.malloc_sized(array_size)
             , written_ptr = Module._malloc(4)
 
         return {
@@ -255,6 +266,8 @@ export function wrap(func_name, args_types) {
             , returns = []
             , cleanups = []
 
+        let has_unknown_returns = null
+
         try {
             // Each arg type consumes 0 or 1 user-provided JS arguments, and expands into 1 or more C/WASM arguments
             for (const arg_type of args_types) {
@@ -263,15 +276,23 @@ export function wrap(func_name, args_types) {
 
                 const as_wasm = arg_type.to_wasm(this_arg, all_args)
 
-                wasm_args.push(...as_wasm.args)
+                if (as_wasm.args) wasm_args.push(...as_wasm.args)
                 if (as_wasm.return) returns.push(as_wasm.return)
                 if (as_wasm.cleanup) cleanups.push(as_wasm.cleanup)
+
+                if (as_wasm.return) {
+                    has_unknown_returns = has_unknown_returns || !as_wasm.known_return
+                }
             }
 
-            const code = wasm_fn(...wasm_args)
+            // Skip the call if all of the return values are already known (can be the case with optional
+            // varlen buffers that are reported to be empty by the associated length function)
+            if (has_unknown_returns !== false) { // this may be `null`, strict !== is necessary
+                const code = wasm_fn(...wasm_args)
 
-            if (code !== WALLY_OK) {
-                throw new WallyError(code)
+                if (code !== WALLY_OK) {
+                    throw new WallyError(code)
+                }
             }
 
             const results = returns.map(return_fn => return_fn())
