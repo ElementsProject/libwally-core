@@ -691,6 +691,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_psbt_get_input_sequence);
 %returns_size_t(wally_psbt_get_input_signatures_size);
 %returns_size_t(wally_psbt_get_input_signature);
+%returns_size_t(wally_psbt_get_input_signature_hash);
 %returns_size_t(wally_psbt_get_input_signature_len);
 %returns_size_t(wally_psbt_get_input_sighash);
 %returns_size_t(wally_psbt_get_input_unknown);

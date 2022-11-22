@@ -2079,6 +2079,26 @@ WALLY_CORE_API int wally_psbt_get_input_scriptcode(
     size_t *written);
 
 /**
+ * Create a BTC transaction for signing a PSBT input and return its hash.
+ *
+ * :param psbt: The PSBT containing the input to compute a signing hash for.
+ * :param index: The zero-based index of the PSBT input to sign.
+ * :param tx: The transaction to generate the signature hash from.
+ * :param script: The (unprefixed) scriptCode for the input being signed.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param bytes_out: Destination for the signature hash.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ */
+WALLY_CORE_API int wally_psbt_get_input_signature_hash(
+    struct wally_psbt *psbt,
+    size_t index,
+    const struct wally_tx *tx,
+    const unsigned char *script,
+    size_t script_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Add a transaction output to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the output to.

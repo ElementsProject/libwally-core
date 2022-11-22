@@ -195,6 +195,7 @@ psbt_init = psbt_init_alloc
 psbt_get_id = _wrap_bin(psbt_get_id, WALLY_TXHASH_LEN)
 psbt_get_input_bip32_key_from = psbt_get_input_bip32_key_from_alloc
 psbt_get_input_scriptcode = _wrap_bin(psbt_get_input_scriptcode, psbt_get_input_scriptcode_len)
+psbt_get_input_signature_hash = _wrap_bin(psbt_get_input_signature_hash, SHA256_LEN)
 psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length)
 psbt_clone = psbt_clone_alloc
 psbt_blind = psbt_blind_alloc

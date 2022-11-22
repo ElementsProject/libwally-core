@@ -986,6 +986,12 @@ inline int psbt_get_input_scriptcode_len(const PSBT& psbt, size_t index, size_t*
     return ret;
 }
 
+template <class PSBT, class TX, class SCRIPT, class BYTES_OUT>
+inline int psbt_get_input_signature_hash(const PSBT& psbt, size_t index, const TX& tx, const SCRIPT& script, BYTES_OUT& bytes_out) {
+    int ret = ::wally_psbt_get_input_signature_hash(detail::get_p(psbt), index, detail::get_p(tx), script.data(), script.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
     int ret = ::wally_psbt_get_length(detail::get_p(psbt), flags, written);

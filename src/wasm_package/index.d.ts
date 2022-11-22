@@ -276,6 +276,7 @@ export function psbt_get_input_required_locktime(psbt: Ref_wally_psbt, index: nu
 export function psbt_get_input_scriptcode_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_sequence(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_sighash(psbt: Ref_wally_psbt, index: number): number;
+export function psbt_get_input_signature_hash(psbt: Ref_wally_psbt, index: number, tx: Ref_wally_tx, script: Buffer|Uint8Array): Buffer;
 export function psbt_get_input_signature_len(psbt: Ref_wally_psbt, index: number, subindex: number): number;
 export function psbt_get_input_signatures_size(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_unknown_len(psbt: Ref_wally_psbt, index: number, subindex: number): number;
