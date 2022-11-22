@@ -484,31 +484,39 @@ class PSBTTests(unittest.TestCase):
         #
         # Inputs: PSBT V2
         #
+        global_tx = psbt_get_global_tx(psbt)
+
         # V2: Previous txid
         self._throws(psbt_set_input_previous_txid, psbt, 0, dummy_txid) # Non v2 PSBT
         self._throws(psbt_set_input_previous_txid, psbt2, 0, dummy_sig)  # Bad Length
-        self._throws(psbt_get_input_previous_txid, psbt, 0)              # Non v2 PSBT
         self._try_get_set_b(psbt_set_input_previous_txid,
                             psbt_get_input_previous_txid,
                             None, psbt2, dummy_txid, mandatory=True)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        txid = tx_get_input_txhash(global_tx, 0)
+        self.assertEqual(psbt_get_input_previous_txid(psbt, 0), txid)
 
         # V2: Output Index
         self._throws(psbt_set_input_output_index, psbt, 0, 1234) # Non v2 PSBT
-        self._throws(psbt_get_input_output_index, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_input_output_index,
                             None,
                             psbt_get_input_output_index, psbt2, 1234)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        out_idx = tx_get_input_index(global_tx, 0)
+        self.assertEqual(psbt_get_input_output_index(psbt, 0), out_idx)
 
         # V2: Sequence
         self._throws(psbt_set_input_sequence, psbt, 0, 1234) # Non v2 PSBT
         self._throws(psbt_clear_input_sequence, psbt, 0)     # Non v2 PSBT
-        self._throws(psbt_get_input_sequence, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_input_sequence,
                             psbt_clear_input_sequence,
                             psbt_get_input_sequence, psbt2, 1234)
         # If no sequence is present, it defaults to final (0xffffffff)
         psbt_clear_input_sequence(psbt2, 0)
         self.assertEqual(psbt_get_input_sequence(psbt2, 0), 0xffffffff)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        seq = tx_get_input_sequence(global_tx, 0)
+        self.assertEqual(psbt_get_input_sequence(psbt, 0), seq)
 
         # V2: Required Lock Height/Time
         heightfns = (psbt_get_input_required_lockheight, psbt_set_input_required_lockheight,

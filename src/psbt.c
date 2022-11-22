@@ -108,6 +108,22 @@ static bool utxo_has_explicit_asset(const struct wally_tx_output *utxo)
 }
 #endif /* BUILD_ELEMENTS */
 
+static struct wally_psbt_input *psbt_get_input(const struct wally_psbt *psbt, size_t index)
+{
+    if (!psbt || index >= psbt->num_inputs ||
+        (psbt->version == PSBT_0 && (!psbt->tx || index >= psbt->tx->num_inputs)))
+        return NULL;
+    return &psbt->inputs[index];
+ }
+
+static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, size_t index)
+{
+    if (!psbt || index >= psbt->num_outputs ||
+        (psbt->version == PSBT_0 && (!psbt->tx || index >= psbt->tx->num_outputs)))
+        return NULL;
+    return &psbt->outputs[index];
+}
+
 static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *psbt,
                                                      const struct wally_psbt_input *input)
 {
@@ -4667,16 +4683,6 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
     return WALLY_OK;
 }
 
-static struct wally_psbt_input *psbt_get_input(const struct wally_psbt *psbt, size_t index)
-{
-    return psbt && index < psbt->num_inputs ? &psbt->inputs[index] : NULL;
-}
-
-static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, size_t index)
-{
-    return psbt && index < psbt->num_outputs ? &psbt->outputs[index] : NULL;
-}
-
 /* Getters for maps in inputs/outputs */
 #define PSBT_GET_K(typ, name) \
     int wally_psbt_get_ ## typ ## _ ## name ## s_size(const struct wally_psbt *psbt, size_t index, \
@@ -4836,9 +4842,11 @@ int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t ind
                                        unsigned char *bytes_out, size_t len)
 {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
-    if (!p || psbt->version != PSBT_2) return WALLY_EINVAL;
-    if (len >= WALLY_TXHASH_LEN)
-        memcpy(bytes_out, p->txhash, WALLY_TXHASH_LEN);
+    const unsigned char *txid;
+    if (!p || !bytes_out || len != WALLY_TXHASH_LEN)
+        return WALLY_EINVAL;
+    txid = psbt->version == PSBT_0 ? psbt->tx->inputs[index].txhash : p->txhash;
+    memcpy(bytes_out, txid, WALLY_TXHASH_LEN);
     return WALLY_OK;
 }
 
@@ -4846,13 +4854,26 @@ int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t inde
                                       size_t *written)
 {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
-    if (written) *written = 0;
-    if (!p || psbt->version != PSBT_2) return WALLY_EINVAL;
-    *written = p->index;
+    if (written)
+        *written = 0;
+    if (!p || !written)
+        return WALLY_EINVAL;
+    *written = psbt->version == PSBT_0 ? psbt->tx->inputs[index].index : p->index;
     return WALLY_OK;
 }
 
-PSBT_GET_I(input, sequence, size_t, PSBT_2)
+int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index,
+                                  size_t *written)
+{
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    if (written)
+        *written = 0;
+    if (!p || !written)
+        return WALLY_EINVAL;
+    *written = psbt->version == PSBT_0 ? psbt->tx->inputs[index].sequence : p->sequence;
+    return WALLY_OK;
+}
+
 int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written) {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written) *written = 0;
