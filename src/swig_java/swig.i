@@ -632,9 +632,9 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_psbt_get_pset_modifiable_flags);
 %returns_struct(wally_psbt_get_global_tx_alloc, wally_tx);
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
-%returns_array_(wally_psbt_get_id, 3, 4, WALLY_TXHASH_LEN);
 %returns_array_(wally_psbt_get_global_scalar, 3, 4, WALLY_SCALAR_OFFSET_LEN);
 %returns_size_t(wally_psbt_get_global_scalars_size);
+%returns_array_(wally_psbt_get_id, 3, 4, WALLY_TXHASH_LEN);
 %returns_uint64(wally_psbt_get_input_amount);
 %returns_size_t(wally_psbt_get_input_amount_rangeproof);
 %returns_size_t(wally_psbt_get_input_amount_rangeproof_len);
@@ -644,6 +644,8 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_psbt_get_input_asset_surjectionproof_len);
 %returns_struct(wally_psbt_get_input_best_utxo_alloc, wally_tx_output);
 %rename("psbt_get_input_best_utxo") wally_psbt_get_input_best_utxo_alloc;
+%returns_struct(wally_psbt_get_input_bip32_key_from_alloc, ext_key);
+%rename("psbt_get_input_bip32_key_from") wally_psbt_get_input_bip32_key_from_alloc;
 %returns_size_t(wally_psbt_get_input_redeem_script);
 %returns_size_t(wally_psbt_get_input_redeem_script_len);
 %returns_size_t(wally_psbt_get_input_issuance_asset_entropy);

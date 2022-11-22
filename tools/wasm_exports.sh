@@ -178,6 +178,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_get_global_tx_alloc' \
 ,'_wally_psbt_get_id' \
 ,'_wally_psbt_get_input_best_utxo_alloc' \
+,'_wally_psbt_get_input_bip32_key_from_alloc' \
 ,'_wally_psbt_get_input_final_scriptsig' \
 ,'_wally_psbt_get_input_final_scriptsig_len' \
 ,'_wally_psbt_get_input_final_witness_alloc' \

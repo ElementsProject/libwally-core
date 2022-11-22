@@ -2031,6 +2031,26 @@ WALLY_CORE_API int wally_psbt_remove_input(
     uint32_t index);
 
 /**
+ * Return a BIP32 derived key matching a keypath in a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input whose keypaths to search.
+ * :param index: The zero-based index of the input in the PSBT.
+ * :param subindex: The zero-based index of the keypath to start searching from.
+ * :param flags: Flags controlling the keypath search. Must be 0.
+ * :param hdkey: The BIP32 parent key to derive matches from.
+ * :param output: Destination for the resulting derived key, if any.
+ *
+ * .. note:: See `wally_map_keypath_get_bip32_key_from_alloc`.
+ */
+WALLY_CORE_API int wally_psbt_get_input_bip32_key_from_alloc(
+    const struct wally_psbt *psbt,
+    size_t index,
+    size_t subindex,
+    uint32_t flags,
+    const struct ext_key *hdkey,
+    struct ext_key **output);
+
+/**
  * Add a transaction output to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the output to.

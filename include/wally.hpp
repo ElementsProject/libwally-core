@@ -967,6 +967,12 @@ inline int psbt_get_id(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out) {
     return ret;
 }
 
+template <class PSBT, class HDKEY>
+inline int psbt_get_input_bip32_key_from_alloc(const PSBT& psbt, size_t index, size_t subindex, uint32_t flags, const HDKEY& hdkey, struct ext_key** output) {
+    int ret = ::wally_psbt_get_input_bip32_key_from_alloc(detail::get_p(psbt), index, subindex, flags, detail::get_p(hdkey), output);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
     int ret = ::wally_psbt_get_length(detail::get_p(psbt), flags, written);

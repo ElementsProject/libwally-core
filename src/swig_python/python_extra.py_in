@@ -193,6 +193,7 @@ witness_program_from_bytes = _wrap_bin(witness_program_from_bytes, WALLY_WITNESS
 witness_program_from_bytes_and_version = _wrap_bin(witness_program_from_bytes_and_version, WALLY_WITNESSSCRIPT_MAX_LEN, resize=True)
 psbt_init = psbt_init_alloc
 psbt_get_id = _wrap_bin(psbt_get_id, WALLY_TXHASH_LEN)
+psbt_get_input_bip32_key_from = psbt_get_input_bip32_key_from_alloc
 psbt_to_bytes = _wrap_bin(psbt_to_bytes, psbt_get_length)
 psbt_clone = psbt_clone_alloc
 psbt_blind = psbt_blind_alloc
