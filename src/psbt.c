@@ -3869,10 +3869,14 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
         *script = utxo->script;
         *script_len = utxo->script_len;
     }
+    if (BYTES_INVALID(*script, *script_len)) {
+        *script = NULL;
+        *script_len = 0;
+        return WALLY_EINVAL;
+    }
     return WALLY_OK;
 }
 
-/* FIXME: Expose these */
 int wally_psbt_get_input_scriptcode_len(const struct wally_psbt *psbt,
                                         size_t index, size_t *written)
 {

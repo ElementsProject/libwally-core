@@ -191,6 +191,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_get_input_redeem_script_len' \
 ,'_wally_psbt_get_input_required_lockheight' \
 ,'_wally_psbt_get_input_required_locktime' \
+,'_wally_psbt_get_input_scriptcode' \
+,'_wally_psbt_get_input_scriptcode_len' \
 ,'_wally_psbt_get_input_sequence' \
 ,'_wally_psbt_get_input_sighash' \
 ,'_wally_psbt_get_input_signature' \

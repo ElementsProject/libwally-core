@@ -396,6 +396,8 @@ for f in (
     ('wally_psbt_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, POINTER(POINTER(wally_psbt))]),
     ('wally_psbt_get_id', c_int, [POINTER(wally_psbt), c_uint32, c_void_p, c_size_t]),
     ('wally_psbt_get_input_bip32_key_from_alloc', c_int, [POINTER(wally_psbt), c_size_t, c_size_t, c_uint32, POINTER(ext_key), POINTER(POINTER(ext_key))]),
+    ('wally_psbt_get_input_scriptcode', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_psbt_get_input_scriptcode_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_length', c_int, [POINTER(wally_psbt), c_uint32, c_size_t_p]),
     ('wally_psbt_get_locktime', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_get_tx_version', c_int, [POINTER(wally_psbt), c_size_t_p]),

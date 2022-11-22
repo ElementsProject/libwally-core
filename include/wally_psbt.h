@@ -2051,6 +2051,34 @@ WALLY_CORE_API int wally_psbt_get_input_bip32_key_from_alloc(
     struct ext_key **output);
 
 /**
+ * Get the length of the scriptpubkey or redeemscript from a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script length from.
+ * :param written: Destination for the length, or zero if not present.
+ */
+WALLY_CORE_API int wally_psbt_get_input_scriptcode_len(
+    const struct wally_psbt *psbt,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get the scriptpubkey or redeemscript from a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script from.
+ * :param bytes_out: Destination for the scriptpubkey or redeemscript.
+ * :param len: Length of ``bytes`` in bytes.
+ * :param written: Destination for the number of bytes written to bytes_out.
+ */
+WALLY_CORE_API int wally_psbt_get_input_scriptcode(
+    const struct wally_psbt *psbt,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
  * Add a transaction output to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the output to.
@@ -2105,7 +2133,7 @@ WALLY_CORE_API int wally_psbt_get_length(
  *
  * :param psbt: the PSBT to serialize.
  * :param flags: Flags controlling serialization. Must be 0.
- * :param bytes_out: Bytes to create the transaction from.
+ * :param bytes_out: Destination for the serialized PSBT.
  * :param len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
  * :param written: number of bytes written to bytes_out.
  */

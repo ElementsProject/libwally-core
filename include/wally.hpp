@@ -973,6 +973,19 @@ inline int psbt_get_input_bip32_key_from_alloc(const PSBT& psbt, size_t index, s
     return ret;
 }
 
+template <class PSBT, class BYTES_OUT>
+inline int psbt_get_input_scriptcode(const PSBT& psbt, size_t index, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_get_input_scriptcode(detail::get_p(psbt), index, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class PSBT>
+inline int psbt_get_input_scriptcode_len(const PSBT& psbt, size_t index, size_t* written) {
+    int ret = ::wally_psbt_get_input_scriptcode_len(detail::get_p(psbt), index, written);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
     int ret = ::wally_psbt_get_length(detail::get_p(psbt), flags, written);
