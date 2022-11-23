@@ -273,12 +273,13 @@ export function psbt_get_input_previous_txid(psbt: Ref_wally_psbt, index: number
 export function psbt_get_input_redeem_script_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_required_lockheight(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_required_locktime(psbt: Ref_wally_psbt, index: number): number;
-export function psbt_get_input_scriptcode_len(psbt: Ref_wally_psbt, index: number): number;
+export function psbt_get_input_scriptcode_len(psbt: Ref_wally_psbt, index: number, script: Buffer|Uint8Array): number;
 export function psbt_get_input_sequence(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_sighash(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_signature_hash(psbt: Ref_wally_psbt, index: number, tx: Ref_wally_tx, script: Buffer|Uint8Array): Buffer;
 export function psbt_get_input_signature_len(psbt: Ref_wally_psbt, index: number, subindex: number): number;
 export function psbt_get_input_signatures_size(psbt: Ref_wally_psbt, index: number): number;
+export function psbt_get_input_signing_script_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_unknown_len(psbt: Ref_wally_psbt, index: number, subindex: number): number;
 export function psbt_get_input_unknowns_size(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_utxo(psbt: Ref_wally_psbt, index: number): Ref_wally_tx;
@@ -700,8 +701,9 @@ export function psbt_get_input_pegin_claim_script(psbt: Ref_wally_psbt, index: n
 export function psbt_get_input_pegin_genesis_blockhash(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_input_pegin_txout_proof(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_input_redeem_script(psbt: Ref_wally_psbt, index: number): Buffer;
-export function psbt_get_input_scriptcode(psbt: Ref_wally_psbt, index: number): Buffer;
+export function psbt_get_input_scriptcode(psbt: Ref_wally_psbt, index: number, script: Buffer|Uint8Array): Buffer;
 export function psbt_get_input_signature(psbt: Ref_wally_psbt, index: number, subindex: number): Buffer;
+export function psbt_get_input_signing_script(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_input_unknown(psbt: Ref_wally_psbt, index: number, subindex: number): Buffer;
 export function psbt_get_input_utxo_rangeproof(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_input_witness_script(psbt: Ref_wally_psbt, index: number): Buffer;

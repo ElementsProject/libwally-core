@@ -2051,29 +2051,65 @@ WALLY_CORE_API int wally_psbt_get_input_bip32_key_from_alloc(
     struct ext_key **output);
 
 /**
- * Get the length of the scriptpubkey or redeemscript from a PSBT input.
+ * Get the length of the scriptPubKey or redeem script from a PSBT input.
  *
  * :param psbt: The PSBT containing the input to get from.
  * :param index: The zero-based index of the input to get the script length from.
- * :param written: Destination for the length, or zero if not present.
+ * :param written: Destination for the length of the script.
  */
-WALLY_CORE_API int wally_psbt_get_input_scriptcode_len(
+WALLY_CORE_API int wally_psbt_get_input_signing_script_len(
     const struct wally_psbt *psbt,
     size_t index,
     size_t *written);
 
 /**
- * Get the scriptpubkey or redeemscript from a PSBT input.
+ * Get the scriptPubKey or redeem script from a PSBT input.
  *
  * :param psbt: The PSBT containing the input to get from.
  * :param index: The zero-based index of the input to get the script from.
- * :param bytes_out: Destination for the scriptpubkey or redeemscript.
+ * :param bytes_out: Destination for the scriptPubKey or redeem script.
+ * :param len: Length of ``bytes`` in bytes.
+ * :param written: Destination for the number of bytes written to bytes_out.
+ */
+WALLY_CORE_API int wally_psbt_get_input_signing_script(
+    const struct wally_psbt *psbt,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the scriptCode for signing a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script from.
+ * :param script: scriptPubKey/redeem script from `wally_psbt_get_input_signing_script`.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param written: Destination for the length of the scriptCode.
+ */
+WALLY_CORE_API int wally_psbt_get_input_scriptcode_len(
+    const struct wally_psbt *psbt,
+    size_t index,
+    const unsigned char *script,
+    size_t script_len,
+    size_t *written);
+
+/**
+ * Get the scriptCode for signing a PSBT input given its scriptPubKey/redeem script.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script from.
+ * :param script: scriptPubKey/redeem script from `wally_psbt_get_input_signing_script`.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param bytes_out: Destination for the scriptCode.
  * :param len: Length of ``bytes`` in bytes.
  * :param written: Destination for the number of bytes written to bytes_out.
  */
 WALLY_CORE_API int wally_psbt_get_input_scriptcode(
     const struct wally_psbt *psbt,
     size_t index,
+    const unsigned char *script,
+    size_t script_len,
     unsigned char *bytes_out,
     size_t len,
     size_t *written);

@@ -199,6 +199,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_get_input_signature_hash' \
 ,'_wally_psbt_get_input_signature_len' \
 ,'_wally_psbt_get_input_signatures_size' \
+,'_wally_psbt_get_input_signing_script' \
+,'_wally_psbt_get_input_signing_script_len' \
 ,'_wally_psbt_get_input_unknown' \
 ,'_wally_psbt_get_input_unknown_len' \
 ,'_wally_psbt_get_input_unknowns_size' \

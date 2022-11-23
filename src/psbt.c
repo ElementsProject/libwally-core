@@ -3846,8 +3846,8 @@ static bool is_matching_redeem(const unsigned char *scriptpk, size_t scriptpk_le
 }
 
 /* Get the scriptpubkey or redeem script from an input */
-static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
-                          const unsigned char **script, size_t *script_len)
+static int get_signing_script(const struct wally_psbt *psbt, size_t index,
+                              const unsigned char **script, size_t *script_len)
 {
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
@@ -3877,17 +3877,17 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
     return WALLY_OK;
 }
 
-int wally_psbt_get_input_scriptcode_len(const struct wally_psbt *psbt,
+int wally_psbt_get_input_signing_script_len(const struct wally_psbt *psbt,
                                         size_t index, size_t *written)
 {
     const unsigned char *p;
-    return written ? get_scriptcode(psbt, index, &p, written) : WALLY_EINVAL;
+    return written ? get_signing_script(psbt, index, &p, written) : WALLY_EINVAL;
 }
 
-int wally_psbt_get_input_scriptcode(const struct wally_psbt *psbt,
-                                    size_t index,
-                                    unsigned char *bytes_out, size_t len,
-                                    size_t *written)
+int wally_psbt_get_input_signing_script(const struct wally_psbt *psbt,
+                                        size_t index,
+                                        unsigned char *bytes_out, size_t len,
+                                        size_t *written)
 {
     const unsigned char *p;
     int ret;
@@ -3895,23 +3895,26 @@ int wally_psbt_get_input_scriptcode(const struct wally_psbt *psbt,
         *written = 0;
     if (!bytes_out || !len || !written)
         return WALLY_EINVAL;
-    ret = get_scriptcode(psbt, index, &p, written);
+    ret = get_signing_script(psbt, index, &p, written);
     if (ret == WALLY_OK && *written <= len)
         memcpy(bytes_out, p, *written);
     return ret;
 }
 
-static int get_signing_script(const struct wally_psbt *psbt, size_t index,
-                              unsigned char *buff, size_t buff_len, bool is_pset,
-                              const unsigned char *scriptcode, size_t scriptcode_len,
-                              const unsigned char **script, size_t *script_len)
+static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
+                          unsigned char *buff, size_t buff_len,
+                          const unsigned char *scriptcode, size_t scriptcode_len,
+                          const unsigned char **script, size_t *script_len)
 {
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     int ret;
 
-    *script = NULL;
-    *script_len = 0;
-    if (!inp || !buff || buff_len != WALLY_SCRIPTPUBKEY_P2PKH_LEN)
+    if (script)
+        *script = NULL;
+    if (script_len)
+        *script_len = 0;
+    if (!inp || !buff || buff_len != WALLY_SCRIPTPUBKEY_P2PKH_LEN ||
+        !scriptcode || !scriptcode_len || !script || !script_len)
         return WALLY_EINVAL;
 
     if (inp->witness_utxo) {
@@ -3959,8 +3962,11 @@ static int get_signing_script(const struct wally_psbt *psbt, size_t index,
     if (inp->utxo) {
         /* Non-segwit input */
         unsigned char txid[WALLY_TXHASH_LEN];
-        if (is_pset)
+        size_t is_pset;
+
+        if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK || is_pset)
             return WALLY_EINVAL; /* Elements doesn't support pre-segwit txs */
+
         ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
         if (ret != WALLY_OK || !is_matching_txid(inp->utxo, txid, sizeof(txid)))
             return WALLY_EINVAL; /* Prevout doesn't match input */
@@ -3969,6 +3975,35 @@ static int get_signing_script(const struct wally_psbt *psbt, size_t index,
         return WALLY_OK;
     }
     return WALLY_EINVAL; /* Missing prevout data in input */
+}
+
+int wally_psbt_get_input_scriptcode_len(const struct wally_psbt *psbt, size_t index,
+                                        const unsigned char *script, size_t script_len,
+                                        size_t *written)
+{
+    unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+    const unsigned char *p;
+    return get_scriptcode(psbt, index, p2pkh, sizeof(p2pkh),
+                          script, script_len, &p, written);
+}
+
+int wally_psbt_get_input_scriptcode(const struct wally_psbt *psbt, size_t index,
+                                    const unsigned char *script, size_t script_len,
+                                    unsigned char *bytes_out, size_t len,
+                                    size_t *written)
+{
+    unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+    const unsigned char *p;
+    int ret;
+    if (written)
+        *written = 0;
+    if (!bytes_out || !len || !written)
+        return WALLY_EINVAL;
+    ret = get_scriptcode(psbt, index, p2pkh, sizeof(p2pkh),
+                         script, script_len, &p, written);
+    if (ret == WALLY_OK && *written <= len)
+        memcpy(bytes_out, p, *written);
+    return ret;
 }
 
 int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
@@ -4077,8 +4112,8 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
     /* Go through each of the inputs */
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         unsigned char txhash[WALLY_TXHASH_LEN];
-        const unsigned char *scriptcode, *script;
-        size_t scriptcode_len, script_len, subindex = 0;
+        const unsigned char *script, *scriptcode;
+        size_t script_len, scriptcode_len, subindex = 0;
         struct ext_key *derived = NULL;
 
         /* Get or derive a key for signing this input.
@@ -4092,18 +4127,18 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
 
         /* Get the scriptpubkey or redeemscript */
         if (ret == WALLY_OK)
-            ret = get_scriptcode(psbt, i, &scriptcode, &scriptcode_len);
+            ret = get_signing_script(psbt, i, &script, &script_len);
 
         /* Get the actual script to sign with */
         if (ret == WALLY_OK)
-            ret = get_signing_script(psbt, i, p2pkh, sizeof(p2pkh),
-                                     is_pset, scriptcode, scriptcode_len,
-                                     &script, &script_len);
+            ret = get_scriptcode(psbt, i, p2pkh, sizeof(p2pkh),
+                                 script, script_len,
+                                 &scriptcode, &scriptcode_len);
 
         /* Get the hash to sign */
         if (ret == WALLY_OK)
             ret = wally_psbt_get_input_signature_hash(psbt, i, tx,
-                                                      script, script_len,
+                                                      scriptcode, scriptcode_len,
                                                       txhash, sizeof(txhash));
         /* Sign the input */
         if (ret == WALLY_OK)
