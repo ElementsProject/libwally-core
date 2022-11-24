@@ -10,7 +10,7 @@ const aes_len = (_key, bytes, _flags) =>
     // ECB mode with no padding - output size is always exactly the same as the input
     bytes.length
 
-const aes_cbc_len = (_key, bytes, _flags) =>
+const aes_cbc_len = (_key, iv, bytes, _flags) =>
     // CBC mode with PKCS#7 padding - output must be padded to the next block size multiply (for the pad length byte)
     (Math.floor(bytes.length/C.AES_BLOCK_LEN) + 1) * C.AES_BLOCK_LEN
 
@@ -40,9 +40,9 @@ const format_bitcoin_message_len = (msg, flags) => {
 
 const script_push_from_bytes_len = (data, flags) => {
     if (flags & C.WALLY_SCRIPT_HASH160) {
-        return HASH160_LEN + 1
+        return C.HASH160_LEN + 1
     } else if (flags & C.WALLY_SCRIPT_SHA256) {
-        return SHA256_LEN + 1
+        return C.SHA256_LEN + 1
     } else {
         let push_len = data.length, opcode_len = 5
         for (const [l, op_len] in [[76, 1], [256, 2], [65536, 3]]) {
@@ -58,16 +58,16 @@ const script_push_from_bytes_len = (data, flags) => {
 const scriptpubkey_csv_2of2_then_1_from_bytes_len = (_pubkeys, _csv_blocks, _flags) =>
     9 + 2 * (C.EC_PUBLIC_KEY_LEN + 1) + 4
 const scriptpubkey_csv_2of2_then_1_from_bytes_opt_len = (_pubkeys, _csv_blocks, _flags) =>
-    6 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 4
+    6 + 2 * (C.EC_PUBLIC_KEY_LEN + 1) + 4
 const scriptpubkey_csv_2of3_then_2_from_bytes_len = (_pubkeys, _csv_blocks, _flags) =>
-    13 + 3 * (EC_PUBLIC_KEY_LEN + 1) + 4
+    13 + 3 * (C.EC_PUBLIC_KEY_LEN + 1) + 4
 
 
 const asset_surjectionproof_len = (_aid, _ag, _gen, _r, in_aid, _in_abf, _in_ags) =>
-        asset_surjectionproof_size(Math.floor(in_aid.length / ASSET_TAG_LEN))
+        asset_surjectionproof_size(Math.floor(in_aid.length / C.ASSET_TAG_LEN))
 
 const asset_pak_whitelistproof_len = (_on_keys, off_keys, _idx, _sub_pubkey, _priv_key, _summed_key) =>
-    asset_pak_whitelistproof_size(Math.floor(off_keys.length / EC_PUBLIC_KEY_LEN))
+    asset_pak_whitelistproof_size(Math.floor(off_keys.length / C.EC_PUBLIC_KEY_LEN))
 
 const elements_pegout_script_from_bytes_len = (bh, mcs, pk, whl, _flag) =>
     elements_pegout_script_size(bh.length, mcs.length, pk.length, whl.length)
@@ -321,7 +321,7 @@ export const psbt_get_input_pegin_amount = wrap('wally_psbt_get_input_pegin_amou
 export const psbt_get_input_pegin_claim_script_len = wrap('wally_psbt_get_input_pegin_claim_script_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_pegin_genesis_blockhash_len = wrap('wally_psbt_get_input_pegin_genesis_blockhash_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_pegin_txout_proof_len = wrap('wally_psbt_get_input_pegin_txout_proof_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
-export const psbt_get_input_previous_txid = wrap('wally_psbt_get_input_previous_txid', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
+export const psbt_get_input_previous_txid = wrap('wally_psbt_get_input_previous_txid', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_TXHASH_LEN)]);
 export const psbt_get_input_redeem_script_len = wrap('wally_psbt_get_input_redeem_script_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_required_lockheight = wrap('wally_psbt_get_input_required_lockheight', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_required_locktime = wrap('wally_psbt_get_input_required_locktime', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
@@ -605,7 +605,7 @@ export const tx_from_bytes = wrap('wally_tx_from_bytes', [T.Bytes, T.Int32, T.De
 export const tx_from_hex = wrap('wally_tx_from_hex', [T.String, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_get_btc_signature_hash = wrap('wally_tx_get_btc_signature_hash', [T.OpaqueRef, T.Int32, T.Bytes, T.Int64, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_elements_signature_hash = wrap('wally_tx_get_elements_signature_hash', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
-export const tx_get_input_blinding_nonce = wrap('wally_tx_get_input_blinding_nonce', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_TX_ASSET_CT_NONCE_LEN)]);
+export const tx_get_input_blinding_nonce = wrap('wally_tx_get_input_blinding_nonce', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_input_entropy = wrap('wally_tx_get_input_entropy', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_input_index = wrap('wally_tx_get_input_index', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_input_inflation_keys_len = wrap('wally_tx_get_input_inflation_keys_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
@@ -614,13 +614,13 @@ export const tx_get_input_issuance_amount_len = wrap('wally_tx_get_input_issuanc
 export const tx_get_input_issuance_amount_rangeproof_len = wrap('wally_tx_get_input_issuance_amount_rangeproof_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_input_script_len = wrap('wally_tx_get_input_script_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_input_sequence = wrap('wally_tx_get_input_sequence', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
-export const tx_get_input_txhash = wrap('wally_tx_get_input_txhash', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
+export const tx_get_input_txhash = wrap('wally_tx_get_input_txhash', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_TXHASH_LEN)]);
 export const tx_get_input_witness_len = wrap('wally_tx_get_input_witness_len', [T.OpaqueRef, T.Int32, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_length = wrap('wally_tx_get_length', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_locktime = wrap('wally_tx_get_locktime', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const tx_get_num_inputs = wrap('wally_tx_get_num_inputs', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const tx_get_num_outputs = wrap('wally_tx_get_num_outputs', [T.OpaqueRef, T.DestPtr(T.Int32)]);
-export const tx_get_output_asset = wrap('wally_tx_get_output_asset', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.ASSET_TAG_LEN)]);
+export const tx_get_output_asset = wrap('wally_tx_get_output_asset', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_TX_ASSET_CT_ASSET_LEN)]);
 export const tx_get_output_nonce = wrap('wally_tx_get_output_nonce', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_TX_ASSET_CT_NONCE_LEN)]);
 export const tx_get_output_rangeproof_len = wrap('wally_tx_get_output_rangeproof_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_output_satoshi = wrap('wally_tx_get_output_satoshi', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int64)]);
@@ -636,7 +636,7 @@ export const tx_get_weight = wrap('wally_tx_get_weight', [T.OpaqueRef, T.DestPtr
 export const tx_get_witness_count = wrap('wally_tx_get_witness_count', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const tx_init = wrap('wally_tx_init_alloc', [T.Int32, T.Int32, T.Int32, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_input_free = wrap('wally_tx_input_free', [T.OpaqueRef]);
-export const tx_input_get_blinding_nonce = wrap('wally_tx_input_get_blinding_nonce', [T.OpaqueRef, T.DestPtrSized(T.Bytes, C.WALLY_TX_ASSET_CT_NONCE_LEN)]);
+export const tx_input_get_blinding_nonce = wrap('wally_tx_input_get_blinding_nonce', [T.OpaqueRef, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_input_get_entropy = wrap('wally_tx_input_get_entropy', [T.OpaqueRef, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_input_get_index = wrap('wally_tx_input_get_index', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const tx_input_get_inflation_keys_len = wrap('wally_tx_input_get_inflation_keys_len', [T.OpaqueRef, T.DestPtr(T.Int32)]);
@@ -645,7 +645,7 @@ export const tx_input_get_issuance_amount_len = wrap('wally_tx_input_get_issuanc
 export const tx_input_get_issuance_amount_rangeproof_len = wrap('wally_tx_input_get_issuance_amount_rangeproof_len', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const tx_input_get_script_len = wrap('wally_tx_input_get_script_len', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const tx_input_get_sequence = wrap('wally_tx_input_get_sequence', [T.OpaqueRef, T.DestPtr(T.Int32)]);
-export const tx_input_get_txhash = wrap('wally_tx_input_get_txhash', [T.OpaqueRef, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
+export const tx_input_get_txhash = wrap('wally_tx_input_get_txhash', [T.OpaqueRef, T.DestPtrSized(T.Bytes, C.WALLY_TXHASH_LEN)]);
 export const tx_input_get_witness_len = wrap('wally_tx_input_get_witness_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_input_init = wrap('wally_tx_input_init_alloc', [T.Bytes, T.Int32, T.Int32, T.Bytes, T.OpaqueRef, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_input_set_blinding_nonce = wrap('wally_tx_input_set_blinding_nonce', [T.OpaqueRef, T.Bytes]);

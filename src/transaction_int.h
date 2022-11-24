@@ -10,7 +10,7 @@ extern "C" {
 /* Input */
 
 /**
- * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  */
 WALLY_CORE_API int wally_tx_input_get_txhash(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len);
 
@@ -21,7 +21,7 @@ WALLY_CORE_API int wally_tx_input_get_witness_len(const struct wally_tx_input *t
 WALLY_CORE_API int wally_tx_input_get_index(const struct wally_tx_input *tx_input_in, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_sequence(const struct wally_tx_input *tx_input_in, size_t *written);
 
-WALLY_CORE_API int wally_tx_input_set_txhash(struct wally_tx_input *tx_input, const unsigned char *txhash, size_t len);
+WALLY_CORE_API int wally_tx_input_set_txhash(struct wally_tx_input *tx_input, const unsigned char *txhash, size_t txhash_len);
 WALLY_CORE_API int wally_tx_input_set_script(struct wally_tx_input *tx_input, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_tx_input_set_witness(struct wally_tx_input *tx_input, const struct wally_tx_witness_stack *witness);
 WALLY_CORE_API int wally_tx_input_set_index(struct wally_tx_input *tx_input, uint32_t index);
@@ -30,7 +30,7 @@ WALLY_CORE_API int wally_tx_input_set_sequence(struct wally_tx_input *tx_input, 
 #ifdef BUILD_ELEMENTS
 
 /**
- * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TX_ASSET_CT_NONCE_LEN)
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_input_get_blinding_nonce(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len);
 
@@ -92,7 +92,7 @@ WALLY_CORE_API int wally_tx_get_num_outputs(const struct wally_tx *tx_in, size_t
 /* Transaction Inputs */
 
 /**
- * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  */
 WALLY_CORE_API int wally_tx_get_input_txhash(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
 
@@ -105,12 +105,12 @@ WALLY_CORE_API int wally_tx_get_input_sequence(const struct wally_tx *tx_in, siz
 
 WALLY_CORE_API int wally_tx_set_input_index(const struct wally_tx *tx_in, size_t index, uint32_t index_in);
 WALLY_CORE_API int wally_tx_set_input_sequence(const struct wally_tx *tx_in, size_t index, uint32_t sequence);
-WALLY_CORE_API int wally_tx_set_input_txhash(const struct wally_tx *tx_in, size_t index, const unsigned char *txhash, size_t len);
+WALLY_CORE_API int wally_tx_set_input_txhash(const struct wally_tx *tx_in, size_t index, const unsigned char *txhash, size_t txhash_len);
 
 #ifdef BUILD_ELEMENTS
 
 /**
- * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TX_ASSET_CT_NONCE_LEN)
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_input_blinding_nonce(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
 
@@ -147,7 +147,7 @@ WALLY_CORE_API int wally_tx_set_output_satoshi(const struct wally_tx *tx_in, siz
 #ifdef BUILD_ELEMENTS
 
 /**
- * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_TAG_LEN)
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TX_ASSET_CT_ASSET_LEN)
  */
 WALLY_CORE_API int wally_tx_get_output_asset(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len);
 

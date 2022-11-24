@@ -3205,11 +3205,11 @@ int wally_tx_input_set_sequence(struct wally_tx_input *input, uint32_t sequence)
 }
 
 int wally_tx_input_set_txhash(struct wally_tx_input *input,
-                              const unsigned char *txhash, size_t len)
+                              const unsigned char *txhash, size_t txhash_len)
 {
-    if (!is_valid_tx_input(input) || !txhash || (len != WALLY_TXHASH_LEN))
+    if (!is_valid_tx_input(input) || !txhash || (txhash_len != WALLY_TXHASH_LEN))
         return WALLY_EINVAL;
-    memcpy(input->txhash, txhash, WALLY_TXHASH_LEN);
+    memcpy(input->txhash, txhash, txhash_len);
     return WALLY_OK;
 }
 
