@@ -254,38 +254,41 @@ def gen_wasm_exports(funcs):
 def gen_wasm_package(funcs):
 
     # Simple single-argument types that can be identified without inspecting the next arguments
+    # map of C type -> (JS type, TypeScript argument type, TypeScript return type)
     typemap_simple = {
-        # Simple primitive types
-        'int'         : 'T.Int32',
-        'size_t'      : 'T.Int32',
-        'uint32_t'    : 'T.Int32',
-        'uint64_t'    : 'T.Int64',
+        # Simple input primitive types
+        'int'         : ('T.Int32', 'number', None),
+        'size_t'      : ('T.Int32', 'number', None),
+        'uint32_t'    : ('T.Int32', 'number', None),
+        'uint64_t'    : ('T.Int64', 'bigint', None),
 
-        'const char*' : 'T.String',
+        'const char*' : ('T.String', 'string', None),
 
-        # Single-argument pointers
-        'size_t*'   : 'T.DestPtr(T.Int32)',
-        'uint32_t*' : 'T.DestPtr(T.Int32)',
-        'uint64_t*' : 'T.DestPtr(T.Int64)',
-        'char**'    : 'T.DestPtrPtr(T.String)',
+        # Single-argument output pointers
+        'size_t*'   : ('T.DestPtr(T.Int32)', None, 'number'),
+        'uint32_t*' : ('T.DestPtr(T.Int32)', None, 'number'),
+        'uint64_t*' : ('T.DestPtr(T.Int64)', None, 'bigint'),
+        'char**'    : ('T.DestPtrPtr(T.String)', None, 'string'),
 
         # These are only used once
-        'char*' : 'T.OpaqueRef', # as the argument to `wally_free_string`
-        'void*' : 'T.OpaqueRef', # as the argument to `wally_bzero`
-        'wally_map_verify_fn_t' : 'T.OpaqueRef', # as the argument to `wally_map_init`
+        'char*' : ('T.OpaqueRef', 'Ref', None), # as the argument to `wally_free_string`
+        'void*' : ('T.OpaqueRef', 'Ref', None), # as the argument to `wally_bzero`
+        'wally_map_verify_fn_t' : ('T.OpaqueRef', 'Ref', None), # as the argument to `wally_map_init`
     }
 
     # Input arrays (represented as two arguments - the first identified by this map, followed by a FOO_len argument)
+    # map of C type -> (JS type, TypeScript argument type)
     typemap_arrays = {
-         'const unsigned char*' : 'T.Bytes',
-         'const uint32_t*'      : 'T.Uint32Array',
-         'const uint64_t*'      : 'T.Uint64Array',
+         'const unsigned char*' : ('T.Bytes', 'Buffer|Uint8Array'),
+         'const uint32_t*'      : ('T.Uint32Array', 'Uint32Array|number[]'),
+         'const uint64_t*'      : ('T.Uint64Array', 'BigUint64Array|bigint[]'),
     }
 
     # Output arrays
+    # map of C type -> (JS type, TypeScript return type)
     typemap_output_arrays = {
-        'unsigned char*': 'T.Bytes',
-        'uint32_t*': 'T.Uint32Array',
+        'unsigned char*': ('T.Bytes', 'Buffer'),
+        'uint32_t*': ('T.Uint32Array', 'Uint32Array'),
     }
 
     # Output buffer length functions implemented on the JS side
@@ -321,6 +324,8 @@ def gen_wasm_package(funcs):
         num_args = len(func.args)
         next_index = 0
         js_args = []
+        ts_args = []
+        ts_returns = []
 
         while next_index < num_args:
             arg = func.args[next_index]
@@ -329,7 +334,10 @@ def gen_wasm_package(funcs):
 
             # Input array types
             if is_array(func, arg, curr_index, num_args, typemap_arrays.keys()):
-                js_args.append(typemap_arrays[arg.type])
+                (js_arg_type, ts_arg_type) = typemap_arrays[arg.type]
+                js_args.append(js_arg_type)
+                ts_args.append(f'{arg.name}: {ts_arg_type}')
+
                 next_index = next_index + 1 # skip next 'FOO_len' argument
                 continue
 
@@ -338,6 +346,7 @@ def gen_wasm_package(funcs):
                 # Sanity check to make sure we don't misidentify unrelated arguments
                 assert arg.struct_name.startswith("wally_") or arg.struct_name == "ext_key" or arg.struct_name == "words"
                 js_args.append('T.OpaqueRef')
+                ts_args.append(f'{arg.name}: Ref_{arg.struct_name}')
                 continue
 
             # Output pointer to an array
@@ -345,8 +354,7 @@ def gen_wasm_package(funcs):
                 # Sanity check to make sure we don't misidentify unrelated arguments
                 assert arg.name.endswith("_out") or arg.name == 'scalar'
 
-                # Get the inner array data type
-                array_type = typemap_output_arrays[arg.type]
+                (array_type, ts_return_type) = typemap_output_arrays[arg.type]
 
                 # Detect output buffer size (fixed or via a length utility function)
                 len_arg = func.args[curr_index + 1]
@@ -376,6 +384,10 @@ def gen_wasm_package(funcs):
                     js_args.append(f'T.DestPtrSized({array_type}, {output_buffer_size})')
                     next_index = next_index + 1 # skip next 'FOO_len' argument
 
+                if output_buffer_size == 'T.USER_PROVIDED_LEN':
+                    ts_args.append('out_len: number')
+                ts_returns.append(f'{arg.name}: {ts_return_type}')
+
                 continue
 
             # Simple single-argument input/output types
@@ -383,7 +395,13 @@ def gen_wasm_package(funcs):
             # This must be checked after checking array output pointers (above), because a `uint32_t*` argument may
             # be either a uint32 or an array of uint32, depending on whether the following argument is a `_len` argument.
             if arg.type in typemap_simple:
-                js_args.append(typemap_simple[arg.type])
+                (js_arg_type, ts_arg_type, ts_return_type) = typemap_simple[arg.type]
+
+                js_args.append(js_arg_type)
+
+                if ts_arg_type:    ts_args.append(f'{arg.name}: {ts_arg_type}')
+                if ts_return_type: ts_returns.append(f'{arg.name}: {ts_return_type}')
+
                 continue
 
             # Output pointer to an opaque reference
@@ -392,11 +410,12 @@ def gen_wasm_package(funcs):
                 assert arg.struct_name.startswith("wally_") or arg.struct_name == "ext_key" or arg.struct_name == "words"
 
                 js_args.append('T.DestPtrPtr(T.OpaqueRef)')
+                ts_returns.append(f'{arg.name}: Ref_{arg.struct_name}')
                 continue
 
             assert False, f'ERROR: Unknown argument type "{arg.type}"'
 
-        return js_args
+        return (js_args, ts_args, ts_returns)
 
     func_names = set([ func.name for func in funcs ])
 
@@ -421,13 +440,24 @@ def gen_wasm_package(funcs):
     # functions are available to them. Then sort by name.
     fn_def_order = sorted(fn_included, key = lambda f: (f.buffer_len_fn is not None, export_name(f.name)))
 
-    jscode = [
-        f"export const {export_name(func.name)} = wrap('{func.name}', [{', '.join(map_args(func))}]);"
-        for func in fn_def_order
-    ]
+    jscode = []
+    tscode = []
+
+    for func in fn_def_order:
+        (js_args, ts_args, ts_returns) = map_args(func)
+        fn_name = export_name(func.name)
+
+        jscode.append(f"export const {fn_name} = wrap('{func.name}', [{', '.join(js_args)}]);")
+
+        ts_return_code = 'void' if len(ts_returns) == 0 else f'{ts_returns[0].split(": ", 1)[1]}' if len(ts_returns) == 1 else f"[{', '.join(ts_returns)}]"
+        tscode.append(f"export function {fn_name}({', '.join(ts_args)}): {ts_return_code};")
 
     # Inject generated functions into functions.js
     replace_text(u'src/wasm_package/functions.js', jscode,
+                 [u'// BEGIN AUTOGENERATED', u'// END AUTOGENERATED'])
+
+    # Inject generated TypeScript definitions into index.d.ts
+    replace_text(u'src/wasm_package/index.d.ts', tscode,
                  [u'// BEGIN AUTOGENERATED', u'// END AUTOGENERATED'])
 
 
