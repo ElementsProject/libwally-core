@@ -297,7 +297,7 @@ export function wrap(func_name, args_types) {
 
             const results = returns.map(return_fn => return_fn())
 
-            return results.length == 0 ? true // success, but no explicit return value
+            return results.length == 0 ? null // success, but no explicit return value
                 : results.length == 1 ? results[0]
                     : results
         } finally {

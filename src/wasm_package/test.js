@@ -8,7 +8,7 @@ import {
 } from './index.js'
 
 // Test simple invocation, with a return code only and no destination pointer
-assert.equal(wally.hex_verify('00'), true)
+wally.hex_verify('00') // should not throw
 assert.throws(_ => wally.hex_verify('001'), 'WALLY_EINVAL')
 
 // Test string destination pointer
