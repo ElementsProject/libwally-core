@@ -103,6 +103,7 @@ WALLY_CORE_API int bip39_mnemonic_validate(
     const struct words *w,
     const char *mnemonic);
 
+#ifndef SWIG
 /**
  * Convert a mnemonic into a binary seed.
  *
@@ -118,6 +119,23 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+#endif /* SWIG */
+
+/**
+ * Convert a mnemonic into a binary seed of 512 bits.
+ *
+ * :param mnemonic: Mnemonic to convert.
+ * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed.
+ * :param bytes_out: The destination for the binary seed.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
+ *
+ * ..note:: Identical to `bip39_mnemonic_to_seed` but returns a fixed size buffer.
+ */
+WALLY_CORE_API int bip39_mnemonic_to_seed512(
+    const char *mnemonic,
+    const char *passphrase,
+    unsigned char *bytes_out,
+    size_t len);
 
 #ifdef __cplusplus
 }

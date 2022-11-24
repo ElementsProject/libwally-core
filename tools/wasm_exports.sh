@@ -48,6 +48,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_bip39_mnemonic_from_bytes' \
 ,'_bip39_mnemonic_to_bytes' \
 ,'_bip39_mnemonic_to_seed' \
+,'_bip39_mnemonic_to_seed512' \
 ,'_bip39_mnemonic_validate' \
 ,'_wally_addr_segwit_from_bytes' \
 ,'_wally_addr_segwit_get_version' \

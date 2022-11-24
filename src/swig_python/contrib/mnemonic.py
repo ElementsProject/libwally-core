@@ -26,9 +26,7 @@ class Mnemonic(object):
     def to_entropy(self, words):
         if isinstance(words, list):
             words = ' '.join(words)
-        buf = bytearray(BIP39_ENTROPY_LEN_256)
-        length = wallycore.bip39_mnemonic_to_bytes(self.wordlist, words, buf)
-        return bytearray(buf)[0:length]
+        return wallycore.bip39_mnemonic_to_bytes(self.wordlist, words)
 
 
     def to_mnemonic(self, data):
@@ -40,9 +38,7 @@ class Mnemonic(object):
 
 
     def to_seed(self, mnemonic, passphrase = ''):
-        buf = bytearray(wallycore.BIP39_SEED_LEN_512)
-        wallycore.bip39_mnemonic_to_seed(mnemonic, passphrase, buf)
-        return buf
+        return wallycore.bip39_mnemonic_to_seed512(mnemonic, passphrase)
 
 
 if __name__ == "__main__":

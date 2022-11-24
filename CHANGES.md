@@ -3,6 +3,8 @@
 ## Version 0.8.7
 - psbt_extract now takes an extra flags parameter. The Java and Python
   wrappers default this to zero for backwards compatibility.
+- bip39_mnemonic_to_seed is no longer available for SWIG-wrapped languages.
+  Callers should use bip39_mnemonic_to_seed512 instead.
 
 ## Version 0.8.6
 - Support for PSET v0 (Elements) has been removed.

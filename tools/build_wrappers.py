@@ -313,7 +313,10 @@ def gen_wasm_package(funcs):
     # Exclude scalar functions for in-place modification. We can't hand a mutable pointer of the user-provided Buffer
     # to WASM, and simulating the in-place behavior in JS would involve copying the Buffer to the WASM memory area
     # and back out, which defeats the purpose. Non-in-place variants are available for use instead.
-    excluded_funcs = [ 'wally_ec_scalar_add_to', 'wally_ec_scalar_multiply_by', 'wally_ec_scalar_subtract_from' ]
+    excluded_funcs = [ 'wally_ec_scalar_add_to', 'wally_ec_scalar_multiply_by',
+                       'wally_ec_scalar_subtract_from',
+                       # Callers should use the fixed length bip39_mnemonic_to_seed512
+                       'bip39_mnemonic_to_seed']
 
     def map_args(func):
         num_args = len(func.args)

@@ -68,7 +68,8 @@ bip32_key_get_fingerprint = _wrap_bin(bip32_key_get_fingerprint, BIP32_KEY_FINGE
 bip38_raw_from_private_key = _wrap_bin(bip38_raw_from_private_key, BIP38_SERIALIZED_LEN)
 bip38_raw_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
 bip38_to_private_key = _wrap_bin(bip38_raw_to_private_key, 32);
-bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed, BIP39_SEED_LEN_512)
+bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed512, BIP39_SEED_LEN_512)
+bip39_mnemonic_to_bytes = _wrap_bin(bip39_mnemonic_to_bytes, BIP39_ENTROPY_MAX_LEN, resize=True)
 
 pbkdf2_hmac_sha256 = _wrap_bin(pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
 pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)

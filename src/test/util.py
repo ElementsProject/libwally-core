@@ -246,6 +246,7 @@ for f in (
     ('bip39_mnemonic_from_bytes', c_int, [c_void_p, c_void_p, c_size_t, c_char_p_p]),
     ('bip39_mnemonic_to_bytes', c_int, [c_void_p, c_char_p, c_void_p, c_size_t, c_size_t_p]),
     ('bip39_mnemonic_to_seed', c_int, [c_char_p, c_char_p, c_void_p, c_size_t, c_size_t_p]),
+    ('bip39_mnemonic_to_seed512', c_int, [c_char_p, c_char_p, c_void_p, c_size_t]),
     ('bip39_mnemonic_validate', c_int, [c_void_p, c_char_p]),
     ('wally_addr_segwit_from_bytes', c_int, [c_void_p, c_size_t, c_char_p, c_uint32, c_char_p_p]),
     ('wally_addr_segwit_get_version', c_int, [c_char_p, c_char_p, c_uint32, c_size_t_p]),

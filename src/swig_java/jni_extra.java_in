@@ -53,6 +53,10 @@
       return trimBuffer(buf, len);
   }
 
+  public final static byte[] bip39_mnemonic_to_seed512(String mnemonic, String passphrase) {
+      return bip39_mnemonic_to_seed512(mnemonic, passphrase, null);
+  }
+
   public final static byte[] base64_to_bytes(String base64) {
       return base64_to_bytes(base64, 0);
   }

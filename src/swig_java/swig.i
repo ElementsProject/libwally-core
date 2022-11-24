@@ -440,7 +440,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_string(bip39_mnemonic_from_bytes);
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);
-%returns_size_t(bip39_mnemonic_to_seed);
+%returns_array_(bip39_mnemonic_to_seed512, 3, 4, BIP39_SEED_LEN_512);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_get_version);
 %returns_size_t(wally_addr_segwit_n_get_version);

@@ -265,6 +265,12 @@ inline int bip39_mnemonic_to_seed(const MNEMONIC& mnemonic, const PASSPHRASE& pa
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class MNEMONIC, class PASSPHRASE, class BYTES_OUT>
+inline int bip39_mnemonic_to_seed512(const MNEMONIC& mnemonic, const PASSPHRASE& passphrase, BYTES_OUT& bytes_out) {
+    int ret = ::bip39_mnemonic_to_seed512(detail::get_p(mnemonic), detail::get_p(passphrase), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class W>
 inline int bip39_mnemonic_validate(const W& w, const char* mnemonic) {
     int ret = ::bip39_mnemonic_validate(detail::get_p(w), mnemonic);

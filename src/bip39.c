@@ -206,7 +206,7 @@ int bip39_mnemonic_validate(const struct words *w, const char *mnemonic)
     return ret;
 }
 
-int  bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
+int bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
                             unsigned char *bytes_out, size_t len,
                             size_t *written)
 {
@@ -242,4 +242,11 @@ int  bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
     clear_and_free(salt, salt_len);
 
     return ret;
+}
+
+int bip39_mnemonic_to_seed512(const char *mnemonic, const char *passphrase,
+                              unsigned char *bytes_out, size_t len)
+{
+    size_t written;
+    return bip39_mnemonic_to_seed(mnemonic, passphrase, bytes_out, len, &written);
 }

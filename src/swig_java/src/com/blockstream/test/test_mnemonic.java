@@ -53,9 +53,7 @@ public class test_mnemonic {
     }
 
     public byte[] toSeed(final String mnemonic, final String passphrase) {
-        final byte[] buf = new byte[BIP39_SEED_LEN_512];
-        Wally.bip39_mnemonic_to_seed(mnemonic, passphrase, buf);
-        return buf;
+        return Wally.bip39_mnemonic_to_seed512(mnemonic, passphrase);
     }
 
     private static final Map<String, byte[]> testMap;

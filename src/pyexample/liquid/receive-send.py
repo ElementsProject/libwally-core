@@ -8,7 +8,7 @@ wif_prefix = wally.WALLY_ADDRESS_VERSION_WIF_TESTNET
 mnemonic = "supreme layer police brand month october rather rack proud strike receive joy limit random hill inside brand depend giant success quarter brain butter mechanic"
 
 # start-create_p2pkh_address
-_, seed = wally.bip39_mnemonic_to_seed512(mnemonic, '')
+seed = wally.bip39_mnemonic_to_seed512(mnemonic, '')
 wallet_master_key = wally.bip32_key_from_seed(
     seed,
     wally.BIP32_VER_TEST_PRIVATE, 0)
