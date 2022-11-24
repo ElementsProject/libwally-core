@@ -40,9 +40,9 @@ const format_bitcoin_message_len = (msg, flags) => {
 
 const script_push_from_bytes_len = (data, flags) => {
     if (flags & C.WALLY_SCRIPT_HASH160) {
-        return HASH160_LEN + 1
+        return C.HASH160_LEN + 1
     } else if (flags & C.WALLY_SCRIPT_SHA256) {
-        return SHA256_LEN + 1
+        return C.SHA256_LEN + 1
     } else {
         let push_len = data.length, opcode_len = 5
         for (const [l, op_len] in [[76, 1], [256, 2], [65536, 3]]) {
@@ -58,16 +58,16 @@ const script_push_from_bytes_len = (data, flags) => {
 const scriptpubkey_csv_2of2_then_1_from_bytes_len = (_pubkeys, _csv_blocks, _flags) =>
     9 + 2 * (C.EC_PUBLIC_KEY_LEN + 1) + 4
 const scriptpubkey_csv_2of2_then_1_from_bytes_opt_len = (_pubkeys, _csv_blocks, _flags) =>
-    6 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 4
+    6 + 2 * (C.EC_PUBLIC_KEY_LEN + 1) + 4
 const scriptpubkey_csv_2of3_then_2_from_bytes_len = (_pubkeys, _csv_blocks, _flags) =>
-    13 + 3 * (EC_PUBLIC_KEY_LEN + 1) + 4
+    13 + 3 * (C.EC_PUBLIC_KEY_LEN + 1) + 4
 
 
 const asset_surjectionproof_len = (_aid, _ag, _gen, _r, in_aid, _in_abf, _in_ags) =>
-        asset_surjectionproof_size(Math.floor(in_aid.length / ASSET_TAG_LEN))
+        asset_surjectionproof_size(Math.floor(in_aid.length / C.ASSET_TAG_LEN))
 
 const asset_pak_whitelistproof_len = (_on_keys, off_keys, _idx, _sub_pubkey, _priv_key, _summed_key) =>
-    asset_pak_whitelistproof_size(Math.floor(off_keys.length / EC_PUBLIC_KEY_LEN))
+    asset_pak_whitelistproof_size(Math.floor(off_keys.length / C.EC_PUBLIC_KEY_LEN))
 
 const elements_pegout_script_from_bytes_len = (bh, mcs, pk, whl, _flag) =>
     elements_pegout_script_size(bh.length, mcs.length, pk.length, whl.length)
