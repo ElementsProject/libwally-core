@@ -66,9 +66,6 @@ const scriptpubkey_csv_2of3_then_2_from_bytes_len = (_pubkeys, _csv_blocks, _fla
 const asset_surjectionproof_len = (_aid, _ag, _gen, _r, in_aid, _in_abf, _in_ags) =>
         asset_surjectionproof_size(Math.floor(in_aid.length / C.ASSET_TAG_LEN))
 
-const asset_pak_whitelistproof_len = (_on_keys, off_keys, _idx, _sub_pubkey, _priv_key, _summed_key) =>
-    asset_pak_whitelistproof_size(Math.floor(off_keys.length / C.EC_PUBLIC_KEY_LEN))
-
 const elements_pegout_script_from_bytes_len = (bh, mcs, pk, whl, _flag) =>
     elements_pegout_script_size(bh.length, mcs.length, pk.length, whl.length)
 
@@ -92,7 +89,7 @@ export const asset_blinding_key_from_seed = wrap('wally_asset_blinding_key_from_
 export const asset_blinding_key_to_ec_private_key = wrap('wally_asset_blinding_key_to_ec_private_key', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PRIVATE_KEY_LEN)]);
 export const asset_final_vbf = wrap('wally_asset_final_vbf', [T.Uint64Array, T.Int32, T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.BLINDING_FACTOR_LEN)]);
 export const asset_generator_from_bytes = wrap('wally_asset_generator_from_bytes', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.ASSET_GENERATOR_LEN)]);
-export const asset_pak_whitelistproof = wrap('wally_asset_pak_whitelistproof', [T.Bytes, T.Bytes, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, asset_pak_whitelistproof_len, false)]);
+export const asset_pak_whitelistproof_len = wrap('wally_asset_pak_whitelistproof_len', [T.Bytes, T.Bytes, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.DestPtr(T.Int32)]);
 export const asset_pak_whitelistproof_size = wrap('wally_asset_pak_whitelistproof_size', [T.Int32, T.DestPtr(T.Int32)]);
 export const asset_rangeproof = wrap('wally_asset_rangeproof', [T.Int64, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Int64, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.ASSET_RANGEPROOF_MAX_LEN, true)]);
 export const asset_rangeproof_with_nonce = wrap('wally_asset_rangeproof_with_nonce', [T.Int64, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Int64, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.ASSET_RANGEPROOF_MAX_LEN, true)]);
@@ -724,6 +721,7 @@ export const witness_p2wpkh_from_der = wrap('wally_witness_p2wpkh_from_der', [T.
 export const witness_p2wpkh_from_sig = wrap('wally_witness_p2wpkh_from_sig', [T.Bytes, T.Bytes, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_program_from_bytes = wrap('wally_witness_program_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_WITNESSSCRIPT_MAX_LEN, true)]);
 export const witness_program_from_bytes_and_version = wrap('wally_witness_program_from_bytes_and_version', [T.Bytes, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_WITNESSSCRIPT_MAX_LEN, true)]);
+export const asset_pak_whitelistproof = wrap('wally_asset_pak_whitelistproof', [T.Bytes, T.Bytes, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, asset_pak_whitelistproof_len, false)]);
 export const base58_n_to_bytes = wrap('wally_base58_n_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, base58_n_get_length, false)]);
 export const base58_to_bytes = wrap('wally_base58_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base58_get_length, false)]);
 export const base64_to_bytes = wrap('wally_base64_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base64_get_maximum_length, true)]);

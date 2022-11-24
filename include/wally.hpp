@@ -1814,6 +1814,13 @@ inline int asset_pak_whitelistproof(const ONLINE_KEYS& online_keys, const OFFLIN
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class ONLINE_KEYS, class OFFLINE_KEYS, class SUB_PUBKEY, class ONLINE_PRIV_KEY, class SUMMED_KEY>
+inline int asset_pak_whitelistproof_len(const ONLINE_KEYS& online_keys, const OFFLINE_KEYS& offline_keys, size_t key_index, const SUB_PUBKEY& sub_pubkey, const ONLINE_PRIV_KEY& online_priv_key, const SUMMED_KEY& summed_key, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_asset_pak_whitelistproof_len(online_keys.data(), online_keys.size(), offline_keys.data(), offline_keys.size(), key_index, sub_pubkey.data(), sub_pubkey.size(), online_priv_key.data(), online_priv_key.size(), summed_key.data(), summed_key.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(summed_key.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 inline int asset_pak_whitelistproof_size(size_t num_keys, size_t* written) {
     int ret = ::wally_asset_pak_whitelistproof_size(num_keys, written);
     return ret;

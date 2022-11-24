@@ -423,6 +423,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_final_vbf' \
 ,'_wally_asset_generator_from_bytes' \
 ,'_wally_asset_pak_whitelistproof' \
+,'_wally_asset_pak_whitelistproof_len' \
 ,'_wally_asset_pak_whitelistproof_size' \
 ,'_wally_asset_rangeproof' \
 ,'_wally_asset_rangeproof_with_nonce' \

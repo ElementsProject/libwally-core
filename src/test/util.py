@@ -265,6 +265,7 @@ for f in (
     ('wally_asset_final_vbf', c_int, [POINTER(c_uint64), c_size_t, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_asset_generator_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_asset_pak_whitelistproof', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_asset_pak_whitelistproof_len', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_asset_pak_whitelistproof_size', c_int, [c_size_t, c_size_t_p]),
     ('wally_asset_rangeproof', c_int, [c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint64, c_int, c_int, c_void_p, c_size_t, c_size_t_p]),
     ('wally_asset_rangeproof_with_nonce', c_int, [c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint64, c_int, c_int, c_void_p, c_size_t, c_size_t_p]),

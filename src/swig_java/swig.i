@@ -1038,6 +1038,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_witness_program_from_bytes_and_version);
 %returns_array_(wally_symmetric_key_from_seed, 3, 4, HMAC_SHA512_LEN);
 %returns_array_(wally_symmetric_key_from_parent, 6, 7, HMAC_SHA512_LEN);
+%returns_size_t(wally_asset_pak_whitelistproof_len);
 %returns_size_t(wally_asset_pak_whitelistproof_size);
 %returns_size_t(wally_asset_pak_whitelistproof);
 %returns_array_(wally_s2c_sig_from_bytes, 10, 11, EC_SIGNATURE_LEN);

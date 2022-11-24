@@ -715,33 +715,24 @@ int wally_asset_blinding_key_to_ec_private_key(
     return ret;
 }
 
-int wally_asset_pak_whitelistproof_size(
-    size_t num_keys,
-    size_t *written)
+int wally_asset_pak_whitelistproof_size(size_t num_keys, size_t *written)
 {
-    if (!written)
+    if (written)
+        *written = 0;
+    if (!written || num_keys > SECP256K1_WHITELIST_MAX_N_KEYS)
         return WALLY_EINVAL;
-
     *written = 1 + 32 * (1 + num_keys);
-
     return WALLY_OK;
 }
 
 int wally_asset_pak_whitelistproof(
-    const unsigned char *online_keys,
-    size_t online_keys_len,
-    const unsigned char *offline_keys,
-    size_t offline_keys_len,
+    const unsigned char *online_keys, size_t online_keys_len,
+    const unsigned char *offline_keys, size_t offline_keys_len,
     size_t key_index,
-    const unsigned char *sub_pubkey,
-    size_t sub_pubkey_len,
-    const unsigned char *online_priv_key,
-    size_t online_priv_key_len,
-    const unsigned char *summed_key,
-    size_t summed_key_len,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written)
+    const unsigned char *sub_pubkey, size_t sub_pubkey_len,
+    const unsigned char *online_priv_key, size_t online_priv_key_len,
+    const unsigned char *summed_key, size_t summed_key_len,
+    unsigned char *bytes_out, size_t len, size_t *written)
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_pubkey online_secp_keys[SECP256K1_WHITELIST_MAX_N_KEYS];
@@ -799,4 +790,22 @@ fail:
     return ret;
 }
 
+int wally_asset_pak_whitelistproof_len(
+    const unsigned char *online_keys, size_t online_keys_len,
+    const unsigned char *offline_keys, size_t offline_keys_len,
+    size_t key_index,
+    const unsigned char *sub_pubkey, size_t sub_pubkey_len,
+    const unsigned char *online_priv_key, size_t online_priv_key_len,
+    const unsigned char *summed_key, size_t summed_key_len,
+    size_t *written)
+{
+    unsigned char buff[1]; /* Undersized: we only want the length */
+    return wally_asset_pak_whitelistproof(online_keys, online_keys_len,
+                                          offline_keys, offline_keys_len,
+                                          key_index,
+                                          sub_pubkey, sub_pubkey_len,
+                                          online_priv_key, online_priv_key_len,
+                                          summed_key, summed_key_len,
+                                          buff, sizeof(buff), written);
+}
 #endif /* BUILD_ELEMENTS */

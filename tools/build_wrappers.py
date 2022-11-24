@@ -305,7 +305,6 @@ def gen_wasm_package(funcs):
         'wally_scriptpubkey_csv_2of3_then_2_from_bytes': 'scriptpubkey_csv_2of3_then_2_from_bytes_len, true',
 
         'wally_asset_surjectionproof': 'asset_surjectionproof_len, true',
-        'wally_asset_pak_whitelistproof': 'asset_pak_whitelistproof_len, false',
         'wally_elements_pegout_script_from_bytes': 'elements_pegout_script_from_bytes_len, true',
         'wally_elements_pegin_contract_script_from_bytes': 'elements_pegin_contract_script_from_bytes_len, true',
     }

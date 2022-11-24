@@ -271,9 +271,7 @@ if is_elements_build():
     asset_surjectionproof = _wrap_bin(asset_surjectionproof, _asset_surjectionproof_len_fn, resize=True)
     asset_blinding_key_from_seed = _wrap_bin(asset_blinding_key_from_seed, HMAC_SHA512_LEN)
     asset_blinding_key_to_ec_private_key = _wrap_bin(asset_blinding_key_to_ec_private_key, EC_PRIVATE_KEY_LEN)
-    def _asset_pak_whitelistproof_len_fn(on_keys, off_keys, idx, sub_pubkey, priv_key, summed_key):
-        return asset_pak_whitelistproof_size(len(off_keys) // EC_PUBLIC_KEY_LEN)
-    asset_pak_whitelistproof = _wrap_bin(asset_pak_whitelistproof, _asset_pak_whitelistproof_len_fn)
+    asset_pak_whitelistproof = _wrap_bin(asset_pak_whitelistproof, asset_pak_whitelistproof_len, resize=True)
 
     def _asset_unblind_fn(fn):
         def wrapped(*args):
