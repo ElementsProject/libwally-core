@@ -14,15 +14,16 @@ def get_doc_lines(l):
     return ['   ' + l]
 
 def preprocess_output_doc_line(l):
+    text = l
     if 'FIXED_SIZED_OUTPUT(' in l:
         parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
         len_param, param, size = parts
-        return l, ':param {}: Size of ``{}``. Must be ``{}``.'.format(len_param, param, size)
+        text = ':param {}: Size of ``{}``. Must be ``{}``.'.format(len_param, param, size)
     elif 'MAX_SIZED_OUTPUT(' in l:
         parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
         len_param, param, max_size = parts
-        return l, ':param {}: Size of ``{}``. Passing ``{}`` will ensure the buffer is large enough.'.format(len_param, param, max_size)
-    return None, l
+        text = ':param {}: Size of ``{}``. Passing ``{}`` will ensure the buffer is large enough.'.format(len_param, param, max_size)
+    return '* ' + l if l else None, text
 
 def output_func(docs, func):
     is_normal_ret = 'WALLY_CORE_API int' in func
@@ -134,7 +135,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'libwally-core'
-copyright = u'2019, Jon Griffiths'
+copyright = u'2022, Jon Griffiths'
 author = u'Jon Griffiths'
 
 # The version info for the project you're documenting, acts as replacement for

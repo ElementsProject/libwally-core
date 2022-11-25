@@ -44,6 +44,7 @@ class Arg(object):
             self.is_pointer_pointer = False
             self.is_struct = False
             self.type, self.name = definition.split(' ')
+        self.docs = ''
         self.is_const = self.type.startswith(u'const ')
         self.fixed_size = None
         self.max_size = None
@@ -56,15 +57,21 @@ class Arg(object):
             parts = [p.strip() for p in m[len('MAX_SIZED_OUTPUT('):-1].split(',')]
             self.max_size = parts[2]
         else:
-            assert False, 'Unknown metadata format {}'.format(m)
+            assert m.startswith(':param '), 'Unknown metadata format {}'.format(m)
+            assert not self.docs, self.name + ': unexpected extra docs: ' + m
+            self.docs = m.split(':')[-1].strip()
 
 class Func(object):
     def __init__(self, definition, non_elements):
         # Strip return type and closing ')', extract name
-        self.name, definition = definition[4:-1].split(u'(')
+        try:
+            self.name, definition = definition[4:-1].split(u'(')
+        except ValueError:
+            raise Exception('failed to parse definition ' + definition)
         # Parse arguments
         self.args = [Arg(d) for d in definition.split(u', ')]
         self.is_elements = self.name not in non_elements
+        self.docs = []
         self.buffer_len_fn = None
         self.buffer_len_is_upper_bound = None
 
@@ -72,9 +79,16 @@ class Func(object):
         return self.name < other.name
 
     def add_metadata(self, m):
-        arg_name = m.split('(')[1].split(',')[0].strip()
+        if m.startswith(u'FIXED_SIZED_OUTPUT(') or m.startswith(u'MAX_SIZED_OUTPUT('):
+            arg_name = m.split('(')[1].split(',')[0].strip() # Argument metadata
+        elif m.startswith(':param '):
+            arg_name = m[len(':param '):].split(':')[0] # Argument docs
+        else:
+            self.docs.append(m) # Function docs
+            return
         args = [arg for arg in self.args if arg.name == arg_name]
-        assert len(args) == 1, 'invalid metadata reference {}'.format(m)
+        assert len(args) == 1, self.name + ':' + arg_name + \
+                ': invalid metadata reference {}'.format(m) + ' refs: ' + str(len(args))
         args[0].add_metadata(m)
 
 def is_array(func, arg, n, num_args, types):
@@ -476,8 +490,11 @@ def get_function_defs(non_elements, internal_only):
     for f in func_lines:
         if f.startswith(u'int '):
             funcs.append(Func(f, non_elements))
-        elif f.startswith(u'FIXED_SIZED_OUTPUT(') or f.startswith(u'MAX_SIZED_OUTPUT('):
-            funcs[-1].add_metadata(f)
+            add_meta = True
+        elif f.startswith(u'* ') and add_meta:
+            funcs[-1].add_metadata(f[2:])
+        else:
+            add_meta = False
 
     # Auto-detect output buffer length function based on the following naming conventions:
     # - funcname -> funcname_len / funcname_length
