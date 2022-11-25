@@ -285,7 +285,7 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
  * :param generator: Array of input asset generators.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN`` * number of inputs.
  * :param bytes_out: Buffer to receive surjection proof.
- * :param bytes_out_len: Length of ``bytes_out``. See `wally_asset_surjectionproof_size`.
+ * :param len: Length of ``bytes_out``. See `wally_asset_surjectionproof_size`.
  * :param written: Number of bytes actually written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_asset_surjectionproof(

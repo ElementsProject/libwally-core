@@ -251,7 +251,7 @@ WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *input);
 /**
  * Initialize a new transaction output.
  *
- * :param satoshi The amount of the output in satoshi.
+ * :param satoshi: The amount of the output in satoshi.
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param output: Transaction output to initialize.
@@ -265,7 +265,7 @@ WALLY_CORE_API int wally_tx_output_init(uint64_t satoshi,
 /**
  * Allocate and initialize a new transaction output.
  *
- * :param satoshi The amount of the output in satoshi.
+ * :param satoshi: The amount of the output in satoshi.
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param output: Destination for the resulting transaction output.
@@ -1187,7 +1187,7 @@ WALLY_CORE_API int wally_tx_get_elements_signature_hash(
 WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
     const unsigned char *txhash,
     size_t txhash_len,
-    uint32_t index,
+    uint32_t utxo_index,
     const unsigned char *contract_hash,
     size_t contract_hash_len,
     unsigned char *bytes_out,

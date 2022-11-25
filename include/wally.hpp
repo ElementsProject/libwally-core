@@ -1238,8 +1238,8 @@ inline int psbt_set_tx_modifiable_flags(const PSBT& psbt, uint32_t flags) {
 }
 
 template <class PSBT>
-inline int psbt_set_tx_version(const PSBT& psbt, uint32_t tx_version) {
-    int ret = ::wally_psbt_set_tx_version(detail::get_p(psbt), tx_version);
+inline int psbt_set_tx_version(const PSBT& psbt, uint32_t version) {
+    int ret = ::wally_psbt_set_tx_version(detail::get_p(psbt), version);
     return ret;
 }
 
@@ -2694,8 +2694,8 @@ inline int tx_elements_issuance_calculate_reissuance_token(const ENTROPY& entrop
 }
 
 template <class TXHASH, class CONTRACT_HASH, class BYTES_OUT>
-inline int tx_elements_issuance_generate_entropy(const TXHASH& txhash, uint32_t index, const CONTRACT_HASH& contract_hash, BYTES_OUT& bytes_out) {
-    int ret = ::wally_tx_elements_issuance_generate_entropy(txhash.data(), txhash.size(), index, contract_hash.data(), contract_hash.size(), bytes_out.data(), bytes_out.size());
+inline int tx_elements_issuance_generate_entropy(const TXHASH& txhash, uint32_t utxo_index, const CONTRACT_HASH& contract_hash, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_elements_issuance_generate_entropy(txhash.data(), txhash.size(), utxo_index, contract_hash.data(), contract_hash.size(), bytes_out.data(), bytes_out.size());
     return ret;
 }
 

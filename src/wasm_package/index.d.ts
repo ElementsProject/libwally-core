@@ -492,7 +492,7 @@ export function psbt_set_output_value_rangeproof(psbt: Ref_wally_psbt, index: nu
 export function psbt_set_output_witness_script(psbt: Ref_wally_psbt, index: number, script: Buffer|Uint8Array): void;
 export function psbt_set_pset_modifiable_flags(psbt: Ref_wally_psbt, flags: number): void;
 export function psbt_set_tx_modifiable_flags(psbt: Ref_wally_psbt, flags: number): void;
-export function psbt_set_tx_version(psbt: Ref_wally_psbt, tx_version: number): void;
+export function psbt_set_tx_version(psbt: Ref_wally_psbt, version: number): void;
 export function psbt_set_version(psbt: Ref_wally_psbt, flags: number, version: number): void;
 export function psbt_sign(psbt: Ref_wally_psbt, key: Buffer|Uint8Array, flags: number): void;
 export function psbt_to_base64(psbt: Ref_wally_psbt, flags: number): string;
