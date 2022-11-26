@@ -271,6 +271,7 @@ for f in (
     ('wally_asset_rangeproof_with_nonce', c_int, [c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint64, c_int, c_int, c_void_p, c_size_t, c_size_t_p]),
     ('wally_asset_scalar_offset', c_int, [c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_asset_surjectionproof', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_asset_surjectionproof_len', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_asset_surjectionproof_size', c_int, [c_size_t, c_size_t_p]),
     ('wally_asset_unblind', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint64_p]),
     ('wally_asset_unblind_with_nonce', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint64_p]),

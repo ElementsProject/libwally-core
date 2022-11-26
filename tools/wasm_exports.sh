@@ -430,6 +430,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_rangeproof_with_nonce' \
 ,'_wally_asset_scalar_offset' \
 ,'_wally_asset_surjectionproof' \
+,'_wally_asset_surjectionproof_len' \
 ,'_wally_asset_surjectionproof_size' \
 ,'_wally_asset_unblind' \
 ,'_wally_asset_unblind_with_nonce' \

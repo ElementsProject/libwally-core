@@ -1859,6 +1859,13 @@ inline int asset_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTPUT_
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES, class ASSET, class ABF, class GENERATOR>
+inline int asset_surjectionproof_len(const OUTPUT_ASSET& output_asset, const OUTPUT_ABF& output_abf, const OUTPUT_GENERATOR& output_generator, const BYTES& bytes, const ASSET& asset, const ABF& abf, const GENERATOR& generator, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_asset_surjectionproof_len(output_asset.data(), output_asset.size(), output_abf.data(), output_abf.size(), output_generator.data(), output_generator.size(), bytes.data(), bytes.size(), asset.data(), asset.size(), abf.data(), abf.size(), generator.data(), generator.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(generator.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 inline int asset_surjectionproof_size(size_t num_inputs, size_t* written) {
     int ret = ::wally_asset_surjectionproof_size(num_inputs, written);
     return ret;

@@ -264,9 +264,7 @@ if is_elements_build():
     asset_rangeproof = _wrap_bin(asset_rangeproof, ASSET_RANGEPROOF_MAX_LEN, resize=True)
     explicit_rangeproof = _wrap_bin(explicit_rangeproof, ASSET_EXPLICIT_RANGEPROOF_MAX_LEN, resize=True)
     explicit_surjectionproof = _wrap_bin(explicit_surjectionproof, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
-    def _asset_surjectionproof_len_fn(aid, ag, gen, r, in_aid, in_abf, in_ags):
-        return asset_surjectionproof_size(len(in_aid) // ASSET_TAG_LEN)
-    asset_surjectionproof = _wrap_bin(asset_surjectionproof, _asset_surjectionproof_len_fn, resize=True)
+    asset_surjectionproof = _wrap_bin(asset_surjectionproof, asset_surjectionproof_len, resize=True)
     asset_blinding_key_from_seed = _wrap_bin(asset_blinding_key_from_seed, HMAC_SHA512_LEN)
     asset_blinding_key_to_ec_private_key = _wrap_bin(asset_blinding_key_to_ec_private_key, EC_PRIVATE_KEY_LEN)
     asset_pak_whitelistproof = _wrap_bin(asset_pak_whitelistproof, asset_pak_whitelistproof_len, resize=True)

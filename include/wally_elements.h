@@ -268,6 +268,42 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
     size_t *written);
 
 /**
+ * Compute the length of an asset surjection proof.
+ *
+ * :param output_asset: asset id for the output.
+ * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_abf: Asset blinding factor for the output. Generated randomly for each output.
+ * :param output_abf_len: Length of ``output_abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
+ * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param bytes: Must be generated randomly for each output.
+ * :param bytes_len: Length of ``bytes``. Must be 32.
+ * :param asset: Array of input asset tags.
+ * :param asset_len: Length of ``asset`. Must be ``ASSET_TAG_LEN`` * number of inputs.
+ * :param abf: Array of input asset blinding factors.
+ * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN`` * number of inputs.
+ * :param generator: Array of input asset generators.
+ * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN`` * number of inputs.
+ * :param written: Number of bytes actually written to ``bytes_out``.
+ */
+WALLY_CORE_API int wally_asset_surjectionproof_len(
+    const unsigned char *output_asset,
+    size_t output_asset_len,
+    const unsigned char *output_abf,
+    size_t output_abf_len,
+    const unsigned char *output_generator,
+    size_t output_generator_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *asset,
+    size_t asset_len,
+    const unsigned char *abf,
+    size_t abf_len,
+    const unsigned char *generator,
+    size_t generator_len,
+    size_t *written);
+
+/**
  * Generate an asset surjection proof.
  *
  * :param output_asset: asset id for the output.
@@ -285,7 +321,7 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
  * :param generator: Array of input asset generators.
  * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN`` * number of inputs.
  * :param bytes_out: Buffer to receive surjection proof.
- * :param len: Length of ``bytes_out``. See `wally_asset_surjectionproof_size`.
+ * :param len: Length of ``bytes_out``. See `wally_asset_surjectionproof_len`.
  * :param written: Number of bytes actually written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_asset_surjectionproof(

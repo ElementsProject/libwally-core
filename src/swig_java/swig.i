@@ -454,6 +454,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_asset_rangeproof_with_nonce);
 %returns_size_t(wally_asset_rangeproof);
 %returns_array_(wally_asset_scalar_offset, 6, 7, EC_SCALAR_LEN);
+%returns_size_t(wally_asset_surjectionproof_len);
 %returns_size_t(wally_asset_surjectionproof_size);
 %returns_size_t(wally_asset_surjectionproof);
 %returns_uint64(wally_asset_unblind_with_nonce);

@@ -457,10 +457,16 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
         (asset_len % ASSET_TAG_LEN != 0) ||
         !abf || abf_len != num_inputs * BLINDING_FACTOR_LEN ||
         !generator || generator_len != num_inputs * ASSET_GENERATOR_LEN ||
-        !bytes_out ||
-        len < SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
+        !bytes_out || !len ||
         !written)
         goto cleanup;
+
+    if (len < SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used)) {
+        /* Let the caller know the required length */
+        *written = SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used);
+        ret = WALLY_OK;
+        goto cleanup;
+    }
 
     /* Build the array of input generator pointers required by secp */
     /* FIXME: This is horribly painful. Since parsed representations dont
@@ -503,6 +509,22 @@ cleanup:
     if (generators)
         clear_and_free(generators, num_inputs * sizeof(secp256k1_generator));
     return ret;
+}
+
+int wally_asset_surjectionproof_len(const unsigned char *output_asset, size_t output_asset_len,
+                                    const unsigned char *output_abf, size_t output_abf_len,
+                                    const unsigned char *output_generator, size_t output_generator_len,
+                                    const unsigned char *bytes, size_t bytes_len,
+                                    const unsigned char *asset, size_t asset_len,
+                                    const unsigned char *abf, size_t abf_len,
+                                    const unsigned char *generator, size_t generator_len,
+                                    size_t *written)
+{
+    unsigned char buff[1];
+    return surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                          output_generator, output_generator_len, bytes, bytes_len,
+                          asset, asset_len, abf, abf_len, generator, generator_len,
+                          buff, sizeof(buff), written, 100);
 }
 
 int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,

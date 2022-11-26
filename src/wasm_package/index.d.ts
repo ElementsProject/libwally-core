@@ -41,7 +41,7 @@ export function asset_pak_whitelistproof_size(num_keys: number): number;
 export function asset_rangeproof(value: bigint, pub_key: Buffer|Uint8Array, priv_key: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, commitment: Buffer|Uint8Array, extra: Buffer|Uint8Array, generator: Buffer|Uint8Array, min_value: bigint, exp: number, min_bits: number): Buffer;
 export function asset_rangeproof_with_nonce(value: bigint, nonce_hash: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, commitment: Buffer|Uint8Array, extra: Buffer|Uint8Array, generator: Buffer|Uint8Array, min_value: bigint, exp: number, min_bits: number): Buffer;
 export function asset_scalar_offset(value: bigint, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array): Buffer;
-export function asset_surjectionproof(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array, bytes: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, generator: Buffer|Uint8Array): Buffer;
+export function asset_surjectionproof_len(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array, bytes: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, generator: Buffer|Uint8Array): number;
 export function asset_surjectionproof_size(num_inputs: number): number;
 export function asset_unblind(pub_key: Buffer|Uint8Array, priv_key: Buffer|Uint8Array, proof: Buffer|Uint8Array, commitment: Buffer|Uint8Array, extra: Buffer|Uint8Array, generator: Buffer|Uint8Array): [asset_out: Buffer, abf_out: Buffer, vbf_out: Buffer, value_out: bigint];
 export function asset_unblind_with_nonce(nonce_hash: Buffer|Uint8Array, proof: Buffer|Uint8Array, commitment: Buffer|Uint8Array, extra: Buffer|Uint8Array, generator: Buffer|Uint8Array): [asset_out: Buffer, abf_out: Buffer, vbf_out: Buffer, value_out: bigint];
@@ -669,6 +669,7 @@ export function witness_p2wpkh_from_sig(pub_key: Buffer|Uint8Array, sig: Buffer|
 export function witness_program_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function witness_program_from_bytes_and_version(bytes: Buffer|Uint8Array, version: number, flags: number): Buffer;
 export function asset_pak_whitelistproof(online_keys: Buffer|Uint8Array, offline_keys: Buffer|Uint8Array, key_index: number, sub_pubkey: Buffer|Uint8Array, online_priv_key: Buffer|Uint8Array, summed_key: Buffer|Uint8Array): Buffer;
+export function asset_surjectionproof(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array, bytes: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, generator: Buffer|Uint8Array): Buffer;
 export function base58_n_to_bytes(str_in: string, str_len: number, flags: number): Buffer;
 export function base58_to_bytes(str_in: string, flags: number): Buffer;
 export function base64_to_bytes(str_in: string, flags: number): Buffer;
