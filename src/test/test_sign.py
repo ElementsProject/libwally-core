@@ -3,7 +3,7 @@ from util import *
 
 FLAG_ECDSA, FLAG_SCHNORR, FLAG_GRIND_R, FLAG_RECOVERABLE = 1, 2, 4, 8
 EX_PRIV_KEY_LEN, EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
-EC_SIGNATURE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 72
+EC_SIGNATURE_LEN, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 65, 72
 EC_SCALAR_LEN = 32
 BITCOIN_MESSAGE_HASH_FLAG = 1
 
@@ -46,6 +46,10 @@ class SignTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(h(r), h(sig[0:32]))
             self.assertEqual(h(s), h(sig[32:64]))
+            ret = wally_ec_sig_from_bytes_len(priv_key, len(priv_key),
+                                              msg, len(msg), FLAG_ECDSA)
+            self.assertEqual(ret, (WALLY_OK, EC_SIGNATURE_LEN))
+
 
             # Also sign with low-R grinding
             set_fake_ec_nonce(None)
@@ -216,6 +220,10 @@ class SignTests(unittest.TestCase):
 
         flags = FLAG_ECDSA | FLAG_RECOVERABLE
         self.assertEqual(WALLY_OK, self.sign(priv_key, msg, flags, out1))
+        ret = wally_ec_sig_from_bytes_len(priv_key, len(priv_key),
+                                          msg, len(msg), flags)
+        self.assertEqual(ret, (WALLY_OK, EC_SIGNATURE_RECOVERABLE_LEN))
+
 
         self.assertEqual(WALLY_OK, wally_ec_public_key_from_private_key(
             priv_key, 32, pub_key, 33))

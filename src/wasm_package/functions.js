@@ -14,9 +14,6 @@ const aes_cbc_len = (_key, iv, bytes, _flags) =>
     // CBC mode with PKCS#7 padding - output must be padded to the next block size multiply (for the pad length byte)
     (Math.floor(bytes.length/C.AES_BLOCK_LEN) + 1) * C.AES_BLOCK_LEN
 
-const ec_sig_from_bytes_len = (_priv_key, _bytes, flags) =>
-    flags & C.EC_FLAG_RECOVERABLE ? C.EC_SIGNATURE_RECOVERABLE_LEN : C.EC_SIGNATURE_LEN
-
 const wif_to_public_key_len = (wif, _prefix) =>
     wif_is_uncompressed(wif) ? C.EC_PUBLIC_KEY_UNCOMPRESSED_LEN : C.EC_PUBLIC_KEY_LEN
 
@@ -172,7 +169,7 @@ export const ec_scalar_add = wrap('wally_ec_scalar_add', [T.Bytes, T.Bytes, T.De
 export const ec_scalar_multiply = wrap('wally_ec_scalar_multiply', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_SCALAR_LEN)]);
 export const ec_scalar_subtract = wrap('wally_ec_scalar_subtract', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_SCALAR_LEN)]);
 export const ec_scalar_verify = wrap('wally_ec_scalar_verify', [T.Bytes]);
-export const ec_sig_from_bytes = wrap('wally_ec_sig_from_bytes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, ec_sig_from_bytes_len, false)]);
+export const ec_sig_from_bytes_len = wrap('wally_ec_sig_from_bytes_len', [T.Bytes, T.Bytes, T.Int32, T.DestPtr(T.Int32)]);
 export const ec_sig_from_der = wrap('wally_ec_sig_from_der', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_SIGNATURE_LEN)]);
 export const ec_sig_normalize = wrap('wally_ec_sig_normalize', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_SIGNATURE_LEN)]);
 export const ec_sig_to_der = wrap('wally_ec_sig_to_der', [T.Bytes, T.DestPtrVarLen(T.Bytes, C.EC_SIGNATURE_DER_MAX_LEN, true)]);
@@ -725,6 +722,7 @@ export const asset_pak_whitelistproof = wrap('wally_asset_pak_whitelistproof', [
 export const base58_n_to_bytes = wrap('wally_base58_n_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, base58_n_get_length, false)]);
 export const base58_to_bytes = wrap('wally_base58_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base58_get_length, false)]);
 export const base64_to_bytes = wrap('wally_base64_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base64_get_maximum_length, true)]);
+export const ec_sig_from_bytes = wrap('wally_ec_sig_from_bytes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, ec_sig_from_bytes_len, false)]);
 export const keypath_get_path = wrap('wally_keypath_get_path', [T.Bytes, T.DestPtrVarLen(T.Uint32Array, keypath_get_path_len, false)]);
 export const map_get_item = wrap('wally_map_get_item', [T.OpaqueRef, T.Int32, T.DestPtrVarLen(T.Bytes, map_get_item_length, false)]);
 export const map_get_item_key = wrap('wally_map_get_item_key', [T.OpaqueRef, T.Int32, T.DestPtrVarLen(T.Bytes, map_get_item_key_length, false)]);

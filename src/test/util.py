@@ -306,6 +306,7 @@ for f in (
     ('wally_ec_scalar_subtract_from', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_scalar_verify', c_int, [c_void_p, c_size_t]),
     ('wally_ec_sig_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
+    ('wally_ec_sig_from_bytes_len', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_size_t_p]),
     ('wally_ec_sig_from_der', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_sig_normalize', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_sig_to_der', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),

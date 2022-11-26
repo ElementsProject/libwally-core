@@ -311,7 +311,6 @@ def gen_wasm_package(funcs):
         'wally_hex_n_to_bytes': 'hex_n_to_bytes_len, false',
         'wally_aes': 'aes_len, false',
         'wally_aes_cbc': 'aes_cbc_len, true', # is_upper_bound=true only needed for the case of decryption
-        'wally_ec_sig_from_bytes': 'ec_sig_from_bytes_len, false',
         'wally_format_bitcoin_message': 'format_bitcoin_message_len, true',
         'wally_script_push_from_bytes': 'script_push_from_bytes_len, true',
         'wally_scriptpubkey_multisig_from_bytes': 'scriptpubkey_multisig_from_bytes_len, true',

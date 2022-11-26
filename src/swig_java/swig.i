@@ -482,6 +482,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_size_t(wally_ec_sig_from_bytes_len);
 %returns_array_check_flag(wally_ec_sig_from_bytes, 6, 7, jarg5, 8, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_normalize, 3, 4, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);

@@ -390,6 +390,25 @@ WALLY_CORE_API int wally_ec_public_key_negate(
     size_t len);
 
 /**
+ * Get the expected length of a signature in bytes.
+ *
+ * :param priv_key: The private key to sign with.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes: The message hash to sign.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param flags: EC_FLAG_ flag values indicating desired behavior.
+ * :param written: Destination for the expected length of the signature, either
+ *|    ``EC_SIGNATURE_LEN`` or ``EC_SIGNATURE_RECOVERABLE_LEN``.
+ */
+WALLY_CORE_API int wally_ec_sig_from_bytes_len(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    size_t *written);
+
+/**
  * Sign a message hash with a private key, producing a compact signature.
  *
  * :param priv_key: The private key to sign with.
@@ -398,9 +417,8 @@ WALLY_CORE_API int wally_ec_public_key_negate(
  * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
  * :param flags: EC_FLAG_ flag values indicating desired behavior.
  * :param bytes_out: Destination for the resulting compact signature.
- * :param len: The length of ``bytes_out`` in bytes. Must be
- *|    ``EC_SIGNATURE_LEN`` if EC_FLAG_RECOVERABLE is not set, otherwise must
- *|    be ``EC_SIGNATURE_RECOVERABLE_LEN``.
+ * :param len: The length of ``bytes_out`` in bytes. Must be ``EC_SIGNATURE_RECOVERABLE_LEN``
+ *|    if flags includes ``EC_FLAG_RECOVERABLE``, otherwise ``EC_SIGNATURE_LEN``.
  */
 WALLY_CORE_API int wally_ec_sig_from_bytes(
     const unsigned char *priv_key,

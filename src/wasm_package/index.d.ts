@@ -119,7 +119,7 @@ export function ec_scalar_add(scalar: Buffer|Uint8Array, operand: Buffer|Uint8Ar
 export function ec_scalar_multiply(scalar: Buffer|Uint8Array, operand: Buffer|Uint8Array): Buffer;
 export function ec_scalar_subtract(scalar: Buffer|Uint8Array, operand: Buffer|Uint8Array): Buffer;
 export function ec_scalar_verify(scalar: Buffer|Uint8Array): void;
-export function ec_sig_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
+export function ec_sig_from_bytes_len(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): number;
 export function ec_sig_from_der(bytes: Buffer|Uint8Array): Buffer;
 export function ec_sig_normalize(sig: Buffer|Uint8Array): Buffer;
 export function ec_sig_to_der(sig: Buffer|Uint8Array): Buffer;
@@ -672,6 +672,7 @@ export function asset_pak_whitelistproof(online_keys: Buffer|Uint8Array, offline
 export function base58_n_to_bytes(str_in: string, str_len: number, flags: number): Buffer;
 export function base58_to_bytes(str_in: string, flags: number): Buffer;
 export function base64_to_bytes(str_in: string, flags: number): Buffer;
+export function ec_sig_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function keypath_get_path(val: Buffer|Uint8Array): Uint32Array;
 export function map_get_item(map_in: Ref_wally_map, index: number): Buffer;
 export function map_get_item_key(map_in: Ref_wally_map, index: number): Buffer;

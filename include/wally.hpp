@@ -505,6 +505,12 @@ inline int ec_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, uint3
     return ret;
 }
 
+template <class PRIV_KEY, class BYTES>
+inline int ec_sig_from_bytes_len(const PRIV_KEY& priv_key, const BYTES& bytes, uint32_t flags, size_t* written) {
+    int ret = ::wally_ec_sig_from_bytes_len(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), flags, written);
+    return ret;
+}
+
 template <class BYTES, class BYTES_OUT>
 inline int ec_sig_from_der(const BYTES& bytes, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_sig_from_der(bytes.data(), bytes.size(), bytes_out.data(), bytes_out.size());
