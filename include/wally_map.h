@@ -34,7 +34,6 @@ struct wally_map {
 };
 #endif /* SWIG */
 
-#ifndef SWIG
 /**
  * Initialize a new map.
  *
@@ -45,7 +44,6 @@ WALLY_CORE_API int wally_map_init(
     size_t allocation_len,
     wally_map_verify_fn_t verify_fn,
     struct wally_map *output);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new map.
@@ -378,7 +376,6 @@ WALLY_CORE_API int wally_map_keypath_get_bip32_key_from_alloc(
     const struct ext_key *hdkey,
     struct ext_key **output);
 
-#ifndef SWIG
 /**
  * Verify a PSBT keypath keyed by a serialized bip32 extended public key.
  *
@@ -420,7 +417,6 @@ WALLY_CORE_API int wally_keypath_xonly_public_key_verify(
     size_t key_len,
     const unsigned char *val,
     size_t val_len);
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new BIP32 keypath map.

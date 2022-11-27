@@ -103,7 +103,6 @@ WALLY_CORE_API int bip39_mnemonic_validate(
     const struct words *w,
     const char *mnemonic);
 
-#ifndef SWIG
 /**
  * Convert a mnemonic into a binary seed.
  *
@@ -119,7 +118,6 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
-#endif /* SWIG */
 
 /**
  * Convert a mnemonic into a binary seed of 512 bits.

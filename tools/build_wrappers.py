@@ -6,6 +6,37 @@ import sys
 # Structs with no definition in the public header files
 OPAQUE_STRUCTS = [u'words']
 
+EXCLUDED_FUNCS = {
+    # Callers should use the fixed length bip39_mnemonic_to_seed512
+    'bip39_mnemonic_to_seed',
+    # Callers should use the non-in-place, value returning scalar operations
+    'wally_ec_scalar_add_to', 'wally_ec_scalar_multiply_by',
+    'wally_ec_scalar_subtract_from',
+    # Map getters returning internal pointers are only for C/C++ use
+    'wally_map_get', 'wally_map_get_integer',
+}
+
+# Output buffer length functions that aren't yet part of the API
+# The boolean is whether the length function is a maximum length,
+# True = Yes, False = Exact length
+MISSING_LEN_FUNCS = {
+    'wally_aes': False,
+    'wally_aes_cbc': True, # is_upper_bound=true only needed for the case of decryption
+    'wally_base58_to_bytes': True,
+    'wally_base58_n_to_bytes': True,
+    'wally_elements_pegin_contract_script_from_bytes': True,
+    'wally_elements_pegout_script_from_bytes': True,
+    'wally_format_bitcoin_message': True,
+    'wally_hex_n_to_bytes': False,
+    'wally_hex_to_bytes': False,
+    'wally_script_push_from_bytes': True,
+    'wally_scriptpubkey_csv_2of2_then_1_from_bytes': True,
+    'wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt': True,
+    'wally_scriptpubkey_csv_2of3_then_2_from_bytes': True,
+    'wally_scriptpubkey_multisig_from_bytes': True,
+    'wally_scriptsig_multisig_from_bytes': True,
+    'wally_wif_to_public_key': False,
+}
 
 def replace_text(filename, text, delims):
     lines = [line.rstrip() for line in open(filename)]
@@ -24,6 +55,22 @@ def get_non_elements_functions():
         funcs = subprocess.check_output(u'clang ' + cmd, shell=True)
     return funcs.decode('utf-8').split(u'\n')
 
+def strip_wally_prefix(func_name):
+    return func_name[len('wally_'):] if func_name.startswith('wally_') else func_name
+
+def get_export_name(func_name, all_names):
+    # Strip the '_alloc' suffix (this is typically what the user wants)
+    if func_name.endswith("_alloc"):
+        func_name = func_name[0:-6]
+    # Add '_noalloc' suffix to the non-alloc variation (should be used rarely)
+    elif f"{func_name}_alloc" in all_names:
+        func_name = f"{func_name}_noalloc"
+    # Strip 'wally_' prefix to keep things DRY
+    return strip_wally_prefix(func_name)
+
+def map_ignored(func, all_funcs):
+    # wrappers expose foo_alloc() as foo(); hide any non-alloc version
+    return f'%ignore {func.name};' if func.name + '_alloc' in all_funcs else ''
 
 class Arg(object):
     def __init__(self, definition):
@@ -105,7 +152,7 @@ def is_int_buffer(func, arg, n, num_args):
     return is_array(func, arg, n, num_args, [u'const uint32_t*', u'const uint64_t*'])
 
 
-def gen_python_cffi(funcs, internal_only):
+def gen_python_cffi(funcs, all_funcs, internal_only):
     typemap = {
         u'int'           : u'c_int',
         u'size_t*'       : u'c_size_t_p',
@@ -150,44 +197,91 @@ def gen_python_cffi(funcs, internal_only):
     replace_text(u'src/test/util.py', cffi, markers)
 
 
-def gen_python_swig(funcs):
+def gen_python_swig(funcs, all_funcs):
+    output_arrays = {
+        'unsigned char*' : '_wrap_bin',
+        'uint32_t*'      : '_wrap_int_array',
+    }
+
     def map_arg(func, arg, n, num_args):
         if is_buffer(func, arg, n, num_args):
             macro = u'output' if arg.type == u'unsigned char*' else u'nullable'
             return f'%pybuffer_{macro}_binary({arg.type} {arg.name}, size_t {func.args[n + 1].name});'
         return u''
 
-    swig = []
+    def wrap_output_buffers(func, num_args):
+        if func.name in EXCLUDED_FUNCS or func.name == 'wally_s2c_sig_from_bytes':
+            return ''
+        func_name = get_export_name(func.name, all_funcs)
+        if func.name.endswith('_alloc'):
+            return f'{func_name} = {func_name}_alloc'
+        if num_args > 2:
+            last_arg, buf_index = func.args[num_args-1], num_args-2
+            is_variable = last_arg.type == u'size_t*' and last_arg.name == u'written'
+            if is_variable:
+                last_arg = func.args[num_args-2]
+                buf_index = num_args - 3
+            if buf_index < 0:
+                return ''
+            buf_arg = func.args[buf_index]
+            if not is_array(func, buf_arg, buf_index, num_args, output_arrays.keys()):
+                return ''
+            wrap_fn = output_arrays[buf_arg.type]
+            if func.name in MISSING_LEN_FUNCS:
+                len_fn = strip_wally_prefix(func.name) + '_len'
+                resize = ', resize=True' if MISSING_LEN_FUNCS[func.name] else ''
+                return f'{func_name} = {wrap_fn}({func_name}, {len_fn}{resize})'
+            elif last_arg.fixed_size:
+                return f'{func_name} = {wrap_fn}({func_name}, {last_arg.fixed_size})'
+            elif last_arg.max_size:
+                return f'{func_name} = {wrap_fn}({func_name}, {last_arg.max_size}, resize=True)'
+            elif func.buffer_len_fn:
+                len_fn = get_export_name(func.buffer_len_fn, all_funcs)
+                resize = ', resize=True' if func.buffer_len_is_upper_bound else ''
+                return f'{func_name} = {wrap_fn}({func_name}, {len_fn}{resize})'
+        return ''
+
+    buffer_args, ignored_calls, wrapped_calls, wrapped_liquid_calls = [], [], [], []
     for func in funcs:
         num_args = len(func.args)
         mapped = [map_arg(func, arg, i, num_args) for i, arg in enumerate(func.args)]
-        swig.extend([m for m in mapped if m])
+        buffer_args.extend([m for m in mapped if m])
+        ignored_calls.extend([m for m in [map_ignored(func, all_funcs)] if m])
+        wrapped = wrap_output_buffers(func, num_args)
+        if wrapped:
+            [wrapped_calls, wrapped_liquid_calls][func.is_elements].append(wrapped)
 
-    swig = sorted(set(swig))
-    replace_text(u'src/swig_python/swig.i', swig,
+    swig_i_decls = sorted(set(buffer_args)) + sorted(set(ignored_calls))
+    replace_text(u'src/swig_python/swig.i', swig_i_decls,
                  [u'/* BEGIN AUTOGENERATED */', u'/* END AUTOGENERATED */'])
 
+    wrapped_liquid_calls = ['if is_elements_build():'] + \
+        ['    ' + call for call in wrapped_liquid_calls]
+    calls = wrapped_calls + wrapped_liquid_calls
+    replace_text(u'src/swig_python/python_extra.py_in', calls,
+                 [u'# BEGIN AUTOGENERATED', u'# END AUTOGENERATED'])
 
-def gen_java_swig(funcs):
+
+def gen_java_swig(funcs, all_funcs):
     def map_arg(func, arg, n, num_args):
-        if arg.type in [u'const unsigned char*', u'unsigned char*'] and \
-                n != num_args -1 and func.args[n + 1].type == u'size_t' and \
-                func.args[n + 1].name.endswith(u'len'):
+        if is_buffer(func, arg, n, num_args):
             return f'%apply(char *STRING, size_t LENGTH) {{ ({arg.type} {arg.name}, size_t {func.args[n + 1].name}) }};'
         return u''
 
-    swig = []
+        ignored_calls.extend([m for m in [map_ignored(func, all_funcs)] if m])
+    buffer_args, ignored_calls = [], []
     for func in funcs:
         num_args = len(func.args)
         mapped = [map_arg(func, arg, i, num_args) for i, arg in enumerate(func.args)]
-        swig.extend([m for m in mapped if m])
+        buffer_args.extend([m for m in mapped if m])
+        ignored_calls.extend([m for m in [map_ignored(func, all_funcs)] if m])
 
-    swig = sorted(set(swig))
-    replace_text(u'src/swig_java/swig.i', swig,
+    swig_i_decls = sorted(set(buffer_args)) + sorted(set(ignored_calls))
+    replace_text(u'src/swig_java/swig.i', swig_i_decls,
                  [u'/* BEGIN AUTOGENERATED */', u'/* END AUTOGENERATED */'])
 
 
-def gen_wally_hpp(funcs):
+def gen_wally_hpp(funcs, all_funcs):
     cpp, cpp_elements = {}, {}
     for func in funcs:
         num_args = len(func.args)
@@ -225,7 +319,7 @@ def gen_wally_hpp(funcs):
         impl = []
         if len(t_types):
             impl.append(f'template <{", ".join(t_types)}>')
-        func_name = func.name[6:] if func.name.startswith(u'wally_') else func.name
+        func_name = strip_wally_prefix(func.name)
         impl.append(f'inline int {func_name}({", ".join(cpp_args)}) {{')
         if vardecl:
             impl.append(vardecl)
@@ -250,7 +344,7 @@ def gen_wally_hpp(funcs):
                  [u'/* BEGIN AUTOGENERATED */', u'/* END AUTOGENERATED */'])
 
 
-def gen_wasm_exports(funcs):
+def gen_wasm_exports(funcs, all_funcs):
     funcs = sorted(funcs)
     exports = ','.join([f"'_{func.name}' \\\n" for func in funcs if not func.is_elements])
     elements_exports = ','.join([f"'_{func.name}' \\\n" for func in funcs if func.is_elements])
@@ -265,7 +359,7 @@ def gen_wasm_exports(funcs):
     replace_text(u'tools/wasm_exports.sh', text,
                  [u'# BEGIN AUTOGENERATED', u'# END AUTOGENERATED'])
 
-def gen_wasm_package(funcs):
+def gen_wasm_package(funcs, all_funcs):
 
     # Simple single-argument types that can be identified without inspecting the next arguments
     # map of C type -> (JS type, TypeScript argument type, TypeScript return type)
@@ -305,32 +399,6 @@ def gen_wasm_package(funcs):
         'uint32_t*': ('T.Uint32Array', 'Uint32Array'),
     }
 
-    # Output buffer length functions implemented on the JS side
-    js_buffer_size_fns = {
-        'wally_hex_to_bytes': 'hex_to_bytes_len, false',
-        'wally_hex_n_to_bytes': 'hex_n_to_bytes_len, false',
-        'wally_aes': 'aes_len, false',
-        'wally_aes_cbc': 'aes_cbc_len, true', # is_upper_bound=true only needed for the case of decryption
-        'wally_format_bitcoin_message': 'format_bitcoin_message_len, true',
-        'wally_script_push_from_bytes': 'script_push_from_bytes_len, true',
-        'wally_scriptpubkey_multisig_from_bytes': 'scriptpubkey_multisig_from_bytes_len, true',
-        'wally_scriptsig_multisig_from_bytes': 'scriptsig_multisig_from_bytes_len, true',
-        'wally_wif_to_public_key': 'wif_to_public_key_len, true',
-        'wally_scriptpubkey_csv_2of2_then_1_from_bytes': 'scriptpubkey_csv_2of2_then_1_from_bytes_len, true',
-        'wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt': 'scriptpubkey_csv_2of2_then_1_from_bytes_opt_len, true',
-        'wally_scriptpubkey_csv_2of3_then_2_from_bytes': 'scriptpubkey_csv_2of3_then_2_from_bytes_len, true',
-        'wally_elements_pegout_script_from_bytes': 'elements_pegout_script_from_bytes_len, true',
-        'wally_elements_pegin_contract_script_from_bytes': 'elements_pegin_contract_script_from_bytes_len, true',
-    }
-
-    # Exclude scalar functions for in-place modification. We can't hand a mutable pointer of the user-provided Buffer
-    # to WASM, and simulating the in-place behavior in JS would involve copying the Buffer to the WASM memory area
-    # and back out, which defeats the purpose. Non-in-place variants are available for use instead.
-    excluded_funcs = [ 'wally_ec_scalar_add_to', 'wally_ec_scalar_multiply_by',
-                       'wally_ec_scalar_subtract_from',
-                       # Callers should use the fixed length bip39_mnemonic_to_seed512
-                       'bip39_mnemonic_to_seed']
-
     def map_args(func):
         num_args = len(func.args)
         next_index = 0
@@ -369,14 +437,16 @@ def gen_wasm_package(funcs):
 
                 # Detect output buffer size (fixed or via a length utility function)
                 len_arg = func.args[curr_index + 1]
-                if len_arg.fixed_size:
+                if func.name in MISSING_LEN_FUNCS:
+                    len_fn = strip_wally_prefix(func.name) + '_len'
+                    output_buffer_size = f'{len_fn}, {str(MISSING_LEN_FUNCS[func.name]).lower()}'
+                elif len_arg.fixed_size:
                     output_buffer_size = f"C.{len_arg.fixed_size}"
                 elif len_arg.max_size:
                     output_buffer_size = f"C.{len_arg.max_size}, true"
                 elif func.buffer_len_fn:
-                    output_buffer_size = f"{export_name(func.buffer_len_fn)}, {'true' if func.buffer_len_is_upper_bound else 'false'}"
-                elif func.name in js_buffer_size_fns:
-                    output_buffer_size = js_buffer_size_fns[func.name]
+                    len_fn = get_export_name(func.buffer_len_fn, all_funcs)
+                    output_buffer_size = f"{len_fn}, {'true' if func.buffer_len_is_upper_bound else 'false'}"
                 elif func.name == 'wally_scrypt':
                     # Special-case for wally_scrypt(), the only function with an output buffer where
                     # the user provides the intended output length as an argument to the JS API.
@@ -428,35 +498,19 @@ def gen_wasm_package(funcs):
 
         return (js_args, ts_args, ts_returns)
 
-    func_names = set([ func.name for func in funcs ])
-
-    def export_name(func_name):
-
-        # Strip the '_alloc' suffix (this is typically what the user wants)
-        if func_name.endswith("_alloc"):
-            func_name = func_name[0:-6]
-        # Add '_noalloc' suffix to the non-alloc variation (should be used rarely)
-        elif f"{func_name}_alloc" in func_names:
-            func_name = f"{func_name}_noalloc"
-
-        # Strip 'wally_' prefix to keep things DRY (everything is already namespaced under the package)
-        if func_name.startswith('wally_'):
-            func_name = func_name[6:]
-
-        return func_name
-
     # Drop excluded functions
-    fn_included = filter(lambda f: f.name not in excluded_funcs, funcs)
+    fn_included = filter(lambda f: f.name not in EXCLUDED_FUNCS, funcs)
     # Place functions that depend on the buffer length utility functions last, so that the utility
     # functions are available to them. Then sort by name.
-    fn_def_order = sorted(fn_included, key = lambda f: (f.buffer_len_fn is not None, export_name(f.name)))
+    key_fn = lambda f: (f.buffer_len_fn is not None, get_export_name(f.name, all_funcs))
+    fn_def_order = sorted(fn_included, key = key_fn)
 
     jscode = []
     tscode = []
 
     for func in fn_def_order:
         (js_args, ts_args, ts_returns) = map_args(func)
-        fn_name = export_name(func.name)
+        fn_name = get_export_name(func.name, all_funcs)
 
         jscode.append(f"export const {fn_name} = wrap('{func.name}', [{', '.join(js_args)}]);")
 
@@ -517,15 +571,17 @@ if __name__ == "__main__":
 
     external_funcs = get_function_defs(non_elements, False)
     internal_funcs = get_function_defs(non_elements, True)
+
     all_funcs = external_funcs + internal_funcs
+    all_names = set([f.name for f in all_funcs])
 
     # Generate the wrapper code
-    gen_python_cffi(external_funcs, False)
-    gen_python_cffi(internal_funcs, True)
+    gen_python_cffi(external_funcs, all_names, False)
+    gen_python_cffi(internal_funcs, all_names, True)
 
-    gen_python_swig(external_funcs)
-    gen_java_swig(external_funcs)
-    gen_wally_hpp(external_funcs)
+    gen_python_swig(all_funcs, all_names)
+    gen_java_swig(external_funcs, all_names)
+    gen_wally_hpp(external_funcs, all_names)
 
-    gen_wasm_exports(all_funcs)
-    gen_wasm_package(all_funcs)
+    gen_wasm_exports(all_funcs, all_names)
+    gen_wasm_package(all_funcs, all_names)

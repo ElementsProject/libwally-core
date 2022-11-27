@@ -3,8 +3,11 @@ import * as C from './const.js'
 
 // Length functions for varlen buffers, based on the Python implementation in python_extra.py_in
 
-const hex_to_bytes_len = hex => hex.length / 2
-const hex_n_to_bytes_len = (_hex, hex_len) => hex_len / 2
+const hex_to_bytes_len = hex => Math.floor(hex.length / 2)
+const hex_n_to_bytes_len = (_hex, hex_len) => Math.floor(hex_len / 2)
+
+const base58_to_bytes_len = (base58, flags) => base58_get_length(base58)
+const base58_n_to_bytes_len = (base58, n, flags) => base58_n_get_length(base58, n)
 
 const aes_len = (_key, bytes, _flags) =>
     // ECB mode with no padding - output size is always exactly the same as the input
@@ -709,7 +712,7 @@ export const wif_from_bytes = wrap('wally_wif_from_bytes', [T.Bytes, T.Int32, T.
 export const wif_is_uncompressed = wrap('wally_wif_is_uncompressed', [T.String, T.DestPtr(T.Int32)]);
 export const wif_to_address = wrap('wally_wif_to_address', [T.String, T.Int32, T.Int32, T.DestPtrPtr(T.String)]);
 export const wif_to_bytes = wrap('wally_wif_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.EC_PRIVATE_KEY_LEN)]);
-export const wif_to_public_key = wrap('wally_wif_to_public_key', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, wif_to_public_key_len, true)]);
+export const wif_to_public_key = wrap('wally_wif_to_public_key', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, wif_to_public_key_len, false)]);
 export const witness_multisig_from_bytes = wrap('wally_witness_multisig_from_bytes', [T.Bytes, T.Bytes, T.Uint32Array, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_p2wpkh_from_der = wrap('wally_witness_p2wpkh_from_der', [T.Bytes, T.Bytes, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_p2wpkh_from_sig = wrap('wally_witness_p2wpkh_from_sig', [T.Bytes, T.Bytes, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
@@ -717,8 +720,8 @@ export const witness_program_from_bytes = wrap('wally_witness_program_from_bytes
 export const witness_program_from_bytes_and_version = wrap('wally_witness_program_from_bytes_and_version', [T.Bytes, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_WITNESSSCRIPT_MAX_LEN, true)]);
 export const asset_pak_whitelistproof = wrap('wally_asset_pak_whitelistproof', [T.Bytes, T.Bytes, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, asset_pak_whitelistproof_len, false)]);
 export const asset_surjectionproof = wrap('wally_asset_surjectionproof', [T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, asset_surjectionproof_len, false)]);
-export const base58_n_to_bytes = wrap('wally_base58_n_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, base58_n_get_length, false)]);
-export const base58_to_bytes = wrap('wally_base58_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base58_get_length, false)]);
+export const base58_n_to_bytes = wrap('wally_base58_n_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, base58_n_to_bytes_len, true)]);
+export const base58_to_bytes = wrap('wally_base58_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base58_to_bytes_len, true)]);
 export const base64_to_bytes = wrap('wally_base64_to_bytes', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, base64_get_maximum_length, true)]);
 export const ec_sig_from_bytes = wrap('wally_ec_sig_from_bytes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, ec_sig_from_bytes_len, false)]);
 export const keypath_get_path = wrap('wally_keypath_get_path', [T.Bytes, T.DestPtrVarLen(T.Uint32Array, keypath_get_path_len, false)]);

@@ -5,6 +5,11 @@
   wrappers default this to zero for backwards compatibility.
 - bip39_mnemonic_to_seed is no longer available for SWIG-wrapped languages.
   Callers should use bip39_mnemonic_to_seed512 instead.
+- Python: Some calls (e.g. bip39_mnemonic_to_seed512, aes, and aes_cbc) used
+  to take output buffers to fill and return the number of bytes written. These
+  calls now automatically create and fill thier buffer, returning it as the
+  only return value. The number of bytes written can be determined by using
+  len() on the returned output buffer.
 
 ## Version 0.8.6
 - Support for PSET v0 (Elements) has been removed.

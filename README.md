@@ -24,7 +24,7 @@ Wally can currently be built for:
 And can be used from:
 - C and compatible languages which can call C interfaces
 - C++ (see include/wally.hpp for C++ container support)
-- Python 2.7+ or 3.x
+- Python 3.x
 - Java
 - Javascript via node.js or Cordova or WebAssembly/Emscripten compatible
 
@@ -122,7 +122,7 @@ It is suggested you only install this way into a virtualenv while the library
 is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
-`PYTHON_VERSION` environment variable (to e.g. `2.7`, `3`, `3.7` etc) before
+`PYTHON_VERSION` environment variable (to e.g. `3`, `3.7` etc) before
 running `pip` or (when compiling manually) `./configure`.
 
 You can also install the binary [wally releases](https://github.com/ElementsProject/libwally-core/releases)

@@ -133,7 +133,6 @@ struct wally_psbt {
 };
 #endif /* SWIG */
 
-#ifndef SWIG
 /**
  * Set the previous txid in an input.
  *
@@ -1806,7 +1805,6 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
     uint32_t flags,
     size_t *written);
 #endif /* BUILD_ELEMENTS */
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new PSBT.
@@ -2142,7 +2140,6 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
     uint32_t flags,
     struct wally_psbt **output);
 
-#ifndef SWIG
 /**
  * Blind a PSBT.
  *
@@ -2171,7 +2168,6 @@ WALLY_CORE_API int wally_psbt_blind(
     uint32_t output_index,
     uint32_t flags,
     struct wally_map *output);
-#endif
 
 /**
  * Blind a PSBT.

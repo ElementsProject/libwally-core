@@ -205,7 +205,6 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
     size_t index,
     uint32_t flags);
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.
  *
@@ -213,7 +212,6 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
  */
 WALLY_CORE_API int wally_tx_witness_stack_free(
     struct wally_tx_witness_stack *stack);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new transaction input.
@@ -238,16 +236,13 @@ WALLY_CORE_API int wally_tx_input_init_alloc(
     const struct wally_tx_witness_stack *witness,
     struct wally_tx_input **output);
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction input allocated by `wally_tx_input_init_alloc`.
  *
  * :param input: The transaction input to free.
  */
 WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *input);
-#endif /* SWIG_PYTHON */
 
-#ifndef SWIG
 /**
  * Initialize a new transaction output.
  *
@@ -260,7 +255,6 @@ WALLY_CORE_API int wally_tx_output_init(uint64_t satoshi,
                                         const unsigned char *script,
                                         size_t script_len,
                                         struct wally_tx_output *output);
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new transaction output.
@@ -286,7 +280,6 @@ WALLY_CORE_API int wally_tx_output_clone_alloc(
     const struct wally_tx_output *tx_output_in,
     struct wally_tx_output **output);
 
-#ifndef SWIG
 /**
  * Create a new copy of a transaction output in place.
  *
@@ -298,16 +291,13 @@ WALLY_CORE_API int wally_tx_output_clone_alloc(
 WALLY_CORE_API int wally_tx_output_clone(
     const struct wally_tx_output *tx_output_in,
     struct wally_tx_output *output);
-#endif /* SWIG */
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction output allocated by `wally_tx_output_init_alloc`.
  *
  * :param output: The transaction output to free.
  */
 WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *output);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new transaction.
@@ -524,14 +514,12 @@ WALLY_CORE_API int wally_tx_get_witness_count(
     const struct wally_tx *tx,
     size_t *written);
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction allocated by `wally_tx_init_alloc`.
  *
  * :param tx: The transaction to free.
  */
 WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
-#endif /* SWIG_PYTHON */
 
 /**
  * Return the txid of a transaction.
@@ -761,7 +749,6 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_set(
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len);
 
-#ifndef SWIG_PYTHON
 /**
  * Free issuance data on an input.
  *
@@ -769,7 +756,6 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_set(
  */
 WALLY_CORE_API int wally_tx_elements_input_issuance_free(
     struct wally_tx_input *input);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new elements transaction input.
@@ -858,7 +844,6 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_set(
     const unsigned char *rangeproof,
     size_t rangeproof_len);
 
-#ifndef SWIG_PYTHON
 /**
  * Free commitment data on an output.
  *
@@ -866,9 +851,7 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_set(
  */
 WALLY_CORE_API int wally_tx_elements_output_commitment_free(
     struct wally_tx_output *output);
-#endif /* SWIG_PYTHON */
 
-#ifndef SWIG
 /**
  * Initialize a new elements transaction output in place.
  *
@@ -902,7 +885,6 @@ WALLY_CORE_API int wally_tx_elements_output_init(
     const unsigned char *rangeproof,
     size_t rangeproof_len,
     struct wally_tx_output *output);
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new elements transaction output.
