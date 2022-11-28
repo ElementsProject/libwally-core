@@ -4009,15 +4009,16 @@ int wally_psbt_get_input_scriptcode(const struct wally_psbt *psbt, size_t index,
 int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                                         const struct wally_tx *tx,
                                         const unsigned char *script, size_t script_len,
+                                        uint32_t flags,
                                         unsigned char *bytes_out, size_t len)
 {
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     uint64_t satoshi;
-    uint32_t sighash, flags;
+    uint32_t sighash, sig_flags;
     size_t is_pset;
     int ret;
 
-    if (!inp || !tx)
+    if (!inp || !tx || flags)
         return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
@@ -4026,7 +4027,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     sighash = inp->sighash ? inp->sighash : WALLY_SIGHASH_ALL;
     if (sighash & 0xffffff00)
         return WALLY_EINVAL;
-    flags = inp->witness_utxo ? WALLY_TX_FLAG_USE_WITNESS : 0;
+    sig_flags = inp->witness_utxo ? WALLY_TX_FLAG_USE_WITNESS : 0;
 
     if (is_pset) {
         if (!inp->witness_utxo)
@@ -4036,14 +4037,15 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                                                     script, script_len,
                                                     inp->witness_utxo->value,
                                                     inp->witness_utxo->value_len,
-                                                    sighash, flags, bytes_out, len);
+                                                    sighash, sig_flags, bytes_out,
+                                                    len);
 #else
         return WALLY_EINVAL; /* Unsupported */
 #endif /* BUILD_ELEMENTS */
     }
     satoshi = inp->witness_utxo ? inp->witness_utxo->satoshi : 0;
     return wally_tx_get_btc_signature_hash(tx, index, script, script_len,
-                                           satoshi, sighash, flags,
+                                           satoshi, sighash, sig_flags,
                                            bytes_out, len);
 }
 
@@ -4139,7 +4141,7 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         if (ret == WALLY_OK)
             ret = wally_psbt_get_input_signature_hash(psbt, i, tx,
                                                       scriptcode, scriptcode_len,
-                                                      txhash, sizeof(txhash));
+                                                      0, txhash, sizeof(txhash));
         /* Sign the input */
         if (ret == WALLY_OK)
             ret = wally_psbt_sign_input_bip32(psbt, i, subindex,
