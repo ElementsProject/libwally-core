@@ -43,7 +43,7 @@ const _wally_free_string = Module.cwrap('wally_free_string', 'number', ['number'
 // Array of integers. Used for byte buffers and 32/64 bits numbers.
 // Passed to C as two arguments, the pointer and the array length.
 // Represented in JS as the IntArrayType, which is a Uint{8,32,64}Array.
-types.IntArray = (IntArrayType, heap) => ({
+types.IntArray = (IntArrayType, heap, wrap=x=>x) => ({
     wasm_types: ['number', 'number'],
     to_wasm: int_arr => {
         if (!Array.isArray(int_arr) && !(int_arr instanceof IntArrayType)) {
@@ -63,17 +63,19 @@ types.IntArray = (IntArrayType, heap) => ({
 
     read_ptr_sized: (ptr, array_size) => {
         const heap_offset = ptr / IntArrayType.BYTES_PER_ELEMENT
-        return new IntArrayType(heap.subarray(heap_offset, heap_offset + array_size))
+        return wrap(new IntArrayType(heap.subarray(heap_offset, heap_offset + array_size)))
     },
 
     free_ptr: ptr => Module._free(ptr),
 
-    init_empty: _ => new IntArrayType,
+    init_empty: _ => wrap(new IntArrayType),
 })
 
-types.Bytes = types.IntArray(Uint8Array, Module.HEAPU8)
 types.Uint32Array = types.IntArray(Uint32Array, Module.HEAPU32)
 types.Uint64Array = types.IntArray(BigUint64Array, Module.HEAPU64)
+// Return Uint8Arrays wrapped as a Buffer, which is a subclass of Uint8Array
+// but with some additional useful functionality (like toString('hex'))
+types.Bytes = types.IntArray(Uint8Array, Module.HEAPU8, Buffer.from)
 
 // An opaque reference returned via DestPtrPtr that can be handed back to libwally
 types.OpaqueRef = {
@@ -200,13 +202,6 @@ const getArraySize = (size_source, this_arg, all_args) =>
   : typeof size_source == 'function' ? size_source(...all_args)
   : size_source
 
-//
-// Utilities
-//
-
-export const hexToBytes = hex => new Uint8Array(Buffer.from(hex, 'hex'))
-
-export const bytesToHex = bytes => Buffer.from(bytes).toString('hex')
 
 //
 // Errors
