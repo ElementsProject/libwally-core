@@ -646,11 +646,14 @@ class PSBTTests(unittest.TestCase):
 
         # V2: Script
         self._throws(psbt_set_output_script, psbt, 0, dummy_bytes) # Non v2 PSBT
-        self._throws(psbt_get_output_script, psbt, 0)              # Non v2 PSBT
-        self._throws(psbt_get_output_script_len, psbt, 0)          # Non v2 PSBT
         self._try_get_set_b(psbt_set_output_script,
                             psbt_get_output_script,
                             psbt_get_output_script_len, psbt2, dummy_bytes, mandatory=True)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        v0_script = tx_get_output_script(global_tx, 0)
+        v0_script_len = tx_get_output_script_len(global_tx, 0)
+        self.assertEqual(psbt_get_output_script(psbt, 0), v0_script)
+        self.assertEqual(psbt_get_output_script_len(psbt, 0), v0_script_len)
 
         #
         # Outputs: PSET

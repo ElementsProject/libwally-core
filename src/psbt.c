@@ -5148,7 +5148,32 @@ int wally_psbt_has_output_amount(const struct wally_psbt *psbt, size_t index, si
     *written = p->has_amount ? 1 : 0;
     return WALLY_OK;
 }
-PSBT_GET_B(output, script, PSBT_2)
+
+int wally_psbt_get_output_script_len(const struct wally_psbt *psbt, size_t index,
+                                     size_t *written) {
+    struct wally_psbt_output *p = psbt_get_output(psbt, index);
+    if (written)
+        *written = 0;
+    if (!p || !written)
+        return WALLY_EINVAL;
+    *written = psbt->version == PSBT_0 ? psbt->tx->outputs[index].script_len : p->script_len;
+    return WALLY_OK;
+}
+
+int wally_psbt_get_output_script(const struct wally_psbt *psbt, size_t index,
+                                 unsigned char *bytes_out, size_t len, size_t *written) {
+    struct wally_psbt_output *p = psbt_get_output(psbt, index);
+    if (written)
+        *written = 0;
+    if (!p || !written)
+        return WALLY_EINVAL;
+    *written = psbt->version == PSBT_0 ? psbt->tx->outputs[index].script_len : p->script_len;
+    if (*written <= len && *written)
+        memcpy(bytes_out,
+               psbt->version == PSBT_0 ? psbt->tx->outputs[index].script : p->script,
+               *written);
+    return WALLY_OK;
+}
 
 PSBT_SET_S(output, keypaths, wally_map)
 PSBT_SET_S(output, unknowns, wally_map)
