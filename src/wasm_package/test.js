@@ -74,7 +74,47 @@ wally.map_free(keypaths)
 
 // Test output buffers with a user-specified length (scrypt is the only instance of this)
 const try_scrypt = size => wally.scrypt(Buffer.from("password"), Buffer.from("NaCl"), 1024, 8, 16, size)
-assert(try_scrypt(32).toString('hex'), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b373162')
-assert(try_scrypt(64).toString('hex'), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')
+assert.equal(try_scrypt(32).toString('hex'), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b373162')
+assert.equal(try_scrypt(64).toString('hex'), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')
+
+// Test base58 conversion (depends on a JS length function)
+assert.equal(wally.base58_to_bytes('1EMBaSSyxMQPV2fmUsdB7mMfMoocgfiMNw', 0).toString('hex'), '00926ac8843cbca0ee59aa857188324d6d5b76c1c6f0bcc3b0')
+assert.equal(wally.base58_n_to_bytes('1EMBaSSyxMQPV2fmUsdB7mMfMoocgfiMNw', 34, 0).toString('hex'), '00926ac8843cbca0ee59aa857188324d6d5b76c1c6f0bcc3b0')
+
+// Test AES (depends on a JS length function)
+assert.equal(wally.aes(Buffer.from('2b7e151628aed2a6abf7158809cf4f3c', 'hex'), Buffer.from('ae2d8a571e03ac9c9eb76fac45af8e51', 'hex'), wally.AES_FLAG_ENCRYPT).toString('hex'), 'f5d3d58503b9699de785895a96fdbaaf')
+assert.equal(wally.aes(Buffer.from('2b7e151628aed2a6abf7158809cf4f3c', 'hex'), Buffer.from('f5d3d58503b9699de785895a96fdbaaf', 'hex'), wally.AES_FLAG_DECRYPT).toString('hex'), 'ae2d8a571e03ac9c9eb76fac45af8e51')
+assert.equal(wally.aes_cbc(Buffer.from('b6bb953ba709b450bfba14f8e8c6b423', 'hex'), Buffer.from('1d3793f6b9ceb8d1c70726bc890f1f10', 'hex'), Buffer.from('212c4fab8ad5a7de2361ebe033cb', 'hex'), wally.AES_FLAG_ENCRYPT).toString('hex'), '9a8a46a2e63518933dd3ad846b04dc08')
+assert.equal(wally.aes_cbc(Buffer.from('b6bb953ba709b450bfba14f8e8c6b423', 'hex'), Buffer.from('1d3793f6b9ceb8d1c70726bc890f1f10', 'hex'), Buffer.from('9a8a46a2e63518933dd3ad846b04dc08', 'hex'), wally.AES_FLAG_DECRYPT).toString('hex'), '212c4fab8ad5a7de2361ebe033cb')
+
+// Test WIF conversion (depends on a JS length function)
+assert.equal(wally.wif_to_public_key('KxDQjJwvLdNNGhsipGgmceWaPjRndZuaQB9B2tgdHsw5sQ8Rtqje', 0x80).toString('hex'), '02fcba7ecf41bc7e1be4ee122d9d22e3333671eb0a3a87b5cdf099d59874e1940f') // compressed
+assert.equal(wally.wif_to_public_key('5J3MnPC5qQCBiAiQ4uwmzvMkN1Yu2VJMFmSR2LQvzHyfG3aFeWg', 0x80).toString('hex'), '04fcba7ecf41bc7e1be4ee122d9d22e3333671eb0a3a87b5cdf099d59874e1940f6e51e74615a5de78c420d41a1daec0d79eb9fa9206f7bb539104d42c9a0d685e') // same key, uncompressed
+
+// Test multisig scripts (depends on a JS length function)
+const r = (s, n) => Array(n+1).join(s) // repeat `s` `n` times
+    , PK3 = Buffer.from(r('11', 33*3), 'hex') // Fake three compressed pubkeys
+    , RS_1of2 = Buffer.from('5121'+r('11',33)+'21'+r('11',33)+'52ae', 'hex') // Fake 1of2 redeem script
+    , SIG = Buffer.from(r('11', 64), 'hex') // Fake sig
+assert.equal(wally.scriptpubkey_multisig_from_bytes(PK3, 2, 0).toString('hex'),
+             '52'+r('21'+r('11', 33), 3)+'53ae')
+assert.equal(wally.scriptsig_multisig_from_bytes(RS_1of2, SIG, [0x01], 0).toString('hex'),
+             '00'+'4730440220'+r('11',32)+'0220'+r('11',32)+'01475121'+r('11',33)+'21'+r('11',33)+'52ae')
+
+// Test format_bitcoin_message (depends on a JS length function)
+const MSG_PREFIX_HEX = Buffer.from('\x18Bitcoin Signed Message:\n').toString('hex')
+    , test_msg = (msg, varint_hex) => assert.equal(wally.format_bitcoin_message(msg, 0).toString('hex'), MSG_PREFIX_HEX + varint_hex + msg.toString('hex'))
+test_msg(Buffer.from('aaa'), '03')
+test_msg(Buffer.from(r('a', 253)), 'fdfd00')
+assert.equal(wally.format_bitcoin_message(Buffer.from('a'), wally.BITCOIN_MESSAGE_FLAG_HASH).length, wally.SHA256_LEN)
+
+// Test script_push_from_bytes (depends on a JS length function)
+const test_script_push = (data, prefix_hex) => assert.equal(wally.script_push_from_bytes(data, 0).toString('hex'), prefix_hex + data.toString('hex'))
+test_script_push(Buffer.from(r('00', 75), 'hex'), '4b')
+test_script_push(Buffer.from(r('00', 76), 'hex'), '4c4c')
+test_script_push(Buffer.from(r('00', 255), 'hex'), '4cff')
+test_script_push(Buffer.from(r('00', 256), 'hex'), '4d0001')
+assert.equal(wally.script_push_from_bytes(Buffer.from('foo'), wally.WALLY_SCRIPT_HASH160).length, wally.HASH160_LEN + 1)
+assert.equal(wally.script_push_from_bytes(Buffer.from('bar'), wally.WALLY_SCRIPT_SHA256).length, wally.SHA256_LEN + 1)
 
 console.log('Tests passed.')
