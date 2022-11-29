@@ -5,6 +5,7 @@ import {
     WALLY_NETWORK_BITCOIN_MAINNET, WALLY_ADDRESS_VERSION_WIF_MAINNET, WALLY_WIF_FLAG_COMPRESSED,
     BIP32_FLAG_KEY_PUBLIC, BIP32_INITIAL_HARDENED_CHILD,
 } from './index.js'
+import { toWallyMap, fromWallyMap } from './util.js'
 
 // Test simple invocation, with a return code only and no destination pointer
 wally.hex_verify('00') // should not throw
@@ -76,6 +77,19 @@ wally.map_free(keypaths)
 const try_scrypt = size => wally.scrypt(Buffer.from("password"), Buffer.from("NaCl"), 1024, 8, 16, size)
 assert.equal(try_scrypt(32).toString('hex'), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b373162')
 assert.equal(try_scrypt(64).toString('hex'), 'fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640')
+
+// Test JS<->wally map conversion
+let m1, m2
+const js_map = new Map([
+    [0, Buffer.from('zero')],
+    [1, Buffer.from('one')],
+    ['k1', Buffer.from('v1')],
+    ['k2', Buffer.from('v2')],
+])
+assert.deepEqual(fromWallyMap(m1=toWallyMap(js_map)), js_map)
+// works with plain objects and string values (auto-converted to a Map of Buffer values)
+assert.deepEqual(fromWallyMap(m2=toWallyMap({ 'foo': 'bar' })), new Map([['foo', Buffer.from('bar')]]))
+wally.map_free(m1); wally.map_free(m2)
 
 // Test base58 conversion (depends on a JS length function)
 assert.equal(wally.base58_to_bytes('1EMBaSSyxMQPV2fmUsdB7mMfMoocgfiMNw', 0).toString('hex'), '00926ac8843cbca0ee59aa857188324d6d5b76c1c6f0bcc3b0')

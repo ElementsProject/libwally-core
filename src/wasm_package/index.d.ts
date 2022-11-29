@@ -6,7 +6,7 @@ export * from './core'
 declare const OPAQUE_TAG: unique symbol;
 type OpaqueRef<S> = number & { readonly [OPAQUE_TAG]: S};
 
-export type Ref = OpaqueRef<'unknown'>;
+export type Ref = OpaqueRef<'unknown'> | null;
 export type Ref_words = OpaqueRef<'words'> | null;
 export type Ref_ext_key = OpaqueRef<'ext_key'> | null; // TODO check whether this is nullable anywhere in the C interface
 export type Ref_wally_map = OpaqueRef<'wally_map'> | null;
