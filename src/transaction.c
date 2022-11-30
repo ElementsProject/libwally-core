@@ -2414,11 +2414,11 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
 #define ensure_commitment(dst, explicit_siz, prefix_a, prefix_b) \
     switch (*dst) { \
-    case 0: \
+    case WALLY_TX_ASSET_CT_EMPTY_PREFIX: \
         ensure_n(sizeof(uint8_t)); \
         p++; \
         break; \
-    case 1: \
+    case WALLY_TX_ASSET_CT_EXPLICIT_PREFIX: \
         ensure_n(explicit_siz); \
         p += explicit_siz; \
         break; \
