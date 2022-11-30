@@ -193,7 +193,7 @@ static size_t get_commitment_len(const unsigned char *bytes,
 {
     if (!bytes || !*bytes)
         return sizeof(uint8_t); /* Null commitment */
-    if (*bytes == 1) {
+    if (*bytes == WALLY_TX_ASSET_CT_EXPLICIT_PREFIX) {
         /* Explicit value (unblinded) */
         if (prefixA == WALLY_TX_ASSET_CT_VALUE_PREFIX_A)
             return WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN; /* uint64 value */
@@ -209,7 +209,7 @@ static size_t confidential_commitment_varint_from_bytes(const unsigned char *byt
                                                         bool ct_value)
 {
     switch (*bytes) {
-    case 1:
+    case WALLY_TX_ASSET_CT_EXPLICIT_PREFIX:
         *v = ct_value ? WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN : WALLY_TX_ASSET_CT_LEN;
         return *v;
     case WALLY_TX_ASSET_CT_VALUE_PREFIX_A:
