@@ -11,6 +11,8 @@ $ npm install wallycore
 
 ## Example use
 
+With ES modules:
+
 ```js
 import wally from 'wallycore'
 
@@ -24,6 +26,19 @@ wally.tx_free(tx)
 ```
 
 If you're using CommonJS, the module can be loaded asynchronously using `const wally = await import('wallycore')` or `import('wallycore').then(wally => { ... })`.
+
+For browser use, you may use a bundler like [webpack](https://webpack.js.org/),
+or use the pre-bundled [`wallycore.bundle.js`](wallycore.bundle.js) file which exposes a global `WallyInit` promise that resolves to the module. For example:
+
+```html
+<script src="wallycore/wallycore.bundle.min.js"></script>
+<script>
+WallyInit.then(wally => {
+    console.log(wally.bip39_get_word(null, 10))
+})
+// or `const wally = await WallyInit`
+</script>
+```
 
 ## License
 [BSD/MIT](https://github.com/ElementsProject/libwally-core/blob/master/LICENSE)
