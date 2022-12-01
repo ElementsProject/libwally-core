@@ -13,6 +13,6 @@
     "*.d.ts",
     "libwally_wasm"
   ],
-  "author": "Nadav Ivgi",
-  "license": "MIT"
+  "author": "Blockstream",
+  "license": "(MIT or BSD)"
 }
