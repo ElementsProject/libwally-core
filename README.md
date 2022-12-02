@@ -19,6 +19,7 @@ Wally can currently be built for:
 - macOS
 - iOS
 - Windows
+- Embedded (e.g ESP-32)
 - WebAssembly
 
 And can be used from:
@@ -26,7 +27,7 @@ And can be used from:
 - C++ (see include/wally.hpp for C++ container support)
 - Python 3.x
 - Java
-- Javascript via node.js or Cordova or WebAssembly/Emscripten compatible
+- Javascript via node.js or web browser.
 
 ## Building
 
@@ -82,8 +83,6 @@ $ brew install swig
    features, including [Liquid](https://blockstream.com/liquid/) support.
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
-- `--enable-js-wrappers`. Enable the Node.js and Cordova Javascript wrappers.
-   This currently requires python to be available at build time (default: no).
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.
@@ -179,6 +178,8 @@ $ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',.
 $ ./tools/build_wasm.sh [--enable-elements]
 ```
 
+Note that emsdk v3.1.27 or later is required.
+
 The script `tools/build_wasm.sh` builds the `wallycore.html` example as well
 as the required `wallycore.js` and `wallycore.wasm` files, which can be used
 as an example for your own WebAssembly projects.
@@ -232,7 +233,7 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js-wrappers --enable-coverage --enable-elements
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-coverage --enable-elements
 $ make
 $ ./tools/coverage.sh clean
 $ make check
