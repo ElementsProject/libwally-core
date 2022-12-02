@@ -22,8 +22,8 @@ unzip -qq ${NDK_FILENAME}
 rm ${NDK_FILENAME}
 git clone https://github.com/emscripten-core/emsdk
 cd emsdk
-./emsdk install 3.1.20
-./emsdk activate 3.1.20
+./emsdk install 3.1.27
+./emsdk activate 3.1.27
 source ./emsdk_env.sh
 
 apt-get remove --purge curl unzip -yqq

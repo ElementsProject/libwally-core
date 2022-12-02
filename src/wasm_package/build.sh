@@ -10,5 +10,7 @@ set -xeo pipefail
 # Build WASM (Elements is always enabled)
 (cd ../.. && ./tools/build_wasm.sh --enable-elements)
 mkdir -p libwally_wasm && cp ../../wally_dist/wallycore.{js,wasm} libwally_wasm/
-# Rename to force commonjs mode. See https://github.com/emscripten-core/emscripten/pull/17451
-mv libwally_wasm/wallycore.js libwally_wasm/wallycore.cjs
+touch libwally_wasm/index # necessary for webpack to work (fixes "Can't resolve './' in 'wasm_package/libwally_wasm'")
+
+# Build browser bundle (to dist/wallycore.bundle.js, see webpack.config.js)
+webpack --mode production
