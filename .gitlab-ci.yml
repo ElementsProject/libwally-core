@@ -21,7 +21,6 @@ bullseye_release:
     - mv release wallycore-android-jni
     - tar cvf wally_dist/wallycore-android-jni.tar wallycore-android-jni
     - gzip -9 wally_dist/wallycore-android-jni.tar
-    - ./tools/build_js_bindings.sh
     - source /opt/emsdk/emsdk_env.sh
     - tools/build_wasm.sh --enable-elements
     - cd wally_dist && tar cvf wallycore-wasm.tar --remove-files wallycore.html wallycore.js wallycore.wasm

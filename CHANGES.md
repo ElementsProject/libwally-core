@@ -1,5 +1,9 @@
 # Changes
 
+## Version 0.8.8
+- The old Javascript and cordova wrappers have been removed. Users should move
+  to the new JS wrappers which are significantly more functional.
+
 ## Version 0.8.7
 - Javascript: Add a new WASM-based JS + typescript wrapper for Node and
   browsers. This now supports the entire wally API and builds to an npm module.
