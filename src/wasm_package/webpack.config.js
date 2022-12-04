@@ -14,12 +14,6 @@ export default {
             name: 'WallyInit'
         }
     },
-    resolve: {
-        fallback: {
-            module: false, // used within an if (NODEJS_ENV), can be skipped for browsers
-            assert: './browser/assert.js',
-        },
-    },
     plugins: [
         new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],
