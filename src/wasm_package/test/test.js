@@ -1,11 +1,11 @@
 import assert from 'assert'
 
-import * as wally from './index.js'
+import wally from '../src/index.js'
 import {
     WALLY_NETWORK_BITCOIN_MAINNET, WALLY_ADDRESS_VERSION_WIF_MAINNET, WALLY_WIF_FLAG_COMPRESSED,
     BIP32_FLAG_KEY_PUBLIC, BIP32_INITIAL_HARDENED_CHILD,
-} from './index.js'
-import { toWallyMap, fromWallyMap } from './util.js'
+} from '../src/index.js'
+import { toWallyMap, fromWallyMap } from '../src/util.js'
 
 // Test simple invocation, with a return code only and no destination pointer
 wally.hex_verify('00') // should not throw

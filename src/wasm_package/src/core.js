@@ -1,5 +1,5 @@
 import assert from 'assert'
-import InitWallyModule from './libwally_wasm/wallycore.js'
+import InitWallyModule from '../libwally_wasm/wallycore.js'
 import { WALLY_OK, WALLY_ERROR, WALLY_EINVAL, WALLY_ENOMEM } from './const.js'
 
 // Initialize the underlying WASM module and expose it publicly

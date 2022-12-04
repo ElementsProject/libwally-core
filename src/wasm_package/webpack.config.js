@@ -2,7 +2,7 @@ import webpack from 'webpack'
 import path from 'path'
 
 export default {
-    entry: './index.js',
+    entry: './src/index.js',
     experiments: {
         topLevelAwait: true,
     },
