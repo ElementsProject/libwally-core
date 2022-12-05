@@ -1,3 +1,6 @@
+import ctypes
+import json
+import struct
 import unittest
 from util import *
 
@@ -9,6 +12,7 @@ TX_MAX_VERSION = 2
 TX_FAKE_HEX = utf8('010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000')
 TX_HEX = utf8('0100000001be66e10da854e7aea9338c1f91cd489768d1d6d7189f586d7a3613f2a24d5396000000008b483045022100da43201760bda697222002f56266bf65023fef2094519e13077f777baed553b102205ce35d05eabda58cd50a67977a65706347cc25ef43153e309ff210a134722e9e0141042daa93315eebbe2cb9b5c3505df4c6fb6caca8b756786098567550d4820c09db988fe9997d049d687292f815ccd6e7fb5c1b1a91137999818d17c73d0f80aef9ffffffff0123ce0100000000001976a9142bc89c2702e0e618db7d59eb5ce2f0f147b4075488ac00000000')
 TX_WITNESS_HEX = utf8('020000000001012f94ddd965758445be2dfac132c5e75c517edf5ea04b745a953d0bc04c32829901000000006aedc98002a8c500000000000022002009246bbe3beb48cf1f6f2954f90d648eb04d68570b797e104fead9e6c3c87fd40544020000000000160014c221cdfc1b867d82f19d761d4e09f3b6216d8a8304004830450221008aaa56e4f0efa1f7b7ed690944ac1b59f046a59306fcd1d09924936bd500046d02202b22e13a2ad7e16a0390d726c56dfc9f07647f7abcfac651e35e5dc9d830fc8a01483045022100e096ad0acdc9e8261d1cdad973f7f234ee84a6ee68e0b89ff0c1370896e63fe102202ec36d7554d1feac8bc297279f89830da98953664b73d38767e81ee0763b9988014752210390134e68561872313ba59e56700732483f4a43c2de24559cb8c7039f25f7faf821039eb59b267a78f1020f27a83dc5e3b1e4157e4a517774040a196e9f43f08ad17d52ae89a3b720')
+TX_BIP341_HEX = utf8('02000000097de20cbff686da83a54981d2b9bab3586f4ca7e48f57f5b55963115f3b334e9c010000000000000000d7b7cab57b1393ace2d064f4d4a2cb8af6def61273e127517d44759b6dafdd990000000000fffffffff8e1f583384333689228c5d28eac13366be082dc57441760d957275419a418420000000000fffffffff0689180aa63b30cb162a73c6d2a38b7eeda2a83ece74310fda0843ad604853b0100000000feffffffaa5202bdf6d8ccd2ee0f0202afbbb7461d9264a25e5bfd3c5a52ee1239e0ba6c0000000000feffffff956149bdc66faa968eb2be2d2faa29718acbfe3941215893a2a3446d32acd050000000000000000000e664b9773b88c09c32cb70a2a3e4da0ced63b7ba3b22f848531bbb1d5d5f4c94010000000000000000e9aa6b8e6c9de67619e6a3924ae25696bb7b694bb677a632a74ef7eadfd4eabf0000000000ffffffffa778eb6a263dc090464cd125c466b5a99667720b1c110468831d058aa1b82af10100000000ffffffff0200ca9a3b000000001976a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac807840cb0000000020ac9a87f5594be208f8532db38cff670c450ed2fea8fcdefcc9a663f78bab962b0065cd1d')
 
 class TransactionTests(unittest.TestCase):
 
@@ -256,6 +260,51 @@ class TransactionTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_OK, wally_tx_get_btc_signature_hash(*args))
             self.assertEqual(expected, h(out[:out_len]))
+
+    def test_get_taproot_signature_hash(self):
+        """Testing function to get the taproot signature hash"""
+
+        with open(sys.path[0]+"/"+"wallet-test-vectors.json") as f:
+            test_vectors = json.load(f)
+
+        keyspend_case = test_vectors["keyPathSpending"][0]
+        utxos = keyspend_case["given"]["utxosSpent"]
+        input_spending = keyspend_case["inputSpending"]
+
+        tx = self.tx_deserialize_hex(TX_BIP341_HEX)
+        for input_index in range(len(input_spending)):
+            hash_type = input_spending[input_index]["given"]["hashType"]
+            index = input_spending[input_index]["given"]["txinIndex"]
+
+            scripts_arr = [bytes(bytearray.fromhex(utxo["scriptPubKey"])) for utxo in utxos]
+            scripts = (ctypes.c_char_p * len(scripts_arr))()
+            scripts[:] = scripts_arr
+
+            script_lens = (b'').join([struct.pack("N", len(bytearray.fromhex(utxo["scriptPubKey"]))) for utxo in utxos])
+            satoshis = (b'').join([struct.pack("<Q", utxo["amountSats"]) for utxo in utxos])
+
+            # Unused in these tests
+            tapleaf_script = None
+            tapleaf_script_len = 0
+            key_version = 0
+            codesep_pos = 0xFFFFFFFF
+            flags = 0
+            bytes_out, out_len = make_cbuffer('00'*32)
+            annex = None
+            annex_len = 0
+
+            sigHash = utf8(input_spending[input_index]["intermediary"]["sigHash"])
+
+            self.assertEqual(WALLY_OK, wally_tx_get_btc_taproot_signature_hash(tx, hash_type, index, scripts, script_lens, satoshis, tapleaf_script, tapleaf_script_len, key_version, codesep_pos, annex, annex_len, bytes_out))
+            self.assertEqual(sigHash, h(bytes_out[:out_len]))
+
+            # Un-verified sighash for BIP342, just to catch obvious user errors
+            tapleaf_script, tapleaf_script_len = make_cbuffer('00')
+            self.assertEqual(WALLY_OK, wally_tx_get_btc_taproot_signature_hash(tx, hash_type, index, scripts, script_lens, satoshis, tapleaf_script, tapleaf_script_len, key_version, codesep_pos, annex, annex_len, bytes_out))
+            codesep_pos = 0x00000001
+            self.assertEqual(WALLY_OK, wally_tx_get_btc_taproot_signature_hash(tx, hash_type, index, scripts, script_lens, satoshis, tapleaf_script, tapleaf_script_len, key_version, codesep_pos, annex, annex_len, bytes_out))
+            key_version = 2 # Only 0 and 1 are allowed
+            self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_taproot_signature_hash(tx, hash_type, index, scripts, script_lens, satoshis, tapleaf_script, tapleaf_script_len, key_version, codesep_pos, annex, annex_len, bytes_out))
 
 
 if __name__ == '__main__':
