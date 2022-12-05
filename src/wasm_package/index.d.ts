@@ -558,6 +558,7 @@ export function tx_free(tx: Ref_wally_tx): void;
 export function tx_from_bytes(bytes: Buffer|Uint8Array, flags: number): Ref_wally_tx;
 export function tx_from_hex(hex: string, flags: number): Ref_wally_tx;
 export function tx_get_btc_signature_hash(tx: Ref_wally_tx, index: number, script: Buffer|Uint8Array, satoshi: bigint, sighash: number, flags: number): Buffer;
+export function tx_get_btc_taproot_signature_hash(tx: Ref_wally_tx, index: number, scripts: Ref_wally_map, values: BigUint64Array|bigint[], tapleaf_script: Buffer|Uint8Array, key_version: number, codesep_position: number, annex: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
 export function tx_get_elements_signature_hash(tx: Ref_wally_tx, index: number, script: Buffer|Uint8Array, value: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
 export function tx_get_input_blinding_nonce(tx_in: Ref_wally_tx, index: number): Buffer;
 export function tx_get_input_entropy(tx_in: Ref_wally_tx, index: number): Buffer;

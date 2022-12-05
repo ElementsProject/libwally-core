@@ -1569,6 +1569,12 @@ inline int tx_get_btc_signature_hash(const TX& tx, size_t index, const SCRIPT& s
     return ret;
 }
 
+template <class TX, class SCRIPTS, class VALUES, class TAPLEAF_SCRIPT, class ANNEX, class BYTES_OUT>
+inline int tx_get_btc_taproot_signature_hash(const TX& tx, size_t index, const SCRIPTS& scripts, const VALUES& values, const TAPLEAF_SCRIPT& tapleaf_script, uint32_t key_version, uint32_t codesep_position, const ANNEX& annex, uint32_t sighash, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_get_btc_taproot_signature_hash(detail::get_p(tx), index, detail::get_p(scripts), values.data(), values.size(), tapleaf_script.data(), tapleaf_script.size(), key_version, codesep_position, annex.data(), annex.size(), sighash, flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class TX>
 inline int tx_get_length(const TX& tx, uint32_t flags, size_t* written) {
     int ret = ::wally_tx_get_length(detail::get_p(tx), flags, written);

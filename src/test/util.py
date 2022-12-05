@@ -618,6 +618,7 @@ for f in (
     ('wally_tx_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, POINTER(POINTER(wally_tx))]),
     ('wally_tx_from_hex', c_int, [c_char_p, c_uint32, POINTER(POINTER(wally_tx))]),
     ('wally_tx_get_btc_signature_hash', c_int, [POINTER(wally_tx), c_size_t, c_void_p, c_size_t, c_uint64, c_uint32, c_uint32, c_void_p, c_size_t]),
+    ('wally_tx_get_btc_taproot_signature_hash', c_int, [POINTER(wally_tx), c_size_t, POINTER(wally_map), POINTER(c_uint64), c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_tx_get_elements_signature_hash', c_int, [POINTER(wally_tx), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_tx_get_length', c_int, [POINTER(wally_tx), c_uint32, c_size_t_p]),
     ('wally_tx_get_signature_hash', c_int, [POINTER(wally_tx), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint64, c_uint32, c_uint32, c_uint32, c_void_p, c_size_t]),

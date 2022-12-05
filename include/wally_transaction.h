@@ -35,14 +35,18 @@ extern "C" {
 #define WALLY_TX_DUMMY_SIG_LOW_R  0x4 /* A dummy signature created with EC_FLAG_GRIND_R */
 
 /** Sighash flags for transaction signing */
+#define WALLY_SIGHASH_DEFAULT      0x00
 #define WALLY_SIGHASH_ALL          0x01
 #define WALLY_SIGHASH_NONE         0x02
 #define WALLY_SIGHASH_SINGLE       0x03
 #define WALLY_SIGHASH_FORKID       0x40
 #define WALLY_SIGHASH_RANGEPROOF   0x40  /* Liquid/Elements only */
+#define WALLY_SIGHASH_ANYPREVOUT   0x40 /* BIP118 only */
+#define WALLY_SIGHASH_ANYPREVOUTANYSCRIPT 0xc0 /* BIP118 only */
 #define WALLY_SIGHASH_ANYONECANPAY 0x80
 
 #define WALLY_SIGHASH_MASK         0x1f /* Mask for determining ALL/NONE/SINGLE */
+#define WALLY_SIGHASH_TR_IN_MASK   0xc0 /* Taproot mask for determining input hash type */
 
 #define WALLY_TX_ASSET_CT_EMPTY_PREFIX    0x00
 #define WALLY_TX_ASSET_CT_EXPLICIT_PREFIX 0x01
@@ -64,6 +68,9 @@ extern "C" {
 #define WALLY_TX_PEGIN_FLAG (1 << 30)
 #define WALLY_TX_INDEX_MASK 0x3fffffff
 
+#define WALLY_NO_CODESEPARATOR 0xffffffff /* No BIP342 code separator position */
+
+struct wally_map;
 #ifdef SWIG
 struct wally_tx_input;
 struct wally_tx_output;
@@ -666,6 +673,42 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
     const unsigned char *script,
     size_t script_len,
     uint64_t satoshi,
+    uint32_t sighash,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Create a BTC transaction for taproot signing and return its hash.
+ *
+ * :param tx: The transaction to generate the signature hash from.
+ * :param index: The input index of the input being signed for.
+ * :param scripts: Map of input index to (unprefixed) scriptCodes for each input in ``tx``.
+ * :param values: The value in satoshi for each input in ``tx``.
+ * :param num_values: The number of elements in ``values``.
+ * :param tapleaf_script: BIP342 tapscript being spent.
+ * :param tapleaf_script_len: Length of ``tapleaf_script`` in bytes.
+ * :param key_version: Version of pubkey in tapscript. Must be set to 0x00 or 0x01.
+ * :param codesep_position: BIP342 codeseparator position or ``WALLY_NO_CODESEPARATOR`` if none.
+ * :param annex: BIP341 annex, or NULL if none.
+ * :param annex_len: Length of ``annex`` in bytes.
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
+ * :param flags: Flags controlling signature generation. Must be 0.
+ * :param bytes_out: Destination for the resulting signature hash.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+*/
+WALLY_CORE_API int wally_tx_get_btc_taproot_signature_hash(
+    const struct wally_tx *tx,
+    size_t index,
+    const struct wally_map *scripts,
+    const uint64_t *values,
+    size_t num_values,
+    const unsigned char *tapleaf_script,
+    size_t tapleaf_script_len,
+    uint32_t key_version,
+    uint32_t codesep_position,
+    const unsigned char *annex,
+    size_t annex_len,
     uint32_t sighash,
     uint32_t flags,
     unsigned char *bytes_out,

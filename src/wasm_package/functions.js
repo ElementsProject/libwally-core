@@ -608,6 +608,7 @@ export const tx_free = wrap('wally_tx_free', [T.OpaqueRef]);
 export const tx_from_bytes = wrap('wally_tx_from_bytes', [T.Bytes, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_from_hex = wrap('wally_tx_from_hex', [T.String, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_get_btc_signature_hash = wrap('wally_tx_get_btc_signature_hash', [T.OpaqueRef, T.Int32, T.Bytes, T.Int64, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
+export const tx_get_btc_taproot_signature_hash = wrap('wally_tx_get_btc_taproot_signature_hash', [T.OpaqueRef, T.Int32, T.OpaqueRef, T.Uint64Array, T.Bytes, T.Int32, T.Int32, T.Bytes, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_elements_signature_hash = wrap('wally_tx_get_elements_signature_hash', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_input_blinding_nonce = wrap('wally_tx_get_input_blinding_nonce', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_input_entropy = wrap('wally_tx_get_input_entropy', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
