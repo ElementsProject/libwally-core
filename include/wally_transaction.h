@@ -35,11 +35,14 @@ extern "C" {
 #define WALLY_TX_DUMMY_SIG_LOW_R  0x4 /* A dummy signature created with EC_FLAG_GRIND_R */
 
 /** Sighash flags for transaction signing */
+#define WALLY_SIGHASH_DEFAULT      0x00
 #define WALLY_SIGHASH_ALL          0x01
 #define WALLY_SIGHASH_NONE         0x02
 #define WALLY_SIGHASH_SINGLE       0x03
 #define WALLY_SIGHASH_FORKID       0x40
 #define WALLY_SIGHASH_RANGEPROOF   0x40  /* Liquid/Elements only */
+#define WALLY_SIGHASH_ANYPREVOUT   0x40 /* BIP118 only */
+#define WALLY_SIGHASH_ANYPREVOUTANYSCRIPT 0xc0 /* BIP118 only */
 #define WALLY_SIGHASH_ANYONECANPAY 0x80
 
 #define WALLY_SIGHASH_MASK         0x1f /* Mask for determining ALL/NONE/SINGLE */
@@ -668,6 +671,38 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Create a BTC transaction for taproot signing and return its hash.
+ *
+ * :param tx: The transaction to generate the signature hash from.
+ * :param hash_type: The BIP341 hash_type to use, via ``WALLY_SIGHASH_``.
+ * :param index: The input index of the input being signed for.
+ * :param scripts: Array of the (unprefixed) scriptCodes for the inputs being signed.
+ * :param script_lens: Array of sizes of ``script``s in bytes.
+ * :param satoshis: Array of amounts spent.
+ * :param tapleaf_script: BIP342 tapscript being spent.
+ * :param tapleaf_script_len: length of tapscript being spent.
+ * :param key_version: Version of pubkey in tapscript. Must be set to 0x00 or 0x01.
+ * :param codesep_position: BIP342 codeseperator position.
+ * :param annex: BIP341 annex. NULL if none.
+ * :param annex_len: Length of annex.
+ * :param bytes_out: Destination for the signature hash which must be at least 32 bytes.
+ */
+WALLY_CORE_API int wally_tx_get_btc_taproot_signature_hash(
+    const struct wally_tx *tx,
+    uint8_t hash_type,
+    size_t index,
+    const unsigned char **scripts,
+    size_t *script_lens,
+    uint64_t *satoshis,
+    const unsigned char *tapleaf_script,
+    size_t tapleaf_script_len,
+    uint8_t key_version,
+    uint32_t codesep_position,
+    unsigned char *annex,
+    size_t annex_len,
+    unsigned char *hash_out);
 
 /**
  * Create a transaction for signing and return its hash.
