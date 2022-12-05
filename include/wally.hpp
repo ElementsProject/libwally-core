@@ -416,6 +416,12 @@ inline int bip32_key_to_address(const HDKEY& hdkey, uint32_t flags, uint32_t ver
     return ret;
 }
 
+template <class BYTES, class TAG, class BYTES_OUT>
+inline int bip340_tagged_hash(const BYTES& bytes, const TAG& tag, BYTES_OUT& bytes_out) {
+    int ret = ::wally_bip340_tagged_hash(bytes.data(), bytes.size(), detail::get_p(tag), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class BYTES>
 inline int bzero(const BYTES& bytes, size_t bytes_len) {
     int ret = ::wally_bzero(detail::get_p(bytes), bytes_len);

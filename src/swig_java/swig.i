@@ -488,6 +488,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %returns_size_t(wally_base64_get_maximum_length);
 %returns_string(wally_bip32_key_to_address);
 %returns_string(wally_bip32_key_to_addr_segwit);
+%returns_array_(wally_bip340_tagged_hash, 4, 5, SHA256_LEN);
 %returns_string(wally_confidential_addr_to_addr);
 %returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_string(wally_confidential_addr_from_addr);

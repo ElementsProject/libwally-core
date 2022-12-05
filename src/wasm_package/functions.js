@@ -139,6 +139,7 @@ export const bip32_key_unserialize = wrap('bip32_key_unserialize_alloc', [T.Byte
 export const bip32_key_unserialize_noalloc = wrap('bip32_key_unserialize', [T.Bytes, T.OpaqueRef]);
 export const bip32_key_with_tweak_from_parent_path = wrap('bip32_key_with_tweak_from_parent_path_alloc', [T.OpaqueRef, T.Uint32Array, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const bip32_key_with_tweak_from_parent_path_noalloc = wrap('bip32_key_with_tweak_from_parent_path', [T.OpaqueRef, T.Uint32Array, T.Int32, T.OpaqueRef]);
+export const bip340_tagged_hash = wrap('wally_bip340_tagged_hash', [T.Bytes, T.String, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const bip38_from_private_key = wrap('bip38_from_private_key', [T.Bytes, T.Bytes, T.Int32, T.DestPtrPtr(T.String)]);
 export const bip38_get_flags = wrap('bip38_get_flags', [T.String, T.DestPtr(T.Int32)]);
 export const bip38_raw_from_private_key = wrap('bip38_raw_from_private_key', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.BIP38_SERIALIZED_LEN)]);

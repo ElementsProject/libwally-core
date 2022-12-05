@@ -286,6 +286,7 @@ for f in (
     ('wally_base64_to_bytes', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_bip32_key_to_addr_segwit', c_int, [POINTER(ext_key), c_char_p, c_uint32, c_char_p_p]),
     ('wally_bip32_key_to_address', c_int, [POINTER(ext_key), c_uint32, c_uint32, c_char_p_p]),
+    ('wally_bip340_tagged_hash', c_int, [c_void_p, c_size_t, c_char_p, c_void_p, c_size_t]),
     ('wally_bzero', c_int, [c_void_p, c_size_t]),
     ('wally_cleanup', c_int, [c_uint32]),
     ('wally_confidential_addr_from_addr', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_char_p_p]),
