@@ -1,3 +1,4 @@
+import json
 import unittest
 from util import *
 
@@ -9,6 +10,7 @@ TX_MAX_VERSION = 2
 TX_FAKE_HEX = utf8('010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000')
 TX_HEX = utf8('0100000001be66e10da854e7aea9338c1f91cd489768d1d6d7189f586d7a3613f2a24d5396000000008b483045022100da43201760bda697222002f56266bf65023fef2094519e13077f777baed553b102205ce35d05eabda58cd50a67977a65706347cc25ef43153e309ff210a134722e9e0141042daa93315eebbe2cb9b5c3505df4c6fb6caca8b756786098567550d4820c09db988fe9997d049d687292f815ccd6e7fb5c1b1a91137999818d17c73d0f80aef9ffffffff0123ce0100000000001976a9142bc89c2702e0e618db7d59eb5ce2f0f147b4075488ac00000000')
 TX_WITNESS_HEX = utf8('020000000001012f94ddd965758445be2dfac132c5e75c517edf5ea04b745a953d0bc04c32829901000000006aedc98002a8c500000000000022002009246bbe3beb48cf1f6f2954f90d648eb04d68570b797e104fead9e6c3c87fd40544020000000000160014c221cdfc1b867d82f19d761d4e09f3b6216d8a8304004830450221008aaa56e4f0efa1f7b7ed690944ac1b59f046a59306fcd1d09924936bd500046d02202b22e13a2ad7e16a0390d726c56dfc9f07647f7abcfac651e35e5dc9d830fc8a01483045022100e096ad0acdc9e8261d1cdad973f7f234ee84a6ee68e0b89ff0c1370896e63fe102202ec36d7554d1feac8bc297279f89830da98953664b73d38767e81ee0763b9988014752210390134e68561872313ba59e56700732483f4a43c2de24559cb8c7039f25f7faf821039eb59b267a78f1020f27a83dc5e3b1e4157e4a517774040a196e9f43f08ad17d52ae89a3b720')
+
 
 class TransactionTests(unittest.TestCase):
 
@@ -258,6 +260,100 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(expected, h(out[:out_len]))
 
 
+    def test_get_taproot_signature_hash(self):
+        """Testing function to get the taproot signature hash"""
+
+        # Test vectors from:
+        # https://github.com/bitcoin/bips/blob/master/bip-0341/wallet-test-vectors.json
+        with open(root_dir + 'src/data/bip341_vectors.json', 'r') as f:
+            cases = json.load(f)
+
+        keyspend_case = cases['keyPathSpending'][0]
+        input_spending = keyspend_case['inputSpending']
+        utxos = keyspend_case['given']['utxosSpent']
+        num_utxos = len(utxos)
+
+        scripts = pointer(wally_map())
+        wally_map_init_alloc(num_utxos, None, scripts)
+        values = (c_uint64 * num_utxos)()
+        num_values = num_utxos
+        # Bad/Faked data for invalid parameter checks
+        empty_scripts = pointer(wally_map())
+        non_tr_scripts = pointer(wally_map())
+        wally_map_init_alloc(num_utxos, None, non_tr_scripts)
+        fake_script, fake_script_len = make_cbuffer('00')
+        fake_annex, fake_annex_len = make_cbuffer('5000')
+        bad_annex, bad_annex_len = make_cbuffer('00')
+
+        for i, utxo in enumerate(utxos):
+            script, script_len = make_cbuffer(utxo['scriptPubKey'])
+            wally_map_add_integer(scripts, i, script, script_len)
+            wally_map_add_integer(non_tr_scripts, i, fake_script, fake_script_len)
+            values[i] = int(utxo['amountSats'])
+
+        tx = self.tx_deserialize_hex(keyspend_case['given']['rawUnsignedTx'])
+        bytes_out, out_len = make_cbuffer('00'*32)
+
+        for input_index in range(len(input_spending)):
+            sighash = input_spending[input_index]['given']['hashType']
+            index = input_spending[input_index]['given']['txinIndex']
+            expected = utf8(input_spending[input_index]['intermediary']['sigHash'])
+
+            # Unused in these tests
+            tapleaf_script = None
+            tapleaf_script_len = 0
+            key_version = 0
+            codesep_pos = 0xFFFFFFFF
+            flags = 0
+            annex = None
+            annex_len = 0
+
+            fn = wally_tx_get_btc_taproot_signature_hash
+            args = [tx, index, scripts, values, num_values, tapleaf_script, tapleaf_script_len,
+                    key_version, codesep_pos, annex, annex_len, sighash, flags, bytes_out, out_len]
+
+            self.assertEqual(wally_tx_get_btc_taproot_signature_hash(*args), WALLY_OK)
+            self.assertEqual(out_len, 32)
+            self.assertEqual(expected, h(bytes_out[:out_len]))
+
+        # Test that signing with a provided tapleaf script/annex works
+        args[5] = fake_script
+        args[6] = fake_script_len
+        self.assertEqual(wally_tx_get_btc_taproot_signature_hash(*args), WALLY_OK)
+        args[9] = fake_annex
+        args[10] = fake_annex_len
+        self.assertEqual(wally_tx_get_btc_taproot_signature_hash(*args), WALLY_OK)
+
+        # Invalid args
+        invalid_cases = [
+            [(0,  None)],            # NULL tx
+            [(1,  50)],              # Invalid index
+            [(2,  None)],            # NULL scripts
+            [(2,  empty_scripts)],   # Missing script(s)
+            [(3,  None)],            # NULL values
+            [(4,  0)],               # Missing values
+            [(4,  1)],               # Too few values
+            [(5,  fake_script)],     # Zero-length tapleaf script
+            [(5,  non_tr_scripts)],  # Non-taproot input script
+            [(6,  fake_script_len)], # NULL tapleaf script
+            [(7,  2)],               # Invalid key version (only 0/1 are allowed)
+            [(9,  fake_annex)],      # Zero length annex
+            [(10, fake_annex_len)],  # NULL annex
+            [(9,  bad_annex), (10, bad_annex_len)], # Missing 0x50 annex prefix
+            [(11, 0xffffffff)],      # Invalid sighash
+            [(12, 0x1)],             # Unknown flag(s)
+            [(13, None)],            # NULL output
+            [(14, 0)],               # Zero length output
+            [(14, 33)],              # Incorrect length output
+        ]
+        for case in invalid_cases:
+            args = [tx, index, scripts, values, num_values, tapleaf_script, tapleaf_script_len,
+                    key_version, codesep_pos, annex, annex_len, sighash, flags, bytes_out, out_len]
+            for i, arg in case:
+                args[i] = arg
+            ret = wally_tx_get_btc_taproot_signature_hash(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+
 if __name__ == '__main__':
     unittest.main()
-
