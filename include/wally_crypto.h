@@ -153,6 +153,20 @@ WALLY_CORE_API int wally_sha512(
     unsigned char *bytes_out,
     size_t len);
 
+/**
+ * BIP340 tagged hash: SHA-256(SHA-256(tag) || SHA-256(tag) || m)
+ *
+ * :param bytes: The message to hash.
+ * :param bytes_len: The length of ``bytes`` in bytes.
+ * :param tag: The BIP340 UTF-8 domain tag.
+ * :param hash_out: Destination for the resulting 32-byte hash.
+ */
+WALLY_CORE_API int wally_tagged_hash(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const char *tag,
+    unsigned char *hash_out);
+
 /** Output length for `wally_ripemd160` */
 #define RIPEMD160_LEN 20
 
