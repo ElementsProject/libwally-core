@@ -1598,7 +1598,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
 {
     size_t n, i, j;
     const unsigned char sighash = opts ? opts->sighash : 0;
-    const bool anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
     const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
@@ -1651,7 +1651,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
         flags &= ~WALLY_TX_FLAG_USE_WITNESS;
 
     n = sizeof(tx->version) +
-        varint_get_length(anyonecanpay ? 1 : tx->num_inputs) +
+        varint_get_length(sh_anyonecanpay ? 1 : tx->num_inputs) +
         (sh_none ? 1 : varint_get_length(sh_single ? opts->index + 1 : tx->num_outputs)) +
         sizeof(tx->locktime) +
         (opts ? sizeof(leint32_t) : 0); /* Include trailing tx_sighash */
@@ -1662,8 +1662,8 @@ static int tx_get_lengths(const struct wally_tx *tx,
         const struct wally_tx_input *input = tx->inputs + i;
         size_t issuance_size = 0;
 
-        if (anyonecanpay && i != opts->index)
-            continue; /* anyonecanpay only signs the given index */
+        if (sh_anyonecanpay && i != opts->index)
+            continue; /* sh_anyonecanpay only signs the given index */
 
         n += sizeof(input->txhash) +
              sizeof(input->index) +
@@ -1847,7 +1847,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
     size_t is_elements = 0;
     const unsigned char sighash = opts ? opts->sighash : 0;
-    const bool anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
     const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
@@ -1916,7 +1916,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     }
 
 #ifdef BUILD_ELEMENTS
-    if (is_elements && !anyonecanpay) {
+    if (is_elements && !sh_anyonecanpay) {
         for (i = 0; i < tx->num_inputs; ++i) {
             if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
                 size_t issuance_size;
@@ -1940,7 +1940,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     }
 
     /* Inputs */
-    if (anyonecanpay)
+    if (sh_anyonecanpay)
         memset(p, 0, SHA256_LEN);
     else {
         for (i = 0; i < tx->num_inputs; ++i) {
@@ -1955,7 +1955,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     p += SHA256_LEN;
 
     /* Sequences */
-    if (anyonecanpay || sh_single || sh_none)
+    if (sh_anyonecanpay || sh_single || sh_none)
         memset(p, 0, SHA256_LEN);
     else {
         for (i = 0; i < tx->num_inputs; ++i)
@@ -1970,7 +1970,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
 #ifdef BUILD_ELEMENTS
     if (is_elements) {
         /* Issuance */
-        if (anyonecanpay)
+        if (sh_anyonecanpay)
             memset(p, 0, SHA256_LEN);
         else {
             unsigned char *tmp_p = buff_p;
@@ -2098,7 +2098,7 @@ static int tx_to_bytes(const struct wally_tx *tx,
 {
     size_t n, i, j, witness_count;
     const unsigned char sighash = opts ? opts->sighash : 0;
-    const bool anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
     const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
@@ -2158,15 +2158,15 @@ static int tx_to_bytes(const struct wally_tx *tx,
             *p++ = 1; /* Write BIP 144 flag */
         }
     }
-    if (anyonecanpay)
+    if (sh_anyonecanpay)
         *p++ = 1;
     else
         p += varint_to_bytes(tx->num_inputs, p);
 
     for (i = 0; i < tx->num_inputs; ++i) {
         const struct wally_tx_input *input = tx->inputs + i;
-        if (anyonecanpay && i != opts->index)
-            continue; /* anyonecanpay only signs the given index */
+        if (sh_anyonecanpay && i != opts->index)
+            continue; /* sh_anyonecanpay only signs the given index */
 
         memcpy(p, input->txhash, sizeof(input->txhash));
         p += sizeof(input->txhash);
