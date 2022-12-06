@@ -46,6 +46,7 @@ endif # PYTHON_MANYLINUX
 # Append our extra wrapper code to the package
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_GEN_FLAGS) -outdir swig_python -o $@ $< && \
+    $(GNU_SED) -i 's/(unsigned long long const \*)/(uint64_t const \*)/g' $@ && \
     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
     rm swig_python/wallycore.py
 
