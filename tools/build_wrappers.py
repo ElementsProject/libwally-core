@@ -138,10 +138,12 @@ class Func(object):
                 ': invalid metadata reference {}'.format(m) + ' refs: ' + str(len(args))
         args[0].add_metadata(m)
 
+
 def is_array(func, arg, n, num_args, types):
     return arg.type in types and n != num_args -1 and \
                func.args[n + 1].type == u'size_t' and \
-               func.args[n + 1].name.endswith(u'len')
+               (func.args[n + 1].name.endswith(u'len') or
+                func.args[n + 1].name.startswith(u'num_'))
 
 
 def is_buffer(func, arg, n, num_args):
@@ -494,7 +496,7 @@ def gen_wasm_package(funcs, all_funcs):
                 ts_returns.append(f'{arg.name}: Ref_{arg.struct_name}')
                 continue
 
-            assert False, f'ERROR: Unknown argument type "{arg.type}"'
+            assert False, f'ERROR: {func.name}: Unknown argument type "{arg.type}" {arg.name}'
 
         return (js_args, ts_args, ts_returns)
 

@@ -384,7 +384,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 %py_int_array(uint32_t, 0xffffffffull, child_path, child_path_len)
 %py_int_array(uint32_t, 0xffull, sighash, sighash_len)
-%py_int_array(uint64_t, 0xffffffffffffffffull, values, values_len)
+%py_int_array(uint64_t, 0xffffffffffffffffull, values, num_values)
 %py_int_array_out(uint32_t, 0xffffffffull, child_path_out, child_path_out_len)
 
 %py_opaque_struct(ext_key);

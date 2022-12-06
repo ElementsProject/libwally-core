@@ -301,7 +301,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (uint32_t *child_path_out, size_t child_path_out_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
-%apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t values_len) }
+%apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t num_values) }
 
 %typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
    val = 0; $1 = ($1_ltype)&val;

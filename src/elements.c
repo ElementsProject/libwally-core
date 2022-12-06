@@ -101,7 +101,7 @@ int wally_asset_generator_from_bytes(const unsigned char *asset, size_t asset_le
     return WALLY_OK;
 }
 
-int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_inputs,
+int wally_asset_final_vbf(const uint64_t *values, size_t num_values, size_t num_inputs,
                           const unsigned char *abf, size_t abf_len,
                           const unsigned char *vbf, size_t vbf_len,
                           unsigned char *bytes_out, size_t len)
@@ -114,36 +114,36 @@ int wally_asset_final_vbf(const uint64_t *values, size_t values_len, size_t num_
     if (!ctx)
         return WALLY_ENOMEM;
 
-    if (!values || values_len < 2u ||
-        num_inputs >= values_len ||
-        !abf || abf_len != (values_len * BLINDING_FACTOR_LEN) ||
-        !vbf || vbf_len != ((values_len - 1) * BLINDING_FACTOR_LEN) ||
+    if (!values || num_values < 2u ||
+        num_inputs >= num_values ||
+        !abf || abf_len != (num_values * BLINDING_FACTOR_LEN) ||
+        !vbf || vbf_len != ((num_values - 1) * BLINDING_FACTOR_LEN) ||
         !bytes_out || len != ASSET_TAG_LEN)
         return WALLY_EINVAL;
 
-    abf_p = wally_malloc(values_len * sizeof(unsigned char *));
-    vbf_p = wally_malloc(values_len * sizeof(unsigned char *));
+    abf_p = wally_malloc(num_values * sizeof(unsigned char *));
+    vbf_p = wally_malloc(num_values * sizeof(unsigned char *));
 
     if (!abf_p || !vbf_p) {
         ret = WALLY_ENOMEM;
         goto cleanup;
     }
 
-    for (i = 0; i < values_len; i++) {
+    for (i = 0; i < num_values; i++) {
         abf_p[i] = abf + i * BLINDING_FACTOR_LEN;
         vbf_p[i] = vbf + i * BLINDING_FACTOR_LEN;
     }
-    vbf_p[values_len - 1] = bytes_out;
+    vbf_p[num_values - 1] = bytes_out;
     wally_clear(bytes_out, len);
 
     if (secp256k1_pedersen_blind_generator_blind_sum(ctx, values, abf_p,
                                                      (unsigned char *const *)vbf_p,
-                                                     values_len, num_inputs))
+                                                     num_values, num_inputs))
         ret = WALLY_OK;
 
 cleanup:
-    clear_and_free(abf_p, values_len * sizeof(unsigned char *));
-    clear_and_free(vbf_p, values_len * sizeof(unsigned char *));
+    clear_and_free(abf_p, num_values * sizeof(unsigned char *));
+    clear_and_free(vbf_p, num_values * sizeof(unsigned char *));
     return ret;
 }
 
