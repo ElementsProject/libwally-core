@@ -389,9 +389,9 @@ def gen_wasm_package(funcs, all_funcs):
     # Input arrays (represented as two arguments - the first identified by this map, followed by a FOO_len argument)
     # map of C type -> (JS type, TypeScript argument type)
     typemap_arrays = {
-         'const unsigned char*' : ('T.Bytes', 'Buffer|Uint8Array'),
-         'const uint32_t*'      : ('T.Uint32Array', 'Uint32Array|number[]'),
-         'const uint64_t*'      : ('T.Uint64Array', 'BigUint64Array|bigint[]'),
+        'const unsigned char*' : ('T.Bytes', 'Buffer|Uint8Array'),
+        'const uint32_t*'      : ('T.Uint32Array', 'Uint32Array|number[]'),
+        'const uint64_t*'      : ('T.Uint64Array', 'BigUint64Array|bigint[]'),
     }
 
     # Output arrays
