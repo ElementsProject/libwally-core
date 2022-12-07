@@ -1,0 +1,14 @@
+name: wallycore
+description: Dart bindings for the libwally Bitcoin library
+version: 0.8.8
+homepage: https://github.com/ElementsProject/libwally-core
+
+environment:
+  sdk: '>=2.18.5 <3.0.0'
+
+dependencies:
+  ffi: ^2.0.1
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.16.0
