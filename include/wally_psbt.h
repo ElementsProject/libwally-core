@@ -1811,7 +1811,7 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
 /**
  * Allocate and initialize a new PSBT.
  *
- * :param version: The version of the PSBT. Must be WALLY_PSBT_VERSION_0 or WALLY_PSBT_VERSION_0.
+ * :param version: The version of the PSBT. Must be WALLY_PSBT_VERSION_0 or WALLY_PSBT_VERSION_2.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
