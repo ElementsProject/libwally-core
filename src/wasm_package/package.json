@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "node test/test.js",
+    "test": "node--test test/",
     "prepare": "./build.sh"
   },
   "files": [
@@ -17,6 +17,7 @@
   "license": "(MIT or BSD)",
   "devDependencies": {
     "buffer": "^6.0.3",
+    "test": "^3.2.1",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.0"
   },
