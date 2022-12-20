@@ -34,7 +34,7 @@ export function aes(key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: num
 export function aes_cbc(key: Buffer|Uint8Array, iv: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function asset_blinding_key_from_seed(bytes: Buffer|Uint8Array): Buffer;
 export function asset_blinding_key_to_ec_private_key(bytes: Buffer|Uint8Array, script: Buffer|Uint8Array): Buffer;
-export function asset_final_vbf(values: BigUint64Array|bigint[], num_inputs: number, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array): Buffer;
+export function asset_final_vbf(values: BigUint64Array|Array<bigint>, num_inputs: number, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array): Buffer;
 export function asset_generator_from_bytes(asset: Buffer|Uint8Array, abf: Buffer|Uint8Array): Buffer;
 export function asset_pak_whitelistproof_len(online_keys: Buffer|Uint8Array, offline_keys: Buffer|Uint8Array, key_index: number, sub_pubkey: Buffer|Uint8Array, online_priv_key: Buffer|Uint8Array, summed_key: Buffer|Uint8Array): number;
 export function asset_pak_whitelistproof_size(num_keys: number): number;
@@ -558,7 +558,7 @@ export function tx_free(tx: Ref_wally_tx): void;
 export function tx_from_bytes(bytes: Buffer|Uint8Array, flags: number): Ref_wally_tx;
 export function tx_from_hex(hex: string, flags: number): Ref_wally_tx;
 export function tx_get_btc_signature_hash(tx: Ref_wally_tx, index: number, script: Buffer|Uint8Array, satoshi: bigint, sighash: number, flags: number): Buffer;
-export function tx_get_btc_taproot_signature_hash(tx: Ref_wally_tx, index: number, scripts: Ref_wally_map, values: BigUint64Array|bigint[], tapleaf_script: Buffer|Uint8Array, key_version: number, codesep_position: number, annex: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
+export function tx_get_btc_taproot_signature_hash(tx: Ref_wally_tx, index: number, scripts: Ref_wally_map, values: BigUint64Array|Array<bigint>, tapleaf_script: Buffer|Uint8Array, key_version: number, codesep_position: number, annex: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
 export function tx_get_elements_signature_hash(tx: Ref_wally_tx, index: number, script: Buffer|Uint8Array, value: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
 export function tx_get_input_blinding_nonce(tx_in: Ref_wally_tx, index: number): Buffer;
 export function tx_get_input_entropy(tx_in: Ref_wally_tx, index: number): Buffer;
