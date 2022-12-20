@@ -391,7 +391,7 @@ def gen_wasm_package(funcs, all_funcs):
     typemap_arrays = {
         'const unsigned char*' : ('T.Bytes', 'Buffer|Uint8Array'),
         'const uint32_t*'      : ('T.Uint32Array', 'Uint32Array|number[]'),
-        'const uint64_t*'      : ('T.Uint64Array', 'BigUint64Array|bigint[]'),
+        'const uint64_t*'      : ('T.Uint64Array', 'BigUint64Array|Array<bigint>'),
     }
 
     # Output arrays
