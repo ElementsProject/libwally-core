@@ -208,8 +208,8 @@ const getArraySize = (size_source, this_arg, all_args) =>
 //
 
 export class WallyError extends Error {
-    constructor(code) {
-        super(`Invalid libwally return code ${code} (${ERROR_CODES[code] || 'unknown'})`)
+    constructor(code, func_name) {
+        super(`Invalid libwally return code ${code} (${ERROR_CODES[code] || 'unknown'}) for ${func_name}`)
         this.code = code
     }
 }
@@ -286,7 +286,7 @@ export function wrap(func_name, args_types) {
                 const code = wasm_fn(...wasm_args)
 
                 if (code !== WALLY_OK) {
-                    throw new WallyError(code)
+                    throw new WallyError(code, func_name)
                 }
             }
 
