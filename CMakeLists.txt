@@ -36,11 +36,6 @@ if(NOT EXCLUDE_GENERATE_WALLY)
 set(EXCLUDE_GENERATE_WALLY  FALSE)
 endif()
 
-if(CMAKE_JS_INC)
-option(ENABLE_JS_WRAPPER "enable the Javascript interface wrappers (ON or OFF. default:ON)" ON)
-else()
-set(ENABLE_JS_WRAPPER off)
-endif()
 option(ENABLE_TESTS "enable code tests for CTest (ON or OFF. default:ON)" ON)
 
 if(NOT WIN32)
@@ -83,6 +78,12 @@ if(ENABLE_SWIG_JAVA)
 set(IS_ENABLE_SWIG_JAVA  TRUE)
 else() # not ENABLE_SWIG_JAVA
 set(IS_ENABLE_SWIG_JAVA  FALSE)
+endif()
+
+if(IS_ENABLE_SWIG_JAVA)
+set(IGNORE_EXPORT_LIB  TRUE)
+else() # not ENABLE_SWIG_JAVA
+set(IGNORE_EXPORT_LIB  FALSE)
 endif()
 
 ####################
@@ -459,8 +460,6 @@ elseif((NOT GENERATE_WALLY) OR (NOT ${GENERATE_WALLY}))
 set(GENERATE_WALLY_LIB FALSE)
 elseif(ENABLE_SWIG_JAVA)
 set(GENERATE_WALLY_LIB FALSE)
-#elseif(ENABLE_JS_WRAPPER)
-#set(GENERATE_WALLY_LIB FALSE)
 else()
 set(GENERATE_WALLY_LIB TRUE)
 endif()
@@ -517,197 +516,16 @@ if(COLLECT_COVERAGE)
 target_link_libraries(${PROJECT_NAME} ${GCOV_LIBRARY})
 endif()
 
-endif() # GENERATE_WALLY OR (ENABLE_JS_WRAPPER)
+endif() # GENERATE_WALLY
 
-
-####################
-# node.js build
-####################
-if(EXCLUDE_WALLYCORE_LIB)
-set(INSTALL_WALLYCORE  FALSE)
-
-elseif(ENABLE_JS_WRAPPER)
-
-set(INSTALL_WALLYCORE  FALSE)
-set(NODE_LIBRARY_NAME wallycore)
-project(wallycore CXX)
-
-find_package(Python3 COMPONENTS Interpreter)
-find_package(PythonInterp REQUIRED)
-if(Python3_Interpreter_FOUND)
-set(PYTHON_BIN  ${Python3_EXECUTABLE})
-message(STATUS "python is 3(${Python3_VERSION})")
-else()
-set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
-message(STATUS "python version is ${PYTHON_VERSION_STRING}")
-endif()
-
-if(ENABLE_ELEMENTS)
-set(ELEMENTS_OPT "elements")
-else()
-set(ELEMENTS_OPT "")
-endif()
-set(OUTPUT_DIR_NAME $<IF:$<CONFIG:Debug>,Debug,Release>)
-
-message(STATUS "[libwally] NODE_RUNTIME=${NODE_RUNTIME}")
-message(STATUS "[libwally] NODE_RUNTIMEVERSION=${NODE_RUNTIMEVERSION}")
-message(STATUS "[libwally] CMAKE_JS_LIB=${CMAKE_JS_LIB}")
-message(STATUS "[libwally] CMAKE_JS_SRC=${CMAKE_JS_SRC}")
-set(NODEJS_WRAP_CC_NAME nodejs_wrap_cc)
-add_custom_target(${NODEJS_WRAP_CC_NAME} SOURCES ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc)
-
-set(NODE_TEST_SRC_DIR       ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/test)
-set(NODE_TEST_DATA_SRC_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/src/data)
-set(NODE_TEST_BASE_DIR      ${CMAKE_CURRENT_BINARY_DIR}/test_wrap_js)
-set(NODE_TEST_JS_DIR        ${NODE_TEST_BASE_DIR}/wrap_js)
-set(NODE_TEST_DATA_DIR      ${NODE_TEST_BASE_DIR}/data)
-set(NODE_TEST_FILE_DIR      ${NODE_TEST_JS_DIR}/test)
-set(NODE_TEST_BUILD_DIR     ${NODE_TEST_JS_DIR}/build)
-set(NODE_TEST_RELEASE_DIR   ${NODE_TEST_JS_DIR}/build/${WORK_WINDOWS_BINARY_DIR_NAME})
-
-# generate source files, and create test directories
-if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
-add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-  COMMAND set PYTHONDONTWRITEBYTECODE=1
-  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
-  COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-  COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
-  VERBATIM
-)
-else()
-add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-  COMMAND set PYTHONDONTWRITEBYTECODE=1
-  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/src
-  COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py nodejs ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc" ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-  COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/nodejs_wrap.cc"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
-  VERBATIM
-)
-endif()
-
-if(${STD_CPP_VERSION})
-set(CMAKE_CXX_STANDARD  ${STD_CPP_VERSION})
-message(STATUS "[STD_CPP_VERSION] ${STD_CPP_VERSION}")
-else()
-set(CMAKE_CXX_STANDARD 14)
-endif()
-add_library(${NODE_LIBRARY_NAME} SHARED)
-target_sources(${NODE_LIBRARY_NAME}
-  PRIVATE
-    ${LIBWALLY_FILES}
-    ${CMAKE_CURRENT_BINARY_DIR}/nodejs_wrap.cc
-    ${CMAKE_JS_SRC}
-)
-if(GENERATE_WALLY_LIB)
-add_dependencies(${WALLY_PROJECT_NAME} ${NODE_LIBRARY_NAME})
-endif()
-
-target_compile_options(${NODE_LIBRARY_NAME}
-  PRIVATE
-    $<IF:$<C_COMPILER_ID:MSVC>,
-      /LD /source-charset:utf-8 /wd4244 /wd4251,
-      -Wall -Wextra -Wno-unused-function
-      ${ENABLE_EXPORT_ALL_OPT}
-    >
-)
-target_compile_definitions(${NODE_LIBRARY_NAME}
-  PRIVATE
-    ${ELEMENTS_COMP_OPT}
-    DWALLY_CORE_BUILD
-    HAVE_CONFIG_H
-    SECP256K1_BUILD
-    SWIG_JAVASCRIPT_BUILD
-)
-
-set_target_properties(${NODE_LIBRARY_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-
-# Include N-API wrappers
-#execute_process(COMMAND node -p "require('node-addon-api').include"
-#    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-#    OUTPUT_VARIABLE NODE_ADDON_API_DIR
-#)
-#string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
-# target_include_directories( PRIVATE ${NODE_ADDON_API_DIR} )
-target_include_directories(${NODE_LIBRARY_NAME}
-  PRIVATE
-    include
-    src/secp256k1/include
-    ${CONFIG_HEADER_DIRECTORY}
-    .
-    src
-    src/ccan
-    src/secp256k1
-    src/secp256k1/src
-    node_modules/nan
-    ${CMAKE_JS_INC}
-)
-
-target_link_libraries(${NODE_LIBRARY_NAME}
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:winmm.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:MSVC>>:ws2_32.lib>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libgcc>
-  PRIVATE $<$<BOOL:$<CXX_COMPILER_ID:GNU>>:-static-libstdc++>
-  PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:pthread>
-  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
-  PRIVATE
-    ${CMAKE_JS_LIB}
-)
-
-if(${CMAKE_VERSION} VERSION_LESS "3.17.0")
-add_custom_command(
-    TARGET ${NODE_LIBRARY_NAME}
-    POST_BUILD
-    COMMAND set PYTHONDONTWRITEBYTECODE=1
-    COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_CURRENT_BINARY_DIR}/wally.js
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${WALLY_OBJ_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_BINARY_DIR}/..
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_DATA_SRC_DIR} ${NODE_TEST_DATA_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-else()
-add_custom_command(
-    TARGET ${NODE_LIBRARY_NAME}
-    POST_BUILD
-    COMMAND set PYTHONDONTWRITEBYTECODE=1
-    COMMAND ${PYTHON_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/makewrappers/wrap.py wally ${OUTPUT_DIR_NAME} ${ELEMENTS_OPT}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_CURRENT_BINARY_DIR}/wally.js
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${WALLY_OBJ_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${CMAKE_BINARY_DIR}/..
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_FILE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_RELEASE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${NODE_TEST_DATA_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_DATA_SRC_DIR} ${NODE_TEST_DATA_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js ${NODE_TEST_JS_DIR}
-    COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_CURRENT_SOURCE_DIR}/src/wrap_js/wally.js
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-endif()
-
-elseif(ENABLE_SWIG_JAVA)
-# after build
-set(WALLYCORE_NAME wallycore)
-set(INSTALL_WALLYCORE  FALSE)
-
-else()	# ENABLE_JS_WRAPPER
 
 ####################
 # libwally library
 ####################
+if(EXCLUDE_WALLYCORE_LIB)
+set(INSTALL_WALLYCORE  FALSE)
+
+else()	# EXCLUDE_WALLYCORE_LIB
 set(WALLYCORE_NAME wallycore)
 set(WALLY_PROJECT_NAME ${WALLYCORE_NAME})
 set(INSTALL_WALLYCORE  TRUE)
@@ -766,7 +584,7 @@ if(GENERATE_WALLY_LIB)
 add_dependencies(${PROJECT_NAME} ${WALLYCORE_NAME})
 endif()
 
-endif()		# ENABLE_JS_WRAPPER
+endif()		# EXCLUDE_WALLYCORE_LIB
 
 
 ####################
@@ -1192,7 +1010,7 @@ endif()
 set(TEST_WALY_LIB  ${WALLY_PROJECT_NAME})
 # set(TEST_WALY_LIB  ${WALLYCORE_NAME})
 
-if((IS_ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
+if(IS_ENABLE_SWIG_JAVA AND (NOT GENERATE_WALLY_LIB))
 message(STATUS "skip c test.")
 else()
 set(TEST_BECH32_NAME ctest_bech32)
@@ -1576,7 +1394,7 @@ add_test(
 )
 
 endif()
-endif((ENABLE_SWIG_JAVA OR ENABLE_JS_WRAPPER) AND (NOT GENERATE_WALLY_LIB))
+endif(IS_ENABLE_SWIG_JAVA AND (NOT GENERATE_WALLY_LIB))
 
 ####################
 # test for Python
@@ -1848,46 +1666,7 @@ endif() # ENABLE_ELEMENTS
 
 endif()
 
-####################
-# test for node.js
-####################
-# Currently, wally.js only supports release builds.
-if(ENABLE_JS_WRAPPER)
-# 'tape' is notfound on Windows, So it's call to 'node'.
-# (testfile is direct require to 'tape'.)
-set(NODE_TEST_BIN  node)
-
-# set(NODE_BIN_TAPE  ${CMAKE_CURRENT_SOURCE_DIR}/node_modules/.bin/tape)
-# if(WIN32)
-# set(CMAKE_MSVCIDE_RUN_PATH ${NODE_BIN_TAPE})
-# endif()
-
-# copy testfile on pre-test (for load on wallycore.node)
-add_test(NAME js_test_init1 COMMAND ${CMAKE_COMMAND} -E copy ${WALLY_OBJ_BINARY_DIR}/wallycore.node ${NODE_TEST_RELEASE_DIR} )
-add_test(NAME js_test_init2 COMMAND ${CMAKE_COMMAND} -E copy_directory ${NODE_TEST_SRC_DIR} ${NODE_TEST_FILE_DIR} )
-
-add_test(NAME js_test_aes      COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_aes.js )
-add_test(NAME js_test_base58   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_base58.js )
-add_test(NAME js_test_bech32   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bech32.js )
-add_test(NAME js_test_binding  COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_binding.js )
-add_test(NAME js_test_bip32    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip32.js )
-add_test(NAME js_test_bip38    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip38.js )
-add_test(NAME js_test_bip39    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_bip39.js )
-add_test(NAME js_test_hash     COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_hash.js )
-add_test(NAME js_test_scrypt   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_scrypt.js )
-add_test(NAME js_test_script   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_script.js )
-if(ENABLE_ELEMENTS)
-add_test(NAME js_test_assets   COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_assets.js )
-add_test(NAME js_test_confidential_addres
-                               COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
-add_test(NAME js_test_unblind  COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_unblind.js )
-add_test(NAME js_test_confidential_address
-    COMMAND ${NODE_TEST_BIN} ${NODE_TEST_FILE_DIR}/test_confidential_address.js )
-endif() # ENABLE_ELEMENTS
-endif() # ENABLE_JS_WRAPPER
-
 endif() # ENABLE_TESTS
-
 
 ####################
 # coverage
@@ -1922,6 +1701,7 @@ endif()
 ####################
 # install & export
 ####################
+if(NOT IGNORE_EXPORT_LIB)
 set(prefix            ${CMAKE_INSTALL_PREFIX})
 set(exec_prefix       ${prefix})
 set(libdir            ${exec_prefix}/lib)
@@ -1984,3 +1764,4 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         FILES_MATCHING PATTERN "*.h")
 endif()
+endif(NOT IGNORE_EXPORT_LIB)
