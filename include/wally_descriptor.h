@@ -15,45 +15,15 @@ extern "C" {
 #define WALLY_MINISCRIPT_WITNESS_SCRIPT  0x00
 #define WALLY_MINISCRIPT_TAPSCRIPT       0x01
 
-#ifdef SWIG
-struct wally_descriptor_address_item;
-struct wally_descriptor_addresses;
-#else
-/** A descriptor address */
-struct wally_descriptor_address_item {
-    uint32_t child_num;
-    char *address;
-    size_t address_len;
-};
-
-/** A descriptor addresses */
-struct wally_descriptor_addresses {
-    struct wally_descriptor_address_item *items;
-    size_t num_items;
-};
-#endif
-
-#ifndef SWIG_PYTHON
-/**
- * Free addresses allocated by `wally_descriptor_to_addresses`.
- *
- * :param addresses: addresses to free.
- */
-WALLY_CORE_API int wally_free_descriptor_addresses(
-    struct wally_descriptor_addresses *addresses);
-#endif /* SWIG_PYTHON */
-
 /**
  * Create a script corresponding to a miniscript string.
  *
  * :param miniscript: Miniscript string.
- * :param key_name_array: Array of key policy name string.
- * :param key_value_array: Array of key mapped value string.
- * :param array_len: Length of the array of key policy name.
+ * :param key_value_map: key map of input label name.
  * :param derive_child_num: Number of the derive path.
  * :param flags: For analyze type.
  *   see WALLY_MINISCRIPT_WITNESS_SCRIPT, WALLY_MINISCRIPT_TAPSCRIPT.
- * :param script: Destination for the resulting scriptpubkey.
+ * :param script_out: Destination for the resulting scriptpubkey.
  * :param script_len: Length of the script array.
  * :param written: Destination for the using scriptpubkey length.
  */
@@ -62,7 +32,7 @@ WALLY_CORE_API int wally_descriptor_parse_miniscript(
     const struct wally_map *key_value_map,
     uint32_t derive_child_num,
     uint32_t flags,
-    unsigned char *script,
+    unsigned char *script_out,
     size_t script_len,
     size_t *written);
 
@@ -70,15 +40,13 @@ WALLY_CORE_API int wally_descriptor_parse_miniscript(
  * Create a scriptpubkey corresponding to a output descriptor.
  *
  * :param descriptor: Output descriptor.
- * :param key_name_array: Array of key policy name string.
- * :param key_value_array: Array of key mapped value string.
- * :param array_len: Length of the array of key policy name.
+ * :param key_value_map: key map of input label name.
  * :param derive_child_num: Number of the derive path.
  * :param network: Number of the network. (bitcoin regtest is set ``0xff``)
  * :param target_depth: Number of the descriptor depth. Default is 0.
  * :param target_index: Number of the descriptor index. Default is 0.
  * :param flags: For future use. Must be 0.
- * :param script: Destination for the resulting scriptpubkey.
+ * :param script_out: Destination for the resulting scriptpubkey.
  * :param script_len: Length of the script array.
  * :param written: Destination for the using scriptpubkey length.
  */
@@ -90,7 +58,7 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
     uint32_t target_depth,
     uint32_t target_index,
     uint32_t flags,
-    unsigned char *script,
+    unsigned char *script_out,
     size_t script_len,
     size_t *written);
 
@@ -98,9 +66,7 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
  * Create an address corresponding to a output descriptor.
  *
  * :param descriptor: Output descriptor.
- * :param key_name_array: Array of key policy name string.
- * :param key_value_array: Array of key mapped value string.
- * :param array_len: Length of the array of key policy name.
+ * :param key_value_map: key map of input label name.
  * :param derive_child_num: Number of the derive path.
  * :param network: Number of the network. (bitcoin regtest is set ``0xff``)
  * :param flags: For future use. Must be 0.
@@ -119,32 +85,28 @@ WALLY_CORE_API int wally_descriptor_to_address(
  * Create addresses that corresponds to the derived range of a output descriptor.
  *
  * :param descriptor: Output descriptor.
- * :param key_name_array: Array of key policy name string.
- * :param key_value_array: Array of key mapped value string.
- * :param array_len: Length of the array of key policy name.
+ * :param key_value_map: key map of input label name.
  * :param start_child_num: Number of the derive start path.
  * :param end_child_num: Number of the derive end path.
  * :param network: Number of the network. (bitcoin regtest is set ``0xff``)
  * :param flags: For future use. Must be 0.
  * :param addresses: Destination for the resulting addresses.
- *|    The string returned should be freed using `wally_free_descriptor_addresses`.
+ *|    The string returned should be freed using `wally_map_free`.
  */
-WALLY_CORE_API int wally_descriptor_to_addresses(
+WALLY_CORE_API int wally_descriptor_to_addresses_alloc(
     const char *descriptor,
     const struct wally_map *key_value_map,
     uint32_t start_child_num,
     uint32_t end_child_num,
     uint32_t network,
     uint32_t flags,
-    struct wally_descriptor_addresses *addresses);
+    struct wally_map **addresses);
 
 /**
  * Create an output descriptor checksum.
  *
  * :param descriptor: Output descriptor.
- * :param key_name_array: Array of key policy name string.
- * :param key_value_array: Array of key mapped value string.
- * :param array_len: Length of the array of key policy name.
+ * :param key_value_map: key map of input label name.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting descriptor string.
  */
