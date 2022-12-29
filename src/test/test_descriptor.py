@@ -96,12 +96,21 @@ class DescriptorTests(unittest.TestCase):
                 'bc1q7yzadku3kxs855wgjxnyr2nk3e44ed75p07lzhnj53ynpczg78nq0leae5',
               ]),
         ]:
-            addr_list_p = pointer(wally_descriptor_addresses())
-            ret = wally_descriptor_to_addresses(descriptor, None, start_num, end_num, network, 0, addr_list_p)
+            addr_list_p = pointer(wally_map())
+            ret = wally_descriptor_to_addresses_alloc(descriptor, None, start_num, end_num, network, 0, addr_list_p)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(len(expect_addr_list), addr_list_p[0].num_items)
+            ret, num_items = wally_map_get_num_items(addr_list_p)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(len(expect_addr_list), num_items)
             for i in range(len(expect_addr_list)):
-                self.assertEqual(expect_addr_list[i].encode('utf-8'), addr_list_p[0].items[i].address)
+                ret, child_num = wally_map_get_item_integer_key(addr_list_p, i)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(i, child_num)
+                out, out_len = make_cbuffer('00'*128)
+                ret, output_len = wally_map_get_item(addr_list_p, child_num, out, out_len)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(expect_addr_list[i].encode('utf-8'), out[:output_len-1])
+            self.assertEqual(wally_map_free(addr_list_p), WALLY_OK)
 
     def test_create_descriptor_checksum(self):
         # Valid args

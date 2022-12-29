@@ -8,6 +8,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
 #include "../include/wally_psbt.h"
 #include "../include/wally_psbt_members.h"
@@ -279,7 +280,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %apply(char *STRING, size_t LENGTH) { (unsigned char* bytes_out, size_t len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char* s2c_opening_out, size_t s2c_opening_out_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char* scalar, size_t scalar_len) };
-%apply(char *STRING, size_t LENGTH) { (unsigned char* script, size_t script_len) };
+%apply(char *STRING, size_t LENGTH) { (unsigned char* script_out, size_t script_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char* vbf_out, size_t vbf_out_len) };
 %ignore bip32_key_from_base58;
 %ignore bip32_key_from_base58_n;
@@ -1222,6 +1223,7 @@ static jbyteArray create_jintArray(JNIEnv *jenv, const uint32_t* p, size_t len) 
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_descriptor.h"
 %include "../include/wally_map.h"
 %include "../include/wally_psbt.h"
 %include "../include/wally_psbt_members.h"

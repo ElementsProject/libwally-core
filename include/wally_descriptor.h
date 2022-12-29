@@ -22,7 +22,7 @@ extern "C" {
  * :param key_value_map: key map of input label name.
  * :param derive_child_num: Number of the derive path.
  * :param flags: For analyze type.
- *   see WALLY_MINISCRIPT_WITNESS_SCRIPT, WALLY_MINISCRIPT_TAPSCRIPT.
+ *|    see WALLY_MINISCRIPT_WITNESS_SCRIPT, WALLY_MINISCRIPT_TAPSCRIPT.
  * :param script_out: Destination for the resulting scriptpubkey.
  * :param script_len: Length of the script array.
  * :param written: Destination for the using scriptpubkey length.
@@ -34,6 +34,23 @@ WALLY_CORE_API int wally_descriptor_parse_miniscript(
     uint32_t flags,
     unsigned char *script_out,
     size_t script_len,
+    size_t *written);
+
+/**
+ * Create a script corresponding to a miniscript string.
+ *
+ * :param miniscript: Miniscript string.
+ * :param key_value_map: key map of input label name.
+ * :param derive_child_num: Number of the derive path.
+ * :param flags: For analyze type.
+ *|    see WALLY_MINISCRIPT_WITNESS_SCRIPT, WALLY_MINISCRIPT_TAPSCRIPT.
+ * :param written: Destination for the using scriptpubkey length.
+ */
+WALLY_CORE_API int wally_descriptor_parse_miniscript_len(
+    const char *miniscript,
+    const struct wally_map *key_value_map,
+    uint32_t derive_child_num,
+    uint32_t flags,
     size_t *written);
 
 /**
@@ -60,6 +77,28 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
     uint32_t flags,
     unsigned char *script_out,
     size_t script_len,
+    size_t *written);
+
+/**
+ * Create a scriptpubkey corresponding to a output descriptor.
+ *
+ * :param descriptor: Output descriptor.
+ * :param key_value_map: key map of input label name.
+ * :param derive_child_num: Number of the derive path.
+ * :param network: Number of the network. (bitcoin regtest is set ``0xff``)
+ * :param target_depth: Number of the descriptor depth. Default is 0.
+ * :param target_index: Number of the descriptor index. Default is 0.
+ * :param flags: For future use. Must be 0.
+ * :param written: Destination for the using scriptpubkey length.
+ */
+WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
+    const char *descriptor,
+    const struct wally_map *key_value_map,
+    uint32_t derive_child_num,
+    uint32_t network,
+    uint32_t target_depth,
+    uint32_t target_index,
+    uint32_t flags,
     size_t *written);
 
 /**

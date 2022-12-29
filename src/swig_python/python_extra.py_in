@@ -176,6 +176,9 @@ map_keypath_get_item_fingerprint = _wrap_bin(map_keypath_get_item_fingerprint, B
 keypath_get_path = _wrap_int_array(keypath_get_path, keypath_get_path_len)
 map_keypath_get_item_path = _wrap_int_array(map_keypath_get_item_path, map_keypath_get_item_path_len)
 map_preimage_init = map_preimage_init_alloc
+descriptor_parse_miniscript = _wrap_bin(descriptor_parse_miniscript, descriptor_parse_miniscript_len)
+descriptor_to_scriptpubkey = _wrap_bin(descriptor_to_scriptpubkey, descriptor_to_scriptpubkey_len)
+descriptor_to_addresses = descriptor_to_addresses_alloc
 scriptpubkey_p2pkh_from_bytes = _wrap_bin(scriptpubkey_p2pkh_from_bytes, WALLY_SCRIPTPUBKEY_P2PKH_LEN, resize=True)
 scriptsig_p2pkh_from_sig = _wrap_bin(scriptsig_p2pkh_from_sig, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, resize=True)
 scriptsig_p2pkh_from_der = _wrap_bin(scriptsig_p2pkh_from_der, WALLY_SCRIPTSIG_P2PKH_MAX_LEN, resize=True)

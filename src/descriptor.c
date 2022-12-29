@@ -3637,6 +3637,34 @@ int wally_descriptor_parse_miniscript(
     return ret;
 }
 
+int wally_descriptor_parse_miniscript_len(
+    const char *miniscript,
+    const struct wally_map *key_value_map,
+    uint32_t derive_child_num,
+    uint32_t flags,
+    size_t *written)
+{
+    if (!written || !miniscript)
+        return WALLY_EINVAL;
+
+    size_t script_len = DESCRIPTOR_LIMIT_LENGTH;
+    unsigned char *tmp_script = wally_malloc(script_len);
+    if(tmp_script == NULL)
+        return WALLY_ENOMEM;
+
+    memset(tmp_script, 0, script_len);
+    int ret = wally_descriptor_parse_miniscript(
+        miniscript,
+        key_value_map,
+        derive_child_num,
+        flags,
+        tmp_script,
+        script_len,
+        written);
+    wally_free(tmp_script);
+    return ret;
+}
+
 int wally_descriptor_to_scriptpubkey(
     const char *descriptor,
     const struct wally_map *key_value_map,
@@ -3690,6 +3718,40 @@ int wally_descriptor_to_scriptpubkey(
         NULL);
     if (ret == WALLY_OK)
         *written = script_item.script_len;
+    return ret;
+}
+
+int wally_descriptor_to_scriptpubkey_len(
+    const char *descriptor,
+    const struct wally_map *key_value_map,
+    uint32_t derive_child_num,
+    uint32_t network,
+    uint32_t target_depth,
+    uint32_t target_index,
+    uint32_t flags,
+    size_t *written)
+{
+    if (!written || !descriptor)
+        return WALLY_EINVAL;
+
+    size_t script_len = DESCRIPTOR_LIMIT_LENGTH;
+    unsigned char *tmp_script = wally_malloc(script_len);
+    if(tmp_script == NULL)
+        return WALLY_ENOMEM;
+
+    memset(tmp_script, 0, script_len);
+    int ret = wally_descriptor_to_scriptpubkey(
+        descriptor,
+        key_value_map,
+        derive_child_num,
+        network,
+        target_depth,
+        target_index,
+        flags,
+        tmp_script,
+        script_len,
+        written);
+    wally_free(tmp_script);
     return ret;
 }
 

@@ -1891,7 +1891,6 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
 #endif
     } else {
         outputs_size = 0;
-        rangeproof_size = 0;
         for (i = 0; i < tx->num_outputs; ++i) {
             const struct wally_tx_output *output = tx->outputs + i;
             if (!is_elements)

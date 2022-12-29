@@ -29,6 +29,7 @@ del swig_import_helper
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_crypto.h"
+#include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
 #include "../include/wally_psbt.h"
 #include "../include/wally_psbt_members.h"
@@ -363,7 +364,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_output_binary(unsigned char* bytes_out, size_t len);
 %pybuffer_output_binary(unsigned char* s2c_opening_out, size_t s2c_opening_out_len);
 %pybuffer_output_binary(unsigned char* scalar, size_t scalar_len);
-%pybuffer_output_binary(unsigned char* script, size_t script_len);
+%pybuffer_output_binary(unsigned char* script_out, size_t script_len);
 %pybuffer_output_binary(unsigned char* vbf_out, size_t vbf_out_len);
 %ignore bip32_key_from_base58;
 %ignore bip32_key_from_base58_n;
@@ -407,6 +408,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_crypto.h"
+%include "../include/wally_descriptor.h"
 %include "../include/wally_script.h"
 %include "../include/wally_map.h"
 %include "../include/wally_psbt.h"
