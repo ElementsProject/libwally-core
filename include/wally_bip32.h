@@ -24,6 +24,12 @@ extern "C" {
 /** The maximum number of path elements allowed in a path */
 #define BIP32_PATH_MAX_LEN 255
 
+/* Length of a BIP32 chain code  */
+#define WALLY_BIP32_CHAIN_CODE_LEN 32
+
+/* Length of Elements' pubkey tweak sum */
+#define WALLY_BIP32_TWEAK_SUM_LEN 32
+
 /** Indicate that we want to derive a private key in `bip32_key_from_parent` */
 #define BIP32_FLAG_KEY_PRIVATE 0x0
 /** Indicate that we want to derive a public key in `bip32_key_from_parent` */
@@ -37,6 +43,8 @@ extern "C" {
 #define BIP32_FLAG_STR_WILDCARD 0x8
 /** Do not allow a leading ``m``/``M`` or ``/`` in path string expressions */
 #define BIP32_FLAG_STR_BARE 0x10
+/** Allow upper as well as lower case 'M'/'H' in path string expressions */
+#define BIP32_FLAG_ALLOW_UPPER 0x20
 
 /** Version codes for extended keys */
 #define BIP32_VER_MAIN_PUBLIC  0x0488B21E
@@ -84,7 +92,6 @@ WALLY_CORE_API int bip32_key_free(
     const struct ext_key *hdkey);
 #endif /* SWIG_PYTHON */
 
-#ifndef SWIG
 /**
  * Initialize a key.
  */
@@ -103,7 +110,6 @@ WALLY_CORE_API int bip32_key_init(
     const unsigned char *parent160,
     size_t parent160_len,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_init`, but allocates the key.
@@ -124,7 +130,6 @@ WALLY_CORE_API int bip32_key_init_alloc(
     size_t parent160_len,
     struct ext_key **output);
 
-#ifndef SWIG
 /**
  * Create a new master extended key from entropy.
  *
@@ -162,7 +167,6 @@ WALLY_CORE_API int bip32_key_from_seed(
     uint32_t version,
     uint32_t flags,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_from_seed_custom`, but allocates the key.
@@ -195,7 +199,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
  * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param bytes_out: Destination for the serialized key.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_SERIALIZED_LEN)
  */
 WALLY_CORE_API int bip32_key_serialize(
     const struct ext_key *hdkey,
@@ -204,7 +208,6 @@ WALLY_CORE_API int bip32_key_serialize(
     size_t len);
 
 
-#ifndef SWIG
 /**
  * Un-serialize an extended key from memory.
  *
@@ -216,7 +219,6 @@ WALLY_CORE_API int bip32_key_unserialize(
     const unsigned char *bytes,
     size_t bytes_len,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_unserialize`, but allocates the key.
@@ -228,7 +230,6 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
     size_t bytes_len,
     struct ext_key **output);
 
-#ifndef SWIG
 /**
  * Create a new child extended key from a parent extended key.
  *
@@ -247,7 +248,6 @@ WALLY_CORE_API int bip32_key_from_parent(
     uint32_t child_num,
     uint32_t flags,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_from_parent`, but allocates the key.
@@ -259,7 +259,6 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
     uint32_t flags,
     struct ext_key **output);
 
-#ifndef SWIG
 /**
  * Create a new child extended key from a parent extended key and a path.
  *
@@ -268,6 +267,9 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  * :param child_path_len: The number of child numbers in ``child_path``.
  * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
+ *
+ * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
+ *           must be an extended private key or this function will fail.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
     const struct ext_key *hdkey,
@@ -275,7 +277,6 @@ WALLY_CORE_API int bip32_key_from_parent_path(
     size_t child_path_len,
     uint32_t flags,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_from_parent_path`, but allocates the key.
@@ -288,7 +289,6 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
     uint32_t flags,
     struct ext_key **output);
 
-#ifndef SWIG
 /**
  * Create a new child extended key from a parent extended key and a path string.
  *
@@ -297,6 +297,9 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param child_num: The child number to use if ``path_str`` contains a ``*`` wildcard.
  * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
+ *
+ * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
+ *           must be an extended private key or this function will fail.
  */
 WALLY_CORE_API int bip32_key_from_parent_path_str(
     const struct ext_key *hdkey,
@@ -317,7 +320,6 @@ WALLY_CORE_API int bip32_key_from_parent_path_str_n(
     uint32_t child_num,
     uint32_t flags,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_from_parent_path_str`, but allocates the key.
@@ -343,15 +345,14 @@ WALLY_CORE_API int bip32_key_from_parent_path_str_n_alloc(
     struct ext_key **output);
 
 #ifdef BUILD_ELEMENTS
-#ifndef SWIG
 /**
  * Derive the pub tweak from a parent extended key and a path.
  *
  * :param hdkey: The parent extended key.
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
- * :param bytes_out: Destination for the resulting pub tweak.
- * :param len: Length of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
+ * :param output: Destination for the resulting key.
  */
 WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
     const struct ext_key *hdkey,
@@ -359,7 +360,6 @@ WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
     size_t child_path_len,
     uint32_t flags,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_with_tweak_from_parent_path`, but allocates the key.
@@ -387,7 +387,6 @@ WALLY_CORE_API int bip32_key_to_base58(
     uint32_t flags,
     char **output);
 
-#ifndef SWIG
 /**
  * Convert a base58 encoded extended key to an extended key.
  *
@@ -407,7 +406,6 @@ WALLY_CORE_API int bip32_key_from_base58_n(
     const char *base58,
     size_t base58_len,
     struct ext_key *output);
-#endif
 
 /**
  * As per `bip32_key_from_base58`, but allocates the key.
@@ -444,7 +442,7 @@ WALLY_CORE_API int bip32_key_strip_private_key(
  *
  * :param hdkey: The extended key.
  * :param bytes_out: Destination for the fingerprint.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
  */
 WALLY_CORE_API int bip32_key_get_fingerprint(
     struct ext_key *hdkey,

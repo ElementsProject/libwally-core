@@ -7,8 +7,8 @@ PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
 
 SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50dcc5a0af4ba2b9efcf022100fd8d53c6be9b3f68c74eed559cca314e718df437b5c5c57668c5930e14140502')
 
-SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AQAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
-SAMPLE_V2 = 'cHNidP8BAgR7AAAAAQQBAQEFAQEB+wQCAAAAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAQAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AAAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
+SAMPLE_V2 = 'cHNidP8BAgR7AAAAAQQBAQEFAQEB+wQCAAAAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAAAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
 SAMPLE_PSET = 'cHNldP8BAgQCAAAAAQQBAQEFAQEBBgEDAfsEAgAAAAABDiCd/GYowmxYmf4b09wzhmW/1V162hD2Iglz3y04bewSdgEPBAEAAAABEAT///8AAAEDCPA9zR0AAAAAAQQWABR7OgC/3BTSd5XCt0kB0J2m7xM1eQf8BHBzZXQCIHd3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3AA=='
 
 def wally_fn(name):
@@ -202,6 +202,31 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(psbt_get_output_asset_commitment_len(pset2, 0), len(blinded_asset))
             self.assertEqual(psbt_get_output_asset_commitment(pset2, 0), blinded_asset)
 
+    def check_keypath(self, keypaths, master, derived, pubkey, fingerprint, path):
+        """Check keypath helper functions"""
+        # The pubkey should be the first and only element
+        self.assertEqual(map_get_num_items(keypaths), 1)
+        self.assertEqual(map_find(keypaths, pubkey), 1)
+        self.assertEqual(map_find_from(keypaths, 0, pubkey), 1)
+        self.assertEqual(map_find_from(keypaths, 1, pubkey), 0) # Not found
+        # Test map to python dict conversion and its inverse
+        m2d, d2m = map_to_dict, map_from_dict
+        self.assertEqual(m2d(keypaths), m2d(d2m(m2d(keypaths))))
+        # Test fetching the values out of the map matches what we put in
+        fp_out = map_keypath_get_item_fingerprint(keypaths, 0)
+        self.assertEqual(fingerprint, fp_out)
+        self.assertEqual(map_keypath_get_item_path_len(keypaths, 0), len(path))
+        self.assertEqual(map_keypath_get_item_path(keypaths, 0), path)
+        # Test deriving a matching key from the map
+        key = map_keypath_get_bip32_key_from(keypaths, 0, derived)
+        self.assertEqual(key, None) # No key in the map derived from 'derived'
+        key = map_keypath_get_bip32_key_from(keypaths, 0, master)
+        self.assertEqual(bip32_key_serialize(key, 0), bip32_key_serialize(derived, 0))
+
+    def check_txout(self, lhs, rhs):
+        self.assertEqual(tx_output_get_satoshi(lhs), tx_output_get_satoshi(rhs))
+        self.assertEqual(tx_output_get_script(lhs), tx_output_get_script(rhs))
+
     def test_psbt(self):
         psbt = psbt_from_base64(SAMPLE)
         psbt2 = psbt_from_base64(SAMPLE_V2)
@@ -258,14 +283,14 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_get_id, psbt, 0xff)   # Unknown flags
         self._throws(psbt_get_id, psbt2, 0xff)  # Unknown flags, v2
         for p, flags, expected_id in [
-            (psbt,  0x0, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
-            (psbt,  0x1, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
-            (psbt,  0x2, '3d52f16feabb48bb5f7ec374fb11fd33c52871aa556a0424b205d769f46c17c6'),
-            (psbt,  0x3, 'fa9614be7e1fcb6c94083643f49b3da40087ca36f6cf182d342d627261c12567'),
-            (psbt2, 0x0, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
-            (psbt2, 0x1, '2f7657fe56cd485ff00dc433722b8640ac88b86bf5a766b00b7f8cb2be016056'),
-            (psbt2, 0x2, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063'),
-            (psbt2, 0x3, '1ef6f55dabf5e064733e2606403ba9ce82fea194d3a2c3072f17a01493f00063')
+            (psbt,  0x0, 'b8fa752b60d37a5f9087acbc26fe5128dc7bde4afebb94d4f5729023b31ccbf5'),
+            (psbt,  0x1, 'd6929da93f26bba9aac07e6a102417c908793442aa204cdee14b12688fd23300'),
+            (psbt,  0x2, 'b8fa752b60d37a5f9087acbc26fe5128dc7bde4afebb94d4f5729023b31ccbf5'),
+            (psbt,  0x3, 'd6929da93f26bba9aac07e6a102417c908793442aa204cdee14b12688fd23300'),
+            (psbt2, 0x0, '64776fede82963c61511d2591e341b66dd2bc1886cb4994cdebb62bf30034cc5'),
+            (psbt2, 0x1, '64776fede82963c61511d2591e341b66dd2bc1886cb4994cdebb62bf30034cc5'),
+            (psbt2, 0x2, '5002d028b68221039a99886442ca0b6459de328306199fa047e247847f444eb1'),
+            (psbt2, 0x3, '5002d028b68221039a99886442ca0b6459de328306199fa047e247847f444eb1')
             ]:
             self.assertEqual(hex_from_bytes(psbt_get_id(p, flags)), expected_id)
 
@@ -281,6 +306,8 @@ class PSBTTests(unittest.TestCase):
         self.assertIsNotNone(dummy_tx)
         self._throws(psbt_set_global_tx, None, dummy_tx)  # NULL PSBT
         self._throws(psbt_set_global_tx, psbt2, dummy_tx) # V2, unsupported
+        dummy_tx_txout = tx_output_init(tx_get_output_satoshi(dummy_tx, 0),
+                                        tx_get_output_script(dummy_tx, 0))
 
         dummy_txout = tx_output_init(1234567, bytearray(b'\x00' * 33))
         if is_elements_build():
@@ -292,11 +319,14 @@ class PSBTTests(unittest.TestCase):
         dummy_witness = tx_witness_stack_init(5)
         self.assertIsNotNone(dummy_witness)
 
+        seed = hex_to_bytes('000102030405060708090a0b0c0d0e0f')
+        master = bip32_key_from_seed(seed, BIP32_VER_MAIN_PRIVATE, 0)
+        dummy_path = [1234, 1234, 1234]
+        derived = bip32_key_from_parent_path(master, dummy_path, BIP32_FLAG_KEY_PRIVATE)
         dummy_bytes = bytearray(b'\x00' * 32)
         dummy_txid = bytearray(b'\x33' * 32)
-        dummy_pubkey = hex_to_bytes('038575eb35e18fb168a913d8b49af50204f4f73627f6f7884f1be11e354664de8b')
-        dummy_fingerprint = bytearray(b'\x00' * BIP32_KEY_FINGERPRINT_LEN)
-        dummy_path = [1234, 1234, 1234]
+        dummy_pubkey = bip32_key_get_pub_key(derived)
+        dummy_fingerprint = bip32_key_get_fingerprint(master)
         dummy_sig = SIG_BYTES + bytearray(b'\x01')      # SIGHASH_ALL
         dummy_sig_0 = SIG_BYTES + bytearray(b'\x00')    # Invalid sighash 0
         dummy_sig_none = SIG_BYTES + bytearray(b'\x02') # SIGHASH_NONE
@@ -314,7 +344,8 @@ class PSBTTests(unittest.TestCase):
         dummy_keypaths = map_keypath_public_key_init(1)
         self.assertIsNotNone(dummy_keypaths)
         map_keypath_add(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
-        self.assertEqual(map_find(dummy_keypaths, dummy_pubkey), 1)
+        self.check_keypath(dummy_keypaths, master, derived,
+                           dummy_pubkey, dummy_fingerprint, dummy_path)
 
         empty_signatures = map_init(0, None)
         dummy_signatures = map_init(0, None) # TODO: pubkey to sig map init
@@ -382,6 +413,18 @@ class PSBTTests(unittest.TestCase):
             self._try_invalid(psbt_get_input_utxo, p)
             self._try_set(psbt_set_input_witness_utxo, p, dummy_txout)
             self._try_invalid(psbt_get_input_witness_utxo, p)
+            # 'best' UTXO: returns witness UTXO or non-witness UTXO if no witness UTXO
+            self._try_invalid(psbt_get_input_best_utxo, p)
+            self._throws(psbt_get_input_best_utxo, p, 0) # No UTXO present
+            psbt_set_input_utxo(p, 0, dummy_tx)
+            psbt_set_input_witness_utxo(p, 0, dummy_txout)
+            # With both present, returns the witness UTXO
+            self.check_txout(psbt_get_input_best_utxo(p, 0), dummy_txout)
+            # With only the non-witness UTXO present, returns the non-witness UTXO
+            psbt_set_input_witness_utxo(p, 0, None)
+            self.check_txout(psbt_get_input_best_utxo(p, 0), dummy_tx_txout)
+            psbt_set_input_utxo(p, 0, None)
+
             for field in ['redeem_script', 'witness_script', 'final_scriptsig']:
                 setfn, getfn, lenfn, hasfn, clearfn = accessors('input', field)
                 self._try_get_set_b(setfn, getfn, lenfn, p, dummy_bytes)
@@ -441,31 +484,39 @@ class PSBTTests(unittest.TestCase):
         #
         # Inputs: PSBT V2
         #
+        global_tx = psbt_get_global_tx(psbt)
+
         # V2: Previous txid
         self._throws(psbt_set_input_previous_txid, psbt, 0, dummy_txid) # Non v2 PSBT
         self._throws(psbt_set_input_previous_txid, psbt2, 0, dummy_sig)  # Bad Length
-        self._throws(psbt_get_input_previous_txid, psbt, 0)              # Non v2 PSBT
         self._try_get_set_b(psbt_set_input_previous_txid,
                             psbt_get_input_previous_txid,
                             None, psbt2, dummy_txid, mandatory=True)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        txid = tx_get_input_txhash(global_tx, 0)
+        self.assertEqual(psbt_get_input_previous_txid(psbt, 0), txid)
 
         # V2: Output Index
         self._throws(psbt_set_input_output_index, psbt, 0, 1234) # Non v2 PSBT
-        self._throws(psbt_get_input_output_index, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_input_output_index,
                             None,
                             psbt_get_input_output_index, psbt2, 1234)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        out_idx = tx_get_input_index(global_tx, 0)
+        self.assertEqual(psbt_get_input_output_index(psbt, 0), out_idx)
 
         # V2: Sequence
         self._throws(psbt_set_input_sequence, psbt, 0, 1234) # Non v2 PSBT
         self._throws(psbt_clear_input_sequence, psbt, 0)     # Non v2 PSBT
-        self._throws(psbt_get_input_sequence, psbt, 0)       # Non v2 PSBT
         self._try_get_set_i(psbt_set_input_sequence,
                             psbt_clear_input_sequence,
                             psbt_get_input_sequence, psbt2, 1234)
         # If no sequence is present, it defaults to final (0xffffffff)
         psbt_clear_input_sequence(psbt2, 0)
         self.assertEqual(psbt_get_input_sequence(psbt2, 0), 0xffffffff)
+        # For v0 PSBTs, fetching returns the value from the global tx
+        seq = tx_get_input_sequence(global_tx, 0)
+        self.assertEqual(psbt_get_input_sequence(psbt, 0), seq)
 
         # V2: Required Lock Height/Time
         heightfns = (psbt_get_input_required_lockheight, psbt_set_input_required_lockheight,

@@ -124,8 +124,8 @@ FUNCS = [
     ('bip39_mnemonic_from_bytes', F([
         'bip39_words_lang_in', 'const_bytes[entropy]',
         'out_str_p'])),
-    ('bip39_mnemonic_to_seed', F([
-        'string[mnemonic]', 'string[pass]', 'out_bytes_sized'
+    ('bip39_mnemonic_to_seed512', F([
+        'string[mnemonic]', 'string[pass]', 'out_bytes_fixedsized'
     ], out_size='64')),
 
     # signing:

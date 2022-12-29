@@ -1029,8 +1029,7 @@ int wally_elements_pegout_script_from_bytes(const unsigned char *genesis_blockha
     len -= bytes_written; \
     if ((ret = wally_script_push_from_bytes(bytes, bytes_len, 0, bytes_out, len, &bytes_written)) != WALLY_OK) \
         return ret; \
-    if (written) \
-        *written += bytes_written;
+    *written += bytes_written;
 
     size_t bytes_written = 1; /* OP_RETURN */
     int ret;
@@ -1040,12 +1039,11 @@ int wally_elements_pegout_script_from_bytes(const unsigned char *genesis_blockha
 
     if (!genesis_blockhash || genesis_blockhash_len != SHA256_LEN ||
         !mainchain_script || !mainchain_script_len || !sub_pubkey || sub_pubkey_len != EC_PUBLIC_KEY_LEN ||
-        !whitelistproof || !whitelistproof_len || flags || !bytes_out || !len)
+        !whitelistproof || !whitelistproof_len || flags || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
     *bytes_out = OP_RETURN;
-    if (written)
-        *written += bytes_written;
+    *written += bytes_written;
 
     pegout_script_push(genesis_blockhash, genesis_blockhash_len);
     pegout_script_push(mainchain_script, mainchain_script_len);
@@ -1072,7 +1070,8 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
     unsigned char *q = bytes_out;
     size_t bytes_len = redeem_script_len;
     size_t ser_len = EC_PUBLIC_KEY_LEN;
-    /* For liquidv1 initial watchman template, don't tweak emergency keys. in the future, use flags to change watchmen template */
+    /* For liquidv1 initial watchman template, don't tweak emergency keys.
+     * In the future, use flags to change watchmen template */
     bool op_else_found = false;
 
     int ret;
@@ -1081,7 +1080,7 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
         *written = 0;
 
     if (!redeem_script || !redeem_script_len || !script ||
-        !script_len || flags || !bytes_out || len != redeem_script_len)
+        !script_len || flags || !bytes_out || len != redeem_script_len || !written)
         return WALLY_EINVAL;
 
     for (;;) {

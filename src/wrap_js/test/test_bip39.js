@@ -21,7 +21,7 @@ test('BIP39', function(t) {
             t.equal(res, item[1]);
         });
 
-        wally.bip39_mnemonic_to_seed(Buffer.from(item[1], 'utf-8'), Buffer.from(passphrase, 'utf-8')).then((res) => {
+        wally.bip39_mnemonic_to_seed512(Buffer.from(item[1], 'utf-8'), Buffer.from(passphrase, 'utf-8')).then((res) => {
             t.equal(Buffer.from(res).toString('hex'), item[2]);
         });
     });

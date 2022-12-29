@@ -32,6 +32,10 @@
 #
 #   - at the configure level, setenv JAVAC
 #
+#   This macro depends on AC_CANONICAL_HOST which requires that config.guess
+#   and config.sub be distributed along with the source code.  See autoconf
+#   manual for details.
+#
 #   Note: This macro can work with the autoconf M4 macros for Java programs.
 #   This particular macro is not part of the original set of macros.
 #
@@ -44,10 +48,10 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 13
-
 AU_ALIAS([AC_JNI_INCLUDE_DIR], [AX_JNI_INCLUDE_DIR])
 AC_DEFUN([AX_JNI_INCLUDE_DIR],[
+
+AC_REQUIRE([AC_CANONICAL_HOST])
 
 JNI_INCLUDE_DIRS=""
 
@@ -86,22 +90,16 @@ _AS_ECHO_LOG([_JINC=$_JINC])
 # On Mac OS X 10.6.4, jni.h is a symlink:
 # /System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers/jni.h
 # -> ../../CurrentJDK/Headers/jni.h.
+AC_MSG_CHECKING(for JNI headers)
 
-AC_CACHE_CHECK(jni headers, ac_cv_jni_header_path,
-[
 if test -f "$_JINC/jni.h"; then
-  ac_cv_jni_header_path="$_JINC"
-  JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
+  JNI_INCLUDE_DIRS="$_JINC"
 else
   _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
   if test -f "$_JTOPDIR/include/jni.h"; then
-    ac_cv_jni_header_path="$_JTOPDIR/include"
-    JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $ac_cv_jni_header_path"
-  else
-    ac_cv_jni_header_path=none
+    JNI_INCLUDE_DIRS="$_JTOPDIR/include"
   fi
 fi
-])
 
 # get the likely subdirectories for system specific java includes
 case "$host_os" in
@@ -123,6 +121,8 @@ do
          JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$JINCSUBDIR"
     fi
 done
+
+AC_MSG_RESULT(${JNI_INCLUDE_DIRS:-none})
 ])
 
 # _ACJNI_FOLLOW_SYMLINKS <path>

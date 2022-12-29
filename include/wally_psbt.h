@@ -32,6 +32,8 @@ extern "C" {
 
 #define WALLY_PSBT_PARSE_FLAG_STRICT 0x1 /* Parse strictly according to the PSBT/PSET spec */
 
+#define WALLY_PSBT_EXTRACT_NON_FINAL 0x1 /* Extract without final scriptsig and witness */
+
 /* ID flags indicating unique id calculation */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
 #define WALLY_PSBT_ID_USE_LOCKTIME 0x2 /* Do not set locktime to 0 before calculating id */
@@ -131,7 +133,6 @@ struct wally_psbt {
 };
 #endif /* SWIG */
 
-#ifndef SWIG
 /**
  * Set the previous txid in an input.
  *
@@ -499,7 +500,7 @@ WALLY_CORE_API int wally_psbt_input_get_asset_len(
  *
  * :param input: The input to update.
  * :param asset: The explicit asset tag.
- * :param asset_len: Size of ``asset`` in bytes.
+ * :param asset_len: Size of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
  */
 WALLY_CORE_API int wally_psbt_input_set_asset(
     struct wally_psbt_input *input,
@@ -882,7 +883,7 @@ WALLY_CORE_API int wally_psbt_input_get_issuance_blinding_nonce_len(
  *
  * :param input: The input to update.
  * :param nonce: Asset issuance or revelation blinding nonce.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be ``ASSET_TAG_LEN``.
  */
 WALLY_CORE_API int wally_psbt_input_set_issuance_blinding_nonce(
     struct wally_psbt_input *input,
@@ -1183,9 +1184,14 @@ WALLY_CORE_API int wally_psbt_input_clear_utxo_rangeproof(
 /**
  * Generate explicit proofs and unblinded values from an inputs witness UTXO.
  *
- * :param input: The input to update.
- * :param nonce_hash: The blinding nonce for the inputs witness UTXO.
- * :param nonce_hash_len: Size of ``nonce_hash`` in bytes. Must be ``SHA256_LEN``.
+ * :param input: The input to generate proofs for.
+ * :param satoshi: The explicit value of the input.
+ * :param asset: The explicit asset tag.
+ * :param asset_len: Size of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
+ * :param abf: Asset blinding factor.
+ * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param vbf: Value blinding factor.
+ * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
  * :param entropy: Random entropy for explicit range proof generation.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``BLINDING_FACTOR_LEN``.
  *
@@ -1437,7 +1443,7 @@ WALLY_CORE_API int wally_psbt_output_get_asset_len(
  *
  * :param output: The output to update.
  * :param asset: The asset tag.
- * :param asset_len: Size of ``asset`` in bytes.
+ * :param asset_len: Size of ``asset`` in bytes. Must be ``ASSET_TAG_LEN``.
  */
 WALLY_CORE_API int wally_psbt_output_set_asset(
     struct wally_psbt_output *output,
@@ -1799,7 +1805,6 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
     uint32_t flags,
     size_t *written);
 #endif /* BUILD_ELEMENTS */
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new PSBT.
@@ -1851,7 +1856,7 @@ WALLY_CORE_API int wally_psbt_set_version(
  * :param flags: WALLY_PSBT_ID_ flags to change the id calculation, or
  *|   pass 0 to compute a BIP-370 compatible id.
  * :param bytes_out: Destination for the id.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  *
  * .. note:: The id is expensive to compute.
  */
@@ -1905,7 +1910,7 @@ WALLY_CORE_API int wally_psbt_set_global_tx(
  */
 WALLY_CORE_API int wally_psbt_set_tx_version(
     struct wally_psbt *psbt,
-    uint32_t tx_version);
+    uint32_t version);
 
 /**
  * Get the transaction version of a PSBT.
@@ -2135,7 +2140,6 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
     uint32_t flags,
     struct wally_psbt **output);
 
-#ifndef SWIG
 /**
  * Blind a PSBT.
  *
@@ -2164,7 +2168,6 @@ WALLY_CORE_API int wally_psbt_blind(
     uint32_t output_index,
     uint32_t flags,
     struct wally_map *output);
-#endif
 
 /**
  * Blind a PSBT.
@@ -2212,10 +2215,12 @@ WALLY_CORE_API int wally_psbt_finalize(
  * Extract a network transaction from a finalized PSBT.
  *
  * :param psbt: PSBT to extract from.
+ * :param flags: Flags controlling signing. Must be 0 or WALLY_PSBT_EXTRACT_NON_FINAL.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_psbt_extract(
     const struct wally_psbt *psbt,
+    uint32_t flags,
     struct wally_tx **output);
 
 /**

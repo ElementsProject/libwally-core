@@ -265,6 +265,12 @@ inline int bip39_mnemonic_to_seed(const MNEMONIC& mnemonic, const PASSPHRASE& pa
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class MNEMONIC, class PASSPHRASE, class BYTES_OUT>
+inline int bip39_mnemonic_to_seed512(const MNEMONIC& mnemonic, const PASSPHRASE& passphrase, BYTES_OUT& bytes_out) {
+    int ret = ::bip39_mnemonic_to_seed512(detail::get_p(mnemonic), detail::get_p(passphrase), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class W>
 inline int bip39_mnemonic_validate(const W& w, const char* mnemonic) {
     int ret = ::bip39_mnemonic_validate(detail::get_p(w), mnemonic);
@@ -531,6 +537,12 @@ inline int ec_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, uint3
     return ret;
 }
 
+template <class PRIV_KEY, class BYTES>
+inline int ec_sig_from_bytes_len(const PRIV_KEY& priv_key, const BYTES& bytes, uint32_t flags, size_t* written) {
+    int ret = ::wally_ec_sig_from_bytes_len(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), flags, written);
+    return ret;
+}
+
 template <class BYTES, class BYTES_OUT>
 inline int ec_sig_from_der(const BYTES& bytes, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_sig_from_der(bytes.data(), bytes.size(), bytes_out.data(), bytes_out.size());
@@ -661,6 +673,25 @@ inline int keypath_bip32_verify(const KEY& key, const VAL& val) {
     return ret;
 }
 
+template <class VAL, class BYTES_OUT>
+inline int keypath_get_fingerprint(const VAL& val, BYTES_OUT& bytes_out) {
+    int ret = ::wally_keypath_get_fingerprint(val.data(), val.size(), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class VAL>
+inline int keypath_get_path(const VAL& val, uint32_t* child_path_out, size_t child_path_out_len, size_t* written) {
+    int ret = ::wally_keypath_get_path(val.data(), val.size(), child_path_out, child_path_out_len, written);
+    return ret;
+}
+
+template <class VAL>
+inline int keypath_get_path_len(const VAL& val, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_keypath_get_path_len(val.data(), val.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(val.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class KEY, class VAL>
 inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_keypath_public_key_verify(key.data(), key.size(), val.data(), val.size());
@@ -709,6 +740,19 @@ inline int map_find(const MAP_IN& map_in, const KEY& key, size_t* written = 0) {
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class MAP_IN, class HDKEY>
+inline int map_find_bip32_public_key_from(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, size_t* written) {
+    int ret = ::wally_map_find_bip32_public_key_from(detail::get_p(map_in), index, detail::get_p(hdkey), written);
+    return ret;
+}
+
+template <class MAP_IN, class KEY>
+inline int map_find_from(const MAP_IN& map_in, size_t index, const KEY& key, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_map_find_from(detail::get_p(map_in), index, key.data(), key.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(key.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 template <class MAP_IN>
 inline int map_find_integer(const MAP_IN& map_in, uint32_t key, size_t* written) {
     int ret = ::wally_map_find_integer(detail::get_p(map_in), key, written);
@@ -728,8 +772,33 @@ inline int map_get_item(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out
 }
 
 template <class MAP_IN>
+inline int map_get_item_integer_key(const MAP_IN& map_in, size_t index, size_t* written) {
+    int ret = ::wally_map_get_item_integer_key(detail::get_p(map_in), index, written);
+    return ret;
+}
+
+template <class MAP_IN, class BYTES_OUT>
+inline int map_get_item_key(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_map_get_item_key(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class MAP_IN>
+inline int map_get_item_key_length(const MAP_IN& map_in, size_t index, size_t* written) {
+    int ret = ::wally_map_get_item_key_length(detail::get_p(map_in), index, written);
+    return ret;
+}
+
+template <class MAP_IN>
 inline int map_get_item_length(const MAP_IN& map_in, size_t index, size_t* written) {
     int ret = ::wally_map_get_item_length(detail::get_p(map_in), index, written);
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_get_num_items(const MAP_IN& map_in, size_t* written) {
+    int ret = ::wally_map_get_num_items(detail::get_p(map_in), written);
     return ret;
 }
 
@@ -757,6 +826,30 @@ inline int map_keypath_add(const MAP_IN& map_in, const PUB_KEY& pub_key, const F
 
 inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map** output) {
     int ret = ::wally_map_keypath_bip32_init_alloc(allocation_len, output);
+    return ret;
+}
+
+template <class MAP_IN, class HDKEY>
+inline int map_keypath_get_bip32_key_from_alloc(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, struct ext_key** output) {
+    int ret = ::wally_map_keypath_get_bip32_key_from_alloc(detail::get_p(map_in), index, detail::get_p(hdkey), output);
+    return ret;
+}
+
+template <class MAP_IN, class BYTES_OUT>
+inline int map_keypath_get_item_fingerprint(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out) {
+    int ret = ::wally_map_keypath_get_item_fingerprint(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_keypath_get_item_path(const MAP_IN& map_in, size_t index, uint32_t* child_path_out, size_t child_path_out_len, size_t* written) {
+    int ret = ::wally_map_keypath_get_item_path(detail::get_p(map_in), index, child_path_out, child_path_out_len, written);
+    return ret;
+}
+
+template <class MAP_IN>
+inline int map_keypath_get_item_path_len(const MAP_IN& map_in, size_t index, size_t* written) {
+    int ret = ::wally_map_keypath_get_item_path_len(detail::get_p(map_in), index, written);
     return ret;
 }
 
@@ -878,8 +971,8 @@ inline int psbt_combine(const PSBT& psbt, const struct wally_psbt* source) {
 }
 
 template <class PSBT>
-inline int psbt_extract(const PSBT& psbt, struct wally_tx** output) {
-    int ret = ::wally_psbt_extract(detail::get_p(psbt), output);
+inline int psbt_extract(const PSBT& psbt, uint32_t flags, struct wally_tx** output) {
+    int ret = ::wally_psbt_extract(detail::get_p(psbt), flags, output);
     return ret;
 }
 
@@ -1188,8 +1281,8 @@ inline int psbt_set_tx_modifiable_flags(const PSBT& psbt, uint32_t flags) {
 }
 
 template <class PSBT>
-inline int psbt_set_tx_version(const PSBT& psbt, uint32_t tx_version) {
-    int ret = ::wally_psbt_set_tx_version(detail::get_p(psbt), tx_version);
+inline int psbt_set_tx_version(const PSBT& psbt, uint32_t version) {
+    int ret = ::wally_psbt_set_tx_version(detail::get_p(psbt), version);
     return ret;
 }
 
@@ -1764,6 +1857,13 @@ inline int asset_pak_whitelistproof(const ONLINE_KEYS& online_keys, const OFFLIN
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class ONLINE_KEYS, class OFFLINE_KEYS, class SUB_PUBKEY, class ONLINE_PRIV_KEY, class SUMMED_KEY>
+inline int asset_pak_whitelistproof_len(const ONLINE_KEYS& online_keys, const OFFLINE_KEYS& offline_keys, size_t key_index, const SUB_PUBKEY& sub_pubkey, const ONLINE_PRIV_KEY& online_priv_key, const SUMMED_KEY& summed_key, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_asset_pak_whitelistproof_len(online_keys.data(), online_keys.size(), offline_keys.data(), offline_keys.size(), key_index, sub_pubkey.data(), sub_pubkey.size(), online_priv_key.data(), online_priv_key.size(), summed_key.data(), summed_key.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(summed_key.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
 inline int asset_pak_whitelistproof_size(size_t num_keys, size_t* written) {
     int ret = ::wally_asset_pak_whitelistproof_size(num_keys, written);
     return ret;
@@ -1794,6 +1894,13 @@ inline int asset_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTPUT_
     size_t n;
     int ret = ::wally_asset_surjectionproof(output_asset.data(), output_asset.size(), output_abf.data(), output_abf.size(), output_generator.data(), output_generator.size(), bytes.data(), bytes.size(), asset.data(), asset.size(), abf.data(), abf.size(), generator.data(), generator.size(), bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES, class ASSET, class ABF, class GENERATOR>
+inline int asset_surjectionproof_len(const OUTPUT_ASSET& output_asset, const OUTPUT_ABF& output_abf, const OUTPUT_GENERATOR& output_generator, const BYTES& bytes, const ASSET& asset, const ABF& abf, const GENERATOR& generator, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_asset_surjectionproof_len(output_asset.data(), output_asset.size(), output_abf.data(), output_abf.size(), output_generator.data(), output_generator.size(), bytes.data(), bytes.size(), asset.data(), asset.size(), abf.data(), abf.size(), generator.data(), generator.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(generator.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
 inline int asset_surjectionproof_size(size_t num_inputs, size_t* written) {
@@ -2637,8 +2744,8 @@ inline int tx_elements_issuance_calculate_reissuance_token(const ENTROPY& entrop
 }
 
 template <class TXHASH, class CONTRACT_HASH, class BYTES_OUT>
-inline int tx_elements_issuance_generate_entropy(const TXHASH& txhash, uint32_t index, const CONTRACT_HASH& contract_hash, BYTES_OUT& bytes_out) {
-    int ret = ::wally_tx_elements_issuance_generate_entropy(txhash.data(), txhash.size(), index, contract_hash.data(), contract_hash.size(), bytes_out.data(), bytes_out.size());
+inline int tx_elements_issuance_generate_entropy(const TXHASH& txhash, uint32_t utxo_index, const CONTRACT_HASH& contract_hash, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_elements_issuance_generate_entropy(txhash.data(), txhash.size(), utxo_index, contract_hash.data(), contract_hash.size(), bytes_out.data(), bytes_out.size());
     return ret;
 }
 

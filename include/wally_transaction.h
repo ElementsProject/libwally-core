@@ -205,7 +205,6 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
     size_t index,
     uint32_t flags);
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.
  *
@@ -213,7 +212,6 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
  */
 WALLY_CORE_API int wally_tx_witness_stack_free(
     struct wally_tx_witness_stack *stack);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new transaction input.
@@ -238,20 +236,17 @@ WALLY_CORE_API int wally_tx_input_init_alloc(
     const struct wally_tx_witness_stack *witness,
     struct wally_tx_input **output);
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction input allocated by `wally_tx_input_init_alloc`.
  *
  * :param input: The transaction input to free.
  */
 WALLY_CORE_API int wally_tx_input_free(struct wally_tx_input *input);
-#endif /* SWIG_PYTHON */
 
-#ifndef SWIG
 /**
  * Initialize a new transaction output.
  *
- * :param satoshi The amount of the output in satoshi.
+ * :param satoshi: The amount of the output in satoshi.
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param output: Transaction output to initialize.
@@ -260,12 +255,11 @@ WALLY_CORE_API int wally_tx_output_init(uint64_t satoshi,
                                         const unsigned char *script,
                                         size_t script_len,
                                         struct wally_tx_output *output);
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new transaction output.
  *
- * :param satoshi The amount of the output in satoshi.
+ * :param satoshi: The amount of the output in satoshi.
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param output: Destination for the resulting transaction output.
@@ -286,7 +280,6 @@ WALLY_CORE_API int wally_tx_output_clone_alloc(
     const struct wally_tx_output *tx_output_in,
     struct wally_tx_output **output);
 
-#ifndef SWIG
 /**
  * Create a new copy of a transaction output in place.
  *
@@ -298,16 +291,13 @@ WALLY_CORE_API int wally_tx_output_clone_alloc(
 WALLY_CORE_API int wally_tx_output_clone(
     const struct wally_tx_output *tx_output_in,
     struct wally_tx_output *output);
-#endif /* SWIG */
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction output allocated by `wally_tx_output_init_alloc`.
  *
  * :param output: The transaction output to free.
  */
 WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *output);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new transaction.
@@ -524,21 +514,19 @@ WALLY_CORE_API int wally_tx_get_witness_count(
     const struct wally_tx *tx,
     size_t *written);
 
-#ifndef SWIG_PYTHON
 /**
  * Free a transaction allocated by `wally_tx_init_alloc`.
  *
  * :param tx: The transaction to free.
  */
 WALLY_CORE_API int wally_tx_free(struct wally_tx *tx);
-#endif /* SWIG_PYTHON */
 
 /**
  * Return the txid of a transaction.
  *
  * :param tx: The transaction to compute the txid of.
  * :param bytes_out: Destination for the txid.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  *
  * .. note:: The txid is expensive to compute.
  */
@@ -668,7 +656,7 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
  * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_btc_signature_hash(
     const struct wally_tx *tx,
@@ -701,7 +689,7 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
  * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be at least ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_signature_hash(
     const struct wally_tx *tx,
@@ -761,7 +749,6 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_set(
     const unsigned char *inflation_keys_rangeproof,
     size_t inflation_keys_rangeproof_len);
 
-#ifndef SWIG_PYTHON
 /**
  * Free issuance data on an input.
  *
@@ -769,7 +756,6 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_set(
  */
 WALLY_CORE_API int wally_tx_elements_input_issuance_free(
     struct wally_tx_input *input);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new elements transaction input.
@@ -858,7 +844,6 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_set(
     const unsigned char *rangeproof,
     size_t rangeproof_len);
 
-#ifndef SWIG_PYTHON
 /**
  * Free commitment data on an output.
  *
@@ -866,9 +851,7 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_set(
  */
 WALLY_CORE_API int wally_tx_elements_output_commitment_free(
     struct wally_tx_output *output);
-#endif /* SWIG_PYTHON */
 
-#ifndef SWIG
 /**
  * Initialize a new elements transaction output in place.
  *
@@ -902,7 +885,6 @@ WALLY_CORE_API int wally_tx_elements_output_init(
     const unsigned char *rangeproof,
     size_t rangeproof_len,
     struct wally_tx_output *output);
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new elements transaction output.
@@ -1125,7 +1107,7 @@ WALLY_CORE_API int wally_tx_is_elements(
  *
  * :param satoshi: The value in satoshi to convert.
  * :param bytes_out: Destination for the confidential value bytes.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
  */
 WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
     uint64_t satoshi,
@@ -1145,7 +1127,7 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
     uint64_t *value_out);
 
 /**
- * Create a Elements transaction for signing and return its hash.
+ * Create an Elements transaction for signing and return its hash.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -1158,7 +1140,7 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
  * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_get_elements_signature_hash(
     const struct wally_tx *tx,
@@ -1182,12 +1164,12 @@ WALLY_CORE_API int wally_tx_get_elements_signature_hash(
  * :param contract_hash: The issuer specified Ricardian contract hash.
  * :param contract_hash_len: Size of ``contract hash`` in bytes. Must be ``SHA256_LEN``.
  * :param bytes_out: Destination for the asset entropy.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
     const unsigned char *txhash,
     size_t txhash_len,
-    uint32_t index,
+    uint32_t utxo_index,
     const unsigned char *contract_hash,
     size_t contract_hash_len,
     unsigned char *bytes_out,
@@ -1199,7 +1181,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
  * :param entropy: The asset entropy.
  * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
  * :param bytes_out: Destination for the asset tag.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
     const unsigned char *entropy,
@@ -1215,7 +1197,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
  * :param flags: ``WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE`` if initial issuance was blinded,
  *|     pass 0 otherwise.
  * :param bytes_out: Destination for the re-issuance token.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``SHA256_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
 WALLY_CORE_API int wally_tx_elements_issuance_calculate_reissuance_token(
     const unsigned char *entropy,

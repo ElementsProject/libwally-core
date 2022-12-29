@@ -3,6 +3,7 @@ from util import *
 from test_bip32 import get_test_master_key, vec_1
 
 BIP32_LEN = 78 # BIP32_SERIALIZED_LEN
+FP_LEN = 4 # BIP32_KEY_FINGERPRINT_LEN
 FLAG_KEY_PUBLIC = 0x1
 
 class MapTests(unittest.TestCase):
@@ -23,6 +24,9 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_init_alloc(0, None, None), WALLY_EINVAL)
         self.assertEqual(wally_map_init_alloc(0, None, m), WALLY_OK)
 
+        self.assertEqual(wally_map_clear(None), WALLY_EINVAL) # Null map
+        self.assertEqual(wally_map_clear(m), WALLY_OK)
+
         for args in [(None, key1, key1_len, val,  val_len), # Null map
                      (m,    None, key1_len, val,  val_len), # Null key
                      (m,    key1, 0,        val,  val_len), # 0 length key
@@ -41,6 +45,8 @@ class MapTests(unittest.TestCase):
                      (m,    None, key1_len), # Null key
                      (m,    key1, 0)]:       # 0 length key
             self.assertEqual(wally_map_find(*args), (WALLY_EINVAL, 0))
+            self.assertEqual(wally_map_find_from(args[0], 0, args[1], args[2]),
+                             (WALLY_EINVAL, 0))
 
         self.assertEqual(wally_map_find_integer(None, 1), (WALLY_EINVAL, 0)) # Null map
 
@@ -57,11 +63,21 @@ class MapTests(unittest.TestCase):
                  (key2, key2_len, val, val_len-1, 2, 3)] # Duplicate Key/New Value
         for case in cases:
             k, l, v, vl, i, n = case
+            # Add and find the item
             self.assertEqual(wally_map_add(m, k, l, v, vl), WALLY_OK)
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
-            self.assertEqual(m.contents.num_items, n)
-            # Replace the item with shorter key
+            self.assertEqual(wally_map_find_from(m, 0, k, l), (WALLY_OK, i))
+            self.assertEqual(wally_map_find_from(m, n, k, l), (WALLY_OK, 0)) # Not found
+            self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, n))
+            # Check its key is as expected
+            self.assertEqual(wally_map_get_item_key_length(m, i - 1), (WALLY_OK, l))
+            ret, written = wally_map_get_item_key(m, i - 1, out, out_len)
+            self.assertEqual(wally_map_get_item_key(m, i - 1, out, out_len), (WALLY_OK, l))
+            self.assertEqual(out[:written], k[:l])
+            self.assertEqual(wally_map_get_item_integer_key(m, i - 1), (WALLY_ERROR, 0))
+            # Replace the item with shorter value
             self.assertEqual(wally_map_replace(m, k, l, v, vl - 1), WALLY_OK)
+            self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
             self.assertEqual(wally_map_get_item_length(m, i - 1), (WALLY_OK, vl - 1))
             # Adding an existing key ignores the new value without error.
             vl = vl if case == cases[-1] else vl - 1
@@ -79,18 +95,24 @@ class MapTests(unittest.TestCase):
                             (key3, key3_len, val_len, 1)]:
             self.assertEqual(wally_map_find(m, k, l), (WALLY_OK, i))
 
-        # Add and find two integer keys, then replace them
+        # Integer keys
         for i in [9, 5]:
+            # Add and find an integer key
             self.assertEqual(wally_map_add_integer(m, i, val, i * 2), WALLY_OK)
-            self.assertEqual(wally_map_find_integer(m, i), (WALLY_OK, m.contents.num_items))
-            self.assertEqual(m.contents.items[m.contents.num_items - 1].value_len, i * 2)
+            item_idx = wally_map_get_num_items(m)[1] - 1
+            self.assertEqual(wally_map_find_integer(m, i), (WALLY_OK, item_idx + 1))
+            self.assertEqual(m.contents.items[item_idx].value_len, i * 2)
+            # Check its key is as expected
+            self.assertEqual(wally_map_get_item_integer_key(m, item_idx), (WALLY_OK, i))
+            self.assertEqual(wally_map_get_item_key_length(m, item_idx), (WALLY_OK, 0))
+            # Replace the items value and check it
             self.assertEqual(wally_map_replace_integer(m, i, val, val_len), WALLY_OK)
-            self.assertEqual(m.contents.items[m.contents.num_items - 1].value_len, val_len)
+            self.assertEqual(m.contents.items[item_idx].value_len, val_len)
 
         # Replacing an item that doesn't exist adds it
-        num_items = m.contents.num_items
+        _, num_items = wally_map_get_num_items(m)
         self.assertEqual(wally_map_replace_integer(m, 10, val, val_len-1), WALLY_OK)
-        self.assertEqual(m.contents.num_items, num_items + 1)
+        self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, num_items + 1))
 
         # Sort again, integer keys sort before byte keys
         self.assertEqual(wally_map_sort(m, 0), WALLY_OK)
@@ -100,18 +122,29 @@ class MapTests(unittest.TestCase):
 
         # Add an empty value
         self.assertEqual(wally_map_add(m, key4, key4_len, empty, empty_len), WALLY_OK)
-        self.assertEqual(wally_map_find(m, key4, key4_len), (WALLY_OK, m.contents.num_items))
+        _, num_items = wally_map_get_num_items(m)
+        self.assertEqual(wally_map_find(m, key4, key4_len), (WALLY_OK, num_items))
 
-        # Getter
-        self.assertEqual(wally_map_get_item_length(None, 0), (WALLY_EINVAL, 0)) # Null map
-        self.assertEqual(wally_map_get_item_length(m, 7), (WALLY_EINVAL, 0)) # Bad index
-        self.assertEqual(wally_map_get_item_length(m, 6), (WALLY_OK, 0)) # Zero length is OK
+        # Item getters
+        for fn in [wally_map_get_item_length, wally_map_get_item_key_length]:
+            self.assertEqual(fn(None, 0), (WALLY_EINVAL, 0)) # Null map
+            self.assertEqual(fn(m, 7), (WALLY_EINVAL, 0)) # Bad index
+            # A zero length value is OK, zero length keys can't be inserted
+            expected = 0 if fn == wally_map_get_item_length else 5
+            ret, l = fn(m, 6)
+            self.assertEqual((ret, l), (WALLY_OK, expected))
 
         for args in [(None, 0, out,   out_len),  # Null map
                      (m,    7, out,   out_len),  # Bad index
                      (m,    0, None,  out_len),  # Null output
                      (m,    0, out,   0)]:       # Empty output
             self.assertEqual(wally_map_get_item(*args), (WALLY_EINVAL, 0))
+            self.assertEqual(wally_map_get_item_key(*args), (WALLY_EINVAL, 0))
+
+        for args in [(None, 0),  # Null map
+                     (m,    7)]:  # Bad index
+            self.assertEqual(wally_map_get_item_key_length(*args), (WALLY_EINVAL, 0))
+            self.assertEqual(wally_map_get_item_integer_key(*args), (WALLY_EINVAL, 0))
 
         self.assertEqual(wally_map_get_item(m, 0, out, out_len), (WALLY_OK, 64))
         self.assertEqual(out[:64], val)
@@ -136,11 +169,11 @@ class MapTests(unittest.TestCase):
         # Combine
         self.assertEqual(wally_map_combine(None, m), WALLY_EINVAL) # No dest map
         self.assertEqual(wally_map_combine(m, None), WALLY_OK)     # No src: no-op
-        num_items = m.contents.num_items
+        _, num_items = wally_map_get_num_items(m)
         self.assertEqual(wally_map_combine(m, m), WALLY_OK)        # Combine w/self: no-op
-        self.assertEqual(m.contents.num_items, num_items)
+        self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, num_items))
         self.assertEqual(wally_map_combine(m, clone), WALLY_OK)
-        self.assertEqual(m.contents.num_items, num_items + 1)      # Added the clone item
+        self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, num_items + 1)) # Added the clone item
 
         # Remove
         for args in [(None, key1, key1_len), # Null map
@@ -153,11 +186,11 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_remove(m, key1, key1_len - 1), WALLY_OK)
         self.assertEqual(wally_map_remove_integer(m, 50), WALLY_OK)
 
-        num_items = m.contents.num_items
+        _, num_items = wally_map_get_num_items(m)
         self.assertEqual(wally_map_remove(m, key2, key2_len), WALLY_OK)
-        self.assertEqual(m.contents.num_items, num_items - 1) # Removed key2
+        self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, num_items - 1)) # Removed key2
         self.assertEqual(wally_map_remove_integer(m, 5), WALLY_OK)
-        self.assertEqual(m.contents.num_items, num_items - 2) # Removed 5
+        self.assertEqual(wally_map_get_num_items(m), (WALLY_OK, num_items - 2)) # Removed '5'
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 
@@ -171,7 +204,7 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_keypath_bip32_init_alloc(0, m), WALLY_OK)
 
         master = get_test_master_key(vec_1)
-        fingerprint, path = (c_ubyte * 4)(), (c_uint * 5)()
+        fingerprint, path = (c_ubyte * FP_LEN)(), (c_uint * 5)()
         path = (c_uint * 5)()
         path[0], path[1], path[2], path[3], path[4] = (0x80000044, 0x80000000, 0x80000000, 0, 1)
 
@@ -206,8 +239,38 @@ class MapTests(unittest.TestCase):
         ]
         for args in cases:
             self.assertEqual(wally_keypath_bip32_verify(*args), WALLY_EINVAL)
-            # TODO: Enable with map function validation
-            #self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+            # Maps created with wally_map_keypath_bip32_init do auto-validation
+            self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+
+        # Valid path
+        self.assertEqual(wally_map_add(m, bip32, bip32_len, kp_path, len(kp_path)), WALLY_OK)
+
+        # Fingerprint/Path
+        out, out_len = (c_ubyte * (FP_LEN + 5 * 4))(), 24
+        cases = [
+            (None,  0, out,  FP_LEN),   # NULL key
+            (m,     1, out,  FP_LEN),   # Bad index
+            (m,     0, None, FP_LEN),   # NULL output
+            (m,     0, out,  FP_LEN-1), # Bad output length
+        ]
+        for args in cases:
+            self.assertEqual(wally_map_keypath_get_item_fingerprint(*args), WALLY_EINVAL)
+            plen = out_len - 4 if args[3] == FP_LEN else out_len - 5
+            if args[0] is None or args[1] != 0:
+                ret = wally_map_keypath_get_item_path_len(args[0], args[1])
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Keypath accessors
+        ret = wally_map_keypath_get_item_fingerprint(m, 0, out, FP_LEN)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(bytes(out[:FP_LEN]), kp_path[:FP_LEN])
+        ret = wally_map_keypath_get_item_path_len(m, 0)
+        self.assertEqual(ret, (WALLY_OK, len(path)))
+        path_out = (c_uint * len(path))()
+        ret = wally_map_keypath_get_item_path(m, 0, path_out, len(path_out))
+        self.assertEqual(ret, (WALLY_OK, len(path)))
+        for i in range(len(path)):
+            self.assertEqual(path_out[i], path[i])
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 
@@ -239,8 +302,34 @@ class MapTests(unittest.TestCase):
         ]
         for args in cases:
             self.assertEqual(wally_keypath_public_key_verify(*args), WALLY_EINVAL)
-            # TODO: Enable with map function validation
-            #self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+            # Maps created with wally_map_keypath_public_key_init do auto-validation
+            self.assertEqual(wally_map_add(m, *args), WALLY_EINVAL)
+
+        # BIP32 lookup
+        bip32_invalid = [
+            (None, 0, derived), # Null map
+            (m, 0, None),       # Null key
+        ]
+        # - compressed
+        ret = wally_map_add(m, pub_key, pub_key_len, kp_path, len(kp_path))
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_map_find_bip32_public_key_from(m, 0, derived)
+        self.assertEqual(ret, (WALLY_OK, 1))
+        ret = wally_map_find_bip32_public_key_from(m, 1, derived) # Search after index
+        self.assertEqual(ret, (WALLY_OK, 0))
+        for args in bip32_invalid:
+            self.assertEqual(wally_map_find_bip32_public_key_from(*args), (WALLY_EINVAL, 0))
+        # TODO: x-only
+        # - uncompressed
+        wally_map_clear(m)
+        ret = wally_map_add(m, pub_key_u, pub_key_u_len, kp_path, len(kp_path))
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_map_find_bip32_public_key_from(m, 0, derived)
+        self.assertEqual(ret, (WALLY_OK, 1))
+        ret = wally_map_find_bip32_public_key_from(m, 1, derived) # Search after index
+        self.assertEqual(ret, (WALLY_OK, 0))
+        for args in bip32_invalid:
+            self.assertEqual(wally_map_find_bip32_public_key_from(*args), (WALLY_EINVAL, 0))
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 

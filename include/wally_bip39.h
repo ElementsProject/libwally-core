@@ -21,6 +21,9 @@ struct words;
 /** The required size of the output buffer for `bip39_mnemonic_to_seed` */
 #define BIP39_SEED_LEN_512 64
 
+/** Maximum entropy size (including up to 2 bytes for checksum) */
+#define BIP39_ENTROPY_MAX_LEN 42
+
 /** The number of words in a BIP39 compliant wordlist */
 #define BIP39_WORDLIST_LEN 2048
 
@@ -80,7 +83,7 @@ WALLY_CORE_API int bip39_mnemonic_from_bytes(
  * :param w: Word list to use. Pass NULL to use the default English list.
  * :param mnemonic: Mnemonic to convert.
  * :param bytes_out: Where to store the resulting entropy.
- * :param len: The length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, BIP39_ENTROPY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int bip39_mnemonic_to_bytes(
@@ -106,8 +109,7 @@ WALLY_CORE_API int bip39_mnemonic_validate(
  * :param mnemonic: Mnemonic to convert.
  * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed.
  * :param bytes_out: The destination for the binary seed.
- * :param len: The length of ``bytes_out`` in bytes. Currently This must
- *|      be ``BIP39_SEED_LEN_512``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int bip39_mnemonic_to_seed(
@@ -116,6 +118,22 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
+
+/**
+ * Convert a mnemonic into a binary seed of 512 bits.
+ *
+ * :param mnemonic: Mnemonic to convert.
+ * :param passphrase: Mnemonic passphrase or NULL if no passphrase is needed.
+ * :param bytes_out: The destination for the binary seed.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
+ *
+ * ..note:: Identical to `bip39_mnemonic_to_seed` but returns a fixed size buffer.
+ */
+WALLY_CORE_API int bip39_mnemonic_to_seed512(
+    const char *mnemonic,
+    const char *passphrase,
+    unsigned char *bytes_out,
+    size_t len);
 
 #ifdef __cplusplus
 }

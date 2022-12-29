@@ -26,11 +26,6 @@ static bool is_valid_ec_type(uint32_t flags)
            ((flags & EC_FLAGS_TYPES) == EC_FLAG_SCHNORR);
 }
 
-static size_t get_expected_sig_len(uint32_t flags)
-{
-    return flags & EC_FLAG_RECOVERABLE ? EC_SIGNATURE_RECOVERABLE_LEN : EC_SIGNATURE_LEN;
-}
-
 int wally_ec_private_key_verify(const unsigned char *priv_key, size_t priv_key_len)
 {
     const secp256k1_context *ctx = secp_ctx();
@@ -201,6 +196,27 @@ int wally_ec_sig_from_der(const unsigned char *bytes, size_t bytes_len,
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
+int wally_ec_sig_from_bytes_len(const unsigned char *priv_key, size_t priv_key_len,
+                                const unsigned char *bytes, size_t bytes_len,
+                                uint32_t flags,
+                                size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
+        !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
+        !is_valid_ec_type(flags) || flags & ~EC_FLAGS_ALL || !written)
+        return WALLY_EINVAL;
+    if (flags & EC_FLAG_SCHNORR) {
+        if (flags & EC_FLAG_RECOVERABLE)
+            return WALLY_EINVAL; /* Only ECDSA is supported for recoverable sigs */
+        /* FIXME: Implement taproot schnorr signs */
+        return WALLY_ERROR; /* Failed to sign */
+    }
+    *written = flags & EC_FLAG_RECOVERABLE ? EC_SIGNATURE_RECOVERABLE_LEN : EC_SIGNATURE_LEN;
+    return WALLY_OK;
+}
+
 int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
                             const unsigned char *bytes, size_t bytes_len,
                             uint32_t flags,
@@ -208,11 +224,11 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
 {
     wally_ec_nonce_t nonce_fn = wally_ops()->ec_nonce_fn;
     const secp256k1_context *ctx = secp_ctx();
+    size_t expected_len;
 
-    if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
-        !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
-        !is_valid_ec_type(flags) || flags & ~EC_FLAGS_ALL ||
-        !bytes_out || len != get_expected_sig_len(flags))
+    if (wally_ec_sig_from_bytes_len(priv_key, priv_key_len, bytes, bytes_len,
+                                    flags, &expected_len)  != WALLY_OK||
+        !bytes_out || len != expected_len)
         return WALLY_EINVAL;
 
     if (!ctx)
@@ -221,14 +237,8 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
     if (flags & EC_FLAG_SCHNORR) {
         if (flags & EC_FLAG_RECOVERABLE)
             return WALLY_EINVAL; /* Only ECDSA is supported for recoverable sigs */
-
-#if 0 /*FIXME: Schnorr is unavailable in secp for now*/
-        if (!secp256k1_schnorr_sign(ctx, bytes_out, bytes,
-                                    priv_key, nonce_fn, NULL))
-            return WALLY_EINVAL; /* Failed to sign */
-        return WALLY_OK;
-#endif
-        return WALLY_EINVAL;
+        /* FIXME: Implement taproot schnorr sigs */
+        return WALLY_ERROR;
     } else {
         unsigned char extra_entropy[32] = {0}, *entropy_p = NULL;
         unsigned char *bytes_out_p = flags & EC_FLAG_RECOVERABLE ? bytes_out + 1 : bytes_out;

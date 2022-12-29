@@ -18,13 +18,20 @@ WALLY_CORE_API int wally_psbt_has_fallback_locktime(const struct wally_psbt *psb
 WALLY_CORE_API int wally_psbt_get_tx_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
 #ifdef BUILD_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written);
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_SCALAR_OFFSET_LEN)
+ */
 WALLY_CORE_API int wally_psbt_get_global_scalar(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
+
 WALLY_CORE_API int wally_psbt_get_pset_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
 #endif /* BUILD_ELEMENTS */
 
 /* Inputs */
 WALLY_CORE_API int wally_psbt_get_input_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx **output);
 WALLY_CORE_API int wally_psbt_get_input_witness_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx_output **output);
+/* Returns the witness UTXO if present, otherwise the correct output from the non-witness UTXO tx */
+WALLY_CORE_API int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx_output **output);
 WALLY_CORE_API int wally_psbt_get_input_redeem_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_redeem_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_witness_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -45,7 +52,12 @@ WALLY_CORE_API int wally_psbt_find_input_unknown(const struct wally_psbt *psbt, 
 WALLY_CORE_API int wally_psbt_get_input_unknown(const struct wally_psbt *psbt, size_t index, size_t subindex, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_unknown_len(const struct wally_psbt *psbt, size_t index, size_t subindex, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_sighash(const struct wally_psbt *psbt, size_t index, size_t *written);
+
+/**
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
+ */
 WALLY_CORE_API int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
+
 WALLY_CORE_API int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written);
