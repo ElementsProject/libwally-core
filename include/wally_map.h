@@ -19,13 +19,13 @@ typedef int (*wally_map_verify_fn_t)(
 
 /** A map item */
 struct wally_map_item {
-    unsigned char *key;
-    size_t key_len;
+    unsigned char *key; /* Pointer to the key data, or NULL if the key is an integer */
+    size_t key_len; /* Length of key, or the integer key if the key is an integer */
     unsigned char *value;
     size_t value_len;
 };
 
-/** A map of key,value pairs */
+/** A map of integer or byte buffer key, to byte buffer value pairs */
 struct wally_map {
     struct wally_map_item *items;
     size_t num_items;
@@ -34,7 +34,6 @@ struct wally_map {
 };
 #endif /* SWIG */
 
-#ifndef SWIG
 /**
  * Initialize a new map.
  *
@@ -45,7 +44,6 @@ WALLY_CORE_API int wally_map_init(
     size_t allocation_len,
     wally_map_verify_fn_t verify_fn,
     struct wally_map *output);
-#endif /* SWIG_PYTHON */
 
 /**
  * Allocate and initialize a new map.
@@ -155,6 +153,23 @@ WALLY_CORE_API int wally_map_remove_integer(
     uint32_t key);
 
 /**
+ * Find an item in a map from a given position onwards.
+ *
+ * :param map_in: The map to find ``key`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param key: The key to find.
+ * :param key_len: Length of ``key`` in bytes.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ */
+WALLY_CORE_API int wally_map_find_from(
+    const struct wally_map *map_in,
+    size_t index,
+    const unsigned char *key,
+    size_t key_len,
+    size_t *written);
+
+/**
  * Find an item in a map.
  *
  * :param map_in: The map to find ``key`` in.
@@ -204,6 +219,62 @@ WALLY_CORE_API const struct wally_map_item *wally_map_get_integer(
     const struct wally_map *map_in,
     uint32_t key);
 #endif
+
+/**
+ * Get the number of key/value items in a map.
+ *
+ * :param map_in: The map to return the number of items from.
+ * :param written: Destination for the number of items.
+ */
+WALLY_CORE_API int wally_map_get_num_items(
+    const struct wally_map *map_in,
+    size_t *written);
+
+/**
+ * Get the length of an items key in a map.
+ *
+ * :param map_in: The map to return the items key length from.
+ * :param index: The zero-based index of the item whose key length to return.
+ * :param written: Destination for the length of the items key in bytes.
+ *
+ * .. note:: Returns 0 if the items key is an integer.
+ */
+WALLY_CORE_API int wally_map_get_item_key_length(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
+
+/**
+ * Return an items key from a map.
+ *
+ * :param map_in: The map to return the items key from.
+ * :param index: The zero-based index of the item whose key to return.
+ * :param bytes_out: Destination for the resulting data.
+ * :param len: The length of ``bytes_out`` in bytes.
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: Returns ``WALLY_ERROR`` if the items key is an integer.
+ */
+WALLY_CORE_API int wally_map_get_item_key(
+    const struct wally_map *map_in,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Return an items integer key from a map.
+ *
+ * :param map_in: The map to return the items key from.
+ * :param index: The zero-based index of the item whose key to return.
+ * :param written: Destination for the items integer key.
+ *
+ * .. note:: Returns ``WALLY_ERROR`` if the items key is not an integer.
+ */
+WALLY_CORE_API int wally_map_get_item_integer_key(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
 
 /**
  * Get the length of an item in a map.
@@ -267,7 +338,44 @@ WALLY_CORE_API int wally_map_assign(
     struct wally_map *map_in,
     const struct wally_map *source);
 
-#ifndef SWIG
+/**
+ * Find an item in a public-key keyed map given a BIP32 derived key.
+ *
+ * :param map_in: The map to find the public key of ``hdkey`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param hdkey: The BIP32 key to find.
+ * :param written: On success, set to zero if the item is not found, otherwise
+ *|    the index of the item plus one.
+ *
+ * .. note:: This function searches for the compressed, x-only and then
+ *|    uncompressed public keys, in order. The caller can determine which
+ *|    by checking the length of the map item when an item is found.
+ */
+WALLY_CORE_API int wally_map_find_bip32_public_key_from(
+    const struct wally_map *map_in,
+    size_t index,
+    const struct ext_key *hdkey,
+    size_t *written);
+
+/**
+ * Return a BIP32 derived key matching the keypath of a parent in a map.
+ *
+ * :param map_in: The map to search for derived keys of ``hdkey`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param hdkey: The BIP32 parent key to derive matches from.
+ * :param output: Destination for the resulting derived key, if any.
+ *
+ * .. note:: This function searches for keys in the map that are children
+ *|    of ``hdkey``. If one is found, the resulting privately derived key
+ *|    is returned. If no key is found, ``*output`` is set to ``NULL`` and
+ *|    WALLY_OK is returned.
+ */
+WALLY_CORE_API int wally_map_keypath_get_bip32_key_from_alloc(
+    const struct wally_map *map_in,
+    size_t index,
+    const struct ext_key *hdkey,
+    struct ext_key **output);
+
 /**
  * Verify a PSBT keypath keyed by a serialized bip32 extended public key.
  *
@@ -309,7 +417,6 @@ WALLY_CORE_API int wally_keypath_xonly_public_key_verify(
     size_t key_len,
     const unsigned char *val,
     size_t val_len);
-#endif /* SWIG */
 
 /**
  * Allocate and initialize a new BIP32 keypath map.
@@ -353,6 +460,100 @@ WALLY_CORE_API int wally_map_keypath_add(
     const uint32_t *child_path,
     size_t child_path_len);
 
+/**
+ * Get the key fingerprint from a PSBT keypath's serialized value.
+ *
+ * :param val: The serialized keypath value as stored in a keypath map.
+ * :param val_len: Length of ``val`` in bytes.
+ * :param bytes_out: Destination for the fingerprint.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
+ */
+WALLY_CORE_API int wally_keypath_get_fingerprint(
+    const unsigned char *val,
+    size_t val_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Return an item's key fingerprint from a keypath map.
+ *
+ * :param map_in: The map to return the item's fingerprint from.
+ * :param index: The zero-based index of the item whose key fingerprint to return.
+ * :param bytes_out: Destination for the resulting data.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
+ *
+ * .. note:: The same key fingerprint may be present in a keypath map more than once.
+ */
+WALLY_CORE_API int wally_map_keypath_get_item_fingerprint(
+    const struct wally_map *map_in,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Get the path length from a PSBT keypath's serialized value.
+ *
+ * :param val: The serialized keypath value as stored in a keypath map.
+ * :param val_len: Length of ``val`` in bytes.
+ * :param written: Destination for the items path length.
+ */
+WALLY_CORE_API int wally_keypath_get_path_len(
+    const unsigned char *val,
+    size_t val_len,
+    size_t *written);
+
+/**
+ * Get the length of an item's key path from a keypath map.
+ *
+ * :param map_in: The map to return the item's path length from.
+ * :param index: The zero-based index of the item whose path length to return.
+ * :param written: Destination for the items path length.
+ */
+WALLY_CORE_API int wally_map_keypath_get_item_path_len(
+    const struct wally_map *map_in,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get the path from a PSBT keypath's serialized value.
+ *
+ * :param val: The serialized keypath value as stored in a keypath map.
+ * :param val_len: Length of ``val`` in bytes.
+ * :param child_path_out: Destination for the resulting path.
+ * :param child_path_out_len: The number of items in ``child_path_out``.
+ * :param written: Destination for the number of items written to ``child_path_out``.
+ *
+ * .. note:: If The path is longer than ``child_path_out_len``, WALLY_OK is
+ *|    returned and ``written`` contains the length required. It is valid
+ *|    for a path to be zero-length.
+ *
+ * .. note:: This function should be used to read paths from serialized
+ *|    keypath values to prevent endianness issues on big-endian hosts.
+ */
+WALLY_CORE_API int wally_keypath_get_path(
+    const unsigned char *val,
+    size_t val_len,
+    uint32_t *child_path_out,
+    size_t child_path_out_len,
+    size_t *written);
+
+/**
+ * Get the path from a PSBT keypath's serialized value.
+ *
+ * :param map_in: The map to return the item's path from.
+ * :param index: The zero-based index of the item whose path to return.
+ * :param child_path_out: Destination for the resulting path.
+ * :param child_path_out_len: The number of items in ``child_path_out``.
+ * :param written: Destination for the number of items written to ``child_path_out``.
+ *
+ * .. note:: See the notes for `wally_keypath_get_path`.
+ */
+WALLY_CORE_API int wally_map_keypath_get_item_path(
+    const struct wally_map *map_in,
+    size_t index,
+    uint32_t *child_path_out,
+    size_t child_path_out_len,
+    size_t *written);
 
 /**
  * Verify a preimage map key and value pair.

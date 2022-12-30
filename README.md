@@ -9,7 +9,6 @@ Note that library interfaces may change slightly while the library design mature
 
 Please report bugs and submit patches to [Our github repository](https://github.com/ElementsProject/libwally-core). If you wish to report a security issue, please read [Our security reporting guidelines](./SECURITY.md).
 
-[![Build Status](https://travis-ci.org/ElementsProject/libwally-core.svg?branch=master)](https://travis-ci.org/ElementsProject/libwally-core)
 [![Documentation Status](https://readthedocs.org/projects/wally/badge/?version=latest)](https://wally.readthedocs.io/en/latest/?badge=latest)
 
 ## Platforms
@@ -25,7 +24,7 @@ Wally can currently be built for:
 And can be used from:
 - C and compatible languages which can call C interfaces
 - C++ (see include/wally.hpp for C++ container support)
-- Python 2.7+ or 3.x
+- Python 3.x
 - Java
 - Javascript via node.js or Cordova or WebAssembly/Emscripten compatible
 
@@ -110,7 +109,7 @@ installed.
 For non-development use, you can install wally with `pip` as follows:
 
 ```
-pip install wallycore==0.8.6
+pip install wallycore==0.8.7
 ```
 
 For python development, you can build and install wally using:
@@ -123,14 +122,14 @@ It is suggested you only install this way into a virtualenv while the library
 is under heavy development.
 
 If you wish to explicitly choose the python version to use, set the
-`PYTHON_VERSION` environment variable (to e.g. `2.7`, `3`, `3.7` etc) before
+`PYTHON_VERSION` environment variable (to e.g. `3`, `3.7` etc) before
 running `pip` or (when compiling manually) `./configure`.
 
 You can also install the binary [wally releases](https://github.com/ElementsProject/libwally-core/releases)
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.6-cp39-cp39m-linux_x86_64.whl
+pip install wallycore-0.8.7-cp39-cp39m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
@@ -211,8 +210,9 @@ Or to reformat all source files, pass no arguments:
 $ ./tools/uncrustify
 ```
 
-If you have added new API functions in your patch, run `./tools/build_wrappers.py`
-to update the auto-generated support code for various platforms.
+If you have added new API functions in your patch, run `tools/update_generated.sh`
+to update the auto-generated support code for various platforms. This requires
+Python and the `jq` binary.
 
 You should also make sure the existing tests pass and if possible write tests
 covering any new functionality, following the existing style. You can run the

@@ -70,6 +70,9 @@ int wally_scrypt(const unsigned char *pass, size_t pass_len,
                  uint32_t cost, uint32_t block_size, uint32_t parallelism,
                  unsigned char *bytes_out, size_t len)
 {
+    if (!bytes_out || !len || len % PBKDF2_HMAC_SHA256_LEN)
+        return WALLY_EINVAL;
+
     return _crypto_scrypt(pass, pass_len, salt, salt_len,
                           cost, block_size, parallelism,
                           bytes_out, len, crypto_scrypt_smix_fn);

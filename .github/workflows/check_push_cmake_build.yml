@@ -17,35 +17,6 @@ on:
     - feature/*
 
 jobs:
-  cmake-js-build:
-    timeout-minutes: 20
-    name: cmake-js build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      max-parallel: 2
-      matrix:
-#        os: [macos-11, ubuntu-20.04]
-        os: [ubuntu-20.04]
-        node: [14, 16]
-#        node: [14]
-        exclude:
-          - os: macos-11
-            node: 14
-
-# windows has illegal AES result.
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: setup-node
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node }}
-    - name: npm_install
-      run: npm install
-    - name: test
-      run: npm run ctest
-
   cmake-build:
     timeout-minutes: 20
     name: cmake build

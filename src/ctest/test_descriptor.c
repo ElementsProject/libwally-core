@@ -1162,7 +1162,7 @@ static bool check_descriptor_to_addresses(const char *function,
                                           const char **expected_address_list,
                                           size_t address_list_len)
 {
-    struct wally_descriptor_addresses addresses = {NULL, 0};
+    struct wally_map *addresses = NULL;
     int ret;
     uint32_t flag = 0;
     uint32_t index = 0;
@@ -1173,7 +1173,7 @@ static bool check_descriptor_to_addresses(const char *function,
         (const char **)g_miniscript_keyname_list,
         (const char **)g_miniscript_keyvalue_list,
         sizeof(g_miniscript_keyname_list) / sizeof(char *));
-    ret = wally_descriptor_to_addresses(
+    ret = wally_descriptor_to_addresses_alloc(
         descriptor,
         wmap,
         start_index,
@@ -1183,17 +1183,36 @@ static bool check_descriptor_to_addresses(const char *function,
         &addresses);
     free_wmap(wmap);
     if (ret != WALLY_OK) {
-        printf("wally_descriptor_to_addresses NG[%d]\n", ret);
+        printf("wally_descriptor_to_addresses_alloc NG[%d]\n", ret);
         return false;
     }
 
-    if (addresses.num_items != address_list_len) {
-        printf("%s:\n  Address length: %zu\n  Expect: %zu\n", function, addresses.num_items, address_list_len);
+    size_t num_items = 0;
+    ret = wally_map_get_num_items(addresses, &num_items);
+    if (ret != WALLY_OK) {
+        printf("wally_map_get_num_items NG[%d]\n", ret);
+        is_success = false;
+    } else if (num_items != address_list_len) {
+        printf("%s:\n  Address length: %zu\n  Expect: %zu\n", function, num_items, address_list_len);
+        is_success = false;
     } else {
+        size_t key = 0;
         for (index = 0; index < address_list_len; ++index) {
+            ret = wally_map_get_item_integer_key(addresses, index, &key);
+            if (ret != WALLY_OK) {
+                printf("wally_map_get_item_integer_key NG[%d] index[%u]\n", ret, index);
+                is_success = false;
+                break;
+            }
+            const struct wally_map_item *item = wally_map_get_integer(addresses, (uint32_t)key);
+            if (item == NULL) {
+                printf("wally_map_get_integer NG. index[%u]\n", index);
+                is_success = false;
+                break;
+            }
             const char *expected_address = expected_address_list[index];
-            const char *addr = addresses.items[index].address;
-            uint32_t child_num = addresses.items[index].child_num;
+            const char *addr = (const char *)item->value;
+            uint32_t child_num = (uint32_t)key;
             uint32_t exp_child_num = start_index + index;
             if (strncmp(expected_address, addr, strlen(expected_address) + 1) != 0) {
                 printf("%s:\n  Address[%u]: %s\n  Expect: %s\n", function, index, addr, expected_address_list[index]);
@@ -1206,7 +1225,7 @@ static bool check_descriptor_to_addresses(const char *function,
         }
     }
 
-    wally_free_descriptor_addresses(&addresses);
+    free_wmap(addresses);
     return is_success;
 }
 

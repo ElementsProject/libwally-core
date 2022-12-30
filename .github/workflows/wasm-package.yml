@@ -1,0 +1,44 @@
+name: Build NPM package
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    defaults:
+      run:
+        working-directory: ./src/wasm_package
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      # Needed for build_wrappers.py, to extract function signatures from source code
+      - run: sudo apt-get install -y python3-sphinx
+
+      # The deps script was written for Debian (11), but works as-is on Ubuntu too
+      - run: sudo ../../contrib/bullseye_deps.sh
+
+      # Build NPM package into a tgz file (pack internally triggers the build/prepare script)
+      - run: npm pack --foreground-scripts
+        name: Build & Pack
+
+      # Report the SHA256 digest of the final package. This should be deterministic (including generated WASM),
+      # so it should match the package published to the NPM registry and can be used to cross-check its integrity.
+      - run: 'echo SHA256 digest: && sha256sum wallycore-*.tgz'
+
+      - run: npm test
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: libwally-npm
+          path: src/wasm_package/wallycore-*.tgz
+          # upload-artifact doesn't seem to take the working-directory setting into account

@@ -13,7 +13,8 @@
                                  BIP32_FLAG_SKIP_HASH | \
                                  BIP32_FLAG_KEY_TWEAK_SUM | \
                                  BIP32_FLAG_STR_WILDCARD | \
-                                 BIP32_FLAG_STR_BARE)
+                                 BIP32_FLAG_STR_BARE | \
+                                 BIP32_FLAG_ALLOW_UPPER)
 
 static const unsigned char HMAC_KEY[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
@@ -75,9 +76,9 @@ static bool version_is_mainnet(uint32_t ver)
     return ver == BIP32_VER_MAIN_PRIVATE || ver == BIP32_VER_MAIN_PUBLIC;
 }
 
-static bool is_hardened_indicator(char c)
+static bool is_hardened_indicator(char c, bool allow_upper)
 {
-    return c == '\'' || c == 'h' || c == 'H';
+    return c == '\'' || c == 'h' || (allow_upper && c == 'H');
 }
 
 static int path_from_string_n(const char *str, size_t str_len,
@@ -85,6 +86,7 @@ static int path_from_string_n(const char *str, size_t str_len,
                               uint32_t *child_path, uint32_t child_path_len,
                               size_t *written)
 {
+    const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
     size_t start, i = 0;
     uint64_t v;
 
@@ -97,7 +99,7 @@ static int path_from_string_n(const char *str, size_t str_len,
         if (i < str_len && str[i] == '/')
             goto fail; /* bare path must start with a number */
     } else {
-        if (i < str_len && (str[i] == 'm' || str[i] == 'M'))
+        if (i < str_len && (str[i] == 'm' || (allow_upper && str[i] == 'M')))
             ++i; /* Skip */
         if (i < str_len && str[i] == '/')
             ++i; /* Skip */
@@ -117,7 +119,7 @@ static int path_from_string_n(const char *str, size_t str_len,
             /* No number found */
             if (str[i] == '/') {
                 if (i && (str[i - 1] < '0' || str[i - 1] > '9') &&
-                    !is_hardened_indicator(str[i - 1]) && str[i - 1] != '*')
+                    !is_hardened_indicator(str[i - 1], allow_upper) && str[i - 1] != '*')
                     goto fail; /* Only valid after number/wildcard/hardened indicator */
                 ++i;
                 if (i == str_len || str[i] == '/')
@@ -137,7 +139,7 @@ static int path_from_string_n(const char *str, size_t str_len,
             v = child_num; /* Use the given child number for the wildcard value */
         }
 
-        if (is_hardened_indicator(str[i])) {
+        if (is_hardened_indicator(str[i], allow_upper)) {
             v |= BIP32_INITIAL_HARDENED_CHILD;
             ++i;
         }
@@ -197,16 +199,58 @@ static bool is_valid_seed_len(size_t len) {
            len == BIP32_ENTROPY_LEN_128;
 }
 
+/* Wipe a key and return failure for the caller to propigate */
+static int wipe_key_fail(struct ext_key *key_out)
+{
+    wally_clear(key_out, sizeof(*key_out));
+    return WALLY_EINVAL;
+}
+
+int bip32_key_from_private_key(uint32_t version,
+                               const unsigned char *priv_key, size_t priv_key_len,
+                               struct ext_key *key_out)
+{
+    const secp256k1_context *ctx;
+
+    if (key_out)
+        wally_clear(key_out, sizeof(*key_out));
+
+    if (!(ctx = secp_ctx()))
+        return WALLY_ENOMEM;
+
+    if (!version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) ||
+        !priv_key || priv_key_len != EC_PRIVATE_KEY_LEN || !key_out)
+        return WALLY_EINVAL;
+
+    /* Check that the generated private key is valid */
+    if (!secp256k1_ec_seckey_verify(ctx, priv_key)) {
+        return WALLY_ERROR; /* Invalid private key */
+    }
+
+    key_out->version = version;
+    /* Copy the private key and set its prefix */
+    key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
+    memcpy(key_out->priv_key + 1, priv_key, priv_key_len);
+    /* Compute the public key */
+    if (key_compute_pub_key(key_out) != WALLY_OK)
+        return wipe_key_fail(key_out);
+
+    /* Returned key is partial; it must be further initialized for deriving */
+    return WALLY_OK;
+}
+
 int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
                                uint32_t version,
                                const unsigned char *hmac_key, size_t hmac_key_len,
                                uint32_t flags, struct ext_key *key_out)
 {
-    const secp256k1_context *ctx;
     struct sha512 sha;
+    int ret;
+
+    if (key_out)
+        wally_clear(key_out, sizeof(*key_out));
 
     if (!bytes || !is_valid_seed_len(bytes_len) ||
-        !version_is_valid(version, BIP32_FLAG_KEY_PRIVATE) ||
         (hmac_key == NULL) != (hmac_key_len == 0) ||
         (flags & ~BIP32_FLAG_SKIP_HASH) || !key_out)
         return WALLY_EINVAL;
@@ -215,38 +259,21 @@ int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
         hmac_key = HMAC_KEY; /* Use the default BIP32 hmac key */
         hmac_key_len = sizeof(HMAC_KEY);
     }
-    wally_clear(key_out, sizeof(*key_out));
-    key_out->version = version;
-
-    if (!(ctx = secp_ctx()))
-        return WALLY_ENOMEM;
 
     /* Generate private key and chain code */
     hmac_sha512_impl(&sha, hmac_key, hmac_key_len, bytes, bytes_len);
 
-    /* Check that the generated private key is valid */
-    if (!secp256k1_ec_seckey_verify(ctx, sha.u.u8)) {
-        wally_clear(&sha, sizeof(sha));
-        return WALLY_ERROR; /* Invalid private key */
+    ret = bip32_key_from_private_key(version, sha.u.u8, EC_PRIVATE_KEY_LEN, key_out);
+    if (ret == WALLY_OK) {
+        /* Copy the chain code and set other members */
+        memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
+        key_out->depth = 0; /* Master key, depth 0 */
+        key_out->child_num = 0;
+        if (!(flags & BIP32_FLAG_SKIP_HASH))
+            key_compute_hash160(key_out);
     }
-
-    /* Copy the private key and set its prefix */
-    key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
-    memcpy(key_out->priv_key + 1, sha.u.u8, sizeof(sha) / 2);
-    if (key_compute_pub_key(key_out) != WALLY_OK) {
-        wally_clear_2(&sha, sizeof(sha), key_out, sizeof(*key_out));
-        return WALLY_EINVAL;
-    }
-
-    /* Copy the chain code */
-    memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
-
-    key_out->depth = 0; /* Master key, depth 0 */
-    key_out->child_num = 0;
-    if (!(flags & BIP32_FLAG_SKIP_HASH))
-        key_compute_hash160(key_out);
     wally_clear(&sha, sizeof(sha));
-    return WALLY_OK;
+    return ret;
 }
 
 int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
@@ -377,13 +404,6 @@ static const unsigned char *copy_in(void *dest,
 {
     memcpy(dest, src, len);
     return src + len;
-}
-
-/* Wipe a key and return failure for the caller to propigate */
-static int wipe_key_fail(struct ext_key *key_out)
-{
-    wally_clear(key_out, sizeof(*key_out));
-    return WALLY_EINVAL;
 }
 
 int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
@@ -631,10 +651,8 @@ int bip32_key_from_parent_path(const struct ext_key *hdkey,
                                const uint32_t *child_path, size_t child_path_len,
                                uint32_t flags, struct ext_key *key_out)
 {
-    /* Optimization: We can skip hash calculations for internal nodes */
-    uint32_t derivation_flags = flags | BIP32_FLAG_SKIP_HASH;
     struct ext_key tmp[2];
-    size_t i, tmp_idx = 0;
+    size_t i, tmp_idx = 0, private_until = 0;
     int ret;
 
     if (flags & ~BIP32_ALL_DEFINED_FLAGS)
@@ -643,14 +661,34 @@ int bip32_key_from_parent_path(const struct ext_key *hdkey,
     if (!hdkey || !child_path || !child_path_len || child_path_len > BIP32_PATH_MAX_LEN || !key_out)
         return WALLY_EINVAL;
 
+    if (flags & BIP32_FLAG_KEY_PUBLIC) {
+        /* Public derivation: Check for intermediate hardened keys */
+        for (i = 0; i < child_path_len; ++i) {
+            if (child_is_hardened(child_path[i]))
+                private_until = i + 1; /* Derive privately until this index */
+        }
+        if (private_until && !key_is_private(hdkey))
+            return WALLY_EINVAL; /* Unsupported derivation */
+    }
+
     for (i = 0; i < child_path_len; ++i) {
         struct ext_key *derived = &tmp[tmp_idx];
+        uint32_t derivation_flags = flags;
+
+        if (private_until && i < private_until - 1) {
+            /* Derive privately until we reach the last hardened child */
+            derivation_flags &= ~BIP32_FLAG_KEY_PUBLIC;
+            derivation_flags |= BIP32_FLAG_KEY_PRIVATE;
+        }
+        if (i + 2 < child_path_len)
+            derivation_flags |= BIP32_FLAG_SKIP_HASH; /* Skip hash for internal keys */
+
 #ifdef BUILD_ELEMENTS
         if (flags & BIP32_FLAG_KEY_TWEAK_SUM)
-            memcpy(derived->pub_key_tweak_sum, hdkey->pub_key_tweak_sum, sizeof(hdkey->pub_key_tweak_sum));
+            memcpy(derived->pub_key_tweak_sum,
+                   hdkey->pub_key_tweak_sum, sizeof(hdkey->pub_key_tweak_sum));
 #endif /* BUILD_ELEMENTS */
-        if (i + 2 >= child_path_len)
-            derivation_flags = flags; /* Use callers flags for the final derivations */
+
         ret = bip32_key_from_parent(hdkey, child_path[i], derivation_flags, derived);
         if (ret != WALLY_OK)
             break;
@@ -957,7 +995,7 @@ int bip32_key_get_fingerprint(struct ext_key *hdkey,
     return WALLY_OK;
 }
 
-#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD)
+#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
 
 /* Getters for ext_key values */
 
@@ -1001,4 +1039,4 @@ GET_I(depth)
 GET_I(child_num)
 GET_I(version)
 
-#endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD */
+#endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD/WASM_BUILD */

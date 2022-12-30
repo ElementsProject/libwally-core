@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.8.6])
+AC_INIT([libwallycore],[0.8.7])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -271,6 +271,15 @@ AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
+
+AC_ARG_ENABLE(wasm-interface,
+    AS_HELP_STRING([--enable-wasm-interface],[enable the WASM interface (default: no)]),
+    [wasm_interface=$enableval], [wasm_interface=no])
+
+if test "x$wasm_interface" == "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-DWASM_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DWASM_BUILD=1"])
+fi
+
 #
 # SWIG
 #
@@ -281,7 +290,7 @@ AC_ARG_ENABLE(swig-python,
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
 
-AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes" -a "x$swig_python" == "xyes"])
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes"])
 
 if test "x$swig_python" == "xyes"; then
     if test "x$pythonexists" != "xyes"; then

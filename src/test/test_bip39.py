@@ -113,10 +113,10 @@ class BIP39Tests(unittest.TestCase):
             mnemonic, seed = case[1], case[2]
 
             buf = create_string_buffer(64)
-            ret, count = bip39_mnemonic_to_seed(mnemonic, b'TREZOR', buf, 64)
-            self.assertEqual(ret, 0)
-            self.assertEqual(count, 64)
-            self.assertEqual(h(buf), seed)
+            for fn in [bip39_mnemonic_to_seed, bip39_mnemonic_to_seed512]:
+                ret = fn(mnemonic, b'TREZOR', buf, 64)
+                self.assertEqual(ret, (WALLY_OK, 64) if fn == bip39_mnemonic_to_seed else WALLY_OK)
+                self.assertEqual(h(buf), seed)
 
 
 if __name__ == '__main__':

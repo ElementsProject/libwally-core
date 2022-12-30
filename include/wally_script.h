@@ -194,7 +194,7 @@ WALLY_CORE_API int wally_scriptpubkey_get_type(const unsigned char *bytes, size_
  *|    hash160 to use.
  * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
- * :param len: Length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_P2PKH_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
@@ -219,6 +219,7 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param bytes_out: Destination for the resulting scriptSig.
  * :param len: The length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTSIG_P2PKH_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
@@ -260,7 +261,7 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
  *|    with the sighash byte appended to it.
  * :param sig_len: The length of ``sig`` in bytes.
  * :param bytes_out: Destination for the resulting scriptSig.
- * :param len: The length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTSIG_P2PKH_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptsig_p2pkh_from_der(
@@ -298,9 +299,7 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
  *|    than or equal to ``WALLY_MAX_OP_RETURN_LEN``.
  * :param flags: Currently unused, must be 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
- * :param len: The length of ``bytes_out`` in bytes. Passing
- *|    ``WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN`` will ensure there is always
- *|    enough room for the resulting scriptPubkey.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
@@ -314,14 +313,14 @@ WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
 /**
  * Create a P2SH scriptPubkey.
  *
- * :param bytes: Bytes to create a scriptPubkey for.
- * :param bytes_len: Length of ``bytes`` in bytes.
- * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
- * :param bytes_out: Destination for the resulting scriptPubkey.
- * :param len: The length of ``bytes_out`` in bytes. If ``WALLY_SCRIPT_HASH160``
+ * :param bytes: Bytes to create a scriptPubkey for. If ``WALLY_SCRIPT_HASH160``
  *|    is given, ``bytes`` is a script to hash160 before creating the P2SH.
  *|    Otherwise, bytes_len must be ``HASH160_LEN`` and ``bytes`` must contain
  *|    the hash160 to use.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_P2SH_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
@@ -555,7 +554,7 @@ WALLY_CORE_API int wally_varbuff_to_bytes(
  *|    a push of the generated script as used for the scriptSig in p2sh-p2wpkh
  *|    and p2sh-p2wsh.
  * :param bytes_out: Destination for the resulting witness program.
- * :param len: The length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_WITNESSSCRIPT_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_witness_program_from_bytes(
@@ -578,7 +577,7 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
  *|    a push of the generated script as used for the scriptSig in p2sh-p2wpkh
  *|    and p2sh-p2wsh.
  * :param bytes_out: Destination for the resulting witness program.
- * :param len: The length of ``bytes_out`` in bytes.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_WITNESSSCRIPT_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_witness_program_from_bytes_and_version(

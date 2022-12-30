@@ -28,7 +28,7 @@ extern "C" {
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting raw BIP38 address.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP38_SERIALIZED_LEN)
  */
 WALLY_CORE_API int bip38_raw_from_private_key(
     const unsigned char *bytes,
@@ -66,7 +66,7 @@ WALLY_CORE_API int bip38_from_private_key(
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
  */
 WALLY_CORE_API int bip38_raw_to_private_key(
     const unsigned char *bytes,
@@ -85,7 +85,7 @@ WALLY_CORE_API int bip38_raw_to_private_key(
  * :param pass_len: Length of ``pass`` in bytes.
  * :param flags: BIP38_KEY_ flags indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
- * :param len: Size of ``bytes_out`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
  */
 WALLY_CORE_API int bip38_to_private_key(
     const char *bip38,

@@ -168,14 +168,16 @@ class ElementsTests(unittest.TestCase):
 
         entropy, entropy_len = make_cbuffer('34' * 32)
         surjectionproof, surjectionproof_len = make_cbuffer('00' * expected_proof_len)
-        ret, written = wally_asset_surjectionproof(UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
-                                                   output_abf, output_abf_len,
-                                                   output_generator, output_generator_len,
-                                                   entropy, entropy_len,
-                                                   UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
-                                                   UNBLINDED_ABF, UNBLINDED_ABF_LEN,
-                                                   UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN,
-                                                   surjectionproof, surjectionproof_len)
+        args = [ UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                 output_abf, output_abf_len,
+                 output_generator, output_generator_len,
+                 entropy, entropy_len,
+                 UNBLINDED_ASSET, UNBLINDED_ASSET_LEN,
+                 UNBLINDED_ABF, UNBLINDED_ABF_LEN,
+                 UNBLIND_ASSET_COMMITMENT, UNBLIND_ASSET_COMMITMENT_LEN ]
+        ret, proof_len = wally_asset_surjectionproof_len(*args)
+        self.assertEqual((ret, proof_len), (WALLY_OK, expected_proof_len))
+        ret, written = wally_asset_surjectionproof(*args + [surjectionproof, surjectionproof_len])
         self.assertEqual((ret, written), (WALLY_OK, expected_proof_len))
 
         # explicit_surjectionproof

@@ -174,7 +174,7 @@ class PSBTTests(unittest.TestCase):
 
             psbt = self.parse_base64(case['psbt'])
             tx = pointer(wally_tx())
-            self.assertEqual(WALLY_OK, wally_psbt_extract(psbt, tx))
+            self.assertEqual(WALLY_OK, wally_psbt_extract(psbt, 0, tx))
             ret, tx_hex = wally_tx_to_hex(tx, 1)
             self.assertEqual((ret, tx_hex), (WALLY_OK, case['result']))
             wally_tx_free(tx)

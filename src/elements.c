@@ -457,10 +457,16 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
         (asset_len % ASSET_TAG_LEN != 0) ||
         !abf || abf_len != num_inputs * BLINDING_FACTOR_LEN ||
         !generator || generator_len != num_inputs * ASSET_GENERATOR_LEN ||
-        !bytes_out ||
-        len < SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used) ||
+        !bytes_out || !len ||
         !written)
         goto cleanup;
+
+    if (len < SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used)) {
+        /* Let the caller know the required length */
+        *written = SECP256K1_SURJECTIONPROOF_SERIALIZATION_BYTES(num_inputs, num_used);
+        ret = WALLY_OK;
+        goto cleanup;
+    }
 
     /* Build the array of input generator pointers required by secp */
     /* FIXME: This is horribly painful. Since parsed representations dont
@@ -503,6 +509,22 @@ cleanup:
     if (generators)
         clear_and_free(generators, num_inputs * sizeof(secp256k1_generator));
     return ret;
+}
+
+int wally_asset_surjectionproof_len(const unsigned char *output_asset, size_t output_asset_len,
+                                    const unsigned char *output_abf, size_t output_abf_len,
+                                    const unsigned char *output_generator, size_t output_generator_len,
+                                    const unsigned char *bytes, size_t bytes_len,
+                                    const unsigned char *asset, size_t asset_len,
+                                    const unsigned char *abf, size_t abf_len,
+                                    const unsigned char *generator, size_t generator_len,
+                                    size_t *written)
+{
+    unsigned char buff[1];
+    return surjproof_impl(output_asset, output_asset_len, output_abf, output_abf_len,
+                          output_generator, output_generator_len, bytes, bytes_len,
+                          asset, asset_len, abf, abf_len, generator, generator_len,
+                          buff, sizeof(buff), written, 100);
 }
 
 int wally_asset_surjectionproof(const unsigned char *output_asset, size_t output_asset_len,
@@ -715,33 +737,24 @@ int wally_asset_blinding_key_to_ec_private_key(
     return ret;
 }
 
-int wally_asset_pak_whitelistproof_size(
-    size_t num_keys,
-    size_t *written)
+int wally_asset_pak_whitelistproof_size(size_t num_keys, size_t *written)
 {
-    if (!written)
+    if (written)
+        *written = 0;
+    if (!written || num_keys > SECP256K1_WHITELIST_MAX_N_KEYS)
         return WALLY_EINVAL;
-
     *written = 1 + 32 * (1 + num_keys);
-
     return WALLY_OK;
 }
 
 int wally_asset_pak_whitelistproof(
-    const unsigned char *online_keys,
-    size_t online_keys_len,
-    const unsigned char *offline_keys,
-    size_t offline_keys_len,
+    const unsigned char *online_keys, size_t online_keys_len,
+    const unsigned char *offline_keys, size_t offline_keys_len,
     size_t key_index,
-    const unsigned char *sub_pubkey,
-    size_t sub_pubkey_len,
-    const unsigned char *online_priv_key,
-    size_t online_priv_key_len,
-    const unsigned char *summed_key,
-    size_t summed_key_len,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written)
+    const unsigned char *sub_pubkey, size_t sub_pubkey_len,
+    const unsigned char *online_priv_key, size_t online_priv_key_len,
+    const unsigned char *summed_key, size_t summed_key_len,
+    unsigned char *bytes_out, size_t len, size_t *written)
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_pubkey online_secp_keys[SECP256K1_WHITELIST_MAX_N_KEYS];
@@ -799,4 +812,22 @@ fail:
     return ret;
 }
 
+int wally_asset_pak_whitelistproof_len(
+    const unsigned char *online_keys, size_t online_keys_len,
+    const unsigned char *offline_keys, size_t offline_keys_len,
+    size_t key_index,
+    const unsigned char *sub_pubkey, size_t sub_pubkey_len,
+    const unsigned char *online_priv_key, size_t online_priv_key_len,
+    const unsigned char *summed_key, size_t summed_key_len,
+    size_t *written)
+{
+    unsigned char buff[1]; /* Undersized: we only want the length */
+    return wally_asset_pak_whitelistproof(online_keys, online_keys_len,
+                                          offline_keys, offline_keys_len,
+                                          key_index,
+                                          sub_pubkey, sub_pubkey_len,
+                                          online_priv_key, online_priv_key_len,
+                                          summed_key, summed_key_len,
+                                          buff, sizeof(buff), written);
+}
 #endif /* BUILD_ELEMENTS */
