@@ -1,3 +1,5 @@
 [submodule "src/secp256k1"]
 	path = src/secp256k1
 	url = https://github.com/ElementsProject/secp256k1-zkp.git
+	branch = 4fdb8ab4870d6dd7dd504456a0cda54613288bf0
+	ignore = dirty
