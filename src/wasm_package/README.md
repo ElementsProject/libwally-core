@@ -40,5 +40,9 @@ WallyInit.then(wally => {
 </script>
 ```
 
+## Limitations
+
+- BIP38 (passphrase-protected keys) [related functions](https://wally.readthedocs.io/en/latest/bip38/) are disabled due to WASM memory restrictions, which are insufficient for running Scrypt with the BIP38 parameters.
+
 ## License
 [BSD/MIT](https://github.com/ElementsProject/libwally-core/blob/master/LICENSE)

@@ -90,12 +90,8 @@ export function bip32_key_unserialize_noalloc(bytes: Buffer|Uint8Array, output: 
 export function bip32_key_with_tweak_from_parent_path(hdkey: Ref_ext_key, child_path: Uint32Array|number[], flags: number): Ref_ext_key;
 export function bip32_key_with_tweak_from_parent_path_noalloc(hdkey: Ref_ext_key, child_path: Uint32Array|number[], flags: number, output: Ref_ext_key): void;
 export function bip340_tagged_hash(bytes: Buffer|Uint8Array, tag: string): Buffer;
-export function bip38_from_private_key(bytes: Buffer|Uint8Array, pass: Buffer|Uint8Array, flags: number): string;
 export function bip38_get_flags(bip38: string): number;
-export function bip38_raw_from_private_key(bytes: Buffer|Uint8Array, pass: Buffer|Uint8Array, flags: number): Buffer;
 export function bip38_raw_get_flags(bytes: Buffer|Uint8Array): number;
-export function bip38_raw_to_private_key(bytes: Buffer|Uint8Array, pass: Buffer|Uint8Array, flags: number): Buffer;
-export function bip38_to_private_key(bip38: string, pass: Buffer|Uint8Array, flags: number): Buffer;
 export function bip39_get_languages(): string;
 export function bip39_get_word(w: Ref_words, index: number): string;
 export function bip39_get_wordlist(lang: string): Ref_words;
