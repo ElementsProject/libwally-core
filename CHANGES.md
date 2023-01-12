@@ -3,6 +3,7 @@
 ## Version 0.8.8
 - The old Javascript and cordova wrappers have been removed. Users should move
   to the new JS wrappers which are significantly more functional.
+- `WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN` was increased to account for future segwit versions, in accordance to BIP 141. The previous value is available as `WALLY_SEGWIT_V0_ADDRESS_PUBKEY_MAX_LEN`.
 
 ## Version 0.8.7
 - Javascript: Add a new WASM-based JS + typescript wrapper for Node and
