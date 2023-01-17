@@ -274,17 +274,17 @@ SET_STRUCT(wally_psbt_input, utxo, wally_tx,
 int wally_psbt_input_set_witness_utxo(struct wally_psbt_input *input, const struct wally_tx_output *utxo)
 {
     int ret = WALLY_OK;
-    struct wally_tx_output *new_p = NULL;
+    struct wally_tx_output *new_utxo = NULL;
     if (!input)
         return WALLY_EINVAL;
 #ifdef BUILD_ELEMENTS
     if (input->has_amount && utxo_has_explicit_value(utxo))
         return WALLY_EINVAL; /* UTXO value is already explicit */
 #endif
-    if (utxo && (ret = wally_tx_output_clone_alloc(utxo, &new_p)) != WALLY_OK)
+    if (utxo && (ret = wally_tx_output_clone_alloc(utxo, &new_utxo)) != WALLY_OK)
         return ret;
     wally_tx_output_free(input->witness_utxo);
-    input->witness_utxo = new_p;
+    input->witness_utxo = new_utxo;
     return ret;
 }
 
@@ -3662,22 +3662,56 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx,
 
 static int psbt_v0_to_v2(struct wally_psbt *psbt)
 {
-    /* FIXME: Upgrade is not yet implemented */
-    (void)psbt;
-    return WALLY_ERROR;
+    size_t i;
+
+    /* Upgrade to v2 */
+    psbt->version = PSBT_2;
+    psbt->tx_version = psbt->tx->version;
+    /* V0 only has the tx locktime, and no per-input locktimes,
+     * so set the V2 fallback locktime to the tx locktime, unless
+     * it is the default value of 0.
+     */
+    psbt->fallback_locktime = psbt->tx->locktime;
+    psbt->has_fallback_locktime = psbt->fallback_locktime != 0;
+    /* V0 PSBTs are implicitly modifiable; reflect that in our flags */
+    psbt->tx_modifiable_flags = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS;
+    /* FIXME: Detect SIGHASH_SINGLE in any signatures present and
+     * set WALLY_PSBT_TXMOD_SINGLE if found.
+     */
+
+    for (i = 0; i < psbt->tx->num_inputs; ++i) {
+        struct wally_psbt_input *pi = &psbt->inputs[i];
+        const struct wally_tx_input *txin = &psbt->tx->inputs[i];
+        memcpy(pi->txhash, txin->txhash, sizeof(pi->txhash));
+        pi->index = txin->index;
+        pi->sequence = txin->sequence;
+    }
+
+    for (i = 0; i < psbt->tx->num_outputs; ++i) {
+        struct wally_psbt_output *po = &psbt->outputs[i];
+        struct wally_tx_output *txout = &psbt->tx->outputs[i];
+        /* We steal script directly from the tx output so this can't fail */
+        po->script = txout->script;
+        txout->script = NULL;
+        po->script_len = txout->script_len;
+        txout->script_len = 0;
+        po->amount = txout->satoshi;
+        po->has_amount = true;
+    }
+
+    wally_tx_free(psbt->tx);
+    psbt->tx = NULL;
+    return WALLY_OK;
 }
 
 static int psbt_v2_to_v0(struct wally_psbt *psbt)
 {
-    struct wally_tx *tx;
     size_t i;
     bool is_pset;
-    int ret = psbt_build_tx(psbt, &tx, &is_pset, false);
+    int ret = psbt_build_tx(psbt, &psbt->tx, &is_pset, false);
 
     if (ret != WALLY_OK)
         return ret;
-    if (is_pset)
-        return WALLY_EINVAL;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *pi = &psbt->inputs[i];
@@ -3706,11 +3740,16 @@ int wally_psbt_set_version(struct wally_psbt *psbt,
                            uint32_t flags,
                            uint32_t version)
 {
+    size_t is_pset;
+
     if (!psbt_is_valid(psbt) || flags || (version != PSBT_0 && version != PSBT_2))
         return WALLY_EINVAL;
 
     if (psbt->version == version)
         return WALLY_OK; /* No-op */
+
+    if (wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
+        return WALLY_EINVAL; /* PSET only supports v2 */
 
     return psbt->version == PSBT_0 ? psbt_v0_to_v2(psbt) : psbt_v2_to_v0(psbt);
 }
@@ -4352,9 +4391,9 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             out_script_len = input->witness_utxo->script_len;
             is_witness = true;
         } else if (input->utxo && utxo_index < input->utxo->num_outputs) {
-            struct wally_tx_output *out = &input->utxo->outputs[utxo_index];
-            out_script = out->script;
-            out_script_len = out->script_len;
+            struct wally_tx_output *utxo = &input->utxo->outputs[utxo_index];
+            out_script = utxo->script;
+            out_script_len = utxo->script_len;
         }
         script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
         if (script) {
@@ -4425,7 +4464,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
 
     for (i = 0; for_final && i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = &psbt->inputs[i];
-        struct wally_tx_input *tx_input = &result->inputs[i];
+        struct wally_tx_input *txin = &result->inputs[i];
         const struct wally_map_item *final_scriptsig;
 
         final_scriptsig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG);
@@ -4436,26 +4475,26 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
         }
 
         if (final_scriptsig) {
-            if (tx_input->script) {
+            if (txin->script) {
                 /* Our global tx shouldn't have a scriptSig */
                 ret = WALLY_EINVAL;
                 break;
             }
-            if (!clone_bytes(&tx_input->script,
+            if (!clone_bytes(&txin->script,
                              final_scriptsig->value, final_scriptsig->value_len)) {
                 ret = WALLY_ENOMEM;
                 break;
             }
-            tx_input->script_len = final_scriptsig->value_len;
+            txin->script_len = final_scriptsig->value_len;
         }
         if (input->final_witness) {
-            if (tx_input->witness) {
+            if (txin->witness) {
                 /* Our global tx shouldn't have a witness */
                 ret = WALLY_EINVAL;
                 break;
             }
             ret = wally_tx_witness_stack_clone_alloc(input->final_witness,
-                                                     &tx_input->witness);
+                                                     &txin->witness);
             if (ret != WALLY_OK)
                 break;
         }
@@ -4956,10 +4995,10 @@ int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t i
                                          struct wally_tx_output **output)
 {
     const struct wally_psbt_input *p = psbt_get_input(psbt, index);
-    const struct wally_tx_output *o = p ? utxo_from_input(psbt, p) : NULL;
+    const struct wally_tx_output *utxo = p ? utxo_from_input(psbt, p) : NULL;
     if (output) *output = NULL;
-    if (!o || !output) return WALLY_EINVAL;
-    return wally_tx_output_clone_alloc(o, output);
+    if (!utxo || !output) return WALLY_EINVAL;
+    return wally_tx_output_clone_alloc(utxo, output);
 }
 PSBT_FIELD(input, redeem_script, PSBT_0)
 PSBT_FIELD(input, witness_script, PSBT_0)

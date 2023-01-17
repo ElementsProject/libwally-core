@@ -273,7 +273,7 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_set_version, psbt2, 0xff, 0) # Unknown flags
         self._throws(psbt_set_version, psbt2, 0, 3)    # Unknown version
         # Upgrading v0 to v2 is not yet supported
-        self.assertRaises(RuntimeError, lambda: psbt_set_version(psbt, 0, 2))
+        psbt_set_version(clones[1], 0, 2)
         # Downgrade v2 to v0
         psbt_set_version(clones[1], 0, 0)
 
