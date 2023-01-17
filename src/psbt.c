@@ -3662,9 +3662,48 @@ static int psbt_build_tx(const struct wally_psbt *psbt, struct wally_tx **tx,
 
 static int psbt_v0_to_v2(struct wally_psbt *psbt)
 {
-    /* FIXME: Upgrade is not yet implemented */
-    (void)psbt;
-    return WALLY_ERROR;
+    size_t i;
+    struct wally_tx *tx = psbt->tx;
+    int ret;
+    size_t is_pset;
+
+    ret = wally_psbt_is_elements(psbt, &is_pset);
+
+    if (ret != WALLY_OK)
+        return ret;
+
+    /* We explicitly do not support PSETv0 */
+    if (is_pset)
+        return WALLY_EINVAL;
+
+    psbt->version = PSBT_2;
+    psbt->tx_version = psbt->tx->version;
+    psbt->fallback_locktime = psbt->tx->locktime;
+    psbt->has_fallback_locktime = true;
+    psbt->tx_modifiable_flags = 0;
+
+    for (i = 0; i < tx->num_inputs; ++i) {
+        struct wally_psbt_input *pi = &psbt->inputs[i];
+        struct wally_tx_input *input = &tx->inputs[i];
+        memcpy(pi->txhash, input->txhash, WALLY_TXHASH_LEN);
+        pi->index = input->index;
+        pi->sequence = input->sequence;
+    }
+
+    for (i = 0; i < tx->num_outputs; ++i) {
+        struct wally_psbt_output *po = &psbt->outputs[i];
+        struct wally_tx_output *output = &tx->outputs[i];
+        po->amount = output->satoshi;
+        po->has_amount = true;
+        ret = wally_psbt_output_set_script(po, output->script, output->script_len);
+        if (ret != WALLY_OK)
+            return ret;
+    }
+
+    ret = wally_tx_free(psbt->tx);
+    psbt->tx = NULL;
+
+    return ret;
 }
 
 static int psbt_v2_to_v0(struct wally_psbt *psbt)
