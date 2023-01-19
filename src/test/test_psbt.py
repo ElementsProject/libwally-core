@@ -78,6 +78,21 @@ class PSBTTests(unittest.TestCase):
 
             ret, written = wally_psbt_to_bytes(psbt, 0, buf, buf_len)
             self.assertEqual((ret, written), (WALLY_OK, length))
+
+            version = wally_psbt_get_version(psbt)[1]
+            if version == 0:
+                # Upgrade to v2 and make sure the same tx is extracted
+                NON_FINAL = 1 # Don't require a finalized tx to extract
+                tx = pointer(wally_tx())
+                if wally_psbt_extract(psbt, NON_FINAL, tx) != WALLY_OK:
+                    continue # Partial tx
+                v0_hex = wally_tx_to_hex(tx, 1)[1]
+                ret = wally_psbt_set_version(psbt, 0, 2)
+                self.assertEqual(wally_psbt_set_version(psbt, 0, 2), WALLY_OK)
+                self.assertEqual(wally_psbt_extract(psbt, NON_FINAL, tx), WALLY_OK)
+                v2_hex = wally_tx_to_hex(tx, 1)[1]
+                self.assertEqual(v0_hex, v2_hex)
+
             wally_psbt_free(psbt)
 
     def test_creator_role(self):
