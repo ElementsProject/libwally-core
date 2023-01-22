@@ -21,6 +21,8 @@
 
 #define ALL_SCRIPT_HASH_FLAGS (WALLY_SCRIPT_HASH160 | WALLY_SCRIPT_SHA256)
 
+#define DER_AND_HASH_MAX_LEN (EC_SIGNATURE_DER_MAX_LEN + 1)
+
 static bool script_flags_ok(uint32_t flags, uint32_t extra_flags)
 {
     if ((flags & ~(ALL_SCRIPT_HASH_FLAGS | extra_flags)) ||
@@ -604,8 +606,7 @@ int wally_scriptsig_multisig_from_bytes(
     const uint32_t *sighash, size_t sighash_len, uint32_t flags,
     unsigned char *bytes_out, size_t len, size_t *written)
 {
-#define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
-    unsigned char der_buff[15 * MAX_DER], *p = bytes_out;
+    unsigned char der_buff[15 * DER_AND_HASH_MAX_LEN], *p = bytes_out;
     size_t der_len[15];
     size_t i, required = 0, n_sigs = bytes_len / EC_SIGNATURE_LEN;
     int ret = WALLY_OK;
@@ -625,10 +626,11 @@ int wally_scriptsig_multisig_from_bytes(
             goto cleanup;
         }
         ret = wally_ec_sig_to_der(bytes + i * EC_SIGNATURE_LEN, EC_SIGNATURE_LEN,
-                                  &der_buff[i * MAX_DER], MAX_DER, &der_len[i]);
+                                  &der_buff[i * DER_AND_HASH_MAX_LEN],
+                                  DER_AND_HASH_MAX_LEN, &der_len[i]);
         if (ret != WALLY_OK)
             goto cleanup;
-        der_buff[i * MAX_DER + der_len[i]] = sighash[i] & 0xff;
+        der_buff[i * DER_AND_HASH_MAX_LEN + der_len[i]] = sighash[i] & 0xff;
         ++der_len[i];
         required += script_get_push_size(der_len[i]);
     }
@@ -644,7 +646,7 @@ int wally_scriptsig_multisig_from_bytes(
     *p++ = OP_0;
     len--;
     for (i = 0; i < n_sigs; ++i) {
-        ret = wally_script_push_from_bytes(&der_buff[i * MAX_DER], der_len[i],
+        ret = wally_script_push_from_bytes(&der_buff[i * DER_AND_HASH_MAX_LEN], der_len[i],
                                            0, p, len, &der_len[i]);
         if (ret != WALLY_OK)
             goto cleanup;
@@ -1242,25 +1244,33 @@ int wally_witness_multisig_from_bytes(
     uint32_t flags,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char *scriptsig = NULL;
+    unsigned char *buff = NULL;
+    size_t buff_len, written, n_sigs;
     int ret = WALLY_OK;
-    size_t scriptsig_len, n_sigs, buf_len;
 
-    if (!script || !script_len || !bytes || !bytes_len || !sighash || !sighash_len ||
-        !witness || !script_is_op_n(script[0], false, &n_sigs))
+    if (witness)
+        *witness = NULL;
+
+    /* Full parameter checking is done in wally_scriptsig_multisig_from_bytes */
+    if (!script || !script_len ||
+        !script_is_op_n(script[0], false, &n_sigs) || !n_sigs || n_sigs > 15)
         return WALLY_EINVAL;
 
-    buf_len = n_sigs * (EC_SIGNATURE_DER_MAX_LEN + 2) + script_len;
-    if (!(scriptsig = wally_malloc(buf_len)))
+    /* OP_O ([sig + sighash_byte])+ [prevout_script] */
+    buff_len = 1 + (1 + DER_AND_HASH_MAX_LEN) * n_sigs + script_get_push_size(script_len);
+    if (!(buff = wally_malloc(buff_len)))
         return WALLY_ENOMEM;
 
     ret = wally_scriptsig_multisig_from_bytes(script, script_len,
                                               bytes, bytes_len,
                                               sighash, sighash_len, flags,
-                                              scriptsig, buf_len, &scriptsig_len);
-    if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(scriptsig, scriptsig_len, witness);
-
-    clear_and_free(scriptsig, scriptsig_len);
+                                              buff, buff_len, &written);
+    if (ret == WALLY_OK) {
+        if (written > buff_len)
+            ret = WALLY_ERROR; /* Required length mismatch, should not happen! */
+        else
+            ret = scriptsig_to_witness(buff, written, witness);
+    }
+    clear_and_free(buff, buff_len);
     return ret;
 }

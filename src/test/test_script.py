@@ -329,8 +329,9 @@ class ScriptTests(unittest.TestCase):
             ret = wally_scriptsig_p2pkh_from_sig(*args)
             self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 9))
 
-    def test_scriptsig_multisig(self):
-        """Tests for creating multisig scriptsig"""
+    def test_scriptsig_and_witness_multisig(self):
+        """Tests for creating multisig scriptsigs and witnesses"""
+        witness_out = pointer(wally_tx_witness_stack())
 
         def c_sighash(s):
             c_sighash = (c_uint * len(s))()
@@ -355,6 +356,10 @@ class ScriptTests(unittest.TestCase):
         for args in invalid_args:
             ret = wally_scriptsig_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_EINVAL, 0))
+            # Test a null witness output as the last case
+            args = list(args[:-2]) + [None if args == invalid_args[-1] else witness_out]
+            ret = wally_witness_multisig_from_bytes(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
 
         # Valid cases
         valid_args = [
@@ -372,6 +377,9 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, (WALLY_OK, 73 + 72 * args[5]))
             exp_script, _ = make_cbuffer(exp_script)
             self.assertEqual(out[:(73 + 72 * args[5])], exp_script)
+            args = list(args[:-2]) + [witness_out]
+            ret = wally_witness_multisig_from_bytes(*args)
+            self.assertEqual(ret, WALLY_OK)
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""
