@@ -13,6 +13,8 @@
     <script type='text/javascript'>
       var element = document.getElementById('output');
       var wally_example = function() {
+          const ccall = Module.ccall;
+
           element.value = "wally_init ... " + ccall("wally_init", 'number', ['number'], [0]);
 
           var entropy_ctx = new Uint8Array(32); // WALLY_SECP_RANDOMIZE_LEN
