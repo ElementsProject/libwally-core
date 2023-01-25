@@ -129,15 +129,19 @@ class ScriptTests(unittest.TestCase):
         # Invalid args
         out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2SH_LEN)
         invalid_args = [
-            (None, SH_LEN, SCRIPT_HASH160, out, out_len), # Null bytes
-            (SH, 0, SCRIPT_HASH160, out, out_len), # Empty bytes
-            (SH, SH_LEN, SCRIPT_SHA256, out, out_len), # Unsupported flags
-            (SH, SH_LEN, SCRIPT_HASH160, None, out_len), # Null output
-            (SH, SH_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2SH_LEN-1), # Short output len
+            (None, SH_LEN,   SCRIPT_HASH160, out,  out_len),   # Null bytes
+            (SH,   0,        SCRIPT_HASH160, out,  out_len),   # Empty bytes
+            (SH,   SH_LEN,   SCRIPT_SHA256,  out,  out_len),   # Unsupported flags
+            (SH,   SH_LEN-1, 0,              out,  out_len),   # Invalid hash160 len
+            (SH,   SH_LEN,   SCRIPT_HASH160, None, out_len),   # Null output
+            (SH,   SH_LEN,   SCRIPT_HASH160, out,  out_len-1), # Short output len
         ]
         for args in invalid_args:
             ret = wally_scriptpubkey_p2sh_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            if ret == (WALLY_OK, SCRIPTPUBKEY_P2SH_LEN):
+                self.assertTrue(args[-1] < out_len)
+            else:
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
 
         # Valid cases
         valid_args = [

@@ -21,6 +21,7 @@
 
 #define ALL_SCRIPT_HASH_FLAGS (WALLY_SCRIPT_HASH160 | WALLY_SCRIPT_SHA256)
 
+/* Max size of a DER-encoded signature with sighash flag appended */
 #define DER_AND_HASH_MAX_LEN (EC_SIGNATURE_DER_MAX_LEN + 1)
 
 static bool script_flags_ok(uint32_t flags, uint32_t extra_flags)
@@ -530,19 +531,26 @@ int wally_scriptpubkey_op_return_from_bytes(
     return ret;
 }
 
-int wally_scriptpubkey_p2sh_from_bytes(
-    const unsigned char *bytes, size_t bytes_len,
-    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
+int wally_scriptpubkey_p2sh_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                                       uint32_t flags,
+                                       unsigned char *bytes_out, size_t len, size_t *written)
 {
     int ret;
 
     if (written)
         *written = 0;
 
-    if (!bytes || !bytes_len || !script_flags_ok(flags, 0) ||
-        (flags & WALLY_SCRIPT_SHA256) || !bytes_out ||
-        len < WALLY_SCRIPTPUBKEY_P2SH_LEN || !written)
+    if (!bytes || !bytes_len || (flags & ~WALLY_SCRIPT_HASH160) ||
+        !bytes_out || !len || !written)
         return WALLY_EINVAL;
+
+    if (!(flags & WALLY_SCRIPT_HASH160) && bytes_len != HASH160_LEN)
+        return WALLY_EINVAL; /* Expected to be a hash160 */
+
+    if (len < WALLY_SCRIPTPUBKEY_P2SH_LEN) {
+        *written = WALLY_SCRIPTPUBKEY_P2SH_LEN; /* Tell caller whats needed */
+        return WALLY_OK;
+    }
 
     bytes_out[0] = OP_HASH160;
     ret = wally_script_push_from_bytes(bytes, bytes_len, flags,
