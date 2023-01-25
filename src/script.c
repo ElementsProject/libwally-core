@@ -563,10 +563,11 @@ int wally_scriptpubkey_multisig_from_bytes(
     const unsigned char *bytes, size_t bytes_len, uint32_t threshold,
     uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
 {
-    size_t n_pubkeys = bytes_len / EC_PUBLIC_KEY_LEN;
-    size_t script_len = 3 + (n_pubkeys * (EC_PUBLIC_KEY_LEN + 1));
-    size_t i;
     unsigned char pubkey_bytes[15 * EC_PUBLIC_KEY_LEN];
+    const size_t n_pubkeys = bytes_len / EC_PUBLIC_KEY_LEN;
+    /* THRESHOLD ([PUBKEY])+ N OP_CHECKMULTISIG */
+    const size_t script_len = 3 + (n_pubkeys * (EC_PUBLIC_KEY_LEN + 1));
+    size_t i;
 
     if (written)
         *written = 0;
@@ -574,18 +575,15 @@ int wally_scriptpubkey_multisig_from_bytes(
     if (!bytes || !bytes_len || bytes_len % EC_PUBLIC_KEY_LEN ||
         n_pubkeys < 1 || n_pubkeys > 15 || threshold < 1 || threshold > 15 ||
         threshold > n_pubkeys || (flags & ~WALLY_SCRIPT_MULTISIG_SORTED) ||
-        !bytes_out || !written)
+        !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    if (len < script_len) {
-        *written = script_len;
-        return WALLY_OK;
-    }
+    if (len < script_len)
+        goto done; /* Tell the caller how many bytes they need */
 
     memcpy(pubkey_bytes, bytes, bytes_len);
-    if (flags & WALLY_SCRIPT_MULTISIG_SORTED) {
+    if (flags & WALLY_SCRIPT_MULTISIG_SORTED)
         qsort(pubkey_bytes, n_pubkeys, EC_PUBLIC_KEY_LEN, pubkey_compare);
-    }
 
     *bytes_out++ = value_to_op_n(threshold);
     for (i = 0; i < n_pubkeys; ++i) {
@@ -596,6 +594,7 @@ int wally_scriptpubkey_multisig_from_bytes(
     wally_clear(pubkey_bytes, sizeof(pubkey_bytes));
     *bytes_out++ = value_to_op_n(n_pubkeys);
     *bytes_out = OP_CHECKMULTISIG;
+done:
     *written = script_len;
     return WALLY_OK;
 }
@@ -1051,10 +1050,8 @@ int wally_elements_pegout_script_from_bytes(const unsigned char *genesis_blockha
     pegout_script_push(mainchain_script, mainchain_script_len);
     pegout_script_push(sub_pubkey, sub_pubkey_len);
     pegout_script_push(whitelistproof, whitelistproof_len);
-
-    return WALLY_OK;
-
 #undef pegout_script_push
+    return WALLY_OK;
 }
 
 int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_script,
@@ -1149,49 +1146,44 @@ int wally_elements_pegin_contract_script_from_bytes(const unsigned char *redeem_
             break;
     }
 
-    if (written)
-        *written = redeem_script_len;
-
+    *written = redeem_script_len;
     return WALLY_OK;
 }
 
 /* Converts a push only scriptsig to a newly allocated witness stack */
-static int scriptsig_to_witness(unsigned char *bytes, size_t bytes_len, struct wally_tx_witness_stack **output)
+static int scriptsig_to_witness(unsigned char *bytes, size_t bytes_len,
+                                struct wally_tx_witness_stack **output)
 {
     unsigned char *p = bytes, *end = p + bytes_len;
-    struct wally_tx_witness_stack *result = NULL;
     int ret = WALLY_OK;
 
-    if (!bytes || !output || !bytes_len) {
+    if (output)
+        *output = NULL;
+
+    if (!bytes || !bytes_len || !output)
         return WALLY_EINVAL;
+
+    ret = wally_tx_witness_stack_init_alloc(2, output);
+
+    while (ret == WALLY_OK && p < end) {
+        size_t push_size, opcode_size;
+
+        ret = script_get_push_size_from_bytes(p, end - p, &push_size);
+        if (ret == WALLY_OK)
+            ret = script_get_push_opcode_size_from_bytes(p, end - p,
+                                                         &opcode_size);
+        if (ret == WALLY_OK) {
+            p += opcode_size;
+            ret = wally_tx_witness_stack_add(*output, p, push_size);
+            if (ret == WALLY_OK)
+                p += push_size;
+        }
     }
 
-    if ((ret = wally_tx_witness_stack_init_alloc(2, &result)) != WALLY_OK) {
-        return ret;
+    if (ret != WALLY_OK) {
+        wally_tx_witness_stack_free(*output);
+        *output = NULL;
     }
-
-    while (p < end) {
-        size_t push_size, push_opcode_size;
-
-        if ((ret = script_get_push_size_from_bytes(p, end - p, &push_size)) != WALLY_OK) {
-            goto fail;
-        }
-        if ((ret = script_get_push_opcode_size_from_bytes(p, end - p, &push_opcode_size)) != WALLY_OK) {
-            goto fail;
-        }
-        p += push_opcode_size;
-
-        if ((ret = wally_tx_witness_stack_add(result, p, push_size)) != WALLY_OK) {
-            goto fail;
-        }
-        p += push_size;
-    }
-
-    *output = result;
-    return WALLY_OK;
-
-fail:
-    wally_tx_witness_stack_free(result);
     return ret;
 }
 
@@ -1202,15 +1194,20 @@ int wally_witness_p2wpkh_from_der(
     size_t sig_len,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char scriptsig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    unsigned char buff[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
     size_t written;
     int ret;
 
-    ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len, scriptsig, sizeof(scriptsig), &written);
+    if (witness)
+        *witness = NULL;
 
-    if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(scriptsig, written, witness);
-
+    ret = wally_scriptsig_p2pkh_from_der(pub_key, pub_key_len, sig, sig_len,
+                                         buff, sizeof(buff), &written);
+    if (ret == WALLY_OK) {
+        if (written > sizeof(buff))
+            return WALLY_ERROR; /* Required length mismatch, should not happen! */
+        ret = scriptsig_to_witness(buff, written, witness);
+    }
     return ret;
 }
 
@@ -1222,15 +1219,21 @@ int wally_witness_p2wpkh_from_sig(
     uint32_t sighash,
     struct wally_tx_witness_stack **witness)
 {
-    unsigned char scriptsig[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
+    unsigned char buff[WALLY_SCRIPTSIG_P2PKH_MAX_LEN];
     size_t written;
     int ret;
 
-    ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len, sighash, scriptsig, sizeof(scriptsig), &written);
+    if (witness)
+        *witness = NULL;
 
-    if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(scriptsig, written, witness);
-
+    ret = wally_scriptsig_p2pkh_from_sig(pub_key, pub_key_len, sig, sig_len,
+                                         sighash, buff, sizeof(buff),
+                                         &written);
+    if (ret == WALLY_OK) {
+        if (written > sizeof(buff))
+            return WALLY_ERROR; /* Required length mismatch, should not happen! */
+        ret = scriptsig_to_witness(buff, written, witness);
+    }
     return ret;
 }
 
