@@ -4417,8 +4417,7 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
 
     OUTPUT_CHECK;
 
-    if (!psbt || (psbt->version == PSBT_0 && (!psbt->num_inputs || !psbt->num_outputs)) ||
-        flags & ~WALLY_PSBT_EXTRACT_NON_FINAL)
+    if (!psbt || flags & ~WALLY_PSBT_EXTRACT_NON_FINAL)
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &result, &is_pset, false)) != WALLY_OK)
