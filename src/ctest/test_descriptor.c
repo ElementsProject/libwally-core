@@ -38,7 +38,8 @@ static struct wally_map_item g_key_map_items[] = {
     { B("key_remote"), B("03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7") },
     { B("key_revocation"), B("03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284") },
     { B("H"), B("d0721279e70d39fb4aa409b52839a0056454e3b5") }, /* HASH160(key_local) */
-    { B("mainnet_xpub"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") }
+    { B("mainnet_xpub"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") },
+    { B("uncompressed"), B("0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf") },
 };
 
 static const struct wally_map g_key_map = {
@@ -111,6 +112,8 @@ static const struct miniscript_ref_test {
     {"lltvlnlltvln:after(1231488000)", NULL}, /* too many wrappers */
     {"older(-9223372036854775808)", NULL}, /* Number too small to parse */
     {"older(9223372036854775807)", NULL}, /* Number too large to parse */
+    {"nl:0", NULL}, /* Rust-miniscript issue 63 */
+    {"or_i(pk(uncompressed),pk(uncompressed))", NULL}, /* Rust-miniscript context tests */
 };
 
 static const struct miniscript_test {
@@ -259,11 +262,25 @@ static const struct descriptor_test {
         NULL,
         "8zl0zxma"
     },{
+        "descriptor - p2wpkh (bip143 test vector)",
+        "wpkh(025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357)",
+        /* From script "76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac" */
+        "00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1",
+        NULL,
+        "pw3pfgx0"
+    },{
         "descriptor - p2sh-p2wpkh",
         "sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
         "a914cc6ffbc0bf31af759451068f90ba7a0272b6b33287",
         NULL,
         "qkrrc7je"
+    },{
+        "descriptor - p2sh-p2wpkh (bip143 test vector)",
+        "sh(wpkh(03ad1d8e89212f0b92c74d23bb710c00662ad1470198ac48c43f7d6f93a2a26873))",
+        /* From script "76a91479091972186c449eb1ded22b78e40d009bdf008988ac" */
+        "a9144733f37cf4db86fbc2efed2500b4f4e49f31202387",
+        NULL,
+        "946zr4e5"
     },{
         "descriptor - combo(p2wpkh)",
         "combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
@@ -313,11 +330,25 @@ static const struct descriptor_test {
         NULL,
         "en3tu306"
     },{
+        "descriptor - p2wsh-multi (from bitcoind's `createmultisig`)",
+        "wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626))",
+        /* From script "522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae" */
+        "00207ca68449d39a95da91c6c283871f587b74b45c1645a37f8c8337fd3d9ac4fee6",
+        NULL,
+        "5wacx8g6"
+    },{
         "descriptor - p2sh-p2wsh-multi",
         "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))",
         "a914aec509e284f909f769bb7dda299a717c87cc97ac87",
         NULL,
         "ks05yr6p"
+    },{
+        "descriptor - p2sh-p2wsh-multi (from bitcoind's `createmultisig`)",
+        "sh(wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626)))",
+        /* From script "522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae" */
+        "a91411aca2b63fbee2cdda856217a8863135b070978b87",
+        NULL,
+        "du4tngj2"
     },{
         "descriptor - p2sh multisig 15",
         /*          1     2     3     4     5     6     7     8     9     10    11    12    13    14    15 */
@@ -343,6 +374,12 @@ static const struct descriptor_test {
         "76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac",
         NULL,
         "ee44hjhg"
+    },{
+        "descriptor - p2pkh-empty-path h-hardened",
+        "pkh([d34db33f/44h/0h/0h]mainnet_xpub/)#ltv22yxk",
+        "76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac",
+        NULL,
+        "ltv22yxk" /* Note different checksum despite being the same expression as above */
     },{
         "descriptor - p2pkh-parent-derive",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*)",
@@ -925,12 +962,24 @@ static const struct descriptor_err_test {
         "pk(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
+        "descriptor - wpkh uncompressed",
+        "wpkh(uncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sh(wpkh) uncompressed",
+        "sh(wpkh(uncompressed))",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
         "descriptor - combo - any parent",
         "pk(combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - combo - multi-child",
         "combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - multi - no args",
+        "multi",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - multi - not enough children",
@@ -947,6 +996,26 @@ static const struct descriptor_err_test {
     },{
         "descriptor - multi - non-key child",
         "multi(1,1)",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sortedmulti - no args",
+        "sortedmulti",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sortedmulti - not enough children",
+        "sortedmulti(1)",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sortedmulti - no number",
+        "sortedmulti(022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc)",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sortedmulti - negative number",
+        "sortedmulti(-1,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4)",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sortedmulti - non-key child",
+        "sortedmulti(1,1)",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - addr - multi-child",
@@ -978,35 +1047,35 @@ static const struct descriptor_err_test {
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - after - non number child",
-        "wsh(after(key_1)",
+        "wsh(after(key_1))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - after - zero delay",
-        "wsh(after(0)",
+        "wsh(after(0))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - after - negative delay",
-        "wsh(after(-1)",
+        "wsh(after(-1))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - after - delay too large",
-        "wsh(after(2147483648)",
+        "wsh(after(2147483648))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - older - non number child",
-        "wsh(older(key_1)",
+        "wsh(older(key_1))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - older - zero delay",
-        "wsh(older(0)",
+        "wsh(older(0))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - older - negative delay",
-        "wsh(older(-1)",
+        "wsh(older(-1))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "descriptor - older - delay too large",
-        "wsh(older(2147483648)",
+        "wsh(older(2147483648))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "miniscript - thresh - zero required",
@@ -1019,6 +1088,14 @@ static const struct descriptor_err_test {
     },{
         "miniscript - thresh - require more than available children",
         "wsh(thresh(4,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3)))",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - wsh-pk uncompressed",
+        "wsh(pk(uncompressed))",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },{
+        "descriptor - sh(wsh-pk) uncompressed",
+        "sh(wsh(pk(uncompressed)))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "miniscript - core recursion limit",
@@ -1060,7 +1137,27 @@ static const struct descriptor_err_test {
         "miniscript - Long fingerprint",
         "pk([112233445]",
         WALLY_NETWORK_BITCOIN_MAINNET
-    }
+    },
+    /* https://github.com/rust-bitcoin/rust-miniscript/blob/master/src/descriptor/mod.rs */
+    {
+        "descriptor - unclosed brace",
+        "(",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    }, {
+        "descriptor - unclosed brace (nested)",
+        "(x()",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    }, {
+        "descriptor - invalid char",
+        "(\x7f()3",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    }, {
+        "descriptor - empty pk",
+        "pk(]",
+        WALLY_NETWORK_BITCOIN_MAINNET
+    },
+
+
     /* TODO: Add more tests for verify_x cases */
 };
 
@@ -1321,7 +1418,8 @@ int main(void)
         if (!check_parse_miniscript(
                 g_miniscript_ref_cases[i].miniscript,
                 g_miniscript_ref_cases[i].miniscript,
-                g_miniscript_ref_cases[i].scriptpubkey, NULL, 0)) {
+                g_miniscript_ref_cases[i].scriptpubkey,
+                &g_key_map, 0)) {
             printf("[%s] test failed!\n", g_miniscript_ref_cases[i].miniscript);
             tests_ok = false;
         }

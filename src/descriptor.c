@@ -327,7 +327,10 @@ static int verify_pk(ms_node *node)
 {
     if (node->child->builtin || !(node->child->kind & KIND_KEY))
         return WALLY_EINVAL;
-
+    if (node->parent && node_has_uncompressed_key(node) &&
+        node->parent->kind != KIND_DESCRIPTOR_SH &&
+        node->parent->kind != KIND_DESCRIPTOR_WSH)
+        return WALLY_EINVAL;
     node->type_properties = builtin_get(node)->type_properties;
     return WALLY_OK;
 }
