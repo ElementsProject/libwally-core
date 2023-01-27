@@ -541,6 +541,7 @@ class BIP32Tests(unittest.TestCase):
                  ('/*/*',         W, 0),          # More than one wildcard
                  ('/1*',          W, 0),          # Invalid wildcard position (1)
                  ('/*1',          W, 0),          # Invalid wildcard position (2)
+                 ('m/1',          W, 1),          # Non-zero wildcard given for non-wildcard path
                  ('/*',           W, 2147483648)] # Hardened wildcard
 
         for path, flags, wildcard in cases:
