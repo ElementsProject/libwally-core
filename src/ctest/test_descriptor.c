@@ -1248,17 +1248,23 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
                                    const struct wally_map *map_in,
                                    uint32_t flags)
 {
-    size_t written = 0;
+    size_t written, len_written;
     unsigned char script[520];
     uint32_t index = 0;
+    int ret, len_ret;
 
-    int ret = wally_miniscript_to_script(descriptor, map_in, index, flags,
-                                         script, sizeof(script), &written);
+    ret = wally_miniscript_to_script(descriptor, map_in, index, flags,
+                                     script, sizeof(script), &written);
     if (!expected)
         return check_ret(function, ret, WALLY_EINVAL);
 
+    len_ret = wally_miniscript_to_script_len(descriptor, map_in, index,
+                                             flags, &len_written);
+
     return check_ret(function, ret, WALLY_OK) &&
-           check_varbuff(function, script, written, expected);
+           check_ret(function, len_ret, WALLY_OK) &&
+           check_varbuff(function, script, written, expected) &&
+           len_written == written;
 }
 
 static bool check_descriptor_to_scriptpubkey(const char *function,
@@ -1267,10 +1273,10 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
                                              const uint32_t *bip32_index,
                                              const char *expected_checksum)
 {
-    size_t written = 0;
+    size_t written, len_written;
     unsigned char script[520];
     char *checksum, *canonical, *canonical_checksum;
-    int ret;
+    int ret, len_ret;
     uint32_t network = 0, desc_depth = 0, desc_index = 0, flags = 0;
     uint32_t index = bip32_index ? *bip32_index : 0;
 
@@ -1278,6 +1284,13 @@ static bool check_descriptor_to_scriptpubkey(const char *function,
                                            desc_depth, desc_index, flags,
                                            script, sizeof(script), &written);
     if (!check_ret(function, ret, WALLY_OK))
+        return false;
+
+    len_ret = wally_descriptor_to_scriptpubkey_len(descriptor, &g_key_map,
+                                                   index, network,
+                                                   desc_depth, desc_index,
+                                                   flags, &len_written);
+    if (!check_ret(function, len_ret, WALLY_OK) || written != len_written)
         return false;
 
     ret = wally_descriptor_get_checksum(descriptor, &g_key_map, flags, &checksum);
