@@ -442,34 +442,34 @@ static int verify_hash_type(ms_node *node)
     return WALLY_OK;
 }
 
-static uint32_t verify_andor_property(uint32_t x_property, uint32_t y_property, uint32_t z_property)
+static uint32_t verify_andor_property(uint32_t x_prop, uint32_t y_prop, uint32_t z_prop)
 {
     /* Y and Z are both B, K, or V */
     uint32_t prop = PROP_X;
     uint32_t need_x = TYPE_B | PROP_D | PROP_U;
     uint32_t need_yz = TYPE_B | TYPE_K | TYPE_V;
-    if (!(x_property & TYPE_B) || !(x_property & need_x))
+    if (!(x_prop & TYPE_B) || !(x_prop & need_x))
         return 0;
-    if (!(y_property & z_property & need_yz))
+    if (!(y_prop & z_prop & need_yz))
         return 0;
 
-    prop |= y_property & z_property & need_yz;
-    prop |= x_property & y_property & z_property & PROP_Z;
-    prop |= (x_property | (y_property & z_property)) & PROP_O;
-    prop |= y_property & z_property & PROP_U;
-    prop |= z_property & PROP_D;
-    prop |= (x_property | y_property | z_property) & (PROP_G | PROP_H | PROP_I | PROP_J);
-    if (x_property & PROP_S || y_property & PROP_F) {
-        prop |= z_property & PROP_F;
-        prop |= x_property & z_property & PROP_E;
+    prop |= y_prop & z_prop & need_yz;
+    prop |= x_prop & y_prop & z_prop & PROP_Z;
+    prop |= (x_prop | (y_prop & z_prop)) & PROP_O;
+    prop |= y_prop & z_prop & PROP_U;
+    prop |= z_prop & PROP_D;
+    prop |= (x_prop | y_prop | z_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    if (x_prop & PROP_S || y_prop & PROP_F) {
+        prop |= z_prop & PROP_F;
+        prop |= x_prop & z_prop & PROP_E;
     }
-    if (x_property & PROP_E &&
-        (x_property | y_property | z_property) & PROP_S) {
-        prop |= x_property & y_property & z_property & PROP_M;
+    if (x_prop & PROP_E &&
+        (x_prop | y_prop | z_prop) & PROP_S) {
+        prop |= x_prop & y_prop & z_prop & PROP_M;
     }
-    prop |= z_property & (x_property | y_property) & PROP_S;
-    if ((x_property & y_property & z_property & PROP_K) &&
-        !has_two_different_lock_states(x_property, y_property))
+    prop |= z_prop & (x_prop | y_prop) & PROP_S;
+    if ((x_prop & y_prop & z_prop & PROP_K) &&
+        !has_two_different_lock_states(x_prop, y_prop))
         prop |= PROP_K;
     return prop;
 }
@@ -482,24 +482,24 @@ static int verify_andor(ms_node *node)
     return node->type_properties ? WALLY_OK : WALLY_EINVAL;
 }
 
-static uint32_t verify_and_v_property(uint32_t x_property, uint32_t y_property)
+static uint32_t verify_and_v_property(uint32_t x_prop, uint32_t y_prop)
 {
     uint32_t prop = 0;
-    prop |= x_property & PROP_N;
-    prop |= y_property & (PROP_U | PROP_X);
-    prop |= x_property & y_property & (PROP_D | PROP_M | PROP_Z);
-    prop |= (x_property | y_property) & PROP_S;
-    prop |= (x_property | y_property) & (PROP_G | PROP_H | PROP_I | PROP_J);
-    if (x_property & TYPE_V)
-        prop |= y_property & (TYPE_K | TYPE_V | TYPE_B);
-    if (x_property & PROP_Z)
-        prop |= y_property & PROP_N;
-    if ((x_property | y_property) & PROP_Z)
-        prop |= (x_property | y_property) & PROP_O;
-    if (y_property & PROP_F || x_property & PROP_S)
+    prop |= x_prop & PROP_N;
+    prop |= y_prop & (PROP_U | PROP_X);
+    prop |= x_prop & y_prop & (PROP_D | PROP_M | PROP_Z);
+    prop |= (x_prop | y_prop) & PROP_S;
+    prop |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    if (x_prop & TYPE_V)
+        prop |= y_prop & (TYPE_K | TYPE_V | TYPE_B);
+    if (x_prop & PROP_Z)
+        prop |= y_prop & PROP_N;
+    if ((x_prop | y_prop) & PROP_Z)
+        prop |= (x_prop | y_prop) & PROP_O;
+    if (y_prop & PROP_F || x_prop & PROP_S)
         prop |= PROP_F;
-    if ((x_property & y_property & PROP_K) &&
-        !has_two_different_lock_states(x_property, y_property))
+    if ((x_prop & y_prop & PROP_K) &&
+        !has_two_different_lock_states(x_prop, y_prop))
         prop |= PROP_K;
 
     return prop & TYPE_MASK ? prop : 0;
@@ -606,22 +606,22 @@ static int verify_or_d(ms_node *node)
     return WALLY_OK;
 }
 
-static uint32_t verify_or_i_property(uint32_t x_property, uint32_t y_property)
+static uint32_t verify_or_i_property(uint32_t x_prop, uint32_t y_prop)
 {
     uint32_t prop = PROP_X;
-    prop |= x_property & y_property & (TYPE_V | TYPE_B | TYPE_K | PROP_U | PROP_F | PROP_S);
-    prop |= (x_property | y_property) & (PROP_G | PROP_H | PROP_I | PROP_J);
-    prop |= (x_property & y_property) & PROP_K;
+    prop |= x_prop & y_prop & (TYPE_V | TYPE_B | TYPE_K | PROP_U | PROP_F | PROP_S);
+    prop |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    prop |= (x_prop & y_prop) & PROP_K;
     if (!(prop & TYPE_MASK))
         return 0;
 
-    prop |= (x_property | y_property) & PROP_D;
-    if ((x_property & y_property) & PROP_Z)
+    prop |= (x_prop | y_prop) & PROP_D;
+    if ((x_prop & y_prop) & PROP_Z)
         prop |= PROP_O;
-    if ((x_property | y_property) & PROP_F)
-        prop |= (x_property | y_property) & PROP_E;
-    if ((x_property | y_property) & PROP_S)
-        prop |= x_property & y_property & PROP_M;
+    if ((x_prop | y_prop) & PROP_F)
+        prop |= (x_prop | y_prop) & PROP_E;
+    if ((x_prop | y_prop) & PROP_S)
+        prop |= x_prop & y_prop & PROP_M;
 
     return prop;
 }
