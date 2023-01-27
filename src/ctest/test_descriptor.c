@@ -108,12 +108,24 @@ static const struct miniscript_ref_test {
     {"c:andor(ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba),pk_h(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e),and_v(v:hash256(8a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b25),pk_h(03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a)))", "82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba876482012088aa208a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b258876a914dd100be7d9aea5721158ebde6d6a1fd8fff93bb1886776a9149fc5dbe5efdce10374a4dd4053c93af5402117188868ac"},
     {"c:andor(u:ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba),pk_h(03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729),or_i(pk_h(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01),pk_h(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)))", "6382012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87670068646376a9149652d86bedf43ad264362e6e6eba6eb764508127886776a914751e76e8199196d454941c45d1b3a323f1433bd688686776a91420d637c1a6404d2227f3561fdbaff5a680dba6488868ac"},
     {"c:or_i(andor(c:pk_h(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),pk_h(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01),pk_h(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)),pk_k(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e))", "6376a914fcd35ddacad9f2d5be5e464639441c6065e6955d88ac6476a91406afd46bcdfd22ef94ac122aa11f241244a37ecc886776a9149652d86bedf43ad264362e6e6eba6eb7645081278868672102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e68ac"},
+    {"thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(1000000000),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670400ca9a3bb16951686c936b6300670164b16951686c935187"},
+    {"thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),ac:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556),altv:after(1000000000),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac6c936b6300670400ca9a3bb16951686c936b6300670164b16951686c935287"},
+    {"thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670164b16951686c935287"},
+    {"thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac7c2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac935187"},
+    {"after(100)", "0164b1"},
+    {"after(1000000000)", "0400ca9a3bb1"},
+    {"or_b(l:after(100),al:after(1000000000))", "6300670164b1686b6300670400ca9a3bb1686c9b"},
+    {"and_b(after(100),a:after(1000000000))", "0164b16b0400ca9a3bb16c9a"},
+    {"thresh(2,ltv:after(1000000000),altv:after(100),a:pk(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65))", "6300670400ca9a3bb16951686b6300670164b16951686c936b2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6c935287"},
+
     /* Error cases */
     {"lltvlnlltvln:after(1231488000)", NULL}, /* too many wrappers */
     {"older(-9223372036854775808)", NULL}, /* Number too small to parse */
     {"older(9223372036854775807)", NULL}, /* Number too large to parse */
     {"nl:0", NULL}, /* Rust-miniscript issue 63 */
     {"or_i(pk(uncompressed),pk(uncompressed))", NULL}, /* Rust-miniscript context tests */
+    {"thresh(3,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", NULL}, /* Threshold greater than the number of policies */
+    {"thresh(0,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", NULL}, /* Threshold of 0 is not allowed */
 };
 
 static const struct miniscript_test {
@@ -141,12 +153,6 @@ static const struct miniscript_test {
         "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
         "and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960)))",
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
-    }, {
-        "miniscript - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "thresh(3,c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),sc:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),sc:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),sdv:older(12960))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c766302a032b26968935387",
-        "thresh(3,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3),sdv:older(12960))",
-        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70"
     }, {
         "miniscript - The BOLT #3 to_local policy",
         "andor(c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),older(1008),c:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
@@ -183,12 +189,6 @@ static const struct miniscript_test {
         "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
         "and_v(v:pk(key_user),or_d(pk(key_service),older(12960)))",
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
-    }, {
-        "miniscript(2) - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "thresh(3,pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),s:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),s:pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),sdv:older(12960))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c766302a032b26968935387",
-        "thresh(3,pk(key_1),s:pk(key_2),s:pk(key_3),sdv:older(12960))",
-        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70"
     }, {
         "miniscript(2) - The BOLT #3 to_local policy",
         "andor(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),older(1008),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
@@ -458,12 +458,6 @@ static const struct descriptor_test {
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced",
         NULL,
         "nwlxsraz"
-    },{
-        "descriptor - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "wsh(thresh(3,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3),sdv:older(12960)))",
-        "0020ab3551bec623130218a9ca5da0e3adb82b8569f91355a483653a49f2a2dd6e70",
-        NULL,
-        "yxfzvp79"
     },{
         "descriptor - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",
@@ -735,12 +729,6 @@ static const struct descriptor_address_test {
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
         "bc1qzfjfgmrxd9vdj530v0wdely9jsda6kunpzc7d35xj6zh2phkenkstn6ur7"
-    },{
-        "address - A 3-of-3 that turns into a 2-of-3 after 90 days",
-        "wsh(thresh(3,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3),sdv:older(12960)))",
-        0,
-        WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1q4v64r0kxyvfsyx9fefw6pcadhq4c260ezd26fqm98fyl9gkadecqy9uufs"
     },{
         "address - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",
@@ -1080,10 +1068,6 @@ static const struct descriptor_err_test {
     },{
         "miniscript - thresh - zero required",
         "wsh(thresh(0,c:pk_k(key_1),sc:pk_k(key_2),sc:pk_k(key_3)))",
-        WALLY_NETWORK_BITCOIN_MAINNET
-    },{
-        "miniscript - thresh - not enough children",
-        "wsh(thresh(2,c:pk_k(key_1),sc:pk_k(key_2)))",
         WALLY_NETWORK_BITCOIN_MAINNET
     },{
         "miniscript - thresh - require more than available children",

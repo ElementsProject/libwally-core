@@ -34,11 +34,16 @@
 #define PROP_S  0x00008000  /* Safe property */
 #define PROP_M  0x00010000  /* Nonmalleable property */
 #define PROP_X  0x00020000  /* Expensive verify */
+#define PROP_G  0x00040000  /* Relative time timelock */
+#define PROP_H  0x00080000  /* Relative height timelock */
+#define PROP_I  0x00100000  /* Absolute time timelock */
+#define PROP_J  0x00200000  /* Absolute time heightlock */
+#define PROP_K  0x00400000  /* No timelock mixing allowed */
 
-/* OP_0 properties: Bzudemsx */
-#define PROP_OP_0  (TYPE_B | PROP_Z | PROP_U | PROP_D | PROP_E | PROP_M | PROP_S | PROP_X)
-/* OP_1 properties: Bzufmx */
-#define PROP_OP_1  (TYPE_B | PROP_Z | PROP_U | PROP_F | PROP_M | PROP_X)
+/* OP_0 properties: Bzudemsxk */
+#define PROP_OP_0  (TYPE_B | PROP_Z | PROP_U | PROP_D | PROP_E | PROP_M | PROP_S | PROP_X | PROP_K)
+/* OP_1 properties: Bzufmxk */
+#define PROP_OP_1  (TYPE_B | PROP_Z | PROP_U | PROP_F | PROP_M | PROP_X | PROP_K)
 
 #define KIND_MINISCRIPT 0x01
 #define KIND_DESCRIPTOR 0x02 /* Output Descriptor */
@@ -62,8 +67,9 @@
 #define MINISCRIPT_MULTI_MAX    20
 #define REDEEM_SCRIPT_MAX_SIZE  520
 #define WITNESS_SCRIPT_MAX_SIZE 10000
-
-#define DESCRIPTOR_CHECKSUM_LENGTH  8
+#define DESCRIPTOR_SEQUENCE_LOCKTIME_TYPE_FLAG 0x00400000
+#define DESCRIPTOR_LOCKTIME_THRESHOLD          500000000
+#define DESCRIPTOR_CHECKSUM_LENGTH 8
 
 /* output descriptor */
 #define KIND_DESCRIPTOR_PK       (0x00000100 | KIND_DESCRIPTOR)
@@ -303,6 +309,14 @@ static void node_free(ms_node *node)
     }
 }
 
+static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
+{
+    return ((primary & PROP_G) && (secondary & PROP_H)) ||
+            ((primary & PROP_H) && (secondary & PROP_G)) ||
+            ((primary & PROP_I) && (secondary & PROP_J)) ||
+            ((primary & PROP_J) && (secondary & PROP_I));
+}
+
 static int verify_sh(ms_node *node)
 {
     if (node->parent || !node->child->builtin)
@@ -404,6 +418,18 @@ static int verify_delay(ms_node *node)
         return WALLY_EINVAL;
 
     node->type_properties = builtin_get(node)->type_properties;
+    if (builtin_get(node)->kind == KIND_MINISCRIPT_OLDER) {
+        if (node->child->number & DESCRIPTOR_SEQUENCE_LOCKTIME_TYPE_FLAG)
+            node->type_properties |= PROP_G;
+        else
+            node->type_properties |= PROP_H;
+    } else {
+        /* KIND_MINISCRIPT_AFTER */
+        if (node->child->number >= DESCRIPTOR_LOCKTIME_THRESHOLD)
+            node->type_properties |= PROP_I;
+        else
+            node->type_properties |= PROP_J;
+    }
     return WALLY_OK;
 }
 
@@ -432,6 +458,7 @@ static uint32_t verify_andor_property(uint32_t x_property, uint32_t y_property, 
     prop |= (x_property | (y_property & z_property)) & PROP_O;
     prop |= y_property & z_property & PROP_U;
     prop |= z_property & PROP_D;
+    prop |= (x_property | y_property | z_property) & (PROP_G | PROP_H | PROP_I | PROP_J);
     if (x_property & PROP_S || y_property & PROP_F) {
         prop |= z_property & PROP_F;
         prop |= x_property & z_property & PROP_E;
@@ -441,6 +468,9 @@ static uint32_t verify_andor_property(uint32_t x_property, uint32_t y_property, 
         prop |= x_property & y_property & z_property & PROP_M;
     }
     prop |= z_property & (x_property | y_property) & PROP_S;
+    if ((x_property & y_property & z_property & PROP_K) &&
+        !has_two_different_lock_states(x_property, y_property))
+        prop |= PROP_K;
     return prop;
 }
 
@@ -459,6 +489,7 @@ static uint32_t verify_and_v_property(uint32_t x_property, uint32_t y_property)
     prop |= y_property & (PROP_U | PROP_X);
     prop |= x_property & y_property & (PROP_D | PROP_M | PROP_Z);
     prop |= (x_property | y_property) & PROP_S;
+    prop |= (x_property | y_property) & (PROP_G | PROP_H | PROP_I | PROP_J);
     if (x_property & TYPE_V)
         prop |= y_property & (TYPE_K | TYPE_V | TYPE_B);
     if (x_property & PROP_Z)
@@ -467,6 +498,9 @@ static uint32_t verify_and_v_property(uint32_t x_property, uint32_t y_property)
         prop |= (x_property | y_property) & PROP_O;
     if (y_property & PROP_F || x_property & PROP_S)
         prop |= PROP_F;
+    if ((x_property & y_property & PROP_K) &&
+        !has_two_different_lock_states(x_property, y_property))
+        prop |= PROP_K;
 
     return prop & TYPE_MASK ? prop : 0;
 }
@@ -486,6 +520,7 @@ static int verify_and_b(ms_node *node)
     node->type_properties = PROP_U | PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_D | PROP_Z | PROP_M);
     node->type_properties |= (x_prop | y_prop) & PROP_S;
+    node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
     node->type_properties |= x_prop & PROP_N;
     if (y_prop & TYPE_W)
         node->type_properties |= x_prop & TYPE_B;
@@ -499,6 +534,9 @@ static int verify_and_b(ms_node *node)
         !(~x_prop & (PROP_S | PROP_F)) ||
         !(~y_prop & (PROP_S | PROP_F)))
         node->type_properties |= PROP_F;
+    if ((x_prop & y_prop & PROP_K) &&
+        !has_two_different_lock_states(x_prop, y_prop))
+        node->type_properties |= PROP_K;
 
     return WALLY_OK;
 }
@@ -517,6 +555,8 @@ static int verify_or_b(ms_node *node)
     const uint32_t y_prop = node->child->next->type_properties;
     node->type_properties = PROP_D | PROP_U | PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_S | PROP_E);
+    node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    node->type_properties |= (x_prop & y_prop) & PROP_K;
     if (!(~x_prop & (TYPE_B | PROP_D)) &&
         !(~y_prop & (TYPE_W | PROP_D)))
         node->type_properties |= TYPE_B;
@@ -535,6 +575,8 @@ static int verify_or_c(ms_node *node)
     const uint32_t y_prop = node->child->next->type_properties;
     node->type_properties = PROP_F | PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_S);
+    node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    node->type_properties |= (x_prop & y_prop) & PROP_K;
     if (!(~x_prop & (TYPE_B | PROP_D | PROP_U)))
         node->type_properties |= y_prop & TYPE_V;
     if (y_prop & PROP_Z)
@@ -552,6 +594,8 @@ static int verify_or_d(ms_node *node)
     node->type_properties = PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_E | PROP_S);
     node->type_properties |= y_prop & (PROP_U | PROP_F | PROP_D);
+    node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    node->type_properties |= (x_prop & y_prop) & PROP_K;
     if (!(~x_prop & (TYPE_B | PROP_D | PROP_U)))
         node->type_properties |= y_prop & TYPE_B;
     if (y_prop & PROP_Z)
@@ -566,6 +610,8 @@ static uint32_t verify_or_i_property(uint32_t x_property, uint32_t y_property)
 {
     uint32_t prop = PROP_X;
     prop |= x_property & y_property & (TYPE_V | TYPE_B | TYPE_K | PROP_U | PROP_F | PROP_S);
+    prop |= (x_property | y_property) & (PROP_G | PROP_H | PROP_I | PROP_J);
+    prop |= (x_property & y_property) & PROP_K;
     if (!(prop & TYPE_MASK))
         return 0;
 
@@ -591,6 +637,7 @@ static int verify_thresh(ms_node *node)
 {
     ms_node *top = top = node->child, *child;
     int64_t count = 0, num_s = 0, args = 0;
+    uint32_t acc_tl = PROP_K, tmp_acc_tl;
     bool all_e = true, all_m = true;
 
     if (!top || top->builtin || top->kind != KIND_NUMBER)
@@ -611,9 +658,17 @@ static int verify_thresh(ms_node *node)
         if (child->type_properties & PROP_Z)
             args += (~child->type_properties & PROP_O) ? 2 : 1;
 
+
+        tmp_acc_tl = ((acc_tl | child->type_properties) & (PROP_G | PROP_H | PROP_I | PROP_J));
+        if ((acc_tl & child->type_properties) & PROP_K) {
+            if (top->number <= 1 || (top->number > 1 &&
+                !has_two_different_lock_states(acc_tl, child->type_properties)))
+                tmp_acc_tl |= PROP_K;
+        }
+        acc_tl = tmp_acc_tl;
         ++count;
     }
-    if (count < 3 || top->number < 1 || top->number >= count)
+    if (top->number < 1 || top->number > count)
         return WALLY_EINVAL;
 
     node->type_properties = TYPE_B | PROP_D | PROP_U;
@@ -627,6 +682,7 @@ static int verify_thresh(ms_node *node)
         node->type_properties |= PROP_M;
     if (num_s >= count - top->number + 1)
         node->type_properties |= PROP_S;
+    node->type_properties |= acc_tl;
 
     return WALLY_OK;
 }
@@ -639,7 +695,7 @@ static int node_verify_wrappers(ms_node *node)
     if (node->wrapper_str[0] == '\0')
         return WALLY_OK; /* No wrappers */
 
-    /* Validate the nodes wrappers in reserve order */
+    /* Validate the nodes wrappers in reverse order */
     for (i = strlen(node->wrapper_str); i != 0; --i) {
         const uint32_t x_prop = *properties;
 #define PROP_REQUIRE(props) if ((x_prop & (props)) != (props)) return WALLY_EINVAL
@@ -650,17 +706,20 @@ static int node_verify_wrappers(ms_node *node)
         case 'a':
             PROP_REQUIRE(TYPE_B);
             PROP_CHANGE_TYPE(TYPE_B, TYPE_W);
-            PROP_CHANGE(PROP_U | PROP_D | PROP_F | PROP_E | PROP_M | PROP_S, PROP_X);
+            PROP_CHANGE(PROP_U | PROP_D | PROP_F | PROP_E | PROP_M | PROP_S |
+                        PROP_G | PROP_H | PROP_I | PROP_J | PROP_K, PROP_X);
             break;
         case 's':
             PROP_REQUIRE(TYPE_B | PROP_O);
             PROP_CHANGE_TYPE(TYPE_B | PROP_O, TYPE_W);
-            PROP_CHANGE(PROP_U | PROP_D | PROP_F | PROP_E | PROP_M | PROP_S | PROP_X, 0);
+            PROP_CHANGE(PROP_U | PROP_D | PROP_F | PROP_E | PROP_M | PROP_S |
+                        PROP_X | PROP_G | PROP_H | PROP_I | PROP_J | PROP_K, 0);
             break;
         case 'c':
             PROP_REQUIRE(TYPE_K);
             PROP_CHANGE_TYPE(TYPE_K, TYPE_B);
-            PROP_CHANGE(PROP_O | PROP_N | PROP_D | PROP_F | PROP_E | PROP_M, PROP_U | PROP_S);
+            PROP_CHANGE(PROP_O | PROP_N | PROP_D | PROP_F | PROP_E | PROP_M |
+                        PROP_G | PROP_H | PROP_I | PROP_J | PROP_K, PROP_U | PROP_S);
             break;
         case 't':
             *properties = verify_and_v_property(x_prop, PROP_OP_1);
@@ -671,7 +730,8 @@ static int node_verify_wrappers(ms_node *node)
         case 'd':
             PROP_REQUIRE(TYPE_V | PROP_Z);
             PROP_CHANGE_TYPE(TYPE_V | PROP_Z, TYPE_B);
-            PROP_CHANGE(PROP_M | PROP_S, PROP_N | PROP_U | PROP_D | PROP_X);
+            PROP_CHANGE(PROP_M | PROP_S, PROP_N | PROP_D | PROP_X |
+                        PROP_G | PROP_H | PROP_I | PROP_J | PROP_K);
             if (x_prop & PROP_Z)
                 *properties |= PROP_O;
             if (x_prop & PROP_F) {
@@ -682,19 +742,21 @@ static int node_verify_wrappers(ms_node *node)
         case 'v':
             PROP_REQUIRE(TYPE_B);
             PROP_CHANGE_TYPE(TYPE_B, TYPE_V);
-            PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_M | PROP_S, PROP_F | PROP_X);
+            PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_M | PROP_S | PROP_G |
+                        PROP_H | PROP_I | PROP_J | PROP_K, PROP_F | PROP_X);
             break;
         case 'j':
             PROP_REQUIRE(TYPE_B | PROP_N);
-            *properties &= TYPE_MASK | PROP_O | PROP_U | PROP_M | PROP_S;
-            *properties |= PROP_N | PROP_D | PROP_X;
+            PROP_CHANGE(PROP_O | PROP_U | PROP_M | PROP_S | PROP_N | PROP_D |
+                        PROP_X, PROP_N | PROP_D | PROP_X);
             if (x_prop & PROP_F) {
                 PROP_CHANGE(~PROP_F, PROP_E);
             }
             break;
         case 'n':
             PROP_REQUIRE(TYPE_B);
-            PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_D | PROP_F | PROP_E | PROP_M | PROP_S, PROP_X);
+            PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_D | PROP_F | PROP_E |
+                        PROP_M | PROP_S | PROP_N | PROP_D | PROP_X, PROP_X);
             break;
         case 'l':
             *properties = verify_or_i_property(PROP_OP_0, x_prop);
@@ -720,6 +782,7 @@ static int node_verify_wrappers(ms_node *node)
 
     if (((*properties & PROP_Z) && (*properties & PROP_O)) ||
         ((*properties & PROP_N) && (*properties & PROP_Z)) ||
+        ((*properties & TYPE_W) && (*properties & PROP_N)) ||
         ((*properties & TYPE_V) && (*properties & PROP_D)) ||
         ((*properties & TYPE_K) && !(*properties & PROP_U)) ||
         ((*properties & TYPE_V) && (*properties & PROP_U)) ||
@@ -1327,8 +1390,6 @@ static int generate_wrappers(ms_node *node,
                 *last = OP_CHECKSIGVERIFY;
             else if (*last == OP_CHECKMULTISIG)
                 *last = OP_CHECKMULTISIGVERIFY;
-            else if (*last == OP_CHECKMULTISIG)
-                *last = OP_CHECKMULTISIGVERIFY;
             else {
                 WRAP_REQUIRE(1, 0);
                 script[*written] = OP_VERIFY;
@@ -1384,12 +1445,12 @@ static const struct ms_builtin_t g_builtins[] = {
     }, {   /* c:pk_k */
         I_NAME("pk"),
         KIND_DESCRIPTOR_PK | KIND_MINISCRIPT_PK,
-        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X,
+        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X | PROP_K,
         1, verify_pk, generate_pk
     }, {   /* c:pk_h */
         I_NAME("pkh"),
         KIND_DESCRIPTOR_PKH | KIND_MINISCRIPT_PKH,
-        TYPE_B | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X,
+        TYPE_B | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X | PROP_K,
         1, verify_pk, generate_pkh
     }, {
         I_NAME("wpkh"),
@@ -1404,7 +1465,7 @@ static const struct ms_builtin_t g_builtins[] = {
     }, {
         I_NAME("multi"),
         KIND_DESCRIPTOR_MULTI | KIND_MINISCRIPT_MULTI,
-        TYPE_B | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S,
+        TYPE_B | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_K,
         0xffffffff, verify_multi, generate_multi
     }, {
         I_NAME("sortedmulti"),
@@ -1426,42 +1487,42 @@ static const struct ms_builtin_t g_builtins[] = {
     {
         I_NAME("pk_k"),
         KIND_MINISCRIPT_PK_K,
-        TYPE_K | PROP_O | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X,
+        TYPE_K | PROP_O | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X | PROP_K,
         1, verify_pk, generate_pk_k
     }, {
         I_NAME("pk_h"),
         KIND_MINISCRIPT_PK_H,
-        TYPE_K | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X,
+        TYPE_K | PROP_N | PROP_D | PROP_U | PROP_E | PROP_M | PROP_S | PROP_X | PROP_K,
         1, verify_pk, generate_pk_h
     }, {
         I_NAME("older"),
         KIND_MINISCRIPT_OLDER,
-        TYPE_B | PROP_Z | PROP_F | PROP_M | PROP_X,
+        TYPE_B | PROP_Z | PROP_F | PROP_M | PROP_X | PROP_K,
         1, verify_delay, generate_delay
     }, {
         I_NAME("after"),
         KIND_MINISCRIPT_AFTER,
-        TYPE_B | PROP_Z | PROP_F | PROP_M | PROP_X,
+        TYPE_B | PROP_Z | PROP_F | PROP_M | PROP_X | PROP_K,
         1, verify_delay, generate_delay
     }, {
         I_NAME("sha256"),
         KIND_MINISCRIPT_SHA256,
-        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M,
+        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M | PROP_K,
         1, verify_hash_type, generate_hash_type
     }, {
         I_NAME("hash256"),
         KIND_MINISCRIPT_HASH256,
-        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M,
+        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M | PROP_K,
         1, verify_hash_type, generate_hash_type
     }, {
         I_NAME("ripemd160"),
         KIND_MINISCRIPT_RIPEMD160,
-        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M,
+        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M | PROP_K,
         1, verify_hash_type, generate_hash_type
     }, {
         I_NAME("hash160"),
         KIND_MINISCRIPT_HASH160,
-        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M,
+        TYPE_B | PROP_O | PROP_N | PROP_D | PROP_U | PROP_M | PROP_K,
         1, verify_hash_type, generate_hash_type
     }, {
         I_NAME("andor"),
