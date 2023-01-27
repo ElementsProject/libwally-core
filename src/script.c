@@ -22,6 +22,8 @@
 
 #define ALL_SCRIPT_HASH_FLAGS (WALLY_SCRIPT_HASH160 | WALLY_SCRIPT_SHA256)
 
+#define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
+
 static bool script_flags_ok(uint32_t flags, uint32_t extra_flags)
 {
     if ((flags & ~(ALL_SCRIPT_HASH_FLAGS | extra_flags)) ||
@@ -608,7 +610,6 @@ int wally_scriptsig_multisig_from_bytes(
     const uint32_t *sighash, size_t sighash_len, uint32_t flags,
     unsigned char *bytes_out, size_t len, size_t *written)
 {
-#define MAX_DER (EC_SIGNATURE_DER_MAX_LEN + 1)
     unsigned char der_buff[15 * MAX_DER], *p = bytes_out;
     size_t der_len[15];
     size_t i, required = 0, n_sigs = bytes_len / EC_SIGNATURE_LEN;
@@ -1255,7 +1256,8 @@ int wally_witness_multisig_from_bytes(
         !witness || !script_is_op_n(script[0], false, &n_sigs))
         return WALLY_EINVAL;
 
-    buf_len = n_sigs * (EC_SIGNATURE_DER_MAX_LEN + 2) + script_len;
+    /* OP_O ([sig + sighash_byte])+ [prevout_script] */
+    buf_len = 1 + (1 + MAX_DER) * n_sigs + script_get_push_size(script_len);
     if (!(scriptsig = wally_malloc(buf_len)))
         return WALLY_ENOMEM;
 
@@ -1263,9 +1265,13 @@ int wally_witness_multisig_from_bytes(
                                               bytes, bytes_len,
                                               sighash, sighash_len, flags,
                                               scriptsig, buf_len, &scriptsig_len);
-    if (ret == WALLY_OK)
-        ret = scriptsig_to_witness(scriptsig, scriptsig_len, witness);
+    if (ret == WALLY_OK) {
+        if (scriptsig_len > buf_len)
+            ret = WALLY_ERROR; /* Required length mismatch, should not happen! */
+        else
+            ret = scriptsig_to_witness(scriptsig, scriptsig_len, witness);
+    }
 
-    clear_and_free(scriptsig, scriptsig_len);
+    clear_and_free(scriptsig, buf_len);
     return ret;
 }
