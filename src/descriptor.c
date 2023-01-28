@@ -139,6 +139,8 @@ struct ms_builtin_t {
 };
 
 struct ms_context {
+    char *src; /* The canonical source script */
+    size_t src_len; /* Length of src */
     unsigned char *script;
     size_t script_len;
     uint32_t child_num; /* Start child number for derivation */
@@ -2053,17 +2055,22 @@ static int node_generate_script(ms_node *node,
  * - addresses == NULL: Generate a single script
  * - addresses != NULL: Generate a range of scripts and then their addresses
  */
-static int parse_miniscript(const char *str, size_t str_len,
+static int parse_miniscript(const char *miniscript, const struct wally_map *vars_in,
                             uint32_t flags, uint32_t kind,
                             const struct addr_ver_t *addr_ver,
                             uint32_t descriptor_depth, uint32_t descriptor_index,
                             struct ms_context *ctx, char **addresses)
 {
-    int ret;
     size_t i;
     ms_node *top_node = NULL;
+    int ret;
 
-    if (!str || !str_len || flags & ~WALLY_MINISCRIPT_TAPSCRIPT || (addresses && !addr_ver))
+    ret = wally_descriptor_canonicalize(miniscript, vars_in, 0, &ctx->src);
+    if (ret != WALLY_OK)
+        return ret;
+    ctx->src_len = strlen(ctx->src);
+
+    if (flags & ~WALLY_MINISCRIPT_TAPSCRIPT || (addresses && !addr_ver))
         return WALLY_EINVAL;
 
     if (ctx->child_num >= BIP32_INITIAL_HARDENED_CHILD ||
@@ -2074,7 +2081,7 @@ static int parse_miniscript(const char *str, size_t str_len,
         return WALLY_ENOMEM;
     ctx->script_len = DESCRIPTOR_MAX_SIZE;
 
-    ret = analyze_miniscript(str, str_len, kind, addr_ver, flags, NULL, NULL, &top_node);
+    ret = analyze_miniscript(ctx->src, ctx->src_len, kind, addr_ver, flags, NULL, NULL, &top_node);
     if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
         (!top_node->builtin || !(top_node->kind & KIND_DESCRIPTOR)))
         ret = WALLY_EINVAL;
@@ -2112,25 +2119,23 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
                                uint32_t child_num, uint32_t flags,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
-    struct ms_context ctx = { NULL, 0, child_num, 1 };
-    char *str;
+    struct ms_context ctx = { NULL, 0, NULL, 0, child_num, 1 };
     int ret;
 
     if (written)
         *written = 0;
 
-    if (!miniscript || !bytes_out || !len || !written)
+    if (!bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    if ((ret = wally_descriptor_canonicalize(miniscript, vars_in, 0, &str)) == WALLY_OK)
-        ret = parse_miniscript(str, strlen(str), flags, KIND_MINISCRIPT, NULL, 0, 0, &ctx, NULL);
+    ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, 0, 0, &ctx, NULL);
     if (ret == WALLY_OK) {
         *written = ctx.script_len;
         if (ctx.script_len <= len)
             memcpy(bytes_out, ctx.script, ctx.script_len);
     }
     clear_and_free(ctx.script, ctx.script_len);
-    wally_free_string(str);
+    wally_free_string(ctx.src);
     return ret;
 }
 
@@ -2149,8 +2154,7 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
                                      unsigned char *bytes_out, size_t len, size_t *written)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
-    struct ms_context ctx = { NULL, 0, child_num, 1 };
-    char *str;
+    struct ms_context ctx = { NULL, 0, NULL, 0, child_num, 1 };
     int ret;
 
     if (written)
@@ -2159,16 +2163,15 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
     if (!descriptor || (network && !addr_ver) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    if ((ret = wally_descriptor_canonicalize(descriptor, vars_in, 0, &str)) == WALLY_OK)
-        ret = parse_miniscript(str, strlen(str), flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                               addr_ver, depth, index, &ctx, NULL);
+    ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
+                           addr_ver, depth, index, &ctx, NULL);
     if (ret == WALLY_OK) {
         *written = ctx.script_len;
         if (ctx.script_len <= len)
             memcpy(bytes_out, ctx.script, ctx.script_len);
     }
     clear_and_free(ctx.script, ctx.script_len);
-    wally_free_string(str);
+    wally_free_string(ctx.src);
     return ret;
 }
 
@@ -2186,9 +2189,8 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
                                   uint32_t child_num, uint32_t network, uint32_t flags,
                                   char **addresses, size_t num_addresses)
 {
-    char *str;
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
-    struct ms_context ctx = { NULL, 0, child_num, num_addresses };
+    struct ms_context ctx = { NULL, 0, NULL, 0, child_num, num_addresses };
     int ret;
 
     if (addresses && num_addresses)
@@ -2197,12 +2199,11 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
     if (!descriptor || !addr_ver || !addresses || !num_addresses)
         return WALLY_EINVAL;
 
-    if ((ret = wally_descriptor_canonicalize(descriptor, vars_in, 0, &str)) == WALLY_OK)
-        ret = parse_miniscript(str, strlen(str), flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                               addr_ver, 0, 0, &ctx, addresses);
+    ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
+                           addr_ver, 0, 0, &ctx, addresses);
 
     clear_and_free(ctx.script, ctx.script_len);
-    wally_free_string(str);
+    wally_free_string(ctx.src);
     return ret;
 }
 
