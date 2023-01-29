@@ -1417,7 +1417,7 @@ int main(void)
                 g_miniscript_ref_cases[i].miniscript,
                 g_miniscript_ref_cases[i].scriptpubkey,
                 &g_key_map, 0)) {
-            printf("[%s] test failed!\n", g_miniscript_ref_cases[i].miniscript);
+            printf("[%s] miniscript_ref test failed!\n", g_miniscript_ref_cases[i].miniscript);
             tests_ok = false;
         }
     }
@@ -1427,7 +1427,7 @@ int main(void)
                 g_miniscript_cases[i].name,
                 g_miniscript_cases[i].descriptor,
                 g_miniscript_cases[i].scriptpubkey, NULL, 0)) {
-            printf("[%s] test failed!\n", g_miniscript_cases[i].name);
+            printf("[%s] miniscript test failed!\n", g_miniscript_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1438,7 +1438,7 @@ int main(void)
                 g_miniscript_taproot_cases[i].miniscript,
                 g_miniscript_taproot_cases[i].scriptpubkey,
                 NULL, g_miniscript_taproot_cases[i].flags)) {
-            printf("[%s] test failed!\n", g_miniscript_taproot_cases[i].miniscript);
+            printf("[%s] miniscript_taproot test failed!\n", g_miniscript_taproot_cases[i].miniscript);
             tests_ok = false;
         }
     }
@@ -1450,7 +1450,7 @@ int main(void)
                 g_descriptor_cases[i].scriptpubkey,
                 g_descriptor_cases[i].bip32_index,
                 g_descriptor_cases[i].checksum)) {
-            printf("[%s] test failed!\n", g_descriptor_cases[i].name);
+            printf("[%s] descriptor test failed!\n", g_descriptor_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1462,7 +1462,7 @@ int main(void)
                 g_descriptor_depth_cases[i].depth,
                 g_descriptor_depth_cases[i].index,
                 g_descriptor_depth_cases[i].scriptpubkey)) {
-            printf("[%s] keylist test failed!\n", g_descriptor_depth_cases[i].name);
+            printf("[%s] descriptor_depth test failed!\n", g_descriptor_depth_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1474,7 +1474,7 @@ int main(void)
                 g_descriptor_address_cases[i].bip32_index,
                 g_descriptor_address_cases[i].network,
                 g_descriptor_address_cases[i].address)) {
-            printf("[%s] test failed!\n", g_descriptor_address_cases[i].name);
+            printf("[%s] descriptor_address test failed!\n", g_descriptor_address_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1487,7 +1487,7 @@ int main(void)
                 g_descriptor_addresses_cases[i].network,
                 g_descriptor_addresses_cases[i].address_list,
                 g_descriptor_addresses_cases[i].num_addresses)) {
-            printf("[%s] test failed!\n", g_descriptor_addresses_cases[i].name);
+            printf("[%s] descriptor_addresses test failed!\n", g_descriptor_addresses_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1497,7 +1497,7 @@ int main(void)
                 g_descriptor_err_cases[i].name,
                 g_descriptor_err_cases[i].descriptor,
                 g_descriptor_err_cases[i].network)) {
-            printf("[%s] test failed!\n", g_descriptor_err_cases[i].name);
+            printf("[%s] descriptor_err test failed!\n", g_descriptor_err_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1507,6 +1507,7 @@ int main(void)
                 g_address_err_cases[i].name,
                 g_address_err_cases[i].descriptor,
                 g_address_err_cases[i].network)) {
+            printf("[%s] address_err test failed!\n", g_descriptor_err_cases[i].name);
             tests_ok = false;
         }
     }
