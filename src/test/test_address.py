@@ -21,6 +21,8 @@ NETWORK_LIQUID_MAINNET  = 0x03
 NETWORK_LIQUID_REGTEST  = 0x04
 NETWORK_LIQUID_TESTNET  = 0x05
 
+SCRIPTPUBKEY_P2PKH_LEN = 25
+SCRIPTPUBKEY_P2SH_LEN = 23
 
 # Vector from test_bip32.py. We only need an xpub to derive addresses.
 vec = {
@@ -125,11 +127,12 @@ class AddressTests(unittest.TestCase):
         self.assertEqual(new_addr, vec[path]['address_segwit'])
 
         # Parse legacy address (P2PKH):
-        out, out_len = make_cbuffer('00' * (25))
+        out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2PKH_LEN)
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_legacy']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_legacy']))
+        self.assertEqual(written, SCRIPTPUBKEY_P2PKH_LEN)
+        self.assertEqual(h(out[:written]), utf8(vec[path]['scriptpubkey_legacy']))
 
         # Get address for P2PKH scriptPubKey
         ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
@@ -137,11 +140,11 @@ class AddressTests(unittest.TestCase):
         self.assertEqual(new_addr, vec[path]['address_legacy'])
 
         # Parse wrapped SegWit address (P2SH_P2WPKH):
-        out, out_len = make_cbuffer('00' * (25))
         ret, written = wally_address_to_scriptpubkey(utf8(vec[path]['address_p2sh_segwit']), network, out, out_len)
 
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
+        self.assertEqual(written, SCRIPTPUBKEY_P2SH_LEN)
+        self.assertEqual(h(out[:written]), utf8(vec[path]['scriptpubkey_p2sh_segwit']))
 
         # Get address for P2SH scriptPubKey
         ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
@@ -152,7 +155,7 @@ class AddressTests(unittest.TestCase):
         out, out_len = make_cbuffer('00' * (100))
         ret, written = wally_addr_segwit_to_bytes(utf8(vec[path]['address_segwit']), utf8(bech32_prefix), 0, out, out_len)
         self.assertEqual(ret, WALLY_OK)
-        self.assertEqual(h(out[0:written]), utf8(vec[path]['scriptpubkey_segwit']))
+        self.assertEqual(h(out[:written]), utf8(vec[path]['scriptpubkey_segwit']))
 
     def test_address_scriptpubkey_liquid(self):
         """Check that addresses can be converted to and from scriptpubkeys for Liquid"""
@@ -164,7 +167,7 @@ class AddressTests(unittest.TestCase):
             out, out_len = make_cbuffer('00' * (100))
             ret, written = wally_address_to_scriptpubkey(utf8(addr), network, out, out_len)
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(h(out[0:written]), utf8(scriptpubkey))
+            self.assertEqual(h(out[:written]), utf8(scriptpubkey))
 
             ret, new_addr = wally_scriptpubkey_to_address(out, written, network)
             self.assertEqual(ret, WALLY_OK)

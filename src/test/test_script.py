@@ -98,13 +98,13 @@ class ScriptTests(unittest.TestCase):
         # Invalid args
         out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2PKH_LEN)
         invalid_args = [
-            (None, PK_LEN, SCRIPT_HASH160, out, out_len), # Null bytes
-            (PK, 0, SCRIPT_HASH160, out, out_len), # Empty bytes
-            (PK, PK_LEN, SCRIPT_SHA256, out, out_len), # Unsupported flags
-            (PK, PK_LEN, SCRIPT_HASH160, None, out_len), # Null output
-            (PK, PK_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2PKH_LEN-1), # Short output len
-            (PK, PK_LEN, 0, out, out_len), # Pubkey w/o SCRIPT_HASH160
-            (PKU, PKU_LEN, 0, out, out_len), # Uncompressed pubkey w/o SCRIPT_HASH160
+            (None, PK_LEN, SCRIPT_HASH160, out,  out_len), # Null bytes
+            (PK,  0,       SCRIPT_HASH160, out,  out_len), # Empty bytes
+            (PK,  PK_LEN,  SCRIPT_SHA256,  out,  out_len), # Unsupported flags
+            (PK,  PK_LEN,  SCRIPT_HASH160, None, out_len), # Null output
+            (PK,  PK_LEN,  SCRIPT_HASH160, out,  0),       # Empty output
+            (PK,  PK_LEN,  0,              out,  out_len), # Pubkey w/o SCRIPT_HASH160
+            (PKU, PKU_LEN, 0,              out,  out_len), # Uncompressed pubkey w/o SCRIPT_HASH160
         ]
         for args in invalid_args:
             ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
@@ -123,6 +123,11 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(args[3], exp_script)
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
+
+        # Calling with a too-short output buffer returns the required length
+        args = (PK, PK_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2PKH_LEN-1) # Short output len
+        ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
+        self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
 
     def test_scriptpubkey_p2sh_from_bytes(self):
         """Tests for creating p2sh scriptPubKeys"""

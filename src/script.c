@@ -430,9 +430,13 @@ int wally_scriptpubkey_p2pkh_from_bytes(
         *written = 0;
 
     if (!bytes || !bytes_len || !script_flags_ok(flags, 0) ||
-        (flags & WALLY_SCRIPT_SHA256) || !bytes_out ||
-        len < WALLY_SCRIPTPUBKEY_P2PKH_LEN || !written)
+        (flags & WALLY_SCRIPT_SHA256) || !bytes_out || !len  || !written)
         return WALLY_EINVAL;
+
+    if (len < WALLY_SCRIPTPUBKEY_P2PKH_LEN) {
+        *written = WALLY_SCRIPTPUBKEY_P2PKH_LEN;
+        return WALLY_OK; /* Tell caller whats needed */
+    }
 
     if (flags & WALLY_SCRIPT_HASH160) {
         if (bytes_len != EC_PUBLIC_KEY_LEN && bytes_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
