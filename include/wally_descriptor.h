@@ -40,7 +40,7 @@ WALLY_CORE_API int wally_descriptor_canonicalize(
  *
  * :param miniscript: Miniscript string.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive.
+ * :param child_num: The BIP32 child number to derive, or zero for static scripts.
  * :param flags: Flags controlling the type of script to create. Use one of
  *|    ``WALLY_MINISCRIPT_WITNESS_SCRIPT`` or ``WALLY_MINISCRIPT_TAPSCRIPT``.
  * :param written: Destination for the resulting script length.
@@ -61,10 +61,10 @@ WALLY_CORE_API int wally_miniscript_to_script_len(
  *
  * :param miniscript: Miniscript string.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive.
+ * :param child_num: The BIP32 child number to derive, or zero for static scripts.
  * :param flags: Flags controlling the type of script to create. Use one of
  *|    ``WALLY_MINISCRIPT_WITNESS_SCRIPT`` or ``WALLY_MINISCRIPT_TAPSCRIPT``.
- * :param bytes_out: Destination for the resulting scriptPubKey.
+ * :param bytes_out: Destination for the resulting script.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
@@ -82,7 +82,7 @@ WALLY_CORE_API int wally_miniscript_to_script(
  *
  * :param descriptor: Output descriptor.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive.
+ * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
  * :param depth: Number of the descriptor depth. Default is 0.
  * :param index: Number of the descriptor index. Default is 0.
@@ -108,7 +108,7 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
  *
  * :param descriptor: Output descriptor.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive.
+ * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
  * :param depth: Number of the descriptor depth. Default is 0.
  * :param index: Number of the descriptor index. Default is 0.
@@ -134,7 +134,7 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
  *
  * :param descriptor: Output descriptor.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive.
+ * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting addresss.
@@ -153,7 +153,7 @@ WALLY_CORE_API int wally_descriptor_to_address(
  *
  * :param descriptor: Output descriptor.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The first BIP32 child number to derive.
+ * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting addresses.
