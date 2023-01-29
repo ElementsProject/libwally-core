@@ -2018,47 +2018,36 @@ static int analyze_miniscript(const char *str, size_t str_len, uint32_t kind,
     return ret;
 }
 
-static int node_generate_script(ms_node *node,
-                                uint32_t child_num, uint32_t depth, uint32_t index,
-                                unsigned char *script, size_t script_len, size_t *written)
+static int node_generate_script(struct ms_context *ctx, uint32_t child_num,
+                                uint32_t depth, uint32_t index,
+                                size_t *written)
 {
+    ms_node *node = ctx->top_node, *parent;
+    size_t i;
     int ret;
-    unsigned char *buf;
-    size_t output_len = 0;
-    ms_node *p = node, *parent;
-    uint32_t count;
 
     *written = 0;
+    if (!ctx->script) {
+        if (!(ctx->script = wally_malloc(DESCRIPTOR_MAX_SIZE)))
+            return WALLY_ENOMEM;
+        ctx->script_len = DESCRIPTOR_MAX_SIZE;
+    }
 
-    for (count = 0; count < depth; ++count) {
-        if (!p->child)
+    for (i = 0; i < depth; ++i) {
+        if (!node->child)
             return WALLY_EINVAL;
-        p = p->child;
+        node = node->child;
     }
-    for (count = 0; count < index; ++count) {
-        if (!p->next)
+    for (i = 0; i < index; ++i) {
+        if (!node->next)
             return WALLY_EINVAL;
-        p = p->next;
+        node = node->next;
     }
 
-    if (!(buf = wally_malloc(DESCRIPTOR_MAX_SIZE)))
-        return WALLY_ENOMEM;
-
-    parent = p->parent;
-    p->parent = NULL;
-    ret = generate_script(p, child_num, buf, DESCRIPTOR_MAX_SIZE, &output_len);
-    p->parent = parent;
-
-    if (ret == WALLY_OK) {
-        *written = output_len;
-        if (output_len > script_len) {
-            /* return WALLY_OK, but data is not written. */
-        } else {
-            memcpy(script, buf, output_len);
-        }
-    }
-
-    clear_and_free(buf, DESCRIPTOR_MAX_SIZE);
+    parent = node->parent;
+    node->parent = NULL;
+    ret = generate_script(node, child_num, ctx->script, ctx->script_len, written);
+    node->parent = parent;
     return ret;
 }
 
@@ -2097,10 +2086,6 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
     ctx->child_num = child_num;
     ctx->num_derivations = num_addresses;
 
-    if (!(ctx->script = wally_malloc(DESCRIPTOR_MAX_SIZE)))
-        return WALLY_ENOMEM;
-    ctx->script_len = DESCRIPTOR_MAX_SIZE;
-
     ret = analyze_miniscript(ctx->src, ctx->src_len, kind, addr_ver, flags, NULL, NULL, &ctx->top_node);
     if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
         (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
@@ -2124,8 +2109,7 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
 
     ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, child_num, NULL, 1, &ctx);
     if (ret == WALLY_OK) {
-        ret = node_generate_script(ctx->top_node, child_num, 0, 0,
-                                   ctx->script, ctx->script_len, written);
+        ret = node_generate_script(ctx, child_num, 0, 0, written);
         if (ret == WALLY_OK && *written <= len)
             memcpy(bytes_out, ctx->script, *written);
     }
@@ -2160,8 +2144,7 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
                            addr_ver, child_num, NULL, 1, &ctx);
     if (ret == WALLY_OK) {
-        ret = node_generate_script(ctx->top_node, child_num, depth, index,
-                                   ctx->script, ctx->script_len, written);
+        ret = node_generate_script(ctx, child_num, depth, index, written);
         if (ret == WALLY_OK && *written <= len)
             memcpy(bytes_out, ctx->script, *written);
     }
@@ -2195,8 +2178,7 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
                            addr_ver, child_num, addresses, num_addresses, &ctx);
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
-        ret = node_generate_script(ctx->top_node, child_num + i, 0, 0,
-                                   ctx->script, ctx->script_len, &written);
+        ret = node_generate_script(ctx, child_num + i, 0, 0, &written);
         if (ret == WALLY_OK) {
             if (written > ctx->script_len)
                 ret = WALLY_ERROR;
