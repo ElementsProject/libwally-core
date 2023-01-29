@@ -141,21 +141,12 @@ struct ms_builtin_t {
 struct ms_context {
     char *src; /* The canonical source script */
     size_t src_len; /* Length of src */
+    ms_node *top_node; /* The first node of the parse tree */
     unsigned char *script;
     size_t script_len;
     uint32_t child_num; /* Start child number for derivation */
     size_t num_derivations; /* How many incrementing children to derive */
 };
-
-static int wally_free_miniscript(struct ms_context *ctx)
-{
-    if (ctx) {
-        clear_and_free(ctx->script, ctx->script_len);
-        wally_free_string(ctx->src);
-        clear_and_free(ctx, sizeof(*ctx));
-    }
-    return WALLY_OK;
-}
 
 struct multisig_sort_data_t {
     size_t pubkey_len;
@@ -327,6 +318,17 @@ static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
             ((primary & PROP_H) && (secondary & PROP_G)) ||
             ((primary & PROP_I) && (secondary & PROP_J)) ||
             ((primary & PROP_J) && (secondary & PROP_I));
+}
+
+static int wally_free_miniscript(struct ms_context *ctx)
+{
+    if (ctx) {
+        clear_and_free(ctx->script, ctx->script_len);
+        wally_free_string(ctx->src);
+        node_free(ctx->top_node);
+        clear_and_free(ctx, sizeof(*ctx));
+    }
+    return WALLY_OK;
 }
 
 static int verify_sh(ms_node *node)
@@ -2068,15 +2070,21 @@ static int node_generate_script(ms_node *node,
 static int parse_miniscript(const char *miniscript, const struct wally_map *vars_in,
                             uint32_t flags, uint32_t kind,
                             const struct addr_ver_t *addr_ver,
-                            uint32_t descriptor_depth, uint32_t descriptor_index,
                             uint32_t child_num,
                             char **addresses, uint32_t num_addresses,
                             struct ms_context **output)
 {
-    ms_node *top_node = NULL;
     struct ms_context *ctx;
-    size_t i;
     int ret;
+
+    *output = NULL;
+
+    if (flags & ~WALLY_MINISCRIPT_TAPSCRIPT || (addresses && !addr_ver))
+        return WALLY_EINVAL;
+
+    if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD)
+        return WALLY_EINVAL; /* Don't allow private derivation via child_num */
 
     /* Allocate a context to hold the canonicalized/parsed expression */
     if (!(*output = wally_calloc(sizeof(struct ms_context))))
@@ -2089,48 +2097,15 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
     ctx->child_num = child_num;
     ctx->num_derivations = num_addresses;
 
-    if (flags & ~WALLY_MINISCRIPT_TAPSCRIPT || (addresses && !addr_ver))
-        return WALLY_EINVAL;
-
-    if (ctx->child_num >= BIP32_INITIAL_HARDENED_CHILD ||
-        (uint64_t)ctx->child_num + ctx->num_derivations >= BIP32_INITIAL_HARDENED_CHILD)
-        return WALLY_EINVAL; /* Don't allow private derivation via child_num */
-
     if (!(ctx->script = wally_malloc(DESCRIPTOR_MAX_SIZE)))
         return WALLY_ENOMEM;
     ctx->script_len = DESCRIPTOR_MAX_SIZE;
 
-    ret = analyze_miniscript(ctx->src, ctx->src_len, kind, addr_ver, flags, NULL, NULL, &top_node);
+    ret = analyze_miniscript(ctx->src, ctx->src_len, kind, addr_ver, flags, NULL, NULL, &ctx->top_node);
     if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
-        (!top_node->builtin || !(top_node->kind & KIND_DESCRIPTOR)))
+        (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
         ret = WALLY_EINVAL;
 
-    for (i = 0; ret == WALLY_OK && i < ctx->num_derivations; ++i) {
-        size_t written = 0;
-        ret = node_generate_script(top_node, ctx->child_num + i,
-                                   descriptor_depth, descriptor_index,
-                                   ctx->script, ctx->script_len,
-                                   &written);
-        if (ret == WALLY_OK && !addresses) {
-            ctx[i].script_len = written; /* Tell the caller how much was written/needed */
-        } else if (ret == WALLY_OK) {
-            /* Generate the address corresponding to this script */
-            ret = wally_scriptpubkey_to_address(ctx->script, written,
-                                                addr_ver->network, &addresses[i]);
-            if (ret == WALLY_EINVAL)
-                ret = wally_addr_segwit_from_bytes(ctx->script, written,
-                                                   addr_ver->family, 0, &addresses[i]);
-        }
-    }
-
-    if (addresses && ret != WALLY_OK) {
-        for (i = 0; i < ctx->num_derivations; ++i) {
-            wally_free_string(addresses[i]);
-            addresses[i] = NULL;
-        }
-    }
-
-    node_free(top_node);
     return ret;
 }
 
@@ -2147,11 +2122,12 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
     if (!bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, 0, 0, child_num, NULL, 1, &ctx);
+    ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, child_num, NULL, 1, &ctx);
     if (ret == WALLY_OK) {
-        *written = ctx->script_len;
-        if (ctx->script_len <= len)
-            memcpy(bytes_out, ctx->script, ctx->script_len);
+        ret = node_generate_script(ctx->top_node, child_num, 0, 0,
+                                   ctx->script, ctx->script_len, written);
+        if (ret == WALLY_OK && *written <= len)
+            memcpy(bytes_out, ctx->script, *written);
     }
     wally_free_miniscript(ctx);
     return ret;
@@ -2182,11 +2158,12 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
         return WALLY_EINVAL;
 
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                           addr_ver, depth, index, child_num, NULL, 1, &ctx);
+                           addr_ver, child_num, NULL, 1, &ctx);
     if (ret == WALLY_OK) {
-        *written = ctx->script_len;
-        if (ctx->script_len <= len)
-            memcpy(bytes_out, ctx->script, ctx->script_len);
+        ret = node_generate_script(ctx->top_node, child_num, depth, index,
+                                   ctx->script, ctx->script_len, written);
+        if (ret == WALLY_OK && *written <= len)
+            memcpy(bytes_out, ctx->script, *written);
     }
     wally_free_miniscript(ctx);
     return ret;
@@ -2208,16 +2185,39 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
     struct ms_context *ctx;
+    size_t i, written;
     int ret;
-
-    if (addresses && num_addresses)
-        wally_clear(addresses, num_addresses * sizeof(*addresses));
 
     if (!descriptor || !addr_ver || !addresses || !num_addresses)
         return WALLY_EINVAL;
+    wally_clear(addresses, num_addresses * sizeof(*addresses));
 
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                           addr_ver, 0, 0, child_num, addresses, num_addresses, &ctx);
+                           addr_ver, child_num, addresses, num_addresses, &ctx);
+    for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
+        ret = node_generate_script(ctx->top_node, child_num + i, 0, 0,
+                                   ctx->script, ctx->script_len, &written);
+        if (ret == WALLY_OK) {
+            if (written > ctx->script_len)
+                ret = WALLY_ERROR;
+            else {
+                /* Generate the address corresponding to this script */
+                ret = wally_scriptpubkey_to_address(ctx->script, written,
+                                                    addr_ver->network, &addresses[i]);
+                if (ret == WALLY_EINVAL)
+                    ret = wally_addr_segwit_from_bytes(ctx->script, written,
+                                                       addr_ver->family, 0, &addresses[i]);
+            }
+        }
+    }
+
+    if (ret != WALLY_OK) {
+        /* Free any partial results */
+        for (i = 0; i < num_addresses; ++i) {
+            wally_free_string(addresses[i]);
+            addresses[i] = NULL;
+        }
+    }
     wally_free_miniscript(ctx);
     return ret;
 }
