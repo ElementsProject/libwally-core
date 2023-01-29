@@ -1,6 +1,8 @@
 /* CC0 license (public domain) - see LICENSE file for details */
 #include <ccan/str/hex/hex.h>
+#if 0
 #include <assert.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 

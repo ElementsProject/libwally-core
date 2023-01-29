@@ -11,7 +11,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#if 0
 #include <assert.h>
+#endif
 #include <errno.h>
 
 #ifdef _WIN32
