@@ -240,7 +240,18 @@ $ make check
 $ ./tools/coverage.sh
 ```
 
-The coverage report can then be viewed at `./src/lcov/src/index.html`. Patches
+For coverage with `clang`, you need to install `llvm-cov`, typically via the
+`llvm-<version>` package that corresponds to your `clang` version. Once
+installed, set the `GCOV` environment variable to the versioned `llvm-cov`
+binary name before running `./tools/coverage.sh`, e.g:
+
+```
+$ GCOV=llvm-cov-11 ./tools/coverage.sh clean
+$ make check
+$ GCOV=llvm-cov-11 ./tools/coverage.sh
+```
+
+The coverage report can be viewed at `./src/lcov/src/index.html`. Patches
 to increase the test coverage are welcome.
 
 ## Users of libwally-core

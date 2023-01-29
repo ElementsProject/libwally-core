@@ -107,6 +107,7 @@ if test "x$debug" == "xyes"; then
     if test "x$coverage" == "xyes"; then
         AX_CHECK_COMPILE_FLAG([-fprofile-arcs -ftest-coverage], [AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"])
         AX_CHECK_LINK_FLAG([-lgcov], [LDFLAGS="$LDFLAGS -lgcov"])
+        AX_CHECK_LINK_FLAG([--coverage], [LDFLAGS="$LDFLAGS --coverage"])
     fi
 else
     # Optimise and harden if we can
