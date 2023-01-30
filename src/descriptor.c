@@ -304,7 +304,7 @@ static void node_free(ms_node *node)
             node_free(child);
             child = next;
         }
-        if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY)
+        if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY || node->kind == KIND_PRIVATE_KEY)
             clear_and_free((void*)node->data, node->data_len);
         clear_and_free(node, sizeof(*node));
     }
@@ -1630,20 +1630,19 @@ static int generate_script(ms_node *node, uint32_t child_num,
             ret = WALLY_OK;
         }
     } else if (node->kind == KIND_PRIVATE_KEY) {
-        unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
         unsigned char pubkey[EC_PUBLIC_KEY_LEN];
-        if (script_len < EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+        if (script_len < EC_PUBLIC_KEY_UNCOMPRESSED_LEN) /*FIXME: test actual pubkey size*/
             return WALLY_EINVAL;
 
-        ret = wally_base58_n_to_bytes(node->data, node->data_len, BASE58_FLAG_CHECKSUM,
-                                      privkey, sizeof(privkey), &output_len);
-        if (ret == WALLY_OK && output_len < EC_PRIVATE_KEY_LEN + 1)
-            return WALLY_EINVAL;
-
-        ret = wally_ec_public_key_from_private_key(&privkey[1], EC_PRIVATE_KEY_LEN,
+        ret = wally_ec_public_key_from_private_key((const unsigned char*)node->data, node->data_len,
                                                    pubkey, sizeof(pubkey));
         if (ret == WALLY_OK) {
-            if (output_len == EC_PRIVATE_KEY_LEN + 2 && privkey[EC_PRIVATE_KEY_LEN + 1] == 1) {
+            if (node->is_uncompressed_key) {
+                ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
+                                                     EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
+                if (ret == WALLY_OK)
+                    *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+            } else {
                 if (node->is_xonly_key) {
                     memcpy(script, &pubkey[1], EC_XONLY_PUBLIC_KEY_LEN);
                     *written = EC_XONLY_PUBLIC_KEY_LEN;
@@ -1651,11 +1650,7 @@ static int generate_script(ms_node *node, uint32_t child_num,
                     memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
                     *written = EC_PUBLIC_KEY_LEN;
                 }
-            } else {
-                ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
-                                                     EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-                if (ret == WALLY_OK)
-                    *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+                ret = WALLY_OK;
             }
         }
     } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
@@ -1780,10 +1775,10 @@ static bool analyze_pubkey_hex(const char *str, size_t str_len, uint32_t flags, 
 static int analyze_miniscript_key(const struct addr_ver_t *addr_ver, uint32_t flags,
                                   ms_node *node, ms_node *parent)
 {
-    int ret;
-    size_t buf_len, size;
     unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
     struct ext_key extkey;
+    size_t privkey_len, size;
+    int ret;
 
     if (!node || (parent && !parent->builtin))
         return WALLY_EINVAL;
@@ -1810,24 +1805,26 @@ static int analyze_miniscript_key(const struct addr_ver_t *addr_ver, uint32_t fl
 
     /* check key (private key(wif)) */
     ret = wally_base58_n_to_bytes(node->data, node->data_len, BASE58_FLAG_CHECKSUM,
-                                  privkey, sizeof(privkey), &buf_len);
-    if (ret == WALLY_OK && buf_len <= EC_PRIVATE_KEY_LEN + 2) {
+                                  privkey, sizeof(privkey), &privkey_len);
+    if (ret == WALLY_OK && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
         if (addr_ver && (addr_ver->version_wif != privkey[0]))
-            ret = WALLY_EINVAL;
-        else if (buf_len == EC_PRIVATE_KEY_LEN + 1 ||
-                 (buf_len == EC_PRIVATE_KEY_LEN + 2 && privkey[EC_PRIVATE_KEY_LEN + 1] == 0x01)) {
-            node->kind = KIND_PRIVATE_KEY;
-            if (buf_len == EC_PRIVATE_KEY_LEN + 1) {
-                node->is_uncompressed_key = true;
-                if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
-                    ret = WALLY_EINVAL;
-            }
+            return WALLY_EINVAL;
+        if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
+            node->is_uncompressed_key = true;
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
-                node->is_xonly_key = true;
-            if (ret == WALLY_OK)
-                ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
-        } else
+                return WALLY_EINVAL; /* Tapscript only allows x-only keys */
+        } else if (privkey_len != EC_PRIVATE_KEY_LEN + 2 ||
+                   privkey[EC_PRIVATE_KEY_LEN + 1] != 1)
+            return WALLY_EINVAL; /* Unknown WIF format */
+
+        node->is_xonly_key = (flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0;
+        ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
+        if (ret == WALLY_OK && !clone_bytes((unsigned char **)&node->data, &privkey[1], EC_PRIVATE_KEY_LEN))
             ret = WALLY_EINVAL;
+        else {
+            node->data_len = EC_PRIVATE_KEY_LEN;
+            node->kind = KIND_PRIVATE_KEY;
+        }
         wally_clear(privkey, sizeof(privkey));
         return ret;
     }
