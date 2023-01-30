@@ -304,7 +304,7 @@ static void node_free(ms_node *node)
             node_free(child);
             child = next;
         }
-        if (node->kind & (KIND_RAW | KIND_ADDRESS))
+        if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY)
             clear_and_free((void*)node->data, node->data_len);
         clear_and_free(node, sizeof(*node));
     }
@@ -1619,11 +1619,9 @@ static int generate_script(ms_node *node, uint32_t child_num,
     }
 
     /* value data */
-    if (node->kind == KIND_PUBLIC_KEY) {
-        ret = wally_hex_n_to_bytes(node->data, node->data_len, script, script_len, written);
-    } else if (node->kind == KIND_NUMBER) {
+    if (node->kind == KIND_NUMBER) {
         ret = generate_script_from_number(node->number, node->parent, script, script_len, written);
-    } else if (node->kind & (KIND_RAW | KIND_ADDRESS)) {
+    } else if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY) {
         if (node->data_len > script_len)
             ret = WALLY_ERROR; /* Not enough room: should not happen! */
         else {
@@ -1770,9 +1768,12 @@ static bool analyze_pubkey_hex(const char *str, size_t str_len, uint32_t flags, 
         wally_ec_public_key_verify(pubkey, written + offset) != WALLY_OK)
         return false;
 
-    node->kind = KIND_PUBLIC_KEY;
+    if (!clone_bytes((unsigned char **)&node->data, pubkey + offset, written))
+        return false; /* FIXME: This needs to return ENOMEM, not continue checking */
+    node->data_len = str_len / 2;
     node->is_uncompressed_key = str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2;
     node->is_xonly_key = str_len == EC_XONLY_PUBLIC_KEY_LEN * 2;
+    node->kind = KIND_PUBLIC_KEY;
     return true;
 }
 
