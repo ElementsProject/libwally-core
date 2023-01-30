@@ -1902,18 +1902,15 @@ static int analyze_miniscript_value(const char *str, size_t str_len,
         }
     }
 
-    if (!node->data) {
-        node->data = str;
-        node->data_len = str_len;
-    }
+    node->data = str;
+    node->data_len = str_len;
 
     if (strtoll_n(node->data, node->data_len, &node->number)) {
-        node->kind = KIND_NUMBER;
         node->type_properties = TYPE_B | PROP_Z | PROP_U | PROP_M | PROP_X;
         node->type_properties |= (node->number ? PROP_F : (PROP_D | PROP_E | PROP_S));
+        node->kind = KIND_NUMBER;
         return WALLY_OK;
     }
-
     return analyze_miniscript_key(addr_ver, flags, node, parent);
 }
 
@@ -1930,12 +1927,11 @@ static int analyze_miniscript(const char *str, size_t str_len, uint32_t kind,
     if (!(node = wally_calloc(sizeof(*node))))
         return WALLY_ENOMEM;
 
-    if (parent)
-        node->parent = parent;
+    node->parent = parent;
 
     for (i = 0; i < str_len; ++i) {
         if (!node->builtin && str[i] == ':') {
-            if (i - offset > sizeof(node->wrapper_str)) {
+            if (i - offset > sizeof(node->wrapper_str) - 1) {
                 ret = WALLY_EINVAL;
                 break;
             }
