@@ -252,10 +252,6 @@ static const struct addr_ver_t *addr_ver_from_family(
 
 /* Function prototype */
 static const struct ms_builtin_t *builtin_get(const ms_node *node);
-static int analyze_address(const char *str, size_t str_len,
-                           ms_node *node, ms_node *parent,
-                           const struct addr_ver_t *addr_ver,
-                           unsigned char *script, size_t script_len, size_t *written);
 static int generate_script(ms_node *node, uint32_t child_num,
                            unsigned char *script, size_t script_len, size_t *written);
 
@@ -308,6 +304,8 @@ static void node_free(ms_node *node)
             node_free(child);
             child = next;
         }
+        if (node->kind & KIND_ADDRESS)
+            clear_and_free((void*)node->data, node->data_len);
         clear_and_free(node, sizeof(*node));
     }
 }
@@ -1625,10 +1623,14 @@ static int generate_script(ms_node *node, uint32_t child_num,
         ret = wally_hex_n_to_bytes(node->data, node->data_len, script, script_len, written);
     } else if (node->kind == KIND_NUMBER) {
         ret = generate_script_from_number(node->number, node->parent, script, script_len, written);
-    } else if (node->kind == KIND_BASE58 || node->kind == KIND_BECH32) {
-        ret = analyze_address(node->data, node->data_len,
-                              NULL, NULL, NULL,
-                              script, script_len, written);
+    } else if (node->kind & KIND_ADDRESS) {
+        if (node->data_len > script_len)
+            ret = WALLY_ERROR; /* Not enough room: should not happen! */
+        else {
+            memcpy(script, node->data, node->data_len);
+            *written = node->data_len;
+            ret = WALLY_OK;
+        }
     } else if (node->kind == KIND_PRIVATE_KEY) {
         unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
         unsigned char pubkey[EC_PUBLIC_KEY_LEN];
@@ -1688,69 +1690,62 @@ static int generate_script(ms_node *node, uint32_t child_num,
 }
 
 static int analyze_address(const char *str, size_t str_len,
-                           ms_node *node, ms_node *parent,
-                           const struct addr_ver_t *addr_ver,
-                           unsigned char *script, size_t script_len, size_t *written)
+                           ms_node *node, const struct addr_ver_t *addr_ver)
 {
-    int ret;
-    unsigned char buf[SHA256_LEN + 2];
+    /* Generated script buffer, big enough for ADDRESS_PUBKEY_MAX_LEN too */
+    unsigned char buff[WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN];
     unsigned char decoded[1 + HASH160_LEN + BASE58_CHECKSUM_LEN];
-    char *hrp_end;
-    size_t hrp_len, output_len;
-
-    if (parent && !node)
-        return WALLY_EINVAL;
-
-    if (script && (script_len < sizeof(buf) || !written))
-        return WALLY_EINVAL;
-
-    if (node) {
-        node->data = str;
-        node->data_len = str_len;
-    }
+    size_t decoded_len, written;
+    int ret;
 
     ret = wally_base58_n_to_bytes(str, str_len, BASE58_FLAG_CHECKSUM,
-                                  decoded, sizeof(decoded), &output_len);
+                                  decoded, sizeof(decoded), &decoded_len);
     if (ret == WALLY_OK) {
-        /* base58 address: Check for P2PKH/P2SH */
+        /* P2PKH/P2SH base58 address */
         bool is_p2sh;
 
-        if (output_len != HASH160_LEN + 1)
+        if (decoded_len != HASH160_LEN + 1)
             return WALLY_EINVAL; /* Unexpected address length */
 
         if (!addr_ver_from_version(decoded[0], addr_ver, &is_p2sh))
             return WALLY_EINVAL; /* Network not found */
 
-        if (node)
-            node->kind = KIND_BASE58;
-
-        if (script) {
-            /* Create the scriptpubkey */
-            ret = (is_p2sh ? wally_scriptpubkey_p2sh_from_bytes : wally_scriptpubkey_p2pkh_from_bytes)(
-                decoded + 1, HASH160_LEN, 0, script, script_len, written);
+        /* Create the scriptpubkey and copy it into the node */
+        ret = (is_p2sh ? wally_scriptpubkey_p2sh_from_bytes : wally_scriptpubkey_p2pkh_from_bytes)(
+            decoded + 1, HASH160_LEN, 0, buff, sizeof(buff), &written);
+        if (ret == WALLY_OK) {
+            if (written != (is_p2sh ? WALLY_SCRIPTPUBKEY_P2SH_LEN : WALLY_SCRIPTPUBKEY_P2PKH_LEN))
+               ret = WALLY_ERROR; /* Should not happen! */
+            else if (!clone_bytes((unsigned char **)&node->data, buff, written))
+                ret = WALLY_ENOMEM;
+            else {
+                node->data_len = written;
+                node->kind = KIND_BASE58;
+            }
         }
-        return ret;
-    }
+    } else {
+        /* Segwit bech32 address */
+        char *hrp_end = memchr(str, '1', str_len);
+        size_t hrp_len;
 
-    /* segwit */
-    hrp_end = memchr(str, '1', str_len);
-    if (!hrp_end)
-        return WALLY_EINVAL; /* Address family missing */
-    hrp_len = hrp_end - str;
+        if (!hrp_end)
+            return WALLY_EINVAL; /* Address family missing */
+        hrp_len = hrp_end - str;
 
-    if (addr_ver && !addr_ver_from_family(str, hrp_len, addr_ver->network))
-        return WALLY_EINVAL; /* Unknown network or address family mismatch */
+        if (addr_ver && !addr_ver_from_family(str, hrp_len, addr_ver->network))
+            return WALLY_EINVAL; /* Unknown network or address family mismatch */
 
-    ret = wally_addr_segwit_n_to_bytes(str, str_len, str, hrp_len, 0, buf, sizeof(buf), &output_len);
-    if (ret == WALLY_OK && output_len != HASH160_LEN + 2 && output_len != SHA256_LEN + 2)
-        return WALLY_EINVAL;
-
-    if (ret == WALLY_OK) {
-        if (node)
-            node->kind = KIND_BECH32;
-        if (script) {
-            memcpy(script, buf, output_len);
-            *written = output_len;
+        ret = wally_addr_segwit_n_to_bytes(str, str_len, str, hrp_len, 0,
+                                           buff, sizeof(buff), &written);
+        if (ret == WALLY_OK) {
+            if (written != HASH160_LEN + 2 && written != SHA256_LEN + 2)
+                ret = WALLY_EINVAL; /* Unknown address format */
+            else if (!clone_bytes((unsigned char **)&node->data, buff, written))
+                ret = WALLY_ENOMEM;
+            else {
+                node->data_len = written;
+                node->kind = KIND_BECH32;
+            }
         }
     }
     return ret;
@@ -1885,7 +1880,7 @@ static int analyze_miniscript_value(const char *str, size_t str_len,
         return WALLY_EINVAL;
 
     if (parent && parent->kind == KIND_DESCRIPTOR_ADDR)
-        return analyze_address(str, str_len, node, parent, addr_ver, NULL, 0, NULL);
+        return analyze_address(str, str_len, node, addr_ver);
 
     if (!node->data) {
         node->data = str;
