@@ -304,7 +304,7 @@ static void node_free(ms_node *node)
             node_free(child);
             child = next;
         }
-        if (node->kind & KIND_ADDRESS)
+        if (node->kind & (KIND_RAW | KIND_ADDRESS))
             clear_and_free((void*)node->data, node->data_len);
         clear_and_free(node, sizeof(*node));
     }
@@ -1619,11 +1619,11 @@ static int generate_script(ms_node *node, uint32_t child_num,
     }
 
     /* value data */
-    if (node->kind & KIND_RAW || node->kind == KIND_PUBLIC_KEY) {
+    if (node->kind == KIND_PUBLIC_KEY) {
         ret = wally_hex_n_to_bytes(node->data, node->data_len, script, script_len, written);
     } else if (node->kind == KIND_NUMBER) {
         ret = generate_script_from_number(node->number, node->parent, script, script_len, written);
-    } else if (node->kind & KIND_ADDRESS) {
+    } else if (node->kind & (KIND_RAW | KIND_ADDRESS)) {
         if (node->data_len > script_len)
             ret = WALLY_ERROR; /* Not enough room: should not happen! */
         else {
@@ -1882,19 +1882,31 @@ static int analyze_miniscript_value(const char *str, size_t str_len,
     if (parent && parent->kind == KIND_DESCRIPTOR_ADDR)
         return analyze_address(str, str_len, node, addr_ver);
 
-    if (!node->data) {
-        node->data = str;
-        node->data_len = str_len;
-    }
-
     if (parent) {
         const uint32_t kind = parent->kind;
         if (kind == KIND_DESCRIPTOR_RAW || kind == KIND_MINISCRIPT_SHA256 ||
             kind == KIND_MINISCRIPT_HASH256 || kind == KIND_MINISCRIPT_RIPEMD160 ||
             kind == KIND_MINISCRIPT_HASH160) {
-            node->kind = KIND_RAW;
-            return wally_hex_n_verify(node->data, node->data_len);
+            int ret = wally_hex_n_verify(str, str_len);
+            if (ret == WALLY_OK) {
+                if (!(node->data = wally_malloc(str_len / 2)))
+                    ret = WALLY_ENOMEM;
+                else {
+                    size_t written;
+                    wally_hex_n_to_bytes(str, str_len,
+                                         (unsigned char*)node->data, str_len / 2,
+                                         &written);
+                    node->data_len = written;
+                    node->kind = KIND_RAW;
+                }
+            }
+            return ret;
         }
+    }
+
+    if (!node->data) {
+        node->data = str;
+        node->data_len = str_len;
     }
 
     if (strtoll_n(node->data, node->data_len, &node->number)) {
