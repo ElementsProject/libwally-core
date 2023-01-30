@@ -6,9 +6,9 @@
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
-#include <include/wally_psbt.h>
-#include <include/wally_script.h>
 #include <include/wally_descriptor.h>
+#include <include/wally_map.h>
+#include <include/wally_script.h>
 
 #include <limits.h>
 #include <stdbool.h>
@@ -61,8 +61,6 @@
 #define KIND_BIP32_PRIVATE_KEY   (0x010000 | KIND_BIP32)
 #define KIND_BIP32_PUBLIC_KEY    (0x020000 | KIND_BIP32)
 
-/* FIXME: Calculate the script length instead of using this maximal size */
-#define DESCRIPTOR_MAX_SIZE     1000000
 #define DESCRIPTOR_MIN_SIZE     20
 #define MINISCRIPT_MULTI_MAX    20
 #define REDEEM_SCRIPT_MAX_SIZE  520
@@ -148,6 +146,8 @@ struct ms_context {
     size_t num_derivations; /* How many incrementing children to derive */
 };
 
+/* FIXME: the max is actually 20 in a witness script */
+#define CHECKMULTISIG_NUM_KEYS_MAX 15
 struct multisig_sort_data_t {
     size_t pubkey_len;
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
@@ -810,25 +810,23 @@ static int node_verify_wrappers(ms_node *node)
     return WALLY_OK;
 }
 
-static int generate_script_from_number(int64_t number, ms_node *parent,
-                                       unsigned char *script, size_t script_len, size_t *written)
+static int generate_number(int64_t number, ms_node *parent,
+                           unsigned char *script, size_t script_len, size_t *written)
 {
-    if ((parent && !parent->builtin) || !script_len)
+    if ((parent && !parent->builtin))
         return WALLY_EINVAL;
 
-    if (number == -1) {
-        script[0] = OP_1NEGATE;
+    if (number >= -1 && number <= 16) {
         *written = 1;
-    } else if (number >= 0 && number <= 16) {
-        script[0] = value_to_op_n(number);
-        *written = 1;
+        if (*written <= script_len)
+            script[0] = number == -1 ? OP_1NEGATE : value_to_op_n(number);
     } else {
         /* PUSH <number> */
-        script[0] = scriptint_get_length(number);
-        if (script_len < script[0] + 1u)
-            return WALLY_EINVAL;
-        scriptint_to_bytes(number, script + 1);
-        *written = script[0] + 1;
+        *written = 1 + scriptint_get_length(number);
+        if (*written <= script_len) {
+            script[0] = *written - 1;
+            scriptint_to_bytes(number, script + 1);
+        }
     }
     return WALLY_OK;
 }
@@ -836,48 +834,45 @@ static int generate_script_from_number(int64_t number, ms_node *parent,
 static int generate_pk_k(ms_node *node, int32_t child_num,
                          unsigned char *script, size_t script_len, size_t *written)
 {
+    unsigned char buff[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     int ret;
 
-    if (!node->child || script_len < EC_PUBLIC_KEY_LEN * 2 || !node_is_root(node))
+    if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
-    ret = generate_script(node->child, child_num, &script[1], script_len - 1, written);
-    if (ret != WALLY_OK)
-        return ret;
-
-    if (*written + 1 > REDEEM_SCRIPT_MAX_SIZE)
-        return WALLY_EINVAL;
-
-    script[0] = (unsigned char)*written;
-    ++(*written);
+    ret = generate_script(node->child, child_num, buff, sizeof(buff), written);
+    if (ret == WALLY_OK) {
+        if (*written != EC_PUBLIC_KEY_LEN && *written != EC_XONLY_PUBLIC_KEY_LEN &&
+            *written != EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+            return WALLY_EINVAL; /* Invalid pubkey length */
+        if (*written <= script_len) {
+            script[0] = *written & 0xff; /* push opcode */
+            memcpy(script + 1, buff, *written);
+        }
+        *written += 1;
+    }
     return ret;
 }
 
 static int generate_pk_h(ms_node *node, int32_t child_num,
                          unsigned char *script, size_t script_len, size_t *written)
 {
-    int ret;
-    size_t output_len = *written;
-    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    unsigned char buff[1 + EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    int ret = WALLY_OK;
 
-    if (!node->child || script_len < WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1 || !node_is_root(node))
-        return WALLY_EINVAL;
-    if (node->child->is_xonly_key)
-        return WALLY_EINVAL;
-
-    ret = generate_script(node->child, child_num, pubkey, sizeof(pubkey), &output_len);
-    if (ret != WALLY_OK)
-        return ret;
-
-    ret = wally_hash160(pubkey, output_len, &script[3], HASH160_LEN);
-    if (ret != WALLY_OK)
-        return ret;
-
-    script[0] = OP_DUP;
-    script[1] = OP_HASH160;
-    script[2] = HASH160_LEN;
-    script[HASH160_LEN + 3] = OP_EQUALVERIFY;
-    *written = HASH160_LEN + 4;
+    if (script_len >= WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1) {
+        ret = generate_pk_k(node, child_num, buff, sizeof(buff), written);
+        if (ret == WALLY_OK) {
+            if (node->child->is_xonly_key)
+                return WALLY_EINVAL;
+            script[0] = OP_DUP;
+            script[1] = OP_HASH160;
+            script[2] = HASH160_LEN;
+            ret = wally_hash160(&buff[1], *written - 1, &script[3], HASH160_LEN);
+            script[3 + HASH160_LEN] = OP_EQUALVERIFY;
+        }
+    }
+    *written = WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1;
     return ret;
 }
 
@@ -885,37 +880,43 @@ static int generate_sh_wsh(ms_node *node, int32_t child_num,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     const bool is_sh = node->kind == KIND_DESCRIPTOR_SH;
-    const size_t required_len = is_sh ? WALLY_SCRIPTPUBKEY_P2SH_LEN : WALLY_SCRIPTPUBKEY_P2WSH_LEN;
+    const size_t final_len = is_sh ? WALLY_SCRIPTPUBKEY_P2SH_LEN : WALLY_SCRIPTPUBKEY_P2WSH_LEN;
     const uint32_t flags = is_sh ? WALLY_SCRIPT_HASH160 : WALLY_SCRIPT_SHA256;
-    size_t output_len = *written;
     unsigned char output[WALLY_SCRIPTPUBKEY_P2WSH_LEN];
+    size_t output_len;
     int ret;
 
-    if (!node->child || script_len < required_len || !node_is_root(node))
+    if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
     ret = generate_script(node->child, child_num, script, script_len, &output_len);
-    if (ret != WALLY_OK)
-        return ret;
-
-    if (output_len > REDEEM_SCRIPT_MAX_SIZE)
-        ret = WALLY_EINVAL;
-
-    ret = (is_sh ? wally_scriptpubkey_p2sh_from_bytes : wally_witness_program_from_bytes)(
-        script, output_len, flags, output, required_len, written);
-    if (ret == WALLY_OK)
-        memcpy(script, output, *written);
-
+    if (ret == WALLY_OK) {
+        if (output_len > REDEEM_SCRIPT_MAX_SIZE)
+            ret = WALLY_EINVAL;
+        else {
+           const size_t required = output_len > final_len ? output_len : final_len;
+           if (script_len < required) {
+               *written = required; /* To generate, not for the final script */
+           } else {
+               ret = (is_sh ? wally_scriptpubkey_p2sh_from_bytes :
+                              wally_witness_program_from_bytes)(
+                      script, output_len, flags, output, sizeof(output), written);
+               if (ret == WALLY_OK && *written <= script_len)
+                   memcpy(script, output, *written);
+           }
+        }
+    }
     return ret;
 }
 
 static int generate_checksig(unsigned char *script, size_t script_len, size_t *written)
 {
-    if (!*written || (*written + 1 > script_len) || (*written + 1 > WITNESS_SCRIPT_MAX_SIZE))
+    if (!*written || (*written + 1 > WITNESS_SCRIPT_MAX_SIZE))
         return WALLY_EINVAL;
 
-    script[*written] = OP_CHECKSIG;
     *written += 1;
+    if (*written <= script_len)
+        script[*written - 1] = OP_CHECKSIG;
     return WALLY_OK;
 }
 
@@ -936,22 +937,29 @@ static int generate_pkh(ms_node *node, int32_t child_num,
 static int generate_wpkh(ms_node *node, int32_t child_num,
                          unsigned char *script, size_t script_len, size_t *written)
 {
-    int ret;
-    size_t output_len = *written;
     unsigned char output[WALLY_SCRIPTPUBKEY_P2WPKH_LEN];
+    size_t output_len;
+    int ret;
 
-    if (!node->child || script_len < sizeof(output) || !node_is_root(node))
+    if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
     ret = generate_script(node->child, child_num, script, script_len, &output_len);
     if (ret == WALLY_OK) {
         if (output_len > REDEEM_SCRIPT_MAX_SIZE)
-            return WALLY_EINVAL;
-
-        ret = wally_witness_program_from_bytes(script, output_len, WALLY_SCRIPT_HASH160,
-                                               output, WALLY_SCRIPTPUBKEY_P2WPKH_LEN, written);
-        if (ret == WALLY_OK)
-            memcpy(script, output, *written);
+            ret = WALLY_EINVAL;
+        else {
+            const size_t final_len = sizeof(output);
+            const size_t required = output_len > final_len ? output_len : final_len;
+            if (script_len < required) {
+                *written = required; /* To generate, not for the final script */
+            } else {
+                ret = wally_witness_program_from_bytes(script, output_len, WALLY_SCRIPT_HASH160,
+                                                       output, final_len, written);
+                if (ret == WALLY_OK && *written <= script_len)
+                    memcpy(script, output, *written);
+            }
+        }
     }
     return ret;
 }
@@ -978,8 +986,7 @@ static int generate_multi(ms_node *node, int32_t child_num,
     size_t offset;
     uint32_t count, i;
     ms_node *child = node->child;
-    struct multisig_sort_data_t sorted[15]; /* 15 = Max number of pubkeys for OP_CHECKMULTISIG */
-    size_t check_len = script_len <= REDEEM_SCRIPT_MAX_SIZE ? script_len : REDEEM_SCRIPT_MAX_SIZE;
+    struct multisig_sort_data_t sorted[CHECKMULTISIG_NUM_KEYS_MAX];
     int ret;
 
     if (!child || !node_is_root(node) || !node->builtin)
@@ -994,7 +1001,7 @@ static int generate_multi(ms_node *node, int32_t child_num,
         ret = generate_script(child, child_num,
                               item->pubkey, sizeof(item->pubkey), &item->pubkey_len);
         if (ret == WALLY_OK && item->pubkey_len > sizeof(item->pubkey))
-            ret = WALLY_EINVAL;
+            ret = WALLY_EINVAL; /* FIXME: check for valid pubkey lengths */
         child = child->next;
     }
 
@@ -1002,28 +1009,31 @@ static int generate_multi(ms_node *node, int32_t child_num,
         ret = WALLY_EINVAL; /* Not enough, or too many keys for multisig */
 
     if (ret == WALLY_OK) {
-        if (node->kind == KIND_DESCRIPTOR_MULTI_S)
+        /* Note we don't bother sorting if we are already beyond the output
+         * size, since sorting won't change the final size computed */
+        if (node->kind == KIND_DESCRIPTOR_MULTI_S && offset <= script_len)
             qsort(sorted, count, sizeof(sorted[0]), compare_multisig_node);
 
         for (i = 0; ret == WALLY_OK && i < count; ++i) {
             const size_t pubkey_len = sorted[i].pubkey_len;
-            if (offset + pubkey_len + 1 > check_len)
-                return WALLY_EINVAL;
-            script[offset] = pubkey_len;
-            memcpy(&script[offset + 1], sorted[i].pubkey, pubkey_len);
+            if (offset + pubkey_len + 1 <= script_len) {
+                script[offset] = pubkey_len;
+                memcpy(&script[offset + 1], sorted[i].pubkey, pubkey_len);
+            }
             offset += pubkey_len + 1;
         }
 
         if (ret == WALLY_OK) {
-            size_t number_len = 0;
-            ret = generate_script_from_number(count, node->parent, &script[offset],
-                                              check_len - offset, &number_len);
+            size_t number_len;
+            /* FIXME: don't let script_len go negative */
+            ret = generate_number(count, node->parent, &script[offset],
+                                  script_len - offset, &number_len);
             if (ret == WALLY_OK) {
-                offset += number_len;
-                if (offset + 1 > check_len)
+                *written = offset + number_len + 1;
+                if (*written > REDEEM_SCRIPT_MAX_SIZE)
                     return WALLY_EINVAL;
-                script[offset] = OP_CHECKMULTISIG;
-                *written = offset + 1;
+                if (*written <= script_len)
+                    script[*written - 1] = OP_CHECKMULTISIG;
             }
         }
     }
@@ -1046,23 +1056,22 @@ static int generate_delay(ms_node *node, int32_t child_num,
 {
     int ret;
     size_t output_len = *written;
-    if (!node->child || script_len < DESCRIPTOR_MIN_SIZE || !node_is_root(node) || !node->builtin)
+    if (!node->child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
 
     ret = generate_script(node->child, child_num, script, script_len, &output_len);
     if (ret != WALLY_OK)
         return ret;
 
-    if (output_len + 1 > REDEEM_SCRIPT_MAX_SIZE)
-        return WALLY_EINVAL;
-
-    if (node->kind == KIND_MINISCRIPT_OLDER)
-        script[output_len] = OP_CHECKSEQUENCEVERIFY;
-    else if (node->kind == KIND_MINISCRIPT_AFTER)
-        script[output_len] = OP_CHECKLOCKTIMEVERIFY;
-    else
-        return WALLY_ERROR; /* Shouldn't happen */
     *written = output_len + 1;
+    if (*written <= script_len) {
+        if (node->kind == KIND_MINISCRIPT_OLDER)
+            script[output_len] = OP_CHECKSEQUENCEVERIFY;
+        else if (node->kind == KIND_MINISCRIPT_AFTER)
+            script[output_len] = OP_CHECKLOCKTIMEVERIFY;
+        else
+            ret = WALLY_ERROR; /* Shouldn't happen */
+    }
     return ret;
 }
 
@@ -1073,7 +1082,6 @@ static int generate_hash_type(ms_node *node, int32_t child_num,
     unsigned char op_code;
     size_t hash_size;
     size_t output_len = *written;
-    size_t check_len = script_len <= REDEEM_SCRIPT_MAX_SIZE ? script_len : REDEEM_SCRIPT_MAX_SIZE;
 
     if (!node->child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
@@ -1093,22 +1101,19 @@ static int generate_hash_type(ms_node *node, int32_t child_num,
     } else
         return WALLY_ERROR; /* Shouldn't happen */
 
-    if (script_len < hash_size + 8)
-        return WALLY_EINVAL;
-
-    ret = generate_script(node->child, child_num, &script[6], script_len - 8, &output_len);
+    /* FIXME: don't let script_len go negative */
+    ret = generate_script(node->child, child_num, &script[6], script_len - 7, &output_len);
     if (ret == WALLY_OK) {
-        if (output_len + 7 > check_len)
-            return WALLY_EINVAL;
-
-        script[0] = OP_SIZE;
-        script[1] = 0x01;
-        script[2] = 0x20;
-        script[3] = OP_EQUALVERIFY;
-        script[4] = op_code;
-        script[5] = hash_size;
-        script[output_len + 6] = OP_EQUAL;
         *written = output_len + 7;
+        if (*written <= script_len) {
+            script[0] = OP_SIZE;
+            script[1] = 0x01;
+            script[2] = 0x20;
+            script[3] = OP_EQUALVERIFY;
+            script[4] = op_code;
+            script[5] = hash_size;
+            script[6 + output_len] = OP_EQUAL;
+        }
     }
     return ret;
 }
@@ -1303,50 +1308,38 @@ static int generate_thresh(ms_node *node, int32_t child_num,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     /* [X1] [X2] ADD ... [Xn] ADD <k> EQUAL */
-    int ret;
-    size_t output_len, offset = 0, count = 0;
     ms_node *child = node->child;
-    size_t check_len = script_len <= REDEEM_SCRIPT_MAX_SIZE ? script_len : REDEEM_SCRIPT_MAX_SIZE;
+    size_t output_len, offset = 0, count = 0;
+    int ret = WALLY_OK;
 
     if (!child || !node_is_root(node))
         return WALLY_EINVAL;
 
-    child = child->next;
-    while (child) {
-        output_len = 0;
+    for (child = child->next; child && ret == WALLY_OK; child = child->next) {
+        /* FIXME: don't let script_len go negative */
         ret = generate_script(child, child_num,
                               &script[offset], script_len - offset - 1, &output_len);
-        if (ret != WALLY_OK)
-            return ret;
-
-        ++count;
-        offset += output_len;
-        if (offset >= check_len)
-            return WALLY_EINVAL;
-
-        if (count != 1) {
-            if (offset + 1 >= check_len)
-                return WALLY_EINVAL;
-
-            script[offset] = OP_ADD;
-            ++offset;
+        if (ret == WALLY_OK) {
+            offset += output_len;
+            if (count++) {
+                if (++offset < script_len)
+                    script[offset - 1] = OP_ADD;
+            }
         }
-
-        child = child->next;
     }
-
-    ret = generate_script(node->child, child_num,
-                          &script[offset], script_len - offset - 1, &output_len);
-    if (ret != WALLY_OK)
-        return ret;
-
-    offset += output_len;
-    if (offset + 1 >= check_len)
-        return WALLY_EINVAL;
-
-    script[offset] = OP_EQUAL;
-    *written = offset + 1;
-    return WALLY_OK;
+    if (ret == WALLY_OK)
+        /* FIXME: don't let script_len go negative */
+        ret = generate_script(node->child, child_num,
+                              &script[offset], script_len - offset - 1,
+                              &output_len);
+    if (ret == WALLY_OK) {
+        *written = offset + output_len + 1;
+        if (*written > REDEEM_SCRIPT_MAX_SIZE)
+            return WALLY_EINVAL;
+        if (*written <= script_len)
+            script[*written - 1] = OP_EQUAL;
+    }
+    return ret;
 }
 
 static int generate_wrappers(ms_node *node,
@@ -1620,41 +1613,40 @@ static int generate_script(ms_node *node, uint32_t child_num,
 
     /* value data */
     if (node->kind == KIND_NUMBER) {
-        ret = generate_script_from_number(node->number, node->parent, script, script_len, written);
+        ret = generate_number(node->number, node->parent, script, script_len, written);
     } else if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY) {
-        if (node->data_len > script_len)
-            ret = WALLY_ERROR; /* Not enough room: should not happen! */
-        else {
+        if (node->data_len <= script_len)
             memcpy(script, node->data, node->data_len);
-            *written = node->data_len;
-            ret = WALLY_OK;
-        }
+        *written = node->data_len;
+        ret = WALLY_OK;
     } else if (node->kind == KIND_PRIVATE_KEY) {
         unsigned char pubkey[EC_PUBLIC_KEY_LEN];
-        if (script_len < EC_PUBLIC_KEY_UNCOMPRESSED_LEN) /*FIXME: test actual pubkey size*/
-            return WALLY_EINVAL;
-
         ret = wally_ec_public_key_from_private_key((const unsigned char*)node->data, node->data_len,
                                                    pubkey, sizeof(pubkey));
         if (ret == WALLY_OK) {
             if (node->is_uncompressed_key) {
-                ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
-                                                     EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-                if (ret == WALLY_OK)
-                    *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+                *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+                if (*written <= script_len)
+                    ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
+                                                         EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
             } else {
                 if (node->is_xonly_key) {
-                    memcpy(script, &pubkey[1], EC_XONLY_PUBLIC_KEY_LEN);
                     *written = EC_XONLY_PUBLIC_KEY_LEN;
+                    if (*written <= script_len)
+                        memcpy(script, &pubkey[1], EC_XONLY_PUBLIC_KEY_LEN);
                 } else {
-                    memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
                     *written = EC_PUBLIC_KEY_LEN;
+                    if (*written <= script_len)
+                        memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
                 }
-                ret = WALLY_OK;
             }
         }
     } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
         struct ext_key master;
+
+        *written = node->is_xonly_key ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
+        if (*written > script_len)
+            return WALLY_OK;
 
         if ((ret = bip32_key_from_base58_n(node->data, node->data_len, &master)) != WALLY_OK)
             return ret;
@@ -1666,18 +1658,11 @@ static int generate_script(ms_node *node, uint32_t child_num,
 
             ret = bip32_key_from_parent_path_str_n(&master, node->child_path, node->child_path_len,
                                                    child_num, flags, &derived);
-            if (ret != WALLY_OK)
-                return ret;
-
-            memcpy(&master, &derived, sizeof(master));
+            if (ret == WALLY_OK)
+                memcpy(&master, &derived, sizeof(master));
         }
-        if (node->is_xonly_key) {
-            memcpy(script, &master.pub_key[1], EC_XONLY_PUBLIC_KEY_LEN);
-            *written = EC_XONLY_PUBLIC_KEY_LEN;
-        } else {
-            memcpy(script, master.pub_key, EC_PUBLIC_KEY_LEN);
-            *written = EC_PUBLIC_KEY_LEN;
-        }
+        if (ret == WALLY_OK)
+            memcpy(script, master.pub_key + (node->is_xonly_key ? 1 : 0), *written);
     }
     return ret;
 }
@@ -2019,6 +2004,160 @@ static int analyze_miniscript(const char *str, size_t str_len, uint32_t kind,
     return ret;
 }
 
+/* Compute the maximum size of the buffer we need to generate a script.
+ * Although our final script may be small, we need a larger scratch
+ * buffer to generate its sub-components to assemble the final script.
+ * For example, we may need to generate a sub-script then hash it to
+ * produce a top level p2pkh/p2sh etc. Note that the exact size of a
+ * script cannot be known up-front without generating it; the 'v' wrapper
+ * for example modifies or appends depending on its sub-scripts final
+ * opcode, which isn't known until its generated.
+ * This can result in over-estimating the size required substantially in
+ * some cases, in order to be safe without requiring a huge up-front
+ * allocation. The alternative is repeated sub-allocations as we generate,
+ * which is undesirable as its both slow leads to memory fragmentation.
+ */
+static int node_generation_size(const ms_node *node, size_t *total)
+{
+    const struct ms_builtin_t *builtin = builtin_get(node);
+    const ms_node *child;
+    size_t i;
+    int ret = WALLY_OK;
+
+    if (builtin) {
+        /* TODO: we could collect this into a subtotal and use
+         *       max(subtotal, final) to minimise the allocation size
+         *       slightly, e.g. for sh-wrapped scripts.
+         */
+        for (child = node->child; ret == WALLY_OK && child; child = child->next)
+            ret = node_generation_size(child, total);
+        if (ret != WALLY_OK)
+            return ret;
+
+        switch (builtin->kind) {
+        case KIND_DESCRIPTOR_PK | KIND_MINISCRIPT_PK:
+            *total += 2;
+            break;
+        case KIND_DESCRIPTOR_PKH | KIND_MINISCRIPT_PKH:
+            *total += WALLY_SCRIPTPUBKEY_P2PKH_LEN;
+            break;
+        case KIND_DESCRIPTOR_MULTI | KIND_MINISCRIPT_MULTI:
+        case KIND_DESCRIPTOR_MULTI_S:
+            *total += CHECKMULTISIG_NUM_KEYS_MAX * EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+            *total += 5; /* worst case OP_PUSHDATA1 <N> * 2 + OP_CHECKMULTISIG */
+            break;
+        case KIND_DESCRIPTOR_SH:
+            *total += WALLY_SCRIPTPUBKEY_P2SH_LEN;
+            break;
+        case KIND_DESCRIPTOR_WSH:
+            *total += WALLY_SCRIPTPUBKEY_P2WSH_LEN;
+            break;
+        case KIND_DESCRIPTOR_WPKH:
+            *total += WALLY_SCRIPTPUBKEY_P2WPKH_LEN;
+            break;
+        case KIND_DESCRIPTOR_COMBO:
+            /* max of p2pk, p2pkh, p2wpkh, or p2sh-p2wpkh */
+            *total += WALLY_SCRIPTPUBKEY_P2PKH_LEN;
+            break;
+        case KIND_DESCRIPTOR_ADDR:
+        case KIND_DESCRIPTOR_RAW:
+            /* No-op */
+            break;
+        case KIND_MINISCRIPT_PK_K:
+            *total += 1;
+            break;
+        case KIND_MINISCRIPT_PK_H:
+            *total += WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1;
+            break;
+        case KIND_MINISCRIPT_OLDER:
+        case KIND_MINISCRIPT_AFTER:
+            *total += 1;
+            break;
+        case KIND_MINISCRIPT_SHA256:
+        case KIND_MINISCRIPT_HASH256:
+        case KIND_MINISCRIPT_RIPEMD160:
+        case KIND_MINISCRIPT_HASH160:
+            *total += 7;
+            break;
+        case KIND_MINISCRIPT_THRESH:
+            *total += node_get_child_count(node) - 1 + 1;
+            break;
+        case KIND_MINISCRIPT_AND_B:
+        case KIND_MINISCRIPT_OR_B:
+            *total += 1;
+            break;
+        case KIND_MINISCRIPT_OR_C:
+            *total += 2;
+            break;
+        case KIND_MINISCRIPT_OR_D:
+        case KIND_MINISCRIPT_OR_I:
+            *total += 3;
+            break;
+        case KIND_MINISCRIPT_AND_N:
+        case KIND_MINISCRIPT_ANDOR:
+            *total += 4;
+            break;
+        case KIND_MINISCRIPT_AND_V:
+            /* no-op */
+            break;
+        default:
+            return WALLY_ERROR; /* Should not happen! */
+        }
+
+        for (i = strlen(node->wrapper_str); i != 0; --i) {
+            switch(node->wrapper_str[i - 1]) {
+            case 's': case 'c': case 't': case 'n': case 'v':
+                *total += 1; /* max: 'v' can can be 0 or 1 */
+                break;
+            case 'a':
+                *total += 2;
+                break;
+            case 'd':
+                *total += 3;
+                break;
+            case 'j': case 'l': case 'u':
+                *total += 4;
+                break;
+            }
+        }
+        return WALLY_OK;
+    }
+    if (node->kind == KIND_NUMBER) {
+        if (node->number >= -1 && node->number <= 16)
+            *total += 1;
+        else
+            *total += 1 + scriptint_get_length(node->number);
+    } else if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY) {
+        *total += node->data_len;
+    } else if (node->kind == KIND_PRIVATE_KEY || (node->kind & KIND_BIP32) == KIND_BIP32) {
+        if (node->is_uncompressed_key)
+            *total += EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+        else if (node->is_xonly_key)
+            *total += EC_XONLY_PUBLIC_KEY_LEN;
+        else
+            *total += EC_PUBLIC_KEY_LEN;
+    } else
+        return WALLY_ERROR; /* Should not happen */
+    return WALLY_OK;
+}
+
+static int allocate_script(struct ms_context *ctx)
+{
+    size_t required_size = 0;
+    int ret = WALLY_OK;
+
+    if (!ctx->script) {
+        ret = node_generation_size(ctx->top_node, &required_size);
+        if (ret == WALLY_OK) {
+            if (!(ctx->script = wally_malloc(required_size)))
+                ret = WALLY_ENOMEM;
+            else
+                ctx->script_len = required_size;
+        }
+    }
+    return ret;
+}
+
 static int node_generate_script(struct ms_context *ctx, uint32_t child_num,
                                 uint32_t depth, uint32_t index,
                                 size_t *written)
@@ -2028,11 +2167,8 @@ static int node_generate_script(struct ms_context *ctx, uint32_t child_num,
     int ret;
 
     *written = 0;
-    if (!ctx->script) {
-        if (!(ctx->script = wally_malloc(DESCRIPTOR_MAX_SIZE)))
-            return WALLY_ENOMEM;
-        ctx->script_len = DESCRIPTOR_MAX_SIZE;
-    }
+    if ((ret = allocate_script(ctx)) != WALLY_OK)
+        return ret;
 
     for (i = 0; i < depth; ++i) {
         if (!node->child)
