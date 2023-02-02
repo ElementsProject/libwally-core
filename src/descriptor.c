@@ -15,6 +15,8 @@
 #include <stdlib.h>
 
 #define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
+#define MS_FLAGS_ALL (WALLY_MINISCRIPT_WITNESS_SCRIPT | \
+        WALLY_MINISCRIPT_TAPSCRIPT | WALLY_MINISCRIPT_ONLY)
 
 /* Properties and expressions definition */
 #define TYPE_NONE  0x00
@@ -2194,17 +2196,17 @@ static int node_generate_script(struct ms_context *ctx, uint32_t depth,
  * - addresses != NULL: Generate a range of scripts and then their addresses
  */
 static int parse_miniscript(const char *miniscript, const struct wally_map *vars_in,
-                            uint32_t child_num, uint32_t network,
-                            uint32_t flags, uint32_t kind,
+                            uint32_t child_num, uint32_t network, uint32_t flags,
                             struct ms_context **output)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
+    uint32_t kind = KIND_MINISCRIPT | (flags & WALLY_MINISCRIPT_ONLY ? 0 : KIND_DESCRIPTOR);
     ms_context *ctx;
     int ret;
 
     *output = NULL;
 
-    if (!miniscript || flags & ~WALLY_MINISCRIPT_TAPSCRIPT ||
+    if (!miniscript || flags & ~MS_FLAGS_ALL ||
         (network != WALLY_NETWORK_NONE && !addr_ver))
         return WALLY_EINVAL;
 
@@ -2244,7 +2246,7 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
         return WALLY_EINVAL;
 
     ret = parse_miniscript(miniscript, vars_in, child_num, WALLY_NETWORK_NONE,
-                           flags, KIND_MINISCRIPT, &ctx);
+                           flags | WALLY_MINISCRIPT_ONLY, &ctx);
     if (ret == WALLY_OK) {
         ctx->child_num = child_num;
         ret = node_generate_script(ctx, 0, 0, written);
@@ -2275,11 +2277,11 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
     if (written)
         *written = 0;
 
-    if (child_num >= BIP32_INITIAL_HARDENED_CHILD || !bytes_out || !len || !written)
+    if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    ret = parse_miniscript(descriptor, vars_in, child_num, network, flags,
-                           KIND_MINISCRIPT | KIND_DESCRIPTOR, &ctx);
+    ret = parse_miniscript(descriptor, vars_in, child_num, network, flags, &ctx);
     if (ret == WALLY_OK) {
         ctx->child_num = child_num;
         ret = node_generate_script(ctx, depth, index, written);
@@ -2310,12 +2312,12 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
 
     if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
-        network == WALLY_NETWORK_NONE || !addresses || !num_addresses)
+        network == WALLY_NETWORK_NONE || (flags & WALLY_MINISCRIPT_ONLY) ||
+        !addresses || !num_addresses)
         return WALLY_EINVAL;
 
     wally_clear(addresses, num_addresses * sizeof(*addresses));
-    ret = parse_miniscript(descriptor, vars_in, child_num, network, flags,
-                           KIND_MINISCRIPT | KIND_DESCRIPTOR, &ctx);
+    ret = parse_miniscript(descriptor, vars_in, child_num, network, flags, &ctx);
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
         ctx->child_num = child_num + i;
         ret = node_generate_script(ctx, 0, 0, &written);
