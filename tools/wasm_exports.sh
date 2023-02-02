@@ -71,7 +71,9 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_bzero' \
 ,'_wally_cleanup' \
 ,'_wally_descriptor_canonicalize' \
+,'_wally_descriptor_free' \
 ,'_wally_descriptor_get_checksum' \
+,'_wally_descriptor_parse' \
 ,'_wally_descriptor_to_address' \
 ,'_wally_descriptor_to_addresses' \
 ,'_wally_descriptor_to_scriptpubkey' \

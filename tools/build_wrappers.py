@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 # Structs with no definition in the public header files
-OPAQUE_STRUCTS = [u'words']
+OPAQUE_STRUCTS = [u'words', u'wally_descriptor']
 
 EXCLUDED_FUNCS = {
     # Callers should use the fixed length bip39_mnemonic_to_seed512

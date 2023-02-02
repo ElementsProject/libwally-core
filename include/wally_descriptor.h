@@ -8,10 +8,43 @@ extern "C" {
 #endif
 
 struct wally_map;
+/** An opaque type holding a parsed minscript/descriptor expression */
+struct wally_descriptor;
 
 /* Miniscript type flag */
 #define WALLY_MINISCRIPT_WITNESS_SCRIPT 0x00 /** Witness script */
 #define WALLY_MINISCRIPT_TAPSCRIPT      0x01 /** Tapscript */
+#define WALLY_MINISCRIPT_ONLY           0x02 /** Only allow miniscript (not descriptor) expressions */
+
+/**
+ * Parse an output descriptor or miniscript expression.
+ *
+ * :param descriptor: Output descriptor or miniscript expression to parse.
+ * :param vars_in: Map of variable names to values, or NULL.
+ * :param network: ``WALLY_NETWORK_`` constant descripting the network the
+ *|    descriptor belongs to, or WALLY_NETWORK_NONE for miniscript-only expressions.
+ * :param flags: ``WALLY_MINISCRIPT_ONLY`` to disallow descriptor expressions, or 0.
+ * :param output: Destination for the resulting parsed descriptor.
+ *|    The descriptor returned should be freed using `wally_descriptor_free`.
+ *
+ * Variable names can be used in the descriptor string and will be substituted
+ * with the contents of ``vars_in`` during parsing. Key names for ``vars_in``
+ * must be 16 characters or less in length and start with a letter.
+ */
+WALLY_CORE_API int wally_descriptor_parse(
+    const char *descriptor,
+    const struct wally_map *vars_in,
+    uint32_t network,
+    uint32_t flags,
+    struct wally_descriptor **output);
+
+/**
+ * Free a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression to free.
+ */
+WALLY_CORE_API int wally_descriptor_free(
+    struct wally_descriptor *descriptor);
 
 /**
  * Canonicalize a descriptor.

@@ -90,6 +90,7 @@ static bool ulonglong_cast(PyObject *item, unsigned long long *val)
     if (p) fn(p); }
 
 capsule_dtor(ext_key, bip32_key_free)
+capsule_dtor(wally_descriptor, wally_descriptor_free)
 capsule_dtor(wally_psbt, wally_psbt_free)
 capsule_dtor(wally_tx, wally_tx_free)
 capsule_dtor(wally_tx_input, wally_tx_input_free)
@@ -415,6 +416,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_int_array_out(uint32_t, 0xffffffffull, child_path_out, child_path_out_len)
 
 %py_opaque_struct(ext_key);
+%py_opaque_struct(wally_descriptor);
 %py_opaque_struct(wally_psbt);
 %py_opaque_struct(wally_tx);
 %py_opaque_struct(wally_tx_input);

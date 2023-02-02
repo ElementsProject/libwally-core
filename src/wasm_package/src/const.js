@@ -104,6 +104,7 @@ export const WALLY_ENOMEM = -3; /** malloc() failed */
 export const WALLY_ERROR = -1; /** General error */
 export const WALLY_HOST_COMMITMENT_LEN = 32;
 export const WALLY_MAX_OP_RETURN_LEN = 80; /* Maximum length of OP_RETURN data push */
+export const WALLY_MINISCRIPT_ONLY = 0x02; /** Only allow miniscript (not descriptor) expressions */
 export const WALLY_MINISCRIPT_TAPSCRIPT = 0x01; /** Tapscript */
 export const WALLY_MINISCRIPT_WITNESS_SCRIPT = 0x00; /** Witness script */
 export const WALLY_NETWORK_BITCOIN_MAINNET = 0x01; /** Bitcoin mainnet */

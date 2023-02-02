@@ -439,9 +439,20 @@ inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, const VARS_IN& 
     return ret;
 }
 
+inline int descriptor_free(struct wally_descriptor* descriptor) {
+    int ret = ::wally_descriptor_free(descriptor);
+    return ret;
+}
+
 template <class DESCRIPTOR, class VARS_IN>
 inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t flags, char** output) {
     int ret = ::wally_descriptor_get_checksum(detail::get_p(descriptor), detail::get_p(vars_in), flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_parse(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t network, uint32_t flags, struct wally_descriptor** output) {
+    int ret = ::wally_descriptor_parse(detail::get_p(descriptor), detail::get_p(vars_in), network, flags, output);
     return ret;
 }
 

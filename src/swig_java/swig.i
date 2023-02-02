@@ -448,6 +448,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %java_opaque_struct(wally_tx, 6);
 %java_opaque_struct(wally_map, 7);
 %java_opaque_struct(wally_psbt, 8);
+%java_opaque_struct(wally_descriptor, 9);
 
 /* Our wrapped functions return types */
 %returns_void__(bip32_key_free);
@@ -541,6 +542,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_descriptor_get_checksum);
 %returns_size_t(wally_miniscript_to_script);
 %returns_size_t(wally_miniscript_to_script_len);
+%returns_void__(wally_descriptor_free);
+%returns_struct(wally_descriptor_parse, wally_descriptor);
 %returns_string(wally_descriptor_to_address);
 %returns_sarray(wally_descriptor_to_addresses);
 %returns_size_t(wally_descriptor_to_scriptpubkey);
