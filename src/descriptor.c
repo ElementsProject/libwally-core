@@ -2194,9 +2194,8 @@ static int node_generate_script(struct ms_context *ctx, uint32_t depth,
  * - addresses != NULL: Generate a range of scripts and then their addresses
  */
 static int parse_miniscript(const char *miniscript, const struct wally_map *vars_in,
+                            uint32_t child_num, uint32_t network,
                             uint32_t flags, uint32_t kind,
-                            uint32_t network,
-                            uint32_t child_num,
                             struct ms_context **output)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
@@ -2244,7 +2243,8 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
     if (child_num >= BIP32_INITIAL_HARDENED_CHILD || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, WALLY_NETWORK_NONE, child_num, &ctx);
+    ret = parse_miniscript(miniscript, vars_in, child_num, WALLY_NETWORK_NONE,
+                           flags, KIND_MINISCRIPT, &ctx);
     if (ret == WALLY_OK) {
         ctx->child_num = child_num;
         ret = node_generate_script(ctx, 0, 0, written);
@@ -2278,8 +2278,8 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
     if (child_num >= BIP32_INITIAL_HARDENED_CHILD || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                           network, child_num, &ctx);
+    ret = parse_miniscript(descriptor, vars_in, child_num, network, flags,
+                           KIND_MINISCRIPT | KIND_DESCRIPTOR, &ctx);
     if (ret == WALLY_OK) {
         ctx->child_num = child_num;
         ret = node_generate_script(ctx, depth, index, written);
@@ -2314,8 +2314,8 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
         return WALLY_EINVAL;
 
     wally_clear(addresses, num_addresses * sizeof(*addresses));
-    ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                           network, child_num, &ctx);
+    ret = parse_miniscript(descriptor, vars_in, child_num, network, flags,
+                           KIND_MINISCRIPT | KIND_DESCRIPTOR, &ctx);
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
         ctx->child_num = child_num + i;
         ret = node_generate_script(ctx, 0, 0, &written);
