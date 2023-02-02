@@ -143,7 +143,6 @@ struct ms_context {
     unsigned char *script;
     size_t script_len;
     uint32_t child_num; /* Start child number for derivation */
-    size_t num_derivations; /* How many incrementing children to derive */
 };
 
 /* FIXME: the max is actually 20 in a witness script */
@@ -2143,16 +2142,14 @@ static int node_generation_size(const ms_node *node, size_t *total)
 
 static int allocate_script(struct ms_context *ctx)
 {
-    size_t required_size = 0;
     int ret = WALLY_OK;
 
     if (!ctx->script) {
-        ret = node_generation_size(ctx->top_node, &required_size);
+        if (!ctx->script_len)
+            ret = node_generation_size(ctx->top_node, &ctx->script_len);
         if (ret == WALLY_OK) {
-            if (!(ctx->script = wally_malloc(required_size)))
+            if (!(ctx->script = wally_malloc(ctx->script_len)))
                 ret = WALLY_ENOMEM;
-            else
-                ctx->script_len = required_size;
         }
     }
     return ret;
@@ -2197,7 +2194,6 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
                             uint32_t flags, uint32_t kind,
                             const struct addr_ver_t *addr_ver,
                             uint32_t child_num,
-                            char **addresses, uint32_t num_addresses,
                             struct ms_context **output)
 {
     struct ms_context *ctx;
@@ -2205,12 +2201,8 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
 
     *output = NULL;
 
-    if (flags & ~WALLY_MINISCRIPT_TAPSCRIPT || (addresses && !addr_ver))
+    if (!miniscript || flags & ~WALLY_MINISCRIPT_TAPSCRIPT)
         return WALLY_EINVAL;
-
-    if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
-        (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD)
-        return WALLY_EINVAL; /* Don't allow private derivation via child_num */
 
     /* Allocate a context to hold the canonicalized/parsed expression */
     if (!(*output = wally_calloc(sizeof(struct ms_context))))
@@ -2221,7 +2213,6 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
         return ret;
     ctx->src_len = strlen(ctx->src);
     ctx->child_num = child_num;
-    ctx->num_derivations = num_addresses;
 
     ret = analyze_miniscript(ctx->src, ctx->src_len, kind, addr_ver, flags, NULL, NULL, &ctx->top_node);
     if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
@@ -2241,10 +2232,10 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
     if (written)
         *written = 0;
 
-    if (!bytes_out || !len || !written)
+    if (child_num >= BIP32_INITIAL_HARDENED_CHILD || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, child_num, NULL, 1, &ctx);
+    ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, child_num, &ctx);
     if (ret == WALLY_OK) {
         ret = node_generate_script(ctx, child_num, 0, 0, written);
         if (ret == WALLY_OK && *written <= len)
@@ -2275,11 +2266,12 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
     if (written)
         *written = 0;
 
-    if (!descriptor || (network && !addr_ver) || !bytes_out || !len || !written)
+    if (child_num >= BIP32_INITIAL_HARDENED_CHILD || (network && !addr_ver) ||
+        !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                           addr_ver, child_num, NULL, 1, &ctx);
+                           addr_ver, child_num, &ctx);
     if (ret == WALLY_OK) {
         ret = node_generate_script(ctx, child_num, depth, index, written);
         if (ret == WALLY_OK && *written <= len)
@@ -2308,12 +2300,14 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
     size_t i, written;
     int ret;
 
-    if (!descriptor || !addr_ver || !addresses || !num_addresses)
+    if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
+        !addr_ver || !addresses || !num_addresses)
         return WALLY_EINVAL;
-    wally_clear(addresses, num_addresses * sizeof(*addresses));
 
+    wally_clear(addresses, num_addresses * sizeof(*addresses));
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
-                           addr_ver, child_num, addresses, num_addresses, &ctx);
+                           addr_ver, child_num, &ctx);
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
         ret = node_generate_script(ctx, child_num + i, 0, 0, &written);
         if (ret == WALLY_OK) {
