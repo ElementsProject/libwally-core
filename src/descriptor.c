@@ -317,7 +317,7 @@ static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
             ((primary & PROP_J) && (secondary & PROP_I));
 }
 
-static int wally_free_miniscript(struct ms_context *ctx)
+static int wally_descriptor_free(struct ms_context *ctx)
 {
     if (ctx) {
         clear_and_free(ctx->script, ctx->script_len);
@@ -2242,7 +2242,7 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
         if (ret == WALLY_OK && *written <= len)
             memcpy(bytes_out, ctx->script, *written);
     }
-    wally_free_miniscript(ctx);
+    wally_descriptor_free(ctx);
     return ret;
 }
 
@@ -2279,7 +2279,7 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
         if (ret == WALLY_OK && *written <= len)
             memcpy(bytes_out, ctx->script, *written);
     }
-    wally_free_miniscript(ctx);
+    wally_descriptor_free(ctx);
     return ret;
 }
 
@@ -2334,7 +2334,7 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
             addresses[i] = NULL;
         }
     }
-    wally_free_miniscript(ctx);
+    wally_descriptor_free(ctx);
     return ret;
 }
 
