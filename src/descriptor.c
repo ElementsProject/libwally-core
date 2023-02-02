@@ -2209,8 +2209,11 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
         return WALLY_ENOMEM;
     ctx = *output;
     ret = wally_descriptor_canonicalize(miniscript, vars_in, 0, &ctx->src);
-    if (ret != WALLY_OK)
+    if (ret != WALLY_OK) {
+        wally_descriptor_free(ctx);
+        *output = NULL;
         return ret;
+    }
     ctx->src_len = strlen(ctx->src);
     ctx->child_num = child_num;
 
