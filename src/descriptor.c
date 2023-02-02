@@ -121,9 +121,18 @@ typedef struct ms_node_t {
     bool is_xonly_key;
 } ms_node;
 
+typedef struct ms_context {
+    char *src; /* The canonical source script */
+    size_t src_len; /* Length of src */
+    ms_node *top_node; /* The first node of the parse tree */
+    unsigned char *script;
+    size_t script_len;
+    uint32_t child_num; /* BIP32 child number for derivation */
+} ms_context;
+
 /* Built-in miniscript expressions */
 typedef int (*node_verify_fn_t)(ms_node *node);
-typedef int (*node_gen_fn_t)(ms_node *node, int32_t child_num,
+typedef int (*node_gen_fn_t)(ms_context *ctx, ms_node *node,
                              unsigned char *script, size_t script_len, size_t *written);
 
 struct ms_builtin_t {
@@ -134,15 +143,6 @@ struct ms_builtin_t {
     const uint32_t child_count; /* Number of expected children */
     const node_verify_fn_t verify_fn;
     const node_gen_fn_t generate_fn;
-};
-
-struct ms_context {
-    char *src; /* The canonical source script */
-    size_t src_len; /* Length of src */
-    ms_node *top_node; /* The first node of the parse tree */
-    unsigned char *script;
-    size_t script_len;
-    uint32_t child_num; /* Start child number for derivation */
 };
 
 /* FIXME: the max is actually 20 in a witness script */
@@ -251,7 +251,7 @@ static const struct addr_ver_t *addr_ver_from_family(
 
 /* Function prototype */
 static const struct ms_builtin_t *builtin_get(const ms_node *node);
-static int generate_script(ms_node *node, uint32_t child_num,
+static int generate_script(ms_context *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written);
 
 /* Wrapper for strtoll */
@@ -830,7 +830,7 @@ static int generate_number(int64_t number, ms_node *parent,
     return WALLY_OK;
 }
 
-static int generate_pk_k(ms_node *node, int32_t child_num,
+static int generate_pk_k(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     unsigned char buff[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
@@ -839,7 +839,7 @@ static int generate_pk_k(ms_node *node, int32_t child_num,
     if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
-    ret = generate_script(node->child, child_num, buff, sizeof(buff), written);
+    ret = generate_script(ctx, node->child, buff, sizeof(buff), written);
     if (ret == WALLY_OK) {
         if (*written != EC_PUBLIC_KEY_LEN && *written != EC_XONLY_PUBLIC_KEY_LEN &&
             *written != EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
@@ -853,14 +853,14 @@ static int generate_pk_k(ms_node *node, int32_t child_num,
     return ret;
 }
 
-static int generate_pk_h(ms_node *node, int32_t child_num,
+static int generate_pk_h(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     unsigned char buff[1 + EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     int ret = WALLY_OK;
 
     if (script_len >= WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1) {
-        ret = generate_pk_k(node, child_num, buff, sizeof(buff), written);
+        ret = generate_pk_k(ctx, node, buff, sizeof(buff), written);
         if (ret == WALLY_OK) {
             if (node->child->is_xonly_key)
                 return WALLY_EINVAL;
@@ -875,7 +875,7 @@ static int generate_pk_h(ms_node *node, int32_t child_num,
     return ret;
 }
 
-static int generate_sh_wsh(ms_node *node, int32_t child_num,
+static int generate_sh_wsh(ms_context *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     const bool is_sh = node->kind == KIND_DESCRIPTOR_SH;
@@ -888,7 +888,7 @@ static int generate_sh_wsh(ms_node *node, int32_t child_num,
     if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
-    ret = generate_script(node->child, child_num, script, script_len, &output_len);
+    ret = generate_script(ctx, node->child, script, script_len, &output_len);
     if (ret == WALLY_OK) {
         if (output_len > REDEEM_SCRIPT_MAX_SIZE)
             ret = WALLY_EINVAL;
@@ -919,21 +919,21 @@ static int generate_checksig(unsigned char *script, size_t script_len, size_t *w
     return WALLY_OK;
 }
 
-static int generate_pk(ms_node *node, int32_t child_num,
+static int generate_pk(ms_context *ctx, ms_node *node,
                        unsigned char *script, size_t script_len, size_t *written)
 {
-    int ret = generate_pk_k(node, child_num, script, script_len, written);
+    int ret = generate_pk_k(ctx, node, script, script_len, written);
     return ret == WALLY_OK ? generate_checksig(script, script_len, written) : ret;
 }
 
-static int generate_pkh(ms_node *node, int32_t child_num,
+static int generate_pkh(ms_context *ctx, ms_node *node,
                         unsigned char *script, size_t script_len, size_t *written)
 {
-    int ret = generate_pk_h(node, child_num, script, script_len, written);
+    int ret = generate_pk_h(ctx, node, script, script_len, written);
     return ret == WALLY_OK ? generate_checksig(script, script_len, written) : ret;
 }
 
-static int generate_wpkh(ms_node *node, int32_t child_num,
+static int generate_wpkh(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     unsigned char output[WALLY_SCRIPTPUBKEY_P2WPKH_LEN];
@@ -943,7 +943,7 @@ static int generate_wpkh(ms_node *node, int32_t child_num,
     if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
-    ret = generate_script(node->child, child_num, script, script_len, &output_len);
+    ret = generate_script(ctx, node->child, script, script_len, &output_len);
     if (ret == WALLY_OK) {
         if (output_len > REDEEM_SCRIPT_MAX_SIZE)
             ret = WALLY_EINVAL;
@@ -963,12 +963,12 @@ static int generate_wpkh(ms_node *node, int32_t child_num,
     return ret;
 }
 
-static int generate_combo(ms_node *node, int32_t child_num,
+static int generate_combo(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     if (node_has_uncompressed_key(node))
-        return generate_pkh(node, child_num, script, script_len, written);
-    return generate_wpkh(node, child_num, script, script_len, written);
+        return generate_pkh(ctx, node, script, script_len, written);
+    return generate_wpkh(ctx, node, script, script_len, written);
 }
 
 static int compare_multisig_node(const void *lhs, const void *rhs)
@@ -979,7 +979,7 @@ static int compare_multisig_node(const void *lhs, const void *rhs)
     return memcmp(l->pubkey, ((const struct multisig_sort_data_t *)rhs)->pubkey, l->pubkey_len);
 }
 
-static int generate_multi(ms_node *node, int32_t child_num,
+static int generate_multi(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     size_t offset;
@@ -991,13 +991,13 @@ static int generate_multi(ms_node *node, int32_t child_num,
     if (!child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
 
-    if ((ret = generate_script(child, child_num, script, script_len, &offset)) != WALLY_OK)
+    if ((ret = generate_script(ctx, child, script, script_len, &offset)) != WALLY_OK)
         return ret;
 
     child = child->next;
     for (count = 0; ret == WALLY_OK && child && count < NUM_ELEMS(sorted); ++count) {
         struct multisig_sort_data_t *item = sorted + count;
-        ret = generate_script(child, child_num,
+        ret = generate_script(ctx, child,
                               item->pubkey, sizeof(item->pubkey), &item->pubkey_len);
         if (ret == WALLY_OK && item->pubkey_len > sizeof(item->pubkey))
             ret = WALLY_EINVAL; /* FIXME: check for valid pubkey lengths */
@@ -1039,18 +1039,18 @@ static int generate_multi(ms_node *node, int32_t child_num,
     return ret;
 }
 
-static int generate_raw(ms_node *node, int32_t child_num,
+static int generate_raw(ms_context *ctx, ms_node *node,
                         unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
     if (!node->child || !script_len || !node_is_root(node))
         return WALLY_EINVAL;
 
-    ret = generate_script(node->child, child_num, script, script_len, written);
+    ret = generate_script(ctx, node->child, script, script_len, written);
     return *written > REDEEM_SCRIPT_MAX_SIZE ?  WALLY_EINVAL : ret;
 }
 
-static int generate_delay(ms_node *node, int32_t child_num,
+static int generate_delay(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
@@ -1058,7 +1058,7 @@ static int generate_delay(ms_node *node, int32_t child_num,
     if (!node->child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
 
-    ret = generate_script(node->child, child_num, script, script_len, &output_len);
+    ret = generate_script(ctx, node->child, script, script_len, &output_len);
     if (ret != WALLY_OK)
         return ret;
 
@@ -1074,7 +1074,7 @@ static int generate_delay(ms_node *node, int32_t child_num,
     return ret;
 }
 
-static int generate_hash_type(ms_node *node, int32_t child_num,
+static int generate_hash_type(ms_context *ctx, ms_node *node,
                               unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
@@ -1101,7 +1101,7 @@ static int generate_hash_type(ms_node *node, int32_t child_num,
         return WALLY_ERROR; /* Shouldn't happen */
 
     /* FIXME: don't let script_len go negative */
-    ret = generate_script(node->child, child_num, &script[6], script_len - 7, &output_len);
+    ret = generate_script(ctx, node->child, &script[6], script_len - 7, &output_len);
     if (ret == WALLY_OK) {
         *written = output_len + 7;
         if (*written <= script_len) {
@@ -1117,7 +1117,7 @@ static int generate_hash_type(ms_node *node, int32_t child_num,
     return ret;
 }
 
-static int generate_concat(ms_node *node, int32_t child_num, size_t target_num,
+static int generate_concat(ms_context *ctx, ms_node *node, size_t target_num,
                            const size_t *reference_indices,
                            const unsigned char *prev_insert, size_t prev_insert_num,
                            const unsigned char *first_insert, size_t first_insert_num,
@@ -1161,7 +1161,7 @@ static int generate_concat(ms_node *node, int32_t child_num, size_t target_num,
         }
 
         output_len = 0;
-        ret = generate_script(child[indices[i]], child_num,
+        ret = generate_script(ctx, child[indices[i]],
                               &script[offset], script_len - offset - 1, &output_len);
         if (ret != WALLY_OK)
             return ret;
@@ -1185,7 +1185,7 @@ static int generate_concat(ms_node *node, int32_t child_num, size_t target_num,
     return ret;
 }
 
-static int generate_andor(ms_node *node, int32_t child_num,
+static int generate_andor(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char first_op[1] = { OP_NOTIF };
@@ -1193,7 +1193,7 @@ static int generate_andor(ms_node *node, int32_t child_num,
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[3] = { 0, 2, 1 };
     /* [X] NOTIF 0 ELSE [Y] ENDIF */
-    return generate_concat(node, child_num, 3, indices,
+    return generate_concat(ctx, node, 3, indices,
                            NULL, 0,
                            first_op, NUM_ELEMS(first_op),
                            second_op, NUM_ELEMS(second_op),
@@ -1201,12 +1201,12 @@ static int generate_andor(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_and_v(ms_node *node, int32_t child_num,
+static int generate_and_v(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     /* [X] [Y] */
     const size_t indices[2] = { 0, 1 };
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            NULL, 0,
                            NULL, 0,
                            NULL, 0,
@@ -1214,13 +1214,13 @@ static int generate_and_v(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_and_b(ms_node *node, int32_t child_num,
+static int generate_and_b(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char append[1] = { OP_BOOLAND };
     const size_t indices[2] = { 0, 1 };
     /* [X] [Y] BOOLAND */
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            NULL, 0,
                            NULL, 0,
                            NULL, 0,
@@ -1228,14 +1228,14 @@ static int generate_and_b(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_and_n(ms_node *node, int32_t child_num,
+static int generate_and_n(ms_context *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char middle_op[3] = { OP_NOTIF, OP_0, OP_ELSE };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
     /* [X] NOTIF 0 ELSE [Y] ENDIF */
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            NULL, 0,
                            middle_op, NUM_ELEMS(middle_op),
                            NULL, 0,
@@ -1243,13 +1243,13 @@ static int generate_and_n(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_or_b(ms_node *node, int32_t child_num,
+static int generate_or_b(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char append[1] = { OP_BOOLOR };
     const size_t indices[2] = { 0, 1 };
     /* [X] [Y] OP_BOOLOR */
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            NULL, 0,
                            NULL, 0,
                            NULL, 0,
@@ -1257,14 +1257,14 @@ static int generate_or_b(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_or_c(ms_node *node, int32_t child_num,
+static int generate_or_c(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char middle_op[1] = { OP_NOTIF };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
     /* [X] NOTIF [Z] ENDIF */
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            NULL, 0,
                            middle_op, NUM_ELEMS(middle_op),
                            NULL, 0,
@@ -1272,14 +1272,14 @@ static int generate_or_c(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_or_d(ms_node *node, int32_t child_num,
+static int generate_or_d(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char middle_op[2] = { OP_IFDUP, OP_NOTIF };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
     /* [X] IFDUP NOTIF [Z] ENDIF */
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            NULL, 0,
                            middle_op, NUM_ELEMS(middle_op),
                            NULL, 0,
@@ -1287,7 +1287,7 @@ static int generate_or_d(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_or_i(ms_node *node, int32_t child_num,
+static int generate_or_i(ms_context *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
     const unsigned char top_op[1] = { OP_IF };
@@ -1295,7 +1295,7 @@ static int generate_or_i(ms_node *node, int32_t child_num,
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
     /* IF [X] ELSE [Z] ENDIF */
-    return generate_concat(node, child_num, 2, indices,
+    return generate_concat(ctx, node, 2, indices,
                            top_op, NUM_ELEMS(top_op),
                            middle_op, NUM_ELEMS(middle_op),
                            NULL, 0,
@@ -1303,7 +1303,7 @@ static int generate_or_i(ms_node *node, int32_t child_num,
                            script, script_len, written);
 }
 
-static int generate_thresh(ms_node *node, int32_t child_num,
+static int generate_thresh(ms_context *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     /* [X1] [X2] ADD ... [Xn] ADD <k> EQUAL */
@@ -1316,7 +1316,7 @@ static int generate_thresh(ms_node *node, int32_t child_num,
 
     for (child = child->next; child && ret == WALLY_OK; child = child->next) {
         /* FIXME: don't let script_len go negative */
-        ret = generate_script(child, child_num,
+        ret = generate_script(ctx, child,
                               &script[offset], script_len - offset - 1, &output_len);
         if (ret == WALLY_OK) {
             offset += output_len;
@@ -1328,7 +1328,7 @@ static int generate_thresh(ms_node *node, int32_t child_num,
     }
     if (ret == WALLY_OK)
         /* FIXME: don't let script_len go negative */
-        ret = generate_script(node->child, child_num,
+        ret = generate_script(ctx, node->child,
                               &script[offset], script_len - offset - 1,
                               &output_len);
     if (ret == WALLY_OK) {
@@ -1593,7 +1593,7 @@ static const struct ms_builtin_t *builtin_get(const ms_node *node)
     return node->builtin ? &g_builtins[node->builtin - 1] : NULL;
 }
 
-static int generate_script(ms_node *node, uint32_t child_num,
+static int generate_script(ms_context *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     int ret = WALLY_EINVAL;
@@ -1601,7 +1601,7 @@ static int generate_script(ms_node *node, uint32_t child_num,
 
     if (node->builtin) {
         output_len = *written;
-        ret = builtin_get(node)->generate_fn(node, child_num, script, script_len, &output_len);
+        ret = builtin_get(node)->generate_fn(ctx, node, script, script_len, &output_len);
         if (ret == WALLY_OK) {
             ret = generate_wrappers(node, script, script_len, &output_len);
             if (ret == WALLY_OK)
@@ -1656,7 +1656,7 @@ static int generate_script(ms_node *node, uint32_t child_num,
             struct ext_key derived;
 
             ret = bip32_key_from_parent_path_str_n(&master, node->child_path, node->child_path_len,
-                                                   child_num, flags, &derived);
+                                                   ctx->child_num, flags, &derived);
             if (ret == WALLY_OK)
                 memcpy(&master, &derived, sizeof(master));
         }
@@ -2155,9 +2155,8 @@ static int allocate_script(struct ms_context *ctx)
     return ret;
 }
 
-static int node_generate_script(struct ms_context *ctx, uint32_t child_num,
-                                uint32_t depth, uint32_t index,
-                                size_t *written)
+static int node_generate_script(struct ms_context *ctx, uint32_t depth,
+                                uint32_t index, size_t *written)
 {
     ms_node *node = ctx->top_node, *parent;
     size_t i;
@@ -2180,7 +2179,7 @@ static int node_generate_script(struct ms_context *ctx, uint32_t child_num,
 
     parent = node->parent;
     node->parent = NULL;
-    ret = generate_script(node, child_num, ctx->script, ctx->script_len, written);
+    ret = generate_script(ctx, node, ctx->script, ctx->script_len, written);
     node->parent = parent;
     return ret;
 }
@@ -2196,7 +2195,7 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
                             uint32_t child_num,
                             struct ms_context **output)
 {
-    struct ms_context *ctx;
+    ms_context *ctx;
     int ret;
 
     *output = NULL;
@@ -2205,7 +2204,7 @@ static int parse_miniscript(const char *miniscript, const struct wally_map *vars
         return WALLY_EINVAL;
 
     /* Allocate a context to hold the canonicalized/parsed expression */
-    if (!(*output = wally_calloc(sizeof(struct ms_context))))
+    if (!(*output = wally_calloc(sizeof(ms_context))))
         return WALLY_ENOMEM;
     ctx = *output;
     ret = wally_descriptor_canonicalize(miniscript, vars_in, 0, &ctx->src);
@@ -2226,7 +2225,7 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
                                uint32_t child_num, uint32_t flags,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
-    struct ms_context *ctx;
+    ms_context *ctx;
     int ret;
 
     if (written)
@@ -2237,7 +2236,8 @@ int wally_miniscript_to_script(const char *miniscript, const struct wally_map *v
 
     ret = parse_miniscript(miniscript, vars_in, flags, KIND_MINISCRIPT, NULL, child_num, &ctx);
     if (ret == WALLY_OK) {
-        ret = node_generate_script(ctx, child_num, 0, 0, written);
+        ctx->child_num = child_num;
+        ret = node_generate_script(ctx, 0, 0, written);
         if (ret == WALLY_OK && *written <= len)
             memcpy(bytes_out, ctx->script, *written);
     }
@@ -2260,7 +2260,7 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
                                      unsigned char *bytes_out, size_t len, size_t *written)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
-    struct ms_context *ctx;
+    ms_context *ctx;
     int ret;
 
     if (written)
@@ -2273,7 +2273,8 @@ int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
                            addr_ver, child_num, &ctx);
     if (ret == WALLY_OK) {
-        ret = node_generate_script(ctx, child_num, depth, index, written);
+        ctx->child_num = child_num;
+        ret = node_generate_script(ctx, depth, index, written);
         if (ret == WALLY_OK && *written <= len)
             memcpy(bytes_out, ctx->script, *written);
     }
@@ -2296,7 +2297,7 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
                                   char **addresses, size_t num_addresses)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
-    struct ms_context *ctx;
+    ms_context *ctx;
     size_t i, written;
     int ret;
 
@@ -2309,7 +2310,8 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
     ret = parse_miniscript(descriptor, vars_in, flags, KIND_MINISCRIPT | KIND_DESCRIPTOR,
                            addr_ver, child_num, &ctx);
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
-        ret = node_generate_script(ctx, child_num + i, 0, 0, &written);
+        ctx->child_num = child_num + i;
+        ret = node_generate_script(ctx, 0, 0, &written);
         if (ret == WALLY_OK) {
             if (written > ctx->script_len)
                 ret = WALLY_ERROR;
