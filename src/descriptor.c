@@ -1662,6 +1662,7 @@ static int generate_script(ms_context *ctx, ms_node *node,
         }
         if (ret == WALLY_OK)
             memcpy(script, master.pub_key + (node->is_xonly_key ? 1 : 0), *written);
+        wally_clear(&master, sizeof(master));
     }
     return ret;
 }
