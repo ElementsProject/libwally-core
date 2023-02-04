@@ -2212,18 +2212,18 @@ int wally_descriptor_parse(const char *miniscript,
     ctx = *output;
     ctx->addr_ver = addr_ver;
     ret = wally_descriptor_canonicalize(miniscript, vars_in, 0, &ctx->src);
+    if (ret == WALLY_OK) {
+        ctx->src_len = strlen(ctx->src);
+        ret = analyze_miniscript(ctx->src, ctx->src_len, kind, ctx->addr_ver,
+                                 flags, NULL, NULL, &ctx->top_node);
+        if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
+            (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
+            ret = WALLY_EINVAL;
+    }
     if (ret != WALLY_OK) {
         wally_descriptor_free(ctx);
         *output = NULL;
-        return ret;
     }
-    ctx->src_len = strlen(ctx->src);
-
-    ret = analyze_miniscript(ctx->src, ctx->src_len, kind, ctx->addr_ver, flags, NULL, NULL, &ctx->top_node);
-    if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
-        (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
-        ret = WALLY_EINVAL;
-
     return ret;
 }
 
