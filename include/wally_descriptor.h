@@ -119,6 +119,21 @@ WALLY_CORE_API int wally_miniscript_to_script(
     size_t *written);
 
 /**
+ * Get the maximum length of a scriptPubKey corresponding to an output descriptor.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param flags: For future use. Must be 0.
+ * :param written: Destination for the resulting maximum scriptPubKey length.
+ *
+ * .. note:: This function overestimates the script size required, but is
+ *|    cheap to compute (does not require script generation).
+ */
+WALLY_CORE_API int wally_descriptor_to_scriptpubkey_maximum_length(
+    const struct wally_descriptor *descriptor,
+    uint32_t flags,
+    size_t *written);
+
+/**
  * Get the length of a scriptPubKey corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
@@ -129,9 +144,10 @@ WALLY_CORE_API int wally_miniscript_to_script(
  * :param flags: For future use. Must be 0.
  * :param written: Destination for the resulting scriptPubKey length.
  *
- * .. note:: Computing this length is expensive. Prefer to pass a large
- *| buffer to `wally_descriptor_to_scriptpubkey` and retry only if the
- *| buffer is too small.
+ * .. note:: Computing the script length using this function is expensive, as
+ *|    it must generate the script. Prefer to use `wally_descriptor_to_scriptpubkey_maximum_length`
+ *|    or pass a large buffer to `wally_descriptor_to_scriptpubkey` and retry
+ *|    the call with a larger buffer if the it was too small.
  */
 WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
     struct wally_descriptor *descriptor,

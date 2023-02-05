@@ -2306,21 +2306,6 @@ static int node_generation_size(const ms_node *node, size_t *total)
     return WALLY_OK;
 }
 
-static int allocate_script(ms_ctx *ctx)
-{
-    int ret = WALLY_OK;
-
-    if (!ctx->script) {
-        if (!ctx->script_len)
-            ret = node_generation_size(ctx->top_node, &ctx->script_len);
-        if (ret == WALLY_OK) {
-            if (!(ctx->script = wally_malloc(ctx->script_len)))
-                ret = WALLY_ENOMEM;
-        }
-    }
-    return ret;
-}
-
 static int node_generate_script(ms_ctx *ctx, uint32_t depth,
                                 uint32_t index, size_t *written)
 {
@@ -2329,8 +2314,6 @@ static int node_generate_script(ms_ctx *ctx, uint32_t depth,
     int ret;
 
     *written = 0;
-    if ((ret = allocate_script(ctx)) != WALLY_OK)
-        return ret;
 
     for (i = 0; i < depth; ++i) {
         if (!node->child)
@@ -2379,6 +2362,11 @@ int wally_descriptor_parse(const char *miniscript,
         if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
             (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
             ret = WALLY_EINVAL;
+        else if (ret == WALLY_OK) {
+            ret = node_generation_size(ctx->top_node, &ctx->script_len);
+            if (ret == WALLY_OK && !(ctx->script = wally_malloc(ctx->script_len)))
+                ret = WALLY_ENOMEM;
+        }
     }
     if (ret != WALLY_OK) {
         wally_descriptor_free(ctx);
@@ -2426,7 +2414,6 @@ int wally_descriptor_to_scriptpubkey(struct wally_descriptor *descriptor,
                                      uint32_t variant, uint32_t child_num, uint32_t flags,
                                      unsigned char *bytes_out, size_t len, size_t *written)
 {
-    ms_ctx *ctx;
     int ret;
     (void)variant; /* TODO: support variants */
 
@@ -2455,8 +2442,8 @@ int wally_descriptor_to_scriptpubkey_len(struct wally_descriptor *descriptor,
                                             buff, sizeof(buff), written);
 }
 
-int wally_descriptor_to_scriptpubkey_maximum_len(const struct wally_descriptor *descriptor,
-                                                 uint32_t flags, size_t *written)
+int wally_descriptor_to_scriptpubkey_maximum_length(
+    const struct wally_descriptor *descriptor, uint32_t flags, size_t *written)
 {
     if (written)
         *written = 0;

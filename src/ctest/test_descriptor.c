@@ -1292,6 +1292,12 @@ static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
         written != len_written)
         return false;
 
+    len_ret = wally_descriptor_to_scriptpubkey_maximum_length(descriptor,
+                                                              flags, &len_written);
+    if (!check_ret("descriptor_to_scriptpubkey_maximum_length", len_ret, WALLY_OK) ||
+        written > len_written)
+        return false;
+
     ret = wally_descriptor_get_checksum(descriptor, flags, &checksum);
     if (!check_ret("descriptor_get_checksum", ret, WALLY_OK))
         return false;

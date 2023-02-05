@@ -78,6 +78,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_to_addresses' \
 ,'_wally_descriptor_to_scriptpubkey' \
 ,'_wally_descriptor_to_scriptpubkey_len' \
+,'_wally_descriptor_to_scriptpubkey_maximum_length' \
 ,'_wally_ec_private_key_verify' \
 ,'_wally_ec_public_key_decompress' \
 ,'_wally_ec_public_key_from_private_key' \

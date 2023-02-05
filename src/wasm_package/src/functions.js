@@ -164,6 +164,7 @@ export const descriptor_parse = wrap('wally_descriptor_parse', [T.String, T.Opaq
 export const descriptor_to_address = wrap('wally_descriptor_to_address', [T.String, T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.DestPtrPtr(T.String)]);
 export const descriptor_to_addresses = wrap('wally_descriptor_to_addresses', [T.String, T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.DestPtrSized(T.String, T.USER_PROVIDED_LEN)]);
 export const descriptor_to_scriptpubkey_len = wrap('wally_descriptor_to_scriptpubkey_len', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.Int32, T.Int32, T.DestPtr(T.Int32)]);
+export const descriptor_to_scriptpubkey_maximum_length = wrap('wally_descriptor_to_scriptpubkey_maximum_length', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const ec_private_key_verify = wrap('wally_ec_private_key_verify', [T.Bytes]);
 export const ec_public_key_decompress = wrap('wally_ec_public_key_decompress', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_UNCOMPRESSED_LEN)]);
 export const ec_public_key_from_private_key = wrap('wally_ec_public_key_from_private_key', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
