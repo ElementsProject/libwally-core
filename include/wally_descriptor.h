@@ -121,12 +121,11 @@ WALLY_CORE_API int wally_miniscript_to_script(
 /**
  * Get the length of a scriptPubKey corresponding to an output descriptor.
  *
- * :param descriptor: Output descriptor.
- * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
- * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
- * :param depth: Number of the descriptor depth. Default is 0.
- * :param index: Number of the descriptor index. Default is 0.
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
+ * :param index: The zero-based index of the child at depth ``depth`` to generate from.
+ * :param variant: The variant of descriptor to generate. Pass 0 for the default.
+ * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
  * :param flags: For future use. Must be 0.
  * :param written: Destination for the resulting scriptPubKey length.
  *
@@ -135,36 +134,33 @@ WALLY_CORE_API int wally_miniscript_to_script(
  *| buffer is too small.
  */
 WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
-    const char *descriptor,
-    const struct wally_map *vars_in,
-    uint32_t child_num,
-    uint32_t network,
+    struct wally_descriptor *descriptor,
     uint32_t depth,
     uint32_t index,
+    uint32_t variant,
+    uint32_t child_num,
     uint32_t flags,
     size_t *written);
 
 /**
  * Create a scriptPubKey corresponding to an output descriptor.
  *
- * :param descriptor: Output descriptor.
- * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
- * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
- * :param depth: Number of the descriptor depth. Default is 0.
- * :param index: Number of the descriptor index. Default is 0.
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
+ * :param index: The zero-based index of the child at depth ``depth`` to generate from.
+ * :param variant: The variant of descriptor to generate. Pass 0 for the default.
+ * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
  * :param flags: For future use. Must be 0.
  * :param bytes_out: Destination for the resulting scriptPubKey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
-    const char *descriptor,
-    const struct wally_map *vars_in,
-    uint32_t child_num,
-    uint32_t network,
+    struct wally_descriptor *descriptor,
     uint32_t depth,
     uint32_t index,
+    uint32_t variant,
+    uint32_t child_num,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len,

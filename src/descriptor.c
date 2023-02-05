@@ -2421,40 +2421,49 @@ int wally_miniscript_to_script_len(const char *miniscript, const struct wally_ma
                                       buff, sizeof(buff), written);
 }
 
-int wally_descriptor_to_scriptpubkey(const char *descriptor, const struct wally_map *vars_in,
-                                     uint32_t child_num, uint32_t network,
-                                     uint32_t depth, uint32_t index, uint32_t flags,
+int wally_descriptor_to_scriptpubkey(struct wally_descriptor *descriptor,
+                                     uint32_t depth, uint32_t index,
+                                     uint32_t variant, uint32_t child_num, uint32_t flags,
                                      unsigned char *bytes_out, size_t len, size_t *written)
 {
     ms_ctx *ctx;
     int ret;
+    (void)variant; /* TODO: support variants */
 
     if (written)
         *written = 0;
 
-    if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+    if (!descriptor || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    ret = wally_descriptor_parse(descriptor, vars_in, network, flags, &ctx);
-    if (ret == WALLY_OK) {
-        ctx->child_num = child_num;
-        ret = node_generate_script(ctx, depth, index, written);
-        if (ret == WALLY_OK && *written <= len)
-            memcpy(bytes_out, ctx->script, *written);
-    }
-    wally_descriptor_free(ctx);
+    descriptor->child_num = child_num;
+    ret = node_generate_script(descriptor, depth, index, written);
+    if (ret == WALLY_OK && *written <= len)
+        memcpy(bytes_out, descriptor->script, *written);
     return ret;
 }
 
-int wally_descriptor_to_scriptpubkey_len(const char *descriptor, const struct wally_map *vars_in,
-                                         uint32_t child_num, uint32_t network,
-                                         uint32_t depth, uint32_t index, uint32_t flags,
+int wally_descriptor_to_scriptpubkey_len(struct wally_descriptor *descriptor,
+                                         uint32_t depth, uint32_t index,
+                                         uint32_t variant, uint32_t child_num, uint32_t flags,
                                          size_t *written)
 {
     unsigned char buff[1];
-    return wally_descriptor_to_scriptpubkey(descriptor, vars_in, child_num, network,
-                                            depth, index, flags, buff, sizeof(buff), written);
+    return wally_descriptor_to_scriptpubkey(descriptor, depth, index,
+                                            variant, child_num, flags,
+                                            buff, sizeof(buff), written);
+}
+
+int wally_descriptor_to_scriptpubkey_maximum_len(const struct wally_descriptor *descriptor,
+                                                 uint32_t flags, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!descriptor || (flags & ~MS_FLAGS_ALL) || !written)
+        return WALLY_EINVAL;
+    *written = descriptor->script_len;
+    return WALLY_OK;
 }
 
 int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map *vars_in,

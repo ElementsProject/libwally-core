@@ -236,321 +236,315 @@ static const struct miniscript_taproot_test {
     }
 };
 
+static const char *const DEPTH_TEST_DESCRIPTOR = "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))";
+
 static const struct descriptor_test {
     const char *name;
     const char *descriptor;
-    const char *scriptpubkey;
+    const uint32_t network;
+    const uint32_t depth;
+    const uint32_t index;
+    const uint32_t variant;
     const uint32_t *bip32_index;
+    const char *scriptpubkey;
     const char *checksum;
 } g_descriptor_cases[] = {
     {
-        "descriptor - p2pk",
+        "descriptor - p2pk with checksum",
         "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)#gn28ywm7",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac",
-        NULL,
         "gn28ywm7"
     },{
         "descriptor - p2pkh",
         "pkh(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac",
-        NULL,
         "8fhd9pwu"
     },{
         "descriptor - p2wpkh",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "00147dd65592d0ab2fe0d0257d571abf032cd9db93dc",
-        NULL,
         "8zl0zxma"
     },{
         "descriptor - p2wpkh (bip143 test vector)",
         "wpkh(025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         /* From script "76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac" */
         "00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1",
-        NULL,
         "pw3pfgx0"
     },{
         "descriptor - p2sh-p2wpkh",
         "sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a914cc6ffbc0bf31af759451068f90ba7a0272b6b33287",
-        NULL,
         "qkrrc7je"
     },{
         "descriptor - p2sh-p2wpkh (bip143 test vector)",
         "sh(wpkh(03ad1d8e89212f0b92c74d23bb710c00662ad1470198ac48c43f7d6f93a2a26873))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         /* From script "76a91479091972186c449eb1ded22b78e40d009bdf008988ac" */
         "a9144733f37cf4db86fbc2efed2500b4f4e49f31202387",
-        NULL,
         "946zr4e5"
     },{
         "descriptor - combo(p2wpkh)",
         "combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "0014751e76e8199196d454941c45d1b3a323f1433bd6",
-        NULL,
         "lq9sf04s"
     },{
         "descriptor - combo(p2pkh)",
         "combo(04a238b0cbea14c9b3f59d0a586a82985f69af3da50579ed5971eefa41e6758ee7f1d77e4d673c6e7aac39759bb762d22259e27bf93572e9d5e363d5a64b6c062b)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91448cb866ee3edb295e4cfeb3da65b4003ab9fa6a288ac",
-        NULL,
         "r3wj6k68"
     },{
         "descriptor - p2sh-p2wsh",
         "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a91455e8d5e8ee4f3604aba23c71c2684fa0a56a3a1287",
-        NULL,
         "2wtr0ej5"
     },{
         "descriptor - multisig",
         "multi(1,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "5121022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe421025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc52ae",
-        NULL,
         "hzhjw406"
     },{
         "descriptor - p2sh-multi",
         "sh(multi(2,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a914a6a8b030a38762f4c1f5cbe387b61a3c5da5cd2687",
-        NULL,
         "y9zthqta"
     },{
         "descriptor - p2sh-sortedmulti 1",
         "sh(sortedmulti(2,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a914a6a8b030a38762f4c1f5cbe387b61a3c5da5cd2687",
-        NULL,
         "qwx6n9lh"
     },{
         "descriptor - p2sh-sortedmulti 2",
         "sh(sortedmulti(2,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a914a6a8b030a38762f4c1f5cbe387b61a3c5da5cd2687",
-        NULL,
         "fjpjdnvk" /* Note different checksum from p2sh-sortedmulti 1 */
     },{
         "descriptor - p2wsh-multi",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "0020773d709598b76c4e3b575c08aad40658963f9322affc0f8c28d1d9a68d0c944a",
-        NULL,
         "en3tu306"
     },{
         "descriptor - p2wsh-multi (from bitcoind's `createmultisig`)",
         "wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         /* From script "522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae" */
         "00207ca68449d39a95da91c6c283871f587b74b45c1645a37f8c8337fd3d9ac4fee6",
-        NULL,
         "5wacx8g6"
     },{
         "descriptor - p2sh-p2wsh-multi",
         "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a914aec509e284f909f769bb7dda299a717c87cc97ac87",
-        NULL,
         "ks05yr6p"
     },{
         "descriptor - p2sh-p2wsh-multi (from bitcoind's `createmultisig`)",
         "sh(wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         /* From script "522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae" */
         "a91411aca2b63fbee2cdda856217a8863135b070978b87",
-        NULL,
         "du4tngj2"
     },{
         "descriptor - p2sh multisig 15",
         /*          1     2     3     4     5     6     7     8     9     10    11    12    13    14    15 */
         "sh(multi(1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a914276b4ebc33265436a9c9b46ca23d6781aef98fe087",
-        NULL,
         "pckwejvm"
     },{
         "descriptor - p2pk-xpub",
         "pk(xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "210339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2ac",
-        NULL,
         "axav5m0j"
     },{
         "descriptor - p2pkh-xpub-derive",
         "pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/2)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a914f833c08f02389c451ae35ec797fccf7f396616bf88ac",
-        NULL,
         "kczqajcv"
     },{
         "descriptor - p2pkh-empty-path",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac",
-        NULL,
         "ee44hjhg"
     },{
         "descriptor - p2pkh-empty-path h-hardened",
         "pkh([d34db33f/44h/0h/0h]mainnet_xpub/)#ltv22yxk",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac",
-        NULL,
         "ltv22yxk" /* Note different checksum despite being the same expression as above */
     },{
         "descriptor - p2pkh-parent-derive",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*)",
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16,
         "76a914d234825a563de8b4fd31d2b30f60b1e60fe57ee788ac",
-        &g_miniscript_index_16,
         "ml40v0wf"
     },{
         "descriptor - p2wsh-multi-xpub",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16,
         "00204616bb4e66d0b540b480c5b26c619385c4c2b83ed79f4f3eab09b01745443a55",
-        &g_miniscript_index_16,
         "t2zpj2eu"
     },{
         "descriptor - p2wsh-sortedmulti-xpub",
         "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16,
         "002002aeee9c3773dfecfe6215f2eea2908776b1232513a700e1ee516b634883ecb0",
-        &g_miniscript_index_16,
         "v66cvalc"
     },{
         "descriptor - addr-btc-legacy-testnet",
         "addr(moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91457526b1a1534d4bde788253281649fc2e91dc70b88ac",
-        NULL,
         "9amhxcar"
     },{
         "descriptor - addr-btc-segwit-mainnet",
         "addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
-        NULL,
         "8kzm8txf"
     },{
         "descriptor - raw-checksum",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e",
-        NULL,
         "zf2avljj"
     },{
         "descriptor - p2pkh-xpriv",
         "pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/1h/2)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a914b28d12ab72a51b10114b17ce76b536265194e1fb88ac",
-        NULL,
         "wghlxksl"
     },{
         "descriptor - p2pkh-xpriv hardened last child",
         "pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/1h/2h)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a9148ab3d0acbde6766fb0a24e0e4286168c2a24a7a088ac",
-        NULL,
         "cj20v7ag"
     },{
         "descriptor - p2pkh-privkey-wif mainnet",
         "pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91492ed3283cfb01caec1163aefba29caf1182f478e88ac",
-        NULL,
         "qm00tjwh"
     },{
         "descriptor - p2pkh-privkey-wif testnet uncompressed",
         "pkh(936Xapr4wpeuiKToGeXtEcsVJAfE6ze8KUEb2UQu72rzBQsMZdX)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "76a91477b6f27ac523d8b9aa8abcfc94fd536493202ae088ac",
-        NULL,
         "9gv5p2gj"
     },{
         "descriptor - A single key",
         "wsh(c:pk_k(key_1))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "0020fa5bf4aae3ee617c6cce1976f6d7d285c359613ffeed481f1067f62bc0f54852",
-        NULL,
         "9u0h8j4t"
     },{
         "descriptor - One of two keys (equally likely)",
         "wsh(or_b(c:pk_k(key_1),sc:pk_k(key_2)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "002018a9df986ba10bcd8f503f495cab5fd00c9fb23c05143e65dbba49ef4d8a825f",
-        NULL,
         "hyh0kcqw"
     },{
         "descriptor - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
         "wsh(and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960))))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced",
-        NULL,
         "nwlxsraz"
     },{
         "descriptor - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "0020052cf1e9c90e9a2883d890467a6a01837e21b3b755a743c9d96a2b6f8285d7c0",
-        NULL,
         "hthd6qg9"
     },{
         "descriptor - The BOLT #3 offered HTLC policy",
         "wsh(t:or_c(c:pk_k(key_revocation),and_v(vc:pk_k(key_remote),or_c(c:pk_k(key_local),v:hash160(H)))))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "0020f9259363db0facc7b97ab2c0294c4f21a0cd56b01bb54ecaaa5899012aae1bc2",
-        NULL,
         "0hmjukva"
     },{
         "descriptor - The BOLT #3 received HTLC policy",
         "wsh(andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303",
-        NULL,
         "8re62ejc"
     },{
         "descriptor - derive key index 0",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_0,
         "002064969d8cdca2aa0bb72cfe88427612878db98a5f07f9a7ec6ec87b85e9f9208b",
-        &g_miniscript_index_0,
         "t2zpj2eu"
     },
     /* https://github.com/rust-bitcoin/rust-miniscript/blob/master/src/descriptor/checksum.rs */
     {
         "descriptor - rust-bitcoin checksum",
         "wpkh(tprv8ZgxMBicQKsPdpkqS7Eair4YxjcuuvDPNYmKX3sCniCf16tHEVrjjiSXEkFRnUH77yXc6ZcwHHcLNfjdi5qUvw3VDfgYiH5mNsj5izuiu2N/1/2/*)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "0014e2d19350c9d8722e2994c81791f4a0ba115bc479",
-        NULL,
         "tqz0nc62"
     }, {
         /* https://github.com/bitcoin/bitcoin/blob/7ae86b3c6845873ca96650fc69beb4ae5285c801/src/test/descriptor_tests.cpp#L352-L354 */
         "descriptor - core checksum",
         "sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
         "a91445a9a622a8b0a1269944be477640eedc447bbd8487",
-        NULL,
         "ggrsrxfy"
-    }
-};
-
-static const char *const DEPTH_TEST_DESCRIPTOR = "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))";
-
-static const struct descriptor_depth_test {
-    const char *name;
-    const char *descriptor;
-    const uint32_t depth;
-    const uint32_t index;
-    const char *scriptpubkey;
-} g_descriptor_depth_cases[] = {
-    {
+    }, {
         "descriptor depth - p2sh-p2wsh-multi (p2sh-p2wsh)",
         DEPTH_TEST_DESCRIPTOR,
-        0,
-        0,
-        "a914aec509e284f909f769bb7dda299a717c87cc97ac87"
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        "a914aec509e284f909f769bb7dda299a717c87cc97ac87",
+        "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (p2wsh)",
         DEPTH_TEST_DESCRIPTOR,
-        1,
-        0,
-        "0020ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee"
+        WALLY_NETWORK_NONE, 1, 0, 0, NULL,
+        "0020ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee",
+        "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi)",
         DEPTH_TEST_DESCRIPTOR,
-        2,
-        0,
-        "512103f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa82103499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e42102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e53ae"
+        WALLY_NETWORK_NONE, 2, 0, 0, NULL,
+        "512103f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa82103499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e42102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e53ae",
+        "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[0])",
         DEPTH_TEST_DESCRIPTOR,
-        3,
-        0,
-        "51"
+        WALLY_NETWORK_NONE, 3, 0, 0, NULL,
+        "51",
+        "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[1])",
         DEPTH_TEST_DESCRIPTOR,
-        3,
-        1,
-        "03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8"
+        WALLY_NETWORK_NONE, 3, 1, 0, NULL,
+        "03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8",
+        "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[2])",
         DEPTH_TEST_DESCRIPTOR,
-        3,
-        2,
-        "03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4"
+        WALLY_NETWORK_NONE, 3, 2, 0, NULL,
+        "03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4",
+        "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[3])",
         DEPTH_TEST_DESCRIPTOR,
-        3,
-        3,
-        "02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e"
+        WALLY_NETWORK_NONE, 3, 3, 0, NULL,
+        "02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e",
+        "ks05yr6p"
     }
 };
 
@@ -1267,72 +1261,56 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
            len_written == written;
 }
 
-static bool check_descriptor_to_scriptpubkey(const char *function,
-                                             const char *src,
-                                             const char *expected,
-                                             const uint32_t *bip32_index,
-                                             const char *expected_checksum)
+static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
     size_t written, len_written;
     unsigned char script[520];
     char *checksum, *canonical;
     int ret, len_ret;
-    uint32_t network = 0, desc_depth = 0, desc_index = 0, flags = 0;
-    uint32_t index = bip32_index ? *bip32_index : 0;
+    uint32_t flags = 0;
+    uint32_t child_num = test->bip32_index ? *test->bip32_index : 0;
 
-    ret = wally_descriptor_parse(src, &g_key_map, network, flags, &descriptor);
-    if (!check_ret(function, ret, WALLY_OK))
+    ret = wally_descriptor_parse(test->descriptor, &g_key_map, test->network,
+                                 flags, &descriptor);
+    if (!check_ret("descriptor_parse", ret, WALLY_OK))
         return false;
 
-    ret = wally_descriptor_to_scriptpubkey(src, &g_key_map, index, network,
-                                           desc_depth, desc_index, flags,
-                                           script, sizeof(script), &written);
-    if (!check_ret(function, ret, WALLY_OK))
+    ret = wally_descriptor_to_scriptpubkey(descriptor,
+                                           test->depth, test->index,
+                                           test->variant, child_num,
+                                           flags, script, sizeof(script),
+                                           &written);
+    if (!check_ret("descriptor_to_scriptpubkey", ret, WALLY_OK))
         return false;
 
-    len_ret = wally_descriptor_to_scriptpubkey_len(src, &g_key_map,
-                                                   index, network,
-                                                   desc_depth, desc_index,
+    len_ret = wally_descriptor_to_scriptpubkey_len(descriptor,
+                                                   test->depth, test->index,
+                                                   test->variant, child_num,
                                                    flags, &len_written);
-    if (!check_ret(function, len_ret, WALLY_OK) || written != len_written)
+    if (!check_ret("descriptor_to_scriptpubkey_len", len_ret, WALLY_OK) ||
+        written != len_written)
         return false;
 
     ret = wally_descriptor_get_checksum(descriptor, flags, &checksum);
-    if (!check_ret(function, ret, WALLY_OK))
+    if (!check_ret("descriptor_get_checksum", ret, WALLY_OK))
         return false;
 
     ret = wally_descriptor_canonicalize(descriptor, flags, &canonical);
     wally_free_string(canonical);
-    if (!check_ret(function, ret, WALLY_OK))
+    if (!check_ret("descriptor_canonicalize", ret, WALLY_OK))
         return false;
 
-    ret = check_varbuff(function, script, written, expected) &&
-          strcmp(checksum, expected_checksum) == 0;
+    ret = check_varbuff("descriptor_to_scriptpubkey", script, written,
+                        test->scriptpubkey) &&
+          !strcmp(checksum, test->checksum);
     if (!ret)
-        printf("%s:  expected [%s], got [%s]\n", function,
-               expected_checksum, checksum);
+        printf("%s:  expected [%s], got [%s]\n", "descriptor_to_scriptpubkey",
+               test->checksum, checksum);
 
     wally_free_string(checksum);
     wally_descriptor_free(descriptor);
     return !!ret;
-}
-
-static bool check_descriptor_to_scriptpubkey_depth(const char *function,
-                                                   const char *descriptor,
-                                                   const uint32_t depth,
-                                                   const uint32_t index,
-                                                   const char *expected_scriptpubkey)
-{
-    size_t written = 0;
-    unsigned char script[520];
-    uint32_t network = 0, flags = 0;
-
-    int ret = wally_descriptor_to_scriptpubkey(descriptor, &g_key_map, 0, network,
-                                               depth, index, flags,
-                                               script, sizeof(script), &written);
-    return check_ret(function, ret, WALLY_OK) &&
-           check_varbuff(function, script, written, expected_scriptpubkey);
 }
 
 static bool check_descriptor_to_address(const char *function,
@@ -1378,20 +1356,6 @@ static bool check_descriptor_to_addresses(const char *function,
         wally_free_string(addresses[i]);
     }
     return true;
-}
-
-static bool check_descriptor_scriptpubkey_error(const char *function,
-                                                const char *descriptor,
-                                                const uint32_t network)
-{
-    size_t written = 0;
-    unsigned char script[520];
-    uint32_t flags = 0, desc_depth = 0, desc_index = 0;
-
-    int ret = wally_descriptor_to_scriptpubkey(descriptor, &g_key_map, 0, network,
-                                               desc_depth, desc_index, flags,
-                                               script, sizeof(script), &written);
-    return check_ret(function, ret, WALLY_EINVAL);
 }
 
 static bool check_descriptor_address_error(const char *function,
@@ -1443,25 +1407,8 @@ int main(void)
     }
 
     for (i = 0; i < NUM_ELEMS(g_descriptor_cases); ++i) {
-        if (!check_descriptor_to_scriptpubkey(
-                g_descriptor_cases[i].name,
-                g_descriptor_cases[i].descriptor,
-                g_descriptor_cases[i].scriptpubkey,
-                g_descriptor_cases[i].bip32_index,
-                g_descriptor_cases[i].checksum)) {
+        if (!check_descriptor_to_scriptpubkey(&g_descriptor_cases[i])) {
             printf("[%s] descriptor test failed!\n", g_descriptor_cases[i].name);
-            tests_ok = false;
-        }
-    }
-
-    for (i = 0; i < NUM_ELEMS(g_descriptor_depth_cases); ++i) {
-        if (!check_descriptor_to_scriptpubkey_depth(
-                g_descriptor_depth_cases[i].name,
-                g_descriptor_depth_cases[i].descriptor,
-                g_descriptor_depth_cases[i].depth,
-                g_descriptor_depth_cases[i].index,
-                g_descriptor_depth_cases[i].scriptpubkey)) {
-            printf("[%s] descriptor_depth test failed!\n", g_descriptor_depth_cases[i].name);
             tests_ok = false;
         }
     }
@@ -1487,16 +1434,6 @@ int main(void)
                 g_descriptor_addresses_cases[i].address_list,
                 g_descriptor_addresses_cases[i].num_addresses)) {
             printf("[%s] descriptor_addresses test failed!\n", g_descriptor_addresses_cases[i].name);
-            tests_ok = false;
-        }
-    }
-
-    for (i = 0; i < NUM_ELEMS(g_descriptor_err_cases); ++i) {
-        if (!check_descriptor_scriptpubkey_error(
-                g_descriptor_err_cases[i].name,
-                g_descriptor_err_cases[i].descriptor,
-                g_descriptor_err_cases[i].network)) {
-            printf("[%s] descriptor_err test failed!\n", g_descriptor_err_cases[i].name);
             tests_ok = false;
         }
     }

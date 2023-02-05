@@ -468,16 +468,16 @@ inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, const VARS_IN& 
     return ret;
 }
 
-template <class DESCRIPTOR, class VARS_IN, class BYTES_OUT>
-inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t depth, uint32_t index, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
-    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, depth, index, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), depth, index, variant, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
-template <class DESCRIPTOR, class VARS_IN>
-inline int descriptor_to_scriptpubkey_len(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t depth, uint32_t index, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_to_scriptpubkey_len(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, depth, index, flags, written);
+template <class DESCRIPTOR>
+inline int descriptor_to_scriptpubkey_len(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_scriptpubkey_len(detail::get_p(descriptor), depth, index, variant, child_num, flags, written);
     return ret;
 }
 
