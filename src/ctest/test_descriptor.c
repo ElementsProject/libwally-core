@@ -1268,55 +1268,54 @@ static bool check_parse_miniscript(const char *function, const char *descriptor,
 }
 
 static bool check_descriptor_to_scriptpubkey(const char *function,
-                                             const char *descriptor,
+                                             const char *src,
                                              const char *expected,
                                              const uint32_t *bip32_index,
                                              const char *expected_checksum)
 {
+    struct wally_descriptor *descriptor;
     size_t written, len_written;
     unsigned char script[520];
-    char *checksum, *canonical, *canonical_checksum;
+    char *checksum, *canonical;
     int ret, len_ret;
     uint32_t network = 0, desc_depth = 0, desc_index = 0, flags = 0;
     uint32_t index = bip32_index ? *bip32_index : 0;
 
-    ret = wally_descriptor_to_scriptpubkey(descriptor, &g_key_map, index, network,
+    ret = wally_descriptor_parse(src, &g_key_map, network, flags, &descriptor);
+    if (!check_ret(function, ret, WALLY_OK))
+        return false;
+
+    ret = wally_descriptor_to_scriptpubkey(src, &g_key_map, index, network,
                                            desc_depth, desc_index, flags,
                                            script, sizeof(script), &written);
     if (!check_ret(function, ret, WALLY_OK))
         return false;
 
-    len_ret = wally_descriptor_to_scriptpubkey_len(descriptor, &g_key_map,
+    len_ret = wally_descriptor_to_scriptpubkey_len(src, &g_key_map,
                                                    index, network,
                                                    desc_depth, desc_index,
                                                    flags, &len_written);
     if (!check_ret(function, len_ret, WALLY_OK) || written != len_written)
         return false;
 
-    ret = wally_descriptor_get_checksum(descriptor, &g_key_map, flags, &checksum);
+    ret = wally_descriptor_get_checksum(descriptor, flags, &checksum);
     if (!check_ret(function, ret, WALLY_OK))
         return false;
 
-    ret = wally_descriptor_canonicalize(descriptor, &g_key_map, flags, &canonical);
+    ret = wally_descriptor_canonicalize(descriptor, flags, &canonical);
+    wally_free_string(canonical);
     if (!check_ret(function, ret, WALLY_OK))
         return false;
 
-    ret = wally_descriptor_get_checksum(canonical, &g_key_map, flags, &canonical_checksum);
-    if (!check_ret(function, ret, WALLY_OK))
-        return false;
+    ret = check_varbuff(function, script, written, expected) &&
+          strcmp(checksum, expected_checksum) == 0;
+    if (!ret)
+        printf("%s:  expected [%s], got [%s]\n", function,
+               expected_checksum, checksum);
 
-    if (check_varbuff(function, script, written, expected)) {
-        if (strcmp(checksum, expected_checksum) == 0 &&
-            strcmp(canonical_checksum, expected_checksum) == 0) {
-            wally_free_string(canonical);
-            wally_free_string(canonical_checksum);
-            wally_free_string(checksum);
-            return true;
-        }
-        printf("%s:  expected [%s], got [%s / %s]\n", function, expected_checksum,
-               checksum, canonical_checksum);
-    }
-    return false;
+    wally_free_string(checksum);
+    wally_descriptor_free(descriptor);
+    return !!ret;
 }
 
 static bool check_descriptor_to_scriptpubkey_depth(const char *function,

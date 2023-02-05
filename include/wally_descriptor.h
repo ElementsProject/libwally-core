@@ -49,24 +49,32 @@ WALLY_CORE_API int wally_descriptor_free(
 /**
  * Canonicalize a descriptor.
  *
- * :param descriptor: Output descriptor.
- * :param vars_in: Map of variable names to values, or NULL.
+ * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting canonical descriptor.
  *|    The string returned should be freed using `wally_free_string`.
- *
- * Replaces any variables from ``vars_in`` with their mapped values,
- * and adds a checksum if required. Key names for ``vars_in`` must be 16
- * characters or less and start with a letter.
  *
  * .. note:: Other canonicalization (hardened derivation indicator
  * mapping, and private to public key mapping) is not yet implemented.
  */
 WALLY_CORE_API int wally_descriptor_canonicalize(
-    const char *descriptor,
-    const struct wally_map *vars_in,
+    const struct wally_descriptor *descriptor,
     uint32_t flags,
     char **output);
+
+/**
+ * Create an output descriptor checksum.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param flags: For future use. Must be 0.
+ * :param output: Destination for the resulting descriptor checksum.
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_descriptor_get_checksum(
+    const struct wally_descriptor *descriptor,
+    uint32_t flags,
+    char **output);
+
 
 /**
  * Get the length of a script corresponding to a miniscript string.
@@ -202,21 +210,6 @@ WALLY_CORE_API int wally_descriptor_to_addresses(
     uint32_t flags,
     char **output,
     size_t num_outputs);
-
-/**
- * Create an output descriptor checksum.
- *
- * :param descriptor: Output descriptor.
- * :param vars_in: Map of variable names to values, or NULL.
- * :param flags: For future use. Must be 0.
- * :param output: Destination for the resulting descriptor checksum.
- *|    The string returned should be freed using `wally_free_string`.
- */
-WALLY_CORE_API int wally_descriptor_get_checksum(
-    const char *descriptor,
-    const struct wally_map *vars_in,
-    uint32_t flags,
-    char **output);
 
 #ifdef __cplusplus
 }

@@ -433,9 +433,9 @@ inline int cleanup(uint32_t flags) {
     return ret;
 }
 
-template <class DESCRIPTOR, class VARS_IN>
-inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_canonicalize(detail::get_p(descriptor), detail::get_p(vars_in), flags, output);
+template <class DESCRIPTOR>
+inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_canonicalize(detail::get_p(descriptor), flags, output);
     return ret;
 }
 
@@ -444,9 +444,9 @@ inline int descriptor_free(struct wally_descriptor* descriptor) {
     return ret;
 }
 
-template <class DESCRIPTOR, class VARS_IN>
-inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_get_checksum(detail::get_p(descriptor), detail::get_p(vars_in), flags, output);
+template <class DESCRIPTOR>
+inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_get_checksum(detail::get_p(descriptor), flags, output);
     return ret;
 }
 

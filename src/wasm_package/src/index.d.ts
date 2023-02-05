@@ -107,9 +107,9 @@ export function confidential_addr_segwit_to_ec_public_key(address: string, confi
 export function confidential_addr_to_addr(address: string, prefix: number): string;
 export function confidential_addr_to_addr_segwit(address: string, confidential_addr_family: string, addr_family: string): string;
 export function confidential_addr_to_ec_public_key(address: string, prefix: number): Buffer;
-export function descriptor_canonicalize(descriptor: string, vars_in: Ref_wally_map, flags: number): string;
+export function descriptor_canonicalize(descriptor: Ref_wally_descriptor, flags: number): string;
 export function descriptor_free(descriptor: Ref_wally_descriptor): void;
-export function descriptor_get_checksum(descriptor: string, vars_in: Ref_wally_map, flags: number): string;
+export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags: number): string;
 export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, network: number, flags: number): Ref_wally_descriptor;
 export function descriptor_to_address(descriptor: string, vars_in: Ref_wally_map, child_num: number, network: number, flags: number): string;
 export function descriptor_to_addresses(descriptor: string, vars_in: Ref_wally_map, child_num: number, network: number, flags: number, out_len: number): string;

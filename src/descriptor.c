@@ -275,6 +275,166 @@ static bool strtoll_n(const char *str, size_t str_len, int64_t *v)
     return end == buf + str_len && *v != LLONG_MIN && *v != LLONG_MAX;
 }
 
+/*
+ * Checksum code adapted from bitcoin core: bitcoin/src/script/descriptor.cpp DescriptorChecksum()
+ */
+/* The character set for the checksum itself (same as bech32). */
+static const char *checksum_charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+
+static const unsigned char checksum_positions[] = {
+    0x5f, 0x3c, 0x5d, 0x5c, 0x1d, 0x1e, 0x33, 0x10, 0x0b, 0x0c, 0x12, 0x34, 0x0f, 0x35, 0x36, 0x11,
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x1c, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+    0x1b, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x0d, 0x5e, 0x0e, 0x3d, 0x3e,
+    0x5b, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+    0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x1f, 0x3f, 0x20, 0x40
+};
+
+static inline size_t checksum_get_position(char c)
+{
+    return c < ' ' || c > '~' ? 0 : checksum_positions[(unsigned char)(c - ' ')];
+}
+
+static uint64_t poly_mod_descriptor_checksum(uint64_t c, int val)
+{
+    uint8_t c0 = c >> 35;
+    c = ((c & 0x7ffffffff) << 5) ^ val;
+    if (c0 & 1) c ^= 0xf5dee51989;
+    if (c0 & 2) c ^= 0xa9fdca3312;
+    if (c0 & 4) c ^= 0x1bab10e32d;
+    if (c0 & 8) c ^= 0x3706b1677a;
+    if (c0 & 16) c ^= 0x644d626ffd;
+    return c;
+}
+
+static int generate_checksum(const char *str, size_t str_len, char *checksum_out)
+{
+    uint64_t c = 1;
+    int cls = 0;
+    int clscount = 0;
+    size_t pos;
+    size_t i;
+
+    for (i = 0; i < str_len; ++i) {
+        if ((pos = checksum_get_position(str[i])) == 0)
+            return WALLY_EINVAL; /* Invalid character */
+        --pos;
+        /* Emit a symbol for the position inside the group, for every character. */
+        c = poly_mod_descriptor_checksum(c, pos & 31);
+        /* Accumulate the group numbers */
+        cls = cls * 3 + (int)(pos >> 5);
+        if (++clscount == 3) {
+            /* Emit an extra symbol representing the group numbers, for every 3 characters. */
+            c = poly_mod_descriptor_checksum(c, cls);
+            cls = 0;
+            clscount = 0;
+        }
+    }
+    if (clscount > 0)
+        c = poly_mod_descriptor_checksum(c, cls);
+    for (i = 0; i < DESCRIPTOR_CHECKSUM_LENGTH; ++i)
+        c = poly_mod_descriptor_checksum(c, 0);
+    c ^= 1;
+
+    for (i = 0; i < DESCRIPTOR_CHECKSUM_LENGTH; ++i)
+        checksum_out[i] = checksum_charset[(c >> (5 * (7 - i))) & 31];
+    checksum_out[DESCRIPTOR_CHECKSUM_LENGTH] = '\0';
+
+    return WALLY_OK;
+}
+
+static inline bool is_identifer_char(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+static const struct wally_map_item *lookup_identifier(const struct wally_map *map_in,
+                                                      const char *key, size_t key_len)
+{
+    size_t i;
+    for (i = 0; i < map_in->num_items; ++i) {
+        const struct wally_map_item *item = &map_in->items[i];
+        if (key_len == item->key_len - 1 && memcmp(key, item->key, key_len) == 0)
+            return item;
+    }
+    return NULL;
+}
+
+static int canonicalize(const char *descriptor,
+                        const struct wally_map *vars_in, uint32_t flags,
+                        char **output)
+{
+    const size_t VAR_MAX_NAME_LEN = 16;
+    size_t required_len = 0;
+    const char *p = descriptor, *start;
+    char *out;
+
+    if (output)
+        *output = NULL;
+
+    if (!descriptor || flags || !output)
+        return WALLY_EINVAL;
+
+    /* First, find the length of the canonicalized descriptor */
+    while (*p && *p != '#') {
+        while (*p && *p != '#' && !is_identifer_char(*p)) {
+            ++required_len;
+            ++p;
+        }
+        start = p;
+        while (is_identifer_char(*p))
+            ++p;
+        if (p != start) {
+            const bool starts_with_digit = *start >= '0' && *start <= '9';
+            const size_t lookup_len = p - start;
+            if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || starts_with_digit) {
+                required_len += lookup_len; /* Too long/wrong format for an identifier */
+            } else {
+                /* Lookup the potential identifier */
+                const struct wally_map_item *item = lookup_identifier(vars_in, start, lookup_len);
+                required_len += item ? item->value_len - 1 : lookup_len;
+            }
+        }
+    }
+
+    if (!(*output = wally_malloc(required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1)))
+        return WALLY_ENOMEM;
+
+    p = descriptor;
+    out = *output;
+    while (*p && *p != '#') {
+        while (*p && *p != '#' && !is_identifer_char(*p)) {
+            *out++ = *p++;
+        }
+        start = p;
+        while (is_identifer_char(*p))
+            ++p;
+        if (p != start) {
+            const bool is_number = *start >= '0' && *start <= '9';
+            size_t lookup_len = p - start;
+            if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || is_number) {
+                memcpy(out, start, lookup_len);
+            } else {
+                /* Lookup the potential identifier */
+                const struct wally_map_item *item = lookup_identifier(vars_in, start, lookup_len);
+                lookup_len = item ? item->value_len - 1 : lookup_len;
+                memcpy(out, item ? (char *)item->value : start, lookup_len);
+            }
+            out += lookup_len;
+        }
+    }
+    *out++ = '#';
+    out[DESCRIPTOR_CHECKSUM_LENGTH] = '\0';
+    if (generate_checksum(*output, required_len, out) != WALLY_OK ||
+        (*p == '#' && strcmp(p + 1, out))) {
+        /* Invalid character in input or failed to match passed in checksum */
+        clear_and_free(*output, required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1);
+        *output = NULL;
+        return WALLY_EINVAL;
+    }
+    return WALLY_OK;
+}
+
 static uint32_t node_get_child_count(const ms_node *node)
 {
     int32_t ret = 0;
@@ -2211,7 +2371,7 @@ int wally_descriptor_parse(const char *miniscript,
         return WALLY_ENOMEM;
     ctx = *output;
     ctx->addr_ver = addr_ver;
-    ret = wally_descriptor_canonicalize(miniscript, vars_in, 0, &ctx->src);
+    ret = canonicalize(miniscript, vars_in, 0, &ctx->src);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ret = analyze_miniscript(ctx->src, ctx->src_len, kind, ctx->addr_ver,
@@ -2349,183 +2509,30 @@ int wally_descriptor_to_address(const char *descriptor, const struct wally_map *
                                          output, 1);
 }
 
-int wally_descriptor_get_checksum(const char *descriptor,
-                                  const struct wally_map *vars_in, uint32_t flags,
-                                  char **output)
+int wally_descriptor_get_checksum(const struct wally_descriptor *descriptor,
+                                  uint32_t flags, char **output)
 {
-    char *str;
-    int ret;
-
     if (output)
         *output = NULL;
 
     if (!descriptor || flags || !output)
         return WALLY_EINVAL;
 
-    if (((ret = wally_descriptor_canonicalize(descriptor, vars_in, 0, &str)) == WALLY_OK) &&
-        !(*output = wally_strdup(str + strlen(str) - DESCRIPTOR_CHECKSUM_LENGTH)))
-        ret = WALLY_ENOMEM;
-
-    wally_free_string(str);
-    return ret;
-}
-
-/*
- * Checksum code adapted from bitcoin core: bitcoin/src/script/descriptor.cpp DescriptorChecksum()
- */
-/* The character set for the checksum itself (same as bech32). */
-static const char *checksum_charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
-
-static const unsigned char checksum_positions[] = {
-    0x5f, 0x3c, 0x5d, 0x5c, 0x1d, 0x1e, 0x33, 0x10, 0x0b, 0x0c, 0x12, 0x34, 0x0f, 0x35, 0x36, 0x11,
-    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x1c, 0x37, 0x38, 0x39, 0x3a, 0x3b,
-    0x1b, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x0d, 0x5e, 0x0e, 0x3d, 0x3e,
-    0x5b, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-    0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x1f, 0x3f, 0x20, 0x40
-};
-
-static inline size_t checksum_get_position(char c)
-{
-    return c < ' ' || c > '~' ? 0 : checksum_positions[(unsigned char)(c - ' ')];
-}
-
-static uint64_t poly_mod_descriptor_checksum(uint64_t c, int val)
-{
-    uint8_t c0 = c >> 35;
-    c = ((c & 0x7ffffffff) << 5) ^ val;
-    if (c0 & 1) c ^= 0xf5dee51989;
-    if (c0 & 2) c ^= 0xa9fdca3312;
-    if (c0 & 4) c ^= 0x1bab10e32d;
-    if (c0 & 8) c ^= 0x3706b1677a;
-    if (c0 & 16) c ^= 0x644d626ffd;
-    return c;
-}
-
-static int generate_checksum(const char *str, size_t str_len, char *checksum_out)
-{
-    uint64_t c = 1;
-    int cls = 0;
-    int clscount = 0;
-    size_t pos;
-    size_t i;
-
-    for (i = 0; i < str_len; ++i) {
-        if ((pos = checksum_get_position(str[i])) == 0)
-            return WALLY_EINVAL; /* Invalid character */
-        --pos;
-        /* Emit a symbol for the position inside the group, for every character. */
-        c = poly_mod_descriptor_checksum(c, pos & 31);
-        /* Accumulate the group numbers */
-        cls = cls * 3 + (int)(pos >> 5);
-        if (++clscount == 3) {
-            /* Emit an extra symbol representing the group numbers, for every 3 characters. */
-            c = poly_mod_descriptor_checksum(c, cls);
-            cls = 0;
-            clscount = 0;
-        }
-    }
-    if (clscount > 0)
-        c = poly_mod_descriptor_checksum(c, cls);
-    for (i = 0; i < DESCRIPTOR_CHECKSUM_LENGTH; ++i)
-        c = poly_mod_descriptor_checksum(c, 0);
-    c ^= 1;
-
-    for (i = 0; i < DESCRIPTOR_CHECKSUM_LENGTH; ++i)
-        checksum_out[i] = checksum_charset[(c >> (5 * (7 - i))) & 31];
-    checksum_out[DESCRIPTOR_CHECKSUM_LENGTH] = '\0';
-
+    if (!(*output = wally_strdup(descriptor->src + descriptor->src_len - DESCRIPTOR_CHECKSUM_LENGTH)))
+        return WALLY_ENOMEM;
     return WALLY_OK;
 }
 
-static inline bool is_identifer_char(char c)
+int wally_descriptor_canonicalize(const struct wally_descriptor *descriptor,
+                                  uint32_t flags, char **output)
 {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
-}
-
-static const struct wally_map_item *lookup_identifier(const struct wally_map *map_in,
-                                                      const char *key, size_t key_len)
-{
-    size_t i;
-    for (i = 0; i < map_in->num_items; ++i) {
-        const struct wally_map_item *item = &map_in->items[i];
-        if (key_len == item->key_len - 1 && memcmp(key, item->key, key_len) == 0)
-            return item;
-    }
-    return NULL;
-}
-
-int wally_descriptor_canonicalize(const char *descriptor,
-                                  const struct wally_map *vars_in, uint32_t flags,
-                                  char **output)
-{
-    const size_t VAR_MAX_NAME_LEN = 16;
-    size_t required_len = 0;
-    const char *p = descriptor, *start;
-    char *out;
-
     if (output)
         *output = NULL;
 
     if (!descriptor || flags || !output)
         return WALLY_EINVAL;
 
-    /* First, find the length of the canonicalized descriptor */
-    while (*p && *p != '#') {
-        while (*p && *p != '#' && !is_identifer_char(*p)) {
-            ++required_len;
-            ++p;
-        }
-        start = p;
-        while (is_identifer_char(*p))
-            ++p;
-        if (p != start) {
-            const bool starts_with_digit = *start >= '0' && *start <= '9';
-            const size_t lookup_len = p - start;
-            if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || starts_with_digit) {
-                required_len += lookup_len; /* Too long/wrong format for an identifier */
-            } else {
-                /* Lookup the potential identifier */
-                const struct wally_map_item *item = lookup_identifier(vars_in, start, lookup_len);
-                required_len += item ? item->value_len - 1 : lookup_len;
-            }
-        }
-    }
-
-    if (!(*output = wally_malloc(required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1)))
+    if (!(*output = wally_strdup(descriptor->src)))
         return WALLY_ENOMEM;
-
-    p = descriptor;
-    out = *output;
-    while (*p && *p != '#') {
-        while (*p && *p != '#' && !is_identifer_char(*p)) {
-            *out++ = *p++;
-        }
-        start = p;
-        while (is_identifer_char(*p))
-            ++p;
-        if (p != start) {
-            const bool is_number = *start >= '0' && *start <= '9';
-            size_t lookup_len = p - start;
-            if (!vars_in || lookup_len > VAR_MAX_NAME_LEN || is_number) {
-                memcpy(out, start, lookup_len);
-            } else {
-                /* Lookup the potential identifier */
-                const struct wally_map_item *item = lookup_identifier(vars_in, start, lookup_len);
-                lookup_len = item ? item->value_len - 1 : lookup_len;
-                memcpy(out, item ? (char *)item->value : start, lookup_len);
-            }
-            out += lookup_len;
-        }
-    }
-    *out++ = '#';
-    out[DESCRIPTOR_CHECKSUM_LENGTH] = '\0';
-    if (generate_checksum(*output, required_len, out) != WALLY_OK ||
-        (*p == '#' && strcmp(p + 1, out))) {
-        /* Invalid character in input or failed to match passed in checksum */
-        clear_and_free(*output, required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1);
-        *output = NULL;
-        return WALLY_EINVAL;
-    }
     return WALLY_OK;
 }
