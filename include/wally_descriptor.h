@@ -16,6 +16,9 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_TAPSCRIPT      0x01 /** Tapscript */
 #define WALLY_MINISCRIPT_ONLY           0x02 /** Only allow miniscript (not descriptor) expressions */
 
+#define WALLY_MS_IS_RANGED 0x01 /** Allows key ranges via '*' */
+
+
 /**
  * Parse an output descriptor or miniscript expression.
  *
@@ -75,6 +78,16 @@ WALLY_CORE_API int wally_descriptor_get_checksum(
     const struct wally_descriptor *descriptor,
     uint32_t flags,
     char **output);
+
+/**
+ * Get the features used in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param value_out: Destination for the resulting ``WALLY_MS_`` feature flags.
+ */
+WALLY_CORE_API int wally_descriptor_get_features(
+    const struct wally_descriptor *descriptor,
+    uint32_t *value_out);
 
 /**
  * Get the maximum length of a script corresponding to an output descriptor.

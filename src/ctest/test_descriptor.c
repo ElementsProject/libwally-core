@@ -1612,7 +1612,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     unsigned char script[520];
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
-    uint32_t child_num = test->bip32_index ? *test->bip32_index : 0;
+    uint32_t child_num = test->bip32_index ? *test->bip32_index : 0, features;
 
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
 
@@ -1639,6 +1639,10 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
         wally_descriptor_free(descriptor);
         return true;
     }
+
+    ret = wally_descriptor_get_features(descriptor, &features);
+    if (!check_ret("descriptor_to_script_len", ret, WALLY_OK))
+        return false;
 
     len_ret = wally_descriptor_to_script_len(descriptor,
                                              test->depth, test->index,

@@ -107,6 +107,7 @@ export const WALLY_MAX_OP_RETURN_LEN = 80; /* Maximum length of OP_RETURN data p
 export const WALLY_MINISCRIPT_ONLY = 0x02; /** Only allow miniscript (not descriptor) expressions */
 export const WALLY_MINISCRIPT_TAPSCRIPT = 0x01; /** Tapscript */
 export const WALLY_MINISCRIPT_WITNESS_SCRIPT = 0x00; /** Witness script */
+export const WALLY_MS_IS_RANGED = 0x01; /** Allows key ranges via '*' */
 export const WALLY_NETWORK_BITCOIN_MAINNET = 0x01; /** Bitcoin mainnet */
 export const WALLY_NETWORK_BITCOIN_REGTEST = 0xff ; /** Bitcoin regtest: Behaves as testnet except for segwit */
 export const WALLY_NETWORK_BITCOIN_TESTNET = 0x02; /** Bitcoin testnet */

@@ -181,6 +181,7 @@ typedef struct wally_descriptor {
     size_t src_len; /* Length of src */
     ms_node *top_node; /* The first node of the parse tree */
     const struct addr_ver_t *addr_ver;
+    uint32_t features; /* features present in the parsed tree */
     unsigned char *script;
     size_t script_len;
     uint32_t child_num; /* BIP32 child number for derivation */
@@ -1832,7 +1833,7 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
     return ret;
 }
 
-static int analyze_address(const char *str, size_t str_len,
+static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
                            ms_node *node, const struct addr_ver_t *addr_ver)
 {
     /* Generated script buffer, big enough for ADDRESS_PUBKEY_MAX_LEN too */
@@ -1840,6 +1841,7 @@ static int analyze_address(const char *str, size_t str_len,
     unsigned char decoded[1 + HASH160_LEN + BASE58_CHECKSUM_LEN];
     size_t decoded_len, written;
     int ret;
+    (void)ctx;
 
     ret = wally_base58_n_to_bytes(str, str_len, BASE58_FLAG_CHECKSUM,
                                   decoded, sizeof(decoded), &decoded_len);
@@ -1894,11 +1896,13 @@ static int analyze_address(const char *str, size_t str_len,
     return ret;
 }
 
-static bool analyze_pubkey_hex(const char *str, size_t str_len, uint32_t flags, ms_node *node)
+static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
+                               uint32_t flags, ms_node *node)
 {
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN + 1];
     size_t offset = flags & WALLY_MINISCRIPT_TAPSCRIPT ? 1 : 0;
     size_t written;
+    (void)ctx;
 
     if (offset) {
         if (str_len != EC_XONLY_PUBLIC_KEY_LEN * 2)
@@ -1922,8 +1926,8 @@ static bool analyze_pubkey_hex(const char *str, size_t str_len, uint32_t flags, 
     return true;
 }
 
-static int analyze_miniscript_key(const struct addr_ver_t *addr_ver, uint32_t flags,
-                                  ms_node *node, ms_node *parent)
+static int analyze_miniscript_key(ms_ctx *ctx, const struct addr_ver_t *addr_ver,
+                                  uint32_t flags, ms_node *node, ms_node *parent)
 {
     unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
     struct ext_key extkey;
@@ -1950,7 +1954,7 @@ static int analyze_miniscript_key(const struct addr_ver_t *addr_ver, uint32_t fl
     }
 
     /* check key (public key) */
-    if (analyze_pubkey_hex(node->data, node->data_len, flags, node))
+    if (analyze_pubkey_hex(ctx, node->data, node->data_len, flags, node))
         return WALLY_OK;
 
     /* check key (private key(wif)) */
@@ -1992,6 +1996,7 @@ static int analyze_miniscript_key(const struct addr_ver_t *addr_ver, uint32_t fl
                 if (node->child_path[node->child_path_len - 1] != '*' &&
                     node->child_path[node->child_path_len - 2] != '*')
                     return WALLY_EINVAL; /* Wildcard must be the last element */
+                ctx->features |= WALLY_MS_IS_RANGED;
             }
         }
     }
@@ -2019,7 +2024,7 @@ static int analyze_miniscript_key(const struct addr_ver_t *addr_ver, uint32_t fl
     return ret;
 }
 
-static int analyze_miniscript_value(const char *str, size_t str_len,
+static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len,
                                     const struct addr_ver_t *addr_ver, uint32_t flags,
                                     ms_node *node, ms_node *parent)
 {
@@ -2028,7 +2033,7 @@ static int analyze_miniscript_value(const char *str, size_t str_len,
         return WALLY_EINVAL;
 
     if (parent && parent->kind == KIND_DESCRIPTOR_ADDR)
-        return analyze_address(str, str_len, node, addr_ver);
+        return analyze_address(ctx, str, str_len, node, addr_ver);
 
     if (parent) {
         const uint32_t kind = parent->kind;
@@ -2061,12 +2066,13 @@ static int analyze_miniscript_value(const char *str, size_t str_len,
         node->kind = KIND_NUMBER;
         return WALLY_OK;
     }
-    return analyze_miniscript_key(addr_ver, flags, node, parent);
+    return analyze_miniscript_key(ctx, addr_ver, flags, node, parent);
 }
 
-static int analyze_miniscript(const char *str, size_t str_len, uint32_t kind,
-                              const struct addr_ver_t *addr_ver, uint32_t flags,
-                              ms_node *prev_node, ms_node *parent, ms_node **output)
+static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
+                              uint32_t kind, const struct addr_ver_t *addr_ver,
+                              uint32_t flags, ms_node *prev_node,
+                              ms_node *parent, ms_node **output)
 {
     size_t i, offset = 0, child_offset = 0;
     uint32_t indent = 0;
@@ -2128,8 +2134,9 @@ static int analyze_miniscript(const char *str, size_t str_len, uint32_t kind,
         }
 
         if (copy_child) {
-            if ((ret = analyze_miniscript(str + child_offset, i - child_offset, kind,
-                                          addr_ver, flags, prev_child, node, &child)) != WALLY_OK)
+            if ((ret = analyze_miniscript(ctx, str + child_offset, i - child_offset,
+                                          kind, addr_ver, flags, prev_child,
+                                          node, &child)) != WALLY_OK)
                 break;
 
             prev_child = child;
@@ -2143,7 +2150,7 @@ static int analyze_miniscript(const char *str, size_t str_len, uint32_t kind,
     }
 
     if (ret == WALLY_OK && !seen_indent)
-        ret = analyze_miniscript_value(str, str_len, addr_ver, flags, node, parent);
+        ret = analyze_miniscript_value(ctx, str, str_len, addr_ver, flags, node, parent);
 
     if (ret == WALLY_OK && node->builtin) {
         const uint32_t expected_children = builtin_get(node)->child_count;
@@ -2357,8 +2364,9 @@ int wally_descriptor_parse(const char *miniscript,
     ret = canonicalize(miniscript, vars_in, 0, &ctx->src);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
-        ret = analyze_miniscript(ctx->src, ctx->src_len, kind, ctx->addr_ver,
-                                 flags, NULL, NULL, &ctx->top_node);
+        ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,
+                                 ctx->addr_ver, flags, NULL, NULL,
+                                 &ctx->top_node);
         if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
             (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
             ret = WALLY_EINVAL;
@@ -2496,5 +2504,16 @@ int wally_descriptor_canonicalize(const struct wally_descriptor *descriptor,
 
     if (!(*output = wally_strdup(descriptor->src)))
         return WALLY_ENOMEM;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
+                                  uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    *value_out = descriptor->features;
     return WALLY_OK;
 }
