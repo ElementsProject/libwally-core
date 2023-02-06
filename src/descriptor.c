@@ -1519,9 +1519,9 @@ static int generate_wrappers(ms_node *node,
         return WALLY_EINVAL; /* Nothing to wrap */
 
 #define WRAP_REQUIRE(req, move_by) output_len = (req); \
-    if (*written + output_len > script_len || *written + output_len > WITNESS_SCRIPT_MAX_SIZE) \
-        return WALLY_EINVAL; \
-    if (move_by) memmove(script + (move_by), script, *written)
+    if (*written + output_len <= script_len) { \
+        if (move_by) memmove(script + (move_by), script, *written)
+#define WRAP_REQUIRE_END } break
 
     /* Generate the nodes wrappers in reserve order */
     for (i = strlen(node->wrapper_str); i != 0; --i) {
@@ -1531,69 +1531,80 @@ static int generate_wrappers(ms_node *node,
             WRAP_REQUIRE(2, 1);
             script[0] = OP_TOALTSTACK;
             script[*written + 1] = OP_FROMALTSTACK;
-            break;
+            WRAP_REQUIRE_END;
         case 's':
             WRAP_REQUIRE(1, 1);
             script[0] = OP_SWAP;
-            break;
+            WRAP_REQUIRE_END;
         case 'c':
             WRAP_REQUIRE(1, 0);
             script[*written] = OP_CHECKSIG;
-            break;
+            WRAP_REQUIRE_END;
         case 't':
             WRAP_REQUIRE(1, 0);
             script[*written] = OP_1;
-            break;
+            WRAP_REQUIRE_END;
         case 'd':
             WRAP_REQUIRE(3, 2);
             script[0] = OP_DUP;
             script[1] = OP_IF;
             script[*written + 2] = OP_ENDIF;
-            break;
-        case 'v': {
-            unsigned char *last = script + *written - 1;
-            if (*last == OP_EQUAL)
-                *last = OP_EQUALVERIFY;
-            else if (*last == OP_NUMEQUAL)
-                *last = OP_NUMEQUALVERIFY;
-            else if (*last == OP_CHECKSIG)
-                *last = OP_CHECKSIGVERIFY;
-            else if (*last == OP_CHECKMULTISIG)
-                *last = OP_CHECKMULTISIGVERIFY;
-            else {
-                WRAP_REQUIRE(1, 0);
-                script[*written] = OP_VERIFY;
+            WRAP_REQUIRE_END;
+        case 'v':
+            if (*written >= script_len) {
+                /* If we aren't actually generating output because the script
+                 * output is too small, we have to assume the worst case, i.e.
+                 * that this wrapper will require an extra opcode rather than
+                 * modifying in place.
+                 */
+                output_len = 1;
+            } else {
+                unsigned char *last = script + *written - 1;
+                if (*last == OP_EQUAL)
+                    *last = OP_EQUALVERIFY;
+                else if (*last == OP_NUMEQUAL)
+                    *last = OP_NUMEQUALVERIFY;
+                else if (*last == OP_CHECKSIG)
+                    *last = OP_CHECKSIGVERIFY;
+                else if (*last == OP_CHECKMULTISIG)
+                    *last = OP_CHECKMULTISIGVERIFY;
+                else {
+                    WRAP_REQUIRE(1, 0);
+                    script[*written] = OP_VERIFY;
+                    WRAP_REQUIRE_END;
+                }
             }
             break;
-        }
         case 'j':
             WRAP_REQUIRE(4, 3);
             script[0] = OP_SIZE;
             script[1] = OP_0NOTEQUAL;
             script[2] = OP_IF;
             script[*written + 3] = OP_ENDIF;
-            break;
+            WRAP_REQUIRE_END;
         case 'n':
             WRAP_REQUIRE(1, 0);
             script[*written] = OP_0NOTEQUAL;
-            break;
+            WRAP_REQUIRE_END;
         case 'l':
             WRAP_REQUIRE(4, 3);
             script[0] = OP_IF;
             script[1] = OP_0;
             script[2] = OP_ELSE;
             script[*written + 3] = OP_ENDIF;
-            break;
+            WRAP_REQUIRE_END;
         case 'u':
             WRAP_REQUIRE(4, 1);
             script[0] = OP_IF;
             script[*written + 1] = OP_ELSE;
             script[*written + 2] = OP_0;
             script[*written + 3] = OP_ENDIF;
-            break;
+            WRAP_REQUIRE_END;
         default:
             return WALLY_ERROR; /* Wrapper type not found, should not happen */
         }
+        if (*written + output_len > WITNESS_SCRIPT_MAX_SIZE)
+            return WALLY_EINVAL;
         *written += output_len;
     }
     return WALLY_OK;
