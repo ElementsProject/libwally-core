@@ -770,210 +770,210 @@ static const struct descriptor_test {
     }
 };
 
-static const struct descriptor_address_test {
+#define ADDR(a) 1, { a, "", "", "", "", "", "", "", "", "", "", "", "", "", \
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }
+
+static const struct address_test {
     const char *name;
     const char *descriptor;
     const uint32_t bip32_index;
     const uint32_t network;
-    const char *address;
-} g_descriptor_address_cases[] = {
+    const size_t num_addresses;
+    const char *addresses[30];
+} g_address_cases[] = {
+    /*
+     * Single address cases
+     */
     {
         "address - p2pkh - mainnet",
         "pkh(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP"
+        ADDR("1cMh228HTCiwS8ZsaakH8A8wze1JR5ZsP")
     },{
         "address - p2pkh - testnet",
         "pkh(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
         0,
         WALLY_NETWORK_BITCOIN_TESTNET,
-        "mg8Jz5776UdyiYcBb9Z873NTozEiADRW5H"
+        ADDR("mg8Jz5776UdyiYcBb9Z873NTozEiADRW5H")
     },{
         "address - p2pkh - regtest",
         "pkh(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
         0,
         WALLY_NETWORK_BITCOIN_REGTEST,
-        "mg8Jz5776UdyiYcBb9Z873NTozEiADRW5H"
+        ADDR("mg8Jz5776UdyiYcBb9Z873NTozEiADRW5H")
     },{
         "address - p2wpkh - mainnet",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1q0ht9tyks4vh7p5p904t340cr9nvahy7u3re7zg"
+        ADDR("bc1q0ht9tyks4vh7p5p904t340cr9nvahy7u3re7zg")
     },{
         "address - p2wpkh - testnet",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
         0,
         WALLY_NETWORK_BITCOIN_TESTNET,
-        "tb1q0ht9tyks4vh7p5p904t340cr9nvahy7um9zdem"
+        ADDR("tb1q0ht9tyks4vh7p5p904t340cr9nvahy7um9zdem")
     },{
         "address - p2wpkh - regtest",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
         0,
         WALLY_NETWORK_BITCOIN_REGTEST,
-        "bcrt1q0ht9tyks4vh7p5p904t340cr9nvahy7uevmqwj"
+        ADDR("bcrt1q0ht9tyks4vh7p5p904t340cr9nvahy7uevmqwj")
     },{
         "address - p2sh-p2wpkh - mainnet",
         "sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "3LKyvRN6SmYXGBNn8fcQvYxW9MGKtwcinN"
+        ADDR("3LKyvRN6SmYXGBNn8fcQvYxW9MGKtwcinN")
     },{
         "address - p2sh-p2wpkh - liquidv1",
         "sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
         0,
         WALLY_NETWORK_LIQUID,
-        "H1pVQ7VtauJK4v7ixvwFQpDFYW2Q6eiPVx"
+        ADDR("H1pVQ7VtauJK4v7ixvwFQpDFYW2Q6eiPVx")
     },{
         "address - p2sh-p2wpkh - liquidregtest",
         "sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
         0,
         WALLY_NETWORK_LIQUID_REGTEST,
-        "XVzCr2EG9PyrWX8qr2visL1aCfJMhGTZyS"
+        ADDR("XVzCr2EG9PyrWX8qr2visL1aCfJMhGTZyS")
     },{
         "address - p2sh-p2wsh - mainnet",
         "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "39XGHYpYmJV9sGFoGHZeU2rLkY6r1MJ6C1"
+        ADDR("39XGHYpYmJV9sGFoGHZeU2rLkY6r1MJ6C1")
     },{
         "address - p2sh-p2wsh - liquidv1",
         "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))",
         0,
         WALLY_NETWORK_LIQUID,
-        "Gq1mmExLuSEwfzzk6YtUxJ769grv6T5Tak"
+        ADDR("Gq1mmExLuSEwfzzk6YtUxJ769grv6T5Tak")
     },{
         "address - p2wsh-multi - mainnet",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qn4zazc"
+        ADDR("bc1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qn4zazc")
     },{
         "address - p2wsh-multi - testnet",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
         0,
         WALLY_NETWORK_BITCOIN_TESTNET,
-        "tb1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qya5jch"
+        ADDR("tb1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qya5jch")
     },{
         "address - p2wsh-multi - regtest",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
         0,
         WALLY_NETWORK_BITCOIN_REGTEST,
-        "bcrt1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qfy75dd"
+        ADDR("bcrt1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qfy75dd")
     },{
         "address - p2wsh-multi - liquidv1",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
         0,
         WALLY_NETWORK_LIQUID,
-        "ex1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39q06fgz7"
+        ADDR("ex1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39q06fgz7")
     },{
         "address - p2wsh-multi - liquidregtest",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
         0,
         WALLY_NETWORK_LIQUID_REGTEST,
-        "ert1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qchk2yf"
+        ADDR("ert1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39qchk2yf")
     },{
         "address - p2pkh-xpub-derive",
         "pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/2)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "1PdNaNxbyQvHW5QHuAZenMGVHrrRaJuZDJ"
+        ADDR("1PdNaNxbyQvHW5QHuAZenMGVHrrRaJuZDJ")
     },{
         "descriptor - p2pkh-empty-path",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "15XVotxCAV7sRx1PSCkQNsGw3W9jT9A94R"
+        ADDR("15XVotxCAV7sRx1PSCkQNsGw3W9jT9A94R")
     },{
         "address - p2pkh-parent-derive",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "14qCH92HCyDDBFFZdhDt1WMfrMDYnBFYMF"
+        ADDR("14qCH92HCyDDBFFZdhDt1WMfrMDYnBFYMF")
     },{
         "address - p2wsh-multi-xpub",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c"
+        ADDR("bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c")
     },{
         "address - p2wsh-sortedmulti-xpub",
         "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c"
+        ADDR("bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c")
     },{
         "address - addr-btc-legacy-testnet",
         "addr(moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW)",
         0,
         WALLY_NETWORK_BITCOIN_TESTNET,
-        "moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW"
+        ADDR("moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW")
     },{
         "address - addr-btc-legacy-testnet/regtest",
         "addr(moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW)",
         0,
         WALLY_NETWORK_BITCOIN_REGTEST,
-        "moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW"
+        ADDR("moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW")
     },{
         "address - addr-btc-segwit-mainnet",
         "addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"
+        ADDR("bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3")
     },{
         "address - p2pkh-xpriv",
         "pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/1h/2)",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "1HH6H4km128m4NsJMNVN2qqCHukbEhgU3V"
+        ADDR("1HH6H4km128m4NsJMNVN2qqCHukbEhgU3V")
     },{
         "address - A single key",
         "wsh(c:pk_k(key_1))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qlfdlf2hraeshcmxwr9m0d47jshp4jcfllmk5s8csvlmzhs84fpfqa6ufv5"
+        ADDR("bc1qlfdlf2hraeshcmxwr9m0d47jshp4jcfllmk5s8csvlmzhs84fpfqa6ufv5")
     },{
         "address - One of two keys (equally likely)",
         "wsh(or_b(c:pk_k(key_1),sc:pk_k(key_2)))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qrz5alxrt5y9umr6s8ay4e26l6qxflv3uq52ruewmhfy77nv2sf0spz2em3"
+        ADDR("bc1qrz5alxrt5y9umr6s8ay4e26l6qxflv3uq52ruewmhfy77nv2sf0spz2em3")
     },{
         "address - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
         "wsh(and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960))))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qzfjfgmrxd9vdj530v0wdely9jsda6kunpzc7d35xj6zh2phkenkstn6ur7"
+        ADDR("bc1qzfjfgmrxd9vdj530v0wdely9jsda6kunpzc7d35xj6zh2phkenkstn6ur7")
     },{
         "address - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qq5k0r6wfp6dz3q7cjpr856spsdlzrvah2kn58jwedg4klq596lqq90rr7h"
+        ADDR("bc1qq5k0r6wfp6dz3q7cjpr856spsdlzrvah2kn58jwedg4klq596lqq90rr7h")
     },{
         "address - The BOLT #3 offered HTLC policy",
         "wsh(t:or_c(c:pk_k(key_revocation),and_v(vc:pk_k(key_remote),or_c(c:pk_k(key_local),v:hash160(H)))))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qlyjexc7mp7kv0wt6ktqzjnz0yxsv644srw65aj42tzvsz24wr0pqc6enkg"
+        ADDR("bc1qlyjexc7mp7kv0wt6ktqzjnz0yxsv644srw65aj42tzvsz24wr0pqc6enkg")
     },{
         "address - The BOLT #3 received HTLC policy",
         "wsh(andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation)))",
         0,
         WALLY_NETWORK_BITCOIN_MAINNET,
-        "bc1qsag4uqzecdz74fwvew4fe5t26ynxu7nfudgdhqkcu8enep3g2vpsvp0wl0"
-    }
-};
-
-static struct descriptor_address_list_test {
-    const char *name;
-    const char *descriptor;
-    const uint32_t child_num;
-    const uint32_t network;
-    const size_t num_addresses;
-    const char *address_list[30];
-} g_descriptor_addresses_cases[] = {
+        ADDR("bc1qsag4uqzecdz74fwvew4fe5t26ynxu7nfudgdhqkcu8enep3g2vpsvp0wl0")
+    },
+    /*
+     * Multiple address cases
+     */
     {
         "address list - p2wsh multisig (0-29)",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))#t2zpj2eu",
@@ -1520,44 +1520,21 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     return !!ret;
 }
 
-static bool check_descriptor_to_address(const char *function,
-                                        const char *descriptor,
-                                        const uint32_t bip32_index,
-                                        const uint32_t network,
-                                        const char *expected_address)
-{
-    char *address = NULL;
-    uint32_t flags = 0;
-
-    int ret = wally_descriptor_to_address(descriptor, &g_key_map, bip32_index,
-                                          network, flags, &address);
-    if (check_ret(function, ret, WALLY_OK) && strcmp(address, expected_address) == 0) {
-        wally_free_string(address);
-        return true;
-    }
-    printf("%s:  expected [%s], got [%s]\n", function, expected_address, address);
-    return false;
-}
-
-static bool check_descriptor_to_addresses(const char *function,
-                                          const char *descriptor,
-                                          const uint32_t child_num,
-                                          const uint32_t network,
-                                          const char **expected_address_list,
-                                          size_t num_addresses)
+static bool check_descriptor_to_address(const struct address_test *test)
 {
     char *addresses[64];
     uint32_t flags = 0;
     size_t i;
 
-    int ret = wally_descriptor_to_addresses(descriptor, &g_key_map, child_num,
-                                            network, flags, addresses, num_addresses);
-    if (!check_ret(function, ret, WALLY_OK))
+    int ret = wally_descriptor_to_addresses(test->descriptor, &g_key_map, test->bip32_index,
+                                            test->network, flags, addresses, test->num_addresses);
+    if (!check_ret("descriptor_to_addresses", ret, WALLY_OK))
         return false;
 
-    for (i = 0; i < num_addresses; ++i) {
-        if (strcmp(expected_address_list[i], addresses[i]) != 0) {
-            printf("%s: expected address: %s, got%s\n", function, expected_address_list[i], addresses[i]);
+    for (i = 0; i < test->num_addresses; ++i) {
+        if (strcmp(test->addresses[i], addresses[i]) != 0) {
+            printf("%s: expected address: %s, got%s\n", "descriptor_to_addresses",
+                   test->addresses[i], addresses[i]);
             return false;
         }
         wally_free_string(addresses[i]);
@@ -1588,27 +1565,9 @@ int main(void)
         }
     }
 
-    for (i = 0; i < NUM_ELEMS(g_descriptor_address_cases); ++i) {
-        if (!check_descriptor_to_address(
-                g_descriptor_address_cases[i].name,
-                g_descriptor_address_cases[i].descriptor,
-                g_descriptor_address_cases[i].bip32_index,
-                g_descriptor_address_cases[i].network,
-                g_descriptor_address_cases[i].address)) {
-            printf("[%s] descriptor_address test failed!\n", g_descriptor_address_cases[i].name);
-            tests_ok = false;
-        }
-    }
-
-    for (i = 0; i < NUM_ELEMS(g_descriptor_addresses_cases); ++i) {
-        if (!check_descriptor_to_addresses(
-                g_descriptor_addresses_cases[i].name,
-                g_descriptor_addresses_cases[i].descriptor,
-                g_descriptor_addresses_cases[i].child_num,
-                g_descriptor_addresses_cases[i].network,
-                g_descriptor_addresses_cases[i].address_list,
-                g_descriptor_addresses_cases[i].num_addresses)) {
-            printf("[%s] descriptor_addresses test failed!\n", g_descriptor_addresses_cases[i].name);
+    for (i = 0; i < NUM_ELEMS(g_address_cases); ++i) {
+        if (!check_descriptor_to_address(&g_address_cases[i])) {
+            printf("[%s] descriptor_address test failed!\n", g_address_cases[i].name);
             tests_ok = false;
         }
     }
