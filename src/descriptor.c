@@ -2375,40 +2375,6 @@ int wally_descriptor_parse(const char *miniscript,
     return ret;
 }
 
-int wally_miniscript_to_script(const char *miniscript, const struct wally_map *vars_in,
-                               uint32_t child_num, uint32_t flags,
-                               unsigned char *bytes_out, size_t len, size_t *written)
-{
-    ms_ctx *ctx;
-    int ret;
-
-    if (written)
-        *written = 0;
-
-    if (child_num >= BIP32_INITIAL_HARDENED_CHILD || !bytes_out || !len || !written)
-        return WALLY_EINVAL;
-
-    ret = wally_descriptor_parse(miniscript, vars_in, WALLY_NETWORK_NONE,
-                                 flags | WALLY_MINISCRIPT_ONLY, &ctx);
-    if (ret == WALLY_OK) {
-        ctx->child_num = child_num;
-        ret = node_generate_script(ctx, 0, 0, written);
-        if (ret == WALLY_OK && *written <= len)
-            memcpy(bytes_out, ctx->script, *written);
-    }
-    wally_descriptor_free(ctx);
-    return ret;
-}
-
-int wally_miniscript_to_script_len(const char *miniscript, const struct wally_map *vars_in,
-                                   uint32_t child_num, uint32_t flags,
-                                   size_t *written)
-{
-    unsigned char buff[1];
-    return wally_miniscript_to_script(miniscript, vars_in, child_num, flags,
-                                      buff, sizeof(buff), written);
-}
-
 int wally_descriptor_to_scriptpubkey(struct wally_descriptor *descriptor,
                                      uint32_t depth, uint32_t index,
                                      uint32_t variant, uint32_t child_num, uint32_t flags,

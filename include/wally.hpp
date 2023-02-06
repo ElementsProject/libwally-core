@@ -940,19 +940,6 @@ inline int map_sort(const MAP_IN& map_in, uint32_t flags) {
     return ret;
 }
 
-template <class MINISCRIPT, class VARS_IN, class BYTES_OUT>
-inline int miniscript_to_script(const MINISCRIPT& miniscript, const VARS_IN& vars_in, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
-    size_t n;
-    int ret = ::wally_miniscript_to_script(detail::get_p(miniscript), detail::get_p(vars_in), child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
-    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
-}
-
-template <class MINISCRIPT, class VARS_IN>
-inline int miniscript_to_script_len(const MINISCRIPT& miniscript, const VARS_IN& vars_in, uint32_t child_num, uint32_t flags, size_t* written) {
-    int ret = ::wally_miniscript_to_script_len(detail::get_p(miniscript), detail::get_p(vars_in), child_num, flags, written);
-    return ret;
-}
-
 template <class PASS, class SALT, class BYTES_OUT>
 inline int pbkdf2_hmac_sha256(const PASS& pass, const SALT& salt, uint32_t flags, uint32_t cost, BYTES_OUT& bytes_out) {
     int ret = ::wally_pbkdf2_hmac_sha256(pass.data(), pass.size(), salt.data(), salt.size(), flags, cost, bytes_out.data(), bytes_out.size());

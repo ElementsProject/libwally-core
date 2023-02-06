@@ -388,8 +388,6 @@ for f in (
     ('wally_map_replace', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_map_replace_integer', c_int, [POINTER(wally_map), c_uint32, c_void_p, c_size_t]),
     ('wally_map_sort', c_int, [POINTER(wally_map), c_uint32]),
-    ('wally_miniscript_to_script', c_int, [c_char_p, POINTER(wally_map), c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
-    ('wally_miniscript_to_script_len', c_int, [c_char_p, POINTER(wally_map), c_uint32, c_uint32, c_size_t_p]),
     ('wally_pbkdf2_hmac_sha256', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_psbt_add_global_scalar', c_int, [POINTER(wally_psbt), c_void_p, c_size_t]),

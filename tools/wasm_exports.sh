@@ -152,8 +152,6 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_replace' \
 ,'_wally_map_replace_integer' \
 ,'_wally_map_sort' \
-,'_wally_miniscript_to_script' \
-,'_wally_miniscript_to_script_len' \
 ,'_wally_pbkdf2_hmac_sha256' \
 ,'_wally_pbkdf2_hmac_sha512' \
 ,'_wally_psbt_add_input_signature' \

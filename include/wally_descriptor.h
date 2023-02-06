@@ -75,49 +75,6 @@ WALLY_CORE_API int wally_descriptor_get_checksum(
     uint32_t flags,
     char **output);
 
-
-/**
- * Get the length of a script corresponding to a miniscript string.
- *
- * :param miniscript: Miniscript string.
- * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive, or zero for static scripts.
- * :param flags: Flags controlling the type of script to create. Use one of
- *|    ``WALLY_MINISCRIPT_WITNESS_SCRIPT`` or ``WALLY_MINISCRIPT_TAPSCRIPT``.
- * :param written: Destination for the resulting script length.
- *
- * .. note:: Computing this length is expensive. Prefer to pass a large
- *| buffer to `wally_miniscript_to_script` and retry only if the
- *| buffer is too small.
- */
-WALLY_CORE_API int wally_miniscript_to_script_len(
-    const char *miniscript,
-    const struct wally_map *vars_in,
-    uint32_t child_num,
-    uint32_t flags,
-    size_t *written);
-
-/**
- * Create a script corresponding to a miniscript string.
- *
- * :param miniscript: Miniscript string.
- * :param vars_in: Map of variable names to values, or NULL.
- * :param child_num: The BIP32 child number to derive, or zero for static scripts.
- * :param flags: Flags controlling the type of script to create. Use one of
- *|    ``WALLY_MINISCRIPT_WITNESS_SCRIPT`` or ``WALLY_MINISCRIPT_TAPSCRIPT``.
- * :param bytes_out: Destination for the resulting script.
- * :param len: The length of ``bytes_out`` in bytes.
- * :param written: Destination for the number of bytes written to ``bytes_out``.
- */
-WALLY_CORE_API int wally_miniscript_to_script(
-    const char *miniscript,
-    const struct wally_map *vars_in,
-    uint32_t child_num,
-    uint32_t flags,
-    unsigned char *bytes_out,
-    size_t len,
-    size_t *written);
-
 /**
  * Get the maximum length of a scriptPubKey corresponding to an output descriptor.
  *

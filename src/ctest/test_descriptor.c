@@ -74,168 +74,6 @@ static bool check_varbuff(const char *function, const unsigned char *src, size_t
     return true;
 }
 
-static const struct miniscript_ref_test {
-    const char *miniscript;
-    const char *scriptpubkey;
-} g_miniscript_ref_cases[] = {
-    /* Randomly generated test set that covers the majority of type and node type combinations */
-    {"lltvln:after(1231488000)", "6300676300676300670400046749b1926869516868"},
-    {"uuj:and_v(v:multi(2,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a,025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc),after(1231488000))", "6363829263522103d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a21025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc52af0400046749b168670068670068"},
-    {"or_b(un:multi(2,03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729,024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),al:older(16))", "63522103daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee872921024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c9752ae926700686b63006760b2686c9b"},
-    {"j:and_v(vdv:after(1567547623),older(2016))", "829263766304e7e06e5db169686902e007b268"},
-    {"t:and_v(vu:hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b),v:sha256(ec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5))", "6382012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b876700686982012088a820ec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc58851"},
-    {"t:andor(multi(3,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e,03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556,02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13),v:older(4194305),v:sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2))", "532102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a14602975562102e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1353ae6482012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2886703010040b2696851"},
-    {"or_d(multi(1,02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9),or_b(multi(3,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01,032fa2104d6b38d11b0230010559879124e42ab8dfeff5ff29dc9cdadd4ecacc3f,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a),su:after(500000)))", "512102f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f951ae73645321022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a0121032fa2104d6b38d11b0230010559879124e42ab8dfeff5ff29dc9cdadd4ecacc3f2103d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a53ae7c630320a107b16700689b68"},
-    {"or_d(sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6),and_n(un:after(499999999),older(4194305)))", "82012088a82038df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b68773646304ff64cd1db19267006864006703010040b26868"},
-    {"and_v(or_i(v:multi(2,02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb),v:multi(2,03e60fce93b59e9ec53011aabc21c23e97b2a31369b87a5ae9c44ee89e2a6dec0a,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc)),sha256(d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c68))", "63522102c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee52103774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb52af67522103e60fce93b59e9ec53011aabc21c23e97b2a31369b87a5ae9c44ee89e2a6dec0a21025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc52af6882012088a820d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c6887"},
-    {"j:and_b(multi(2,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),s:or_i(older(1),older(4252898)))", "82926352210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179821024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c9752ae7c6351b26703e2e440b2689a68"},
-    {"and_b(older(16),s:or_d(sha256(e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f),n:after(1567547623)))", "60b27c82012088a820e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f87736404e7e06e5db192689a"},
-    {"j:and_v(v:hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07),or_d(sha256(96de8fc8c256fa1e1556d41af431cace7dca68707c78dd88c3acab8b17164c47),older(16)))", "82926382012088a91420195b5a3d650c17f0f29f91c33f8f6335193d078882012088a82096de8fc8c256fa1e1556d41af431cace7dca68707c78dd88c3acab8b17164c4787736460b26868"},
-    {"and_b(hash256(32ba476771d01e37807990ead8719f08af494723de1d228f2c2c07cc0aa40bac),a:and_b(hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b),a:older(1)))", "82012088aa2032ba476771d01e37807990ead8719f08af494723de1d228f2c2c07cc0aa40bac876b82012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b876b51b26c9a6c9a"},
-    {"thresh(2,multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00),a:multi(1,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00),ac:pk_k(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01))", "522103a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c721036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a0052ae6b5121036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a0051ae6c936b21022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01ac6c935287"},
-    {"and_n(sha256(d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c68),t:or_i(v:older(4252898),v:older(144)))", "82012088a820d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c68876400676303e2e440b26967029000b269685168"},
-    {"or_d(d:and_v(v:older(4252898),v:older(4252898)),sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6))", "766303e2e440b26903e2e440b26968736482012088a82038df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b68768"},
-    {"c:and_v(or_c(sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2),v:multi(1,02c44d12c7065d812e8acf28d7cbb19f9011ecd9e9fdf281b0e6a3b5e87d22e7db)),pk_k(03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe))", "82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed28764512102c44d12c7065d812e8acf28d7cbb19f9011ecd9e9fdf281b0e6a3b5e87d22e7db51af682103acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbeac"},
-    {"c:and_v(or_c(multi(2,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00,02352bbf4a4cdd12564f93fa332ce333301d9ad40271f8107181340aef25be59d5),v:ripemd160(1b0f3c404d12075c68c938f9f60ebea4f74941a0)),pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", "5221036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a002102352bbf4a4cdd12564f93fa332ce333301d9ad40271f8107181340aef25be59d552ae6482012088a6141b0f3c404d12075c68c938f9f60ebea4f74941a088682103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac"},
-    {"and_v(andor(hash256(8a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b25),v:hash256(939894f70e6c3a25da75da0cc2071b4076d9b006563cf635986ada2e93c0d735),v:older(50000)),after(499999999))", "82012088aa208a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b2587640350c300b2696782012088aa20939894f70e6c3a25da75da0cc2071b4076d9b006563cf635986ada2e93c0d735886804ff64cd1db1"},
-    {"andor(hash256(5f8d30e655a7ba0d7596bb3ddfb1d2d20390d23b1845000e1e118b3be1b3f040),j:and_v(v:hash160(3a2bff0da9d96868e66abc4427bea4691cf61ccd),older(4194305)),ripemd160(44d90e2d3714c8663b632fcf0f9d5f22192cc4c8))", "82012088aa205f8d30e655a7ba0d7596bb3ddfb1d2d20390d23b1845000e1e118b3be1b3f040876482012088a61444d90e2d3714c8663b632fcf0f9d5f22192cc4c8876782926382012088a9143a2bff0da9d96868e66abc4427bea4691cf61ccd8803010040b26868"},
-    {"or_i(c:and_v(v:after(500000),pk_k(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)),sha256(d9147961436944f43cd99d28b2bbddbf452ef872b30c8279e255e7daafc7f946))", "630320a107b1692102c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5ac6782012088a820d9147961436944f43cd99d28b2bbddbf452ef872b30c8279e255e7daafc7f9468768"},
-    {"thresh(2,c:pk_h(025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc),s:sha256(e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f),a:hash160(dd69735817e0e3f6f826a9238dc2e291184f0131))", "76a9145dedfbf9ea599dd4e3ca6a80b333c472fd0b3f6988ac7c82012088a820e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f87936b82012088a914dd69735817e0e3f6f826a9238dc2e291184f0131876c935287"},
-    {"and_n(sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2),uc:and_v(v:older(144),pk_k(03fe72c435413d33d48ac09c9161ba8b09683215439d62b7940502bda8b202e6ce)))", "82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed28764006763029000b2692103fe72c435413d33d48ac09c9161ba8b09683215439d62b7940502bda8b202e6ceac67006868"},
-    {"and_n(c:pk_k(03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729),and_b(l:older(4252898),a:older(16)))", "2103daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac64006763006703e2e440b2686b60b26c9a68"},
-    {"c:or_i(and_v(v:older(16),pk_h(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)),pk_h(026a245bf6dc698504c89a20cfded60853152b695336c28063b61c65cbd269e6b4))", "6360b26976a9149fc5dbe5efdce10374a4dd4053c93af540211718886776a9142fbd32c8dd59ee7c17e66cb6ebea7e9846c3040f8868ac"},
-    {"or_d(c:pk_h(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13),andor(c:pk_k(024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),older(2016),after(1567547623)))", "76a914c42e7ef92fdb603af844d064faad95db9bcdfd3d88ac736421024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97ac6404e7e06e5db16702e007b26868"},
-    {"c:andor(ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba),pk_h(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e),and_v(v:hash256(8a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b25),pk_h(03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a)))", "82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba876482012088aa208a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b258876a914dd100be7d9aea5721158ebde6d6a1fd8fff93bb1886776a9149fc5dbe5efdce10374a4dd4053c93af5402117188868ac"},
-    {"c:andor(u:ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba),pk_h(03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729),or_i(pk_h(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01),pk_h(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)))", "6382012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87670068646376a9149652d86bedf43ad264362e6e6eba6eb764508127886776a914751e76e8199196d454941c45d1b3a323f1433bd688686776a91420d637c1a6404d2227f3561fdbaff5a680dba6488868ac"},
-    {"c:or_i(andor(c:pk_h(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),pk_h(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01),pk_h(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)),pk_k(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e))", "6376a914fcd35ddacad9f2d5be5e464639441c6065e6955d88ac6476a91406afd46bcdfd22ef94ac122aa11f241244a37ecc886776a9149652d86bedf43ad264362e6e6eba6eb7645081278868672102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e68ac"},
-    {"thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(1000000000),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670400ca9a3bb16951686c936b6300670164b16951686c935187"},
-    {"thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),ac:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556),altv:after(1000000000),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac6c936b6300670400ca9a3bb16951686c936b6300670164b16951686c935287"},
-    {"thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(100))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670164b16951686c935287"},
-    {"thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac7c2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac935187"},
-    {"after(100)", "0164b1"},
-    {"after(1000000000)", "0400ca9a3bb1"},
-    {"or_b(l:after(100),al:after(1000000000))", "6300670164b1686b6300670400ca9a3bb1686c9b"},
-    {"and_b(after(100),a:after(1000000000))", "0164b16b0400ca9a3bb16c9a"},
-    {"thresh(2,ltv:after(1000000000),altv:after(100),a:pk(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65))", "6300670400ca9a3bb16951686b6300670164b16951686c936b2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6c935287"},
-
-    /* Error cases */
-    {"lltvlnlltvln:after(1231488000)", NULL}, /* too many wrappers */
-    {"older(-9223372036854775808)", NULL}, /* Number too small to parse */
-    {"older(9223372036854775807)", NULL}, /* Number too large to parse */
-    {"nl:0", NULL}, /* Rust-miniscript issue 63 */
-    {"or_i(pk(uncompressed),pk(uncompressed))", NULL}, /* Rust-miniscript context tests */
-    {"thresh(3,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", NULL}, /* Threshold greater than the number of policies */
-    {"thresh(0,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))", NULL}, /* Threshold of 0 is not allowed */
-};
-
-static const struct miniscript_test {
-    const char *name;
-    const char *descriptor;
-    const char *scriptpubkey;
-    const char *miniscript;
-    const char *p2wsh_scriptpubkey;
-} g_miniscript_cases[] = {
-    {
-        "miniscript - A single key",
-        "c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048)",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
-        "c:pk_k(key_1)",
-        "0020fa5bf4aae3ee617c6cce1976f6d7d285c359613ffeed481f1067f62bc0f54852"
-    }, {
-        "miniscript - One of two keys (equally likely)",
-        "or_b(c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),sc:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac9b",
-        "or_b(c:pk_k(key_1),sc:pk_k(key_2))",
-        "002018a9df986ba10bcd8f503f495cab5fd00c9fb23c05143e65dbba49ef4d8a825f"
-    }, {
-        "miniscript - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
-        "and_v(vc:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),or_d(c:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),older(12960)))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
-        "and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960)))",
-        "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
-    }, {
-        "miniscript - The BOLT #3 to_local policy",
-        "andor(c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),older(1008),c:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac6702f003b268",
-        "andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation))",
-        "0020052cf1e9c90e9a2883d890467a6a01837e21b3b755a743c9d96a2b6f8285d7c0"
-    }, {
-        "miniscript - The BOLT #3 offered HTLC policy ",
-        "t:or_c(c:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),and_v(vc:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_c(c:pk_k(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),v:hash160(d0721279e70d39fb4aa409b52839a0056454e3b5))))",
-        "2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac6482012088a914d0721279e70d39fb4aa409b52839a0056454e3b588686851",
-        "t:or_c(c:pk_k(key_revocation),and_v(vc:pk_k(key_remote),or_c(c:pk_k(key_local),v:hash160(H))))",
-        "0020f9259363db0facc7b97ab2c0294c4f21a0cd56b01bb54ecaaa5899012aae1bc2"
-    }, {
-        "miniscript - The BOLT #3 received HTLC policy ",
-        "andor(c:pk_k(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_i(and_v(vc:pk_h(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),hash160(d0721279e70d39fb4aa409b52839a0056454e3b5)),older(1008)),c:pk_k(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
-        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
-        "andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation))",
-        "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
-    }, {
-        "miniscript(2) - A single key",
-        "pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048)",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
-        "pk(key_1)",
-        "0020fa5bf4aae3ee617c6cce1976f6d7d285c359613ffeed481f1067f62bc0f54852"
-    }, {
-        "miniscript(2) - One of two keys (equally likely)",
-        "or_b(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),s:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac9b",
-        "or_b(pk(key_1),s:pk(key_2))",
-        "002018a9df986ba10bcd8f503f495cab5fd00c9fb23c05143e65dbba49ef4d8a825f"
-    }, {
-        "miniscript(2) - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
-        "and_v(v:pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),or_d(pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),older(12960)))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
-        "and_v(v:pk(key_user),or_d(pk(key_service),older(12960)))",
-        "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced"
-    }, {
-        "miniscript(2) - The BOLT #3 to_local policy",
-        "andor(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),older(1008),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
-        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac6702f003b268",
-        "andor(pk(key_local),older(1008),pk(key_revocation))",
-        "0020052cf1e9c90e9a2883d890467a6a01837e21b3b755a743c9d96a2b6f8285d7c0"
-    }, {
-        "miniscript(2) - The BOLT #3 offered HTLC policy ",
-        "t:or_c(pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284),and_v(v:pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_c(pk(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),v:hash160(d0721279e70d39fb4aa409b52839a0056454e3b5))))",
-        "2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac6482012088a914d0721279e70d39fb4aa409b52839a0056454e3b588686851",
-        "t:or_c(pk(key_revocation),and_v(v:pk(key_remote),or_c(pk(key_local),v:hash160(H))))",
-        "0020f9259363db0facc7b97ab2c0294c4f21a0cd56b01bb54ecaaa5899012aae1bc2"
-    }, {
-        "miniscript(2) - The BOLT #3 received HTLC policy ",
-        "andor(pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_i(and_v(v:pkh(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),hash160(d0721279e70d39fb4aa409b52839a0056454e3b5)),older(1008)),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
-        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
-        "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
-        "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
-    }, {
-        "miniscript(2) - The BOLT #3 received HTLC policy ",
-        "andor(pk(03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7),or_i(and_v(v:pkh(038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048),hash160(d0721279e70d39fb4aa409b52839a0056454e3b5)),older(1008)),pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284))",
-        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
-        "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
-        "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303"
-    }
-};
-
-static const struct miniscript_taproot_test {
-    const char *miniscript;
-    const char *scriptpubkey;
-    uint32_t flags;
-} g_miniscript_taproot_cases[] = {
-    {
-        "c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)",
-        "20daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac",
-        WALLY_MINISCRIPT_TAPSCRIPT
-    }, {
-        "c:pk_k([bd16bee5/0]xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/1)",
-        "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac",
-        WALLY_MINISCRIPT_TAPSCRIPT
-    }, {
-        "c:pk_k(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
-        "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
-        WALLY_MINISCRIPT_TAPSCRIPT
-    }
-};
-
 static const char *const DEPTH_TEST_DESCRIPTOR = "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))";
 
 static const struct descriptor_test {
@@ -246,112 +84,116 @@ static const struct descriptor_test {
     const uint32_t index;
     const uint32_t variant;
     const uint32_t *bip32_index;
+    const uint32_t flags;
     const char *scriptpubkey;
     const char *checksum;
 } g_descriptor_cases[] = {
+    /*
+     * Output descriptors
+     */
     {
         "descriptor - p2pk with checksum",
         "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)#gn28ywm7",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac",
         "gn28ywm7"
     },{
         "descriptor - p2pkh",
         "pkh(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac",
         "8fhd9pwu"
     },{
         "descriptor - p2wpkh",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "00147dd65592d0ab2fe0d0257d571abf032cd9db93dc",
         "8zl0zxma"
     },{
         "descriptor - p2wpkh (bip143 test vector)",
         "wpkh(025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         /* From script "76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac" */
         "00141d0f172a0ecb48aee1be1f2687d2963ae33f71a1",
         "pw3pfgx0"
     },{
         "descriptor - p2sh-p2wpkh",
         "sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914cc6ffbc0bf31af759451068f90ba7a0272b6b33287",
         "qkrrc7je"
     },{
         "descriptor - p2sh-p2wpkh (bip143 test vector)",
         "sh(wpkh(03ad1d8e89212f0b92c74d23bb710c00662ad1470198ac48c43f7d6f93a2a26873))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         /* From script "76a91479091972186c449eb1ded22b78e40d009bdf008988ac" */
         "a9144733f37cf4db86fbc2efed2500b4f4e49f31202387",
         "946zr4e5"
     },{
         "descriptor - combo(p2wpkh)",
         "combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "0014751e76e8199196d454941c45d1b3a323f1433bd6",
         "lq9sf04s"
     },{
         "descriptor - combo(p2pkh)",
         "combo(04a238b0cbea14c9b3f59d0a586a82985f69af3da50579ed5971eefa41e6758ee7f1d77e4d673c6e7aac39759bb762d22259e27bf93572e9d5e363d5a64b6c062b)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91448cb866ee3edb295e4cfeb3da65b4003ab9fa6a288ac",
         "r3wj6k68"
     },{
         "descriptor - p2sh-p2wsh",
         "sh(wsh(pkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13)))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a91455e8d5e8ee4f3604aba23c71c2684fa0a56a3a1287",
         "2wtr0ej5"
     },{
         "descriptor - multisig",
         "multi(1,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "5121022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe421025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc52ae",
         "hzhjw406"
     },{
         "descriptor - p2sh-multi",
         "sh(multi(2,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914a6a8b030a38762f4c1f5cbe387b61a3c5da5cd2687",
         "y9zthqta"
     },{
         "descriptor - p2sh-sortedmulti 1",
         "sh(sortedmulti(2,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914a6a8b030a38762f4c1f5cbe387b61a3c5da5cd2687",
         "qwx6n9lh"
     },{
         "descriptor - p2sh-sortedmulti 2",
         "sh(sortedmulti(2,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01,03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914a6a8b030a38762f4c1f5cbe387b61a3c5da5cd2687",
         "fjpjdnvk" /* Note different checksum from p2sh-sortedmulti 1 */
     },{
         "descriptor - p2wsh-multi",
         "wsh(multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "0020773d709598b76c4e3b575c08aad40658963f9322affc0f8c28d1d9a68d0c944a",
         "en3tu306"
     },{
         "descriptor - p2wsh-multi (from bitcoind's `createmultisig`)",
         "wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         /* From script "522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae" */
         "00207ca68449d39a95da91c6c283871f587b74b45c1645a37f8c8337fd3d9ac4fee6",
         "5wacx8g6"
     },{
         "descriptor - p2sh-p2wsh-multi",
         "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914aec509e284f909f769bb7dda299a717c87cc97ac87",
         "ks05yr6p"
     },{
         "descriptor - p2sh-p2wsh-multi (from bitcoind's `createmultisig`)",
         "sh(wsh(multi(2,03789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd,03dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a61626)))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         /* From script "522103789ed0bb717d88f7d321a368d905e7430207ebbd82bd342cf11ae157a7ace5fd2103dbc6764b8884a92e871274b87583e6d5c2a58819473e17e107ef3f6aa5a6162652ae" */
         "a91411aca2b63fbee2cdda856217a8863135b070978b87",
         "du4tngj2"
@@ -359,133 +201,133 @@ static const struct descriptor_test {
         "descriptor - p2sh multisig 15",
         /*          1     2     3     4     5     6     7     8     9     10    11    12    13    14    15 */
         "sh(multi(1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914276b4ebc33265436a9c9b46ca23d6781aef98fe087",
         "pckwejvm"
     },{
         "descriptor - p2pk-xpub",
         "pk(xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "210339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2ac",
         "axav5m0j"
     },{
         "descriptor - p2pkh-xpub-derive",
         "pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/2)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a914f833c08f02389c451ae35ec797fccf7f396616bf88ac",
         "kczqajcv"
     },{
         "descriptor - p2pkh-empty-path",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac",
         "ee44hjhg"
     },{
         "descriptor - p2pkh-empty-path h-hardened",
         "pkh([d34db33f/44h/0h/0h]mainnet_xpub/)#ltv22yxk",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91431a507b815593dfc51ffc7245ae7e5aee304246e88ac",
         "ltv22yxk" /* Note different checksum despite being the same expression as above */
     },{
         "descriptor - p2pkh-parent-derive",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*)",
-        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16,
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,
         "76a914d234825a563de8b4fd31d2b30f60b1e60fe57ee788ac",
         "ml40v0wf"
     },{
         "descriptor - p2wsh-multi-xpub",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
-        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16,
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,
         "00204616bb4e66d0b540b480c5b26c619385c4c2b83ed79f4f3eab09b01745443a55",
         "t2zpj2eu"
     },{
         "descriptor - p2wsh-sortedmulti-xpub",
         "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
-        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16,
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,
         "002002aeee9c3773dfecfe6215f2eea2908776b1232513a700e1ee516b634883ecb0",
         "v66cvalc"
     },{
         "descriptor - addr-btc-legacy-testnet",
         "addr(moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91457526b1a1534d4bde788253281649fc2e91dc70b88ac",
         "9amhxcar"
     },{
         "descriptor - addr-btc-segwit-mainnet",
         "addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
         "8kzm8txf"
     },{
         "descriptor - raw-checksum",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e",
         "zf2avljj"
     },{
         "descriptor - p2pkh-xpriv",
         "pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/1h/2)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a914b28d12ab72a51b10114b17ce76b536265194e1fb88ac",
         "wghlxksl"
     },{
         "descriptor - p2pkh-xpriv hardened last child",
         "pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/1h/2h)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a9148ab3d0acbde6766fb0a24e0e4286168c2a24a7a088ac",
         "cj20v7ag"
     },{
         "descriptor - p2pkh-privkey-wif mainnet",
         "pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91492ed3283cfb01caec1163aefba29caf1182f478e88ac",
         "qm00tjwh"
     },{
         "descriptor - p2pkh-privkey-wif testnet uncompressed",
         "pkh(936Xapr4wpeuiKToGeXtEcsVJAfE6ze8KUEb2UQu72rzBQsMZdX)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91477b6f27ac523d8b9aa8abcfc94fd536493202ae088ac",
         "9gv5p2gj"
     },{
         "descriptor - A single key",
         "wsh(c:pk_k(key_1))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "0020fa5bf4aae3ee617c6cce1976f6d7d285c359613ffeed481f1067f62bc0f54852",
         "9u0h8j4t"
     },{
         "descriptor - One of two keys (equally likely)",
         "wsh(or_b(c:pk_k(key_1),sc:pk_k(key_2)))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "002018a9df986ba10bcd8f503f495cab5fd00c9fb23c05143e65dbba49ef4d8a825f",
         "hyh0kcqw"
     },{
         "descriptor - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
         "wsh(and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960))))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "00201264946c666958d9522f63dcdcfc85941bdd5b9308b1e6c68696857506f6cced",
         "nwlxsraz"
     },{
         "descriptor - The BOLT #3 to_local policy",
         "wsh(andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation)))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "0020052cf1e9c90e9a2883d890467a6a01837e21b3b755a743c9d96a2b6f8285d7c0",
         "hthd6qg9"
     },{
         "descriptor - The BOLT #3 offered HTLC policy",
         "wsh(t:or_c(c:pk_k(key_revocation),and_v(vc:pk_k(key_remote),or_c(c:pk_k(key_local),v:hash160(H)))))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "0020f9259363db0facc7b97ab2c0294c4f21a0cd56b01bb54ecaaa5899012aae1bc2",
         "0hmjukva"
     },{
         "descriptor - The BOLT #3 received HTLC policy",
         "wsh(andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation)))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "002087515e0059c345eaa5cccbaa9cd16ad1266e7a69e350db82d8e1f33c86285303",
         "8re62ejc"
     },{
         "descriptor - derive key index 0",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
-        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_0,
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_0, 0,
         "002064969d8cdca2aa0bb72cfe88427612878db98a5f07f9a7ec6ec87b85e9f9208b",
         "t2zpj2eu"
     },
@@ -493,58 +335,438 @@ static const struct descriptor_test {
     {
         "descriptor - rust-bitcoin checksum",
         "wpkh(tprv8ZgxMBicQKsPdpkqS7Eair4YxjcuuvDPNYmKX3sCniCf16tHEVrjjiSXEkFRnUH77yXc6ZcwHHcLNfjdi5qUvw3VDfgYiH5mNsj5izuiu2N/1/2/*)",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "0014e2d19350c9d8722e2994c81791f4a0ba115bc479",
         "tqz0nc62"
     }, {
         /* https://github.com/bitcoin/bitcoin/blob/7ae86b3c6845873ca96650fc69beb4ae5285c801/src/test/descriptor_tests.cpp#L352-L354 */
         "descriptor - core checksum",
         "sh(multi(2,[00000000/111'/222]xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc,xprv9uPDJpEQgRQfDcW7BkF7eTya6RPxXeJCqCJGHuCJ4GiRVLzkTXBAJMu2qaMWPrS7AANYqdq6vcBcBUdJCVVFceUvJFjaPdGZ2y9WACViL4L/0))",
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a91445a9a622a8b0a1269944be477640eedc447bbd8487",
         "ggrsrxfy"
-    }, {
+    },
+    /*
+     * Depth/index test cases (for generating sub-scripts)
+     */
+    {
         "descriptor depth - p2sh-p2wsh-multi (p2sh-p2wsh)",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 0, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "a914aec509e284f909f769bb7dda299a717c87cc97ac87",
         "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (p2wsh)",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 1, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 1, 0, 0, NULL, 0,
         "0020ef8110fa7ddefb3e2d02b2c1b1480389b4bc93f606281570cfc20dba18066aee",
         "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi)",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 2, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 2, 0, 0, NULL, 0,
         "512103f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa82103499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e42102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e53ae",
         "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[0])",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 3, 0, 0, NULL,
+        WALLY_NETWORK_NONE, 3, 0, 0, NULL, 0,
         "51",
         "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[1])",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 3, 1, 0, NULL,
+        WALLY_NETWORK_NONE, 3, 1, 0, NULL, 0,
         "03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8",
         "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[2])",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 3, 2, 0, NULL,
+        WALLY_NETWORK_NONE, 3, 2, 0, NULL, 0,
         "03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4",
         "ks05yr6p"
     }, {
         "descriptor depth - p2sh-p2wsh-multi (multi[3])",
         DEPTH_TEST_DESCRIPTOR,
-        WALLY_NETWORK_NONE, 3, 3, 0, NULL,
+        WALLY_NETWORK_NONE, 3, 3, 0, NULL, 0,
         "02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e",
         "ks05yr6p"
+    },
+    /*
+     * Miniscript: Randomly generated test set that covers the majority of type and node type combinations
+     */
+    {
+        "miniscript - random 1",
+        "lltvln:after(1231488000)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6300676300676300670400046749b1926869516868",
+        ""
+    }, {
+        "miniscript - random 2",
+        "uuj:and_v(v:multi(2,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a,025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc),after(1231488000))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6363829263522103d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a21025601570cb47f238d2b0286db4a990fa0f3ba28d1a319f5e7cf55c2a2444da7cc52af0400046749b168670068670068",
+        ""
+    }, {
+        "miniscript - random 3",
+        "or_b(un:multi(2,03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729,024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),al:older(16))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "63522103daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee872921024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c9752ae926700686b63006760b2686c9b",
+        ""
+    }, {
+        "miniscript - random 4",
+        "j:and_v(vdv:after(1567547623),older(2016))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "829263766304e7e06e5db169686902e007b268",
+        ""
+    }, {
+        "miniscript - random 5",
+        "t:and_v(vu:hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b),v:sha256(ec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6382012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b876700686982012088a820ec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc58851",
+        ""
+    }, {
+        "miniscript - random 6",
+        "t:andor(multi(3,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e,03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556,02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13),v:older(4194305),v:sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "532102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a14602975562102e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1353ae6482012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2886703010040b2696851",
+        ""
+    }, {
+        "miniscript - random 7",
+        "or_d(multi(1,02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9),or_b(multi(3,022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01,032fa2104d6b38d11b0230010559879124e42ab8dfeff5ff29dc9cdadd4ecacc3f,03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a),su:after(500000)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "512102f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f951ae73645321022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a0121032fa2104d6b38d11b0230010559879124e42ab8dfeff5ff29dc9cdadd4ecacc3f2103d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a53ae7c630320a107b16700689b68",
+        ""
+    }, {
+        "miniscript - random 8",
+        "or_d(sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6),and_n(un:after(499999999),older(4194305)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a82038df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b68773646304ff64cd1db19267006864006703010040b26868",
+        ""
+    }, {
+        "miniscript - random 9",
+        "and_v(or_i(v:multi(2,02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5,03774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb),v:multi(2,03e60fce93b59e9ec53011aabc21c23e97b2a31369b87a5ae9c44ee89e2a6dec0a,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc)),sha256(d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c68))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "63522102c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee52103774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cb52af67522103e60fce93b59e9ec53011aabc21c23e97b2a31369b87a5ae9c44ee89e2a6dec0a21025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc52af6882012088a820d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c6887",
+        ""
+    }, {
+        "miniscript - random 10",
+        "j:and_b(multi(2,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),s:or_i(older(1),older(4252898)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82926352210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179821024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c9752ae7c6351b26703e2e440b2689a68",
+        ""
+    }, {
+        "miniscript - random 11",
+        "and_b(older(16),s:or_d(sha256(e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f),n:after(1567547623)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "60b27c82012088a820e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f87736404e7e06e5db192689a",
+        ""
+    }, {
+        "miniscript - random 12",
+        "j:and_v(v:hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07),or_d(sha256(96de8fc8c256fa1e1556d41af431cace7dca68707c78dd88c3acab8b17164c47),older(16)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82926382012088a91420195b5a3d650c17f0f29f91c33f8f6335193d078882012088a82096de8fc8c256fa1e1556d41af431cace7dca68707c78dd88c3acab8b17164c4787736460b26868",
+        ""
+    }, {
+        "miniscript - random 13",
+        "and_b(hash256(32ba476771d01e37807990ead8719f08af494723de1d228f2c2c07cc0aa40bac),a:and_b(hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b),a:older(1)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088aa2032ba476771d01e37807990ead8719f08af494723de1d228f2c2c07cc0aa40bac876b82012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b876b51b26c9a6c9a",
+        ""
+    }, {
+        "miniscript - random 14",
+        "thresh(2,multi(2,03a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00),a:multi(1,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00),ac:pk_k(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "522103a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c721036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a0052ae6b5121036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a0051ae6c936b21022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01ac6c935287",
+        ""
+    }, {
+        "miniscript - random 15",
+        "and_n(sha256(d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c68),t:or_i(v:older(4252898),v:older(144)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a820d1ec675902ef1633427ca360b290b0b3045a0d9058ddb5e648b4c3c3224c5c68876400676303e2e440b26967029000b269685168",
+        ""
+    }, {
+        "miniscript - random 16",
+        "or_d(d:and_v(v:older(4252898),v:older(4252898)),sha256(38df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b6))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "766303e2e440b26903e2e440b26968736482012088a82038df1c1f64a24a77b23393bca50dff872e31edc4f3b5aa3b90ad0b82f4f089b68768",
+        ""
+    }, {
+        "miniscript - random 17",
+        "c:and_v(or_c(sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2),v:multi(1,02c44d12c7065d812e8acf28d7cbb19f9011ecd9e9fdf281b0e6a3b5e87d22e7db)),pk_k(03acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbe))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed28764512102c44d12c7065d812e8acf28d7cbb19f9011ecd9e9fdf281b0e6a3b5e87d22e7db51af682103acd484e2f0c7f65309ad178a9f559abde09796974c57e714c35f110dfc27ccbeac",
+        ""
+    }, {
+        "miniscript - random 18",
+        "c:and_v(or_c(multi(2,036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a00,02352bbf4a4cdd12564f93fa332ce333301d9ad40271f8107181340aef25be59d5),v:ripemd160(1b0f3c404d12075c68c938f9f60ebea4f74941a0)),pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "5221036d2b085e9e382ed10b69fc311a03f8641ccfff21574de0927513a49d9a688a002102352bbf4a4cdd12564f93fa332ce333301d9ad40271f8107181340aef25be59d552ae6482012088a6141b0f3c404d12075c68c938f9f60ebea4f74941a088682103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac",
+        ""
+    }, {
+        "miniscript - random 19",
+        "and_v(andor(hash256(8a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b25),v:hash256(939894f70e6c3a25da75da0cc2071b4076d9b006563cf635986ada2e93c0d735),v:older(50000)),after(499999999))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088aa208a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b2587640350c300b2696782012088aa20939894f70e6c3a25da75da0cc2071b4076d9b006563cf635986ada2e93c0d735886804ff64cd1db1",
+        ""
+    }, {
+        "miniscript - random 20",
+        "andor(hash256(5f8d30e655a7ba0d7596bb3ddfb1d2d20390d23b1845000e1e118b3be1b3f040),j:and_v(v:hash160(3a2bff0da9d96868e66abc4427bea4691cf61ccd),older(4194305)),ripemd160(44d90e2d3714c8663b632fcf0f9d5f22192cc4c8))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088aa205f8d30e655a7ba0d7596bb3ddfb1d2d20390d23b1845000e1e118b3be1b3f040876482012088a61444d90e2d3714c8663b632fcf0f9d5f22192cc4c8876782926382012088a9143a2bff0da9d96868e66abc4427bea4691cf61ccd8803010040b26868",
+        ""
+    }, {
+        "miniscript - random 21",
+        "or_i(c:and_v(v:after(500000),pk_k(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)),sha256(d9147961436944f43cd99d28b2bbddbf452ef872b30c8279e255e7daafc7f946))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "630320a107b1692102c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5ac6782012088a820d9147961436944f43cd99d28b2bbddbf452ef872b30c8279e255e7daafc7f9468768",
+        ""
+    }, {
+        "miniscript - random 22",
+        "thresh(2,c:pk_h(025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc),s:sha256(e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f),a:hash160(dd69735817e0e3f6f826a9238dc2e291184f0131))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "76a9145dedfbf9ea599dd4e3ca6a80b333c472fd0b3f6988ac7c82012088a820e38990d0c7fc009880a9c07c23842e886c6bbdc964ce6bdd5817ad357335ee6f87936b82012088a914dd69735817e0e3f6f826a9238dc2e291184f0131876c935287",
+        ""
+    }, {
+        "miniscript - random 23",
+        "and_n(sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2),uc:and_v(v:older(144),pk_k(03fe72c435413d33d48ac09c9161ba8b09683215439d62b7940502bda8b202e6ce)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed28764006763029000b2692103fe72c435413d33d48ac09c9161ba8b09683215439d62b7940502bda8b202e6ceac67006868",
+        ""
+    }, {
+        "miniscript - random 24",
+        "and_n(c:pk_k(03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729),and_b(l:older(4252898),a:older(16)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac64006763006703e2e440b2686b60b26c9a68",
+        ""
+    }, {
+        "miniscript - random 25",
+        "c:or_i(and_v(v:older(16),pk_h(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)),pk_h(026a245bf6dc698504c89a20cfded60853152b695336c28063b61c65cbd269e6b4))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6360b26976a9149fc5dbe5efdce10374a4dd4053c93af540211718886776a9142fbd32c8dd59ee7c17e66cb6ebea7e9846c3040f8868ac",
+        ""
+    }, {
+        "miniscript - random 26",
+        "or_d(c:pk_h(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd13),andor(c:pk_k(024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97),older(2016),after(1567547623)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "76a914c42e7ef92fdb603af844d064faad95db9bcdfd3d88ac736421024ce119c96e2fa357200b559b2f7dd5a5f02d5290aff74b03f3e471b273211c97ac6404e7e06e5db16702e007b26868",
+        ""
+    }, {
+        "miniscript - random 27",
+        "c:andor(ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba),pk_h(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e),and_v(v:hash256(8a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b25),pk_h(03d01115d548e7561b15c38f004d734633687cf4419620095bc5b0f47070afe85a)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba876482012088aa208a35d9ca92a48eaade6f53a64985e9e2afeb74dcf8acb4c3721e0dc7e4294b258876a914dd100be7d9aea5721158ebde6d6a1fd8fff93bb1886776a9149fc5dbe5efdce10374a4dd4053c93af5402117188868ac",
+        ""
+    }, {
+        "miniscript - random 28",
+        "c:andor(u:ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba),pk_h(03daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729),or_i(pk_h(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01),pk_h(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6382012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87670068646376a9149652d86bedf43ad264362e6e6eba6eb764508127886776a914751e76e8199196d454941c45d1b3a323f1433bd688686776a91420d637c1a6404d2227f3561fdbaff5a680dba6488868ac",
+        ""
+    }, {
+        "miniscript - random 29",
+        "c:or_i(andor(c:pk_h(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),pk_h(022f01e5e15cca351daff3843fb70f3c2f0a1bdd05e5af888a67784ef3e10a2a01),pk_h(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)),pk_k(02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6376a914fcd35ddacad9f2d5be5e464639441c6065e6955d88ac6476a91406afd46bcdfd22ef94ac122aa11f241244a37ecc886776a9149652d86bedf43ad264362e6e6eba6eb7645081278868672102d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e68ac",
+        ""
+    }, {
+        "miniscript - random 30",
+        "thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(1000000000),altv:after(100))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670400ca9a3bb16951686c936b6300670164b16951686c935187",
+        ""
+    }, {
+        "miniscript - random 31",
+        "thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),ac:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556),altv:after(1000000000),altv:after(100))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac6c936b6300670400ca9a3bb16951686c936b6300670164b16951686c935287",
+        ""
+    }, {
+        "miniscript - random 32",
+        "thresh(2,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),altv:after(100))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6b6300670164b16951686c935287",
+        ""
+    }, {
+        "miniscript - random 33",
+        "thresh(1,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac7c2103fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556ac935187",
+        ""
+    }, {
+        "miniscript - random 34",
+        "after(100)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "0164b1",
+        ""
+    }, {
+        "miniscript - random 35",
+        "after(1000000000)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "0400ca9a3bb1",
+        ""
+    }, {
+        "miniscript - random 36",
+        "or_b(l:after(100),al:after(1000000000))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6300670164b1686b6300670400ca9a3bb1686c9b",
+        ""
+    }, {
+        "miniscript - random 37",
+        "and_b(after(100),a:after(1000000000))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "0164b16b0400ca9a3bb16c9a",
+        ""
+    }, {
+        "miniscript - random 38",
+        "thresh(2,ltv:after(1000000000),altv:after(100),a:pk(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6300670400ca9a3bb16951686b6300670164b16951686c936b2103d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65ac6c935287",
+        ""
+    },
+    /*
+     * Miniscript: Error cases
+     */
+    {
+        "miniscript - Too many wrappers",
+        "lltvlnlltvln:after(1231488000)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    }, {
+        "miniscript - Number too small to parse",
+        "older(-9223372036854775808)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    }, {
+        "miniscript - Number too large to parse",
+        "older(9223372036854775807)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    }, {
+        "miniscript - Rust-miniscript issue 63",
+        "nl:0",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    }, {
+        "miniscript - Rust-miniscript context test",
+        "or_i(pk(uncompressed),pk(uncompressed))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    }, {
+        "miniscript - Threshold greater than the number of policies",
+        "thresh(3,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    }, {
+        "miniscript - Threshold of 0 is not allowed",
+        "thresh(0,c:pk_k(03d30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65),sc:pk_k(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
+    },
+    /*
+     * Miniscript: BOLT examples
+     */
+    {
+        "miniscript - A single key",
+        "c:pk_k(key_1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        ""
+    }, {
+        "miniscript - A single key (2)",
+        "pk(key_1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        ""
+    }, {
+        "miniscript - One of two keys (equally likely)",
+        "or_b(c:pk_k(key_1),sc:pk_k(key_2))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac9b",
+        ""
+    }, {
+        "miniscript - One of two keys (equally likely) (2)",
+        "or_b(pk(key_1),s:pk(key_2))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac9b",
+        ""
+    }, {
+        "miniscript - A user and a 2FA service need to sign off, but after 90 days the user alone is enough",
+        "and_v(vc:pk_k(key_user),or_d(c:pk_k(key_service),older(12960)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
+        ""
+    }, {
+        "miniscript - A user and a 2FA service need to sign off, but after 90 days the user alone is enough (2)",
+        "and_v(v:pk(key_user),or_d(pk(key_service),older(12960)))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ad2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac736402a032b268",
+        ""
+    }, {
+        "miniscript - The BOLT #3 to_local policy",
+        "andor(c:pk_k(key_local),older(1008),c:pk_k(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac6702f003b268",
+        ""
+    }, {
+        "miniscript - The BOLT #3 to_local policy (2)",
+        "andor(pk(key_local),older(1008),pk(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac6702f003b268",
+        ""
+    }, {
+        "miniscript - The BOLT #3 offered HTLC policy",
+        "t:or_c(c:pk_k(key_revocation),and_v(vc:pk_k(key_remote),or_c(c:pk_k(key_local),v:hash160(H))))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac6482012088a914d0721279e70d39fb4aa409b52839a0056454e3b588686851",
+        ""
+    }, {
+        "miniscript - The BOLT #3 offered HTLC policy (2)",
+        "t:or_c(pk(key_revocation),and_v(v:pk(key_remote),or_c(pk(key_local),v:hash160(H))))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac6482012088a914d0721279e70d39fb4aa409b52839a0056454e3b588686851",
+        ""
+    }, {
+        "miniscript - The BOLT #3 received HTLC policy",
+        "andor(c:pk_k(key_remote),or_i(and_v(vc:pk_h(key_local),hash160(H)),older(1008)),c:pk_k(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
+        ""
+    }, {
+        "miniscript - The BOLT #3 received HTLC policy (2)",
+        "andor(pk(key_remote),or_i(and_v(v:pkh(key_local),hash160(H)),older(1008)),pk(key_revocation))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868",
+        ""
+    },
+    /*
+     * Taproot cases
+     */
+    {
+        "miniscript - taproot raw pubkey",
+        "c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "20daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729ac",
+        ""
+    }, {
+        "miniscript - taproot bip32 key",
+        "c:pk_k([bd16bee5/0]xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac",
+        ""
+    }, {
+        "miniscript - taproot WIF",
+        "c:pk_k(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
+        ""
     }
 };
 
@@ -1237,49 +1459,29 @@ struct descriptor_err_test g_address_err_cases[] = {
     }
 };
 
-static bool check_parse_miniscript(const char *function, const char *descriptor,
-                                   const char *expected,
-                                   const struct wally_map *map_in,
-                                   uint32_t flags)
-{
-    size_t written, len_written;
-    unsigned char script[520];
-    uint32_t index = 0;
-    int ret, len_ret;
-
-    ret = wally_miniscript_to_script(descriptor, map_in, index, flags,
-                                     script, sizeof(script), &written);
-    if (!expected)
-        return check_ret(function, ret, WALLY_EINVAL);
-
-    len_ret = wally_miniscript_to_script_len(descriptor, map_in, index,
-                                             flags, &len_written);
-
-    return check_ret(function, ret, WALLY_OK) &&
-           check_ret(function, len_ret, WALLY_OK) &&
-           check_varbuff(function, script, written, expected) &&
-           len_written == written;
-}
-
 static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
     size_t written, len_written;
     unsigned char script[520];
     char *checksum, *canonical;
-    int ret, len_ret;
-    uint32_t flags = 0;
+    int expected_ret, ret, len_ret;
     uint32_t child_num = test->bip32_index ? *test->bip32_index : 0;
 
+    expected_ret = test->scriptpubkey ? WALLY_OK : WALLY_EINVAL;
+
     ret = wally_descriptor_parse(test->descriptor, &g_key_map, test->network,
-                                 flags, &descriptor);
-    if (!check_ret("descriptor_parse", ret, WALLY_OK))
+                                 test->flags, &descriptor);
+    if (!check_ret("descriptor_parse", ret, expected_ret))
         return false;
+
+    if (expected_ret != WALLY_OK)
+        return true;
 
     ret = wally_descriptor_to_scriptpubkey(descriptor,
                                            test->depth, test->index,
                                            test->variant, child_num,
-                                           flags, script, sizeof(script),
+                                           0, script, sizeof(script),
                                            &written);
     if (!check_ret("descriptor_to_scriptpubkey", ret, WALLY_OK))
         return false;
@@ -1287,29 +1489,29 @@ static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
     len_ret = wally_descriptor_to_scriptpubkey_len(descriptor,
                                                    test->depth, test->index,
                                                    test->variant, child_num,
-                                                   flags, &len_written);
+                                                   0, &len_written);
     if (!check_ret("descriptor_to_scriptpubkey_len", len_ret, WALLY_OK) ||
         written != len_written)
         return false;
 
     len_ret = wally_descriptor_to_scriptpubkey_maximum_length(descriptor,
-                                                              flags, &len_written);
+                                                              0, &len_written);
     if (!check_ret("descriptor_to_scriptpubkey_maximum_length", len_ret, WALLY_OK) ||
         written > len_written)
         return false;
 
-    ret = wally_descriptor_get_checksum(descriptor, flags, &checksum);
+    ret = wally_descriptor_get_checksum(descriptor, 0, &checksum);
     if (!check_ret("descriptor_get_checksum", ret, WALLY_OK))
         return false;
 
-    ret = wally_descriptor_canonicalize(descriptor, flags, &canonical);
+    ret = wally_descriptor_canonicalize(descriptor, 0, &canonical);
     wally_free_string(canonical);
     if (!check_ret("descriptor_canonicalize", ret, WALLY_OK))
         return false;
 
     ret = check_varbuff("descriptor_to_scriptpubkey", script, written,
                         test->scriptpubkey) &&
-          !strcmp(checksum, test->checksum);
+          (!*test->checksum || !strcmp(checksum, test->checksum));
     if (!ret)
         printf("%s:  expected [%s], got [%s]\n", "descriptor_to_scriptpubkey",
                test->checksum, checksum);
@@ -1379,38 +1581,6 @@ int main(void)
 {
     bool tests_ok = true;
     size_t i;
-
-    for (i = 0; i < NUM_ELEMS(g_miniscript_ref_cases); ++i) {
-        if (!check_parse_miniscript(
-                g_miniscript_ref_cases[i].miniscript,
-                g_miniscript_ref_cases[i].miniscript,
-                g_miniscript_ref_cases[i].scriptpubkey,
-                &g_key_map, 0)) {
-            printf("[%s] miniscript_ref test failed!\n", g_miniscript_ref_cases[i].miniscript);
-            tests_ok = false;
-        }
-    }
-
-    for (i = 0; i < NUM_ELEMS(g_miniscript_cases); ++i) {
-        if (!check_parse_miniscript(
-                g_miniscript_cases[i].name,
-                g_miniscript_cases[i].descriptor,
-                g_miniscript_cases[i].scriptpubkey, NULL, 0)) {
-            printf("[%s] miniscript test failed!\n", g_miniscript_cases[i].name);
-            tests_ok = false;
-        }
-    }
-
-    for (i = 0; i < NUM_ELEMS(g_miniscript_taproot_cases); ++i) {
-        if (!check_parse_miniscript(
-                g_miniscript_taproot_cases[i].miniscript,
-                g_miniscript_taproot_cases[i].miniscript,
-                g_miniscript_taproot_cases[i].scriptpubkey,
-                NULL, g_miniscript_taproot_cases[i].flags)) {
-            printf("[%s] miniscript_taproot test failed!\n", g_miniscript_taproot_cases[i].miniscript);
-            tests_ok = false;
-        }
-    }
 
     for (i = 0; i < NUM_ELEMS(g_descriptor_cases); ++i) {
         if (!check_descriptor_to_scriptpubkey(&g_descriptor_cases[i])) {
