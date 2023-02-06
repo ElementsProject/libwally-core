@@ -456,15 +456,15 @@ inline int descriptor_parse(const DESCRIPTOR& descriptor, const VARS_IN& vars_in
     return ret;
 }
 
-template <class DESCRIPTOR, class VARS_IN>
-inline int descriptor_to_address(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, flags, output);
+template <class DESCRIPTOR>
+inline int descriptor_to_address(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t child_num, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), variant, child_num, flags, output);
     return ret;
 }
 
-template <class DESCRIPTOR, class VARS_IN>
-inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t child_num, uint32_t network, uint32_t flags, char** output, size_t num_outputs) {
-    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), detail::get_p(vars_in), child_num, network, flags, output, num_outputs);
+template <class DESCRIPTOR>
+inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t child_num, uint32_t flags, char** output, size_t num_outputs) {
+    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), variant, child_num, flags, output, num_outputs);
     return ret;
 }
 

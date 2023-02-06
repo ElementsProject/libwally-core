@@ -2419,28 +2419,29 @@ int wally_descriptor_to_script_maximum_length(
     return WALLY_OK;
 }
 
-int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map *vars_in,
-                                  uint32_t child_num, uint32_t network, uint32_t flags,
+int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
+                                  uint32_t variant, uint32_t child_num,
+                                  uint32_t flags,
                                   char **addresses, size_t num_addresses)
 {
-    ms_ctx *ctx;
     size_t i, written;
-    int ret;
+    int ret = WALLY_OK;
+    (void)variant;
 
-    if (child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+    if (!descriptor || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
-        network == WALLY_NETWORK_NONE || (flags & WALLY_MINISCRIPT_ONLY) ||
-        !addresses || !num_addresses)
+        flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
 
     wally_clear(addresses, num_addresses * sizeof(*addresses));
-    ret = wally_descriptor_parse(descriptor, vars_in, network, flags, &ctx);
+
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
+        ms_ctx *ctx = descriptor;
         ctx->child_num = child_num + i;
         ret = node_generate_script(ctx, 0, 0, &written);
         if (ret == WALLY_OK) {
             if (written > ctx->script_len)
-                ret = WALLY_ERROR;
+                ret = WALLY_ERROR; /* Not enough room - should not happen! */
             else {
                 /* Generate the address corresponding to this script */
                 ret = wally_scriptpubkey_to_address(ctx->script, written,
@@ -2459,15 +2460,14 @@ int wally_descriptor_to_addresses(const char *descriptor, const struct wally_map
             addresses[i] = NULL;
         }
     }
-    wally_descriptor_free(ctx);
     return ret;
 }
 
-int wally_descriptor_to_address(const char *descriptor, const struct wally_map *vars_in,
-                                uint32_t child_num, uint32_t network, uint32_t flags,
-                                char **output)
+int wally_descriptor_to_address(struct wally_descriptor *descriptor,
+                                uint32_t variant, uint32_t child_num,
+                                uint32_t flags, char **output)
 {
-    return wally_descriptor_to_addresses(descriptor, vars_in, child_num, network, flags,
+    return wally_descriptor_to_addresses(descriptor, variant, child_num, flags,
                                          output, 1);
 }
 

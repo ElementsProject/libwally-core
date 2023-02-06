@@ -111,8 +111,8 @@ export function descriptor_canonicalize(descriptor: Ref_wally_descriptor, flags:
 export function descriptor_free(descriptor: Ref_wally_descriptor): void;
 export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags: number): string;
 export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, network: number, flags: number): Ref_wally_descriptor;
-export function descriptor_to_address(descriptor: string, vars_in: Ref_wally_map, child_num: number, network: number, flags: number): string;
-export function descriptor_to_addresses(descriptor: string, vars_in: Ref_wally_map, child_num: number, network: number, flags: number, out_len: number): string;
+export function descriptor_to_address(descriptor: Ref_wally_descriptor, variant: number, child_num: number, flags: number): string;
+export function descriptor_to_addresses(descriptor: Ref_wally_descriptor, variant: number, child_num: number, flags: number, out_len: number): string;
 export function descriptor_to_script_len(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, child_num: number, flags: number): number;
 export function descriptor_to_script_maximum_length(descriptor: Ref_wally_descriptor, flags: number): number;
 export function ec_private_key_verify(priv_key: Buffer|Uint8Array): void;

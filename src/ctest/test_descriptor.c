@@ -1676,26 +1676,41 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
 
 static bool check_descriptor_to_address(const struct address_test *test)
 {
+    struct wally_descriptor *descriptor;
     char *addresses[64];
-    uint32_t flags = 0;
+    uint32_t variant = 0, flags = 0;
     size_t i;
-    int expected_ret = *test->addresses[0] ? WALLY_OK : WALLY_EINVAL;
+    int ret, expected_ret = *test->addresses[0] ? WALLY_OK : WALLY_EINVAL;
 
-    int ret = wally_descriptor_to_addresses(test->descriptor, &g_key_map, test->bip32_index,
-                                            test->network, flags, addresses, test->num_addresses);
+    ret = wally_descriptor_parse(test->descriptor, &g_key_map, test->network,
+                                 flags, &descriptor);
+
+    if (expected_ret == WALLY_OK || ret == expected_ret) {
+        /* For failure cases, we may fail when generating instead of parsing,
+         * we catch those cases below */
+        if (!check_ret("descriptor_parse", ret, expected_ret))
+            return false;
+
+        if (expected_ret != WALLY_OK)
+            return true;
+    }
+
+    ret = wally_descriptor_to_addresses(descriptor, variant, test->bip32_index,
+                                        flags, addresses, test->num_addresses);
     if (!check_ret("descriptor_to_addresses", ret, expected_ret))
         return false;
-    if (expected_ret != WALLY_OK)
-        return true;
 
-    for (i = 0; i < test->num_addresses; ++i) {
-        if (strcmp(test->addresses[i], addresses[i]) != 0) {
-            printf("%s: expected address: %s, got%s\n", "descriptor_to_addresses",
-                   test->addresses[i], addresses[i]);
-            return false;
+    if (expected_ret == WALLY_OK) {
+        for (i = 0; i < test->num_addresses; ++i) {
+            if (strcmp(test->addresses[i], addresses[i]) != 0) {
+                printf("%s: expected address: %s, got%s\n", "descriptor_to_addresses",
+                       test->addresses[i], addresses[i]);
+                return false;
+            }
+            wally_free_string(addresses[i]);
         }
-        wally_free_string(addresses[i]);
     }
+    wally_descriptor_free(descriptor);
     return true;
 }
 

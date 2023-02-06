@@ -142,29 +142,26 @@ WALLY_CORE_API int wally_descriptor_to_script(
 /**
  * Create an address corresponding to an output descriptor.
  *
- * :param descriptor: Output descriptor.
- * :param vars_in: Map of variable names to values, or NULL.
+ * :param descriptor: Parsed output descriptor.
+ * :param variant: The variant of descriptor to generate. Pass 0 for the default.
  * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
- * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting addresss.
  *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_descriptor_to_address(
-    const char *descriptor,
-    const struct wally_map *vars_in,
+    struct wally_descriptor *descriptor,
+    uint32_t variant,
     uint32_t child_num,
-    uint32_t network,
     uint32_t flags,
     char **output);
 
 /**
  * Create addresses that correspond to the derived range of an output descriptor.
  *
- * :param descriptor: Output descriptor.
- * :param vars_in: Map of variable names to values, or NULL.
+ * :param descriptor: Parsed output descriptor.
+ * :param variant: The variant of descriptor to generate. Pass 0 for the default.
  * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
- * :param network: ``WALLY_NETWORK_`` constant descripting the network to generate for.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting addresses.
  * :param num_outputs: The number of items in ``output``. Addresses will be
@@ -172,10 +169,9 @@ WALLY_CORE_API int wally_descriptor_to_address(
  *|    The addresses returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_descriptor_to_addresses(
-    const char *descriptor,
-    const struct wally_map *vars_in,
+    struct wally_descriptor *descriptor,
+    uint32_t variant,
     uint32_t child_num,
-    uint32_t network,
     uint32_t flags,
     char **output,
     size_t num_outputs);
