@@ -23,7 +23,7 @@ public class test_descriptor {
         final int child_num = 0;
         final int flags = 0;
         final int variant = 0;
-        final Object descriptor = Wally.descriptor_parse(descriptor_str, null,
+        final Object descriptor = Wally.descriptor_parse(descriptor_str, Wally.map_init(0),
                                                          Wally.WALLY_NETWORK_BITCOIN_MAINNET,
                                                          flags);
         final String[] addrs = Wally.descriptor_to_addresses(descriptor, variant, child_num,

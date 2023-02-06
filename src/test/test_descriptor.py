@@ -3,6 +3,7 @@ import unittest
 from util import *
 
 
+NETWORK_NONE       = 0x00
 NETWORK_BTC_MAIN   = 0x01
 NETWORK_BTC_TEST   = 0x02
 NETWORK_BTC_REG    = 0xff
@@ -39,11 +40,15 @@ class DescriptorTests(unittest.TestCase):
              '2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868'),
         ]
         for miniscript, child_num, expected in args:
-            ret, written = wally_descriptor_to_script(miniscript, keys, child_num,
-                                                            MS_ONLY, script, script_len)
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, keys, NETWORK_NONE, MS_ONLY, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, child_num,
+                                                      0, script, script_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(expected) / 2)
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
+            wally_descriptor_free(d)
         wally_map_free(keys)
 
         # Invalid args
@@ -54,9 +59,14 @@ class DescriptorTests(unittest.TestCase):
             (args[0][0], 0,          MS_ONLY, script, 0),          # Empty output
         ]
         for miniscript, child_num, flags, bytes_out, bytes_len in bad_args:
-            ret, written = wally_descriptor_to_script(miniscript, None, child_num,
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, None, NETWORK_NONE, flags, d)
+            if ret == WALLY_OK:
+                ret, written = wally_descriptor_to_script(d, 0, 0, 0, child_num,
                                                             flags, bytes_out, bytes_len)
-            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+                self.assertEqual(written, 0)
+                wally_descriptor_free(d)
+            self.assertEqual(ret, WALLY_EINVAL)
 
     def test_descriptor_to_script(self):
         script, script_len = make_cbuffer('00' * 64 * 2)
@@ -67,10 +77,14 @@ class DescriptorTests(unittest.TestCase):
              0, NETWORK_BTC_MAIN, '00147dd65592d0ab2fe0d0257d571abf032cd9db93dc'),
         ]
         for descriptor, child_num, network, expected in args:
-            ret, written = wally_descriptor_to_script(descriptor, None, child_num,
-                                                            network, 0, 0, 0, script, script_len)
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, network, 0, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, child_num,
+                                                      0, script, script_len)
             self.assertEqual((ret, written), (WALLY_OK, len(expected) // 2))
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
+            wally_descriptor_free(d)
 
         # Invalid args
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
@@ -85,19 +99,14 @@ class DescriptorTests(unittest.TestCase):
             (args[0][0], 0,          M, 0, 0, 0, script, 0),          # Empty output
         ]
         for descriptor, child_num, network, depth, idx, flags, bytes_out, bytes_len in bad_args:
-            ret, written = wally_descriptor_to_script(descriptor, None, child_num,
-                                                            network, depth, idx, flags,
-                                                            bytes_out, bytes_len)
-            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
-
-    def test_descriptor_to_address(self):
-        # Valid args
-        args = [
-            ('wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)', 0, NETWORK_BTC_TEST, 'tb1q0ht9tyks4vh7p5p904t340cr9nvahy7um9zdem'),
-        ]
-        for descriptor, child_num, network, expected in args:
-            ret, addr = wally_descriptor_to_address(descriptor, None, child_num, network, 0)
-            self.assertEqual((ret, addr), (WALLY_OK, expected))
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, network, flags, d)
+            if ret == WALLY_OK:
+                ret, written = wally_descriptor_to_script(d, depth, idx, 0, child_num,
+                                                          flags, bytes_out, bytes_len)
+                self.assertEqual(written, 0)
+                wally_descriptor_free(d)
+            self.assertEqual(ret, WALLY_EINVAL)
 
     def test_descriptor_to_addresses(self):
         addrs_len = 64
@@ -105,6 +114,10 @@ class DescriptorTests(unittest.TestCase):
 
         # Valid args
         args = [
+            ('wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)',
+              0, NETWORK_BTC_TEST, [
+                'tb1q0ht9tyks4vh7p5p904t340cr9nvahy7um9zdem'
+              ]),
             ('wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))',
               0, NETWORK_BTC_MAIN, [
                 'bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c',
@@ -115,11 +128,15 @@ class DescriptorTests(unittest.TestCase):
               ]),
         ]
         for descriptor, child_num, network, expected in args:
-            ret = wally_descriptor_to_addresses(descriptor, None, child_num, network,
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, network, 0, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret = wally_descriptor_to_addresses(d, 0, child_num,
                                                 0, addrs, len(expected))
             self.assertEqual(ret, WALLY_OK)
             for i in range(len(expected)):
                 self.assertEqual(expected[i].encode('utf-8'), addrs[i])
+            wally_descriptor_free(d)
 
         # Invalid args
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
@@ -132,8 +149,12 @@ class DescriptorTests(unittest.TestCase):
             (args[0][0], 0,          M, 0, addrs, 0),         # Empty output
         ]
         for descriptor, child_num, network, flags, out, out_len in bad_args:
-            ret = wally_descriptor_to_addresses(descriptor, None, child_num, network,
-                                                flags, out, out_len)
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, network, flags, d)
+            if ret == WALLY_OK:
+                ret = wally_descriptor_to_addresses(d, 0, child_num,
+                                                    0, out, out_len)
+                wally_descriptor_free(d)
             self.assertEqual(ret, WALLY_EINVAL)
 
     def test_create_descriptor_checksum(self):
@@ -141,21 +162,26 @@ class DescriptorTests(unittest.TestCase):
         for descriptor, expected in [
             ('wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))', 't2zpj2eu'),
         ]:
-            ret, checksum = wally_descriptor_get_checksum(descriptor, None, 0)
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
+            ret, checksum = wally_descriptor_get_checksum(d, 0)
             self.assertEqual((ret, checksum), (WALLY_OK, expected))
+            wally_descriptor_free(d)
 
     def test_canonicalize_checksum_bad_args(self):
         """Test bad arguments to canonicalize and checksum functions"""
         descriptor = 'sh(wpkh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
         bad_args = [
-            (None,       0), # NULL descriptor
-            (descriptor, 1), # Bad flags
+            (None, 0), # NULL descriptor
+            (d,    1), # Bad flags
         ]
 
         for fn in (wally_descriptor_canonicalize, wally_descriptor_get_checksum):
             for descriptor, flags in bad_args:
-                ret, out = fn(descriptor, None, flags)
-                self.assertEqual((ret, out), (WALLY_EINVAL, None))
+               ret, out = fn(descriptor, flags)
+               self.assertEqual((ret, out), (WALLY_EINVAL, None))
 
 
 if __name__ == '__main__':
