@@ -1288,9 +1288,8 @@ static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
                            const unsigned char **insert, const uint8_t *insert_len,
                            unsigned char *script, size_t script_len, size_t *written)
 {
-    size_t total = insert_len[0] + insert_len[1] + insert_len[2];
-    size_t output_len, i = 0, offset = 0;
-    ms_node *child[3] = { NULL, NULL, NULL };
+    size_t i = 0, offset = 0;
+    ms_node *children[3] = { NULL, NULL, NULL };
     const size_t default_indices[] = { 0, 1, 2 }, *indices;
     int ret = WALLY_OK;
 
@@ -1300,32 +1299,31 @@ static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
     indices = reference_indices ? reference_indices : default_indices;
 
     for (i = 0; i < target_num; ++i) {
-        child[i] = (i == 0) ? node->child : child[i - 1]->next;
-        if (!child[i])
+        children[i] = i == 0 ? node->child : children[i - 1]->next;
+        if (!children[i])
             return WALLY_EINVAL;
     }
 
     for (i = 0; i < target_num; ++i) {
-        if (insert_len[i]) {
-            memcpy(script + offset, insert[i], insert_len[i]);
-            offset += insert_len[i];
-        }
+        size_t output_len = 0, remaining_len = 0;
 
-        output_len = 0;
-        ret = generate_script(ctx, child[indices[i]],
-                              &script[offset], script_len - offset - 1, &output_len);
+        if (insert_len[i] && offset + insert_len[i] <= script_len)
+            memcpy(script + offset, insert[i], insert_len[i]);
+        offset += insert_len[i];
+        if (offset < script_len)
+            remaining_len = script_len - offset - 1;
+        ret = generate_script(ctx, children[indices[i]],
+                              script + offset, remaining_len, &output_len);
         if (ret != WALLY_OK)
             return ret;
-
         offset += output_len;
-        total += output_len;
     }
 
-    if (total + insert_len[3] > REDEEM_SCRIPT_MAX_SIZE)
-        return WALLY_EINVAL;
     if (insert_len[3] && offset + insert_len[3] <= script_len)
         memcpy(script + offset, insert[3], insert_len[3]);
     *written = offset + insert_len[3];
+    if (*written > REDEEM_SCRIPT_MAX_SIZE)
+        return WALLY_EINVAL;
     return ret;
 }
 
