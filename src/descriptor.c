@@ -1285,26 +1285,19 @@ static int generate_hash_type(ms_ctx *ctx, ms_node *node,
 
 static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
                            const size_t *reference_indices,
-                           const unsigned char *prev_insert, size_t prev_insert_num,
-                           const unsigned char *first_insert, size_t first_insert_num,
-                           const unsigned char *second_insert, size_t second_insert_num,
-                           const unsigned char *last_append, size_t last_append_num,
+                           const unsigned char **insert, const uint8_t *insert_len,
                            unsigned char *script, size_t script_len, size_t *written)
 {
-    size_t output_len;
-    size_t total = prev_insert_num + first_insert_num + second_insert_num;
-    size_t i = 0, offset = 0;
+    size_t total = insert_len[0] + insert_len[1] + insert_len[2];
+    size_t output_len, i = 0, offset = 0;
     ms_node *child[3] = { NULL, NULL, NULL };
-    size_t default_indices[] = { 0, 1, 2 };
-    const size_t *indices = reference_indices;
-    size_t check_len = script_len <= REDEEM_SCRIPT_MAX_SIZE ? script_len : REDEEM_SCRIPT_MAX_SIZE;
+    const size_t default_indices[] = { 0, 1, 2 }, *indices;
     int ret = WALLY_OK;
 
     if (!node->child || !node_is_root(node))
         return WALLY_EINVAL;
 
-    if (!reference_indices)
-        indices = default_indices;
+    indices = reference_indices ? reference_indices : default_indices;
 
     for (i = 0; i < target_num; ++i) {
         child[i] = (i == 0) ? node->child : child[i - 1]->next;
@@ -1313,17 +1306,9 @@ static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
     }
 
     for (i = 0; i < target_num; ++i) {
-        if (i == 0 && prev_insert_num) {
-            memcpy(script + offset, prev_insert, prev_insert_num);
-            offset += prev_insert_num;
-        }
-        if (i == 1 && first_insert_num) {
-            memcpy(script + offset, first_insert, first_insert_num);
-            offset += first_insert_num;
-        }
-        if (i == 2 && second_insert_num) {
-            memcpy(script + offset, second_insert, second_insert_num);
-            offset += second_insert_num;
+        if (insert_len[i]) {
+            memcpy(script + offset, insert[i], insert_len[i]);
+            offset += insert_len[i];
         }
 
         output_len = 0;
@@ -1334,36 +1319,27 @@ static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
 
         offset += output_len;
         total += output_len;
-        if (total > check_len)
-            return WALLY_EINVAL;
     }
 
-    if (total + last_append_num > check_len)
+    if (total + insert_len[3] > REDEEM_SCRIPT_MAX_SIZE)
         return WALLY_EINVAL;
-    if (last_append_num) {
-        memcpy(script + offset, last_append, last_append_num);
-        offset += last_append_num;
-    }
-
-    if (ret == WALLY_OK)
-        *written = offset;
-
+    if (insert_len[3] && offset + insert_len[3] <= script_len)
+        memcpy(script + offset, insert[3], insert_len[3]);
+    *written = offset + insert_len[3];
     return ret;
 }
 
 static int generate_andor(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
+    /* [X] NOTIF 0 ELSE [Y] ENDIF */
     const unsigned char first_op[1] = { OP_NOTIF };
     const unsigned char second_op[1] = { OP_ELSE };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[3] = { 0, 2, 1 };
-    /* [X] NOTIF 0 ELSE [Y] ENDIF */
-    return generate_concat(ctx, node, 3, indices,
-                           NULL, 0,
-                           first_op, NUM_ELEMS(first_op),
-                           second_op, NUM_ELEMS(second_op),
-                           last_op, NUM_ELEMS(last_op),
+    const unsigned char *insert[4] = { NULL, first_op, second_op, last_op };
+    const uint8_t insert_len[4] = { 0, NUM_ELEMS(first_op), NUM_ELEMS(second_op), NUM_ELEMS(last_op) };
+    return generate_concat(ctx, node, 3, indices, insert, insert_len,
                            script, script_len, written);
 }
 
@@ -1372,100 +1348,86 @@ static int generate_and_v(ms_ctx *ctx, ms_node *node,
 {
     /* [X] [Y] */
     const size_t indices[2] = { 0, 1 };
-    return generate_concat(ctx, node, 2, indices,
-                           NULL, 0,
-                           NULL, 0,
-                           NULL, 0,
-                           NULL, 0,
+    const unsigned char *insert[4] = { NULL, NULL, NULL, NULL };
+    const uint8_t insert_len[4] = { 0, 0, 0, 0 };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
 static int generate_and_b(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
+    /* [X] [Y] BOOLAND */
     const unsigned char append[1] = { OP_BOOLAND };
     const size_t indices[2] = { 0, 1 };
-    /* [X] [Y] BOOLAND */
-    return generate_concat(ctx, node, 2, indices,
-                           NULL, 0,
-                           NULL, 0,
-                           NULL, 0,
-                           append, NUM_ELEMS(append),
+    const unsigned char *insert[4] = { NULL, NULL, NULL, append };
+    const uint8_t insert_len[4] = { 0, 0, 0, NUM_ELEMS(append) };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
 static int generate_and_n(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
+    /* [X] NOTIF 0 ELSE [Y] ENDIF */
     const unsigned char middle_op[3] = { OP_NOTIF, OP_0, OP_ELSE };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
-    /* [X] NOTIF 0 ELSE [Y] ENDIF */
-    return generate_concat(ctx, node, 2, indices,
-                           NULL, 0,
-                           middle_op, NUM_ELEMS(middle_op),
-                           NULL, 0,
-                           last_op, NUM_ELEMS(last_op),
+    const unsigned char *insert[4] = { NULL, middle_op, NULL, last_op };
+    const uint8_t insert_len[4] = { 0, NUM_ELEMS(middle_op), 0, NUM_ELEMS(last_op) };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
 static int generate_or_b(ms_ctx *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
+    /* [X] [Y] OP_BOOLOR */
     const unsigned char append[1] = { OP_BOOLOR };
     const size_t indices[2] = { 0, 1 };
-    /* [X] [Y] OP_BOOLOR */
-    return generate_concat(ctx, node, 2, indices,
-                           NULL, 0,
-                           NULL, 0,
-                           NULL, 0,
-                           append, NUM_ELEMS(append),
+    const unsigned char *insert[4] = { NULL, NULL, NULL, append };
+    const uint8_t insert_len[4] = { 0, 0, 0, NUM_ELEMS(append) };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
 static int generate_or_c(ms_ctx *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
+    /* [X] NOTIF [Z] ENDIF */
     const unsigned char middle_op[1] = { OP_NOTIF };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
-    /* [X] NOTIF [Z] ENDIF */
-    return generate_concat(ctx, node, 2, indices,
-                           NULL, 0,
-                           middle_op, NUM_ELEMS(middle_op),
-                           NULL, 0,
-                           last_op, NUM_ELEMS(last_op),
+    const unsigned char *insert[4] = { NULL, middle_op, NULL, last_op };
+    const uint8_t insert_len[4] = { 0, NUM_ELEMS(middle_op), 0, NUM_ELEMS(last_op) };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
 static int generate_or_d(ms_ctx *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
+    /* [X] IFDUP NOTIF [Z] ENDIF */
     const unsigned char middle_op[2] = { OP_IFDUP, OP_NOTIF };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
-    /* [X] IFDUP NOTIF [Z] ENDIF */
-    return generate_concat(ctx, node, 2, indices,
-                           NULL, 0,
-                           middle_op, NUM_ELEMS(middle_op),
-                           NULL, 0,
-                           last_op, NUM_ELEMS(last_op),
+    const unsigned char *insert[4] = { NULL, middle_op, NULL, last_op };
+    const uint8_t insert_len[4] = { 0, NUM_ELEMS(middle_op), 0, NUM_ELEMS(last_op) };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
 static int generate_or_i(ms_ctx *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
+    /* IF [X] ELSE [Z] ENDIF */
     const unsigned char top_op[1] = { OP_IF };
     const unsigned char middle_op[1] = { OP_ELSE };
     const unsigned char last_op[1] = { OP_ENDIF };
     const size_t indices[2] = { 0, 1 };
-    /* IF [X] ELSE [Z] ENDIF */
-    return generate_concat(ctx, node, 2, indices,
-                           top_op, NUM_ELEMS(top_op),
-                           middle_op, NUM_ELEMS(middle_op),
-                           NULL, 0,
-                           last_op, NUM_ELEMS(last_op),
+    const unsigned char *insert[4] = { top_op, middle_op, NULL, last_op };
+    const uint8_t insert_len[4] = { NUM_ELEMS(top_op), NUM_ELEMS(middle_op), 0, NUM_ELEMS(last_op) };
+    return generate_concat(ctx, node, 2, indices, insert, insert_len,
                            script, script_len, written);
 }
 
