@@ -2359,8 +2359,6 @@ int wally_descriptor_to_script(struct wally_descriptor *descriptor,
                                uint32_t variant, uint32_t child_num, uint32_t flags,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
-    unsigned char* foo;
-    size_t foo_len;
     int ret;
     (void)variant; /* TODO: support variants */
 
@@ -2372,25 +2370,7 @@ int wally_descriptor_to_script(struct wally_descriptor *descriptor,
         return WALLY_EINVAL;
 
     descriptor->child_num = child_num;
-    if (len == 1) {
-        foo = descriptor->script;
-        foo_len = descriptor->script_len;
-        descriptor->script = bytes_out;
-        descriptor->script_len = 1;
-    }
     ret = node_generate_script(descriptor, depth, index, written);
-    if (len == 1) {
-        descriptor->script = foo;
-        descriptor->script_len = foo_len;
-        int ret2 = node_generate_script(descriptor, depth, index, written);
-        if (ret != ret2) {
-        descriptor->script = bytes_out;
-        descriptor->script_len = 1;
-        node_generate_script(descriptor, depth, index, written);
-            abort();
-        }
-    }
-
     if (ret == WALLY_OK && *written <= len)
         memcpy(bytes_out, descriptor->script, *written);
     return ret;
