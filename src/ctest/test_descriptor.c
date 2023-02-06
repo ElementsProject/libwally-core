@@ -1504,109 +1504,104 @@ static const struct address_test {
             "bc1qd6ffgpayzpywa6hps0c65xuur5letl9hdy3pv5y40t8p9nrjpdtqqkan7a"
             "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
         }
-    }
-};
-
-
-static const struct descriptor_err_test {
-    const char *name;
-    const char *descriptor;
-    const uint32_t network;
-} g_address_err_cases[] = {
+    },
+    /*
+     * Address error cases
+     */
     {
         "address errchk - invalid network",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
-        0xf0
+        0, 0xf0, ADDR("")
     },{
         "address errchk - addr - unmatch network1",
         "addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
-        WALLY_NETWORK_BITCOIN_TESTNET
+        0, WALLY_NETWORK_BITCOIN_TESTNET, ADDR("")
     },{
         "address errchk - addr - no HRP",
         "addr(bcqrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
-        WALLY_NETWORK_BITCOIN_TESTNET
+        0, WALLY_NETWORK_BITCOIN_TESTNET, ADDR("")
     },{
         "address errchk - addr - unmatch network2",
         "addr(ex1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39q06fgz7)",
-        WALLY_NETWORK_LIQUID_REGTEST
+        0, WALLY_NETWORK_LIQUID_REGTEST, ADDR("")
     },{
         "address errchk - unsupport address - p2pk",
         "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - unsupport address - raw",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - unterminated key origin",
         "pkh([d34db33f/44'/0'/0'mainnet_xpub/1/*)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - double slash",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub//)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - middle double slash",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1//2)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - end slash",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/2/)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - duplicate wildcard (1)",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/**)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - duplicate wildcard (2)",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*/*)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - non-final wildcard",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*/1)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - hardened from xpub",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1h)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - hardened wildcard from xpub",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*h)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - index too large",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/2147483648/1)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - invalid path character",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/3c/1)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         /* Note: mainnet_xpub depth is 4, so this valid path takes it over the depth limit */
         "address errchk - depth exceeded",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         /* Paths over 255 elements in length are up-front invalid */
         "address errchk - path too long",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1/1)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - invalid descriptor character",
         "pkh(\b)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - unknown function",
         "foo(mainnet_xpub)",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - missing leading brace",
         ")",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - trailing value",
         "pkh(mainnet_xpub),1",
-        WALLY_NETWORK_BITCOIN_MAINNET
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     }
 };
 
@@ -1684,11 +1679,14 @@ static bool check_descriptor_to_address(const struct address_test *test)
     char *addresses[64];
     uint32_t flags = 0;
     size_t i;
+    int expected_ret = *test->addresses[0] ? WALLY_OK : WALLY_EINVAL;
 
     int ret = wally_descriptor_to_addresses(test->descriptor, &g_key_map, test->bip32_index,
                                             test->network, flags, addresses, test->num_addresses);
-    if (!check_ret("descriptor_to_addresses", ret, WALLY_OK))
+    if (!check_ret("descriptor_to_addresses", ret, expected_ret))
         return false;
+    if (expected_ret != WALLY_OK)
+        return true;
 
     for (i = 0; i < test->num_addresses; ++i) {
         if (strcmp(test->addresses[i], addresses[i]) != 0) {
@@ -1699,17 +1697,6 @@ static bool check_descriptor_to_address(const struct address_test *test)
         wally_free_string(addresses[i]);
     }
     return true;
-}
-
-static bool check_descriptor_address_error(const char *function,
-                                           const char *descriptor,
-                                           const uint32_t network)
-{
-    char *address = NULL;
-    uint32_t flags = 0;
-
-    int ret = wally_descriptor_to_address(descriptor, &g_key_map, 0, network, flags, &address);
-    return check_ret(function, ret, WALLY_EINVAL);
 }
 
 int main(void)
@@ -1730,17 +1717,7 @@ int main(void)
             tests_ok = false;
         }
     }
-#if 0
-    for (i = 0; i < NUM_ELEMS(g_address_err_cases); ++i) {
-        if (!check_descriptor_address_error(
-                g_address_err_cases[i].name,
-                g_address_err_cases[i].descriptor,
-                g_address_err_cases[i].network)) {
-            printf("[%s] address_err test failed!\n", g_descriptor_err_cases[i].name);
-            tests_ok = false;
-        }
-    }
-#endif
+
     wally_cleanup(0);
     return tests_ok ? 0 : 1;
 }
