@@ -23,7 +23,8 @@ struct wally_descriptor;
  * :param vars_in: Map of variable names to values, or NULL.
  * :param network: ``WALLY_NETWORK_`` constant descripting the network the
  *|    descriptor belongs to, or WALLY_NETWORK_NONE for miniscript-only expressions.
- * :param flags: ``WALLY_MINISCRIPT_ONLY`` to disallow descriptor expressions, or 0.
+ * :param flags: Include ``WALLY_MINISCRIPT_ONLY`` to disallow descriptor
+ *|    expressions, ``WALLY_MINISCRIPT_TAPSCRIPT`` to use x-only pubkeys, or 0.
  * :param output: Destination for the resulting parsed descriptor.
  *|    The descriptor returned should be freed using `wally_descriptor_free`.
  *
