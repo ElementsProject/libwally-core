@@ -76,22 +76,22 @@ WALLY_CORE_API int wally_descriptor_get_checksum(
     char **output);
 
 /**
- * Get the maximum length of a scriptPubKey corresponding to an output descriptor.
+ * Get the maximum length of a script corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param flags: For future use. Must be 0.
- * :param written: Destination for the resulting maximum scriptPubKey length.
+ * :param written: Destination for the resulting maximum script length.
  *
  * .. note:: This function overestimates the script size required, but is
  *|    cheap to compute (does not require script generation).
  */
-WALLY_CORE_API int wally_descriptor_to_scriptpubkey_maximum_length(
+WALLY_CORE_API int wally_descriptor_to_script_maximum_length(
     const struct wally_descriptor *descriptor,
     uint32_t flags,
     size_t *written);
 
 /**
- * Get the length of a scriptPubKey corresponding to an output descriptor.
+ * Get the length of a script corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
@@ -99,14 +99,14 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey_maximum_length(
  * :param variant: The variant of descriptor to generate. Pass 0 for the default.
  * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
  * :param flags: For future use. Must be 0.
- * :param written: Destination for the resulting scriptPubKey length.
+ * :param written: Destination for the resulting script length.
  *
  * .. note:: Computing the script length using this function is expensive, as
- *|    it must generate the script. Prefer to use `wally_descriptor_to_scriptpubkey_maximum_length`
- *|    or pass a large buffer to `wally_descriptor_to_scriptpubkey` and retry
+ *|    it must generate the script. Prefer to use `wally_descriptor_to_script_maximum_length`
+ *|    or pass a large buffer to `wally_descriptor_to_script` and retry
  *|    the call with a larger buffer if the it was too small.
  */
-WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
+WALLY_CORE_API int wally_descriptor_to_script_len(
     struct wally_descriptor *descriptor,
     uint32_t depth,
     uint32_t index,
@@ -116,7 +116,7 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
     size_t *written);
 
 /**
- * Create a scriptPubKey corresponding to an output descriptor.
+ * Create a script corresponding to an output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
@@ -124,11 +124,11 @@ WALLY_CORE_API int wally_descriptor_to_scriptpubkey_len(
  * :param variant: The variant of descriptor to generate. Pass 0 for the default.
  * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
  * :param flags: For future use. Must be 0.
- * :param bytes_out: Destination for the resulting scriptPubKey.
+ * :param bytes_out: Destination for the resulting scriptPubKey or script.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */
-WALLY_CORE_API int wally_descriptor_to_scriptpubkey(
+WALLY_CORE_API int wally_descriptor_to_script(
     struct wally_descriptor *descriptor,
     uint32_t depth,
     uint32_t index,

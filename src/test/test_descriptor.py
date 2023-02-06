@@ -9,6 +9,8 @@ NETWORK_BTC_REG    = 0xff
 NETWORK_LIQUID     = 0x03
 NETWORK_LIQUID_REG = 0x04
 
+MS_TAP = 0x1  # WALLY_MINISCRIPT_TAPSCRIPT
+MS_ONLY = 0x2 # WALLY_MINISCRIPT_ONLY
 
 def wally_map_from_dict(d):
     m = pointer(wally_map())
@@ -37,8 +39,8 @@ class DescriptorTests(unittest.TestCase):
              '2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac676376a914d0721279e70d39fb4aa409b52839a0056454e3b588ad82012088a914d0721279e70d39fb4aa409b52839a0056454e3b5876702f003b26868'),
         ]
         for miniscript, child_num, expected in args:
-            ret, written = wally_miniscript_to_script(miniscript, keys, child_num,
-                                                             0, script, script_len)
+            ret, written = wally_descriptor_to_script(miniscript, keys, child_num,
+                                                            MS_ONLY, script, script_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(expected) / 2)
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
@@ -46,17 +48,17 @@ class DescriptorTests(unittest.TestCase):
 
         # Invalid args
         bad_args = [
-            (None,       0,          0, script, script_len), # NULL miniscript
-            (args[0][0], 0x80000000, 0, script, script_len), # Hardened child
-            (args[0][0], 0,          0, None,   script_len), # NULL output
-            (args[0][0], 0,          0, script, 0),          # Empty output
+            (None,       0,          MS_ONLY, script, script_len), # NULL miniscript
+            (args[0][0], 0x80000000, MS_ONLY, script, script_len), # Hardened child
+            (args[0][0], 0,          MS_ONLY, None,   script_len), # NULL output
+            (args[0][0], 0,          MS_ONLY, script, 0),          # Empty output
         ]
         for miniscript, child_num, flags, bytes_out, bytes_len in bad_args:
-            ret, written = wally_miniscript_to_script(miniscript, None, child_num,
-                                                             flags, bytes_out, bytes_len)
+            ret, written = wally_descriptor_to_script(miniscript, None, child_num,
+                                                            flags, bytes_out, bytes_len)
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
-    def test_descriptor_to_scriptpubkey(self):
+    def test_descriptor_to_script(self):
         script, script_len = make_cbuffer('00' * 64 * 2)
 
         # Valid args
@@ -65,7 +67,7 @@ class DescriptorTests(unittest.TestCase):
              0, NETWORK_BTC_MAIN, '00147dd65592d0ab2fe0d0257d571abf032cd9db93dc'),
         ]
         for descriptor, child_num, network, expected in args:
-            ret, written = wally_descriptor_to_scriptpubkey(descriptor, None, child_num,
+            ret, written = wally_descriptor_to_script(descriptor, None, child_num,
                                                             network, 0, 0, 0, script, script_len)
             self.assertEqual((ret, written), (WALLY_OK, len(expected) // 2))
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
@@ -83,7 +85,7 @@ class DescriptorTests(unittest.TestCase):
             (args[0][0], 0,          M, 0, 0, 0, script, 0),          # Empty output
         ]
         for descriptor, child_num, network, depth, idx, flags, bytes_out, bytes_len in bad_args:
-            ret, written = wally_descriptor_to_scriptpubkey(descriptor, None, child_num,
+            ret, written = wally_descriptor_to_script(descriptor, None, child_num,
                                                             network, depth, idx, flags,
                                                             bytes_out, bytes_len)
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))

@@ -544,9 +544,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_struct(wally_descriptor_parse, wally_descriptor);
 %returns_string(wally_descriptor_to_address);
 %returns_sarray(wally_descriptor_to_addresses);
-%returns_size_t(wally_descriptor_to_scriptpubkey);
-%returns_size_t(wally_descriptor_to_scriptpubkey_len);
-%returns_size_t(wally_descriptor_to_scriptpubkey_maximum_length);
+%returns_size_t(wally_descriptor_to_script);
+%returns_size_t(wally_descriptor_to_script_len);
+%returns_size_t(wally_descriptor_to_script_maximum_length);
 %returns_void__(wally_ec_private_key_verify);
 %returns_void__(wally_ec_public_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);

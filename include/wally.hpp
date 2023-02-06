@@ -469,21 +469,21 @@ inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, const VARS_IN& 
 }
 
 template <class DESCRIPTOR, class BYTES_OUT>
-inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+inline int descriptor_to_script(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
-    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), depth, index, variant, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    int ret = ::wally_descriptor_to_script(detail::get_p(descriptor), depth, index, variant, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
 template <class DESCRIPTOR>
-inline int descriptor_to_scriptpubkey_len(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_to_scriptpubkey_len(detail::get_p(descriptor), depth, index, variant, child_num, flags, written);
+inline int descriptor_to_script_len(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_script_len(detail::get_p(descriptor), depth, index, variant, child_num, flags, written);
     return ret;
 }
 
 template <class DESCRIPTOR>
-inline int descriptor_to_scriptpubkey_maximum_length(const DESCRIPTOR& descriptor, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_to_scriptpubkey_maximum_length(detail::get_p(descriptor), flags, written);
+inline int descriptor_to_script_maximum_length(const DESCRIPTOR& descriptor, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_script_maximum_length(detail::get_p(descriptor), flags, written);
     return ret;
 }
 

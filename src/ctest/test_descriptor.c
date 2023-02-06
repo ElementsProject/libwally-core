@@ -85,7 +85,7 @@ static const struct descriptor_test {
     const uint32_t variant;
     const uint32_t *bip32_index;
     const uint32_t flags;
-    const char *scriptpubkey;
+    const char *script;
     const char *checksum;
 } g_descriptor_cases[] = {
     /*
@@ -1459,7 +1459,7 @@ struct descriptor_err_test g_address_err_cases[] = {
     }
 };
 
-static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
+static bool check_descriptor_to_script(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
     size_t written, len_written;
@@ -1468,7 +1468,7 @@ static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
     int expected_ret, ret, len_ret;
     uint32_t child_num = test->bip32_index ? *test->bip32_index : 0;
 
-    expected_ret = test->scriptpubkey ? WALLY_OK : WALLY_EINVAL;
+    expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
 
     ret = wally_descriptor_parse(test->descriptor, &g_key_map, test->network,
                                  test->flags, &descriptor);
@@ -1478,25 +1478,25 @@ static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
     if (expected_ret != WALLY_OK)
         return true;
 
-    ret = wally_descriptor_to_scriptpubkey(descriptor,
-                                           test->depth, test->index,
-                                           test->variant, child_num,
-                                           0, script, sizeof(script),
-                                           &written);
-    if (!check_ret("descriptor_to_scriptpubkey", ret, WALLY_OK))
+    ret = wally_descriptor_to_script(descriptor,
+                                     test->depth, test->index,
+                                     test->variant, child_num,
+                                     0, script, sizeof(script),
+                                     &written);
+    if (!check_ret("descriptor_to_script", ret, WALLY_OK))
         return false;
 
-    len_ret = wally_descriptor_to_scriptpubkey_len(descriptor,
-                                                   test->depth, test->index,
-                                                   test->variant, child_num,
-                                                   0, &len_written);
-    if (!check_ret("descriptor_to_scriptpubkey_len", len_ret, WALLY_OK) ||
+    len_ret = wally_descriptor_to_script_len(descriptor,
+                                             test->depth, test->index,
+                                             test->variant, child_num, 0,
+                                             &len_written);
+    if (!check_ret("descriptor_to_script_len", len_ret, WALLY_OK) ||
         written != len_written)
         return false;
 
-    len_ret = wally_descriptor_to_scriptpubkey_maximum_length(descriptor,
-                                                              0, &len_written);
-    if (!check_ret("descriptor_to_scriptpubkey_maximum_length", len_ret, WALLY_OK) ||
+    len_ret = wally_descriptor_to_script_maximum_length(descriptor, 0,
+                                                        &len_written);
+    if (!check_ret("descriptor_to_script_maximum_length", len_ret, WALLY_OK) ||
         written > len_written)
         return false;
 
@@ -1509,11 +1509,10 @@ static bool check_descriptor_to_scriptpubkey(const struct descriptor_test* test)
     if (!check_ret("descriptor_canonicalize", ret, WALLY_OK))
         return false;
 
-    ret = check_varbuff("descriptor_to_scriptpubkey", script, written,
-                        test->scriptpubkey) &&
+    ret = check_varbuff("descriptor_to_script", script, written, test->script) &&
           (!*test->checksum || !strcmp(checksum, test->checksum));
     if (!ret)
-        printf("%s:  expected [%s], got [%s]\n", "descriptor_to_scriptpubkey",
+        printf("%s:  expected [%s], got [%s]\n", "descriptor_to_script",
                test->checksum, checksum);
 
     wally_free_string(checksum);
@@ -1583,7 +1582,7 @@ int main(void)
     size_t i;
 
     for (i = 0; i < NUM_ELEMS(g_descriptor_cases); ++i) {
-        if (!check_descriptor_to_scriptpubkey(&g_descriptor_cases[i])) {
+        if (!check_descriptor_to_script(&g_descriptor_cases[i])) {
             printf("[%s] descriptor test failed!\n", g_descriptor_cases[i].name);
             tests_ok = false;
         }

@@ -113,8 +113,8 @@ export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags:
 export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, network: number, flags: number): Ref_wally_descriptor;
 export function descriptor_to_address(descriptor: string, vars_in: Ref_wally_map, child_num: number, network: number, flags: number): string;
 export function descriptor_to_addresses(descriptor: string, vars_in: Ref_wally_map, child_num: number, network: number, flags: number, out_len: number): string;
-export function descriptor_to_scriptpubkey_len(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, child_num: number, flags: number): number;
-export function descriptor_to_scriptpubkey_maximum_length(descriptor: Ref_wally_descriptor, flags: number): number;
+export function descriptor_to_script_len(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, child_num: number, flags: number): number;
+export function descriptor_to_script_maximum_length(descriptor: Ref_wally_descriptor, flags: number): number;
 export function ec_private_key_verify(priv_key: Buffer|Uint8Array): void;
 export function ec_public_key_decompress(pub_key: Buffer|Uint8Array): Buffer;
 export function ec_public_key_from_private_key(priv_key: Buffer|Uint8Array): Buffer;
@@ -685,7 +685,7 @@ export function asset_surjectionproof(output_asset: Buffer|Uint8Array, output_ab
 export function base58_n_to_bytes(str_in: string, str_len: number, flags: number): Buffer;
 export function base58_to_bytes(str_in: string, flags: number): Buffer;
 export function base64_to_bytes(str_in: string, flags: number): Buffer;
-export function descriptor_to_scriptpubkey(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, child_num: number, flags: number): Buffer;
+export function descriptor_to_script(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, child_num: number, flags: number): Buffer;
 export function ec_sig_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function keypath_get_path(val: Buffer|Uint8Array): Uint32Array;
 export function map_get_item(map_in: Ref_wally_map, index: number): Buffer;
