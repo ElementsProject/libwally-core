@@ -1033,7 +1033,7 @@ static int generate_pk_h(ms_ctx *ctx, ms_node *node,
             script[0] = OP_DUP;
             script[1] = OP_HASH160;
             script[2] = HASH160_LEN;
-            ret = wally_hash160(&buff[1], *written - 1, &script[3], HASH160_LEN);
+            ret = wally_hash160(&buff[1], *written - 1, script + 3, HASH160_LEN);
             script[3 + HASH160_LEN] = OP_EQUALVERIFY;
         }
     }
@@ -1183,16 +1183,16 @@ static int generate_multi(ms_ctx *ctx, ms_node *node,
             const size_t pubkey_len = sorted[i].pubkey_len;
             if (offset + pubkey_len + 1 <= script_len) {
                 script[offset] = pubkey_len;
-                memcpy(&script[offset + 1], sorted[i].pubkey, pubkey_len);
+                memcpy(script + offset + 1, sorted[i].pubkey, pubkey_len);
             }
             offset += pubkey_len + 1;
         }
 
         if (ret == WALLY_OK) {
             size_t number_len;
-            /* FIXME: don't let script_len go negative */
-            ret = generate_number(count, node->parent, &script[offset],
-                                  script_len - offset, &number_len);
+            size_t remaining_len = offset > script_len ? 0 : script_len - offset;
+            ret = generate_number(count, node->parent, script + offset,
+                                  remaining_len, &number_len);
             if (ret == WALLY_OK) {
                 *written = offset + number_len + 1;
                 if (*written > REDEEM_SCRIPT_MAX_SIZE)
@@ -1244,9 +1244,8 @@ static int generate_hash_type(ms_ctx *ctx, ms_node *node,
                               unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
+    size_t hash_size,  output_len = *written, remaining_len = 0;
     unsigned char op_code;
-    size_t hash_size;
-    size_t output_len = *written;
 
     if (!node->child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
@@ -1266,8 +1265,9 @@ static int generate_hash_type(ms_ctx *ctx, ms_node *node,
     } else
         return WALLY_ERROR; /* Shouldn't happen */
 
-    /* FIXME: don't let script_len go negative */
-    ret = generate_script(ctx, node->child, &script[6], script_len - 7, &output_len);
+    if (script_len >= 7)
+        remaining_len = script_len - 7;
+    ret = generate_script(ctx, node->child, script + 6, remaining_len, &output_len);
     if (ret == WALLY_OK) {
         *written = output_len + 7;
         if (*written <= script_len) {
@@ -1434,16 +1434,16 @@ static int generate_thresh(ms_ctx *ctx, ms_node *node,
 {
     /* [X1] [X2] ADD ... [Xn] ADD <k> EQUAL */
     ms_node *child = node->child;
-    size_t output_len, offset = 0, count = 0;
+    size_t output_len, remaining_len, offset = 0, count = 0;
     int ret = WALLY_OK;
 
     if (!child || !node_is_root(node))
         return WALLY_EINVAL;
 
     for (child = child->next; child && ret == WALLY_OK; child = child->next) {
-        /* FIXME: don't let script_len go negative */
+        remaining_len = offset >= script_len ? 0 : script_len - offset - 1;
         ret = generate_script(ctx, child,
-                              &script[offset], script_len - offset - 1, &output_len);
+                              script + offset, remaining_len, &output_len);
         if (ret == WALLY_OK) {
             offset += output_len;
             if (count++) {
@@ -1452,11 +1452,11 @@ static int generate_thresh(ms_ctx *ctx, ms_node *node,
             }
         }
     }
-    if (ret == WALLY_OK)
-        /* FIXME: don't let script_len go negative */
+    if (ret == WALLY_OK) {
+        remaining_len = offset >= script_len ? 0 : script_len - offset - 1;
         ret = generate_script(ctx, node->child,
-                              &script[offset], script_len - offset - 1,
-                              &output_len);
+                              script + offset, remaining_len, &output_len);
+    }
     if (ret == WALLY_OK) {
         *written = offset + output_len + 1;
         if (*written > REDEEM_SCRIPT_MAX_SIZE)
