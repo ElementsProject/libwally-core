@@ -182,6 +182,7 @@ typedef struct wally_descriptor {
     ms_node *top_node; /* The first node of the parse tree */
     const struct addr_ver_t *addr_ver;
     uint32_t features; /* Features present in the parsed tree */
+    uint32_t num_variants; /* Number of script variants in the expression */
     size_t script_len; /* Max script length generatable from this expression */
     uint32_t child_num; /* BIP32 child number for derivation */
 } ms_ctx;
@@ -2494,5 +2495,16 @@ int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
     if (!descriptor || !value_out)
         return WALLY_EINVAL;
     *value_out = descriptor->features;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_num_variants(const struct wally_descriptor *descriptor,
+                                      uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    *value_out = descriptor->num_variants;
     return WALLY_OK;
 }

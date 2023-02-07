@@ -111,6 +111,7 @@ export function descriptor_canonicalize(descriptor: Ref_wally_descriptor, flags:
 export function descriptor_free(descriptor: Ref_wally_descriptor): void;
 export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags: number): string;
 export function descriptor_get_features(descriptor: Ref_wally_descriptor): number;
+export function descriptor_get_num_variants(descriptor: Ref_wally_descriptor): number;
 export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, network: number, flags: number): Ref_wally_descriptor;
 export function descriptor_to_address(descriptor: Ref_wally_descriptor, variant: number, child_num: number, flags: number): string;
 export function descriptor_to_addresses(descriptor: Ref_wally_descriptor, variant: number, child_num: number, flags: number, out_len: number): string;

@@ -161,6 +161,7 @@ export const descriptor_canonicalize = wrap('wally_descriptor_canonicalize', [T.
 export const descriptor_free = wrap('wally_descriptor_free', [T.OpaqueRef]);
 export const descriptor_get_checksum = wrap('wally_descriptor_get_checksum', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.String)]);
 export const descriptor_get_features = wrap('wally_descriptor_get_features', [T.OpaqueRef, T.DestPtr(T.Int32)]);
+export const descriptor_get_num_variants = wrap('wally_descriptor_get_num_variants', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_parse = wrap('wally_descriptor_parse', [T.String, T.OpaqueRef, T.Int32, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const descriptor_to_address = wrap('wally_descriptor_to_address', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.DestPtrPtr(T.String)]);
 export const descriptor_to_addresses = wrap('wally_descriptor_to_addresses', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.DestPtrSized(T.String, T.USER_PROVIDED_LEN)]);

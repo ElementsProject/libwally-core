@@ -90,6 +90,26 @@ WALLY_CORE_API int wally_descriptor_get_features(
     uint32_t *value_out);
 
 /**
+ * Get the number of variants in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param value_out: Destination for the number of available variants.
+ *
+ * Expressions such as ``combo()`` can return more than one script/address for
+ * a given key or key range. Each available type is represented as a variant
+ * numbered from zero. The variant is passed to `wally_descriptor_to_script`
+ * or `wally_descriptor_to_addresses` to generate a script/address
+ * corresponding to that variant type.
+ *
+ * For ``combo()``, the variants are ``p2pk``, ``p2pkh``, ``p2wpkh``,
+ * and ``p2sh-p2wpkh`` in order from 0-3. If the expression's key is
+ * uncompressed, only the first two variants are available.
+ */
+WALLY_CORE_API int wally_descriptor_get_num_variants(
+    const struct wally_descriptor *descriptor,
+    uint32_t *value_out);
+
+/**
  * Get the maximum length of a script corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
