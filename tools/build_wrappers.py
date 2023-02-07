@@ -30,6 +30,9 @@ MISSING_LEN_FUNCS = {
     'wally_aes_cbc': True, # is_upper_bound=true only needed for the case of decryption
     'wally_base58_to_bytes': True,
     'wally_base58_n_to_bytes': True,
+    # Note descriptor_to_script_len is present, but is an upper bound,
+    # so it is listed here to avoid generation as an exact length call.
+    'wally_descriptor_to_script': True,
     'wally_elements_pegin_contract_script_from_bytes': True,
     'wally_elements_pegout_script_from_bytes': True,
     'wally_format_bitcoin_message': True,

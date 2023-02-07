@@ -1649,12 +1649,12 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
                                              test->variant, child_num, 0,
                                              &len_written);
     if (!check_ret("descriptor_to_script_len", len_ret, WALLY_OK) ||
-        len_written > written)
+        written > len_written)
         return false;
 
-    len_ret = wally_descriptor_to_script_maximum_length(descriptor, 0,
+    len_ret = wally_descriptor_to_script_get_maximum_length(descriptor, 0,
                                                         &max_written);
-    if (!check_ret("descriptor_to_script_maximum_length", len_ret, WALLY_OK) ||
+    if (!check_ret("descriptor_to_script_get_maximum_length", len_ret, WALLY_OK) ||
         max_written < len_written)
         return false;
 

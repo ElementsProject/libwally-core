@@ -99,7 +99,7 @@ WALLY_CORE_API int wally_descriptor_get_features(
  * .. note:: This function overestimates the script size required, but is
  *|    cheap to compute (does not require script generation).
  */
-WALLY_CORE_API int wally_descriptor_to_script_maximum_length(
+WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
     const struct wally_descriptor *descriptor,
     uint32_t flags,
     size_t *written);
@@ -115,8 +115,11 @@ WALLY_CORE_API int wally_descriptor_to_script_maximum_length(
  * :param flags: For future use. Must be 0.
  * :param written: Destination for the resulting script length.
  *
+ * .. note:: This function may return a size slightly larger than the final
+ *|    scripts generated size, typically by 1-2 bytes if so.
  * .. note:: Computing the script length using this function is expensive, as
- *|    it must generate the script. Prefer to use `wally_descriptor_to_script_maximum_length`
+ *|    it must partially generate the script. Prefer to use
+ *|    either `wally_descriptor_to_script_get_maximum_length`
  *|    or pass a large buffer to `wally_descriptor_to_script` and retry
  *|    the call with a larger buffer if the it was too small.
  */

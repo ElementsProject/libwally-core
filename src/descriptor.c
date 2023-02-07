@@ -2381,7 +2381,7 @@ int wally_descriptor_to_script_len(struct wally_descriptor *descriptor,
                                       buff, sizeof(buff), written);
 }
 
-int wally_descriptor_to_script_maximum_length(
+int wally_descriptor_to_script_get_maximum_length(
     const struct wally_descriptor *descriptor, uint32_t flags, size_t *written)
 {
     if (written)
