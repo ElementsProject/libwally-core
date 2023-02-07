@@ -2370,17 +2370,6 @@ int wally_descriptor_to_script(struct wally_descriptor *descriptor,
                                 bytes_out, len, written);
 }
 
-int wally_descriptor_to_script_len(struct wally_descriptor *descriptor,
-                                   uint32_t depth, uint32_t index,
-                                   uint32_t variant, uint32_t child_num,
-                                   uint32_t flags, size_t *written)
-{
-    unsigned char buff[1];
-    return wally_descriptor_to_script(descriptor, depth, index,
-                                      variant, child_num, flags,
-                                      buff, sizeof(buff), written);
-}
-
 int wally_descriptor_to_script_get_maximum_length(
     const struct wally_descriptor *descriptor, uint32_t flags, size_t *written)
 {

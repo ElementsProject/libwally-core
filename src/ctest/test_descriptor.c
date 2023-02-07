@@ -1608,7 +1608,7 @@ static const struct address_test {
 static bool check_descriptor_to_script(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
-    size_t written, len_written, max_written;
+    size_t written, max_written;
     unsigned char script[520];
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
@@ -1641,21 +1641,13 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     }
 
     ret = wally_descriptor_get_features(descriptor, &features);
-    if (!check_ret("descriptor_to_script_len", ret, WALLY_OK))
-        return false;
-
-    len_ret = wally_descriptor_to_script_len(descriptor,
-                                             test->depth, test->index,
-                                             test->variant, child_num, 0,
-                                             &len_written);
-    if (!check_ret("descriptor_to_script_len", len_ret, WALLY_OK) ||
-        written > len_written)
+    if (!check_ret("descriptor_get_features", ret, WALLY_OK))
         return false;
 
     len_ret = wally_descriptor_to_script_get_maximum_length(descriptor, 0,
                                                         &max_written);
     if (!check_ret("descriptor_to_script_get_maximum_length", len_ret, WALLY_OK) ||
-        max_written < len_written)
+        max_written < written)
         return false;
 
     ret = wally_descriptor_get_checksum(descriptor, 0, &checksum);

@@ -546,7 +546,6 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_descriptor_to_address);
 %returns_sarray(wally_descriptor_to_addresses);
 %returns_size_t(wally_descriptor_to_script);
-%returns_size_t(wally_descriptor_to_script_len);
 %returns_size_t(wally_descriptor_to_script_get_maximum_length);
 %returns_void__(wally_ec_private_key_verify);
 %returns_void__(wally_ec_public_key_verify);

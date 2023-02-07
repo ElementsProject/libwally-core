@@ -30,9 +30,6 @@ MISSING_LEN_FUNCS = {
     'wally_aes_cbc': True, # is_upper_bound=true only needed for the case of decryption
     'wally_base58_to_bytes': True,
     'wally_base58_n_to_bytes': True,
-    # Note descriptor_to_script_len is present, but is an upper bound,
-    # so it is listed here to avoid generation as an exact length call.
-    'wally_descriptor_to_script': True,
     'wally_elements_pegin_contract_script_from_bytes': True,
     'wally_elements_pegout_script_from_bytes': True,
     'wally_format_bitcoin_message': True,
@@ -560,15 +557,18 @@ def get_function_defs(non_elements, internal_only):
             add_meta = False
 
     # Auto-detect output buffer length function based on the following naming conventions:
-    # - funcname -> funcname_len / funcname_length
+    # - funcname -> funcname_len / funcname_length / funcname_get_maximum_length
     # - funcname_to_bytes -> funcname_get_length
-    # - funcname_to_bytes -> funcname_get_maximum_length (implies is_upper_bound=true)
-    buffer_len_fns = set([f.name for f in funcs if f.name.endswith('_len') or f.name.endswith('_length')])
+    # - funcname_to_bytes -> funcname_get_maximum_length
+    # - _get_maximum_length implies is_upper_bound=true
+    def is_len_fn(f):
+        return f.endswith('_len') or f.endswith('_length')
+    buffer_len_fns = set([f.name for f in funcs if is_len_fn(f.name)])
     for f in funcs:
         if f.name.endswith('_to_bytes'):
             possible_names = [ f.name[0:-9]+'_get_length', f.name[0:-9]+'_get_maximum_length' ]
         else:
-            possible_names = [ f.name + '_len', f.name + '_length' ]
+            possible_names = [ f.name + '_len', f.name + '_length', f.name + '_get_maximum_length' ]
 
         for name in possible_names:
             if name in buffer_len_fns:

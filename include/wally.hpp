@@ -487,12 +487,6 @@ inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor,
     return ret;
 }
 
-template <class DESCRIPTOR>
-inline int descriptor_to_script_len(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t child_num, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_to_script_len(detail::get_p(descriptor), depth, index, variant, child_num, flags, written);
-    return ret;
-}
-
 template <class PRIV_KEY>
 inline int ec_private_key_verify(const PRIV_KEY& priv_key) {
     int ret = ::wally_ec_private_key_verify(priv_key.data(), priv_key.size());

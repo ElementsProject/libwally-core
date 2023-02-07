@@ -105,34 +105,6 @@ WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
     size_t *written);
 
 /**
- * Get the length of a script corresponding to an output descriptor.
- *
- * :param descriptor: Parsed output descriptor or miniscript expression.
- * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
- * :param index: The zero-based index of the child at depth ``depth`` to generate from.
- * :param variant: The variant of descriptor to generate. Pass 0 for the default.
- * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
- * :param flags: For future use. Must be 0.
- * :param written: Destination for the resulting script length.
- *
- * .. note:: This function may return a size slightly larger than the final
- *|    scripts generated size, typically by 1-2 bytes if so.
- * .. note:: Computing the script length using this function is expensive, as
- *|    it must partially generate the script. Prefer to use
- *|    either `wally_descriptor_to_script_get_maximum_length`
- *|    or pass a large buffer to `wally_descriptor_to_script` and retry
- *|    the call with a larger buffer if the it was too small.
- */
-WALLY_CORE_API int wally_descriptor_to_script_len(
-    struct wally_descriptor *descriptor,
-    uint32_t depth,
-    uint32_t index,
-    uint32_t variant,
-    uint32_t child_num,
-    uint32_t flags,
-    size_t *written);
-
-/**
  * Create a script corresponding to an output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
