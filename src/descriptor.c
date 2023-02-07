@@ -187,7 +187,7 @@ typedef struct wally_descriptor {
 } ms_ctx;
 
 /* Built-in miniscript expressions */
-typedef int (*node_verify_fn_t)(ms_node *node);
+typedef int (*node_verify_fn_t)(ms_ctx *ctx, ms_node *node);
 typedef int (*node_gen_fn_t)(ms_ctx *ctx, ms_node *node,
                              unsigned char *script, size_t script_len, size_t *written);
 
@@ -492,8 +492,9 @@ int wally_descriptor_free(ms_ctx *ctx)
     return WALLY_OK;
 }
 
-static int verify_sh(ms_node *node)
+static int verify_sh(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->parent || !node->child->builtin)
         return WALLY_EINVAL;
 
@@ -501,8 +502,9 @@ static int verify_sh(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_wsh(ms_node *node)
+static int verify_wsh(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->parent && node->parent->kind != KIND_DESCRIPTOR_SH)
         return WALLY_EINVAL;
     if (!node->child->builtin || node_has_uncompressed_key(node))
@@ -512,8 +514,9 @@ static int verify_wsh(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_pk(ms_node *node)
+static int verify_pk(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->child->builtin || !(node->child->kind & KIND_KEY))
         return WALLY_EINVAL;
     if (node->parent && node_has_uncompressed_key(node) &&
@@ -524,8 +527,9 @@ static int verify_pk(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_wpkh(ms_node *node)
+static int verify_wpkh(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     ms_node *parent = node->parent;
     if (parent && (!parent->builtin || parent->kind & KIND_MINISCRIPT))
         return WALLY_EINVAL;
@@ -539,17 +543,18 @@ static int verify_wpkh(ms_node *node)
     return node_has_uncompressed_key(node) ?  WALLY_EINVAL : WALLY_OK;
 }
 
-static int verify_combo(ms_node *node)
+static int verify_combo(ms_ctx *ctx, ms_node *node)
 {
     if (node->parent)
         return WALLY_EINVAL;
 
     /* Since the combo is of multiple return types, the return value is wpkh or pkh. */
-    return node_has_uncompressed_key(node) ? verify_pk(node) : verify_wpkh(node);
+    return node_has_uncompressed_key(node) ? verify_pk(ctx, node) : verify_wpkh(ctx, node);
 }
 
-static int verify_multi(ms_node *node)
+static int verify_multi(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     const int64_t count = node_get_child_count(node);
     ms_node *top, *key;
 
@@ -572,22 +577,25 @@ static int verify_multi(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_addr(ms_node *node)
+static int verify_addr(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->parent || node->child->builtin || !(node->child->kind & KIND_ADDRESS))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
 
-static int verify_raw(ms_node *node)
+static int verify_raw(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->parent || node->child->builtin || !(node->child->kind & KIND_RAW))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
 
-static int verify_delay(ms_node *node)
+static int verify_delay(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->child->builtin || node->child->kind != KIND_NUMBER ||
         node->child->number <= 0 || node->child->number > 0x7fffffff)
         return WALLY_EINVAL;
@@ -608,8 +616,9 @@ static int verify_delay(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_hash_type(ms_node *node)
+static int verify_hash_type(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     if (node->child->builtin || !(node->child->kind & KIND_RAW))
         return WALLY_EINVAL;
 
@@ -649,8 +658,9 @@ static uint32_t verify_andor_property(uint32_t x_prop, uint32_t y_prop, uint32_t
     return prop;
 }
 
-static int verify_andor(ms_node *node)
+static int verify_andor(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     node->type_properties = verify_andor_property(node->child->type_properties,
                                                   node->child->next->type_properties,
                                                   node->child->next->next->type_properties);
@@ -680,18 +690,20 @@ static uint32_t verify_and_v_property(uint32_t x_prop, uint32_t y_prop)
     return prop & TYPE_MASK ? prop : 0;
 }
 
-static int verify_and_v(ms_node *node)
+static int verify_and_v(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     node->type_properties = verify_and_v_property(
         node->child->type_properties,
         node->child->next->type_properties);
     return node->type_properties ? WALLY_OK : WALLY_EINVAL;
 }
 
-static int verify_and_b(ms_node *node)
+static int verify_and_b(ms_ctx *ctx, ms_node *node)
 {
     const uint32_t x_prop = node->child->type_properties;
     const uint32_t y_prop = node->child->next->type_properties;
+    (void)ctx;
     node->type_properties = PROP_U | PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_D | PROP_Z | PROP_M);
     node->type_properties |= (x_prop | y_prop) & PROP_S;
@@ -716,18 +728,20 @@ static int verify_and_b(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_and_n(ms_node *node)
+static int verify_and_n(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     node->type_properties = verify_andor_property(node->child->type_properties,
                                                   node->child->next->type_properties,
                                                   PROP_OP_0);
     return node->type_properties ? WALLY_OK : WALLY_EINVAL;
 }
 
-static int verify_or_b(ms_node *node)
+static int verify_or_b(ms_ctx *ctx, ms_node *node)
 {
     const uint32_t x_prop = node->child->type_properties;
     const uint32_t y_prop = node->child->next->type_properties;
+    (void)ctx;
     node->type_properties = PROP_D | PROP_U | PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_S | PROP_E);
     node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
@@ -744,10 +758,11 @@ static int verify_or_b(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_or_c(ms_node *node)
+static int verify_or_c(ms_ctx *ctx, ms_node *node)
 {
     const uint32_t x_prop = node->child->type_properties;
     const uint32_t y_prop = node->child->next->type_properties;
+    (void)ctx;
     node->type_properties = PROP_F | PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_S);
     node->type_properties |= (x_prop | y_prop) & (PROP_G | PROP_H | PROP_I | PROP_J);
@@ -762,10 +777,11 @@ static int verify_or_c(ms_node *node)
     return WALLY_OK;
 }
 
-static int verify_or_d(ms_node *node)
+static int verify_or_d(ms_ctx *ctx, ms_node *node)
 {
     const uint32_t x_prop = node->child->type_properties;
     const uint32_t y_prop = node->child->next->type_properties;
+    (void)ctx;
     node->type_properties = PROP_X;
     node->type_properties |= x_prop & y_prop & (PROP_Z | PROP_E | PROP_S);
     node->type_properties |= y_prop & (PROP_U | PROP_F | PROP_D);
@@ -801,20 +817,22 @@ static uint32_t verify_or_i_property(uint32_t x_prop, uint32_t y_prop)
     return prop;
 }
 
-static int verify_or_i(ms_node *node)
+static int verify_or_i(ms_ctx *ctx, ms_node *node)
 {
+    (void)ctx;
     node->type_properties = verify_or_i_property(node->child->type_properties,
                                                  node->child->next->type_properties);
     return node->type_properties ? WALLY_OK : WALLY_EINVAL;
 }
 
-static int verify_thresh(ms_node *node)
+static int verify_thresh(ms_ctx *ctx, ms_node *node)
 {
     ms_node *top = top = node->child, *child;
     int64_t count = 0, num_s = 0, args = 0;
     uint32_t acc_tl = PROP_K, tmp_acc_tl;
     bool all_e = true, all_m = true;
 
+    (void)ctx;
     if (!top || top->builtin || top->kind != KIND_NUMBER)
         return WALLY_EINVAL;
 
@@ -2126,7 +2144,7 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         if (expected_children != 0xffffffff && node_get_child_count(node) != expected_children)
             ret = WALLY_EINVAL; /* Too many or too few children */
         else
-            ret = builtin_get(node)->verify_fn(node);
+            ret = builtin_get(node)->verify_fn(ctx, node);
     }
 
     if (ret == WALLY_OK)
