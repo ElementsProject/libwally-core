@@ -119,6 +119,11 @@ WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
  *
  * .. note:: For miniscript expressions, the script generated is untyped
  *|    bitcoin script. For descriptors, a scriptPubKey is generated.
+ *
+ * .. note:: ``depth`` and ``index`` can be used to generate sub-scripts from
+ *|    the expression tree. These are expected to be useful once introspection
+ *|    of the expression is improved, e.g. to allow generating the nested
+ *|    script inside sh() or wsh() expressions.
  */
 WALLY_CORE_API int wally_descriptor_to_script(
     struct wally_descriptor *descriptor,
