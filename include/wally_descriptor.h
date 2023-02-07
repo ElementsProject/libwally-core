@@ -116,6 +116,9 @@ WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
  * :param bytes_out: Destination for the resulting scriptPubKey or script.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: For miniscript expressions, the script generated is untyped
+ *|    bitcoin script. For descriptors, a scriptPubKey is generated.
  */
 WALLY_CORE_API int wally_descriptor_to_script(
     struct wally_descriptor *descriptor,
