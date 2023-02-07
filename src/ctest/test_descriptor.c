@@ -67,7 +67,7 @@ static bool check_varbuff(const char *function, const unsigned char *src, size_t
         return false;
 
     if (strcmp(hex, expected)) {
-        printf("%s: mismatch [%s] != [%s]\n", function, hex, expected);
+        printf("%s: mismatch, expected [%s], got [%s]\n", function, expected, hex);
         return false;
     }
     wally_free_string(hex);
@@ -210,6 +210,12 @@ static const struct descriptor_test {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "210339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2ac",
         "axav5m0j"
+    },{
+        "descriptor - p2pkh-xpub-derive single child",
+        "pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "76a914bef5a2f9a56a94aab12459f72ad9cf8cf19c7bbe88ac",
+        "kd8wch8l"
     },{
         "descriptor - p2pkh-xpub-derive",
         "pkh(xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw/1/2)",
