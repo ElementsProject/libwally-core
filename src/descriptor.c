@@ -1165,12 +1165,31 @@ static int generate_wpkh(ms_ctx *ctx, ms_node *node,
     return ret;
 }
 
+static int generate_sh_wpkh(ms_ctx *ctx, ms_node *node,
+                            unsigned char *script, size_t script_len, size_t *written)
+{
+    /* Create a fake parent sh() node to wrap our combo w2pkh child */
+    const unsigned char builtin_sh_index = 0 + 1;
+    ms_node sh_node = { NULL, node, NULL, KIND_DESCRIPTOR_SH,
+                        TYPE_NONE, 0, NULL, NULL, 0, 0,
+                        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                        builtin_sh_index, false, false };
+    int ret;
+
+    if (ctx->variant != 3)
+        return WALLY_ERROR; /* Should only be called to sh-wpkh */
+    ctx->variant = 2; /* Generate wpkh from the combo node */
+    ret = builtin_get(&sh_node)->generate_fn(ctx, &sh_node, script, script_len,
+                                             written);
+    ctx->variant = 3;
+    return ret;
+}
+
 static int generate_combo(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
-    if (node_has_uncompressed_key(node))
-        return generate_pkh(ctx, node, script, script_len, written);
-    return generate_wpkh(ctx, node, script, script_len, written);
+    const node_gen_fn_t funcs[4] = { generate_pk, generate_pkh, generate_wpkh, generate_sh_wpkh };
+    return funcs[ctx->variant](ctx, node, script, script_len, written);
 }
 
 static int compare_multisig_node(const void *lhs, const void *rhs)
