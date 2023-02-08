@@ -546,11 +546,28 @@ static int verify_wpkh(ms_ctx *ctx, ms_node *node)
 
 static int verify_combo(ms_ctx *ctx, ms_node *node)
 {
+    const bool has_uncompressed_key = node_has_uncompressed_key(node);
+    int ret;
+
     if (node->parent)
         return WALLY_EINVAL;
 
-    /* Since the combo is of multiple return types, the return value is wpkh or pkh. */
-    return node_has_uncompressed_key(node) ? verify_pk(ctx, node) : verify_wpkh(ctx, node);
+    if (has_uncompressed_key) {
+        ctx->num_variants = 2; /* p2pk and p2pkh */
+    } else {
+        ctx->num_variants = 4; /* p2pk, p2pkh, p2wpkh and p2sh-p2wpkh */
+    }
+    ret = verify_pk(ctx, node);
+    /* pkh is the same verification as pk, so skipped */
+    if (ret == WALLY_OK && !has_uncompressed_key) {
+        ret = verify_wpkh(ctx, node);
+        /* p2sh, i.e. p2sh-wpkh is valid if pk and wpkh are */
+    }
+    /* Take our properties from the combo builtin; this means
+     * you can't really say anything about combo validity.
+     */
+    node->type_properties = builtin_get(node)->type_properties;
+    return ret;
 }
 
 static int verify_multi(ms_ctx *ctx, ms_node *node)
