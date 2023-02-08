@@ -98,11 +98,23 @@ static const struct descriptor_test {
         "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac",
         "gn28ywm7"
     },{
+        "descriptor - p2pk uncompressed",
+        "pk(uncompressed)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "410414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cfac",
+        "xfwtewl7"
+    },{
         "descriptor - p2pkh",
         "pkh(02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "76a91406afd46bcdfd22ef94ac122aa11f241244a37ecc88ac",
         "8fhd9pwu"
+    },{
+        "descriptor - p2pkh uncompressed",
+        "pkh(uncompressed)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "76a914bc11f399122b0bda5e5432aba3f5206dbb7dc18388ac",
+        "svxeae4h"
     },{
         "descriptor - p2wpkh",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
@@ -1533,6 +1545,10 @@ static const struct address_test {
     },{
         "address errchk - unsupport address - p2pk",
         "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
+        0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
+    },{
+        "address errchk - unsupport address - uncompressed p2pk",
+        "pk(uncompressed)",
         0, WALLY_NETWORK_BITCOIN_MAINNET, ADDR("")
     },{
         "address errchk - unsupport address - raw",
