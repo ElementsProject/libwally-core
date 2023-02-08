@@ -184,6 +184,8 @@ typedef struct wally_descriptor {
     uint32_t features; /* Features present in the parsed tree */
     uint32_t num_variants; /* Number of script variants in the expression */
     size_t script_len; /* Max script length generatable from this expression */
+    /* User modified for generation */
+    uint32_t variant; /* Variant for derivation of multi-type expressions */
     uint32_t child_num; /* BIP32 child number for derivation */
 } ms_ctx;
 
@@ -2392,15 +2394,15 @@ int wally_descriptor_to_script(struct wally_descriptor *descriptor,
                                uint32_t variant, uint32_t child_num, uint32_t flags,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
-    (void)variant; /* TODO: support variants */
-
     if (written)
         *written = 0;
 
-    if (!descriptor || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+    if (!descriptor || (variant && variant >= descriptor->num_variants) ||
+        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
+    descriptor->variant = variant;
     descriptor->child_num = child_num;
     return node_generate_script(descriptor, depth, index,
                                 bytes_out, len, written);
@@ -2426,9 +2428,9 @@ int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
     ms_ctx *ctx = descriptor;
     size_t i, written;
     int ret = WALLY_OK;
-    (void)variant;
 
-    if (!ctx || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+    if (!ctx || (variant && variant >= ctx->num_variants) ||
+        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
         flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
@@ -2437,6 +2439,7 @@ int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
     if (ctx->script_len > sizeof(buff) &&(!(p = wally_malloc(ctx->script_len))))
         return WALLY_ENOMEM;
 
+    ctx->variant = variant;
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
         ctx->child_num = child_num + i;
         ret = node_generate_script(ctx, 0, 0, p, ctx->script_len, &written);
