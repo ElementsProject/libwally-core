@@ -23,7 +23,8 @@ def wally_map_from_dict(d):
 
 class DescriptorTests(unittest.TestCase):
 
-    def test_parse_miniscript(self):
+    def test_parse_and_to_script(self):
+        """Test parsing and script generation"""
         keys = wally_map_from_dict({
             utf8('key_local'): utf8('038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048'),
             utf8('key_remote'): utf8('03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7'),
@@ -52,58 +53,26 @@ class DescriptorTests(unittest.TestCase):
         wally_map_free(keys)
 
         # Invalid args
-        bad_args = [
-            (None,       0,          MS_ONLY, script, script_len), # NULL miniscript
-            (args[0][0], 0x80000000, MS_ONLY, script, script_len), # Hardened child
-            (args[0][0], 0,          MS_ONLY, None,   script_len), # NULL output
-            (args[0][0], 0,          MS_ONLY, script, 0),          # Empty output
-        ]
-        for miniscript, child_num, flags, bytes_out, bytes_len in bad_args:
-            d = c_void_p()
-            ret = wally_descriptor_parse(miniscript, None, NETWORK_NONE, flags, d)
-            if ret == WALLY_OK:
-                ret, written = wally_descriptor_to_script(d, 0, 0, 0, child_num,
-                                                            flags, bytes_out, bytes_len)
-                self.assertEqual(written, 0)
-                wally_descriptor_free(d)
-            self.assertEqual(ret, WALLY_EINVAL)
-
-    def test_descriptor_to_script(self):
-        script, script_len = make_cbuffer('00' * 64 * 2)
-
-        # Valid args
-        args = [
-            ('wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)',
-             0, NETWORK_BTC_MAIN, '00147dd65592d0ab2fe0d0257d571abf032cd9db93dc'),
-        ]
-        for descriptor, child_num, network, expected in args:
-            d = c_void_p()
-            ret = wally_descriptor_parse(descriptor, None, network, 0, d)
-            self.assertEqual(ret, WALLY_OK)
-            ret, written = wally_descriptor_to_script(d, 0, 0, 0, child_num,
-                                                      0, script, script_len)
-            self.assertEqual((ret, written), (WALLY_OK, len(expected) // 2))
-            self.assertEqual(script[:written], make_cbuffer(expected)[0])
-            wally_descriptor_free(d)
-
-        # Invalid args
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
+        H = 0x80000000 # Hardened child
         bad_args = [
-            (None,       0,          M, 0, 0, 0, script, script_len), # NULL miniscript
-            (args[0][0], 0x80000000, M, 0, 0, 0, script, script_len), # Hardened child
-            (args[0][0], 0,          U, 0, 0, 0, script, script_len), # Unknown network
-            (args[0][0], 0,          M, 2, 0, 0, script, script_len), # Invalid depth
-            (args[0][0], 0,          M, 1, 1, 0, script, script_len), # Invalid child index
-            (args[0][0], 0,          M, 1, 0, 1, script, script_len), # Invalid flags
-            (args[0][0], 0,          M, 0, 0, 0, None,   script_len), # NULL output
-            (args[0][0], 0,          M, 0, 0, 0, script, 0),          # Empty output
+            (None,       M, 0, 0, 0, 0, MS_ONLY, script, script_len), # NULL miniscript
+            ('',         M, 0, 0, 0, 0, MS_ONLY, script, script_len), # Empty miniscript
+            (args[0][0], U, 0, 0, 0, 0, MS_ONLY, script, script_len), # Unknown network
+            (args[0][0], M, 4, 0, 1, 0, MS_ONLY, script, script_len), # Invalid depth
+            (args[0][0], M, 0, 4, 1, 0, MS_ONLY, script, script_len), # Invalid idx
+            (args[0][0], M, 0, 0, 1, 0, MS_ONLY, script, script_len), # Bad variant
+            (args[0][0], M, 0, 0, 0, H, MS_ONLY, script, script_len), # Hardened child
+            (args[0][0], M, 0, 0, 0, 0, MS_ONLY, None,   script_len), # NULL output
+            (args[0][0], M, 0, 0, 0, 0, MS_ONLY, script, 0),          # Empty output
         ]
-        for descriptor, child_num, network, depth, idx, flags, bytes_out, bytes_len in bad_args:
+        for args in bad_args:
+            descriptor, network, depth, idx, variant, child_num, flags, bytes_out, bytes_len = args
             d = c_void_p()
-            ret = wally_descriptor_parse(descriptor, None, network, flags, d)
+            ret = wally_descriptor_parse(miniscript, None, network, flags, d)
             if ret == WALLY_OK:
-                ret, written = wally_descriptor_to_script(d, depth, idx, 0, child_num,
-                                                          flags, bytes_out, bytes_len)
+                ret, written = wally_descriptor_to_script(d, depth, idx, variant, child_num,
+                                                          0, bytes_out, bytes_len)
                 self.assertEqual(written, 0)
                 wally_descriptor_free(d)
             self.assertEqual(ret, WALLY_EINVAL)
@@ -115,11 +84,11 @@ class DescriptorTests(unittest.TestCase):
         # Valid args
         args = [
             ('wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)',
-              0, NETWORK_BTC_TEST, [
+              NETWORK_BTC_TEST, 0, 0, [
                 'tb1q0ht9tyks4vh7p5p904t340cr9nvahy7um9zdem'
               ]),
             ('wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))',
-              0, NETWORK_BTC_MAIN, [
+              NETWORK_BTC_MAIN, 0, 0, [
                 'bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c',
                 'bc1qp6rfclasvmwys7w7j4svgc2mrujq9m73s5shpw4e799hwkdcqlcsj464fw',
                 'bc1qsflxzyj2f2evshspl9n5n745swcvs5k7p5t8qdww5unxpjwdvw5qx53ms4',
@@ -127,7 +96,7 @@ class DescriptorTests(unittest.TestCase):
                 'bc1qjeu2wa5jwvs90tv9t9xz99njnv3we3ux04fn7glw3vqsk4ewuaaq9kdc9t',
               ]),
         ]
-        for descriptor, child_num, network, expected in args:
+        for descriptor, network, variant, child_num, expected in args:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, network, 0, d)
             self.assertEqual(ret, WALLY_OK)
@@ -140,19 +109,21 @@ class DescriptorTests(unittest.TestCase):
 
         # Invalid args
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
+        H = 0x80000000 # Hardened child
         bad_args = [
-            (None,       0,          M, 0, addrs, addrs_len), # NULL miniscript
-            (args[0][0], 0x80000000, M, 0, addrs, addrs_len), # Hardened child
-            (args[0][0], 0,          U, 0, addrs, addrs_len), # Unknown network
-            (args[0][0], 0,          M, 2, addrs, addrs_len), # Invalid flags
-            (args[0][0], 0,          M, 0, None,  addrs_len), # NULL output
-            (args[0][0], 0,          M, 0, addrs, 0),         # Empty output
+            (None,       M, 0, 0, 0, addrs, addrs_len), # NULL miniscript
+            (args[0][0], M, 0, H, 0, addrs, addrs_len), # Hardened child
+            (args[0][0], U, 0, 0, 0, addrs, addrs_len), # Unknown network
+            (args[0][0], M, 1, 0, 0, addrs, addrs_len), # Unknown variant
+            (args[0][0], M, 0, 0, 2, addrs, addrs_len), # Invalid flags
+            (args[0][0], M, 0, 0, 0, None,  addrs_len), # NULL output
+            (args[0][0], M, 0, 0, 0, addrs, 0),         # Empty output
         ]
-        for descriptor, child_num, network, flags, out, out_len in bad_args:
+        for descriptor, network, variant, child_num, flags, out, out_len in bad_args:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, network, flags, d)
             if ret == WALLY_OK:
-                ret = wally_descriptor_to_addresses(d, 0, child_num,
+                ret = wally_descriptor_to_addresses(d, variant, child_num,
                                                     0, out, out_len)
                 wally_descriptor_free(d)
             self.assertEqual(ret, WALLY_EINVAL)
