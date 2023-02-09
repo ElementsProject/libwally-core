@@ -2447,8 +2447,8 @@ int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
     size_t i, written;
     int ret = WALLY_OK;
 
-    if (!ctx || (variant && variant >= ctx->num_variants) || range_index ||
-        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+    if (!ctx || !ctx->addr_ver || (variant && variant >= ctx->num_variants) ||
+        range_index || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
         flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
