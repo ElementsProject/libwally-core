@@ -80,6 +80,40 @@ class DescriptorTests(unittest.TestCase):
                 wally_descriptor_free(d)
             self.assertEqual(ret, WALLY_EINVAL)
 
+    def test_network(self):
+        addrs_len = 64
+        addrs = (c_char_p * addrs_len)()
+
+        # Start with a descriptor containing raw keys
+        descriptor = 'sh(multi(1,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        # Get the network from the descriptor
+        ret, network = wally_descriptor_get_network(None)
+        self.assertEqual((ret, network), (WALLY_EINVAL, NETWORK_NONE))
+        ret, network = wally_descriptor_get_network(d)
+        self.assertEqual((ret, network), (WALLY_OK, NETWORK_NONE))
+        # We cannot generate an address for a descriptor without a network
+        addrs = (c_char_p * 1)()
+        ret = wally_descriptor_to_addresses(d, 0, 0, 0, 0, addrs, 1)
+        self.assertEqual(ret, WALLY_EINVAL)
+        # Set the network for the descriptor
+        for args in [(None, NETWORK_BTC_MAIN), (d, 0xf0)]:
+            ret = wally_descriptor_set_network(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
+        ret = wally_descriptor_set_network(d, NETWORK_BTC_MAIN)
+        self.assertEqual(ret, WALLY_OK)
+        # Verify the network changed
+        ret, network = wally_descriptor_get_network(d)
+        self.assertEqual((ret, network), (WALLY_OK, NETWORK_BTC_MAIN))
+        # We can now generate an address
+        addrs = (c_char_p * 1)()
+        ret = wally_descriptor_to_addresses(d, 0, 0, 0, 0, addrs, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addrs[0], utf8('3ETTzkMnuA4PguZeWYtdCT6Rva3yTHATyP'))
+        wally_descriptor_free(d)
+
     def test_descriptor_to_addresses(self):
         addrs_len = 64
         addrs = (c_char_p * addrs_len)()
@@ -108,7 +142,7 @@ class DescriptorTests(unittest.TestCase):
                                                 len(expected))
             self.assertEqual(ret, WALLY_OK)
             for i in range(len(expected)):
-                self.assertEqual(expected[i].encode('utf-8'), addrs[i])
+                self.assertEqual(utf8(expected[i]), addrs[i])
             wally_descriptor_free(d)
 
         # Invalid args

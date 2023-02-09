@@ -165,7 +165,7 @@ def gen_python_cffi(funcs, all_funcs, internal_only):
         u'int'           : u'c_int',
         u'size_t*'       : u'c_size_t_p',
         u'size_t'        : u'c_size_t',
-        u'uint32_t*'     : u'c_uint_p',
+        u'uint32_t*'     : u'c_uint32_p',
         u'uint32_t'      : u'c_uint32',
         u'uint64_t*'     : u'c_uint64_p',
         u'uint64_t'      : u'c_uint64',
@@ -178,6 +178,8 @@ def gen_python_cffi(funcs, all_funcs, internal_only):
         }
     def map_arg(arg, n, num_args):
         argtype = arg.type[6:] if arg.is_const else arg.type # Strip const
+        if argtype == u'uint32_t*' and n != num_args - 1:
+            return u'POINTER(c_uint32)'
         if argtype == u'uint64_t*' and n != num_args - 1:
             return u'POINTER(c_uint64)'
         if argtype == u'char**' and n != num_args - 1:
