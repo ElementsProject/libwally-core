@@ -24,7 +24,7 @@ struct wally_descriptor;
  *
  * :param descriptor: Output descriptor or miniscript expression to parse.
  * :param vars_in: Map of variable names to values, or NULL.
- * :param network: ``WALLY_NETWORK_`` constant descripting the network the
+ * :param network: ``WALLY_NETWORK_`` constant describing the network the
  *|    descriptor belongs to, or WALLY_NETWORK_NONE for miniscript-only expressions.
  * :param flags: Include ``WALLY_MINISCRIPT_ONLY`` to disallow descriptor
  *|    expressions, ``WALLY_MINISCRIPT_TAPSCRIPT`` to use x-only pubkeys, or 0.
@@ -78,6 +78,36 @@ WALLY_CORE_API int wally_descriptor_get_checksum(
     const struct wally_descriptor *descriptor,
     uint32_t flags,
     char **output);
+
+/**
+ * Get the network used in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param value_out: Destination for the resulting ``WALLY_NETWORK`` network.
+ *
+ * A descriptor parsed with ``WALLY_NETWORK_NONE`` will infer its network from
+ * the contained key expressions. If the descriptor does not contain network
+ * information (e.g. its keys are raw keys), then this function will
+ * return ``WALLY_NETWORK_NONE``, and `wally_descriptor_set_network` must be
+ * called to set a network for the descriptor before addresses can be
+ * generated from it.
+ */
+WALLY_CORE_API int wally_descriptor_get_network(
+    const struct wally_descriptor *descriptor,
+    uint32_t *value_out);
+
+/**
+ * set the network for a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param network: The ``WALLY_NETWORK`` network constant describing the
+ *|    network the descriptor should belong to.
+ *
+ * .. note:: The network can only be set if it is currently ``WALLY_NETWORK_NONE``.
+ */
+WALLY_CORE_API int wally_descriptor_set_network(
+    struct wally_descriptor *descriptor,
+    uint32_t network);
 
 /**
  * Get the features used in a parsed output descriptor or miniscript expression.

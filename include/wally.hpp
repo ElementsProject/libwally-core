@@ -457,6 +457,12 @@ inline int descriptor_get_features(const DESCRIPTOR& descriptor, uint32_t* value
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_num_ranges(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_num_ranges(detail::get_p(descriptor), value_out);
     return ret;
@@ -471,6 +477,12 @@ inline int descriptor_get_num_variants(const DESCRIPTOR& descriptor, uint32_t* v
 template <class DESCRIPTOR, class VARS_IN>
 inline int descriptor_parse(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t network, uint32_t flags, struct wally_descriptor** output) {
     int ret = ::wally_descriptor_parse(detail::get_p(descriptor), detail::get_p(vars_in), network, flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_set_network(const DESCRIPTOR& descriptor, uint32_t network) {
+    int ret = ::wally_descriptor_set_network(detail::get_p(descriptor), network);
     return ret;
 }
 

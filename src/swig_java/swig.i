@@ -541,8 +541,10 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_descriptor_canonicalize);
 %returns_string(wally_descriptor_get_checksum);
 %returns_size_t(wally_descriptor_get_features);
+%returns_size_t(wally_descriptor_get_network);
 %returns_size_t(wally_descriptor_get_num_ranges);
 %returns_size_t(wally_descriptor_get_num_variants);
+%returns_void__(wally_descriptor_set_network);
 %returns_void__(wally_descriptor_free);
 %returns_struct(wally_descriptor_parse, wally_descriptor);
 %returns_string(wally_descriptor_to_address);

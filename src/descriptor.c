@@ -2526,6 +2526,31 @@ int wally_descriptor_canonicalize(const struct wally_descriptor *descriptor,
     return WALLY_OK;
 }
 
+int wally_descriptor_get_network(const struct wally_descriptor *descriptor,
+                                 uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    *value_out = descriptor->addr_ver ? descriptor->addr_ver->network : WALLY_NETWORK_NONE;
+    return WALLY_OK;
+}
+
+int wally_descriptor_set_network(struct wally_descriptor *descriptor,
+                                 uint32_t network)
+{
+     /* Allow setting a non-NONE network only if there isn't one already */
+    if (!descriptor || network == WALLY_NETWORK_NONE)
+        return WALLY_EINVAL;
+    if (descriptor->addr_ver && descriptor->addr_ver->network == network)
+        return WALLY_OK; /* No-op */
+    if (descriptor->addr_ver)
+        return WALLY_EINVAL; /* Already have a network */
+    descriptor->addr_ver = addr_ver_from_network(network);
+    return descriptor->addr_ver ? WALLY_OK : WALLY_EINVAL;
+}
+
 int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
                                   uint32_t *value_out)
 {

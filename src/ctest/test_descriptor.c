@@ -1602,31 +1602,39 @@ static const struct address_test {
      * Address error cases
      */
     {
+        "address errchk - no network",
+        "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
+        WALLY_NETWORK_NONE, 0, 0, ADDR("")
+    },{
         "address errchk - invalid network",
         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
         0xf0, 0, 0, ADDR("")
     },{
-        "address errchk - addr - unmatch network1",
+        "address errchk - addr - mismatched network 1",
         "addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
         WALLY_NETWORK_BITCOIN_TESTNET, 0, 0, ADDR("")
+    },{
+        "address errchk - addr - unmatched network 2",
+        "addr(ex1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39q06fgz7)",
+        WALLY_NETWORK_LIQUID_REGTEST, 0, 0, ADDR("")
+    },{
+        "address errchk - addr - network conflict",
+        "multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB,tpubD6NzVbkrYhZ4XJDrzRvuxHEyQaPd1mwwdDofEJwekX18tAdsqeKfxss79AJzg1431FybXg5rfpTrJF4iAhyR7RubberdzEQXiRmXGADH2eA)",
+        WALLY_NETWORK_NONE, 0, 0, ADDR("")
     },{
         "address errchk - addr - no HRP",
         "addr(bcqrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3)",
         WALLY_NETWORK_BITCOIN_TESTNET, 0, 0, ADDR("")
     },{
-        "address errchk - addr - unmatch network2",
-        "addr(ex1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39q06fgz7)",
-        WALLY_NETWORK_LIQUID_REGTEST, 0, 0, ADDR("")
-    },{
-        "address errchk - unsupport address - p2pk",
+        "address errchk - unsupported address - p2pk",
         "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, ADDR("")
     },{
-        "address errchk - unsupport address - uncompressed p2pk",
+        "address errchk - unsupported address - uncompressed p2pk",
         "pk(uncompressed)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, ADDR("")
     },{
-        "address errchk - unsupport address - raw",
+        "address errchk - unsupported address - raw",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, ADDR("")
     },{
