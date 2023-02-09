@@ -2410,14 +2410,15 @@ int wally_descriptor_parse(const char *miniscript,
 
 int wally_descriptor_to_script(struct wally_descriptor *descriptor,
                                uint32_t depth, uint32_t index,
-                               uint32_t variant, uint32_t child_num, uint32_t flags,
+                               uint32_t variant, uint32_t range_index,
+                               uint32_t child_num, uint32_t flags,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
     if (written)
         *written = 0;
 
     if (!descriptor || (variant && variant >= descriptor->num_variants) ||
-        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        range_index || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
@@ -2439,8 +2440,8 @@ int wally_descriptor_to_script_get_maximum_length(
 }
 
 int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
-                                  uint32_t variant, uint32_t child_num,
-                                  uint32_t flags,
+                                  uint32_t variant, uint32_t range_index,
+                                  uint32_t child_num, uint32_t flags,
                                   char **addresses, size_t num_addresses)
 {
     unsigned char buff[REDEEM_SCRIPT_MAX_SIZE], *p = buff;
@@ -2448,7 +2449,7 @@ int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
     size_t i, written;
     int ret = WALLY_OK;
 
-    if (!ctx || (variant && variant >= ctx->num_variants) ||
+    if (!ctx || (variant && variant >= ctx->num_variants) || range_index ||
         child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
         flags || !addresses || !num_addresses)
@@ -2491,11 +2492,12 @@ int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
 }
 
 int wally_descriptor_to_address(struct wally_descriptor *descriptor,
-                                uint32_t variant, uint32_t child_num,
-                                uint32_t flags, char **output)
+                                uint32_t variant, uint32_t range_index,
+                                uint32_t child_num, uint32_t flags,
+                                char **output)
 {
-    return wally_descriptor_to_addresses(descriptor, variant, child_num, flags,
-                                         output, 1);
+    return wally_descriptor_to_addresses(descriptor, variant, range_index,
+                                         child_num, flags, output, 1);
 }
 
 int wally_descriptor_get_checksum(const struct wally_descriptor *descriptor,
@@ -2545,5 +2547,17 @@ int wally_descriptor_get_num_variants(const struct wally_descriptor *descriptor,
     if (!descriptor || !value_out)
         return WALLY_EINVAL;
     *value_out = descriptor->num_variants;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_num_ranges(const struct wally_descriptor *descriptor,
+                                    uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    /* TODO: Support descriptor ranges e.g. <a;b>, <a;b;c> in key path expressions */
+    *value_out = 1;
     return WALLY_OK;
 }

@@ -44,7 +44,7 @@ class DescriptorTests(unittest.TestCase):
             d = c_void_p()
             ret = wally_descriptor_parse(miniscript, keys, NETWORK_NONE, MS_ONLY, d)
             self.assertEqual(ret, WALLY_OK)
-            ret, written = wally_descriptor_to_script(d, 0, 0, 0, child_num,
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, child_num,
                                                       0, script, script_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(written, len(expected) / 2)
@@ -56,22 +56,25 @@ class DescriptorTests(unittest.TestCase):
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
         H = 0x80000000 # Hardened child
         bad_args = [
-            (None,       M, 0, 0, 0, 0, MS_ONLY, script, script_len), # NULL miniscript
-            ('',         M, 0, 0, 0, 0, MS_ONLY, script, script_len), # Empty miniscript
-            (args[0][0], U, 0, 0, 0, 0, MS_ONLY, script, script_len), # Unknown network
-            (args[0][0], M, 4, 0, 1, 0, MS_ONLY, script, script_len), # Invalid depth
-            (args[0][0], M, 0, 4, 1, 0, MS_ONLY, script, script_len), # Invalid idx
-            (args[0][0], M, 0, 0, 1, 0, MS_ONLY, script, script_len), # Bad variant
-            (args[0][0], M, 0, 0, 0, H, MS_ONLY, script, script_len), # Hardened child
-            (args[0][0], M, 0, 0, 0, 0, MS_ONLY, None,   script_len), # NULL output
-            (args[0][0], M, 0, 0, 0, 0, MS_ONLY, script, 0),          # Empty output
+            (None,       M, 0, 0, 0, 0, 0, MS_ONLY, script, script_len), # NULL miniscript
+            ('',         M, 0, 0, 0, 0, 0, MS_ONLY, script, script_len), # Empty miniscript
+            (args[0][0], U, 0, 0, 0, 0, 0, MS_ONLY, script, script_len), # Unknown network
+            (args[0][0], M, 4, 0, 0, 0, 0, MS_ONLY, script, script_len), # Invalid depth
+            (args[0][0], M, 0, 4, 0, 0, 0, MS_ONLY, script, script_len), # Invalid idx
+            (args[0][0], M, 0, 0, 1, 0, 0, MS_ONLY, script, script_len), # Invalid variant
+            (args[0][0], M, 0, 0, 0, 1, 0, MS_ONLY, script, script_len), # Invalid range index
+            (args[0][0], M, 0, 0, 0, 0, H, MS_ONLY, script, script_len), # Hardened child
+            (args[0][0], M, 0, 0, 0, 0, 0, MS_ONLY, None,   script_len), # NULL output
+            (args[0][0], M, 0, 0, 0, 0, 0, MS_ONLY, script, 0),          # Empty output
         ]
         for args in bad_args:
-            descriptor, network, depth, idx, variant, child_num, flags, bytes_out, bytes_len = args
+            (descriptor, network, depth, idx, variant, range_index,
+                child_num, flags, bytes_out, bytes_len) = args
             d = c_void_p()
             ret = wally_descriptor_parse(miniscript, None, network, flags, d)
             if ret == WALLY_OK:
-                ret, written = wally_descriptor_to_script(d, depth, idx, variant, child_num,
+                ret, written = wally_descriptor_to_script(d, depth, idx, variant,
+                                                          range_index, child_num,
                                                           0, bytes_out, bytes_len)
                 self.assertEqual(written, 0)
                 wally_descriptor_free(d)
@@ -84,11 +87,11 @@ class DescriptorTests(unittest.TestCase):
         # Valid args
         args = [
             ('wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)',
-              NETWORK_BTC_TEST, 0, 0, [
+              NETWORK_BTC_TEST, 0, 0, 0, [
                 'tb1q0ht9tyks4vh7p5p904t340cr9nvahy7um9zdem'
               ]),
             ('wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))',
-              NETWORK_BTC_MAIN, 0, 0, [
+              NETWORK_BTC_MAIN, 0, 0, 0, [
                 'bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c',
                 'bc1qp6rfclasvmwys7w7j4svgc2mrujq9m73s5shpw4e799hwkdcqlcsj464fw',
                 'bc1qsflxzyj2f2evshspl9n5n745swcvs5k7p5t8qdww5unxpjwdvw5qx53ms4',
@@ -96,12 +99,13 @@ class DescriptorTests(unittest.TestCase):
                 'bc1qjeu2wa5jwvs90tv9t9xz99njnv3we3ux04fn7glw3vqsk4ewuaaq9kdc9t',
               ]),
         ]
-        for descriptor, network, variant, child_num, expected in args:
+        for descriptor, network, variant, range_index, child_num, expected in args:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, network, 0, d)
             self.assertEqual(ret, WALLY_OK)
-            ret = wally_descriptor_to_addresses(d, 0, child_num,
-                                                0, addrs, len(expected))
+            ret = wally_descriptor_to_addresses(d, variant, range_index,
+                                                child_num, 0, addrs,
+                                                len(expected))
             self.assertEqual(ret, WALLY_OK)
             for i in range(len(expected)):
                 self.assertEqual(expected[i].encode('utf-8'), addrs[i])
@@ -111,20 +115,23 @@ class DescriptorTests(unittest.TestCase):
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
         H = 0x80000000 # Hardened child
         bad_args = [
-            (None,       M, 0, 0, 0, addrs, addrs_len), # NULL miniscript
-            (args[0][0], M, 0, H, 0, addrs, addrs_len), # Hardened child
-            (args[0][0], U, 0, 0, 0, addrs, addrs_len), # Unknown network
-            (args[0][0], M, 1, 0, 0, addrs, addrs_len), # Unknown variant
-            (args[0][0], M, 0, 0, 2, addrs, addrs_len), # Invalid flags
-            (args[0][0], M, 0, 0, 0, None,  addrs_len), # NULL output
-            (args[0][0], M, 0, 0, 0, addrs, 0),         # Empty output
+            (None,       M, 0, 0, 0, 0, addrs, addrs_len), # NULL miniscript
+            (args[0][0], M, 0, 0, H, 0, addrs, addrs_len), # Hardened child
+            (args[0][0], U, 0, 0, 0, 0, addrs, addrs_len), # Unknown network
+            (args[0][0], M, 1, 0, 0, 0, addrs, addrs_len), # Unknown variant
+            (args[0][0], M, 0, 1, 0, 0, addrs, addrs_len), # Unknown range index
+            (args[0][0], M, 0, 0, 0, 2, addrs, addrs_len), # Invalid flags
+            (args[0][0], M, 0, 0, 0, 0, None,  addrs_len), # NULL output
+            (args[0][0], M, 0, 0, 0, 0, addrs, 0),         # Empty output
         ]
-        for descriptor, network, variant, child_num, flags, out, out_len in bad_args:
+        for args in bad_args:
+            (descriptor, network, variant, range_index,
+                child_num, flags, out, out_len) = args
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, network, flags, d)
             if ret == WALLY_OK:
-                ret = wally_descriptor_to_addresses(d, variant, child_num,
-                                                    0, out, out_len)
+                ret = wally_descriptor_to_addresses(d, variant, range_index,
+                                                    child_num, 0, out, out_len)
                 wally_descriptor_free(d)
             self.assertEqual(ret, WALLY_EINVAL)
 

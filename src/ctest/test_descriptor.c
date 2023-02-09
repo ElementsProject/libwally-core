@@ -1709,6 +1709,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     unsigned char script[520];
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
+    uint32_t range_index = 0;
     uint32_t child_num = test->bip32_index ? *test->bip32_index : 0, features;
 
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
@@ -1727,9 +1728,9 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
 
     ret = wally_descriptor_to_script(descriptor,
                                      test->depth, test->index,
-                                     test->variant, child_num,
-                                     0, script, sizeof(script),
-                                     &written);
+                                     test->variant, range_index,
+                                     child_num, 0,
+                                     script, sizeof(script), &written);
     if (!check_ret("descriptor_to_script", ret, expected_ret))
         return false;
     if (expected_ret != WALLY_OK) {
@@ -1742,7 +1743,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
         return false;
 
     len_ret = wally_descriptor_to_script_get_maximum_length(descriptor, 0,
-                                                        &max_written);
+                                                            &max_written);
     if (!check_ret("descriptor_to_script_get_maximum_length", len_ret, WALLY_OK) ||
         max_written < written)
         return false;
@@ -1771,7 +1772,7 @@ static bool check_descriptor_to_address(const struct address_test *test)
 {
     struct wally_descriptor *descriptor;
     char *addresses[64];
-    uint32_t flags = 0;
+    uint32_t range_index = 0, flags = 0;
     size_t i;
     int ret, expected_ret = *test->addresses[0] ? WALLY_OK : WALLY_EINVAL;
 
@@ -1789,7 +1790,7 @@ static bool check_descriptor_to_address(const struct address_test *test)
     }
 
     ret = wally_descriptor_to_addresses(descriptor, test->variant,
-                                        test->bip32_index,
+                                        range_index, test->bip32_index,
                                         flags, addresses,
                                         test->num_addresses);
     if (!check_ret("descriptor_to_addresses", ret, expected_ret))

@@ -23,11 +23,13 @@ public class test_descriptor {
         final int child_num = 0;
         final int flags = 0;
         final int variant = 0;
+        final int range_index = 0;
         final Object descriptor = Wally.descriptor_parse(descriptor_str, Wally.map_init(0),
                                                          Wally.WALLY_NETWORK_BITCOIN_MAINNET,
                                                          flags);
-        final String[] addrs = Wally.descriptor_to_addresses(descriptor, variant, child_num,
-                                                             flags, expected_addrs.length);
+        final String[] addrs = Wally.descriptor_to_addresses(descriptor, variant, range_index,
+                                                             child_num, flags,
+                                                             expected_addrs.length);
         assert_eq(expected_addrs.length, addrs.length, "Addresses size mismatch");
         for (int i = 0; i < expected_addrs.length; i++) {
             assert_eq(expected_addrs[i], addrs[i], "Addresses mismatch");

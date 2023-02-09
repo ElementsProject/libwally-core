@@ -74,6 +74,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_free' \
 ,'_wally_descriptor_get_checksum' \
 ,'_wally_descriptor_get_features' \
+,'_wally_descriptor_get_num_ranges' \
 ,'_wally_descriptor_get_num_variants' \
 ,'_wally_descriptor_parse' \
 ,'_wally_descriptor_to_address' \
