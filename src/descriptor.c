@@ -1860,7 +1860,7 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
 }
 
 static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
-                           ms_node *node, const struct addr_ver_t *addr_ver)
+                           ms_node *node)
 {
     /* Generated script buffer, big enough for ADDRESS_PUBKEY_MAX_LEN too */
     unsigned char buff[WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN];
@@ -1878,7 +1878,7 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
         if (decoded_len != HASH160_LEN + 1)
             return WALLY_EINVAL; /* Unexpected address length */
 
-        if (!addr_ver_from_version(decoded[0], addr_ver, &is_p2sh))
+        if (!addr_ver_from_version(decoded[0], ctx->addr_ver, &is_p2sh))
             return WALLY_EINVAL; /* Network not found */
 
         /* Create the scriptpubkey and copy it into the node */
@@ -1903,7 +1903,8 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
             return WALLY_EINVAL; /* Address family missing */
         hrp_len = hrp_end - str;
 
-        if (addr_ver && !addr_ver_from_family(str, hrp_len, addr_ver->network))
+        if (ctx->addr_ver &&
+            !addr_ver_from_family(str, hrp_len, ctx->addr_ver->network))
             return WALLY_EINVAL; /* Unknown network or address family mismatch */
 
         ret = wally_addr_segwit_n_to_bytes(str, str_len, str, hrp_len, 0,
@@ -1952,8 +1953,8 @@ static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
     return true;
 }
 
-static int analyze_miniscript_key(ms_ctx *ctx, const struct addr_ver_t *addr_ver,
-                                  uint32_t flags, ms_node *node, ms_node *parent)
+static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
+                                  ms_node *node, ms_node *parent)
 {
     unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
     struct ext_key extkey;
@@ -1987,7 +1988,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, const struct addr_ver_t *addr_ver
     ret = wally_base58_n_to_bytes(node->data, node->data_len, BASE58_FLAG_CHECKSUM,
                                   privkey, sizeof(privkey), &privkey_len);
     if (ret == WALLY_OK && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
-        if (addr_ver && (addr_ver->version_wif != privkey[0]))
+        if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
             return WALLY_EINVAL;
         if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
             node->is_uncompressed_key = true;
@@ -2035,11 +2036,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, const struct addr_ver_t *addr_ver
     else
         node->kind = KIND_BIP32_PUBLIC_KEY;
 
-    if (addr_ver) {
+    if (ctx->addr_ver) {
         const bool main_key = extkey.version == BIP32_VER_MAIN_PUBLIC ||
                               extkey.version == BIP32_VER_MAIN_PRIVATE;
-        const bool main_net = addr_ver->network == WALLY_NETWORK_BITCOIN_MAINNET ||
-                              addr_ver->network == WALLY_NETWORK_LIQUID;
+        const bool main_net = ctx->addr_ver->network == WALLY_NETWORK_BITCOIN_MAINNET ||
+                              ctx->addr_ver->network == WALLY_NETWORK_LIQUID;
         if (main_key != main_net)
             ret = WALLY_EINVAL; /* Mismatched main/test network */
     }
@@ -2051,15 +2052,14 @@ static int analyze_miniscript_key(ms_ctx *ctx, const struct addr_ver_t *addr_ver
 }
 
 static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len,
-                                    const struct addr_ver_t *addr_ver, uint32_t flags,
-                                    ms_node *node, ms_node *parent)
+                                    uint32_t flags, ms_node *node, ms_node *parent)
 {
 
     if (!node || (parent && !parent->builtin) || !str || !str_len)
         return WALLY_EINVAL;
 
     if (parent && parent->kind == KIND_DESCRIPTOR_ADDR)
-        return analyze_address(ctx, str, str_len, node, addr_ver);
+        return analyze_address(ctx, str, str_len, node);
 
     if (parent) {
         const uint32_t kind = parent->kind;
@@ -2092,12 +2092,11 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
         node->kind = KIND_NUMBER;
         return WALLY_OK;
     }
-    return analyze_miniscript_key(ctx, addr_ver, flags, node, parent);
+    return analyze_miniscript_key(ctx, flags, node, parent);
 }
 
 static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
-                              uint32_t kind, const struct addr_ver_t *addr_ver,
-                              uint32_t flags, ms_node *prev_node,
+                              uint32_t kind, uint32_t flags, ms_node *prev_node,
                               ms_node *parent, ms_node **output)
 {
     size_t i, offset = 0, child_offset = 0;
@@ -2161,7 +2160,7 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
 
         if (copy_child) {
             if ((ret = analyze_miniscript(ctx, str + child_offset, i - child_offset,
-                                          kind, addr_ver, flags, prev_child,
+                                          kind, flags, prev_child,
                                           node, &child)) != WALLY_OK)
                 break;
 
@@ -2176,7 +2175,7 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
     }
 
     if (ret == WALLY_OK && !seen_indent)
-        ret = analyze_miniscript_value(ctx, str, str_len, addr_ver, flags, node, parent);
+        ret = analyze_miniscript_value(ctx, str, str_len, flags, node, parent);
 
     if (ret == WALLY_OK && node->builtin) {
         const uint32_t expected_children = builtin_get(node)->child_count;
@@ -2392,8 +2391,7 @@ int wally_descriptor_parse(const char *miniscript,
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,
-                                 ctx->addr_ver, flags, NULL, NULL,
-                                 &ctx->top_node);
+                                 flags, NULL, NULL, &ctx->top_node);
         if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
             (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
             ret = WALLY_EINVAL;
