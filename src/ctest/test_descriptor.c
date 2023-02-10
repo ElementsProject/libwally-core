@@ -1723,7 +1723,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     unsigned char script[520];
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
-    uint32_t range_index = 0;
+    uint32_t multi_index = 0;
     uint32_t child_num = test->bip32_index ? *test->bip32_index : 0, features;
 
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
@@ -1742,7 +1742,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
 
     ret = wally_descriptor_to_script(descriptor,
                                      test->depth, test->index,
-                                     test->variant, range_index,
+                                     test->variant, multi_index,
                                      child_num, 0,
                                      script, sizeof(script), &written);
     if (!check_ret("descriptor_to_script", ret, expected_ret))
@@ -1786,7 +1786,7 @@ static bool check_descriptor_to_address(const struct address_test *test)
 {
     struct wally_descriptor *descriptor;
     char *addresses[64];
-    uint32_t range_index = 0, flags = 0;
+    uint32_t multi_index = 0, flags = 0;
     size_t i;
     int ret, expected_ret = *test->addresses[0] ? WALLY_OK : WALLY_EINVAL;
 
@@ -1804,7 +1804,7 @@ static bool check_descriptor_to_address(const struct address_test *test)
     }
 
     ret = wally_descriptor_to_addresses(descriptor, test->variant,
-                                        range_index, test->bip32_index,
+                                        multi_index, test->bip32_index,
                                         flags, addresses,
                                         test->num_addresses);
     if (!check_ret("descriptor_to_addresses", ret, expected_ret))

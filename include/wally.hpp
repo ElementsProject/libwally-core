@@ -463,8 +463,8 @@ inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_
 }
 
 template <class DESCRIPTOR>
-inline int descriptor_get_num_ranges(const DESCRIPTOR& descriptor, uint32_t* value_out) {
-    int ret = ::wally_descriptor_get_num_ranges(detail::get_p(descriptor), value_out);
+inline int descriptor_get_num_paths(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_num_paths(detail::get_p(descriptor), value_out);
     return ret;
 }
 
@@ -487,21 +487,21 @@ inline int descriptor_set_network(const DESCRIPTOR& descriptor, uint32_t network
 }
 
 template <class DESCRIPTOR>
-inline int descriptor_to_address(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t range_index, uint32_t child_num, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), variant, range_index, child_num, flags, output);
+inline int descriptor_to_address(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), variant, multi_index, child_num, flags, output);
     return ret;
 }
 
 template <class DESCRIPTOR>
-inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t range_index, uint32_t child_num, uint32_t flags, char** output, size_t num_outputs) {
-    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), variant, range_index, child_num, flags, output, num_outputs);
+inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, char** output, size_t num_outputs) {
+    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), variant, multi_index, child_num, flags, output, num_outputs);
     return ret;
 }
 
 template <class DESCRIPTOR, class BYTES_OUT>
-inline int descriptor_to_script(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t range_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+inline int descriptor_to_script(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
-    int ret = ::wally_descriptor_to_script(detail::get_p(descriptor), depth, index, variant, range_index, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    int ret = ::wally_descriptor_to_script(detail::get_p(descriptor), depth, index, variant, multi_index, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 

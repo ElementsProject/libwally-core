@@ -300,7 +300,7 @@ for f in (
     ('wally_descriptor_get_checksum', c_int, [c_void_p, c_uint32, c_char_p_p]),
     ('wally_descriptor_get_features', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_network', c_int, [c_void_p, c_uint32_p]),
-    ('wally_descriptor_get_num_ranges', c_int, [c_void_p, c_uint32_p]),
+    ('wally_descriptor_get_num_paths', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_num_variants', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_parse', c_int, [c_char_p, POINTER(wally_map), c_uint32, c_uint32, POINTER(c_void_p)]),
     ('wally_descriptor_set_network', c_int, [c_void_p, c_uint32]),

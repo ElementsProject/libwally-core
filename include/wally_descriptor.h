@@ -127,7 +127,7 @@ WALLY_CORE_API int wally_descriptor_get_features(
  * :param value_out: Destination for the number of available variants.
  *
  * Expressions such as ``combo()`` can return more than one script/address for
- * a given key or key range. Each available type is represented as a variant
+ * a given key or key path. Each available type is represented as a variant
  * numbered from zero. The variant is passed to `wally_descriptor_to_script`
  * or `wally_descriptor_to_addresses` to generate a script/address
  * corresponding to that variant type.
@@ -141,22 +141,22 @@ WALLY_CORE_API int wally_descriptor_get_num_variants(
     uint32_t *value_out);
 
 /**
- * Get the number of ranges in a descriptors path expression(s).
+ * Get the number of multi-path items in a descriptors path expression(s).
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param value_out: Destination for the number of ranges.
  *
- * Paths in descriptor key expressions can contain ranges in the format
- * ``<x;y;z>``, each of which corresponds to a new path with the given child
- * number being one of ``x``, ``y``, or ``z`` respectively. The
- * index of the range is passed to `wally_descriptor_to_script`
+ * Paths in descriptor key expressions can contain multiple paths in the
+ * format ``<x;y;z>``, where each item corresponds to a new path with the
+ * given path elements being one of ``x``, ``y``, or ``z`` respectively. The
+ * index of the multi-path is passed to `wally_descriptor_to_script`
  * or `wally_descriptor_to_addresses` to generate a script/address
  * corresponding to the corresponding key path.
  *
- * .. note:: This function is a stub, expression ranges are not yet
+ * .. note:: This function is a stub, multi-path keys are not yet
  *|    implemented and will currently fail to parse.
  */
-WALLY_CORE_API int wally_descriptor_get_num_ranges(
+WALLY_CORE_API int wally_descriptor_get_num_paths(
     const struct wally_descriptor *descriptor,
     uint32_t *value_out);
 
@@ -182,7 +182,7 @@ WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
  * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
  * :param index: The zero-based index of the child at depth ``depth`` to generate from.
  * :param variant: The variant of descriptor to generate. See `wally_descriptor_get_num_variants`.
- * :param range_index: The range item to generate. See `wally_descriptor_get_num_ranges`.
+ * :param multi_index: The multi-path item to generate. See `wally_descriptor_get_num_paths`.
  * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
  * :param flags: For future use. Must be 0.
  * :param bytes_out: Destination for the resulting scriptPubKey or script.
@@ -202,7 +202,7 @@ WALLY_CORE_API int wally_descriptor_to_script(
     uint32_t depth,
     uint32_t index,
     uint32_t variant,
-    uint32_t range_index,
+    uint32_t multi_index,
     uint32_t child_num,
     uint32_t flags,
     unsigned char *bytes_out,
@@ -214,7 +214,7 @@ WALLY_CORE_API int wally_descriptor_to_script(
  *
  * :param descriptor: Parsed output descriptor.
  * :param variant: The variant of descriptor to generate. See `wally_descriptor_get_num_variants`.
- * :param range_index: The range item to generate. See `wally_descriptor_get_num_ranges`.
+ * :param multi_index: The multi-path item to generate. See `wally_descriptor_get_num_paths`.
  * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting addresss.
@@ -223,7 +223,7 @@ WALLY_CORE_API int wally_descriptor_to_script(
 WALLY_CORE_API int wally_descriptor_to_address(
     struct wally_descriptor *descriptor,
     uint32_t variant,
-    uint32_t range_index,
+    uint32_t multi_index,
     uint32_t child_num,
     uint32_t flags,
     char **output);
@@ -233,7 +233,7 @@ WALLY_CORE_API int wally_descriptor_to_address(
  *
  * :param descriptor: Parsed output descriptor.
  * :param variant: The variant of descriptor to generate. See `wally_descriptor_get_num_variants`.
- * :param range_index: The range item to generate. See `wally_descriptor_get_num_ranges`.
+ * :param multi_index: The multi-path item to generate. See `wally_descriptor_get_num_paths`.
  * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting addresses.
@@ -244,7 +244,7 @@ WALLY_CORE_API int wally_descriptor_to_address(
 WALLY_CORE_API int wally_descriptor_to_addresses(
     struct wally_descriptor *descriptor,
     uint32_t variant,
-    uint32_t range_index,
+    uint32_t multi_index,
     uint32_t child_num,
     uint32_t flags,
     char **output,

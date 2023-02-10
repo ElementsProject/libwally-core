@@ -68,13 +68,13 @@ class DescriptorTests(unittest.TestCase):
             (args[0][0], M, 0, 0, 0, 0, 0, MS_ONLY, script, 0),          # Empty output
         ]
         for args in bad_args:
-            (descriptor, network, depth, idx, variant, range_index,
+            (descriptor, network, depth, idx, variant, multi_index,
                 child_num, flags, bytes_out, bytes_len) = args
             d = c_void_p()
             ret = wally_descriptor_parse(miniscript, None, network, flags, d)
             if ret == WALLY_OK:
                 ret, written = wally_descriptor_to_script(d, depth, idx, variant,
-                                                          range_index, child_num,
+                                                          multi_index, child_num,
                                                           0, bytes_out, bytes_len)
                 self.assertEqual(written, 0)
                 wally_descriptor_free(d)
@@ -133,11 +133,11 @@ class DescriptorTests(unittest.TestCase):
                 'bc1qjeu2wa5jwvs90tv9t9xz99njnv3we3ux04fn7glw3vqsk4ewuaaq9kdc9t',
               ]),
         ]
-        for descriptor, network, variant, range_index, child_num, expected in args:
+        for descriptor, network, variant, multi_index, child_num, expected in args:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, network, 0, d)
             self.assertEqual(ret, WALLY_OK)
-            ret = wally_descriptor_to_addresses(d, variant, range_index,
+            ret = wally_descriptor_to_addresses(d, variant, multi_index,
                                                 child_num, 0, addrs,
                                                 len(expected))
             self.assertEqual(ret, WALLY_OK)
@@ -159,12 +159,12 @@ class DescriptorTests(unittest.TestCase):
             (args[0][0], M, 0, 0, 0, 0, addrs, 0),         # Empty output
         ]
         for args in bad_args:
-            (descriptor, network, variant, range_index,
+            (descriptor, network, variant, multi_index,
                 child_num, flags, out, out_len) = args
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, network, flags, d)
             if ret == WALLY_OK:
-                ret = wally_descriptor_to_addresses(d, variant, range_index,
+                ret = wally_descriptor_to_addresses(d, variant, multi_index,
                                                     child_num, 0, out, out_len)
                 wally_descriptor_free(d)
             self.assertEqual(ret, WALLY_EINVAL)
