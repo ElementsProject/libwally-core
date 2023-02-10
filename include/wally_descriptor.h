@@ -198,7 +198,7 @@ WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
  *|    script inside sh() or wsh() expressions.
  */
 WALLY_CORE_API int wally_descriptor_to_script(
-    struct wally_descriptor *descriptor,
+    const struct wally_descriptor *descriptor,
     uint32_t depth,
     uint32_t index,
     uint32_t variant,
@@ -221,7 +221,7 @@ WALLY_CORE_API int wally_descriptor_to_script(
  *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_descriptor_to_address(
-    struct wally_descriptor *descriptor,
+    const struct wally_descriptor *descriptor,
     uint32_t variant,
     uint32_t multi_index,
     uint32_t child_num,
@@ -242,7 +242,7 @@ WALLY_CORE_API int wally_descriptor_to_address(
  *|    The addresses returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_descriptor_to_addresses(
-    struct wally_descriptor *descriptor,
+    const struct wally_descriptor *descriptor,
     uint32_t variant,
     uint32_t multi_index,
     uint32_t child_num,

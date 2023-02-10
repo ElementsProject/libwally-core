@@ -1173,20 +1173,20 @@ static int generate_sh_wpkh(ms_ctx *ctx, ms_node *node,
                             unsigned char *script, size_t script_len, size_t *written)
 {
     /* Create a fake parent sh() node to wrap our combo w2pkh child */
+    ms_ctx fake_ctx;
     const unsigned char builtin_sh_index = 0 + 1;
     ms_node sh_node = { NULL, node, NULL, KIND_DESCRIPTOR_SH,
                         TYPE_NONE, 0, NULL, NULL, 0, 0,
                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                         builtin_sh_index, false, false };
-    int ret;
 
     if (ctx->variant != 3)
-        return WALLY_ERROR; /* Should only be called to sh-wpkh */
-    ctx->variant = 2; /* Generate wpkh from the combo node */
-    ret = builtin_get(&sh_node)->generate_fn(ctx, &sh_node, script, script_len,
+        return WALLY_ERROR; /* Should only be called to generate sh-wpkh */
+    memcpy(&fake_ctx, ctx, sizeof(fake_ctx));
+    fake_ctx.variant = 2; /* Generate wpkh from the combo node */
+    return builtin_get(&sh_node)->generate_fn(&fake_ctx, &sh_node,
+                                             script, script_len,
                                              written);
-    ctx->variant = 3;
-    return ret;
 }
 
 static int generate_combo(ms_ctx *ctx, ms_node *node,
@@ -2412,12 +2412,14 @@ int wally_descriptor_parse(const char *miniscript,
     return ret;
 }
 
-int wally_descriptor_to_script(struct wally_descriptor *descriptor,
+int wally_descriptor_to_script(const struct wally_descriptor *descriptor,
                                uint32_t depth, uint32_t index,
                                uint32_t variant, uint32_t multi_index,
                                uint32_t child_num, uint32_t flags,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
+    ms_ctx ctx;
+
     if (written)
         *written = 0;
 
@@ -2426,10 +2428,10 @@ int wally_descriptor_to_script(struct wally_descriptor *descriptor,
         (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
-    descriptor->variant = variant;
-    descriptor->child_num = child_num;
-    return node_generate_script(descriptor, depth, index,
-                                bytes_out, len, written);
+    memcpy(&ctx, descriptor, sizeof(ctx));
+    ctx.variant = variant;
+    ctx.child_num = child_num;
+    return node_generate_script(&ctx, depth, index, bytes_out, len, written);
 }
 
 int wally_descriptor_to_script_get_maximum_length(
@@ -2443,41 +2445,43 @@ int wally_descriptor_to_script_get_maximum_length(
     return WALLY_OK;
 }
 
-int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
+int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
                                   uint32_t variant, uint32_t multi_index,
                                   uint32_t child_num, uint32_t flags,
                                   char **addresses, size_t num_addresses)
 {
     unsigned char buff[REDEEM_SCRIPT_MAX_SIZE], *p = buff;
-    ms_ctx *ctx = descriptor;
+    ms_ctx ctx;
     size_t i, written;
     int ret = WALLY_OK;
 
-    if (!ctx || !ctx->addr_ver || (variant && variant >= ctx->num_variants) ||
+    if (!descriptor || !descriptor->addr_ver || (variant && variant >= descriptor->num_variants) ||
         multi_index || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
         flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
 
     wally_clear(addresses, num_addresses * sizeof(*addresses));
-    if (ctx->script_len > sizeof(buff) &&(!(p = wally_malloc(ctx->script_len))))
+    if (descriptor->script_len > sizeof(buff) &&(!(p = wally_malloc(descriptor->script_len))))
         return WALLY_ENOMEM;
 
-    ctx->variant = variant;
+    memcpy(&ctx, descriptor, sizeof(ctx));
+    ctx.variant = variant;
+
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
-        ctx->child_num = child_num + i;
-        ret = node_generate_script(ctx, 0, 0, p, ctx->script_len, &written);
+        ctx.child_num = child_num + i;
+        ret = node_generate_script(&ctx, 0, 0, p, ctx.script_len, &written);
         if (ret == WALLY_OK) {
-            if (written > ctx->script_len)
+            if (written > ctx.script_len)
                 ret = WALLY_ERROR; /* Not enough room - should not happen! */
             else {
                 /* Generate the address corresponding to this script */
                 ret = wally_scriptpubkey_to_address(p, written,
-                                                    ctx->addr_ver->network,
+                                                    ctx.addr_ver->network,
                                                     &addresses[i]);
                 if (ret == WALLY_EINVAL)
                     ret = wally_addr_segwit_from_bytes(p, written,
-                                                       ctx->addr_ver->family,
+                                                       ctx.addr_ver->family,
                                                        0, &addresses[i]);
             }
         }
@@ -2495,7 +2499,7 @@ int wally_descriptor_to_addresses(struct wally_descriptor *descriptor,
     return ret;
 }
 
-int wally_descriptor_to_address(struct wally_descriptor *descriptor,
+int wally_descriptor_to_address(const struct wally_descriptor *descriptor,
                                 uint32_t variant, uint32_t multi_index,
                                 uint32_t child_num, uint32_t flags,
                                 char **output)
