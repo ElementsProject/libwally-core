@@ -16,7 +16,8 @@
 
 #define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
 #define MS_FLAGS_ALL (WALLY_MINISCRIPT_WITNESS_SCRIPT | \
-        WALLY_MINISCRIPT_TAPSCRIPT | WALLY_MINISCRIPT_ONLY)
+        WALLY_MINISCRIPT_TAPSCRIPT | WALLY_MINISCRIPT_ONLY | \
+        WALLY_MINISCRIPT_REQUIRE_CHECKSUM)
 
 /* Properties and expressions definition */
 #define TYPE_NONE  0x00
@@ -375,7 +376,7 @@ static int canonicalize(const char *descriptor,
     if (output)
         *output = NULL;
 
-    if (!descriptor || flags || !output)
+    if (!descriptor || (flags & ~WALLY_MINISCRIPT_REQUIRE_CHECKSUM) || !output)
         return WALLY_EINVAL;
 
     /* First, find the length of the canonicalized descriptor */
@@ -399,6 +400,9 @@ static int canonicalize(const char *descriptor,
             }
         }
     }
+
+    if (!*p && (flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM))
+        return WALLY_EINVAL; /* Checksum required but not present */
 
     if (!(*output = wally_malloc(required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1)))
         return WALLY_ENOMEM;
@@ -2387,7 +2391,9 @@ int wally_descriptor_parse(const char *miniscript,
         return WALLY_ENOMEM;
     ctx = *output;
     ctx->addr_ver = addr_ver;
-    ret = canonicalize(miniscript, vars_in, 0, &ctx->src);
+    ret = canonicalize(miniscript, vars_in,
+                       flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM,
+                       &ctx->src);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,

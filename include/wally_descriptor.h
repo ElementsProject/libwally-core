@@ -11,10 +11,11 @@ struct wally_map;
 /** An opaque type holding a parsed minscript/descriptor expression */
 struct wally_descriptor;
 
-/* Miniscript type flag */
-#define WALLY_MINISCRIPT_WITNESS_SCRIPT 0x00 /** Witness script */
-#define WALLY_MINISCRIPT_TAPSCRIPT      0x01 /** Tapscript */
-#define WALLY_MINISCRIPT_ONLY           0x02 /** Only allow miniscript (not descriptor) expressions */
+/* Flags for parsing miniscript/descriptors */
+#define WALLY_MINISCRIPT_WITNESS_SCRIPT   0x00 /** Witness script */
+#define WALLY_MINISCRIPT_TAPSCRIPT        0x01 /** Tapscript */
+#define WALLY_MINISCRIPT_ONLY             0x02 /** Only allow miniscript (not descriptor) expressions */
+#define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
 
 #define WALLY_MS_IS_RANGED 0x01 /** Allows key ranges via '*' */
 

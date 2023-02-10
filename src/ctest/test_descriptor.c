@@ -832,6 +832,12 @@ static const struct descriptor_test {
         NULL,
         ""
     },{
+        "descriptor errchk - missing required checksum",
+        "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_REQUIRE_CHECKSUM,
+        NULL,
+        ""
+    },{
         "descriptor errchk - upper case hardened indicator",
         "pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/1H/2)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
