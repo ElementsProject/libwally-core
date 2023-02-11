@@ -226,7 +226,7 @@ WALLY_CORE_API int wally_tx_witness_stack_free(
  * Allocate and initialize a new transaction input.
  *
  * :param txhash: The transaction hash of the transaction this input comes from.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
@@ -363,7 +363,7 @@ WALLY_CORE_API int wally_tx_add_input_at(
  *
  * :param tx: The transaction to add the input to.
  * :param txhash: The transaction hash of the transaction this input comes from.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
@@ -389,7 +389,7 @@ WALLY_CORE_API int wally_tx_add_raw_input(
  * :param tx: The transaction to add the input to.
  * :param index: The zero-based index of the position to add the input at.
  * :param txhash: The transaction hash of the transaction this input comes from.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
@@ -660,9 +660,9 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
  * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param satoshi: The amount spent by the input being signed for. Only used if
- *|     flags includes ``WALLY_TX_FLAG_USE_WITNESS``, pass 0 otherwise.
+ *|     flags includes `WALLY_TX_FLAG_USE_WITNESS`, pass 0 otherwise.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
- * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
+ * :param flags: `WALLY_TX_FLAG_USE_WITNESS` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
@@ -723,15 +723,15 @@ WALLY_CORE_API int wally_tx_get_btc_taproot_signature_hash(
  * :param script_len: Size of ``script`` in bytes.
  * :param extra: Extra bytes to include in the transaction preimage.
  * :param extra_len: Size of ``extra`` in bytes.
- * :param extra_offset: Offset with the preimage to store ``extra``. To store
+ * :param extra_offset: Offset within the preimage to store ``extra``. To store
  *|     it at the end of the preimage, use 0xffffffff.
  * :param satoshi: The amount spent by the input being signed for. Only used if
- *|     flags includes ``WALLY_TX_FLAG_USE_WITNESS``, pass 0 otherwise.
+ *|     flags includes `WALLY_TX_FLAG_USE_WITNESS`, pass 0 otherwise.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param tx_sighash: The 32bit sighash value to include in the preimage to hash.
  *|     This must be given in host CPU endianess; For normal Bitcoin signing
  *|     the value of ``sighash`` should be given.
- * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
+ * :param flags: `WALLY_TX_FLAG_USE_WITNESS` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
@@ -767,9 +767,9 @@ WALLY_CORE_API int wally_tx_is_coinbase(
  *
  * :param input: The input to add to.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -806,7 +806,7 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_free(
  * Allocate and initialize a new elements transaction input.
  *
  * :param txhash: The transaction hash of the transaction this input comes from.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
@@ -814,9 +814,9 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_free(
  * :param script_len: Size of ``script`` in bytes.
  * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -866,11 +866,11 @@ WALLY_CORE_API int wally_tx_elements_input_is_pegin(
  *
  * :param output: The output to add to.
  * :param asset: The commitment to a possibly blinded asset.
- * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
+ * :param asset_len: Size of ``asset`` in bytes. Must be `WALLY_TX_ASSET_CT_ASSET_LEN`.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be `WALLY_TX_ASSET_CT_VALUE_LEN` or `WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN`.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_CT_NONCE_LEN`.
  * :param surjectionproof: surjection proof.
  * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
  * :param rangeproof: rangeproof.
@@ -903,11 +903,11 @@ WALLY_CORE_API int wally_tx_elements_output_commitment_free(
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param asset: The asset tag of the output.
- * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
+ * :param asset_len: Size of ``asset`` in bytes. Must be `WALLY_TX_ASSET_CT_ASSET_LEN`.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be `WALLY_TX_ASSET_CT_VALUE_LEN` or `WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN`.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_CT_NONCE_LEN`.
  * :param surjectionproof: The surjection proof.
  * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
  * :param rangeproof: The range proof.
@@ -937,11 +937,11 @@ WALLY_CORE_API int wally_tx_elements_output_init(
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param asset: The asset tag of the output.
- * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
+ * :param asset_len: Size of ``asset`` in bytes. Must be `WALLY_TX_ASSET_CT_ASSET_LEN`.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be `WALLY_TX_ASSET_CT_VALUE_LEN` or `WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN`.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_CT_NONCE_LEN`.
  * :param surjectionproof: The surjection proof.
  * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
  * :param rangeproof: The range proof.
@@ -968,7 +968,7 @@ WALLY_CORE_API int wally_tx_elements_output_init_alloc(
  *
  * :param tx: The transaction to add the input to.
  * :param txhash: The transaction hash of the transaction this input comes from.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
@@ -976,9 +976,9 @@ WALLY_CORE_API int wally_tx_elements_output_init_alloc(
  * :param script_len: Size of ``script`` in bytes.
  * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -1020,7 +1020,7 @@ WALLY_CORE_API int wally_tx_add_elements_raw_input(
  * :param tx: The transaction to add the input to.
  * :param index: The zero-based index of the position to add the input at.
  * :param txhash: The transaction hash of the transaction this input comes from.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output in ``txhash`` that
  *|     this input comes from.
  * :param sequence: The sequence number for the input.
@@ -1028,9 +1028,9 @@ WALLY_CORE_API int wally_tx_add_elements_raw_input(
  * :param script_len: Size of ``script`` in bytes.
  * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be ``WALLY_TX_ASSET_TAG_LEN``.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -1074,11 +1074,11 @@ WALLY_CORE_API int wally_tx_add_elements_raw_input_at(
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param asset: The asset tag of the output.
- * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
+ * :param asset_len: Size of ``asset`` in bytes. Must be `WALLY_TX_ASSET_CT_ASSET_LEN`.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be `WALLY_TX_ASSET_CT_VALUE_LEN` or `WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN`.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_CT_NONCE_LEN`.
  * :param surjectionproof: The surjection proof.
  * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
  * :param rangeproof: The range proof.
@@ -1109,11 +1109,11 @@ WALLY_CORE_API int wally_tx_add_elements_raw_output(
  * :param script: The scriptPubkey for the output.
  * :param script_len: Size of ``script`` in bytes.
  * :param asset: The asset tag of the output.
- * :param asset_len: Size of ``asset`` in bytes. Must be ``WALLY_TX_ASSET_CT_ASSET_LEN``.
+ * :param asset_len: Size of ``asset`` in bytes. Must be `WALLY_TX_ASSET_CT_ASSET_LEN`.
  * :param value: The commitment to a possibly blinded value.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_LEN`` or ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be `WALLY_TX_ASSET_CT_VALUE_LEN` or `WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN`.
  * :param nonce: The commitment used to create the nonce (with the blinding key) for the range proof.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be ``WALLY_TX_ASSET_CT_NONCE_LEN``.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_CT_NONCE_LEN`.
  * :param surjectionproof: The surjection proof.
  * :param surjectionproof_len: Size of ``surjectionproof`` in bytes.
  * :param rangeproof: The range proof.
@@ -1163,7 +1163,7 @@ WALLY_CORE_API int wally_tx_confidential_value_from_satoshi(
  * Convert an explicit confidential value representation to satoshi.
  *
  * :param value: The confidential value bytes.
- * :param value_len: Size of ``value`` in bytes. Must be ``WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN``.
+ * :param value_len: Size of ``value`` in bytes. Must be `WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN`.
  * :param value_out: The converted value in satoshi.
  */
 WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
@@ -1179,10 +1179,10 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
  * :param script: The (unprefixed) scriptCode for the input being signed.
  * :param script_len: Size of ``script`` in bytes.
  * :param value: The (confidential) value spent by the input being signed for. Only used if
- *|     flags includes ``WALLY_TX_FLAG_USE_WITNESS``, pass NULL otherwise.
+ *|     flags includes `WALLY_TX_FLAG_USE_WITNESS`, pass NULL otherwise.
  * :param value_len: Size of ``value`` in bytes.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
- * :param flags: ``WALLY_TX_FLAG_USE_WITNESS`` to generate a BIP 143 signature, or 0
+ * :param flags: `WALLY_TX_FLAG_USE_WITNESS` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.
  * :param bytes_out: Destination for the signature hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
@@ -1203,11 +1203,11 @@ WALLY_CORE_API int wally_tx_get_elements_signature_hash(
  * Calculate the asset entropy from a prevout and the Ricardian contract hash.
  *
  * :param txhash: The prevout transaction hash.
- * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param utxo_index: The zero-based index of the transaction output
  *|     in ``txhash`` to use.
  * :param contract_hash: The issuer specified Ricardian contract hash.
- * :param contract_hash_len: Size of ``contract hash`` in bytes. Must be ``SHA256_LEN``.
+ * :param contract_hash_len: Size of ``contract hash`` in bytes. Must be `SHA256_LEN`.
  * :param bytes_out: Destination for the asset entropy.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
@@ -1224,7 +1224,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_generate_entropy(
  * Calculate the asset from the entropy.
  *
  * :param entropy: The asset entropy.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `SHA256_LEN`.
  * :param bytes_out: Destination for the asset tag.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  */
@@ -1238,8 +1238,8 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_asset(
  * Calculate a re-issuance token from an asset's entropy.
  *
  * :param entropy: The asset entropy.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be ``SHA256_LEN``.
- * :param flags: ``WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE`` if initial issuance was blinded,
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `SHA256_LEN`.
+ * :param flags: `WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE` if initial issuance was blinded,
  *|     pass 0 otherwise.
  * :param bytes_out: Destination for the re-issuance token.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)

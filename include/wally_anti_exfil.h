@@ -20,8 +20,8 @@ extern "C" {
  *|    be revealed to the client until after the host has received the client
  *|    commitment.
  * :param entropy_len: The length of ``entropy`` in bytes. Must be
- *|    ``WALLY_S2C_DATA_LEN``.
- * :param flags: Must be ``EC_FLAG_ECDSA``.
+ *|    `WALLY_S2C_DATA_LEN`.
+ * :param flags: Must be `EC_FLAG_ECDSA`.
  * :param bytes_out: Destination for the resulting compact signature.
  * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_HOST_COMMITMENT_LEN)
  */
@@ -36,13 +36,13 @@ WALLY_CORE_API int wally_ae_host_commit_from_bytes(
  * Compute signer's original nonce.
  *
  * :param priv_key: The private key used for signing.
- * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param bytes: The message hash to be signed.
- * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be `EC_MESSAGE_HASH_LEN`.
  * :param commitment: Randomness commitment from the host.
  * :param commitment_len: The length of ``commitment`` in bytes. Must be
- *|    ``WALLY_HOST_COMMITMENT_LEN``.
- * :param flags: Must be ``EC_FLAG_ECDSA``.
+ *|    `WALLY_HOST_COMMITMENT_LEN`.
+ * :param flags: Must be `EC_FLAG_ECDSA`.
  * :param s2c_opening_out: Destination for the resulting opening information.
  * FIXED_SIZED_OUTPUT(s2c_opening_out_len, s2c_opening_out, WALLY_S2C_OPENING_LEN)
  */
@@ -58,15 +58,15 @@ WALLY_CORE_API int wally_ae_signer_commit_from_bytes(
     size_t s2c_opening_out_len);
 
 /**
- * Same as ``wally_ec_sig_from_bytes``, but commits to the host randomness.
+ * Same as `wally_ec_sig_from_bytes`, but commits to the host randomness.
  *
  * :param priv_key: The private key to sign with.
- * :param priv_key_len: The length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param bytes: The message hash to sign.
- * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be `EC_MESSAGE_HASH_LEN`.
  * :param entropy: Host provided randomness.
- * :param entropy_len: The length of ``entropy`` in bytes. Must be ``WALLY_S2C_DATA_LEN``.
- * :param flags: Must be ``EC_FLAG_ECDSA``.
+ * :param entropy_len: The length of ``entropy`` in bytes. Must be `WALLY_S2C_DATA_LEN`.
+ * :param flags: Must be `EC_FLAG_ECDSA`.
  * :param bytes_out: Destination for the resulting compact signature.
  * FIXED_SIZED_OUTPUT(len, bytes_out, EC_SIGNATURE_LEN)
  */
@@ -85,17 +85,17 @@ WALLY_CORE_API int wally_ae_sig_from_bytes(
  * Verify a signature was correctly constructed using the Anti-Exfil Protocol.
  *
  * :param pub_key: The public key to verify with.
- * :param pub_key_len: The length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
  * :param bytes: The message hash to verify.
- * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_MESSAGE_HASH_LEN``.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be `EC_MESSAGE_HASH_LEN`.
  * :param entropy: Randomness provided by the host.
- * :param entropy_len: The length of ``entropy`` in bytes. Must be ``WALLY_S2C_DATA_LEN``.
+ * :param entropy_len: The length of ``entropy`` in bytes. Must be `WALLY_S2C_DATA_LEN`.
  * :param s2c_opening: Opening information provided by the signer.
  * :param s2c_opening_len: The length of ``s2c_opening`` in bytes. Must be
- *|    ``WALLY_S2C_OPENING_LEN``.
- * :param flags: Must be ``EC_FLAG_ECDSA``.
+ *|    `WALLY_S2C_OPENING_LEN`.
+ * :param flags: Must be `EC_FLAG_ECDSA`.
  * :param sig: The compact signature of the message in ``bytes``.
- * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sig_len: The length of ``sig`` in bytes. Must be `EC_SIGNATURE_LEN`.
  */
 WALLY_CORE_API int wally_ae_verify(
     const unsigned char *pub_key,

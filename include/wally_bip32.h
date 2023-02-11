@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-/** The required lengths of entropy for `bip32_key_from_seed` */
-#define BIP32_ENTROPY_LEN_128 16
-#define BIP32_ENTROPY_LEN_256 32
-#define BIP32_ENTROPY_LEN_512 64
+/*** bip32-entropy-length BIP32 Seed Entropy Lengths */
+#define BIP32_ENTROPY_LEN_128 16 /** 128 bits */
+#define BIP32_ENTROPY_LEN_256 32 /** 256 bits */
+#define BIP32_ENTROPY_LEN_512 64 /** 512 bits */
 
 /** Length of a BIP32 key fingerprint */
 #define BIP32_KEY_FINGERPRINT_LEN 4
@@ -30,27 +30,28 @@ extern "C" {
 /* Length of Elements' pubkey tweak sum */
 #define WALLY_BIP32_TWEAK_SUM_LEN 32
 
+/*** bip32-flags BIP32 Derivation Flags */
 /** Indicate that we want to derive a private key in `bip32_key_from_parent` */
 #define BIP32_FLAG_KEY_PRIVATE 0x0
 /** Indicate that we want to derive a public key in `bip32_key_from_parent` */
 #define BIP32_FLAG_KEY_PUBLIC  0x1
 /** Indicate that we want to skip hash calculation when deriving a key in `bip32_key_from_parent` */
 #define BIP32_FLAG_SKIP_HASH 0x2
-/** Indicate that we want the pub tweak to be added to the calculation when deriving a key in `bip32_key_from_parent` */
-/** Only used with elements */
+/** Elements: Indicate that we want the pub tweak to be added to the calculation when deriving a key in `bip32_key_from_parent` */
 #define BIP32_FLAG_KEY_TWEAK_SUM 0x4
-/** Allow a wildcard ``*`` or ``*'``/``*h`` in path string expressions */
+/** Allow a wildcard ``*`` or ``*'``/``*h`` in BIP32 path string expressions */
 #define BIP32_FLAG_STR_WILDCARD 0x8
-/** Do not allow a leading ``m``/``M`` or ``/`` in path string expressions */
+/** Do not allow a leading ``m``/``M`` or ``/`` in BIP32 path string expressions */
 #define BIP32_FLAG_STR_BARE 0x10
-/** Allow upper as well as lower case 'M'/'H' in path string expressions */
+/** Allow upper as well as lower case ``M``/``H`` in BIP32 path string expressions */
 #define BIP32_FLAG_ALLOW_UPPER 0x20
 
-/** Version codes for extended keys */
-#define BIP32_VER_MAIN_PUBLIC  0x0488B21E
-#define BIP32_VER_MAIN_PRIVATE 0x0488ADE4
-#define BIP32_VER_TEST_PUBLIC  0x043587CF
-#define BIP32_VER_TEST_PRIVATE 0x04358394
+
+/*** bip32-version-codes BIP32 extended key versions */
+#define BIP32_VER_MAIN_PUBLIC  0x0488B21E /** Mainnet, public key */
+#define BIP32_VER_MAIN_PRIVATE 0x0488ADE4 /** Mainnet, private key */
+#define BIP32_VER_TEST_PUBLIC  0x043587CF /** Testnet, public key */
+#define BIP32_VER_TEST_PRIVATE 0x04358394 /** Testnet, private key */
 
 #ifdef SWIG
 struct ext_key;
@@ -139,14 +140,13 @@ WALLY_CORE_API int bip32_key_init_alloc(
  * new entropy.
  *
  * :param bytes: Entropy to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be one of ``BIP32_ENTROPY_LEN_128``,
- *|     ``BIP32_ENTROPY_LEN_256`` or ``BIP32_ENTROPY_LEN_512``.
- * :param version: Either ``BIP32_VER_MAIN_PRIVATE`` or ``BIP32_VER_TEST_PRIVATE``,
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be one of the :ref:`bip32-entropy-length`
+ * :param version: Either `BIP32_VER_MAIN_PRIVATE` or `BIP32_VER_TEST_PRIVATE`,
  *|     indicating mainnet or testnet/regtest respectively.
  * :param hmac_key: Custom data to HMAC-SHA512 with ``bytes`` before creating the key. Pass
  *|             NULL to use the default BIP32 key of "Bitcoin seed".
  * :param hmac_key_len: Size of ``hmac_key`` in bytes, or 0 if ``hmac_key`` is NULL.
- * :param flags: Either ``BIP32_FLAG_SKIP_HASH`` to skip hash160 calculation, or 0.
+ * :param flags: Either `BIP32_FLAG_SKIP_HASH` to skip hash160 calculation, or 0.
  * :param output: Destination for the resulting master extended key.
  */
 WALLY_CORE_API int bip32_key_from_seed_custom(
@@ -196,7 +196,7 @@ WALLY_CORE_API int bip32_key_from_seed_alloc(
  * Serialize an extended key to memory using BIP32 format.
  *
  * :param hdkey: The extended key to serialize.
- * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating which key to serialize. You can not
+ * :param flags: :ref:`bip32-flags` indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param bytes_out: Destination for the serialized key.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_SERIALIZED_LEN)
@@ -212,7 +212,7 @@ WALLY_CORE_API int bip32_key_serialize(
  * Un-serialize an extended key from memory.
  *
  * :param bytes: Storage holding the serialized key.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be `BIP32_SERIALIZED_LEN`.
  * :param output: Destination for the resulting extended key.
  */
 WALLY_CORE_API int bip32_key_unserialize(
@@ -235,10 +235,10 @@ WALLY_CORE_API int bip32_key_unserialize_alloc(
  *
  * :param hdkey: The parent extended key.
  * :param child_num: The child number to create. Numbers greater
- *|           than or equal to ``BIP32_INITIAL_HARDENED_CHILD`` represent
+ *|           than or equal to `BIP32_INITIAL_HARDENED_CHILD` represent
  *|           hardened keys that cannot be created from public parent
  *|           extended keys.
- * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating the type of derivation wanted.
+ * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted.
  *|       You can not derive a private child extended key from a public
  *|       parent extended key.
  * :param output: Destination for the resulting child extended key.
@@ -265,11 +265,11 @@ WALLY_CORE_API int bip32_key_from_parent_alloc(
  * :param hdkey: The parent extended key.
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
- * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
+ * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
  *
  * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
- *           must be an extended private key or this function will fail.
+ *|    must be an extended private key or this function will fail.
  */
 WALLY_CORE_API int bip32_key_from_parent_path(
     const struct ext_key *hdkey,
@@ -295,11 +295,11 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param hdkey: The parent extended key.
  * :param path_str: The BIP32 path string of child numbers to create.
  * :param child_num: The child number to use if ``path_str`` contains a ``*`` wildcard.
- * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
+ * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted.
  * :param output: Destination for the resulting child extended key.
  *
  * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
- *           must be an extended private key or this function will fail.
+ *|    must be an extended private key or this function will fail.
  */
 WALLY_CORE_API int bip32_key_from_parent_path_str(
     const struct ext_key *hdkey,
@@ -351,7 +351,7 @@ WALLY_CORE_API int bip32_key_from_parent_path_str_n_alloc(
  * :param hdkey: The parent extended key.
  * :param child_path: The path of child numbers to create.
  * :param child_path_len: The number of child numbers in ``child_path``.
- * :param flags: ``BIP32_FLAG_`` Flags indicating the type of derivation wanted.
+ * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted.
  * :param output: Destination for the resulting key.
  */
 WALLY_CORE_API int bip32_key_with_tweak_from_parent_path(
@@ -377,7 +377,7 @@ WALLY_CORE_API int bip32_key_with_tweak_from_parent_path_alloc(
  * Convert an extended key to base58.
  *
  * :param hdkey: The extended key.
- * :param flags: ``BIP32_FLAG_KEY_`` Flags indicating which key to serialize. You can not
+ * :param flags: :ref:`bip32-flags` indicating which key to serialize. You can not
  *|        serialize a private extended key from a public extended key.
  * :param output: Destination for the resulting key in base58.
  *|    The string returned should be freed using `wally_free_string`.
@@ -438,7 +438,7 @@ WALLY_CORE_API int bip32_key_strip_private_key(
 
 /**
  * Get the BIP32 fingerprint for an extended key. Performs hash160 calculation
- * if previously skipped with ``BIP32_FLAG_SKIP_HASH``.
+ * if previously skipped with `BIP32_FLAG_SKIP_HASH`.
  *
  * :param hdkey: The extended key.
  * :param bytes_out: Destination for the fingerprint.

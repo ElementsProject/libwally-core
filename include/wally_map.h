@@ -255,7 +255,7 @@ WALLY_CORE_API int wally_map_get_item_key_length(
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  *
- * .. note:: Returns ``WALLY_ERROR`` if the items key is an integer.
+ * .. note:: Returns `WALLY_ERROR` if the items key is an integer.
  */
 WALLY_CORE_API int wally_map_get_item_key(
     const struct wally_map *map_in,
@@ -271,7 +271,7 @@ WALLY_CORE_API int wally_map_get_item_key(
  * :param index: The zero-based index of the item whose key to return.
  * :param written: Destination for the items integer key.
  *
- * .. note:: Returns ``WALLY_ERROR`` if the items key is not an integer.
+ * .. note:: Returns `WALLY_ERROR` if the items key is not an integer.
  */
 WALLY_CORE_API int wally_map_get_item_integer_key(
     const struct wally_map *map_in,
@@ -370,7 +370,7 @@ WALLY_CORE_API int wally_map_find_bip32_public_key_from(
  * .. note:: This function searches for keys in the map that are children
  *|    of ``hdkey``. If one is found, the resulting privately derived key
  *|    is returned. If no key is found, ``*output`` is set to ``NULL`` and
- *|    WALLY_OK is returned.
+ *|    `WALLY_OK` is returned.
  */
 WALLY_CORE_API int wally_map_keypath_get_bip32_key_from_alloc(
     const struct wally_map *map_in,
@@ -382,7 +382,7 @@ WALLY_CORE_API int wally_map_keypath_get_bip32_key_from_alloc(
  * Verify a PSBT keypath keyed by a serialized bip32 extended public key.
  *
  * :param key: An extended public key in bip32 format.
- * :param key_len: Length of ``key`` in bytes. Must be ``BIP32_SERIALIZED_LEN``.
+ * :param key_len: Length of ``key`` in bytes. Must be `BIP32_SERIALIZED_LEN`.
  * :param val: The 4 byte PSBT serialized master key fingerprint followed by the serialized path.
  * :param val_len: Length of ``val`` in bytes.
  */
@@ -396,7 +396,7 @@ WALLY_CORE_API int wally_keypath_bip32_verify(
  * Verify a PSBT keypath keyed by a compressed or uncompressed public key.
  *
  * :param key: Public key bytes.
- * :param key_len: Length of ``key`` in bytes. Must be ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN`` or ``BIP32_SERIALIZED_LEN``.
+ * :param key_len: Length of ``key`` in bytes. Must be `EC_PUBLIC_KEY_UNCOMPRESSED_LEN` or `BIP32_SERIALIZED_LEN`.
  * :param val: The 4 byte PSBT serialized master key fingerprint followed by the serialized path.
  * :param val_len: Length of ``val`` in bytes.
  */
@@ -410,7 +410,7 @@ WALLY_CORE_API int wally_keypath_public_key_verify(
  * Verify a PSBT keypath keyed by an x-only public key.
  *
  * :param key: Public key bytes.
- * :param key_len: Length of ``key`` in bytes. Must be ``EC_XONLY_PUBLIC_KEY_LEN``,
+ * :param key_len: Length of ``key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`,
  * :param val: The 4 byte PSBT serialized master key fingerprint followed by the serialized path.
  * :param val_len: Length of ``val`` in bytes.
  */
@@ -445,11 +445,11 @@ WALLY_CORE_API int wally_map_keypath_public_key_init_alloc(
  *
  * :param map_in: The keypath map to add to.
  * :param pub_key: The public key or extended public key to add.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``BIP32_SERIALIZED_LEN``
- *|    for an extended bip32 public key, or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``
- *|    or ``EC_PUBLIC_KEY_LEN`` for a public key.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `BIP32_SERIALIZED_LEN`
+ *|    for an extended bip32 public key, or `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`
+ *|    or `EC_PUBLIC_KEY_LEN` for a public key.
  * :param fingerprint: The master key fingerprint for the pubkey.
- * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be ``BIP32_KEY_FINGERPRINT_LEN``.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
  * :param child_path: The BIP32 derivation path for the pubkey.
  * :param child_path_len: The number of items in ``child_path``.
  */
@@ -525,7 +525,7 @@ WALLY_CORE_API int wally_map_keypath_get_item_path_len(
  * :param child_path_out_len: The number of items in ``child_path_out``.
  * :param written: Destination for the number of items written to ``child_path_out``.
  *
- * .. note:: If The path is longer than ``child_path_out_len``, WALLY_OK is
+ * .. note:: If the path is longer than ``child_path_out_len``, `WALLY_OK` is
  *|    returned and ``written`` contains the length required. It is valid
  *|    for a path to be zero-length.
  *

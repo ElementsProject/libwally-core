@@ -187,12 +187,12 @@ WALLY_CORE_API int wally_scriptpubkey_get_type(const unsigned char *bytes, size_
  *
  * :param bytes: Bytes to create a scriptPubkey for.
  * :param bytes_len: The length of ``bytes`` in bytes. If
- *|    ``WALLY_SCRIPT_HASH160`` is given in ``flags``, ``bytes`` is a public
+ *|    `WALLY_SCRIPT_HASH160` is given in ``flags``, ``bytes`` is a public
  *|    key to hash160 before creating the P2PKH, and ``bytes_len`` must be
- *|    ``EC_PUBLIC_KEY_LEN`` or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``. Otherwise,
- *|    ``bytes_len`` must be ``HASH160_LEN`` and ``bytes`` must contain the
+ *|    `EC_PUBLIC_KEY_LEN` or `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`. Otherwise,
+ *|    ``bytes_len`` must be `HASH160_LEN` and ``bytes`` must contain the
  *|    hash160 to use.
- * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
+ * :param flags: `WALLY_SCRIPT_HASH160` or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_P2PKH_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -212,10 +212,10 @@ WALLY_CORE_API int wally_scriptpubkey_p2pkh_from_bytes(
  * encoding, appending the given sighash, then calling `wally_scriptsig_p2pkh_from_der`.
  *
  * :param pub_key: The public key to create a scriptSig with.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
- *|    or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`
+ *|    or `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`.
  * :param sig: The compact signature to create a scriptSig with.
- * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sig_len: The length of ``sig`` in bytes. Must be `EC_SIGNATURE_LEN`.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param bytes_out: Destination for the resulting scriptSig.
  * :param len: The length of ``bytes_out`` in bytes.
@@ -236,10 +236,10 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_sig(
  * Create a P2WPKH witness from a pubkey and compact signature.
  *
  * :param pub_key: The public key to create a witness with.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
- *|    or ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`
+ *|    or `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`.
  * :param sig: The compact signature to create a witness with.
- * :param sig_len: The length of ``sig`` in bytes. Must be ``EC_SIGNATURE_LEN``.
+ * :param sig_len: The length of ``sig`` in bytes. Must be `EC_SIGNATURE_LEN`.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param witness: Destination for the newly created witness.
  */
@@ -256,7 +256,7 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_sig(
  *
  * :param pub_key: The public key to create a scriptSig with.
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be
- *|    ``EC_PUBLIC_KEY_LEN`` ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ *|    `EC_PUBLIC_KEY_LEN` `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`.
  * :param sig: The DER encoded signature to create a scriptSig,
  *|    with the sighash byte appended to it.
  * :param sig_len: The length of ``sig`` in bytes.
@@ -278,7 +278,7 @@ WALLY_CORE_API int wally_scriptsig_p2pkh_from_der(
  *
  * :param pub_key: The public key to create a witness with.
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be
- *|    ``EC_PUBLIC_KEY_LEN`` ``EC_PUBLIC_KEY_UNCOMPRESSED_LEN``.
+ *|    `EC_PUBLIC_KEY_LEN` `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`.
  * :param sig: The DER encoded signature to create a witness,
  *|    with the sighash byte appended to it.
  * :param sig_len: The length of ``sig`` in bytes.
@@ -296,7 +296,7 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
  *
  * :param bytes: Bytes to create a scriptPubkey for.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be less
- *|    than or equal to ``WALLY_MAX_OP_RETURN_LEN``.
+ *|    than or equal to `WALLY_MAX_OP_RETURN_LEN`.
  * :param flags: Currently unused, must be 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN)
@@ -313,12 +313,12 @@ WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
 /**
  * Create a P2SH scriptPubkey.
  *
- * :param bytes: Bytes to create a scriptPubkey for. If ``WALLY_SCRIPT_HASH160``
+ * :param bytes: Bytes to create a scriptPubkey for. If `WALLY_SCRIPT_HASH160`
  *|    is given, ``bytes`` is a redeem script to hash160 before creating the P2SH.
- *|    Otherwise, bytes_len must be ``HASH160_LEN`` and ``bytes`` must contain
+ *|    Otherwise, bytes_len must be `HASH160_LEN` and ``bytes`` must contain
  *|    the hash160 to use.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param flags: ``WALLY_SCRIPT_HASH160`` or 0.
+ * :param flags: `WALLY_SCRIPT_HASH160` or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_P2SH_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -335,9 +335,9 @@ WALLY_CORE_API int wally_scriptpubkey_p2sh_from_bytes(
  * Create a multisig scriptPubkey.
  *
  * :param bytes: Compressed public keys to create a scriptPubkey from.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of `EC_PUBLIC_KEY_LEN`.
  * :param threshold: The number of signatures that must match to satisfy the script.
- * :param flags: Must be ``WALLY_SCRIPT_MULTISIG_SORTED`` for BIP67 sorting or 0.
+ * :param flags: Must be `WALLY_SCRIPT_MULTISIG_SORTED` for BIP67 sorting or 0.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -359,7 +359,7 @@ WALLY_CORE_API int wally_scriptpubkey_multisig_from_bytes(
  * :param script: The redeem script this scriptSig provides signatures for.
  * :param script_len: The length of ``script`` in bytes.
  * :param bytes: Compact signatures to place in the scriptSig.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of `EC_SIGNATURE_LEN`.
  * :param sighash: ``WALLY_SIGHASH_`` flags for each signature in ``bytes``.
  * :param sighash_len: The number of sighash flags in ``sighash``.
  * :param flags: Must be zero.
@@ -385,7 +385,7 @@ WALLY_CORE_API int wally_scriptsig_multisig_from_bytes(
  * :param script: The witness script this scriptWitness provides signatures for.
  * :param script_len: The length of ``script`` in bytes.
  * :param bytes: Compact signatures to place in the scriptWitness.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of ``EC_SIGNATURE_LEN``.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of `EC_SIGNATURE_LEN`.
  * :param sighash: ``WALLY_SIGHASH_`` flags for each signature in ``bytes``.
  * :param sighash_len: The number of sighash flags in ``sighash``.
  * :param flags: Must be zero.
@@ -410,7 +410,7 @@ WALLY_CORE_API int wally_witness_multisig_from_bytes(
  *
  * :param bytes: Compressed public keys to create a scriptPubkey from. The
  *|    second key given will be used as the recovery key.
- * :param bytes_len: Length of ``bytes`` in bytes. Must 2 * ``EC_PUBLIC_KEY_LEN``.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must 2 * `EC_PUBLIC_KEY_LEN`.
  * :param csv_blocks: The number of blocks before the recovery key can be
  *| used. Must be between 17 and 65536.
  * :param flags: Must be zero.
@@ -430,7 +430,7 @@ WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes(
 /**
  * Create an optimised CSV 2of2 multisig with a single key recovery scriptPubkey.
  *
- * Works like ``wally_scriptpubkey_csv_2of2_then_1_from_bytes`` but produces a
+ * Works like `wally_scriptpubkey_csv_2of2_then_1_from_bytes` but produces a
  * script that is smaller and compatible with the miniscript expression
  * "and(pk(key_user),or(99@pk(key_service),older(<csv_blocks>)))".
  */
@@ -452,7 +452,7 @@ WALLY_CORE_API int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
  *
  * :param bytes: Compressed public keys to create a scriptPubkey from. The
  *|    second and third keys given will be used as the recovery keys.
- * :param bytes_len: Length of ``bytes`` in bytes. Must 3 * ``EC_PUBLIC_KEY_LEN``.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must 3 * `EC_PUBLIC_KEY_LEN`.
  * :param csv_blocks: The number of blocks before the recovery keys can be
  *| used. Must be between 17 and 65536.
  * :param flags: Must be zero.
@@ -474,7 +474,7 @@ WALLY_CORE_API int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
  *
  * :param bytes: Bytes to create a push script for.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to
+ * :param flags: `WALLY_SCRIPT_HASH160` or `WALLY_SCRIPT_SHA256` to
  *|    hash ``bytes`` before pushing it.
  * :param bytes_out: Destination for the resulting push script.
  * :param len: The length of ``bytes_out`` in bytes.
@@ -546,11 +546,11 @@ WALLY_CORE_API int wally_varbuff_to_bytes(
  * Create a segwit witness program from a script or hash.
  *
  * :param bytes: Script or hash bytes to create a witness program from.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be ``HASH160_LEN``
- *|     or ``SHA256_LEN`` if neither ``WALLY_SCRIPT_HASH160`` or
- *|     ``WALLY_SCRIPT_SHA256`` is given.
- * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to hash
- *|    the input script before using it. ``WALLY_SCRIPT_AS_PUSH`` to generate
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be `HASH160_LEN`
+ *|     or `SHA256_LEN` if neither `WALLY_SCRIPT_HASH160` or
+ *|     `WALLY_SCRIPT_SHA256` is given.
+ * :param flags: `WALLY_SCRIPT_HASH160` or `WALLY_SCRIPT_SHA256` to hash
+ *|    the input script before using it. `WALLY_SCRIPT_AS_PUSH` to generate
  *|    a push of the generated script as used for the scriptSig in p2sh-p2wpkh
  *|    and p2sh-p2wsh.
  * :param bytes_out: Destination for the resulting witness program.
@@ -572,8 +572,8 @@ WALLY_CORE_API int wally_witness_program_from_bytes(
  * :param bytes_len: Length of ``bytes`` in bytes.
  * :param version: Witness version to create a witness program from.
  *|    Specify a value of 16 or less.
- * :param flags: ``WALLY_SCRIPT_HASH160`` or ``WALLY_SCRIPT_SHA256`` to hash
- *|    the input script before using it. ``WALLY_SCRIPT_AS_PUSH`` to generate
+ * :param flags: `WALLY_SCRIPT_HASH160` or `WALLY_SCRIPT_SHA256` to hash
+ *|    the input script before using it. `WALLY_SCRIPT_AS_PUSH` to generate
  *|    a push of the generated script as used for the scriptSig in p2sh-p2wpkh
  *|    and p2sh-p2wsh.
  * :param bytes_out: Destination for the resulting witness program.
@@ -593,9 +593,9 @@ WALLY_CORE_API int wally_witness_program_from_bytes_and_version(
 /**
  * Get the pegout script size.
  *
- * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be `SHA256_LEN`.
  * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
- * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
  * :param whitelistproof_len: The length of ``whitelistproof`` in bytes.
  * :param written: Destination for the number of bytes required to hold the pegout script.
  */
@@ -610,11 +610,11 @@ WALLY_CORE_API int wally_elements_pegout_script_size(
  * Create a pegout script.
  *
  * :param genesis_blockhash: The genesis blockhash of the parent chain.
- * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be ``SHA256_LEN``.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must be `SHA256_LEN`.
  * :param mainchain_script: The parent chain script.
  * :param mainchain_script_len: Length of ``mainchain_script`` in bytes.
  * :param sub_pubkey: The whitelisted public key.
- * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
  * :param whitelistproof: The whitelist proof.
  * :param whitelistproof_len: The length of ``whitelistproof`` in bytes.
  * :param flags: Must be zero.

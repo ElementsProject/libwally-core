@@ -28,9 +28,9 @@ extern "C" {
  * Create an Asset Generator from an either an asset commitment or asset tag plus blinding factor.
  *
  * :param asset: Asset Commitment or Tag to create a generator for.
- * :param asset_len: Length of ``asset`` in bytes. Must be ``ASSET_COMMITMENT_LEN`` or ``ASSET_TAG_LEN``.
+ * :param asset_len: Length of ``asset`` in bytes. Must be `ASSET_COMMITMENT_LEN` or `ASSET_TAG_LEN`.
  * :param abf: Asset Blinding Factor (Random entropy to blind with). Must be NULL when ``asset`` is a commitment.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``BLINDING_FACTOR_LEN`` if ``abf`` is non-NULL.
+ * :param abf_len: Length of ``abf`` in bytes. Must be `BLINDING_FACTOR_LEN` if ``abf`` is non-NULL.
  * :param bytes_out: Destination for the resulting Asset Generator.
  * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_GENERATOR_LEN)
  */
@@ -46,15 +46,15 @@ WALLY_CORE_API int wally_asset_generator_from_bytes(
  * Generate a rangeproof nonce hash via SHA256(ECDH(pub_key, priv_key).
  *
  * :param pub_key: Public blinding key.
- * :param pub_key_len: Length of ``pub_key`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`
  * :param priv_key: Ephemeral (randomly generated) private key.
- * :param priv_key_len: Length of ``priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param priv_key_len: Length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param bytes_out: Destination for the resulting nonce hash.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  *
  * .. note:: The public blinding key can be retrieved from a confidential
  *|    address using `wally_confidential_addr_to_ec_public_key`. If ``priv_key``
- *|    is invalid, then ``WALLY_ERROR`` is returned.
+ *|    is invalid, then `WALLY_ERROR` is returned.
  * .. note:: The computation can also be performed with the private key
  *|    corresponding to ``pub_key`` and the public key corresponding
  *|    to ``priv_key`` giving the same result.
@@ -76,9 +76,9 @@ WALLY_CORE_API int wally_ecdh_nonce_hash(
  * :param num_inputs: Number of elements in the input arrays that represent inputs. The number of outputs is
  *|     implicitly ``num_values`` - ``num_inputs``.
  * :param abf:  Array of bytes representing ``num_values`` asset blinding factors.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``num_values`` * ``BLINDING_FACTOR_LEN``.
+ * :param abf_len: Length of ``abf`` in bytes. Must be ``num_values`` * `BLINDING_FACTOR_LEN`.
  * :param vbf: Array of bytes representing (``num_values`` - 1) value blinding factors.
- * :param vbf_len: Length of ``vbf`` in bytes. Must be (``num_values`` - 1) * ``BLINDING_FACTOR_LEN``.
+ * :param vbf_len: Length of ``vbf`` in bytes. Must be (``num_values`` - 1) * `BLINDING_FACTOR_LEN`.
  * :param bytes_out: Buffer to receive the final value blinding factor.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
  */
@@ -98,9 +98,9 @@ WALLY_CORE_API int wally_asset_final_vbf(
  *
  * :param value: The value in satoshi.
  * :param abf: Asset blinding factor.
- * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param abf_len: Length of ``abf``. Must be `BLINDING_FACTOR_LEN`.
  * :param vbf: Value blinding factor.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param vbf_len: Length of ``vbf``. Must be `BLINDING_FACTOR_LEN`.
  * :param bytes_out: Destination to receive the scalar offset.
  * FIXED_SIZED_OUTPUT(len, bytes_out, EC_SCALAR_LEN)
  */
@@ -118,9 +118,9 @@ WALLY_CORE_API int wally_asset_scalar_offset(
  *
  * :param value: Output value in satoshi.
  * :param vbf: Value Blinding Factor.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param vbf_len: Length of ``vbf``. Must be `BLINDING_FACTOR_LEN`.
  * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param bytes_out: Buffer to receive value commitment.
  * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_COMMITMENT_LEN)
  */
@@ -137,21 +137,21 @@ WALLY_CORE_API int wally_asset_value_commitment(
  * Generate a rangeproof using a nonce.
  *
  * :param value: Value of the output in satoshi.
- * :param nonce_hash: Nonce for rangeproof generation, usually from ``wally_ecdh_nonce_hash``.
- * :param nonce_hash_len: Length of ``nonce_hash``. Must be ``SHA256_LEN``.
+ * :param nonce_hash: Nonce for rangeproof generation, usually from `wally_ecdh_nonce_hash`.
+ * :param nonce_hash_len: Length of ``nonce_hash``. Must be `SHA256_LEN`.
  * :param asset: Asset id of output.
- * :param asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN`.
  * :param abf: Asset blinding factor. Randomly generated for each output.
- * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param abf_len: Length of ``abf``. Must be `BLINDING_FACTOR_LEN`.
  * :param vbf: Value blinding factor. Randomly generated for each output except the last, which is generate by calling
  *|     `wally_asset_final_vbf`.
- * :param vbf_len: Length of ``vbf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param vbf_len: Length of ``vbf``. Must be `BLINDING_FACTOR_LEN`.
  * :param commitment: Value commitment from `wally_asset_value_commitment`.
- * :param commitment_len: Length of ``commitment``. Must be ``ASSET_COMMITMENT_LEN``.
+ * :param commitment_len: Length of ``commitment``. Must be `ASSET_COMMITMENT_LEN`.
  * :param extra: Set this to the script pubkey of the output.
  * :param extra_len: Length of ``extra``, i.e. script pubkey.
  * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param generator_len: Length of ``generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param min_value: Recommended value 1.
  * :param exp: Exponent value. -1 >= ``exp`` >= 18. Recommended value 0.
  * :param min_bits: 0 >= min_bits >= 64. Recommended value 52.
@@ -244,9 +244,9 @@ WALLY_CORE_API int wally_explicit_rangeproof(
  * :param rangeproof_len: Length of ``rangeproof`` in bytes.
  * :param value: The expected value that the explicit rangeproof proves.
  * :param commitment: Value commitment from `wally_asset_value_commitment`.
- * :param commitment_len: Length of ``commitment``. Must be ``ASSET_COMMITMENT_LEN``.
+ * :param commitment_len: Length of ``commitment``. Must be `ASSET_COMMITMENT_LEN`.
  * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param generator_len: Length of ``generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
  */
 WALLY_CORE_API int wally_explicit_rangeproof_verify(
     const unsigned char *rangeproof,
@@ -271,19 +271,19 @@ WALLY_CORE_API int wally_asset_surjectionproof_size(
  * Compute the length of an asset surjection proof.
  *
  * :param output_asset: asset id for the output.
- * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN`.
  * :param output_abf: Asset blinding factor for the output. Generated randomly for each output.
- * :param output_abf_len: Length of ``output_abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param output_abf_len: Length of ``output_abf``. Must be `BLINDING_FACTOR_LEN`.
  * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param output_generator_len: Length of ``output_generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param bytes: Must be generated randomly for each output.
  * :param bytes_len: Length of ``bytes``. Must be 32.
  * :param asset: Array of input asset tags.
- * :param asset_len: Length of ``asset`. Must be ``ASSET_TAG_LEN`` * number of inputs.
+ * :param asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN` * number of inputs.
  * :param abf: Array of input asset blinding factors.
- * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN`` * number of inputs.
+ * :param abf_len: Length of ``abf``. Must be `BLINDING_FACTOR_LEN` * number of inputs.
  * :param generator: Array of input asset generators.
- * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN`` * number of inputs.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN` * number of inputs.
  * :param written: Number of bytes actually written to ``bytes_out``.
  */
 WALLY_CORE_API int wally_asset_surjectionproof_len(
@@ -307,19 +307,19 @@ WALLY_CORE_API int wally_asset_surjectionproof_len(
  * Generate an asset surjection proof.
  *
  * :param output_asset: asset id for the output.
- * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN`.
  * :param output_abf: Asset blinding factor for the output. Generated randomly for each output.
- * :param output_abf_len: Length of ``output_abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param output_abf_len: Length of ``output_abf``. Must be `BLINDING_FACTOR_LEN`.
  * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param output_generator_len: Length of ``output_generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param bytes: Must be generated randomly for each output.
  * :param bytes_len: Length of ``bytes``. Must be 32.
  * :param asset: Array of input asset tags.
- * :param asset_len: Length of ``asset`. Must be ``ASSET_TAG_LEN`` * number of inputs.
+ * :param asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN` * number of inputs.
  * :param abf: Array of input asset blinding factors.
- * :param abf_len: Length of ``abf``. Must be ``BLINDING_FACTOR_LEN`` * number of inputs.
+ * :param abf_len: Length of ``abf``. Must be `BLINDING_FACTOR_LEN` * number of inputs.
  * :param generator: Array of input asset generators.
- * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN`` * number of inputs.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN` * number of inputs.
  * :param bytes_out: Buffer to receive surjection proof.
  * :param len: Length of ``bytes_out``. See `wally_asset_surjectionproof_len`.
  * :param written: Number of bytes actually written to ``bytes_out``.
@@ -347,11 +347,11 @@ WALLY_CORE_API int wally_asset_surjectionproof(
  * Generate an explicit asset surjection proof.
  *
  * :param output_asset: asset id for the output.
- * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN`.
  * :param output_abf: Asset blinding factor for the output. Generated randomly for each output.
- * :param output_abf_len: Length of ``output_abf``. Must be ``BLINDING_FACTOR_LEN``.
+ * :param output_abf_len: Length of ``output_abf``. Must be `BLINDING_FACTOR_LEN`.
  * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param output_generator_len: Length of ``output_generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param bytes_out: Buffer to receive surjection proof.
  * FIXED_SIZED_OUTPUT(len, bytes_out, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
  */
@@ -371,9 +371,9 @@ WALLY_CORE_API int wally_explicit_surjectionproof(
  * :param surjectionproof: The explicit asset surjection proof.
  * :param surjectionproof_len: Length of ``surjectionproof``.
  * :param output_asset: The unblinded asset we expect ``surjectionproof`` to prove.
- * :param output_asset_len: Length of ``asset``. Must be ``ASSET_TAG_LEN``.
+ * :param output_asset_len: Length of ``asset``. Must be `ASSET_TAG_LEN`.
  * :param output_generator: Asset generator from `wally_asset_generator_from_bytes`.
- * :param output_generator_len: Length of ``output_generator`. Must be ``ASSET_GENERATOR_LEN``.
+ * :param output_generator_len: Length of ``output_generator``. Must be `ASSET_GENERATOR_LEN`.
  */
 WALLY_CORE_API int wally_explicit_surjectionproof_verify(
     const unsigned char *surjectionproof,
@@ -387,15 +387,15 @@ WALLY_CORE_API int wally_explicit_surjectionproof_verify(
  * Unblind a confidential transaction output.
  *
  * :param nonce_hash: SHA-256 hash of the generated nonce.
- * :param nonce_hash_len: Length of ``nonce_hash``. Must be ``SHA256_LEN``.
- * :param proof: Rangeproof from :c:func:`wally_tx_get_output_rangeproof`.
+ * :param nonce_hash_len: Length of ``nonce_hash``. Must be `SHA256_LEN`.
+ * :param proof: Rangeproof from `wally_tx_get_output_rangeproof`.
  * :param proof_len: Length of ``proof``.
- * :param commitment: Value commitment from :c:func:`wally_tx_get_output_value`.
+ * :param commitment: Value commitment from `wally_tx_get_output_value`.
  * :param commitment_len: Length of ``commitment``.
- * :param extra: Script pubkey from :c:func:`wally_tx_get_output_script`.
+ * :param extra: Script pubkey from `wally_tx_get_output_script`.
  * :param extra_len: Length of ``extra``.
- * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
- * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
+ * :param generator: Asset generator from `wally_tx_get_output_asset`.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param asset_out: Buffer to receive unblinded asset id.
  * FIXED_SIZED_OUTPUT(asset_out_len, asset_out, ASSET_TAG_LEN)
  * :param abf_out: Buffer to receive asset blinding factor.
@@ -426,18 +426,18 @@ WALLY_CORE_API int wally_asset_unblind_with_nonce(
 /**
  * Unblind a confidential transaction output.
  *
- * :param pub_key: From :c:func:`wally_tx_get_output_nonce`.
- * :param pub_key_len: Length of ``pub_key``. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param pub_key: From `wally_tx_get_output_nonce`.
+ * :param pub_key_len: Length of ``pub_key``. Must be `EC_PUBLIC_KEY_LEN`.
  * :param priv_key: Private blinding key corresponding to public blinding key used to generate destination address. See
- *|     :c:func:`wally_asset_blinding_key_to_ec_private_key`.
- * :param proof: Rangeproof from :c:func:`wally_tx_get_output_rangeproof`.
+ *|     `wally_asset_blinding_key_to_ec_private_key`.
+ * :param proof: Rangeproof from `wally_tx_get_output_rangeproof`.
  * :param proof_len: Length of ``proof``.
- * :param commitment: Value commitment from :c:func:`wally_tx_get_output_value`.
+ * :param commitment: Value commitment from `wally_tx_get_output_value`.
  * :param commitment_len: Length of ``commitment``.
- * :param extra: Script pubkey from :c:func:`wally_tx_get_output_script`.
+ * :param extra: Script pubkey from `wally_tx_get_output_script`.
  * :param extra_len: Length of ``extra``.
- * :param generator: Asset generator from :c:func:`wally_tx_get_output_asset`.
- * :param generator_len: Length of ``generator``. Must be ``ASSET_GENERATOR_LEN``.
+ * :param generator: Asset generator from `wally_tx_get_output_asset`.
+ * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param asset_out: Buffer to receive unblinded asset id.
  * FIXED_SIZED_OUTPUT(asset_out_len, asset_out, ASSET_TAG_LEN)
  * :param abf_out: Buffer to receive asset blinding factor.
@@ -470,9 +470,9 @@ WALLY_CORE_API int wally_asset_unblind(
 /**
  * Generate a master blinding key from a seed as specified in SLIP-0077.
  *
- * :param bytes: Seed value. See :c:func:`bip39_mnemonic_to_seed`.
- * :param bytes_len: Length of ``bytes``. Must be one of ``BIP32_ENTROPY_LEN_128``, ``BIP32_ENTROPY_LEN_256`` or
- *|     ``BIP32_ENTROPY_LEN_512``.
+ * :param bytes: Seed value. See `bip39_mnemonic_to_seed`.
+ * :param bytes_len: Length of ``bytes``. Must be one of `BIP32_ENTROPY_LEN_128`, `BIP32_ENTROPY_LEN_256` or
+ *|     `BIP32_ENTROPY_LEN_512`.
  * :param bytes_out: Buffer to receive master blinding key. The master blinding key can be used to generate blinding
  *|     keys for specific outputs by passing it to `wally_asset_blinding_key_to_ec_private_key`.
  * FIXED_SIZED_OUTPUT(len, bytes_out, HMAC_SHA512_LEN)
@@ -487,7 +487,7 @@ WALLY_CORE_API int wally_asset_blinding_key_from_seed(
  * Generate a blinding key for a script pubkey.
  *
  * :param bytes: Master blinding key from `wally_asset_blinding_key_from_seed`.
- * :param bytes_len: Length of ``bytes``. Must be ``HMAC_SHA512_LEN``.
+ * :param bytes_len: Length of ``bytes``. Must be `HMAC_SHA512_LEN`.
  * :param script: The script pubkey for the confidential output address.
  * :param script_len: Length of ``script``.
  * :param bytes_out: Buffer to receive blinding key.
@@ -517,16 +517,16 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof_size(
  * Generate a whitelist proof for a pegout script.
  *
  * :param online_keys: The list of concatenated online keys.
- * :param online_keys_len: Length of ``online_keys`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param online_keys_len: Length of ``online_keys`` in bytes. Must be a multiple of `EC_PUBLIC_KEY_LEN`.
  * :param offline_keys: The list of concatenated offline keys.
  * :param offline_keys_len: Length of ``offline_keys`` in bytes. Must match ``online_keys_len``.
  * :param key_index: The index in the PAK list of the key signing this whitelist proof.
  * :param sub_pubkey: The public key to be whitelisted.
- * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
  * :param online_priv_key: The secret key to the signer's online pubkey.
- * :param online_priv_key_len: Length of ``online_priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param online_priv_key_len: Length of ``online_priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param summed_key: The secret key to the sum of (whitelisted key, signer's offline pubkey).
- * :param summed_key_len: Length of ``summed_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param summed_key_len: Length of ``summed_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param bytes_out: Destination for the resulting whitelist proof.
  * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
@@ -551,16 +551,16 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof(
  * Calculate the size in bytes of a whitelist proof.
  *
  * :param online_keys: The list of concatenated online keys.
- * :param online_keys_len: Length of ``online_keys`` in bytes. Must be a multiple of ``EC_PUBLIC_KEY_LEN``.
+ * :param online_keys_len: Length of ``online_keys`` in bytes. Must be a multiple of `EC_PUBLIC_KEY_LEN`.
  * :param offline_keys: The list of concatenated offline keys.
  * :param offline_keys_len: Length of ``offline_keys`` in bytes. Must match ``online_keys_len``.
  * :param key_index: The index in the PAK list of the key signing this whitelist proof.
  * :param sub_pubkey: The public key to be whitelisted.
- * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``.
+ * :param sub_pubkey_len: Length of ``sub_pubkey`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
  * :param online_priv_key: The secret key to the signer's online pubkey.
- * :param online_priv_key_len: Length of ``online_priv_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param online_priv_key_len: Length of ``online_priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param summed_key: The secret key to the sum of (whitelisted key, signer's offline pubkey).
- * :param summed_key_len: Length of ``summed_key`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param summed_key_len: Length of ``summed_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param written: Destination for resulting proof size in bytes.
  *
  * .. note:: Use `wally_asset_pak_whitelistproof_size` for a simpler call interface.
