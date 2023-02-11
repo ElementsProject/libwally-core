@@ -82,6 +82,8 @@ def extract_docs(infile, outfile):
                 if l.startswith('*|'):
                     current[-1] += ' ' + l[2:].strip()
                 else:
+                    if l.startswith('* .. note::') and current[-1]:
+                        current.append('') # A blank line ensures notes format correctly
                     l = preprocess_input_doc_line(l[1:].strip())
                     current.append(l)
         else: # FUNC
