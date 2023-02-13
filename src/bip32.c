@@ -87,6 +87,7 @@ static int path_from_string_n(const char *str, size_t str_len,
                               size_t *written)
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
+    bool found_wildcard = false;
     size_t start, i = 0;
     uint64_t v;
 
@@ -130,6 +131,7 @@ static int path_from_string_n(const char *str, size_t str_len,
                 goto fail; /* Unknown character */
 
             /* Wildcard */
+            found_wildcard = true;
             if (!(flags & BIP32_FLAG_STR_WILDCARD))
                 goto fail; /* Wildcard not allowed, or previously seen */
             flags &= ~BIP32_FLAG_STR_WILDCARD;
@@ -153,6 +155,9 @@ static int path_from_string_n(const char *str, size_t str_len,
             child_path[*written] = v;
         ++*written;
     }
+
+    if (!found_wildcard && child_num != 0)
+        return WALLY_EINVAL; /* Child number given for a non-wildcard path */
 
     return *written ? WALLY_OK : WALLY_EINVAL;
 fail:

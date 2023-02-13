@@ -1,7 +1,9 @@
 #include "internal.h"
 #include "script_int.h"
 
+#if 0
 #include <assert.h>
+#endif
 #include <limits.h>
 #include "pullpush.h"
 
@@ -176,9 +178,11 @@ void pull_subfield_end(const unsigned char **cursor, size_t *max,
         pull_failed(cursor, max);
     } else if (*cursor != NULL) {
         const unsigned char *subend = subcursor + submax;
-        assert(subcursor >= *cursor);
-        assert(subend <= *cursor + *max);
-        *max -= (subend - *cursor);
-        *cursor = subend;
+        if (subcursor < *cursor || subend > *cursor + *max) {
+            pull_failed(cursor, max);
+        } else {
+            *max -= (subend - *cursor);
+            *cursor = subend;
+        }
     }
 }

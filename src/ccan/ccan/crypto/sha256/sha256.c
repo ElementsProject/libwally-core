@@ -10,7 +10,9 @@
 #include <ccan/endian/endian.h>
 #include <ccan/compiler/compiler.h>
 #include <stdbool.h>
+#if 0
 #include <assert.h>
+#endif
 #include <string.h>
 
 #ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
@@ -21,7 +23,9 @@ static void invalidate_sha256(struct sha256_ctx *ctx)
 
 static void check_sha256(struct sha256_ctx *ctx UNUSED)
 {
+#if 0
 	assert(ctx->c.md_len != 0);
+#endif
 }
 
 void sha256_init(struct sha256_ctx *ctx)
@@ -48,7 +52,9 @@ static void invalidate_sha256(struct sha256_ctx *ctx)
 
 static void check_sha256(struct sha256_ctx *ctx UNUSED)
 {
+#if 0
 	assert(ctx->bytes != (size_t)-1);
+#endif
 }
 
 static uint32_t Ch(uint32_t x, uint32_t y, uint32_t z)

@@ -416,6 +416,12 @@ inline int bip32_key_to_address(const HDKEY& hdkey, uint32_t flags, uint32_t ver
     return ret;
 }
 
+template <class BYTES, class TAG, class BYTES_OUT>
+inline int bip340_tagged_hash(const BYTES& bytes, const TAG& tag, BYTES_OUT& bytes_out) {
+    int ret = ::wally_bip340_tagged_hash(bytes.data(), bytes.size(), detail::get_p(tag), bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class BYTES>
 inline int bzero(const BYTES& bytes, size_t bytes_len) {
     int ret = ::wally_bzero(detail::get_p(bytes), bytes_len);
@@ -427,47 +433,81 @@ inline int cleanup(uint32_t flags) {
     return ret;
 }
 
-template <class DESCRIPTOR, class KEY_VALUE_MAP>
-inline int descriptor_create_checksum(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_create_checksum(detail::get_p(descriptor), detail::get_p(key_value_map), flags, output);
+template <class DESCRIPTOR>
+inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_canonicalize(detail::get_p(descriptor), flags, output);
     return ret;
 }
 
-template <class MINISCRIPT, class KEY_VALUE_MAP, class SCRIPT_OUT>
-inline int descriptor_parse_miniscript(const MINISCRIPT& miniscript, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t flags, SCRIPT_OUT& script_out, size_t* written = 0) {
+inline int descriptor_free(struct wally_descriptor* descriptor) {
+    int ret = ::wally_descriptor_free(descriptor);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_get_checksum(detail::get_p(descriptor), flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_features(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_features(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_num_paths(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_num_paths(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_num_variants(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_num_variants(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR, class VARS_IN>
+inline int descriptor_parse(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t network, uint32_t flags, struct wally_descriptor** output) {
+    int ret = ::wally_descriptor_parse(detail::get_p(descriptor), detail::get_p(vars_in), network, flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_set_network(const DESCRIPTOR& descriptor, uint32_t network) {
+    int ret = ::wally_descriptor_set_network(detail::get_p(descriptor), network);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_to_address(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, char** output) {
+    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), variant, multi_index, child_num, flags, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_to_addresses(const DESCRIPTOR& descriptor, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, char** output, size_t num_outputs) {
+    int ret = ::wally_descriptor_to_addresses(detail::get_p(descriptor), variant, multi_index, child_num, flags, output, num_outputs);
+    return ret;
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_to_script(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;
-    int ret = ::wally_descriptor_parse_miniscript(detail::get_p(miniscript), detail::get_p(key_value_map), derive_child_num, flags, script_out.data(), script_out.size(), written ? written : &n);
-    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(script_out.size()) ? WALLY_OK : WALLY_EINVAL;
+    int ret = ::wally_descriptor_to_script(detail::get_p(descriptor), depth, index, variant, multi_index, child_num, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
-template <class MINISCRIPT, class KEY_VALUE_MAP>
-inline int descriptor_parse_miniscript_len(const MINISCRIPT& miniscript, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_parse_miniscript_len(detail::get_p(miniscript), detail::get_p(key_value_map), derive_child_num, flags, written);
-    return ret;
-}
-
-template <class DESCRIPTOR, class KEY_VALUE_MAP>
-inline int descriptor_to_address(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t network, uint32_t flags, char** output) {
-    int ret = ::wally_descriptor_to_address(detail::get_p(descriptor), detail::get_p(key_value_map), derive_child_num, network, flags, output);
-    return ret;
-}
-
-template <class DESCRIPTOR, class KEY_VALUE_MAP>
-inline int descriptor_to_addresses_alloc(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t start_child_num, uint32_t end_child_num, uint32_t network, uint32_t flags, struct wally_map** addresses) {
-    int ret = ::wally_descriptor_to_addresses_alloc(detail::get_p(descriptor), detail::get_p(key_value_map), start_child_num, end_child_num, network, flags, addresses);
-    return ret;
-}
-
-template <class DESCRIPTOR, class KEY_VALUE_MAP, class SCRIPT_OUT>
-inline int descriptor_to_scriptpubkey(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t network, uint32_t target_depth, uint32_t target_index, uint32_t flags, SCRIPT_OUT& script_out, size_t* written = 0) {
-    size_t n;
-    int ret = ::wally_descriptor_to_scriptpubkey(detail::get_p(descriptor), detail::get_p(key_value_map), derive_child_num, network, target_depth, target_index, flags, script_out.data(), script_out.size(), written ? written : &n);
-    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(script_out.size()) ? WALLY_OK : WALLY_EINVAL;
-}
-
-template <class DESCRIPTOR, class KEY_VALUE_MAP>
-inline int descriptor_to_scriptpubkey_len(const DESCRIPTOR& descriptor, const KEY_VALUE_MAP& key_value_map, uint32_t derive_child_num, uint32_t network, uint32_t target_depth, uint32_t target_index, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_to_scriptpubkey_len(detail::get_p(descriptor), detail::get_p(key_value_map), derive_child_num, network, target_depth, target_index, flags, written);
+template <class DESCRIPTOR>
+inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_script_get_maximum_length(detail::get_p(descriptor), flags, written);
     return ret;
 }
 
@@ -1011,6 +1051,45 @@ inline int psbt_get_id(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out) {
     return ret;
 }
 
+template <class PSBT, class HDKEY>
+inline int psbt_get_input_bip32_key_from_alloc(const PSBT& psbt, size_t index, size_t subindex, uint32_t flags, const HDKEY& hdkey, struct ext_key** output) {
+    int ret = ::wally_psbt_get_input_bip32_key_from_alloc(detail::get_p(psbt), index, subindex, flags, detail::get_p(hdkey), output);
+    return ret;
+}
+
+template <class PSBT, class SCRIPT, class BYTES_OUT>
+inline int psbt_get_input_scriptcode(const PSBT& psbt, size_t index, const SCRIPT& script, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_get_input_scriptcode(detail::get_p(psbt), index, script.data(), script.size(), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class PSBT, class SCRIPT>
+inline int psbt_get_input_scriptcode_len(const PSBT& psbt, size_t index, const SCRIPT& script, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_get_input_scriptcode_len(detail::get_p(psbt), index, script.data(), script.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(script.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class PSBT, class TX, class SCRIPT, class BYTES_OUT>
+inline int psbt_get_input_signature_hash(const PSBT& psbt, size_t index, const TX& tx, const SCRIPT& script, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_psbt_get_input_signature_hash(detail::get_p(psbt), index, detail::get_p(tx), script.data(), script.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PSBT, class BYTES_OUT>
+inline int psbt_get_input_signing_script(const PSBT& psbt, size_t index, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_psbt_get_input_signing_script(detail::get_p(psbt), index, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class PSBT>
+inline int psbt_get_input_signing_script_len(const PSBT& psbt, size_t index, size_t* written) {
+    int ret = ::wally_psbt_get_input_signing_script_len(detail::get_p(psbt), index, written);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_get_length(const PSBT& psbt, uint32_t flags, size_t* written) {
     int ret = ::wally_psbt_get_length(detail::get_p(psbt), flags, written);
@@ -1305,6 +1384,18 @@ inline int psbt_sign(const PSBT& psbt, const KEY& key, uint32_t flags) {
     return ret;
 }
 
+template <class PSBT, class HDKEY>
+inline int psbt_sign_bip32(const PSBT& psbt, const HDKEY& hdkey, uint32_t flags) {
+    int ret = ::wally_psbt_sign_bip32(detail::get_p(psbt), detail::get_p(hdkey), flags);
+    return ret;
+}
+
+template <class PSBT, class TXHASH, class HDKEY>
+inline int psbt_sign_input_bip32(const PSBT& psbt, size_t index, size_t subindex, const TXHASH& txhash, const HDKEY& hdkey, uint32_t flags) {
+    int ret = ::wally_psbt_sign_input_bip32(detail::get_p(psbt), index, subindex, txhash.data(), txhash.size(), detail::get_p(hdkey), flags);
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_to_base64(const PSBT& psbt, uint32_t flags, char** output) {
     int ret = ::wally_psbt_to_base64(detail::get_p(psbt), flags, output);
@@ -1553,6 +1644,12 @@ inline int tx_from_hex(const HEX& hex, uint32_t flags, struct wally_tx** output)
 template <class TX, class SCRIPT, class BYTES_OUT>
 inline int tx_get_btc_signature_hash(const TX& tx, size_t index, const SCRIPT& script, uint64_t satoshi, uint32_t sighash, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_tx_get_btc_signature_hash(detail::get_p(tx), index, script.data(), script.size(), satoshi, sighash, flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class TX, class SCRIPTS, class VALUES, class TAPLEAF_SCRIPT, class ANNEX, class BYTES_OUT>
+inline int tx_get_btc_taproot_signature_hash(const TX& tx, size_t index, const SCRIPTS& scripts, const VALUES& values, const TAPLEAF_SCRIPT& tapleaf_script, uint32_t key_version, uint32_t codesep_position, const ANNEX& annex, uint32_t sighash, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_get_btc_taproot_signature_hash(detail::get_p(tx), index, detail::get_p(scripts), values.data(), values.size(), tapleaf_script.data(), tapleaf_script.size(), key_version, codesep_position, annex.data(), annex.size(), sighash, flags, bytes_out.data(), bytes_out.size());
     return ret;
 }
 

@@ -11,7 +11,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#if 0
 #include <assert.h>
+#endif
 #include <errno.h>
 
 #ifdef _WIN32
@@ -27,7 +29,9 @@
 
 /* Ignore test logging compiler warnings */
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
 
 static void fail(const char *fmt, ...)
 {

@@ -166,6 +166,7 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
         case WALLY_NETWORK_BITCOIN_MAINNET:
             bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_MAINNET;
             break;
+        case WALLY_NETWORK_BITCOIN_REGTEST:
         case WALLY_NETWORK_BITCOIN_TESTNET:
             bytes[0] = WALLY_ADDRESS_VERSION_P2PKH_TESTNET;
             break;
@@ -188,6 +189,7 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
         case WALLY_NETWORK_BITCOIN_MAINNET:
             bytes[0] = WALLY_ADDRESS_VERSION_P2SH_MAINNET;
             break;
+        case WALLY_NETWORK_BITCOIN_REGTEST:
         case WALLY_NETWORK_BITCOIN_TESTNET:
             bytes[0] = WALLY_ADDRESS_VERSION_P2SH_TESTNET;
             break;

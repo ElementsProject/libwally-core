@@ -1,18 +1,29 @@
 {
   "name": "wallycore",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "description": "JavaScript bindings for libwally",
-  "main": "index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "node test.js",
+    "test": "node--test test/",
     "prepare": "./build.sh"
   },
   "files": [
-    "*.js",
-    "*.d.ts",
-    "libwally_wasm"
+    "src",
+    "libwally_wasm",
+    "webpack.config.js"
   ],
-  "author": "Nadav Ivgi",
-  "license": "MIT"
+  "author": "Blockstream",
+  "license": "(MIT or BSD)",
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "test": "^3.2.1",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.0"
+  },
+  "browser": {
+    "module": false,
+    "assert": "./src/browser/assert.js",
+    "crypto": "./src/browser/crypto.js"
+  }
 }

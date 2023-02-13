@@ -5,8 +5,8 @@
   && egrep -r '#define [^ (]* ' include/*.h \
      | grep -v '#define OP_' \
      | sed -r 's~.*#define ([^ ]*) *~export const \1 = ~; s~( /\*)| *$~;\1~' \
-     | sort \
-) > src/wasm_package/const.js
+     | LC_ALL=C sort \
+) > src/wasm_package/src/const.js
 
 
 # Update version number to match libwally's

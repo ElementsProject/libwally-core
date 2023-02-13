@@ -70,6 +70,22 @@ ripemd160_cases = [
     [ 'a' * 1000000,    '52783243c1697bdbe16d37f97f68f08325dc1528' ],
 ]
 
+# Test cases generated using the core test TaggedHash python impl:
+#import binascii, sys, hashlib
+#if __name__ == '__main__':
+#    ss = hashlib.sha256(sys.argv[2].encode('utf-8')).digest()
+#    ss += ss
+#    ss += binascii.unhexlify(sys.argv[1])
+#    print(binascii.hexlify(hashlib.sha256(ss).digest()))
+#
+bip340_tagged_cases = [
+    [ '00000000000000', 'Foo',
+      '89691133c1656f396254afbdee8049d77bec37e0c7427094b00bc2baf8fefef2' ],
+    [ '0102030405060708090a0b0c0d0e0f', 'Bar',
+      '15586de28c491c70948008f57bf0befe13c8c4a6938dd773f5173ed921f33f93' ],
+]
+
+
 class HashTests(unittest.TestCase):
 
     SHA256_LEN, SHA512_LEN, HASH160_LEN, RIPEMD160_LEN = 32, 64, 20, 20
@@ -87,10 +103,13 @@ class HashTests(unittest.TestCase):
         return byref(buf, offset), buf_len
 
 
-    def do_hash(self, fn, hex_in, aligned=True):
+    def do_hash(self, fn, hex_in, aligned, tag=None):
         buf, buf_len = self.make_outbuf(fn, aligned)
         in_bytes, in_bytes_len = make_cbuffer(hex_in)
-        ret = fn(in_bytes, in_bytes_len, buf, buf_len)
+        args = [in_bytes, in_bytes_len, buf, buf_len]
+        if tag is not None:
+            args.insert(2, tag)
+        ret = fn(*args)
         self.assertEqual(ret, WALLY_OK)
         ret, result = wally_hex_from_bytes(buf, buf_len)
         self.assertEqual(ret, WALLY_OK)
@@ -138,6 +157,21 @@ class HashTests(unittest.TestCase):
                          (in_bytes, in_bytes_len, buf,  buf_len + 1)]:
                 self.assertEqual(fn(args[0], args[1], args[2], args[3]),
                                  WALLY_EINVAL)
+                if fn == wally_sha256:
+                    # First time around: check tagged hash args too
+                    ret = wally_bip340_tagged_hash(args[0], args[1], 'Tag', args[2], args[3])
+                    self.assertEqual(ret, WALLY_EINVAL)
+        # Invalid tags
+        for tag in [ '', None ]:
+            ret = wally_bip340_tagged_hash(in_bytes, in_bytes_len, tag, buf,  buf_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+
+    def test_bip340_tagged_vectors(self):
+        for msg, tag, expected in bip340_tagged_cases:
+            for aligned in [True, False]:
+                result = self.do_hash(wally_bip340_tagged_hash, msg, aligned, tag)
+                self.assertEqual(result, utf8(expected.lower()))
 
 
 if __name__ == '__main__':

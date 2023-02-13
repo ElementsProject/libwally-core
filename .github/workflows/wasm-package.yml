@@ -22,13 +22,14 @@ jobs:
           submodules: true
 
       # Needed for build_wrappers.py, to extract function signatures from source code
-      - run: sudo apt-get install -y python3-sphinx
+      # We sed out azure to attempt to mitigate apt network failues.
+      - run: sudo sed -i 's/azure\.//' /etc/apt/sources.list
 
       # The deps script was written for Debian (11), but works as-is on Ubuntu too
       - run: sudo ../../contrib/bullseye_deps.sh
 
       # Build NPM package into a tgz file (pack internally triggers the build/prepare script)
-      - run: npm pack --foreground-scripts
+      - run: npm install && npm pack --foreground-scripts
         name: Build & Pack
 
       # Report the SHA256 digest of the final package. This should be deterministic (including generated WASM),
