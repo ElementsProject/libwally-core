@@ -103,8 +103,8 @@ if DUMP_INTERNAL:
 else:
     for m in [
         'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'map',
-        'descriptor',
-        'script', 'psbt', 'symmetric', 'transaction', 'elements', 'anti_exfil'
+        'script', 'psbt', 'descriptor', 'symmetric', 'transaction',
+        'elements', 'anti_exfil'
         ]:
         extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
@@ -144,7 +144,7 @@ author = u'Jon Griffiths'
 # built documents.
 #
 # The short X.Y version.
-version = u'0.8.7'
+version = u'0.8.8'
 # The full version, including alpha/beta/rc tags.
 release = version
 

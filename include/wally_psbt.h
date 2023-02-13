@@ -48,6 +48,8 @@ extern "C" {
 
 #define WALLY_SCALAR_OFFSET_LEN 32 /* Length of a PSET scalar offset */
 
+struct ext_key;
+
 #ifdef SWIG
 struct wally_psbt_input;
 struct wally_psbt_output;
@@ -1809,7 +1811,7 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
 /**
  * Allocate and initialize a new PSBT.
  *
- * :param version: The version of the PSBT. Must be WALLY_PSBT_VERSION_0 or WALLY_PSBT_VERSION_0.
+ * :param version: The version of the PSBT. Must be WALLY_PSBT_VERSION_0 or WALLY_PSBT_VERSION_2.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
@@ -2029,6 +2031,112 @@ WALLY_CORE_API int wally_psbt_remove_input(
     uint32_t index);
 
 /**
+ * Return a BIP32 derived key matching a keypath in a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input whose keypaths to search.
+ * :param index: The zero-based index of the input in the PSBT.
+ * :param subindex: The zero-based index of the keypath to start searching from.
+ * :param flags: Flags controlling the keypath search. Must be 0.
+ * :param hdkey: The BIP32 parent key to derive matches from.
+ * :param output: Destination for the resulting derived key, if any.
+ *
+ * .. note:: See `wally_map_keypath_get_bip32_key_from_alloc`.
+ */
+WALLY_CORE_API int wally_psbt_get_input_bip32_key_from_alloc(
+    const struct wally_psbt *psbt,
+    size_t index,
+    size_t subindex,
+    uint32_t flags,
+    const struct ext_key *hdkey,
+    struct ext_key **output);
+
+/**
+ * Get the length of the scriptPubKey or redeem script from a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script length from.
+ * :param written: Destination for the length of the script.
+ */
+WALLY_CORE_API int wally_psbt_get_input_signing_script_len(
+    const struct wally_psbt *psbt,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get the scriptPubKey or redeem script from a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script from.
+ * :param bytes_out: Destination for the scriptPubKey or redeem script.
+ * :param len: Length of ``bytes`` in bytes.
+ * :param written: Destination for the number of bytes written to bytes_out.
+ */
+WALLY_CORE_API int wally_psbt_get_input_signing_script(
+    const struct wally_psbt *psbt,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Get the length of the scriptCode for signing a PSBT input.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script from.
+ * :param script: scriptPubKey/redeem script from `wally_psbt_get_input_signing_script`.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param written: Destination for the length of the scriptCode.
+ */
+WALLY_CORE_API int wally_psbt_get_input_scriptcode_len(
+    const struct wally_psbt *psbt,
+    size_t index,
+    const unsigned char *script,
+    size_t script_len,
+    size_t *written);
+
+/**
+ * Get the scriptCode for signing a PSBT input given its scriptPubKey/redeem script.
+ *
+ * :param psbt: The PSBT containing the input to get from.
+ * :param index: The zero-based index of the input to get the script from.
+ * :param script: scriptPubKey/redeem script from `wally_psbt_get_input_signing_script`.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param bytes_out: Destination for the scriptCode.
+ * :param len: Length of ``bytes`` in bytes.
+ * :param written: Destination for the number of bytes written to bytes_out.
+ */
+WALLY_CORE_API int wally_psbt_get_input_scriptcode(
+    const struct wally_psbt *psbt,
+    size_t index,
+    const unsigned char *script,
+    size_t script_len,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create a transaction for signing a PSBT input and return its hash.
+ *
+ * :param psbt: The PSBT containing the input to compute a signature hash for.
+ * :param index: The zero-based index of the PSBT input to sign.
+ * :param tx: The transaction to generate the signature hash from.
+ * :param script: The (unprefixed) scriptCode for the input being signed.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param flags: Flags controlling signature hash generation. Must be 0.
+ * :param bytes_out: Destination for the signature hash.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ */
+WALLY_CORE_API int wally_psbt_get_input_signature_hash(
+    struct wally_psbt *psbt,
+    size_t index,
+    const struct wally_tx *tx,
+    const unsigned char *script,
+    size_t script_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Add a transaction output to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the output to.
@@ -2083,7 +2191,7 @@ WALLY_CORE_API int wally_psbt_get_length(
  *
  * :param psbt: the PSBT to serialize.
  * :param flags: Flags controlling serialization. Must be 0.
- * :param bytes_out: Bytes to create the transaction from.
+ * :param bytes_out: Destination for the serialized PSBT.
  * :param len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
  * :param written: number of bytes written to bytes_out.
  */
@@ -2187,7 +2295,7 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
     struct wally_map **output);
 
 /**
- * Sign a PSBT using the simple signer algorithm.
+ * Sign PSBT inputs corresponding to a given private key.
  *
  * :param psbt: PSBT to sign. Directly modifies this PSBT.
  * :param key: Private key to sign PSBT with.
@@ -2195,12 +2303,47 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
  * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
  *
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
- *|    for a description of the simple signer algorithm.
+ *|    for a description of the signing algorithm.
  */
 WALLY_CORE_API int wally_psbt_sign(
     struct wally_psbt *psbt,
     const unsigned char *key,
     size_t key_len,
+    uint32_t flags);
+
+/**
+ * Sign PSBT inputs corresponding to a given BIP32 parent key.
+ *
+ * :param psbt: PSBT to sign. Directly modifies this PSBT.
+ * :param hdkey: The parent extended key to derive signing keys from.
+ * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
+ *
+ * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
+ *|    for a description of the signing algorithm.
+ */
+WALLY_CORE_API int wally_psbt_sign_bip32(
+    struct wally_psbt *psbt,
+    const struct ext_key *hdkey,
+    uint32_t flags);
+
+/**
+ * Sign a single PSBT input with a given BIP32 key.
+ *
+ * :param psbt: PSBT containing the input to sign. Directly modifies this PSBT.
+ * :param index: The zero-based index of the input in the PSBT.
+ * :param subindex: The zero-based index of the keypath to start searching from.
+ * :param txhash: The signature hash to sign, from `wally_psbt_get_input_signature_hash`.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be ``WALLY_TXHASH_LEN``.
+ * :param hdkey: The derived extended key to sign with.
+ * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
+ */
+WALLY_CORE_API int wally_psbt_sign_input_bip32(
+    struct wally_psbt *psbt,
+    size_t index,
+    size_t subindex,
+    const unsigned char *txhash,
+    size_t txhash_len,
+    const struct ext_key *hdkey,
     uint32_t flags);
 
 /**

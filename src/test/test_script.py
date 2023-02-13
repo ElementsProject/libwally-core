@@ -98,13 +98,13 @@ class ScriptTests(unittest.TestCase):
         # Invalid args
         out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2PKH_LEN)
         invalid_args = [
-            (None, PK_LEN, SCRIPT_HASH160, out, out_len), # Null bytes
-            (PK, 0, SCRIPT_HASH160, out, out_len), # Empty bytes
-            (PK, PK_LEN, SCRIPT_SHA256, out, out_len), # Unsupported flags
-            (PK, PK_LEN, SCRIPT_HASH160, None, out_len), # Null output
-            (PK, PK_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2PKH_LEN-1), # Short output len
-            (PK, PK_LEN, 0, out, out_len), # Pubkey w/o SCRIPT_HASH160
-            (PKU, PKU_LEN, 0, out, out_len), # Uncompressed pubkey w/o SCRIPT_HASH160
+            (None, PK_LEN, SCRIPT_HASH160, out,  out_len), # Null bytes
+            (PK,  0,       SCRIPT_HASH160, out,  out_len), # Empty bytes
+            (PK,  PK_LEN,  SCRIPT_SHA256,  out,  out_len), # Unsupported flags
+            (PK,  PK_LEN,  SCRIPT_HASH160, None, out_len), # Null output
+            (PK,  PK_LEN,  SCRIPT_HASH160, out,  0),       # Empty output
+            (PK,  PK_LEN,  0,              out,  out_len), # Pubkey w/o SCRIPT_HASH160
+            (PKU, PKU_LEN, 0,              out,  out_len), # Uncompressed pubkey w/o SCRIPT_HASH160
         ]
         for args in invalid_args:
             ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
@@ -124,20 +124,29 @@ class ScriptTests(unittest.TestCase):
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
 
+        # Calling with a too-short output buffer returns the required length
+        args = (PK, PK_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2PKH_LEN-1) # Short output len
+        ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
+        self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
+
     def test_scriptpubkey_p2sh_from_bytes(self):
         """Tests for creating p2sh scriptPubKeys"""
         # Invalid args
         out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2SH_LEN)
         invalid_args = [
-            (None, SH_LEN, SCRIPT_HASH160, out, out_len), # Null bytes
-            (SH, 0, SCRIPT_HASH160, out, out_len), # Empty bytes
-            (SH, SH_LEN, SCRIPT_SHA256, out, out_len), # Unsupported flags
-            (SH, SH_LEN, SCRIPT_HASH160, None, out_len), # Null output
-            (SH, SH_LEN, SCRIPT_HASH160, out, SCRIPTPUBKEY_P2SH_LEN-1), # Short output len
+            (None, SH_LEN,   SCRIPT_HASH160, out,  out_len),   # Null bytes
+            (SH,   0,        SCRIPT_HASH160, out,  out_len),   # Empty bytes
+            (SH,   SH_LEN,   SCRIPT_SHA256,  out,  out_len),   # Unsupported flags
+            (SH,   SH_LEN-1, 0,              out,  out_len),   # Invalid hash160 len
+            (SH,   SH_LEN,   SCRIPT_HASH160, None, out_len),   # Null output
+            (SH,   SH_LEN,   SCRIPT_HASH160, out,  out_len-1), # Short output len
         ]
         for args in invalid_args:
             ret = wally_scriptpubkey_p2sh_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            if ret == (WALLY_OK, SCRIPTPUBKEY_P2SH_LEN):
+                self.assertTrue(args[-1] < out_len)
+            else:
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
 
         # Valid cases
         valid_args = [
@@ -329,8 +338,9 @@ class ScriptTests(unittest.TestCase):
             ret = wally_scriptsig_p2pkh_from_sig(*args)
             self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 9))
 
-    def test_scriptsig_multisig(self):
-        """Tests for creating multisig scriptsig"""
+    def test_scriptsig_and_witness_multisig(self):
+        """Tests for creating multisig scriptsigs and witnesses"""
+        witness_out = pointer(wally_tx_witness_stack())
 
         def c_sighash(s):
             c_sighash = (c_uint * len(s))()
@@ -355,6 +365,10 @@ class ScriptTests(unittest.TestCase):
         for args in invalid_args:
             ret = wally_scriptsig_multisig_from_bytes(*args)
             self.assertEqual(ret, (WALLY_EINVAL, 0))
+            # Test a null witness output as the last case
+            args = list(args[:-2]) + [None if args == invalid_args[-1] else witness_out]
+            ret = wally_witness_multisig_from_bytes(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
 
         # Valid cases
         valid_args = [
@@ -372,6 +386,9 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(ret, (WALLY_OK, 73 + 72 * args[5]))
             exp_script, _ = make_cbuffer(exp_script)
             self.assertEqual(out[:(73 + 72 * args[5])], exp_script)
+            args = list(args[:-2]) + [witness_out]
+            ret = wally_witness_multisig_from_bytes(*args)
+            self.assertEqual(ret, WALLY_OK)
 
     def test_script_push_from_bytes(self):
         """Tests for encoding script pushes"""

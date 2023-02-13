@@ -10,7 +10,9 @@
 #include <ccan/endian/endian.h>
 #include <ccan/compiler/compiler.h>
 #include <stdbool.h>
+#if 0
 #include <assert.h>
+#endif
 #include <string.h>
 
 static void invalidate_sha512(struct sha512_ctx *ctx)
@@ -24,10 +26,12 @@ static void invalidate_sha512(struct sha512_ctx *ctx)
 
 static void check_sha512(struct sha512_ctx *ctx UNUSED)
 {
+#if 0
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	assert(ctx->c.md_len != 0);
 #else
 	assert(ctx->bytes != (size_t)-1);
+#endif
 #endif
 }
 

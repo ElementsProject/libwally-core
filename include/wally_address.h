@@ -16,7 +16,9 @@ struct ext_key;
 #define WALLY_CA_PREFIX_LIQUID_REGTEST 0x04 /** Liquid v1 confidential address prefix for regtest */
 #define WALLY_CA_PREFIX_LIQUID_TESTNET 0x17 /** Liquid v1 confidential address prefix for testnet */
 
+#define WALLY_NETWORK_NONE 0x00 /** Used for miniscript parsing only */
 #define WALLY_NETWORK_BITCOIN_MAINNET 0x01 /** Bitcoin mainnet */
+#define WALLY_NETWORK_BITCOIN_REGTEST 0xff  /** Bitcoin regtest: Behaves as testnet except for segwit */
 #define WALLY_NETWORK_BITCOIN_TESTNET 0x02 /** Bitcoin testnet */
 #define WALLY_NETWORK_LIQUID 0x03 /** Liquid v1 */
 #define WALLY_NETWORK_LIQUID_REGTEST 0x04 /** Liquid v1 regtest */
@@ -39,8 +41,11 @@ struct ext_key;
 #define WALLY_ADDRESS_VERSION_WIF_MAINNET 0x80 /** Wallet Import Format on mainnet */
 #define WALLY_ADDRESS_VERSION_WIF_TESTNET 0xEF /** Wallet Import Format on testnet */
 
-#define WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN 34
+#define WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN 42 /** OP_[0-16] OP_PUSH_N [up-to-40-bytes witprog] */
 #define WALLY_ADDRESS_PUBKEY_MAX_LEN 25
+
+#define WALLY_SEGWIT_V0_ADDRESS_PUBKEY_MAX_LEN 34 /** OP_0 OP_PUSH_{20,32} [20 bytes for wpkh, 32 for wsh] */
+#define WALLY_SEGWIT_V1_ADDRESS_PUBKEY_LEN 34 /** OP_1 OP_PUSH_32 [32-bytes x-only pubkey] */
 
 /**
  * Create a segwit native address from a v0 or later witness program.

@@ -73,9 +73,7 @@ include_dirs=[
     './src/secp256k1/src/'
     ]
 if is_windows:
-    # Borrowing config from wrap_js
-    # TODO: Move this to another directory
-    include_dirs = ['./src/wrap_js/windows_config'] + include_dirs
+    include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
 
 extra_compile_args = ['-flax-vector-conversions']
 
@@ -86,15 +84,15 @@ wally_ext = Extension(
     extra_compile_args=extra_compile_args,
     sources=[
         'src/swig_python/swig_wrap.c' if is_windows else 'src/swig_python/swig_python_wrap.c',
-        'src/wrap_js/src/combined.c',
-        'src/wrap_js/src/combined_ccan.c',
-        'src/wrap_js/src/combined_ccan2.c',
+        'src/amalgamation/combined.c',
+        'src/amalgamation/combined_ccan.c',
+        'src/amalgamation/combined_ccan2.c',
         ],
     )
 
 kwargs = {
     'name': 'wallycore',
-    'version': '0.8.7',
+    'version': '0.8.8',
     'description': 'libwally Bitcoin library',
     'long_description': 'Python bindings for the libwally Bitcoin library',
     'url': 'https://github.com/ElementsProject/libwally-core',

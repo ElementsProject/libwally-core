@@ -262,6 +262,7 @@ class SignTests(unittest.TestCase):
             ]:
             self.assertEqual(WALLY_EINVAL, wally_ec_sig_to_public_key(*args))
 
+    @unittest.skipUnless(wally_s2c_sig_from_bytes, "s2c module not enabled")
     def test_s2c(self):
         priv_key, pub_key, msg, s2c_data, sig_out, s2c_opening_out = self.cbufferize(
             ['11' * 32, '00' * 32, '22' * 32, '33' * 32, '00' * 64, '00' * 33])

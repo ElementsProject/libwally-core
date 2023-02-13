@@ -86,6 +86,11 @@ void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size);
 int array_grow(void **src, size_t num_items, size_t *allocation_len,
                size_t item_size);
 
+struct ext_key;
+/* Internal: Create a partial bip32 key from a private key (no chaincode, un-derivable) */
+int bip32_key_from_private_key(uint32_t version, const unsigned char *priv_key,
+                               size_t priv_key_len, struct ext_key *output);
+
 struct wally_map;
 int map_add(struct wally_map *map_in,
             const unsigned char *key, size_t key_len,

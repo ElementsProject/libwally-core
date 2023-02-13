@@ -314,7 +314,7 @@ WALLY_CORE_API int wally_scriptpubkey_op_return_from_bytes(
  * Create a P2SH scriptPubkey.
  *
  * :param bytes: Bytes to create a scriptPubkey for. If ``WALLY_SCRIPT_HASH160``
- *|    is given, ``bytes`` is a script to hash160 before creating the P2SH.
+ *|    is given, ``bytes`` is a redeem script to hash160 before creating the P2SH.
  *|    Otherwise, bytes_len must be ``HASH160_LEN`` and ``bytes`` must contain
  *|    the hash160 to use.
  * :param bytes_len: Length of ``bytes`` in bytes.

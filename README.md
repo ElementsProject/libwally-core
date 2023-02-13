@@ -19,6 +19,7 @@ Wally can currently be built for:
 - macOS
 - iOS
 - Windows
+- Embedded (e.g ESP-32)
 - WebAssembly
 
 And can be used from:
@@ -26,7 +27,7 @@ And can be used from:
 - C++ (see include/wally.hpp for C++ container support)
 - Python 3.x
 - Java
-- Javascript via node.js or Cordova or WebAssembly/Emscripten compatible
+- Javascript via node.js or web browser.
 
 ## Building
 
@@ -82,8 +83,6 @@ $ brew install swig
    features, including [Liquid](https://blockstream.com/liquid/) support.
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
-- `--enable-js-wrappers`. Enable the Node.js and Cordova Javascript wrappers.
-   This currently requires python to be available at build time (default: no).
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.
@@ -109,7 +108,7 @@ installed.
 For non-development use, you can install wally with `pip` as follows:
 
 ```
-pip install wallycore==0.8.7
+pip install wallycore==0.8.8
 ```
 
 For python development, you can build and install wally using:
@@ -129,7 +128,7 @@ You can also install the binary [wally releases](https://github.com/ElementsProj
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.7-cp39-cp39m-linux_x86_64.whl
+pip install wallycore-0.8.8-cp39-cp39m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
@@ -178,6 +177,8 @@ $ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',.
 # Build
 $ ./tools/build_wasm.sh [--enable-elements]
 ```
+
+Note that emsdk v3.1.27 or later is required.
 
 The script `tools/build_wasm.sh` builds the `wallycore.html` example as well
 as the required `wallycore.js` and `wallycore.wasm` files, which can be used
@@ -232,14 +233,25 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-js-wrappers --enable-coverage --enable-elements
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-coverage --enable-elements
 $ make
 $ ./tools/coverage.sh clean
 $ make check
 $ ./tools/coverage.sh
 ```
 
-The coverage report can then be viewed at `./src/lcov/src/index.html`. Patches
+For coverage with `clang`, you need to install `llvm-cov`, typically via the
+`llvm-<version>` package that corresponds to your `clang` version. Once
+installed, set the `GCOV` environment variable to the versioned `llvm-cov`
+binary name before running `./tools/coverage.sh`, e.g:
+
+```
+$ GCOV=llvm-cov-11 ./tools/coverage.sh clean
+$ make check
+$ GCOV=llvm-cov-11 ./tools/coverage.sh
+```
+
+The coverage report can be viewed at `./src/lcov/src/index.html`. Patches
 to increase the test coverage are welcome.
 
 ## Users of libwally-core

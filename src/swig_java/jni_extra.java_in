@@ -426,6 +426,20 @@
       return checkBuffer(buf, len);
   }
 
+  public final static byte[] psbt_get_input_signing_script(Object psbt, long idx) {
+      final byte[] buf = new byte[psbt_get_input_signing_script_len(psbt, idx)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_signing_script(psbt, idx, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] psbt_get_input_scriptcode(Object psbt, long idx, final byte[] script) {
+      final byte[] buf = new byte[psbt_get_input_scriptcode_len(psbt, idx, script)];
+      if (buf.length == 0) return buf;
+      final int len = psbt_get_input_scriptcode(psbt, idx, script, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static byte[] psbt_get_output_keypath(Object psbt, long idx, long sub_idx) {
       final byte[] buf = new byte[psbt_get_output_keypath_len(psbt, idx, sub_idx)];
       if (buf.length == 0) return buf;

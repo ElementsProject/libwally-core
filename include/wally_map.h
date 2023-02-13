@@ -38,6 +38,7 @@ struct wally_map {
  * Initialize a new map.
  *
  * :param allocation_len: The number of items to allocate space for.
+ * :param verify_fn: A function to verify items before storing, or NULL.
  * :param output: Map to initialize.
  */
 WALLY_CORE_API int wally_map_init(
@@ -49,6 +50,7 @@ WALLY_CORE_API int wally_map_init(
  * Allocate and initialize a new map.
  *
  * :param allocation_len: The number of items to allocate space for.
+ * :param verify_fn: A function to verify items before storing, or NULL.
  * :param output: Destination for the new map.
  */
 WALLY_CORE_API int wally_map_init_alloc(

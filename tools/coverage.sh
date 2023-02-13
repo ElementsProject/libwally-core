@@ -5,7 +5,7 @@
 # ./tools/coverage.sh       : Calculates coverage stats, produces
 #                             src/lcov/index.html as output.
 
-lcov="lcov --directory=src/ --base-directory src/"
+lcov="lcov --directory=src/ --base-directory src/ --gcov-tool $PWD/tools/run-gcov.sh"
 
 if [ "$1" = "clean" ]; then
     $lcov --zerocounters

@@ -3,7 +3,9 @@
 
 #include <errno.h>
 #include <string.h>
+#if 0
 #include <assert.h>
+#endif
 #include <stdint.h>
 
 /**
@@ -14,8 +16,9 @@
  */
 static char sixbit_to_b64(const base64_maps_t *maps, const uint8_t sixbit)
 {
+#if 0
 	assert(sixbit <= 63);
-
+#endif
 	return maps->encode_map[(unsigned char)sixbit];
 }
 
@@ -78,8 +81,9 @@ void base64_encode_tail_using_maps(const base64_maps_t *maps, char dest[4],
 {
 	char longsrc[3] = { 0 };
 
+#if 0
 	assert(srclen <= 3);
-
+#endif
 	memcpy(longsrc, src, srclen);
 	base64_encode_triplet_using_maps(maps, dest, longsrc);
 	memset(dest+1+srclen, '=', 3-srclen);

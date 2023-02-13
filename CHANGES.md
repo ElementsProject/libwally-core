@@ -1,5 +1,20 @@
 # Changes
 
+## Version 0.8.8
+- witness_multisig_from_bytes: The length for the internally generated
+  scriptsig was not calculated correctly, and not checked after generation.
+  In rare cases where all signatures encode to the maximum DER signature
+  encoding, this may cause an invalid write/read of 1-2 bytes past an
+  allocated buffer. The severity of this depends on the users malloc
+  implementation, but all users are encouraged to upgrade to the latest
+  version. Note that the Jade and Bitbox02 hardware wallets and the Green
+  wallet apps are confirmed to *not* be affected by this issue.
+- The old Javascript and cordova wrappers have been removed. Users should move
+  to the new JS wrappers which are significantly more functional.
+- `WALLY_SEGWIT_ADDRESS_PUBKEY_MAX_LEN` was increased to account for future
+  segwit versions, in accordance with BIP 141. The previous value is available
+  as `WALLY_SEGWIT_V0_ADDRESS_PUBKEY_MAX_LEN`.
+
 ## Version 0.8.7
 - Javascript: Add a new WASM-based JS + typescript wrapper for Node and
   browsers. This now supports the entire wally API and builds to an npm module.

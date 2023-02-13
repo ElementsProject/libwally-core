@@ -10,7 +10,9 @@
 #include <ccan/endian/endian.h>
 #include <ccan/compiler/compiler.h>
 #include <stdbool.h>
+#if 0
 #include <assert.h>
+#endif
 #include <string.h>
 
 static void invalidate_ripemd160(struct ripemd160_ctx *ctx)
@@ -24,10 +26,12 @@ static void invalidate_ripemd160(struct ripemd160_ctx *ctx)
 
 static void check_ripemd160(struct ripemd160_ctx *ctx UNUSED)
 {
+#if 0
 #ifdef CCAN_CRYPTO_RIPEMD160_USE_OPENSSL
 	assert(ctx->c.num != -1U);
 #else
 	assert(ctx->bytes != -1ULL);
+#endif
 #endif
 }
 

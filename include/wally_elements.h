@@ -71,20 +71,20 @@ WALLY_CORE_API int wally_ecdh_nonce_hash(
  * Generate the final value blinding factor required for blinding a confidential transaction.
  *
  * :param values: Array of values in satoshi
- * :param values_len: Length of ``values``, also the number of elements in all three of the input arrays, which is equal
+ * :param num_values: Length of ``values``, also the number of elements in all three of the input arrays, which is equal
  *|     to ``num_inputs`` plus the number of outputs.
  * :param num_inputs: Number of elements in the input arrays that represent inputs. The number of outputs is
- *|     implicitly ``values_len`` - ``num_inputs``.
- * :param abf:  Array of bytes representing ``values_len`` asset blinding factors.
- * :param abf_len: Length of ``abf`` in bytes. Must be ``values_len`` * ``BLINDING_FACTOR_LEN``.
- * :param vbf: Array of bytes representing (``values_len`` - 1) value blinding factors.
- * :param vbf_len: Length of ``vbf`` in bytes. Must be (``values_len`` - 1) * ``BLINDING_FACTOR_LEN``.
+ *|     implicitly ``num_values`` - ``num_inputs``.
+ * :param abf:  Array of bytes representing ``num_values`` asset blinding factors.
+ * :param abf_len: Length of ``abf`` in bytes. Must be ``num_values`` * ``BLINDING_FACTOR_LEN``.
+ * :param vbf: Array of bytes representing (``num_values`` - 1) value blinding factors.
+ * :param vbf_len: Length of ``vbf`` in bytes. Must be (``num_values`` - 1) * ``BLINDING_FACTOR_LEN``.
  * :param bytes_out: Buffer to receive the final value blinding factor.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
  */
 WALLY_CORE_API int wally_asset_final_vbf(
     const uint64_t *values,
-    size_t values_len,
+    size_t num_values,
     size_t num_inputs,
     const unsigned char *abf,
     size_t abf_len,

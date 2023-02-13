@@ -46,16 +46,6 @@ src/swig_java/swig_java_wrap.c
 src/swig_java/*.java
 src/swig_java/*.jar
 src/swig_java/src/com/blockstream/libwally
-WallyCordova.java
-WallyCordova.swift
-src/wrap_js/binding.gyp
-src/wrap_js/node_modules/
-src/wrap_js/nodejs_wrap.cc
-src/wrap_js/wally.js
-src/wrap_js/cordovaplugin/Wally.java
-src/wrap_js/cordovaplugin/WallyCordova.java
-src/wrap_js/cordovaplugin/WallyCordova.swift
-src/wrap_js/cordovaplugin/jniLibs/
 src/swig_python/swig_python_wrap.c
 src/swig_python/wallycore/__init__.py
 src/swig_python/wallycore/wallycore.egg-info
@@ -80,6 +70,7 @@ docs/source/bip39.rst
 docs/source/core.rst
 docs/source/crypto.rst
 docs/source/map.rst
+docs/source/descriptor.rst
 docs/source/psbt.rst
 docs/source/psbt_members.rst
 docs/source/script.rst

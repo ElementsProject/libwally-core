@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.8.7])
+AC_INIT([libwallycore],[0.8.8])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -107,6 +107,7 @@ if test "x$debug" == "xyes"; then
     if test "x$coverage" == "xyes"; then
         AX_CHECK_COMPILE_FLAG([-fprofile-arcs -ftest-coverage], [AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"])
         AX_CHECK_LINK_FLAG([-lgcov], [LDFLAGS="$LDFLAGS -lgcov"])
+        AX_CHECK_LINK_FLAG([--coverage], [LDFLAGS="$LDFLAGS --coverage"])
     fi
 else
     # Optimise and harden if we can
@@ -299,35 +300,6 @@ if test "x$swig_python" == "xyes"; then
     SWIG_PYTHON
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
 fi
-
-AC_ARG_ENABLE(js-wrappers,
-    AS_HELP_STRING([--enable-js-wrappers],[enable the Javascript interface wrappers (default: no)]),
-    [js_wrappers=$enableval], [js_wrappers=no])
-AM_CONDITIONAL([USE_JS_WRAPPERS], [test "x$js_wrappers" == "xyes"])
-
-if test "x$js_wrappers" == "xyes"; then
-    if test "x$pythonexists" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable Python was found for generating js wrappers])
-    fi
-    if test "x$swig_python" != "xyes"; then
-        SWIG_PYTHON
-    fi
-    AX_CHECK_COMPILE_FLAG([-DSWIG_JAVASCRIPT_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_JAVASCRIPT_BUILD=1"])
-    AC_CHECK_PROG(HAVE_YARN,yarn,yes,no)
-    if test "x$HAVE_YARN" != "xyes"; then
-        AC_MSG_FAILURE([ERROR: No usable yarn was found, please install yarn before re-running])
-    fi
-fi
-
-# Set node-gyp flags regardless of  JS enablement; they are used for wrapper
-# generation which can be usefully run without enabling JS/requiring yarn
-NODE_GYP_DIR="Release"
-if test "x$debug" == "xyes"; then
-    NODE_GYP_FLAGS="--debug"
-    NODE_GYP_DIR="Debug"
-fi
-AC_SUBST([NODE_GYP_FLAGS])
-AC_SUBST([NODE_GYP_DIR])
 
 AC_ARG_ENABLE(swig-java,
     AS_HELP_STRING([--enable-swig-java],[enable the SWIG java (JNI) interface (default: no)]),
