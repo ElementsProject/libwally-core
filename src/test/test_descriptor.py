@@ -13,6 +13,10 @@ NETWORK_LIQUID_REG = 0x04
 MS_TAP = 0x1  # WALLY_MINISCRIPT_TAPSCRIPT
 MS_ONLY = 0x2 # WALLY_MINISCRIPT_ONLY
 
+MS_IS_RANGED = 0x1
+MS_IS_MULTIPATH = 0x2
+MS_IS_PRIVATE = 0x4
+
 def wally_map_from_dict(d):
     m = pointer(wally_map())
     assert(wally_map_init_alloc(len(d.keys()), None, m) == WALLY_OK)
@@ -195,6 +199,31 @@ class DescriptorTests(unittest.TestCase):
                ret, out = fn(descriptor, flags)
                self.assertEqual((ret, out), (WALLY_EINVAL, None))
 
+    def test_feautures(self):
+        # Valid args
+        for descriptor, expected in [
+            # Bip32 xpub
+            ("pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB)",
+             0),
+            # Bip32 xpub with range
+            ("pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/*)",
+             MS_IS_RANGED),
+            # BIP32 xprv
+            ("pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/*)",
+             MS_IS_PRIVATE|MS_IS_RANGED),
+            # WIF
+            ("pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
+             MS_IS_PRIVATE),
+        ]:
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
+            ret, features = wally_descriptor_get_features(d)
+            self.assertEqual((ret, features), (WALLY_OK, expected))
+            wally_descriptor_free(d)
+
+        # Invalid args
+        ret, features = wally_descriptor_get_features(None) # NULL descriptor
+        self.assertEqual((ret, features), (WALLY_EINVAL, 0))
 
 if __name__ == '__main__':
     unittest.main()

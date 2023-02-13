@@ -2009,6 +2009,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         else {
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
+            ctx->features |= WALLY_MS_IS_PRIVATE;
         }
         wally_clear(privkey, sizeof(privkey));
         return ret;
@@ -2035,9 +2036,10 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     if ((ret = bip32_key_from_base58_n(node->data, node->data_len, &extkey)) != WALLY_OK)
         return ret;
 
-    if (extkey.priv_key[0] == BIP32_FLAG_KEY_PRIVATE)
+    if (extkey.priv_key[0] == BIP32_FLAG_KEY_PRIVATE) {
         node->kind = KIND_BIP32_PRIVATE_KEY;
-    else
+        ctx->features |= WALLY_MS_IS_PRIVATE;
+    } else
         node->kind = KIND_BIP32_PUBLIC_KEY;
 
     if (ctx->addr_ver) {

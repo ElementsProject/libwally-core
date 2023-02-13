@@ -16,7 +16,10 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_ONLY             0x02 /** Only allow miniscript (not descriptor) expressions */
 #define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
 
-#define WALLY_MS_IS_RANGED 0x01 /** Allows key ranges via '*' */
+/*** miniscript-features Miniscript/Descriptor feature flags */
+#define WALLY_MS_IS_RANGED 0x01 /** Allows key ranges via ``*`` */
+#define WALLY_MS_IS_MULTIPATH 0x02 /** Allows multiple paths via ``<a;b;c>`` */
+#define WALLY_MS_IS_PRIVATE 0x04 /** Contains at least one private key */
 
 /**
  * Parse an output descriptor or miniscript expression.
@@ -112,7 +115,7 @@ WALLY_CORE_API int wally_descriptor_set_network(
  * Get the features used in a parsed output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
- * :param value_out: Destination for the resulting ``WALLY_MS_`` feature flags.
+ * :param value_out: Destination for the resulting :ref:`miniscript-features`.
  */
 WALLY_CORE_API int wally_descriptor_get_features(
     const struct wally_descriptor *descriptor,
