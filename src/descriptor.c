@@ -2159,6 +2159,10 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
             }
             seen_indent = true;
         } else if (str[i] == '#') {
+            if (i - offset != 0) {
+                ret = WALLY_EINVAL; /* Garbage before checksum */
+                break;
+            }
             if (!parent && node->builtin && !collect_child && indent == 0) {
                 break;  /* end */
             }

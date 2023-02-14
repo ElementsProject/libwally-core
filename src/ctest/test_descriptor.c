@@ -844,6 +844,12 @@ static const struct descriptor_test {
         NULL,
         ""
     },{
+        "descriptor errchk - trailing path",
+        "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)/1/2",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        NULL,
+        ""
+    },{
         "descriptor errchk - privkey - unmatch network1",
         "wpkh(cSMSHUGbEiZQUXVw9zA33yT3m8fgC27rn2XEGZJupwCpsRS3rAYa)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
