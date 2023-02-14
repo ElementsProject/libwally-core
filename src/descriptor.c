@@ -2524,13 +2524,15 @@ int wally_descriptor_to_address(const struct wally_descriptor *descriptor,
 int wally_descriptor_get_checksum(const struct wally_descriptor *descriptor,
                                   uint32_t flags, char **output)
 {
+    size_t start_offset;
     if (output)
         *output = NULL;
 
     if (!descriptor || flags || !output)
         return WALLY_EINVAL;
 
-    if (!(*output = wally_strdup(descriptor->src + descriptor->src_len - DESCRIPTOR_CHECKSUM_LENGTH)))
+    start_offset = descriptor->src_len - DESCRIPTOR_CHECKSUM_LENGTH;
+    if (!(*output = wally_strdup_n(descriptor->src + start_offset, DESCRIPTOR_CHECKSUM_LENGTH)))
         return WALLY_ENOMEM;
     return WALLY_OK;
 }
@@ -2544,7 +2546,7 @@ int wally_descriptor_canonicalize(const struct wally_descriptor *descriptor,
     if (!descriptor || flags || !output)
         return WALLY_EINVAL;
 
-    if (!(*output = wally_strdup(descriptor->src)))
+    if (!(*output = wally_strdup_n(descriptor->src, descriptor->src_len)))
         return WALLY_ENOMEM;
     return WALLY_OK;
 }

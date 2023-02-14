@@ -62,6 +62,7 @@ const struct wally_operations *wally_ops(void);
 void *wally_malloc(size_t size);
 void *wally_calloc(size_t size);
 void wally_free(void *ptr);
+char *wally_strdup_n(const char *str, size_t str_len);
 char *wally_strdup(const char *str);
 
 #define malloc(size) __use_wally_malloc_internally__

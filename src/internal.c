@@ -406,13 +406,19 @@ void wally_free(void *ptr)
     _ops.free_fn(ptr);
 }
 
+char *wally_strdup_n(const char *str, size_t str_len)
+{
+    char *new_str = (char *)wally_malloc(str_len + 1);
+    if (new_str) {
+        memcpy(new_str, str, str_len);
+        new_str[str_len] = '\0';
+    }
+    return new_str;
+}
+
 char *wally_strdup(const char *str)
 {
-    size_t len = strlen(str) + 1;
-    char *new_str = (char *)wally_malloc(len);
-    if (new_str)
-        memcpy(new_str, str, len); /* Copies terminating nul */
-    return new_str;
+    return wally_strdup_n(str, strlen(str));
 }
 
 const struct wally_operations *wally_ops(void)
