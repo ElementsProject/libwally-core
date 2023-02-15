@@ -2136,6 +2136,10 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
                     ret = WALLY_EINVAL; /* Wrapper on a descriptor built-in */
                     break;
                 }
+                if ((node->kind & KIND_MINISCRIPT) && !(node->kind & KIND_DESCRIPTOR)) {
+                    /* Not a pure descriptor */
+                    ctx->features &= ~WALLY_MS_IS_DESCRIPTOR;
+                }
                 offset = i + 1;
                 child_offset = offset;
             }
@@ -2404,6 +2408,7 @@ int wally_descriptor_parse(const char *miniscript,
                        &ctx->src);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
+        ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
         ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,
                                  flags, NULL, NULL, &ctx->top_node);
         if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&

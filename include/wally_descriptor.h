@@ -20,6 +20,7 @@ struct wally_descriptor;
 #define WALLY_MS_IS_RANGED 0x01 /** Allows key ranges via ``*`` */
 #define WALLY_MS_IS_MULTIPATH 0x02 /** Allows multiple paths via ``<a;b;c>`` */
 #define WALLY_MS_IS_PRIVATE 0x04 /** Contains at least one private key */
+#define WALLY_MS_IS_DESCRIPTOR 0x08 /** Contains only descriptor expressions (no miniscript) */
 
 /**
  * Parse an output descriptor or miniscript expression.

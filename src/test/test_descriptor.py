@@ -16,6 +16,7 @@ MS_ONLY = 0x2 # WALLY_MINISCRIPT_ONLY
 MS_IS_RANGED = 0x1
 MS_IS_MULTIPATH = 0x2
 MS_IS_PRIVATE = 0x4
+MS_IS_DESCRIPTOR = 0x8
 
 def wally_map_from_dict(d):
     m = pointer(wally_map())
@@ -199,24 +200,27 @@ class DescriptorTests(unittest.TestCase):
                ret, out = fn(descriptor, flags)
                self.assertEqual((ret, out), (WALLY_EINVAL, None))
 
-    def test_feautures(self):
+    def test_features(self):
         # Valid args
-        for descriptor, expected in [
+        for descriptor, flags, expected in [
             # Bip32 xpub
-            ("pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB)",
-             0),
+            ('pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB)',
+             0, MS_IS_DESCRIPTOR),
             # Bip32 xpub with range
-            ("pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/*)",
-             MS_IS_RANGED),
+            ('pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/*)',
+             0,  MS_IS_RANGED|MS_IS_DESCRIPTOR),
             # BIP32 xprv
-            ("pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/*)",
-             MS_IS_PRIVATE|MS_IS_RANGED),
+            ('pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/*)',
+             0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR),
             # WIF
-            ("pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)",
-             MS_IS_PRIVATE),
+            ('pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)',
+             0, MS_IS_PRIVATE|MS_IS_DESCRIPTOR),
+            # Miniscript
+            ('j:and_v(vdv:after(1567547623),older(2016))',
+             MS_ONLY, 0),
         ]:
             d = c_void_p()
-            ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
+            ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, flags, d)
             ret, features = wally_descriptor_get_features(d)
             self.assertEqual((ret, features), (WALLY_OK, expected))
             wally_descriptor_free(d)
