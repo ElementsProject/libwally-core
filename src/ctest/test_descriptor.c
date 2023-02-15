@@ -1226,6 +1226,12 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
         NULL,
         ""
+    },{
+        "descriptor errchk - wrapper on non-miniscript element",
+        "v:addr(moUfpGiXWcFd5ueRn3988VDqRSkB5NrEmW)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        NULL,
+        ""
     },
     /* https://github.com/rust-bitcoin/rust-miniscript/blob/master/src/descriptor/key.rs
      * (Adapted)

@@ -2127,13 +2127,15 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         } else if (str[i] == '(') {
             if (!node->builtin && indent == 0) {
                 collect_child = true;
-                node->builtin = builtin_lookup(str + offset, i - offset, kind);
-                if (!node->builtin ||
-                    (node->wrapper_str[0] != '\0' && !(builtin_get(node)->kind & KIND_MINISCRIPT))) {
-                    ret = WALLY_EINVAL;
+                if (!(node->builtin = builtin_lookup(str + offset, i - offset, kind))) {
+                    ret = WALLY_EINVAL; /* Unknown built-in fragment */
                     break;
                 }
                 node->kind = builtin_get(node)->kind;
+                if (node->wrapper_str[0] && !(node->kind & KIND_MINISCRIPT)) {
+                    ret = WALLY_EINVAL; /* Wrapper on a descriptor built-in */
+                    break;
+                }
                 offset = i + 1;
                 child_offset = offset;
             }
