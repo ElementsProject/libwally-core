@@ -18,6 +18,8 @@ MS_IS_MULTIPATH = 0x2
 MS_IS_PRIVATE = 0x4
 MS_IS_DESCRIPTOR = 0x8
 
+NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
+
 def wally_map_from_dict(d):
     m = pointer(wally_map())
     assert(wally_map_init_alloc(len(d.keys()), None, m) == WALLY_OK)
@@ -181,8 +183,25 @@ class DescriptorTests(unittest.TestCase):
         ]:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_OK)
             ret, checksum = wally_descriptor_get_checksum(d, 0)
             self.assertEqual((ret, checksum), (WALLY_OK, expected))
+            wally_descriptor_free(d)
+
+    def test_canonicalize(self):
+        """Test canonicalization """
+        descriptor_str = 'wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9)'
+        for descriptor, flags, expected in [
+            # 0: returns checksum
+            (descriptor_str, 0, descriptor_str + '#8zl0zxma'),
+            # WALLY_MS_CANONICAL_NO_CHECKSUM does not return checksum
+            (descriptor_str, NO_CHECKSUM, descriptor_str),
+        ]:
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, canonical = wally_descriptor_canonicalize(d, flags)
+            self.assertEqual((ret, canonical), (WALLY_OK, expected))
             wally_descriptor_free(d)
 
     def test_canonicalize_checksum_bad_args(self):
@@ -191,8 +210,8 @@ class DescriptorTests(unittest.TestCase):
         d = c_void_p()
         ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, 0, d)
         bad_args = [
-            (None, 0), # NULL descriptor
-            (d,    1), # Bad flags
+            (None, 0),    # NULL descriptor
+            (d,    0xff), # Bad flags
         ]
 
         for fn in (wally_descriptor_canonicalize, wally_descriptor_get_checksum):

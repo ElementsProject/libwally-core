@@ -109,6 +109,7 @@ export const WALLY_MAX_OP_RETURN_LEN = 80; /* Maximum length of OP_RETURN data p
 export const WALLY_MINISCRIPT_ONLY = 0x02; /** Only allow miniscript (not descriptor) expressions */
 export const WALLY_MINISCRIPT_REQUIRE_CHECKSUM = 0x04; /** Require a checksum to be present */
 export const WALLY_MINISCRIPT_TAPSCRIPT = 0x01; /** Tapscript, use x-only pubkeys */
+export const WALLY_MS_CANONICAL_NO_CHECKSUM = 0x01; /** Do not include a checksum */
 export const WALLY_MS_IS_DESCRIPTOR = 0x08; /** Contains only descriptor expressions (no miniscript) */
 export const WALLY_MS_IS_MULTIPATH = 0x02; /** Allows multiple paths via ``<a;b;c>`` */
 export const WALLY_MS_IS_PRIVATE = 0x04; /** Contains at least one private key */

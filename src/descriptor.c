@@ -2540,13 +2540,20 @@ int wally_descriptor_get_checksum(const struct wally_descriptor *descriptor,
 int wally_descriptor_canonicalize(const struct wally_descriptor *descriptor,
                                   uint32_t flags, char **output)
 {
+    size_t copy_len;
+
     if (output)
         *output = NULL;
 
-    if (!descriptor || flags || !output)
+    if (!descriptor || !descriptor->src ||
+        descriptor->src_len < DESCRIPTOR_CHECKSUM_LENGTH + 1 ||
+        (flags & ~WALLY_MS_CANONICAL_NO_CHECKSUM) || !output)
         return WALLY_EINVAL;
 
-    if (!(*output = wally_strdup_n(descriptor->src, descriptor->src_len)))
+    copy_len = descriptor->src_len;
+    if (flags & WALLY_MS_CANONICAL_NO_CHECKSUM)
+        copy_len -= (DESCRIPTOR_CHECKSUM_LENGTH + 1);
+    if (!(*output = wally_strdup_n(descriptor->src, copy_len)))
         return WALLY_ENOMEM;
     return WALLY_OK;
 }

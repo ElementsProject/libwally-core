@@ -22,6 +22,9 @@ struct wally_descriptor;
 #define WALLY_MS_IS_PRIVATE 0x04 /** Contains at least one private key */
 #define WALLY_MS_IS_DESCRIPTOR 0x08 /** Contains only descriptor expressions (no miniscript) */
 
+/*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
+#define WALLY_MS_CANONICAL_NO_CHECKSUM 0x01 /** Do not include a checksum */
+
 /**
  * Parse an output descriptor or miniscript expression.
  *
@@ -57,7 +60,7 @@ WALLY_CORE_API int wally_descriptor_free(
  * Canonicalize a descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
- * :param flags: For future use. Must be 0.
+ * :param flags: :ref:`ms-canonicalization-flags` controlling canonicalization.
  * :param output: Destination for the resulting canonical descriptor.
  *|    The string returned should be freed using `wally_free_string`.
  *
