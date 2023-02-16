@@ -45,6 +45,8 @@ extern "C" {
 #define BIP32_FLAG_STR_BARE 0x10
 /** Allow upper as well as lower case ``M``/``H`` in BIP32 path string expressions */
 #define BIP32_FLAG_ALLOW_UPPER 0x20
+/** Allow a multi-path expression ``<child_num_1;child_num_2;..>``in BIP32 path string expressions */
+#define BIP32_FLAG_STR_MULTIPATH 0x40
 
 
 /*** bip32-version-codes BIP32 extended key versions */
@@ -295,7 +297,9 @@ WALLY_CORE_API int bip32_key_from_parent_path_alloc(
  * :param hdkey: The parent extended key.
  * :param path_str: The BIP32 path string of child numbers to create.
  * :param child_num: The child number to use if ``path_str`` contains a ``*`` wildcard.
- * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted.
+ * :param flags: :ref:`bip32-flags` indicating the type of derivation wanted. Note
+ *|    that `BIP32_FLAG_STR_MULTIPATH` is not supported. To derive a multi-path
+ *|    key, use `bip32_path_from_str` then `bip32_key_from_parent_path`.
  * :param output: Destination for the resulting child extended key.
  *
  * .. note:: If ``child_path`` contains hardened child numbers, then ``hdkey``
@@ -448,6 +452,42 @@ WALLY_CORE_API int bip32_key_get_fingerprint(
     struct ext_key *hdkey,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Convert a BIP32 path string to a path.
+ *
+ * :param path_str: The BIP32 path string of child numbers to convert from.
+ * :param child_num: The child number to use if ``path_str`` contains a ``*`` wildcard.
+ * :param multi_index: The multi-path item to use if ``path_str`` contains a ``<>`` multi-path.
+ * :param flags: :ref:`bip32-flags` controlling path parsing behaviour.
+ * :param child_path_out: Destination for the resulting path.
+ * :param child_path_out_len: The number of items in ``child_path_out``.
+ * :param written: Destination for the number of items written to ``child_path_out``.
+ * See `bip32_path_from_path_str`.
+ */
+WALLY_CORE_API int bip32_path_from_str(
+    const char *path_str,
+    uint32_t child_num,
+    uint32_t multi_index,
+    uint32_t flags,
+    uint32_t *child_path_out,
+    uint32_t child_path_out_len,
+    size_t *written);
+
+/**
+ * Convert a known-length BIP32 path string to an integer path.
+ *
+ * See `bip32_path_from_path_str`.
+ */
+WALLY_CORE_API int bip32_path_from_str_n(
+    const char *path_str,
+    size_t path_str_len,
+    uint32_t child_num,
+    uint32_t multi_index,
+    uint32_t flags,
+    uint32_t *child_path_out,
+    uint32_t child_path_out_len,
+    size_t *written);
 
 #ifdef __cplusplus
 }

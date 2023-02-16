@@ -23,6 +23,7 @@ export const BIP32_FLAG_KEY_PUBLIC = 0x1;
 export const BIP32_FLAG_KEY_TWEAK_SUM = 0x4;
 export const BIP32_FLAG_SKIP_HASH = 0x2;
 export const BIP32_FLAG_STR_BARE = 0x10;
+export const BIP32_FLAG_STR_MULTIPATH = 0x40;
 export const BIP32_FLAG_STR_WILDCARD = 0x8;
 export const BIP32_INITIAL_HARDENED_CHILD = 0x80000000;
 export const BIP32_KEY_FINGERPRINT_LEN = 4;

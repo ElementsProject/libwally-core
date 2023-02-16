@@ -9,9 +9,10 @@ VER_TEST_PRIVATE = 0x04358394
 
 FLAG_KEY_PRIVATE, FLAG_KEY_PUBLIC, FLAG_SKIP_HASH, = 0x0, 0x1, 0x2
 FLAG_KEY_TWEAK_SUM, FLAG_STR_WILDCARD, FLAG_STR_BARE = 0x4, 0x8, 0x10
-FLAG_ALLOW_UPPER = 0x20
+FLAG_ALLOW_UPPER, FLAG_STR_MULTIPATH = 0x20, 0x40
 ALL_DEFINED_FLAGS = FLAG_KEY_PRIVATE | FLAG_KEY_PUBLIC | FLAG_SKIP_HASH | \
-    FLAG_KEY_TWEAK_SUM | FLAG_STR_WILDCARD | FLAG_STR_BARE | FLAG_ALLOW_UPPER
+    FLAG_KEY_TWEAK_SUM | FLAG_STR_WILDCARD | FLAG_STR_BARE | \
+    FLAG_ALLOW_UPPER | FLAG_STR_MULTIPATH
 BIP32_SERIALIZED_LEN = 78
 BIP32_FLAG_SKIP_HASH = 0x2
 EMPTY_PRIV_KEY = utf8('01' + ('00') * 32)
@@ -520,9 +521,12 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(ret, WALLY_EINVAL)
 
         # String paths: Invalid cases
+        c_path = (c_uint * 256)()
         master.depth = 0
-        B, W = FLAG_STR_BARE, FLAG_STR_WILDCARD
-        cases = [('m',            0, 0),          # Empty resulting path (1)
+        B, W, M = FLAG_STR_BARE, FLAG_STR_WILDCARD, FLAG_STR_MULTIPATH
+        cases = [(None,           0, 0),          # NULL path
+                 ('',             0, 0),          # Empty path
+                 ('m',            0, 0),          # Empty resulting path (1)
                  ('m/',           0, 0),          # Empty resulting path (2)
                  ('/',            0, 0),          # Empty resulting path (3)
                  ('M/1',          0, 0),          # Uppercase M without flag
@@ -542,12 +546,21 @@ class BIP32Tests(unittest.TestCase):
                  ('/1*',          W, 0),          # Invalid wildcard position (1)
                  ('/*1',          W, 0),          # Invalid wildcard position (2)
                  ('m/1',          W, 1),          # Non-zero wildcard given for non-wildcard path
-                 ('/*',           W, 2147483648)] # Hardened wildcard
+                 ('/*',           W, 2147483648), # Hardened wildcard
+                 ('1',            0xff, 0),       # Invalid flags
+                 ('/1/<0;1>',     0, 0),          # Multi-index present without flag
+                 ('/1/<0;1>',     M, 0)]          # Multi-index flag present
 
         for path, flags, wildcard in cases:
             flags = flags | FLAG_KEY_PRIVATE
-            ret = bip32_key_from_parent_path_str_n(m, path, len(path), wildcard, flags, key_out)
+            ret = bip32_key_from_parent_path_str_n(m, path, len(path or ''),
+                                                   wildcard, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
+            if flags == M:
+                continue # Multi-index for bip32_path_from_str is tested below
+            ret, written = bip32_path_from_str(path, wildcard, 0, flags,
+                                               c_path, len(c_path))
+            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
         # Hardened derivation is possible from a full key
         fn = lambda f: bip32_key_from_parent_path_str_n(m, 'm/1h/1h', 7, 0, f, key_out)
@@ -557,6 +570,16 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(bip32_key_strip_private_key(m), WALLY_OK)
         self.assertEqual(fn(FLAG_KEY_PRIVATE), WALLY_EINVAL)
         self.assertEqual(fn(FLAG_KEY_PUBLIC), WALLY_EINVAL)
+
+        # path_from_str invalid args (that aren't covered above)
+        cases = [
+            ('1',  0, 1, 0, c_path, len(c_path)), # Multi-index without flag
+            ('1',  0, 0, 0, None,   len(c_path)), # NULL output
+            ('1',  0, 0, 0, c_path, 0),           # Empty output
+        ]
+        for path, child_num, multi_index, flags, out, out_len in cases:
+            ret, written = bip32_path_from_str(path, child_num, multi_index, flags, out, out_len)
+            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
     def test_wildcard(self):
         master, pub, priv = self.create_master_pub_priv()

@@ -14,7 +14,8 @@
                                  BIP32_FLAG_KEY_TWEAK_SUM | \
                                  BIP32_FLAG_STR_WILDCARD | \
                                  BIP32_FLAG_STR_BARE | \
-                                 BIP32_FLAG_ALLOW_UPPER)
+                                 BIP32_FLAG_ALLOW_UPPER | \
+                                 BIP32_FLAG_STR_MULTIPATH)
 
 static const unsigned char HMAC_KEY[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
@@ -81,17 +82,21 @@ static bool is_hardened_indicator(char c, bool allow_upper)
     return c == '\'' || c == 'h' || (allow_upper && c == 'H');
 }
 
-static int path_from_string_n(const char *str, size_t str_len,
-                              uint32_t child_num, uint32_t flags,
-                              uint32_t *child_path, uint32_t child_path_len,
-                              size_t *written)
+int bip32_path_from_str_n(const char *str, size_t str_len,
+                          uint32_t child_num, uint32_t multi_index,
+                          uint32_t flags,
+                          uint32_t *child_path, uint32_t child_path_len,
+                          size_t *written)
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
     bool found_wildcard = false;
     size_t start, i = 0;
     uint64_t v;
 
-    if (!str || !str_len || child_num >= BIP32_INITIAL_HARDENED_CHILD || !written)
+    if (!str || !str_len || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (flags & ~BIP32_ALL_DEFINED_FLAGS) ||
+        (!(flags & BIP32_FLAG_STR_MULTIPATH) && multi_index) ||
+        !child_path || !child_path_len || !written)
         goto fail;
 
     *written = 0;
@@ -156,14 +161,23 @@ static int path_from_string_n(const char *str, size_t str_len,
         ++*written;
     }
 
-    if (!found_wildcard && child_num != 0)
-        return WALLY_EINVAL; /* Child number given for a non-wildcard path */
+    if (*written && (!child_num || found_wildcard))
+        return WALLY_OK;
 
-    return *written ? WALLY_OK : WALLY_EINVAL;
 fail:
     if (written)
         *written = 0;
     return WALLY_EINVAL;
+}
+
+int bip32_path_from_str(const char *str, uint32_t child_num,
+                        uint32_t multi_index, uint32_t flags,
+                        uint32_t *child_path, uint32_t child_path_len,
+                        size_t *written)
+{
+    return bip32_path_from_str_n(str, str ? strlen(str) : 0, child_num,
+                                 multi_index, flags,
+                                 child_path, child_path_len, written);
 }
 
 static bool key_is_private(const struct ext_key *hdkey)
@@ -780,9 +794,12 @@ int bip32_key_from_parent_path_str_n(const struct ext_key *hdkey,
                                      struct ext_key *key_out)
 {
     uint32_t path[BIP32_PATH_MAX_LEN], *path_p = path;
+    const uint32_t multi_index = 0; /* Multi-index not supported */
     size_t written;
-    int ret = path_from_string_n(str, str_len, child_num, flags,
-                                 path_p, BIP32_PATH_MAX_LEN, &written);
+    if (flags & BIP32_FLAG_STR_MULTIPATH)
+        return WALLY_EINVAL; /* Multi-path is not supported for this call */
+    int ret = bip32_path_from_str_n(str, str_len, child_num, multi_index, flags,
+                                    path_p, BIP32_PATH_MAX_LEN, &written);
 
     if (ret == WALLY_OK)
         ret = bip32_key_from_parent_path(hdkey, path, written, flags, key_out);
