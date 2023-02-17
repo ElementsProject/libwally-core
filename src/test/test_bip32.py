@@ -573,9 +573,12 @@ class BIP32Tests(unittest.TestCase):
 
         # path_from_str invalid args (that aren't covered above)
         cases = [
-            ('1',  0, 1, 0, c_path, len(c_path)), # Multi-index without flag
-            ('1',  0, 0, 0, None,   len(c_path)), # NULL output
-            ('1',  0, 0, 0, c_path, 0),           # Empty output
+            ('1',     0, 1, 0, c_path, len(c_path)), # Non-zero multi_index without flag
+            ('1',     0, 1, M, c_path, len(c_path)), # Non-zero multi_index with no multi element
+            ('<0;1>', 0, 0, 0, c_path, len(c_path)), # Multi-path without flag
+            ('<0;1>', 0, 2, M, c_path, len(c_path)), # Invalid multi_index
+            ('1',     0, 0, 0, None,   len(c_path)), # NULL output
+            ('1',     0, 0, 0, c_path, 0),           # Empty output
         ]
         for path, child_num, multi_index, flags, out, out_len in cases:
             ret, written = bip32_path_from_str(path, child_num, multi_index, flags, out, out_len)

@@ -89,8 +89,8 @@ int bip32_path_from_str_n(const char *str, size_t str_len,
                           size_t *written)
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
-    bool found_wildcard = false;
-    size_t start, i = 0;
+    bool found_wildcard = false, found_multi = false;
+    size_t start, multi_start, num_multi = 0, i = 0;
     uint64_t v;
 
     if (!str || !str_len || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
@@ -112,9 +112,31 @@ int bip32_path_from_str_n(const char *str, size_t str_len,
     }
 
     while (i < str_len) {
-        bool is_wildcard = false;
+        size_t multi;
+        bool is_wildcard = false, is_multi = false;
         start = i;
         v = 0;
+        if (str[i] == '<' && (flags & BIP32_FLAG_STR_MULTIPATH)) {
+            /* Multi-path expression - skip to the required multi_index */
+            ++i;
+            found_multi = true;
+            is_multi = true;
+            for (multi = 0; i < str_len && multi < multi_index; ++multi) {
+                multi_start = i;
+                while (i < str_len && str[i] >= '0' && str[i] <= '9')
+                    ++i;
+                if (i == multi_start)
+                    goto fail; /* Missing multi-item number */
+                if (i < str_len && is_hardened_indicator(str[i], allow_upper))
+                    ++i;
+                if (i == str_len || str[i] != ';')
+                    goto fail; /* Malformed multi or incorrect index */
+                ++i;
+                ++num_multi;
+            }
+            if (multi < multi_index && i == start + 1)
+                goto fail; /* No number found */
+        }
         while (str[i] >= '0' && str[i] <= '9' && i < str_len) {
             v = v * 10 + (str[i] - '0');
             if (v >= BIP32_INITIAL_HARDENED_CHILD)
@@ -123,6 +145,8 @@ int bip32_path_from_str_n(const char *str, size_t str_len,
         }
         if (i == start) {
             /* No number found */
+            if (is_multi)
+                goto fail; /* Must have a number for multi */
             if (str[i] == '/') {
                 if (i && (str[i - 1] < '0' || str[i - 1] > '9') &&
                     !is_hardened_indicator(str[i - 1], allow_upper) && str[i - 1] != '*')
@@ -139,17 +163,40 @@ int bip32_path_from_str_n(const char *str, size_t str_len,
             found_wildcard = true;
             if (!(flags & BIP32_FLAG_STR_WILDCARD))
                 goto fail; /* Wildcard not allowed, or previously seen */
-            flags &= ~BIP32_FLAG_STR_WILDCARD;
+            flags &= ~BIP32_FLAG_STR_WILDCARD; /* Only allow one wildcard */
             if (i && str[i - 1] != '/')
                 goto fail; /* Must follow a slash */
             ++i;
             v = child_num; /* Use the given child number for the wildcard value */
         }
-
         if (is_hardened_indicator(str[i], allow_upper)) {
             v |= BIP32_INITIAL_HARDENED_CHILD;
             ++i;
         }
+        if (is_multi) {
+            /* Multi-path expression - skip remaining multi-path items */
+            ++num_multi; /* For the item we just read */
+            while (i < str_len && str[i] != '>') {
+                if (str[i] == ';') {
+                    ++i;
+                    ++num_multi;
+                }
+                multi_start = i;
+                while (i < str_len && str[i] >= '0' && str[i] <= '9')
+                    ++i;
+                if (i == multi_start)
+                    goto fail; /* Missing multi-item number */
+                if (i < str_len && is_hardened_indicator(str[i], allow_upper))
+                    ++i;
+            }
+            if (i == str_len || str[i] != '>')
+                goto fail; /* Malformed multi or incorrect index */
+            ++i;
+            if (num_multi < 2 || num_multi >= 255)
+                goto fail;
+            flags &= ~BIP32_FLAG_STR_MULTIPATH; /* Only allow one multi-path */
+        }
+
         if (is_wildcard && i != str_len && str[i] != '/')
             goto fail; /* Wildcard followed by something other than a slash */
         if (*written == child_path_len) {
