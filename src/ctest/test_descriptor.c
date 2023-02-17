@@ -1732,7 +1732,8 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
     size_t written, max_written;
-    unsigned char script[520];
+    const size_t script_len = 520;
+    unsigned char *script = malloc(script_len);
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
     uint32_t multi_index = 0;
@@ -1748,19 +1749,22 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
         if (!check_ret("descriptor_parse", ret, expected_ret))
             return false;
 
-        if (expected_ret != WALLY_OK)
+        if (expected_ret != WALLY_OK) {
+            free(script);
             return true;
+        }
     }
 
     ret = wally_descriptor_to_script(descriptor,
                                      test->depth, test->index,
                                      test->variant, multi_index,
                                      child_num, 0,
-                                     script, sizeof(script), &written);
+                                     script, script_len, &written);
     if (!check_ret("descriptor_to_script", ret, expected_ret))
         return false;
     if (expected_ret != WALLY_OK) {
         wally_descriptor_free(descriptor);
+        free(script);
         return true;
     }
 
@@ -1791,6 +1795,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
 
     wally_free_string(checksum);
     wally_descriptor_free(descriptor);
+    free(script);
     return !!ret;
 }
 
