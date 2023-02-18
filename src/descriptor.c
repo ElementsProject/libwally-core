@@ -184,6 +184,7 @@ typedef struct wally_descriptor {
     const struct addr_ver_t *addr_ver;
     uint32_t features; /* Features present in the parsed tree */
     uint32_t num_variants; /* Number of script variants in the expression */
+    uint32_t num_multipaths; /* Number of multi-path items in the expression */
     size_t script_len; /* Max script length generatable from this expression */
     /* User modified for generation */
     uint32_t variant; /* Variant for derivation of multi-type expressions */
@@ -2019,17 +2020,34 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     if ((node->child_path = memchr(node->data, '/', node->data_len))) {
         node->child_path_len = node->data_len - (node->child_path - node->data);
         node->data_len = node->child_path - node->data; /* Trim node data to just the bip32 key */
-        if (node->child_path_len) {
-            if (node->child_path[1] == '/')
-                return WALLY_EINVAL; /* Double slash, invalid */
+        if (node->child_path_len > 1) {
+            uint32_t features, num_elems, num_multi, wildcard_pos;
             ++node->child_path; /* Skip leading '/' */
             --node->child_path_len;
-            if (memchr(node->child_path, '*', node->child_path_len)) {
-                if (node->child_path[node->child_path_len - 1] != '*' &&
-                    node->child_path[node->child_path_len - 2] != '*')
-                    return WALLY_EINVAL; /* Wildcard must be the last element */
+            if (bip32_path_str_n_get_features(node->child_path,
+                                              node->child_path_len,
+                                              &features) != WALLY_OK)
+                return WALLY_EINVAL; /* Invalid key path */
+            if (!(features & BIP32_PATH_IS_BARE))
+                return WALLY_EINVAL; /* Must be a bare path */
+            num_elems = (features & BIP32_PATH_LEN_MASK) >> BIP32_PATH_LEN_SHIFT;
+            /* TODO: Check length of key origin plus our length < 255 */
+            num_multi = (features & BIP32_PATH_MULTI_MASK) >> BIP32_PATH_MULTI_SHIFT;
+            if (num_multi) {
+                if (ctx->num_multipaths && ctx->num_multipaths != num_multi)
+                    return WALLY_EINVAL; /* Different multi-path lengths */
+                ctx->num_multipaths = num_multi;
+                ctx->features |= WALLY_MS_IS_MULTIPATH;
+            }
+            if (features & BIP32_PATH_IS_WILDCARD) {
+                wildcard_pos = (features & BIP32_PATH_WILDCARD_MASK) >> BIP32_PATH_WILDCARD_SHIFT;
+                if (wildcard_pos != num_elems - 1)
+                    return WALLY_EINVAL; /* Must be the last element */
                 ctx->features |= WALLY_MS_IS_RANGED;
             }
+        } else {
+            node->child_path = NULL; /* Empty path */
+            node->child_path_len = 0;
         }
     }
 
@@ -2612,7 +2630,6 @@ int wally_descriptor_get_num_paths(const struct wally_descriptor *descriptor,
         *value_out = 0;
     if (!descriptor || !value_out)
         return WALLY_EINVAL;
-    /* TODO: Support descriptor ranges e.g. <a;b>, <a;b;c> in key path expressions */
-    *value_out = 1;
+    *value_out = descriptor->num_multipaths ? descriptor->num_multipaths : 1;
     return WALLY_OK;
 }
