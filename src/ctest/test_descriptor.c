@@ -289,6 +289,12 @@ static const struct descriptor_test {
         "76a914d234825a563de8b4fd31d2b30f60b1e60fe57ee788ac",
         "ml40v0wf"
     },{
+        "descriptor - ranged and non-ranged keys (1)",
+        "multi(2,mainnet_xpub,mainnet_xpub/*)",
+        WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,
+        "522102d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f02102fb7d86f93bb0f5958171e05473bf36d99a850596b0a8dbe086a0101d4946083a52ae",
+        "e0pf8z74"
+    },{
         "descriptor - p2wsh-multi-xpub",
         "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
         WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,

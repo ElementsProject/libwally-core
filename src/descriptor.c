@@ -161,6 +161,8 @@ static const struct addr_ver_t g_address_versions[] = {
 
 #define NF_IS_UNCOMPRESSED 0x01
 #define NF_IS_XONLY        0x02
+#define NF_IS_RANGED       0x04
+#define NF_IS_MULTI        0x08
 
 /* A node in a parsed miniscript expression */
 typedef struct ms_node_t {
@@ -191,6 +193,7 @@ typedef struct wally_descriptor {
     /* User modified for generation */
     uint32_t variant; /* Variant for derivation of multi-type expressions */
     uint32_t child_num; /* BIP32 child number for derivation */
+    uint32_t multi_index; /* Multi-path index for derivation */
 } ms_ctx;
 
 /* Built-in miniscript expressions */
@@ -1850,12 +1853,25 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
             return ret;
 
         if (node->child_path_len) {
-            const uint32_t flags = BIP32_FLAG_STR_WILDCARD | BIP32_FLAG_STR_BARE | \
-                                   BIP32_FLAG_SKIP_HASH | BIP32_FLAG_KEY_PUBLIC;
+            uint32_t path[BIP32_PATH_MAX_LEN];
+            size_t path_len;
+            const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
+                                   BIP32_FLAG_STR_BARE |
+                                   BIP32_FLAG_STR_MULTIPATH;
+            const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH |
+                                          BIP32_FLAG_KEY_PUBLIC;
+            const bool is_ranged = node->flags & NF_IS_RANGED;
+            const bool is_multi = node->flags & NF_IS_MULTI;
             struct ext_key derived;
 
-            ret = bip32_key_from_parent_path_str_n(&master, node->child_path, node->child_path_len,
-                                                   ctx->child_num, flags, &derived);
+            ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
+                                        is_ranged ? ctx->child_num : 0,
+                                        is_multi ? ctx->multi_index : 0,
+                                        flags, path, NUM_ELEMS(path),
+                                        &path_len);
+            if (ret == WALLY_OK)
+                ret = bip32_key_from_parent_path(&master, path, path_len,
+                                                 derive_flags, &derived);
             if (ret == WALLY_OK)
                 memcpy(&master, &derived, sizeof(master));
         }
@@ -2042,12 +2058,14 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
                     return WALLY_EINVAL; /* Different multi-path lengths */
                 ctx->num_multipaths = num_multi;
                 ctx->features |= WALLY_MS_IS_MULTIPATH;
+                node->flags |= NF_IS_MULTI;
             }
             if (features & BIP32_PATH_IS_WILDCARD) {
                 wildcard_pos = (features & BIP32_PATH_WILDCARD_MASK) >> BIP32_PATH_WILDCARD_SHIFT;
                 if (wildcard_pos != num_elems - 1)
                     return WALLY_EINVAL; /* Must be the last element */
                 ctx->features |= WALLY_MS_IS_RANGED;
+                node->flags |= NF_IS_RANGED;
             }
         } else {
             node->child_path = NULL; /* Empty path */
@@ -2459,13 +2477,16 @@ int wally_descriptor_to_script(const struct wally_descriptor *descriptor,
         *written = 0;
 
     if (!descriptor || (variant && variant >= descriptor->num_variants) ||
-        multi_index || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (child_num && !(descriptor->features & WALLY_MS_IS_RANGED)) ||
+        (multi_index && !(descriptor->features & WALLY_MS_IS_MULTIPATH)) ||
         (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
     memcpy(&ctx, descriptor, sizeof(ctx));
     ctx.variant = variant;
     ctx.child_num = child_num;
+    ctx.multi_index = multi_index;
     return node_generate_script(&ctx, depth, index, bytes_out, len, written);
 }
 
@@ -2490,9 +2511,12 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
     size_t i, written;
     int ret = WALLY_OK;
 
-    if (!descriptor || !descriptor->addr_ver || (variant && variant >= descriptor->num_variants) ||
-        multi_index || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+    if (!descriptor || !descriptor->addr_ver ||
+        (variant && variant >= descriptor->num_variants) ||
+         child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
+        (child_num && !(descriptor->features & WALLY_MS_IS_RANGED)) ||
+        (multi_index && !(descriptor->features & WALLY_MS_IS_MULTIPATH)) ||
         flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
 
@@ -2505,6 +2529,7 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
 
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
         ctx.child_num = child_num + i;
+        ctx.multi_index = multi_index;
         ret = node_generate_script(&ctx, 0, 0, p, ctx.script_len, &written);
         if (ret == WALLY_OK) {
             if (written > ctx.script_len)
