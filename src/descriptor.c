@@ -159,6 +159,9 @@ static const struct addr_ver_t g_address_versions[] = {
     },
 };
 
+#define NF_IS_UNCOMPRESSED 0x01
+#define NF_IS_XONLY        0x02
+
 /* A node in a parsed miniscript expression */
 typedef struct ms_node_t {
     struct ms_node_t *next;
@@ -173,8 +176,7 @@ typedef struct ms_node_t {
     uint32_t child_path_len;
     char wrapper_str[12];
     unsigned char builtin;
-    bool is_uncompressed_key;
-    bool is_xonly_key;
+    unsigned char flags; /* NF_ flags */
 } ms_node;
 
 typedef struct wally_descriptor {
@@ -456,7 +458,7 @@ static bool node_has_uncompressed_key(const ms_node *node)
 {
     const ms_node *child;
     for (child = node->child; child; child = child->next)
-        if (child->is_uncompressed_key || node_has_uncompressed_key(child))
+        if ((child->flags & NF_IS_UNCOMPRESSED) || node_has_uncompressed_key(child))
             return true;
     return false;
 }
@@ -1069,7 +1071,7 @@ static int generate_pk_h(ms_ctx *ctx, ms_node *node,
     if (script_len >= WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1) {
         ret = generate_pk_k(ctx, node, buff, sizeof(buff), written);
         if (ret == WALLY_OK) {
-            if (node->child->is_xonly_key)
+            if (node->child->flags & NF_IS_XONLY)
                 return WALLY_EINVAL;
             script[0] = OP_DUP;
             script[1] = OP_HASH160;
@@ -1179,7 +1181,7 @@ static int generate_sh_wpkh(ms_ctx *ctx, ms_node *node,
     ms_node sh_node = { NULL, node, NULL, KIND_DESCRIPTOR_SH,
                         TYPE_NONE, 0, NULL, NULL, 0, 0,
                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                        builtin_sh_index, false, false };
+                        builtin_sh_index, 0 };
 
     if (ctx->variant != 3)
         return WALLY_ERROR; /* Should only be called to generate sh-wpkh */
@@ -1820,13 +1822,13 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
         ret = wally_ec_public_key_from_private_key((const unsigned char*)node->data, node->data_len,
                                                    pubkey, sizeof(pubkey));
         if (ret == WALLY_OK) {
-            if (node->is_uncompressed_key) {
+            if (node->flags & NF_IS_UNCOMPRESSED) {
                 *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
                 if (*written <= script_len)
                     ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
                                                          EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
             } else {
-                if (node->is_xonly_key) {
+                if (node->flags & NF_IS_XONLY) {
                     *written = EC_XONLY_PUBLIC_KEY_LEN;
                     if (*written <= script_len)
                         memcpy(script, &pubkey[1], EC_XONLY_PUBLIC_KEY_LEN);
@@ -1840,7 +1842,7 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
     } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
         struct ext_key master;
 
-        *written = node->is_xonly_key ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
+        *written = node->flags & NF_IS_XONLY ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
         if (*written > script_len)
             return WALLY_OK;
 
@@ -1858,7 +1860,7 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
                 memcpy(&master, &derived, sizeof(master));
         }
         if (ret == WALLY_OK)
-            memcpy(script, master.pub_key + (node->is_xonly_key ? 1 : 0), *written);
+            memcpy(script, master.pub_key + ((node->flags & NF_IS_XONLY) ? 1 : 0), *written);
         wally_clear(&master, sizeof(master));
     }
     return ret;
@@ -1952,8 +1954,10 @@ static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
     if (!clone_bytes((unsigned char **)&node->data, pubkey + offset, written))
         return false; /* FIXME: This needs to return ENOMEM, not continue checking */
     node->data_len = str_len / 2;
-    node->is_uncompressed_key = str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2;
-    node->is_xonly_key = str_len == EC_XONLY_PUBLIC_KEY_LEN * 2;
+    if (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)
+        node->flags |= NF_IS_UNCOMPRESSED;
+    if (str_len == EC_XONLY_PUBLIC_KEY_LEN * 2)
+        node->flags |= NF_IS_XONLY;
     node->kind = KIND_PUBLIC_KEY;
     return true;
 }
@@ -1996,14 +2000,14 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
             return WALLY_EINVAL;
         if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
-            node->is_uncompressed_key = true;
+            node->flags |= NF_IS_UNCOMPRESSED;
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
                 return WALLY_EINVAL; /* Tapscript only allows x-only keys */
         } else if (privkey_len != EC_PRIVATE_KEY_LEN + 2 ||
                    privkey[EC_PRIVATE_KEY_LEN + 1] != 1)
             return WALLY_EINVAL; /* Unknown WIF format */
 
-        node->is_xonly_key = (flags & WALLY_MINISCRIPT_TAPSCRIPT) != 0;
+        node->flags |= (flags & WALLY_MINISCRIPT_TAPSCRIPT) ? NF_IS_XONLY : 0;
         ret = wally_ec_private_key_verify(&privkey[1], EC_PRIVATE_KEY_LEN);
         if (ret == WALLY_OK && !clone_bytes((unsigned char **)&node->data, &privkey[1], EC_PRIVATE_KEY_LEN))
             ret = WALLY_EINVAL;
@@ -2070,7 +2074,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     }
 
     if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_TAPSCRIPT))
-        node->is_xonly_key = true;
+        node->flags |= NF_IS_XONLY;
     wally_clear(&extkey, sizeof(extkey));
     return ret;
 }
@@ -2361,9 +2365,9 @@ static int node_generation_size(const ms_node *node, size_t *total)
     } else if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY) {
         *total += node->data_len;
     } else if (node->kind == KIND_PRIVATE_KEY || (node->kind & KIND_BIP32) == KIND_BIP32) {
-        if (node->is_uncompressed_key)
+        if (node->flags & NF_IS_UNCOMPRESSED)
             *total += EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-        else if (node->is_xonly_key)
+        else if (node->flags & NF_IS_XONLY)
             *total += EC_XONLY_PUBLIC_KEY_LEN;
         else
             *total += EC_PUBLIC_KEY_LEN;
