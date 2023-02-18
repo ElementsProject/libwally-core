@@ -55,6 +55,18 @@ extern "C" {
 #define BIP32_VER_TEST_PUBLIC  0x043587CF /** Testnet, public key */
 #define BIP32_VER_TEST_PRIVATE 0x04358394 /** Testnet, private key */
 
+/*** path-feature-flags BIP32 path feature flags */
+#define BIP32_PATH_LEN_MASK        0x000000ff /** Mask for the path length in bits 0-7 */
+#define BIP32_PATH_LEN_SHIFT       0x00000000 /** Shift for the path length in bits 0-7 */
+#define BIP32_PATH_MULTI_MASK      0x0000ff00 /** Mask for the number of multi-paths in bits 8-15 */
+#define BIP32_PATH_MULTI_SHIFT     0x00000008 /** Shift for the number of multi-paths in bits 8-15 */
+#define BIP32_PATH_WILDCARD_MASK   0x00ff0000 /** Mask for the wildcard position in bits 16-23 */
+#define BIP32_PATH_WILDCARD_SHIFT  0x00000010 /** Shift for the wildcard position in bits 16-23 */
+#define BIP32_PATH_IS_BARE         0x01000000 /** Path is bare */
+#define BIP32_PATH_IS_HARDENED     0x02000000 /** Path contains hardened elements */
+#define BIP32_PATH_IS_WILDCARD     0x04000000 /** Path contains a wildcard */
+#define BIP32_PATH_IS_MULTIPATH    0x08000000 /** Path contains a multi-path expression */
+
 #ifdef SWIG
 struct ext_key;
 #else
@@ -488,6 +500,26 @@ WALLY_CORE_API int bip32_path_from_str_n(
     uint32_t *child_path_out,
     uint32_t child_path_out_len,
     size_t *written);
+
+/**
+ * Get information about the structure of a BIP32 path string.
+ *
+ * :param path_str: The BIP32 path string of child numbers to convert from.
+ * :param value_out: Destination for the resulting :ref:`path-feature-flags`.
+ */
+WALLY_CORE_API int bip32_path_str_get_features(
+    const char *path_str,
+    uint32_t *value_out);
+
+/**
+ * Get information about the structure of a known_length BIP32 path string.
+ *
+ * See See `bip32_path_from_path_str`.
+ */
+WALLY_CORE_API int bip32_path_str_n_get_features(
+    const char *path_str,
+    size_t path_str_len,
+    uint32_t *value_out);
 
 #ifdef __cplusplus
 }

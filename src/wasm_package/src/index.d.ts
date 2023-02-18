@@ -91,6 +91,8 @@ export function bip32_key_with_tweak_from_parent_path(hdkey: Ref_ext_key, child_
 export function bip32_key_with_tweak_from_parent_path_noalloc(hdkey: Ref_ext_key, child_path: Uint32Array|number[], flags: number, output: Ref_ext_key): void;
 export function bip32_path_from_str(path_str: string, child_num: number, multi_index: number, flags: number, child_path_out_len: number): [child_path_out: number, written: number];
 export function bip32_path_from_str_n(path_str: string, path_str_len: number, child_num: number, multi_index: number, flags: number, child_path_out_len: number): [child_path_out: number, written: number];
+export function bip32_path_str_get_features(path_str: string): number;
+export function bip32_path_str_n_get_features(path_str: string, path_str_len: number): number;
 export function bip340_tagged_hash(bytes: Buffer|Uint8Array, tag: string): Buffer;
 export function bip38_get_flags(bip38: string): number;
 export function bip38_raw_get_flags(bytes: Buffer|Uint8Array): number;

@@ -238,6 +238,8 @@ for f in (
     ('bip32_key_with_tweak_from_parent_path_alloc', c_int, [POINTER(ext_key), POINTER(c_uint32), c_size_t, c_uint32, POINTER(POINTER(ext_key))]),
     ('bip32_path_from_str', c_int, [c_char_p, c_uint32, c_uint32, c_uint32, POINTER(c_uint32), c_uint32, c_size_t_p]),
     ('bip32_path_from_str_n', c_int, [c_char_p, c_size_t, c_uint32, c_uint32, c_uint32, POINTER(c_uint32), c_uint32, c_size_t_p]),
+    ('bip32_path_str_get_features', c_int, [c_char_p, c_uint32_p]),
+    ('bip32_path_str_n_get_features', c_int, [c_char_p, c_size_t, c_uint32_p]),
     ('bip38_from_private_key', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_char_p_p]),
     ('bip38_get_flags', c_int, [c_char_p, c_size_t_p]),
     ('bip38_raw_from_private_key', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),

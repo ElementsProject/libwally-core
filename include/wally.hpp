@@ -208,6 +208,18 @@ inline int bip32_path_from_str_n(const PATH_STR& path_str, size_t path_str_len, 
     return ret;
 }
 
+template <class PATH_STR>
+inline int bip32_path_str_get_features(const PATH_STR& path_str, uint32_t* value_out) {
+    int ret = ::bip32_path_str_get_features(detail::get_p(path_str), value_out);
+    return ret;
+}
+
+template <class PATH_STR>
+inline int bip32_path_str_n_get_features(const PATH_STR& path_str, size_t path_str_len, uint32_t* value_out) {
+    int ret = ::bip32_path_str_n_get_features(detail::get_p(path_str), path_str_len, value_out);
+    return ret;
+}
+
 template <class BYTES, class PASS>
 inline int bip38_from_private_key(const BYTES& bytes, const PASS& pass, uint32_t flags, char** output) {
     int ret = ::bip38_from_private_key(bytes.data(), bytes.size(), pass.data(), pass.size(), flags, output);
