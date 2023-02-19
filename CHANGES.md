@@ -1,6 +1,9 @@
 # Changes
 
-## Version 0.8.8
+## Version 0.8.9
+- descriptor_get_num_variants: Now returns 1 instead of 0 if no variants are
+  present. This allows iterating the variant from 0 to the number of variants
+  returned in order to generate all scripts/addresses.
 - scriptpubkey_csv_2of3_then_2_from_bytes has been removed from the API.
 - psbt: psbt_finalize now takes an extra flags parameter. The Java and Python
   wrappers default this to zero for backwards compatibility.

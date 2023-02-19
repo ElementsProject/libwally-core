@@ -2039,7 +2039,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     /* check bip32 key */
     if ((node->child_path = memchr(node->data, '/', node->data_len))) {
         node->child_path_len = node->data_len - (node->child_path - node->data);
-        node->data_len = node->child_path - node->data; /* Trim node data to just the bip32 key */
+        node->data_len = node->child_path - node->data; /* Trim to bip32 key */
         if (node->child_path_len > 1) {
             uint32_t features, num_elems, num_multi, wildcard_pos;
             ++node->child_path; /* Skip leading '/' */
@@ -2054,7 +2054,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             /* TODO: Check length of key origin plus our length < 255 */
             num_multi = (features & BIP32_PATH_MULTI_MASK) >> BIP32_PATH_MULTI_SHIFT;
             if (num_multi) {
-                if (ctx->num_multipaths && ctx->num_multipaths != num_multi)
+                if (ctx->num_multipaths != 1 && ctx->num_multipaths != num_multi)
                     return WALLY_EINVAL; /* Different multi-path lengths */
                 ctx->num_multipaths = num_multi;
                 ctx->features |= WALLY_MS_IS_MULTIPATH;
@@ -2443,6 +2443,8 @@ int wally_descriptor_parse(const char *miniscript,
         return WALLY_ENOMEM;
     ctx = *output;
     ctx->addr_ver = addr_ver;
+    ctx->num_variants = 1;
+    ctx->num_multipaths = 1;
     ret = canonicalize(miniscript, vars_in,
                        flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM,
                        &ctx->src);
@@ -2476,10 +2478,10 @@ int wally_descriptor_to_script(const struct wally_descriptor *descriptor,
     if (written)
         *written = 0;
 
-    if (!descriptor || (variant && variant >= descriptor->num_variants) ||
+    if (!descriptor || variant >= descriptor->num_variants ||
         child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (child_num && !(descriptor->features & WALLY_MS_IS_RANGED)) ||
-        (multi_index && !(descriptor->features & WALLY_MS_IS_MULTIPATH)) ||
+        multi_index >= descriptor->num_multipaths ||
         (flags & WALLY_MINISCRIPT_ONLY) || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
@@ -2512,11 +2514,11 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
     int ret = WALLY_OK;
 
     if (!descriptor || !descriptor->addr_ver ||
-        (variant && variant >= descriptor->num_variants) ||
+        variant >= descriptor->num_variants ||
          child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
         (child_num && !(descriptor->features & WALLY_MS_IS_RANGED)) ||
-        (multi_index && !(descriptor->features & WALLY_MS_IS_MULTIPATH)) ||
+        multi_index >= descriptor->num_multipaths ||
         flags || !addresses || !num_addresses)
         return WALLY_EINVAL;
 
@@ -2659,6 +2661,6 @@ int wally_descriptor_get_num_paths(const struct wally_descriptor *descriptor,
         *value_out = 0;
     if (!descriptor || !value_out)
         return WALLY_EINVAL;
-    *value_out = descriptor->num_multipaths ? descriptor->num_multipaths : 1;
+    *value_out = descriptor->num_multipaths;
     return WALLY_OK;
 }
