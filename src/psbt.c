@@ -334,6 +334,11 @@ int wally_psbt_input_set_sighash(struct wally_psbt_input *input, uint32_t sighas
 
     if (!input)
         return WALLY_EINVAL;
+    /* Note we do not skip this check if sighash == input->sighash.
+     * This is because we set the loaded value again after reading a PSBT
+     * input, in order to ensure the loaded signatures are compatible with
+     * it (since they can be read in any order).
+     */
     if (sighash) {
         for (i = 0; i < input->signatures.num_items; ++i) {
             const struct wally_map_item *item = &input->signatures.items[i];
@@ -2128,9 +2133,14 @@ unknown:
     }
 
     if (mandatory && (keyset & mandatory) != mandatory)
-        ret = WALLY_EINVAL; /* Mandatory field is missing*/
+        ret = WALLY_EINVAL; /* Mandatory field is missing */
     else if (disallowed && (keyset & disallowed))
         ret = WALLY_EINVAL; /* Disallowed field present */
+
+    if (ret == WALLY_OK && result->sighash) {
+        /* Verify that the sighash provided matches any signatures given */
+        ret = wally_psbt_input_set_sighash(result, result->sighash);
+    }
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
