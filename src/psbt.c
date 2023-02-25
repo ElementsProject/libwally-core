@@ -41,6 +41,8 @@ static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 /* The PSET key prefix is the same as the first 4 PSET magic bytes */
 #define PSET_PREFIX_LEN 4u
 
+#define TR_MAX_MERKLE_PATH_LEN 128u
+
 static bool is_pset_key(const unsigned char *key, size_t key_len)
 {
     return key_len == PSET_PREFIX_LEN && !memcmp(key, PSET_MAGIC, key_len);
@@ -424,6 +426,18 @@ static int pubkey_sig_verify(const unsigned char *key, size_t key_len,
     return ret;
 }
 
+static int map_leaf_hashes_verify(const unsigned char *key, size_t key_len,
+                                  const unsigned char *val, size_t val_len)
+{
+    int ret = wally_ec_xonly_public_key_verify(key, key_len);
+    if (ret == WALLY_OK) {
+        if (BYTES_INVALID(val, val_len) || (val_len && val_len % SHA256_LEN) ||
+            val_len > TR_MAX_MERKLE_PATH_LEN * SHA256_LEN)
+            ret = WALLY_EINVAL;
+    }
+    return ret;
+}
+
 static int psbt_input_field_verify(uint32_t field_type,
                                    const unsigned char *val, size_t val_len)
 {
@@ -705,7 +719,7 @@ static void psbt_input_init(struct wally_psbt_input *input)
     wally_map_init(0, psbt_map_input_field_verify, &input->psbt_fields);
     wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_signatures);
     wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_scripts);
-    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_hashes);
+    wally_map_init(0, map_leaf_hashes_verify, &input->taproot_leaf_hashes);
     wally_map_init(0, wally_keypath_xonly_public_key_verify, &input->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_input_field_verify, &input->pset_fields);
@@ -973,7 +987,7 @@ static void psbt_output_init(struct wally_psbt_output *output)
     wally_map_init(0, NULL, &output->unknowns);
     wally_map_init(0, psbt_map_output_field_verify, &output->psbt_fields);
     wally_map_init(0, NULL, &output->taproot_tree);
-    wally_map_init(0, NULL /* FIXME */, &output->taproot_leaf_hashes);
+    wally_map_init(0, map_leaf_hashes_verify, &output->taproot_leaf_hashes);
     wally_map_init(0, wally_keypath_xonly_public_key_verify, &output->taproot_leaf_paths);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_output_field_verify, &output->pset_fields);
@@ -1921,8 +1935,8 @@ static int pull_taproot_derivation(const unsigned char **cursor, size_t *max,
     size_t xonly_len = *key_len, num_hashes, hashes_len, val_len;
     int ret;
 
-    if ((ret = wally_ec_xonly_public_key_verify(xonly, xonly_len)) != WALLY_OK)
-        return ret;
+    if (xonly_len != EC_XONLY_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;;
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     num_hashes = pull_varint(&val, &val_len);
     hashes_len = num_hashes * SHA256_LEN;
