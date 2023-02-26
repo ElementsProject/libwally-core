@@ -331,6 +331,8 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_FLAG_GRIND_R 0x4
 /** Indicates that the signature is recoverable */
 #define EC_FLAG_RECOVERABLE 0x8
+/** Indicates that the Elements/Liquid tagged hashes should be used where needed */
+#define EC_FLAG_ELEMENTS 0x10
 
 /* All defined flags */
 #define EC_FLAGS_ALL (0x1 | 0x2 | 0x4 | 0x8)
@@ -395,7 +397,7 @@ WALLY_CORE_API int wally_ec_public_key_decompress(
     size_t len);
 
 /**
- * Negates a public key.
+ * Negate a public key.
  *
  * :param pub_key: The public key to negate.
  * :param pub_key_len: The length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.

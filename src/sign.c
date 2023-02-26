@@ -57,7 +57,7 @@ int wally_ec_xonly_public_key_verify(const unsigned char *pub_key, size_t pub_ke
     secp256k1_xonly_pubkey pub;
 
     if (!pub_key || pub_key_len != EC_XONLY_PUBLIC_KEY_LEN ||
-        !xpubkey_parse(&pub, pub_key))
+        !xpubkey_parse(&pub, pub_key, pub_key_len))
         return WALLY_EINVAL;
 
     wally_clear(&pub, sizeof(pub));
