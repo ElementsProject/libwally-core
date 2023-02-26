@@ -56,6 +56,7 @@ export const BITCOIN_MESSAGE_MAX_LEN = (64 * 1024 - 64);
 export const BLINDING_FACTOR_LEN = 32; /** Length of a Blinding Factor (or blinder) */
 export const EC_FLAGS_ALL = (0x1 | 0x2 | 0x4 | 0x8);
 export const EC_FLAG_ECDSA = 0x1;
+export const EC_FLAG_ELEMENTS = 0x10;
 export const EC_FLAG_GRIND_R = 0x4;
 export const EC_FLAG_RECOVERABLE = 0x8;
 export const EC_FLAG_SCHNORR = 0x2;

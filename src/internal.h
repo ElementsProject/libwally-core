@@ -30,10 +30,15 @@ int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_p
 /* Note xpubkey_parse accepts standard compressed pubkeys as well as x-only */
 int xpubkey_parse(secp256k1_xonly_pubkey *pubkey, const unsigned char *input, size_t input_len);
 int xpubkey_tweak_add(secp256k1_pubkey *pubkey, const secp256k1_xonly_pubkey *xpubkey, const unsigned char *tweak);
+int xpubkey_serialize(unsigned char *output, const secp256k1_xonly_pubkey *xpubkey);
 int seckey_verify(const unsigned char *seckey);
 int seckey_negate(unsigned char *seckey);
 int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak);
 int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak);
+int keypair_create(secp256k1_keypair *keypair, const unsigned char *priv_key);
+int keypair_xonly_pub(secp256k1_xonly_pubkey *xpubkey, const secp256k1_keypair *keypair);
+int keypair_sec(unsigned char *output, const secp256k1_keypair *keypair);
+int keypair_xonly_tweak_add(secp256k1_keypair *keypair, const unsigned char *tweak);
 
 #define PUBKEY_COMPRESSED   SECP256K1_EC_COMPRESSED
 #define PUBKEY_UNCOMPRESSED SECP256K1_EC_UNCOMPRESSED

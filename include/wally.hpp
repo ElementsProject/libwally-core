@@ -511,9 +511,21 @@ inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor,
     return ret;
 }
 
+template <class PRIV_KEY, class MERKLE_ROOT, class BYTES_OUT>
+inline int ec_private_key_bip341_tweak(const PRIV_KEY& priv_key, const MERKLE_ROOT& merkle_root, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_private_key_bip341_tweak(priv_key.data(), priv_key.size(), merkle_root.data(), merkle_root.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class PRIV_KEY>
 inline int ec_private_key_verify(const PRIV_KEY& priv_key) {
     int ret = ::wally_ec_private_key_verify(priv_key.data(), priv_key.size());
+    return ret;
+}
+
+template <class PUB_KEY, class MERKLE_ROOT, class BYTES_OUT>
+inline int ec_public_key_bip341_tweak(const PUB_KEY& pub_key, const MERKLE_ROOT& merkle_root, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_public_key_bip341_tweak(pub_key.data(), pub_key.size(), merkle_root.data(), merkle_root.size(), flags, bytes_out.data(), bytes_out.size());
     return ret;
 }
 

@@ -11,6 +11,11 @@ TX_FAKE_HEX = utf8('010000000100000000000000000000000000000000000000000000000000
 TX_HEX = utf8('0100000001be66e10da854e7aea9338c1f91cd489768d1d6d7189f586d7a3613f2a24d5396000000008b483045022100da43201760bda697222002f56266bf65023fef2094519e13077f777baed553b102205ce35d05eabda58cd50a67977a65706347cc25ef43153e309ff210a134722e9e0141042daa93315eebbe2cb9b5c3505df4c6fb6caca8b756786098567550d4820c09db988fe9997d049d687292f815ccd6e7fb5c1b1a91137999818d17c73d0f80aef9ffffffff0123ce0100000000001976a9142bc89c2702e0e618db7d59eb5ce2f0f147b4075488ac00000000')
 TX_WITNESS_HEX = utf8('020000000001012f94ddd965758445be2dfac132c5e75c517edf5ea04b745a953d0bc04c32829901000000006aedc98002a8c500000000000022002009246bbe3beb48cf1f6f2954f90d648eb04d68570b797e104fead9e6c3c87fd40544020000000000160014c221cdfc1b867d82f19d761d4e09f3b6216d8a8304004830450221008aaa56e4f0efa1f7b7ed690944ac1b59f046a59306fcd1d09924936bd500046d02202b22e13a2ad7e16a0390d726c56dfc9f07647f7abcfac651e35e5dc9d830fc8a01483045022100e096ad0acdc9e8261d1cdad973f7f234ee84a6ee68e0b89ff0c1370896e63fe102202ec36d7554d1feac8bc297279f89830da98953664b73d38767e81ee0763b9988014752210390134e68561872313ba59e56700732483f4a43c2de24559cb8c7039f25f7faf821039eb59b267a78f1020f27a83dc5e3b1e4157e4a517774040a196e9f43f08ad17d52ae89a3b720')
 
+# Test vectors from:
+# https://github.com/bitcoin/bips/blob/master/bip-0341/wallet-test-vectors.json
+with open(root_dir + 'src/data/bip341_vectors.json', 'r') as f:
+    JSON = json.load(f)
+
 
 class TransactionTests(unittest.TestCase):
 
@@ -260,15 +265,47 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(expected, h(out[:out_len]))
 
 
+    def test_bip341_tweak(self):
+        """Tests for computing the bip341 signature hash"""
+
+        pubkey_cases = []
+        mc = lambda h: (None, 0) if h is None else make_cbuffer(h)
+        for i in range(len(JSON['scriptPubKey'])):
+            case = JSON['scriptPubKey'][i]
+            inter = case['intermediary']
+            pubkey_cases.append((mc(case['given']['internalPubkey']),
+                mc(inter['merkleRoot']), utf8(inter['tweakedPubkey'])))
+
+        bytes_out, out_len = make_cbuffer('00'*33)
+        for case in pubkey_cases:
+            ((pub_key, pub_key_len), (merkle, merkle_len), expected) = case
+            args = [pub_key, pub_key_len, merkle, merkle_len, 0, bytes_out, out_len]
+            ret = wally_ec_public_key_bip341_tweak(*args)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(expected, h(bytes_out[1:out_len]))
+
+        privkey_cases = []
+        mc = lambda h: (None, 0) if h is None else make_cbuffer(h)
+        for i in range(len(JSON['keyPathSpending'][0]['inputSpending'])):
+            case = JSON['keyPathSpending'][0]['inputSpending'][i]
+            inter, given = case['intermediary'], case['given']
+            privkey_cases.append((mc(given['internalPrivkey']),
+                mc(given['merkleRoot']), utf8(inter['tweakedPrivkey'])))
+
+        bytes_out, out_len = make_cbuffer('00'*32)
+        for case in privkey_cases:
+            ((priv_key, priv_key_len), (merkle, merkle_len), expected) = case
+            args = [priv_key, priv_key_len, merkle, merkle_len, 0, bytes_out, out_len]
+            ret = wally_ec_private_key_bip341_tweak(*args)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(expected, h(bytes_out[:out_len]))
+
+        # FIXME: Add invalid arguments cases for pub/priv keys
+
     def test_get_taproot_signature_hash(self):
-        """Testing function to get the taproot signature hash"""
+        """Tests for computing the taproot signature hash"""
 
-        # Test vectors from:
-        # https://github.com/bitcoin/bips/blob/master/bip-0341/wallet-test-vectors.json
-        with open(root_dir + 'src/data/bip341_vectors.json', 'r') as f:
-            cases = json.load(f)
-
-        keyspend_case = cases['keyPathSpending'][0]
+        keyspend_case = JSON['keyPathSpending'][0]
         input_spending = keyspend_case['inputSpending']
         utxos = keyspend_case['given']['utxosSpent']
         num_utxos = len(utxos)

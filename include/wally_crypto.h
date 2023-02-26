@@ -411,6 +411,55 @@ WALLY_CORE_API int wally_ec_public_key_negate(
     size_t len);
 
 /**
+ * Tweak a compressed or x-only public key for taproot.
+ *
+ * :param pub_key: The compressed or x-only public key to tweak.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be
+ *|    either `EC_PUBLIC_KEY_LEN` or `EC_XONLY_PUBLIC_KEY_LEN`.
+ * :param merkle_root: The taproot merkle root hash to tweak by, or NULL if none.
+ * :param merkle_root_len: The length of ``merkle_root``. Must be `SHA256_LEN` or 0.
+ * :param flags: Flags indicating desired behavior. Must be `EC_FLAG_ELEMENTS` or 0.
+ * :param bytes_out: Destination for the tweaked public key.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PUBLIC_KEY_LEN)
+ *
+ * When ``merkle_root`` is NULL, the BIP341-suggested commitment
+ * ``P + int(hashTapTweak(bytes(P)))G`` is used. Otherwise, the merkle root
+ * is included, i.e. ``P + int(hashTapTweak(bytes(P)||merkle_root))G``.
+ *
+ * .. note:: This function returns a compressed (not x-only) public key.
+ */
+WALLY_CORE_API int wally_ec_public_key_bip341_tweak(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *merkle_root,
+    size_t merkle_root_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Tweak a private key for taproot.
+ *
+ * :param priv_key: The private key to tweak.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must `EC_PRIVATE_KEY_LEN`.
+ * :param merkle_root: The taproot merkle root hash to tweak by, or NULL if none.
+ * :param merkle_root_len: The length of ``merkle_root``. Must be `SHA256_LEN` or 0.
+ * :param flags: Flags indicating desired behavior. Must be `EC_FLAG_ELEMENTS` or 0.
+ * :param bytes_out: Destination for the tweaked private key.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
+ *
+ * See `wally_ec_public_key_bip341_tweak`.
+ */
+WALLY_CORE_API int wally_ec_private_key_bip341_tweak(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *merkle_root,
+    size_t merkle_root_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Get the expected length of a signature in bytes.
  *
  * :param priv_key: The private key to sign with.

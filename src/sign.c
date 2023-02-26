@@ -11,6 +11,14 @@
 #define MSG_ALL_FLAGS (BITCOIN_MESSAGE_FLAG_HASH)
 
 static const char MSG_PREFIX[] = "\x18" "Bitcoin Signed Message:\n";
+static const char TAPTWEAK_BTC[] = "TapTweak";
+#ifdef BUILD_ELEMENTS
+static const char TAPTWEAK_ELEMENTS[] = "TapTweak/elements";
+#define GET_TAPTWEAK(flags) ((flags & EC_FLAG_ELEMENTS)? TAPTWEAK_ELEMENTS : TAPTWEAK_BTC)
+#else
+#define GET_TAPTWEAK(flags) TAPTWEAK_BTC
+#endif
+
 
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
@@ -124,6 +132,91 @@ int wally_ec_public_key_negate(const unsigned char *pub_key, size_t pub_key_len,
         wally_clear(bytes_out, len);
     wally_clear(&pub, sizeof(pub));
     return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+static int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
+                            const unsigned char *merkle_root, uint32_t flags,
+                            unsigned char *tweak, size_t tweak_len)
+{
+    unsigned char preimage[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN];
+    const size_t offset = pub_key_len == EC_PUBLIC_KEY_LEN ? 1 : 0;
+    const size_t preimage_len = merkle_root ? sizeof(preimage) : EC_XONLY_PUBLIC_KEY_LEN;
+
+    memcpy(preimage, pub_key + offset, EC_XONLY_PUBLIC_KEY_LEN);
+    if (merkle_root)
+        memcpy(preimage + EC_XONLY_PUBLIC_KEY_LEN, merkle_root, SHA256_LEN);
+    return wally_bip340_tagged_hash(preimage, preimage_len,
+                                    GET_TAPTWEAK(flags), tweak, tweak_len);
+}
+
+int wally_ec_public_key_bip341_tweak(
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *merkle_root, size_t merkle_root_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len)
+{
+    secp256k1_xonly_pubkey xonly;
+    int ret;
+
+    if (!pub_key || BYTES_INVALID_N(merkle_root, merkle_root_len, SHA256_LEN) ||
+#ifdef BUILD_ELEMENTS
+        (flags & ~EC_FLAG_ELEMENTS) ||
+#else
+        flags ||
+#endif
+        !bytes_out || len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+
+    ret = xpubkey_parse(&xonly, pub_key, pub_key_len) ? WALLY_OK : WALLY_EINVAL;
+    if (ret == WALLY_OK) {
+        unsigned char tweak[SHA256_LEN];
+        secp256k1_pubkey tweaked;
+        size_t len_in_out = EC_PUBLIC_KEY_LEN;
+        ret = get_bip341_tweak(pub_key, pub_key_len, merkle_root,
+                               flags, tweak, sizeof(tweak));
+        if (ret == WALLY_OK && !xpubkey_tweak_add(&tweaked, &xonly, tweak))
+            ret = WALLY_ERROR;
+        if (ret == WALLY_OK)
+            pubkey_serialize(bytes_out, &len_in_out,
+                             &tweaked, SECP256K1_EC_COMPRESSED);
+    }
+    return ret;
+}
+
+int wally_ec_private_key_bip341_tweak(
+    const unsigned char *priv_key, size_t priv_key_len,
+    const unsigned char *merkle_root, size_t merkle_root_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len)
+{
+    unsigned char tweak[SHA256_LEN];
+    unsigned char pub_key[EC_XONLY_PUBLIC_KEY_LEN];
+    secp256k1_keypair keypair;
+    secp256k1_xonly_pubkey xonly;
+    int ret;
+
+    if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
+        BYTES_INVALID_N(merkle_root, merkle_root_len, SHA256_LEN) ||
+#ifdef BUILD_ELEMENTS
+        (flags & ~EC_FLAG_ELEMENTS) ||
+#else
+        flags ||
+#endif
+        !bytes_out || len != EC_PRIVATE_KEY_LEN)
+        return WALLY_EINVAL;
+
+    if (!keypair_create(&keypair, priv_key))
+        return WALLY_ERROR; /* Invalid private key */
+
+    if (!keypair_xonly_pub(&xonly, &keypair) ||
+        !xpubkey_serialize(pub_key, &xonly))
+        ret = WALLY_EINVAL;
+    else
+        ret = get_bip341_tweak(pub_key, sizeof(pub_key), merkle_root,
+                               flags, tweak, sizeof(tweak));
+    if (ret == WALLY_OK && (!keypair_xonly_tweak_add(&keypair, tweak) ||
+        !keypair_sec(bytes_out, &keypair)))
+        ret = WALLY_ERROR;
+    wally_clear(&keypair, sizeof(keypair));
+    return WALLY_OK;
 }
 
 int wally_ec_sig_normalize(const unsigned char *sig, size_t sig_len,

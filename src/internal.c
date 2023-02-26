@@ -62,6 +62,11 @@ int xpubkey_tweak_add(secp256k1_pubkey *pubkey,
                                             pubkey, xpubkey, tweak);
 }
 
+int xpubkey_serialize(unsigned char *output, const secp256k1_xonly_pubkey *xpubkey)
+{
+    return secp256k1_xonly_pubkey_serialize(secp256k1_context_no_precomp, output, xpubkey);
+}
+
 int seckey_verify(const unsigned char *seckey)
 {
     return secp256k1_ec_seckey_verify(secp256k1_context_no_precomp, seckey);
@@ -80,6 +85,26 @@ int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
 int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak)
 {
     return secp256k1_ec_seckey_tweak_mul(secp256k1_context_no_precomp, seckey, tweak);
+}
+
+int keypair_create(secp256k1_keypair *keypair, const unsigned char *priv_key)
+{
+    return secp256k1_keypair_create(secp_ctx(), keypair, priv_key);
+}
+
+int keypair_xonly_pub(secp256k1_xonly_pubkey *xpubkey, const secp256k1_keypair *keypair)
+{
+    return secp256k1_keypair_xonly_pub(secp256k1_context_no_precomp, xpubkey, NULL, keypair);
+}
+
+int keypair_sec(unsigned char *output, const secp256k1_keypair *keypair)
+{
+    return secp256k1_keypair_sec(secp256k1_context_no_precomp, output, keypair);
+}
+
+int keypair_xonly_tweak_add(secp256k1_keypair *keypair, const unsigned char *tweak)
+{
+    return secp256k1_keypair_xonly_tweak_add(secp256k1_context_no_precomp, keypair, tweak);
 }
 
 #ifndef SWIG

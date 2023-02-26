@@ -279,6 +279,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
@@ -551,7 +552,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_sarray(wally_descriptor_to_addresses);
 %returns_size_t(wally_descriptor_to_script);
 %returns_size_t(wally_descriptor_to_script_get_maximum_length);
+%returns_array_(wally_ec_private_key_bip341_tweak, 6, 7, EC_PRIVATE_KEY_LEN);
 %returns_void__(wally_ec_private_key_verify);
+%returns_array_(wally_ec_public_key_bip341_tweak, 6, 7, EC_PUBLIC_KEY_LEN);
 %returns_void__(wally_ec_public_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
