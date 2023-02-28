@@ -158,7 +158,9 @@ class wally_psbt_input(Structure):
                 ('pegin_amount', c_uint64),
                 ('pegin_tx', POINTER(wally_tx)),
                 ('pegin_witness', POINTER(wally_tx_witness_stack)),
-                ('pset_fields', wally_map)]
+                ('pset_fields', wally_map),
+                ('amount', c_uint64),
+                ('has_amount', c_uint32)]
 
 class wally_psbt_output(Structure):
     _fields_ = [('keypaths', wally_map),
