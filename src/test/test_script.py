@@ -9,6 +9,8 @@ SCRIPT_TYPE_P2WPKH = 0x8
 SCRIPT_TYPE_P2WSH = 0x10
 SCRIPT_TYPE_MULTISIG = 0x20
 SCRIPT_TYPE_P2TR = 0x40
+SCRIPT_TYPE_CSV2OF2_1 = 0x80
+SCRIPT_TYPE_CSV2OF2_1_OPT = 0x81
 
 SCRIPT_MULTISIG_SORTED = 0x8
 
@@ -238,14 +240,23 @@ class ScriptTests(unittest.TestCase):
             [(MPK_2, MPK_2_LEN, 0x8000, 0, out, out_len), '748c6321'+'11'*33+'ad6703008000b2756821'+'11'*33+'ac'],
         ]
         for args, exp_script in valid_args:
+            # Un-optimized CSV
             csv_len = 1 + (args[2] > 0x7f) + (args[2] > 0x7fff)
             script_len = 2 * (33 + 1) + 9 + 1 + csv_len
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, script_len))
+            # Check type
+            ret = wally_scriptpubkey_get_type(out, script_len)
+            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_CSV2OF2_1))
+
+            # Optimized CSV (miniscript-compatible)
             exp_script, _ = make_cbuffer(exp_script)
             self.assertEqual(args[4][:script_len], exp_script)
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*args)
             self.assertEqual(ret, (WALLY_OK, script_len - 3))
+            ret = wally_scriptpubkey_get_type(out, script_len - 3)
+            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_CSV2OF2_1_OPT))
+
             # Check a too-short output buffer
             short_out, short_out_len = make_cbuffer('00' * (script_len - 1))
             short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len)

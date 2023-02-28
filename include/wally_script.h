@@ -8,15 +8,17 @@
 extern "C" {
 #endif
 
-/* Script types */
-#define WALLY_SCRIPT_TYPE_UNKNOWN   0x0
-#define WALLY_SCRIPT_TYPE_OP_RETURN 0x1
-#define WALLY_SCRIPT_TYPE_P2PKH     0x2
-#define WALLY_SCRIPT_TYPE_P2SH      0x4
-#define WALLY_SCRIPT_TYPE_P2WPKH    0x8
-#define WALLY_SCRIPT_TYPE_P2WSH     0x10
-#define WALLY_SCRIPT_TYPE_MULTISIG  0x20
-#define WALLY_SCRIPT_TYPE_P2TR      0x40
+/*** script-type Script type constants */
+#define WALLY_SCRIPT_TYPE_UNKNOWN       0x0
+#define WALLY_SCRIPT_TYPE_OP_RETURN     0x1
+#define WALLY_SCRIPT_TYPE_P2PKH         0x2
+#define WALLY_SCRIPT_TYPE_P2SH          0x4
+#define WALLY_SCRIPT_TYPE_P2WPKH        0x8
+#define WALLY_SCRIPT_TYPE_P2WSH         0x10
+#define WALLY_SCRIPT_TYPE_MULTISIG      0x20
+#define WALLY_SCRIPT_TYPE_P2TR          0x40
+#define WALLY_SCRIPT_TYPE_CSV2OF2_1     0x80
+#define WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT 0x81
 
 /* Standard script lengths */
 #define WALLY_SCRIPTPUBKEY_P2PKH_LEN  25 /** OP_DUP OP_HASH160 [HASH160] OP_EQUALVERIFY OP_CHECKSIG */
@@ -177,7 +179,7 @@ extern "C" {
  *
  * :param bytes: Bytes of the scriptPubkey.
  * :param bytes_len: Length of ``bytes`` in bytes.
- * :param written: Destination for the ``WALLY_SCRIPT_TYPE_`` script type.
+ * :param written: Destination for the script type, one of the :ref:`script-type`.
  */
 WALLY_CORE_API int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
                                                size_t *written);

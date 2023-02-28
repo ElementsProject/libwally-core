@@ -369,6 +369,48 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     return bytes_len == 2;
 }
 
+static bool scriptpubkey_is_csv_2of2_then_1(const unsigned char *bytes, size_t bytes_len)
+{
+    const size_t min_len = 9 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 2;
+    size_t csv_len;
+
+    if (bytes_len < min_len || bytes_len > min_len + 2)
+        return false;
+    if (bytes[0] != OP_DEPTH || bytes[1] != OP_1SUB ||
+        bytes[2] != OP_IF || bytes[3] != EC_PUBLIC_KEY_LEN ||
+        bytes[EC_PUBLIC_KEY_LEN + 4] != OP_CHECKSIGVERIFY ||
+        bytes[EC_PUBLIC_KEY_LEN + 5] != OP_ELSE)
+        return false;
+    csv_len = bytes[EC_PUBLIC_KEY_LEN + 6];
+    if (csv_len < 1 || csv_len > 4 || bytes_len != min_len - 1 + csv_len)
+        return false;
+    bytes += EC_PUBLIC_KEY_LEN + 6 + 1 + csv_len;
+    return bytes[0] == OP_CHECKSEQUENCEVERIFY && bytes[1] == OP_DROP &&
+        bytes[2] == OP_ENDIF && bytes[3] == EC_PUBLIC_KEY_LEN &&
+        bytes[EC_PUBLIC_KEY_LEN + 4] == OP_CHECKSIG;
+}
+
+static bool scriptpubkey_is_csv_2of2_then_1_opt(const unsigned char *bytes, size_t bytes_len)
+{
+    const size_t min_len = 6 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 2;
+    size_t csv_len;
+
+    if (bytes_len < min_len || bytes_len > min_len + 2)
+        return false;
+    if (bytes[0] != EC_PUBLIC_KEY_LEN ||
+        bytes[EC_PUBLIC_KEY_LEN + 1] != OP_CHECKSIGVERIFY ||
+        bytes[EC_PUBLIC_KEY_LEN + 2] != EC_PUBLIC_KEY_LEN)
+        return false;
+    bytes += EC_PUBLIC_KEY_LEN * 2 + 3;
+    if (bytes[0] != OP_CHECKSIG || bytes[1] != OP_IFDUP || bytes[2] != OP_NOTIF)
+        return false;
+    csv_len = bytes[3];
+    if (csv_len < 1 || csv_len > 4 || bytes_len != min_len - 1 + csv_len)
+        return false;
+    bytes += 4 + csv_len;
+    return bytes[0] == OP_CHECKSEQUENCEVERIFY && bytes[1] == OP_ENDIF;
+}
+
 int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
                                 size_t *written)
 {
@@ -385,6 +427,16 @@ int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
 
     if (scriptpubkey_is_multisig(bytes, bytes_len)) {
         *written = WALLY_SCRIPT_TYPE_MULTISIG;
+        return WALLY_OK;
+    }
+
+    if (scriptpubkey_is_csv_2of2_then_1(bytes, bytes_len)) {
+        *written = WALLY_SCRIPT_TYPE_CSV2OF2_1;
+        return WALLY_OK;
+    }
+
+    if (scriptpubkey_is_csv_2of2_then_1_opt(bytes, bytes_len)) {
+        *written = WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT;
         return WALLY_OK;
     }
 
