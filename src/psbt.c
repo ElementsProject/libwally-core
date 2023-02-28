@@ -2763,7 +2763,8 @@ static int push_varbuff_from_map(unsigned char **cursor, size_t *max,
 }
 
 static int push_psbt_input(const struct wally_psbt *psbt,
-                           unsigned char **cursor, size_t *max, uint32_t tx_flags,
+                           unsigned char **cursor, size_t *max,
+                           uint32_t tx_flags, uint32_t flags,
                            const struct wally_psbt_input *input)
 {
     const bool is_pset = (tx_flags & WALLY_TX_FLAG_USE_ELEMENTS) != 0;
@@ -2794,7 +2795,19 @@ static int push_psbt_input(const struct wally_psbt *psbt,
     }
 
     final_scriptsig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG);
-    if (!input->final_witness && !final_scriptsig) {
+    if ((!input->final_witness && !final_scriptsig) ||
+        (flags & WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT)) {
+        /* BIP-0174 is clear that once finalized, these members should be
+         * removed from the PSBT and therefore obviously not serialized.
+         * If an input is finalized eternally (by setting final_witness/
+         * final_scriptsig directly), then these fields may still be present
+         * in the PSBT. By default, wally will not serialize them in that case
+         * unless WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT is given, since doing so
+         * violates the spec and makes the PSBT unnecessarily larger.
+         * WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT is supported to allow matching
+         * the buggy behaviour of other implementations, since it seems there
+         * is already code incorrectly relying on this behaviour in the wild.
+         */
         /* Partial sigs */
         push_psbt_map(cursor, max, PSBT_IN_PARTIAL_SIG, false, &input->signatures);
         /* Sighash type */
@@ -3026,7 +3039,8 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     if (written)
         *written = 0;
 
-    if (!psbt_is_valid(psbt) || flags || !written)
+    if (!psbt_is_valid(psbt) || flags & ~WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT ||
+        !written)
         return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
@@ -3091,7 +3105,7 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     /* Push each input and output */
     for (i = 0; i < psbt->num_inputs; ++i) {
         const struct wally_psbt_input *input = &psbt->inputs[i];
-        if ((ret = push_psbt_input(psbt, &cursor, &max, tx_flags, input)) != WALLY_OK)
+        if ((ret = push_psbt_input(psbt, &cursor, &max, tx_flags, flags, input)) != WALLY_OK)
             return ret;
     }
     for (i = 0; i < psbt->num_outputs; ++i) {

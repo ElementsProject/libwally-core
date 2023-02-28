@@ -18,7 +18,7 @@ class PSBTTests(unittest.TestCase):
         self.assertEqual(ret, expected, "{0}".format(src_base64))
         return psbt
 
-    def to_base64(self, psbt, mod_flags=None):
+    def to_base64(self, psbt, mod_flags=None, flags=0):
         """Dump a PSBT to base64, optionally overriding tx modifiable flags"""
         if mod_flags is not None:
             version = wally_psbt_get_version(psbt)[1]
@@ -29,7 +29,7 @@ class PSBTTests(unittest.TestCase):
                 self.assertEqual(ret, WALLY_OK)
                 ret = wally_psbt_set_tx_modifiable_flags(psbt, mod_flags)
                 self.assertEqual(ret, WALLY_OK)
-        ret, base64 = wally_psbt_to_base64(psbt, 0)
+        ret, base64 = wally_psbt_to_base64(psbt, flags)
         self.assertEqual(ret, WALLY_OK)
         if mod_flags is not None:
             ret = wally_psbt_set_tx_modifiable_flags(psbt, old_flags)
@@ -307,6 +307,24 @@ class PSBTTests(unittest.TestCase):
                      (psbt, 0x1, clone), # Invalid flags
                      (psbt, 0x0, None)]: # NULL dest
             self.assertEqual(WALLY_EINVAL, wally_psbt_clone_alloc(*args))
+
+    def test_redundant(self):
+        """Test serializing redundant finalized input information"""
+        buf, buf_len = make_cbuffer('00' * 4096)
+        b64 = 'cHNidP8BAKACAAAAAqsJSaCMWvfEm4IS9Bfi8Vqz9cM9zxU4IagTn4d6W3vkAAAAAAD+////qwlJoIxa98SbghL0F+LxWrP1wz3PFTghqBOfh3pbe+QBAAAAAP7///8CYDvqCwAAAAAZdqkUdopAu9dAy+gdmI5x3ipNXHE5ax2IrI4kAAAAAAAAGXapFG9GILVT+glechue4O/p+gOcykWXiKwAAAAAAAEHakcwRAIgR1lmF5fAGwNrJZKJSGhiGDR9iYZLcZ4ff89X0eURZYcCIFMJ6r9Wqk2Ikf/REf3xM286KdqGbX+EhtdVRs7tr5MZASEDXNxh/HupccC1AaZGoqg7ECy0OIEhfKaC3Ibi1z+ogpIAAQEgAOH1BQAAAAAXqRQ1RebjO4MsRwUPJNPuuTycA5SLx4cBBBYAFIXRNTfy4mVAWjTbr6nj3aAfuCMIAAAA'
+        psbt = self.parse_base64(b64)
+        # Set a fake redeem script to the finalized input 0
+        redeem, redeem_len = make_cbuffer('00' * 64)
+        ret = wally_psbt_input_set_redeem_script(psbt.contents.inputs[0], redeem, redeem_len)
+        self.assertEqual(ret, WALLY_OK)
+        # This round trips by default, i.e. it doesn't include the redeem
+        # script since the input is finalized
+        serialized = self.to_base64(psbt)
+        self.assertEqual(serialized, b64)
+        # When SERIALIZE_FLAG_REDUNDANT is given, the redeem script is included
+        SERIALIZE_FLAG_REDUNDANT = 0x1
+        serialized = self.to_base64(psbt, None, SERIALIZE_FLAG_REDUNDANT)
+        self.assertNotEqual(serialized, b64)
 
 if __name__ == '__main__':
     unittest.main()

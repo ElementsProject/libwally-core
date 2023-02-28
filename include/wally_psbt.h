@@ -31,6 +31,9 @@ extern "C" {
 
 #define WALLY_PSBT_PARSE_FLAG_STRICT 0x1 /* Parse strictly according to the PSBT/PSET spec */
 
+/** Include redundant information to match some buggy PSBT implementations */
+#define WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT 0x1
+
 #define WALLY_PSBT_EXTRACT_NON_FINAL 0x1 /* Extract without final scriptsig and witness */
 
 /*** psbt-id-flags PSBT ID calculation flags */

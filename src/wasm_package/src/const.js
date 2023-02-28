@@ -128,6 +128,7 @@ export const WALLY_PSBT_ID_USE_LOCKTIME = 0x2; /* Do not set locktime to 0 befor
 export const WALLY_PSBT_INIT_PSET = 0x1;
 export const WALLY_PSBT_PARSE_FLAG_STRICT = 0x1; /* Parse strictly according to the PSBT/PSET spec */
 export const WALLY_PSBT_PROPRIETARY_TYPE = 0xFC;
+export const WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT = 0x1;
 export const WALLY_PSBT_TXMOD_INPUTS = 0x1; /* Inputs can be modified */
 export const WALLY_PSBT_TXMOD_OUTPUTS = 0x2; /* Outputs can be modified */
 export const WALLY_PSBT_TXMOD_SINGLE = 0x4; /* SIGHASH_SINGLE signature is present */
