@@ -1460,13 +1460,6 @@ inline int scriptpubkey_csv_2of2_then_1_from_bytes_opt(const BYTES& bytes, uint3
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
-template <class BYTES, class BYTES_OUT>
-inline int scriptpubkey_csv_2of3_then_2_from_bytes(const BYTES& bytes, uint32_t csv_blocks, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
-    size_t n;
-    int ret = ::wally_scriptpubkey_csv_2of3_then_2_from_bytes(bytes.data(), bytes.size(), csv_blocks, flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
-    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
-}
-
 template <class BYTES>
 inline int scriptpubkey_get_type(const BYTES& bytes, size_t* written = 0) {
     size_t n;

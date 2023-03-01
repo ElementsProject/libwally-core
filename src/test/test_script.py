@@ -255,41 +255,6 @@ class ScriptTests(unittest.TestCase):
             ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*short_args)
             self.assertEqual(ret, (WALLY_OK, script_len - 3))
 
-    def test_scriptpubkey_csv_2of3_then_2_from_bytes(self):
-        """Tests for creating csv 2of3 then 2 scriptPubKeys"""
-        # Invalid args
-        out, out_len = make_cbuffer('00' * 33 * 4)
-        invalid_args = [
-            (None, MPK_3_LEN, 1, 0, out, out_len), # Null bytes
-            (MPK_3, 0, 1, 0, out, out_len), # Empty bytes
-            (MPK_3, MPK_3_LEN+1, 1, 0, out, out_len), # Unsupported bytes len
-            (MPK_3, MPK_3_LEN, 16, 0, out, out_len), # Too few csv blocks
-            (MPK_3, MPK_3_LEN, 0x10000, 0, out, out_len), # Too many csv blocks
-            (MPK_3, MPK_3_LEN, 1, SCRIPT_HASH160, out, out_len), # Unsupported flags
-            (MPK_3, MPK_3_LEN, 1, 0, None, out_len), # Null output
-        ]
-        for args in invalid_args:
-            ret = wally_scriptpubkey_csv_2of3_then_2_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_EINVAL, 0))
-
-        # Valid cases
-        valid_args = [
-            [(MPK_3, MPK_3_LEN, 17, 0, out, out_len), '748c8c635221'+'11'*33+'670111b275510068'+('21'+'11'*33)*2+'53ae'],
-            [(MPK_3, MPK_3_LEN, 0x8000, 0, out, out_len), '748c8c635221'+'11'*33+'6703008000b275510068'+('21'+'11'*33)*2+'53ae'],
-        ]
-        for args, exp_script in valid_args:
-            csv_len = 1 + (args[2] > 0x7f) + (args[2] > 0x7fff)
-            script_len = 3 * (33 + 1) + 13 + 1 + csv_len
-            ret = wally_scriptpubkey_csv_2of3_then_2_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_OK, script_len))
-            exp_script, _ = make_cbuffer(exp_script)
-            self.assertEqual(args[4][:script_len], exp_script)
-            # Check a too-short output buffer
-            short_out, short_out_len = make_cbuffer('00' * (script_len - 1))
-            short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len)
-            ret = wally_scriptpubkey_csv_2of3_then_2_from_bytes(*short_args)
-            self.assertEqual(ret, (WALLY_OK, script_len))
-
     def test_scriptsig_p2pkh(self):
         """Tests for creating p2pkh scriptsig"""
         # From DER

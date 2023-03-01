@@ -1,6 +1,9 @@
 # Changes
 
 ## Version 0.8.8
+- scriptpubkey_csv_2of3_then_2_from_bytes has been removed from the API.
+
+## Version 0.8.8
 - witness_multisig_from_bytes: The length for the internally generated
   scriptsig was not calculated correctly, and not checked after generation.
   In rare cases where all signatures encode to the maximum DER signature

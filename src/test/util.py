@@ -584,7 +584,6 @@ for f in (
     ('wally_script_push_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_csv_2of2_then_1_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
-    ('wally_scriptpubkey_csv_2of3_then_2_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_get_type', c_int, [c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_multisig_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_op_return_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),

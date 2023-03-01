@@ -519,7 +519,6 @@ export function s2c_sig_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Ui
 export function script_push_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function scriptpubkey_csv_2of2_then_1_from_bytes(bytes: Buffer|Uint8Array, csv_blocks: number, flags: number): Buffer;
 export function scriptpubkey_csv_2of2_then_1_from_bytes_opt(bytes: Buffer|Uint8Array, csv_blocks: number, flags: number): Buffer;
-export function scriptpubkey_csv_2of3_then_2_from_bytes(bytes: Buffer|Uint8Array, csv_blocks: number, flags: number): Buffer;
 export function scriptpubkey_get_type(bytes: Buffer|Uint8Array): number;
 export function scriptpubkey_multisig_from_bytes(bytes: Buffer|Uint8Array, threshold: number, flags: number): Buffer;
 export function scriptpubkey_op_return_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;

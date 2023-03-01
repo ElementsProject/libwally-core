@@ -76,10 +76,6 @@ def scriptpubkey_csv_2of2_then_1_from_bytes_len(pubkeys, csv_blocks, flags):
     # TODO: See scriptpubkey_csv_2of2_then_1_from_bytes_opt_len
     return 9 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 4
 
-def scriptpubkey_csv_2of3_then_2_from_bytes_len(pubkeys, csv_blocks, flags):
-    # TODO: See scriptpubkey_csv_2of2_then_1_from_bytes_opt_len
-    return 13 + 3 * (EC_PUBLIC_KEY_LEN + 1) + 4
-
 def scriptpubkey_multisig_from_bytes_len(pubkeys, threshold, flags):
     return 3 + (len(pubkeys) // EC_PUBLIC_KEY_LEN) * (EC_PUBLIC_KEY_LEN + 1)
 
@@ -189,7 +185,6 @@ scriptpubkey_multisig_from_bytes = _wrap_bin(scriptpubkey_multisig_from_bytes, s
 scriptsig_multisig_from_bytes = _wrap_bin(scriptsig_multisig_from_bytes, scriptsig_multisig_from_bytes_len, resize=True)
 scriptpubkey_csv_2of2_then_1_from_bytes = _wrap_bin(scriptpubkey_csv_2of2_then_1_from_bytes, scriptpubkey_csv_2of2_then_1_from_bytes_len, resize=True)
 scriptpubkey_csv_2of2_then_1_from_bytes_opt = _wrap_bin(scriptpubkey_csv_2of2_then_1_from_bytes_opt, scriptpubkey_csv_2of2_then_1_from_bytes_opt_len, resize=True)
-scriptpubkey_csv_2of3_then_2_from_bytes = _wrap_bin(scriptpubkey_csv_2of3_then_2_from_bytes, scriptpubkey_csv_2of3_then_2_from_bytes_len, resize=True)
 script_push_from_bytes = _wrap_bin(script_push_from_bytes, script_push_from_bytes_len, resize=True)
 varint_to_bytes = _wrap_bin(varint_to_bytes, varint_get_length)
 varbuff_to_bytes = _wrap_bin(varbuff_to_bytes, varbuff_get_length)

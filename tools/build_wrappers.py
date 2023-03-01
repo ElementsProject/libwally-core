@@ -38,7 +38,6 @@ MISSING_LEN_FUNCS = {
     'wally_script_push_from_bytes': True,
     'wally_scriptpubkey_csv_2of2_then_1_from_bytes': True,
     'wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt': True,
-    'wally_scriptpubkey_csv_2of3_then_2_from_bytes': True,
     'wally_scriptpubkey_multisig_from_bytes': True,
     'wally_scriptsig_multisig_from_bytes': True,
     'wally_wif_to_public_key': False,
