@@ -4400,17 +4400,17 @@ fail:
 int wally_psbt_finalize(struct wally_psbt *psbt)
 {
     size_t i;
-    struct wally_tx *tx;
-    bool is_pset;
-    int ret;
 
-    if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false)) != WALLY_OK)
-        return ret;
+    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
+        return WALLY_EINVAL;
 
     for (i = 0; i < psbt->num_inputs; ++i) {
         const struct wally_map_item *script;
         struct wally_psbt_input *input = &psbt->inputs[i];
-        const uint32_t utxo_index = tx->inputs[i].index;
+        uint32_t utxo_index;
+
+        if (wally_psbt_get_input_output_index(psbt, i, &utxo_index) != WALLY_OK)
+            return WALLY_EINVAL;
 
         /* Script for this input. originally set to the input's scriptPubKey, but in the case of a p2sh/p2wsh
          * input, it will be eventually be set to the unhashed script, if known */
@@ -4422,8 +4422,9 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
             wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG))
             continue; /* Already finalized */
 
-        /* Note that if we patch libwally to supply the non-witness utxo tx field (tx) for
-        * witness inputs also, we'll need a different way to signal p2sh-p2wpkh scripts */
+        /* Note that if we supply the non-witness utxo tx field (tx) for
+         * witness inputs also, we'll need a different way to signal
+         * p2sh-p2wpkh scripts */
         if (input->witness_utxo && input->witness_utxo->script_len) {
             out_script = input->witness_utxo->script;
             out_script_len = input->witness_utxo->script_len;
@@ -4480,8 +4481,6 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         wally_map_clear(&input->signatures);
         input->sighash = 0;
     }
-
-    wally_tx_free(tx);
     return WALLY_OK;
 }
 
