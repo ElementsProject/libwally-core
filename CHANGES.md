@@ -2,6 +2,8 @@
 
 ## Version 0.8.8
 - scriptpubkey_csv_2of3_then_2_from_bytes has been removed from the API.
+- psbt: output_index, sequence, required_locktime and required_lockheight are
+  now returned as uint32_t values. Wrapped languages are not affected.
 
 ## Version 0.8.8
 - witness_multisig_from_bytes: The length for the internally generated

@@ -5059,7 +5059,7 @@ int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t ind
 }
 
 int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t index,
-                                      size_t *written)
+                                      uint32_t *written)
 {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written)
@@ -5071,7 +5071,7 @@ int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t inde
 }
 
 int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index,
-                                  size_t *written)
+                                  uint32_t *written)
 {
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written)
@@ -5082,7 +5082,9 @@ int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index,
     return WALLY_OK;
 }
 
-int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written) {
+int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt,
+                                           size_t index, uint32_t *written)
+{
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written) *written = 0;
     if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;
@@ -5090,7 +5092,10 @@ int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t
     *written = p->required_locktime;
     return WALLY_OK;
 }
-int wally_psbt_has_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written) {
+
+int wally_psbt_has_input_required_locktime(const struct wally_psbt *psbt,
+                                           size_t index, size_t *written)
+{
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written) *written = 0;
     if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;
@@ -5098,7 +5103,9 @@ int wally_psbt_has_input_required_locktime(const struct wally_psbt *psbt, size_t
     return WALLY_OK;
 }
 
-int wally_psbt_get_input_required_lockheight(const struct wally_psbt *psbt, size_t index, size_t *written) {
+int wally_psbt_get_input_required_lockheight(const struct wally_psbt *psbt,
+                                             size_t index, uint32_t *written)
+{
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written) *written = 0;
     if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;
@@ -5106,7 +5113,10 @@ int wally_psbt_get_input_required_lockheight(const struct wally_psbt *psbt, size
     *written = p->required_lockheight;
     return WALLY_OK;
 }
-int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt, size_t index, size_t *written) {
+
+int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt,
+                                             size_t index, size_t *written)
+{
     struct wally_psbt_input *p = psbt_get_input(psbt, index);
     if (written) *written = 0;
     if (!p || !written || psbt->version != PSBT_2) return WALLY_EINVAL;

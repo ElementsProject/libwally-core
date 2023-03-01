@@ -58,10 +58,10 @@ WALLY_CORE_API int wally_psbt_get_input_sighash(const struct wally_psbt *psbt, s
  */
 WALLY_CORE_API int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
 
-WALLY_CORE_API int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t index, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, size_t *written);
-WALLY_CORE_API int wally_psbt_get_input_required_lockheight(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_input_output_index(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_sequence(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_required_locktime(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);
+WALLY_CORE_API int wally_psbt_get_input_required_lockheight(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);
 
 WALLY_CORE_API int wally_psbt_set_input_utxo(struct wally_psbt *psbt, size_t index, const struct wally_tx *utxo);
 WALLY_CORE_API int wally_psbt_set_input_witness_utxo(struct wally_psbt *psbt, size_t index, const struct wally_tx_output *witness_utxo);
