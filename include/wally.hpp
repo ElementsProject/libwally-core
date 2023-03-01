@@ -1035,8 +1035,15 @@ inline int psbt_extract(const PSBT& psbt, uint32_t flags, struct wally_tx** outp
     return ret;
 }
 
-inline int psbt_finalize(struct wally_psbt* psbt) {
-    int ret = ::wally_psbt_finalize(psbt);
+template <class PSBT>
+inline int psbt_finalize(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_finalize(detail::get_p(psbt), flags);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_finalize_input(const PSBT& psbt, size_t index, uint32_t flags) {
+    int ret = ::wally_psbt_finalize_input(detail::get_p(psbt), index, flags);
     return ret;
 }
 

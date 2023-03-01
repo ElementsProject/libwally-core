@@ -408,3 +408,4 @@ def map_from_dict(d):
 psbt_from_bytes = _wrap_with_defaults(psbt_from_bytes, 1, 2, 0)
 psbt_from_base64 = _wrap_with_defaults(psbt_from_base64, 1, 2, 0)
 psbt_extract = _wrap_with_defaults(psbt_extract, 1, 2, 0)
+psbt_finalize = _wrap_with_defaults(psbt_finalize, 1, 2, 0)

@@ -36,6 +36,8 @@ extern "C" {
 
 #define WALLY_PSBT_EXTRACT_NON_FINAL 0x1 /* Extract without final scriptsig and witness */
 
+#define WALLY_PSBT_FINALIZE_NO_CLEAR 0x1 /* Finalize without clearing redeem/witness scripts etc */
+
 /*** psbt-id-flags PSBT ID calculation flags */
 #define WALLY_PSBT_ID_BIP370 0x0 /* BIP370 compatible */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
@@ -2352,15 +2354,37 @@ WALLY_CORE_API int wally_psbt_sign_input_bip32(
  * Finalize a PSBT.
  *
  * :param psbt: PSBT to finalize. Directly modifies this PSBT.
+ * :param flags: Flags controlling finalization. Must be 0 or `WALLY_PSBT_FINALIZE_NO_CLEAR`.
+ *
+ * .. note:: This call does not return an error if no finalization is
+ * performed. Use `wally_psbt_is_finalized` or `wally_psbt_input_is_finalized`
+ * to determine the finalization status after calling.
  */
 WALLY_CORE_API int wally_psbt_finalize(
-    struct wally_psbt *psbt);
+    struct wally_psbt *psbt,
+    uint32_t flags);
+
+/**
+ * Finalize a PSBT input.
+ *
+ * :param psbt: PSBT whose input to finalize. Directly modifies this PSBT.
+ * :param index: The zero-based index of the input in the PSBT to finalize.
+ * :param flags: Flags controlling finalization. Must be 0 or `WALLY_PSBT_FINALIZE_NO_CLEAR`.
+ *
+ * .. note:: This call does not return an error if no finalization is
+ * performed. Use `wally_psbt_is_finalized` or `wally_psbt_input_is_finalized`
+ * to determine the finalization status after calling.
+ */
+WALLY_CORE_API int wally_psbt_finalize_input(
+    struct wally_psbt *psbt,
+    size_t index,
+    uint32_t flags);
 
 /**
  * Extract a network transaction from a finalized PSBT.
  *
  * :param psbt: PSBT to extract from.
- * :param flags: Flags controlling signing. Must be 0 or WALLY_PSBT_EXTRACT_NON_FINAL.
+ * :param flags: Flags controlling signing. Must be 0 or `WALLY_PSBT_EXTRACT_NON_FINAL`.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_psbt_extract(

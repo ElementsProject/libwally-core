@@ -4405,83 +4405,76 @@ fail:
     return ret;
 }
 
-int wally_psbt_finalize(struct wally_psbt *psbt)
+int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t flags)
 {
-    size_t i;
+    struct wally_psbt_input *input = psbt_get_input(psbt, index);
+    const struct wally_map_item *script;
+    unsigned char *out_script = NULL;
+    size_t out_script_len, type;
+    uint32_t utxo_index;
+    bool is_witness = false, is_p2sh = false;
 
-    if (!psbt_is_valid(psbt) || (psbt->version == PSBT_0 && !psbt->tx))
+    if (!psbt_is_valid(psbt) || !input || (flags & ~WALLY_PSBT_FINALIZE_NO_CLEAR))
         return WALLY_EINVAL;
 
-    for (i = 0; i < psbt->num_inputs; ++i) {
-        const struct wally_map_item *script;
-        struct wally_psbt_input *input = &psbt->inputs[i];
-        uint32_t utxo_index;
+    if (wally_psbt_get_input_output_index(psbt, index, &utxo_index) != WALLY_OK)
+        return WALLY_EINVAL;
 
-        if (wally_psbt_get_input_output_index(psbt, i, &utxo_index) != WALLY_OK)
-            return WALLY_EINVAL;
+    if (input->final_witness ||
+        wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG))
+        goto done; /* Already finalized */
 
-        /* Script for this input. originally set to the input's scriptPubKey, but in the case of a p2sh/p2wsh
-         * input, it will be eventually be set to the unhashed script, if known */
-        unsigned char *out_script = NULL;
-        size_t out_script_len, type;
-        bool is_witness = false, is_p2sh = false;
+    /* Note that if we supply the non-witness utxo tx field (tx) for
+     * witness inputs also, we'll need a different way to signal
+     * p2sh-p2wpkh scripts */
+    if (input->witness_utxo && input->witness_utxo->script_len) {
+        out_script = input->witness_utxo->script;
+        out_script_len = input->witness_utxo->script_len;
+        is_witness = true;
+    } else if (input->utxo && utxo_index < input->utxo->num_outputs) {
+        struct wally_tx_output *utxo = &input->utxo->outputs[utxo_index];
+        out_script = utxo->script;
+        out_script_len = utxo->script_len;
+    }
+    script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
+    if (script) {
+        out_script = script->value;
+        out_script_len = script->value_len;
+        is_p2sh = true;
+    }
+    script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_WITNESS_SCRIPT);
+    if (script) {
+        out_script = script->value;
+        out_script_len = script->value_len;
+        is_witness = true;
+    }
 
-        if (input->final_witness ||
-            wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG))
-            continue; /* Already finalized */
+    if (wally_scriptpubkey_get_type(out_script, out_script_len, &type) != WALLY_OK)
+        return WALLY_OK; /* Invalid/missing script */
 
-        /* Note that if we supply the non-witness utxo tx field (tx) for
-         * witness inputs also, we'll need a different way to signal
-         * p2sh-p2wpkh scripts */
-        if (input->witness_utxo && input->witness_utxo->script_len) {
-            out_script = input->witness_utxo->script;
-            out_script_len = input->witness_utxo->script_len;
-            is_witness = true;
-        } else if (input->utxo && utxo_index < input->utxo->num_outputs) {
-            struct wally_tx_output *utxo = &input->utxo->outputs[utxo_index];
-            out_script = utxo->script;
-            out_script_len = utxo->script_len;
-        }
-        script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
-        if (script) {
-            out_script = script->value;
-            out_script_len = script->value_len;
-            is_p2sh = true;
-        }
-        script = wally_map_get_integer(&input->psbt_fields, PSBT_IN_WITNESS_SCRIPT);
-        if (script) {
-            out_script = script->value;
-            out_script_len = script->value_len;
-            is_witness = true;
-        }
+    switch(type) {
+    case WALLY_SCRIPT_TYPE_P2PKH:
+        if (!finalize_p2pkh(input))
+            return WALLY_OK;
+        break;
+    case WALLY_SCRIPT_TYPE_P2WPKH:
+        if (!finalize_p2wpkh(input))
+            return WALLY_OK;
+        break;
+    case WALLY_SCRIPT_TYPE_P2WSH:
+        if (!finalize_p2wsh(input))
+            return WALLY_OK;
+        break;
+    case WALLY_SCRIPT_TYPE_MULTISIG:
+        if (!finalize_multisig(input, out_script, out_script_len, is_witness, is_p2sh))
+            return WALLY_OK;
+        break;
+    default:
+        return WALLY_OK; /* Unhandled script type  */
+    }
 
-        if (!out_script)
-            continue; /* We need an outscript to do anything */
-
-        if (wally_scriptpubkey_get_type(out_script, out_script_len, &type) != WALLY_OK)
-            continue; /* Can't identify the type, skip */
-
-        switch(type) {
-        case WALLY_SCRIPT_TYPE_P2PKH:
-            if (!finalize_p2pkh(input))
-                continue;
-            break;
-        case WALLY_SCRIPT_TYPE_P2WPKH:
-            if (!finalize_p2wpkh(input))
-                continue;
-            break;
-        case WALLY_SCRIPT_TYPE_P2WSH:
-            if (!finalize_p2wsh(input))
-                continue;
-            break;
-        case WALLY_SCRIPT_TYPE_MULTISIG:
-            if (!finalize_multisig(input, out_script, out_script_len, is_witness, is_p2sh))
-                continue;
-            break;
-        default:
-            continue; /* Can't finalize this input, skip */
-        }
-
+done:
+    if (!(flags & WALLY_PSBT_FINALIZE_NO_CLEAR)) {
         /* Clear non-final things */
         wally_map_remove_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
         wally_map_remove_integer(&input->psbt_fields, PSBT_IN_WITNESS_SCRIPT);
@@ -4490,6 +4483,16 @@ int wally_psbt_finalize(struct wally_psbt *psbt)
         input->sighash = 0;
     }
     return WALLY_OK;
+}
+
+int wally_psbt_finalize(struct wally_psbt *psbt, uint32_t flags)
+{
+    size_t i;
+    int ret = WALLY_OK;
+
+    for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
+        ret = wally_psbt_finalize_input(psbt, i, flags);
+    return ret;
 }
 
 int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wally_tx **output)

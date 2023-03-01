@@ -2,6 +2,8 @@
 
 ## Version 0.8.8
 - scriptpubkey_csv_2of3_then_2_from_bytes has been removed from the API.
+- psbt: psbt_finalize now takes an extra flags parameter. The Java and Python
+  wrappers default this to zero for backwards compatibility.
 - psbt: output_index, sequence, required_locktime and required_lockheight are
   now returned as uint32_t values. Wrapped languages are not affected.
 

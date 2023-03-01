@@ -120,6 +120,7 @@ export const WALLY_NETWORK_NONE = 0x00; /** Used for miniscript parsing only */
 export const WALLY_NO_CODESEPARATOR = 0xffffffff; /* No BIP342 code separator position */
 export const WALLY_OK = 0; /** Success */
 export const WALLY_PSBT_EXTRACT_NON_FINAL = 0x1; /* Extract without final scriptsig and witness */
+export const WALLY_PSBT_FINALIZE_NO_CLEAR = 0x1; /* Finalize without clearing redeem/witness scripts etc */
 export const WALLY_PSBT_FLAG_NON_FINAL = 0x1;
 export const WALLY_PSBT_HIGHEST_VERSION = 0x2;
 export const WALLY_PSBT_ID_AS_V2 = 0x1; /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */

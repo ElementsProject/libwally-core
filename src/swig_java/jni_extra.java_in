@@ -371,6 +371,11 @@
       return psbt_extract(psbt, 0); // Default flags to 0 for back compat.
   }
 
+  public final static void psbt_finalize(Object psbt)
+  {
+      psbt_finalize(psbt, 0); // Default flags to 0 for back compat.
+  }
+
   public final static byte[] psbt_get_input_final_scriptsig(Object psbt, long idx) {
       final byte[] buf = new byte[psbt_get_input_final_scriptsig_len(psbt, idx)];
       if (buf.length == 0) return buf;
