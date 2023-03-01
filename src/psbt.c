@@ -36,6 +36,9 @@ static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
 
 #define MAX_INVALID_SATOSHI ((uint64_t) -1)
+/* Note we mask given indices regardless of PSBT/PSET, since enormous
+ * indices can never be valid on BTC either */
+#define MASK_INDEX(index) ((index) & WALLY_TX_INDEX_MASK)
 
 #ifdef BUILD_ELEMENTS
 /* The PSET key prefix is the same as the first 4 PSET magic bytes */
@@ -359,7 +362,8 @@ int wally_psbt_input_set_output_index(struct wally_psbt_input *input, uint32_t i
 {
     if (!input)
         return WALLY_EINVAL;
-    input->index = index;
+    /* The PSBT index ignores any elements issuance/pegin flags */
+    input->index = MASK_INDEX(index);
     return WALLY_OK;
 }
 
@@ -1414,7 +1418,7 @@ static int psbt_input_from_tx_input(struct wally_psbt *psbt,
         return WALLY_OK; /* Nothing to do */
 
     memcpy(dst->txhash, txin->txhash, WALLY_TXHASH_LEN);
-    dst->index = txin->index;
+    dst->index = MASK_INDEX(txin->index);
     dst->sequence = txin->sequence;
 
     if (psbt->version == PSBT_2) {
@@ -2070,6 +2074,10 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 break;
             case PSBT_IN_OUTPUT_INDEX:
                 result->index = pull_le32_subfield(cursor, max);
+                if (is_pset && (result->index & ~WALLY_TX_INDEX_MASK) &&
+                    (flags & WALLY_PSBT_PARSE_FLAG_STRICT))
+                    ret = WALLY_EINVAL;
+                result->index = MASK_INDEX(result->index);
                 break;
             case PSBT_IN_SEQUENCE:
                 result->sequence = pull_le32_subfield(cursor, max);
@@ -3721,7 +3729,7 @@ static int psbt_v0_to_v2(struct wally_psbt *psbt)
         struct wally_psbt_input *pi = &psbt->inputs[i];
         const struct wally_tx_input *txin = &psbt->tx->inputs[i];
         memcpy(pi->txhash, txin->txhash, sizeof(pi->txhash));
-        pi->index = txin->index;
+        pi->index = txin->index; /* No mask, since PSET is v2 only */
         pi->sequence = txin->sequence;
     }
 
