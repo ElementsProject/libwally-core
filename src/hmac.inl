@@ -13,7 +13,7 @@ static void SHA_PRE(_mix)(struct SHA_T *sha, const unsigned char *pad,
 {
     struct SHA_PRE(_ctx) ctx;
     SHA_PRE(_init)(&ctx);
-    SHA_PRE(_update)(&ctx, pad, sizeof(ctx.buf));
+    SHA_PRE(_update)(&ctx, pad, sizeof(ctx.SHA_CTX_BUFF));
     SHA_PRE(_update)(&ctx, data, data_len);
     SHA_PRE(_done)(&ctx, sha);
     wally_clear(&ctx, sizeof(ctx));
@@ -24,24 +24,24 @@ void HMAC_FUNCTION(struct SHA_T *sha,
                    const unsigned char *msg, size_t msg_len)
 {
     struct SHA_PRE(_ctx) ctx;
-    unsigned char ipad[sizeof(ctx.buf)];
-    unsigned char opad[sizeof(ctx.buf)];
+    unsigned char ipad[sizeof(ctx.SHA_CTX_BUFF)];
+    unsigned char opad[sizeof(ctx.SHA_CTX_BUFF)];
     size_t i;
 
-    wally_clear(ctx.buf.u8, sizeof(ctx.buf));
+    wally_clear(ctx.SHA_CTX_BUFF, sizeof(ctx.SHA_CTX_BUFF));
 
-    if (key_len <= sizeof(ctx.buf))
-        memcpy(ctx.buf.u8, key, key_len);
+    if (key_len <= sizeof(ctx.SHA_CTX_BUFF))
+        memcpy(ctx.SHA_CTX_BUFF, key, key_len);
     else
-        SHA_T((struct SHA_T *)ctx.buf.SHA_CTX_MEMBER, key, key_len);
+        SHA_T((struct SHA_T *)ctx.SHA_CTX_BUFF, key, key_len);
 
-    for (i = 0; i < sizeof(ctx.buf); ++i) {
-        opad[i] = ctx.buf.u8[i] ^ 0x5c;
-        ipad[i] = ctx.buf.u8[i] ^ 0x36;
+    for (i = 0; i < sizeof(ctx.SHA_CTX_BUFF); ++i) {
+        opad[i] = ctx.SHA_CTX_BUFF[i] ^ 0x5c;
+        ipad[i] = ctx.SHA_CTX_BUFF[i] ^ 0x36;
     }
 
-    SHA_PRE(_mix)((struct SHA_T *)ctx.buf.SHA_CTX_MEMBER, ipad, msg, msg_len);
-    SHA_PRE(_mix)(sha, opad, ctx.buf.u8, sizeof(*sha));
+    SHA_PRE(_mix)((struct SHA_T *)ctx.SHA_CTX_BUFF, ipad, msg, msg_len);
+    SHA_PRE(_mix)(sha, opad, ctx.SHA_CTX_BUFF, sizeof(*sha));
     wally_clear_3(&ctx, sizeof(ctx), ipad, sizeof(ipad), opad, sizeof(opad));
 }
 
@@ -50,7 +50,7 @@ int WALLY_HMAC_FUNCTION(const unsigned char *key, size_t key_len,
                         unsigned char *bytes_out, size_t len)
 {
     struct SHA_T sha;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.SHA_CTX_MEMBER));
+    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u8));
     struct SHA_T *sha_p = aligned ? (void *)bytes_out : (void*)&sha;
 
     if (!key || !key_len || !bytes || !bytes_len ||

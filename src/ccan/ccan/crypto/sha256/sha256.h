@@ -12,6 +12,10 @@
 #include <openssl/sha.h>
 #endif
 
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#include <mbedtls/sha256.h>
+#endif
+
 /**
  * struct sha256 - structure representing a completed SHA256.
  * @u.u8: an unsigned char array.
@@ -48,6 +52,8 @@ void sha256(struct sha256 *sha, const void *p, size_t size);
 struct sha256_ctx {
 #ifdef CCAN_CRYPTO_SHA256_USE_OPENSSL
 	SHA256_CTX c;
+#elif defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
+	mbedtls_sha256_context c;
 #else
 	uint32_t s[8];
 	union {
