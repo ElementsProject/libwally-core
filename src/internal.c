@@ -191,9 +191,18 @@ static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
 {
     size_t i;
 
-    for (i = 0; i < sizeof(ctx->s) / sizeof(ctx->s[0]); i++)
-        res->u.u32[i] = cpu_to_be32(ctx->s[i]);
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#define SHA_CTX_STATE c.state
+#else
+#define SHA_CTX_STATE s
+#endif
+
+    for (i = 0; i < sizeof(ctx->SHA_CTX_STATE) / sizeof(ctx->SHA_CTX_STATE[0]); i++)
+        res->u.u32[i] = cpu_to_be32(ctx->SHA_CTX_STATE[i]);
+
+#ifndef CCAN_CRYPTO_SHA256_USE_MBEDTLS
     ctx->bytes = (size_t)-1;
+#endif
 }
 
 int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
@@ -207,6 +216,11 @@ int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
         return WALLY_EINVAL;
 
     sha256_init(&ctx);
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) && \
+    defined(MBEDTLS_SHA256_ALT) && defined(SOC_SHA_SUPPORT_PARALLEL_ENG)
+    /* HW sha engine doesn't allow to extract the midstate */
+    ctx.c.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
+#endif
     sha256_update(&ctx, bytes, bytes_len);
     sha256_midstate(&ctx, aligned ? (void *)bytes_out : (void *)&sha);
     wally_clear(&ctx, sizeof(ctx));
