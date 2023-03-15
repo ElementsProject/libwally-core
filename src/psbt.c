@@ -4410,7 +4410,7 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
     struct wally_psbt_input *input = psbt_get_input(psbt, index);
     const struct wally_map_item *script;
     unsigned char *out_script = NULL;
-    size_t out_script_len, type;
+    size_t out_script_len = 0, type = WALLY_SCRIPT_TYPE_UNKNOWN;
     uint32_t utxo_index;
     bool is_witness = false, is_p2sh = false;
 
@@ -4449,10 +4449,11 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
         is_witness = true;
     }
 
-    if (wally_scriptpubkey_get_type(out_script, out_script_len, &type) != WALLY_OK)
+    if (out_script &&
+        wally_scriptpubkey_get_type(out_script, out_script_len, &type) != WALLY_OK)
         return WALLY_OK; /* Invalid/missing script */
 
-    switch(type) {
+    switch (type) {
     case WALLY_SCRIPT_TYPE_P2PKH:
         if (!finalize_p2pkh(input))
             return WALLY_OK;
