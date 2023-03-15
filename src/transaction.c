@@ -2147,6 +2147,7 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
     /* Note we assume tx_to_bytes has already validated all inputs */
     (void)flags;
     (void)len;
+    (void)is_elements;
 
 #ifdef BUILD_ELEMENTS
     if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK || is_elements)
@@ -3164,6 +3165,7 @@ int wally_tx_get_btc_taproot_signature_hash(
     };
     size_t is_elements, n, n2;
     int ret;
+    (void)is_elements;
 
     if (!values || !num_values || index >= num_values ||
         BYTES_INVALID(tapleaf_script, tapleaf_script_len) ||

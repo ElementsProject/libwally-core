@@ -40,11 +40,11 @@ static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
  * indices can never be valid on BTC either */
 #define MASK_INDEX(index) ((index) & WALLY_TX_INDEX_MASK)
 
+#define TR_MAX_MERKLE_PATH_LEN 128u
+
 #ifdef BUILD_ELEMENTS
 /* The PSET key prefix is the same as the first 4 PSET magic bytes */
 #define PSET_PREFIX_LEN 4u
-
-#define TR_MAX_MERKLE_PATH_LEN 128u
 
 static bool is_pset_key(const unsigned char *key, size_t key_len)
 {

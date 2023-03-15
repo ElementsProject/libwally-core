@@ -141,6 +141,7 @@ static int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
     unsigned char preimage[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN];
     const size_t offset = pub_key_len == EC_PUBLIC_KEY_LEN ? 1 : 0;
     const size_t preimage_len = merkle_root ? sizeof(preimage) : EC_XONLY_PUBLIC_KEY_LEN;
+    (void)flags;
 
     memcpy(preimage, pub_key + offset, EC_XONLY_PUBLIC_KEY_LEN);
     if (merkle_root)
