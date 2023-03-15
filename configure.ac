@@ -76,6 +76,9 @@ AC_ARG_ENABLE(builtin-memset,
 AC_ARG_ENABLE(minimal,
     AS_HELP_STRING([--enable-minimal],[enable minimal size/memory footprint build (default: no)]),
     [minimal=$enableval], [minimal=no])
+AC_ARG_ENABLE(mbed-tls,
+    AS_HELP_STRING([--enable-mbed-tls],[enable minimal size/memory footprint build (default: no)]),
+    [mbedtls=$enableval], [mbedtls=no])
 AC_ARG_ENABLE(secp256k1-tests,
     AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
     [secp256k1_tests=$enableval], [secp256k1_tests=no])
@@ -225,6 +228,9 @@ if test "x$asm" == "xyes"; then
 fi
 
 AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
+if test "x$mbedtls" == "xyes"; then
+    AC_CHECK_HEADERS([mbedtls/sha256.h, mbedtls/sha512.h])
+fi
 
 AC_ARG_ENABLE(clear-tests,
     AS_HELP_STRING([--enable-clear-tests],[enable tests for memory clearing (default: yes)]),

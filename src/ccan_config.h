@@ -34,6 +34,14 @@
 #define alignment_ok(p, n) ((size_t)(p) % (n) == 0)
 #endif
 
+#ifdef HAVE_MBEDTLS_SHA256_H
+#define CCAN_CRYPTO_SHA256_USE_MBEDTLS 1
+#endif
+
+#ifdef HAVE_MBEDTLS_SHA512_H
+#define CCAN_CRYPTO_SHA512_USE_MBEDTLS 1
+#endif
+
 void wally_clear(void *p, size_t len);
 
 #define CCAN_CLEAR_MEMORY(p, len) wally_clear(p, len)
