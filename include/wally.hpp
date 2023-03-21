@@ -17,6 +17,9 @@
 #include <wally_script.h>
 #include <wally_symmetric.h>
 #include <wally_transaction.h>
+#ifdef BUILD_ELEMENTS
+#include <wally_elements.h>
+#endif
 
 /* These wrappers allow passing containers such as std::vector, std::array,
  * std::string and custom classes as input/output buffers to wally functions.
