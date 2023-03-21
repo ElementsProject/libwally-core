@@ -11,6 +11,8 @@
 #include <wally_bip39.h>
 #include <wally_core.h>
 #include <wally_crypto.h>
+#include <wally_descriptor.h>
+#include <wally_map.h>
 #include <wally_psbt.h>
 #include <wally_script.h>
 #include <wally_symmetric.h>
@@ -867,13 +869,13 @@ inline int map_hash_preimage_verify(const KEY& key, const VAL& val) {
     return ret;
 }
 
-inline int map_init(size_t allocation_len, struct wally_map* output) {
-    int ret = ::wally_map_init(allocation_len, output);
+inline int map_init(size_t allocation_len, wally_map_verify_fn_t verify_fn, struct wally_map* output) {
+    int ret = ::wally_map_init(allocation_len, verify_fn, output);
     return ret;
 }
 
-inline int map_init_alloc(size_t allocation_len, struct wally_map** output) {
-    int ret = ::wally_map_init_alloc(allocation_len, output);
+inline int map_init_alloc(size_t allocation_len, wally_map_verify_fn_t verify_fn, struct wally_map** output) {
+    int ret = ::wally_map_init_alloc(allocation_len, verify_fn, output);
     return ret;
 }
 

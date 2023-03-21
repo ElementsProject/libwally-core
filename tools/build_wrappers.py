@@ -315,7 +315,8 @@ def gen_wally_hpp(funcs, all_funcs):
                 cpp_args.append(f'{arg.type} {arg.name} = 0')
                 call_args.append(f'{arg.name} ? {arg.name} : &n')
             elif arg.type in [u'int', u'size_t', u'uint32_t', u'uint64_t',
-                              u'int*', u'size_t*', u'uint32_t*', u'uint64_t*']:
+                              u'int*', u'size_t*', u'uint32_t*', u'uint64_t*',
+                              u'wally_map_verify_fn_t']:
                 cpp_args.append(f'{arg.type} {arg.name}')
                 call_args.append(f'{arg.name}')
             elif arg.is_pointer:
@@ -326,6 +327,8 @@ def gen_wally_hpp(funcs, all_funcs):
                     t_types.append(f'class {arg.name.upper()}')
                     cpp_args.append(f'const {arg.name.upper()}& {arg.name}')
                     call_args.append(f'detail::get_p({arg.name})')
+            else:
+                assert False, f'Unmapped argument {func.name}:{arg.name}'
 
         impl = []
         if len(t_types):
