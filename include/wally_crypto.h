@@ -489,12 +489,65 @@ WALLY_CORE_API int wally_ec_sig_from_bytes_len(
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be `EC_SIGNATURE_RECOVERABLE_LEN`
  *|    if flags includes `EC_FLAG_RECOVERABLE`, otherwise `EC_SIGNATURE_LEN`.
+ *
+ * Equivalent to calling `wally_ec_sig_from_bytes_aux` with ``aux_rand`` set to NULL.
  */
 WALLY_CORE_API int wally_ec_sig_from_bytes(
     const unsigned char *priv_key,
     size_t priv_key_len,
     const unsigned char *bytes,
     size_t bytes_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Get the expected length of a signature with auxiliary data in bytes.
+ *
+ * :param priv_key: The private key to sign with.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
+ * :param bytes: The message hash to sign.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be `EC_MESSAGE_HASH_LEN`.
+ * :param aux_rand: Optional auxiliary data or NULL. See `wally_ec_sig_from_bytes_aux`.
+ * :param aux_rand_len: The length of ``aux_rand`` in bytes. See `wally_ec_sig_from_bytes_aux`.
+ * :param flags: :ref:`ec-flags` indicating desired behavior.
+ * :param written: Destination for the expected length of the signature, either
+ *|    `EC_SIGNATURE_LEN` or `EC_SIGNATURE_RECOVERABLE_LEN`.
+ */
+WALLY_CORE_API int wally_ec_sig_from_bytes_aux_len(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *aux_rand,
+    size_t aux_rand_len,
+    uint32_t flags,
+    size_t *written);
+
+/**
+ * Sign a message hash with a private key and auxiliary data, producing a compact signature.
+ *
+ * :param priv_key: The private key to sign with.
+ * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
+ * :param bytes: The message hash to sign.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be `EC_MESSAGE_HASH_LEN`.
+ * :param aux_rand: Optional auxiliary data or NULL. Must be NULL if flags
+ *|     includes `EC_FLAG_GRIND_R`. For BIP340/schnorr signatures it is
+ *|     strongly advised to pass fresh entropy as a defense in depth measure.
+ * :param aux_rand_len: The length of ``aux_rand`` in bytes. Must be ``32``
+ *|    or ``0`` if `aux_rand` is non-NULL.
+ * :param flags: :ref:`ec-flags` indicating desired behavior.
+ * :param bytes_out: Destination for the resulting compact signature.
+ * :param len: The length of ``bytes_out`` in bytes. Must be `EC_SIGNATURE_RECOVERABLE_LEN`
+ *|    if flags includes `EC_FLAG_RECOVERABLE`, otherwise `EC_SIGNATURE_LEN`.
+ */
+WALLY_CORE_API int wally_ec_sig_from_bytes_aux(
+    const unsigned char *priv_key,
+    size_t priv_key_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *aux_rand,
+    size_t aux_rand_len,
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);

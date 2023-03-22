@@ -162,6 +162,10 @@
       return ec_sig_from_bytes(jarg1, jarg2, jarg3, null);
   }
 
+  public final static byte[] ec_sig_from_bytes_aux(byte[] jarg1, byte[] jarg2, byte[] jarg3, long jarg4) {
+      return ec_sig_from_bytes_aux(jarg1, jarg2, jarg3, jarg4, null);
+  }
+
   public final static byte[] ec_sig_normalize(byte[] jarg1) {
       return ec_sig_normalize(jarg1, null);
   }

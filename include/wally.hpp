@@ -606,6 +606,18 @@ inline int ec_sig_from_bytes(const PRIV_KEY& priv_key, const BYTES& bytes, uint3
     return ret;
 }
 
+template <class PRIV_KEY, class BYTES, class AUX_RAND, class BYTES_OUT>
+inline int ec_sig_from_bytes_aux(const PRIV_KEY& priv_key, const BYTES& bytes, const AUX_RAND& aux_rand, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_sig_from_bytes_aux(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), aux_rand.data(), aux_rand.size(), flags, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PRIV_KEY, class BYTES, class AUX_RAND>
+inline int ec_sig_from_bytes_aux_len(const PRIV_KEY& priv_key, const BYTES& bytes, const AUX_RAND& aux_rand, uint32_t flags, size_t* written) {
+    int ret = ::wally_ec_sig_from_bytes_aux_len(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), aux_rand.data(), aux_rand.size(), flags, written);
+    return ret;
+}
+
 template <class PRIV_KEY, class BYTES>
 inline int ec_sig_from_bytes_len(const PRIV_KEY& priv_key, const BYTES& bytes, uint32_t flags, size_t* written) {
     int ret = ::wally_ec_sig_from_bytes_len(priv_key.data(), priv_key.size(), bytes.data(), bytes.size(), flags, written);

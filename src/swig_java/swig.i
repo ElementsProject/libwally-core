@@ -259,6 +259,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* abf, size_t abf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* annex, size_t annex_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* asset, size_t asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* aux_rand, size_t aux_rand_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* bytes, size_t bytes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* commitment, size_t commitment_len) };
@@ -559,7 +560,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_size_t(wally_ec_sig_from_bytes_aux_len);
 %returns_size_t(wally_ec_sig_from_bytes_len);
+%returns_array_check_flag(wally_ec_sig_from_bytes_aux, 8, 9, jarg7, 10, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_LEN);
 %returns_array_check_flag(wally_ec_sig_from_bytes, 6, 7, jarg5, 8, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_normalize, 3, 4, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
