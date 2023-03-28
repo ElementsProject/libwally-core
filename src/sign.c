@@ -303,7 +303,8 @@ int wally_ec_sig_from_bytes_aux_len(const unsigned char *priv_key, size_t priv_k
     if (flags & EC_FLAG_SCHNORR) {
         if (flags & (EC_FLAG_RECOVERABLE | EC_FLAG_GRIND_R))
             return WALLY_EINVAL; /* Only ECDSA supports recoverable/grinding sigs */
-    }
+    } else if (aux_rand && (flags & EC_FLAG_GRIND_R))
+        return WALLY_EINVAL; /* Can't use grinding if aux_rand provided */
     *written = flags & EC_FLAG_RECOVERABLE ? EC_SIGNATURE_RECOVERABLE_LEN : EC_SIGNATURE_LEN;
     return WALLY_OK;
 }
@@ -344,15 +345,11 @@ int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_l
         wally_clear(&keypair, sizeof(&keypair));
         return ret;
     } else {
-        unsigned char extra_entropy[32] = {0}, *entropy_p = NULL;
+        unsigned char extra_entropy[32] = {0}, *entropy_p = (unsigned char *)aux_rand;
         unsigned char *bytes_out_p = flags & EC_FLAG_RECOVERABLE ? bytes_out + 1 : bytes_out;
         secp256k1_ecdsa_recoverable_signature sig_secp;
         uint32_t counter = 0;
         int recid;
-
-        /* FIXME: support aux_rand for ECDSA when not grinding */
-        if (aux_rand)
-            return WALLY_EINVAL;
 
         while (true) {
             if (!secp256k1_ecdsa_sign_recoverable(ctx, &sig_secp, bytes,

@@ -327,11 +327,11 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_FLAG_ECDSA 0x1
 /** Indicates that a signature using EC-Schnorr-SHA256 is required */
 #define EC_FLAG_SCHNORR 0x2
-/** Indicates that the signature nonce should be incremented until the signature is low-R */
+/** ECDSA only: indicates that the signature nonce should be incremented until the signature is low-R */
 #define EC_FLAG_GRIND_R 0x4
-/** Indicates that the signature is recoverable */
+/** ECDSA only: Indicates that the signature is recoverable */
 #define EC_FLAG_RECOVERABLE 0x8
-/** Indicates that the Elements/Liquid tagged hashes should be used where needed */
+/** Schnorr only: Indicates that the Elements/Liquid tagged hashes should be used where needed */
 #define EC_FLAG_ELEMENTS 0x10
 
 /* All defined flags */
@@ -535,7 +535,7 @@ WALLY_CORE_API int wally_ec_sig_from_bytes_aux_len(
  *|     includes `EC_FLAG_GRIND_R`. For BIP340/schnorr signatures it is
  *|     strongly advised to pass fresh entropy as a defense in depth measure.
  * :param aux_rand_len: The length of ``aux_rand`` in bytes. Must be ``32``
- *|    or ``0`` if `aux_rand` is non-NULL.
+ *|    or ``0`` if ``aux_rand`` is non-NULL.
  * :param flags: :ref:`ec-flags` indicating desired behavior.
  * :param bytes_out: Destination for the resulting compact signature.
  * :param len: The length of ``bytes_out`` in bytes. Must be `EC_SIGNATURE_RECOVERABLE_LEN`
