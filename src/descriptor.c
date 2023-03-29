@@ -457,12 +457,14 @@ static uint32_t node_get_child_count(const ms_node *node)
     return ret;
 }
 
-static bool node_has_uncompressed_key(const ms_node *node)
+static bool node_has_uncompressed_key(const ms_ctx *ctx, const ms_node *node)
 {
-    const ms_node *child;
-    for (child = node->child; child; child = child->next)
-        if ((child->flags & NF_IS_UNCOMPRESSED) || node_has_uncompressed_key(child))
-            return true;
+    if (ctx->features & WALLY_MS_IS_UNCOMPRESSED) {
+        const ms_node *child;
+        for (child = node->child; child; child = child->next)
+            if ((child->flags & NF_IS_UNCOMPRESSED) || node_has_uncompressed_key(ctx, child))
+                return true;
+    }
     return false;
 }
 
@@ -520,7 +522,7 @@ static int verify_wsh(ms_ctx *ctx, ms_node *node)
     (void)ctx;
     if (node->parent && node->parent->kind != KIND_DESCRIPTOR_SH)
         return WALLY_EINVAL;
-    if (!node->child->builtin || node_has_uncompressed_key(node))
+    if (!node->child->builtin || node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
 
     node->type_properties = node->child->type_properties;
@@ -532,7 +534,7 @@ static int verify_pk(ms_ctx *ctx, ms_node *node)
     (void)ctx;
     if (node->child->builtin || !(node->child->kind & KIND_KEY))
         return WALLY_EINVAL;
-    if (node->parent && node_has_uncompressed_key(node) &&
+    if (node->parent && node_has_uncompressed_key(ctx, node) &&
         node->parent->kind != KIND_DESCRIPTOR_SH &&
         node->parent->kind != KIND_DESCRIPTOR_WSH)
         return WALLY_EINVAL;
@@ -553,12 +555,12 @@ static int verify_wpkh(ms_ctx *ctx, ms_node *node)
         if (parent->kind == KIND_DESCRIPTOR_WSH)
             return WALLY_EINVAL;
 
-    return node_has_uncompressed_key(node) ?  WALLY_EINVAL : WALLY_OK;
+    return node_has_uncompressed_key(ctx, node) ?  WALLY_EINVAL : WALLY_OK;
 }
 
 static int verify_combo(ms_ctx *ctx, ms_node *node)
 {
-    const bool has_uncompressed_key = node_has_uncompressed_key(node);
+    const bool has_uncompressed_key = node_has_uncompressed_key(ctx, node);
     int ret;
 
     if (node->parent)
