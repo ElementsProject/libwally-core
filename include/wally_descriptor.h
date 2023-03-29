@@ -17,10 +17,12 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
 
 /*** miniscript-features Miniscript/Descriptor feature flags */
-#define WALLY_MS_IS_RANGED 0x01 /** Allows key ranges via ``*`` */
-#define WALLY_MS_IS_MULTIPATH 0x02 /** Allows multiple paths via ``<a;b;c>`` */
-#define WALLY_MS_IS_PRIVATE 0x04 /** Contains at least one private key */
-#define WALLY_MS_IS_DESCRIPTOR 0x08 /** Contains only descriptor expressions (no miniscript) */
+#define WALLY_MS_IS_RANGED       0x01 /** Allows key ranges via ``*`` */
+#define WALLY_MS_IS_MULTIPATH    0x02 /** Allows multiple paths via ``<a;b;c>`` */
+#define WALLY_MS_IS_PRIVATE      0x04 /** Contains at least one private key */
+#define WALLY_MS_IS_UNCOMPRESSED 0x08 /** Contains at least one uncompressed key */
+#define WALLY_MS_IS_RAW          0x10 /** Contains at least one raw key */
+#define WALLY_MS_IS_DESCRIPTOR   0x20 /** Contains only descriptor expressions (no miniscript) */
 
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
 #define WALLY_MS_CANONICAL_NO_CHECKSUM 0x01 /** Do not include a checksum */

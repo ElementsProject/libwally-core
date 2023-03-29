@@ -16,7 +16,9 @@ MS_ONLY = 0x2 # WALLY_MINISCRIPT_ONLY
 MS_IS_RANGED = 0x1
 MS_IS_MULTIPATH = 0x2
 MS_IS_PRIVATE = 0x4
-MS_IS_DESCRIPTOR = 0x8
+MS_IS_UNCOMPRESSED = 0x08
+MS_IS_RAW = 0x010
+MS_IS_DESCRIPTOR = 0x20
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
@@ -233,7 +235,13 @@ class DescriptorTests(unittest.TestCase):
              0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR),
             # WIF
             ('pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)',
-             0, MS_IS_PRIVATE|MS_IS_DESCRIPTOR),
+             0, MS_IS_PRIVATE|MS_IS_RAW|MS_IS_DESCRIPTOR),
+            # Hex pubkey, compressed
+            ('pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284)',
+             0, MS_IS_RAW|MS_IS_DESCRIPTOR),
+            # Hex pubkey, uncompressed
+            ('pk(0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf)',
+             0, MS_IS_UNCOMPRESSED|MS_IS_RAW|MS_IS_DESCRIPTOR),
             # Miniscript
             ('j:and_v(vdv:after(1567547623),older(2016))',
              MS_ONLY, 0),

@@ -1970,11 +1970,14 @@ static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
     if (!clone_bytes((unsigned char **)&node->data, pubkey + offset, written))
         return false; /* FIXME: This needs to return ENOMEM, not continue checking */
     node->data_len = str_len / 2;
-    if (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)
+    if (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2) {
         node->flags |= NF_IS_UNCOMPRESSED;
+        ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
+    }
     if (str_len == EC_XONLY_PUBLIC_KEY_LEN * 2)
         node->flags |= NF_IS_XONLY;
     node->kind = KIND_PUBLIC_KEY;
+    ctx->features |= WALLY_MS_IS_RAW;
     return true;
 }
 
@@ -2016,9 +2019,10 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
             return WALLY_EINVAL;
         if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
-            node->flags |= NF_IS_UNCOMPRESSED;
             if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
                 return WALLY_EINVAL; /* Tapscript only allows x-only keys */
+            node->flags |= NF_IS_UNCOMPRESSED;
+            ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
         } else if (privkey_len != EC_PRIVATE_KEY_LEN + 2 ||
                    privkey[EC_PRIVATE_KEY_LEN + 1] != 1)
             return WALLY_EINVAL; /* Unknown WIF format */
@@ -2030,7 +2034,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         else {
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
-            ctx->features |= WALLY_MS_IS_PRIVATE;
+            ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
         }
         wally_clear(privkey, sizeof(privkey));
         return ret;
