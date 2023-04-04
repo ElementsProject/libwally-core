@@ -45,7 +45,7 @@ extern "C" {
 #define BIP32_FLAG_STR_BARE 0x10
 /** Allow upper as well as lower case ``M``/``H`` in BIP32 path string expressions */
 #define BIP32_FLAG_ALLOW_UPPER 0x20
-/** Allow a multi-path expression ``<child_num_1;child_num_2;..>``in BIP32 path string expressions */
+/** Allow a multi-path expression ``<child_num_1;child_num_2;..>`` in BIP32 path string expressions */
 #define BIP32_FLAG_STR_MULTIPATH 0x40
 
 
@@ -475,7 +475,6 @@ WALLY_CORE_API int bip32_key_get_fingerprint(
  * :param child_path_out: Destination for the resulting path.
  * :param child_path_out_len: The number of items in ``child_path_out``.
  * :param written: Destination for the number of items written to ``child_path_out``.
- * See `bip32_path_from_path_str`.
  */
 WALLY_CORE_API int bip32_path_from_str(
     const char *path_str,
@@ -489,7 +488,7 @@ WALLY_CORE_API int bip32_path_from_str(
 /**
  * Convert a known-length BIP32 path string to an integer path.
  *
- * See `bip32_path_from_path_str`.
+ * See `bip32_path_from_str`.
  */
 WALLY_CORE_API int bip32_path_from_str_n(
     const char *path_str,
@@ -514,7 +513,7 @@ WALLY_CORE_API int bip32_path_str_get_features(
 /**
  * Get information about the structure of a known_length BIP32 path string.
  *
- * See See `bip32_path_from_path_str`.
+ * See `bip32_path_str_get_features`.
  */
 WALLY_CORE_API int bip32_path_str_n_get_features(
     const char *path_str,
