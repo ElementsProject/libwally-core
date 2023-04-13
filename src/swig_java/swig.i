@@ -918,6 +918,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_scriptsig_p2pkh_from_sig);
 %returns_size_t(wally_scriptsig_p2pkh_from_der);
 %returns_size_t(wally_scriptsig_multisig_from_bytes);
+%returns_struct(wally_witness_p2tr_from_sig, wally_tx_witness_stack);
 %returns_struct(wally_witness_p2wpkh_from_sig, wally_tx_witness_stack);
 %returns_struct(wally_witness_p2wpkh_from_der, wally_tx_witness_stack);
 %returns_struct(wally_witness_multisig_from_bytes, wally_tx_witness_stack);

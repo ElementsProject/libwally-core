@@ -741,6 +741,7 @@ export const wif_to_address = wrap('wally_wif_to_address', [T.String, T.Int32, T
 export const wif_to_bytes = wrap('wally_wif_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.EC_PRIVATE_KEY_LEN)]);
 export const wif_to_public_key = wrap('wally_wif_to_public_key', [T.String, T.Int32, T.DestPtrVarLen(T.Bytes, wif_to_public_key_len, false)]);
 export const witness_multisig_from_bytes = wrap('wally_witness_multisig_from_bytes', [T.Bytes, T.Bytes, T.Uint32Array, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
+export const witness_p2tr_from_sig = wrap('wally_witness_p2tr_from_sig', [T.Bytes, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_p2wpkh_from_der = wrap('wally_witness_p2wpkh_from_der', [T.Bytes, T.Bytes, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_p2wpkh_from_sig = wrap('wally_witness_p2wpkh_from_sig', [T.Bytes, T.Bytes, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_program_from_bytes = wrap('wally_witness_program_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_WITNESSSCRIPT_MAX_LEN, true)]);

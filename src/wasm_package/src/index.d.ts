@@ -693,6 +693,7 @@ export function wif_to_address(wif: string, prefix: number, version: number): st
 export function wif_to_bytes(wif: string, prefix: number, flags: number): Buffer;
 export function wif_to_public_key(wif: string, prefix: number): Buffer;
 export function witness_multisig_from_bytes(script: Buffer|Uint8Array, bytes: Buffer|Uint8Array, sighash: Uint32Array|number[], flags: number): Ref_wally_tx_witness_stack;
+export function witness_p2tr_from_sig(sig: Buffer|Uint8Array): Ref_wally_tx_witness_stack;
 export function witness_p2wpkh_from_der(pub_key: Buffer|Uint8Array, sig: Buffer|Uint8Array): Ref_wally_tx_witness_stack;
 export function witness_p2wpkh_from_sig(pub_key: Buffer|Uint8Array, sig: Buffer|Uint8Array, sighash: number): Ref_wally_tx_witness_stack;
 export function witness_program_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;

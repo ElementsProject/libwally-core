@@ -690,6 +690,7 @@ for f in (
     ('wally_wif_to_bytes', c_int, [c_char_p, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_wif_to_public_key', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_witness_multisig_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t, c_uint32, POINTER(POINTER(wally_tx_witness_stack))]),
+    ('wally_witness_p2tr_from_sig', c_int, [c_void_p, c_size_t, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_witness_p2wpkh_from_der', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_witness_p2wpkh_from_sig', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_witness_program_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),

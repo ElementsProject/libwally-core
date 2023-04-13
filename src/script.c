@@ -1235,6 +1235,29 @@ int wally_witness_p2wpkh_from_sig(
     return ret;
 }
 
+int wally_witness_p2tr_from_sig(const unsigned char *sig, size_t sig_len,
+                                struct wally_tx_witness_stack **witness)
+{
+    int ret;
+
+    if (witness)
+        *witness = NULL;
+
+    /* Required to be a valid BIP340 length of 64 + possible sighash flag */
+    if (!sig || (sig_len != 64 && sig_len != 65) || !witness)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_tx_witness_stack_init_alloc(1, witness)) == WALLY_OK) {
+        ret = wally_tx_witness_stack_add(*witness, sig, sig_len);
+        if (ret != WALLY_OK) {
+            wally_tx_witness_stack_free(*witness);
+            *witness = NULL;
+        }
+    }
+
+    return ret;
+}
+
 int wally_witness_multisig_from_bytes(
     const unsigned char *script,
     size_t script_len,
