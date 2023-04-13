@@ -264,6 +264,31 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(WALLY_OK, wally_tx_get_btc_signature_hash(*args))
             self.assertEqual(expected, h(out[:out_len]))
 
+    def test_hash_prevouts(self):
+        """Test functions computing hash_prevouts"""
+        out, out_len = make_cbuffer('00'*32)
+        # The first sample tx from BIP-0143
+        bip143_tx = '0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000'
+        for tx_hex, expected in [
+            (bip143_tx, utf8('96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37')),
+            ]:
+            # Compute from the tx
+            tx = self.tx_deserialize_hex(tx_hex)
+            ret = wally_tx_get_hash_prevouts(tx, 0, 0xffffffff, out, out_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(h(out[:out_len]), expected)
+
+        # Invalid args
+        cases = [
+            (None, 0, 0xffffffff, out,  out_len),     # NULL tx
+            (tx,   2, 0xffffffff, out,  out_len),     # Invalid start index
+            (tx,   0, 0,          out,  out_len),     # Zero num_inputs
+            (tx,   0, 3,          out,  out_len),     # Invalid num_inputs
+            (tx,   0, 0xffffffff, None, out_len),     # Null output
+            (tx,   0, 0xffffffff, out,  out_len - 1), # Invalid output length
+        ]
+        for args in cases:
+            self.assertEqual(WALLY_EINVAL, wally_tx_get_hash_prevouts(*args))
 
     def test_bip341_tweak(self):
         """Tests for computing the bip341 signature hash"""

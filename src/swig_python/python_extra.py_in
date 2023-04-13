@@ -211,6 +211,7 @@ tx_output_clone = tx_output_clone_alloc
 tx_init = tx_init_alloc
 tx_clone = tx_clone_alloc
 tx_get_txid = _wrap_bin(tx_get_txid, WALLY_TXHASH_LEN)
+tx_get_hash_prevouts = _wrap_bin(tx_get_hash_prevouts, SHA256_LEN)
 tx_to_bytes = _wrap_bin(tx_to_bytes, tx_get_length)
 tx_get_btc_signature_hash = _wrap_bin(tx_get_btc_signature_hash, SHA256_LEN)
 tx_get_btc_taproot_signature_hash = _wrap_bin(tx_get_btc_taproot_signature_hash, SHA256_LEN)

@@ -545,6 +545,27 @@ WALLY_CORE_API int wally_tx_get_txid(
     size_t len);
 
 /**
+ * Return the BIP 143 hashPrevouts of a transaction.
+ *
+ * :param tx: The transaction to compute the hashPrevouts of.
+ * :param index: The zero-based index of the input to start hashing from.
+ *|    Pass 0 to start from the first input.
+ * :param num_inputs: The number of inputs to hash starting from the first.
+ *|    Pass 0xffffffff to use all inputs.
+ * :param bytes_out: Destination for the hashPrevouts bytes.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ *
+ * .. note:: The hash is computed without reference to any sighash flags,
+ *|    and so will not match BIP143 for `WALLY_SIGHASH_ANYONECANPAY`.
+ */
+WALLY_CORE_API int wally_tx_get_hash_prevouts(
+    const struct wally_tx *tx,
+    size_t index,
+    size_t num_inputs,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Return the length of transaction once serialized into bytes.
  *
  * :param tx: The transaction to find the serialized length of.

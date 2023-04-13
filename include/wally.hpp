@@ -1706,6 +1706,12 @@ inline int tx_get_btc_taproot_signature_hash(const TX& tx, size_t index, const S
     return ret;
 }
 
+template <class TX, class BYTES_OUT>
+inline int tx_get_hash_prevouts(const TX& tx, size_t index, size_t num_inputs, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_get_hash_prevouts(detail::get_p(tx), index, num_inputs, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
 template <class TX>
 inline int tx_get_length(const TX& tx, uint32_t flags, size_t* written) {
     int ret = ::wally_tx_get_length(detail::get_p(tx), flags, written);

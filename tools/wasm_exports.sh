@@ -357,6 +357,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_from_hex' \
 ,'_wally_tx_get_btc_signature_hash' \
 ,'_wally_tx_get_btc_taproot_signature_hash' \
+,'_wally_tx_get_hash_prevouts' \
 ,'_wally_tx_get_input_index' \
 ,'_wally_tx_get_input_script' \
 ,'_wally_tx_get_input_script_len' \
