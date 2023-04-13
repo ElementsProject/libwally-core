@@ -271,6 +271,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* genesis_blockhash, size_t genesis_blockhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* hash160, size_t hash160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* hash_prevouts, size_t hash_prevouts_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* hmac_key, size_t hmac_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys, size_t inflation_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
@@ -523,6 +524,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_uint64(wally_asset_unblind_with_nonce);
 %returns_uint64(wally_asset_unblind);
 %returns_array_(wally_asset_blinding_key_from_seed, 3, 4, HMAC_SHA512_LEN);
+%returns_array_(wally_asset_blinding_key_to_abf, 6, 7, BLINDING_FACTOR_LEN);
+%returns_array_(wally_asset_blinding_key_to_abf_vbf, 6, 7, WALLY_ABF_VBF_LEN);
+%returns_array_(wally_asset_blinding_key_to_vbf, 6, 7, BLINDING_FACTOR_LEN);
 %returns_array_(wally_asset_blinding_key_to_ec_private_key, 5, 6, EC_PRIVATE_KEY_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
 %returns_string(wally_base58_from_bytes);

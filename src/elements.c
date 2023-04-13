@@ -1,5 +1,6 @@
 #include "internal.h"
 #ifdef BUILD_ELEMENTS
+#include "script_int.h"
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
 #include <include/wally_elements.h>
@@ -10,7 +11,6 @@
 #include "secp256k1/include/secp256k1_rangeproof.h"
 #include "src/secp256k1/include/secp256k1_surjectionproof.h"
 #include "src/secp256k1/include/secp256k1_whitelist.h"
-#include "ccan/ccan/endian/endian.h"
 
 
 static const unsigned char LABEL_STR[] = {
@@ -745,6 +745,68 @@ int wally_asset_blinding_key_to_ec_private_key(
             wally_clear(bytes_out, len);
     }
     return ret;
+}
+
+#define BK_ABF 0x1
+#define BK_VBF 0x2
+
+int bk_to_abf_vbf_impl(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *hash_prevouts, size_t hash_prevouts_len,
+    uint32_t output_index, unsigned char *bytes_out, size_t len, uint32_t flags)
+{
+    unsigned char buff[SHA256_LEN];
+    unsigned char msg[7] = { 0x00, 'B', 'F', 0x00, 0x00, 0x00, 0x00 };
+    size_t i;
+    int ret;
+
+    if (!bytes_out || len != SHA256_LEN * (flags == (BK_ABF|BK_VBF) ? 2 : 1))
+        return WALLY_EINVAL;
+    ret = asset_blinding_key_hash(bytes, bytes_len,
+                                  hash_prevouts, hash_prevouts_len,
+                                  buff, sizeof(buff));
+    if (ret == WALLY_OK) {
+        uint32_to_be_bytes(output_index, msg + 3);
+        for (i = BK_ABF; ret == WALLY_OK && i <= BK_VBF; ++i) {
+            if (flags & i) {
+                msg[0] = i == BK_ABF ? 'A' : 'V';
+                ret = wally_hmac_sha256(buff, sizeof(buff), msg, sizeof(msg),
+                                        bytes_out, SHA256_LEN);
+                bytes_out += SHA256_LEN;
+            }
+        }
+    }
+    wally_clear(buff, sizeof(buff));
+    return ret;
+}
+
+int wally_asset_blinding_key_to_abf_vbf(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *hash_prevouts, size_t hash_prevouts_len,
+    uint32_t output_index, unsigned char *bytes_out, size_t len)
+{
+    return bk_to_abf_vbf_impl(bytes, bytes_len, hash_prevouts, hash_prevouts_len,
+                              output_index, bytes_out, len, BK_ABF | BK_VBF);
+}
+
+int wally_asset_blinding_key_to_abf(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *hash_prevouts, size_t hash_prevouts_len,
+    uint32_t output_index,
+    unsigned char *bytes_out, size_t len)
+{
+    return bk_to_abf_vbf_impl(bytes, bytes_len, hash_prevouts, hash_prevouts_len,
+                              output_index, bytes_out, len, BK_ABF);
+}
+
+int wally_asset_blinding_key_to_vbf(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *hash_prevouts, size_t hash_prevouts_len,
+    uint32_t output_index,
+    unsigned char *bytes_out, size_t len)
+{
+    return bk_to_abf_vbf_impl(bytes, bytes_len, hash_prevouts, hash_prevouts_len,
+                              output_index, bytes_out, len, BK_VBF);
 }
 
 int wally_asset_pak_whitelistproof_size(size_t num_keys, size_t *written)

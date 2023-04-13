@@ -445,7 +445,10 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_bip32_key_with_tweak_from_parent_path' \
 ,'_bip32_key_with_tweak_from_parent_path_alloc' \
 ,'_wally_asset_blinding_key_from_seed' \
+,'_wally_asset_blinding_key_to_abf' \
+,'_wally_asset_blinding_key_to_abf_vbf' \
 ,'_wally_asset_blinding_key_to_ec_private_key' \
+,'_wally_asset_blinding_key_to_vbf' \
 ,'_wally_asset_final_vbf' \
 ,'_wally_asset_generator_from_bytes' \
 ,'_wally_asset_pak_whitelistproof' \

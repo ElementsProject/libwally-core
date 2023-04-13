@@ -90,6 +90,7 @@ export const PBKDF2_HMAC_SHA512_LEN = 64;
 export const RIPEMD160_LEN = 20;
 export const SHA256_LEN = 32;
 export const SHA512_LEN = 64;
+export const WALLY_ABF_VBF_LEN = 64;
 export const WALLY_ADDRESS_PUBKEY_MAX_LEN = 25;
 export const WALLY_ADDRESS_TYPE_P2PKH = 0x01      ; /** P2PKH address ("1...") */
 export const WALLY_ADDRESS_TYPE_P2SH_P2WPKH = 0x02; /** P2SH-P2WPKH wrapped SegWit address ("3...") */

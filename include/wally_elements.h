@@ -502,6 +502,71 @@ WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
     unsigned char *bytes_out,
     size_t len);
 
+#define WALLY_ABF_VBF_LEN 64
+
+/**
+ * Generate asset and value blinding factors for a transaction output.
+ *
+ * :param bytes: A full master blinding key, e.g. from `wally_asset_blinding_key_from_seed`,
+ *|    or a partial key of length `SHA256_LEN`, typically from the last half of the full key.
+ * :param bytes_len: Length of ``bytes``. Must be `HMAC_SHA512_LEN` or `SHA256_LEN`.
+ * :param hash_prevouts: The hashPrevouts of the transaction from `wally_get_hash_prevouts`.
+ * :param hash_prevouts_len: Length of ``hash_prevouts`` in bytes. Must be `SHA256_LEN`.
+ * :param output_index: The zero-based index of the transaction output to be blinded.
+ * :param bytes_out: Destination for the concatenated asset and value blinding factors.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_ABF_VBF_LEN)
+ */
+WALLY_CORE_API int wally_asset_blinding_key_to_abf_vbf(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *hash_prevouts,
+    size_t hash_prevouts_len,
+    uint32_t output_index,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Generate an asset blinding factor for a transaction output.
+ *
+ * :param bytes: A full master blinding key, e.g. from `wally_asset_blinding_key_from_seed`,
+ *|    or a partial key of length `SHA256_LEN`, typically from the last half of the full key.
+ * :param bytes_len: Length of ``bytes``. Must be `HMAC_SHA512_LEN` or `SHA256_LEN`.
+ * :param hash_prevouts: The hashPrevouts of the transaction from `wally_get_hash_prevouts`.
+ * :param hash_prevouts_len: Length of ``hash_prevouts`` in bytes. Must be `SHA256_LEN`.
+ * :param output_index: The zero-based index of the transaction output to be blinded.
+ * :param bytes_out: Destination for the resulting asset blinding factor.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
+ */
+WALLY_CORE_API int wally_asset_blinding_key_to_abf(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *hash_prevouts,
+    size_t hash_prevouts_len,
+    uint32_t output_index,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Generate a value blinding factor for a transaction output.
+ *
+ * :param bytes: A full master blinding key, e.g. from `wally_asset_blinding_key_from_seed`,
+ *|    or a partial key of length `SHA256_LEN`, typically from the last half of the full key.
+ * :param bytes_len: Length of ``bytes``. Must be `HMAC_SHA512_LEN` or `SHA256_LEN`.
+ * :param hash_prevouts: The hashPrevouts of the transaction from `wally_get_hash_prevouts`.
+ * :param hash_prevouts_len: Length of ``hash_prevouts`` in bytes. Must be `SHA256_LEN`.
+ * :param output_index: The zero-based index of the transaction output to be blinded.
+ * :param bytes_out: Destination for the resulting value blinding factor.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BLINDING_FACTOR_LEN)
+ */
+WALLY_CORE_API int wally_asset_blinding_key_to_vbf(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *hash_prevouts,
+    size_t hash_prevouts_len,
+    uint32_t output_index,
+    unsigned char *bytes_out,
+    size_t len);
+
 /**
  * Calculate the size in bytes of a whitelist proof.
  *
