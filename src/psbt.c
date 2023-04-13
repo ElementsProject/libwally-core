@@ -4405,6 +4405,21 @@ fail:
     return ret;
 }
 
+static bool finalize_p2tr(struct wally_psbt_input *input)
+{
+    const struct wally_map_item *sig;
+
+    sig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_TAP_KEY_SIG);
+
+    /* TODO support tapleaf spends input->taproot_leaf_signatures */
+    if (!sig ||
+        wally_witness_p2tr_from_sig(sig->value, sig->value_len,
+                                    &input->final_witness) != WALLY_OK)
+        return false;
+
+    return true;
+}
+
 int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t flags)
 {
     struct wally_psbt_input *input = psbt_get_input(psbt, index);
@@ -4470,6 +4485,10 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
         if (!finalize_multisig(input, out_script, out_script_len, is_witness, is_p2sh))
             return WALLY_OK;
         break;
+    case WALLY_SCRIPT_TYPE_P2TR:
+        if (!finalize_p2tr(input))
+            return WALLY_OK;
+        break;
     default:
         return WALLY_OK; /* Unhandled script type  */
     }
@@ -4479,8 +4498,11 @@ done:
         /* Clear non-final things */
         wally_map_remove_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT);
         wally_map_remove_integer(&input->psbt_fields, PSBT_IN_WITNESS_SCRIPT);
+        wally_map_remove_integer(&input->psbt_fields, PSBT_IN_TAP_KEY_SIG);
+        wally_map_remove_integer(&input->psbt_fields, PSBT_IN_TAP_INTERNAL_KEY);
         wally_map_clear(&input->keypaths);
         wally_map_clear(&input->signatures);
+        wally_map_clear(&input->taproot_leaf_paths);
         input->sighash = 0;
     }
     return WALLY_OK;

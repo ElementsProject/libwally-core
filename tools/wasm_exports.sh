@@ -435,6 +435,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_wif_to_bytes' \
 ,'_wally_wif_to_public_key' \
 ,'_wally_witness_multisig_from_bytes' \
+,'_wally_witness_p2tr_from_sig' \
 ,'_wally_witness_p2wpkh_from_der' \
 ,'_wally_witness_p2wpkh_from_sig' \
 ,'_wally_witness_program_from_bytes' \

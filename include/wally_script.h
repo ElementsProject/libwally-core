@@ -294,6 +294,20 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
     struct wally_tx_witness_stack **witness);
 
 /**
+ * Create a P2TR keyspend witness from a BIP340 signature plus
+ * optional sighash.
+ *
+ * :param sig: The BIP340-encoded keyspend signature, including a sighash byte
+ *|    for non `WALLY_SIGHASH_DEFAULT` sighashes.
+ * :param sig_len: The length of ``sig`` in bytes. Must be 64 or 65.
+ * :param witness: Destination for the newly created witness.
+ */
+WALLY_CORE_API int wally_witness_p2tr_from_sig(
+    const unsigned char *sig,
+    size_t sig_len,
+    struct wally_tx_witness_stack **witness);
+
+/**
  * Create an OP_RETURN scriptPubkey.
  *
  * :param bytes: Bytes to create a scriptPubkey for.

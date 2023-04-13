@@ -1956,6 +1956,12 @@ inline int witness_multisig_from_bytes(const SCRIPT& script, const BYTES& bytes,
     return ret;
 }
 
+template <class SIG>
+inline int witness_p2tr_from_sig(const SIG& sig, struct wally_tx_witness_stack** witness) {
+    int ret = ::wally_witness_p2tr_from_sig(sig.data(), sig.size(), witness);
+    return ret;
+}
+
 template <class PUB_KEY, class SIG>
 inline int witness_p2wpkh_from_der(const PUB_KEY& pub_key, const SIG& sig, struct wally_tx_witness_stack** witness) {
     int ret = ::wally_witness_p2wpkh_from_der(pub_key.data(), pub_key.size(), sig.data(), sig.size(), witness);
