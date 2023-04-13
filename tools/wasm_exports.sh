@@ -111,6 +111,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ecdh' \
 ,'_wally_format_bitcoin_message' \
 ,'_wally_free_string' \
+,'_wally_get_hash_prevouts' \
 ,'_wally_get_operations' \
 ,'_wally_hash160' \
 ,'_wally_hex_from_bytes' \

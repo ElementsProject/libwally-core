@@ -382,6 +382,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* surjectionproof, size_t surjectionproof_len);
 %pybuffer_nullable_binary(const unsigned char* tapleaf_script, size_t tapleaf_script_len);
 %pybuffer_nullable_binary(const unsigned char* txhash, size_t txhash_len);
+%pybuffer_nullable_binary(const unsigned char* txhashes, size_t txhashes_len);
 %pybuffer_nullable_binary(const unsigned char* txout_proof, size_t txout_proof_len);
 %pybuffer_nullable_binary(const unsigned char* val, size_t val_len);
 %pybuffer_nullable_binary(const unsigned char* value, size_t value_len);
@@ -414,6 +415,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 
 %py_int_array(uint32_t, 0xffffffffull, child_path, child_path_len)
 %py_int_array(uint32_t, 0xffull, sighash, sighash_len)
+%py_int_array(uint32_t, 0xffffffffull, utxo_indices, num_utxo_indices)
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, num_values)
 %py_int_array_out(uint32_t, 0xffffffffull, child_path_out, child_path_out_len)
 

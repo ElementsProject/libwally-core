@@ -1870,18 +1870,54 @@ int wally_tx_get_vsize(const struct wally_tx *tx, size_t *written)
     return ret;
 }
 
+static int hash_prevouts(unsigned char *prevouts, size_t inputs_size,
+                         unsigned char *bytes_out, size_t len, bool do_free)
+{
+    int ret = wally_sha256d(prevouts, inputs_size, bytes_out, len);
+    wally_clear(prevouts, inputs_size);
+    if (do_free)
+        wally_free(prevouts);
+    return ret;
+}
+
+int wally_get_hash_prevouts(const unsigned char *txhashes, size_t txhashes_len,
+                            const uint32_t *utxo_indices, size_t num_utxo_indices,
+                            unsigned char *bytes_out, size_t len)
+{
+    unsigned char *buff_p;
+    size_t inputs_size, i;
+
+    if (!txhashes || !txhashes_len || txhashes_len % WALLY_TXHASH_LEN ||
+        !utxo_indices || num_utxo_indices * WALLY_TXHASH_LEN != txhashes_len ||
+        !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    inputs_size = txhashes_len + (num_utxo_indices * sizeof(uint32_t));
+    if (!(buff_p = wally_malloc(inputs_size)))
+        return WALLY_ENOMEM;
+
+    for (i = 0; i < num_utxo_indices; ++i) {
+        unsigned char *tmp_p = buff_p + i * (WALLY_TXHASH_LEN + sizeof(uint32_t));
+        memcpy(tmp_p, txhashes + i * WALLY_TXHASH_LEN, WALLY_TXHASH_LEN);
+        uint32_to_le_bytes(utxo_indices[i], tmp_p + WALLY_TXHASH_LEN);
+    }
+    return hash_prevouts(buff_p, inputs_size, bytes_out, len, true);
+}
+
 int wally_tx_get_hash_prevouts(const struct wally_tx *tx,
                                size_t index, size_t num_inputs,
                                unsigned char *bytes_out, size_t len)
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t inputs_size, i;
-    int ret;
 
-    if (tx && num_inputs == 0xffffffff)
+    if (tx && num_inputs == 0xffffffff) {
+        if (index)
+            return WALLY_EINVAL; /* 0xffffffff is only valid with index == 0 */
        num_inputs = tx->num_inputs;
-    if (!tx || index >= tx->num_inputs ||
-        !num_inputs || num_inputs > tx->num_inputs ||
+    }
+    if (!tx || index >= tx->num_inputs || !num_inputs ||
+        num_inputs > tx->num_inputs || index + num_inputs > tx->num_inputs ||
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
@@ -1895,12 +1931,7 @@ int wally_tx_get_hash_prevouts(const struct wally_tx *tx,
         memcpy(tmp_p, tx->inputs[tx_i].txhash, WALLY_TXHASH_LEN);
         uint32_to_le_bytes(tx->inputs[tx_i].index, tmp_p + WALLY_TXHASH_LEN);
     }
-
-    ret = wally_sha256d(buff_p, inputs_size, bytes_out, len);
-    wally_clear(buff_p, inputs_size);
-    if (inputs_size > sizeof(buff))
-        wally_free(buff_p);
-    return ret;
+    return hash_prevouts(buff_p, inputs_size, bytes_out, len, inputs_size > sizeof(buff));
 }
 
 static inline int tx_to_bip143_bytes(const struct wally_tx *tx,

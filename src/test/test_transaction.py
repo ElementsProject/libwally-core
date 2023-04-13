@@ -270,25 +270,60 @@ class TransactionTests(unittest.TestCase):
         # The first sample tx from BIP-0143
         bip143_tx = '0100000002fff7f7881a8099afa6940d42d1e7f6362bec38171ea3edf433541db4e4ad969f0000000000eeffffffef51e1b804cc89d182d279655c3aa89e815b1b309fe287d9b2b55d57b90ec68a0100000000ffffffff02202cb206000000001976a9148280b37df378db99f66f85c95a783a76ac7a6d5988ac9093510d000000001976a9143bde42dbee7e4dbe6a21b2d50ce2f0167faa815988ac11000000'
         for tx_hex, expected in [
-            (bip143_tx, utf8('96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37')),
+            # Note this test case must be last for the invalid tests below
+            (bip143_tx, utf8('96b827c8483d4e9b96712b6713a7b68d6e8003a781feba36c31143470b4efd37'))
             ]:
             # Compute from the tx
             tx = self.tx_deserialize_hex(tx_hex)
-            ret = wally_tx_get_hash_prevouts(tx, 0, 0xffffffff, out, out_len)
+            _, num_inputs = wally_tx_get_num_inputs(tx)
+            # Can be called with 'all inputs marker' 0xffffffff or the actual num_inputs
+            for start, count in [(0, 0xffffffff), (0, num_inputs)]:
+                ret = wally_tx_get_hash_prevouts(tx, start, count, out, out_len)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(h(out[:out_len]), expected)
+            # Can be called with a subset of inputs (although we have no vectors for this)
+            ret = wally_tx_get_hash_prevouts(tx, 0, 1, out, out_len) # Just the first input
+            self.assertEqual(ret, WALLY_OK)
+            self.assertNotEqual(h(out[:out_len]), expected)
+
+            # Compute from the underlying data
+            txhashes, indices = bytearray(), (c_uint * num_inputs)()
+            for i in range(num_inputs):
+                wally_tx_get_input_txhash(tx, i, out, out_len)
+                txhashes.extend(out[:out_len])
+                _, indices[i] = wally_tx_get_input_index(tx, i)
+            txhashes = bytes(txhashes)
+            ret = wally_get_hash_prevouts(txhashes, len(txhashes),
+                                          indices, len(indices), out, out_len)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(h(out[:out_len]), expected)
 
         # Invalid args
         cases = [
             (None, 0, 0xffffffff, out,  out_len),     # NULL tx
-            (tx,   2, 0xffffffff, out,  out_len),     # Invalid start index
+            (tx,   2, 1,          out,  out_len),     # Start index >= num tx inputs
+            (tx,   1, 0xffffffff, out,  out_len),     # Non-zero start index + all inputs marker
+            (tx,   1, 2,          out,  out_len),     # Start index + num_inputs > num tx inputs
             (tx,   0, 0,          out,  out_len),     # Zero num_inputs
-            (tx,   0, 3,          out,  out_len),     # Invalid num_inputs
+            (tx,   0, 3,          out,  out_len),     # num_inputs > num tx inputs
             (tx,   0, 0xffffffff, None, out_len),     # Null output
             (tx,   0, 0xffffffff, out,  out_len - 1), # Invalid output length
         ]
         for args in cases:
             self.assertEqual(WALLY_EINVAL, wally_tx_get_hash_prevouts(*args))
+
+        cases = [
+            (None,     len(txhashes), indices, len(indices), out,  out_len), # NULL txhashes
+            (txhashes, 0,             indices, len(indices), out,  out_len), # Zero hash len
+            (txhashes, 16,            indices, len(indices), out,  out_len), # Incorect hash len
+            (txhashes, len(txhashes), None,    len(indices), out,  out_len), # NULL indices
+            (txhashes, len(txhashes), indices, 0,            out,  out_len), # Zero num indices
+            (txhashes, len(txhashes), indices, 1,            out,  out_len), # Num indices != num hashes
+            (txhashes, len(txhashes), indices, len(indices), None, out_len), # NULL output
+            (txhashes, len(txhashes), indices, len(indices), out,  out_len - 1), # Invalid output length
+        ]
+        for args in cases:
+            self.assertEqual(WALLY_EINVAL, wally_get_hash_prevouts(*args))
 
     def test_bip341_tweak(self):
         """Tests for computing the bip341 signature hash"""

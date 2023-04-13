@@ -309,6 +309,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* txhashes, size_t txhashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txout_proof, size_t txout_proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* val, size_t val_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* value, size_t value_len) };
@@ -342,6 +343,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (uint32_t *child_path_out, size_t child_path_out_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *utxo_indices, size_t num_utxo_indices) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t num_values) }
 
 %typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
@@ -581,6 +583,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_explicit_surjectionproof, 7, 8, ASSET_EXPLICIT_SURJECTIONPROOF_LEN);
 %returns_void__(wally_explicit_surjectionproof_verify);
 %returns_size_t(wally_format_bitcoin_message);
+%returns_array_(wally_get_hash_prevouts, 5, 6, SHA256_LEN);
 %returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_n_to_bytes);

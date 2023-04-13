@@ -545,13 +545,32 @@ WALLY_CORE_API int wally_tx_get_txid(
     size_t len);
 
 /**
+ * Calculate the BIP 143 hashPrevouts of a list of input txids and output indices.
+ *
+ * :param txhashes: The input txids to compute the hash from.
+ * :param txhashes_len: Length of ``txhashes`` in bytes. Must be a multiple of `WALLY_TXHASH_LEN`.
+ * :param utxo_indices: The output indices of the txids in ``txhashes``.
+ * :param num_utxo_indices: The number of output indices in ``utxo_indices``. You must
+ *|    pass one index for every txhash in ``txhashes``.
+ * :param bytes_out: Destination for the hashPrevouts bytes.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ */
+WALLY_CORE_API int wally_get_hash_prevouts(
+    const unsigned char *txhashes,
+    size_t txhashes_len,
+    const uint32_t *utxo_indices,
+    size_t num_utxo_indices,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Return the BIP 143 hashPrevouts of a transaction.
  *
  * :param tx: The transaction to compute the hashPrevouts of.
  * :param index: The zero-based index of the input to start hashing from.
  *|    Pass 0 to start from the first input.
  * :param num_inputs: The number of inputs to hash starting from the first.
- *|    Pass 0xffffffff to use all inputs.
+ *|    If ``index`` is given as 0, you can pass 0xffffffff to use all inputs.
  * :param bytes_out: Destination for the hashPrevouts bytes.
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
  *
