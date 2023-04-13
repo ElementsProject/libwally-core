@@ -85,14 +85,19 @@ class CATests(unittest.TestCase):
         unconfidential_addr = '2dpWh6jbhAowNsQ5agtFzi7j6nKscj6UnEr'
         script, _ = make_cbuffer('76a914a579388225827d9f2fe9014add644487808c695d88ac')
         private_blinding_key, _ = make_cbuffer('00' * 32)
-        ret = wally_asset_blinding_key_to_ec_private_key(root.data, len(root.data), script, len(script), private_blinding_key, len(private_blinding_key))
-        self.assertEqual(ret, WALLY_OK)
-        public_blinding_key, _ = make_cbuffer('00' * 33)
-        ret = wally_ec_public_key_from_private_key(private_blinding_key, len(private_blinding_key), public_blinding_key, len(public_blinding_key))
-        self.assertEqual(ret, WALLY_OK)
+        for master_key in [root.data, root.data[32:64]]:
+            ret = wally_asset_blinding_key_to_ec_private_key(master_key, len(master_key),
+                                                             script, len(script),
+                                                             private_blinding_key, len(private_blinding_key))
+            self.assertEqual(ret, WALLY_OK)
+            public_blinding_key, _ = make_cbuffer('00' * 33)
+            ret = wally_ec_public_key_from_private_key(private_blinding_key, len(private_blinding_key),
+                                                       public_blinding_key, len(public_blinding_key))
+            self.assertEqual(ret, WALLY_OK)
 
-        ret, address = wally_confidential_addr_from_addr(utf8(unconfidential_addr), CA_PREFIX_LIQUID_REGTEST, public_blinding_key, len(public_blinding_key))
-        self.assertEqual(address, 'CTEkf75DFff5ReB7juTg2oehrj41aMj21kvvJaQdWsEAQohz1EDhu7Ayh6goxpz3GZRVKidTtaXaXYEJ')
+            ret, address = wally_confidential_addr_from_addr(utf8(unconfidential_addr), CA_PREFIX_LIQUID_REGTEST,
+                                                             public_blinding_key, len(public_blinding_key))
+            self.assertEqual(address, 'CTEkf75DFff5ReB7juTg2oehrj41aMj21kvvJaQdWsEAQohz1EDhu7Ayh6goxpz3GZRVKidTtaXaXYEJ')
 
 
     def test_confidential_addr(self):

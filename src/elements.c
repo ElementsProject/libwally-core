@@ -717,23 +717,33 @@ int wally_asset_blinding_key_from_seed(
     return ret;
 }
 
-int wally_asset_blinding_key_to_ec_private_key(
-    const unsigned char *bytes,
-    size_t bytes_len,
-    const unsigned char *script,
-    size_t script_len,
-    unsigned char *bytes_out,
-    size_t len)
+static int asset_blinding_key_hash(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *data, size_t data_len,
+    unsigned char *bytes_out, size_t len)
 {
-    int ret;
-
-    if (!bytes || bytes_len != HMAC_SHA512_LEN || !script || !script_len || !bytes_out || len != EC_PRIVATE_KEY_LEN)
+    if (bytes && bytes_len == HMAC_SHA512_LEN) {
+        /* Full blinding key: convert it to the used part (last half) */
+        bytes += HMAC_SHA512_LEN / 2;
+        bytes_len = HMAC_SHA512_LEN / 2;
+    }
+    if (!bytes || bytes_len != HMAC_SHA512_LEN / 2 || !data || !data_len ||
+        !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
+    return wally_hmac_sha256(bytes, bytes_len, data, data_len, bytes_out, len);
+}
 
-    ret = wally_hmac_sha256(bytes + HMAC_SHA512_LEN / 2, HMAC_SHA512_LEN / 2, script, script_len, bytes_out, len);
-    if (ret == WALLY_OK)
-        ret = wally_ec_private_key_verify(bytes_out, EC_PRIVATE_KEY_LEN);
-
+int wally_asset_blinding_key_to_ec_private_key(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *script, size_t script_len,
+    unsigned char *bytes_out, size_t len)
+{
+    int ret = asset_blinding_key_hash(bytes, bytes_len, script, script_len, bytes_out, len);
+    if (ret == WALLY_OK) {
+        ret = wally_ec_private_key_verify(bytes_out, len);
+        if (ret != WALLY_OK)
+            wally_clear(bytes_out, len);
+    }
     return ret;
 }
 
