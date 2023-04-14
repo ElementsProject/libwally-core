@@ -148,8 +148,8 @@ WALLY_CORE_API int wally_asset_value_commitment(
  * :param vbf_len: Length of ``vbf``. Must be `BLINDING_FACTOR_LEN`.
  * :param commitment: Value commitment from `wally_asset_value_commitment`.
  * :param commitment_len: Length of ``commitment``. Must be `ASSET_COMMITMENT_LEN`.
- * :param extra: Set this to the script pubkey of the output.
- * :param extra_len: Length of ``extra``, i.e. script pubkey.
+ * :param extra: Set this to the scriptPubkey of the output.
+ * :param extra_len: Length of ``extra``, i.e. scriptPubkey.
  * :param generator: Asset generator from `wally_asset_generator_from_bytes`.
  * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
  * :param min_value: Recommended value 1.
@@ -392,7 +392,7 @@ WALLY_CORE_API int wally_explicit_surjectionproof_verify(
  * :param proof_len: Length of ``proof``.
  * :param commitment: Value commitment from `wally_tx_get_output_value`.
  * :param commitment_len: Length of ``commitment``.
- * :param extra: Script pubkey from `wally_tx_get_output_script`.
+ * :param extra: scriptPubkey from `wally_tx_get_output_script`.
  * :param extra_len: Length of ``extra``.
  * :param generator: Asset generator from `wally_tx_get_output_asset`.
  * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
@@ -434,7 +434,7 @@ WALLY_CORE_API int wally_asset_unblind_with_nonce(
  * :param proof_len: Length of ``proof``.
  * :param commitment: Value commitment from `wally_tx_get_output_value`.
  * :param commitment_len: Length of ``commitment``.
- * :param extra: Script pubkey from `wally_tx_get_output_script`.
+ * :param extra: scriptPubkey from `wally_tx_get_output_script`.
  * :param extra_len: Length of ``extra``.
  * :param generator: Asset generator from `wally_tx_get_output_asset`.
  * :param generator_len: Length of ``generator``. Must be `ASSET_GENERATOR_LEN`.
@@ -484,12 +484,12 @@ WALLY_CORE_API int wally_asset_blinding_key_from_seed(
     size_t len);
 
 /**
- * Generate a blinding private key for a script pubkey.
+ * Generate a blinding private key for a scriptPubkey.
  *
  * :param bytes: A full master blinding key, e.g. from `wally_asset_blinding_key_from_seed`,
  *|    or a partial key of length `SHA256_LEN`, typically from the last half of the full key.
  * :param bytes_len: Length of ``bytes``. Must be `HMAC_SHA512_LEN` or `SHA256_LEN`.
- * :param script: The script pubkey for the confidential output address.
+ * :param script: The scriptPubkey for the confidential output address.
  * :param script_len: Length of ``script``.
  * :param bytes_out: Destination for the resulting blinding private key.
  * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
