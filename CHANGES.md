@@ -1,6 +1,10 @@
 # Changes
 
 ## Version 0.8.9
+- libsecp256k1-zkp: The internal libsecp256k1 library version has been updated
+  to fix a potential timing leak when compiling with clang v14 or later.
+  Although there are no known exploits at this time, users are encouraged to
+  update as soon as possible.
 - descriptor_get_num_variants: Now returns 1 instead of 0 if no variants are
   present. This allows iterating the variant from 0 to the number of variants
   returned in order to generate all scripts/addresses.
