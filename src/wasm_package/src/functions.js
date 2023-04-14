@@ -90,6 +90,7 @@ export const asset_generator_from_bytes = wrap('wally_asset_generator_from_bytes
 export const asset_pak_whitelistproof_len = wrap('wally_asset_pak_whitelistproof_len', [T.Bytes, T.Bytes, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.DestPtr(T.Int32)]);
 export const asset_pak_whitelistproof_size = wrap('wally_asset_pak_whitelistproof_size', [T.Int32, T.DestPtr(T.Int32)]);
 export const asset_rangeproof = wrap('wally_asset_rangeproof', [T.Int64, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Int64, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.ASSET_RANGEPROOF_MAX_LEN, true)]);
+export const asset_rangeproof_get_maximum_len = wrap('wally_asset_rangeproof_get_maximum_len', [T.Int64, T.Int32, T.DestPtr(T.Int32)]);
 export const asset_rangeproof_with_nonce = wrap('wally_asset_rangeproof_with_nonce', [T.Int64, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Int64, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.ASSET_RANGEPROOF_MAX_LEN, true)]);
 export const asset_scalar_offset = wrap('wally_asset_scalar_offset', [T.Int64, T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_SCALAR_LEN)]);
 export const asset_surjectionproof_len = wrap('wally_asset_surjectionproof_len', [T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.DestPtr(T.Int32)]);

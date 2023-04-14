@@ -134,6 +134,18 @@ WALLY_CORE_API int wally_asset_value_commitment(
     size_t len);
 
 /**
+ * Calculate the maximum size of a rangeproof.
+ *
+ * :param value: The maximum possible value of the output in satoshi.
+ * :param min_bits: The min_bits value that will be passed to `wally_asset_rangeproof`.
+ * :param written: Destination for the maximum rangeproof size in bytes.
+ */
+WALLY_CORE_API int wally_asset_rangeproof_get_maximum_len(
+    uint64_t value,
+    int min_bits,
+    size_t *written);
+
+/**
  * Generate a rangeproof using a nonce.
  *
  * :param value: Value of the output in satoshi.

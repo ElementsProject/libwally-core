@@ -455,6 +455,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_pak_whitelistproof_len' \
 ,'_wally_asset_pak_whitelistproof_size' \
 ,'_wally_asset_rangeproof' \
+,'_wally_asset_rangeproof_get_maximum_len' \
 ,'_wally_asset_rangeproof_with_nonce' \
 ,'_wally_asset_scalar_offset' \
 ,'_wally_asset_surjectionproof' \

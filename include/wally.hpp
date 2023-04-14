@@ -2063,6 +2063,11 @@ inline int asset_rangeproof(uint64_t value, const PUB_KEY& pub_key, const PRIV_K
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+inline int asset_rangeproof_get_maximum_len(uint64_t value, int min_bits, size_t* written) {
+    int ret = ::wally_asset_rangeproof_get_maximum_len(value, min_bits, written);
+    return ret;
+}
+
 template <class NONCE_HASH, class ASSET, class ABF, class VBF, class COMMITMENT, class EXTRA, class GENERATOR, class BYTES_OUT>
 inline int asset_rangeproof_with_nonce(uint64_t value, const NONCE_HASH& nonce_hash, const ASSET& asset, const ABF& abf, const VBF& vbf, const COMMITMENT& commitment, const EXTRA& extra, const GENERATOR& generator, uint64_t min_value, int exp, int min_bits, BYTES_OUT& bytes_out, size_t* written = 0) {
     size_t n;

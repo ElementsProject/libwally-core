@@ -191,6 +191,18 @@ int wally_asset_value_commitment(uint64_t value,
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
+int wally_asset_rangeproof_get_maximum_len(uint64_t value, int min_bits, size_t *written)
+{
+    const secp256k1_context *ctx = secp_ctx();
+    if (!written)
+        return WALLY_EINVAL;
+    *written = 0;
+    if (!ctx)
+        return WALLY_ENOMEM;
+    *written = secp256k1_rangeproof_max_size(ctx, value, min_bits);
+    return WALLY_OK;
+}
+
 int wally_asset_rangeproof_with_nonce(uint64_t value,
                                       const unsigned char *nonce_hash, size_t nonce_hash_len,
                                       const unsigned char *asset, size_t asset_len,

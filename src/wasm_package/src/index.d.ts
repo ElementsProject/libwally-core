@@ -42,6 +42,7 @@ export function asset_generator_from_bytes(asset: Buffer|Uint8Array, abf: Buffer
 export function asset_pak_whitelistproof_len(online_keys: Buffer|Uint8Array, offline_keys: Buffer|Uint8Array, key_index: number, sub_pubkey: Buffer|Uint8Array, online_priv_key: Buffer|Uint8Array, summed_key: Buffer|Uint8Array): number;
 export function asset_pak_whitelistproof_size(num_keys: number): number;
 export function asset_rangeproof(value: bigint, pub_key: Buffer|Uint8Array, priv_key: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, commitment: Buffer|Uint8Array, extra: Buffer|Uint8Array, generator: Buffer|Uint8Array, min_value: bigint, exp: number, min_bits: number): Buffer;
+export function asset_rangeproof_get_maximum_len(value: bigint, min_bits: number): number;
 export function asset_rangeproof_with_nonce(value: bigint, nonce_hash: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, commitment: Buffer|Uint8Array, extra: Buffer|Uint8Array, generator: Buffer|Uint8Array, min_value: bigint, exp: number, min_bits: number): Buffer;
 export function asset_scalar_offset(value: bigint, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array): Buffer;
 export function asset_surjectionproof_len(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array, bytes: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, generator: Buffer|Uint8Array): number;
