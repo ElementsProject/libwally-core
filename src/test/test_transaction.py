@@ -275,9 +275,8 @@ class TransactionTests(unittest.TestCase):
             ]:
             # Compute from the tx
             tx = self.tx_deserialize_hex(tx_hex)
-            _, num_inputs = wally_tx_get_num_inputs(tx)
             # Can be called with 'all inputs marker' 0xffffffff or the actual num_inputs
-            for start, count in [(0, 0xffffffff), (0, num_inputs)]:
+            for start, count in [(0, 0xffffffff), (0, tx.num_inputs)]:
                 ret = wally_tx_get_hash_prevouts(tx, start, count, out, out_len)
                 self.assertEqual(ret, WALLY_OK)
                 self.assertEqual(h(out[:out_len]), expected)
@@ -287,8 +286,8 @@ class TransactionTests(unittest.TestCase):
             self.assertNotEqual(h(out[:out_len]), expected)
 
             # Compute from the underlying data
-            txhashes, indices = bytearray(), (c_uint * num_inputs)()
-            for i in range(num_inputs):
+            txhashes, indices = bytearray(), (c_uint * tx.num_inputs)()
+            for i in range(tx.num_inputs):
                 wally_tx_get_input_txhash(tx, i, out, out_len)
                 txhashes.extend(out[:out_len])
                 _, indices[i] = wally_tx_get_input_index(tx, i)
