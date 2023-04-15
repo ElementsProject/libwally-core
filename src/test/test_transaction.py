@@ -288,9 +288,8 @@ class TransactionTests(unittest.TestCase):
             # Compute from the underlying data
             txhashes, indices = bytearray(), (c_uint * tx.num_inputs)()
             for i in range(tx.num_inputs):
-                wally_tx_get_input_txhash(tx, i, out, out_len)
-                txhashes.extend(out[:out_len])
-                _, indices[i] = wally_tx_get_input_index(tx, i)
+                txhashes.extend(tx.inputs[i].txhash)
+                indices[i] = tx.inputs[i].index
             txhashes = bytes(txhashes)
             ret = wally_get_hash_prevouts(txhashes, len(txhashes),
                                           indices, len(indices), out, out_len)
