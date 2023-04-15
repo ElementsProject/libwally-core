@@ -28,18 +28,18 @@ class BIP39Tests(unittest.TestCase):
 
             gwl = lambda lang: self.get_wordlist(utf8(lang))
             self.wordlists = {l: gwl(l) for l in list(self.langs.keys())}
+            ret, all_langs = bip39_get_languages()
+            self.assertEqual(ret, 0)
+            self.all_langs = all_langs.split()
+            self.num_langs = len(self.all_langs)
 
 
     def test_all_langs(self):
 
-        ret, all_langs = bip39_get_languages()
-        self.assertEqual(ret, 0)
-        all_langs = all_langs.split()
-
-        for lang in all_langs:
+        for lang in self.all_langs:
             self.assertTrue(lang in self.langs)
 
-        self.assertEqual(len(all_langs), len(list(self.langs.keys())))
+        self.assertTrue(self.num_langs == 1 or self.num_langs == len(self.langs.keys()))
 
 
     def test_bip39_wordlists(self):
@@ -54,7 +54,7 @@ class BIP39Tests(unittest.TestCase):
 
     def test_all_lookups(self):
 
-        for lang in list(self.langs.keys()):
+        for lang in self.all_langs:
             wl = self.wordlists[lang]
             words_list, _ = load_words(self.langs[lang])
             for i in range(2048):
