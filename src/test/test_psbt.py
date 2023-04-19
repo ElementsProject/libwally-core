@@ -308,6 +308,44 @@ class PSBTTests(unittest.TestCase):
                      (psbt, 0x0, None)]: # NULL dest
             self.assertEqual(WALLY_EINVAL, wally_psbt_clone_alloc(*args))
 
+        # Populate PSBT with one input and output to test various invalid args for taproot keypaths
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        ret = wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_output)
+        self.assertEqual(WALLY_OK, ret)
+        ret = wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output)
+        self.assertEqual(WALLY_OK, ret)
+
+        pk, pk_len = make_cbuffer('339ce7e165e67d93adb3fef88a6d4beed33f01fa876f05a225242b82a631abc0')
+        mkl, mkl_len = make_cbuffer('00' * 32)
+        fpr, fpr_len = make_cbuffer('00' * 4)
+        path, path_len = (c_uint32 * 1)(), 1
+        i, flags = 0, 0
+
+        invalid_args = [
+            (None, i, flags, pk,   pk_len,   mkl,   mkl_len,   fpr, fpr_len,   path, path_len),   # NULL psbt
+            (psbt, 1, flags, pk,   pk_len,   mkl,   mkl_len,   fpr, fpr_len,   path, path_len),   # Invalid index
+            (psbt, i, 0x01,  pk,   pk_len,   mkl,   mkl_len,   fpr, fpr_len,   path, path_len),   # Invalid flags
+            (psbt, i, flags, pk,   pk_len+1, mkl,   mkl_len,   fpr, fpr_len,   path, path_len),   # Bad pubkey length
+            (psbt, i, flags, pk,   pk_len,   mkl,   mkl_len-1, fpr, fpr_len,   path, path_len),   # Bad tapleaf_hashes_len
+            (psbt, i, flags, pk,   pk_len,   None,  mkl_len,   fpr, fpr_len,   path, path_len),   # Merkle length should be 0
+            (psbt, i, flags, None, pk_len,   mkl,   mkl_len,   fpr, fpr_len,   path, path_len),   # No pubkey given
+            (psbt, i, flags, pk,   pk_len,   mkl,   mkl_len,   fpr, fpr_len-1, path, path_len),   # Bad fpr length
+            (psbt, i, flags, pk,   pk_len,   mkl,   mkl_len,   fpr, fpr_len,   None, path_len),   # NULL child path
+            (psbt, i, flags, pk,   pk_len,   mkl,   mkl_len,   fpr, fpr_len,   path, path_len-1), # Bad child path length
+        ]
+
+        for args in invalid_args:
+            self.assertEqual(WALLY_EINVAL, wally_psbt_add_input_taproot_keypath(*args))
+            self.assertEqual(WALLY_EINVAL, wally_psbt_add_output_taproot_keypath(*args))
+
+        valid_args = (psbt, i, flags, pk, pk_len, mkl, mkl_len, fpr, fpr_len, path, path_len)
+        self.assertEqual(WALLY_OK, wally_psbt_add_input_taproot_keypath(*valid_args))
+        self.assertEqual(WALLY_OK, wally_psbt_add_output_taproot_keypath(*valid_args))
+
     def test_redundant(self):
         """Test serializing redundant finalized input information"""
         buf, buf_len = make_cbuffer('00' * 4096)

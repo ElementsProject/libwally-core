@@ -356,6 +356,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* key, size_t key_len);
 %pybuffer_nullable_binary(const unsigned char* label, size_t label_len);
 %pybuffer_nullable_binary(const unsigned char* mainchain_script, size_t mainchain_script_len);
+%pybuffer_nullable_binary(const unsigned char* merkle_hashes, size_t merkle_hashes_len);
 %pybuffer_nullable_binary(const unsigned char* merkle_root, size_t merkle_root_len);
 %pybuffer_nullable_binary(const unsigned char* nonce, size_t nonce_len);
 %pybuffer_nullable_binary(const unsigned char* nonce_hash, size_t nonce_hash_len);
@@ -383,6 +384,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* sub_pubkey, size_t sub_pubkey_len);
 %pybuffer_nullable_binary(const unsigned char* summed_key, size_t summed_key_len);
 %pybuffer_nullable_binary(const unsigned char* surjectionproof, size_t surjectionproof_len);
+%pybuffer_nullable_binary(const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len);
 %pybuffer_nullable_binary(const unsigned char* tapleaf_script, size_t tapleaf_script_len);
 %pybuffer_nullable_binary(const unsigned char* txhash, size_t txhash_len);
 %pybuffer_nullable_binary(const unsigned char* txhashes, size_t txhashes_len);

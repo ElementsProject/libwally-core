@@ -283,6 +283,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
@@ -310,6 +311,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhashes, size_t txhashes_len) };
@@ -642,6 +644,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_struct(wally_map_init_alloc, wally_map);
 %rename("map_init") wally_map_init_alloc;
 %returns_struct(wally_map_preimage_init_alloc, wally_map);
+%returns_void__(wally_map_merkle_path_add);
 %rename("map_preimage_init") wally_map_preimage_init_alloc;
 %returns_void__(wally_map_preimage_hash160_add);
 %returns_void__(wally_map_preimage_ripemd160_add);
@@ -652,10 +655,13 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_map_replace);
 %returns_void__(wally_map_replace_integer);
 %returns_void__(wally_map_sort);
+%returns_void__(wally_merkle_path_xonly_public_key_verify);
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_psbt_add_tx_input_at);
 %returns_void__(wally_psbt_add_input_signature);
+%returns_void__(wally_psbt_add_input_taproot_keypath);
+%returns_void__(wally_psbt_add_output_taproot_keypath);
 %returns_void__(wally_psbt_add_tx_output_at);
 %returns_void__(wally_psbt_add_global_scalar);
 %returns_struct(wally_psbt_blind_alloc, wally_map);
@@ -1173,6 +1179,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_input_set_final_scriptsig;
 %ignore wally_psbt_input_set_final_witness;
 %ignore wally_psbt_input_set_keypaths;
+%ignore wally_psbt_input_taproot_keypath_add;
+%ignore wally_psbt_output_taproot_keypath_add;
 %ignore wally_psbt_input_find_keypath;
 %ignore wally_psbt_input_keypath_add;
 %ignore wally_psbt_input_set_signatures;

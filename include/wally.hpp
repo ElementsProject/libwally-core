@@ -983,6 +983,12 @@ inline int map_keypath_public_key_init_alloc(size_t allocation_len, struct wally
     return ret;
 }
 
+template <class MAP_IN, class PUB_KEY, class MERKLE_HASHES>
+inline int map_merkle_path_add(const MAP_IN& map_in, const PUB_KEY& pub_key, const MERKLE_HASHES& merkle_hashes) {
+    int ret = ::wally_map_merkle_path_add(detail::get_p(map_in), pub_key.data(), pub_key.size(), merkle_hashes.data(), merkle_hashes.size());
+    return ret;
+}
+
 template <class MAP_IN, class VALUE>
 inline int map_preimage_hash160_add(const MAP_IN& map_in, const VALUE& value) {
     int ret = ::wally_map_preimage_hash160_add(detail::get_p(map_in), value.data(), value.size());
@@ -1042,6 +1048,12 @@ inline int map_sort(const MAP_IN& map_in, uint32_t flags) {
     return ret;
 }
 
+template <class KEY, class VAL>
+inline int merkle_path_xonly_public_key_verify(const KEY& key, const VAL& val) {
+    int ret = ::wally_merkle_path_xonly_public_key_verify(key.data(), key.size(), val.data(), val.size());
+    return ret;
+}
+
 template <class PASS, class SALT, class BYTES_OUT>
 inline int pbkdf2_hmac_sha256(const PASS& pass, const SALT& salt, uint32_t flags, uint32_t cost, BYTES_OUT& bytes_out) {
     int ret = ::wally_pbkdf2_hmac_sha256(pass.data(), pass.size(), salt.data(), salt.size(), flags, cost, bytes_out.data(), bytes_out.size());
@@ -1051,6 +1063,18 @@ inline int pbkdf2_hmac_sha256(const PASS& pass, const SALT& salt, uint32_t flags
 template <class PASS, class SALT, class BYTES_OUT>
 inline int pbkdf2_hmac_sha512(const PASS& pass, const SALT& salt, uint32_t flags, uint32_t cost, BYTES_OUT& bytes_out) {
     int ret = ::wally_pbkdf2_hmac_sha512(pass.data(), pass.size(), salt.data(), salt.size(), flags, cost, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class PSBT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_add_input_taproot_keypath(const PSBT& psbt, uint32_t index, uint32_t flags, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_add_input_taproot_keypath(detail::get_p(psbt), index, flags, pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
+}
+
+template <class PSBT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_add_output_taproot_keypath(const PSBT& psbt, uint32_t index, uint32_t flags, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_add_output_taproot_keypath(detail::get_p(psbt), index, flags, pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
     return ret;
 }
 
@@ -1348,6 +1372,12 @@ inline int psbt_input_set_witness_utxo_from_tx(const INPUT& input, const UTXO& u
     return ret;
 }
 
+template <class INPUT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_input_taproot_keypath_add(const INPUT& input, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_input_taproot_keypath_add(detail::get_p(input), pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return ret;
+}
+
 template <class PSBT>
 inline int psbt_is_elements(const PSBT& psbt, size_t* written) {
     int ret = ::wally_psbt_is_elements(detail::get_p(psbt), written);
@@ -1418,6 +1448,12 @@ inline int psbt_output_set_unknowns(const OUTPUT& output, const struct wally_map
 template <class OUTPUT, class SCRIPT>
 inline int psbt_output_set_witness_script(const OUTPUT& output, const SCRIPT& script) {
     int ret = ::wally_psbt_output_set_witness_script(detail::get_p(output), script.data(), script.size());
+    return ret;
+}
+
+template <class OUTPUT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_output_taproot_keypath_add(const OUTPUT& output, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_output_taproot_keypath_add(detail::get_p(output), pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
     return ret;
 }
 

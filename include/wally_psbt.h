@@ -259,10 +259,10 @@ WALLY_CORE_API int wally_psbt_input_set_final_witness(
     const struct wally_tx_witness_stack *witness);
 
 /**
- * Set the keypaths in an input.
+ * Set the non-taproot keypaths in an input.
  *
  * :param input: The input to update.
- * :param map_in: The HD keypaths for this input.
+ * :param map_in: The non-taproot HD keypaths to set for this input.
  */
 WALLY_CORE_API int wally_psbt_input_set_keypaths(
     struct wally_psbt_input *input,
@@ -276,6 +276,8 @@ WALLY_CORE_API int wally_psbt_input_set_keypaths(
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_UNCOMPRESSED_LEN` or `EC_PUBLIC_KEY_LEN`.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
+ *
+ * .. note:: This function only finds non-taproot keypaths.
  */
 WALLY_CORE_API int wally_psbt_input_find_keypath(
     struct wally_psbt_input *input,
@@ -298,6 +300,30 @@ WALLY_CORE_API int wally_psbt_input_keypath_add(
     struct wally_psbt_input *input,
     const unsigned char *pub_key,
     size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
+/**
+ * Convert and add a pubkey/taproot keypath to a PSBT input.
+ *
+ * :param input: The input to add to.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ * :param tapleaf_hashes: Series of 32-byte leaf hashes.
+ * :param tapleaf_hashes_len: Length of ``tapleaf_hashes`` in bytes. Must be a multiple of `SHA256_LEN`.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ */
+WALLY_CORE_API int wally_psbt_input_taproot_keypath_add(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *tapleaf_hashes,
+    size_t tapleaf_hashes_len,
     const unsigned char *fingerprint,
     size_t fingerprint_len,
     const uint32_t *child_path,
@@ -1253,7 +1279,7 @@ WALLY_CORE_API int wally_psbt_output_set_witness_script(
     size_t script_len);
 
 /**
- * Set the keypaths in an output.
+ * Set the non-taproot keypaths in an output.
  *
  * :param output: The output to update.
  * :param map_in: The HD keypaths for this output.
@@ -1270,6 +1296,8 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_UNCOMPRESSED_LEN` or `EC_PUBLIC_KEY_LEN`.
  * :param written: On success, set to zero if the item is not found, otherwise
  *|    the index of the item plus one.
+ *
+ * .. note:: This function only finds non-taproot keypaths.
  */
 WALLY_CORE_API int wally_psbt_output_find_keypath(
     struct wally_psbt_output *output,
@@ -1292,6 +1320,30 @@ WALLY_CORE_API int wally_psbt_output_keypath_add(
     struct wally_psbt_output *output,
     const unsigned char *pub_key,
     size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
+/**
+ * Convert and add a pubkey/taproot keypath to a PSBT output.
+ *
+ * :param output: The output to add to.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ * :param tapleaf_hashes: Series of 32-byte leaf hashes.
+ * :param tapleaf_hashes_len: Length of ``tapleaf_hashes`` in bytes. Must be a multiple of `SHA256_LEN`.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ */
+WALLY_CORE_API int wally_psbt_output_taproot_keypath_add(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *tapleaf_hashes,
+    size_t tapleaf_hashes_len,
     const unsigned char *fingerprint,
     size_t fingerprint_len,
     const uint32_t *child_path,
@@ -2011,6 +2063,34 @@ WALLY_CORE_API int wally_psbt_set_pset_modifiable_flags(
 #endif /* BUILD_ELEMENTS */
 
 /**
+ * Add a taproot keypath to a given PSBT input.
+ *
+ * :param psbt: The PSBT to add the taproot keypath to.
+ * :param index: The zero-based index of the input to add to.
+ * :param flags: Flags controlling keypath insertion. Must be 0.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ * :param tapleaf_hashes: Series of 32-byte leaf hashes.
+ * :param tapleaf_hashes_len: Length of ``tapleaf_hashes`` in bytes. Must be a multiple of `SHA256_LEN`.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ */
+WALLY_CORE_API int wally_psbt_add_input_taproot_keypath(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    uint32_t flags,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *tapleaf_hashes,
+    size_t tapleaf_hashes_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
+/**
  * Add a transaction input to a PSBT at a given position.
  *
  * :param psbt: The PSBT to add the input to.
@@ -2139,6 +2219,34 @@ WALLY_CORE_API int wally_psbt_get_input_signature_hash(
     uint32_t flags,
     unsigned char *bytes_out,
     size_t len);
+
+/**
+ * Add a taproot keypath to a given PSBT output.
+ *
+ * :param psbt: The PSBT to add the taproot keypath to.
+ * :param index: The zero-based index of the output to add to.
+ * :param flags: Flags controlling keypath insertion. Must be 0.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ * :param tapleaf_hashes: Series of 32-byte leaf hashes.
+ * :param tapleaf_hashes_len: Length of ``tapleaf_hashes`` in bytes. Must be a multiple of `SHA256_LEN`.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ */
+WALLY_CORE_API int wally_psbt_add_output_taproot_keypath(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    uint32_t flags,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *tapleaf_hashes,
+    size_t tapleaf_hashes_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
 
 /**
  * Add a transaction output to a PSBT at a given position.

@@ -201,6 +201,7 @@ export function map_keypath_get_bip32_key_from(map_in: Ref_wally_map, index: num
 export function map_keypath_get_item_fingerprint(map_in: Ref_wally_map, index: number): Buffer;
 export function map_keypath_get_item_path_len(map_in: Ref_wally_map, index: number): number;
 export function map_keypath_public_key_init(allocation_len: number): Ref_wally_map;
+export function map_merkle_path_add(map_in: Ref_wally_map, pub_key: Buffer|Uint8Array, merkle_hashes: Buffer|Uint8Array): void;
 export function map_preimage_hash160_add(map_in: Ref_wally_map, value: Buffer|Uint8Array): void;
 export function map_preimage_init(allocation_len: number): Ref_wally_map;
 export function map_preimage_ripemd160_add(map_in: Ref_wally_map, value: Buffer|Uint8Array): void;
@@ -211,10 +212,13 @@ export function map_remove_integer(map_in: Ref_wally_map, key: number): void;
 export function map_replace(map_in: Ref_wally_map, key: Buffer|Uint8Array, value: Buffer|Uint8Array): void;
 export function map_replace_integer(map_in: Ref_wally_map, key: number, value: Buffer|Uint8Array): void;
 export function map_sort(map_in: Ref_wally_map, flags: number): void;
+export function merkle_path_xonly_public_key_verify(key: Buffer|Uint8Array, val: Buffer|Uint8Array): void;
 export function pbkdf2_hmac_sha256(pass: Buffer|Uint8Array, salt: Buffer|Uint8Array, flags: number, cost: number): Buffer;
 export function pbkdf2_hmac_sha512(pass: Buffer|Uint8Array, salt: Buffer|Uint8Array, flags: number, cost: number): Buffer;
 export function psbt_add_global_scalar(psbt: Ref_wally_psbt, scalar: Buffer|Uint8Array): void;
 export function psbt_add_input_signature(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array, sig: Buffer|Uint8Array): void;
+export function psbt_add_input_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
+export function psbt_add_output_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_add_tx_input_at(psbt: Ref_wally_psbt, index: number, flags: number, input: Ref_wally_tx_input): void;
 export function psbt_add_tx_output_at(psbt: Ref_wally_psbt, index: number, flags: number, output: Ref_wally_tx_output): void;
 export function psbt_blind(psbt: Ref_wally_psbt, values: Ref_wally_map, vbfs: Ref_wally_map, assets: Ref_wally_map, abfs: Ref_wally_map, entropy: Buffer|Uint8Array, output_index: number, flags: number): Ref_wally_map;
@@ -422,6 +426,7 @@ export function psbt_input_set_utxo_rangeproof(input: Ref_wally_psbt_input, rang
 export function psbt_input_set_witness_script(input: Ref_wally_psbt_input, script: Buffer|Uint8Array): void;
 export function psbt_input_set_witness_utxo(input: Ref_wally_psbt_input, witness_utxo: Ref_wally_tx_output): void;
 export function psbt_input_set_witness_utxo_from_tx(input: Ref_wally_psbt_input, utxo: Ref_wally_tx, index: number): void;
+export function psbt_input_taproot_keypath_add(input: Ref_wally_psbt_input, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_is_elements(psbt: Ref_wally_psbt): number;
 export function psbt_is_finalized(psbt: Ref_wally_psbt): number;
 export function psbt_output_clear_amount(output: Ref_wally_psbt_output): void;
@@ -464,6 +469,7 @@ export function psbt_output_set_value_blinding_rangeproof(output: Ref_wally_psbt
 export function psbt_output_set_value_commitment(output: Ref_wally_psbt_output, commitment: Buffer|Uint8Array): void;
 export function psbt_output_set_value_rangeproof(output: Ref_wally_psbt_output, rangeproof: Buffer|Uint8Array): void;
 export function psbt_output_set_witness_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array): void;
+export function psbt_output_taproot_keypath_add(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_remove_input(psbt: Ref_wally_psbt, index: number): void;
 export function psbt_remove_output(psbt: Ref_wally_psbt, index: number): void;
 export function psbt_set_fallback_locktime(psbt: Ref_wally_psbt, locktime: number): void;
