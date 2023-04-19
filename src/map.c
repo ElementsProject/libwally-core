@@ -620,6 +620,18 @@ int wally_keypath_xonly_public_key_verify(const unsigned char *key, size_t key_l
     return WALLY_OK;
 }
 
+int wally_merkle_path_xonly_public_key_verify(const unsigned char *key, size_t key_len,
+                                              const unsigned char *val, size_t val_len)
+{
+    struct ext_key extkey;
+
+    if (key_len != EC_XONLY_PUBLIC_KEY_LEN ||
+        keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
+        extkey.version || !val || !val_len || val_len % SHA256_LEN != 0)
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
 int wally_map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map **output)
 {
     return wally_map_init_alloc(allocation_len, wally_keypath_bip32_verify, output);
@@ -644,6 +656,7 @@ int wally_map_keypath_add(struct wally_map *map_in,
         return WALLY_EINVAL;
 
     if (map_in->verify_fn != wally_keypath_public_key_verify &&
+        map_in->verify_fn != wally_keypath_xonly_public_key_verify &&
         map_in->verify_fn != wally_keypath_bip32_verify)
         return WALLY_EINVAL; /* Not a keypath map */
 
@@ -662,6 +675,19 @@ int wally_map_keypath_add(struct wally_map *map_in,
     if (ret != WALLY_OK)
         clear_and_free(value, value_len);
     return ret;
+}
+
+int wally_map_merkle_path_add(struct wally_map *map_in,
+                              const unsigned char *pub_key, size_t pub_key_len,
+                              const unsigned char *merkle_hashes, size_t merkle_hashes_len)
+{
+    if (!map_in || pub_key_len != EC_XONLY_PUBLIC_KEY_LEN ||
+        BYTES_INVALID(merkle_hashes, merkle_hashes_len))
+        return WALLY_EINVAL;
+
+    /* Add map for tap leaves */
+    return map_add(map_in, pub_key, pub_key_len,
+                   merkle_hashes, merkle_hashes_len, false, false);
 }
 
 int wally_keypath_get_fingerprint(const unsigned char *val, size_t val_len,

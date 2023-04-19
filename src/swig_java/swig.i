@@ -283,6 +283,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
@@ -310,6 +311,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhashes, size_t txhashes_len) };

@@ -158,6 +158,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_keypath_get_item_path' \
 ,'_wally_map_keypath_get_item_path_len' \
 ,'_wally_map_keypath_public_key_init_alloc' \
+,'_wally_map_merkle_path_add' \
 ,'_wally_map_preimage_hash160_add' \
 ,'_wally_map_preimage_init_alloc' \
 ,'_wally_map_preimage_ripemd160_add' \
@@ -168,9 +169,12 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_replace' \
 ,'_wally_map_replace_integer' \
 ,'_wally_map_sort' \
+,'_wally_merkle_path_xonly_public_key_verify' \
 ,'_wally_pbkdf2_hmac_sha256' \
 ,'_wally_pbkdf2_hmac_sha512' \
 ,'_wally_psbt_add_input_signature' \
+,'_wally_psbt_add_input_taproot_keypath' \
+,'_wally_psbt_add_output_taproot_keypath' \
 ,'_wally_psbt_add_tx_input_at' \
 ,'_wally_psbt_add_tx_output_at' \
 ,'_wally_psbt_blind' \
@@ -277,6 +281,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_input_set_witness_script' \
 ,'_wally_psbt_input_set_witness_utxo' \
 ,'_wally_psbt_input_set_witness_utxo_from_tx' \
+,'_wally_psbt_input_taproot_keypath_add' \
 ,'_wally_psbt_is_elements' \
 ,'_wally_psbt_is_finalized' \
 ,'_wally_psbt_output_clear_amount' \
@@ -289,6 +294,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_output_set_script' \
 ,'_wally_psbt_output_set_unknowns' \
 ,'_wally_psbt_output_set_witness_script' \
+,'_wally_psbt_output_taproot_keypath_add' \
 ,'_wally_psbt_remove_input' \
 ,'_wally_psbt_remove_output' \
 ,'_wally_psbt_set_fallback_locktime' \

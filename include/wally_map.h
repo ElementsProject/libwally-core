@@ -421,6 +421,20 @@ WALLY_CORE_API int wally_keypath_xonly_public_key_verify(
     size_t val_len);
 
 /**
+ * Verify a merkle path keyed by an x-only public key.
+ *
+ * :param key: Public key bytes.
+ * :param key_len: Length of ``key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ * :param val: The PSBT merkle path.
+ * :param val_len: Length of ``val`` in bytes. Must be a multiple of `SHA256_LEN`.
+ */
+WALLY_CORE_API int wally_merkle_path_xonly_public_key_verify(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *val,
+    size_t val_len);
+
+/**
  * Allocate and initialize a new BIP32 keypath map.
  *
  * :param allocation_len: The number of items to allocate space for.
@@ -446,8 +460,8 @@ WALLY_CORE_API int wally_map_keypath_public_key_init_alloc(
  * :param map_in: The keypath map to add to.
  * :param pub_key: The public key or extended public key to add.
  * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `BIP32_SERIALIZED_LEN`
- *|    for an extended bip32 public key, or `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`
- *|    or `EC_PUBLIC_KEY_LEN` for a public key.
+ *|    for an extended bip32 public key, `EC_PUBLIC_KEY_UNCOMPRESSED_LEN`,
+ *|    `EC_PUBLIC_KEY_LEN`, or `EC_XONLY_PUBLIC_KEY_LEN` for a public key.
  * :param fingerprint: The master key fingerprint for the pubkey.
  * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
  * :param child_path: The BIP32 derivation path for the pubkey.
@@ -461,6 +475,24 @@ WALLY_CORE_API int wally_map_keypath_add(
     size_t fingerprint_len,
     const uint32_t *child_path,
     size_t child_path_len);
+
+/**
+ * Convert and add a public key and merkle path to a map.
+ *
+ * :param map_in: The map to add to.
+ * :param pub_key: The public key or extended public key to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`
+ *|    bytes.
+ * :param merkle_hashes: Series of 32-byte leaf hashes. Must be NULL if ``merkle_hashes_len`` is 0.
+ * :param merkle_hashes_len: Length of ``merkle_hashes`` in bytes. Must be a multiple
+ *|    of `SHA256_LEN`.
+ */
+WALLY_CORE_API int wally_map_merkle_path_add(
+    struct wally_map *map_in,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *merkle_hashes,
+    size_t merkle_hashes_len);
 
 /**
  * Get the key fingerprint from a PSBT keypath's serialized value.
