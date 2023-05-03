@@ -1,0 +1,82 @@
+#ifndef LIBWALLYCORE_CONFIG_H
+#define LIBWALLYCORE_CONFIG_H
+
+/* Define if building universal (internal helper macro) */
+#cmakedefine AC_APPLE_UNIVERSAL_BUILD @AC_APPLE_UNIVERSAL_BUILD@
+
+/* Define to 1 if you have the <asm/page.h> header file. */
+#cmakedefine HAVE_ASM_PAGE_H @HAVE_ASM_PAGE_H@
+
+
+/* Define to 1 if you have the <byteswap.h,> header file. */
+#cmakedefine HAVE_BYTESWAP_H @HAVE_BYTESWAP_H@
+
+/* Define to 1 if you have the `explicit_bzero' function. */
+#cmakedefine HAVE_EXPLICIT_BZERO @HAVE_EXPLICIT_BZERO@
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#cmakedefine HAVE_EXPLICIT_MEMSET @HAVE_EXPLICIT_MEMSET@
+
+/* inline asm code can be used */
+#cmakedefine HAVE_INLINE_ASM @HAVE_INLINE_ASM@
+
+/* Define to 1 if you have the <mbedtls/sha256.h,> header file. */
+#cmakedefine HAVE_MBEDTLS_SHA256_H_ @HAVE_MBEDTLS_SHA256_H@
+
+/* Define to 1 if you have the <mbedtls/sha512.h> header file. */
+#cmakedefine HAVE_MBEDTLS_SHA512_H @HAVE_MBEDTLS_SHA512_H@
+
+/* Define to 1 if you have the `memset_s' function. */
+#cmakedefine HAVE_MEMSET_S @HAVE_MEMSET_S@
+
+/* Define if we have mmap */
+#cmakedefine HAVE_MMAP @HAVE_MMAP@
+
+/* Define if we have posix_memalign */
+#cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#cmakedefine HAVE_SYS_MMAN_H @HAVE_SYS_MMAN_H@
+
+/* Define if we have unaligned access */
+#cmakedefine HAVE_UNALIGNED_ACCESS @HAVE_UNALIGNED_ACCESS@
+
+/* Name of package */
+#cmakedefine PACKAGE @PACKAGE@
+
+/* Define to the address where bug reports for this package should be sent. */
+#cmakedefine PACKAGE_BUGREPORT @PACKAGE_BUGREPORT@
+
+/* Define to the full name of this package. */
+#cmakedefine PACKAGE_NAME @PACKAGE_NAME@
+
+/* Define to the full name and version of this package. */
+#cmakedefine PACKAGE_STRING @PACKAGE_STRING@
+
+/* Define to the one symbol short name of this package. */
+#cmakedefine PACKAGE_TARNAME @PACKAGE_TARNAME@
+
+/* Define to the home page for this package. */
+#cmakedefine PACKAGE_URL @PACKAGE_URL@
+
+/* Define to the version of this package. */
+#cmakedefine PACKAGE_VERSION @PACKAGE_VERSION@
+
+/* Version number of package */
+#cmakedefine VERSION @VERSION@
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#cmakedefine WORDS_BIGENDIAN @WORDS_BIGENDIAN@
+# endif
+#endif
+
+
+#include "ccan_config.h"
+#endif /*LIBWALLYCORE_CONFIG_H*/

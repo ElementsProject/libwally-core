@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.15)
+
+project(
+  libwallycore
+  VERSION 0.8.8
+  DESCRIPTION "collection of useful primitives for cryptocurrency wallets"
+  LANGUAGES C)
+
+include(cmake/utils.cmake)
+generate_config_file()
