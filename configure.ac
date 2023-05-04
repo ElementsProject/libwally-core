@@ -227,9 +227,9 @@ if test "x$asm" == "xyes"; then
     )
 fi
 
-AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
+AC_CHECK_HEADERS([byteswap.h sys/mman.h])
 if test "x$mbedtls" == "xyes"; then
-    AC_CHECK_HEADERS([mbedtls/sha256.h, mbedtls/sha512.h])
+    AC_CHECK_HEADERS([mbedtls/sha256.h mbedtls/sha512.h])
 fi
 
 AC_ARG_ENABLE(clear-tests,
