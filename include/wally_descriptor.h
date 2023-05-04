@@ -159,9 +159,6 @@ WALLY_CORE_API int wally_descriptor_get_num_variants(
  * index of the multi-path is passed to `wally_descriptor_to_script`
  * or `wally_descriptor_to_addresses` to generate a script/address
  * corresponding to the corresponding key path.
- *
- * .. note:: This function is a stub, multi-path keys are not yet
- *|    implemented and will currently fail to parse.
  */
 WALLY_CORE_API int wally_descriptor_get_num_paths(
     const struct wally_descriptor *descriptor,
