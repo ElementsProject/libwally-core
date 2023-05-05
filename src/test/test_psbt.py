@@ -1,4 +1,3 @@
-import ctypes
 import json
 import unittest
 from util import *
@@ -323,13 +322,12 @@ class PSBTTests(unittest.TestCase):
         pubkey, pubkey_len = make_cbuffer('339ce7e165e67d93adb3fef88a6d4beed33f01fa876f05a225242b82a631abc0')
         merkle, merkle_len = make_cbuffer('00' * 32)
         fpr, fpr_len = make_cbuffer('00' * 4)
-        child_path = ctypes.c_uint32(0)
-        child_path = ctypes.pointer(child_path)
         child_path_len = 1
+        child_path = (c_uint32 * child_path_len)()
         index = 0
         flags = 0
 
-        valid_arg = (psbt, index, flags, pubkey, pubkey_len, merkle, merkle_len, fpr, fpr_len, child_path, child_path_len)
+        valid_args = (psbt, index, flags, pubkey, pubkey_len, merkle, merkle_len, fpr, fpr_len, child_path, child_path_len)
         invalid_args = [
             (None, index, flags, pubkey, pubkey_len, merkle, merkle_len, fpr, fpr_len, child_path, child_path_len), # NULL psbt
             (psbt, 1, flags, pubkey, pubkey_len, merkle, merkle_len, fpr, fpr_len, child_path, child_path_len), # invalid index
@@ -342,12 +340,12 @@ class PSBTTests(unittest.TestCase):
             (psbt, index, flags, pubkey, pubkey_len, merkle, merkle_len, fpr, fpr_len, child_path, child_path_len - 1), # wrong child path length
         ]
 
-        for arg in invalid_args:
-            self.assertEqual(WALLY_EINVAL, wally_psbt_add_input_taproot_keypath(*arg))
-            self.assertEqual(WALLY_EINVAL, wally_psbt_add_output_taproot_keypath(*arg))
+        for args in invalid_args:
+            self.assertEqual(WALLY_EINVAL, wally_psbt_add_input_taproot_keypath(*args))
+            self.assertEqual(WALLY_EINVAL, wally_psbt_add_output_taproot_keypath(*args))
 
-        self.assertEqual(WALLY_OK, wally_psbt_add_input_taproot_keypath(*valid_arg))
-        self.assertEqual(WALLY_OK, wally_psbt_add_output_taproot_keypath(*valid_arg))
+        self.assertEqual(WALLY_OK, wally_psbt_add_input_taproot_keypath(*valid_args))
+        self.assertEqual(WALLY_OK, wally_psbt_add_output_taproot_keypath(*valid_args))
 
     def test_redundant(self):
         """Test serializing redundant finalized input information"""
