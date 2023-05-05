@@ -125,7 +125,7 @@ if DUMP_INTERNAL:
     extract_docs('../../include/wally_psbt_members.h', 'psbt_members.rst')
 else:
     for m in [
-        'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'map',
+        'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'bip85', 'map',
         'script', 'psbt', 'descriptor', 'symmetric', 'transaction',
         'elements', 'anti_exfil'
         ]:

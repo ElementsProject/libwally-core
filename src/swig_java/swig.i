@@ -7,6 +7,7 @@
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
+#include "../include/wally_bip85.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
@@ -505,6 +506,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);
 %returns_array_(bip39_mnemonic_to_seed512, 3, 4, BIP39_SEED_LEN_512);
+%returns_string(bip85_get_languages);
+%returns_size_t(bip85_get_bip39_entropy);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_get_version);
 %returns_size_t(wally_addr_segwit_n_get_version);
@@ -1303,6 +1306,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
+%include "../include/wally_bip85.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_descriptor.h"
 %include "../include/wally_map.h"

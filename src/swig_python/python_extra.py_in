@@ -166,6 +166,7 @@ bip38_raw_to_private_key = _wrap_bin(bip38_raw_to_private_key, EC_PRIVATE_KEY_LE
 bip38_to_private_key = _wrap_bin(bip38_to_private_key, EC_PRIVATE_KEY_LEN)
 bip39_mnemonic_to_bytes = _wrap_bin(bip39_mnemonic_to_bytes, BIP39_ENTROPY_MAX_LEN, resize=True)
 bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed512, BIP39_SEED_LEN_512)
+bip85_get_bip39_entropy = _wrap_bin(bip85_get_bip39_entropy, HMAC_SHA512_LEN, resize=True)
 map_init = map_init_alloc
 map_get_item_key = _wrap_bin(map_get_item_key, map_get_item_key_length)
 map_get_item = _wrap_bin(map_get_item, map_get_item_length)

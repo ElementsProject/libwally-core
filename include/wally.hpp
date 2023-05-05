@@ -9,6 +9,7 @@
 #include <wally_bip32.h>
 #include <wally_bip38.h>
 #include <wally_bip39.h>
+#include <wally_bip85.h>
 #include <wally_core.h>
 #include <wally_crypto.h>
 #include <wally_descriptor.h>
@@ -303,6 +304,18 @@ inline int bip39_mnemonic_to_seed512(const MNEMONIC& mnemonic, const PASSPHRASE&
 template <class W>
 inline int bip39_mnemonic_validate(const W& w, const char* mnemonic) {
     int ret = ::bip39_mnemonic_validate(detail::get_p(w), mnemonic);
+    return ret;
+}
+
+template <class HDKEY, class LANG, class BYTES_OUT>
+inline int bip85_get_bip39_entropy(const HDKEY& hdkey, const LANG& lang, uint32_t num_words, uint32_t index, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::bip85_get_bip39_entropy(detail::get_p(hdkey), detail::get_p(lang), num_words, index, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+inline int bip85_get_languages(char** output) {
+    int ret = ::bip85_get_languages(output);
     return ret;
 }
 

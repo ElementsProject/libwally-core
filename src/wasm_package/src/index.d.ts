@@ -107,6 +107,8 @@ export function bip39_mnemonic_from_bytes(w: Ref_words, bytes: Buffer|Uint8Array
 export function bip39_mnemonic_to_bytes(w: Ref_words, mnemonic: string): Buffer;
 export function bip39_mnemonic_to_seed512(mnemonic: string, passphrase: string): Buffer;
 export function bip39_mnemonic_validate(w: Ref_words, mnemonic: string): void;
+export function bip85_get_bip39_entropy(hdkey: Ref_ext_key, lang: string, num_words: number, index: number): Buffer;
+export function bip85_get_languages(): string;
 export function bzero(bytes: Ref, bytes_len: number): void;
 export function cleanup(flags: number): void;
 export function confidential_addr_from_addr(address: string, prefix: number, pub_key: Buffer|Uint8Array): string;
