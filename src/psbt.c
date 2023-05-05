@@ -1460,35 +1460,25 @@ static int psbt_input_from_tx_input(struct wally_psbt *psbt,
     return ret;
 }
 
-int wally_psbt_add_input_taproot_keypath(struct wally_psbt *psbt,
-                                         uint32_t index, uint32_t flags,
-                                         const unsigned char *pub_key,
-                                         size_t pub_key_len,
-                                         const unsigned char *tapleaf_hashes,
-                                         size_t tapleaf_hashes_len,
-                                         const unsigned char *fingerprint,
-                                         size_t fingerprint_len,
-                                         const uint32_t *child_path,
-                                         size_t child_path_len)
+int wally_psbt_add_input_taproot_keypath(
+    struct wally_psbt *psbt,
+    uint32_t index, uint32_t flags,
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *tapleaf_hashes, size_t tapleaf_hashes_len,
+    const unsigned char *fingerprint, size_t fingerprint_len,
+    const uint32_t *child_path, size_t child_path_len)
 {
     struct wally_psbt_input *inp;
 
     inp = psbt_get_input(psbt, index);
-    if (!inp || !psbt_is_valid(psbt) || flags)
-        return WALLY_EINVAL;
-
-    if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
+    if (!inp || !psbt_is_valid(psbt) || flags || !psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
         return WALLY_EINVAL;
 
     return wally_psbt_input_taproot_keypath_add(inp,
-                                                pub_key,
-                                                pub_key_len,
-                                                tapleaf_hashes,
-                                                tapleaf_hashes_len,
-                                                fingerprint,
-                                                fingerprint_len,
-                                                child_path,
-                                                child_path_len);
+                                                pub_key, pub_key_len,
+                                                tapleaf_hashes, tapleaf_hashes_len,
+                                                fingerprint, fingerprint_len,
+                                                child_path, child_path_len);
 }
 
 int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
@@ -1622,36 +1612,25 @@ static int psbt_output_from_tx_output(struct wally_psbt *psbt,
     return ret;
 }
 
-int wally_psbt_add_output_taproot_keypath(struct wally_psbt *psbt,
-                                         uint32_t index, uint32_t flags,
-                                         const unsigned char *pub_key,
-                                         size_t pub_key_len,
-                                         const unsigned char *tapleaf_hashes,
-                                         size_t tapleaf_hashes_len,
-                                         const unsigned char *fingerprint,
-                                         size_t fingerprint_len,
-                                         const uint32_t *child_path,
-                                         size_t child_path_len)
+int wally_psbt_add_output_taproot_keypath(
+    struct wally_psbt *psbt,
+    uint32_t index, uint32_t flags,
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *tapleaf_hashes, size_t tapleaf_hashes_len,
+    const unsigned char *fingerprint, size_t fingerprint_len,
+    const uint32_t *child_path, size_t child_path_len)
 {
     struct wally_psbt_output *out;
 
     out = psbt_get_output(psbt, index);
-    if (!out || !psbt_is_valid(psbt) || flags)
+    if (!out || !psbt_is_valid(psbt) || flags || !psbt_can_modify(psbt, WALLY_PSBT_TXMOD_OUTPUTS))
         return WALLY_EINVAL;
-
-    if (!psbt_can_modify(psbt, WALLY_PSBT_TXMOD_OUTPUTS))
-        return WALLY_EINVAL;
-
 
     return wally_psbt_output_taproot_keypath_add(out,
-                                                pub_key,
-                                                pub_key_len,
-                                                tapleaf_hashes,
-                                                tapleaf_hashes_len,
-                                                fingerprint,
-                                                fingerprint_len,
-                                                child_path,
-                                                child_path_len);
+                                                 pub_key, pub_key_len,
+                                                 tapleaf_hashes, tapleaf_hashes_len,
+                                                 fingerprint, fingerprint_len,
+                                                 child_path, child_path_len);
 }
 
 int wally_psbt_add_tx_output_at(struct wally_psbt *psbt,
