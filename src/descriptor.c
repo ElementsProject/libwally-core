@@ -1220,27 +1220,32 @@ static int generate_multi(ms_ctx *ctx, ms_node *node,
     size_t offset;
     uint32_t count, i;
     ms_node *child = node->child;
-    struct multisig_sort_data_t sorted[CHECKMULTISIG_NUM_KEYS_MAX];
+    struct multisig_sort_data_t *sorted;
     int ret;
 
     if (!child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
 
+    count = node_get_child_count(node) - 1;
+    /* FIXME: We should allow 20 keys in witness scriptss */
+    if (count > CHECKMULTISIG_NUM_KEYS_MAX)
+        return WALLY_EINVAL; /* Too many keys for multisig */
+
     if ((ret = generate_script(ctx, child, script, script_len, &offset)) != WALLY_OK)
         return ret;
 
+    if (!(sorted = wally_malloc(count * sizeof(struct multisig_sort_data_t))))
+        return WALLY_ENOMEM;
+
     child = child->next;
-    for (count = 0; ret == WALLY_OK && child && count < NUM_ELEMS(sorted); ++count) {
-        struct multisig_sort_data_t *item = sorted + count;
+    for (i = 0; ret == WALLY_OK && i < count; ++i) {
+        struct multisig_sort_data_t *item = sorted + i;
         ret = generate_script(ctx, child,
                               item->pubkey, sizeof(item->pubkey), &item->pubkey_len);
         if (ret == WALLY_OK && item->pubkey_len > sizeof(item->pubkey))
             ret = WALLY_EINVAL; /* FIXME: check for valid pubkey lengths */
         child = child->next;
     }
-
-    if (ret == WALLY_OK && (!count || child))
-        ret = WALLY_EINVAL; /* Not enough, or too many keys for multisig */
 
     if (ret == WALLY_OK) {
         /* Note we don't bother sorting if we are already beyond the output
@@ -1271,6 +1276,7 @@ static int generate_multi(ms_ctx *ctx, ms_node *node,
             }
         }
     }
+    wally_free(sorted);
     return ret;
 }
 

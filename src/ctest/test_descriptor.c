@@ -1031,6 +1031,10 @@ static const struct descriptor_test {
         "multi",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
+        "descriptor - multi - no children",
+        "multi()",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
         "descriptor - multi - not enough children",
         "multi(1)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
@@ -1049,6 +1053,10 @@ static const struct descriptor_test {
     },{
         "descriptor - sortedmulti - no args",
         "sortedmulti",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - sortedmulti - no children",
+        "sortedmulti()",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - sortedmulti - not enough children",
