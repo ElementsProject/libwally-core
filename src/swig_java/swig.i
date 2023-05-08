@@ -552,6 +552,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_confidential_addr_from_addr_segwit);
 %returns_string(wally_descriptor_canonicalize);
 %returns_string(wally_descriptor_get_checksum);
+%returns_size_t(wally_descriptor_get_depth);
 %returns_size_t(wally_descriptor_get_features);
 %returns_size_t(wally_descriptor_get_network);
 %returns_size_t(wally_descriptor_get_num_paths);

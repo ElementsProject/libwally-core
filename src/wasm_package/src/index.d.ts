@@ -120,6 +120,7 @@ export function confidential_addr_to_ec_public_key(address: string, prefix: numb
 export function descriptor_canonicalize(descriptor: Ref_wally_descriptor, flags: number): string;
 export function descriptor_free(descriptor: Ref_wally_descriptor): void;
 export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags: number): string;
+export function descriptor_get_depth(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_features(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_network(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;

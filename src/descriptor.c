@@ -2686,3 +2686,26 @@ int wally_descriptor_get_num_paths(const struct wally_descriptor *descriptor,
     *value_out = descriptor->num_multipaths;
     return WALLY_OK;
 }
+
+static uint32_t node_get_depth(const ms_node *node)
+{
+    uint32_t max_child_depth = 0;
+    while (node) {
+        uint32_t child_depth = node_get_depth(node->child);
+        if (child_depth > max_child_depth)
+            max_child_depth = child_depth;
+        node = node->next;
+    }
+    return 1 + max_child_depth;
+}
+
+int wally_descriptor_get_depth(const struct wally_descriptor *descriptor,
+                               uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    *value_out = node_get_depth(descriptor->top_node) - 1;
+    return WALLY_OK;
+}

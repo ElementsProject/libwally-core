@@ -165,6 +165,19 @@ WALLY_CORE_API int wally_descriptor_get_num_paths(
     uint32_t *value_out);
 
 /**
+ * Get the maximum depth of a descriptors parse tree.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param value_out: Destination for the descriptor depth.
+ *
+ * This function is intended for use by callers that need to limit the size
+ * of descriptors they process (for example, to limit stack usage).
+ */
+WALLY_CORE_API int wally_descriptor_get_depth(
+    const struct wally_descriptor *descriptor,
+    uint32_t *value_out);
+
+/**
  * Get the maximum length of a script corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.

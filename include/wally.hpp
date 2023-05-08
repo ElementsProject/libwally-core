@@ -493,6 +493,12 @@ inline int descriptor_get_checksum(const DESCRIPTOR& descriptor, uint32_t flags,
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_depth(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_depth(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_features(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_features(detail::get_p(descriptor), value_out);
     return ret;

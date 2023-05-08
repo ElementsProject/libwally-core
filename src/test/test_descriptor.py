@@ -221,48 +221,52 @@ class DescriptorTests(unittest.TestCase):
                ret, out = fn(descriptor, flags)
                self.assertEqual((ret, out), (WALLY_EINVAL, None))
 
-    def test_features(self):
-        """Test descriptor feature detection"""
+    def test_features_and_depth(self):
+        """Test descriptor feature detection and depth"""
         k1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
         k2 = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         # Valid args
-        for descriptor, flags, expected in [
+        for descriptor, flags, expected, expected_depth in [
             # Bip32 xpub
             (f'pkh({k1})',
-             0, MS_IS_DESCRIPTOR),
+             0, MS_IS_DESCRIPTOR, 2),
             # Bip32 xpub with range
             (f'pkh({k1}/*)',
-             0,  MS_IS_RANGED|MS_IS_DESCRIPTOR),
+             0,  MS_IS_RANGED|MS_IS_DESCRIPTOR, 2),
             # BIP32 xprv
             (f'pkh({k2}/*)',
-             0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR),
+             0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR, 2),
             # WIF
             ('pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)',
-             0, MS_IS_PRIVATE|MS_IS_RAW|MS_IS_DESCRIPTOR),
+             0, MS_IS_PRIVATE|MS_IS_RAW|MS_IS_DESCRIPTOR, 2),
             # Hex pubkey, compressed
             ('pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284)',
-             0, MS_IS_RAW|MS_IS_DESCRIPTOR),
+             0, MS_IS_RAW|MS_IS_DESCRIPTOR, 2),
             # Hex pubkey, uncompressed
             ('pk(0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf)',
-             0, MS_IS_UNCOMPRESSED|MS_IS_RAW|MS_IS_DESCRIPTOR),
+             0, MS_IS_UNCOMPRESSED|MS_IS_RAW|MS_IS_DESCRIPTOR, 2),
             # Miniscript
             ('j:and_v(vdv:after(1567547623),older(2016))',
-             MS_ONLY, 0),
+             MS_ONLY, 0, 3),
             # pk() is both descriptor and miniscript valid and should parse as each
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
-             0, MS_IS_PRIVATE),
+             0, MS_IS_PRIVATE, 5),
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
-             MS_ONLY, MS_IS_PRIVATE),
+             MS_ONLY, MS_IS_PRIVATE, 5),
         ]:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, flags, d)
             ret, features = wally_descriptor_get_features(d)
             self.assertEqual((ret, features), (WALLY_OK, expected))
+            ret, depth = wally_descriptor_get_depth(d)
+            self.assertEqual((ret, depth), (WALLY_OK, expected_depth))
             wally_descriptor_free(d)
 
         # Invalid args
         ret, features = wally_descriptor_get_features(None) # NULL descriptor
         self.assertEqual((ret, features), (WALLY_EINVAL, 0))
+        ret, depth = wally_descriptor_get_depth(None) # NULL descriptor
+        self.assertEqual((ret, depth), (WALLY_EINVAL, 0))
 
 if __name__ == '__main__':
     unittest.main()

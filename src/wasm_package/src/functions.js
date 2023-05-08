@@ -168,6 +168,7 @@ export const confidential_addr_to_ec_public_key = wrap('wally_confidential_addr_
 export const descriptor_canonicalize = wrap('wally_descriptor_canonicalize', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.String)]);
 export const descriptor_free = wrap('wally_descriptor_free', [T.OpaqueRef]);
 export const descriptor_get_checksum = wrap('wally_descriptor_get_checksum', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.String)]);
+export const descriptor_get_depth = wrap('wally_descriptor_get_depth', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_features = wrap('wally_descriptor_get_features', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_network = wrap('wally_descriptor_get_network', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_num_paths = wrap('wally_descriptor_get_num_paths', [T.OpaqueRef, T.DestPtr(T.Int32)]);

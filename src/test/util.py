@@ -310,6 +310,7 @@ for f in (
     ('wally_descriptor_canonicalize', c_int, [c_void_p, c_uint32, c_char_p_p]),
     ('wally_descriptor_free', c_int, [c_void_p]),
     ('wally_descriptor_get_checksum', c_int, [c_void_p, c_uint32, c_char_p_p]),
+    ('wally_descriptor_get_depth', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_features', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_network', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_num_paths', c_int, [c_void_p, c_uint32_p]),
