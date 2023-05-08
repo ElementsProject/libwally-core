@@ -15,6 +15,8 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_TAPSCRIPT        0x01 /** Tapscript, use x-only pubkeys */
 #define WALLY_MINISCRIPT_ONLY             0x02 /** Only allow miniscript (not descriptor) expressions */
 #define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
+#define WALLY_MINISCRIPT_DEPTH_MASK       0xffff0000 /** Mask for limiting maximum depth */
+#define WALLY_MINISCRIPT_DEPTH_SHIFT      16 /** Shift to convert maximum depth to flags */
 
 /*** miniscript-features Miniscript/Descriptor feature flags */
 #define WALLY_MS_IS_RANGED       0x01 /** Allows key ranges via ``*`` */
@@ -35,7 +37,8 @@ struct wally_descriptor;
  * :param network: Network the descriptor belongs to. Pass `WALLY_NETWORK_NONE`
  *|    for miniscript-only expressions or to infer the network. Must
  *|    be one of the :ref:`address-networks`.
- * :param flags: :ref:`miniscript-flags`.
+ * :param flags: :ref:`miniscript-flags`. The maximum depth of the descriptor
+ *|    can be limited by passing the depth in the upper 16 bits of the flags.
  * :param output: Destination for the resulting parsed descriptor.
  *|    The descriptor returned should be freed using `wally_descriptor_free`.
  *

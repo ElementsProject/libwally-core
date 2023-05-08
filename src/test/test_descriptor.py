@@ -261,12 +261,22 @@ class DescriptorTests(unittest.TestCase):
             ret, depth = wally_descriptor_get_depth(d)
             self.assertEqual((ret, depth), (WALLY_OK, expected_depth))
             wally_descriptor_free(d)
+            # Check the maximum depth parsing limit
+            for limit, expected in [(depth-1, WALLY_EINVAL), (depth, WALLY_OK)]:
+                ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE,
+                                            flags | (limit << 16), d)
+                self.assertEqual(ret, expected)
+            wally_descriptor_free(d)
 
         # Invalid args
         ret, features = wally_descriptor_get_features(None) # NULL descriptor
         self.assertEqual((ret, features), (WALLY_EINVAL, 0))
         ret, depth = wally_descriptor_get_depth(None) # NULL descriptor
         self.assertEqual((ret, depth), (WALLY_EINVAL, 0))
+        # Mismatched parens are caught early when checking maximum depth
+        ret = wally_descriptor_parse('pk())', None, NETWORK_NONE,
+                                     flags | (5 << 16), d)
+        self.assertEqual(ret, WALLY_EINVAL)
 
 if __name__ == '__main__':
     unittest.main()
