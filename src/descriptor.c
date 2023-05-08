@@ -194,6 +194,8 @@ typedef struct wally_descriptor {
     uint32_t variant; /* Variant for derivation of multi-type expressions */
     uint32_t child_num; /* BIP32 child number for derivation */
     uint32_t multi_index; /* Multi-path index for derivation */
+    uint32_t *path_buff; /* Path buffer for deriving keys */
+    uint32_t max_path_elems; /* Max path length seen in the descriptor */
 } ms_ctx;
 
 /* Built-in miniscript expressions */
@@ -1856,7 +1858,6 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
             return ret;
 
         if (node->child_path_len) {
-            uint32_t path[BIP32_PATH_MAX_LEN];
             size_t path_len;
             const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
                                    BIP32_FLAG_STR_BARE |
@@ -1870,10 +1871,10 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
             ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
                                         is_ranged ? ctx->child_num : 0,
                                         is_multi ? ctx->multi_index : 0,
-                                        flags, path, NUM_ELEMS(path),
+                                        flags, ctx->path_buff, ctx->max_path_elems,
                                         &path_len);
             if (ret == WALLY_OK)
-                ret = bip32_key_from_parent_path(&master, path, path_len,
+                ret = bip32_key_from_parent_path(&master, ctx->path_buff, path_len,
                                                  derive_flags, &derived);
             if (ret == WALLY_OK)
                 memcpy(&master, &derived, sizeof(master));
@@ -2074,6 +2075,8 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
                 ctx->features |= WALLY_MS_IS_RANGED;
                 node->flags |= NF_IS_RANGED;
             }
+            if (num_elems > ctx->max_path_elems)
+                ctx->max_path_elems = num_elems;
         } else {
             node->child_path = NULL; /* Empty path */
             node->child_path_len = 0;
@@ -2481,6 +2484,7 @@ int wally_descriptor_to_script(const struct wally_descriptor *descriptor,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
     ms_ctx ctx;
+    int ret;
 
     if (written)
         *written = 0;
@@ -2496,7 +2500,12 @@ int wally_descriptor_to_script(const struct wally_descriptor *descriptor,
     ctx.variant = variant;
     ctx.child_num = child_num;
     ctx.multi_index = multi_index;
-    return node_generate_script(&ctx, depth, index, bytes_out, len, written);
+    if (ctx.max_path_elems &&
+        !(ctx.path_buff = wally_malloc(ctx.max_path_elems * sizeof(uint32_t))))
+        return WALLY_ENOMEM;
+    ret = node_generate_script(&ctx, depth, index, bytes_out, len, written);
+    wally_free(ctx.path_buff);
+    return ret;
 }
 
 int wally_descriptor_to_script_get_maximum_length(
@@ -2515,12 +2524,12 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
                                   uint32_t child_num, uint32_t flags,
                                   char **addresses, size_t num_addresses)
 {
-    unsigned char buff[REDEEM_SCRIPT_MAX_SIZE], *p = buff;
     ms_ctx ctx;
+    unsigned char *p;
     size_t i, written;
     int ret = WALLY_OK;
 
-    if (!descriptor || !descriptor->addr_ver ||
+    if (!descriptor || !descriptor->addr_ver || !descriptor->script_len ||
         variant >= descriptor->num_variants ||
          child_num >= BIP32_INITIAL_HARDENED_CHILD ||
         (uint64_t)child_num + num_addresses >= BIP32_INITIAL_HARDENED_CHILD ||
@@ -2530,11 +2539,14 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
         return WALLY_EINVAL;
 
     wally_clear(addresses, num_addresses * sizeof(*addresses));
-    if (descriptor->script_len > sizeof(buff) &&(!(p = wally_malloc(descriptor->script_len))))
+    if (!(p = wally_malloc(descriptor->script_len)))
         return WALLY_ENOMEM;
 
     memcpy(&ctx, descriptor, sizeof(ctx));
     ctx.variant = variant;
+    if (ctx.max_path_elems &&
+        !(ctx.path_buff = wally_malloc(ctx.max_path_elems * sizeof(uint32_t))))
+        return WALLY_ENOMEM;
 
     for (i = 0; ret == WALLY_OK && i < num_addresses; ++i) {
         ctx.child_num = child_num + i;
@@ -2563,8 +2575,8 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
             addresses[i] = NULL;
         }
     }
-    if (p != buff)
-        wally_free(p);
+    wally_free(ctx.path_buff);
+    wally_free(p);
     return ret;
 }
 
