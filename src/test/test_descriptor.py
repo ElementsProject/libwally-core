@@ -222,16 +222,19 @@ class DescriptorTests(unittest.TestCase):
                self.assertEqual((ret, out), (WALLY_EINVAL, None))
 
     def test_features(self):
+        """Test descriptor feature detection"""
+        k1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        k2 = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         # Valid args
         for descriptor, flags, expected in [
             # Bip32 xpub
-            ('pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB)',
+            (f'pkh({k1})',
              0, MS_IS_DESCRIPTOR),
             # Bip32 xpub with range
-            ('pkh(xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/*)',
+            (f'pkh({k1}/*)',
              0,  MS_IS_RANGED|MS_IS_DESCRIPTOR),
             # BIP32 xprv
-            ('pkh(xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU/*)',
+            (f'pkh({k2}/*)',
              0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR),
             # WIF
             ('pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)',
@@ -245,6 +248,11 @@ class DescriptorTests(unittest.TestCase):
             # Miniscript
             ('j:and_v(vdv:after(1567547623),older(2016))',
              MS_ONLY, 0),
+            # pk() is both descriptor and miniscript valid and should parse as each
+            (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
+             0, MS_IS_PRIVATE),
+            (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
+             MS_ONLY, MS_IS_PRIVATE),
         ]:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, flags, d)

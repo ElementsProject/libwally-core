@@ -2467,14 +2467,11 @@ int wally_descriptor_parse(const char *miniscript,
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
+
         ret = analyze_miniscript(ctx, ctx->src, ctx->src_len, kind,
                                  flags, NULL, NULL, &ctx->top_node);
-        if (ret == WALLY_OK && (kind & KIND_DESCRIPTOR) &&
-            (!ctx->top_node->builtin || !(ctx->top_node->kind & KIND_DESCRIPTOR)))
-            ret = WALLY_EINVAL;
-        else if (ret == WALLY_OK) {
+        if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
-        }
     }
     if (ret != WALLY_OK) {
         wally_descriptor_free(ctx);
