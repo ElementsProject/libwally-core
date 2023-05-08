@@ -1753,7 +1753,8 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     if (!check_ret("descriptor_get_features", ret, WALLY_OK))
         return false;
 
-    len_ret = wally_descriptor_to_script_get_maximum_length(descriptor, 0,
+    len_ret = wally_descriptor_to_script_get_maximum_length(descriptor,
+                                                            0, 0, 0, 0, 0, 0,
                                                             &max_written);
     if (!check_ret("descriptor_to_script_get_maximum_length", len_ret, WALLY_OK) ||
         max_written < written)

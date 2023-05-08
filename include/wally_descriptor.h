@@ -184,6 +184,11 @@ WALLY_CORE_API int wally_descriptor_get_depth(
  * Get the maximum length of a script corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param depth: Depth of the expression tree to generate from. Pass 0 to generate from the root.
+ * :param index: The zero-based index of the child at depth ``depth`` to generate from.
+ * :param variant: The variant of descriptor to generate. See `wally_descriptor_get_num_variants`.
+ * :param multi_index: The multi-path item to generate. See `wally_descriptor_get_num_paths`.
+ * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
  * :param flags: For future use. Must be 0.
  * :param written: Destination for the resulting maximum script length.
  *
@@ -192,6 +197,11 @@ WALLY_CORE_API int wally_descriptor_get_depth(
  */
 WALLY_CORE_API int wally_descriptor_to_script_get_maximum_length(
     const struct wally_descriptor *descriptor,
+    uint32_t depth,
+    uint32_t index,
+    uint32_t variant,
+    uint32_t multi_index,
+    uint32_t child_num,
     uint32_t flags,
     size_t *written);
 

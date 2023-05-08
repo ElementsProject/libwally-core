@@ -554,8 +554,8 @@ inline int descriptor_to_script(const DESCRIPTOR& descriptor, uint32_t depth, ui
 }
 
 template <class DESCRIPTOR>
-inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor, uint32_t flags, size_t* written) {
-    int ret = ::wally_descriptor_to_script_get_maximum_length(detail::get_p(descriptor), flags, written);
+inline int descriptor_to_script_get_maximum_length(const DESCRIPTOR& descriptor, uint32_t depth, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_to_script_get_maximum_length(detail::get_p(descriptor), depth, index, variant, multi_index, child_num, flags, written);
     return ret;
 }
 

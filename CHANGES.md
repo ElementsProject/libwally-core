@@ -1,5 +1,9 @@
 # Changes
 
+## Version 0.9.0
+- ABI: wally_descriptor_to_script_get_maximum_length has changed its arguments
+  to match wally_descriptor_to_script.
+
 ## Version 0.8.9
 - libsecp256k1-zkp: The internal libsecp256k1 library version has been updated
   to fix a potential timing leak when compiling with clang v14 or later.

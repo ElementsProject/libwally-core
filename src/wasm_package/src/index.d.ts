@@ -129,7 +129,7 @@ export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, net
 export function descriptor_set_network(descriptor: Ref_wally_descriptor, network: number): void;
 export function descriptor_to_address(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number): string;
 export function descriptor_to_addresses(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number, out_len: number): string;
-export function descriptor_to_script_get_maximum_length(descriptor: Ref_wally_descriptor, flags: number): number;
+export function descriptor_to_script_get_maximum_length(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, multi_index: number, child_num: number, flags: number): number;
 export function ec_private_key_bip341_tweak(priv_key: Buffer|Uint8Array, merkle_root: Buffer|Uint8Array, flags: number): Buffer;
 export function ec_private_key_verify(priv_key: Buffer|Uint8Array): void;
 export function ec_public_key_bip341_tweak(pub_key: Buffer|Uint8Array, merkle_root: Buffer|Uint8Array, flags: number): Buffer;

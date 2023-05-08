@@ -2531,8 +2531,15 @@ int wally_descriptor_to_script(const struct wally_descriptor *descriptor,
 }
 
 int wally_descriptor_to_script_get_maximum_length(
-    const struct wally_descriptor *descriptor, uint32_t flags, size_t *written)
+    const struct wally_descriptor *descriptor,
+    uint32_t depth, uint32_t index, uint32_t variant, uint32_t multi_index,
+    uint32_t child_num, uint32_t flags, size_t *written)
 {
+    (void)depth;
+    (void)index;
+    (void)variant;
+    (void)multi_index;
+    (void)child_num;
     if (written)
         *written = 0;
     if (!descriptor || (flags & ~MS_FLAGS_ALL) || !written)
