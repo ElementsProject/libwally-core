@@ -360,18 +360,6 @@ static inline bool is_identifer_char(char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 
-static const struct wally_map_item *lookup_identifier(const struct wally_map *map_in,
-                                                      const char *key, size_t key_len)
-{
-    size_t i;
-    for (i = 0; i < map_in->num_items; ++i) {
-        const struct wally_map_item *item = &map_in->items[i];
-        if (key_len == item->key_len - 1 && memcmp(key, item->key, key_len) == 0)
-            return item;
-    }
-    return NULL;
-}
-
 static int canonicalize(const char *descriptor,
                         const struct wally_map *vars_in, uint32_t flags,
                         char **output)
@@ -403,8 +391,9 @@ static int canonicalize(const char *descriptor,
                 required_len += lookup_len; /* Too long/wrong format for an identifier */
             } else {
                 /* Lookup the potential identifier */
-                const struct wally_map_item *item = lookup_identifier(vars_in, start, lookup_len);
-                required_len += item ? item->value_len - 1 : lookup_len;
+                const struct wally_map_item *item;
+                item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
+                required_len += item ? item->value_len : lookup_len;
             }
         }
     }
@@ -431,8 +420,9 @@ static int canonicalize(const char *descriptor,
                 memcpy(out, start, lookup_len);
             } else {
                 /* Lookup the potential identifier */
-                const struct wally_map_item *item = lookup_identifier(vars_in, start, lookup_len);
-                lookup_len = item ? item->value_len - 1 : lookup_len;
+                const struct wally_map_item *item;
+                item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
+                lookup_len = item ? item->value_len : lookup_len;
                 memcpy(out, item ? (char *)item->value : start, lookup_len);
             }
             out += lookup_len;

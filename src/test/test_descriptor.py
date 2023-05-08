@@ -26,7 +26,7 @@ def wally_map_from_dict(d):
     m = pointer(wally_map())
     assert(wally_map_init_alloc(len(d.keys()), None, m) == WALLY_OK)
     for k,v in d.items():
-        assert(wally_map_add(m, k, len(k) + 1, v, len(v) + 1) == WALLY_OK)
+        assert(wally_map_add(m, k, len(k), v, len(v)) == WALLY_OK)
     return m
 
 

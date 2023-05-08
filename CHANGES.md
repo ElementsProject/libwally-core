@@ -3,6 +3,10 @@
 ## Version 0.9.0
 - ABI: wally_descriptor_to_script_get_maximum_length has changed its arguments
   to match wally_descriptor_to_script.
+- ABI: The vars_in variable substitution map argument to wally_descriptor_parse
+  now expects its key and value length to match the actual length to substitute
+  rather than including an extra byte. Since the map stores byte arrays and not
+  strings, this is more consistent with the existing map API.
 
 ## Version 0.8.9
 - libsecp256k1-zkp: The internal libsecp256k1 library version has been updated

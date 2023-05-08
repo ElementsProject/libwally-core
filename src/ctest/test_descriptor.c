@@ -23,7 +23,7 @@
    }
  */
 
-#define B(str) (unsigned char *)(str), sizeof(str)
+#define B(str) (unsigned char *)(str), sizeof(str)-1
 #define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
 
 static struct wally_map_item g_key_map_items[] = {
