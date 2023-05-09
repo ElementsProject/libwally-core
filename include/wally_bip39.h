@@ -30,7 +30,7 @@ struct words;
 /**
  * Get the list of default supported languages.
  *
- * ..note:: The string returned should be freed using `wally_free_string`.
+ * .. note:: The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip39_get_languages(
     char **output);
@@ -127,7 +127,7 @@ WALLY_CORE_API int bip39_mnemonic_to_seed(
  * :param bytes_out: The destination for the binary seed.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BIP39_SEED_LEN_512)
  *
- * ..note:: Identical to `bip39_mnemonic_to_seed` but returns a fixed size buffer.
+ * .. note:: Identical to `bip39_mnemonic_to_seed` but returns a fixed size buffer.
  */
 WALLY_CORE_API int bip39_mnemonic_to_seed512(
     const char *mnemonic,

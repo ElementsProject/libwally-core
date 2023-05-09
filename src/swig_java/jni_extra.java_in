@@ -107,6 +107,12 @@
       return bip38_to_private_key(jarg1, jarg2, jarg3, null);
   }
 
+  public final static byte[] bip85_get_bip39_entropy(Object hdkey, String lang, long num_words, long index) {
+      final byte[] buf = new byte[HMAC_SHA512_LEN];
+      final int len = bip85_get_bip39_entropy(hdkey, lang, num_words, index, buf);
+      return trimBuffer(buf, len);
+  }
+
   public final static byte[] ecdh(byte[] jarg1, byte[] jarg2) {
       return ecdh(jarg1, jarg2, null);
   }

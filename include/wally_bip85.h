@@ -12,7 +12,7 @@ struct ext_key;
 /**
  * Get the list of default supported languages.
  *
- * ..note:: The string returned should be freed using `wally_free_string`.
+ * .. note:: The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int bip85_get_languages(
     char **output);
