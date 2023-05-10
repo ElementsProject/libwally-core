@@ -215,7 +215,7 @@ int wally_ec_private_key_bip341_tweak(
         !keypair_sec(bytes_out, &keypair)))
         ret = WALLY_ERROR;
     wally_clear(&keypair, sizeof(keypair));
-    return WALLY_OK;
+    return ret;
 }
 
 int wally_ec_sig_normalize(const unsigned char *sig, size_t sig_len,

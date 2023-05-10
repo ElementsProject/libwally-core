@@ -1943,7 +1943,7 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
     size_t is_elements = 0;
-    const unsigned char sighash = opts ? opts->sighash : 0;
+    const unsigned char sighash = opts->sighash;
     const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
     const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
@@ -3238,12 +3238,12 @@ int wally_tx_get_btc_taproot_signature_hash(
         return WALLY_EINVAL;
 
 #ifdef BUILD_ELEMENTS
-    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK || is_elements)
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK || is_elements)
         return WALLY_EINVAL;
 #endif
 
     if ((ret = tx_get_length(tx, &opts, 0, &n, false)) != WALLY_OK)
-        return WALLY_EINVAL;
+        return ret;
 
     if (n > sizeof(buff))
         return WALLY_ERROR; /* Will never happen unless buff size is reduced */

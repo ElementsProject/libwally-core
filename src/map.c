@@ -688,7 +688,7 @@ int wally_keypath_get_path_len(const unsigned char *val, size_t val_len,
 {
     if (written)
         *written = 0;
-    if (!kp_is_valid(val, val_len))
+    if (!kp_is_valid(val, val_len) || !written)
         return WALLY_EINVAL;
     *written = kp_path_len(val_len);
     return WALLY_OK;

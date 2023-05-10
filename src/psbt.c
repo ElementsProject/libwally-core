@@ -326,7 +326,7 @@ int wally_psbt_input_set_previous_txid(struct wally_psbt_input *input,
 {
     if (!input || BYTES_INVALID_N(txhash, len, WALLY_TXHASH_LEN))
         return WALLY_EINVAL;
-    if (len)
+    if (txhash)
         memcpy(input->txhash, txhash, WALLY_TXHASH_LEN);
     else
         wally_clear(input->txhash, WALLY_TXHASH_LEN);
@@ -1744,7 +1744,7 @@ static int pull_tx(const unsigned char **cursor, size_t *max,
     int ret;
 
     if (*tx_out)
-        ret = WALLY_EINVAL; /* Duplicate */
+        return WALLY_EINVAL; /* Duplicate */
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     ret = wally_tx_from_bytes(val, val_len, tx_flags, tx_out);
     pull_subfield_end(cursor, max, val, val_len);
@@ -1826,7 +1826,7 @@ static int pull_witness(const unsigned char **cursor, size_t *max,
     int ret;
 
     if (*witness_out)
-        ret = WALLY_EINVAL; /* Duplicate */
+        return WALLY_EINVAL; /* Duplicate */
 
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     num_witnesses = pull_varint(&val, &val_len);
@@ -4049,7 +4049,7 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
         unsigned char txid[WALLY_TXHASH_LEN];
         size_t is_pset;
 
-        if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK || is_pset)
+        if (wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
             return WALLY_EINVAL; /* Elements doesn't support pre-segwit txs */
 
         ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
@@ -4830,8 +4830,9 @@ int wally_psbt_blind(struct wally_psbt *psbt,
             if (ret == WALLY_OK) {
                 if (surjectionproof_len > sizeof(surjectionproof))
                     ret = WALLY_EINVAL; /* Should never happen */
-                ret = wally_psbt_output_set_asset_surjectionproof(out, surjectionproof,
-                                                                  surjectionproof_len);
+                else
+                    ret = wally_psbt_output_set_asset_surjectionproof(out, surjectionproof,
+                                                                      surjectionproof_len);
             }
         }
 

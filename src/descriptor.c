@@ -851,7 +851,7 @@ static int verify_or_i(ms_ctx *ctx, ms_node *node)
 
 static int verify_thresh(ms_ctx *ctx, ms_node *node)
 {
-    ms_node *top = top = node->child, *child;
+    ms_node *top = node->child, *child;
     int64_t count = 0, num_s = 0, args = 0;
     uint32_t acc_tl = PROP_K, tmp_acc_tl;
     bool all_e = true, all_m = true;

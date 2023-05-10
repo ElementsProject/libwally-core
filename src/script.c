@@ -575,7 +575,7 @@ int wally_scriptpubkey_op_return_from_bytes(
     if (written)
         *written = 0;
 
-    if (bytes_len > WALLY_MAX_OP_RETURN_LEN || flags || !bytes_out || !len)
+    if (bytes_len > WALLY_MAX_OP_RETURN_LEN || flags || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
     ret = wally_script_push_from_bytes(bytes, bytes_len, flags,
