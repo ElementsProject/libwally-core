@@ -113,6 +113,7 @@ export const WALLY_BTC_MAX = 21000000;
 export const WALLY_CA_PREFIX_LIQUID = 0x0c; /** Liquid v1 confidential address prefix */
 export const WALLY_CA_PREFIX_LIQUID_REGTEST = 0x04; /** Liquid v1 confidential address prefix for regtest */
 export const WALLY_CA_PREFIX_LIQUID_TESTNET = 0x17; /** Liquid v1 confidential address prefix for testnet */
+export const WALLY_CS_MAX_ASSETS = 256;
 export const WALLY_EINVAL = -2; /** Invalid argument */
 export const WALLY_ENOMEM = -3; /** malloc() failed */
 export const WALLY_ERROR = -1; /** General error */

@@ -145,6 +145,7 @@ libwallycore_la_SOURCES = \
     bip39.c \
     bip85.c \
     bech32.c \
+    coins.c \
     descriptor.c \
     ecdh.c \
     elements.c \
@@ -177,6 +178,7 @@ libwallycore_la_INCLUDES = \
     include/wally_bip38.h \
     include/wally_bip39.h \
     include/wally_bip85.h \
+    include/wally_coinselection.h \
     include/wally_core.h \
     include/wally_crypto.h \
     include/wally_descriptor.h \
@@ -238,6 +240,14 @@ if PYTHON_MANYLINUX
 test_clear_LDADD += $(PYTHON_LIBS)
 endif
 endif
+TESTS += test_coinselection
+noinst_PROGRAMS += test_coinselection
+test_coinselection_SOURCES = ctest/test_coinselection.c
+test_coinselection_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
+test_coinselection_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
+if PYTHON_MANYLINUX
+test_coinselection_LDADD += $(PYTHON_LIBS)
+endif
 TESTS += test_tx
 noinst_PROGRAMS += test_tx
 test_tx_SOURCES = ctest/test_tx.c
@@ -281,6 +291,7 @@ check-libwallycore: $(PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip38.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip39.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_bip85.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_coinselection.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_descriptor.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_ecdh.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_hash.py
@@ -308,6 +319,7 @@ endif
 if USE_SWIG_PYTHON
 check-swig-python: $(SWIG_PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/coinselection.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/descriptor.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/psbt.py

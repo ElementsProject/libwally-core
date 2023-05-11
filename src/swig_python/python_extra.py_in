@@ -16,13 +16,18 @@ def _wrap_bin(fn, length, resize=False):
         return buf
     return wrapped
 
-def _wrap_int_array(fn, length):
+def _wrap_int_array(fn, length, resize=False):
     """ Wrap functions that take an output integer array to create/return it """
     def wrapped(*args):
         n = length(*args) if callable(length) else length
         out = [None] * n
         ret = fn(*list(args)+[out])
-        assert ret == len(out) # Input list must be of the correct size
+        if resize:
+            # Truncate as per _wrap_bin
+            assert ret <= n
+            return out[0:ret] if ret != n else out
+        if ret is not None:
+            assert ret == n
         return out
     return wrapped
 
@@ -267,6 +272,7 @@ if is_elements_build():
     asset_value_commitment = _wrap_bin(asset_value_commitment, ASSET_COMMITMENT_LEN)
     bip32_key_get_pub_key_tweak_sum = _wrap_bin(bip32_key_get_pub_key_tweak_sum, WALLY_BIP32_TWEAK_SUM_LEN)
     bip32_key_with_tweak_from_parent_path = bip32_key_with_tweak_from_parent_path_alloc
+    coinselect_assets = _wrap_int_array(coinselect_assets, WALLY_CS_MAX_ASSETS, resize=True)
     confidential_addr_segwit_to_ec_public_key = _wrap_bin(confidential_addr_segwit_to_ec_public_key, EC_PUBLIC_KEY_LEN)
     confidential_addr_to_ec_public_key = _wrap_bin(confidential_addr_to_ec_public_key, EC_PUBLIC_KEY_LEN)
     ecdh_nonce_hash = _wrap_bin(ecdh_nonce_hash, SHA256_LEN)

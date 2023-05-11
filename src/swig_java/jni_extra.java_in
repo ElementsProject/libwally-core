@@ -12,6 +12,11 @@
       return buf;
   }
 
+  private final static int[] trimIntBuffer(final int[] buf, final int len) {
+      if (len > buf.length) throw new IllegalArgumentException();
+      return len == buf.length ? buf: java.util.Arrays.copyOf(buf, len);
+  }
+
   private final static int[] checkIntBuffer(final int[] buf, final int len) {
       if (len != buf.length)
           throw new RuntimeException("Failed");

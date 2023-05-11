@@ -468,6 +468,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_unblind' \
 ,'_wally_asset_unblind_with_nonce' \
 ,'_wally_asset_value_commitment' \
+,'_wally_coinselect_assets' \
 ,'_wally_confidential_addr_from_addr' \
 ,'_wally_confidential_addr_from_addr_segwit' \
 ,'_wally_confidential_addr_segwit_to_ec_public_key' \

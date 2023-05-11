@@ -8,6 +8,7 @@
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_bip85.h"
+#include "../include/wally_coinselection.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
@@ -345,6 +346,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (uint32_t *child_path_out, size_t child_path_out_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
+%apply(uint32_t *STRING, size_t LENGTH) { (uint32_t *indices_out, size_t indices_out_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *utxo_indices, size_t num_utxo_indices) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t num_values) }
 
@@ -544,6 +546,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_bip32_key_to_address);
 %returns_string(wally_bip32_key_to_addr_segwit);
 %returns_array_(wally_bip340_tagged_hash, 4, 5, SHA256_LEN);
+%returns_size_t(wally_coinselect_assets);
 %returns_string(wally_confidential_addr_to_addr);
 %returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_string(wally_confidential_addr_from_addr);
@@ -1308,6 +1311,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_bip85.h"
+%include "../include/wally_coinselection.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_descriptor.h"
 %include "../include/wally_map.h"

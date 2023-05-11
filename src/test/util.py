@@ -301,6 +301,7 @@ for f in (
     ('wally_bip340_tagged_hash', c_int, [c_void_p, c_size_t, c_char_p, c_void_p, c_size_t]),
     ('wally_bzero', c_int, [c_void_p, c_size_t]),
     ('wally_cleanup', c_int, [c_uint32]),
+    ('wally_coinselect_assets', c_int, [POINTER(c_uint64), c_size_t, c_uint64, c_uint64, c_uint32, POINTER(c_uint32), c_size_t, c_size_t_p]),
     ('wally_confidential_addr_from_addr', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_char_p_p]),
     ('wally_confidential_addr_from_addr_segwit', c_int, [c_char_p, c_char_p, c_char_p, c_void_p, c_size_t, c_char_p_p]),
     ('wally_confidential_addr_segwit_to_ec_public_key', c_int, [c_char_p, c_char_p, c_void_p, c_size_t]),

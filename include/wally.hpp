@@ -2143,6 +2143,12 @@ inline int asset_value_commitment(uint64_t value, const VBF& vbf, const GENERATO
     return ret;
 }
 
+template <class VALUES>
+inline int coinselect_assets(const VALUES& values, uint64_t target, uint64_t attempts, uint32_t io_ratio, uint32_t* indices_out, size_t indices_out_len, size_t* written) {
+    int ret = ::wally_coinselect_assets(values.data(), values.size(), target, attempts, io_ratio, indices_out, indices_out_len, written);
+    return ret;
+}
+
 template <class ADDRESS, class PUB_KEY>
 inline int confidential_addr_from_addr(const ADDRESS& address, uint32_t prefix, const PUB_KEY& pub_key, char** output) {
     int ret = ::wally_confidential_addr_from_addr(detail::get_p(address), prefix, pub_key.data(), pub_key.size(), output);

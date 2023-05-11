@@ -111,6 +111,7 @@ export function bip85_get_bip39_entropy(hdkey: Ref_ext_key, lang: string, num_wo
 export function bip85_get_languages(): string;
 export function bzero(bytes: Ref, bytes_len: number): void;
 export function cleanup(flags: number): void;
+export function coinselect_assets(values: BigUint64Array|Array<bigint>, target: bigint, attempts: bigint, io_ratio: number): Uint32Array;
 export function confidential_addr_from_addr(address: string, prefix: number, pub_key: Buffer|Uint8Array): string;
 export function confidential_addr_from_addr_segwit(address: string, addr_family: string, confidential_addr_family: string, pub_key: Buffer|Uint8Array): string;
 export function confidential_addr_segwit_to_ec_public_key(address: string, confidential_addr_family: string): Buffer;

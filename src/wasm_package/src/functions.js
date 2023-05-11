@@ -159,6 +159,7 @@ export const bip85_get_bip39_entropy = wrap('bip85_get_bip39_entropy', [T.Opaque
 export const bip85_get_languages = wrap('bip85_get_languages', [T.DestPtrPtr(T.String)]);
 export const bzero = wrap('wally_bzero', [T.OpaqueRef, T.Int32]);
 export const cleanup = wrap('wally_cleanup', [T.Int32]);
+export const coinselect_assets = wrap('wally_coinselect_assets', [T.Uint64Array, T.Int64, T.Int64, T.Int32, T.DestPtrVarLen(T.Uint32Array, C.WALLY_CS_MAX_ASSETS, true)]);
 export const confidential_addr_from_addr = wrap('wally_confidential_addr_from_addr', [T.String, T.Int32, T.Bytes, T.DestPtrPtr(T.String)]);
 export const confidential_addr_from_addr_segwit = wrap('wally_confidential_addr_from_addr_segwit', [T.String, T.String, T.String, T.Bytes, T.DestPtrPtr(T.String)]);
 export const confidential_addr_segwit_to_ec_public_key = wrap('wally_confidential_addr_segwit_to_ec_public_key', [T.String, T.String, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);

@@ -11,6 +11,7 @@
 #include "bip38.c"
 #include "bip39.c"
 #include "bip85.c"
+#include "coins.c"
 #include "descriptor.c"
 #include "ecdh.c"
 #include "elements.c"

@@ -29,6 +29,7 @@ del swig_import_helper
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
 #include "../include/wally_bip85.h"
+#include "../include/wally_coinselection.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
@@ -420,6 +421,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %py_int_array(uint32_t, 0xffffffffull, utxo_indices, num_utxo_indices)
 %py_int_array(uint64_t, 0xffffffffffffffffull, values, num_values)
 %py_int_array_out(uint32_t, 0xffffffffull, child_path_out, child_path_out_len)
+%py_int_array_out(uint32_t, 0xffffffffull, indices_out, indices_out_len)
 
 %py_opaque_struct(ext_key);
 %py_opaque_struct(wally_descriptor);
@@ -441,6 +443,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
 %include "../include/wally_bip85.h"
+%include "../include/wally_coinselection.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_descriptor.h"
 %include "../include/wally_map.h"
