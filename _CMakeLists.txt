@@ -1,10 +1,61 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.20)
 
 project(
   libwallycore
   VERSION 0.8.8
   DESCRIPTION "collection of useful primitives for cryptocurrency wallets"
-  LANGUAGES C)
+  LANGUAGES C
+)
+
+option(BUILD_SHARED_LIBS "Build as shared library" OFF)
+
 
 include(cmake/utils.cmake)
 generate_config_file()
+configure_file(src/ccan_config.h ccan_config.h COPYONLY)
+
+include(cmake/libsecp256k1.cmake)
+
+add_subdirectory(src)
+
+
+### install directives
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(LIB_CMAKE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/wallycore)
+
+configure_package_config_file(
+    ${CMAKE_SOURCE_DIR}/cmake/wallycore-config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/wallycore-config.cmake"
+    INSTALL_DESTINATION ${LIB_CMAKE_INSTALL_DIR}
+    PATH_VARS LIB_CMAKE_INSTALL_DIR
+)
+write_basic_package_version_file(
+    wallycore-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/wallycore-config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/wallycore-config-version.cmake"
+    DESTINATION
+        ${LIB_CMAKE_INSTALL_DIR}
+)
+install(
+    TARGETS wallycore
+    EXPORT "wallycore-target"
+    COMPONENT wallycore
+    RUNTIME EXCLUDE_FROM_ALL
+    OBJECTS EXCLUDE_FROM_ALL
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(EXPORT "wallycore-target"
+    DESTINATION ${LIB_CMAKE_INSTALL_DIR}
+    NAMESPACE wallycore::
+    FILE "wallycore-targets.cmake"
+)
+
