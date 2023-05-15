@@ -554,8 +554,10 @@ static int keypath_key_verify(const unsigned char *key, size_t key_len, struct e
         ret = bip32_key_unserialize(key, key_len, key_out);
         if (ret == WALLY_OK &&
             (key_out->version == BIP32_VER_MAIN_PRIVATE ||
-             key_out->version == BIP32_VER_TEST_PRIVATE))
+             key_out->version == BIP32_VER_TEST_PRIVATE)) {
+            wally_clear(key_out, sizeof(*key_out));
             ret = WALLY_EINVAL; /* Must be a public key, not private */
+        }
     }
     return ret;
 }
