@@ -1,6 +1,6 @@
 """setuptools config for wallycore """
 from setuptools import setup, Extension
-import copy, os, platform
+import copy, os, platform, shutil
 import distutils.sysconfig
 
 CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux --enable-elements'
@@ -73,6 +73,7 @@ include_dirs=[
     './src/secp256k1/src/'
     ]
 if is_windows:
+    shutil.copyfile('./src/amalgamation/windows_config/libsecp256k1-config.h', 'src/secp256k1/src/libsecp256k1-config.h')
     include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
 
 extra_compile_args = ['-flax-vector-conversions']

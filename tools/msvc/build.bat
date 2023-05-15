@@ -12,6 +12,9 @@ REM problems. Make renamed copies as a workaround.
 copy src\ccan\ccan\str\hex\hex.c src\ccan\ccan\str\hex\hex_.c
 copy src\ccan\ccan\base64\base64.c src\ccan\ccan\base64\base64_.c
 
+REM secp now requires its config header in the source directory
+copy src\amalgamation\windows_config\libsecp256k1-config.h src\secp256k1\src\libsecp256k1-config.h
+
 if "%ELEMENTS_BUILD%" == "elements" (
   set ELEMENTS_OPT=/DBUILD_ELEMENTS
 ) else (
