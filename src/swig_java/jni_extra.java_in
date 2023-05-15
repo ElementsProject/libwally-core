@@ -285,6 +285,14 @@
       return _wif_is_uncompressed(wif) != 0;
   }
 
+  public final static byte[] get_hash_prevouts(byte[] jarg1, int[] jarg3) {
+      return get_hash_prevouts(jarg1, jarg3, null);
+  }
+
+  public final static byte[] tx_get_hash_prevouts(final Object tx, long index, long num_inputs) {
+      return tx_get_hash_prevouts(tx, index, num_inputs, null);
+  }
+
   public final static byte[] tx_get_txid(final Object tx) {
       return tx_get_txid(tx, null);
   }
