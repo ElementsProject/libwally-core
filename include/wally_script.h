@@ -181,8 +181,10 @@ extern "C" {
  * :param bytes_len: Length of ``bytes`` in bytes.
  * :param written: Destination for the script type, one of the :ref:`script-type`.
  */
-WALLY_CORE_API int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
-                                               size_t *written);
+WALLY_CORE_API int wally_scriptpubkey_get_type(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    size_t *written);
 
 /**
  * Create a P2PKH scriptPubkey.
