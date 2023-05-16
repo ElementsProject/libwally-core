@@ -311,6 +311,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tap_sig, size_t tap_sig_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
@@ -781,6 +782,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_input_signature_hash);
 %returns_size_t(wally_psbt_get_input_signature_len);
 %returns_size_t(wally_psbt_get_input_sighash);
+%returns_size_t(wally_psbt_get_input_taproot_signature);
+%returns_size_t(wally_psbt_get_input_taproot_signature_len);
 %returns_size_t(wally_psbt_get_input_unknown);
 %returns_size_t(wally_psbt_get_input_unknown_len);
 %returns_size_t(wally_psbt_get_input_unknowns_size);
@@ -888,6 +891,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_set_input_sequence);
 %returns_void__(wally_psbt_set_input_sighash);
 %returns_void__(wally_psbt_set_input_signatures);
+%returns_void__(wally_psbt_set_input_taproot_signature);
 %returns_void__(wally_psbt_set_input_unknowns);
 %returns_void__(wally_psbt_set_input_utxo);
 %returns_void__(wally_psbt_set_input_utxo_rangeproof);
@@ -1255,6 +1259,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_input_get_inflation_keys_blinding_rangeproof_len;
 %ignore wally_psbt_input_set_inflation_keys_blinding_rangeproof;
 %ignore wally_psbt_input_clear_inflation_keys_blinding_rangeproof;
+%ignore wally_psbt_input_set_taproot_signature;
 %ignore wally_psbt_input_get_utxo_rangeproof;
 %ignore wally_psbt_input_get_utxo_rangeproof_len;
 %ignore wally_psbt_input_set_utxo_rangeproof;

@@ -1342,6 +1342,12 @@ inline int psbt_input_set_signatures(const INPUT& input, const struct wally_map*
     return ret;
 }
 
+template <class INPUT, class TAP_SIG>
+inline int psbt_input_set_taproot_signature(const INPUT& input, const TAP_SIG& tap_sig) {
+    int ret = ::wally_psbt_input_set_taproot_signature(detail::get_p(input), tap_sig.data(), tap_sig.size());
+    return ret;
+}
+
 template <class INPUT>
 inline int psbt_input_set_unknowns(const INPUT& input, const struct wally_map* map_in) {
     int ret = ::wally_psbt_input_set_unknowns(detail::get_p(input), map_in);

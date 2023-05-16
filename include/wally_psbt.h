@@ -340,6 +340,18 @@ WALLY_CORE_API int wally_psbt_input_set_signatures(
     const struct wally_map *map_in);
 
 /**
+ * Set the taproot key signature in an input.
+ *
+ * :param input: The input to update.
+ * :param tap_sig: The taproot keyspend signature for this input.
+ * :param tap_sig_len: The length of ``tap_sig``. Must be 64 or 65.
+ */
+WALLY_CORE_API int wally_psbt_input_set_taproot_signature(
+    struct wally_psbt_input *input,
+    const unsigned char *tap_sig,
+    size_t tap_sig_len);
+
+/**
  * Find a partial signature matching a pubkey in an input.
  *
  * :param input: The input to search in.
