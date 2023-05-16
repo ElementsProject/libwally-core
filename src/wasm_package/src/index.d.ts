@@ -420,6 +420,7 @@ export function psbt_input_set_required_locktime(input: Ref_wally_psbt_input, re
 export function psbt_input_set_sequence(input: Ref_wally_psbt_input, sequence: number): void;
 export function psbt_input_set_sighash(input: Ref_wally_psbt_input, sighash: number): void;
 export function psbt_input_set_signatures(input: Ref_wally_psbt_input, map_in: Ref_wally_map): void;
+export function psbt_input_set_taproot_signature(input: Ref_wally_psbt_input, tap_sig: Buffer|Uint8Array): void;
 export function psbt_input_set_unknowns(input: Ref_wally_psbt_input, map_in: Ref_wally_map): void;
 export function psbt_input_set_utxo(input: Ref_wally_psbt_input, utxo: Ref_wally_tx): void;
 export function psbt_input_set_utxo_rangeproof(input: Ref_wally_psbt_input, rangeproof: Buffer|Uint8Array): void;

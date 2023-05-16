@@ -384,6 +384,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* sub_pubkey, size_t sub_pubkey_len);
 %pybuffer_nullable_binary(const unsigned char* summed_key, size_t summed_key_len);
 %pybuffer_nullable_binary(const unsigned char* surjectionproof, size_t surjectionproof_len);
+%pybuffer_nullable_binary(const unsigned char* tap_sig, size_t tap_sig_len);
 %pybuffer_nullable_binary(const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len);
 %pybuffer_nullable_binary(const unsigned char* tapleaf_script, size_t tapleaf_script_len);
 %pybuffer_nullable_binary(const unsigned char* txhash, size_t txhash_len);

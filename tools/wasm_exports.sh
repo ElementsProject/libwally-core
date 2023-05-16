@@ -276,6 +276,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_input_set_sequence' \
 ,'_wally_psbt_input_set_sighash' \
 ,'_wally_psbt_input_set_signatures' \
+,'_wally_psbt_input_set_taproot_signature' \
 ,'_wally_psbt_input_set_unknowns' \
 ,'_wally_psbt_input_set_utxo' \
 ,'_wally_psbt_input_set_witness_script' \

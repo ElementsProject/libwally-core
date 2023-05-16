@@ -311,6 +311,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tap_sig, size_t tap_sig_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
@@ -1255,6 +1256,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_input_get_inflation_keys_blinding_rangeproof_len;
 %ignore wally_psbt_input_set_inflation_keys_blinding_rangeproof;
 %ignore wally_psbt_input_clear_inflation_keys_blinding_rangeproof;
+%ignore wally_psbt_input_set_taproot_signature;
 %ignore wally_psbt_input_get_utxo_rangeproof;
 %ignore wally_psbt_input_get_utxo_rangeproof_len;
 %ignore wally_psbt_input_set_utxo_rangeproof;

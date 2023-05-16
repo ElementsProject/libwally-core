@@ -468,6 +468,7 @@ export const psbt_input_set_required_locktime = wrap('wally_psbt_input_set_requi
 export const psbt_input_set_sequence = wrap('wally_psbt_input_set_sequence', [T.OpaqueRef, T.Int32]);
 export const psbt_input_set_sighash = wrap('wally_psbt_input_set_sighash', [T.OpaqueRef, T.Int32]);
 export const psbt_input_set_signatures = wrap('wally_psbt_input_set_signatures', [T.OpaqueRef, T.OpaqueRef]);
+export const psbt_input_set_taproot_signature = wrap('wally_psbt_input_set_taproot_signature', [T.OpaqueRef, T.Bytes]);
 export const psbt_input_set_unknowns = wrap('wally_psbt_input_set_unknowns', [T.OpaqueRef, T.OpaqueRef]);
 export const psbt_input_set_utxo = wrap('wally_psbt_input_set_utxo', [T.OpaqueRef, T.OpaqueRef]);
 export const psbt_input_set_utxo_rangeproof = wrap('wally_psbt_input_set_utxo_rangeproof', [T.OpaqueRef, T.Bytes]);
