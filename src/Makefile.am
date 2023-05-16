@@ -13,6 +13,7 @@ include_HEADERS += $(top_srcdir)/include/wally_bip32.h
 include_HEADERS += $(top_srcdir)/include/wally_bip38.h
 include_HEADERS += $(top_srcdir)/include/wally_bip39.h
 include_HEADERS += $(top_srcdir)/include/wally_bip85.h
+include_HEADERS += $(top_srcdir)/include/wally_coinselection.h
 include_HEADERS += $(top_srcdir)/include/wally_core.h
 include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_descriptor.h
