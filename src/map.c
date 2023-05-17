@@ -629,7 +629,7 @@ int wally_merkle_path_xonly_public_key_verify(const unsigned char *key, size_t k
 
     if (key_len != EC_XONLY_PUBLIC_KEY_LEN ||
         keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
-        extkey.version || !val || !val_len || val_len % SHA256_LEN != 0)
+        extkey.version || BYTES_INVALID(val, val_len) || val_len % SHA256_LEN != 0)
         return WALLY_EINVAL;
     return WALLY_OK;
 }
