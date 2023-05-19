@@ -174,7 +174,7 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
                  unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
@@ -210,7 +210,7 @@ int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
 {
     struct sha256 sha;
     struct sha256_ctx ctx;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
@@ -236,7 +236,7 @@ int wally_sha256d(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha_1, sha_2;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
@@ -255,7 +255,7 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
                  unsigned char *bytes_out, size_t len)
 {
     struct sha512 sha;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA512_LEN)
         return WALLY_EINVAL;
@@ -272,7 +272,7 @@ int wally_ripemd160(const unsigned char *bytes, size_t bytes_len,
                     unsigned char *bytes_out, size_t len)
 {
     struct ripemd160 ripemd;
-    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != RIPEMD160_LEN)
         return WALLY_EINVAL;
@@ -292,7 +292,7 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
 {
     unsigned char buff[SHA256_LEN];
     struct ripemd160 ripemd;
-    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32[0]));
 
     if (!bytes_out || len != HASH160_LEN)
         return WALLY_EINVAL;
