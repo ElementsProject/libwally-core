@@ -1062,18 +1062,19 @@ static int generate_pk_k(ms_ctx *ctx, ms_node *node,
 static int generate_pk_h(ms_ctx *ctx, ms_node *node,
                          unsigned char *script, size_t script_len, size_t *written)
 {
-    unsigned char buff[1 + EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
+    /* Note 4 instead of 1 here to align the data to hash to 32 bits */
+    unsigned char buff[4 + EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     int ret = WALLY_OK;
 
     if (script_len >= WALLY_SCRIPTPUBKEY_P2PKH_LEN - 1) {
-        ret = generate_pk_k(ctx, node, buff, sizeof(buff), written);
+        ret = generate_pk_k(ctx, node, buff+3, sizeof(buff)-3, written);
         if (ret == WALLY_OK) {
             if (node->child->flags & NF_IS_XONLY)
                 return WALLY_EINVAL;
             script[0] = OP_DUP;
             script[1] = OP_HASH160;
             script[2] = HASH160_LEN;
-            ret = wally_hash160(&buff[1], *written - 1, script + 3, HASH160_LEN);
+            ret = wally_hash160(buff+4, *written - 1, script + 3, HASH160_LEN);
             script[3 + HASH160_LEN] = OP_EQUALVERIFY;
         }
     }
