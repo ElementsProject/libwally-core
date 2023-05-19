@@ -5287,6 +5287,7 @@ int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t i
 PSBT_FIELD(input, redeem_script, PSBT_0)
 PSBT_FIELD(input, witness_script, PSBT_0)
 PSBT_FIELD(input, final_scriptsig, PSBT_0)
+PSBT_FIELD(input, taproot_signature, PSBT_0)
 PSBT_GET_S(input, final_witness, wally_tx_witness_stack, wally_tx_witness_stack_clone_alloc)
 PSBT_GET_M(input, keypath)
 PSBT_GET_M(input, signature)

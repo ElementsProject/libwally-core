@@ -782,6 +782,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_input_signature_hash);
 %returns_size_t(wally_psbt_get_input_signature_len);
 %returns_size_t(wally_psbt_get_input_sighash);
+%returns_size_t(wally_psbt_get_input_taproot_signature);
+%returns_size_t(wally_psbt_get_input_taproot_signature_len);
 %returns_size_t(wally_psbt_get_input_unknown);
 %returns_size_t(wally_psbt_get_input_unknown_len);
 %returns_size_t(wally_psbt_get_input_unknowns_size);
@@ -889,6 +891,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_set_input_sequence);
 %returns_void__(wally_psbt_set_input_sighash);
 %returns_void__(wally_psbt_set_input_signatures);
+%returns_void__(wally_psbt_set_input_taproot_signature);
 %returns_void__(wally_psbt_set_input_unknowns);
 %returns_void__(wally_psbt_set_input_utxo);
 %returns_void__(wally_psbt_set_input_utxo_rangeproof);
