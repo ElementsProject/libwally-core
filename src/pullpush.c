@@ -35,14 +35,17 @@ void pull_bytes(void *dst, size_t len,
                 const unsigned char **cursor, size_t *max)
 {
     if (len > *max) {
-        memcpy(dst, *cursor, *max);
+        if (*max && *cursor)
+            memcpy(dst, *cursor, *max);
         memset((char *)dst + *max, 0, len - *max);
         pull_failed(cursor, max);
         return;
     }
-    memcpy(dst, *cursor, len);
-    *cursor += len;
-    *max -= len;
+    if (len && *cursor) {
+        memcpy(dst, *cursor, len);
+        *cursor += len;
+        *max -= len;
+    }
 }
 
 const unsigned char *pull_skip(const unsigned char **cursor, size_t *max,
@@ -79,7 +82,7 @@ void push_le64(unsigned char **cursor, size_t *max, uint64_t v)
 
 uint64_t pull_le64(const unsigned char **cursor, size_t *max)
 {
-    leint64_t lev;
+    leint64_t lev = 0;
     pull_bytes(&lev, sizeof(lev), cursor, max);
     return le64_to_cpu(lev);
 }
@@ -92,7 +95,7 @@ void push_le32(unsigned char **cursor, size_t *max, uint32_t v)
 
 uint32_t pull_le32(const unsigned char **cursor, size_t *max)
 {
-    leint32_t lev;
+    leint32_t lev = 0;
     pull_bytes(&lev, sizeof(lev), cursor, max);
     return le32_to_cpu(lev);
 }
@@ -104,7 +107,7 @@ void push_u8(unsigned char **cursor, size_t *max, uint8_t v)
 
 uint8_t pull_u8(const unsigned char **cursor, size_t *max)
 {
-    uint8_t v;
+    uint8_t v = 0;
     pull_bytes(&v, sizeof(v), cursor, max);
     return v;
 }
@@ -130,13 +133,13 @@ void push_varint(unsigned char **cursor, size_t *max, uint64_t v)
 uint64_t pull_varint(const unsigned char **cursor, size_t *max)
 {
     unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
+    size_t len;
     uint64_t v;
 
-    /* FIXME: Would be more efficient to opencode varint here! */
     pull_bytes(buf, 1, cursor, max);
-    pull_bytes(buf + 1, varint_length_from_bytes(buf) - 1, cursor, max);
+    if ((len = varint_length_from_bytes(buf) - 1))
+        pull_bytes(buf + 1, len, cursor, max);
     varint_from_bytes(buf, &v);
-
     return v;
 }
 

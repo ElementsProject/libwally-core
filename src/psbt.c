@@ -905,6 +905,9 @@ static bool pset_check_proof(const struct wally_psbt *psbt,
     bool has_value = false, has_explicit = false, do_verify = true;;
     int ret;
 
+    if (!in && !out)
+        return false; /* Not possible, but it fixes static analysis */
+
     wally_clear(&commitment, sizeof(commitment));
     wally_clear(&asset, sizeof(asset));
 
@@ -3444,7 +3447,7 @@ static int combine_output(struct wally_psbt_output *dst,
         /* Ensure amount, script (and asset, for elements) match */
         if (dst->has_amount != src->has_amount || dst->amount != src->amount ||
             dst->script_len != src->script_len ||
-            memcmp(dst->script, src->script, src->script_len))
+            (dst->script_len && memcmp(dst->script, src->script, src->script_len)))
             ret = WALLY_EINVAL; /* Mismatched amount or script */
         else if (is_pset) {
 #ifdef BUILD_ELEMENTS

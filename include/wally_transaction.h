@@ -64,8 +64,8 @@ extern "C" {
 #define WALLY_TX_ASSET_CT_NONCE_LEN 33 /* version byte + 32 bytes */
 #define WALLY_TX_ASSET_CT_LEN 33       /* version byte + 32 bytes */
 
-#define WALLY_TX_ISSUANCE_FLAG (1 << 31)
-#define WALLY_TX_PEGIN_FLAG (1 << 30)
+#define WALLY_TX_ISSUANCE_FLAG 0x80000000
+#define WALLY_TX_PEGIN_FLAG 0x40000000
 #define WALLY_TX_INDEX_MASK 0x3fffffff
 
 #define WALLY_NO_CODESEPARATOR 0xffffffff /* No BIP342 code separator position */

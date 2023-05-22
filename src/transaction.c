@@ -2771,11 +2771,13 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     *num_inputs = v;
 
     for (i = 0; i < *num_inputs; ++i) {
-        bool expect_issuance;
+        bool expect_issuance = false;
         uint32_t utxo_index;
         ensure_n(WALLY_TXHASH_LEN + sizeof(uint32_t));
         uint32_from_le_bytes(p + WALLY_TXHASH_LEN, &utxo_index);
-        expect_issuance = is_elements && (utxo_index & WALLY_TX_ISSUANCE_FLAG) && !is_coinbase_bytes(p, WALLY_TXHASH_LEN, utxo_index);
+        if (is_elements && (utxo_index & WALLY_TX_ISSUANCE_FLAG) &&
+            !is_coinbase_bytes(p, WALLY_TXHASH_LEN, utxo_index))
+            expect_issuance = true;
         p += WALLY_TXHASH_LEN + sizeof(uint32_t);
         ensure_varbuff(&v);
         /* FIXME: Analyze script types if required */
@@ -3426,7 +3428,8 @@ static int tx_getb_impl(const void *input,
         *written = 0;
     if (!input || !bytes_out || len < src_len || !written)
         return WALLY_EINVAL;
-    memcpy(bytes_out, src, src_len);
+    if (src_len)
+        memcpy(bytes_out, src, src_len);
     *written = src_len;
     return WALLY_OK;
 }
@@ -3466,27 +3469,28 @@ GET_TX_B_FIXED(tx_input, entropy, SHA256_LEN, SHA256_LEN)
 
 
 GET_TX_B(tx_input, script, input->script_len)
-static bool get_witness_preamble(const struct wally_tx_input *input,
-                                 size_t index, size_t *written)
+static const struct wally_tx_witness_item *get_witness_preamble(
+    const struct wally_tx_input *input, size_t index, size_t *written)
 {
     if (written)
         *written = 0;
     if (!is_valid_tx_input(input) || !written ||
         !is_valid_witness_stack(input->witness) ||
         index >= input->witness->num_items)
-        return false;
-    return true;
+        return NULL;
+    return &input->witness->items[index];
 }
 
 int wally_tx_input_get_witness(const struct wally_tx_input *input, size_t index,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
-    if (!bytes_out || !get_witness_preamble(input, index, written) ||
-        len < input->witness->items[index].witness_len)
+    const struct wally_tx_witness_item *item;
+    if (!bytes_out || !(item = get_witness_preamble(input, index, written)) ||
+        len < item->witness_len)
         return WALLY_EINVAL;
-    memcpy(bytes_out, input->witness->items[index].witness,
-           input->witness->items[index].witness_len);
-    *written = input->witness->items[index].witness_len;
+    if (item->witness_len)
+        memcpy(bytes_out, item->witness, item->witness_len);
+    *written = item->witness_len;
     return WALLY_OK;
 }
 
@@ -3497,9 +3501,10 @@ GET_TX_I(tx_input, script_len, size_t)
 int wally_tx_input_get_witness_len(const struct wally_tx_input *input,
                                    size_t index, size_t *written)
 {
-    if (!get_witness_preamble(input, index, written))
+    const struct wally_tx_witness_item *item;
+    if (!(item = get_witness_preamble(input, index, written)))
         return WALLY_EINVAL;
-    *written = input->witness->items[index].witness_len;
+    *written = item->witness_len;
     return WALLY_OK;
 }
 #ifdef BUILD_ELEMENTS
