@@ -1,6 +1,6 @@
 {
   "name": "wallycore",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "description": "JavaScript bindings for libwally",
   "main": "src/index.js",
   "type": "module",
