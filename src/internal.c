@@ -328,12 +328,12 @@ static void wally_internal_bzero(void *dest, size_t len)
     explicit_memset(dest, 0, len);
 #else
     memset(dest, 0, len);
+#endif
 #if defined(HAVE_INLINE_ASM)
     /* This is used by boringssl to prevent memset from being elided. It
      * works by forcing a memory barrier and so can be slow.
      */
     __asm__ __volatile__ ("" : : "r" (dest) : "memory");
-#endif
 #endif
 }
 
