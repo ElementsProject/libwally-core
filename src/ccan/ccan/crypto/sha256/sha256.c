@@ -197,7 +197,7 @@ static void TransformDefault(uint32_t *s, const uint32_t *chunk, size_t blocks)
 	}
 }
 
-#if defined(__x86_64__) || defined(__amd64__)
+#if defined(HAVE_INLINE_ASM) && (defined(__x86_64__) || defined(__amd64__))
 #include <cpuid.h>
 
 #include "sha256_sse4.c"
@@ -207,7 +207,7 @@ static int use_optimized_transform = 0;
 
 static inline void Transform(uint32_t *s, const uint32_t *chunk, size_t blocks)
 {
-#if defined(__x86_64__) || defined(__amd64__)
+#if defined(HAVE_INLINE_ASM) && (defined(__x86_64__) || defined(__amd64__))
 	if (use_optimized_transform) {
 		TransformSSE4(s, chunk, blocks);
 		return;
@@ -257,6 +257,7 @@ static void add(struct sha256_ctx *ctx, const void *p, size_t len)
 
 void sha256_optimize(void)
 {
+#if defined(HAVE_INLINE_ASM)
 #if defined(__x86_64__) || defined(__amd64__)
 	uint32_t leaf = 1, subleaf = 0;
 	uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -269,6 +270,7 @@ void sha256_optimize(void)
 		use_optimized_transform = 1; /* SSE4 is available */
 	}
 #endif
+#endif /* defined(HAVE_INLINE_ASM) */
 }
 
 void sha256_init(struct sha256_ctx *ctx)
