@@ -1549,8 +1549,10 @@ add_test(NAME test_bip38        COMMAND ${PYTHON_BIN} test/test_bip38.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_bip39        COMMAND ${PYTHON_BIN} test/test_bip39.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+if(NOT WIN32)
 add_test(NAME test_bip85        COMMAND ${PYTHON_BIN} test/test_bip85.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+endif(NOT WIN32)
 add_test(NAME test_ecdh         COMMAND ${PYTHON_BIN} test/test_ecdh.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_hash         COMMAND ${PYTHON_BIN} test/test_hash.py
