@@ -203,12 +203,11 @@ endif()
 
 if(MSVC)  # force active
 set(HAVE_MMAP     "1")
-set(HAVE_UNISTD_H "1")
 set(HAVE_PTHREAD "1")
 set(HAVE_PTHREAD_PRIO_INHERIT "1")
 set(HAVE_LIBCRYPTO "1")
 
-else()
+else(MSVC)
 # not windows
 check_function_exists(memset_s HAVE_MEMSET_S)
 check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
@@ -219,25 +218,24 @@ check_cxx_source_compiles("int main() { __builtin_clzll(0); return 0; }"
   HAVE_BUILTIN_CLZLL)
 
 set(HAVE___INT128  "1")
-check_include_file("unistd.h" HAVE_UNISTD_H)
 
 find_package(LIBCRYPTO QUIET)
 if(LIBCRYPTO_FOUND)
 set(HAVE_LIBCRYPTO "1")
-else()
+else(LIBCRYPTO_FOUND)
 check_include_file("openssl/crypto.h" HAVE_OPENSSL_CRYPTO_H)
 if(HAVE_OPENSSL_CRYPTO_H)
 set(HAVE_LIBCRYPTO "1")
 endif(HAVE_OPENSSL_CRYPTO_H)
-endif()
+endif(LIBCRYPTO_FOUND)
 
 find_package(Threads QUIET)
 if(Threads_FOUND)
 set(HAVE_PTHREAD "1")
 set(HAVE_PTHREAD_PRIO_INHERIT "1")
-endif()
+endif(Threads_FOUND)
 
-endif()
+endif(MSVC)
 # PTHREAD_CREATE_JOINABLE
 
 if(${PYTHON})
@@ -253,6 +251,7 @@ check_c_source_compiles("int main(void){int a = 42; int *pnt = &a; __asm__ __vol
   HAVE_INLINE_ASM)
 
 set(STDC_HEADERS  "1")
+check_include_file("unistd.h" HAVE_UNISTD_H)
 check_include_file("asm/page.h" HAVE_ASM_PAGE_H)
 check_include_file("byteswap.h" HAVE_BYTESWAP_H_)
 check_include_file("memory.h" HAVE_MEMORY_H)
@@ -1179,7 +1178,6 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
-if(NOT WIN32)
 set(TEST_PSBT_LIMITS_NAME ctest_psbt_limits)
 add_executable(${TEST_PSBT_LIMITS_NAME} src/ctest/test_psbt_limits.c src/ccan/ccan/str/hex/hex.c)
 target_compile_options(${TEST_PSBT_LIMITS_NAME}
@@ -1218,7 +1216,6 @@ add_test(
   COMMAND $<TARGET_FILE:${TEST_PSBT_LIMITS_NAME}>
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
-endif(NOT WIN32)
 
 set(TEST_DESCRIPTOR_NAME ctest_descriptor)
 add_executable(${TEST_DESCRIPTOR_NAME} src/ctest/test_descriptor.c)
@@ -1511,7 +1508,7 @@ set(PY_TEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/test)
 find_package(Python3 COMPONENTS Interpreter)
 find_package(PythonInterp REQUIRED)
 if(Python3_Interpreter_FOUND)
-if(${PYTHON_VERSION_STRING} EQUAL ${Python3_VERSION})
+if("${PYTHON_VERSION_STRING}" EQUAL ${Python3_VERSION})
 set(PYTHON_BIN  ${PYTHON_EXECUTABLE})
 message(STATUS "python is 3(${PYTHON_VERSION_STRING}), bin=${PYTHON_EXECUTABLE}")
 else()
