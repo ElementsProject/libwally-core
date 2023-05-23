@@ -133,38 +133,6 @@ clean-swig-java:
 clean-local: clean-swig-java
 endif # USE_SWIG_JAVA
 
-if USE_SWIG_GO
-# We must sed the wrapper to workaround SWIGs odd library naming conventions
-SWIG_INT_GO_SIZE=32
-if IS_MINGW
-LOAD_SSP = -lssp
-else
-LOAD_SSP = 
-endif  # IS_MINGW
-if SHARED_BUILD_ENABLED
-swig_go/wallycore.cxx :
-	cp swig_go/swig.i swig_go/temp_swig.i && \
-	$(GNU_SED) -i 's/-lwallycore/-lwallycore $(LOAD_SSP)/g' swig_go/temp_swig.i && \
-	cd .. && \
-	$(SWIG) -go -c++ $(SWIG_GEN_FLAGS) -outdir . -o wallycore.cxx -cgo -intgosize $(SWIG_INT_GO_SIZE) src/swig_go/temp_swig.i && \
-	rm src/swig_go/temp_swig.i
-else
-swig_go/wallycore.cxx :
-	cp swig_go/swig.i swig_go/temp_swig.i && \
-	$(GNU_SED) -i 's/-lwallycore/-lwallycore -lsecp256k1 $(LOAD_SSP)/g' swig_go/temp_swig.i && \
-	cd .. && \
-	$(SWIG) -go -c++ $(SWIG_GEN_FLAGS) -outdir . -o wallycore.cxx -cgo -intgosize $(SWIG_INT_GO_SIZE) src/swig_go/temp_swig.i && \
-	rm src/swig_go/temp_swig.i
-endif # SHARED_BUILD_ENABLED
-
-all: swig_go/wallycore.cxx
-
-# clean-swig-go:
-# 	$(AM_V_at)rm -f swig_go/wallycore.cxx
-# clean-local: clean-swig-go
-
-endif # USE_SWIG_GO
-
 lib_LTLIBRARIES = libwallycore.la
 
 libwallycore_la_SOURCES = \
