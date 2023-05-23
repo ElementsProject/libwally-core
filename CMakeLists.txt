@@ -25,7 +25,6 @@ endif()
 # option(ENABLE_DEBUG "enable debugging (ON or OFF. default:OFF)" OFF)
 option(ENABLE_ELEMENTS "enable elements tx code (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SWIG_PYTHON "enable the SWIG python interface (ON or OFF. default:OFF)" OFF)
-option(ENABLE_SWIG_GO "enable the SWIG Go interface (ON or OFF. default:OFF)" OFF)
 option(GENERATE_WALLY "generate the wally.xxx library (ON or OFF. default:ON)" ON)
 option(ENABLE_EMSCRIPTEN "enable EMSCRIPTEN (ON or OFF. default:OFF)" OFF)
 option(ENABLE_SECP256K1_TEST "enable secp256k1 test (ON or OFF. default:OFF)" OFF)
@@ -266,6 +265,8 @@ check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
 check_include_file("sys/types.h" HAVE_SYS_TYPES_H)
 check_include_file("dlfcn.h" HAVE_DLFCN_H)
 check_include_file("inttypes.h" HAVE_INTTYPES_H)
+check_include_file("mbedtls/sha256.h" HAVE_MBEDTLS_SHA256_H)
+check_include_file("mbedtls/sha512.h" HAVE_MBEDTLS_SHA512_H)
 
 if(NOT WIN32)
 TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
@@ -329,6 +330,8 @@ set(ENABLE_MODULE_GENERATOR "1")
 set(ENABLE_MODULE_SCHNORRSIG "1")
 set(ENABLE_MODULE_EXTRAKEYS "1")
 set(ENABLE_MODULE_ECDSA_ADAPTOR "1")
+#set(ENABLE_MODULE_BPPP "1")
+set(ENABLE_MODULE_BPPP "0")
 
 check_cxx_source_compiles("int main() { __builtin_popcount(0); return 0;}"
   HAVE_BUILTIN_POPCOUNT)
@@ -379,6 +382,7 @@ endif()
 set(VERSION   WALLY_PACKAGE_VERSION)
 configure_file(cmake/config.h.in              "${CONFIG_HEADER_DIRECTORY}/config.h")
 configure_file(cmake/libsecp256k1-config.h.in "${CONFIG_HEADER_DIRECTORY}/libsecp256k1-config.h")
+configure_file(cmake/libsecp256k1-config.h.in "${CMAKE_CURRENT_SOURCE_DIR}/src/secp256k1/src/libsecp256k1-config.h")
 
 
 ####################
@@ -395,8 +399,10 @@ set(LIBWALLY_FILES
     src/bip32.c
     src/bip38.c
     src/bip39.c
+    src/bip85.c
     src/bech32.c
     src/blech32.c
+    src/coins.c
     src/descriptor.c
     src/elements.c
     src/ecdh.c
@@ -431,6 +437,8 @@ set(LIBWALLY_FILES
     include/wally_bip32.h
     include/wally_bip38.h
     include/wally_bip39.h
+    include/wally_bip85.h
+    include/wally_coinselection.h
     include/wally_core.h
     include/wally_crypto.h
     include/wally_descriptor.h
@@ -1251,6 +1259,45 @@ add_test(
   WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
 )
 
+set(TEST_COINSELECTION_NAME ctest_coinselection)
+add_executable(${TEST_COINSELECTION_NAME} src/ctest/test_coinselection.c)
+target_compile_options(${TEST_COINSELECTION_NAME}
+  PRIVATE
+    $<IF:$<C_COMPILER_ID:MSVC>,
+      /source-charset:utf-8 /wd4251,
+      -Wall -Wextra -Wno-unused-function
+      ${PROFILE_ARCS_OPT} ${TEST_COVERAGE_OPT}
+    >
+)
+target_compile_definitions(${TEST_COINSELECTION_NAME}
+  PRIVATE
+    ${ELEMENTS_COMP_OPT}
+)
+target_include_directories(${TEST_COINSELECTION_NAME}
+  PRIVATE
+    ${CONFIG_HEADER_DIRECTORY}
+    .
+    src
+    src/ccan
+    src/secp256k1
+    src/secp256k1/src
+)
+target_link_directories(${TEST_COINSELECTION_NAME}  PRIVATE ./ )
+target_link_libraries(${TEST_COINSELECTION_NAME}
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:winmm.lib>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:MSVC>>:ws2_32.lib>
+  PRIVATE $<IF:$<OR:$<PLATFORM_ID:Darwin>,$<PLATFORM_ID:Windows>>,,rt>
+  PRIVATE $<$<BOOL:$<C_COMPILER_ID:GCC>>:-static-libgcc>
+  PRIVATE $<$<NOT:$<C_COMPILER_ID:MSVC>>:pthread>
+  PRIVATE
+    ${TEST_WALY_LIB}
+)
+add_test(
+  NAME ${TEST_COINSELECTION_NAME}
+  COMMAND $<TARGET_FILE:${TEST_COINSELECTION_NAME}>
+  WORKING_DIRECTORY ${WALLY_OBJ_BINARY_DIR}
+)
+
 ####################
 # test for C(secp256k1)
 ####################
@@ -1435,6 +1482,7 @@ add_test(NAME py_test_tx              COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/
 add_test(NAME py_test_psbt            COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/psbt.py )
 add_test(NAME py_test_sha             COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/sha.py )
 add_test(NAME py_test_anti_exfil      COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/anti-exfil.py )
+add_test(NAME py_test_coinselection   COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/coinselection.py )
 
 if(ENABLE_ELEMENTS)
 add_test(NAME py_test_elements_tx     COMMAND ${PYTHON_BIN} ${SWIG_PY_TEST_DIR}/elements_tx.py )
@@ -1501,6 +1549,8 @@ add_test(NAME test_bip38        COMMAND ${PYTHON_BIN} test/test_bip38.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_bip39        COMMAND ${PYTHON_BIN} test/test_bip39.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_bip85        COMMAND ${PYTHON_BIN} test/test_bip85.py
+                                WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_ecdh         COMMAND ${PYTHON_BIN} test/test_ecdh.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_hash         COMMAND ${PYTHON_BIN} test/test_hash.py
@@ -1533,6 +1583,8 @@ add_test(NAME test_descriptor   COMMAND ${PYTHON_BIN} test/test_descriptor.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 add_test(NAME test_transaction  COMMAND ${PYTHON_BIN} test/test_transaction.py
                                 WORKING_DIRECTORY ${PY_TEST_DIR})
+add_test(NAME test_coinselection COMMAND ${PYTHON_BIN} test/test_coinselection.py
+                                 WORKING_DIRECTORY ${PY_TEST_DIR})
 
 if(ENABLE_ELEMENTS)
 add_test(NAME test_elements           COMMAND ${PYTHON_BIN} test/test_elements.py

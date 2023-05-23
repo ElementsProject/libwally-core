@@ -28,6 +28,12 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
+/* Define to 1 if you have the <mbedtls/sha256.h,> header file. */
+#cmakedefine HAVE_MBEDTLS_SHA256_H @HAVE_MBEDTLS_SHA256_H@
+
+/* Define to 1 if you have the <mbedtls/sha512.h> header file. */
+#cmakedefine HAVE_MBEDTLS_SHA512_H @HAVE_MBEDTLS_SHA512_H@
+
 /* Define to 1 if you have the <memory.h> header file. */
 #cmakedefine HAVE_MEMORY_H @HAVE_MEMORY_H@
 
