@@ -19,6 +19,7 @@ static void invalidate_sha512(struct sha512_ctx *ctx)
 {
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	ctx->c.md_len = 0;
+#elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
 #else
 	ctx->bytes = (size_t)-1;
 #endif
@@ -50,6 +51,24 @@ void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 void sha512_done(struct sha512_ctx *ctx, struct sha512 *res)
 {
 	SHA512_Final(res->u.u8, &ctx->c);
+	invalidate_sha512(ctx);
+}
+#elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
+inline void sha512_init(struct sha512_ctx *ctx)
+{
+	mbedtls_sha512_init(&ctx->c);
+	mbedtls_sha512_starts(&ctx->c, 0);
+}
+
+inline void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
+{
+	check_sha512(ctx);
+	mbedtls_sha512_update(&ctx->c, p, size);
+}
+
+inline void sha512_done(struct sha512_ctx *ctx, struct sha512* res)
+{
+	mbedtls_sha512_finish(&ctx->c, res->u.u8);
 	invalidate_sha512(ctx);
 }
 #else

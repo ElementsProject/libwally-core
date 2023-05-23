@@ -69,7 +69,7 @@ for vout in range(num_outputs):
     sender_ephemeral_pubkey = wally.tx_get_output_nonce(tx, vout)
     rangeproof = wally.tx_get_output_rangeproof(tx, vout)
     script_pubkey = wally.tx_get_output_script(tx, vout)
-    asset_id = wally.tx_get_output_asset(tx, vout)
+    asset_commitment = wally.tx_get_output_asset(tx, vout)
     value_commitment = wally.tx_get_output_value(tx, vout)
 
     script_pubkeys_in.append(script_pubkey)
@@ -80,9 +80,11 @@ for vout in range(num_outputs):
         rangeproof,
         value_commitment,
         script_pubkey,
-        asset_id)
+        asset_commitment)
 
     asset_generator = wally.asset_generator_from_bytes(asset_id, abf)
+    # In Liquid, an asset commitment is used as a generator
+    assert(asset_generator == asset_commitment)
 
     asset_generators_in += asset_generator
     asset_ids_in += asset_id

@@ -1,8 +1,9 @@
+import json
 import unittest
 from util import *
 
 FLAG_ECDSA, FLAG_SCHNORR, FLAG_GRIND_R, FLAG_RECOVERABLE = 1, 2, 4, 8
-EX_PRIV_KEY_LEN, EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
+EC_PRIV_KEY_LEN, EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_UNCOMPRESSED_LEN = 32, 33, 65
 EC_SIGNATURE_LEN, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_DER_MAX_LEN = 64, 65, 72
 EC_SCALAR_LEN = 32
 BITCOIN_MESSAGE_HASH_FLAG = 1
@@ -17,14 +18,22 @@ class SignTests(unittest.TestCase):
                     lines.append(self.cbufferize(l.strip().split(',')))
         return lines
 
+    def get_bip340_sign_cases(self):
+        with open(root_dir + 'src/data/schnorr_secp256k1_vectors.json', 'r') as f:
+            return json.load(f)
+
     def cbufferize(self, values):
         conv = lambda v: make_cbuffer(v)[0] if type(v) is str else v
         return [conv(v) for v in values]
 
-    def sign(self, priv_key, msg, flags, out_buf, out_len=None):
+    def sign(self, priv_key, msg, flags, out_buf, out_len=None, aux=None, aux_len=None):
         blen = lambda b: 0 if b is None else len(b)
-        if out_len is None:
-            out_len = blen(out_buf)
+        out_len = blen(out_buf) if out_len is None else out_len
+        aux_len = blen(aux) if aux_len is None else aux_len
+        if aux or aux_len:
+            return wally_ec_sig_from_bytes_aux(priv_key, blen(priv_key),
+                                               msg, blen(msg), aux, aux_len,
+                                               flags, out_buf, out_len)
         return wally_ec_sig_from_bytes(priv_key, blen(priv_key),
                                        msg, blen(msg), flags, out_buf, out_len)
 
@@ -89,21 +98,32 @@ class SignTests(unittest.TestCase):
 
         priv_key, msg = self.cbufferize(['11' * 32, '22' * 32])
         priv_bad, msg_bad = self.cbufferize(['FF' * 32, '22' * 33])
-        FLAGS_BOTH = FLAG_ECDSA | FLAG_SCHNORR
+        FLAGS_BOTH, FLAGS_BAD = FLAG_ECDSA | FLAG_SCHNORR, FLAG_ECDSA | 0x20
+        FLAGS_R = FLAG_ECDSA | FLAG_RECOVERABLE
+        FLAGS_G = FLAG_ECDSA | FLAG_GRIND_R
+        FLAGS_SR = FLAG_SCHNORR | FLAG_RECOVERABLE
+        FLAGS_SG = FLAG_SCHNORR | FLAG_GRIND_R
 
         # Signing
-        cases = [(None,         msg,     FLAG_ECDSA),   # Null priv_key
-                 (('11' * 33),  msg,     FLAG_ECDSA),   # Wrong priv_key len
-                 (priv_bad,     msg,     FLAG_ECDSA),   # Bad private key
-                 (priv_key,     None,    FLAG_ECDSA),   # Null message
-                 (priv_key,     msg_bad, FLAG_ECDSA),   # Wrong message len
-                 (priv_key,     msg,     0),            # No flags set
-                 (priv_key,     msg,     FLAGS_BOTH),   # Mutually exclusive
-                 (priv_key,     msg,     0x4)]          # Unknown flag
-
-        for priv_key, msg, flags in cases:
-            ret = self.sign(priv_key, msg, flags, out_buf)
-            self.assertEqual(ret, WALLY_EINVAL)
+        aux, aux_len = make_cbuffer('00' * 32)
+        for args in [
+            (None,         msg,     FLAG_ECDSA,  out_buf),     # Null priv_key
+            (('11' * 33),  msg,     FLAG_ECDSA,  out_buf),     # Wrong priv_key len
+            (priv_bad,     msg,     FLAG_ECDSA,  out_buf),     # Bad private key
+            (priv_key,     None,    FLAG_ECDSA,  out_buf),     # Null message
+            (priv_key,     msg_bad, FLAG_ECDSA,  out_buf),     # Wrong message len
+            (priv_key,     msg,     0,           out_buf),     # No flags set
+            (priv_key,     msg,     FLAGS_BOTH,  out_buf),     # Mutually exclusive
+            (priv_key,     msg,     FLAGS_SR,    out_buf),     # Mutually exclusive
+            (priv_key,     msg,     FLAGS_SG,    out_buf),     # Mutually exclusive
+            (priv_key,     msg,     FLAGS_BAD,   out_buf),     # Unknown flag
+            (priv_key,     msg,     FLAG_ECDSA,  out_buf, 65), # Bad output len
+            (priv_key,     msg,     FLAGS_R,     out_buf, 64), # Bad recoverable output len
+            (priv_key,     msg,     FLAG_ECDSA,  out_buf, 64, None, 32), # NULL aux
+            (priv_key,     msg,     FLAG_ECDSA,  out_buf, 64, aux,  16),  # Bad aux len
+            (priv_key,     msg,     FLAGS_G,     out_buf, 64, aux,  32),  # Can't grind w/aux
+            ]:
+            self.assertEqual(self.sign(*args), WALLY_EINVAL)
 
         for o, o_len in [(None, 32), (out_buf, -1)]: # Null out, Wrong out len
             ret = self.sign(priv_key, msg, FLAG_ECDSA, o, o_len)
@@ -243,11 +263,17 @@ class SignTests(unittest.TestCase):
         self.assertEqual(WALLY_OK, wally_ec_sig_verify(pub_key, 33, msg, 32, FLAG_ECDSA, out1[1:], 64))
 
         # Invalid cases
+        aux, aux_len = make_cbuffer('00' * 32)
+        flags = FLAG_ECDSA | FLAG_RECOVERABLE
         for args in [
-            (priv_key, msg, FLAG_RECOVERABLE, out1, 65),                 # Singing algorithm not specified
-            (priv_key, msg, FLAG_ECDSA, out1, 65),                       # Incorrect length
-            (priv_key, msg, FLAG_ECDSA | FLAG_RECOVERABLE, out1, 64),    # Incorrect length
-            (priv_key, msg, FLAG_SCHNORR | FLAG_RECOVERABLE, out1, 65),  # Mutually exclusive
+            (priv_key, msg, FLAG_RECOVERABLE, out1, 65, None),                # No singing algorithm
+            (priv_key, msg, FLAG_ECDSA, out1, 65, None),                      # Incorrect output len
+            (priv_key, msg, flags, out1, 64, None),                           # Incorrect output len
+            (priv_key, msg, FLAG_SCHNORR | FLAG_RECOVERABLE, out1, 65, None), # Mutually exclusive
+            (priv_key, msg, FLAG_SCHNORR | FLAG_GRIND_R, out1, 65, None),     # Mutually exclusive
+            (priv_key, msg, flags, out1, 65, None, 32),                       # NULL aux
+            (priv_key, msg, flags, out1, 65, aux, 33),                        # Bad aux len
+            (priv_key, msg, flags | FLAG_GRIND_R, out1, 65, aux, 32),         # Can't grind w/aux
             ]:
             self.assertEqual(WALLY_EINVAL, self.sign(*args))
 
@@ -376,6 +402,52 @@ class SignTests(unittest.TestCase):
         self.assertEqual(mul(zero, zero), (WALLY_OK, zero_hex))
         self.assertEqual(mul(zero, scalar), (WALLY_OK, zero_hex))
         self.assertEqual(mul(zero, negative), (WALLY_OK, zero_hex))
+
+    def test_bip340_sigs(self):
+
+        num_tests_run = 0
+        sig_out, sig_out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
+
+        for case in self.get_bip340_sign_cases():
+            priv_key, priv_key_len = make_cbuffer(case['priv_key'])
+            pub_key, pub_key_len = make_cbuffer(case['pub_key'])
+            aux_rand, aux_rand_len = make_cbuffer(case['aux_rand'])
+            msg, msg_len = make_cbuffer(case['msg'])
+            sig, sig_len = make_cbuffer(case['sig'])
+            is_valid = case['is_valid']
+
+
+            if priv_key_len == EC_PRIV_KEY_LEN:
+                num_tests_run += 1
+                flags = FLAG_SCHNORR
+                ret = self.sign(priv_key, msg, flags, sig_out, None, aux_rand)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(sig, sig_out)
+
+                ret = wally_ec_sig_from_bytes_len(priv_key, priv_key_len,
+                                                  msg, msg_len, FLAG_SCHNORR)
+                self.assertEqual(ret, (WALLY_OK, EC_SIGNATURE_LEN))
+
+                # Wrong size privkey
+                ret = wally_ec_sig_from_bytes_len(priv_key, priv_key_len - 1,
+                                                  msg, msg_len, FLAG_SCHNORR)
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+                # TODO support wally_ec_public_key_from_private_key with bip340 keys to check priv_key -> pub_key
+
+            ret = wally_ec_sig_verify(pub_key, pub_key_len, msg, msg_len, FLAG_SCHNORR, sig, sig_len)
+            self.assertEqual(ret == WALLY_OK, is_valid)
+
+            # Wrong signature type
+            ret = wally_ec_sig_verify(pub_key, pub_key_len, msg, msg_len, FLAG_ECDSA, sig, sig_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+            # Wrong size pubkey
+            ret = wally_ec_sig_verify(pub_key, pub_key_len - 1, msg, msg_len, FLAG_SCHNORR, sig, sig_len)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+        self.assertGreater(num_tests_run, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

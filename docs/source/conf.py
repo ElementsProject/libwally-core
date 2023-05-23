@@ -18,11 +18,11 @@ def preprocess_output_doc_line(l):
     if 'FIXED_SIZED_OUTPUT(' in l:
         parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
         len_param, param, size = parts
-        text = ':param {}: Size of ``{}``. Must be ``{}``.'.format(len_param, param, size)
+        text = ':param {}: Size of ``{}``. Must be `{}`.'.format(len_param, param, size)
     elif 'MAX_SIZED_OUTPUT(' in l:
         parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
         len_param, param, max_size = parts
-        text = ':param {}: Size of ``{}``. Passing ``{}`` will ensure the buffer is large enough.'.format(len_param, param, max_size)
+        text = ':param {}: Size of ``{}``. Passing `{}` will ensure the buffer is large enough.'.format(len_param, param, max_size)
     return '* ' + l if l else None, text
 
 def output_func(docs, func):
@@ -60,11 +60,13 @@ def extract_docs(infile, outfile):
 
     lines = [l.strip() for l in open(infile).readlines()]
     if DUMP_INTERNAL:
-        title = 'unused'
+        title, constant_title = 'unused', 'unused'
     else:
-        title = infile.split('wally_')[1][:-2].title().replace('_', '-') + ' Functions'
-    title_markup = '=' * len(title)
+        base_title = infile.split('wally_')[1][:-2].title().replace('_', '-')
+        title, constant_title = base_title + ' Functions', base_title + ' Constants'
+    title_markup, constant_markup = '=' * len(title), '-' * len(constant_title)
     output, current, func, state = [title, title_markup, ''], [], '', SCANNING
+    constants, last_one_liner = [' ', constant_title, constant_markup, ''], ''
 
     for l in lines:
         # Allow one-liner internal functions with no doc comments
@@ -72,8 +74,25 @@ def extract_docs(infile, outfile):
             state = FUNC
 
         if state == SCANNING:
-            if l.startswith('/**') and '*/' not in l:
-                current, func, state = [l[3:]], '', DOCS
+            if l.startswith('/***'):
+                mark, details = l[4:-2].strip().split(' ', 1)
+                constants.extend([f'.. _{mark}:', '', details, '^' *len(details)])
+            elif l.startswith('/**'):
+                if '*/' in l:
+                    last_one_liner = l[3:-2].strip()
+                else:
+                    current, func, state = [l[3:]], '', DOCS
+            elif l.startswith('#define ') and ' ' in l[len('#define '):]: # and '/*' not in l:
+                c, remainder = l[len('#define '):].strip().split(' ', 1)
+                if '/* ' in remainder:
+                    remainder = remainder.split('/* ')[0].strip()
+                if '/**' in remainder:
+                    last_one_liner = remainder.split('/**')[1][:-2]
+                constants.extend(['.. c:macro:: ' + c.strip(), ' ',
+                                  '    ' + last_one_liner.strip(), ''])
+                last_one_liner = ''
+            else:
+                last_one_liner = ''
         elif state == DOCS:
             if l == '*/':
                 state = FUNC
@@ -82,6 +101,8 @@ def extract_docs(infile, outfile):
                 if l.startswith('*|'):
                     current[-1] += ' ' + l[2:].strip()
                 else:
+                    if l.startswith('* .. note::') and current[-1]:
+                        current.append('') # A blank line ensures notes format correctly
                     l = preprocess_input_doc_line(l[1:].strip())
                     current.append(l)
         else: # FUNC
@@ -92,6 +113,8 @@ def extract_docs(infile, outfile):
                     current, func = '', ''
                 state = SCANNING
 
+    if len(constants) > 4:
+        output.extend(constants)
     with open(outfile, 'w') as f:
         f.write('\n'.join(output))
 
@@ -102,9 +125,9 @@ if DUMP_INTERNAL:
     extract_docs('../../include/wally_psbt_members.h', 'psbt_members.rst')
 else:
     for m in [
-        'core', 'crypto', 'address', 'bip32', 'bip38', 'bip39', 'map',
-        'script', 'psbt', 'descriptor', 'symmetric', 'transaction',
-        'elements', 'anti_exfil'
+        'address', 'anti_exfil', 'bip32', 'bip38', 'bip39', 'bip85',
+        'coinselection', 'core', 'crypto', 'descriptor', 'elements',
+        'map', 'psbt', 'script', 'symmetric', 'transaction'
         ]:
         extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
@@ -144,7 +167,7 @@ author = u'Jon Griffiths'
 # built documents.
 #
 # The short X.Y version.
-version = u'0.8.8'
+version = u'0.9.0'
 # The full version, including alpha/beta/rc tags.
 release = version
 

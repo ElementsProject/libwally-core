@@ -12,6 +12,10 @@
 #include <openssl/sha.h>
 #endif
 
+#ifdef CCAN_CRYPTO_SHA512_USE_MBEDTLS
+#include <mbedtls/sha512.h>
+#endif
+
 /**
  * struct sha512 - structure representing a completed SHA512.
  * @u.u8: an unsigned char array.
@@ -43,6 +47,8 @@ void sha512(struct sha512 *sha, const void *p, size_t size);
 struct sha512_ctx {
 #ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	SHA512_CTX c;
+#elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
+	mbedtls_sha512_context c;
 #else
 	uint64_t s[8];
 	union {

@@ -12,6 +12,11 @@
       return buf;
   }
 
+  private final static int[] trimIntBuffer(final int[] buf, final int len) {
+      if (len > buf.length) throw new IllegalArgumentException();
+      return len == buf.length ? buf: java.util.Arrays.copyOf(buf, len);
+  }
+
   private final static int[] checkIntBuffer(final int[] buf, final int len) {
       if (len != buf.length)
           throw new RuntimeException("Failed");
@@ -107,6 +112,12 @@
       return bip38_to_private_key(jarg1, jarg2, jarg3, null);
   }
 
+  public final static byte[] bip85_get_bip39_entropy(Object hdkey, String lang, long num_words, long index) {
+      final byte[] buf = new byte[HMAC_SHA512_LEN];
+      final int len = bip85_get_bip39_entropy(hdkey, lang, num_words, index, buf);
+      return trimBuffer(buf, len);
+  }
+
   public final static byte[] ecdh(byte[] jarg1, byte[] jarg2) {
       return ecdh(jarg1, jarg2, null);
   }
@@ -160,6 +171,10 @@
 
   public final static byte[] ec_sig_from_bytes(byte[] jarg1, byte[] jarg2, long jarg3) {
       return ec_sig_from_bytes(jarg1, jarg2, jarg3, null);
+  }
+
+  public final static byte[] ec_sig_from_bytes_aux(byte[] jarg1, byte[] jarg2, byte[] jarg3, long jarg4) {
+      return ec_sig_from_bytes_aux(jarg1, jarg2, jarg3, jarg4, null);
   }
 
   public final static byte[] ec_sig_normalize(byte[] jarg1) {
@@ -270,6 +285,14 @@
       return _wif_is_uncompressed(wif) != 0;
   }
 
+  public final static byte[] get_hash_prevouts(byte[] jarg1, int[] jarg3) {
+      return get_hash_prevouts(jarg1, jarg3, null);
+  }
+
+  public final static byte[] tx_get_hash_prevouts(final Object tx, long index, long num_inputs) {
+      return tx_get_hash_prevouts(tx, index, num_inputs, null);
+  }
+
   public final static byte[] tx_get_txid(final Object tx) {
       return tx_get_txid(tx, null);
   }
@@ -369,6 +392,11 @@
   public final static Object psbt_extract(Object psbt)
   {
       return psbt_extract(psbt, 0); // Default flags to 0 for back compat.
+  }
+
+  public final static void psbt_finalize(Object psbt)
+  {
+      psbt_finalize(psbt, 0); // Default flags to 0 for back compat.
   }
 
   public final static byte[] psbt_get_input_final_scriptsig(Object psbt, long idx) {

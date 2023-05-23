@@ -6,6 +6,8 @@ from wallycore import *
 class ElementsTxTests(unittest.TestCase):
 
     def test_tx_input(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         # Test invalid inputs
         txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'0000', b'000000'
         nonce, entropy = b'0' * 32, b'0' * 32
@@ -31,6 +33,8 @@ class ElementsTxTests(unittest.TestCase):
             tx_input_get_witness(tx_input, 0) # Can't get a non-existent witness
 
     def test_tx_output(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         # Test outputs
         satoshi, script, asset, asset2 = 10000, b'0000', b'0' * 33, b'1' * 33
 
@@ -47,6 +51,8 @@ class ElementsTxTests(unittest.TestCase):
         self.assertEqual(tx_output_get_value(tx_output), ct_value)
 
     def test_tx(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'0000', b'000000'
         nonce, entropy = b'0' * 32, b'0' * 32
         witness = tx_witness_stack_init(5)
@@ -88,6 +94,8 @@ class ElementsTxTests(unittest.TestCase):
             self.assertEqual(tx_hex, hex_from_bytes(tx_bytes))
 
     def test_coinbase(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         txhash, seq, script = bytearray(b'\x00'*32), 0xffffffff, b'0000'
         tx_input_no_witness = tx_elements_input_init(txhash, seq, seq, script)
 
@@ -99,6 +107,8 @@ class ElementsTxTests(unittest.TestCase):
         self.assertEqual(tx_is_coinbase(tx), 1)
 
     def test_issuance(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         txhash = hex_to_bytes("39453cf897e2f0c2e9563364874f4b2a85be06dd8ec10665085033eeb75016c3")[::-1]
         vout = 68
         contract_hash = bytearray(b'\x00'*32)
@@ -108,6 +118,8 @@ class ElementsTxTests(unittest.TestCase):
         self.assertEqual(hex_from_bytes(asset[::-1]), "dedf795f74e8b52c6ff8a9ad390850a87b18aeb2be9d1967038308290093a893")
 
     def test_reissuance_token(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         entropy = hex_to_bytes("7746cd11098b1de0cb6f3a8eae8fe3b7c9aef69b96ea91c6feaf480f0135e7c5")
         asset = tx_elements_issuance_calculate_asset(entropy)
         self.assertEqual(hex_from_bytes(asset[::-1]), "eb82f87a64d7b701569a88d9b1578953038b53916ebf7f87b865beab3a3e26d2")
@@ -115,6 +127,8 @@ class ElementsTxTests(unittest.TestCase):
         self.assertEqual(hex_from_bytes(reissuance_token[::-1]), "42066f5f26d72da30758487822436c61cccea78e8f9b6b9f08230f5d9003848c")
 
     def test_confidential_address(self):
+        if not is_elements_build():
+            self.skipTest('Not applicable for non-elements builds')
         addr = "Q7qcjTLsYGoMA7TjUp97R6E6AM5VKqBik6"
         pubkey_hex = "02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623"
         addr_c = "VTpz1bNuCALgavJKgbAw9Lpp9A72rJy64XPqgqfnaLpMjRcPh5UHBqyRUE4WMZ3asjqu7YEPVAnWw2EK"

@@ -11,6 +11,8 @@ libwally-core documentation
    bip32
    bip38
    bip39
+   bip85
+   coinselection
    map
    psbt
    script

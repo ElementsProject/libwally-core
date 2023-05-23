@@ -7,6 +7,8 @@
 #include "bip32_int.h"
 #include "../include/wally_bip38.h"
 #include "../include/wally_bip39.h"
+#include "../include/wally_bip85.h"
+#include "../include/wally_coinselection.h"
 #include "../include/wally_crypto.h"
 #include "../include/wally_descriptor.h"
 #include "../include/wally_map.h"
@@ -259,6 +261,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* abf, size_t abf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* annex, size_t annex_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* asset, size_t asset_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* aux_rand, size_t aux_rand_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* bytes, size_t bytes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* commitment, size_t commitment_len) };
@@ -270,6 +273,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* generator, size_t generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* genesis_blockhash, size_t genesis_blockhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* hash160, size_t hash160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* hash_prevouts, size_t hash_prevouts_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* hmac_key, size_t hmac_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys, size_t inflation_keys_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len) };
@@ -279,6 +283,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce, size_t nonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* nonce_hash, size_t nonce_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* offline_keys, size_t offline_keys_len) };
@@ -305,8 +311,11 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* surjectionproof, size_t surjectionproof_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tap_sig, size_t tap_sig_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* txhashes, size_t txhashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txout_proof, size_t txout_proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* val, size_t val_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* value, size_t value_len) };
@@ -340,6 +349,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *child_path, size_t child_path_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (uint32_t *child_path_out, size_t child_path_out_len) }
 %apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *sighash, size_t sighash_len) }
+%apply(uint32_t *STRING, size_t LENGTH) { (uint32_t *indices_out, size_t indices_out_len) }
+%apply(uint32_t *STRING, size_t LENGTH) { (const uint32_t *utxo_indices, size_t num_utxo_indices) }
 %apply(uint64_t *STRING, size_t LENGTH) { (const uint64_t *values, size_t num_values) }
 
 %typemap(in, numinputs=0) uint32_t *value_out (uint32_t val) {
@@ -500,6 +511,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(bip39_mnemonic_to_bytes);
 %returns_void__(bip39_mnemonic_validate);
 %returns_array_(bip39_mnemonic_to_seed512, 3, 4, BIP39_SEED_LEN_512);
+%returns_string(bip85_get_languages);
+%returns_size_t(bip85_get_bip39_entropy);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_get_version);
 %returns_size_t(wally_addr_segwit_n_get_version);
@@ -510,6 +523,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_aes_cbc);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);
+%returns_size_t(wally_asset_rangeproof_get_maximum_len);
 %returns_size_t(wally_asset_rangeproof_with_nonce);
 %returns_size_t(wally_asset_rangeproof);
 %returns_array_(wally_asset_scalar_offset, 6, 7, EC_SCALAR_LEN);
@@ -519,6 +533,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_uint64(wally_asset_unblind_with_nonce);
 %returns_uint64(wally_asset_unblind);
 %returns_array_(wally_asset_blinding_key_from_seed, 3, 4, HMAC_SHA512_LEN);
+%returns_array_(wally_asset_blinding_key_to_abf, 6, 7, BLINDING_FACTOR_LEN);
+%returns_array_(wally_asset_blinding_key_to_abf_vbf, 6, 7, WALLY_ABF_VBF_LEN);
+%returns_array_(wally_asset_blinding_key_to_vbf, 6, 7, BLINDING_FACTOR_LEN);
 %returns_array_(wally_asset_blinding_key_to_ec_private_key, 5, 6, EC_PRIVATE_KEY_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
 %returns_string(wally_base58_from_bytes);
@@ -532,6 +549,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_bip32_key_to_address);
 %returns_string(wally_bip32_key_to_addr_segwit);
 %returns_array_(wally_bip340_tagged_hash, 4, 5, SHA256_LEN);
+%returns_size_t(wally_coinselect_assets);
 %returns_string(wally_confidential_addr_to_addr);
 %returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_string(wally_confidential_addr_from_addr);
@@ -540,6 +558,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_confidential_addr_from_addr_segwit);
 %returns_string(wally_descriptor_canonicalize);
 %returns_string(wally_descriptor_get_checksum);
+%returns_size_t(wally_descriptor_get_depth);
 %returns_size_t(wally_descriptor_get_features);
 %returns_size_t(wally_descriptor_get_network);
 %returns_size_t(wally_descriptor_get_num_paths);
@@ -551,12 +570,16 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_sarray(wally_descriptor_to_addresses);
 %returns_size_t(wally_descriptor_to_script);
 %returns_size_t(wally_descriptor_to_script_get_maximum_length);
+%returns_array_(wally_ec_private_key_bip341_tweak, 6, 7, EC_PRIVATE_KEY_LEN);
 %returns_void__(wally_ec_private_key_verify);
+%returns_array_(wally_ec_public_key_bip341_tweak, 6, 7, EC_PUBLIC_KEY_LEN);
 %returns_void__(wally_ec_public_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
 %returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_size_t(wally_ec_sig_from_bytes_aux_len);
 %returns_size_t(wally_ec_sig_from_bytes_len);
+%returns_array_check_flag(wally_ec_sig_from_bytes_aux, 8, 9, jarg7, 10, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_LEN);
 %returns_array_check_flag(wally_ec_sig_from_bytes, 6, 7, jarg5, 8, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_normalize, 3, 4, EC_SIGNATURE_LEN);
 %returns_array_(wally_ec_sig_from_der, 3, 4, EC_SIGNATURE_LEN);
@@ -575,6 +598,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_explicit_surjectionproof, 7, 8, ASSET_EXPLICIT_SURJECTIONPROOF_LEN);
 %returns_void__(wally_explicit_surjectionproof_verify);
 %returns_size_t(wally_format_bitcoin_message);
+%returns_array_(wally_get_hash_prevouts, 5, 6, SHA256_LEN);
 %returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);
 %returns_size_t(wally_hex_n_to_bytes);
@@ -621,6 +645,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_struct(wally_map_init_alloc, wally_map);
 %rename("map_init") wally_map_init_alloc;
 %returns_struct(wally_map_preimage_init_alloc, wally_map);
+%returns_void__(wally_map_merkle_path_add);
 %rename("map_preimage_init") wally_map_preimage_init_alloc;
 %returns_void__(wally_map_preimage_hash160_add);
 %returns_void__(wally_map_preimage_ripemd160_add);
@@ -631,10 +656,13 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_map_replace);
 %returns_void__(wally_map_replace_integer);
 %returns_void__(wally_map_sort);
+%returns_void__(wally_merkle_path_xonly_public_key_verify);
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_psbt_add_tx_input_at);
 %returns_void__(wally_psbt_add_input_signature);
+%returns_void__(wally_psbt_add_input_taproot_keypath);
+%returns_void__(wally_psbt_add_output_taproot_keypath);
 %returns_void__(wally_psbt_add_tx_output_at);
 %returns_void__(wally_psbt_add_global_scalar);
 %returns_struct(wally_psbt_blind_alloc, wally_map);
@@ -676,6 +704,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_combine);
 %returns_struct(wally_psbt_extract, wally_tx);
 %returns_void__(wally_psbt_finalize);
+%returns_void__(wally_psbt_finalize_input);
 %returns_size_t(wally_psbt_find_input_keypath);
 %returns_size_t(wally_psbt_find_input_signature);
 %returns_size_t(wally_psbt_find_input_unknown);
@@ -753,6 +782,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_input_signature_hash);
 %returns_size_t(wally_psbt_get_input_signature_len);
 %returns_size_t(wally_psbt_get_input_sighash);
+%returns_size_t(wally_psbt_get_input_taproot_signature);
+%returns_size_t(wally_psbt_get_input_taproot_signature_len);
 %returns_size_t(wally_psbt_get_input_unknown);
 %returns_size_t(wally_psbt_get_input_unknown_len);
 %returns_size_t(wally_psbt_get_input_unknowns_size);
@@ -860,6 +891,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_set_input_sequence);
 %returns_void__(wally_psbt_set_input_sighash);
 %returns_void__(wally_psbt_set_input_signatures);
+%returns_void__(wally_psbt_set_input_taproot_signature);
 %returns_void__(wally_psbt_set_input_unknowns);
 %returns_void__(wally_psbt_set_input_utxo);
 %returns_void__(wally_psbt_set_input_utxo_rangeproof);
@@ -895,7 +927,6 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_script_push_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes);
 %returns_size_t(wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt);
-%returns_size_t(wally_scriptpubkey_csv_2of3_then_2_from_bytes);
 %returns_size_t(wally_scriptpubkey_get_type);
 %returns_size_t(wally_scriptpubkey_op_return_from_bytes);
 %returns_size_t(wally_scriptpubkey_p2pkh_from_bytes);
@@ -904,6 +935,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_scriptsig_p2pkh_from_sig);
 %returns_size_t(wally_scriptsig_p2pkh_from_der);
 %returns_size_t(wally_scriptsig_multisig_from_bytes);
+%returns_struct(wally_witness_p2tr_from_sig, wally_tx_witness_stack);
 %returns_struct(wally_witness_p2wpkh_from_sig, wally_tx_witness_stack);
 %returns_struct(wally_witness_p2wpkh_from_der, wally_tx_witness_stack);
 %returns_struct(wally_witness_multisig_from_bytes, wally_tx_witness_stack);
@@ -947,6 +979,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_tx_get_btc_signature_hash, 8, 9, SHA256_LEN);
 %returns_array_(wally_tx_get_btc_taproot_signature_hash, 14, 15, SHA256_LEN);
 %returns_array_(wally_tx_get_elements_signature_hash, 9, 10, SHA256_LEN);
+%returns_array_(wally_tx_get_hash_prevouts, 4, 5, SHA256_LEN);
 %returns_array_(wally_tx_get_input_blinding_nonce, 3, 4, SHA256_LEN);
 %returns_array_(wally_tx_get_input_entropy, 3, 4, SHA256_LEN);
 %rename("_tx_get_input_issuance_amount") wally_tx_get_input_issuance_amount;
@@ -1150,6 +1183,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_input_set_final_scriptsig;
 %ignore wally_psbt_input_set_final_witness;
 %ignore wally_psbt_input_set_keypaths;
+%ignore wally_psbt_input_taproot_keypath_add;
+%ignore wally_psbt_output_taproot_keypath_add;
 %ignore wally_psbt_input_find_keypath;
 %ignore wally_psbt_input_keypath_add;
 %ignore wally_psbt_input_set_signatures;
@@ -1224,6 +1259,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_input_get_inflation_keys_blinding_rangeproof_len;
 %ignore wally_psbt_input_set_inflation_keys_blinding_rangeproof;
 %ignore wally_psbt_input_clear_inflation_keys_blinding_rangeproof;
+%ignore wally_psbt_input_set_taproot_signature;
 %ignore wally_psbt_input_get_utxo_rangeproof;
 %ignore wally_psbt_input_get_utxo_rangeproof_len;
 %ignore wally_psbt_input_set_utxo_rangeproof;
@@ -1287,6 +1323,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %include "bip32_int.h"
 %include "../include/wally_bip38.h"
 %include "../include/wally_bip39.h"
+%include "../include/wally_bip85.h"
+%include "../include/wally_coinselection.h"
 %include "../include/wally_crypto.h"
 %include "../include/wally_descriptor.h"
 %include "../include/wally_map.h"

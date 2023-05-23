@@ -1,5 +1,27 @@
 # Changes
 
+## Version 0.9.0
+- ABI: wally_descriptor_to_script_get_maximum_length has changed its arguments
+  to match wally_descriptor_to_script.
+- ABI: The vars_in variable substitution map argument to wally_descriptor_parse
+  now expects its key and value length to match the actual length to substitute
+  rather than including an extra byte. Since the map stores byte arrays and not
+  strings, this is more consistent with the existing map API.
+
+## Version 0.8.9
+- libsecp256k1-zkp: The internal libsecp256k1 library version has been updated
+  to fix a potential timing leak when compiling with clang v14 or later.
+  Although there are no known exploits at this time, users are encouraged to
+  update as soon as possible.
+- descriptor_get_num_variants: Now returns 1 instead of 0 if no variants are
+  present. This allows iterating the variant from 0 to the number of variants
+  returned in order to generate all scripts/addresses.
+- scriptpubkey_csv_2of3_then_2_from_bytes has been removed from the API.
+- psbt: psbt_finalize now takes an extra flags parameter. The Java and Python
+  wrappers default this to zero for backwards compatibility.
+- psbt: output_index, sequence, required_locktime and required_lockheight are
+  now returned as uint32_t values. Wrapped languages are not affected.
+
 ## Version 0.8.8
 - witness_multisig_from_bytes: The length for the internally generated
   scriptsig was not calculated correctly, and not checked after generation.
