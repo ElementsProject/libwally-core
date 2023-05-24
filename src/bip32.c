@@ -14,7 +14,8 @@
                                  BIP32_FLAG_KEY_TWEAK_SUM | \
                                  BIP32_FLAG_STR_WILDCARD | \
                                  BIP32_FLAG_STR_BARE | \
-                                 BIP32_FLAG_ALLOW_UPPER)
+                                 BIP32_FLAG_ALLOW_UPPER | \
+                                 BIP32_FLAG_STR_MULTIPATH)
 
 static const unsigned char HMAC_KEY[] = {
     'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
@@ -76,22 +77,32 @@ static bool version_is_mainnet(uint32_t ver)
     return ver == BIP32_VER_MAIN_PRIVATE || ver == BIP32_VER_MAIN_PUBLIC;
 }
 
-static bool is_hardened_indicator(char c, bool allow_upper)
+static bool is_hardened_indicator(char c, bool allow_upper, uint32_t *features)
 {
-    return c == '\'' || c == 'h' || (allow_upper && c == 'H');
+    if (c == '\'' || c == 'h' || (allow_upper && c == 'H')) {
+        *features |= BIP32_PATH_IS_HARDENED;
+        return true;
+    }
+    return false;
 }
 
-static int path_from_string_n(const char *str, size_t str_len,
-                              uint32_t child_num, uint32_t flags,
-                              uint32_t *child_path, uint32_t child_path_len,
-                              size_t *written)
+static int path_from_str_n(const char *str, size_t str_len,
+                           uint32_t child_num, uint32_t multi_index,
+                           uint32_t *features, uint32_t flags,
+                           uint32_t *child_path, uint32_t child_path_len,
+                           size_t *written)
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
-    bool found_wildcard = false;
-    size_t start, i = 0;
+    size_t start, multi_start, num_multi = 0, i = 0;
     uint64_t v;
 
-    if (!str || !str_len || child_num >= BIP32_INITIAL_HARDENED_CHILD || !written)
+    *features = 0;
+
+    if (!str || !str_len || child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (flags & ~BIP32_ALL_DEFINED_FLAGS) ||
+        (!(flags & BIP32_FLAG_STR_WILDCARD) && child_num) ||
+        (!(flags & BIP32_FLAG_STR_MULTIPATH) && multi_index) ||
+        !child_path || !child_path_len || !written)
         goto fail;
 
     *written = 0;
@@ -99,17 +110,45 @@ static int path_from_string_n(const char *str, size_t str_len,
     if (flags & BIP32_FLAG_STR_BARE) {
         if (i < str_len && str[i] == '/')
             goto fail; /* bare path must start with a number */
+        *features |= BIP32_PATH_IS_BARE;
     } else {
+        start = i;
         if (i < str_len && (str[i] == 'm' || (allow_upper && str[i] == 'M')))
             ++i; /* Skip */
         if (i < str_len && str[i] == '/')
             ++i; /* Skip */
+        if (start == i)
+            *features |= BIP32_PATH_IS_BARE;
     }
 
     while (i < str_len) {
-        bool is_wildcard = false;
+        size_t multi;
+        bool is_wildcard = false, is_multi = false;
         start = i;
         v = 0;
+        if (str[i] == '<' && (flags & BIP32_FLAG_STR_MULTIPATH)) {
+            /* Multi-path expression - skip to the required multi_index */
+            ++i;
+            if (i < str_len && (str[i] < '0' || str[i] > '9'))
+                goto fail; /* Missing initial child */
+            *features |= BIP32_PATH_IS_MULTIPATH;
+            is_multi = true;
+            for (multi = 0; i < str_len && multi < multi_index; ++multi) {
+                multi_start = i;
+                while (i < str_len && str[i] >= '0' && str[i] <= '9')
+                    ++i;
+                if (i == multi_start)
+                    goto fail; /* Missing multi-item number */
+                if (i < str_len && is_hardened_indicator(str[i], allow_upper, features))
+                    ++i;
+                if (i == str_len || str[i] != ';')
+                    goto fail; /* Malformed multi or incorrect index */
+                ++i;
+                ++num_multi;
+            }
+            if (multi < multi_index && i == start + 1)
+                goto fail; /* No number found */
+        }
         while (str[i] >= '0' && str[i] <= '9' && i < str_len) {
             v = v * 10 + (str[i] - '0');
             if (v >= BIP32_INITIAL_HARDENED_CHILD)
@@ -118,10 +157,15 @@ static int path_from_string_n(const char *str, size_t str_len,
         }
         if (i == start) {
             /* No number found */
+            if (is_multi)
+                goto fail; /* Must have a number for multi */
             if (str[i] == '/') {
                 if (i && (str[i - 1] < '0' || str[i - 1] > '9') &&
-                    !is_hardened_indicator(str[i - 1], allow_upper) && str[i - 1] != '*')
-                    goto fail; /* Only valid after number/wildcard/hardened indicator */
+                    !is_hardened_indicator(str[i - 1], allow_upper, features) &&
+                    str[i - 1] != '*' && str[i - 1] != '>') {
+                    /* Only valid after number/wildcard/hardened/multi-end */
+                    goto fail;
+                }
                 ++i;
                 if (i == str_len || str[i] == '/')
                     goto fail; /* Trailing slash, invalid */
@@ -131,20 +175,45 @@ static int path_from_string_n(const char *str, size_t str_len,
                 goto fail; /* Unknown character */
 
             /* Wildcard */
-            found_wildcard = true;
             if (!(flags & BIP32_FLAG_STR_WILDCARD))
                 goto fail; /* Wildcard not allowed, or previously seen */
-            flags &= ~BIP32_FLAG_STR_WILDCARD;
+            flags &= ~BIP32_FLAG_STR_WILDCARD; /* Only allow one wildcard */
+            *features |= BIP32_PATH_IS_WILDCARD;
+            *features |= (*written << BIP32_PATH_WILDCARD_SHIFT);
             if (i && str[i - 1] != '/')
                 goto fail; /* Must follow a slash */
             ++i;
             v = child_num; /* Use the given child number for the wildcard value */
         }
-
-        if (is_hardened_indicator(str[i], allow_upper)) {
+        if (is_hardened_indicator(str[i], allow_upper, features)) {
             v |= BIP32_INITIAL_HARDENED_CHILD;
             ++i;
         }
+        if (is_multi) {
+            /* Multi-path expression - skip remaining multi-path items */
+            ++num_multi; /* For the item we just read */
+            while (i < str_len && str[i] != '>') {
+                if (str[i] == ';') {
+                    ++i;
+                    ++num_multi;
+                }
+                multi_start = i;
+                while (i < str_len && str[i] >= '0' && str[i] <= '9')
+                    ++i;
+                if (i == multi_start)
+                    goto fail; /* Missing multi-item number */
+                if (i < str_len && is_hardened_indicator(str[i], allow_upper, features))
+                    ++i;
+            }
+            if (i == str_len || str[i] != '>')
+                goto fail; /* Malformed multi or incorrect index */
+            ++i;
+            if (num_multi < 2 || num_multi >= 255)
+                goto fail;
+            *features |= (num_multi << BIP32_PATH_MULTI_SHIFT);
+            flags &= ~BIP32_FLAG_STR_MULTIPATH; /* Only allow one multi-path */
+        }
+
         if (is_wildcard && i != str_len && str[i] != '/')
             goto fail; /* Wildcard followed by something other than a slash */
         if (*written == child_path_len) {
@@ -156,14 +225,56 @@ static int path_from_string_n(const char *str, size_t str_len,
         ++*written;
     }
 
-    if (!found_wildcard && child_num != 0)
-        return WALLY_EINVAL; /* Child number given for a non-wildcard path */
+    if (*written && *written <= BIP32_PATH_MAX_LEN &&
+        (!child_num || (*features & BIP32_PATH_IS_WILDCARD)) &&
+        (!multi_index || (*features & BIP32_PATH_IS_MULTIPATH))) {
+        *features |= (*written << BIP32_PATH_LEN_SHIFT);
+        return WALLY_OK;
+    }
 
-    return *written ? WALLY_OK : WALLY_EINVAL;
 fail:
+    *features = 0;
     if (written)
         *written = 0;
     return WALLY_EINVAL;
+}
+
+int bip32_path_from_str_n(const char *str, size_t str_len,
+                          uint32_t child_num, uint32_t multi_index,
+                          uint32_t flags,
+                          uint32_t *child_path, uint32_t child_path_len,
+                          size_t *written)
+{
+    uint32_t features;
+    return path_from_str_n(str, str_len, child_num, multi_index, &features,
+                           flags, child_path, child_path_len, written);
+}
+
+int bip32_path_from_str(const char *str, uint32_t child_num,
+                        uint32_t multi_index, uint32_t flags,
+                        uint32_t *child_path, uint32_t child_path_len,
+                        size_t *written)
+{
+    uint32_t features;
+    return path_from_str_n(str, str ? strlen(str) : 0, child_num,
+                           multi_index, &features, flags,
+                           child_path, child_path_len, written);
+}
+
+int bip32_path_str_n_get_features(const char *str, size_t str_len,
+                                  uint32_t *value_out)
+{
+    uint32_t dummy, child_num = 0, multi_index = 0;
+    uint32_t flags = BIP32_FLAG_STR_WILDCARD | BIP32_FLAG_ALLOW_UPPER |
+                     BIP32_FLAG_STR_MULTIPATH;
+    size_t written;
+    return path_from_str_n(str, str_len, child_num, multi_index, value_out,
+                           flags, &dummy, 1, &written);
+}
+
+int bip32_path_str_get_features(const char *str, uint32_t *value_out)
+{
+    return bip32_path_str_n_get_features(str, str ? strlen(str) : 0, value_out);
 }
 
 static bool key_is_private(const struct ext_key *hdkey)
@@ -779,10 +890,13 @@ int bip32_key_from_parent_path_str_n(const struct ext_key *hdkey,
                                      uint32_t child_num, uint32_t flags,
                                      struct ext_key *key_out)
 {
-    uint32_t path[BIP32_PATH_MAX_LEN], *path_p = path;
+    uint32_t path[BIP32_PATH_MAX_LEN], *path_p = path, features;
+    const uint32_t multi_index = 0; /* Multi-index not supported */
     size_t written;
-    int ret = path_from_string_n(str, str_len, child_num, flags,
-                                 path_p, BIP32_PATH_MAX_LEN, &written);
+    if (flags & BIP32_FLAG_STR_MULTIPATH)
+        return WALLY_EINVAL; /* Multi-path is not supported for this call */
+    int ret = path_from_str_n(str, str_len, child_num, multi_index, &features,
+                              flags, path_p, BIP32_PATH_MAX_LEN, &written);
 
     if (ret == WALLY_OK)
         ret = bip32_key_from_parent_path(hdkey, path, written, flags, key_out);

@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([libwallycore],[0.8.8])
+AC_INIT([libwallycore],[0.9.0])
 AC_CONFIG_AUX_DIR([tools/build-aux])
 AC_CONFIG_MACRO_DIR([tools/build-aux/m4])
 AC_CONFIG_SRCDIR([src/mnemonic.h])
@@ -76,6 +76,9 @@ AC_ARG_ENABLE(builtin-memset,
 AC_ARG_ENABLE(minimal,
     AS_HELP_STRING([--enable-minimal],[enable minimal size/memory footprint build (default: no)]),
     [minimal=$enableval], [minimal=no])
+AC_ARG_ENABLE(mbed-tls,
+    AS_HELP_STRING([--enable-mbed-tls],[enable minimal size/memory footprint build (default: no)]),
+    [mbedtls=$enableval], [mbedtls=no])
 AC_ARG_ENABLE(secp256k1-tests,
     AS_HELP_STRING([--enable-secp256k1-tests],[enable secp256k1 tests (default: no)]),
     [secp256k1_tests=$enableval], [secp256k1_tests=no])
@@ -165,7 +168,7 @@ AX_CHECK_COMPILE_FLAG([-Wno-long-long], [AM_CFLAGS="$AM_CFLAGS -Wno-long-long"])
 AX_CHECK_COMPILE_FLAG([-Wno-overlength-strings], [AM_CFLAGS="$AM_CFLAGS -Wno-overlength-strings"])
 AX_CHECK_COMPILE_FLAG([-Wno-variadic-macros], [AM_CFLAGS="$AM_CFLAGS -Wno-variadic-macros"])
 
-if [[ "$CC" == *"clang"* ]]; then
+if echo | "$CC" -dM -E - | grep __clang__ >/dev/null; then
     AX_CHECK_COMPILE_FLAG([-Wno-gnu-statement-expression], [AM_CFLAGS="$AM_CFLAGS -Wno-gnu-statement-expression"])
     AX_CHECK_COMPILE_FLAG([-Wno-zero-length-array], [AM_CFLAGS="$AM_CFLAGS -Wno-zero-length-array"])
     AX_CHECK_COMPILE_FLAG([-Wno-language-extension-token], [AM_CFLAGS="$AM_CFLAGS -Wno-language-extension-token"])
@@ -178,8 +181,10 @@ AC_SUBST([NOBUILTIN_CFLAGS])
 # SWIG versions vary in generated code quality; skip warnings
 SWIG_WARN_CFLAGS="-fno-strict-aliasing"
 AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-shadow"])
-AX_CHECK_COMPILE_FLAG([-Wno-self-assign], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-self-assign"])
 AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-missing-field-initializers"])
+if echo | "$CC" -dM -E - | grep __clang__ >/dev/null; then
+    AX_CHECK_COMPILE_FLAG([-Wno-self-assign], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-self-assign"])
+fi
 AC_SUBST([SWIG_WARN_CFLAGS])
 
 AC_ARG_ENABLE(export-all,
@@ -224,7 +229,10 @@ if test "x$asm" == "xyes"; then
     )
 fi
 
-AC_CHECK_HEADERS([byteswap.h, sys/mman.h])
+AC_CHECK_HEADERS([byteswap.h sys/mman.h])
+if test "x$mbedtls" == "xyes"; then
+    AC_CHECK_HEADERS([mbedtls/sha256.h mbedtls/sha512.h])
+fi
 
 AC_ARG_ENABLE(clear-tests,
     AS_HELP_STRING([--enable-clear-tests],[enable tests for memory clearing (default: yes)]),
@@ -351,11 +359,6 @@ AM_CONDITIONAL([RUN_JAVA_TESTS], [test "x$run_java_tests" != "x"])
 JAVAC_TARGET=1.7
 AC_SUBST([JAVAC_TARGET])
 
-AC_ARG_ENABLE(swig-go,
-    AS_HELP_STRING([--enable-swig-go],[enable the SWIG go interface (default: no)]),
-    [swig_go=$enableval], [swig_go=no])
-AM_CONDITIONAL([USE_SWIG_GO], [test "x$swig_go" == "xyes"])
-
 AC_SUBST([AM_CFLAGS])
 
 if test "x$enable_static" == "xyes"; then
@@ -396,7 +399,7 @@ export ARFLAGS
 export AR_FLAGS
 export LD
 export LDFLAGS
-ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-ecdsa-s2c --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-schnorrsig --enable-module-extrakeys --enable-module-ecdsa-adaptor --enable-openssl-tests=no ${secp256k1_test_opt} --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
+ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-experimental --enable-module-ecdh --enable-module-recovery --enable-module-ecdsa-s2c --enable-module-rangeproof --enable-module-surjectionproof --enable-module-whitelist --enable-module-generator --enable-module-extrakeys --enable-module-schnorrsig --enable-module-ecdsa-adaptor ${secp256k1_test_opt} --enable-openssl-tests=no --enable-exhaustive-tests=no --enable-benchmark=no --disable-dependency-tracking ${secp_asm}"
 AC_CONFIG_SUBDIRS([src/secp256k1])
 
 

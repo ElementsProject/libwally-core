@@ -52,8 +52,12 @@ public class test_bip32 {
 
         final byte[] message = Wally.bip32_key_get_chain_code(derivedKey);
         final byte[] signature = Wally.ec_sig_from_bytes(Wally.bip32_key_get_priv_key(derivedKey),
-                                                         message,
-                                                         EC_FLAG_ECDSA);
+                                                         message, EC_FLAG_ECDSA);
+        final byte[] signature_aux = Wally.ec_sig_from_bytes_aux(Wally.bip32_key_get_priv_key(derivedKey),
+                                                                 message, null, EC_FLAG_ECDSA);
+        if (!Arrays.equals(signature, signature_aux)) {
+            throw new RuntimeException("NULL aux_data signature does not match");
+        }
 
         final byte[] signatureRecoverable = Wally.ec_sig_from_bytes(Wally.bip32_key_get_priv_key(derivedKey),
                                                                     message,

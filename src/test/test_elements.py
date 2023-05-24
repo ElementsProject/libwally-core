@@ -1,5 +1,6 @@
 import unittest
 from util import *
+import json
 
 # the private part of our blinding key
 UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN = make_cbuffer('e8ba74f899e6b06da05fb255511c7adcea41f186326ef4fc45290fa8043f7af5')
@@ -206,6 +207,40 @@ class ElementsTests(unittest.TestCase):
         self.assertEqual(h(offset),
                          utf8('4e5f3ca8aa2048eeacc8c300e3d63ca92048f407264352bee2fb15bd44349c45'))
         self.assertEqual(wally_ec_scalar_verify(offset, offset_len), WALLY_OK)
+
+    def test_deterministic_blinding_factors(self):
+        # Test vector from:
+        # https://github.com/Blockstream/Jade/blob/master/test_data/liquid_txn_ledger_compare.json
+        with open(root_dir + 'src/data/liquid_txn_ledger_compare.json', 'r') as f:
+            JSON = json.load(f)
+        master_key_hex = 'afacc503637e85da661ca1706c4ea147f1407868c48d8f92dd339ac272293cdc'
+        master_key, master_key_len = make_cbuffer(master_key_hex)
+        tx = pointer(wally_tx())
+        tx_flags = 0x3 # WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS
+        tx_hex = JSON['input']['txn']
+        tx_hash_prevout = utf8('7e78263a58236ffd160ee5a2c58c18b71637974aa95e1c72070b08208012144f')
+        self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, tx_flags, tx))
+        # hashPrevouts
+        hp, hp_len = make_cbuffer('00'*32)
+        ret = wally_tx_get_hash_prevouts(tx, 0, 0xffffffff, hp, hp_len)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(h(hp[:hp_len]), tx_hash_prevout)
+        # ABF/VBF. Note we don't expect the last VBF to match
+        out, out_len = make_cbuffer('00'*64)
+        commitments = JSON['input']['trusted_commitments'][:-1] # Skip Fee output
+        for n, output in enumerate(commitments):
+            abf, vbf = [output[k] for k in ('abf', 'vbf')]
+            for fn, o_len, expected in [
+                (wally_asset_blinding_key_to_abf_vbf, 64, abf + vbf),
+                (wally_asset_blinding_key_to_abf,     32, abf),
+                (wally_asset_blinding_key_to_vbf,     32, vbf)]:
+                ret = fn(master_key, master_key_len, hp, hp_len, n, out, o_len)
+                self.assertEqual(ret, WALLY_OK)
+                if n == len(commitments) - 1:
+                    if fn in [wally_asset_blinding_key_to_abf_vbf, wally_asset_blinding_key_to_vbf]:
+                        continue # Skip final VBF
+                self.assertEqual(h(out[:o_len]), utf8(expected))
+
 
 if __name__ == '__main__':
     _, val = wally_is_elements_build()

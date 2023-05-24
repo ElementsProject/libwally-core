@@ -384,3 +384,9 @@
   public final static byte[] bip32_key_get_pub_key_tweak_sum(Object jarg1) {
       return bip32_key_get_pub_key_tweak_sum(jarg1, null);
   }
+
+  public final static int[] coinselect_assets(long[] values, long target, long attempts, int io_ratio) {
+      final int[] buf = new int[values.length];
+      final int len = coinselect_assets(values, target, attempts, io_ratio, buf);
+      return trimIntBuffer(buf, len);
+  }

@@ -36,6 +36,10 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_bip32_key_to_base58' \
 ,'_bip32_key_unserialize' \
 ,'_bip32_key_unserialize_alloc' \
+,'_bip32_path_from_str' \
+,'_bip32_path_from_str_n' \
+,'_bip32_path_str_get_features' \
+,'_bip32_path_str_n_get_features' \
 ,'_bip38_get_flags' \
 ,'_bip38_raw_get_flags' \
 ,'_bip39_get_languages' \
@@ -45,6 +49,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_bip39_mnemonic_to_bytes' \
 ,'_bip39_mnemonic_to_seed512' \
 ,'_bip39_mnemonic_validate' \
+,'_bip85_get_bip39_entropy' \
+,'_bip85_get_languages' \
 ,'_wally_addr_segwit_from_bytes' \
 ,'_wally_addr_segwit_get_version' \
 ,'_wally_addr_segwit_n_get_version' \
@@ -73,6 +79,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_canonicalize' \
 ,'_wally_descriptor_free' \
 ,'_wally_descriptor_get_checksum' \
+,'_wally_descriptor_get_depth' \
 ,'_wally_descriptor_get_features' \
 ,'_wally_descriptor_get_network' \
 ,'_wally_descriptor_get_num_paths' \
@@ -83,7 +90,9 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_to_addresses' \
 ,'_wally_descriptor_to_script' \
 ,'_wally_descriptor_to_script_get_maximum_length' \
+,'_wally_ec_private_key_bip341_tweak' \
 ,'_wally_ec_private_key_verify' \
+,'_wally_ec_public_key_bip341_tweak' \
 ,'_wally_ec_public_key_decompress' \
 ,'_wally_ec_public_key_from_private_key' \
 ,'_wally_ec_public_key_negate' \
@@ -93,6 +102,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ec_scalar_subtract' \
 ,'_wally_ec_scalar_verify' \
 ,'_wally_ec_sig_from_bytes' \
+,'_wally_ec_sig_from_bytes_aux' \
+,'_wally_ec_sig_from_bytes_aux_len' \
 ,'_wally_ec_sig_from_bytes_len' \
 ,'_wally_ec_sig_from_der' \
 ,'_wally_ec_sig_normalize' \
@@ -103,6 +114,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ecdh' \
 ,'_wally_format_bitcoin_message' \
 ,'_wally_free_string' \
+,'_wally_get_hash_prevouts' \
 ,'_wally_get_operations' \
 ,'_wally_hash160' \
 ,'_wally_hex_from_bytes' \
@@ -146,6 +158,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_keypath_get_item_path' \
 ,'_wally_map_keypath_get_item_path_len' \
 ,'_wally_map_keypath_public_key_init_alloc' \
+,'_wally_map_merkle_path_add' \
 ,'_wally_map_preimage_hash160_add' \
 ,'_wally_map_preimage_init_alloc' \
 ,'_wally_map_preimage_ripemd160_add' \
@@ -156,9 +169,12 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_replace' \
 ,'_wally_map_replace_integer' \
 ,'_wally_map_sort' \
+,'_wally_merkle_path_xonly_public_key_verify' \
 ,'_wally_pbkdf2_hmac_sha256' \
 ,'_wally_pbkdf2_hmac_sha512' \
 ,'_wally_psbt_add_input_signature' \
+,'_wally_psbt_add_input_taproot_keypath' \
+,'_wally_psbt_add_output_taproot_keypath' \
 ,'_wally_psbt_add_tx_input_at' \
 ,'_wally_psbt_add_tx_output_at' \
 ,'_wally_psbt_blind' \
@@ -172,6 +188,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_combine' \
 ,'_wally_psbt_extract' \
 ,'_wally_psbt_finalize' \
+,'_wally_psbt_finalize_input' \
 ,'_wally_psbt_find_input_keypath' \
 ,'_wally_psbt_find_input_signature' \
 ,'_wally_psbt_find_input_unknown' \
@@ -207,6 +224,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_get_input_signatures_size' \
 ,'_wally_psbt_get_input_signing_script' \
 ,'_wally_psbt_get_input_signing_script_len' \
+,'_wally_psbt_get_input_taproot_signature' \
+,'_wally_psbt_get_input_taproot_signature_len' \
 ,'_wally_psbt_get_input_unknown' \
 ,'_wally_psbt_get_input_unknown_len' \
 ,'_wally_psbt_get_input_unknowns_size' \
@@ -259,11 +278,13 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_input_set_sequence' \
 ,'_wally_psbt_input_set_sighash' \
 ,'_wally_psbt_input_set_signatures' \
+,'_wally_psbt_input_set_taproot_signature' \
 ,'_wally_psbt_input_set_unknowns' \
 ,'_wally_psbt_input_set_utxo' \
 ,'_wally_psbt_input_set_witness_script' \
 ,'_wally_psbt_input_set_witness_utxo' \
 ,'_wally_psbt_input_set_witness_utxo_from_tx' \
+,'_wally_psbt_input_taproot_keypath_add' \
 ,'_wally_psbt_is_elements' \
 ,'_wally_psbt_is_finalized' \
 ,'_wally_psbt_output_clear_amount' \
@@ -276,6 +297,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_output_set_script' \
 ,'_wally_psbt_output_set_unknowns' \
 ,'_wally_psbt_output_set_witness_script' \
+,'_wally_psbt_output_taproot_keypath_add' \
 ,'_wally_psbt_remove_input' \
 ,'_wally_psbt_remove_output' \
 ,'_wally_psbt_set_fallback_locktime' \
@@ -291,6 +313,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_set_input_sequence' \
 ,'_wally_psbt_set_input_sighash' \
 ,'_wally_psbt_set_input_signatures' \
+,'_wally_psbt_set_input_taproot_signature' \
 ,'_wally_psbt_set_input_unknowns' \
 ,'_wally_psbt_set_input_utxo' \
 ,'_wally_psbt_set_input_witness_script' \
@@ -316,7 +339,6 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_script_push_from_bytes' \
 ,'_wally_scriptpubkey_csv_2of2_then_1_from_bytes' \
 ,'_wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt' \
-,'_wally_scriptpubkey_csv_2of3_then_2_from_bytes' \
 ,'_wally_scriptpubkey_get_type' \
 ,'_wally_scriptpubkey_multisig_from_bytes' \
 ,'_wally_scriptpubkey_op_return_from_bytes' \
@@ -349,6 +371,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_from_hex' \
 ,'_wally_tx_get_btc_signature_hash' \
 ,'_wally_tx_get_btc_taproot_signature_hash' \
+,'_wally_tx_get_hash_prevouts' \
 ,'_wally_tx_get_input_index' \
 ,'_wally_tx_get_input_script' \
 ,'_wally_tx_get_input_script_len' \
@@ -425,6 +448,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_wif_to_bytes' \
 ,'_wally_wif_to_public_key' \
 ,'_wally_witness_multisig_from_bytes' \
+,'_wally_witness_p2tr_from_sig' \
 ,'_wally_witness_p2wpkh_from_der' \
 ,'_wally_witness_p2wpkh_from_sig' \
 ,'_wally_witness_program_from_bytes' \
@@ -435,13 +459,17 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_bip32_key_with_tweak_from_parent_path' \
 ,'_bip32_key_with_tweak_from_parent_path_alloc' \
 ,'_wally_asset_blinding_key_from_seed' \
+,'_wally_asset_blinding_key_to_abf' \
+,'_wally_asset_blinding_key_to_abf_vbf' \
 ,'_wally_asset_blinding_key_to_ec_private_key' \
+,'_wally_asset_blinding_key_to_vbf' \
 ,'_wally_asset_final_vbf' \
 ,'_wally_asset_generator_from_bytes' \
 ,'_wally_asset_pak_whitelistproof' \
 ,'_wally_asset_pak_whitelistproof_len' \
 ,'_wally_asset_pak_whitelistproof_size' \
 ,'_wally_asset_rangeproof' \
+,'_wally_asset_rangeproof_get_maximum_len' \
 ,'_wally_asset_rangeproof_with_nonce' \
 ,'_wally_asset_scalar_offset' \
 ,'_wally_asset_surjectionproof' \
@@ -450,6 +478,7 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_asset_unblind' \
 ,'_wally_asset_unblind_with_nonce' \
 ,'_wally_asset_value_commitment' \
+,'_wally_coinselect_assets' \
 ,'_wally_confidential_addr_from_addr' \
 ,'_wally_confidential_addr_from_addr_segwit' \
 ,'_wally_confidential_addr_segwit_to_ec_public_key' \

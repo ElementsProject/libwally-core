@@ -83,6 +83,10 @@ $ brew install swig
    features, including [Liquid](https://blockstream.com/liquid/) support.
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
+- `--enable-mbed-tls`. Use mbed-tls hashing functions if available. This typically
+   results in faster hashing on embedded platforms such as STM32. Note that the user
+   must define `MBEDTLS_SHA256_ALT` and/or `SOC_SHA_SUPPORT_PARALLEL_ENG` matching the
+   SOC support when compiling the library. (default: no)
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.
@@ -108,7 +112,7 @@ installed.
 For non-development use, you can install wally with `pip` as follows:
 
 ```
-pip install wallycore==0.8.8
+pip install wallycore==0.9.0
 ```
 
 For python development, you can build and install wally using:
@@ -128,7 +132,7 @@ You can also install the binary [wally releases](https://github.com/ElementsProj
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.8.8-cp39-cp39m-linux_x86_64.whl
+pip install wallycore-0.9.0-cp39-cp39m-linux_x86_64.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files

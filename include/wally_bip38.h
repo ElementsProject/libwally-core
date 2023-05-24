@@ -7,7 +7,8 @@
 extern "C" {
 #endif
 
-/** Flags for BIP38 conversion. The first 8 bits are reserved for the network */
+/*** bip38-flags BIP38 conversion flags */
+#define BIP38_KEY_NETWORK_MASK  0xff  /** Mask for the bottom 8 bitflags which hold the network */
 #define BIP38_KEY_MAINNET       0  /** Address is for main network */
 #define BIP38_KEY_TESTNET      111 /** Address is for test network */
 #define BIP38_KEY_COMPRESSED   256 /** Public key is compressed */
@@ -23,10 +24,10 @@ extern "C" {
  * Encode a private key in raw BIP 38 address format.
  *
  * :param bytes: Private key to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behavior.
+ * :param flags: :ref:`bip38-flags` indicating desired behavior.
  * :param bytes_out: Destination for the resulting raw BIP38 address.
  * FIXED_SIZED_OUTPUT(len, bytes_out, BIP38_SERIALIZED_LEN)
  */
@@ -43,10 +44,10 @@ WALLY_CORE_API int bip38_raw_from_private_key(
  * Encode a private key in BIP 38 address format.
  *
  * :param bytes: Private key to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``EC_PRIVATE_KEY_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behavior.
+ * :param flags: :ref:`bip38-flags` indicating desired behavior.
  * :param output: Destination for the resulting BIP38 address.
  */
 WALLY_CORE_API int bip38_from_private_key(
@@ -61,10 +62,10 @@ WALLY_CORE_API int bip38_from_private_key(
  * Decode a raw BIP 38 address to a private key.
  *
  * :param bytes: Raw BIP 38 address to decode.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be `BIP38_SERIALIZED_LEN`.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behavior.
+ * :param flags: :ref:`bip38-flags` indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
  * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
  */
@@ -83,7 +84,7 @@ WALLY_CORE_API int bip38_raw_to_private_key(
  * :param bip38: BIP 38 address to decode.
  * :param pass: Password for the encoded private key.
  * :param pass_len: Length of ``pass`` in bytes.
- * :param flags: BIP38_KEY_ flags indicating desired behavior.
+ * :param flags: :ref:`bip38-flags` indicating desired behavior.
  * :param bytes_out: Destination for the resulting private key.
  * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PRIVATE_KEY_LEN)
  */
@@ -99,8 +100,8 @@ WALLY_CORE_API int bip38_to_private_key(
  * Get compression and/or EC mult flags.
  *
  * :param bytes: Raw BIP 38 address to get the flags from.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``BIP38_SERIALIZED_LEN``.
- * :param written: BIP38_KEY_ flags indicating behavior.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be `BIP38_SERIALIZED_LEN`.
+ * :param written: :ref:`bip38-flags` indicating behavior.
  */
 WALLY_CORE_API int bip38_raw_get_flags(
     const unsigned char *bytes,
@@ -111,7 +112,7 @@ WALLY_CORE_API int bip38_raw_get_flags(
  * Get compression and/or EC mult flags.
  *
  * :param bip38: BIP 38 address to get the flags from.
- * :param written: BIP38_KEY_ flags indicating behavior.
+ * :param written: :ref:`bip38-flags` indicating behavior.
  */
 WALLY_CORE_API int bip38_get_flags(
     const char *bip38,

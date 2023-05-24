@@ -11,8 +11,8 @@ extern "C" {
  * Create a new symmetric parent key from entropy.
  *
  * :param bytes: Entropy to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be one of ``BIP32_ENTROPY_LEN_128``,
- *|     ``BIP32_ENTROPY_LEN_256`` or ``BIP32_ENTROPY_LEN_512``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be one of `BIP32_ENTROPY_LEN_128`,
+ *|     `BIP32_ENTROPY_LEN_256` or `BIP32_ENTROPY_LEN_512`.
  * :param bytes_out: Destination for the resulting parent key.
  * FIXED_SIZED_OUTPUT(len, bytes_out, HMAC_SHA512_LEN)
  */
@@ -27,7 +27,7 @@ WALLY_CORE_API int wally_symmetric_key_from_seed(
  * Create a new child symmetric key from a parent key.
  *
  * :param bytes: Parent key to use.
- * :param bytes_len: Size of ``bytes`` in bytes. Must be ``HMAC_SHA512_LEN``.
+ * :param bytes_len: Size of ``bytes`` in bytes. Must be `HMAC_SHA512_LEN`.
  * :param version: Version byte to prepend to ``label``. Must be zero.
  * :param label: Label to use for the child.
  * :param label_len: Size of ``label`` in bytes.

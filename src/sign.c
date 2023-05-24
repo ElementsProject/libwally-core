@@ -1,9 +1,7 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
 #include "script_int.h"
-#if 0
-#include "secp256k1/include/secp256k1_schnorr.h"
-#endif
+#include "secp256k1/include/secp256k1_schnorrsig.h"
 #include "ccan/ccan/build_assert/build_assert.h"
 
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
@@ -11,6 +9,14 @@
 #define MSG_ALL_FLAGS (BITCOIN_MESSAGE_FLAG_HASH)
 
 static const char MSG_PREFIX[] = "\x18" "Bitcoin Signed Message:\n";
+static const char TAPTWEAK_BTC[] = "TapTweak";
+#ifdef BUILD_ELEMENTS
+static const char TAPTWEAK_ELEMENTS[] = "TapTweak/elements";
+#define GET_TAPTWEAK(flags) ((flags & EC_FLAG_ELEMENTS)? TAPTWEAK_ELEMENTS : TAPTWEAK_BTC)
+#else
+#define GET_TAPTWEAK(flags) TAPTWEAK_BTC
+#endif
+
 
 /* LCOV_EXCL_START */
 /* Check assumptions we expect to hold true */
@@ -57,7 +63,7 @@ int wally_ec_xonly_public_key_verify(const unsigned char *pub_key, size_t pub_ke
     secp256k1_xonly_pubkey pub;
 
     if (!pub_key || pub_key_len != EC_XONLY_PUBLIC_KEY_LEN ||
-        !xpubkey_parse(&pub, pub_key))
+        !xpubkey_parse(&pub, pub_key, pub_key_len))
         return WALLY_EINVAL;
 
     wally_clear(&pub, sizeof(pub));
@@ -124,6 +130,92 @@ int wally_ec_public_key_negate(const unsigned char *pub_key, size_t pub_key_len,
         wally_clear(bytes_out, len);
     wally_clear(&pub, sizeof(pub));
     return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+static int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
+                            const unsigned char *merkle_root, uint32_t flags,
+                            unsigned char *tweak, size_t tweak_len)
+{
+    unsigned char preimage[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN];
+    const size_t offset = pub_key_len == EC_PUBLIC_KEY_LEN ? 1 : 0;
+    const size_t preimage_len = merkle_root ? sizeof(preimage) : EC_XONLY_PUBLIC_KEY_LEN;
+    (void)flags;
+
+    memcpy(preimage, pub_key + offset, EC_XONLY_PUBLIC_KEY_LEN);
+    if (merkle_root)
+        memcpy(preimage + EC_XONLY_PUBLIC_KEY_LEN, merkle_root, SHA256_LEN);
+    return wally_bip340_tagged_hash(preimage, preimage_len,
+                                    GET_TAPTWEAK(flags), tweak, tweak_len);
+}
+
+int wally_ec_public_key_bip341_tweak(
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *merkle_root, size_t merkle_root_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len)
+{
+    secp256k1_xonly_pubkey xonly;
+    int ret;
+
+    if (!pub_key || BYTES_INVALID_N(merkle_root, merkle_root_len, SHA256_LEN) ||
+#ifdef BUILD_ELEMENTS
+        (flags & ~EC_FLAG_ELEMENTS) ||
+#else
+        flags ||
+#endif
+        !bytes_out || len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+
+    ret = xpubkey_parse(&xonly, pub_key, pub_key_len) ? WALLY_OK : WALLY_EINVAL;
+    if (ret == WALLY_OK) {
+        unsigned char tweak[SHA256_LEN];
+        secp256k1_pubkey tweaked;
+        size_t len_in_out = EC_PUBLIC_KEY_LEN;
+        ret = get_bip341_tweak(pub_key, pub_key_len, merkle_root,
+                               flags, tweak, sizeof(tweak));
+        if (ret == WALLY_OK && !xpubkey_tweak_add(&tweaked, &xonly, tweak))
+            ret = WALLY_ERROR;
+        if (ret == WALLY_OK)
+            pubkey_serialize(bytes_out, &len_in_out,
+                             &tweaked, SECP256K1_EC_COMPRESSED);
+    }
+    return ret;
+}
+
+int wally_ec_private_key_bip341_tweak(
+    const unsigned char *priv_key, size_t priv_key_len,
+    const unsigned char *merkle_root, size_t merkle_root_len,
+    uint32_t flags, unsigned char *bytes_out, size_t len)
+{
+    unsigned char tweak[SHA256_LEN];
+    unsigned char pub_key[EC_XONLY_PUBLIC_KEY_LEN];
+    secp256k1_keypair keypair;
+    secp256k1_xonly_pubkey xonly;
+    int ret;
+
+    if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
+        BYTES_INVALID_N(merkle_root, merkle_root_len, SHA256_LEN) ||
+#ifdef BUILD_ELEMENTS
+        (flags & ~EC_FLAG_ELEMENTS) ||
+#else
+        flags ||
+#endif
+        !bytes_out || len != EC_PRIVATE_KEY_LEN)
+        return WALLY_EINVAL;
+
+    if (!keypair_create(&keypair, priv_key))
+        return WALLY_ERROR; /* Invalid private key */
+
+    if (!keypair_xonly_pub(&xonly, &keypair) ||
+        !xpubkey_serialize(pub_key, &xonly))
+        ret = WALLY_EINVAL;
+    else
+        ret = get_bip341_tweak(pub_key, sizeof(pub_key), merkle_root,
+                               flags, tweak, sizeof(tweak));
+    if (ret == WALLY_OK && (!keypair_xonly_tweak_add(&keypair, tweak) ||
+        !keypair_sec(bytes_out, &keypair)))
+        ret = WALLY_ERROR;
+    wally_clear(&keypair, sizeof(keypair));
+    return ret;
 }
 
 int wally_ec_sig_normalize(const unsigned char *sig, size_t sig_len,
@@ -196,38 +288,47 @@ int wally_ec_sig_from_der(const unsigned char *bytes, size_t bytes_len,
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-int wally_ec_sig_from_bytes_len(const unsigned char *priv_key, size_t priv_key_len,
-                                const unsigned char *bytes, size_t bytes_len,
-                                uint32_t flags,
-                                size_t *written)
+int wally_ec_sig_from_bytes_aux_len(const unsigned char *priv_key, size_t priv_key_len,
+                                    const unsigned char *bytes, size_t bytes_len,
+                                    const unsigned char *aux_rand, size_t aux_rand_len,
+                                    uint32_t flags, size_t *written)
 {
     if (written)
         *written = 0;
     if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
         !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
+        BYTES_INVALID_N(aux_rand, aux_rand_len, 32) ||
         !is_valid_ec_type(flags) || flags & ~EC_FLAGS_ALL || !written)
         return WALLY_EINVAL;
     if (flags & EC_FLAG_SCHNORR) {
-        if (flags & EC_FLAG_RECOVERABLE)
-            return WALLY_EINVAL; /* Only ECDSA is supported for recoverable sigs */
-        /* FIXME: Implement taproot schnorr signs */
-        return WALLY_ERROR; /* Failed to sign */
-    }
+        if (flags & (EC_FLAG_RECOVERABLE | EC_FLAG_GRIND_R))
+            return WALLY_EINVAL; /* Only ECDSA supports recoverable/grinding sigs */
+    } else if (aux_rand && (flags & EC_FLAG_GRIND_R))
+        return WALLY_EINVAL; /* Can't use grinding if aux_rand provided */
     *written = flags & EC_FLAG_RECOVERABLE ? EC_SIGNATURE_RECOVERABLE_LEN : EC_SIGNATURE_LEN;
     return WALLY_OK;
 }
 
-int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
-                            const unsigned char *bytes, size_t bytes_len,
-                            uint32_t flags,
-                            unsigned char *bytes_out, size_t len)
+int wally_ec_sig_from_bytes_len(const unsigned char *priv_key, size_t priv_key_len,
+                                const unsigned char *bytes, size_t bytes_len,
+                                uint32_t flags, size_t *written)
+{
+    return wally_ec_sig_from_bytes_aux_len(priv_key, priv_key_len, bytes, bytes_len,
+                                           NULL, 0, flags, written);
+}
+
+int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_len,
+                                const unsigned char *bytes, size_t bytes_len,
+                                const unsigned char *aux_rand, size_t aux_rand_len,
+                                uint32_t flags, unsigned char *bytes_out, size_t len)
 {
     wally_ec_nonce_t nonce_fn = wally_ops()->ec_nonce_fn;
     const secp256k1_context *ctx = secp_ctx();
     size_t expected_len;
 
-    if (wally_ec_sig_from_bytes_len(priv_key, priv_key_len, bytes, bytes_len,
-                                    flags, &expected_len)  != WALLY_OK||
+    if (wally_ec_sig_from_bytes_aux_len(priv_key, priv_key_len,
+                                        bytes, bytes_len, aux_rand, aux_rand_len,
+                                        flags, &expected_len) != WALLY_OK ||
         !bytes_out || len != expected_len)
         return WALLY_EINVAL;
 
@@ -235,22 +336,27 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
         return WALLY_ENOMEM;
 
     if (flags & EC_FLAG_SCHNORR) {
-        if (flags & EC_FLAG_RECOVERABLE)
-            return WALLY_EINVAL; /* Only ECDSA is supported for recoverable sigs */
-        /* FIXME: Implement taproot schnorr sigs */
-        return WALLY_ERROR;
+        secp256k1_keypair keypair;
+        int ret = WALLY_OK;
+        if (!keypair_create(&keypair, priv_key))
+            ret = WALLY_EINVAL;
+        else if (!secp256k1_schnorrsig_sign32(ctx, bytes_out, bytes, &keypair, aux_rand))
+            ret = WALLY_ERROR;
+        wally_clear(&keypair, sizeof(&keypair));
+        return ret;
     } else {
-        unsigned char extra_entropy[32] = {0}, *entropy_p = NULL;
+        unsigned char extra_entropy[32] = {0}, *entropy_p = (unsigned char *)aux_rand;
         unsigned char *bytes_out_p = flags & EC_FLAG_RECOVERABLE ? bytes_out + 1 : bytes_out;
-        uint32_t counter = 0;
         secp256k1_ecdsa_recoverable_signature sig_secp;
+        uint32_t counter = 0;
         int recid;
 
         while (true) {
-            if (!secp256k1_ecdsa_sign_recoverable(ctx, &sig_secp, bytes, priv_key, nonce_fn, entropy_p)) {
+            if (!secp256k1_ecdsa_sign_recoverable(ctx, &sig_secp, bytes,
+                                                  priv_key, nonce_fn, entropy_p)) {
                 wally_clear(&sig_secp, sizeof(sig_secp));
                 if (!secp256k1_ec_seckey_verify(ctx, priv_key))
-                    return WALLY_EINVAL; /* invalid priv_key */
+                    return WALLY_EINVAL; /* Invalid priv_key */
                 return WALLY_ERROR;     /* Nonce function failed */
             }
 
@@ -271,6 +377,16 @@ int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
             uint32_to_le_bytes(counter, entropy_p);
         }
     }
+
+}
+
+int wally_ec_sig_from_bytes(const unsigned char *priv_key, size_t priv_key_len,
+                            const unsigned char *bytes, size_t bytes_len,
+                            uint32_t flags, unsigned char *bytes_out, size_t len)
+{
+    return wally_ec_sig_from_bytes_aux(priv_key, priv_key_len,
+                                       bytes, bytes_len, NULL, 0,
+                                       flags, bytes_out, len);
 }
 
 int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
@@ -278,13 +394,11 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
                         uint32_t flags,
                         const unsigned char *sig, size_t sig_len)
 {
-    secp256k1_pubkey pub;
     secp256k1_ecdsa_signature sig_secp;
     const secp256k1_context *ctx = secp_ctx();
     bool ok;
 
-    if (!pub_key || pub_key_len != EC_PUBLIC_KEY_LEN ||
-        !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
+    if (!pub_key || !bytes || bytes_len != EC_MESSAGE_HASH_LEN ||
         !is_valid_ec_type(flags) || flags & ~EC_FLAGS_TYPES ||
         !sig || sig_len != EC_SIGNATURE_LEN)
         return WALLY_EINVAL;
@@ -292,19 +406,22 @@ int wally_ec_sig_verify(const unsigned char *pub_key, size_t pub_key_len,
     if (!ctx)
         return WALLY_ENOMEM;
 
-    ok = pubkey_parse(&pub, pub_key, pub_key_len);
-
-    if (flags & EC_FLAG_SCHNORR)
-#if 0 /*FIXME: Schnorr is unavailable in secp for now*/
-        ok = ok && secp256k1_schnorr_verify(ctx, sig, bytes, &pub);
-#else
-        ok = false;
-#endif
-    else
+    if (flags & EC_FLAG_SCHNORR) {
+        secp256k1_xonly_pubkey xonly_pub;
+        ok = xpubkey_parse(&xonly_pub, pub_key, pub_key_len);
+        ok = ok && secp256k1_schnorrsig_verify(ctx, sig, bytes, bytes_len, &xonly_pub);
+        wally_clear(&xonly_pub, sizeof(xonly_pub));
+    } else {
+        secp256k1_pubkey pub;
+        if (pub_key_len != EC_PUBLIC_KEY_LEN)
+            return WALLY_EINVAL;
+        ok = pubkey_parse(&pub, pub_key, pub_key_len);
         ok = ok && secp256k1_ecdsa_signature_parse_compact(ctx, &sig_secp, sig) &&
              secp256k1_ecdsa_verify(ctx, &sig_secp, bytes, &pub);
+        wally_clear(&pub, sizeof(pub));
+    }
 
-    wally_clear_2(&pub, sizeof(pub), &sig_secp, sizeof(sig_secp));
+    wally_clear(&sig_secp, sizeof(sig_secp));
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 

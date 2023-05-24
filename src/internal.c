@@ -28,19 +28,43 @@ int pubkey_negate(secp256k1_pubkey *pubkey)
     return secp256k1_ec_pubkey_negate(secp256k1_context_no_precomp, pubkey);
 }
 
-int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t inputlen)
+int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t input_len)
 {
-    return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, inputlen);
-}
-
-int xpubkey_parse(secp256k1_xonly_pubkey *pubkey, const unsigned char *input)
-{
-    return secp256k1_xonly_pubkey_parse(secp256k1_context_no_precomp, pubkey, input);
+    return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, input_len);
 }
 
 int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags)
 {
     return secp256k1_ec_pubkey_serialize(secp256k1_context_no_precomp, output, outputlen, pubkey, flags);
+}
+
+int xpubkey_parse(secp256k1_xonly_pubkey *xpubkey, const unsigned char *input, size_t input_len)
+{
+    const secp256k1_context *ctx = secp256k1_context_no_precomp;
+    if (input_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+        return 0;
+    if (input_len == EC_PUBLIC_KEY_LEN) {
+        secp256k1_pubkey pubkey;
+        if (!pubkey_parse(&pubkey, input, input_len))
+            return 0;
+        return secp256k1_xonly_pubkey_from_pubkey(ctx, xpubkey, NULL, &pubkey);
+    }
+    if (input_len == EC_XONLY_PUBLIC_KEY_LEN)
+        return secp256k1_xonly_pubkey_parse(ctx, xpubkey, input);
+    return 0;
+}
+
+int xpubkey_tweak_add(secp256k1_pubkey *pubkey,
+                      const secp256k1_xonly_pubkey *xpubkey,
+                      const unsigned char *tweak)
+{
+    return secp256k1_xonly_pubkey_tweak_add(secp256k1_context_no_precomp,
+                                            pubkey, xpubkey, tweak);
+}
+
+int xpubkey_serialize(unsigned char *output, const secp256k1_xonly_pubkey *xpubkey)
+{
+    return secp256k1_xonly_pubkey_serialize(secp256k1_context_no_precomp, output, xpubkey);
 }
 
 int seckey_verify(const unsigned char *seckey)
@@ -61,6 +85,26 @@ int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
 int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak)
 {
     return secp256k1_ec_seckey_tweak_mul(secp256k1_context_no_precomp, seckey, tweak);
+}
+
+int keypair_create(secp256k1_keypair *keypair, const unsigned char *priv_key)
+{
+    return secp256k1_keypair_create(secp_ctx(), keypair, priv_key);
+}
+
+int keypair_xonly_pub(secp256k1_xonly_pubkey *xpubkey, const secp256k1_keypair *keypair)
+{
+    return secp256k1_keypair_xonly_pub(secp256k1_context_no_precomp, xpubkey, NULL, keypair);
+}
+
+int keypair_sec(unsigned char *output, const secp256k1_keypair *keypair)
+{
+    return secp256k1_keypair_sec(secp256k1_context_no_precomp, output, keypair);
+}
+
+int keypair_xonly_tweak_add(secp256k1_keypair *keypair, const unsigned char *tweak)
+{
+    return secp256k1_keypair_xonly_tweak_add(secp256k1_context_no_precomp, keypair, tweak);
 }
 
 #ifndef SWIG
@@ -130,7 +174,7 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
                  unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
@@ -147,9 +191,18 @@ static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
 {
     size_t i;
 
-    for (i = 0; i < sizeof(ctx->s) / sizeof(ctx->s[0]); i++)
-        res->u.u32[i] = cpu_to_be32(ctx->s[i]);
+#ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#define SHA_CTX_STATE c.state
+#else
+#define SHA_CTX_STATE s
+#endif
+
+    for (i = 0; i < sizeof(ctx->SHA_CTX_STATE) / sizeof(ctx->SHA_CTX_STATE[0]); i++)
+        res->u.u32[i] = cpu_to_be32(ctx->SHA_CTX_STATE[i]);
+
+#ifndef CCAN_CRYPTO_SHA256_USE_MBEDTLS
     ctx->bytes = (size_t)-1;
+#endif
 }
 
 int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
@@ -157,12 +210,17 @@ int wally_sha256_midstate(const unsigned char *bytes, size_t bytes_len,
 {
     struct sha256 sha;
     struct sha256_ctx ctx;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
     sha256_init(&ctx);
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS) && \
+    defined(MBEDTLS_SHA256_ALT) && defined(SOC_SHA_SUPPORT_PARALLEL_ENG)
+    /* HW sha engine doesn't allow to extract the midstate */
+    ctx.c.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
+#endif
     sha256_update(&ctx, bytes, bytes_len);
     sha256_midstate(&ctx, aligned ? (void *)bytes_out : (void *)&sha);
     wally_clear(&ctx, sizeof(ctx));
@@ -178,7 +236,7 @@ int wally_sha256d(const unsigned char *bytes, size_t bytes_len,
                   unsigned char *bytes_out, size_t len)
 {
     struct sha256 sha_1, sha_2;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha_1.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
@@ -197,7 +255,7 @@ int wally_sha512(const unsigned char *bytes, size_t bytes_len,
                  unsigned char *bytes_out, size_t len)
 {
     struct sha512 sha;
-    bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64));
+    const bool aligned = alignment_ok(bytes_out, sizeof(sha.u.u64[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != SHA512_LEN)
         return WALLY_EINVAL;
@@ -214,7 +272,7 @@ int wally_ripemd160(const unsigned char *bytes, size_t bytes_len,
                     unsigned char *bytes_out, size_t len)
 {
     struct ripemd160 ripemd;
-    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32[0]));
 
     if ((!bytes && bytes_len != 0) || !bytes_out || len != RIPEMD160_LEN)
         return WALLY_EINVAL;
@@ -234,7 +292,7 @@ int wally_hash160(const unsigned char *bytes, size_t bytes_len,
 {
     unsigned char buff[SHA256_LEN];
     struct ripemd160 ripemd;
-    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32));
+    const bool aligned = alignment_ok(bytes_out, sizeof(ripemd.u.u32[0]));
 
     if (!bytes_out || len != HASH160_LEN)
         return WALLY_EINVAL;
@@ -348,13 +406,19 @@ void wally_free(void *ptr)
     _ops.free_fn(ptr);
 }
 
+char *wally_strdup_n(const char *str, size_t str_len)
+{
+    char *new_str = (char *)wally_malloc(str_len + 1);
+    if (new_str) {
+        memcpy(new_str, str, str_len);
+        new_str[str_len] = '\0';
+    }
+    return new_str;
+}
+
 char *wally_strdup(const char *str)
 {
-    size_t len = strlen(str) + 1;
-    char *new_str = (char *)wally_malloc(len);
-    if (new_str)
-        memcpy(new_str, str, len); /* Copies terminating nul */
-    return new_str;
+    return wally_strdup_n(str, strlen(str));
 }
 
 const struct wally_operations *wally_ops(void)

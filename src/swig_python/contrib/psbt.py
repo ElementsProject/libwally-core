@@ -6,6 +6,7 @@ PSBT_TXMOD_BOTH = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_OUTPUTS
 PSBT_TXMOD_INP_SINGLE = WALLY_PSBT_TXMOD_INPUTS | WALLY_PSBT_TXMOD_SINGLE
 
 SIG_BYTES = hex_to_bytes('30450220263325fcbd579f5a3d0c49aa96538d9562ee41dc690d50dcc5a0af4ba2b9efcf022100fd8d53c6be9b3f68c74eed559cca314e718df437b5c5c57668c5930e14140502')
+TAPROOT_SIG_BYTES = hex_to_bytes('6faa94f318aa24a767fa53991eecccfc98ce888237ad3fb89b6b0c151b12d1e28d17ccf3119a3552150e97f0f99a325e36349d94edfe79947d7dbfcff2358307')
 
 SAMPLE = 'cHNidP8BAFICAAAAAZ38ZijCbFiZ/hvT3DOGZb/VXXraEPYiCXPfLTht7BJ2AAAAAAD/////AfA9zR0AAAAAFgAUezoAv9wU0neVwrdJAdCdpu8TNXkAAAAATwEENYfPAto/0AiAAAAAlwSLGtBEWx7IJ1UXcnyHtOTrwYogP/oPlMAVZr046QADUbdDiH7h1A3DKmBDck8tZFmztaTXPa7I+64EcvO8Q+IM2QxqT64AAIAAAACATwEENYfPAto/0AiAAAABuQRSQnE5zXjCz/JES+NTzVhgXj5RMoXlKLQH+uP2FzUD0wpel8itvFV9rCrZp+OcFyLrrGnmaLbyZnzB1nHIPKsM2QxqT64AAIABAACAAAEBKwBlzR0AAAAAIgAgLFSGEmxJeAeagU4TcV1l82RZ5NbMre0mbQUIZFuvpjIBBUdSIQKdoSzbWyNWkrkVNq/v5ckcOrlHPY5DtTODarRWKZyIcSEDNys0I07Xz5wf6l0F1EFVeSe+lUKxYusC4ass6AIkwAtSriIGAp2hLNtbI1aSuRU2r+/lyRw6uUc9jkO1M4NqtFYpnIhxENkMak+uAACAAAAAgAAAAAAiBgM3KzQjTtfPnB/qXQXUQVV5J76VQrFi6wLhqyzoAiTACxDZDGpPrgAAgAEAAIAAAAAAACICA57/H1R6HV+S36K6evaslxpL0DukpzSwMVaiVritOh75EO3kXMUAAACAAAAAgAEAAIAA'
 SAMPLE_V2 = 'cHNidP8BAgR7AAAAAQQBAQEFAQEB+wQCAAAAAAEOIAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gAQ8EAAAAAAABAwiH1hIAAAAAAAEEIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
@@ -332,6 +333,9 @@ class PSBTTests(unittest.TestCase):
         dummy_sig_none = SIG_BYTES + bytearray(b'\x02') # SIGHASH_NONE
         dummy_sig_acp = SIG_BYTES + bytearray(b'\x80')  # SIGHASH_ANYONECANPAY
         dummy_sig_sacp = SIG_BYTES + bytearray(b'\x83') # SIGHASH_SINGLE|SIGHASH_ANYONECANPAY
+        dummy_sig_tap_default = TAPROOT_SIG_BYTES # SIGHASH_DEFAULT
+        dummy_sig_tap_all = TAPROOT_SIG_BYTES + bytearray(b'\x01') # SIGHASH_ALL
+        dummy_sig_tap_single = TAPROOT_SIG_BYTES + bytearray(b'\x03') # SIGHASH_SINGLE
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
@@ -480,6 +484,12 @@ class PSBTTests(unittest.TestCase):
             psbt_set_input_signatures(p, 0, empty_signatures)
             self._try_get_set_i(psbt_set_input_sighash, None,
                                 psbt_get_input_sighash, p, 0xff) # FIXME 0x100 as invalid_value should fail
+            for sig_type in [dummy_sig_tap_default, dummy_sig_tap_all, dummy_sig_tap_single]:
+                psbt_set_input_taproot_signature(p, 0, sig_type)
+                self.assertEqual(psbt_get_input_taproot_signature(p, 0), sig_type)
+            self._try_get_set_b(psbt_set_input_taproot_signature,
+                                psbt_get_input_taproot_signature,
+                                None, psbt, dummy_sig_tap_default)
 
         #
         # Inputs: PSBT V2

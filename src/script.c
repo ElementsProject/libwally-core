@@ -369,6 +369,48 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     return bytes_len == 2;
 }
 
+static bool scriptpubkey_is_csv_2of2_then_1(const unsigned char *bytes, size_t bytes_len)
+{
+    const size_t min_len = 9 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 2;
+    size_t csv_len;
+
+    if (bytes_len < min_len || bytes_len > min_len + 2)
+        return false;
+    if (bytes[0] != OP_DEPTH || bytes[1] != OP_1SUB ||
+        bytes[2] != OP_IF || bytes[3] != EC_PUBLIC_KEY_LEN ||
+        bytes[EC_PUBLIC_KEY_LEN + 4] != OP_CHECKSIGVERIFY ||
+        bytes[EC_PUBLIC_KEY_LEN + 5] != OP_ELSE)
+        return false;
+    csv_len = bytes[EC_PUBLIC_KEY_LEN + 6];
+    if (csv_len < 1 || csv_len > 4 || bytes_len != min_len - 1 + csv_len)
+        return false;
+    bytes += EC_PUBLIC_KEY_LEN + 6 + 1 + csv_len;
+    return bytes[0] == OP_CHECKSEQUENCEVERIFY && bytes[1] == OP_DROP &&
+        bytes[2] == OP_ENDIF && bytes[3] == EC_PUBLIC_KEY_LEN &&
+        bytes[EC_PUBLIC_KEY_LEN + 4] == OP_CHECKSIG;
+}
+
+static bool scriptpubkey_is_csv_2of2_then_1_opt(const unsigned char *bytes, size_t bytes_len)
+{
+    const size_t min_len = 6 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 2;
+    size_t csv_len;
+
+    if (bytes_len < min_len || bytes_len > min_len + 2)
+        return false;
+    if (bytes[0] != EC_PUBLIC_KEY_LEN ||
+        bytes[EC_PUBLIC_KEY_LEN + 1] != OP_CHECKSIGVERIFY ||
+        bytes[EC_PUBLIC_KEY_LEN + 2] != EC_PUBLIC_KEY_LEN)
+        return false;
+    bytes += EC_PUBLIC_KEY_LEN * 2 + 3;
+    if (bytes[0] != OP_CHECKSIG || bytes[1] != OP_IFDUP || bytes[2] != OP_NOTIF)
+        return false;
+    csv_len = bytes[3];
+    if (csv_len < 1 || csv_len > 4 || bytes_len != min_len - 1 + csv_len)
+        return false;
+    bytes += 4 + csv_len;
+    return bytes[0] == OP_CHECKSEQUENCEVERIFY && bytes[1] == OP_ENDIF;
+}
+
 int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
                                 size_t *written)
 {
@@ -385,6 +427,16 @@ int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
 
     if (scriptpubkey_is_multisig(bytes, bytes_len)) {
         *written = WALLY_SCRIPT_TYPE_MULTISIG;
+        return WALLY_OK;
+    }
+
+    if (scriptpubkey_is_csv_2of2_then_1(bytes, bytes_len)) {
+        *written = WALLY_SCRIPT_TYPE_CSV2OF2_1;
+        return WALLY_OK;
+    }
+
+    if (scriptpubkey_is_csv_2of2_then_1_opt(bytes, bytes_len)) {
+        *written = WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT;
         return WALLY_OK;
     }
 
@@ -523,7 +575,7 @@ int wally_scriptpubkey_op_return_from_bytes(
     if (written)
         *written = 0;
 
-    if (bytes_len > WALLY_MAX_OP_RETURN_LEN || flags || !bytes_out || !len)
+    if (bytes_len > WALLY_MAX_OP_RETURN_LEN || flags || !bytes_out || !len || !written)
         return WALLY_EINVAL;
 
     ret = wally_script_push_from_bytes(bytes, bytes_len, flags,
@@ -774,72 +826,6 @@ int wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(
     bytes_out += scriptint_to_bytes(csv_blocks, bytes_out);
     *bytes_out++ = OP_CHECKSEQUENCEVERIFY;
     *bytes_out++ = OP_ENDIF;
-
-    *written = script_len;
-    return WALLY_OK;
-}
-
-int wally_scriptpubkey_csv_2of3_then_2_from_bytes(
-    const unsigned char *bytes, size_t bytes_len, uint32_t csv_blocks,
-    uint32_t flags, unsigned char *bytes_out, size_t len, size_t *written)
-{
-    size_t csv_len = scriptint_get_length(csv_blocks);
-    size_t script_len = 3 * (EC_PUBLIC_KEY_LEN + 1) + 13 + 1 + csv_len; /* 1 for push */
-
-    if (written)
-        *written = 0;
-
-    if (!bytes || bytes_len != 3 * EC_PUBLIC_KEY_LEN ||
-        csv_blocks < 17 || csv_blocks > 0xffff || flags || !bytes_out || !written)
-        return WALLY_EINVAL;
-
-    if (len < script_len) {
-        *written = script_len;
-        return WALLY_OK;
-    }
-
-    /* The script we create is:
-     *     OP_DEPTH OP_1SUB OP_1SUB
-     *     OP_IF
-     *       # The stack contains 3 items, a dummy push for the off-by-one bug
-     *       # in OP_CHECKMULTISIG, and any 2 of the 3 signatures.
-     *       OP_2 <main_pubkey>
-     *     OP_ELSE
-     *       # The stack contains a dummy push as above, and either of the
-     *       # recovery signatures.
-     *       <csv_blocks> OP_CHECKSEQUENCEVERIFY OP_DROP
-     *       # Note OP_0 is a dummy pubkey that can't match any signature. This
-     *       # allows us to share the final OP_3 OP_CHECKMULTISIGVERIFY case
-     *       # thus reducing the size of the script.
-     *       OP_1 OP_0
-     *     OP_ENDIF
-     *     # Shared code to check the signatures provided
-     *     <recovery_pubkey> <recovery_pubkey_2> OP_3 OP_CHECKMULTISIG
-     */
-    *bytes_out++ = OP_DEPTH;
-    *bytes_out++ = OP_1SUB;
-    *bytes_out++ = OP_1SUB;
-    *bytes_out++ = OP_IF;
-    *bytes_out++ = OP_2;
-    *bytes_out++ = EC_PUBLIC_KEY_LEN;
-    memcpy(bytes_out, bytes, EC_PUBLIC_KEY_LEN);
-    bytes_out += EC_PUBLIC_KEY_LEN;
-    *bytes_out++ = OP_ELSE;
-    *bytes_out++ = csv_len & 0xff;
-    bytes_out += scriptint_to_bytes(csv_blocks, bytes_out);
-    *bytes_out++ = OP_CHECKSEQUENCEVERIFY;
-    *bytes_out++ = OP_DROP;
-    *bytes_out++ = OP_1;
-    *bytes_out++ = OP_0;
-    *bytes_out++ = OP_ENDIF;
-    *bytes_out++ = EC_PUBLIC_KEY_LEN;
-    memcpy(bytes_out, bytes + EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN);
-    bytes_out += EC_PUBLIC_KEY_LEN;
-    *bytes_out++ = EC_PUBLIC_KEY_LEN;
-    memcpy(bytes_out, bytes + EC_PUBLIC_KEY_LEN * 2, EC_PUBLIC_KEY_LEN);
-    bytes_out += EC_PUBLIC_KEY_LEN;
-    *bytes_out++ = OP_3;
-    *bytes_out++ = OP_CHECKMULTISIG;
 
     *written = script_len;
     return WALLY_OK;
@@ -1246,6 +1232,29 @@ int wally_witness_p2wpkh_from_sig(
             return WALLY_ERROR; /* Required length mismatch, should not happen! */
         ret = scriptsig_to_witness(buff, written, witness);
     }
+    return ret;
+}
+
+int wally_witness_p2tr_from_sig(const unsigned char *sig, size_t sig_len,
+                                struct wally_tx_witness_stack **witness)
+{
+    int ret;
+
+    if (witness)
+        *witness = NULL;
+
+    /* Required to be a valid BIP340 length of 64 + possible sighash flag */
+    if (!sig || (sig_len != 64 && sig_len != 65) || !witness)
+        return WALLY_EINVAL;
+
+    if ((ret = wally_tx_witness_stack_init_alloc(1, witness)) == WALLY_OK) {
+        ret = wally_tx_witness_stack_add(*witness, sig, sig_len);
+        if (ret != WALLY_OK) {
+            wally_tx_witness_stack_free(*witness);
+            *witness = NULL;
+        }
+    }
+
     return ret;
 }
 
