@@ -111,4 +111,13 @@ int map_add_preimage_and_hash(struct wally_map *map_in,
 const struct wally_map_item *map_find_equal_integer(const struct wally_map *lhs,
                                                     const struct wally_map *rhs,
                                                     uint32_t key);
+
+/* Clamp input/output allocation sizing to standard tx sizes for BTC.
+ * Liquid numbers are smaller; we use the upper limit */
+#define TX_MAX_INPUTS_ALLOC 1738u
+#define TX_MAX_OUTPUTS_ALLOC 3224u
+
+/* Clamp initial witness stack allocation sizing */
+#define MAX_WITNESS_ITEMS_ALLOC 100u /* Non-Taproot standardness limit */
+
 #endif /* LIBWALLY_INTERNAL_H */

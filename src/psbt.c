@@ -1096,10 +1096,16 @@ static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outpu
         return WALLY_EINVAL;
 #endif /* BUILD_ELEMENTS */
 
-    if (num_inputs)
+    if (num_inputs) {
+        if (num_inputs > TX_MAX_INPUTS_ALLOC)
+            num_inputs = TX_MAX_INPUTS_ALLOC;
         psbt_out->inputs = wally_calloc(num_inputs * sizeof(struct wally_psbt_input));
-    if (num_outputs)
+    }
+    if (num_outputs) {
+        if (num_outputs > TX_MAX_OUTPUTS_ALLOC)
+            num_outputs = TX_MAX_OUTPUTS_ALLOC;
         psbt_out->outputs = wally_calloc(num_outputs * sizeof(struct wally_psbt_output));
+    }
 
     ret = wally_map_init(num_unknowns, NULL, &psbt_out->unknowns);
     if (ret == WALLY_OK)

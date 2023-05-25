@@ -196,6 +196,8 @@ int wally_tx_witness_stack_init_alloc(size_t allocation_len,
     OUTPUT_ALLOC(struct wally_tx_witness_stack);
 
     if (allocation_len) {
+        if (allocation_len > MAX_WITNESS_ITEMS_ALLOC)
+            allocation_len = MAX_WITNESS_ITEMS_ALLOC;
         (*output)->items = wally_calloc(allocation_len * sizeof(struct wally_tx_witness_item));
         if (!(*output)->items) {
             wally_free(*output);
@@ -1090,10 +1092,16 @@ int wally_tx_init_alloc(uint32_t version, uint32_t locktime,
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_tx);
 
-    if (inputs_allocation_len)
+    if (inputs_allocation_len) {
+        if (inputs_allocation_len > TX_MAX_INPUTS_ALLOC)
+            inputs_allocation_len = TX_MAX_INPUTS_ALLOC;
         new_inputs = wally_calloc(inputs_allocation_len * sizeof(struct wally_tx_input));
-    if (outputs_allocation_len)
+    }
+    if (outputs_allocation_len) {
+        if (outputs_allocation_len > TX_MAX_OUTPUTS_ALLOC)
+            outputs_allocation_len = TX_MAX_OUTPUTS_ALLOC;
         new_outputs = wally_calloc(outputs_allocation_len * sizeof(struct wally_tx_output));
+    }
     if ((inputs_allocation_len && !new_inputs) ||
         (outputs_allocation_len && !new_outputs)) {
         wally_free(new_inputs);
