@@ -53,8 +53,8 @@ struct ext_key;
  * Create a segwit native address from a v0 or later witness program.
  *
  * :param bytes: Witness program bytes, including the version and data push opcode.
- * :param bytes_len: Length of ``bytes`` in bytes. Must be `HASH160_LEN`
- *|    or `SHA256_LEN` for v0 witness programs.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be `HASH160_LEN` + 2
+ *|    or `SHA256_LEN` + 2 for v0 witness programs.
  * :param addr_family: Address family to generate, e.g. "bc" or "tb".
  * :param flags: For future use. Must be 0.
  * :param output: Destination for the resulting segwit native address string.
