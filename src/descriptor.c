@@ -2357,26 +2357,7 @@ static int node_generation_size(const ms_node *node, size_t *total)
         default:
             return WALLY_ERROR; /* Should not happen! */
         }
-
-        for (i = strlen(node->wrapper_str); i != 0; --i) {
-            switch(node->wrapper_str[i - 1]) {
-            case 's': case 'c': case 't': case 'n': case 'v':
-                *total += 1; /* max: 'v' can can be 0 or 1 */
-                break;
-            case 'a':
-                *total += 2;
-                break;
-            case 'd':
-                *total += 3;
-                break;
-            case 'j': case 'l': case 'u':
-                *total += 4;
-                break;
-            }
-        }
-        return WALLY_OK;
-    }
-    if (node->kind == KIND_NUMBER) {
+    } else if (node->kind == KIND_NUMBER) {
         if (node->number >= -1 && node->number <= 16)
             *total += 1;
         else
@@ -2392,6 +2373,23 @@ static int node_generation_size(const ms_node *node, size_t *total)
             *total += EC_PUBLIC_KEY_LEN;
     } else
         return WALLY_ERROR; /* Should not happen */
+
+    for (i = 0; i < strlen(node->wrapper_str); ++i) {
+        switch(node->wrapper_str[i]) {
+        case 's': case 'c': case 't': case 'n': case 'v':
+            *total += 1; /* max: 'v' can can be 0 or 1 */
+            break;
+        case 'a':
+            *total += 2;
+            break;
+        case 'd':
+            *total += 3;
+            break;
+        case 'j': case 'l': case 'u':
+            *total += 4;
+            break;
+        }
+    }
     return WALLY_OK;
 }
 
