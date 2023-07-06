@@ -1801,26 +1801,16 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     int ret = WALLY_EINVAL;
-    size_t output_len;
+    size_t output_len = *written;
 
     if (node->builtin) {
-        output_len = *written;
         ret = builtin_get(node)->generate_fn(ctx, node, script, script_len, &output_len);
-        if (ret == WALLY_OK) {
-            ret = generate_wrappers(node, script, script_len, &output_len);
-            if (ret == WALLY_OK)
-                *written = output_len;
-        }
-        return ret;
-    }
-
-    /* value data */
-    if (node->kind == KIND_NUMBER) {
-        ret = generate_number(node->number, node->parent, script, script_len, written);
+    } else if (node->kind == KIND_NUMBER) {
+        ret = generate_number(node->number, node->parent, script, script_len, &output_len);
     } else if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY) {
         if (node->data_len <= script_len)
             memcpy(script, node->data, node->data_len);
-        *written = node->data_len;
+        output_len = node->data_len;
         ret = WALLY_OK;
     } else if (node->kind == KIND_PRIVATE_KEY) {
         unsigned char pubkey[EC_PUBLIC_KEY_LEN];
@@ -1828,57 +1818,61 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
                                                    pubkey, sizeof(pubkey));
         if (ret == WALLY_OK) {
             if (node->flags & NF_IS_UNCOMPRESSED) {
-                *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-                if (*written <= script_len)
+                output_len = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+                if (output_len <= script_len)
                     ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
                                                          EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
             } else {
                 if (node->flags & NF_IS_XONLY) {
-                    *written = EC_XONLY_PUBLIC_KEY_LEN;
-                    if (*written <= script_len)
+                    output_len = EC_XONLY_PUBLIC_KEY_LEN;
+                    if (output_len <= script_len)
                         memcpy(script, &pubkey[1], EC_XONLY_PUBLIC_KEY_LEN);
                 } else {
-                    *written = EC_PUBLIC_KEY_LEN;
-                    if (*written <= script_len)
+                    output_len = EC_PUBLIC_KEY_LEN;
+                    if (output_len <= script_len)
                         memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
                 }
             }
         }
     } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
-        struct ext_key master;
+        output_len = node->flags & NF_IS_XONLY ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
+        if (output_len > script_len) {
+            ret = WALLY_OK; /* Return required length without writing */
+        } else {
+            struct ext_key master;
 
-        *written = node->flags & NF_IS_XONLY ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
-        if (*written > script_len)
-            return WALLY_OK;
+            ret = bip32_key_from_base58_n(node->data, node->data_len, &master);
+            if (ret == WALLY_OK && node->child_path_len) {
+                size_t path_len;
+                const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
+                                       BIP32_FLAG_STR_BARE |
+                                       BIP32_FLAG_STR_MULTIPATH;
+                const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH |
+                                              BIP32_FLAG_KEY_PUBLIC;
+                const bool is_ranged = node->flags & NF_IS_RANGED;
+                const bool is_multi = node->flags & NF_IS_MULTI;
+                struct ext_key derived;
 
-        if ((ret = bip32_key_from_base58_n(node->data, node->data_len, &master)) != WALLY_OK)
-            return ret;
-
-        if (node->child_path_len) {
-            size_t path_len;
-            const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
-                                   BIP32_FLAG_STR_BARE |
-                                   BIP32_FLAG_STR_MULTIPATH;
-            const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH |
-                                          BIP32_FLAG_KEY_PUBLIC;
-            const bool is_ranged = node->flags & NF_IS_RANGED;
-            const bool is_multi = node->flags & NF_IS_MULTI;
-            struct ext_key derived;
-
-            ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
-                                        is_ranged ? ctx->child_num : 0,
-                                        is_multi ? ctx->multi_index : 0,
-                                        flags, ctx->path_buff, ctx->max_path_elems,
-                                        &path_len);
+                ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
+                                            is_ranged ? ctx->child_num : 0,
+                                            is_multi ? ctx->multi_index : 0,
+                                            flags, ctx->path_buff, ctx->max_path_elems,
+                                            &path_len);
+                if (ret == WALLY_OK)
+                    ret = bip32_key_from_parent_path(&master, ctx->path_buff, path_len,
+                                                     derive_flags, &derived);
+                if (ret == WALLY_OK)
+                    memcpy(&master, &derived, sizeof(master));
+            }
             if (ret == WALLY_OK)
-                ret = bip32_key_from_parent_path(&master, ctx->path_buff, path_len,
-                                                 derive_flags, &derived);
-            if (ret == WALLY_OK)
-                memcpy(&master, &derived, sizeof(master));
+                memcpy(script, master.pub_key + ((node->flags & NF_IS_XONLY) ? 1 : 0), output_len);
+            wally_clear(&master, sizeof(master));
         }
+    }
+    if (ret == WALLY_OK) {
+        ret = generate_wrappers(node, script, script_len, &output_len);
         if (ret == WALLY_OK)
-            memcpy(script, master.pub_key + ((node->flags & NF_IS_XONLY) ? 1 : 0), *written);
-        wally_clear(&master, sizeof(master));
+            *written = output_len;
     }
     return ret;
 }
