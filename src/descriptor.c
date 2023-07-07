@@ -2207,6 +2207,12 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
             seen_indent = true;
         } else if (str[i] == '#') {
             if (i - offset != 0) {
+                if (!node->builtin && node->wrapper_str[0] &&
+                    i - offset == strlen(node->wrapper_str)) {
+                    /* wrapper:value followed by checksum */
+                    str_len -= (DESCRIPTOR_CHECKSUM_LENGTH + 1);
+                    break;
+                }
                 ret = WALLY_EINVAL; /* Garbage before checksum */
                 break;
             }
@@ -2231,8 +2237,12 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         }
     }
 
-    if (ret == WALLY_OK && !seen_indent)
-        ret = analyze_miniscript_value(ctx, str, str_len, flags, node, parent);
+    if (ret == WALLY_OK && !seen_indent) {
+        /* A constant value. Parse it ignoring any already added wrappers */
+        offset = node->wrapper_str[0] ? strlen(node->wrapper_str) + 1 : 0;
+        ret = analyze_miniscript_value(ctx, str + offset, str_len - offset,
+                                       flags, node, parent);
+    }
 
     if (ret == WALLY_OK && node->builtin) {
         const uint32_t expected_children = builtin_get(node)->child_count;

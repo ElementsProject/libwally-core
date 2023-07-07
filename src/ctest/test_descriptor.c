@@ -731,6 +731,12 @@ static const struct descriptor_test {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         NULL,
         ""
+    }, {
+        "miniscript - Unknown wrapper type",
+        "z:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
     },
     /*
      * Miniscript: BOLT examples
@@ -829,6 +835,31 @@ static const struct descriptor_test {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
         "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
         ""
+    },
+    /*
+     * Ledger 'a' wrapper vulnerability:
+     * See https://wizardsardine.com/blog/ledger-vulnerability-disclosure/
+     */
+    {
+        "miniscript - Ledger 'a' wrapper bug (outside a built-in)",
+        "a:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6b516c", /* OP_TOALTSTACK 1 OP_FROMALTSTACK */
+        "7yjru3ju"
+    },
+    {
+        "miniscript - Ledger 'a' wrapper bug (interior arg of a built-in)",
+        "and_b(a:1,pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6b516c210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac9a",
+        "c27u392r"
+    },
+    {
+        "miniscript - Ledger 'a' wrapper bug (final arg of built-in)",
+        "and_b(pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),a:1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac6b516c9a",
+        "cj9s6y5g"
     },
     /* Multi-path */
     {
