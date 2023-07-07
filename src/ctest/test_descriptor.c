@@ -321,6 +321,12 @@ static const struct descriptor_test {
         "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
         "8kzm8txf"
     },{
+        "descriptor - empty raw",
+        "raw()",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "",
+        "58lrscpx"
+    }, {
         "descriptor - raw-checksum",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
@@ -1046,6 +1052,10 @@ static const struct descriptor_test {
     },{
         "descriptor errchk - xprivkey - unmatch network5",
         "wpkh(mainnet_xpriv)",
+        WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor errchk - addr - empty addr",
+        "addr()",
         WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor errchk - addr - unmatch network1",

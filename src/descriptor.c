@@ -611,8 +611,11 @@ static int verify_addr(ms_ctx *ctx, ms_node *node)
 
 static int verify_raw(ms_ctx *ctx, ms_node *node)
 {
+    const uint32_t child_count = node_get_child_count(node);
     (void)ctx;
-    if (node->parent || node->child->builtin || !(node->child->kind & KIND_RAW))
+    if (node->parent || child_count > 1)
+        return WALLY_EINVAL;
+    if (child_count && (node->child->builtin || !(node->child->kind & KIND_RAW)))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
@@ -1275,9 +1278,15 @@ static int generate_raw(ms_ctx *ctx, ms_node *node,
                         unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
-    if (!node->child || !script_len || !node_is_root(node))
+    if (!script_len || !node_is_root(node))
         return WALLY_EINVAL;
-
+    if (!node->child) {
+        if (node->kind == KIND_DESCRIPTOR_RAW) {
+            *written = 0; /* raw() - empty script */
+            return WALLY_OK;
+        }
+        return WALLY_EINVAL; /* addr() is not valid */
+    }
     ret = generate_script(ctx, node->child, script, script_len, written);
     return *written > REDEEM_SCRIPT_MAX_SIZE ?  WALLY_EINVAL : ret;
 }
@@ -1689,7 +1698,7 @@ static const struct ms_builtin_t g_builtins[] = {
         I_NAME("raw"),
         KIND_DESCRIPTOR_RAW,
         TYPE_NONE,
-        1, verify_raw, generate_raw
+        0xffffffff, verify_raw, generate_raw
     },
     /* miniscript */
     {
@@ -2222,7 +2231,8 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         }
 
         if (copy_child) {
-            if ((ret = analyze_miniscript(ctx, str + child_offset, i - child_offset,
+            if (i - child_offset &&
+                (ret = analyze_miniscript(ctx, str + child_offset, i - child_offset,
                                           kind, flags, prev_child,
                                           node, &child)) != WALLY_OK)
                 break;
