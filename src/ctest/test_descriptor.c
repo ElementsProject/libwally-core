@@ -815,6 +815,69 @@ static const struct descriptor_test {
         ""
     },
     /*
+     * Wrappers ('a' case and positioning is handled below)
+     */
+    {
+        /* NOTE: Core generates "OP_SWAP 1", but "1" is not type O and so
+         * should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * s:X requires X is Bo
+         */
+        "miniscript - 's' wrapper",
+        "s:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        /* NOTE: Core generates "1 OP_CHECKSIG", but "1" is not type K and so
+         * should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * c:X requires X is K
+         */
+        "miniscript - 'c' wrapper",
+        "c:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        /* NOTE: Core generates "1 1", but "1" is not type V and so
+         * should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * t:X == and_v(X,1) requires X is V
+         */
+        "miniscript - 't' wrapper",
+        "t:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        /* NOTE: Core generates "OP_DUP OP_IF 1 OP_ENDIF", but "1" is not type
+         * V and so should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * d:X requires X is Vz
+         */
+        "miniscript - 'd' wrapper",
+        "d:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        "miniscript - 'v' wrapper",
+        "v:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "5169", /* 1 OP_VERIFY */
+        "zd904w4w"
+    },
+    {
+        /* NOTE: Core generates "OP_SIZE OP_0NOTEQUAL OP_IF 1 OP_ENDIF", but
+         * "1" is not type Bn and so should be invalid according
+         * to https://bitcoin.sipa.be/miniscript/:
+         * j:X requires X is Bn
+         */
+        "miniscript - 'j' wrapper",
+        "j:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        "miniscript - 'n' wrapper",
+        "n:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "5192", /* 1 OP_0NOTEQUAL */
+        "d959hk4q"
+    },
+    /*
      * Taproot cases
      */
     {
