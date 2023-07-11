@@ -414,6 +414,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %ignore bip32_key_with_tweak_from_parent_path;
 %ignore wally_map_init;
 %ignore wally_psbt_blind;
+%ignore wally_psbt_get_input_best_utxo;
 %ignore wally_tx_elements_output_init;
 %ignore wally_tx_output_clone;
 %ignore wally_tx_output_init;

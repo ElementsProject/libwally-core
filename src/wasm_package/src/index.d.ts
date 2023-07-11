@@ -279,6 +279,7 @@ export function psbt_get_input_amount_rangeproof_len(psbt: Ref_wally_psbt, index
 export function psbt_get_input_asset_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_asset_surjectionproof_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_best_utxo(psbt: Ref_wally_psbt, index: number): Ref_wally_tx_output;
+export function psbt_get_input_best_utxo_noalloc(psbt: Ref_wally_psbt, index: number): Ref_wally_tx_output;
 export function psbt_get_input_bip32_key_from(psbt: Ref_wally_psbt, index: number, subindex: number, flags: number, hdkey: Ref_ext_key): Ref_ext_key;
 export function psbt_get_input_final_scriptsig_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_input_final_witness(psbt: Ref_wally_psbt, index: number): Ref_wally_tx_witness_stack;

@@ -5284,14 +5284,23 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 
 PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
-int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index,
-                                         struct wally_tx_output **output)
+int wally_psbt_get_input_best_utxo(const struct wally_psbt *psbt, size_t index,
+                                   const struct wally_tx_output **output)
 {
     const struct wally_psbt_input *p = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = p ? utxo_from_input(psbt, p) : NULL;
     if (output) *output = NULL;
     if (!utxo || !output) return WALLY_EINVAL;
-    return wally_tx_output_clone_alloc(utxo, output);
+    *output = utxo;
+    return WALLY_OK;
+}
+int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index,
+                                         struct wally_tx_output **output)
+{
+    int ret = wally_psbt_get_input_best_utxo(psbt, index, (const struct wally_tx_output **)output);
+    if (ret == WALLY_OK)
+        ret = wally_tx_output_clone_alloc(*output, output);
+    return ret;
 }
 PSBT_FIELD(input, redeem_script, PSBT_0)
 PSBT_FIELD(input, witness_script, PSBT_0)

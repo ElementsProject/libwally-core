@@ -327,6 +327,7 @@ export const psbt_get_input_amount_rangeproof_len = wrap('wally_psbt_get_input_a
 export const psbt_get_input_asset_len = wrap('wally_psbt_get_input_asset_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_asset_surjectionproof_len = wrap('wally_psbt_get_input_asset_surjectionproof_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_best_utxo = wrap('wally_psbt_get_input_best_utxo_alloc', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
+export const psbt_get_input_best_utxo_noalloc = wrap('wally_psbt_get_input_best_utxo', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_get_input_bip32_key_from = wrap('wally_psbt_get_input_bip32_key_from_alloc', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.OpaqueRef, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_get_input_final_scriptsig_len = wrap('wally_psbt_get_input_final_scriptsig_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_final_witness = wrap('wally_psbt_get_input_final_witness_alloc', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);

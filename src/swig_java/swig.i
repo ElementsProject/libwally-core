@@ -1171,6 +1171,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 
 /* FIXME: Add or auto-ignore these */
 %ignore wally_keypath_xonly_public_key_verify;
+%ignore wally_psbt_get_input_best_utxo;
 %ignore wally_psbt_input_set_previous_txid;
 %ignore wally_psbt_input_set_output_index;
 %ignore wally_psbt_input_set_sequence;

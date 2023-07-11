@@ -31,6 +31,9 @@ WALLY_CORE_API int wally_psbt_get_pset_modifiable_flags(const struct wally_psbt 
 WALLY_CORE_API int wally_psbt_get_input_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx **output);
 WALLY_CORE_API int wally_psbt_get_input_witness_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx_output **output);
 /* Returns the witness UTXO if present, otherwise the correct output from the non-witness UTXO tx */
+#ifndef SWIG
+WALLY_CORE_API int wally_psbt_get_input_best_utxo(const struct wally_psbt *psbt, size_t index, const struct wally_tx_output **output);
+#endif
 WALLY_CORE_API int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx_output **output);
 WALLY_CORE_API int wally_psbt_get_input_redeem_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_redeem_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
