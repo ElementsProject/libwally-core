@@ -310,6 +310,7 @@ export const psbt_finalize_input = wrap('wally_psbt_finalize_input', [T.OpaqueRe
 export const psbt_find_global_scalar = wrap('wally_psbt_find_global_scalar', [T.OpaqueRef, T.Bytes, T.DestPtr(T.Int32)]);
 export const psbt_find_input_keypath = wrap('wally_psbt_find_input_keypath', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);
 export const psbt_find_input_signature = wrap('wally_psbt_find_input_signature', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);
+export const psbt_find_input_spending_utxo = wrap('wally_psbt_find_input_spending_utxo', [T.OpaqueRef, T.Bytes, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_find_input_unknown = wrap('wally_psbt_find_input_unknown', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);
 export const psbt_find_output_keypath = wrap('wally_psbt_find_output_keypath', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);
 export const psbt_find_output_unknown = wrap('wally_psbt_find_output_unknown', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);

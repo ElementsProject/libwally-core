@@ -707,6 +707,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_finalize_input);
 %returns_size_t(wally_psbt_find_input_keypath);
 %returns_size_t(wally_psbt_find_input_signature);
+%returns_size_t(wally_psbt_find_input_spending_utxo);
 %returns_size_t(wally_psbt_find_input_unknown);
 %returns_size_t(wally_psbt_find_output_keypath);
 %returns_size_t(wally_psbt_find_output_unknown);

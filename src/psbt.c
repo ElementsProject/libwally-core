@@ -1263,6 +1263,34 @@ int wally_psbt_set_tx_modifiable_flags(struct wally_psbt *psbt, uint32_t flags) 
     return WALLY_OK;
 }
 
+int wally_psbt_find_input_spending_utxo(const struct wally_psbt *psbt,
+                                        const unsigned char *txhash, size_t txhash_len,
+                                        uint32_t utxo_index, size_t *written)
+{
+    size_t i;
+    if (written)
+        *written = 0;
+    if (!psbt_is_valid(psbt) || !txhash || txhash_len != WALLY_TXHASH_LEN ||
+        !written)
+        return WALLY_EINVAL;
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        if (psbt->version == PSBT_0) {
+            const struct wally_tx_input *input = &psbt->tx->inputs[i];
+            if (input->index == utxo_index && !memcmp(input->txhash, txhash, txhash_len)) {
+                *written = i + 1;
+                return WALLY_OK;
+            }
+        } else {
+            const struct wally_psbt_input *input = &psbt->inputs[i];
+            if (input->index == utxo_index && !memcmp(input->txhash, txhash, txhash_len)) {
+                *written = i + 1;
+                return WALLY_OK;
+            }
+        }
+    }
+    return WALLY_OK; /* Not found, return 0 */
+}
+
 #ifdef BUILD_ELEMENTS
 int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written)
 {

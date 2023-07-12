@@ -429,6 +429,7 @@ for f in (
     ('wally_psbt_finalize', c_int, [POINTER(wally_psbt), c_uint32]),
     ('wally_psbt_finalize_input', c_int, [POINTER(wally_psbt), c_size_t, c_uint32]),
     ('wally_psbt_find_global_scalar', c_int, [POINTER(wally_psbt), c_void_p, c_size_t, c_size_t_p]),
+    ('wally_psbt_find_input_spending_utxo', c_int, [POINTER(wally_psbt), c_void_p, c_size_t, c_uint32, c_size_t_p]),
     ('wally_psbt_free', c_int, [POINTER(wally_psbt)]),
     ('wally_psbt_from_base64', c_int, [c_char_p, c_uint32, POINTER(POINTER(wally_psbt))]),
     ('wally_psbt_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, POINTER(POINTER(wally_psbt))]),

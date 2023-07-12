@@ -490,6 +490,16 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_taproot_signature,
                                 psbt_get_input_taproot_signature,
                                 None, psbt, dummy_sig_tap_default)
+            # Test finding the UXTO an input spends by txid/vout
+            utxo_txhash = psbt_get_input_previous_txid(psbt, 0)
+            utxo_index = psbt_get_input_output_index(psbt, 0)
+            for txhash, out_idx, expected in [
+                (utxo_txhash, utxo_index + 30, 0), # utxo_index not found
+                (b'0' * 32,   utxo_index,      0), # txhash not found
+                (utxo_txhash, utxo_index,      1)  # Found
+                ]:
+                found_idx = psbt_find_input_spending_utxo(psbt, txhash, out_idx)
+                self.assertEqual(found_idx, expected)
 
         #
         # Inputs: PSBT V2

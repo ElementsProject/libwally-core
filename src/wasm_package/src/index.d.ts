@@ -262,6 +262,7 @@ export function psbt_finalize_input(psbt: Ref_wally_psbt, index: number, flags: 
 export function psbt_find_global_scalar(psbt: Ref_wally_psbt, scalar: Buffer|Uint8Array): number;
 export function psbt_find_input_keypath(psbt: Ref_wally_psbt, index: number, key: Buffer|Uint8Array): number;
 export function psbt_find_input_signature(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array): number;
+export function psbt_find_input_spending_utxo(psbt: Ref_wally_psbt, txhash: Buffer|Uint8Array, utxo_index: number): number;
 export function psbt_find_input_unknown(psbt: Ref_wally_psbt, index: number, key: Buffer|Uint8Array): number;
 export function psbt_find_output_keypath(psbt: Ref_wally_psbt, index: number, key: Buffer|Uint8Array): number;
 export function psbt_find_output_unknown(psbt: Ref_wally_psbt, index: number, key: Buffer|Uint8Array): number;

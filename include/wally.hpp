@@ -1137,6 +1137,12 @@ inline int psbt_finalize_input(const PSBT& psbt, size_t index, uint32_t flags) {
     return ret;
 }
 
+template <class PSBT, class TXHASH>
+inline int psbt_find_input_spending_utxo(const PSBT& psbt, const TXHASH& txhash, uint32_t utxo_index, size_t* written) {
+    int ret = ::wally_psbt_find_input_spending_utxo(detail::get_p(psbt), txhash.data(), txhash.size(), utxo_index, written);
+    return ret;
+}
+
 inline int psbt_free(struct wally_psbt* psbt) {
     int ret = ::wally_psbt_free(psbt);
     return ret;

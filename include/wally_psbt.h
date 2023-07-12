@@ -2075,6 +2075,24 @@ WALLY_CORE_API int wally_psbt_set_pset_modifiable_flags(
 #endif /* BUILD_ELEMENTS */
 
 /**
+ * Find the index of the PSBT input that spends a given UTXO.
+ *
+ * :param psbt: The PSBT to find in.
+ * :param txhash: The transaction hash of the UTXO to search for.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
+ * :param utxo_index: The zero-based index of the transaction output in ``txhash`` to
+ *|     search for.
+ * :param written: On success, set to zero if no matching input is found, otherwise
+ *|    the index of the matching input plus one.
+ */
+WALLY_CORE_API int wally_psbt_find_input_spending_utxo(
+    const struct wally_psbt *psbt,
+    const unsigned char *txhash,
+    size_t txhash_len,
+    uint32_t utxo_index,
+    size_t *written);
+
+/**
  * Add a taproot keypath to a given PSBT input.
  *
  * :param psbt: The PSBT to add the taproot keypath to.
