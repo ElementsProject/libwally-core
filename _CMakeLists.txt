@@ -7,8 +7,9 @@ project(
   LANGUAGES C
 )
 
-option(BUILD_SHARED_LIBS "Build as shared library" OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(BUILD_SHARED_LIBS "Build as shared library" OFF)
 
 include(cmake/utils.cmake)
 generate_config_file()
@@ -17,6 +18,12 @@ configure_file(src/ccan_config.h ccan_config.h COPYONLY)
 include(cmake/libsecp256k1.cmake)
 
 add_subdirectory(src)
+
+if (CALL_FROM_SETUP_PY)
+    target_compile_definitions(wallycore PRIVATE SWIG_PYTHON_BUILD)
+    add_subdirectory(bindings/python)
+    return()
+endif()
 
 
 ### install directives
@@ -59,3 +66,21 @@ install(EXPORT "wallycore-target"
     FILE "wallycore-targets.cmake"
 )
 
+install(
+    FILES $<TARGET_PROPERTY:libsecp256k1,IMPORTED_LOCATION>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    COMPONENT libsecp256k1
+)
+install(
+    FILES $<TARGET_PROPERTY:libsecp256k1,PUBLIC_HEADER>
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    COMPONENT libsecp256k1
+)
+install(
+    FILES ${INSTALL_DIR}/lib/pkgconfig/libsecp256k1.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT libsecp256k1
+)
+install(SCRIPT ${CMAKE_SOURCE_DIR}/_cmake/libsecp256k1-pkgconfig.cmake
+    COMPONENT libsecp256k1
+)

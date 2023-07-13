@@ -1,0 +1,58 @@
+name: cmake
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-gcc:
+    name: building using cmake and default compiler
+    runs-on: debian-bullseye
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: get cmake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.20"
+      - name: create links of correct file names
+        run: |
+          ln -s _CMakeLists.txt CMakeLists.txt
+          ln -s _cmake cmake
+          ln -s src/_CMakeLists.txt src/CMakeLists.txt
+      - name: configure cmake
+        run: cmake -B build-cmake -S . -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=FALSE -DENABLE_TESTS=TRUE -DENABLE_PYTHON=TRUE
+      - name: build
+        run: cmake --build build-cmake
+
+name: cmake-wheel-build
+
+on: [push, pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, windows-2019, macos-11]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: creating links # this step will be removed once cmake support will become official
+        run: ln -s _CMakeLists.txt CMakeLists.txt
+        run: ln -s src/_CMakeLists.txt src/CMakeLists.txt
+        run: ln -s _cmake cmake
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.15.0
+        with:
+          package-dir: ./bindings/python
+          output-dir: wheelhouse
+          config-file: "pyproject.toml"
+      # - uses: actions/upload-artifact@v3
+      #   with:

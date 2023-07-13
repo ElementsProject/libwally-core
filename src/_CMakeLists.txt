@@ -5,7 +5,7 @@ file(GLOB ccan_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "ccan/ccan/base64/*.[ch]"
     "ccan/ccan/build_assert/*.h"
     "ccan/ccan/compiler/*.h"
-    "ccan/ccan/crypto/sha256/*.[ch]"
+    "ccan/ccan/crypto/sha256/sha256.[ch]"
     "ccan/ccan/crypto/sha512/*.[ch]"
     "ccan/ccan/crypto/ripemd160/*.[ch]"
     "ccan/ccan/endian/*.h"
@@ -16,7 +16,10 @@ file(GLOB wallycore_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.[ch]")
 file(GLOB wallycore_public_headers RELATIVE ${CMAKE_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/include/*.h")
 
 target_sources(wallycore PRIVATE ${ccan_srcs} ${wallycore_srcs})
-set_target_properties(wallycore PROPERTIES PUBLIC_HEADER "${wallycore_public_headers}")
+set_target_properties(wallycore PROPERTIES
+    PUBLIC_HEADER "${wallycore_public_headers}"
+    POSITION_INDEPENDENT_CODE TRUE
+)
 target_include_directories(
     wallycore
     PUBLIC
@@ -27,3 +30,4 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/ccan
 )
+target_link_libraries(wallycore PUBLIC libsecp256k1)
