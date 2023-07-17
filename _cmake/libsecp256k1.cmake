@@ -48,7 +48,6 @@ ExternalProject_Add(libsecp256k1-build
         --prefix <INSTALL_DIR>
         ${_secp_lib_type_option}
         --with-pic
-        --with-bignum=no
         --enable-experimental
         --enable-module-ecdh
         --enable-module-recovery
@@ -59,7 +58,6 @@ ExternalProject_Add(libsecp256k1-build
         --enable-module-generator
         --enable-module-extrakeys
         --enable-module-schnorrsig
-        --enable-openssl-tests=no
         --enable-exhaustive-tests=no
         --enable-benchmark=no
         --disable-dependency-tracking
