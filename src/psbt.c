@@ -5276,7 +5276,7 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
         const struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (output) *output = NULL; \
         if (!p || !output) return WALLY_EINVAL; \
-        return clonefn(p->name, output); \
+        return p->name ? clonefn(p->name, output) : WALLY_OK; \
     }
 
 /* Set a struct on an input/output */
@@ -5318,7 +5318,8 @@ int wally_psbt_get_input_best_utxo(const struct wally_psbt *psbt, size_t index,
     const struct wally_psbt_input *p = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = p ? utxo_from_input(psbt, p) : NULL;
     if (output) *output = NULL;
-    if (!utxo || !output) return WALLY_EINVAL;
+    if (!p || !output)
+        return WALLY_EINVAL;
     *output = utxo;
     return WALLY_OK;
 }
@@ -5327,7 +5328,7 @@ int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t i
 {
     int ret = wally_psbt_get_input_best_utxo(psbt, index, (const struct wally_tx_output **)output);
     if (ret == WALLY_OK)
-        ret = wally_tx_output_clone_alloc(*output, output);
+        ret = *output ? wally_tx_output_clone_alloc(*output, output) : WALLY_OK;
     return ret;
 }
 PSBT_FIELD(input, redeem_script, PSBT_0)

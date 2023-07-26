@@ -414,12 +414,14 @@ class PSBTTests(unittest.TestCase):
         #
         for p in [psbt, psbt2]:
             self._try_set(psbt_set_input_utxo, p, dummy_tx)
+            self.assertEqual(psbt_get_input_utxo(p, 0), None)
             self._try_invalid(psbt_get_input_utxo, p)
             self._try_set(psbt_set_input_witness_utxo, p, dummy_txout)
+            self.assertEqual(psbt_get_input_witness_utxo(p, 0), None)
             self._try_invalid(psbt_get_input_witness_utxo, p)
             # 'best' UTXO: returns witness UTXO or non-witness UTXO if no witness UTXO
             self._try_invalid(psbt_get_input_best_utxo, p)
-            self._throws(psbt_get_input_best_utxo, p, 0) # No UTXO present
+            self.assertEqual(psbt_get_input_best_utxo(p, 0), None) # No UTXO present
             psbt_set_input_utxo(p, 0, dummy_tx)
             psbt_set_input_witness_utxo(p, 0, dummy_txout)
             # With both present, returns the witness UTXO
@@ -433,6 +435,7 @@ class PSBTTests(unittest.TestCase):
                 setfn, getfn, lenfn, hasfn, clearfn = accessors('input', field)
                 self._try_get_set_b(setfn, getfn, lenfn, p, dummy_bytes)
             self._try_set(psbt_set_input_final_witness, p, dummy_witness)
+            self.assertEqual(psbt_get_input_final_witness(p, 0), None)
             self._try_invalid(psbt_get_input_final_witness, p)
             self._try_get_set_m(psbt_set_input_keypaths,
                                 psbt_get_input_keypaths_size,
