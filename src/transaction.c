@@ -3805,13 +3805,21 @@ int wally_tx_clone_alloc(const struct wally_tx *tx, uint32_t flags, struct wally
 
     OUTPUT_CHECK;
 
-    if (!is_valid_tx(tx) || flags != 0)
+    if (!is_valid_tx(tx) || flags & ~WALLY_TX_CLONE_FLAG_NON_FINAL)
         return WALLY_EINVAL;
 
     ret = wally_tx_init_alloc(tx->version, tx->locktime, tx->num_inputs, tx->num_outputs, output);
 
-    for (i = 0; ret == WALLY_OK && i < tx->num_inputs; ++i)
-        ret = wally_tx_add_input(*output, &tx->inputs[i]);
+    for (i = 0; ret == WALLY_OK && i < tx->num_inputs; ++i) {
+        struct wally_tx_input tmp;
+        memcpy(&tmp, &tx->inputs[i], sizeof(tmp));
+        if (flags & WALLY_TX_CLONE_FLAG_NON_FINAL) {
+            tmp.script = NULL;
+            tmp.script_len = 0;
+            tmp.witness = NULL;
+        }
+        ret = wally_tx_add_input(*output, &tmp);
+    }
 
     for (i = 0; ret == WALLY_OK && i < tx->num_outputs; ++i)
         ret = wally_tx_add_output(*output, &tx->outputs[i]);

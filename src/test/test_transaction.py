@@ -76,6 +76,14 @@ class TransactionTests(unittest.TestCase):
             # Check that the txid can be computed
             txid, txid_len = make_cbuffer('00' * 32)
             self.assertEqual(WALLY_OK, wally_tx_get_txid(tx_out, txid, txid_len))
+            # Check the transaction can be cloned without finalization data
+            tx_nf, flag_nf = pointer(wally_tx()), 0x1
+            self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, flag_nf, tx_nf))
+            for i in range(wally_tx_get_num_inputs(tx_copy)[1]):
+                wally_tx_set_input_script(tx_copy, i, None, 0)
+                wally_tx_set_input_witness(tx_copy, i, None)
+            self.assertEqual(utf8(self.tx_serialize_hex(tx_copy)),
+                             utf8(self.tx_serialize_hex(tx_nf)))
 
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""

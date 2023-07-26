@@ -219,6 +219,7 @@ export const WALLY_TX_ASSET_CT_VALUE_PREFIX_A = 0x08;
 export const WALLY_TX_ASSET_CT_VALUE_PREFIX_B = 0x09;
 export const WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN = 9; /* version byte + 8 bytes */
 export const WALLY_TX_ASSET_TAG_LEN = 32;
+export const WALLY_TX_CLONE_FLAG_NON_FINAL = 0x1; /* Ignore scriptsig and witness when cloning */
 export const WALLY_TX_DUMMY_NULL = 0x1; /* An empty witness item */
 export const WALLY_TX_DUMMY_SIG = 0x2; /* A dummy signature */
 export const WALLY_TX_DUMMY_SIG_LOW_R = 0x4; /* A dummy signature created with EC_FLAG_GRIND_R */

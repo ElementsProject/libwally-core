@@ -30,6 +30,9 @@ extern "C" {
 
 #define WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE 0x1
 
+/*** tx-clone Transaction cloning flags */
+#define WALLY_TX_CLONE_FLAG_NON_FINAL 0x1 /* Ignore scriptsig and witness when cloning */
+
 #define WALLY_TX_DUMMY_NULL 0x1 /* An empty witness item */
 #define WALLY_TX_DUMMY_SIG  0x2 /* A dummy signature */
 #define WALLY_TX_DUMMY_SIG_LOW_R  0x4 /* A dummy signature created with EC_FLAG_GRIND_R */
@@ -315,7 +318,7 @@ WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *output);
  * :param locktime: The locktime of the transaction.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
- * :param output: Destination for the resulting transaction output.
+ * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_tx_init_alloc(
     uint32_t version,
@@ -328,7 +331,7 @@ WALLY_CORE_API int wally_tx_init_alloc(
  * Create a new copy of a transaction.
  *
  * :param tx: The transaction to clone.
- * :param flags: Flags controlling transaction creation. Must be 0.
+ * :param flags: :ref:`tx-clone` controlling new transaction creation.
  * :param output: Destination for the resulting transaction copy.
  */
 WALLY_CORE_API int wally_tx_clone_alloc(
