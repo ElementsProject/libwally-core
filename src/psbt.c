@@ -1157,6 +1157,37 @@ int wally_psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_output
     return ret;
 }
 
+int wally_psbt_from_tx(const struct wally_tx *tx, uint32_t version,
+                       uint32_t flags, struct wally_psbt **output)
+{
+    size_t i;
+    int ret;
+
+    if (output)
+        *output = NULL;
+    if (!tx || !output || (version == WALLY_PSBT_VERSION_2 && tx->version < 2u))
+        return WALLY_EINVAL;
+    ret = wally_psbt_init_alloc(version, tx->num_inputs, tx->num_outputs, 0,
+                                flags, output);
+    if (ret == WALLY_OK && version == WALLY_PSBT_VERSION_0)
+        ret = wally_psbt_set_global_tx(*output, tx);
+    else {
+        for (i = 0; ret == WALLY_OK && i < tx->num_inputs; ++i)
+            ret = wally_psbt_add_tx_input_at(*output, i, 0, tx->inputs + i);
+        for (i = 0; ret == WALLY_OK && i < tx->num_outputs; ++i)
+            ret = wally_psbt_add_tx_output_at(*output, i, 0, tx->outputs + i);
+        if (ret == WALLY_OK) {
+            (*output)->tx_version = tx->version;
+            ret = wally_psbt_set_fallback_locktime(*output, tx->locktime);
+        }
+    }
+    if (ret != WALLY_OK) {
+        wally_psbt_free(*output);
+        *output = NULL;
+    }
+    return ret;
+}
+
 static void psbt_claim_allocated_inputs(struct wally_psbt *psbt, size_t num_inputs, size_t num_outputs)
 {
     size_t i;

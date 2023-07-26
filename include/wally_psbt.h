@@ -1884,8 +1884,8 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
- * :param flags: Flags controlling psbt creation. Must be 0 or WALLY_PSBT_INIT_PSET.
- * :param output: Destination for the resulting PSBT output.
+ * :param flags: Flags controlling psbt creation. Must be 0 or `WALLY_PSBT_INIT_PSET`.
+ * :param output: Destination for the resulting PSBT.
  */
 WALLY_CORE_API int wally_psbt_init_alloc(
     uint32_t version,
@@ -2367,6 +2367,23 @@ WALLY_CORE_API int wally_psbt_to_base64(
     const struct wally_psbt *psbt,
     uint32_t flags,
     char **output);
+
+/**
+ * Create a PSBT from an existing transaction.
+ *
+ * :param tx: The transaction to create the PSBT from.
+ * :param version: The PSBT version to create. Must be ``WALLY_PSBT_VERSION_0`` or ``WALLY_PSBT_VERSION_2``.
+ * :param flags: Flags controlling psbt creation. Must be 0 or `WALLY_PSBT_INIT_PSET`.
+ * :param output: Destination for the resulting PSBT.
+ *
+ * .. note:: Any input scriptSigs and witnesses from the transaction's inputs
+ *|    are ignored when creating the PSBT.
+ */
+WALLY_CORE_API int wally_psbt_from_tx(
+    const struct wally_tx *tx,
+    uint32_t version,
+    uint32_t flags,
+    struct wally_psbt **output);
 
 /**
  * Combine the metadata from a source PSBT into another PSBT.

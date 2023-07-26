@@ -730,5 +730,18 @@ class PSBTTests(unittest.TestCase):
             psbt_clear_output_blinding_public_key(pset2, 0)
             self.assertEqual(func(pset2, 0, 0), WALLY_PSET_BLINDED_NONE)
 
+        # psbt_from_tx
+        self._throws(psbt_from_tx, None,     0, 0)    # NULL tx
+        self._throws(psbt_from_tx, dummy_tx, 1, 0)    # Invalid version
+        self._throws(psbt_from_tx, dummy_tx, 0, 0xff) # Unknown flag
+        dummy_tx_hex = tx_to_hex(dummy_tx, 0)
+        for ver in [0, 2]:
+            # Creating a PSBT from a tx then extracting it should return
+            # the same tx
+            p = psbt_from_tx(dummy_tx, ver, 0)
+            tx = psbt_extract(p, WALLY_PSBT_EXTRACT_NON_FINAL)
+            self.assertEqual(dummy_tx_hex, tx_to_hex(tx, 0))
+
+
 if __name__ == '__main__':
     unittest.main()

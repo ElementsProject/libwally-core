@@ -1160,6 +1160,12 @@ inline int psbt_from_bytes(const BYTES& bytes, uint32_t flags, struct wally_psbt
     return ret;
 }
 
+template <class TX>
+inline int psbt_from_tx(const TX& tx, uint32_t version, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_tx(detail::get_p(tx), version, flags, output);
+    return ret;
+}
+
 template <class PSBT, class BYTES_OUT>
 inline int psbt_get_id(const PSBT& psbt, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_psbt_get_id(detail::get_p(psbt), flags, bytes_out.data(), bytes_out.size());

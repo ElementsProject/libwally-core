@@ -198,6 +198,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_free' \
 ,'_wally_psbt_from_base64' \
 ,'_wally_psbt_from_bytes' \
+,'_wally_psbt_from_tx' \
 ,'_wally_psbt_get_fallback_locktime' \
 ,'_wally_psbt_get_global_tx_alloc' \
 ,'_wally_psbt_get_id' \

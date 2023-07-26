@@ -269,6 +269,7 @@ export function psbt_find_output_unknown(psbt: Ref_wally_psbt, index: number, ke
 export function psbt_free(psbt: Ref_wally_psbt): void;
 export function psbt_from_base64(base64: string, flags: number): Ref_wally_psbt;
 export function psbt_from_bytes(bytes: Buffer|Uint8Array, flags: number): Ref_wally_psbt;
+export function psbt_from_tx(tx: Ref_wally_tx, version: number, flags: number): Ref_wally_psbt;
 export function psbt_generate_input_explicit_proofs(psbt: Ref_wally_psbt, index: number, satoshi: bigint, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, entropy: Buffer|Uint8Array): void;
 export function psbt_get_fallback_locktime(psbt: Ref_wally_psbt): number;
 export function psbt_get_global_scalar(psbt: Ref_wally_psbt, index: number): Buffer;
