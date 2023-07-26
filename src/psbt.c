@@ -1379,12 +1379,17 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
     if (!psbt_is_valid(psbt) || !tx || psbt->tx || psbt->version != PSBT_0)
         return WALLY_EINVAL; /* PSBT must be v0 and completely empty */
 
-    for (i = 0; i < tx->num_inputs; ++i)
-        if (tx->inputs[i].script || tx->inputs[i].witness)
-            return WALLY_EINVAL; /* tx mustn't have scriptSigs or witnesses */
-
-    if (do_clone && (ret = tx_clone_alloc(tx, &new_tx)) != WALLY_OK)
-        return ret;
+    if (do_clone) {
+        /* clone without scriptSigs and witnesses */
+        const uint32_t clone_flags = WALLY_TX_CLONE_FLAG_NON_FINAL;
+        if ((ret = wally_tx_clone_alloc(tx, clone_flags, &new_tx)) != WALLY_OK)
+            return ret;
+    } else {
+        /* tx mustn't have scriptSigs or witnesses */
+        for (i = 0; i < tx->num_inputs; ++i)
+            if (tx->inputs[i].script || tx->inputs[i].witness)
+                return WALLY_EINVAL;
+    }
 
     if (psbt->inputs_allocation_len < tx->num_inputs) {
         new_inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
