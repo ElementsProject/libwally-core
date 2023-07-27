@@ -218,6 +218,18 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
     uint32_t flags);
 
 /**
+ * Create a new witness stack from its BIP 144 serialization.
+ *
+ * :param bytes: Bytes to create the witness stack from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param output: Destination for the resulting witness stack.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    struct wally_tx_witness_stack **output);
+
+/**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.
  *
  * :param stack: The transaction witness stack to free.

@@ -698,6 +698,7 @@ export function tx_witness_stack_add(stack: Ref_wally_tx_witness_stack, witness:
 export function tx_witness_stack_add_dummy(stack: Ref_wally_tx_witness_stack, flags: number): void;
 export function tx_witness_stack_clone(stack: Ref_wally_tx_witness_stack): Ref_wally_tx_witness_stack;
 export function tx_witness_stack_free(stack: Ref_wally_tx_witness_stack): void;
+export function tx_witness_stack_from_bytes(bytes: Buffer|Uint8Array): Ref_wally_tx_witness_stack;
 export function tx_witness_stack_init(allocation_len: number): Ref_wally_tx_witness_stack;
 export function tx_witness_stack_set(stack: Ref_wally_tx_witness_stack, index: number, witness: Buffer|Uint8Array): void;
 export function tx_witness_stack_set_dummy(stack: Ref_wally_tx_witness_stack, index: number, flags: number): void;

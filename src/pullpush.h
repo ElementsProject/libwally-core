@@ -1,5 +1,8 @@
 #ifndef LIBWALLY_CORE_PULLPUSH_H
 #define LIBWALLY_CORE_PULLPUSH_H 1
+
+struct wally_tx_witness_stack;
+
 /**
  * Safely copy @len bytes from @src into @cursor.
  *
@@ -70,6 +73,19 @@ void push_varbuff(unsigned char **cursor, size_t *max,
 /* Calls pull_failed() (and returns 0) if length would exceed remaining *max */
 size_t pull_varlength(const unsigned char **cursor, size_t *max);
 
+/* Pull a buffer prefixed by its varlength length */
+void pull_varlength_buff(const unsigned char **cursor, size_t *max,
+                         const unsigned char **dst, size_t *len);
+
+/* Pull a buffer prefixed by its var_int length */
+void pull_varint_buff(const unsigned char **cursor, size_t *max,
+                      const unsigned char **dst, size_t *len);
+
+/* Pull a witness stack from its BIP 144 serialization */
+int pull_witness(const unsigned char **cursor, size_t *max,
+                 struct wally_tx_witness_stack **witness_out,
+                 bool for_psbt);
+
 /**
  * Functions to parse a subfield within an area.
  *
@@ -85,5 +101,10 @@ void pull_subfield_start(const unsigned char *const *cursor, const size_t *max,
 
 void pull_subfield_end(const unsigned char **cursor, size_t *max,
                        const unsigned char *subcursor, size_t submax);
+
+/* Stricter version of pull_subfield_end which insists there's nothing left. */
+void subfield_nomore_end(const unsigned char **cursor, size_t *max,
+                         const unsigned char *subcursor,
+                         const size_t submax);
 
 #endif /* LIBWALLY_CORE_PULLPUSH_H */

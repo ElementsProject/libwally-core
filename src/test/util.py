@@ -690,6 +690,7 @@ for f in (
     ('wally_tx_witness_stack_add_dummy', c_int, [POINTER(wally_tx_witness_stack), c_uint32]),
     ('wally_tx_witness_stack_clone_alloc', c_int, [POINTER(wally_tx_witness_stack), POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_tx_witness_stack_free', c_int, [POINTER(wally_tx_witness_stack)]),
+    ('wally_tx_witness_stack_from_bytes', c_int, [c_void_p, c_size_t, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_tx_witness_stack_init_alloc', c_int, [c_size_t, POINTER(POINTER(wally_tx_witness_stack))]),
     ('wally_tx_witness_stack_set', c_int, [POINTER(wally_tx_witness_stack), c_size_t, c_void_p, c_size_t]),
     ('wally_tx_witness_stack_set_dummy', c_int, [POINTER(wally_tx_witness_stack), c_size_t, c_uint32]),

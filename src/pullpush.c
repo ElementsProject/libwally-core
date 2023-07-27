@@ -6,6 +6,7 @@
 #endif
 #include <limits.h>
 #include "pullpush.h"
+#include <include/wally_transaction.h>
 
 unsigned char *push_bytes(unsigned char **cursor, size_t *max,
                           const void *src, size_t len)
@@ -162,6 +163,21 @@ size_t pull_varlength(const unsigned char **cursor, size_t *max)
     return len;
 }
 
+void pull_varlength_buff(const unsigned char **cursor, size_t *max,
+                         const unsigned char **dst, size_t *len)
+{
+    *len = pull_varlength(cursor, max);
+    *dst = pull_skip(cursor, max, *len);
+}
+
+void pull_varint_buff(const unsigned char **cursor, size_t *max,
+                      const unsigned char **dst, size_t *len)
+{
+    uint64_t varint_len = pull_varint(cursor, max);
+    *len = varint_len;
+    *dst = pull_skip(cursor, max, varint_len);
+}
+
 void pull_subfield_start(const unsigned char *const *cursor, const size_t *max,
                          size_t subfield_len,
                          const unsigned char **subcursor, size_t *submax)
@@ -188,4 +204,56 @@ void pull_subfield_end(const unsigned char **cursor, size_t *max,
             *cursor = subend;
         }
     }
+}
+
+void subfield_nomore_end(const unsigned char **cursor, size_t *max,
+                         const unsigned char *subcursor,
+                         const size_t submax)
+{
+    if (submax)
+        pull_failed(cursor, max);
+    else
+        pull_subfield_end(cursor, max, subcursor, submax);
+}
+
+int pull_witness(const unsigned char **cursor, size_t *max,
+                 struct wally_tx_witness_stack **witness_out,
+                 bool for_psbt)
+{
+    const unsigned char *val;
+    size_t val_len;
+    uint64_t num_witnesses, i;
+    int ret;
+
+    if (*witness_out)
+        return WALLY_EINVAL; /* Duplicate */
+
+    if (for_psbt)
+        pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
+    else {
+        val = *cursor;
+        val_len = *max;
+    }
+    num_witnesses = pull_varint(&val, &val_len);
+    ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness_out);
+
+    for (i = 0; ret == WALLY_OK && i < num_witnesses; ++i) {
+        const unsigned char *wit;
+        size_t wit_len;
+        pull_varint_buff(&val, &val_len, &wit, &wit_len);
+        ret = wally_tx_witness_stack_set(*witness_out, i, wit, wit_len);
+    }
+    if (ret == WALLY_OK) {
+        if (for_psbt) {
+            subfield_nomore_end(cursor, max, val, val_len);
+            if (!*cursor && !*max)
+                ret = WALLY_EINVAL; // Trailing data
+        } else if (!val && !val_len)
+            ret = WALLY_EINVAL; // Trailing data
+    }
+    if (ret != WALLY_OK) {
+        wally_tx_witness_stack_free(*witness_out);
+        *witness_out = NULL;
+    }
+    return ret;
 }

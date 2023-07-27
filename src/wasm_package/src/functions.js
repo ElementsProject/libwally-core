@@ -746,6 +746,7 @@ export const tx_witness_stack_add = wrap('wally_tx_witness_stack_add', [T.Opaque
 export const tx_witness_stack_add_dummy = wrap('wally_tx_witness_stack_add_dummy', [T.OpaqueRef, T.Int32]);
 export const tx_witness_stack_clone = wrap('wally_tx_witness_stack_clone_alloc', [T.OpaqueRef, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_witness_stack_free = wrap('wally_tx_witness_stack_free', [T.OpaqueRef]);
+export const tx_witness_stack_from_bytes = wrap('wally_tx_witness_stack_from_bytes', [T.Bytes, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_witness_stack_init = wrap('wally_tx_witness_stack_init_alloc', [T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const tx_witness_stack_set = wrap('wally_tx_witness_stack_set', [T.OpaqueRef, T.Int32, T.Bytes]);
 export const tx_witness_stack_set_dummy = wrap('wally_tx_witness_stack_set_dummy', [T.OpaqueRef, T.Int32, T.Int32]);

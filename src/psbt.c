@@ -1799,18 +1799,6 @@ int wally_psbt_remove_output(struct wally_psbt *psbt, uint32_t index)
     return ret;
 }
 
-/* Stricter version of pull_subfield_end which insists there's nothing left. */
-static void subfield_nomore_end(const unsigned char **cursor, size_t *max,
-                                const unsigned char *subcursor,
-                                const size_t submax)
-{
-    if (submax) {
-        pull_failed(cursor, max);
-    } else {
-        pull_subfield_end(cursor, max, subcursor, submax);
-    }
-}
-
 static uint8_t pull_u8_subfield(const unsigned char **cursor, size_t *max)
 {
     const unsigned char *val;
@@ -1855,13 +1843,6 @@ static uint64_t pull_varint_subfield(const unsigned char **cursor, size_t *max)
     return ret;
 }
 
-static void pull_varlength_buff(const unsigned char **cursor, size_t *max,
-                                const unsigned char **dst, size_t *len)
-{
-    *len = pull_varlength(cursor, max);
-    *dst = pull_skip(cursor, max, *len);
-}
-
 static int pull_output_varbuf(const unsigned char **cursor, size_t *max,
                               struct wally_psbt_output *output,
                               int (*set_fn)(struct wally_psbt_output *, const unsigned char *, size_t))
@@ -1870,14 +1851,6 @@ static int pull_output_varbuf(const unsigned char **cursor, size_t *max,
     size_t val_len;
     pull_varlength_buff(cursor, max, &val, &val_len);
     return val_len ? set_fn(output, val, val_len) : WALLY_OK;
-}
-
-static void pull_varint_buff(const unsigned char **cursor, size_t *max,
-                             const unsigned char **dst, size_t *len)
-{
-    uint64_t varint_len = pull_varint(cursor, max);
-    *len = varint_len;
-    *dst = pull_skip(cursor, max, varint_len);
 }
 
 static int pull_map_item(const unsigned char **cursor, size_t *max,
@@ -1979,31 +1952,6 @@ static int pull_tx_output(const unsigned char **cursor, size_t *max,
     if (!script || !script_len)
         return WALLY_EINVAL;
     ret = wally_tx_output_init_alloc(satoshi, script, script_len, txout_out);
-    subfield_nomore_end(cursor, max, val, val_len);
-    return ret;
-}
-
-static int pull_witness(const unsigned char **cursor, size_t *max,
-                        struct wally_tx_witness_stack **witness_out)
-{
-    const unsigned char *val;
-    size_t val_len;
-    uint64_t num_witnesses, i;
-    int ret;
-
-    if (*witness_out)
-        return WALLY_EINVAL; /* Duplicate */
-
-    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
-    num_witnesses = pull_varint(&val, &val_len);
-    ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness_out);
-
-    for (i = 0; ret == WALLY_OK && i < num_witnesses; ++i) {
-        const unsigned char *wit;
-        size_t wit_len;
-        pull_varint_buff(&val, &val_len, &wit, &wit_len);
-        ret = wally_tx_witness_stack_set(*witness_out, i, wit, wit_len);
-    }
     subfield_nomore_end(cursor, max, val, val_len);
     return ret;
 }
@@ -2215,7 +2163,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
                 break;
             case PSBT_IN_FINAL_SCRIPTWITNESS:
-                ret = pull_witness(cursor, max, &result->final_witness);
+                ret = pull_witness(cursor, max, &result->final_witness, true);
                 break;
             case PSBT_IN_RIPEMD160:
             case PSBT_IN_SHA256:
@@ -2287,7 +2235,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_tx(cursor, max, 0, &result->pegin_tx);
                 break;
             case PSET_FT(PSET_IN_PEG_IN_WITNESS):
-                ret = pull_witness(cursor, max, &result->pegin_witness);
+                ret = pull_witness(cursor, max, &result->pegin_witness, true);
                 break;
             case PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT):
             case PSET_FT(PSET_IN_ISSUANCE_VALUE_RANGEPROOF):

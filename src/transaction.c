@@ -8,8 +8,9 @@
 #include <include/wally_script.h>
 
 #include <limits.h>
-#include "transaction_int.h"
+#include "pullpush.h"
 #include "script_int.h"
+#include "transaction_int.h"
 
 #define WALLY_TX_ALL_FLAGS \
     (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | \
@@ -229,6 +230,16 @@ static int tx_witness_stack_free(struct wally_tx_witness_stack *stack,
             wally_free(stack);
     }
     return WALLY_OK;
+}
+
+int wally_tx_witness_stack_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                                      struct wally_tx_witness_stack **output)
+{
+    if (output)
+        *output = NULL;
+    if (!bytes || !bytes_len || !output)
+        return WALLY_EINVAL;
+    return pull_witness(&bytes, &bytes_len, output, false);
 }
 
 int wally_tx_witness_stack_free(struct wally_tx_witness_stack *stack)

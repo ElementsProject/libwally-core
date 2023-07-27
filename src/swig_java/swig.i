@@ -1137,6 +1137,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_tx_witness_stack_add);
 %returns_void__(wally_tx_witness_stack_add_dummy);
 %returns_void__(wally_tx_witness_stack_free);
+%returns_struct(wally_tx_witness_stack_from_bytes, wally_tx_witness_stack);
 %returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
 %rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
 %returns_struct(wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack);

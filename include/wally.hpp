@@ -1949,6 +1949,12 @@ inline int tx_witness_stack_free(struct wally_tx_witness_stack* stack) {
     return ret;
 }
 
+template <class BYTES>
+inline int tx_witness_stack_from_bytes(const BYTES& bytes, struct wally_tx_witness_stack** output) {
+    int ret = ::wally_tx_witness_stack_from_bytes(bytes.data(), bytes.size(), output);
+    return ret;
+}
+
 inline int tx_witness_stack_init_alloc(size_t allocation_len, struct wally_tx_witness_stack** output) {
     int ret = ::wally_tx_witness_stack_init_alloc(allocation_len, output);
     return ret;
