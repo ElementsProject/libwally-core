@@ -73,6 +73,9 @@ void push_varbuff(unsigned char **cursor, size_t *max,
 /* Calls pull_failed() (and returns 0) if length would exceed remaining *max */
 size_t pull_varlength(const unsigned char **cursor, size_t *max);
 
+void push_witness_stack(unsigned char **cursor, size_t *max,
+                        const struct wally_tx_witness_stack *witness);
+
 /* Pull a buffer prefixed by its varlength length */
 void pull_varlength_buff(const unsigned char **cursor, size_t *max,
                          const unsigned char **dst, size_t *len);

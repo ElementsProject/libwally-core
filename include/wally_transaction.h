@@ -170,6 +170,16 @@ WALLY_CORE_API int wally_tx_witness_stack_clone_alloc(
     struct wally_tx_witness_stack **output);
 
 /**
+ * Return the number of witness items in a witness stack.
+ *
+ * :param stack: The witness stack to get the number of items from.
+ * :param written: Destination for the number of items.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_get_num_items(
+    const struct wally_tx_witness_stack *stack,
+    size_t *written);
+
+/**
  * Add a witness to a witness stack.
  *
  * :param stack: The witness stack to add to.
@@ -228,6 +238,30 @@ WALLY_CORE_API int wally_tx_witness_stack_from_bytes(
     const unsigned char *bytes,
     size_t bytes_len,
     struct wally_tx_witness_stack **output);
+
+/**
+ * Return the length of a witness stacks BIP 144 serialization.
+ *
+ * :param stack: The witness stack to find the serialized length of.
+ * :param written: Destination for the length of the serialized bytes.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_get_length(
+    const struct wally_tx_witness_stack *stack,
+    size_t *written);
+
+/**
+ * Serialize a witness stack to its BIP 144 serialization.
+ *
+ * :param stack: The witness stack to serialize.
+ * :param bytes_out: Destination for the serialized witness stack.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the length of the serialized witness stack.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_to_bytes(
+    const struct wally_tx_witness_stack *stack,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.

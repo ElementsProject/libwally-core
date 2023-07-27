@@ -131,6 +131,17 @@ void push_varint(unsigned char **cursor, size_t *max, uint64_t v)
     push_bytes(cursor, max, buf, len);
 }
 
+void push_witness_stack(unsigned char **cursor, size_t *max,
+                        const struct wally_tx_witness_stack *witness)
+{
+    size_t i;
+    push_varint(cursor, max, witness->num_items);
+    for (i = 0; i < witness->num_items; ++i) {
+        push_varbuff(cursor, max, witness->items[i].witness,
+                     witness->items[i].witness_len);
+    }
+}
+
 uint64_t pull_varint(const unsigned char **cursor, size_t *max)
 {
     unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];

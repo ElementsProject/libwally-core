@@ -232,6 +232,18 @@ static int tx_witness_stack_free(struct wally_tx_witness_stack *stack,
     return WALLY_OK;
 }
 
+int wally_tx_witness_stack_get_num_items(
+    const struct wally_tx_witness_stack *stack, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!stack || !written)
+        return WALLY_EINVAL;
+    *written = stack->num_items;
+    return WALLY_OK;
+}
+
+
 int wally_tx_witness_stack_from_bytes(const unsigned char *bytes, size_t bytes_len,
                                       struct wally_tx_witness_stack **output)
 {
@@ -240,6 +252,35 @@ int wally_tx_witness_stack_from_bytes(const unsigned char *bytes, size_t bytes_l
     if (!bytes || !bytes_len || !output)
         return WALLY_EINVAL;
     return pull_witness(&bytes, &bytes_len, output, false);
+}
+
+int wally_tx_witness_stack_get_length(
+    const struct wally_tx_witness_stack *stack,
+    size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!stack || !written)
+        return WALLY_EINVAL;
+    push_witness_stack(NULL, written, stack);
+    return WALLY_OK;
+}
+
+int wally_tx_witness_stack_to_bytes(
+    const struct wally_tx_witness_stack *stack,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written)
+{
+    int ret;
+    if (written)
+        *written = 0;
+    if (!stack || !bytes_out || !written)
+        return WALLY_EINVAL;
+    ret = wally_tx_witness_stack_get_length(stack, written);
+    if (ret == WALLY_OK && len >= *written)
+        push_witness_stack(&bytes_out, &len, stack);
+    return ret;
 }
 
 int wally_tx_witness_stack_free(struct wally_tx_witness_stack *stack)

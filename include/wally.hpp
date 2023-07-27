@@ -1955,6 +1955,18 @@ inline int tx_witness_stack_from_bytes(const BYTES& bytes, struct wally_tx_witne
     return ret;
 }
 
+template <class STACK>
+inline int tx_witness_stack_get_length(const STACK& stack, size_t* written) {
+    int ret = ::wally_tx_witness_stack_get_length(detail::get_p(stack), written);
+    return ret;
+}
+
+template <class STACK>
+inline int tx_witness_stack_get_num_items(const STACK& stack, size_t* written) {
+    int ret = ::wally_tx_witness_stack_get_num_items(detail::get_p(stack), written);
+    return ret;
+}
+
 inline int tx_witness_stack_init_alloc(size_t allocation_len, struct wally_tx_witness_stack** output) {
     int ret = ::wally_tx_witness_stack_init_alloc(allocation_len, output);
     return ret;
@@ -1970,6 +1982,13 @@ template <class STACK>
 inline int tx_witness_stack_set_dummy(const STACK& stack, size_t index, uint32_t flags) {
     int ret = ::wally_tx_witness_stack_set_dummy(detail::get_p(stack), index, flags);
     return ret;
+}
+
+template <class STACK, class BYTES_OUT>
+inline int tx_witness_stack_to_bytes(const STACK& stack, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_tx_witness_stack_to_bytes(detail::get_p(stack), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
 template <class BYTES>

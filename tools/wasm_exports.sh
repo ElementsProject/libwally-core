@@ -439,9 +439,12 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_witness_stack_clone_alloc' \
 ,'_wally_tx_witness_stack_free' \
 ,'_wally_tx_witness_stack_from_bytes' \
+,'_wally_tx_witness_stack_get_length' \
+,'_wally_tx_witness_stack_get_num_items' \
 ,'_wally_tx_witness_stack_init_alloc' \
 ,'_wally_tx_witness_stack_set' \
 ,'_wally_tx_witness_stack_set_dummy' \
+,'_wally_tx_witness_stack_to_bytes' \
 ,'_wally_varbuff_get_length' \
 ,'_wally_varbuff_to_bytes' \
 ,'_wally_varint_get_length' \

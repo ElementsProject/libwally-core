@@ -2678,28 +2678,16 @@ static int push_length_and_tx(unsigned char **cursor, size_t *max,
     return wally_tx_to_bytes(tx, flags, p, tx_len, &tx_len);
 }
 
-static void push_witness_stack_impl(unsigned char **cursor, size_t *max,
-                                    const struct wally_tx_witness_stack *witness)
-{
-    size_t i;
-
-    push_varint(cursor, max, witness->num_items);
-    for (i = 0; i < witness->num_items; ++i) {
-        push_varbuff(cursor, max, witness->items[i].witness,
-                     witness->items[i].witness_len);
-    }
-}
-
-static void push_witness_stack(unsigned char **cursor, size_t *max,
-                               uint64_t type, bool is_pset,
-                               const struct wally_tx_witness_stack *witness)
+static void push_witness(unsigned char **cursor, size_t *max,
+                         uint64_t type, bool is_pset,
+                         const struct wally_tx_witness_stack *witness)
 {
     size_t wit_len = 0;
-    push_witness_stack_impl(NULL, &wit_len, witness); /* calculate length */
+    push_witness_stack(NULL, &wit_len, witness); /* calculate length */
 
     push_key(cursor, max, type, is_pset, NULL, 0);
     push_varint(cursor, max, wit_len);
-    push_witness_stack_impl(cursor, max, witness);
+    push_witness_stack(cursor, max, witness);
 }
 
 static void push_psbt_varbuff(unsigned char **cursor, size_t *max,
@@ -2956,8 +2944,8 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 
     /* Final scriptWitness */
     if (input->final_witness)
-        push_witness_stack(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS,
-                           false, input->final_witness);
+        push_witness(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS,
+                     false, input->final_witness);
 
     if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_POR_COMMITMENT,
                                      PSBT_IN_POR_COMMITMENT,
@@ -3043,8 +3031,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                 break;
             case PSET_IN_PEG_IN_WITNESS:
                 if (input->pegin_witness)
-                    push_witness_stack(cursor, max, ft,
-                                       true, input->pegin_witness);
+                    push_witness(cursor, max, ft, true, input->pegin_witness);
                 break;
             case PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT:
                 if (input->inflation_keys)

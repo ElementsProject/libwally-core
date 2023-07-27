@@ -251,6 +251,7 @@ tx_output_init = tx_output_init_alloc
 tx_to_bytes = _wrap_bin(tx_to_bytes, tx_get_length)
 tx_witness_stack_clone = tx_witness_stack_clone_alloc
 tx_witness_stack_init = tx_witness_stack_init_alloc
+tx_witness_stack_to_bytes = _wrap_bin(tx_witness_stack_to_bytes, tx_witness_stack_get_length)
 varbuff_to_bytes = _wrap_bin(varbuff_to_bytes, varbuff_get_length)
 varint_to_bytes = _wrap_bin(varint_to_bytes, varint_get_length)
 wif_to_bytes = _wrap_bin(wif_to_bytes, EC_PRIVATE_KEY_LEN)
