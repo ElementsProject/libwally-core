@@ -134,8 +134,12 @@ int main(void)
             /* Only PSETv2 is supported, so skip round-tripping */
         } else if (psbt->version == WALLY_PSBT_VERSION_0) {
             /* V0 -> V2 -> V0 */
+            /* We have to save and restore the tx version as v1 txs
+             * are upgraded to v2 when the PSBT is upgraded */
+            uint32_t tx_version = psbt_clone->tx->version;
             change_version(psbt_clone, WALLY_PSBT_VERSION_2, base64_in);
             change_version(psbt_clone, WALLY_PSBT_VERSION_0, base64_in);
+            psbt_clone->tx->version = tx_version;
         } else if (psbt->version == WALLY_PSBT_VERSION_2) {
             /* V2 -> V0 -> V2 */
             bool has_per_input_lock = false;

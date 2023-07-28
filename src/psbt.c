@@ -3813,7 +3813,8 @@ static int psbt_v0_to_v2(struct wally_psbt *psbt)
 
     /* Upgrade to v2 */
     psbt->version = PSBT_2;
-    psbt->tx_version = psbt->tx->version;
+    /* v2 requires a tx version of at least 2 */
+    psbt->tx_version = psbt->tx->version < 2 ? 2 : psbt->tx->version;
     /* V0 only has the tx locktime, and no per-input locktimes,
      * so set the V2 fallback locktime to the tx locktime, unless
      * it is the default value of 0.

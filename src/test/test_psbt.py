@@ -87,11 +87,15 @@ class PSBTTests(unittest.TestCase):
                 if wally_psbt_extract(psbt, NON_FINAL, tx) == WALLY_OK:
                     # Upgrade/Downgrade and make sure the same tx is extracted
                     pre_hex = wally_tx_to_hex(tx, USE_WITNESS)[1]
+                    tx_version = tx.contents.version
                     new_version = 2 if version == 0 else 0
                     ret = wally_psbt_set_version(psbt, 0, new_version)
                     self.assertEqual(ret, WALLY_OK)
                     ret = wally_psbt_extract(psbt, NON_FINAL, tx)
                     self.assertEqual(ret, WALLY_OK)
+                    if new_version == 2:
+                        # Restore the tx version in case a v0/v1 tx was upgraded
+                        tx.contents.version = tx_version
                     post_hex = wally_tx_to_hex(tx, USE_WITNESS)[1]
                     self.assertEqual(pre_hex, post_hex)
 
