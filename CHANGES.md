@@ -1,5 +1,17 @@
 # Changes
 
+## Version 0.9.1
+- PSET: When adding an Elements transaction output to a PSET, the nonce
+  commitment was incorrectly mapped to the PSET output blinding key field.
+  It is now correctly mapped to the ECDH public key field.
+- Transaction versions less than 2 are now upgraded to version 2 when
+  converting a version 0 PSBT to version 2.
+- Fetching nested structures (e.g. witness stacks) from PSBTs where no
+  structure is present now returns NULL without returning an error.
+- Python wheels are no longer released for deprecated versions 3.6/3.7.
+- Python wheels are now available through pip for musl-based x86 platforms
+  such as Apline Linux.
+
 ## Version 0.9.0
 - ABI: wally_descriptor_to_script_get_maximum_length has changed its arguments
   to match wally_descriptor_to_script.
