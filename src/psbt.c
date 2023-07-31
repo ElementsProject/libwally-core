@@ -1698,7 +1698,7 @@ static int psbt_output_from_tx_output(struct wally_psbt *psbt,
                                             &dst->amount, &dst->has_amount,
                                             &dst->pset_fields);
             if (ret == WALLY_OK && txout->nonce_len)
-                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_BLINDING_PUBKEY,
+                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_ECDH_PUBKEY,
                                             txout->nonce, txout->nonce_len);
             if (ret == WALLY_OK && txout->surjectionproof_len)
                 ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_ASSET_SURJECTION_PROOF,
