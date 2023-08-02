@@ -79,7 +79,7 @@ class TransactionTests(unittest.TestCase):
             # Check the transaction can be cloned without finalization data
             tx_nf, flag_nf = pointer(wally_tx()), 0x1
             self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, flag_nf, tx_nf))
-            for i in range(wally_tx_get_num_inputs(tx_copy)[1]):
+            for i in range(tx_copy.contents.num_inputs):
                 wally_tx_set_input_script(tx_copy, i, None, 0)
                 wally_tx_set_input_witness(tx_copy, i, None)
             self.assertEqual(utf8(self.tx_serialize_hex(tx_copy)),
