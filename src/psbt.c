@@ -1077,9 +1077,10 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
     return WALLY_OK;
 }
 
-static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
-                           size_t num_unknowns, uint32_t flags,
-                           struct wally_psbt *psbt_out)
+static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
+                     size_t num_unknowns, uint32_t flags,
+                     size_t max_num_inputs, size_t max_num_outputs,
+                     struct wally_psbt *psbt_out)
 {
     int ret;
 
@@ -1097,13 +1098,13 @@ static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outpu
 #endif /* BUILD_ELEMENTS */
 
     if (num_inputs) {
-        if (num_inputs > TX_MAX_INPUTS_ALLOC)
-            num_inputs = TX_MAX_INPUTS_ALLOC;
+        if (num_inputs > max_num_inputs)
+            num_inputs = max_num_inputs;
         psbt_out->inputs = wally_calloc(num_inputs * sizeof(struct wally_psbt_input));
     }
     if (num_outputs) {
-        if (num_outputs > TX_MAX_OUTPUTS_ALLOC)
-            num_outputs = TX_MAX_OUTPUTS_ALLOC;
+        if (num_outputs > max_num_outputs)
+            num_outputs = max_num_outputs;
         psbt_out->outputs = wally_calloc(num_outputs * sizeof(struct wally_psbt_output));
     }
 
@@ -1142,19 +1143,30 @@ static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outpu
     return WALLY_OK;
 }
 
-int wally_psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_outputs,
-                          size_t num_unknowns, uint32_t flags, struct wally_psbt **output)
+static int psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_outputs,
+                           size_t num_unknowns, uint32_t flags,
+                           size_t max_num_inputs, size_t max_num_outputs,
+                           struct wally_psbt **output)
 {
     int ret;
 
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_psbt);
-    ret = wally_psbt_init(version, num_inputs, num_outputs, num_unknowns, flags, *output);
+    ret = psbt_init(version, num_inputs, num_outputs, num_unknowns, flags,
+                    max_num_inputs, max_num_outputs, *output);
     if (ret != WALLY_OK) {
         wally_free(*output);
         *output = NULL;
     }
     return ret;
+}
+
+int wally_psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_outputs,
+                          size_t num_unknowns, uint32_t flags, struct wally_psbt **output)
+{
+    return psbt_init_alloc(version, num_inputs, num_outputs, num_unknowns,
+                           flags, TX_MAX_INPUTS_ALLOC, TX_MAX_OUTPUTS_ALLOC,
+                           output);
 }
 
 int wally_psbt_from_tx(const struct wally_tx *tx, uint32_t version,
@@ -1167,8 +1179,8 @@ int wally_psbt_from_tx(const struct wally_tx *tx, uint32_t version,
         *output = NULL;
     if (!tx || !output || (version == WALLY_PSBT_VERSION_2 && tx->version < 2u))
         return WALLY_EINVAL;
-    ret = wally_psbt_init_alloc(version, tx->num_inputs, tx->num_outputs, 0,
-                                flags, output);
+    ret = psbt_init_alloc(version, tx->num_inputs, tx->num_outputs, 0, flags,
+                          tx->num_inputs, tx->num_outputs, output);
     if (ret == WALLY_OK && version == WALLY_PSBT_VERSION_0)
         ret = wally_psbt_set_global_tx(*output, tx);
     else {
@@ -2588,7 +2600,8 @@ unknown:
             ret = WALLY_EINVAL; /* Tx version must be >= 2 */
         else {
             struct wally_psbt tmp;
-            ret = wally_psbt_init((*output)->version, input_count, output_count, 0, 0, &tmp);
+            ret = psbt_init((*output)->version, input_count, output_count,
+                            0, 0, input_count, output_count, &tmp);
             if (ret == WALLY_OK) {
                 /* Steal the allocated input/output arrays */
                 (*output)->inputs = tmp.inputs;
@@ -3967,12 +3980,14 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
 
     ret = wally_psbt_is_elements(psbt, &is_pset);
     if (ret == WALLY_OK)
-        ret = wally_psbt_init_alloc(psbt->version,
-                                    psbt->inputs_allocation_len,
-                                    psbt->outputs_allocation_len,
-                                    psbt->unknowns.items_allocation_len,
-                                    is_pset ? WALLY_PSBT_INIT_PSET : 0,
-                                    output);
+        ret = psbt_init_alloc(psbt->version,
+                              psbt->inputs_allocation_len,
+                              psbt->outputs_allocation_len,
+                              psbt->unknowns.items_allocation_len,
+                              is_pset ? WALLY_PSBT_INIT_PSET : 0,
+                              psbt->inputs_allocation_len,
+                              psbt->outputs_allocation_len,
+                              output);
     if (ret == WALLY_OK) {
         (*output)->tx_version = psbt->tx_version;
         psbt_claim_allocated_inputs(*output, psbt->num_inputs, psbt->num_outputs);
