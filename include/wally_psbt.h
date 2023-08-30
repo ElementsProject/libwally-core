@@ -2419,6 +2419,7 @@ WALLY_CORE_API int wally_psbt_clone_alloc(
     uint32_t flags,
     struct wally_psbt **output);
 
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Blind a PSBT.
  *
@@ -2464,6 +2465,7 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
     uint32_t output_index,
     uint32_t flags,
     struct wally_map **output);
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /**
  * Sign PSBT inputs corresponding to a given private key.

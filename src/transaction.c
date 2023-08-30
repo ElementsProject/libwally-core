@@ -3487,12 +3487,6 @@ static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t ind
     return is_valid_tx(tx) && index < tx->num_inputs ? &tx->inputs[index] : NULL;
 }
 
-#define TX_SET_B(typ, name) \
-    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
-                                          const unsigned char *name, size_t name ## _len) { \
-        return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
-    }
-
 /* Getters for wally_tx_input/wally_tx_output/wally_tx values */
 
 static int tx_getb_impl(const void *input,
@@ -3518,14 +3512,6 @@ static int tx_getb_impl(const void *input,
         return tx_getb_impl(input, input->name, siz, bytes_out, len, &written); \
     }
 
-
-GET_TX_B_FIXED(tx_input, txhash, WALLY_TXHASH_LEN, WALLY_TXHASH_LEN)
-#ifdef BUILD_ELEMENTS
-GET_TX_B_FIXED(tx_input, blinding_nonce, SHA256_LEN, SHA256_LEN)
-GET_TX_B_FIXED(tx_input, entropy, SHA256_LEN, SHA256_LEN)
-#endif /* BUILD_ELEMENTS */
-
-
 #define GET_TX_B(typ, name, siz) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, \
                                        unsigned char *bytes_out, size_t len, size_t * written) { \
@@ -3533,6 +3519,22 @@ GET_TX_B_FIXED(tx_input, entropy, SHA256_LEN, SHA256_LEN)
             return WALLY_EINVAL; \
         return tx_getb_impl(input, input->name, siz, bytes_out, len, written); \
     }
+
+#define TX_SET_B(typ, name) \
+    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
+                                          const unsigned char *name, size_t name ## _len) { \
+        return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
+    }
+#ifdef BUILD_ELEMENTS
+#define TX_SET_B_ELEMENTS(typ, name) TX_SET_B(typ, name)
+#else
+#define TX_SET_B_ELEMENTS(typ, name) \
+    int wally_tx_set_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, \
+                                          const unsigned char *name, size_t name ## _len) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS */
+
 
 #define GET_TX_I(typ, name, outtyp) \
     int wally_ ## typ ## _get_ ## name(const struct wally_ ## typ *input, outtyp * written) { \
@@ -3542,8 +3544,9 @@ GET_TX_B_FIXED(tx_input, entropy, SHA256_LEN, SHA256_LEN)
         return WALLY_OK; \
     }
 
-
+GET_TX_B_FIXED(tx_input, txhash, WALLY_TXHASH_LEN, WALLY_TXHASH_LEN)
 GET_TX_B(tx_input, script, input->script_len)
+
 static const struct wally_tx_witness_item *get_witness_preamble(
     const struct wally_tx_input *input, size_t index, size_t *written)
 {
@@ -3582,7 +3585,10 @@ int wally_tx_input_get_witness_len(const struct wally_tx_input *input,
     *written = item->witness_len;
     return WALLY_OK;
 }
-#ifdef BUILD_ELEMENTS
+
+#ifndef WALLY_ABI_NO_ELEMENTS
+GET_TX_B_FIXED(tx_input, blinding_nonce, SHA256_LEN, SHA256_LEN)
+GET_TX_B_FIXED(tx_input, entropy, SHA256_LEN, SHA256_LEN)
 GET_TX_B(tx_input, issuance_amount, input->issuance_amount_len)
 GET_TX_I(tx_input, issuance_amount_len, size_t)
 GET_TX_B(tx_input, inflation_keys, input->inflation_keys_len)
@@ -3591,13 +3597,13 @@ GET_TX_B(tx_input, issuance_amount_rangeproof, input->issuance_amount_rangeproof
 GET_TX_I(tx_input, issuance_amount_rangeproof_len, size_t)
 GET_TX_B(tx_input, inflation_keys_rangeproof, input->inflation_keys_rangeproof_len)
 GET_TX_I(tx_input, inflation_keys_rangeproof_len, size_t)
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 GET_TX_B(tx_output, script, input->script_len)
 GET_TX_I(tx_output, satoshi, uint64_t)
 GET_TX_I(tx_output, script_len, size_t)
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 GET_TX_B_FIXED(tx_output, asset, input->asset_len, WALLY_TX_ASSET_CT_ASSET_LEN)
 GET_TX_I(tx_output, asset_len, size_t)
 GET_TX_B(tx_output, value, input->value_len)
@@ -3608,7 +3614,7 @@ GET_TX_B(tx_output, surjectionproof, input->surjectionproof_len)
 GET_TX_I(tx_output, surjectionproof_len, size_t)
 GET_TX_B(tx_output, rangeproof, input->rangeproof_len)
 GET_TX_I(tx_output, rangeproof_len, size_t)
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 GET_TX_I(tx, version, size_t)
 GET_TX_I(tx, locktime, size_t)
@@ -3629,14 +3635,20 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
     *bytes_out_len = bytes_len;
     return WALLY_OK;
 }
-
-#define SET_TX_B(typ, name, siz) \
+#define SET_TX_B_ELEMENTS(typ, name, siz) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
                                        const unsigned char *bytes, size_t siz) { \
         if (!is_valid_elements_ ## typ(output) || BYTES_INVALID(bytes, siz)) \
             return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
+#else
+#define SET_TX_B_ELEMENTS(typ, name, siz) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
+                                       const unsigned char *bytes, size_t siz) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS */
 
 #define SET_TX_B_FIXED(typ, name, siz, n) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
@@ -3645,7 +3657,15 @@ static int tx_setb_impl(const unsigned char *bytes, size_t bytes_len,
             return WALLY_EINVAL; \
         return tx_setb_impl(bytes, siz, &output->name, &output->name ## _len); \
     }
-#endif /* BUILD_ELEMENTS */
+#ifdef BUILD_ELEMENTS
+#define SET_TX_B_FIXED_ELEMENTS(typ, name, siz, n) SET_TX_B_FIXED(typ, name, siz, n)
+#else
+#define SET_TX_B_FIXED_ELEMENTS(typ, name, siz, n) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *output, \
+                                       const unsigned char *bytes, size_t siz) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS*/
 
 int wally_tx_input_set_index(struct wally_tx_input *input, uint32_t index)
 {
@@ -3689,7 +3709,7 @@ int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi
 }
 
 #ifdef BUILD_ELEMENTS
-#define SET_TX_ARRAY(typ, name, siz) \
+#define SET_TX_ARRAY_ELEMENTS(typ, name, siz) \
     int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *input, \
                                        const unsigned char *name, size_t name ## _len) { \
         if (!is_valid_elements_ ## typ(input) || !name || name ## _len != siz) \
@@ -3697,27 +3717,39 @@ int wally_tx_output_set_satoshi(struct wally_tx_output *output, uint64_t satoshi
         memcpy(input->name, name, siz); \
         return WALLY_OK; \
     }
+#else
+#define SET_TX_ARRAY_ELEMENTS(typ, name, siz) \
+    int wally_ ## typ ## _set_ ## name(struct wally_ ## typ *input, \
+                                       const unsigned char *name, size_t name ## _len) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS */
 
-SET_TX_ARRAY(tx_input, blinding_nonce, SHA256_LEN)
-SET_TX_ARRAY(tx_input, entropy, SHA256_LEN)
-SET_TX_B(tx_input, inflation_keys, siz)
-SET_TX_B(tx_input, inflation_keys_rangeproof, siz)
-SET_TX_B(tx_input, issuance_amount, siz)
-SET_TX_B(tx_input, issuance_amount_rangeproof, siz)
+#ifndef WALLY_ABI_NO_ELEMENTS
+SET_TX_ARRAY_ELEMENTS(tx_input, blinding_nonce, SHA256_LEN)
+SET_TX_ARRAY_ELEMENTS(tx_input, entropy, SHA256_LEN)
+SET_TX_B_ELEMENTS(tx_input, inflation_keys, siz)
+SET_TX_B_ELEMENTS(tx_input, inflation_keys_rangeproof, siz)
+SET_TX_B_ELEMENTS(tx_input, issuance_amount, siz)
+SET_TX_B_ELEMENTS(tx_input, issuance_amount_rangeproof, siz)
 
-SET_TX_B_FIXED(tx_output, asset, siz, WALLY_TX_ASSET_CT_ASSET_LEN)
+SET_TX_B_FIXED_ELEMENTS(tx_output, asset, siz, WALLY_TX_ASSET_CT_ASSET_LEN)
 int wally_tx_output_set_value(struct wally_tx_output *output, const unsigned char *value, size_t value_len)
 {
+#ifdef BUILD_ELEMENTS
     if (!is_valid_elements_tx_output(output) ||
         ((value != NULL) != (value_len == WALLY_TX_ASSET_CT_VALUE_LEN ||
                              value_len == WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)))
         return WALLY_EINVAL;
     return tx_setb_impl(value, value_len, &output->value, &output->value_len);
-}
-SET_TX_B_FIXED(tx_output, nonce, siz, WALLY_TX_ASSET_CT_NONCE_LEN)
-SET_TX_B(tx_output, surjectionproof, siz)
-SET_TX_B(tx_output, rangeproof, siz)
+#else
+    return WALLY_ERROR;
 #endif
+}
+SET_TX_B_FIXED_ELEMENTS(tx_output, nonce, siz, WALLY_TX_ASSET_CT_NONCE_LEN)
+SET_TX_B_ELEMENTS(tx_output, surjectionproof, siz)
+SET_TX_B_ELEMENTS(tx_output, rangeproof, siz)
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 static struct wally_tx_output *tx_get_output(const struct wally_tx *tx, size_t index)
 {
@@ -3728,16 +3760,40 @@ static struct wally_tx_output *tx_get_output(const struct wally_tx *tx, size_t i
     int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written) { \
         return wally_tx_ ## typ ## _get_ ## name(tx_get_ ## typ(tx, index), bytes_out, len, written); \
     }
+#ifdef BUILD_ELEMENTS
+#define TX_GET_B_ELEMENTS(typ, name) TX_GET_B(typ, name)
+#else
+#define TX_GET_B_ELEMENTS(typ, name) \
+    int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len, size_t *written) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS */
 
 #define TX_GET_B_FIXED(typ, name) \
     int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len) { \
         return wally_tx_ ## typ ## _get_ ## name(tx_get_ ## typ(tx, index), bytes_out, len); \
     }
+#ifdef BUILD_ELEMENTS
+#define TX_GET_B_FIXED_ELEMENTS(typ, name) TX_GET_B_FIXED(typ, name)
+#else
+#define TX_GET_B_FIXED_ELEMENTS(typ, name) \
+    int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, unsigned char *bytes_out, size_t len) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS */
 
 #define TX_GET_I(typ, name) \
     int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, size_t *written) { \
         return wally_tx_ ## typ ## _get_ ## name(tx_get_ ## typ(tx, index), written); \
     }
+#ifdef BUILD_ELEMENTS
+#define TX_GET_I_ELEMENTS(typ, name) TX_GET_I(typ, name)
+#else
+#define TX_GET_I_ELEMENTS(typ, name) \
+    int wally_tx_get_ ## typ ## _ ## name(const struct wally_tx *tx, size_t index, size_t *written) { \
+        return WALLY_ERROR; \
+    }
+#endif /* BUILD_ELEMENTS */
 
 TX_GET_B(input, script)
 TX_GET_I(input, script_len)
@@ -3755,18 +3811,19 @@ int wally_tx_get_input_witness_len(const struct wally_tx *tx, size_t index, size
     return wally_tx_input_get_witness_len(tx_get_input(tx, index), wit_index, written);
 }
 
-#ifdef BUILD_ELEMENTS
-TX_GET_B_FIXED(input, blinding_nonce)
-TX_GET_B_FIXED(input, entropy)
-TX_GET_B(input, inflation_keys)
-TX_GET_B(input, inflation_keys_rangeproof)
-TX_GET_B(input, issuance_amount)
-TX_GET_B(input, issuance_amount_rangeproof)
-TX_GET_I(input, inflation_keys_len)
-TX_GET_I(input, inflation_keys_rangeproof_len)
-TX_GET_I(input, issuance_amount_len)
-TX_GET_I(input, issuance_amount_rangeproof_len)
-#endif /* BUILD_ELEMENTS */
+#ifndef WALLY_ABI_NO_ELEMENTS
+TX_GET_B_FIXED_ELEMENTS(input, blinding_nonce)
+TX_GET_B_FIXED_ELEMENTS(input, entropy)
+TX_GET_B_ELEMENTS(input, inflation_keys)
+TX_GET_B_ELEMENTS(input, inflation_keys_rangeproof)
+TX_GET_B_ELEMENTS(input, issuance_amount)
+TX_GET_B_ELEMENTS(input, issuance_amount_rangeproof)
+TX_GET_I_ELEMENTS(input, inflation_keys_len)
+TX_GET_I_ELEMENTS(input, inflation_keys_rangeproof_len)
+TX_GET_I_ELEMENTS(input, issuance_amount_len)
+TX_GET_I_ELEMENTS(input, issuance_amount_rangeproof_len)
+#endif /* WALLY_ABI_NO_ELEMENTS */
+
 TX_GET_B(output, script)
 TX_GET_I(output, script_len)
 
@@ -3775,18 +3832,18 @@ int wally_tx_get_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
     return wally_tx_output_get_satoshi(tx_get_output(tx, index), value_out);
 }
 
-#ifdef BUILD_ELEMENTS
-TX_GET_B_FIXED(output, asset)
-TX_GET_B(output, value)
-TX_GET_B_FIXED(output, nonce)
-TX_GET_B(output, surjectionproof)
-TX_GET_B(output, rangeproof)
-TX_GET_I(output, asset_len)
-TX_GET_I(output, value_len)
-TX_GET_I(output, nonce_len)
-TX_GET_I(output, surjectionproof_len)
-TX_GET_I(output, rangeproof_len)
-#endif /* BUILD_ELEMENTS */
+#ifndef WALLY_ABI_NO_ELEMENTS
+TX_GET_B_FIXED_ELEMENTS(output, asset)
+TX_GET_B_ELEMENTS(output, value)
+TX_GET_B_FIXED_ELEMENTS(output, nonce)
+TX_GET_B_ELEMENTS(output, surjectionproof)
+TX_GET_B_ELEMENTS(output, rangeproof)
+TX_GET_I_ELEMENTS(output, asset_len)
+TX_GET_I_ELEMENTS(output, value_len)
+TX_GET_I_ELEMENTS(output, nonce_len)
+TX_GET_I_ELEMENTS(output, surjectionproof_len)
+TX_GET_I_ELEMENTS(output, rangeproof_len)
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 TX_SET_B(input, txhash)
 
@@ -3815,20 +3872,20 @@ int wally_tx_set_output_satoshi(const struct wally_tx *tx, size_t index, uint64_
     return wally_tx_output_set_satoshi(tx_get_output(tx, index), satoshi);
 }
 
-#ifdef BUILD_ELEMENTS
-TX_SET_B(input, blinding_nonce)
-TX_SET_B(input, entropy)
-TX_SET_B(input, inflation_keys)
-TX_SET_B(input, inflation_keys_rangeproof)
-TX_SET_B(input, issuance_amount)
-TX_SET_B(input, issuance_amount_rangeproof)
+#ifndef WALLY_ABI_NO_ELEMENTS
+TX_SET_B_ELEMENTS(input, blinding_nonce)
+TX_SET_B_ELEMENTS(input, entropy)
+TX_SET_B_ELEMENTS(input, inflation_keys)
+TX_SET_B_ELEMENTS(input, inflation_keys_rangeproof)
+TX_SET_B_ELEMENTS(input, issuance_amount)
+TX_SET_B_ELEMENTS(input, issuance_amount_rangeproof)
 
-TX_SET_B(output, asset)
-TX_SET_B(output, value)
-TX_SET_B(output, nonce)
-TX_SET_B(output, surjectionproof)
-TX_SET_B(output, rangeproof)
-#endif
+TX_SET_B_ELEMENTS(output, asset)
+TX_SET_B_ELEMENTS(output, value)
+TX_SET_B_ELEMENTS(output, nonce)
+TX_SET_B_ELEMENTS(output, surjectionproof)
+TX_SET_B_ELEMENTS(output, rangeproof)
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 int wally_tx_input_set_witness(struct wally_tx_input *input,
                                const struct wally_tx_witness_stack *stack)
