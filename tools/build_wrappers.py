@@ -304,6 +304,7 @@ def gen_wally_hpp(funcs, all_funcs):
             if skip:
                 skip = False
                 continue
+            is_verify_function = func.name.endswith('_verify')
             if is_buffer(func, arg, n, num_args) or is_int_buffer(func, arg, n, num_args):
                 t_types.append(f'class {arg.name.upper()}')
                 const = u'const ' if arg.is_const else ''
@@ -330,14 +331,18 @@ def gen_wally_hpp(funcs, all_funcs):
         if len(t_types):
             impl.append(f'template <{", ".join(t_types)}>')
         func_name = strip_wally_prefix(func.name)
-        impl.append(f'inline int {func_name}({", ".join(cpp_args)}) {{')
+        return_type = 'bool' if is_verify_function else 'int'
+        impl.append(f'inline {return_type} {func_name}({", ".join(cpp_args)}) {{')
         if vardecl:
             impl.append(vardecl)
         impl.append(f'    int ret = ::{func.name}({", ".join(call_args)});')
         if vardecl:
             prev = func.args[-3]
             impl.append(f'    if (ret == WALLY_OK && n != static_cast<size_t>({prev.name}.size())) ret = WALLY_EINVAL;')
-        impl.append(f'    return detail::check_ret(__FUNCTION__, ret);')
+        if is_verify_function:
+            impl.append(f'    return ret == WALLY_OK;')
+        else:
+            impl.append(f'    return detail::check_ret(__FUNCTION__, ret);')
         impl.extend([u'}', u''])
         (cpp_elements if func.is_elements else cpp)[func.name] = impl
 
