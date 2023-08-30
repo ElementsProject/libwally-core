@@ -1133,10 +1133,12 @@ int wally_tx_output_free(struct wally_tx_output *output)
     return tx_output_free(output, true);
 }
 
-int wally_tx_init_alloc(uint32_t version, uint32_t locktime,
-                        size_t inputs_allocation_len,
-                        size_t outputs_allocation_len,
-                        struct wally_tx **output)
+static int tx_init_alloc(uint32_t version, uint32_t locktime,
+                         size_t inputs_allocation_len,
+                         size_t outputs_allocation_len,
+                         size_t max_inputs_allocation_len,
+                         size_t max_outputs_allocation_len,
+                         struct wally_tx **output)
 {
     struct wally_tx_input *new_inputs = NULL;
     struct wally_tx_output *new_outputs = NULL;
@@ -1145,13 +1147,13 @@ int wally_tx_init_alloc(uint32_t version, uint32_t locktime,
     OUTPUT_ALLOC(struct wally_tx);
 
     if (inputs_allocation_len) {
-        if (inputs_allocation_len > TX_MAX_INPUTS_ALLOC)
-            inputs_allocation_len = TX_MAX_INPUTS_ALLOC;
+        if (inputs_allocation_len > max_inputs_allocation_len)
+            inputs_allocation_len = max_inputs_allocation_len;
         new_inputs = wally_calloc(inputs_allocation_len * sizeof(struct wally_tx_input));
     }
     if (outputs_allocation_len) {
-        if (outputs_allocation_len > TX_MAX_OUTPUTS_ALLOC)
-            outputs_allocation_len = TX_MAX_OUTPUTS_ALLOC;
+        if (outputs_allocation_len > max_outputs_allocation_len)
+            outputs_allocation_len = max_outputs_allocation_len;
         new_outputs = wally_calloc(outputs_allocation_len * sizeof(struct wally_tx_output));
     }
     if ((inputs_allocation_len && !new_inputs) ||
@@ -1172,6 +1174,16 @@ int wally_tx_init_alloc(uint32_t version, uint32_t locktime,
     (*output)->num_outputs = 0;
     (*output)->outputs_allocation_len = outputs_allocation_len;
     return WALLY_OK;
+}
+
+int wally_tx_init_alloc(uint32_t version, uint32_t locktime,
+                        size_t inputs_allocation_len,
+                        size_t outputs_allocation_len,
+                        struct wally_tx **output)
+{
+    return tx_init_alloc(version, locktime,
+                         inputs_allocation_len, outputs_allocation_len,
+                         TX_MAX_INPUTS_ALLOC, TX_MAX_OUTPUTS_ALLOC, output);
 }
 
 static int tx_free(struct wally_tx *tx, bool free_parent)
@@ -2962,7 +2974,9 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
                    &expect_witnesses) != WALLY_OK)
         return WALLY_EINVAL;
 
-    ret = wally_tx_init_alloc(0, 0, num_inputs, num_outputs, output);
+    /* Allow pre-allocating all inputs as we have already analyzed the tx */
+    ret = tx_init_alloc(0, 0, num_inputs, num_outputs,
+                        num_inputs, num_outputs, output);
     if (ret != WALLY_OK)
         return ret;
 
