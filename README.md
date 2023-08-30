@@ -132,7 +132,7 @@ You can also install the binary [wally releases](https://github.com/ElementsProj
 using the released wheel files without having to compile the library, e.g.:
 
 ```
-pip install wallycore-0.9.2-cp39-cp39m-linux_x86_64.whl
+pip install wallycore-<version_and_architecture>.whl
 ```
 
 The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
