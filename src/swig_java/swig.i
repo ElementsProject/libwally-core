@@ -17,7 +17,7 @@
 #include "../include/wally_script.h"
 #include "../include/wally_symmetric.h"
 #include "../include/wally_transaction.h"
-#include "transaction_int.h"
+#include "../include/wally_transaction_members.h"
 #include "../include/wally_elements.h"
 #include "../internal.h"
 #include <limits.h>
@@ -1342,5 +1342,5 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %include "../include/wally_script.h"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
-%include "transaction_int.h"
+%include "../include/wally_transaction_members.h"
 %include "../include/wally_elements.h"

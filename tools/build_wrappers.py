@@ -52,7 +52,7 @@ def replace_text(filename, text, delims):
 
 def get_non_elements_functions():
     # SWIG_PYTHON_BUILD=1 used to include internal functions too
-    cmd = "-E -DSWIG_PYTHON_BUILD=1 include/*.h src/bip32_int.h src/transaction_int.h |" \
+    cmd = "-E -DSWIG_PYTHON_BUILD=1 include/*.h src/bip32_int.h |" \
           "sort | uniq | sed 's/^ *WALLY_CORE_API//' | grep '^ *int ' | grep '(' | sed -e 's/^ *int //g' -e 's/(.*//g' | egrep '^wally_|^bip'"
     try:
         funcs = subprocess.check_output(u'gcc ' + cmd, shell=True)

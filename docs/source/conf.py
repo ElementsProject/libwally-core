@@ -120,9 +120,9 @@ def extract_docs(infile, outfile):
 
 # Generate the documentation source files
 if DUMP_INTERNAL:
-    for m in ['bip32_int', 'transaction_int']:
-        extract_docs('../../src/%s.h' % m, '%s.rst' % m)
+    extract_docs('../../src/bip32_int.h', 'bip32_int.rst')
     extract_docs('../../include/wally_psbt_members.h', 'psbt_members.rst')
+    extract_docs('../../include/wally_transaction_members.h', 'transaction_members.rst')
 else:
     for m in [
         'address', 'anti_exfil', 'bip32', 'bip38', 'bip39', 'bip85',
