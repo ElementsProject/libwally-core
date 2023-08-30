@@ -29,10 +29,10 @@ extern "C" {
 #define WALLY_ENOMEM -3 /** malloc() failed */
 
 /** Library version */
-#define WALLY_MAJOR_VER 0
-#define WALLY_MINOR_VER 9
-#define WALLY_PATCH_VER 2
-#define WALLY_BUILD_VER 0x902
+#define WALLY_MAJOR_VER 1
+#define WALLY_MINOR_VER 0
+#define WALLY_PATCH_VER 0
+#define WALLY_BUILD_VER 0x10000
 
 /**
  * Initialize wally.
