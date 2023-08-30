@@ -5,7 +5,7 @@ for cryptocurrency wallets.
 
 Read the API documentation at https://wally.readthedocs.io.
 
-Note that library interfaces may change slightly while the library design matures. Please see the [CHANGES](./CHANGES.md) file to determine if the API has changed when upgrading.
+Please see the [CHANGES](./CHANGES.md) for details of ABI changes when upgrading.
 
 Please report bugs and submit patches to [Our github repository](https://github.com/ElementsProject/libwally-core). If you wish to report a security issue, please read [Our security reporting guidelines](./SECURITY.md).
 
@@ -88,6 +88,8 @@ $ brew install swig
    header files. This option *must not be given if wally is being installed as a system/shared library*. (default: no).
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
+- `--with-system-secp256k1=<package_name>`. Compile and link against a system-wide
+   install of libsecp256k1 instead of the in-tree submodule. (default: not enabled).
 - `--enable-mbed-tls`. Use mbed-tls hashing functions if available. This typically
    results in faster hashing on embedded platforms such as STM32. Note that the user
    must define `MBEDTLS_SHA256_ALT` and/or `SOC_SHA_SUPPORT_PARALLEL_ENG` matching the

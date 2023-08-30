@@ -1,5 +1,19 @@
 # Changes
 
+## Version 1.0.0
+- The library now follows semantic versioning as per https://semver.org/.
+- Elements support is now enabled by default, reflecting the common library
+  usage. Please see the `configure --help` entries for `--disable-elements`
+  and `--disable-elements-abi` for details.
+- The ABI of the library is now consistent by default regardless of whether
+  it is built with or without Elements support.
+- When configured to build as a static library, linking to libwallycore.a
+  requires additionally linking to libsecp256k1.a.
+- Wally can now be configured to build against a system-wide libsecp256k1.
+- Some functions in the c++ header wally.hpp have changed interface slightly.
+  Note that this header is deprecated and will be replaced in an upcoming
+  release with higher level wrappers in the same manner as Python and JS.
+
 ## Version 0.9.1
 - PSET: When adding an Elements transaction output to a PSET, the nonce
   commitment was incorrectly mapped to the PSET output blinding key field.
