@@ -350,6 +350,13 @@ typedef int (*wally_ec_nonce_t)(
 typedef struct secp256k1_context_struct *(*secp_context_t)(
     void);
 
+/** The type of an overridable function to get the last extended error code */
+typedef int (*wally_get_error_t)(void);
+
+/** The type of an overridable function to set the last extended error code */
+typedef int (*wally_set_error_t)(
+    int error_code);
+
 /** Structure holding function pointers for overridable wally operations */
 struct wally_operations {
     uintptr_t struct_size; /* Must be initialised to sizeof(wally_operations) */
@@ -358,9 +365,9 @@ struct wally_operations {
     wally_bzero_t bzero_fn;
     wally_ec_nonce_t ec_nonce_fn;
     secp_context_t secp_context_fn;
-    void *reserved_1; /* reserved_ pointers are reserved for future use */
-    void *reserved_2;
-    void *reserved_3;
+    wally_get_error_t get_error_fn;
+    wally_set_error_t set_error_fn;
+    void *reserved_3; /* reserved_ pointers are reserved for future use */
     void *reserved_4;
 };
 
