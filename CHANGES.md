@@ -1,5 +1,60 @@
 # Changes
 
+## Version 1.0.0
+
+This release contains ABI changes; it is not ABI compatibile with prior versions.
+
+### Added
+
+- The library version number is now available as compile time constants
+  (`WALLY_MAJOR_VER`, `WALLY_MINOR_VER`, `WALLY_PATCH_VER`, `WALLY_BUILD_VER`),
+  and at runtime via `wally_get_build_version`.
+- Added support for wallet policies (https://github.com/bitcoin/bips/pull/1389).
+- Added support for iterating and querying keys in descriptor/policy
+  expressions, including support for key origin information such as
+  fingerprint and path.
+- The library allocation functions (which may be overridden by the caller
+  at runtime) are now exposed as wally_[malloc|calloc|free|strdup|strdump_n].
+  Libraries using wally that wish to respect the callers allocation strategy
+  can use these to avoid having to expose their own customizable allocator.
+- Added support for encrypted request/response protocols using ephemeral keys
+  via aes_cbc_with_ecdh_key().
+- The PyPI wheel uploads now include an sdist source distribution, allowing
+  install on otherwise-unsupported architectures.
+
+### Changed
+
+- The library now follows semantic versioning as per https://semver.org/.
+- Elements support is now enabled by default, reflecting the common library
+  usage. Please see the `configure --help` entries for `--disable-elements`
+  and `--disable-elements-abi` for details.
+- The ABI of the library is now consistent by default regardless of whether
+  it is built with or without Elements support.
+- The constant EC_SIGNATURE_DER_MAX_LOW_R_LEN has been changed from 71 to 70,
+  to reflect that wally always produced low-R, low-S signatures when grinding.
+- When configured to build as a static library, linking to libwallycore.a
+  requires additionally linking to libsecp256k1.a.
+- Wally can now be configured to build against a system-wide libsecp256k1 by
+  passing `--with-system-secp256k1` to configure.
+- The Python wheel can now be built with standard Python tooling such as `build`,
+  and can be built from an uploaded source distribution.
+- The Python wheel can now be built with dynamic linking to libwallycore and
+  libsecp256k1-zkp/libsecp256k1.
+- libsecp256k1-zkp has been updated to the lastest master version as at
+  the time of release.
+- Some functions in the c++ header wally.hpp have changed interface slightly.
+  Note that this header is deprecated and will be replaced in an upcoming
+  release with higher level wrappers in the same manner as Python and JS.
+- The docker-based builds have been streamlined and simplified. NPM builds in
+  particular are now much faster.
+
+### Fixed
+
+- Fixed a bug affecting signing PSBT taproot inputs.
+- Fixed extern libsecp256k1-zkp linkage for windows static builds.
+- Several build fixes/improvements and CI updates have been made.
+
+
 ## Version 0.9.1
 - PSET: When adding an Elements transaction output to a PSET, the nonce
   commitment was incorrectly mapped to the PSET output blinding key field.
