@@ -120,4 +120,9 @@ const struct wally_map_item *map_find_equal_integer(const struct wally_map *lhs,
 /* Clamp initial witness stack allocation sizing */
 #define MAX_WITNESS_ITEMS_ALLOC 100u /* Non-Taproot standardness limit */
 
+/* Absolute maximum number of inputs and outputs for BTC.
+ * Liquid numbers are smaller; we use the upper limit */
+#define TX_MAX_INPUTS (TX_MAX_INPUTS_ALLOC * 10)
+#define TX_MAX_OUTPUTS (TX_MAX_OUTPUTS_ALLOC * 10)
+
 #endif /* LIBWALLY_INTERNAL_H */

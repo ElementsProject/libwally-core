@@ -1144,6 +1144,9 @@ static int tx_init_alloc(uint32_t version, uint32_t locktime,
     struct wally_tx_output *new_outputs = NULL;
 
     OUTPUT_CHECK;
+    if (inputs_allocation_len > TX_MAX_INPUTS ||
+        outputs_allocation_len > TX_MAX_OUTPUTS)
+        return WALLY_EINVAL; /* Tx cannot fit in a block: invalid */
     OUTPUT_ALLOC(struct wally_tx);
 
     if (inputs_allocation_len) {
