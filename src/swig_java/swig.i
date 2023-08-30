@@ -598,6 +598,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_explicit_surjectionproof, 7, 8, ASSET_EXPLICIT_SURJECTIONPROOF_LEN);
 %returns_void__(wally_explicit_surjectionproof_verify);
 %returns_size_t(wally_format_bitcoin_message);
+%returns_size_t(wally_get_build_version)
 %returns_array_(wally_get_hash_prevouts, 5, 6, SHA256_LEN);
 %returns_array_(wally_hash160, 3, 4, HASH160_LEN);
 %returns_string(wally_hex_from_bytes);

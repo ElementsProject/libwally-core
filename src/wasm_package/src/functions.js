@@ -209,6 +209,7 @@ export const explicit_surjectionproof = wrap('wally_explicit_surjectionproof', [
 export const explicit_surjectionproof_verify = wrap('wally_explicit_surjectionproof_verify', [T.Bytes, T.Bytes, T.Bytes]);
 export const format_bitcoin_message = wrap('wally_format_bitcoin_message', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, format_bitcoin_message_len, true)]);
 export const free_string = wrap('wally_free_string', [T.OpaqueRef]);
+export const get_build_version = wrap('wally_get_build_version', [T.DestPtr(T.Int32)]);
 export const get_hash_prevouts = wrap('wally_get_hash_prevouts', [T.Bytes, T.Uint32Array, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const get_operations = wrap('wally_get_operations', [T.OpaqueRef]);
 export const hash160 = wrap('wally_hash160', [T.Bytes, T.DestPtrSized(T.Bytes, C.HASH160_LEN)]);

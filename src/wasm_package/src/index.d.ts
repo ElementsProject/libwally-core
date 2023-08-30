@@ -161,6 +161,7 @@ export function explicit_surjectionproof(output_asset: Buffer|Uint8Array, output
 export function explicit_surjectionproof_verify(surjectionproof: Buffer|Uint8Array, output_asset: Buffer|Uint8Array, output_generator: Buffer|Uint8Array): void;
 export function format_bitcoin_message(bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function free_string(str: Ref): void;
+export function get_build_version(): number;
 export function get_hash_prevouts(txhashes: Buffer|Uint8Array, utxo_indices: Uint32Array|number[]): Buffer;
 export function get_operations(output: Ref_wally_operations): void;
 export function hash160(bytes: Buffer|Uint8Array): Buffer;

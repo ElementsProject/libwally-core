@@ -722,6 +722,11 @@ inline int free_string(char* str) {
     return ret;
 }
 
+inline int get_build_version(uint32_t* value) {
+    int ret = ::wally_get_build_version(value);
+    return ret;
+}
+
 template <class TXHASHES, class UTXO_INDICES, class BYTES_OUT>
 inline int get_hash_prevouts(const TXHASHES& txhashes, const UTXO_INDICES& utxo_indices, BYTES_OUT& bytes_out) {
     int ret = ::wally_get_hash_prevouts(txhashes.data(), txhashes.size(), utxo_indices.data(), utxo_indices.size(), bytes_out.data(), bytes_out.size());
