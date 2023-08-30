@@ -5,7 +5,7 @@ for cryptocurrency wallets.
 
 Read the API documentation at https://wally.readthedocs.io.
 
-Note that library interfaces may change slightly while the library design matures. Please see the [CHANGES](./CHANGES.md) file to determine if the API has changed when upgrading.
+Please see the [CHANGES](./CHANGES.md) for details of ABI changes when upgrading.
 
 Please report bugs and submit patches to [Our github repository](https://github.com/ElementsProject/libwally-core). If you wish to report a security issue, please read [Our security reporting guidelines](./SECURITY.md).
 
