@@ -482,6 +482,7 @@ export const psbt_input_set_witness_utxo_from_tx = wrap('wally_psbt_input_set_wi
 export const psbt_input_taproot_keypath_add = wrap('wally_psbt_input_taproot_keypath_add', [T.OpaqueRef, T.Bytes, T.Bytes, T.Bytes, T.Uint32Array]);
 export const psbt_is_elements = wrap('wally_psbt_is_elements', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const psbt_is_finalized = wrap('wally_psbt_is_finalized', [T.OpaqueRef, T.DestPtr(T.Int32)]);
+export const psbt_is_input_finalized = wrap('wally_psbt_is_input_finalized', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_output_clear_amount = wrap('wally_psbt_output_clear_amount', [T.OpaqueRef]);
 export const psbt_output_clear_asset = wrap('wally_psbt_output_clear_asset', [T.OpaqueRef]);
 export const psbt_output_clear_asset_blinding_surjectionproof = wrap('wally_psbt_output_clear_asset_blinding_surjectionproof', [T.OpaqueRef]);

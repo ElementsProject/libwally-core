@@ -1413,6 +1413,12 @@ int wally_psbt_is_finalized(const struct wally_psbt *psbt,
     return WALLY_OK;
 }
 
+int wally_psbt_is_input_finalized(const struct wally_psbt *psbt,
+                                  size_t index, size_t *written)
+{
+    return wally_psbt_input_is_finalized(psbt_get_input(psbt, index), written);
+}
+
 static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool do_clone)
 {
     struct wally_tx *new_tx = NULL;

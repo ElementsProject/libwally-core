@@ -1408,6 +1408,12 @@ inline int psbt_is_finalized(const PSBT& psbt, size_t* written) {
     return ret;
 }
 
+template <class PSBT>
+inline int psbt_is_input_finalized(const PSBT& psbt, size_t index, size_t* written) {
+    int ret = ::wally_psbt_is_input_finalized(detail::get_p(psbt), index, written);
+    return ret;
+}
+
 inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
     int ret = ::wally_psbt_output_clear_amount(output);
     return ret;

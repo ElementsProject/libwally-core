@@ -434,6 +434,7 @@ export function psbt_input_set_witness_utxo_from_tx(input: Ref_wally_psbt_input,
 export function psbt_input_taproot_keypath_add(input: Ref_wally_psbt_input, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_is_elements(psbt: Ref_wally_psbt): number;
 export function psbt_is_finalized(psbt: Ref_wally_psbt): number;
+export function psbt_is_input_finalized(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_output_clear_amount(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_asset(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_asset_blinding_surjectionproof(output: Ref_wally_psbt_output): void;

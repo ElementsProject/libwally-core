@@ -541,6 +541,7 @@ for f in (
     ('wally_psbt_input_taproot_keypath_add', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
     ('wally_psbt_is_elements', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_is_finalized', c_int, [POINTER(wally_psbt), c_size_t_p]),
+    ('wally_psbt_is_input_finalized', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_output_clear_amount', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_clear_asset', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_clear_asset_blinding_surjectionproof', c_int, [POINTER(wally_psbt_output)]),

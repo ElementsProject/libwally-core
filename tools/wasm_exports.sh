@@ -290,6 +290,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_input_taproot_keypath_add' \
 ,'_wally_psbt_is_elements' \
 ,'_wally_psbt_is_finalized' \
+,'_wally_psbt_is_input_finalized' \
 ,'_wally_psbt_output_clear_amount' \
 ,'_wally_psbt_output_find_keypath' \
 ,'_wally_psbt_output_find_unknown' \

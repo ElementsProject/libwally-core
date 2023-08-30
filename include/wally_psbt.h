@@ -1959,6 +1959,18 @@ WALLY_CORE_API int wally_psbt_is_finalized(
     size_t *written);
 
 /**
+ * Determine if a given PSBT input is finalized.
+ *
+ * :param psbt: The PSBT to check.
+ * :param index: The zero-based index of the input to check.
+ * :param written: On success, set to one if the input is finalized, otherwise zero.
+ */
+WALLY_CORE_API int wally_psbt_is_input_finalized(
+    const struct wally_psbt *psbt,
+    size_t index,
+    size_t *written);
+
+/**
  * Set the global transaction for a PSBT.
  *
  * :param psbt: The PSBT to set the transaction for.

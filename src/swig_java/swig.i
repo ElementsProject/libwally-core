@@ -858,6 +858,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %rename("psbt_init") wally_psbt_init_alloc;
 %returns_size_t(wally_psbt_is_elements);
 %returns_size_t(wally_psbt_is_finalized);
+%returns_size_t(wally_psbt_is_input_finalized);
 %returns_void__(wally_psbt_remove_input);
 %returns_void__(wally_psbt_remove_output);
 %returns_void__(wally_psbt_set_pset_modifiable_flags);
