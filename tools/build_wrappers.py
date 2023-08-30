@@ -310,11 +310,6 @@ def gen_wally_hpp(funcs, all_funcs):
                 cpp_args.append(f'{const}{arg.name.upper()}& {arg.name}')
                 call_args.extend([f'{arg.name}.data()', f'{arg.name}.size()'])
                 skip = True
-            elif arg.type == u'size_t*' and arg.name == u'written' and \
-                    n >= 2 and is_buffer(func, func.args[n-2], n-2, num_args):
-                vardecl = u'    size_t n;'
-                cpp_args.append(f'{arg.type} {arg.name} = 0')
-                call_args.append(f'{arg.name} ? {arg.name} : &n')
             elif arg.type in [u'int', u'size_t', u'uint32_t', u'uint64_t',
                               u'int*', u'size_t*', u'uint32_t*', u'uint64_t*',
                               u'wally_map_verify_fn_t']:
