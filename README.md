@@ -79,8 +79,14 @@ $ brew install swig
 - `--enable-swig-java`. Enable the [SWIG](http://www.swig.org/) Java (JNI)
    interface. After building, see `src/swig_java/src/com/blockstream/libwally/Wally.java`
    for the Java interface definition (default: no).
-- `--enable-elements`. Enables support for [Elements](https://elementsproject.org/)
-   features, including [Liquid](https://blockstream.com/liquid/) support.
+- `--disable-elements`. Disables support for [Elements](https://elementsproject.org/)
+   features, including [Liquid](https://blockstream.com/liquid/) support (default: no).
+   Note that to use Elements API calls from C/C++, the caller must define `BUILD_ELEMENTS`
+   when including the wally header files.
+- `--disable-elements-abi`. Ensures that exposed library structures maintain the same ABI
+   regardless of `--disable-elements`. If disabled, elements support must be disabled and
+   the user must define `WALLY_ABI_NO_ELEMENTS` before including all wally header files.
+   This option *must be set if wally is being installed as a system/shared library*. (default: no).
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
 - `--enable-mbed-tls`. Use mbed-tls hashing functions if available. This typically

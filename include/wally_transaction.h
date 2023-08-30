@@ -101,7 +101,7 @@ struct wally_tx_input {
     size_t script_len;
     struct wally_tx_witness_stack *witness;
     uint8_t features;
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
     unsigned char blinding_nonce[SHA256_LEN];
     unsigned char entropy[SHA256_LEN];
     unsigned char *issuance_amount;
@@ -113,7 +113,7 @@ struct wally_tx_input {
     unsigned char *inflation_keys_rangeproof;
     size_t inflation_keys_rangeproof_len;
     struct wally_tx_witness_stack *pegin_witness;
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 };
 
 /** A transaction output */
@@ -122,7 +122,7 @@ struct wally_tx_output {
     unsigned char *script;
     size_t script_len;
     uint8_t features;
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
     unsigned char *asset;
     size_t asset_len;
     unsigned char *value;
@@ -133,7 +133,7 @@ struct wally_tx_output {
     size_t surjectionproof_len;
     unsigned char *rangeproof;
     size_t rangeproof_len;
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 };
 
 /** A parsed bitcoin transaction */

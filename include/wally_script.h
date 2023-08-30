@@ -649,7 +649,7 @@ WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
-#endif
+#endif /* BUILD_ELEMENTS */
 
 #ifdef __cplusplus
 }

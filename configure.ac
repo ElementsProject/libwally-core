@@ -65,8 +65,11 @@ AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--enable-tests],[enable code tests (default: yes)]),
     [tests=$enableval], [tests=yes])
 AC_ARG_ENABLE(elements,
-    AS_HELP_STRING([--enable-elements],[enable elements tx code (default: no)]),
-    [elements=$enableval], [elements=no])
+    AS_HELP_STRING([--enable-elements],[enable support for elements (default: yes)]),
+    [elements=$enableval], [elements=yes])
+AC_ARG_ENABLE(elements_abi,
+    AS_HELP_STRING([--enable-elements-abi],[enable ABI compatibility when elements is disabled (default: yes)]),
+    [elements_abi=$enableval], [elements_abi=yes])
 AC_ARG_ENABLE(standard-secp,
     AS_HELP_STRING([--enable-standard-secp],[enable compiling with standard libsecp256k1 (default: no)]),
     [standard_secp=$enableval], [standard_secp=no])
@@ -87,6 +90,7 @@ AC_ARG_ENABLE(asm,
     [asm=$enableval], [asm=yes])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
+AM_CONDITIONAL([WALLY_ABI_NO_ELEMENTS], [test "x$elements_abi" == "xno"])
 AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" == "xyes"])
 AM_CONDITIONAL([BUILD_MINIMAL], [test "x$minimal" == "xyes"])
 
@@ -127,6 +131,12 @@ fi
 
 if test "x$elements" == "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DBUILD_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_ELEMENTS=1"])
+fi
+if test "x$elements_abi" == "xno"; then
+    if test "x$elements" == "xyes"; then
+        AC_MSG_FAILURE([ERROR: Elements ABI cannot be disabled when elements is enabled])
+    fi
+    AX_CHECK_COMPILE_FLAG([-DWALLY_ABI_NO_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DWALLY_ABI_NO_ELEMENTS=1"])
 fi
 if test "x$standard_secp" == "xyes"; then
     if test "x$elements" == "xyes"; then
