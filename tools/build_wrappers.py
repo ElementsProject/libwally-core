@@ -341,9 +341,8 @@ def gen_wally_hpp(funcs, all_funcs):
         impl.append(f'    int ret = ::{func.name}({", ".join(call_args)});')
         if vardecl:
             prev = func.args[-3]
-            impl.append(f'    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>({prev.name}.size()) ? WALLY_OK : WALLY_EINVAL;')
-        else:
-            impl.append(f'    return ret;')
+            impl.append(f'    if (ret == WALLY_OK && n != static_cast<size_t>({prev.name}.size())) ret = WALLY_EINVAL;')
+        impl.append(f'    return detail::check_ret(__FUNCTION__, ret);')
         impl.extend([u'}', u''])
         (cpp_elements if func.is_elements else cpp)[func.name] = impl
 
