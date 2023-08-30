@@ -17,7 +17,7 @@ case $host_os in
     LDPATH_VAR=DYLD_LIBRARY_PATH
     ;;
 esac
-AM_CONDITIONAL([IS_OSX], [test "x$is_osx" == "xyes"])
+AM_CONDITIONAL([IS_OSX], [test "x$is_osx" = "xyes"])
 AC_SUBST([LDPATH_VAR])
 
 case $host in
@@ -25,7 +25,7 @@ case $host in
     is_mingw="yes"
     ;;
 esac
-AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" == "xyes"])
+AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" = "xyes"])
 
 # Require Automake 1.11.2 for AM_PROG_AR
 AM_INIT_AUTOMAKE([1.11.2 foreign subdir-objects])
@@ -43,10 +43,10 @@ AC_SUBST([RANLIB])
 
 GNU_SED=sed
 AC_CHECK_PROG(HAVE_GSED,gsed,yes,no)
-if test "x$HAVE_GSED" == "xyes"; then
+if test "x$HAVE_GSED" = "xyes"; then
   GNU_SED=gsed
 else
-    if test "x$is_osx" == "xyes"; then
+    if test "x$is_osx" = "xyes"; then
         AC_MSG_ERROR([gsed must be available to build this library])
     fi
 fi
@@ -88,11 +88,11 @@ AC_ARG_ENABLE(secp256k1-tests,
 AC_ARG_ENABLE(asm,
     AS_HELP_STRING([--enable-asm],[enable assembly language implementations (default: yes)]),
     [asm=$enableval], [asm=yes])
-AM_CONDITIONAL([RUN_TESTS], [test "x$tests" == "xyes"])
-AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" == "xyes"])
-AM_CONDITIONAL([WALLY_ABI_NO_ELEMENTS], [test "x$elements_abi" == "xno"])
-AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" == "xyes"])
-AM_CONDITIONAL([BUILD_MINIMAL], [test "x$minimal" == "xyes"])
+AM_CONDITIONAL([RUN_TESTS], [test "x$tests" = "xyes"])
+AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" = "xyes"])
+AM_CONDITIONAL([WALLY_ABI_NO_ELEMENTS], [test "x$elements_abi" = "xno"])
+AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" = "xyes"])
+AM_CONDITIONAL([BUILD_MINIMAL], [test "x$minimal" = "xyes"])
 
 AC_C_BIGENDIAN()
 AC_C_INLINE
@@ -105,13 +105,13 @@ AC_TYPE_UINT8_T
 AM_CFLAGS=
 AX_CHECK_COMPILE_FLAG([-O0], [NOOPT_CFLAGS="-O0"])
 
-if test "x$debug" == "xyes"; then
+if test "x$debug" = "xyes"; then
     # Make debugging easier, leave assertions in
     AM_CFLAGS="$AM_CFLAGS $NOOPT_CFLAGS"
     AX_CHECK_COMPILE_FLAG([-ggdb], [AM_CFLAGS="$AM_CFLAGS -ggdb"])
     AX_CHECK_LINK_FLAG([-O0], [LDFLAGS="$LDFLAGS -O0"])
     AX_CHECK_LINK_FLAG([-ggdb], [LDFLAGS="$LDFLAGS -ggdb"])
-    if test "x$coverage" == "xyes"; then
+    if test "x$coverage" = "xyes"; then
         AX_CHECK_COMPILE_FLAG([-fprofile-arcs -ftest-coverage], [AM_CFLAGS="$AM_CFLAGS -fprofile-arcs -ftest-coverage"])
         AX_CHECK_LINK_FLAG([-lgcov], [LDFLAGS="$LDFLAGS -lgcov"])
         AX_CHECK_LINK_FLAG([--coverage], [LDFLAGS="$LDFLAGS --coverage"])
@@ -129,27 +129,27 @@ else
     AX_CHECK_LINK_FLAG([-Wl,-z,relro], [LDFLAGS="$LDFLAGS -Wl,-z,relro"])
 fi
 
-if test "x$elements" == "xyes"; then
+if test "x$elements" = "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DBUILD_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_ELEMENTS=1"])
 fi
-if test "x$elements_abi" == "xno"; then
-    if test "x$elements" == "xyes"; then
+if test "x$elements_abi" = "xno"; then
+    if test "x$elements" = "xyes"; then
         AC_MSG_FAILURE([ERROR: Elements ABI cannot be disabled when elements is enabled])
     fi
     AX_CHECK_COMPILE_FLAG([-DWALLY_ABI_NO_ELEMENTS=1], [AM_CFLAGS="$AM_CFLAGS -DWALLY_ABI_NO_ELEMENTS=1"])
 fi
-if test "x$standard_secp" == "xyes"; then
-    if test "x$elements" == "xyes"; then
+if test "x$standard_secp" = "xyes"; then
+    if test "x$elements" = "xyes"; then
         AC_MSG_FAILURE([ERROR: Elements cannot be enabled with standard libsecp256k1])
     fi
     AX_CHECK_COMPILE_FLAG([-DBUILD_STANDARD_SECP=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_STANDARD_SECP=1"])
 fi
 
-if test "x$minimal" == "xyes"; then
+if test "x$minimal" = "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DBUILD_MINIMAL=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_MINIMAL=1"])
 fi
 
-if test "x$builtin_memset" == "xno"; then
+if test "x$builtin_memset" = "xno"; then
     AX_CHECK_COMPILE_FLAG([-fno-builtin-memset], [AM_CFLAGS="$AM_CFLAGS -fno-builtin"])
 fi
 
@@ -200,7 +200,7 @@ AC_SUBST([SWIG_WARN_CFLAGS])
 AC_ARG_ENABLE(export-all,
     AS_HELP_STRING([--enable-export-all],[export all functions (for testing, default: no)]),
     [export_all=$enableval], [export_all=no])
-AM_CONDITIONAL([EXPORT_ALL], [test "x$export_all" == "xyes"])
+AM_CONDITIONAL([EXPORT_ALL], [test "x$export_all" = "xyes"])
 
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [AM_CFLAGS="$AM_CFLAGS -fvisibility=hidden"])
@@ -225,7 +225,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],[[return posix_memalign(
 
 AC_CHECK_FUNCS([memset_s explicit_bzero explicit_memset])
 
-if test "x$asm" == "xyes"; then
+if test "x$asm" = "xyes"; then
     AC_MSG_CHECKING(whether we can use inline asm code)
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     ]], [[
@@ -240,7 +240,7 @@ if test "x$asm" == "xyes"; then
 fi
 
 AC_CHECK_HEADERS([byteswap.h sys/mman.h])
-if test "x$mbedtls" == "xyes"; then
+if test "x$mbedtls" = "xyes"; then
     AC_CHECK_HEADERS([mbedtls/sha256.h mbedtls/sha512.h])
 fi
 
@@ -249,8 +249,8 @@ AC_ARG_ENABLE(clear-tests,
     [clear_tests=$enableval], [clear_tests=yes])
 
 AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
-AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" == "xyes" -a "x$clear_tests" == "xyes"])
-if test "x$ac_have_pthread" == "xyes"; then
+AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" = "xyes" -a "x$clear_tests" = "xyes"])
+if test "x$ac_have_pthread" = "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], 1, [Define if we have pthread support])
     AC_CHECK_HEADERS([asm/page.h])
 fi
@@ -285,7 +285,7 @@ AC_SUBST([LIBADD_SECP256K1])
 AC_ARG_ENABLE(python-manylinux,
     AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
     [python_manylinux=$enableval], [python_manylinux=no])
-AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" == "xyes"])
+AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" = "xyes"])
 
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
@@ -295,7 +295,7 @@ AC_ARG_ENABLE(wasm-interface,
     AS_HELP_STRING([--enable-wasm-interface],[enable the WASM interface (default: no)]),
     [wasm_interface=$enableval], [wasm_interface=no])
 
-if test "x$wasm_interface" == "xyes"; then
+if test "x$wasm_interface" = "xyes"; then
     AX_CHECK_COMPILE_FLAG([-DWASM_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DWASM_BUILD=1"])
 fi
 
@@ -307,11 +307,11 @@ AC_PROG_SWIG
 AC_ARG_ENABLE(swig-python,
     AS_HELP_STRING([--enable-swig-python],[enable the SWIG Python interface (default: no)]),
     [swig_python=$enableval], [swig_python=no])
-AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" == "xyes"])
+AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" = "xyes"])
 
-AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" == "xyes"])
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" = "xyes"])
 
-if test "x$swig_python" == "xyes"; then
+if test "x$swig_python" = "xyes"; then
     if test "x$pythonexists" != "xyes"; then
         AC_MSG_FAILURE([ERROR: No usable Python was found for swig-python])
     fi
@@ -322,9 +322,9 @@ fi
 AC_ARG_ENABLE(swig-java,
     AS_HELP_STRING([--enable-swig-java],[enable the SWIG java (JNI) interface (default: no)]),
     [swig_java=$enableval], [swig_java=no])
-AM_CONDITIONAL([USE_SWIG_JAVA], [test "x$swig_java" == "xyes"])
+AM_CONDITIONAL([USE_SWIG_JAVA], [test "x$swig_java" = "xyes"])
 
-if test "x$swig_java" == "xyes"; then
+if test "x$swig_java" = "xyes"; then
     saved_JAVA_HOME=$JAVA_HOME
     if test x"$cross_compiling" = "xyes"; then
         # For cross compiling we assume the users host O/S Java install is not
@@ -357,7 +357,7 @@ else
 fi
 AM_CONDITIONAL([HAVE_JAVA], [test "x$JAVA" != "x"])
 AM_CONDITIONAL([HAVE_JAVAC], [test "x$JAVAC" != "x"])
-if test "x$swig_java" == "xyes"; then
+if test "x$swig_java" = "xyes"; then
     if test "x$JAVAC" != "x"; then
         if test "x$JAVA" != "x"; then
             # Only run tests if we have java-swig, compiler and interpreter
@@ -371,12 +371,12 @@ AC_SUBST([JAVAC_TARGET])
 
 AC_SUBST([AM_CFLAGS])
 
-if test "x$enable_static" == "xyes"; then
+if test "x$enable_static" = "xyes"; then
     CTEST_EXTRA_STATIC='$(libwallycore_la_LIBADD)'
 fi
 AC_SUBST([CTEST_EXTRA_STATIC])
 
-AM_CONDITIONAL([SHARED_BUILD_ENABLED], [test "x$enable_shared" == "xyes"])
+AM_CONDITIONAL([SHARED_BUILD_ENABLED], [test "x$enable_shared" = "xyes"])
 
 AC_CONFIG_FILES([
  Makefile
@@ -385,15 +385,15 @@ AC_CONFIG_FILES([
 ])
 
 secp_asm="--with-asm=auto"
-if test "x$asm" == "xno"; then
+if test "x$asm" = "xno"; then
     secp_asm="--with-asm=no"
 fi
-if test "x$debug" == "xyes"; then
+if test "x$debug" = "xyes"; then
     secp_asm="--with-asm=no"
 fi
 
 secp256k1_test_opt="--disable-tests"
-if test "x$secp256k1_tests" == "xyes"; then
+if test "x$secp256k1_tests" = "xyes"; then
     secp256k1_test_opt="--enable-tests"
 fi
 
