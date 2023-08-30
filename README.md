@@ -120,7 +120,7 @@ installed.
 For non-development use, you can install wally from PyPI with `pip` as follows:
 
 ```
-pip install wallycore==0.9.2
+pip install wallycore==1.0.0
 ```
 
 For development, you can build and install wally using:
