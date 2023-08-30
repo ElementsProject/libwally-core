@@ -84,7 +84,6 @@ export const EC_XONLY_PUBLIC_KEY_LEN = 32;
 export const HASH160_LEN = 20;
 export const HMAC_SHA256_LEN = 32;
 export const HMAC_SHA512_LEN = 64;
-export const LIBWALLY_CORE_PSBT_MEMBERS_H = 1;
 export const PBKDF2_HMAC_SHA256_LEN = 32;
 export const PBKDF2_HMAC_SHA512_LEN = 64;
 export const RIPEMD160_LEN = 20;
