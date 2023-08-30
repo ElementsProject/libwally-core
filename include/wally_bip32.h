@@ -360,7 +360,7 @@ WALLY_CORE_API int bip32_key_from_parent_path_str_n_alloc(
     uint32_t flags,
     struct ext_key **output);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Derive the pub tweak from a parent extended key and a path.
  *
@@ -387,7 +387,7 @@ WALLY_CORE_API int bip32_key_with_tweak_from_parent_path_alloc(
     size_t child_path_len,
     uint32_t flags,
     struct ext_key **output);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /**
  * Convert an extended key to base58.

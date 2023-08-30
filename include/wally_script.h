@@ -581,7 +581,7 @@ WALLY_CORE_API int wally_witness_program_from_bytes_and_version(
     size_t len,
     size_t *written);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Get the pegout script size.
  *
@@ -649,7 +649,7 @@ WALLY_CORE_API int wally_elements_pegin_contract_script_from_bytes(
     unsigned char *bytes_out,
     size_t len,
     size_t *written);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 #ifdef __cplusplus
 }
