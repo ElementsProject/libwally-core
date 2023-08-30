@@ -2,9 +2,9 @@
 
 set -e
 
-ENABLE_ELEMENTS=""
-if [ "$1" = "--enable-elements" ]; then
-    ENABLE_ELEMENTS="$1"
+DISABLE_ELEMENTS=""
+if [ "$1" = "--disable-elements" ]; then
+    DISABLE_ELEMENTS="--disable-elements --disable-elements-abi"
 fi
 
 num_jobs=4
@@ -26,7 +26,7 @@ $PWD/tools/cleanup.sh && $PWD/tools/autogen.sh
 #sed -i 's/WALLY_CORE_API/EMSCRIPTEN_KEEPALIVE/g' include/*.h src/*.h
 
 export CFLAGS="-fno-stack-protector"
-emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $ENABLE_ELEMENTS --disable-tests --enable-export-all --enable-wasm-interface
+emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $DISABLE_ELEMENTS --disable-tests --enable-export-all --enable-wasm-interface
 emmake make -j $num_jobs
 
 EMCC_OPTIONS="$EMCC_OPTIONS -s EXPORT_ES6=1 -s MODULARIZE=1 -s EXPORT_NAME=InitWally -s WASM_BIGINT"

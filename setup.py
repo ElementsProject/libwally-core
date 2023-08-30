@@ -3,7 +3,7 @@ from setuptools import setup, Extension
 import copy, os, platform, shutil
 import distutils.sysconfig
 
-CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux --enable-elements'
+CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux'
 CONFIGURE_ARGS += ' --disable-swig-java --disable-tests --disable-dependency-tracking'
 
 distutils_env = distutils.sysconfig.get_config_vars()

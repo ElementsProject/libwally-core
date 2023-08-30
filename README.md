@@ -185,7 +185,7 @@ $ source $HOME/emsdk/emsdk_env.sh
 $ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',...]"
 
 # Build
-$ ./tools/build_wasm.sh [--enable-elements]
+$ ./tools/build_wasm.sh [--disable-elements]
 ```
 
 Note that emsdk v3.1.27 or later is required.
@@ -243,7 +243,7 @@ To generate an HTML coverage report, install `lcov` and use:
 ```
 $ ./tools/cleanup.sh
 $ ./tools/autogen.sh
-$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-coverage --enable-elements
+$ ./configure --enable-debug --enable-export-all --enable-swig-python --enable-swig-java --enable-coverage
 $ make
 $ ./tools/coverage.sh clean
 $ make check

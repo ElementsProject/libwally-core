@@ -71,7 +71,7 @@ function android_build_wally() {
     RANLIB=$toolsdir/bin/llvm-ranlib \
     STRIP=$toolsdir/bin/llvm-strip \
     ./configure --host=$(android_get_cross_compile_triplet $arch $api) \
-      --enable-swig-java --disable-swig-python --enable-elements $useropts
+      --enable-swig-java --disable-swig-python $useropts
     local num_jobs=4
     if [ -f /proc/cpuinfo ]; then
         num_jobs=$(grep ^processor /proc/cpuinfo | wc -l)
