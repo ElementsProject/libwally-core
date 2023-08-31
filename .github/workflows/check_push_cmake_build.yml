@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2022, windows-2019, macos-12, macos-11, ubuntu-22.04, ubuntu-20.04]
+        os: [windows-2022, windows-2019, macos-13, macos-12, macos-11, ubuntu-22.04, ubuntu-20.04]
         generator: ['Unix Makefiles']
         include:
           - os: windows-2022
@@ -43,7 +43,7 @@ jobs:
       with:
         submodules: true
     - name: setup python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: x64
@@ -64,55 +64,69 @@ jobs:
         cd build
         ctest -C Release --output-on-failure
 
-  cmake-swig-build:
+  cmake-swig-python-build:
     timeout-minutes: 20
-    name: cmake swig build
+    name: cmake swig python build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-#        os: [macos-12, windows-2022, ubuntu-22.04]
+#        os: [macos-13, windows-2022, ubuntu-22.04]
         os: [ubuntu-22.04]
-        target: [python, java]
-        java: ['8.0', '11.0', '17']
-        exclude:
-          - target: python
-            java: '8.0'
-          - target: python
-            java: '11.0'
 
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
     - name: setup python
-      if: matrix.target == 'python'
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: x64
+    - name: cmake-generate-python-config
+      if: matrix.os != 'windows-2022'
+      run: |
+        cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+    - name: cmake-generate-windows-python-config
+      if: matrix.os == 'windows-2022'
+      run: |
+        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+    - name: cmake-build
+      run: |
+        cmake --version
+        cmake --build build --config Release
+    - name: test
+      run: |
+        cd build
+        ctest -C Release --output-on-failure
+
+  cmake-swig-java-build:
+    timeout-minutes: 20
+    name: cmake swig java build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+#        os: [macos-13, windows-2022, ubuntu-22.04]
+        os: [ubuntu-22.04]
+        java: ['8', '11', '17', '20']
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
     - name: setup java
-      if: matrix.target == 'java'
       uses: actions/setup-java@v3
       with:
         java-version: ${{ matrix.java }}
         architecture: x64
         distribution: 'temurin'
-    - name: cmake-generate-python-config
-      if: matrix.os != 'windows-2022' && matrix.target == 'python'
-      run: |
-        cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
-    - name: cmake-generate-windows-python-config
-      if: matrix.os == 'windows-2022' && matrix.target == 'python'
-      run: |
-        cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_PYTHON=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
     - name: cmake-generate-java-config
-      if: matrix.os != 'windows-2022' && matrix.target == 'java'
+      if: matrix.os != 'windows-2022'
       run: |
         cmake -S . -B build -G "Unix Makefiles" -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
     - name: cmake-generate-windows-java-config
-      if: matrix.os == 'windows-2022' && matrix.target == 'java'
+      if: matrix.os == 'windows-2022'
       run: |
-        cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
+        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DENABLE_SHARED=on -DENABLE_ELEMENTS=on -DCMAKE_BUILD_PARALLEL_LEVEL=2 -DENABLE_SWIG_JAVA=on -DGENERATE_WALLY=off -DTARGET_RPATH="./wrap_js/build/Release;../"
     - name: cmake-build
       run: |
         cmake --version
