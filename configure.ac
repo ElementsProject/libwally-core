@@ -259,29 +259,49 @@ fi
 #
 # libsecp256k1
 #
-libsecp256k1_CFLAGS='-I$(top_srcdir)/src/secp256k1/include'
-AC_SUBST([libsecp256k1_CFLAGS])
+AC_ARG_WITH([system-secp256k1],
+    [AS_HELP_STRING([[--with-system-secp256k1[=PKG]]],
+        [build using system-installed libsecp256k1 instead of bundled, passing PKG (default: libsecp256k1 or libsecp256k1_zkp, depending on --enable-standard-secp) to pkg-config (default: no)])],
+    [AS_IF([test "x$withval" = xyes],
+        [AM_COND_IF([BUILD_STANDARD_SECP], [with_system_secp256k1=libsecp256k1], [with_system_secp256k1=libsecp256k1_zkp])])],
+    [with_system_secp256k1=no])
 
-# FIXME: This is needed to force libtool to use all object files from secp.
-#        We can only build secp properly by recursively invoking
-#        configure/make, and can't include it as a noinst_ library. Libtool
-#        assumes that such libraries will be installed along with our library
-#        target and so won't force all object files in the library to be
-#        included in ours - despite the fact that we are making a shared
-#        library and linking to a static one. This is broken and we work
-#        around it by hacking the secp objects directly into the library
-#        via the _LDADD variable for wallycore.
-#        We previously achieved this by adding the libsecp256k1.a archive,
-#        but changes to libtool and apples linkers mean that
-#        archives-within-archives no longer work.
-#        Because automake tries to police its users very strictly and fails
-#        hard when flags are passed in this way, we have to substitute the
-#        flags here.
-#        Because libtool both intercepts -Wl and arbitrarily re-orders its
-#        command line inputs, we have to concoct a single expression to
-#        enforce linking that cannot be split, hence the below expression.
-LIBADD_SECP256K1="-Wl,secp256k1/src/libsecp256k1_la-secp256k1.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult_gen.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult.${OBJEXT}"
-AC_SUBST([LIBADD_SECP256K1])
+AM_CONDITIONAL([LINK_SYSTEM_SECP256K1], [test "x$with_system_secp256k1" != xno])
+AM_COND_IF([LINK_SYSTEM_SECP256K1], [
+    dnl Use the secp installed system-wide (after checking it for suitability)
+    saved_LIBS=$LIBS
+    m4_ifdef([PKG_CHECK_MODULES],
+        [PKG_CHECK_MODULES([libsecp256k1], [$with_system_secp256k1])],
+        [AC_MSG_ERROR([You need to install pkg-config to use --with-system-secp256k1.])])
+    LIBS="$libsecp256k1_LIBS $LIBS"
+    missing_modules=
+    AC_DEFUN([CHECK_MODULE], [
+        AC_CHECK_FUNCS([$2], [], [missing_modules="${missing_modules} $1"])
+    ])
+    CHECK_MODULE([ecdh], [secp256k1_ecdh])
+    CHECK_MODULE([extrakeys], [secp256k1_xonly_pubkey_parse])
+    CHECK_MODULE([recovery], [secp256k1_ecdsa_recover])
+    CHECK_MODULE([schnorrsig], [secp256k1_schnorrsig_verify])
+    AM_COND_IF([BUILD_STANDARD_SECP], [], [
+        CHECK_MODULE([ecdsa-s2c], [secp256k1_ecdsa_s2c_sign])
+    ])
+    AM_COND_IF([BUILD_ELEMENTS], [
+        CHECK_MODULE([generator], [secp256k1_generator_parse])
+        CHECK_MODULE([rangeproof], [secp256k1_rangeproof_verify])
+        CHECK_MODULE([surjectionproof], [secp256k1_surjectionproof_initialize])
+        CHECK_MODULE([whitelist], [secp256k1_whitelist_sign])
+    ])
+    AS_IF([test -n "${missing_modules}"], [
+        AC_MSG_ERROR([system-installed $with_system_secp256k1 does not support these required modules:${missing_modules}])
+    ])
+    LIBS=$saved_LIBS
+], [
+    dnl Use the secp in-tree submodule
+    libsecp256k1_CFLAGS='-I$(top_srcdir)/src/secp256k1/include'
+    libsecp256k1_LIBS='$(top_srcdir)/src/secp256k1/libsecp256k1.la'
+])
+AC_SUBST([libsecp256k1_CFLAGS])
+AC_SUBST([libsecp256k1_LIBS])
 
 #
 # Python facilities
@@ -408,6 +428,8 @@ export AR_FLAGS
 export LD
 export LDFLAGS
 
-AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-ecdsa-s2c], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-generator], [--enable-module-extrakeys], [--enable-module-schnorrsig], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
+AM_COND_IF([LINK_SYSTEM_SECP256K1], [], [
+	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-ecdsa-s2c], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-generator], [--enable-module-extrakeys], [--enable-module-schnorrsig], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
+])
 
 AC_OUTPUT
