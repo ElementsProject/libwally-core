@@ -208,9 +208,11 @@ endif
 endif # SHARED_BUILD_ENABLED
 
 libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan $(libsecp256k1_CFLAGS) -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
-libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
+libwallycore_la_LIBADD = $(libsecp256k1_LIBS) $(noinst_LTLIBRARIES)
 
+if !LINK_SYSTEM_SECP256K1
 SUBDIRS = secp256k1
+endif
 
 TESTS =
 noinst_PROGRAMS =
