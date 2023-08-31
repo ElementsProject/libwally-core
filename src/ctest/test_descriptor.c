@@ -321,6 +321,12 @@ static const struct descriptor_test {
         "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
         "8kzm8txf"
     },{
+        "descriptor - empty raw",
+        "raw()",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "",
+        "58lrscpx"
+    }, {
         "descriptor - raw-checksum",
         "raw(6a4c4f54686973204f505f52455455524e207472616e73616374696f6e206f7574707574207761732063726561746564206279206d6f646966696564206372656174657261777472616e73616374696f6e2e)#zf2avljj",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
@@ -731,6 +737,12 @@ static const struct descriptor_test {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         NULL,
         ""
+    }, {
+        "miniscript - Unknown wrapper type",
+        "z:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        NULL,
+        ""
     },
     /*
      * Miniscript: BOLT examples
@@ -809,6 +821,69 @@ static const struct descriptor_test {
         ""
     },
     /*
+     * Wrappers ('a' case and positioning is handled below)
+     */
+    {
+        /* NOTE: Core generates "OP_SWAP 1", but "1" is not type O and so
+         * should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * s:X requires X is Bo
+         */
+        "miniscript - 's' wrapper",
+        "s:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        /* NOTE: Core generates "1 OP_CHECKSIG", but "1" is not type K and so
+         * should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * c:X requires X is K
+         */
+        "miniscript - 'c' wrapper",
+        "c:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        /* NOTE: Core generates "1 1", but "1" is not type V and so
+         * should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * t:X == and_v(X,1) requires X is V
+         */
+        "miniscript - 't' wrapper",
+        "t:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        /* NOTE: Core generates "OP_DUP OP_IF 1 OP_ENDIF", but "1" is not type
+         * V and so should be invalid according to https://bitcoin.sipa.be/miniscript/:
+         * d:X requires X is Vz
+         */
+        "miniscript - 'd' wrapper",
+        "d:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        "miniscript - 'v' wrapper",
+        "v:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "5169", /* 1 OP_VERIFY */
+        "zd904w4w"
+    },
+    {
+        /* NOTE: Core generates "OP_SIZE OP_0NOTEQUAL OP_IF 1 OP_ENDIF", but
+         * "1" is not type Bn and so should be invalid according
+         * to https://bitcoin.sipa.be/miniscript/:
+         * j:X requires X is Bn
+         */
+        "miniscript - 'j' wrapper",
+        "j:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY, NULL, ""
+    },
+    {
+        "miniscript - 'n' wrapper",
+        "n:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "5192", /* 1 OP_0NOTEQUAL */
+        "d959hk4q"
+    },
+    /*
      * Taproot cases
      */
     {
@@ -829,6 +904,31 @@ static const struct descriptor_test {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
         "20ff7e7b1d3c4ba385cb1f2e6423bf30c96fb5007e7917b09ec1b6c965ef644d13ac",
         ""
+    },
+    /*
+     * Ledger 'a' wrapper vulnerability:
+     * See https://wizardsardine.com/blog/ledger-vulnerability-disclosure/
+     */
+    {
+        "miniscript - Ledger 'a' wrapper bug (outside a built-in)",
+        "a:1",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6b516c", /* OP_TOALTSTACK 1 OP_FROMALTSTACK */
+        "7yjru3ju"
+    },
+    {
+        "miniscript - Ledger 'a' wrapper bug (interior arg of a built-in)",
+        "and_b(a:1,pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "6b516c210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac9a",
+        "c27u392r"
+    },
+    {
+        "miniscript - Ledger 'a' wrapper bug (final arg of built-in)",
+        "and_b(pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798),a:1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac6b516c9a",
+        "cj9s6y5g"
     },
     /* Multi-path */
     {
@@ -952,6 +1052,10 @@ static const struct descriptor_test {
     },{
         "descriptor errchk - xprivkey - unmatch network5",
         "wpkh(mainnet_xpriv)",
+        WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor errchk - addr - empty addr",
+        "addr()",
         WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor errchk - addr - unmatch network1",

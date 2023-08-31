@@ -76,6 +76,14 @@ class TransactionTests(unittest.TestCase):
             # Check that the txid can be computed
             txid, txid_len = make_cbuffer('00' * 32)
             self.assertEqual(WALLY_OK, wally_tx_get_txid(tx_out, txid, txid_len))
+            # Check the transaction can be cloned without finalization data
+            tx_nf, flag_nf = pointer(wally_tx()), 0x1
+            self.assertEqual(WALLY_OK, wally_tx_clone_alloc(tx_out, flag_nf, tx_nf))
+            for i in range(tx_copy.contents.num_inputs):
+                wally_tx_set_input_script(tx_copy, i, None, 0)
+                wally_tx_set_input_witness(tx_copy, i, None)
+            self.assertEqual(utf8(self.tx_serialize_hex(tx_copy)),
+                             utf8(self.tx_serialize_hex(tx_nf)))
 
     def test_lengths(self):
         """Testing functions measuring different lengths for a tx"""
@@ -210,19 +218,65 @@ class TransactionTests(unittest.TestCase):
 
 
     def test_witness(self):
-        """Testing functions manipulating witness"""
-        witness, witness_len = make_cbuffer('00')
+        """Testing functions manipulating witness stacks"""
+        witness = wally_tx_witness_stack()
+        item, item_len = make_cbuffer('00')
+        out, out_len = make_cbuffer('00'*128)
+
         for args in [
-            (None, witness, witness_len), # Empty stack
+            (None,    item, item_len), # NULL stack
+            (witness, None, item_len), # NULL stack item
             ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_witness_stack_add(*args))
             # Testing only wally_tx_witness_stack_add, because it calls wally_tx_witness_stack_set
 
+        for fn in [wally_tx_witness_stack_get_num_items, wally_tx_witness_stack_get_length]:
+            self.assertEqual((WALLY_EINVAL, 0), fn(None)) # NULL stack
+        # An empty stack has no items and is serialized as a single 0x00 byte
+        self.assertEqual((WALLY_OK, 0), wally_tx_witness_stack_get_num_items(witness))
+        self.assertEqual((WALLY_OK, 1), wally_tx_witness_stack_get_length(witness))
+
         for args in [
-            (wally_tx_witness_stack(), witness, witness_len),
+            (witness, None, 0),        # Empty stack items are allowed
+            (witness, item, 0),        # Zero-length stack items are allowed
+            (witness, item, item_len), # Add a single byte item
             ]:
             self.assertEqual(WALLY_OK, wally_tx_witness_stack_add(*args))
-            # To test the expected stack, it should be included in serialized transaction
+
+        # Witness stack now contains 3 items (2 empty, 1 single byte)
+        self.assertEqual((WALLY_OK, 3), wally_tx_witness_stack_get_num_items(witness))
+        # 03 (num_items) 00 (0-length item) 00 (0-length item) 0100 (1-length zero byte item)
+        expected, expected_len = make_cbuffer('0300000100')
+        self.assertEqual((WALLY_OK, expected_len), wally_tx_witness_stack_get_length(witness))
+
+        for args in [
+            (None,    out,  out_len),      # NULL stack
+            (witness, None, out_len),      # NULL output
+            (witness, None, expected_len), # output too small
+            ]:
+            self.assertEqual((WALLY_EINVAL, 0), wally_tx_witness_stack_to_bytes(*args))
+
+        # Round-trip serialization
+        def check_witness_to_bytes(w, expected, expected_len):
+            out, out_len = make_cbuffer('00' * 64)
+            ret, written = wally_tx_witness_stack_to_bytes(w, out, out_len)
+            self.assertEqual((ret, written), (WALLY_OK, expected_len))
+            self.assertEqual(h(out[:written]), utf8(expected[:expected_len * 2]))
+        def witness_roundtrip(src, expected_len, num_items):
+            w = pointer(wally_tx_witness_stack())
+            b, b_len = make_cbuffer(src)
+            ret = wally_tx_witness_stack_from_bytes(b, b_len, w)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual((WALLY_OK, num_items), wally_tx_witness_stack_get_num_items(w))
+            check_witness_to_bytes(w, src, expected_len)
+
+        for src, expected_len, num_items in [
+            ('00',           1, 0),
+            ('0100',         2, 1),
+            ('0300000100',   5, 3),
+            ('030000010000', 5, 3), # Note trailing bytes are ignored
+            ]:
+            witness_roundtrip(src, expected_len, num_items)
 
     def test_get_signature_hash(self):
         """Testing function to get the signature hash"""

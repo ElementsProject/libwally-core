@@ -1,0 +1,29 @@
+
+# libwallycore
+add_library(wallycore)
+file(GLOB ccan_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    "ccan/ccan/base64/*.[ch]"
+    "ccan/ccan/build_assert/*.h"
+    "ccan/ccan/compiler/*.h"
+    "ccan/ccan/crypto/sha256/*.[ch]"
+    "ccan/ccan/crypto/sha512/*.[ch]"
+    "ccan/ccan/crypto/ripemd160/*.[ch]"
+    "ccan/ccan/endian/*.h"
+    "ccan/ccan/str/hex/*.[ch]"
+    "ccan/ccan/tap/*.[ch]"
+)
+file(GLOB wallycore_srcs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.[ch]")
+file(GLOB wallycore_public_headers RELATIVE ${CMAKE_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/include/*.h")
+
+target_sources(wallycore PRIVATE ${ccan_srcs} ${wallycore_srcs})
+set_target_properties(wallycore PROPERTIES PUBLIC_HEADER "${wallycore_public_headers}")
+target_include_directories(
+    wallycore
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    PRIVATE
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/ccan
+)

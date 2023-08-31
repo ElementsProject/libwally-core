@@ -1137,6 +1137,12 @@ inline int psbt_finalize_input(const PSBT& psbt, size_t index, uint32_t flags) {
     return ret;
 }
 
+template <class PSBT, class TXHASH>
+inline int psbt_find_input_spending_utxo(const PSBT& psbt, const TXHASH& txhash, uint32_t utxo_index, size_t* written) {
+    int ret = ::wally_psbt_find_input_spending_utxo(detail::get_p(psbt), txhash.data(), txhash.size(), utxo_index, written);
+    return ret;
+}
+
 inline int psbt_free(struct wally_psbt* psbt) {
     int ret = ::wally_psbt_free(psbt);
     return ret;
@@ -1151,6 +1157,12 @@ inline int psbt_from_base64(const BASE64& base64, uint32_t flags, struct wally_p
 template <class BYTES>
 inline int psbt_from_bytes(const BYTES& bytes, uint32_t flags, struct wally_psbt** output) {
     int ret = ::wally_psbt_from_bytes(bytes.data(), bytes.size(), flags, output);
+    return ret;
+}
+
+template <class TX>
+inline int psbt_from_tx(const TX& tx, uint32_t version, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_tx(detail::get_p(tx), version, flags, output);
     return ret;
 }
 
@@ -1393,6 +1405,12 @@ inline int psbt_is_elements(const PSBT& psbt, size_t* written) {
 template <class PSBT>
 inline int psbt_is_finalized(const PSBT& psbt, size_t* written) {
     int ret = ::wally_psbt_is_finalized(detail::get_p(psbt), written);
+    return ret;
+}
+
+template <class PSBT>
+inline int psbt_is_input_finalized(const PSBT& psbt, size_t index, size_t* written) {
+    int ret = ::wally_psbt_is_input_finalized(detail::get_p(psbt), index, written);
     return ret;
 }
 
@@ -1937,6 +1955,24 @@ inline int tx_witness_stack_free(struct wally_tx_witness_stack* stack) {
     return ret;
 }
 
+template <class BYTES>
+inline int tx_witness_stack_from_bytes(const BYTES& bytes, struct wally_tx_witness_stack** output) {
+    int ret = ::wally_tx_witness_stack_from_bytes(bytes.data(), bytes.size(), output);
+    return ret;
+}
+
+template <class STACK>
+inline int tx_witness_stack_get_length(const STACK& stack, size_t* written) {
+    int ret = ::wally_tx_witness_stack_get_length(detail::get_p(stack), written);
+    return ret;
+}
+
+template <class STACK>
+inline int tx_witness_stack_get_num_items(const STACK& stack, size_t* written) {
+    int ret = ::wally_tx_witness_stack_get_num_items(detail::get_p(stack), written);
+    return ret;
+}
+
 inline int tx_witness_stack_init_alloc(size_t allocation_len, struct wally_tx_witness_stack** output) {
     int ret = ::wally_tx_witness_stack_init_alloc(allocation_len, output);
     return ret;
@@ -1952,6 +1988,13 @@ template <class STACK>
 inline int tx_witness_stack_set_dummy(const STACK& stack, size_t index, uint32_t flags) {
     int ret = ::wally_tx_witness_stack_set_dummy(detail::get_p(stack), index, flags);
     return ret;
+}
+
+template <class STACK, class BYTES_OUT>
+inline int tx_witness_stack_to_bytes(const STACK& stack, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_tx_witness_stack_to_bytes(detail::get_p(stack), bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
 template <class BYTES>

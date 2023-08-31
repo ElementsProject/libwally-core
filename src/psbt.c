@@ -1077,9 +1077,10 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
     return WALLY_OK;
 }
 
-static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
-                           size_t num_unknowns, uint32_t flags,
-                           struct wally_psbt *psbt_out)
+static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
+                     size_t num_unknowns, uint32_t flags,
+                     size_t max_num_inputs, size_t max_num_outputs,
+                     struct wally_psbt *psbt_out)
 {
     int ret;
 
@@ -1087,6 +1088,8 @@ static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outpu
         wally_clear(psbt_out, sizeof(*psbt_out));
     if ((version != PSBT_0 && version != PSBT_2) || !psbt_out)
         return WALLY_EINVAL; /* Only v0/v2 are specified/supported */
+    if (num_inputs > TX_MAX_INPUTS || num_outputs > TX_MAX_OUTPUTS)
+        return WALLY_EINVAL; /* Resulting tx could not fit in a block */
 #ifdef BUILD_ELEMENTS
     if (flags & ~WALLY_PSBT_INIT_PSET ||
         (flags & WALLY_PSBT_INIT_PSET && version != PSBT_2))
@@ -1096,10 +1099,16 @@ static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outpu
         return WALLY_EINVAL;
 #endif /* BUILD_ELEMENTS */
 
-    if (num_inputs)
+    if (num_inputs) {
+        if (num_inputs > max_num_inputs)
+            num_inputs = max_num_inputs;
         psbt_out->inputs = wally_calloc(num_inputs * sizeof(struct wally_psbt_input));
-    if (num_outputs)
+    }
+    if (num_outputs) {
+        if (num_outputs > max_num_outputs)
+            num_outputs = max_num_outputs;
         psbt_out->outputs = wally_calloc(num_outputs * sizeof(struct wally_psbt_output));
+    }
 
     ret = wally_map_init(num_unknowns, NULL, &psbt_out->unknowns);
     if (ret == WALLY_OK)
@@ -1136,16 +1145,58 @@ static int wally_psbt_init(uint32_t version, size_t num_inputs, size_t num_outpu
     return WALLY_OK;
 }
 
-int wally_psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_outputs,
-                          size_t num_unknowns, uint32_t flags, struct wally_psbt **output)
+static int psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_outputs,
+                           size_t num_unknowns, uint32_t flags,
+                           size_t max_num_inputs, size_t max_num_outputs,
+                           struct wally_psbt **output)
 {
     int ret;
 
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_psbt);
-    ret = wally_psbt_init(version, num_inputs, num_outputs, num_unknowns, flags, *output);
+    ret = psbt_init(version, num_inputs, num_outputs, num_unknowns, flags,
+                    max_num_inputs, max_num_outputs, *output);
     if (ret != WALLY_OK) {
         wally_free(*output);
+        *output = NULL;
+    }
+    return ret;
+}
+
+int wally_psbt_init_alloc(uint32_t version, size_t num_inputs, size_t num_outputs,
+                          size_t num_unknowns, uint32_t flags, struct wally_psbt **output)
+{
+    return psbt_init_alloc(version, num_inputs, num_outputs, num_unknowns,
+                           flags, TX_MAX_INPUTS_ALLOC, TX_MAX_OUTPUTS_ALLOC,
+                           output);
+}
+
+int wally_psbt_from_tx(const struct wally_tx *tx, uint32_t version,
+                       uint32_t flags, struct wally_psbt **output)
+{
+    size_t i;
+    int ret;
+
+    if (output)
+        *output = NULL;
+    if (!tx || !output || (version == WALLY_PSBT_VERSION_2 && tx->version < 2u))
+        return WALLY_EINVAL;
+    ret = psbt_init_alloc(version, tx->num_inputs, tx->num_outputs, 0, flags,
+                          tx->num_inputs, tx->num_outputs, output);
+    if (ret == WALLY_OK && version == WALLY_PSBT_VERSION_0)
+        ret = wally_psbt_set_global_tx(*output, tx);
+    else {
+        for (i = 0; ret == WALLY_OK && i < tx->num_inputs; ++i)
+            ret = wally_psbt_add_tx_input_at(*output, i, 0, tx->inputs + i);
+        for (i = 0; ret == WALLY_OK && i < tx->num_outputs; ++i)
+            ret = wally_psbt_add_tx_output_at(*output, i, 0, tx->outputs + i);
+        if (ret == WALLY_OK) {
+            (*output)->tx_version = tx->version;
+            ret = wally_psbt_set_fallback_locktime(*output, tx->locktime);
+        }
+    }
+    if (ret != WALLY_OK) {
+        wally_psbt_free(*output);
         *output = NULL;
     }
     return ret;
@@ -1257,6 +1308,34 @@ int wally_psbt_set_tx_modifiable_flags(struct wally_psbt *psbt, uint32_t flags) 
     return WALLY_OK;
 }
 
+int wally_psbt_find_input_spending_utxo(const struct wally_psbt *psbt,
+                                        const unsigned char *txhash, size_t txhash_len,
+                                        uint32_t utxo_index, size_t *written)
+{
+    size_t i;
+    if (written)
+        *written = 0;
+    if (!psbt_is_valid(psbt) || !txhash || txhash_len != WALLY_TXHASH_LEN ||
+        !written)
+        return WALLY_EINVAL;
+    for (i = 0; i < psbt->num_inputs; ++i) {
+        if (psbt->version == PSBT_0) {
+            const struct wally_tx_input *input = &psbt->tx->inputs[i];
+            if (input->index == utxo_index && !memcmp(input->txhash, txhash, txhash_len)) {
+                *written = i + 1;
+                return WALLY_OK;
+            }
+        } else {
+            const struct wally_psbt_input *input = &psbt->inputs[i];
+            if (input->index == utxo_index && !memcmp(input->txhash, txhash, txhash_len)) {
+                *written = i + 1;
+                return WALLY_OK;
+            }
+        }
+    }
+    return WALLY_OK; /* Not found, return 0 */
+}
+
 #ifdef BUILD_ELEMENTS
 int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written)
 {
@@ -1334,6 +1413,12 @@ int wally_psbt_is_finalized(const struct wally_psbt *psbt,
     return WALLY_OK;
 }
 
+int wally_psbt_is_input_finalized(const struct wally_psbt *psbt,
+                                  size_t index, size_t *written)
+{
+    return wally_psbt_input_is_finalized(psbt_get_input(psbt, index), written);
+}
+
 static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool do_clone)
 {
     struct wally_tx *new_tx = NULL;
@@ -1345,12 +1430,17 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
     if (!psbt_is_valid(psbt) || !tx || psbt->tx || psbt->version != PSBT_0)
         return WALLY_EINVAL; /* PSBT must be v0 and completely empty */
 
-    for (i = 0; i < tx->num_inputs; ++i)
-        if (tx->inputs[i].script || tx->inputs[i].witness)
-            return WALLY_EINVAL; /* tx mustn't have scriptSigs or witnesses */
-
-    if (do_clone && (ret = tx_clone_alloc(tx, &new_tx)) != WALLY_OK)
-        return ret;
+    if (do_clone) {
+        /* clone without scriptSigs and witnesses */
+        const uint32_t clone_flags = WALLY_TX_CLONE_FLAG_NON_FINAL;
+        if ((ret = wally_tx_clone_alloc(tx, clone_flags, &new_tx)) != WALLY_OK)
+            return ret;
+    } else {
+        /* tx mustn't have scriptSigs or witnesses */
+        for (i = 0; i < tx->num_inputs; ++i)
+            if (tx->inputs[i].script || tx->inputs[i].witness)
+                return WALLY_EINVAL;
+    }
 
     if (psbt->inputs_allocation_len < tx->num_inputs) {
         new_inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
@@ -1628,7 +1718,7 @@ static int psbt_output_from_tx_output(struct wally_psbt *psbt,
                                             &dst->amount, &dst->has_amount,
                                             &dst->pset_fields);
             if (ret == WALLY_OK && txout->nonce_len)
-                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_BLINDING_PUBKEY,
+                ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_ECDH_PUBKEY,
                                             txout->nonce, txout->nonce_len);
             if (ret == WALLY_OK && txout->surjectionproof_len)
                 ret = wally_map_add_integer(&dst->pset_fields, PSET_OUT_ASSET_SURJECTION_PROOF,
@@ -1729,18 +1819,6 @@ int wally_psbt_remove_output(struct wally_psbt *psbt, uint32_t index)
     return ret;
 }
 
-/* Stricter version of pull_subfield_end which insists there's nothing left. */
-static void subfield_nomore_end(const unsigned char **cursor, size_t *max,
-                                const unsigned char *subcursor,
-                                const size_t submax)
-{
-    if (submax) {
-        pull_failed(cursor, max);
-    } else {
-        pull_subfield_end(cursor, max, subcursor, submax);
-    }
-}
-
 static uint8_t pull_u8_subfield(const unsigned char **cursor, size_t *max)
 {
     const unsigned char *val;
@@ -1785,13 +1863,6 @@ static uint64_t pull_varint_subfield(const unsigned char **cursor, size_t *max)
     return ret;
 }
 
-static void pull_varlength_buff(const unsigned char **cursor, size_t *max,
-                                const unsigned char **dst, size_t *len)
-{
-    *len = pull_varlength(cursor, max);
-    *dst = pull_skip(cursor, max, *len);
-}
-
 static int pull_output_varbuf(const unsigned char **cursor, size_t *max,
                               struct wally_psbt_output *output,
                               int (*set_fn)(struct wally_psbt_output *, const unsigned char *, size_t))
@@ -1800,14 +1871,6 @@ static int pull_output_varbuf(const unsigned char **cursor, size_t *max,
     size_t val_len;
     pull_varlength_buff(cursor, max, &val, &val_len);
     return val_len ? set_fn(output, val, val_len) : WALLY_OK;
-}
-
-static void pull_varint_buff(const unsigned char **cursor, size_t *max,
-                             const unsigned char **dst, size_t *len)
-{
-    uint64_t varint_len = pull_varint(cursor, max);
-    *len = varint_len;
-    *dst = pull_skip(cursor, max, varint_len);
 }
 
 static int pull_map_item(const unsigned char **cursor, size_t *max,
@@ -1909,31 +1972,6 @@ static int pull_tx_output(const unsigned char **cursor, size_t *max,
     if (!script || !script_len)
         return WALLY_EINVAL;
     ret = wally_tx_output_init_alloc(satoshi, script, script_len, txout_out);
-    subfield_nomore_end(cursor, max, val, val_len);
-    return ret;
-}
-
-static int pull_witness(const unsigned char **cursor, size_t *max,
-                        struct wally_tx_witness_stack **witness_out)
-{
-    const unsigned char *val;
-    size_t val_len;
-    uint64_t num_witnesses, i;
-    int ret;
-
-    if (*witness_out)
-        return WALLY_EINVAL; /* Duplicate */
-
-    pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
-    num_witnesses = pull_varint(&val, &val_len);
-    ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness_out);
-
-    for (i = 0; ret == WALLY_OK && i < num_witnesses; ++i) {
-        const unsigned char *wit;
-        size_t wit_len;
-        pull_varint_buff(&val, &val_len, &wit, &wit_len);
-        ret = wally_tx_witness_stack_set(*witness_out, i, wit, wit_len);
-    }
     subfield_nomore_end(cursor, max, val, val_len);
     return ret;
 }
@@ -2145,7 +2183,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_map_item(cursor, max, key, key_len, &result->keypaths);
                 break;
             case PSBT_IN_FINAL_SCRIPTWITNESS:
-                ret = pull_witness(cursor, max, &result->final_witness);
+                ret = pull_witness(cursor, max, &result->final_witness, true);
                 break;
             case PSBT_IN_RIPEMD160:
             case PSBT_IN_SHA256:
@@ -2217,7 +2255,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_tx(cursor, max, 0, &result->pegin_tx);
                 break;
             case PSET_FT(PSET_IN_PEG_IN_WITNESS):
-                ret = pull_witness(cursor, max, &result->pegin_witness);
+                ret = pull_witness(cursor, max, &result->pegin_witness, true);
                 break;
             case PSET_FT(PSET_IN_ISSUANCE_VALUE_COMMITMENT):
             case PSET_FT(PSET_IN_ISSUANCE_VALUE_RANGEPROOF):
@@ -2570,7 +2608,8 @@ unknown:
             ret = WALLY_EINVAL; /* Tx version must be >= 2 */
         else {
             struct wally_psbt tmp;
-            ret = wally_psbt_init((*output)->version, input_count, output_count, 0, 0, &tmp);
+            ret = psbt_init((*output)->version, input_count, output_count,
+                            0, 0, input_count, output_count, &tmp);
             if (ret == WALLY_OK) {
                 /* Steal the allocated input/output arrays */
                 (*output)->inputs = tmp.inputs;
@@ -2660,28 +2699,16 @@ static int push_length_and_tx(unsigned char **cursor, size_t *max,
     return wally_tx_to_bytes(tx, flags, p, tx_len, &tx_len);
 }
 
-static void push_witness_stack_impl(unsigned char **cursor, size_t *max,
-                                    const struct wally_tx_witness_stack *witness)
-{
-    size_t i;
-
-    push_varint(cursor, max, witness->num_items);
-    for (i = 0; i < witness->num_items; ++i) {
-        push_varbuff(cursor, max, witness->items[i].witness,
-                     witness->items[i].witness_len);
-    }
-}
-
-static void push_witness_stack(unsigned char **cursor, size_t *max,
-                               uint64_t type, bool is_pset,
-                               const struct wally_tx_witness_stack *witness)
+static void push_witness(unsigned char **cursor, size_t *max,
+                         uint64_t type, bool is_pset,
+                         const struct wally_tx_witness_stack *witness)
 {
     size_t wit_len = 0;
-    push_witness_stack_impl(NULL, &wit_len, witness); /* calculate length */
+    push_witness_stack(NULL, &wit_len, witness); /* calculate length */
 
     push_key(cursor, max, type, is_pset, NULL, 0);
     push_varint(cursor, max, wit_len);
-    push_witness_stack_impl(cursor, max, witness);
+    push_witness_stack(cursor, max, witness);
 }
 
 static void push_psbt_varbuff(unsigned char **cursor, size_t *max,
@@ -2938,8 +2965,8 @@ static int push_psbt_input(const struct wally_psbt *psbt,
 
     /* Final scriptWitness */
     if (input->final_witness)
-        push_witness_stack(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS,
-                           false, input->final_witness);
+        push_witness(cursor, max, PSBT_IN_FINAL_SCRIPTWITNESS,
+                     false, input->final_witness);
 
     if ((ret = push_varbuff_from_map(cursor, max, PSBT_IN_POR_COMMITMENT,
                                      PSBT_IN_POR_COMMITMENT,
@@ -3025,8 +3052,7 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                 break;
             case PSET_IN_PEG_IN_WITNESS:
                 if (input->pegin_witness)
-                    push_witness_stack(cursor, max, ft,
-                                       true, input->pegin_witness);
+                    push_witness(cursor, max, ft, true, input->pegin_witness);
                 break;
             case PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT:
                 if (input->inflation_keys)
@@ -3808,7 +3834,8 @@ static int psbt_v0_to_v2(struct wally_psbt *psbt)
 
     /* Upgrade to v2 */
     psbt->version = PSBT_2;
-    psbt->tx_version = psbt->tx->version;
+    /* v2 requires a tx version of at least 2 */
+    psbt->tx_version = psbt->tx->version < 2 ? 2 : psbt->tx->version;
     /* V0 only has the tx locktime, and no per-input locktimes,
      * so set the V2 fallback locktime to the tx locktime, unless
      * it is the default value of 0.
@@ -3961,12 +3988,14 @@ int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,
 
     ret = wally_psbt_is_elements(psbt, &is_pset);
     if (ret == WALLY_OK)
-        ret = wally_psbt_init_alloc(psbt->version,
-                                    psbt->inputs_allocation_len,
-                                    psbt->outputs_allocation_len,
-                                    psbt->unknowns.items_allocation_len,
-                                    is_pset ? WALLY_PSBT_INIT_PSET : 0,
-                                    output);
+        ret = psbt_init_alloc(psbt->version,
+                              psbt->inputs_allocation_len,
+                              psbt->outputs_allocation_len,
+                              psbt->unknowns.items_allocation_len,
+                              is_pset ? WALLY_PSBT_INIT_PSET : 0,
+                              psbt->inputs_allocation_len,
+                              psbt->outputs_allocation_len,
+                              output);
     if (ret == WALLY_OK) {
         (*output)->tx_version = psbt->tx_version;
         psbt_claim_allocated_inputs(*output, psbt->num_inputs, psbt->num_outputs);
@@ -5242,7 +5271,7 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
         const struct wally_psbt_ ## typ *p = psbt_get_ ## typ(psbt, index); \
         if (output) *output = NULL; \
         if (!p || !output) return WALLY_EINVAL; \
-        return clonefn(p->name, output); \
+        return p->name ? clonefn(p->name, output) : WALLY_OK; \
     }
 
 /* Set a struct on an input/output */
@@ -5278,14 +5307,24 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
 
 PSBT_GET_S(input, utxo, wally_tx, tx_clone_alloc)
 PSBT_GET_S(input, witness_utxo, wally_tx_output, wally_tx_output_clone_alloc)
-int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index,
-                                         struct wally_tx_output **output)
+int wally_psbt_get_input_best_utxo(const struct wally_psbt *psbt, size_t index,
+                                   const struct wally_tx_output **output)
 {
     const struct wally_psbt_input *p = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = p ? utxo_from_input(psbt, p) : NULL;
     if (output) *output = NULL;
-    if (!utxo || !output) return WALLY_EINVAL;
-    return wally_tx_output_clone_alloc(utxo, output);
+    if (!p || !output)
+        return WALLY_EINVAL;
+    *output = utxo;
+    return WALLY_OK;
+}
+int wally_psbt_get_input_best_utxo_alloc(const struct wally_psbt *psbt, size_t index,
+                                         struct wally_tx_output **output)
+{
+    int ret = wally_psbt_get_input_best_utxo(psbt, index, (const struct wally_tx_output **)output);
+    if (ret == WALLY_OK)
+        ret = *output ? wally_tx_output_clone_alloc(*output, output) : WALLY_OK;
+    return ret;
 }
 PSBT_FIELD(input, redeem_script, PSBT_0)
 PSBT_FIELD(input, witness_script, PSBT_0)

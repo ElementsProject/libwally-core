@@ -611,8 +611,11 @@ static int verify_addr(ms_ctx *ctx, ms_node *node)
 
 static int verify_raw(ms_ctx *ctx, ms_node *node)
 {
+    const uint32_t child_count = node_get_child_count(node);
     (void)ctx;
-    if (node->parent || node->child->builtin || !(node->child->kind & KIND_RAW))
+    if (node->parent || child_count > 1)
+        return WALLY_EINVAL;
+    if (child_count && (node->child->builtin || !(node->child->kind & KIND_RAW)))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
@@ -1275,9 +1278,15 @@ static int generate_raw(ms_ctx *ctx, ms_node *node,
                         unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
-    if (!node->child || !script_len || !node_is_root(node))
+    if (!script_len || !node_is_root(node))
         return WALLY_EINVAL;
-
+    if (!node->child) {
+        if (node->kind == KIND_DESCRIPTOR_RAW) {
+            *written = 0; /* raw() - empty script */
+            return WALLY_OK;
+        }
+        return WALLY_EINVAL; /* addr() is not valid */
+    }
     ret = generate_script(ctx, node->child, script, script_len, written);
     return *written > REDEEM_SCRIPT_MAX_SIZE ?  WALLY_EINVAL : ret;
 }
@@ -1689,7 +1698,7 @@ static const struct ms_builtin_t g_builtins[] = {
         I_NAME("raw"),
         KIND_DESCRIPTOR_RAW,
         TYPE_NONE,
-        1, verify_raw, generate_raw
+        0xffffffff, verify_raw, generate_raw
     },
     /* miniscript */
     {
@@ -1801,26 +1810,16 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     int ret = WALLY_EINVAL;
-    size_t output_len;
+    size_t output_len = *written;
 
     if (node->builtin) {
-        output_len = *written;
         ret = builtin_get(node)->generate_fn(ctx, node, script, script_len, &output_len);
-        if (ret == WALLY_OK) {
-            ret = generate_wrappers(node, script, script_len, &output_len);
-            if (ret == WALLY_OK)
-                *written = output_len;
-        }
-        return ret;
-    }
-
-    /* value data */
-    if (node->kind == KIND_NUMBER) {
-        ret = generate_number(node->number, node->parent, script, script_len, written);
+    } else if (node->kind == KIND_NUMBER) {
+        ret = generate_number(node->number, node->parent, script, script_len, &output_len);
     } else if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY) {
         if (node->data_len <= script_len)
             memcpy(script, node->data, node->data_len);
-        *written = node->data_len;
+        output_len = node->data_len;
         ret = WALLY_OK;
     } else if (node->kind == KIND_PRIVATE_KEY) {
         unsigned char pubkey[EC_PUBLIC_KEY_LEN];
@@ -1828,57 +1827,61 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
                                                    pubkey, sizeof(pubkey));
         if (ret == WALLY_OK) {
             if (node->flags & NF_IS_UNCOMPRESSED) {
-                *written = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-                if (*written <= script_len)
+                output_len = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+                if (output_len <= script_len)
                     ret = wally_ec_public_key_decompress(pubkey, sizeof(pubkey), script,
                                                          EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
             } else {
                 if (node->flags & NF_IS_XONLY) {
-                    *written = EC_XONLY_PUBLIC_KEY_LEN;
-                    if (*written <= script_len)
+                    output_len = EC_XONLY_PUBLIC_KEY_LEN;
+                    if (output_len <= script_len)
                         memcpy(script, &pubkey[1], EC_XONLY_PUBLIC_KEY_LEN);
                 } else {
-                    *written = EC_PUBLIC_KEY_LEN;
-                    if (*written <= script_len)
+                    output_len = EC_PUBLIC_KEY_LEN;
+                    if (output_len <= script_len)
                         memcpy(script, pubkey, EC_PUBLIC_KEY_LEN);
                 }
             }
         }
     } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
-        struct ext_key master;
+        output_len = node->flags & NF_IS_XONLY ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
+        if (output_len > script_len) {
+            ret = WALLY_OK; /* Return required length without writing */
+        } else {
+            struct ext_key master;
 
-        *written = node->flags & NF_IS_XONLY ? EC_XONLY_PUBLIC_KEY_LEN : EC_PUBLIC_KEY_LEN;
-        if (*written > script_len)
-            return WALLY_OK;
+            ret = bip32_key_from_base58_n(node->data, node->data_len, &master);
+            if (ret == WALLY_OK && node->child_path_len) {
+                size_t path_len;
+                const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
+                                       BIP32_FLAG_STR_BARE |
+                                       BIP32_FLAG_STR_MULTIPATH;
+                const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH |
+                                              BIP32_FLAG_KEY_PUBLIC;
+                const bool is_ranged = node->flags & NF_IS_RANGED;
+                const bool is_multi = node->flags & NF_IS_MULTI;
+                struct ext_key derived;
 
-        if ((ret = bip32_key_from_base58_n(node->data, node->data_len, &master)) != WALLY_OK)
-            return ret;
-
-        if (node->child_path_len) {
-            size_t path_len;
-            const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
-                                   BIP32_FLAG_STR_BARE |
-                                   BIP32_FLAG_STR_MULTIPATH;
-            const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH |
-                                          BIP32_FLAG_KEY_PUBLIC;
-            const bool is_ranged = node->flags & NF_IS_RANGED;
-            const bool is_multi = node->flags & NF_IS_MULTI;
-            struct ext_key derived;
-
-            ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
-                                        is_ranged ? ctx->child_num : 0,
-                                        is_multi ? ctx->multi_index : 0,
-                                        flags, ctx->path_buff, ctx->max_path_elems,
-                                        &path_len);
+                ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
+                                            is_ranged ? ctx->child_num : 0,
+                                            is_multi ? ctx->multi_index : 0,
+                                            flags, ctx->path_buff, ctx->max_path_elems,
+                                            &path_len);
+                if (ret == WALLY_OK)
+                    ret = bip32_key_from_parent_path(&master, ctx->path_buff, path_len,
+                                                     derive_flags, &derived);
+                if (ret == WALLY_OK)
+                    memcpy(&master, &derived, sizeof(master));
+            }
             if (ret == WALLY_OK)
-                ret = bip32_key_from_parent_path(&master, ctx->path_buff, path_len,
-                                                 derive_flags, &derived);
-            if (ret == WALLY_OK)
-                memcpy(&master, &derived, sizeof(master));
+                memcpy(script, master.pub_key + ((node->flags & NF_IS_XONLY) ? 1 : 0), output_len);
+            wally_clear(&master, sizeof(master));
         }
+    }
+    if (ret == WALLY_OK) {
+        ret = generate_wrappers(node, script, script_len, &output_len);
         if (ret == WALLY_OK)
-            memcpy(script, master.pub_key + ((node->flags & NF_IS_XONLY) ? 1 : 0), *written);
-        wally_clear(&master, sizeof(master));
+            *written = output_len;
     }
     return ret;
 }
@@ -2213,6 +2216,12 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
             seen_indent = true;
         } else if (str[i] == '#') {
             if (i - offset != 0) {
+                if (!node->builtin && node->wrapper_str[0] &&
+                    i - offset == strlen(node->wrapper_str)) {
+                    /* wrapper:value followed by checksum */
+                    str_len -= (DESCRIPTOR_CHECKSUM_LENGTH + 1);
+                    break;
+                }
                 ret = WALLY_EINVAL; /* Garbage before checksum */
                 break;
             }
@@ -2222,7 +2231,8 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         }
 
         if (copy_child) {
-            if ((ret = analyze_miniscript(ctx, str + child_offset, i - child_offset,
+            if (i - child_offset &&
+                (ret = analyze_miniscript(ctx, str + child_offset, i - child_offset,
                                           kind, flags, prev_child,
                                           node, &child)) != WALLY_OK)
                 break;
@@ -2237,8 +2247,12 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         }
     }
 
-    if (ret == WALLY_OK && !seen_indent)
-        ret = analyze_miniscript_value(ctx, str, str_len, flags, node, parent);
+    if (ret == WALLY_OK && !seen_indent) {
+        /* A constant value. Parse it ignoring any already added wrappers */
+        offset = node->wrapper_str[0] ? strlen(node->wrapper_str) + 1 : 0;
+        ret = analyze_miniscript_value(ctx, str + offset, str_len - offset,
+                                       flags, node, parent);
+    }
 
     if (ret == WALLY_OK && node->builtin) {
         const uint32_t expected_children = builtin_get(node)->child_count;
@@ -2363,26 +2377,7 @@ static int node_generation_size(const ms_node *node, size_t *total)
         default:
             return WALLY_ERROR; /* Should not happen! */
         }
-
-        for (i = strlen(node->wrapper_str); i != 0; --i) {
-            switch(node->wrapper_str[i - 1]) {
-            case 's': case 'c': case 't': case 'n': case 'v':
-                *total += 1; /* max: 'v' can can be 0 or 1 */
-                break;
-            case 'a':
-                *total += 2;
-                break;
-            case 'd':
-                *total += 3;
-                break;
-            case 'j': case 'l': case 'u':
-                *total += 4;
-                break;
-            }
-        }
-        return WALLY_OK;
-    }
-    if (node->kind == KIND_NUMBER) {
+    } else if (node->kind == KIND_NUMBER) {
         if (node->number >= -1 && node->number <= 16)
             *total += 1;
         else
@@ -2398,6 +2393,23 @@ static int node_generation_size(const ms_node *node, size_t *total)
             *total += EC_PUBLIC_KEY_LEN;
     } else
         return WALLY_ERROR; /* Should not happen */
+
+    for (i = 0; i < strlen(node->wrapper_str); ++i) {
+        switch(node->wrapper_str[i]) {
+        case 's': case 'c': case 't': case 'n': case 'v':
+            *total += 1; /* max: 'v' can can be 0 or 1 */
+            break;
+        case 'a':
+            *total += 2;
+            break;
+        case 'd':
+            *total += 3;
+            break;
+        case 'j': case 'l': case 'u':
+            *total += 4;
+            break;
+        }
+    }
     return WALLY_OK;
 }
 

@@ -3,6 +3,7 @@
 #include "ccan/ccan/crypto/sha512/sha512.h"
 #include <include/wally_bip32.h>
 #include <include/wally_bip39.h>
+#include <include/wally_bip85.h>
 #include <include/wally_crypto.h>
 
 /* Bip85 path element values */

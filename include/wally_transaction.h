@@ -30,6 +30,9 @@ extern "C" {
 
 #define WALLY_TX_FLAG_BLINDED_INITIAL_ISSUANCE 0x1
 
+/*** tx-clone Transaction cloning flags */
+#define WALLY_TX_CLONE_FLAG_NON_FINAL 0x1 /* Ignore scriptsig and witness when cloning */
+
 #define WALLY_TX_DUMMY_NULL 0x1 /* An empty witness item */
 #define WALLY_TX_DUMMY_SIG  0x2 /* A dummy signature */
 #define WALLY_TX_DUMMY_SIG_LOW_R  0x4 /* A dummy signature created with EC_FLAG_GRIND_R */
@@ -167,6 +170,16 @@ WALLY_CORE_API int wally_tx_witness_stack_clone_alloc(
     struct wally_tx_witness_stack **output);
 
 /**
+ * Return the number of witness items in a witness stack.
+ *
+ * :param stack: The witness stack to get the number of items from.
+ * :param written: Destination for the number of items.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_get_num_items(
+    const struct wally_tx_witness_stack *stack,
+    size_t *written);
+
+/**
  * Add a witness to a witness stack.
  *
  * :param stack: The witness stack to add to.
@@ -213,6 +226,42 @@ WALLY_CORE_API int wally_tx_witness_stack_set_dummy(
     struct wally_tx_witness_stack *stack,
     size_t index,
     uint32_t flags);
+
+/**
+ * Create a new witness stack from its BIP 144 serialization.
+ *
+ * :param bytes: Bytes to create the witness stack from.
+ * :param bytes_len: Length of ``bytes`` in bytes.
+ * :param output: Destination for the resulting witness stack.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    struct wally_tx_witness_stack **output);
+
+/**
+ * Return the length of a witness stacks BIP 144 serialization.
+ *
+ * :param stack: The witness stack to find the serialized length of.
+ * :param written: Destination for the length of the serialized bytes.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_get_length(
+    const struct wally_tx_witness_stack *stack,
+    size_t *written);
+
+/**
+ * Serialize a witness stack to its BIP 144 serialization.
+ *
+ * :param stack: The witness stack to serialize.
+ * :param bytes_out: Destination for the serialized witness stack.
+ * :param len: Size of ``bytes_out`` in bytes.
+ * :param written: Destination for the length of the serialized witness stack.
+ */
+WALLY_CORE_API int wally_tx_witness_stack_to_bytes(
+    const struct wally_tx_witness_stack *stack,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
 
 /**
  * Free a transaction witness stack allocated by `wally_tx_witness_stack_init_alloc`.
@@ -315,7 +364,7 @@ WALLY_CORE_API int wally_tx_output_free(struct wally_tx_output *output);
  * :param locktime: The locktime of the transaction.
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
- * :param output: Destination for the resulting transaction output.
+ * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_tx_init_alloc(
     uint32_t version,
@@ -328,7 +377,7 @@ WALLY_CORE_API int wally_tx_init_alloc(
  * Create a new copy of a transaction.
  *
  * :param tx: The transaction to clone.
- * :param flags: Flags controlling transaction creation. Must be 0.
+ * :param flags: :ref:`tx-clone` controlling new transaction creation.
  * :param output: Destination for the resulting transaction copy.
  */
 WALLY_CORE_API int wally_tx_clone_alloc(

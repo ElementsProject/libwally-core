@@ -414,12 +414,14 @@ class PSBTTests(unittest.TestCase):
         #
         for p in [psbt, psbt2]:
             self._try_set(psbt_set_input_utxo, p, dummy_tx)
+            self.assertEqual(psbt_get_input_utxo(p, 0), None)
             self._try_invalid(psbt_get_input_utxo, p)
             self._try_set(psbt_set_input_witness_utxo, p, dummy_txout)
+            self.assertEqual(psbt_get_input_witness_utxo(p, 0), None)
             self._try_invalid(psbt_get_input_witness_utxo, p)
             # 'best' UTXO: returns witness UTXO or non-witness UTXO if no witness UTXO
             self._try_invalid(psbt_get_input_best_utxo, p)
-            self._throws(psbt_get_input_best_utxo, p, 0) # No UTXO present
+            self.assertEqual(psbt_get_input_best_utxo(p, 0), None) # No UTXO present
             psbt_set_input_utxo(p, 0, dummy_tx)
             psbt_set_input_witness_utxo(p, 0, dummy_txout)
             # With both present, returns the witness UTXO
@@ -433,6 +435,7 @@ class PSBTTests(unittest.TestCase):
                 setfn, getfn, lenfn, hasfn, clearfn = accessors('input', field)
                 self._try_get_set_b(setfn, getfn, lenfn, p, dummy_bytes)
             self._try_set(psbt_set_input_final_witness, p, dummy_witness)
+            self.assertEqual(psbt_get_input_final_witness(p, 0), None)
             self._try_invalid(psbt_get_input_final_witness, p)
             self._try_get_set_m(psbt_set_input_keypaths,
                                 psbt_get_input_keypaths_size,
@@ -490,6 +493,16 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_taproot_signature,
                                 psbt_get_input_taproot_signature,
                                 None, psbt, dummy_sig_tap_default)
+            # Test finding the UXTO an input spends by txid/vout
+            utxo_txhash = psbt_get_input_previous_txid(psbt, 0)
+            utxo_index = psbt_get_input_output_index(psbt, 0)
+            for txhash, out_idx, expected in [
+                (utxo_txhash, utxo_index + 30, 0), # utxo_index not found
+                (b'0' * 32,   utxo_index,      0), # txhash not found
+                (utxo_txhash, utxo_index,      1)  # Found
+                ]:
+                found_idx = psbt_find_input_spending_utxo(psbt, txhash, out_idx)
+                self.assertEqual(found_idx, expected)
 
         #
         # Inputs: PSBT V2
@@ -716,6 +729,19 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(func(pset2, 0, 0), WALLY_PSET_BLINDED_PARTIAL)
             psbt_clear_output_blinding_public_key(pset2, 0)
             self.assertEqual(func(pset2, 0, 0), WALLY_PSET_BLINDED_NONE)
+
+        # psbt_from_tx
+        self._throws(psbt_from_tx, None,     0, 0)    # NULL tx
+        self._throws(psbt_from_tx, dummy_tx, 1, 0)    # Invalid version
+        self._throws(psbt_from_tx, dummy_tx, 0, 0xff) # Unknown flag
+        dummy_tx_hex = tx_to_hex(dummy_tx, 0)
+        for ver in [0, 2]:
+            # Creating a PSBT from a tx then extracting it should return
+            # the same tx
+            p = psbt_from_tx(dummy_tx, ver, 0)
+            tx = psbt_extract(p, WALLY_PSBT_EXTRACT_NON_FINAL)
+            self.assertEqual(dummy_tx_hex, tx_to_hex(tx, 0))
+
 
 if __name__ == '__main__':
     unittest.main()

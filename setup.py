@@ -93,7 +93,7 @@ wally_ext = Extension(
 
 kwargs = {
     'name': 'wallycore',
-    'version': '0.9.0',
+    'version': '0.9.2',
     'description': 'libwally Bitcoin library',
     'long_description': 'Python bindings for the libwally Bitcoin library',
     'url': 'https://github.com/ElementsProject/libwally-core',
@@ -109,11 +109,7 @@ kwargs = {
 
         'License :: OSI Approved :: MIT License',
 
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3',
     ],
     'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1',
     'project_urls': {

@@ -707,6 +707,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_finalize_input);
 %returns_size_t(wally_psbt_find_input_keypath);
 %returns_size_t(wally_psbt_find_input_signature);
+%returns_size_t(wally_psbt_find_input_spending_utxo);
 %returns_size_t(wally_psbt_find_input_unknown);
 %returns_size_t(wally_psbt_find_output_keypath);
 %returns_size_t(wally_psbt_find_output_unknown);
@@ -714,6 +715,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_free);
 %returns_struct(wally_psbt_from_base64, wally_psbt);
 %returns_struct(wally_psbt_from_bytes, wally_psbt);
+%returns_struct(wally_psbt_from_tx, wally_psbt);
 %returns_void__(wally_psbt_generate_input_explicit_proofs);
 %returns_size_t(wally_psbt_get_pset_modifiable_flags);
 %returns_struct(wally_psbt_get_global_tx_alloc, wally_tx);
@@ -856,6 +858,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %rename("psbt_init") wally_psbt_init_alloc;
 %returns_size_t(wally_psbt_is_elements);
 %returns_size_t(wally_psbt_is_finalized);
+%returns_size_t(wally_psbt_is_input_finalized);
 %returns_void__(wally_psbt_remove_input);
 %returns_void__(wally_psbt_remove_output);
 %returns_void__(wally_psbt_set_pset_modifiable_flags);
@@ -1134,13 +1137,17 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_tx_vsize_from_weight);
 %returns_void__(wally_tx_witness_stack_add);
 %returns_void__(wally_tx_witness_stack_add_dummy);
-%returns_void__(wally_tx_witness_stack_free);
-%returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
-%rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
 %returns_struct(wally_tx_witness_stack_clone_alloc, wally_tx_witness_stack);
 %rename("tx_witness_stack_clone") wally_tx_witness_stack_clone_alloc;
+%returns_void__(wally_tx_witness_stack_free);
+%returns_struct(wally_tx_witness_stack_from_bytes, wally_tx_witness_stack);
+%returns_size_t(wally_tx_witness_stack_get_length);
+%returns_size_t(wally_tx_witness_stack_get_num_items);
+%returns_struct(wally_tx_witness_stack_init_alloc, wally_tx_witness_stack);
+%rename("tx_witness_stack_init") wally_tx_witness_stack_init_alloc;
 %returns_void__(wally_tx_witness_stack_set);
 %returns_void__(wally_tx_witness_stack_set_dummy);
+%returns_size_t(wally_tx_witness_stack_to_bytes);
 %returns_size_t(wally_varbuff_get_length);
 %returns_size_t(wally_varbuff_to_bytes);
 %returns_size_t(wally_varint_get_length);
@@ -1171,6 +1178,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 
 /* FIXME: Add or auto-ignore these */
 %ignore wally_keypath_xonly_public_key_verify;
+%ignore wally_psbt_get_input_best_utxo;
 %ignore wally_psbt_input_set_previous_txid;
 %ignore wally_psbt_input_set_output_index;
 %ignore wally_psbt_input_set_sequence;

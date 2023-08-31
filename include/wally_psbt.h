@@ -1884,8 +1884,8 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
  * :param inputs_allocation_len: The number of inputs to pre-allocate space for.
  * :param outputs_allocation_len: The number of outputs to pre-allocate space for.
  * :param global_unknowns_allocation_len: The number of global unknowns to allocate space for.
- * :param flags: Flags controlling psbt creation. Must be 0 or WALLY_PSBT_INIT_PSET.
- * :param output: Destination for the resulting PSBT output.
+ * :param flags: Flags controlling psbt creation. Must be 0 or `WALLY_PSBT_INIT_PSET`.
+ * :param output: Destination for the resulting PSBT.
  */
 WALLY_CORE_API int wally_psbt_init_alloc(
     uint32_t version,
@@ -1956,6 +1956,18 @@ WALLY_CORE_API int wally_psbt_get_locktime(
  */
 WALLY_CORE_API int wally_psbt_is_finalized(
     const struct wally_psbt *psbt,
+    size_t *written);
+
+/**
+ * Determine if a given PSBT input is finalized.
+ *
+ * :param psbt: The PSBT to check.
+ * :param index: The zero-based index of the input to check.
+ * :param written: On success, set to one if the input is finalized, otherwise zero.
+ */
+WALLY_CORE_API int wally_psbt_is_input_finalized(
+    const struct wally_psbt *psbt,
+    size_t index,
     size_t *written);
 
 /**
@@ -2073,6 +2085,24 @@ WALLY_CORE_API int wally_psbt_set_pset_modifiable_flags(
     struct wally_psbt *psbt,
     uint32_t flags);
 #endif /* BUILD_ELEMENTS */
+
+/**
+ * Find the index of the PSBT input that spends a given UTXO.
+ *
+ * :param psbt: The PSBT to find in.
+ * :param txhash: The transaction hash of the UTXO to search for.
+ * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
+ * :param utxo_index: The zero-based index of the transaction output in ``txhash`` to
+ *|     search for.
+ * :param written: On success, set to zero if no matching input is found, otherwise
+ *|    the index of the matching input plus one.
+ */
+WALLY_CORE_API int wally_psbt_find_input_spending_utxo(
+    const struct wally_psbt *psbt,
+    const unsigned char *txhash,
+    size_t txhash_len,
+    uint32_t utxo_index,
+    size_t *written);
 
 /**
  * Add a taproot keypath to a given PSBT input.
@@ -2349,6 +2379,23 @@ WALLY_CORE_API int wally_psbt_to_base64(
     const struct wally_psbt *psbt,
     uint32_t flags,
     char **output);
+
+/**
+ * Create a PSBT from an existing transaction.
+ *
+ * :param tx: The transaction to create the PSBT from.
+ * :param version: The PSBT version to create. Must be ``WALLY_PSBT_VERSION_0`` or ``WALLY_PSBT_VERSION_2``.
+ * :param flags: Flags controlling psbt creation. Must be 0 or `WALLY_PSBT_INIT_PSET`.
+ * :param output: Destination for the resulting PSBT.
+ *
+ * .. note:: Any input scriptSigs and witnesses from the transaction's inputs
+ *|    are ignored when creating the PSBT.
+ */
+WALLY_CORE_API int wally_psbt_from_tx(
+    const struct wally_tx *tx,
+    uint32_t version,
+    uint32_t flags,
+    struct wally_psbt **output);
 
 /**
  * Combine the metadata from a source PSBT into another PSBT.
