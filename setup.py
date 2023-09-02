@@ -3,12 +3,28 @@ from setuptools import setup, Extension
 import copy, os, platform, shutil
 import distutils.sysconfig
 import subprocess
+import sys
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/'
 CONFIGURE_ENV = copy.deepcopy(os.environ)
 DISTUTILS_ENV = distutils.sysconfig.get_config_vars()
 IS_WINDOWS = platform.system() == "Windows"
 ARCH_FLAGS = os.environ.get('ARCHFLAGS','').split()
+USE_LIB = os.environ.get('WALLY_ABI_PY_WHEEL_USE_LIB', 'no')
+
+if USE_LIB not in ('no', 'static', 'shared'):
+    print('Warning: WALLY_ABI_PY_WHEEL_USE_LIB has unsupported value; assuming "no".\n',
+        file=sys.stderr)
+    USE_LIB = 'no'
+if USE_LIB != 'shared' and (os.path.exists('src/.libs/libwallycore.so') or \
+        os.path.exists('src/.libs/libwallycore.dylib')):
+    print('Warning: libwallycore shared library has been found, but Python module will not'
+        '\nuse it. Set WALLY_ABI_PY_WHEEL_USE_LIB=shared to link with the shared library.\n',
+        file=sys.stderr)
+elif USE_LIB != 'static' and os.path.exists('src/.libs/libwallycore.a'):
+    print('Warning: libwallycore static library has been found, but Python module will not'
+        '\nuse it. Set WALLY_ABI_PY_WHEEL_USE_LIB=static to link with the static library.\n',
+        file=sys.stderr)
 
 def call(args, cwd=ABS_PATH):
     subprocess.check_call(args, cwd=cwd, env=CONFIGURE_ENV)
@@ -19,7 +35,12 @@ if not os.path.exists('src/secp256k1/Makefile.am'):
     call(['git','submodule','sync','--recursive'])
     call(['git','submodule','update','--init','--recursive'])
 
-CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic',
+if USE_LIB == 'shared':
+    CONFIGURE_ARGS = ['--enable-shared', '--disable-static']
+else:
+    CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic']
+
+CONFIGURE_ARGS += [
     '--enable-swig-python', '--enable-python-manylinux',
     '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking']
 
@@ -48,14 +69,17 @@ if os.environ.get('GITHUB_ACTION') and os.environ.get('RUNNER_OS') == 'macOS':
             CONFIGURE_ENV['CFLAGS'] = DISTUTILS_ENV['PY_CFLAGS']
             CONFIGURE_ENV['LDFLAGS'] = DISTUTILS_ENV['PY_LDFLAGS']
 
-if not IS_WINDOWS:
+if not IS_WINDOWS and (USE_LIB == 'no' or not os.path.exists('src/Makefile')):
     # Run the autotools/make build up front to generate our sources,
     # then build using the standard Python ext module machinery.
     # (Windows requires source generation to be done separately).
     call(['./tools/cleanup.sh'])
     call(['./tools/autogen.sh'])
     call(['./configure'] + CONFIGURE_ARGS)
-    call(['make', 'swig_python/swig_python_wrap.c'], ABS_PATH + 'src/')
+    if USE_LIB == 'no':
+        call(['make', 'swig_python/swig_python_wrap.c'], ABS_PATH + 'src/')
+    else:
+        call(['make'])
 
 define_macros=[
     ('SWIG_PYTHON_BUILD', None),
@@ -66,9 +90,31 @@ define_macros=[
 include_dirs=[
     './',
     './src',
-    './src/ccan',
     './src/secp256k1/include',
     ]
+library_dirs = [
+    ]
+libraries = [
+    ]
+sources = [
+    'src/swig_python/swig_python_wrap.c',
+    ]
+
+if USE_LIB == 'no':
+    include_dirs += [
+        './src/ccan',
+        ]
+    sources += [
+        'src/amalgamation/combined.c',
+        'src/amalgamation/combined_ccan.c',
+        'src/amalgamation/combined_ccan2.c',
+        ]
+else:
+    library_dirs += ['src/.libs']
+    libraries += ['wallycore']
+    if USE_LIB == 'static':
+        library_dirs += ['src/secp256k1/.libs']
+        libraries += ['secp256k1']
 
 if IS_WINDOWS:
     include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
@@ -80,13 +126,10 @@ wally_ext = Extension(
     '_wallycore',
     define_macros=define_macros,
     include_dirs=include_dirs,
+    library_dirs=library_dirs,
+    libraries=libraries,
     extra_compile_args=extra_compile_args,
-    sources=[
-        'src/swig_python/swig_python_wrap.c',
-        'src/amalgamation/combined.c',
-        'src/amalgamation/combined_ccan.c',
-        'src/amalgamation/combined_ccan2.c',
-        ],
+    sources=sources,
     )
 
 kwargs = {
