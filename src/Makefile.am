@@ -98,18 +98,15 @@ sjs=swig_java/src
 $(sjs)/$(cblw)/Wally.java: swig_java/swig_java_wrap.c
 	$(AM_V_at)$(top_srcdir)/tools/swigjavapost.sh @GNU_SED@ $(TOOLS_EXTRA_ARGS)
 
-$(sjs)/$(cblw)/Wally.class: $(sjs)/$(cblw)/Wally.java
-	$(AM_V_at)$(JAVAC) -implicit:none -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs)/$(cblw)/ $(sjs)/$(cblw)/Wally.java
+JAVA_CLASSES = $(sjs)/$(cblw)/Wally.class
 
 swig_java/wallycore.jar: $(sjs)/$(cblw)/Wally.class
 	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/Wally$$Obj.class' -C $(sjs) '$(cblw)/Wally.class'
 
-$(sjs)/$(cbt)/%.class: $(sjs)/$(cbt)/%.java swig_java/wallycore.jar
-	$(AM_V_at)$(JAVAC) -implicit:none -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs) $(filter %.java,$^)
-
 if HAVE_JAVAC
 all: swig_java/wallycore.jar
 
+if RUN_JAVA_TESTS
 SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_bip32.class \
     $(sjs)/$(cbt)/test_descriptor.class \
@@ -122,7 +119,12 @@ SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class \
     $(sjs)/$(cbt)/test_pegs.class
 endif
 
+JAVA_CLASSES += $(SWIG_JAVA_TEST_DEPS)
 all: $(SWIG_JAVA_TEST_DEPS)
+endif # RUN_JAVA_TESTS
+
+$(JAVA_CLASSES) &: $(JAVA_CLASSES:.class=.java)
+	$(AM_V_at)$(JAVAC) -implicit:none -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs) $^
 
 JAVA_TEST = @LDPATH_VAR@=.libs $(JAVA) -Djava.library.path=.libs -classpath $(sjs) com.blockstream.test.
 

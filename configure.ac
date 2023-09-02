@@ -358,15 +358,9 @@ else
 fi
 AM_CONDITIONAL([HAVE_JAVA], [test "x$JAVA" != "x"])
 AM_CONDITIONAL([HAVE_JAVAC], [test "x$JAVAC" != "x"])
-if test "x$swig_java" = "xyes"; then
-    if test "x$JAVAC" != "x"; then
-        if test "x$JAVA" != "x"; then
-            # Only run tests if we have java-swig, compiler and interpreter
-            run_java_tests="yes"
-        fi
-    fi
-fi
-AM_CONDITIONAL([RUN_JAVA_TESTS], [test "x$run_java_tests" != "x"])
+AM_CONDITIONAL([RUN_JAVA_TESTS],
+    dnl Only run tests if we have java-swig, compiler and interpreter
+    [test "x$tests" = xyes -a "x$swig_java" = xyes -a -n "$JAVAC" -a -n "$JAVA"])
 JAVAC_TARGET=1.7
 AC_SUBST([JAVAC_TARGET])
 
