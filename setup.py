@@ -3,7 +3,13 @@ from setuptools import setup, Extension
 import copy, os, platform, shutil
 import distutils.sysconfig
 
-CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic',
+build_shared = os.environ.get('WALLY_ABI_PY_WHEEL_USE_DSO', '').lower() not in ['', '0', 'false', 'no', 'n', 'off']
+if build_shared:
+    CONFIGURE_ARGS = ['--enable-shared', '--disable-static']
+else:
+    CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic']
+
+CONFIGURE_ARGS += [
     '--enable-swig-python', '--enable-python-manylinux',
     '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking']
 
@@ -79,8 +85,10 @@ wally_ext = Extension(
     '_wallycore',
     define_macros=define_macros,
     include_dirs=include_dirs,
-    library_dirs=[] if is_windows else ['src/.libs', 'src/secp256k1/.libs'],
-    libraries=[] if is_windows else ['wallycore', 'secp256k1'],
+    library_dirs=[] if is_windows else
+        ['src/.libs'] + ([] if build_shared else ['src/secp256k1/.libs']),
+    libraries=[] if is_windows else
+        ['wallycore'] + ([] if build_shared else ['secp256k1']),
     extra_compile_args=extra_compile_args,
     sources=[
         'src/swig_python/swig_wrap.c',
