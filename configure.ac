@@ -260,28 +260,9 @@ fi
 # libsecp256k1
 #
 libsecp256k1_CFLAGS='-I$(top_srcdir)/src/secp256k1/include'
+libsecp256k1_LIBS='$(top_srcdir)/src/secp256k1/libsecp256k1.la'
 AC_SUBST([libsecp256k1_CFLAGS])
-
-# FIXME: This is needed to force libtool to use all object files from secp.
-#        We can only build secp properly by recursively invoking
-#        configure/make, and can't include it as a noinst_ library. Libtool
-#        assumes that such libraries will be installed along with our library
-#        target and so won't force all object files in the library to be
-#        included in ours - despite the fact that we are making a shared
-#        library and linking to a static one. This is broken and we work
-#        around it by hacking the secp objects directly into the library
-#        via the _LDADD variable for wallycore.
-#        We previously achieved this by adding the libsecp256k1.a archive,
-#        but changes to libtool and apples linkers mean that
-#        archives-within-archives no longer work.
-#        Because automake tries to police its users very strictly and fails
-#        hard when flags are passed in this way, we have to substitute the
-#        flags here.
-#        Because libtool both intercepts -Wl and arbitrarily re-orders its
-#        command line inputs, we have to concoct a single expression to
-#        enforce linking that cannot be split, hence the below expression.
-LIBADD_SECP256K1="-Wl,secp256k1/src/libsecp256k1_la-secp256k1.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult_gen.${OBJEXT},secp256k1/src/libsecp256k1_precomputed_la-precomputed_ecmult.${OBJEXT}"
-AC_SUBST([LIBADD_SECP256K1])
+AC_SUBST([libsecp256k1_LIBS])
 
 #
 # Python facilities
