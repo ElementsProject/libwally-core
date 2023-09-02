@@ -67,12 +67,11 @@ if is_windows:
 include_dirs=[
     './',
     './src',
-    './src/ccan',
     './src/secp256k1/include',
     ]
 if is_windows:
     shutil.copyfile('./src/amalgamation/windows_config/libsecp256k1-config.h', 'src/secp256k1/src/libsecp256k1-config.h')
-    include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
+    include_dirs = ['./src/amalgamation/windows_config'] + include_dirs + ['./src/ccan']
 
 extra_compile_args = ['-flax-vector-conversions']
 
@@ -80,12 +79,16 @@ wally_ext = Extension(
     '_wallycore',
     define_macros=define_macros,
     include_dirs=include_dirs,
+    library_dirs=[] if is_windows else ['src/.libs', 'src/secp256k1/.libs'],
+    libraries=[] if is_windows else ['wallycore', 'secp256k1'],
     extra_compile_args=extra_compile_args,
     sources=[
-        'src/swig_python/swig_wrap.c' if is_windows else 'src/swig_python/swig_python_wrap.c',
+        'src/swig_python/swig_wrap.c',
         'src/amalgamation/combined.c',
         'src/amalgamation/combined_ccan.c',
         'src/amalgamation/combined_ccan2.c',
+        ] if is_windows else [
+        'src/swig_python/swig_python_wrap.c',
         ],
     )
 
