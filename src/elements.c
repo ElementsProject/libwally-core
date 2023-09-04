@@ -7,10 +7,10 @@
 #include <include/wally_crypto.h>
 #include <include/wally_symmetric.h>
 #include <include/wally_transaction.h>
-#include "secp256k1/include/secp256k1_generator.h"
-#include "secp256k1/include/secp256k1_rangeproof.h"
-#include "src/secp256k1/include/secp256k1_surjectionproof.h"
-#include "src/secp256k1/include/secp256k1_whitelist.h"
+#include <secp256k1_generator.h>
+#include <secp256k1_rangeproof.h>
+#include <secp256k1_surjectionproof.h>
+#include <secp256k1_whitelist.h>
 
 
 static const unsigned char LABEL_STR[] = {

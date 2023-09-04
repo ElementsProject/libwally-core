@@ -1,7 +1,7 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
 #include "script_int.h"
-#include "secp256k1/include/secp256k1_schnorrsig.h"
+#include <secp256k1_schnorrsig.h>
 #include "ccan/ccan/build_assert/build_assert.h"
 
 #define EC_FLAGS_TYPES (EC_FLAG_ECDSA | EC_FLAG_SCHNORR)
