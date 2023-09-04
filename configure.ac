@@ -259,6 +259,9 @@ fi
 #
 # libsecp256k1
 #
+libsecp256k1_CFLAGS='-I$(top_srcdir)/src/secp256k1/include'
+AC_SUBST([libsecp256k1_CFLAGS])
+
 # FIXME: This is needed to force libtool to use all object files from secp.
 #        We can only build secp properly by recursively invoking
 #        configure/make, and can't include it as a noinst_ library. Libtool

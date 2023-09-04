@@ -13,11 +13,11 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif /* BUILD_ELEMENTS */
 #endif /* WALLY_ABI_NO_ELEMENTS */
-#include "secp256k1/include/secp256k1.h"
-#include "secp256k1/include/secp256k1_recovery.h"
-#include "secp256k1/include/secp256k1_extrakeys.h"
+#include <secp256k1.h>
+#include <secp256k1_recovery.h>
+#include <secp256k1_extrakeys.h>
 #ifndef BUILD_STANDARD_SECP
-#include "secp256k1/include/secp256k1_ecdsa_s2c.h"
+#include <secp256k1_ecdsa_s2c.h>
 #endif
 #include <config.h>
 #if defined(HAVE_MEMSET_S)
