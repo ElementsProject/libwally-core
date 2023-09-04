@@ -8,3 +8,7 @@ if uname | grep "Darwin" >/dev/null 2>&1; then
         done
     done
 fi
+
+if [ -x src/secp256k1/autogen.sh ] ; then
+    cd src/secp256k1 && ./autogen.sh
+fi
