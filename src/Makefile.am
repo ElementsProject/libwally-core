@@ -40,7 +40,7 @@ if USE_SWIG_PYTHON
 noinst_LTLIBRARIES += libswig_python.la
 libswig_python_la_SOURCES = swig_python/swig_python_wrap.c
 
-libswig_python_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
+libswig_python_la_CFLAGS = -I$(top_srcdir) $(libsecp256k1_CFLAGS) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
 if PYTHON_MANYLINUX
 else
 libswig_python_la_LIBADD = $(PYTHON_LIBS)
@@ -83,7 +83,7 @@ noinst_LTLIBRARIES += libswig_java.la
 libswig_java_la_SOURCES = \
     swig_java/swig_java_wrap.c
 
-libswig_java_la_CFLAGS = -I$(top_srcdir) $(AM_CFLAGS) $(SWIG_JAVA_CPPFLAGS) $(SWIG_WARN_CFLAGS)
+libswig_java_la_CFLAGS = -I$(top_srcdir) $(libsecp256k1_CFLAGS) $(AM_CFLAGS) $(SWIG_JAVA_CPPFLAGS) $(SWIG_WARN_CFLAGS)
 
 SWIG_JOPT = $(SWIG_JAVA_OPT) -outdir swig_java -noproxy -package com.blockstream.libwally
 
@@ -207,7 +207,7 @@ libwallycore_la_LDFLAGS += -no-undefined
 endif
 endif # SHARED_BUILD_ENABLED
 
-libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
+libwallycore_la_CFLAGS = -I$(top_srcdir) -I$(srcdir)/ccan $(libsecp256k1_CFLAGS) -DWALLY_CORE_BUILD=1 $(AM_CFLAGS)
 libwallycore_la_LIBADD = $(LIBADD_SECP256K1) $(noinst_LTLIBRARIES)
 
 SUBDIRS = secp256k1

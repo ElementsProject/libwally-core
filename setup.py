@@ -67,10 +67,8 @@ if is_windows:
 include_dirs=[
     './',
     './src',
-    './include',
     './src/ccan',
-    './src/secp256k1',
-    './src/secp256k1/src/'
+    './src/secp256k1/include',
     ]
 if is_windows:
     shutil.copyfile('./src/amalgamation/windows_config/libsecp256k1-config.h', 'src/secp256k1/src/libsecp256k1-config.h')
