@@ -3,8 +3,9 @@ from setuptools import setup, Extension
 import copy, os, platform, shutil
 import distutils.sysconfig
 
-CONFIGURE_ARGS = '--enable-swig-python --enable-python-manylinux'
-CONFIGURE_ARGS += ' --disable-swig-java --disable-tests --disable-dependency-tracking'
+CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic',
+    '--enable-swig-python', '--enable-python-manylinux',
+    '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking']
 
 distutils_env = distutils.sysconfig.get_config_vars()
 configure_env = copy.deepcopy(os.environ)
@@ -26,11 +27,11 @@ if os.environ.get('GITHUB_ACTION') and os.environ.get('RUNNER_OS') == 'macOS':
     if is_x86 and not is_native:
         # We are cross-compiling or compiling a univeral2 binary.
         # Configure our source code as a cross compile to make the build work
-        CONFIGURE_ARGS += ' --host x86_64-apple-darwin'
+        CONFIGURE_ARGS += ['--host', 'x86_64-apple-darwin']
         arch = 'universal2' if len(archs) > 1 else archs[0]
-        CONFIGURE_ARGS += ' --target {}-apple-macos'.format(arch)
+        CONFIGURE_ARGS += ['--target', '{}-apple-macos'.format(arch)]
         if len(archs) > 1:
-            CONFIGURE_ARGS += ' --with-asm=no'
+            CONFIGURE_ARGS += ['--with-asm=no']
         if 'PY_CFLAGS' in distutils_env:
             configure_env['CFLAGS'] = distutils_env['PY_CFLAGS']
             configure_env['LDFLAGS'] = distutils_env['PY_LDFLAGS']
@@ -40,18 +41,17 @@ if not is_windows:
     # then build using the standard Python ext module machinery.
     # (Windows requires source generation to be done separately).
     import multiprocessing
-    import os
     import subprocess
 
     abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 
-    def call(cmd):
-        subprocess.check_call(cmd.split(' '), cwd=abs_path, env=configure_env)
+    def call(args):
+        subprocess.check_call(args, cwd=abs_path, env=configure_env)
 
-    call('./tools/cleanup.sh')
-    call('./tools/autogen.sh')
-    call('./configure {}'.format(CONFIGURE_ARGS))
-    call('make -j{}'.format(multiprocessing.cpu_count()))
+    call(['./tools/cleanup.sh'])
+    call(['./tools/autogen.sh'])
+    call(['./configure'] + CONFIGURE_ARGS)
+    call(['make', '-j{}'.format(multiprocessing.cpu_count())])
 
 define_macros=[
     ('SWIG_PYTHON_BUILD', None),
