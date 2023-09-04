@@ -104,8 +104,6 @@ swig_java/wallycore.jar: $(sjs)/$(cblw)/Wally.class
 	$(AM_V_at)$(JAR) cf swig_java/wallycore.jar -C $(sjs) '$(cblw)/Wally$$Obj.class' -C $(sjs) '$(cblw)/Wally.class'
 
 if HAVE_JAVAC
-all: swig_java/wallycore.jar
-
 if RUN_JAVA_TESTS
 SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_bip32.class \
@@ -120,7 +118,9 @@ SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class \
 endif
 
 JAVA_CLASSES += $(SWIG_JAVA_TEST_DEPS)
-all: $(SWIG_JAVA_TEST_DEPS)
+all-local: swig_java/wallycore.jar $(SWIG_JAVA_TEST_DEPS)
+else # RUN_JAVA_TESTS
+all-local: swig_java/wallycore.jar
 endif # RUN_JAVA_TESTS
 
 $(JAVA_CLASSES) &: $(JAVA_CLASSES:.class=.java)
