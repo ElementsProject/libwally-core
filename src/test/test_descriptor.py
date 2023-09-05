@@ -12,6 +12,8 @@ NETWORK_LIQUID_REG = 0x04
 
 MS_TAP = 0x1  # WALLY_MINISCRIPT_TAPSCRIPT
 MS_ONLY = 0x2 # WALLY_MINISCRIPT_ONLY
+REQUIRE_CHECKSUM = 0x4 # WALLY_MINISCRIPT_REQUIRE_CHECKSUM
+POLICY    = 0x08 # WALLY_MINISCRIPT_POLICY
 
 MS_IS_RANGED = 0x1
 MS_IS_MULTIPATH = 0x2
@@ -26,7 +28,7 @@ def wally_map_from_dict(d):
     m = pointer(wally_map())
     assert(wally_map_init_alloc(len(d.keys()), None, m) == WALLY_OK)
     for k,v in d.items():
-        assert(wally_map_add(m, k, len(k), v, len(v)) == WALLY_OK)
+        assert(wally_map_add(m, utf8(k), len(k), utf8(v), len(v)) == WALLY_OK)
     return m
 
 
@@ -35,10 +37,10 @@ class DescriptorTests(unittest.TestCase):
     def test_parse_and_to_script(self):
         """Test parsing and script generation"""
         keys = wally_map_from_dict({
-            utf8('key_local'): utf8('038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048'),
-            utf8('key_remote'): utf8('03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7'),
-            utf8('key_revocation'): utf8('03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284'),
-            utf8('H'): utf8('d0721279e70d39fb4aa409b52839a0056454e3b5'), # HASH160(key_local)
+            'key_local': '038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048',
+            'key_remote': '03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7',
+            'key_revocation': '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284',
+            'H': 'd0721279e70d39fb4aa409b52839a0056454e3b5', # HASH160(key_local)
         })
         script, script_len = make_cbuffer('00' * 256 * 2)
 
@@ -277,6 +279,38 @@ class DescriptorTests(unittest.TestCase):
         ret = wally_descriptor_parse('pk())', None, NETWORK_NONE,
                                      flags | (5 << 16), d)
         self.assertEqual(ret, WALLY_EINVAL)
+
+    def test_policy(self):
+        """Test policy parsing"""
+        # Substitution variables
+        xpriv = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
+        xpub1 = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL'
+        xpub2 = 'xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU'
+
+        def make_keys(xpubs):
+            keys = {f'@{i}': xpub for i,xpub in enumerate(xpubs)}
+            return wally_map_from_dict(keys)
+
+        bad_args = [
+            # Raw pubkey
+            [POLICY, ['038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048']],
+            # Bip32 private key
+            [POLICY, [xpriv]],
+            # Keys must be in the form of @N
+            [POLICY, {'foo': xpub1}],
+            # Keys must start from 0
+            [POLICY, {'@1': xpub1}],
+            # Keys must be successive integers
+            [POLICY, {'@0': xpub1, '@2': xpub2}],
+            # Keys cannot have child paths
+            [POLICY, {'@0': f'{xpub1}/0'}],
+        ]
+        d = c_void_p()
+        for flags, key_items in bad_args:
+            keys = wally_map_from_dict(key_items) if type(key_items) is dict else make_keys(key_items)
+            ret = wally_descriptor_parse('pkh(@0/*)', keys, NETWORK_BTC_MAIN, POLICY, d)
+            self.assertEqual(ret, WALLY_EINVAL)
+            wally_map_free(keys)
 
 if __name__ == '__main__':
     unittest.main()

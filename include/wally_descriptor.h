@@ -15,6 +15,7 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_TAPSCRIPT        0x01 /** Tapscript, use x-only pubkeys */
 #define WALLY_MINISCRIPT_ONLY             0x02 /** Only allow miniscript (not descriptor) expressions */
 #define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
+#define WALLY_MINISCRIPT_POLICY           0x08 /** Only allow policy @n variable substitution */
 #define WALLY_MINISCRIPT_DEPTH_MASK       0xffff0000 /** Mask for limiting maximum depth */
 #define WALLY_MINISCRIPT_DEPTH_SHIFT      16 /** Shift to convert maximum depth to flags */
 

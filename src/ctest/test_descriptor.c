@@ -51,6 +51,17 @@ static const struct wally_map g_key_map = {
     NULL
 };
 
+static struct wally_map_item g_policy_map_items[] = {
+    { B("@0"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") }
+};
+
+static const struct wally_map g_policy_map = {
+    g_policy_map_items,
+    NUM_ELEMS(g_policy_map_items),
+    NUM_ELEMS(g_policy_map_items),
+    NULL
+};
+
 static const uint32_t g_miniscript_index_0 = 0;
 static const uint32_t g_miniscript_index_16 = 0x10;
 
@@ -968,6 +979,32 @@ static const struct descriptor_test {
         "5221038145454b87fc9ec3557478d6eadc2aea290b50f3c469b828abeb542ae8f8849d2102d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f052ae",
         "y5pky4r2"
     },
+    /* Wallet policies https://github.com/bitcoin/bips/pull/1389 */
+    {
+        "policy - single asterisk reconciliation",
+        "pkh(mainnet_xpub/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
+        "cp8r8rlg"
+    }, {
+        "policy - single asterisk",
+        "pkh(@0/*)", // Becomes "pkh(mainnet_xpub/*)" i.e. the test case above this
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
+        "cp8r8rlg"
+    }, {
+        "policy - double asterisk",
+        "pkh(@0/**)", // Becomes "pkh(mainnet_xpub/<0;1>/*)"
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        "76a9143099ad49dfdd021bf3748f7f858e0d1fa0b4f6f888ac",
+        "ydnzkve4"
+    }, {
+        "policy - multi-path",
+        "pkh(@0/<0;1>/*)", // Becomes "pkh(mainnet_xpub/<0;1>/*)"
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        "76a9143099ad49dfdd021bf3748f7f858e0d1fa0b4f6f888ac",
+        "ydnzkve4"
+    },
     /*
      * Misc error cases (code coverage)
      */
@@ -1375,6 +1412,28 @@ static const struct descriptor_test {
         "descriptor - hardened xpub multi-path", /* TODO: Allow setting an xpriv into the descriptor */
         "pkh(mainnet_xpub/<0';1>)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },
+    /* Wallet policy error cases */
+    {
+        "policy errchk - key with path",
+        "pkh(@0/0/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - missing key postfix",
+        "pkh(@0)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - terminal key postfix",
+        "@0",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - missing key number",
+        "@",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
     }
 };
 
@@ -1823,10 +1882,12 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     int expected_ret, ret, len_ret;
     uint32_t multi_index = 0;
     uint32_t child_num = test->child_num ? *test->child_num : 0, features;
+    const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY;
+    const struct wally_map *keys = is_policy ? &g_policy_map : &g_key_map;
 
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
 
-    ret = wally_descriptor_parse(test->descriptor, &g_key_map, test->network,
+    ret = wally_descriptor_parse(test->descriptor, keys, test->network,
                                  test->flags, &descriptor);
     if (expected_ret == WALLY_OK || ret == expected_ret) {
         /* For failure cases, we may fail when generating instead of parsing,
