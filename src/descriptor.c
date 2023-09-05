@@ -377,6 +377,7 @@ static int canonicalize(const char *descriptor,
     size_t required_len = 0;
     const char *p = descriptor, *start;
     char *out;
+    bool found_policy_key = false;
 
     if (output)
         *output = NULL;
@@ -413,6 +414,7 @@ static int canonicalize(const char *descriptor,
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
                 required_len += item ? item->value_len : lookup_len;
                 if (item && flags & WALLY_MINISCRIPT_POLICY) {
+                    found_policy_key = true;
                     if (*p++ != '/')
                         return WALLY_EINVAL;
                     ++required_len;
@@ -433,6 +435,8 @@ static int canonicalize(const char *descriptor,
 
     if (!*p && (flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM))
         return WALLY_EINVAL; /* Checksum required but not present */
+    if (!found_policy_key && flags & WALLY_MINISCRIPT_POLICY)
+        return WALLY_EINVAL; /* At least one key expression must be present */
     if (!(*output = wally_malloc(required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1)))
         return WALLY_ENOMEM;
 

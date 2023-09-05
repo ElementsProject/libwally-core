@@ -1415,6 +1415,11 @@ static const struct descriptor_test {
     },
     /* Wallet policy error cases */
     {
+        "policy errchk - no key expression",
+        "raw()",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
         "policy errchk - key with path",
         "pkh(@0/0/*)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
