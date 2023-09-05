@@ -2499,6 +2499,7 @@ static uint32_t get_max_depth(const char *miniscript, size_t miniscript_len)
 
 static bool is_valid_policy_map(const struct wally_map *map_in)
 {
+    struct wally_map keys;
     ms_ctx ctx;
     ms_node* node;
     int64_t v;
@@ -2509,6 +2510,7 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
         return WALLY_EINVAL; /* Must contain at least one key expression */
 
     memset(&ctx, 0, sizeof(ctx));
+    ret = wally_map_init(map_in->num_items, NULL, &keys);
 
     for (i = 0; ret == WALLY_OK && i < map_in->num_items; ++i) {
         const struct wally_map_item *item = &map_in->items[i];
@@ -2531,10 +2533,15 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
             } else if (ctx.features & (WALLY_MS_IS_MULTIPATH | WALLY_MS_IS_RANGED)) {
                 /* Range or multipath must be part of the expression, not the key */
                 ret = WALLY_EINVAL;
+            } else {
+                ret = wally_map_add(&keys, item->value, item->value_len, NULL, 0);
             }
+            node_free(node);
         }
-        node_free(node);
     }
+    if (ret == WALLY_OK && keys.num_items != map_in->num_items)
+        ret = WALLY_EINVAL; /* One of more keys is not unique */
+    wally_map_clear(&keys);
     return ret == WALLY_OK;
 }
 

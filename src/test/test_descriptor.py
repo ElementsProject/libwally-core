@@ -304,6 +304,8 @@ class DescriptorTests(unittest.TestCase):
             [POLICY, {'@0': xpub1, '@2': xpub2}],
             # Keys cannot have child paths
             [POLICY, {'@0': f'{xpub1}/0'}],
+            # Keys must be unique
+            [POLICY, [xpub1, xpub1]],
         ]
         d = c_void_p()
         for flags, key_items in bad_args:
