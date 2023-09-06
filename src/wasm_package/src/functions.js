@@ -172,6 +172,7 @@ export const descriptor_get_checksum = wrap('wally_descriptor_get_checksum', [T.
 export const descriptor_get_depth = wrap('wally_descriptor_get_depth', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_features = wrap('wally_descriptor_get_features', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_network = wrap('wally_descriptor_get_network', [T.OpaqueRef, T.DestPtr(T.Int32)]);
+export const descriptor_get_num_keys = wrap('wally_descriptor_get_num_keys', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_num_paths = wrap('wally_descriptor_get_num_paths', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_num_variants = wrap('wally_descriptor_get_num_variants', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_parse = wrap('wally_descriptor_parse', [T.String, T.OpaqueRef, T.Int32, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);

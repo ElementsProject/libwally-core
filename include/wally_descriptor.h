@@ -132,6 +132,18 @@ WALLY_CORE_API int wally_descriptor_get_features(
     uint32_t *value_out);
 
 /**
+ * Get the number of keys in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param value_out: Destination for the number of keys.
+ *
+* .. note:: Repeated keys are counted once for each time they appear.
+ */
+WALLY_CORE_API int wally_descriptor_get_num_keys(
+    const struct wally_descriptor *descriptor,
+    uint32_t *value_out);
+
+/**
  * Get the number of variants in a parsed output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.

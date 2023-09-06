@@ -124,6 +124,7 @@ export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags:
 export function descriptor_get_depth(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_features(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_network(descriptor: Ref_wally_descriptor): number;
+export function descriptor_get_num_keys(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_variants(descriptor: Ref_wally_descriptor): number;
 export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, network: number, flags: number): Ref_wally_descriptor;

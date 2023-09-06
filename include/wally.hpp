@@ -511,6 +511,12 @@ inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_num_keys(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_num_keys(detail::get_p(descriptor), value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_num_paths(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_num_paths(detail::get_p(descriptor), value_out);
     return ret;

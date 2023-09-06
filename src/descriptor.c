@@ -190,6 +190,7 @@ typedef struct wally_descriptor {
     ms_node *top_node; /* The first node of the parse tree */
     const struct addr_ver_t *addr_ver;
     uint32_t features; /* Features present in the parsed tree */
+    uint32_t num_keys; /* Number of keys in the expression */
     uint32_t num_variants; /* Number of script variants in the expression */
     uint32_t num_multipaths; /* Number of multi-path items in the expression */
     size_t script_len; /* Max script length generatable from this expression */
@@ -2034,6 +2035,7 @@ static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
         node->flags |= NF_IS_XONLY;
     node->kind = KIND_PUBLIC_KEY;
     ctx->features |= WALLY_MS_IS_RAW;
+    ++ctx->num_keys;
     return true;
 }
 
@@ -2091,6 +2093,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
             ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
+            ++ctx->num_keys;
         }
         wally_clear(privkey, sizeof(privkey));
         return ret;
@@ -2153,8 +2156,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             ret = WALLY_EINVAL; /* Mismatched main/test network */
     }
 
-    if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_TAPSCRIPT))
-        node->flags |= NF_IS_XONLY;
+    if (ret == WALLY_OK) {
+        if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
+            node->flags |= NF_IS_XONLY;
+        ++ctx->num_keys;
+    }
     wally_clear(&extkey, sizeof(extkey));
     return ret;
 }
@@ -2782,37 +2788,43 @@ int wally_descriptor_set_network(struct wally_descriptor *descriptor,
     return descriptor->addr_ver ? WALLY_OK : WALLY_EINVAL;
 }
 
-int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
-                                  uint32_t *value_out)
+static int descriptor_uint32(const void *descriptor,
+                             uint32_t *value_out, size_t offset)
 {
     if (value_out)
         *value_out = 0;
     if (!descriptor || !value_out)
         return WALLY_EINVAL;
-    *value_out = descriptor->features;
+    memcpy(value_out, (char*)descriptor + offset, sizeof(uint32_t));
     return WALLY_OK;
+}
+
+int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
+                                  uint32_t *value_out)
+{
+    return descriptor_uint32(descriptor, value_out,
+                             offsetof(struct wally_descriptor, features));
+}
+
+int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
+                                  uint32_t *value_out)
+{
+    return descriptor_uint32(descriptor, value_out,
+                             offsetof(struct wally_descriptor, num_keys));
 }
 
 int wally_descriptor_get_num_variants(const struct wally_descriptor *descriptor,
                                       uint32_t *value_out)
 {
-    if (value_out)
-        *value_out = 0;
-    if (!descriptor || !value_out)
-        return WALLY_EINVAL;
-    *value_out = descriptor->num_variants;
-    return WALLY_OK;
+    return descriptor_uint32(descriptor, value_out,
+                             offsetof(struct wally_descriptor, num_variants));
 }
 
 int wally_descriptor_get_num_paths(const struct wally_descriptor *descriptor,
                                    uint32_t *value_out)
 {
-    if (value_out)
-        *value_out = 0;
-    if (!descriptor || !value_out)
-        return WALLY_EINVAL;
-    *value_out = descriptor->num_multipaths;
-    return WALLY_OK;
+    return descriptor_uint32(descriptor, value_out,
+                             offsetof(struct wally_descriptor, num_multipaths));
 }
 
 static uint32_t node_get_depth(const ms_node *node)
