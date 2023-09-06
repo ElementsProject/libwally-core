@@ -375,6 +375,7 @@ static int canonicalize(const char *descriptor,
     const size_t VAR_MAX_NAME_LEN = 16;
     is_identifer_fn is_id_start = is_identifer_char, is_id_char = is_identifer_char;
     size_t required_len = 0;
+    int key_index_hwm = -1;
     const char *p = descriptor, *start;
     char *out;
     bool found_policy_key = false;
@@ -414,6 +415,11 @@ static int canonicalize(const char *descriptor,
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
                 required_len += item ? item->value_len : lookup_len;
                 if (item && flags & WALLY_MINISCRIPT_POLICY) {
+                    int key_index = (int)(item - vars_in->items);
+                    if (key_index > key_index_hwm + 1)
+                        return WALLY_EINVAL; /* Must be ordered with no gaps */
+                    if (key_index > key_index_hwm)
+                        key_index_hwm = key_index;
                     found_policy_key = true;
                     if (*p++ != '/')
                         return WALLY_EINVAL;

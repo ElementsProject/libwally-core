@@ -52,7 +52,8 @@ static const struct wally_map g_key_map = {
 };
 
 static struct wally_map_item g_policy_map_items[] = {
-    { B("@0"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") }
+    { B("@0"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") },
+    { B("@1"), B("xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU") }
 };
 
 static const struct wally_map g_policy_map = {
@@ -1004,6 +1005,12 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
         "76a9143099ad49dfdd021bf3748f7f858e0d1fa0b4f6f888ac",
         "ydnzkve4"
+    }, {
+        "policy - previous key reference",
+        "sh(multi(1,@0/**,@1/**,@0/**))", /* For testing: expresssion isn't sensible */
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        "a91415b7de59bd65038744e3214a521d9d4443dc78c287",
+        "xwdj6ucy"
     },
     /*
      * Misc error cases (code coverage)
@@ -1437,6 +1444,11 @@ static const struct descriptor_test {
     }, {
         "policy errchk - missing key number",
         "@",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - mis-ordered keys",
+        "sh(multi(1,@1/**,@0/**))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
         WALLY_MINISCRIPT_POLICY, NULL, ""
     }
