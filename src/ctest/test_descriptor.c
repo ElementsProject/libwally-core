@@ -1466,6 +1466,16 @@ static const struct descriptor_test {
         "sh(multi(1,@0/<0;1>/*,@1/*))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
         WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - invalid key cardinality (key path)",
+        "pkh(@0/<0;1;2>/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - invalid key cardinality (variant)",
+        "combo(@0/**)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
     }
 };
 

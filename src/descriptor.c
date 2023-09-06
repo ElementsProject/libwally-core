@@ -2612,9 +2612,12 @@ int wally_descriptor_parse(const char *miniscript,
                                      flags, NULL, NULL, &ctx->top_node);
         if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
-        if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY) &&
-            ctx->num_keys != num_substitutions)
-            ret = WALLY_EINVAL;
+        if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY)) {
+            if (ctx->num_keys != num_substitutions)
+                ret = WALLY_EINVAL; /* A non-substituted key was present */
+            else if (ctx->num_variants > 1 || ctx->num_multipaths > 2)
+                ret = WALLY_EINVAL; /* Solved cardinality must be 1 or 2 */
+        }
     }
     if (ret != WALLY_OK) {
         wally_descriptor_free(ctx);
