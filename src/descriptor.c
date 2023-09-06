@@ -371,7 +371,7 @@ static bool is_policy_identifer_char(char c) { return c >= '0' && c <= '9'; }
 
 static int canonicalize(const char *descriptor,
                         const struct wally_map *vars_in, uint32_t flags,
-                        char **output)
+                        char **output, size_t *num_substitutions)
 {
     const size_t VAR_MAX_NAME_LEN = 16;
     is_identifer_fn is_id_start = is_identifer_char, is_id_char = is_identifer_char;
@@ -381,10 +381,9 @@ static int canonicalize(const char *descriptor,
     char *out;
     bool found_policy_key = false;
 
-    if (output)
-        *output = NULL;
-
-    if (!descriptor || (flags & ~MS_FLAGS_CANONICALIZE) || !output)
+    *output = NULL;
+    *num_substitutions = 0;
+    if (!descriptor || (flags & ~MS_FLAGS_CANONICALIZE))
         return WALLY_EINVAL;
 
     if (flags & WALLY_MINISCRIPT_POLICY) {
@@ -414,8 +413,13 @@ static int canonicalize(const char *descriptor,
                 /* Lookup the potential identifier */
                 const struct wally_map_item *item;
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
-                required_len += item ? item->value_len : lookup_len;
-                if (item && flags & WALLY_MINISCRIPT_POLICY) {
+                if (!item) {
+                    required_len += lookup_len;
+                    continue;
+                }
+                required_len += item->value_len;
+                ++*num_substitutions;
+                if (flags & WALLY_MINISCRIPT_POLICY) {
                     int key_index = (int)(item - vars_in->items);
                     if (key_index > key_index_hwm + 1)
                         return WALLY_EINVAL; /* Must be ordered with no gaps */
@@ -2567,6 +2571,7 @@ int wally_descriptor_parse(const char *miniscript,
                            ms_ctx **output)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
+    size_t num_substitutions;
     uint32_t kind = KIND_MINISCRIPT | (flags & WALLY_MINISCRIPT_ONLY ? 0 : KIND_DESCRIPTOR);
     uint32_t max_depth = flags >> WALLY_MINISCRIPT_DEPTH_SHIFT;
     ms_ctx *ctx;
@@ -2587,7 +2592,7 @@ int wally_descriptor_parse(const char *miniscript,
     ctx->num_variants = 1;
     ctx->num_multipaths = 1;
     ret = canonicalize(miniscript, vars_in, flags & MS_FLAGS_CANONICALIZE,
-                       &ctx->src);
+                       &ctx->src, &num_substitutions);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
@@ -2599,6 +2604,9 @@ int wally_descriptor_parse(const char *miniscript,
                                      flags, NULL, NULL, &ctx->top_node);
         if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
+        if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY) &&
+            ctx->num_keys != num_substitutions)
+            ret = WALLY_EINVAL;
     }
     if (ret != WALLY_OK) {
         wally_descriptor_free(ctx);
