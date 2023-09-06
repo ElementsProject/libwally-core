@@ -379,7 +379,7 @@ static int canonicalize(const char *descriptor,
     int key_index_hwm = -1;
     const char *p = descriptor, *start;
     char *out;
-    bool found_policy_key = false;
+    bool found_policy_key = false, found_policy_single = false, found_policy_multi = false;;
 
     *output = NULL;
     *num_substitutions = 0;
@@ -429,14 +429,18 @@ static int canonicalize(const char *descriptor,
                     if (*p++ != '/')
                         return WALLY_EINVAL;
                     ++required_len;
-                    if (*p == '<')
+                    if (*p == '<') {
+                        found_policy_multi = true;
                         continue;
+                    }
                     if (*p++ != '*')
                         return WALLY_EINVAL;
                     if (*p == '*') {
+                        found_policy_multi = true;
                         ++p;
                         required_len += strlen("<0;1>/*");
                     } else {
+                        found_policy_single = true;
                         required_len += 1;
                     }
                 }
@@ -446,8 +450,12 @@ static int canonicalize(const char *descriptor,
 
     if (!*p && (flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM))
         return WALLY_EINVAL; /* Checksum required but not present */
-    if (!found_policy_key && flags & WALLY_MINISCRIPT_POLICY)
-        return WALLY_EINVAL; /* At least one key expression must be present */
+    if (flags & WALLY_MINISCRIPT_POLICY) {
+        if (!found_policy_key)
+            return WALLY_EINVAL; /* At least one key expression must be present */
+        if (found_policy_single && found_policy_multi)
+            return WALLY_EINVAL; /* Cannot mix cardinality of policy keys */
+    }
     if (!(*output = wally_malloc(required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1)))
         return WALLY_ENOMEM;
 

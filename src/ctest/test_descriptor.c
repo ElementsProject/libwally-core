@@ -1456,6 +1456,16 @@ static const struct descriptor_test {
         "sh(multi(1,@0/**,xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
         WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - mismatched key cardinalities (1)",
+        "sh(multi(1,@0/**,@1/*))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
+    }, {
+        "policy errchk - mismatched key cardinalities (2)",
+        "sh(multi(1,@0/<0;1>/*,@1/*))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY, NULL, ""
     }
 };
 
