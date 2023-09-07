@@ -511,6 +511,18 @@ inline int descriptor_get_key(const DESCRIPTOR& descriptor, size_t index, char**
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_key_child_path_str(const DESCRIPTOR& descriptor, size_t index, char** output) {
+    int ret = ::wally_descriptor_get_key_child_path_str(detail::get_p(descriptor), index, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_key_child_path_str_len(const DESCRIPTOR& descriptor, size_t index, size_t* written) {
+    int ret = ::wally_descriptor_get_key_child_path_str_len(detail::get_p(descriptor), index, written);
+    return ret;
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
     return ret;

@@ -321,26 +321,41 @@ class DescriptorTests(unittest.TestCase):
         wif = 'L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM'
         pk = '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284'
         pk_u = '0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf'
+        policy_keys = wally_map_from_dict({f'@{i}': xpub for i,xpub in enumerate([k1])})
+        P = POLICY
+
         # Valid args
-        for descriptor, expected in [
+        for flags, descriptor, expected, child_path in [
             # Bip32 xpub
-            (f'pkh({k1})', k1),
+            (0, f'pkh({k1})',         k1,   ''),
+            (0, f'pkh({k1}/*)',       k1,   '*'),
+            (0, f'pkh({k1}/0/1/2/*)', k1,   '0/1/2/*'),
+            (0, f'pkh({k1}/<0;1>/*)', k1,   '<0;1>/*'),
+            # Bip32 xpub (as policy)
+            (P, 'pkh(@0/*)',          k1,   '*'),
+            (P, 'pkh(@0/**)',         k1,   '<0;1>/*'),
+            (P, 'pkh(@0/<0;1>/*)',    k1,   '<0;1>/*'),
             # BIP32 xprv
-            (f'pkh({k2})', k2),
+            (0, f'pkh({k2})',         k2,   ''),
             # WIF
-            (f'pkh({wif})', wif),
+            (0, f'pkh({wif})',        wif,  ''),
             # Hex pubkey, compressed
-            (f'pk({pk})', pk),
+            (0, f'pk({pk})',          pk,   ''),
             # Hex pubkey, uncompressed
-            (f'pk({pk_u})', pk_u),
+            (0, f'pk({pk_u})',        pk_u, ''),
         ]:
             d = c_void_p()
-            ret = wally_descriptor_parse(descriptor, None, NETWORK_BTC_MAIN, 0, d)
+            keys = policy_keys if flags & P else None
+            ret = wally_descriptor_parse(descriptor, keys, NETWORK_BTC_MAIN, flags, d)
             self.assertEqual(ret, WALLY_OK)
             ret, num_keys = wally_descriptor_get_num_keys(d)
             self.assertEqual((ret, num_keys), (WALLY_OK, 1))
             ret, key_str = wally_descriptor_get_key(d, 0)
             self.assertEqual((ret, key_str), (WALLY_OK, expected))
+            ret, path_len = wally_descriptor_get_key_child_path_str_len(d, 0)
+            self.assertEqual((ret, path_len), (WALLY_OK, len(child_path)))
+            ret, path_str = wally_descriptor_get_key_child_path_str(d, 0)
+            self.assertEqual((ret, path_str), (WALLY_OK, child_path))
             wally_descriptor_free(d)
 
 

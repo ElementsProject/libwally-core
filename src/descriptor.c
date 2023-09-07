@@ -2895,18 +2895,24 @@ int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wcast-align"
 #endif
+static const ms_node *descriptor_get_key(const struct wally_descriptor *descriptor,
+                                         size_t index)
+{
+    if (!descriptor || index >= descriptor->keys.num_items)
+        return NULL;
+    return (ms_node *)descriptor->keys.items[index].value;
+}
 
 int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
                              size_t index, char **output)
 {
-    const ms_node *node;
+    const ms_node *node = descriptor_get_key(descriptor, index);
 
     if (output)
         *output = 0;
-    if (!descriptor || index >= descriptor->keys.num_items || !output)
+    if (!node || !output)
         return WALLY_EINVAL;
 
-    node = (ms_node *)descriptor->keys.items[index].value;
     if (node->kind == KIND_PUBLIC_KEY) {
         return wally_hex_from_bytes((const unsigned char *)node->data,
                                     node->data_len, output);
@@ -2922,6 +2928,33 @@ int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
     if ((node->kind & KIND_BIP32) != KIND_BIP32)
         return WALLY_ERROR; /* Unknown key type, should not happen */
     if (!(*output = wally_strdup_n(node->data, node->data_len)))
+        return WALLY_ENOMEM;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_key_child_path_str_len(
+    const struct wally_descriptor *descriptor, size_t index, size_t *written)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (written)
+        *written = 0;
+    if (!node || !written)
+        return WALLY_EINVAL;
+    *written = node->child_path_len;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_key_child_path_str(
+    const struct wally_descriptor *descriptor, size_t index, char **output)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (output)
+        *output = 0;
+    if (!node || !output)
+        return WALLY_EINVAL;
+    if (!(*output = wally_strdup_n(node->child_path, node->child_path_len)))
         return WALLY_ENOMEM;
     return WALLY_OK;
 }

@@ -562,6 +562,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_descriptor_get_features);
 %returns_size_t(wally_descriptor_get_network);
 %returns_string(wally_descriptor_get_key);
+%returns_string(wally_descriptor_get_key_child_path_str);
+%returns_size_t(wally_descriptor_get_key_child_path_str_len);
 %returns_size_t(wally_descriptor_get_num_keys);
 %returns_size_t(wally_descriptor_get_num_paths);
 %returns_size_t(wally_descriptor_get_num_variants);

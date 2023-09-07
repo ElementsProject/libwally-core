@@ -212,6 +212,33 @@ WALLY_CORE_API int wally_descriptor_get_key(
     char **output);
 
 /**
+ * Get the length of a keys child path string in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key whose child path to get.
+ * :param written: Destination for the length of the keys child path string,
+ *|    excluding the NUL terminator.
+ */
+WALLY_CORE_API int wally_descriptor_get_key_child_path_str_len(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get the keys child path string in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key whose child path to get.
+ * :param output: Destination for the resulting path string (may be empty).
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_descriptor_get_key_child_path_str(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    char **output);
+
+
+/**
  * Get the maximum length of a script corresponding to an output descriptor.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
