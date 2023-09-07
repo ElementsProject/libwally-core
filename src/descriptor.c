@@ -190,7 +190,6 @@ typedef struct wally_descriptor {
     ms_node *top_node; /* The first node of the parse tree */
     const struct addr_ver_t *addr_ver;
     uint32_t features; /* Features present in the parsed tree */
-    uint32_t num_keys; /* Number of keys in the expression */
     uint32_t num_variants; /* Number of script variants in the expression */
     uint32_t num_multipaths; /* Number of multi-path items in the expression */
     size_t script_len; /* Max script length generatable from this expression */
@@ -200,7 +199,15 @@ typedef struct wally_descriptor {
     uint32_t multi_index; /* Multi-path index for derivation */
     uint32_t *path_buff; /* Path buffer for deriving keys */
     uint32_t max_path_elems; /* Max path length seen in the descriptor */
+    struct wally_map keys;
 } ms_ctx;
+
+static int ctx_add_key_node(ms_ctx *ctx, ms_node *node)
+{
+    const char *v = (char *)node;
+    return map_add(&ctx->keys, NULL, ctx->keys.num_items,
+                   (unsigned char *)v, 1, false, false);
+}
 
 /* Built-in miniscript expressions */
 typedef int (*node_verify_fn_t)(ms_ctx *ctx, ms_node *node);
@@ -557,6 +564,10 @@ static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
 int wally_descriptor_free(ms_ctx *ctx)
 {
     if (ctx) {
+        /* Just clear the item storage, the actual items are owned by
+         * the tree of nodes */
+        clear_and_free(ctx->keys.items,
+                       ctx->keys.num_items * sizeof(*ctx->keys.items));
         wally_free_string(ctx->src);
         node_free(ctx->top_node);
         clear_and_free(ctx, sizeof(*ctx));
@@ -2015,29 +2026,29 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
     return ret;
 }
 
-static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
-                               uint32_t flags, ms_node *node)
+static int analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
+                              uint32_t flags, ms_node *node, bool *is_hex)
 {
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN + 1];
     size_t offset = flags & WALLY_MINISCRIPT_TAPSCRIPT ? 1 : 0;
     size_t written;
-    (void)ctx;
 
+    *is_hex = false;
     if (offset) {
         if (str_len != EC_XONLY_PUBLIC_KEY_LEN * 2)
-            return false; /* Only X-only pubkeys allowed under tapscript */
+            return WALLY_OK; /* Only X-only pubkeys allowed under tapscript */
         pubkey[0] = 2; /* Non-X-only pubkey prefix, for validation below */
     } else {
         if (str_len != EC_PUBLIC_KEY_LEN * 2 && str_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)
-            return false; /* Unknown public key size */
+            return WALLY_OK; /* Unknown public key size */
     }
 
     if (wally_hex_n_to_bytes(str, str_len, pubkey + offset, sizeof(pubkey) - offset, &written) != WALLY_OK ||
         wally_ec_public_key_verify(pubkey, written + offset) != WALLY_OK)
-        return false;
+        return WALLY_OK; /* Not hex, or not a pubkey */
 
     if (!clone_bytes((unsigned char **)&node->data, pubkey + offset, written))
-        return false; /* FIXME: This needs to return ENOMEM, not continue checking */
+        return WALLY_ENOMEM;
     node->data_len = str_len / 2;
     if (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2) {
         node->flags |= NF_IS_UNCOMPRESSED;
@@ -2047,8 +2058,8 @@ static bool analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
         node->flags |= NF_IS_XONLY;
     node->kind = KIND_PUBLIC_KEY;
     ctx->features |= WALLY_MS_IS_RAW;
-    ++ctx->num_keys;
-    return true;
+    *is_hex = true;
+    return ctx_add_key_node(ctx, node);
 }
 
 static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
@@ -2058,6 +2069,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     struct ext_key extkey;
     size_t privkey_len, size;
     int ret;
+    bool is_hex;
 
     if (!node || (parent && !parent->builtin))
         return WALLY_EINVAL;
@@ -2079,7 +2091,8 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     }
 
     /* check key (public key) */
-    if (analyze_pubkey_hex(ctx, node->data, node->data_len, flags, node))
+    ret = analyze_pubkey_hex(ctx, node->data, node->data_len, flags, node, &is_hex);
+    if (ret == WALLY_OK && is_hex)
         return WALLY_OK;
 
     /* check key (private key(wif)) */
@@ -2105,7 +2118,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
             ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
-            ++ctx->num_keys;
+            ret = ctx_add_key_node(ctx, node);
         }
         wally_clear(privkey, sizeof(privkey));
         return ret;
@@ -2171,7 +2184,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     if (ret == WALLY_OK) {
         if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
             node->flags |= NF_IS_XONLY;
-        ++ctx->num_keys;
+        ret = ctx_add_key_node(ctx, node);
     }
     wally_clear(&extkey, sizeof(extkey));
     return ret;
@@ -2569,6 +2582,8 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
     }
     if (ret == WALLY_OK && keys.num_items != map_in->num_items)
         ret = WALLY_EINVAL; /* One of more keys is not unique */
+    clear_and_free(ctx.keys.items,
+                   ctx.keys.num_items * sizeof(*ctx.keys.items));
     wally_map_clear(&keys);
     return ret == WALLY_OK;
 }
@@ -2599,8 +2614,10 @@ int wally_descriptor_parse(const char *miniscript,
     ctx->addr_ver = addr_ver;
     ctx->num_variants = 1;
     ctx->num_multipaths = 1;
-    ret = canonicalize(miniscript, vars_in, flags & MS_FLAGS_CANONICALIZE,
-                       &ctx->src, &num_substitutions);
+    ret = wally_map_init(vars_in ? vars_in->num_items : 1, NULL, &ctx->keys);
+    if (ret == WALLY_OK)
+        ret = canonicalize(miniscript, vars_in, flags & MS_FLAGS_CANONICALIZE,
+                           &ctx->src, &num_substitutions);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
@@ -2613,7 +2630,7 @@ int wally_descriptor_parse(const char *miniscript,
         if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
         if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY)) {
-            if (ctx->num_keys != num_substitutions)
+            if (ctx->keys.num_items != num_substitutions)
                 ret = WALLY_EINVAL; /* A non-substituted key was present */
             else if (ctx->num_variants > 1 || ctx->num_multipaths > 2)
                 ret = WALLY_EINVAL; /* Solved cardinality must be 1 or 2 */
@@ -2828,8 +2845,12 @@ int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
 int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
                                   uint32_t *value_out)
 {
-    return descriptor_uint32(descriptor, value_out,
-                             offsetof(struct wally_descriptor, num_keys));
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    *value_out = (uint32_t)descriptor->keys.num_items;
+    return WALLY_OK;
 }
 
 int wally_descriptor_get_num_variants(const struct wally_descriptor *descriptor,
