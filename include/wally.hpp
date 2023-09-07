@@ -505,6 +505,12 @@ inline int descriptor_get_features(const DESCRIPTOR& descriptor, uint32_t* value
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_key(const DESCRIPTOR& descriptor, size_t index, char** output) {
+    int ret = ::wally_descriptor_get_key(detail::get_p(descriptor), index, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
     return ret;

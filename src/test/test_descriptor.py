@@ -314,5 +314,35 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_EINVAL)
             wally_map_free(keys)
 
+    def test_key_iteration(self):
+        """Test iterating descriptor keys"""
+        k1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        k2 = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
+        wif = 'L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM'
+        pk = '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284'
+        pk_u = '0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf'
+        # Valid args
+        for descriptor, expected in [
+            # Bip32 xpub
+            (f'pkh({k1})', k1),
+            # BIP32 xprv
+            (f'pkh({k2})', k2),
+            # WIF
+            (f'pkh({wif})', wif),
+            # Hex pubkey, compressed
+            (f'pk({pk})', pk),
+            # Hex pubkey, uncompressed
+            (f'pk({pk_u})', pk_u),
+        ]:
+            d = c_void_p()
+            ret = wally_descriptor_parse(descriptor, None, NETWORK_BTC_MAIN, 0, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, num_keys = wally_descriptor_get_num_keys(d)
+            self.assertEqual((ret, num_keys), (WALLY_OK, 1))
+            ret, key_str = wally_descriptor_get_key(d, 0)
+            self.assertEqual((ret, key_str), (WALLY_OK, expected))
+            wally_descriptor_free(d)
+
+
 if __name__ == '__main__':
     unittest.main()

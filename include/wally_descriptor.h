@@ -132,18 +132,6 @@ WALLY_CORE_API int wally_descriptor_get_features(
     uint32_t *value_out);
 
 /**
- * Get the number of keys in a parsed output descriptor or miniscript expression.
- *
- * :param descriptor: Parsed output descriptor or miniscript expression.
- * :param value_out: Destination for the number of keys.
- *
-* .. note:: Repeated keys are counted once for each time they appear.
- */
-WALLY_CORE_API int wally_descriptor_get_num_keys(
-    const struct wally_descriptor *descriptor,
-    uint32_t *value_out);
-
-/**
  * Get the number of variants in a parsed output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
@@ -192,6 +180,36 @@ WALLY_CORE_API int wally_descriptor_get_num_paths(
 WALLY_CORE_API int wally_descriptor_get_depth(
     const struct wally_descriptor *descriptor,
     uint32_t *value_out);
+
+/**
+ * Get the number of keys in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param value_out: Destination for the number of keys.
+ *
+ * .. note:: Repeated keys are counted once for each time they appear.
+ */
+WALLY_CORE_API int wally_descriptor_get_num_keys(
+    const struct wally_descriptor *descriptor,
+    uint32_t *value_out);
+
+/**
+ * Get the string representation of a key in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key to get.
+ * :param output: Destination for the resulting string representation.
+ *|    The string returned should be freed using `wally_free_string`.
+ *
+ * .. note:: Keys may be BIP32 xpub/xpriv, WIF or hex pubkeys. The caller
+ *|    can use `wally_descriptor_get_features` to determine which key types
+ *|    are present.
+ *
+ */
+WALLY_CORE_API int wally_descriptor_get_key(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    char **output);
 
 /**
  * Get the maximum length of a script corresponding to an output descriptor.

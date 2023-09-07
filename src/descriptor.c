@@ -206,7 +206,7 @@ static int ctx_add_key_node(ms_ctx *ctx, ms_node *node)
 {
     const char *v = (char *)node;
     return map_add(&ctx->keys, NULL, ctx->keys.num_items,
-                   (unsigned char *)v, 1, false, false);
+                   (unsigned char *)v, 1, true, false);
 }
 
 /* Built-in miniscript expressions */
@@ -2842,17 +2842,6 @@ int wally_descriptor_get_features(const struct wally_descriptor *descriptor,
                              offsetof(struct wally_descriptor, features));
 }
 
-int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
-                                  uint32_t *value_out)
-{
-    if (value_out)
-        *value_out = 0;
-    if (!descriptor || !value_out)
-        return WALLY_EINVAL;
-    *value_out = (uint32_t)descriptor->keys.num_items;
-    return WALLY_OK;
-}
-
 int wally_descriptor_get_num_variants(const struct wally_descriptor *descriptor,
                                       uint32_t *value_out)
 {
@@ -2887,5 +2876,52 @@ int wally_descriptor_get_depth(const struct wally_descriptor *descriptor,
     if (!descriptor || !value_out)
         return WALLY_EINVAL;
     *value_out = node_get_depth(descriptor->top_node) - 1;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
+                                  uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!descriptor || !value_out)
+        return WALLY_EINVAL;
+    *value_out = (uint32_t)descriptor->keys.num_items;
+    return WALLY_OK;
+}
+
+/* Ignore incorrect warnings from the ms_node cast below */
+#pragma GCC diagnostic ignored "-Wcast-align"
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wcast-align"
+#endif
+
+int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
+                             size_t index, char **output)
+{
+    const ms_node *node;
+
+    if (output)
+        *output = 0;
+    if (!descriptor || index >= descriptor->keys.num_items || !output)
+        return WALLY_EINVAL;
+
+    node = (ms_node *)descriptor->keys.items[index].value;
+    if (node->kind == KIND_PUBLIC_KEY) {
+        return wally_hex_from_bytes((const unsigned char *)node->data,
+                                    node->data_len, output);
+    }
+    if (node->kind == KIND_PRIVATE_KEY) {
+        uint32_t flags = node->flags & NF_IS_UNCOMPRESSED ? WALLY_WIF_FLAG_UNCOMPRESSED : 0;
+        if (!descriptor->addr_ver)
+            return WALLY_EINVAL; /* Must have a network to fetch private keys */
+        return wally_wif_from_bytes((const unsigned char *)node->data, node->data_len,
+                                    descriptor->addr_ver->version_wif,
+                                    flags, output);
+    }
+    if ((node->kind & KIND_BIP32) != KIND_BIP32)
+        return WALLY_ERROR; /* Unknown key type, should not happen */
+    if (!(*output = wally_strdup_n(node->data, node->data_len)))
+        return WALLY_ENOMEM;
     return WALLY_OK;
 }
