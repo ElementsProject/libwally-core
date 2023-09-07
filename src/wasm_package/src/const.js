@@ -131,6 +131,7 @@ export const WALLY_MS_IS_PRIVATE = 0x04; /** Contains at least one private key *
 export const WALLY_MS_IS_RANGED = 0x01; /** Allows key ranges via ``*`` */
 export const WALLY_MS_IS_RAW = 0x10; /** Contains at least one raw key */
 export const WALLY_MS_IS_UNCOMPRESSED = 0x08; /** Contains at least one uncompressed key */
+export const WALLY_MS_IS_X_ONLY = 0x40; /** Contains at least one x-only key */
 export const WALLY_NETWORK_BITCOIN_MAINNET = 0x01; /** Bitcoin mainnet */
 export const WALLY_NETWORK_BITCOIN_REGTEST = 0xff ; /** Bitcoin regtest: Behaves as testnet except for segwit */
 export const WALLY_NETWORK_BITCOIN_TESTNET = 0x02; /** Bitcoin testnet */

@@ -26,6 +26,7 @@ struct wally_descriptor;
 #define WALLY_MS_IS_UNCOMPRESSED 0x08 /** Contains at least one uncompressed key */
 #define WALLY_MS_IS_RAW          0x10 /** Contains at least one raw key */
 #define WALLY_MS_IS_DESCRIPTOR   0x20 /** Contains only descriptor expressions (no miniscript) */
+#define WALLY_MS_IS_X_ONLY       0x40 /** Contains at least one x-only key */
 
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
 #define WALLY_MS_CANONICAL_NO_CHECKSUM 0x01 /** Do not include a checksum */
