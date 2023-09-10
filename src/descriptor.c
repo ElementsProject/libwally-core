@@ -2934,6 +2934,19 @@ int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
     return WALLY_OK;
 }
 
+int wally_descriptor_get_key_features(const struct wally_descriptor *descriptor,
+                                      size_t index, uint32_t *value_out)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (value_out)
+        *value_out = 0;
+    if (!node || !value_out)
+        return WALLY_EINVAL;
+    *value_out = node->flags;
+    return WALLY_OK;
+}
+
 int wally_descriptor_get_key_child_path_str_len(
     const struct wally_descriptor *descriptor, size_t index, size_t *written)
 {

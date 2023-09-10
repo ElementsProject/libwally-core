@@ -125,6 +125,7 @@ export function descriptor_get_depth(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_features(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_key(descriptor: Ref_wally_descriptor, index: number): string;
 export function descriptor_get_key_child_path_str_len(descriptor: Ref_wally_descriptor, index: number): number;
+export function descriptor_get_key_features(descriptor: Ref_wally_descriptor, index: number): number;
 export function descriptor_get_network(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_keys(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;

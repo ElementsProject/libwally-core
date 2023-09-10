@@ -523,6 +523,12 @@ inline int descriptor_get_key_child_path_str_len(const DESCRIPTOR& descriptor, s
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_key_features(const DESCRIPTOR& descriptor, size_t index, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_key_features(detail::get_p(descriptor), index, value_out);
+    return ret;
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
     return ret;

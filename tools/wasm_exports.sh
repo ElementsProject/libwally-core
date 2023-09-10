@@ -84,6 +84,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_get_key' \
 ,'_wally_descriptor_get_key_child_path_str' \
 ,'_wally_descriptor_get_key_child_path_str_len' \
+,'_wally_descriptor_get_key_features' \
 ,'_wally_descriptor_get_network' \
 ,'_wally_descriptor_get_num_keys' \
 ,'_wally_descriptor_get_num_paths' \

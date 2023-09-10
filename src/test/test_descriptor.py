@@ -325,24 +325,24 @@ class DescriptorTests(unittest.TestCase):
         P = POLICY
 
         # Valid args
-        for flags, descriptor, expected, child_path in [
+        for flags, descriptor, expected, child_path, expected_features in [
             # Bip32 xpub
-            (0, f'pkh({k1})',         k1,   ''),
-            (0, f'pkh({k1}/*)',       k1,   '*'),
-            (0, f'pkh({k1}/0/1/2/*)', k1,   '0/1/2/*'),
-            (0, f'pkh({k1}/<0;1>/*)', k1,   '<0;1>/*'),
+            (0, f'pkh({k1})',         k1,   '',        0),
+            (0, f'pkh({k1}/*)',       k1,   '*',       MS_IS_RANGED),
+            (0, f'pkh({k1}/0/1/2/*)', k1,   '0/1/2/*', MS_IS_RANGED),
+            (0, f'pkh({k1}/<0;1>/*)', k1,   '<0;1>/*', MS_IS_RANGED|MS_IS_MULTIPATH),
             # Bip32 xpub (as policy)
-            (P, 'pkh(@0/*)',          k1,   '*'),
-            (P, 'pkh(@0/**)',         k1,   '<0;1>/*'),
-            (P, 'pkh(@0/<0;1>/*)',    k1,   '<0;1>/*'),
+            (P, 'pkh(@0/*)',          k1,   '*',       MS_IS_RANGED),
+            (P, 'pkh(@0/**)',         k1,   '<0;1>/*', MS_IS_RANGED|MS_IS_MULTIPATH),
+            (P, 'pkh(@0/<0;1>/*)',    k1,   '<0;1>/*', MS_IS_RANGED|MS_IS_MULTIPATH),
             # BIP32 xprv
-            (0, f'pkh({k2})',         k2,   ''),
+            (0, f'pkh({k2})',         k2,   '',        MS_IS_PRIVATE),
             # WIF
-            (0, f'pkh({wif})',        wif,  ''),
+            (0, f'pkh({wif})',        wif,  '',        MS_IS_RAW|MS_IS_PRIVATE),
             # Hex pubkey, compressed
-            (0, f'pk({pk})',          pk,   ''),
+            (0, f'pk({pk})',          pk,   '',        MS_IS_RAW),
             # Hex pubkey, uncompressed
-            (0, f'pk({pk_u})',        pk_u, ''),
+            (0, f'pk({pk_u})',        pk_u, '',        MS_IS_RAW|MS_IS_UNCOMPRESSED),
         ]:
             d = c_void_p()
             keys = policy_keys if flags & P else None
@@ -356,6 +356,8 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual((ret, path_len), (WALLY_OK, len(child_path)))
             ret, path_str = wally_descriptor_get_key_child_path_str(d, 0)
             self.assertEqual((ret, path_str), (WALLY_OK, child_path))
+            ret, features = wally_descriptor_get_key_features(d, 0)
+            self.assertEqual((ret, features), (WALLY_OK, expected_features))
             wally_descriptor_free(d)
 
 
