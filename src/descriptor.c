@@ -2053,8 +2053,9 @@ static int analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
         node->flags |= WALLY_MS_IS_X_ONLY;
         ctx->features |= WALLY_MS_IS_X_ONLY;
     }
-    node->kind = KIND_PUBLIC_KEY;
     ctx->features |= WALLY_MS_IS_RAW;
+    node->kind = KIND_PUBLIC_KEY;
+    node->flags |= WALLY_MS_IS_RAW;
     *is_hex = true;
     return ctx_add_key_node(ctx, node);
 }
@@ -2115,6 +2116,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             node->data_len = EC_PRIVATE_KEY_LEN;
             node->kind = KIND_PRIVATE_KEY;
             ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
+            node->flags |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
             ret = ctx_add_key_node(ctx, node);
         }
         wally_clear(privkey, sizeof(privkey));
@@ -2166,6 +2168,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     if (extkey.priv_key[0] == BIP32_FLAG_KEY_PRIVATE) {
         node->kind = KIND_BIP32_PRIVATE_KEY;
         ctx->features |= WALLY_MS_IS_PRIVATE;
+        node->flags |= WALLY_MS_IS_PRIVATE;
     } else
         node->kind = KIND_BIP32_PUBLIC_KEY;
 
