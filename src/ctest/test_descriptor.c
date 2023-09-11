@@ -990,25 +990,25 @@ static const struct descriptor_test {
     }, {
         "policy - single asterisk",
         "pkh(@0/*)", // Becomes "pkh(mainnet_xpub/*)" i.e. the test case above this
-        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
         "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
         "cp8r8rlg"
     }, {
         "policy - double asterisk",
         "pkh(@0/**)", // Becomes "pkh(mainnet_xpub/<0;1>/*)"
-        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
         "76a9143099ad49dfdd021bf3748f7f858e0d1fa0b4f6f888ac",
         "ydnzkve4"
     }, {
         "policy - multi-path",
         "pkh(@0/<0;1>/*)", // Becomes "pkh(mainnet_xpub/<0;1>/*)"
-        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
         "76a9143099ad49dfdd021bf3748f7f858e0d1fa0b4f6f888ac",
         "ydnzkve4"
     }, {
         "policy - previous key reference",
         "sh(multi(1,@0/**,@1/**,@0/**))", /* For testing: expresssion isn't sensible */
-        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY,
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
         "a91415b7de59bd65038744e3214a521d9d4443dc78c287",
         "xwdj6ucy"
     },
@@ -1425,57 +1425,57 @@ static const struct descriptor_test {
         "policy errchk - no key expression",
         "raw()",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - key with path",
         "pkh(@0/0/*)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - missing key postfix",
         "pkh(@0)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - terminal key postfix",
         "@0",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - missing key number",
         "@",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - mis-ordered keys",
         "sh(multi(1,@1/**,@0/**))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - non-policy keys",
         "sh(multi(1,@0/**,xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - mismatched key cardinalities (1)",
         "sh(multi(1,@0/**,@1/*))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - mismatched key cardinalities (2)",
         "sh(multi(1,@0/<0;1>/*,@1/*))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - invalid key cardinality (key path)",
         "pkh(@0/<0;1;2>/*)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }, {
         "policy errchk - invalid key cardinality (variant)",
         "combo(@0/**)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
-        WALLY_MINISCRIPT_POLICY, NULL, ""
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }
 };
 
@@ -1924,7 +1924,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     int expected_ret, ret, len_ret;
     uint32_t multi_index = 0;
     uint32_t child_num = test->child_num ? *test->child_num : 0, features;
-    const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY;
+    const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY_TEMPLATE;
     const struct wally_map *keys = is_policy ? &g_policy_map : &g_key_map;
 
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;

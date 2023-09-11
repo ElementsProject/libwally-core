@@ -18,9 +18,9 @@
 #define MS_FLAGS_ALL (WALLY_MINISCRIPT_TAPSCRIPT | \
         WALLY_MINISCRIPT_ONLY | \
         WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
-        WALLY_MINISCRIPT_POLICY)
+        WALLY_MINISCRIPT_POLICY_TEMPLATE)
 #define MS_FLAGS_CANONICALIZE (WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
-        WALLY_MINISCRIPT_POLICY)
+        WALLY_MINISCRIPT_POLICY_TEMPLATE)
 
 /* Properties and expressions definition */
 #define TYPE_NONE  0x00
@@ -388,7 +388,7 @@ static int canonicalize(const char *descriptor,
     if (!descriptor || (flags & ~MS_FLAGS_CANONICALIZE))
         return WALLY_EINVAL;
 
-    if (flags & WALLY_MINISCRIPT_POLICY) {
+    if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
         if (!is_valid_policy_map(vars_in))
             return WALLY_EINVAL; /* Invalid policy variables given */
         is_id_start = is_policy_start_char;
@@ -421,7 +421,7 @@ static int canonicalize(const char *descriptor,
                 }
                 required_len += item->value_len;
                 ++*num_substitutions;
-                if (flags & WALLY_MINISCRIPT_POLICY) {
+                if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
                     int key_index = (int)(item - vars_in->items);
                     if (key_index > key_index_hwm + 1)
                         return WALLY_EINVAL; /* Must be ordered with no gaps */
@@ -452,7 +452,7 @@ static int canonicalize(const char *descriptor,
 
     if (!*p && (flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM))
         return WALLY_EINVAL; /* Checksum required but not present */
-    if (flags & WALLY_MINISCRIPT_POLICY) {
+    if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
         if (!found_policy_key)
             return WALLY_EINVAL; /* At least one key expression must be present */
         if (found_policy_single && found_policy_multi)
@@ -483,7 +483,7 @@ static int canonicalize(const char *descriptor,
                 item = wally_map_get(vars_in, (unsigned char*)start, lookup_len);
                 lookup_len = item ? item->value_len : lookup_len;
                 memcpy(out, item ? (char *)item->value : start, lookup_len);
-                if (item && flags & WALLY_MINISCRIPT_POLICY) {
+                if (item && flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
                     if (p[1] == '*' && p[2] == '*') {
                         out += lookup_len;
                         lookup_len = strlen("/<0;1>/*");
@@ -2631,7 +2631,7 @@ int wally_descriptor_parse(const char *miniscript,
                                      flags, NULL, NULL, &ctx->top_node);
         if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
-        if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY)) {
+        if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE)) {
             if (ctx->keys.num_items != num_substitutions)
                 ret = WALLY_EINVAL; /* A non-substituted key was present */
             else if (ctx->num_variants > 1 || ctx->num_multipaths > 2)
