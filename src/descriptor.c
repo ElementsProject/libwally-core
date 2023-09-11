@@ -18,7 +18,8 @@
 #define MS_FLAGS_ALL (WALLY_MINISCRIPT_TAPSCRIPT | \
         WALLY_MINISCRIPT_ONLY | \
         WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
-        WALLY_MINISCRIPT_POLICY_TEMPLATE)
+        WALLY_MINISCRIPT_POLICY_TEMPLATE | \
+        WALLY_MINISCRIPT_UNIQUE_KEYPATHS)
 #define MS_FLAGS_CANONICALIZE (WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
         WALLY_MINISCRIPT_POLICY_TEMPLATE)
 
@@ -204,6 +205,8 @@ static int ctx_add_key_node(ms_ctx *ctx, ms_node *node)
                    (unsigned char *)v, 1, true, false);
 }
 
+static int ensure_unique_policy_keys(const ms_ctx *ctx);
+
 /* Built-in miniscript expressions */
 typedef int (*node_verify_fn_t)(ms_ctx *ctx, ms_node *node);
 typedef int (*node_gen_fn_t)(ms_ctx *ctx, ms_node *node,
@@ -381,7 +384,7 @@ static int canonicalize(const char *descriptor,
     int key_index_hwm = -1;
     const char *p = descriptor, *start;
     char *out;
-    bool found_policy_key = false, found_policy_single = false, found_policy_multi = false;;
+    bool found_policy_single = false, found_policy_multi = false;;
 
     *output = NULL;
     *num_substitutions = 0;
@@ -427,7 +430,6 @@ static int canonicalize(const char *descriptor,
                         return WALLY_EINVAL; /* Must be ordered with no gaps */
                     if (key_index > key_index_hwm)
                         key_index_hwm = key_index;
-                    found_policy_key = true;
                     if (*p++ != '/')
                         return WALLY_EINVAL;
                     ++required_len;
@@ -453,10 +455,10 @@ static int canonicalize(const char *descriptor,
     if (!*p && (flags & WALLY_MINISCRIPT_REQUIRE_CHECKSUM))
         return WALLY_EINVAL; /* Checksum required but not present */
     if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
-        if (!found_policy_key)
-            return WALLY_EINVAL; /* At least one key expression must be present */
         if (found_policy_single && found_policy_multi)
             return WALLY_EINVAL; /* Cannot mix cardinality of policy keys */
+        if (key_index_hwm == -1 || key_index_hwm != (int)vars_in->num_items - 1)
+            return WALLY_EINVAL; /* One or more keys wasn't substituted */
     }
     if (!(*output = wally_malloc(required_len + 1 + DESCRIPTOR_CHECKSUM_LENGTH + 1)))
         return WALLY_ENOMEM;
@@ -2633,9 +2635,13 @@ int wally_descriptor_parse(const char *miniscript,
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
         if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE)) {
             if (ctx->keys.num_items != num_substitutions)
-                ret = WALLY_EINVAL; /* A non-substituted key was present */
+                ret = WALLY_EINVAL; /* non-substituted key in the expression */
+            else if (vars_in && ctx->keys.num_items < vars_in->num_items)
+                ret = WALLY_EINVAL; /* non-substituted key in substitutions */
             else if (ctx->num_variants > 1 || ctx->num_multipaths > 2)
                 ret = WALLY_EINVAL; /* Solved cardinality must be 1 or 2 */
+            else if (flags & WALLY_MINISCRIPT_UNIQUE_KEYPATHS)
+                ret = ensure_unique_policy_keys(ctx);
         }
     }
     if (ret != WALLY_OK) {
@@ -2971,5 +2977,66 @@ int wally_descriptor_get_key_child_path_str(
         return WALLY_EINVAL;
     if (!(*output = wally_strdup_n(node->child_path, node->child_path_len)))
         return WALLY_ENOMEM;
+    return WALLY_OK;
+}
+
+static const char *get_multipath_child(const char* p, uint32_t *v)
+{
+    *v = 0;
+    if (*p != '<' && *p != ';')
+        return NULL;
+    else {
+        ++p;
+        while (*p >= '0' && *p <= '9') {
+            *v *= 10;
+            *v += (*p++ - '0');
+        }
+        if (*p == '\'' || *p == 'h' || *p == 'H') {
+            *v |= BIP32_INITIAL_HARDENED_CHILD;
+            ++p;
+        }
+    }
+    return p;
+}
+
+static int are_keys_overlapped(const ms_ctx *ctx,
+                               const ms_node *lhs, const ms_node *rhs)
+{
+    const char *p;
+    uint32_t l1, l2, r1, r2;
+
+    if (lhs->data_len != rhs->data_len ||
+        memcmp(lhs->data, rhs->data, lhs->data_len))
+        return WALLY_OK; /* Different root keys */
+    if (lhs->child_path_len == rhs->child_path_len &&
+        !memcmp(lhs->child_path, rhs->child_path, lhs->child_path_len))
+        return WALLY_EINVAL; /* Identical paths */
+    if (!(lhs->flags & WALLY_MS_IS_MULTIPATH))
+        return WALLY_OK; /* Non-identical ranged, non-multipath keys */
+    if (ctx->max_path_elems != 2 || !(rhs->flags & WALLY_MS_IS_MULTIPATH))
+        return WALLY_ERROR; /* Should never happen! */
+    /* Check the set of multi-path indices is disjoint */
+    if (!(p = get_multipath_child(strchr(lhs->child_path, '<'), &l1)) ||
+        !get_multipath_child(p, &l2) ||
+        !(p = get_multipath_child(strchr(rhs->child_path, '<'), &r1)) ||
+        !get_multipath_child(p, &r2))
+        return WALLY_ERROR; /* Should never happen! */
+    if (l1 == r1 || l1 == r2 || l2 == r1 || l2 == r2)
+        return WALLY_EINVAL; /* indices are not disjoint */
+    return WALLY_OK;
+}
+
+static int ensure_unique_policy_keys(const ms_ctx *ctx)
+{
+    size_t i, j;
+
+    for (i = 0; i < ctx->keys.num_items; ++i) {
+        const ms_node *node = descriptor_get_key(ctx, i);
+        for (j = i + 1; j < ctx->keys.num_items; ++j) {
+            int ret = are_keys_overlapped(ctx, node, descriptor_get_key(ctx, j));
+            if (ret != WALLY_OK)
+                return ret;
+        }
+    }
     return WALLY_OK;
 }

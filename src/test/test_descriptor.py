@@ -10,10 +10,11 @@ NETWORK_BTC_REG    = 0xff
 NETWORK_LIQUID     = 0x03
 NETWORK_LIQUID_REG = 0x04
 
-MS_TAP = 0x1  # WALLY_MINISCRIPT_TAPSCRIPT
-MS_ONLY = 0x2 # WALLY_MINISCRIPT_ONLY
-REQUIRE_CHECKSUM = 0x4 # WALLY_MINISCRIPT_REQUIRE_CHECKSUM
-POLICY    = 0x08 # WALLY_MINISCRIPT_POLICY_TEMPLATE
+MS_TAP           = 0x1  # WALLY_MINISCRIPT_TAPSCRIPT
+MS_ONLY          = 0x2  # WALLY_MINISCRIPT_ONLY
+REQUIRE_CHECKSUM = 0x4  # WALLY_MINISCRIPT_REQUIRE_CHECKSUM
+POLICY           = 0x08 # WALLY_MINISCRIPT_POLICY_TEMPLATE
+UNIQUE_KEYPATHS  = 0x10 # WALLY_MINISCRIPT_UNIQUE_KEYPATHS
 
 MS_IS_RANGED = 0x1
 MS_IS_MULTIPATH = 0x2
@@ -291,26 +292,35 @@ class DescriptorTests(unittest.TestCase):
             keys = {f'@{i}': xpub for i,xpub in enumerate(xpubs)}
             return wally_map_from_dict(keys)
 
+        P, K = POLICY, UNIQUE_KEYPATHS
         bad_args = [
             # Raw pubkey
-            [POLICY, ['038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048']],
+            [P, 'pkh(@0/*)', ['038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048']],
             # Bip32 private key
-            [POLICY, [xpriv]],
+            [P, 'pkh(@0/*)', [xpriv]],
             # Keys must be in the form of @N
-            [POLICY, {'foo': xpub1}],
+            [P, 'pkh(@0/*)', {'foo': xpub1}],
             # Keys must start from 0
-            [POLICY, {'@1': xpub1}],
+            [P, 'pkh(@0/*)', {'@1': xpub1}],
             # Keys must be successive integers
-            [POLICY, {'@0': xpub1, '@2': xpub2}],
+            [P, 'pkh(@0/*)', [xpub1, xpub2]],
+            # Keys must all be substituted
+            [P, 'pkh(@0/*)', {'@0': xpub1, '@1': xpub2}],
             # Keys cannot have child paths
-            [POLICY, {'@0': f'{xpub1}/0'}],
-            # Keys must be unique
-            [POLICY, [xpub1, xpub1]],
+            [P, 'pkh(@0/*)', {'@0': f'{xpub1}/0'}],
+            # Keys must be unique in the substitution list (always)
+            [P, 'sh(multi(1, @0/*,@1/*))', [xpub1, xpub1]],
+            # Keys must be unique in the final expression (with flag)
+            [P|K, 'sh(multi(1,@0/*,@0/*))', [xpub1]],
+            [P|K, 'sh(multi(1,@0/**,@0/**))', [xpub1]],
+            # Key multi-paths must be disjoint sets
+            [P|K, 'sh(multi(1,@0/<0;1>/*,@0/<1;2>/*))', [xpub1]],
+            [P|K, 'sh(multi(1,@0/<1;0>/*,@0/<2;1>/*))', [xpub1]],
         ]
         d = c_void_p()
-        for flags, key_items in bad_args:
+        for flags, policy, key_items in bad_args:
             keys = wally_map_from_dict(key_items) if type(key_items) is dict else make_keys(key_items)
-            ret = wally_descriptor_parse('pkh(@0/*)', keys, NETWORK_BTC_MAIN, POLICY, d)
+            ret = wally_descriptor_parse(policy, keys, NETWORK_BTC_MAIN, flags, d)
             self.assertEqual(ret, WALLY_EINVAL)
             wally_map_free(keys)
 

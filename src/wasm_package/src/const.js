@@ -124,6 +124,7 @@ export const WALLY_MINISCRIPT_ONLY = 0x02; /** Only allow miniscript (not descri
 export const WALLY_MINISCRIPT_POLICY_TEMPLATE = 0x08; /** Only allow policy templates with @n BIP32 keys */
 export const WALLY_MINISCRIPT_REQUIRE_CHECKSUM = 0x04; /** Require a checksum to be present */
 export const WALLY_MINISCRIPT_TAPSCRIPT = 0x01; /** Tapscript, use x-only pubkeys */
+export const WALLY_MINISCRIPT_UNIQUE_KEYPATHS = 0x10; /** For policy templates, ensure BIP32 derivation paths differ for identical keys */
 export const WALLY_MS_CANONICAL_NO_CHECKSUM = 0x01; /** Do not include a checksum */
 export const WALLY_MS_IS_DESCRIPTOR = 0x20; /** Contains only descriptor expressions (no miniscript) */
 export const WALLY_MS_IS_MULTIPATH = 0x02; /** Allows multiple paths via ``<a;b;c>`` */

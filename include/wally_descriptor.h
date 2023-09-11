@@ -16,6 +16,7 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_ONLY             0x02 /** Only allow miniscript (not descriptor) expressions */
 #define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
 #define WALLY_MINISCRIPT_POLICY_TEMPLATE  0x08 /** Only allow policy templates with @n BIP32 keys */
+#define WALLY_MINISCRIPT_UNIQUE_KEYPATHS  0x10 /** For policy templates, ensure BIP32 derivation paths differ for identical keys */
 #define WALLY_MINISCRIPT_DEPTH_MASK       0xffff0000 /** Mask for limiting maximum depth */
 #define WALLY_MINISCRIPT_DEPTH_SHIFT      16 /** Shift to convert maximum depth to flags */
 

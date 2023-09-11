@@ -1008,10 +1008,10 @@ static const struct descriptor_test {
         "ydnzkve4"
     }, {
         "policy - previous key reference",
-        "sh(multi(1,@0/**,@1/**,@0/**))", /* For testing: expresssion isn't sensible */
+        "sh(multi(1,@0/**,@1/**,@0/<2;3>/*))", /* For testing: expresssion isn't sensible */
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
-        "a91415b7de59bd65038744e3214a521d9d4443dc78c287",
-        "xwdj6ucy"
+        "a9146cc69bc5443e97b8a30918cb6297ba4efb3d6dc387",
+        "45w36ywr"
     },
     /*
      * Misc error cases (code coverage)
@@ -1937,6 +1937,13 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
 
     ret = wally_descriptor_parse(test->descriptor, keys, test->network,
                                  test->flags, &descriptor);
+    if (is_policy && expected_ret == WALLY_OK) {
+        /* Re-parse with strict key checking */
+        wally_descriptor_free(descriptor);
+        ret = wally_descriptor_parse(test->descriptor, keys, test->network,
+                                     test->flags | WALLY_MINISCRIPT_UNIQUE_KEYPATHS,
+                                     &descriptor);
+    }
     if (expected_ret == WALLY_OK || ret == expected_ret) {
         /* For failure cases, we may fail when generating instead of parsing,
          * we catch those cases below */
