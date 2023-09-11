@@ -56,11 +56,12 @@ static struct wally_map_item g_policy_map_items[] = {
     { B("@1"), B("xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU") }
 };
 
-static const struct wally_map g_policy_map = {
-    g_policy_map_items,
-    NUM_ELEMS(g_policy_map_items),
-    NUM_ELEMS(g_policy_map_items),
-    NULL
+/* 1 and 2 element key variable maps for policy testing.
+ * The bip refers to these as "key information vectors".
+ */
+static const struct wally_map g_policy_maps[2] = {
+    { g_policy_map_items, 1, 1, NULL },
+    { g_policy_map_items, NUM_ELEMS(g_policy_map_items), NUM_ELEMS(g_policy_map_items), NULL }
 };
 
 static const uint32_t g_miniscript_index_0 = 0;
@@ -1925,9 +1926,14 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     uint32_t multi_index = 0;
     uint32_t child_num = test->child_num ? *test->child_num : 0, features;
     const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY_TEMPLATE;
-    const struct wally_map *keys = is_policy ? &g_policy_map : &g_key_map;
+    const struct wally_map *keys = is_policy ? &g_policy_maps[0] : &g_key_map;
 
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
+    if (is_policy && expected_ret == WALLY_OK) {
+        const char *p = strchr(test->descriptor, '@');
+        if (p && strchr(p + 1, '@'))
+            keys = &g_policy_maps[1]; /* 2-Element policy key map */
+    }
 
     ret = wally_descriptor_parse(test->descriptor, keys, test->network,
                                  test->flags, &descriptor);
