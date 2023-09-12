@@ -126,6 +126,8 @@ export function descriptor_get_features(descriptor: Ref_wally_descriptor): numbe
 export function descriptor_get_key(descriptor: Ref_wally_descriptor, index: number): string;
 export function descriptor_get_key_child_path_str_len(descriptor: Ref_wally_descriptor, index: number): number;
 export function descriptor_get_key_features(descriptor: Ref_wally_descriptor, index: number): number;
+export function descriptor_get_key_origin_fingerprint(descriptor: Ref_wally_descriptor, index: number): Buffer;
+export function descriptor_get_key_origin_path_str_len(descriptor: Ref_wally_descriptor, index: number): number;
 export function descriptor_get_network(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_keys(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;
@@ -728,6 +730,7 @@ export function base58_n_to_bytes(str_in: string, str_len: number, flags: number
 export function base58_to_bytes(str_in: string, flags: number): Buffer;
 export function base64_to_bytes(str_in: string, flags: number): Buffer;
 export function descriptor_get_key_child_path_str(descriptor: Ref_wally_descriptor, index: number): string;
+export function descriptor_get_key_origin_path_str(descriptor: Ref_wally_descriptor, index: number): string;
 export function descriptor_to_script(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, multi_index: number, child_num: number, flags: number): Buffer;
 export function ec_sig_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function ec_sig_from_bytes_aux(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, aux_rand: Buffer|Uint8Array, flags: number): Buffer;

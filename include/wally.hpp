@@ -528,6 +528,24 @@ inline int descriptor_get_key_features(const DESCRIPTOR& descriptor, size_t inde
     return ret;
 }
 
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_key_origin_fingerprint(const DESCRIPTOR& descriptor, size_t index, BYTES_OUT& bytes_out) {
+    int ret = ::wally_descriptor_get_key_origin_fingerprint(detail::get_p(descriptor), index, bytes_out.data(), bytes_out.size());
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_key_origin_path_str(const DESCRIPTOR& descriptor, size_t index, char** output) {
+    int ret = ::wally_descriptor_get_key_origin_path_str(detail::get_p(descriptor), index, output);
+    return ret;
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_key_origin_path_str_len(const DESCRIPTOR& descriptor, size_t index, size_t* written) {
+    int ret = ::wally_descriptor_get_key_origin_path_str_len(detail::get_p(descriptor), index, written);
+    return ret;
+}
+
 template <class DESCRIPTOR>
 inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);

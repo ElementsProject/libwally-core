@@ -16,12 +16,14 @@ REQUIRE_CHECKSUM = 0x4  # WALLY_MINISCRIPT_REQUIRE_CHECKSUM
 POLICY           = 0x08 # WALLY_MINISCRIPT_POLICY_TEMPLATE
 UNIQUE_KEYPATHS  = 0x10 # WALLY_MINISCRIPT_UNIQUE_KEYPATHS
 
-MS_IS_RANGED = 0x1
-MS_IS_MULTIPATH = 0x2
-MS_IS_PRIVATE = 0x4
+MS_IS_RANGED       = 0x1
+MS_IS_MULTIPATH    = 0x2
+MS_IS_PRIVATE      = 0x4
 MS_IS_UNCOMPRESSED = 0x08
-MS_IS_RAW = 0x010
-MS_IS_DESCRIPTOR = 0x20
+MS_IS_RAW          = 0x010
+MS_IS_DESCRIPTOR   = 0x20
+MS_IS_X_ONLY       = 0x40
+MS_IS_PARENTED     = 0x80
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
@@ -326,12 +328,16 @@ class DescriptorTests(unittest.TestCase):
 
     def test_key_iteration(self):
         """Test iterating descriptor keys"""
+        origin_fp = 'd34db33f'
+        origin_path = "44'/0'/0'"
+        origin = f'[{origin_fp}/{origin_path}]'
         k1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
         k2 = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         wif = 'L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM'
         pk = '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284'
         pk_u = '0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf'
         policy_keys = wally_map_from_dict({f'@{i}': xpub for i,xpub in enumerate([k1])})
+        policy_keys_with_origins = wally_map_from_dict({f'@{i}': f'{origin}{xpub}' for i,xpub in enumerate([k1])})
         P = POLICY
 
         # Valid args
@@ -355,20 +361,43 @@ class DescriptorTests(unittest.TestCase):
             (0, f'pk({pk_u})',        pk_u, '',        MS_IS_RAW|MS_IS_UNCOMPRESSED),
         ]:
             d = c_void_p()
-            keys = policy_keys if flags & P else None
-            ret = wally_descriptor_parse(descriptor, keys, NETWORK_BTC_MAIN, flags, d)
-            self.assertEqual(ret, WALLY_OK)
-            ret, num_keys = wally_descriptor_get_num_keys(d)
-            self.assertEqual((ret, num_keys), (WALLY_OK, 1))
-            ret, key_str = wally_descriptor_get_key(d, 0)
-            self.assertEqual((ret, key_str), (WALLY_OK, expected))
-            ret, path_len = wally_descriptor_get_key_child_path_str_len(d, 0)
-            self.assertEqual((ret, path_len), (WALLY_OK, len(child_path)))
-            ret, path_str = wally_descriptor_get_key_child_path_str(d, 0)
-            self.assertEqual((ret, path_str), (WALLY_OK, child_path))
-            ret, features = wally_descriptor_get_key_features(d, 0)
-            self.assertEqual((ret, features), (WALLY_OK, expected_features))
-            wally_descriptor_free(d)
+            buf, buf_len = make_cbuffer('0' * 8)
+
+            for with_origin in [False, True] if expected == k1 else [False]:
+                keys = None
+                if flags & P:
+                    keys = policy_keys_with_origins if with_origin else policy_keys
+                elif with_origin:
+                    continue
+                ret = wally_descriptor_parse(descriptor, keys, NETWORK_BTC_MAIN, flags, d)
+                self.assertEqual(ret, WALLY_OK)
+                ret, num_keys = wally_descriptor_get_num_keys(d)
+                self.assertEqual((ret, num_keys), (WALLY_OK, 1))
+                ret, key_str = wally_descriptor_get_key(d, 0)
+                self.assertEqual((ret, key_str), (WALLY_OK, expected))
+                ret, path_len = wally_descriptor_get_key_child_path_str_len(d, 0)
+                self.assertEqual((ret, path_len), (WALLY_OK, len(child_path)))
+                ret, path_str = wally_descriptor_get_key_child_path_str(d, 0)
+                self.assertEqual((ret, path_str), (WALLY_OK, child_path))
+                ret, features = wally_descriptor_get_key_features(d, 0)
+                if with_origin:
+                    expected_features |= MS_IS_PARENTED
+                self.assertEqual((ret, features), (WALLY_OK, expected_features))
+                ret = wally_descriptor_get_key_origin_fingerprint(d, 0, buf, buf_len)
+                # Ensure the key origin matches if present
+                if with_origin:
+                    self.assertEqual(ret, WALLY_OK)
+                    ret, fp = wally_hex_from_bytes(buf, buf_len)
+                    self.assertEqual((ret, fp), (WALLY_OK, origin_fp))
+                else:
+                    self.assertEqual(ret, WALLY_EINVAL)
+                ret, path_len = wally_descriptor_get_key_origin_path_str_len(d, 0)
+                expected_len = len(origin_path) if with_origin else 0
+                self.assertEqual((ret, path_len), (WALLY_OK, expected_len))
+                ret, path_str = wally_descriptor_get_key_origin_path_str(d, 0)
+                expected_path = origin_path if with_origin else ''
+                self.assertEqual((ret, path_str), (WALLY_OK, expected_path))
+                wally_descriptor_free(d)
 
 
 if __name__ == '__main__':

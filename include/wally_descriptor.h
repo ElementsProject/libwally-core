@@ -28,6 +28,7 @@ struct wally_descriptor;
 #define WALLY_MS_IS_RAW          0x10 /** Contains at least one raw key */
 #define WALLY_MS_IS_DESCRIPTOR   0x20 /** Contains only descriptor expressions (no miniscript) */
 #define WALLY_MS_IS_X_ONLY       0x40 /** Contains at least one x-only key */
+#define WALLY_MS_IS_PARENTED     0x80 /** Contains at least one key key with a parent key origin */
 
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
 #define WALLY_MS_CANONICAL_NO_CHECKSUM 0x01 /** Do not include a checksum */
@@ -230,7 +231,7 @@ WALLY_CORE_API int wally_descriptor_get_key_features(
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param index: The zero-based index of the key whose child path to get.
  * :param written: Destination for the length of the keys child path string,
- *|    excluding the NUL terminator.
+ *|    excluding the NUL terminator (zero if not present).
  */
 WALLY_CORE_API int wally_descriptor_get_key_child_path_str_len(
     const struct wally_descriptor *descriptor,
@@ -242,7 +243,7 @@ WALLY_CORE_API int wally_descriptor_get_key_child_path_str_len(
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param index: The zero-based index of the key whose child path to get.
- * :param output: Destination for the resulting path string (may be empty).
+ * :param output: Destination for the resulting path string (empty if not present).
  *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_descriptor_get_key_child_path_str(
@@ -250,6 +251,47 @@ WALLY_CORE_API int wally_descriptor_get_key_child_path_str(
     size_t index,
     char **output);
 
+/**
+ * Get the keys parent BIP32 fingerprint in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key whose parent fingerprint to get.
+ * :param bytes_out: Destination for the fingerprint.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
+ *
+ * If the key does not contain key origin information then `WALLY_EINVAL` is returned.
+ */
+WALLY_CORE_API int wally_descriptor_get_key_origin_fingerprint(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Get the length of a keys parent path string in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key whose parent path to get.
+ * :param written: Destination for the length of the keys parent path string,
+ *|    excluding the NUL terminator (zero if not present).
+ */
+WALLY_CORE_API int wally_descriptor_get_key_origin_path_str_len(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get the keys parent path string in a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key whose parent path to get.
+ * :param output: Destination for the resulting path string (empty if not present).
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_descriptor_get_key_origin_path_str(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    char **output);
 
 /**
  * Get the maximum length of a script corresponding to an output descriptor.

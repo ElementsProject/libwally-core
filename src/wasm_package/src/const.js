@@ -128,6 +128,7 @@ export const WALLY_MINISCRIPT_UNIQUE_KEYPATHS = 0x10; /** For policy templates, 
 export const WALLY_MS_CANONICAL_NO_CHECKSUM = 0x01; /** Do not include a checksum */
 export const WALLY_MS_IS_DESCRIPTOR = 0x20; /** Contains only descriptor expressions (no miniscript) */
 export const WALLY_MS_IS_MULTIPATH = 0x02; /** Allows multiple paths via ``<a;b;c>`` */
+export const WALLY_MS_IS_PARENTED = 0x80; /** Contains at least one key key with a parent key origin */
 export const WALLY_MS_IS_PRIVATE = 0x04; /** Contains at least one private key */
 export const WALLY_MS_IS_RANGED = 0x01; /** Allows key ranges via ``*`` */
 export const WALLY_MS_IS_RAW = 0x10; /** Contains at least one raw key */

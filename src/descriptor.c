@@ -2085,7 +2085,12 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             (node->data[9] != ']' && node->data[9] != '/'))
             return WALLY_EINVAL; /* Invalid key origin fingerprint */
         size = end - node->data + 1;
-        /* cut parent path */
+        /* Store offset and length of any origin info in the number field */
+        node->number = (uint64_t)(node->data - ctx->src) << 32u;
+        node->number |= size;
+        ctx->features |= WALLY_MS_IS_PARENTED;
+        node->flags |= WALLY_MS_IS_PARENTED;
+        /* Remove the key origin info from the key data */
         node->data = end + 1;
         node->data_len -= size;
     }
@@ -2976,6 +2981,57 @@ int wally_descriptor_get_key_child_path_str(
     if (!node || !output)
         return WALLY_EINVAL;
     if (!(*output = wally_strdup_n(node->child_path, node->child_path_len)))
+        return WALLY_ENOMEM;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_key_origin_fingerprint(
+    const struct wally_descriptor *descriptor, size_t index,
+    unsigned char *bytes_out, size_t len)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+    const char *fingerprint;
+    size_t written;
+    int ret;
+
+    if (!node || !bytes_out || len != BIP32_KEY_FINGERPRINT_LEN ||
+        !(node->flags & WALLY_MS_IS_PARENTED))
+        return WALLY_EINVAL;
+    fingerprint = descriptor->src + (((uint64_t)node->number) >> 32u) + 1;
+    ret = wally_hex_n_to_bytes(fingerprint, BIP32_KEY_FINGERPRINT_LEN * 2,
+                               bytes_out, len, &written);
+    return ret == WALLY_OK && written != BIP32_KEY_FINGERPRINT_LEN ? WALLY_EINVAL : ret;
+}
+
+int wally_descriptor_get_key_origin_path_str_len(
+    const struct wally_descriptor *descriptor, size_t index, size_t *written)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (written)
+        *written = 0;
+    if (!node || !written)
+        return WALLY_EINVAL;
+    *written = node->flags & WALLY_MS_IS_PARENTED ? node->number & 0xffffffff : 0;
+    *written = *written < 11u ? 0 : *written - 11u;
+    return WALLY_OK;
+}
+
+int wally_descriptor_get_key_origin_path_str(
+    const struct wally_descriptor *descriptor, size_t index, char **output)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+    const char *path;
+    size_t path_len;
+
+    if (output)
+        *output = NULL;
+    if (!node || !output)
+        return WALLY_EINVAL;
+    path_len = node->flags & WALLY_MS_IS_PARENTED ? node->number & 0xffffffff : 0;
+    path_len = path_len < 11u ? 0 : path_len - 11u;
+    path = descriptor->src + (((uint64_t)node->number) >> 32u) + 10u;
+    if (!(*output = wally_strdup_n(path, path_len)))
         return WALLY_ENOMEM;
     return WALLY_OK;
 }
