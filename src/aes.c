@@ -104,6 +104,24 @@ int wally_aes(const unsigned char *key, size_t key_len,
     return WALLY_OK;
 }
 
+int wally_aes_cbc_get_maximum_length(const unsigned char *key, size_t key_len,
+                                     const unsigned char *iv, size_t iv_len,
+                                     const unsigned char *bytes, size_t bytes_len,
+                                     uint32_t flags,
+                                     size_t *written)
+{
+    if (written)
+        *written = 0;
+
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
+        ((flags & AES_FLAG_DECRYPT) && (bytes_len % AES_BLOCK_LEN)) ||
+        !iv || iv_len != AES_BLOCK_LEN || !written)
+        return WALLY_EINVAL;
+
+    *written = ((bytes_len / AES_BLOCK_LEN) + 1) * AES_BLOCK_LEN;
+    return WALLY_OK;
+}
+
 int wally_aes_cbc(const unsigned char *key, size_t key_len,
                   const unsigned char *iv, size_t iv_len,
                   const unsigned char *bytes, size_t bytes_len,

@@ -92,10 +92,6 @@ def scriptsig_multisig_from_bytes_len(script, sigs, sighashes, flags):
 def wif_to_public_key_len(wif, prefix):
     return EC_PUBLIC_KEY_UNCOMPRESSED_LEN if wif_is_uncompressed(wif) else EC_PUBLIC_KEY_LEN
 
-def aes_cbc_len(key, iv, src_bytes, flags):
-    bytes_len = len(src_bytes)
-    return (bytes_len // AES_BLOCK_LEN + 1) * AES_BLOCK_LEN
-
 if is_elements_build():
     def elements_pegout_script_from_bytes_len(bh, mcs, pk, whl, flags):
         return elements_pegout_script_size(len(bh), len(mcs), len(pk), len(whl))
@@ -119,7 +115,7 @@ ae_host_commit_from_bytes = _wrap_bin(ae_host_commit_from_bytes, WALLY_HOST_COMM
 ae_sig_from_bytes = _wrap_bin(ae_sig_from_bytes, EC_SIGNATURE_LEN)
 ae_signer_commit_from_bytes = _wrap_bin(ae_signer_commit_from_bytes, WALLY_S2C_OPENING_LEN)
 aes = _wrap_bin(aes, aes_len)
-aes_cbc = _wrap_bin(aes_cbc, aes_cbc_len, resize=True)
+aes_cbc = _wrap_bin(aes_cbc, aes_cbc_get_maximum_length, resize=True)
 base58_n_to_bytes = _wrap_bin(base58_n_to_bytes, base58_n_to_bytes_len, resize=True)
 base58_to_bytes = _wrap_bin(base58_to_bytes, base58_to_bytes_len, resize=True)
 base64_to_bytes = _wrap_bin(base64_to_bytes, base64_get_maximum_length, resize=True)

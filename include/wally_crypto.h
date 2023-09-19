@@ -87,6 +87,28 @@ WALLY_CORE_API int wally_aes(
     size_t len);
 
 /**
+ * Get the maximum length of encrypted/decrypted data using AES (CBC mode, PKCS#7 padding).
+ *
+ * :param key: Key material for initialisation.
+ * :param key_len: Length of ``key`` in bytes. Must be one of the :ref:`aes-key-length`.
+ * :param iv: Initialisation vector.
+ * :param iv_len: Length of ``iv`` in bytes. Must be `AES_BLOCK_LEN`.
+ * :param bytes: Bytes to encrypt/decrypt.
+ * :param bytes_len: Length of ``bytes`` in bytes. Can be of any length for encryption, must be a multiple of `AES_BLOCK_LEN` for decryption.
+ * :param flags: :ref:`aes-operation-flag` indicating the desired behavior.
+ * :param written: Destination for the maximum length of the encrypted/decrypted data.
+ */
+WALLY_CORE_API int wally_aes_cbc_get_maximum_length(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *iv,
+    size_t iv_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    size_t *written);
+
+/**
  * Encrypt/decrypt data using AES (CBC mode, PKCS#7 padding).
  *
  * :param key: Key material for initialisation.
