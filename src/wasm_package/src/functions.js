@@ -9,10 +9,6 @@ const hex_n_to_bytes_len = (_hex, hex_len) => Math.floor(hex_len / 2)
 const base58_to_bytes_len = (base58, flags) => base58_get_length(base58)
 const base58_n_to_bytes_len = (base58, n, flags) => base58_n_get_length(base58, n)
 
-const aes_len = (_key, bytes, _flags) =>
-    // ECB mode with no padding - output size is always exactly the same as the input
-    bytes.length
-
 const aes_cbc_len = (_key, iv, bytes, _flags) =>
     // CBC mode with PKCS#7 padding - output must be padded to the next block size multiply (for the pad length byte)
     (Math.floor(bytes.length/C.AES_BLOCK_LEN) + 1) * C.AES_BLOCK_LEN
@@ -78,8 +74,8 @@ export const ae_host_commit_from_bytes = wrap('wally_ae_host_commit_from_bytes',
 export const ae_sig_from_bytes = wrap('wally_ae_sig_from_bytes', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.EC_SIGNATURE_LEN)]);
 export const ae_signer_commit_from_bytes = wrap('wally_ae_signer_commit_from_bytes', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_S2C_OPENING_LEN)]);
 export const ae_verify = wrap('wally_ae_verify', [T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Int32, T.Bytes]);
-export const aes = wrap('wally_aes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, aes_len, false)]);
 export const aes_cbc = wrap('wally_aes_cbc', [T.Bytes, T.Bytes, T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, aes_cbc_len, true)]);
+export const aes_len = wrap('wally_aes_len', [T.Bytes, T.Bytes, T.Int32, T.DestPtr(T.Int32)]);
 export const asset_blinding_key_from_seed = wrap('wally_asset_blinding_key_from_seed', [T.Bytes, T.DestPtrSized(T.Bytes, C.HMAC_SHA512_LEN)]);
 export const asset_blinding_key_to_abf = wrap('wally_asset_blinding_key_to_abf', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.BLINDING_FACTOR_LEN)]);
 export const asset_blinding_key_to_abf_vbf = wrap('wally_asset_blinding_key_to_abf_vbf', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_ABF_VBF_LEN)]);
@@ -772,6 +768,7 @@ export const witness_p2wpkh_from_der = wrap('wally_witness_p2wpkh_from_der', [T.
 export const witness_p2wpkh_from_sig = wrap('wally_witness_p2wpkh_from_sig', [T.Bytes, T.Bytes, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const witness_program_from_bytes = wrap('wally_witness_program_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_WITNESSSCRIPT_MAX_LEN, true)]);
 export const witness_program_from_bytes_and_version = wrap('wally_witness_program_from_bytes_and_version', [T.Bytes, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_WITNESSSCRIPT_MAX_LEN, true)]);
+export const aes = wrap('wally_aes', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, aes_len, false)]);
 export const asset_pak_whitelistproof = wrap('wally_asset_pak_whitelistproof', [T.Bytes, T.Bytes, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, asset_pak_whitelistproof_len, false)]);
 export const asset_surjectionproof = wrap('wally_asset_surjectionproof', [T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, asset_surjectionproof_len, false)]);
 export const base58_n_to_bytes = wrap('wally_base58_n_to_bytes', [T.String, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, base58_n_to_bytes_len, true)]);

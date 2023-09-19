@@ -26,7 +26,6 @@ WASM_EXCLUDED_FUNCS = EXCLUDED_FUNCS | {
 # The boolean is whether the length function is a maximum length,
 # True = Yes, False = Exact length
 MISSING_LEN_FUNCS = {
-    'wally_aes': False,
     'wally_aes_cbc': True, # is_upper_bound=true only needed for the case of decryption
     'wally_base58_to_bytes': True,
     'wally_base58_n_to_bytes': True,

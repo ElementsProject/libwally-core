@@ -268,6 +268,7 @@ for f in (
     ('wally_ae_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_aes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_aes_cbc', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_aes_len', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_size_t_p]),
     ('wally_asset_blinding_key_from_seed', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_asset_blinding_key_to_abf', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_asset_blinding_key_to_abf_vbf', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),

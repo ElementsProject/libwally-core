@@ -395,6 +395,12 @@ inline int aes_cbc(const KEY& key, const IV& iv, const BYTES& bytes, uint32_t fl
     return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
 }
 
+template <class KEY, class BYTES>
+inline int aes_len(const KEY& key, const BYTES& bytes, uint32_t flags, size_t* written) {
+    int ret = ::wally_aes_len(key.data(), key.size(), bytes.data(), bytes.size(), flags, written);
+    return ret;
+}
+
 template <class BYTES>
 inline int base58_from_bytes(const BYTES& bytes, uint32_t flags, char** output) {
     int ret = ::wally_base58_from_bytes(bytes.data(), bytes.size(), flags, output);

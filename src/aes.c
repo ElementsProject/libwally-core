@@ -70,6 +70,19 @@ static void aes_dec(AES256_ctx *ctx,
     }
 }
 
+int wally_aes_len(const unsigned char *key, size_t key_len,
+                  const unsigned char *bytes, size_t bytes_len,
+                  uint32_t flags, size_t *written)
+{
+    if (!written)
+        *written = 0;
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
+        !bytes_len || bytes_len % AES_BLOCK_LEN || !written)
+        return WALLY_EINVAL;
+    *written = bytes_len;
+    return WALLY_OK;
+}
+
 int wally_aes(const unsigned char *key, size_t key_len,
               const unsigned char *bytes, size_t bytes_len,
               uint32_t flags,

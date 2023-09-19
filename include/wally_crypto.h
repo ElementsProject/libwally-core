@@ -47,6 +47,26 @@ WALLY_CORE_API int wally_scrypt(
 #define AES_FLAG_DECRYPT  2 /** Decrypt */
 
 /**
+ * Get the length of encrypted/decrypted data using AES (ECB mode, no padding).
+ *
+ * :param key: Key material for initialisation.
+ * :param key_len: Length of ``key`` in bytes. Must be one of the :ref:`aes-key-length`.
+ * :param bytes: Bytes to encrypt/decrypt.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of `AES_BLOCK_LEN`.
+ * :param flags: :ref:`aes-operation-flag` indicating the desired behavior.
+ * :param written: Destination for the length of the encrypted/decrypted data.
+ *
+ * This function returns ``bytes_len`` assuming its arguments are valid.
+ */
+WALLY_CORE_API int wally_aes_len(
+    const unsigned char *key,
+    size_t key_len,
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    size_t *written);
+
+/**
  * Encrypt/decrypt data using AES (ECB mode, no padding).
  *
  * :param key: Key material for initialisation.

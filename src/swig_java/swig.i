@@ -520,6 +520,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_addr_segwit_to_bytes);
 %returns_size_t(wally_address_to_scriptpubkey);
 %returns_array_(wally_aes, 6, 7, AES_BLOCK_LEN);
+%returns_size_t(wally_aes_len);
 %returns_size_t(wally_aes_cbc);
 %returns_array_(wally_asset_final_vbf, 8, 9, ASSET_TAG_LEN);
 %returns_array_(wally_asset_generator_from_bytes, 5, 6, ASSET_GENERATOR_LEN);

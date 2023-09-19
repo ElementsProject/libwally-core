@@ -92,9 +92,6 @@ def scriptsig_multisig_from_bytes_len(script, sigs, sighashes, flags):
 def wif_to_public_key_len(wif, prefix):
     return EC_PUBLIC_KEY_UNCOMPRESSED_LEN if wif_is_uncompressed(wif) else EC_PUBLIC_KEY_LEN
 
-def aes_len(key, src_bytes, flags):
-    return len(src_bytes)
-
 def aes_cbc_len(key, iv, src_bytes, flags):
     bytes_len = len(src_bytes)
     return (bytes_len // AES_BLOCK_LEN + 1) * AES_BLOCK_LEN
