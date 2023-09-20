@@ -9,7 +9,7 @@ def _wrap_bin(fn, length, resize=False):
         if resize:
             # Truncate buf to bytes written if needed. Also assert the
             # wrapper allocated enough space for the returned value to fit.
-            assert ret <= n
+            assert ret <= n, f'{fn.__name__}: {ret} > {n}'
             return buf[0:ret] if ret != n else buf
         if ret is not None:
             assert ret == n
