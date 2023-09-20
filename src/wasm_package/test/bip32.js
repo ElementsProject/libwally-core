@@ -109,7 +109,7 @@ test('BIP32 derivation', () => {
   const derivedSerialized = wally.bip32_key_serialize(derivedKey, wally.BIP32_FLAG_KEY_PRIVATE)
   const initSerialized = wally.bip32_key_serialize(initKey, wally.BIP32_FLAG_KEY_PRIVATE)
 
-  assert.deepEqual(initSerialized, derivedSerialized, 'BIP32 initialisation by member failed')
+  assert.deepEqual(initSerialized, derivedSerialized, 'BIP32 initialization by member failed')
 
   wally.bip32_key_free(seedKey)
   wally.bip32_key_free(derivedKey)

@@ -48,7 +48,7 @@ public class test_bip32 {
         final byte[] initSerialized = Wally.bip32_key_serialize(initKey, BIP32_FLAG_KEY_PRIVATE);
 
         if (!h(initSerialized).equals(h(derivedSerialized)))
-            throw new RuntimeException("BIP32 initialisation by member failed");
+            throw new RuntimeException("BIP32 initialization by member failed");
 
         final byte[] message = Wally.bip32_key_get_chain_code(derivedKey);
         final byte[] signature = Wally.ec_sig_from_bytes(Wally.bip32_key_get_priv_key(derivedKey),

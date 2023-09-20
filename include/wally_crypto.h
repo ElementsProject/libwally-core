@@ -49,7 +49,7 @@ WALLY_CORE_API int wally_scrypt(
 /**
  * Get the length of encrypted/decrypted data using AES (ECB mode, no padding).
  *
- * :param key: Key material for initialisation.
+ * :param key: Encryption/decryption key.
  * :param key_len: Length of ``key`` in bytes. Must be one of the :ref:`aes-key-length`.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of `AES_BLOCK_LEN`.
@@ -69,7 +69,7 @@ WALLY_CORE_API int wally_aes_len(
 /**
  * Encrypt/decrypt data using AES (ECB mode, no padding).
  *
- * :param key: Key material for initialisation.
+ * :param key: Encryption/decryption key.
  * :param key_len: Length of ``key`` in bytes. Must be one of the :ref:`aes-key-length`.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes. Must be a multiple of `AES_BLOCK_LEN`.
@@ -89,9 +89,10 @@ WALLY_CORE_API int wally_aes(
 /**
  * Get the maximum length of encrypted/decrypted data using AES (CBC mode, PKCS#7 padding).
  *
- * :param key: Key material for initialisation.
+ * :param key: Encryption/decryption key.
  * :param key_len: Length of ``key`` in bytes. Must be one of the :ref:`aes-key-length`.
- * :param iv: Initialisation vector.
+ * :param iv: Initialization vector. For encryption this should be secure entropy. For
+ *|    decryption the bytes used when encrypting must be given.
  * :param iv_len: Length of ``iv`` in bytes. Must be `AES_BLOCK_LEN`.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes. Can be of any length for encryption, must be a multiple of `AES_BLOCK_LEN` for decryption.
@@ -111,9 +112,10 @@ WALLY_CORE_API int wally_aes_cbc_get_maximum_length(
 /**
  * Encrypt/decrypt data using AES (CBC mode, PKCS#7 padding).
  *
- * :param key: Key material for initialisation.
+ * :param key: Encryption/decryption key.
  * :param key_len: Length of ``key`` in bytes. Must be one of the :ref:`aes-key-length`.
- * :param iv: Initialisation vector.
+ * :param iv: Initialization vector. For encryption this should be secure entropy. For
+ *|    decryption the bytes used when encrypting must be given.
  * :param iv_len: Length of ``iv`` in bytes. Must be `AES_BLOCK_LEN`.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes. Can be of any length for encryption, must be a multiple of `AES_BLOCK_LEN` for decryption.
@@ -896,7 +898,7 @@ WALLY_CORE_API int wally_s2c_commitment_verify(
  *
  * :param priv_key: The callers private key used for Diffie-Helman exchange.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
- * :param iv: Initialisation vector. Only required when encrypting, otherwise pass NULL.
+ * :param iv: Initialization vector. Only required when encrypting, otherwise pass NULL.
  * :param iv_len: Length of ``iv`` in bytes. Must be `AES_BLOCK_LEN`.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes.
@@ -927,7 +929,7 @@ WALLY_CORE_API int wally_aes_cbc_with_ecdh_key_get_maximum_length(
  *
  * :param priv_key: The callers private key used for Diffie-Helman exchange.
  * :param priv_key_len: The length of ``priv_key`` in bytes. Must be `EC_PRIVATE_KEY_LEN`.
- * :param iv: Initialisation vector. Only required when encrypting, otherwise pass NULL.
+ * :param iv: Initialization vector. Only required when encrypting, otherwise pass NULL.
  * :param iv_len: Length of ``iv`` in bytes. Must be `AES_BLOCK_LEN` if encrypting otherwise 0.
  * :param bytes: Bytes to encrypt/decrypt.
  * :param bytes_len: Length of ``bytes`` in bytes.

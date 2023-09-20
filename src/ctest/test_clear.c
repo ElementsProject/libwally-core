@@ -36,7 +36,7 @@ extern void __asan_unpoison_memory_region(void const volatile *addr, size_t size
  * determine that the memory is not read afterwards. There are reports
  * that tricks designed to work around this including making data volatile,
  * calling through function pointers, dummy asm contraints etc are
- * not always effective as optimisation continues to improve.
+ * not always effective as optimization continues to improve.
  *
  * Here we try to ensure that the wally_clear/wally_clear_n() functions work as advertised
  * by:

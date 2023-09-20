@@ -53,12 +53,12 @@ typedef struct value_remaining {
  * the io_ratio passed in, which increases the search space and prefers to
  * use more inputs if a changeless solution is found.
  *
- * We implement the core optimisations:
+ * We implement the core optimizations:
  * - Cut the search branch when it cannot reach the target
  * - Cut the search branch when it exceeds the target (after scoring it)
  * - Do not test equivalent combinations
  *
- * We add two additional optimisations. First, we return immediately if we find
+ * We add two additional optimizations. First, we return immediately if we find
  * a single input exact match, since that represents the best match possible.
  * Second, we cut the search branch when the number of selected inputs
  * is enough that even an exact match would not score better than the current

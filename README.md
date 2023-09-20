@@ -61,7 +61,7 @@ $ brew install swig
 ### configure options
 
 - `--enable-debug`. Enables debugging information and disables compiler
-   optimisations (default: no).
+   optimizations (default: no).
 - `--enable-minimal`. Minimises library size and memory requirements to target
    embedded or resource-constrained environments (default: no).
 - `--enable-asm`. Enables fast assembly language implementations where available.

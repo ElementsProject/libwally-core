@@ -2794,7 +2794,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
     if (is_elements) {
         if (flags & WALLY_TX_FLAG_PRE_BIP144)
-            return WALLY_EINVAL; /* No pre-BIP 144 serialisation for elements */
+            return WALLY_EINVAL; /* No pre-BIP 144 serialization for elements */
         *expect_witnesses = *p++ != 0;
     } else {
         if (!(flags & WALLY_TX_FLAG_PRE_BIP144) && *p == 0) {
