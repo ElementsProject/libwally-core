@@ -1,6 +1,7 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
 
+#include "ccan/ccan/build_assert/build_assert.h"
 #include "ctaes/ctaes.h"
 #include "ctaes/ctaes.c"
 
@@ -207,4 +208,133 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
 finish:
     wally_clear_2(buf, sizeof(buf), &ctx, sizeof(ctx));
     return WALLY_OK;
+}
+
+int wally_aes_cbc_with_ecdh_key_get_maximum_length(
+    const unsigned char *priv_key, size_t priv_key_len,
+    const unsigned char *iv, size_t iv_len,
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *label, size_t label_len, uint32_t flags,
+    size_t *written)
+{
+    if (written)
+        *written = 0;
+
+    if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN || !bytes ||
+        !pub_key || pub_key_len != EC_PUBLIC_KEY_LEN || !label || !label_len ||
+        (flags != AES_FLAG_ENCRYPT && flags != AES_FLAG_DECRYPT) || !written)
+        return WALLY_EINVAL;
+
+    if (flags & AES_FLAG_ENCRYPT) {
+        /* Must provide IV + minimum 1 byte of payload for encryption */
+        if (!iv || iv_len != AES_BLOCK_LEN || !bytes_len)
+            return WALLY_EINVAL;
+        /* Output is IV + encrypted payload + HMAC */
+        *written = AES_BLOCK_LEN + HMAC_SHA256_LEN
+                   + ((bytes_len / AES_BLOCK_LEN) + 1) * AES_BLOCK_LEN;
+    } else {
+        /* Must not provide an IV for decryption */
+        if (iv || iv_len)
+            return WALLY_EINVAL;
+         /* Payload must contain IV, payload and the HMAC for decryption */
+        if (bytes_len < AES_BLOCK_LEN + AES_BLOCK_LEN + HMAC_SHA256_LEN)
+            return WALLY_EINVAL;
+        /* Output is the decrypted payload without the IV and HMAC */
+        bytes_len = bytes_len - AES_BLOCK_LEN - HMAC_SHA256_LEN;
+        if (bytes_len % AES_BLOCK_LEN)
+            return WALLY_EINVAL; /* Payload isn't a block size multiple */
+        /* Actual bytes written may be less due to padding, but the
+         * caller must pass a buffer of the padded size. */
+        *written = bytes_len;
+    }
+    return WALLY_OK;
+}
+
+int wally_aes_cbc_with_ecdh_key(
+    const unsigned char *priv_key, size_t priv_key_len,
+    const unsigned char *iv, size_t iv_len,
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *label, size_t label_len, uint32_t flags,
+    unsigned char *bytes_out, size_t len, size_t *written)
+{
+    unsigned char secret[SHA256_LEN], keys[HMAC_SHA512_LEN];
+    const unsigned char *enc_key = keys, *hmac_key = keys + AES_KEY_LEN_256;
+    size_t expected_len;
+    const bool is_encrypt = flags & AES_FLAG_ENCRYPT;
+    int ret;
+
+    /* Derived key sizes must match the derived keys buffer */
+    BUILD_ASSERT(sizeof(keys) == AES_KEY_LEN_256 + SHA256_LEN);
+
+    if (written)
+        *written = 0;
+
+    if (!bytes_out || !len || !written)
+        return WALLY_EINVAL;
+    ret = wally_aes_cbc_with_ecdh_key_get_maximum_length(
+                  priv_key, priv_key_len, iv, iv_len, bytes, bytes_len,
+                  pub_key, pub_key_len, label, label_len, flags,
+                  &expected_len);
+    if (ret == WALLY_OK && expected_len > len) {
+        *written = expected_len;
+        return ret; /* Tell the caller how much space is needed */
+    }
+    if (ret != WALLY_OK)
+        return ret;
+
+    if (is_encrypt) {
+        /* Copy the IV to the start of the encrypted output */
+        memcpy(bytes_out, iv, iv_len);
+    } else {
+        /* The IV is the first AES_BLOCK_LEN bytes of the payload */
+        iv = bytes;
+        iv_len = AES_BLOCK_LEN;
+    }
+
+    /* Shared secret is ECDH(their pubkey, our private key) */
+    ret = wally_ecdh(pub_key, pub_key_len, priv_key, priv_key_len,
+                     secret, sizeof(secret));
+    /* Generate encryption/HMAC keys using the shared secret and label */
+    if (ret == WALLY_OK)
+        ret = wally_hmac_sha512(secret, sizeof(secret), label, label_len, keys, sizeof(keys));
+    if (ret == WALLY_OK && !is_encrypt) {
+        /* Verify the IV + encrypted data's HMAC */
+        unsigned char hmac[HMAC_SHA256_LEN];
+        ret = wally_hmac_sha256(hmac_key, SHA256_LEN,
+                                bytes, bytes_len - sizeof(hmac),
+                                hmac, sizeof(hmac));
+        if (ret == WALLY_OK &&
+            memcmp(hmac, bytes + bytes_len - sizeof(hmac), sizeof(hmac)))
+            ret = WALLY_EINVAL; /* Invalid HMAC */
+    }
+
+    /* Encrypt/decrypt the payload */
+    if (ret == WALLY_OK) {
+        /* Trim our output length to a block size multiple for aes_cbc */
+        size_t out_len = (len - (is_encrypt ? (iv_len + HMAC_SHA256_LEN) : 0)) & ~((size_t)0xf);
+        if (is_encrypt)
+            ret = wally_aes_cbc(enc_key, AES_KEY_LEN_256, iv, iv_len,
+                                bytes, bytes_len, flags,
+                                bytes_out + iv_len, out_len, written);
+        else
+            ret = wally_aes_cbc(enc_key, AES_KEY_LEN_256, iv, iv_len,
+                                bytes + iv_len, bytes_len - iv_len - HMAC_SHA256_LEN,
+                                flags, bytes_out, out_len, written);
+    }
+
+    if (ret == WALLY_OK && is_encrypt) {
+        /* append the HMAC of the IV + encrypted data */
+        *written += AES_BLOCK_LEN; /* Include the IV */
+        ret = wally_hmac_sha256(hmac_key, SHA256_LEN,
+                                bytes_out, *written,
+                                bytes_out + *written, HMAC_SHA256_LEN);
+        *written = ret == WALLY_OK ? *written + HMAC_SHA256_LEN : 0;
+    }
+
+    if (ret == WALLY_OK && *written > expected_len)
+        ret = WALLY_ERROR; /* Should never happen! */
+    wally_clear_2(secret, sizeof(secret), keys, sizeof(keys));
+    return ret;
 }

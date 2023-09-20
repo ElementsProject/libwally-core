@@ -31,6 +31,7 @@ export function ae_sig_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Uin
 export function ae_signer_commit_from_bytes(priv_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, commitment: Buffer|Uint8Array, flags: number): Buffer;
 export function ae_verify(pub_key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, entropy: Buffer|Uint8Array, s2c_opening: Buffer|Uint8Array, flags: number, sig: Buffer|Uint8Array): void;
 export function aes_cbc_get_maximum_length(key: Buffer|Uint8Array, iv: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): number;
+export function aes_cbc_with_ecdh_key_get_maximum_length(priv_key: Buffer|Uint8Array, iv: Buffer|Uint8Array, bytes: Buffer|Uint8Array, pub_key: Buffer|Uint8Array, label: Buffer|Uint8Array, flags: number): number;
 export function aes_len(key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): number;
 export function asset_blinding_key_from_seed(bytes: Buffer|Uint8Array): Buffer;
 export function asset_blinding_key_to_abf(bytes: Buffer|Uint8Array, hash_prevouts: Buffer|Uint8Array, output_index: number): Buffer;
@@ -726,6 +727,7 @@ export function witness_program_from_bytes(bytes: Buffer|Uint8Array, flags: numb
 export function witness_program_from_bytes_and_version(bytes: Buffer|Uint8Array, version: number, flags: number): Buffer;
 export function aes(key: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function aes_cbc(key: Buffer|Uint8Array, iv: Buffer|Uint8Array, bytes: Buffer|Uint8Array, flags: number): Buffer;
+export function aes_cbc_with_ecdh_key(priv_key: Buffer|Uint8Array, iv: Buffer|Uint8Array, bytes: Buffer|Uint8Array, pub_key: Buffer|Uint8Array, label: Buffer|Uint8Array, flags: number): Buffer;
 export function asset_pak_whitelistproof(online_keys: Buffer|Uint8Array, offline_keys: Buffer|Uint8Array, key_index: number, sub_pubkey: Buffer|Uint8Array, online_priv_key: Buffer|Uint8Array, summed_key: Buffer|Uint8Array): Buffer;
 export function asset_surjectionproof(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array, bytes: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, generator: Buffer|Uint8Array): Buffer;
 export function base58_n_to_bytes(str_in: string, str_len: number, flags: number): Buffer;

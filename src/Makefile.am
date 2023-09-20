@@ -319,6 +319,7 @@ endif
 
 if USE_SWIG_PYTHON
 check-swig-python: $(SWIG_PYTHON_TEST_DEPS)
+	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/aes.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/coinselection.py
 	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/descriptor.py

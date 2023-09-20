@@ -401,6 +401,19 @@ inline int aes_cbc_get_maximum_length(const KEY& key, const IV& iv, const BYTES&
     return ret;
 }
 
+template <class PRIV_KEY, class IV, class BYTES, class PUB_KEY, class LABEL, class BYTES_OUT>
+inline int aes_cbc_with_ecdh_key(const PRIV_KEY& priv_key, const IV& iv, const BYTES& bytes, const PUB_KEY& pub_key, const LABEL& label, uint32_t flags, BYTES_OUT& bytes_out, size_t* written = 0) {
+    size_t n;
+    int ret = ::wally_aes_cbc_with_ecdh_key(priv_key.data(), priv_key.size(), iv.data(), iv.size(), bytes.data(), bytes.size(), pub_key.data(), pub_key.size(), label.data(), label.size(), flags, bytes_out.data(), bytes_out.size(), written ? written : &n);
+    return written || ret != WALLY_OK ? ret : n == static_cast<size_t>(bytes_out.size()) ? WALLY_OK : WALLY_EINVAL;
+}
+
+template <class PRIV_KEY, class IV, class BYTES, class PUB_KEY, class LABEL>
+inline int aes_cbc_with_ecdh_key_get_maximum_length(const PRIV_KEY& priv_key, const IV& iv, const BYTES& bytes, const PUB_KEY& pub_key, const LABEL& label, uint32_t flags, size_t* written) {
+    int ret = ::wally_aes_cbc_with_ecdh_key_get_maximum_length(priv_key.data(), priv_key.size(), iv.data(), iv.size(), bytes.data(), bytes.size(), pub_key.data(), pub_key.size(), label.data(), label.size(), flags, written);
+    return ret;
+}
+
 template <class KEY, class BYTES>
 inline int aes_len(const KEY& key, const BYTES& bytes, uint32_t flags, size_t* written) {
     int ret = ::wally_aes_len(key.data(), key.size(), bytes.data(), bytes.size(), flags, written);

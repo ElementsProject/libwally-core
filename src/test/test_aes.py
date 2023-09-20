@@ -92,6 +92,85 @@ class AESTests(unittest.TestCase):
                 self.assertEqual((ret, written), (0, len(o)))
                 self.assertEqual(h(out_buf), h(o))
 
+    def test_aes_cbc_with_ecdh_key(self):
+        ENCRYPT, DECRYPT, PUBKEY_LEN, _ = 1, 2, 33, True
+        a_priv = make_cbuffer('1c6a837d1ac663fdc7f1002327ca38452766eaf4fe3b80ce620bf7cd3f584cf6')[0]
+        a_pub = make_cbuffer('03e581be89d1ef8ce11d60746d08e4f8aedf934d1d861dd436042ee2e3b16db918')[0]
+        b_priv = make_cbuffer('0b6b3dc90d203d854100110788ac87d43aa00620c9cdb361b281b09022ef4b53')[0]
+        b_pub = make_cbuffer('03ff06999ad61c0f3a733b93fc1e6b75ecfb1439b326e840de590a56454f0eeb0d')[0]
+        iv = make_cbuffer('bd5d4724243880738e7e8b0c02658700')[0]
+        label = 'a sample label'.encode()
+        payload = 'This is an example response/payload to encrypt'.encode()
+        buf = make_cbuffer('00' * 256)[0]
+
+        # Encryption
+        good_args = [b_priv, len(b_priv), iv, len(iv), payload, len(payload),
+                     a_pub, len(a_pub), label, len(label), ENCRYPT, buf, len(buf)]
+
+        ret, written = wally_aes_cbc_with_ecdh_key(*good_args)
+        self.assertEqual(ret, WALLY_OK) # Make sure good args work
+        encrypted = make_cbuffer(buf[:written].hex())[0]
+
+        invalid_cases = [
+            (None, _, _,    _, _,    _, _,    _, _,    _, _,    _, _), # NULL privkey
+            (_,    0, _,    _, _,    _, _,    _, _,    _, _,    _, _), # Empty privkey
+            (_,    9, _,    _, _,    _, _,    _, _,    _, _,    _, _), # Wrong privkey length
+            (_,    _, None, _, _,    _, _,    _, _,    _, _,    _, _), # NULL IV (enc)
+            (_,    _, _,    0, _,    _, _,    _, _,    _, _,    _, _), # Empty IV (enc)
+            (_,    _, _,    9, _,    _, _,    _, _,    _, _,    _, _), # Wrong IV length (enc)
+            (_,    _, _,    _, None, _, _,    _, _,    _, _,    _, _), # NULL payload
+            (_,    _, _,    _, _,    0, _,    _, _,    _, _,    _, _), # Empty payload
+            (_,    _, _,    _, _,    _, None, _, _,    _, _,    _, _), # NULL pubkey
+            (_,    _, _,    _, _,    _, _,    0, _,    _, _,    _, _), # Empty pubkey
+            (_,    _, _,    _, _,    _, _,    9, _,    _, _,    _, _), # Wrong pubkey length
+            (_,    _, _,    _, _,    _, _,    _, None, _, _,    _, _), # NULL label
+            (_,    _, _,    _, _,    _, _,    _, _,    0, _,    _, _), # Empty label
+            (_,    _, _,    _, _,    _, _,    _, _,    _, 3,    _, _), # Encrypt+Decrypt flags
+            (_,    _, _,    _, _,    _, _,    _, _,    _, 5,    _, _), # Unknown flag
+            (_,    _, _,    _, _,    _, _,    _, _,    _, _, None, _), # NULL output
+            (_,    _, _,    _, _,    _, _,    _, _,    _, _, _,    0), # Zero-length output
+        ]
+        for case in invalid_cases:
+            args = [good_args[i] if a == _ else a for i, a in enumerate(case)]
+            self.assertEqual(wally_aes_cbc_with_ecdh_key(*args), (WALLY_EINVAL, 0))
+
+        # Test writing up to/beyond the output buffer size
+        for out_len in range(1, len(encrypted) + 16):
+            args = [a for a in good_args]
+            args[-1] = out_len
+            ret = wally_aes_cbc_with_ecdh_key(*args)
+            self.assertEqual(ret, (WALLY_OK, written)) # returns required length
+
+        # Decryption
+        good_args = [a_priv, len(a_priv), None, 0, encrypted, len(encrypted),
+                     b_pub, len(b_pub), label, len(label), DECRYPT, buf, len(buf)]
+
+        ret, written = wally_aes_cbc_with_ecdh_key(*good_args)
+        self.assertEqual(ret, WALLY_OK) # Make sure good args work
+        self.assertEqual(buf[:written], payload)
+
+        bad = make_cbuffer((encrypted[:-1] + b'?').hex())[0] # Corrupt the HMAC
+        bad_len = len(encrypted) - 1
+        invalid_cases = [
+            (_, _, iv, _,       _,    _,      _, _, _, _, _, _, _), # Non-NULL IV (dec)
+            (_, _, _,  len(iv), _,    _,      _, _, _, _, _, _, _), # Non-zero IV length (dec)
+            (_, _, _,  _,       bad, _,       _, _, _, _, _, _, _), # Corrupt HMAC
+            (_, _, _,  _,       _,   bad_len, _, _, _, _, _, _, _), # Truncated encrypted data
+        ]
+        for case in invalid_cases:
+            args = [good_args[i] if a == _ else a for i, a in enumerate(case)]
+            self.assertEqual(wally_aes_cbc_with_ecdh_key(*args), (WALLY_EINVAL, 0))
+
+        # Test writing up to/beyond the output buffer size
+        for out_len in range(1, len(payload) + 16):
+            args = [a for a in good_args]
+            args[-1] = out_len
+            ret, written = wally_aes_cbc_with_ecdh_key(*args)
+            self.assertEqual(ret, WALLY_OK)
+            # The output size required includes final padding which is
+            # stripped if the payload isn't a multiple of the AES block size.
+            self.assertLessEqual(len(payload), written)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -64,6 +64,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_aes' \
 ,'_wally_aes_cbc' \
 ,'_wally_aes_cbc_get_maximum_length' \
+,'_wally_aes_cbc_with_ecdh_key' \
+,'_wally_aes_cbc_with_ecdh_key_get_maximum_length' \
 ,'_wally_aes_len' \
 ,'_wally_base58_from_bytes' \
 ,'_wally_base58_get_length' \
