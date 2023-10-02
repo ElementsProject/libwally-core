@@ -1269,7 +1269,7 @@ static int tx_add_elements_raw_input_at(
         (unsigned char *)script, script_len,
         (struct wally_tx_witness_stack *) witness,
         is_elements ? WALLY_TX_IS_ELEMENTS : 0,
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
         { 0 }, { 0 }, (unsigned char *) issuance_amount,
         issuance_amount_len,
         (unsigned char *) inflation_keys,
@@ -1279,11 +1279,11 @@ static int tx_add_elements_raw_input_at(
         (unsigned char *) inflation_keys_rangeproof,
         inflation_keys_rangeproof_len,
         (struct wally_tx_witness_stack *) pegin_witness
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
     };
     bool is_coinbase;
     int ret;
-#ifndef BUILD_ELEMENTS
+#ifdef WALLY_ABI_NO_ELEMENTS
     (void)pegin_witness;
 #endif
 
@@ -1491,11 +1491,11 @@ static int tx_add_elements_raw_output_at(
     struct wally_tx_output output = {
         satoshi, (unsigned char *)script, script_len,
         is_elements ? WALLY_TX_IS_ELEMENTS : 0,
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
         (unsigned char *)asset, asset_len, (unsigned char *)value, value_len,
         (unsigned char *)nonce, nonce_len, (unsigned char *)surjectionproof, surjectionproof_len,
         (unsigned char *)rangeproof, rangeproof_len,
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
     };
     int ret;
 

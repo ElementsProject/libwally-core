@@ -90,9 +90,9 @@ struct ext_key {
     unsigned char pad2[3];
     /** The public key with prefix byte 0x2 or 0x3 */
     unsigned char pub_key[33];
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
     unsigned char pub_key_tweak_sum[32];
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 };
 #endif /* SWIG */
 

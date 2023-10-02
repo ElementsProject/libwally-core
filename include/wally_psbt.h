@@ -82,7 +82,7 @@ struct wally_psbt_input {
     /* Hashes and paths for taproot bip32 derivation path */
     struct wally_map taproot_leaf_hashes;
     struct wally_map taproot_leaf_paths;
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
     uint64_t issuance_amount; /* Issuance amount, or 0 if not given */
     uint64_t inflation_keys; /* Number of reissuance tokens, or 0 if none given */
     uint64_t pegin_amount; /* Peg-in amount, or 0 if none given */
@@ -91,7 +91,7 @@ struct wally_psbt_input {
     struct wally_map pset_fields; /* Commitments/scripts/proofs etc keyed by PSET keytype*/
     uint64_t amount; /* Explicit amount (not normally present, used for mixed-creator txs) */
     uint32_t has_amount;
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 };
 
 /** A PSBT output */
@@ -109,11 +109,11 @@ struct wally_psbt_output {
     /* Hashes and paths for taproot bip32 derivation path */
     struct wally_map taproot_leaf_hashes;
     struct wally_map taproot_leaf_paths;
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
     uint32_t blinder_index; /* Index of the input whose owner should blind this output */
     uint32_t has_blinder_index;
     struct wally_map pset_fields; /* Commitments/pubkeys/proofs etc keyed by PSET keytype*/
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 };
 
 /** A partially signed bitcoin transaction */
@@ -133,10 +133,10 @@ struct wally_psbt {
     uint32_t fallback_locktime;
     uint32_t has_fallback_locktime;
     uint32_t tx_modifiable_flags;
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
     struct wally_map global_scalars;
     uint32_t pset_modifiable_flags;
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 };
 #endif /* SWIG */
 
