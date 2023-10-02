@@ -28,6 +28,12 @@ extern "C" {
 #define WALLY_EINVAL -2 /** Invalid argument */
 #define WALLY_ENOMEM -3 /** malloc() failed */
 
+/** Library version */
+#define WALLY_MAJOR_VER 0
+#define WALLY_MINOR_VER 9
+#define WALLY_PATCH_VER 2
+#define WALLY_BUILD_VER 0x902
+
 /**
  * Initialize wally.
  *
@@ -43,6 +49,15 @@ WALLY_CORE_API int wally_init(uint32_t flags);
  * :param flags: Flags controlling what to clean up. Currently must be zero.
  */
 WALLY_CORE_API int wally_cleanup(uint32_t flags);
+
+/**
+ * Get the version number of the library.
+ *
+ * :param value: Destination for the library build version. This is the
+ *|    value of `WALLY_BUILD_VER` when the library was compiled.
+ */
+WALLY_CORE_API int wally_get_build_version(
+    uint32_t *value);
 
 #ifndef SWIG
 /**

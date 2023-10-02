@@ -18,6 +18,13 @@
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
 
+int wally_get_build_version(uint32_t *value)
+{
+    if (value)
+        *value = WALLY_BUILD_VER;
+    return value ? WALLY_OK : WALLY_EINVAL;
+}
+
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
 {
     return secp256k1_ec_pubkey_combine(secp256k1_context_no_precomp, pubnonce, pubnonces, n);

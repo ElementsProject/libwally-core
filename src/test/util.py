@@ -369,6 +369,7 @@ for f in (
     ('wally_explicit_surjectionproof_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_format_bitcoin_message', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_free_string', c_int, [c_char_p]),
+    ('wally_get_build_version', c_int, [c_uint32_p]),
     ('wally_get_hash_prevouts', c_int, [c_void_p, c_size_t, POINTER(c_uint32), c_size_t, c_void_p, c_size_t]),
     ('wally_get_operations', c_int, [POINTER(wally_operations)]),
     ('wally_hash160', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
