@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+struct ext_key;
+
 #ifdef SWIG
 struct wally_map;
 typedef void *wally_map_verify_fn_t;
