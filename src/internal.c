@@ -17,6 +17,8 @@
 
 /* Caller is responsible for thread safety */
 static secp256k1_context *global_ctx = NULL;
+/* Global extended error code. Not thread-safe unless caller-overridden */
+static int global_error = WALLY_OK;
 
 int wally_get_build_version(uint32_t *value)
 {
@@ -378,6 +380,16 @@ struct secp256k1_context_struct *wally_internal_secp_context(void)
     return global_ctx;
 }
 
+int wally_internal_get_error(void) {
+    return global_error;
+}
+
+int wally_internal_set_error(int error_code)
+{
+    global_error = error_code;
+    return error_code;
+}
+
 static struct wally_operations _ops = {
     sizeof(struct wally_operations),
     wally_internal_malloc,
@@ -385,8 +397,8 @@ static struct wally_operations _ops = {
     wally_internal_bzero,
     wally_internal_ec_nonce_fn,
     wally_internal_secp_context,
-    NULL,
-    NULL,
+    wally_internal_get_error,
+    wally_internal_set_error,
     NULL,
     NULL
 };
@@ -428,6 +440,15 @@ char *wally_strdup(const char *str)
     return wally_strdup_n(str, strlen(str));
 }
 
+int wally_get_error(void) {
+    return _ops.get_error_fn();
+}
+
+int wally_set_error(int error_code)
+{
+    return _ops.set_error_fn(error_code);
+}
+
 const struct wally_operations *wally_ops(void)
 {
     return &_ops;
@@ -447,7 +468,7 @@ int wally_set_operations(const struct wally_operations *ops)
         return WALLY_EINVAL; /* Null or invalid version of ops */
     /* Reserved pointers must be null so they can be enabled in the
      * future without breaking back compatibility */
-    if (ops->reserved_1 || ops->reserved_2 || ops->reserved_3 || ops->reserved_4)
+    if (ops->reserved_3 || ops->reserved_4)
         return WALLY_EINVAL;
 
 #define COPY_FN_PTR(name) if (ops->name) _ops.name = ops->name
@@ -456,6 +477,8 @@ int wally_set_operations(const struct wally_operations *ops)
     COPY_FN_PTR (bzero_fn);
     COPY_FN_PTR (ec_nonce_fn);
     COPY_FN_PTR (secp_context_fn);
+    COPY_FN_PTR (get_error_fn);
+    COPY_FN_PTR (set_error_fn);
 #undef COPY_FN_PTR
     return WALLY_OK;
 }
