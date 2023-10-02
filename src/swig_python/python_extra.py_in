@@ -181,7 +181,6 @@ map_keypath_public_key_init = map_keypath_public_key_init_alloc
 map_preimage_init = map_preimage_init_alloc
 pbkdf2_hmac_sha256 = _wrap_bin(pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
 pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
-psbt_blind = psbt_blind_alloc
 psbt_clone = psbt_clone_alloc
 psbt_get_global_tx = psbt_get_global_tx_alloc
 psbt_get_id = _wrap_bin(psbt_get_id, WALLY_TXHASH_LEN)
@@ -277,6 +276,7 @@ if is_elements_build():
     elements_pegout_script_from_bytes = _wrap_bin(elements_pegout_script_from_bytes, elements_pegout_script_from_bytes_len, resize=True)
     explicit_rangeproof = _wrap_bin(explicit_rangeproof, ASSET_EXPLICIT_RANGEPROOF_MAX_LEN, resize=True)
     explicit_surjectionproof = _wrap_bin(explicit_surjectionproof, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
+    psbt_blind = psbt_blind_alloc
     psbt_get_global_scalar = _wrap_bin(psbt_get_global_scalar, WALLY_SCALAR_OFFSET_LEN)
     psbt_get_input_amount_rangeproof = _wrap_bin(psbt_get_input_amount_rangeproof, psbt_get_input_amount_rangeproof_len)
     psbt_get_input_asset = _wrap_bin(psbt_get_input_asset, psbt_get_input_asset_len)

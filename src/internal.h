@@ -3,11 +3,16 @@
 
 #include <include/wally_core.h>
 
-#ifdef BUILD_ELEMENTS
 #ifdef WALLY_ABI_NO_ELEMENTS
+#ifdef BUILD_ELEMENTS
 #error "WALLY_ABI_NO_ELEMENTS cannot be defined if BUILD_ELEMENTS is defined"
 #endif
-#endif
+#else
+#ifndef BUILD_ELEMENTS
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 #include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_recovery.h"
 #include "secp256k1/include/secp256k1_extrakeys.h"

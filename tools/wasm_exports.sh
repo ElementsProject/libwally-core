@@ -190,8 +190,6 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_add_output_taproot_keypath' \
 ,'_wally_psbt_add_tx_input_at' \
 ,'_wally_psbt_add_tx_output_at' \
-,'_wally_psbt_blind' \
-,'_wally_psbt_blind_alloc' \
 ,'_wally_psbt_clear_fallback_locktime' \
 ,'_wally_psbt_clear_input_required_lockheight' \
 ,'_wally_psbt_clear_input_required_locktime' \
@@ -475,7 +473,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_witness_program_from_bytes' \
 ,'_wally_witness_program_from_bytes_and_version' \
 "
-if [ -n "$ENABLE_ELEMENTS" ]; then
+if [ -z "$DISABLE_ELEMENTS" ]; then
     EXPORTED_FUNCTIONS="$EXPORTED_FUNCTIONS"",'_bip32_key_get_pub_key_tweak_sum' \
 ,'_bip32_key_with_tweak_from_parent_path' \
 ,'_bip32_key_with_tweak_from_parent_path_alloc' \
@@ -515,6 +513,8 @@ if [ -n "$ENABLE_ELEMENTS" ]; then
 ,'_wally_explicit_surjectionproof' \
 ,'_wally_explicit_surjectionproof_verify' \
 ,'_wally_psbt_add_global_scalar' \
+,'_wally_psbt_blind' \
+,'_wally_psbt_blind_alloc' \
 ,'_wally_psbt_clear_input_amount' \
 ,'_wally_psbt_clear_input_amount_rangeproof' \
 ,'_wally_psbt_clear_input_asset' \

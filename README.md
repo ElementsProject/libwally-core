@@ -80,13 +80,12 @@ $ brew install swig
    interface. After building, see `src/swig_java/src/com/blockstream/libwally/Wally.java`
    for the Java interface definition (default: no).
 - `--disable-elements`. Disables support for [Elements](https://elementsproject.org/)
-   features, including [Liquid](https://blockstream.com/liquid/) support (default: no).
-   Note that to use Elements API calls from C/C++, the caller must define `BUILD_ELEMENTS`
-   when including the wally header files.
-- `--disable-elements-abi`. Ensures that exposed library structures maintain the same ABI
-   regardless of `--disable-elements`. If disabled, elements support must be disabled and
-   the user must define `WALLY_ABI_NO_ELEMENTS` before including all wally header files.
-   This option *must be set if wally is being installed as a system/shared library*. (default: no).
+   features, including [Liquid](https://blockstream.com/liquid/) support. Elements
+   functions exported by the library will always return WALLY_ERROR (default: no).
+- `--disable-elements-abi`. Changes the exposed library ABI to completely remove Elements
+   structure members and exported functions. When configured, elements support must be
+   disabled and the user must define `WALLY_ABI_NO_ELEMENTS` before including all wally
+   header files. This option *must not be given if wally is being installed as a system/shared library*. (default: no).
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
 - `--enable-mbed-tls`. Use mbed-tls hashing functions if available. This typically
@@ -97,10 +96,10 @@ $ brew install swig
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.
 - `--disable-shared`. Disables building a shared library and builds a static
-  library instead.
-- `--disable-tests`. Disables building library tests.
+  library instead. (default: no)
+- `--disable-tests`. Disables building library tests. (default: no)
 - `--disable-clear-tests`. Disables just the test_clear test (required to pass
-  the test suite with some compilers).
+  the test suite with some compilers). (default: no)
 
 ### Recommended development configure options
 

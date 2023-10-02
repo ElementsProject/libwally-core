@@ -837,13 +837,16 @@ int bip32_key_from_parent_path_alloc(const struct ext_key *hdkey,
     return ret;
 }
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 int bip32_key_with_tweak_from_parent_path(const struct ext_key *hdkey,
                                           const uint32_t *child_path,
                                           size_t child_path_len,
                                           uint32_t flags,
                                           struct ext_key *output)
 {
+#ifndef BUILD_ELEMENTS
+    return WALLY_ERROR;
+#else
     const secp256k1_context *ctx;
     secp256k1_pubkey pub_key;
     size_t len = EC_PUBLIC_KEY_LEN;
@@ -865,6 +868,7 @@ int bip32_key_with_tweak_from_parent_path(const struct ext_key *hdkey,
         return wipe_key_fail(output);
 
     return WALLY_OK;
+#endif /* BUILD_ELEMENTS */
 }
 
 int bip32_key_with_tweak_from_parent_path_alloc(const struct ext_key *hdkey,
@@ -872,6 +876,9 @@ int bip32_key_with_tweak_from_parent_path_alloc(const struct ext_key *hdkey,
                                                 uint32_t flags,
                                                 struct ext_key **output)
 {
+#ifndef BUILD_ELEMENTS
+    return WALLY_ERROR;
+#else
     int ret;
 
     ALLOC_KEY();
@@ -882,8 +889,9 @@ int bip32_key_with_tweak_from_parent_path_alloc(const struct ext_key *hdkey,
         *output = NULL;
     }
     return ret;
-}
 #endif /* BUILD_ELEMENTS */
+}
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 int bip32_key_from_parent_path_str_n(const struct ext_key *hdkey,
                                      const char *str, size_t str_len,
@@ -1137,9 +1145,15 @@ GET_B(chain_code)
 GET_B(parent160)
 GET_B(hash160)
 GET_B(pub_key)
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
+#ifndef BUILD_ELEMENTS
+int bip32_key_get_pub_key_tweak_sum(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len) {
+    return WALLY_ERROR;
+}
+#else
 GET_B(pub_key_tweak_sum)
 #endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 int bip32_key_get_priv_key(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len) {
     return getb_impl(hdkey, hdkey->priv_key + 1, sizeof(hdkey->priv_key) - 1, bytes_out, len);
