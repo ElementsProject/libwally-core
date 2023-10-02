@@ -1,7 +1,7 @@
-#ifndef LIBWALLY_CORE_TRANSACTION_INT_H
-#define LIBWALLY_CORE_TRANSACTION_INT_H 1
+#ifndef LIBWALLY_CORE_TRANSACTION_MEMBERS_H
+#define LIBWALLY_CORE_TRANSACTION_MEMBERS_H 1
 
-#if defined(SWIG) || defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined(SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
+/* Accessors for Transaction members */
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,11 +173,11 @@ WALLY_CORE_API int wally_tx_set_output_value(const struct wally_tx *tx_in, size_
 WALLY_CORE_API int wally_tx_set_output_nonce(const struct wally_tx *tx_in, size_t index, const unsigned char *nonce, size_t nonce_len);
 WALLY_CORE_API int wally_tx_set_output_surjectionproof(const struct wally_tx *tx_in, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
 WALLY_CORE_API int wally_tx_set_output_rangeproof(const struct wally_tx *tx_in, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
-#endif
+#endif /* BUILD_ELEMENTS */
+
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* SWIG/SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD/WASM_BUILD */
-
-#endif /* LIBWALLY_CORE_TRANSACTION_INT_H */
+#endif /* LIBWALLY_CORE_TRANSACTION_MEMBERS_H */

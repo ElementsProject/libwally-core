@@ -4,13 +4,13 @@
 
 #include <include/wally_crypto.h>
 #include <include/wally_transaction.h>
+#include <include/wally_transaction_members.h>
 #include <include/wally_map.h>
 #include <include/wally_script.h>
 
 #include <limits.h>
 #include "pullpush.h"
 #include "script_int.h"
-#include "transaction_int.h"
 
 #define WALLY_TX_ALL_FLAGS \
     (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | \
@@ -3493,8 +3493,6 @@ static struct wally_tx_input *tx_get_input(const struct wally_tx *tx, size_t ind
         return wally_tx_ ## typ ## _set_ ## name(tx_get_ ## typ(tx, index), name, name ## _len); \
     }
 
-#if defined (SWIG_JAVA_BUILD) || defined (SWIG_PYTHON_BUILD) || defined (SWIG_JAVASCRIPT_BUILD) || defined(WASM_BUILD)
-
 /* Getters for wally_tx_input/wally_tx_output/wally_tx values */
 
 static int tx_getb_impl(const void *input,
@@ -3831,7 +3829,6 @@ TX_SET_B(output, nonce)
 TX_SET_B(output, surjectionproof)
 TX_SET_B(output, rangeproof)
 #endif
-#endif /* SWIG_JAVA_BUILD/SWIG_PYTHON_BUILD/SWIG_JAVASCRIPT_BUILD/WASM_BUILD */
 
 int wally_tx_input_set_witness(struct wally_tx_input *input,
                                const struct wally_tx_witness_stack *stack)

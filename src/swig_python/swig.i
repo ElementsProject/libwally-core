@@ -38,7 +38,7 @@ del swig_import_helper
 #include "../include/wally_script.h"
 #include "../include/wally_symmetric.h"
 #include "../include/wally_transaction.h"
-#include "transaction_int.h"
+#include "../include/wally_transaction_members.h"
 #include "../include/wally_elements.h"
 #include "../internal.h"
 
@@ -456,5 +456,5 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %include "../include/wally_script.h"
 %include "../include/wally_symmetric.h"
 %include "../include/wally_transaction.h"
-%include "transaction_int.h"
+%include "../include/wally_transaction_members.h"
 %include "../include/wally_elements.h"
