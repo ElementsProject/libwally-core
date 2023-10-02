@@ -374,9 +374,9 @@ inline int ae_signer_commit_from_bytes(const PRIV_KEY& priv_key, const BYTES& by
 }
 
 template <class PUB_KEY, class BYTES, class ENTROPY, class S2C_OPENING, class SIG>
-inline int ae_verify(const PUB_KEY& pub_key, const BYTES& bytes, const ENTROPY& entropy, const S2C_OPENING& s2c_opening, uint32_t flags, const SIG& sig) {
+inline bool ae_verify(const PUB_KEY& pub_key, const BYTES& bytes, const ENTROPY& entropy, const S2C_OPENING& s2c_opening, uint32_t flags, const SIG& sig) {
     int ret = ::wally_ae_verify(pub_key.data(), pub_key.size(), bytes.data(), bytes.size(), entropy.data(), entropy.size(), s2c_opening.data(), s2c_opening.size(), flags, sig.data(), sig.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class KEY, class BYTES, class BYTES_OUT>
@@ -630,9 +630,9 @@ inline int ec_private_key_bip341_tweak(const PRIV_KEY& priv_key, const MERKLE_RO
 }
 
 template <class PRIV_KEY>
-inline int ec_private_key_verify(const PRIV_KEY& priv_key) {
+inline bool ec_private_key_verify(const PRIV_KEY& priv_key) {
     int ret = ::wally_ec_private_key_verify(priv_key.data(), priv_key.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PUB_KEY, class MERKLE_ROOT, class BYTES_OUT>
@@ -660,9 +660,9 @@ inline int ec_public_key_negate(const PUB_KEY& pub_key, BYTES_OUT& bytes_out) {
 }
 
 template <class PUB_KEY>
-inline int ec_public_key_verify(const PUB_KEY& pub_key) {
+inline bool ec_public_key_verify(const PUB_KEY& pub_key) {
     int ret = ::wally_ec_public_key_verify(pub_key.data(), pub_key.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class SCALAR, class OPERAND, class BYTES_OUT>
@@ -702,9 +702,9 @@ inline int ec_scalar_subtract_from(SCALAR& scalar, const OPERAND& operand) {
 }
 
 template <class SCALAR>
-inline int ec_scalar_verify(const SCALAR& scalar) {
+inline bool ec_scalar_verify(const SCALAR& scalar) {
     int ret = ::wally_ec_scalar_verify(scalar.data(), scalar.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PRIV_KEY, class BYTES, class BYTES_OUT>
@@ -756,15 +756,15 @@ inline int ec_sig_to_public_key(const BYTES& bytes, const SIG& sig, BYTES_OUT& b
 }
 
 template <class PUB_KEY, class BYTES, class SIG>
-inline int ec_sig_verify(const PUB_KEY& pub_key, const BYTES& bytes, uint32_t flags, const SIG& sig) {
+inline bool ec_sig_verify(const PUB_KEY& pub_key, const BYTES& bytes, uint32_t flags, const SIG& sig) {
     int ret = ::wally_ec_sig_verify(pub_key.data(), pub_key.size(), bytes.data(), bytes.size(), flags, sig.data(), sig.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PUB_KEY>
-inline int ec_xonly_public_key_verify(const PUB_KEY& pub_key) {
+inline bool ec_xonly_public_key_verify(const PUB_KEY& pub_key) {
     int ret = ::wally_ec_xonly_public_key_verify(pub_key.data(), pub_key.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PUB_KEY, class PRIV_KEY, class BYTES_OUT>
@@ -819,9 +819,9 @@ inline int hex_n_to_bytes(const HEX& hex, size_t hex_len, BYTES_OUT& bytes_out, 
 }
 
 template <class HEX>
-inline int hex_n_verify(const HEX& hex, size_t hex_len) {
+inline bool hex_n_verify(const HEX& hex, size_t hex_len) {
     int ret = ::wally_hex_n_verify(detail::get_p(hex), hex_len);
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class HEX, class BYTES_OUT>
@@ -830,9 +830,9 @@ inline int hex_to_bytes(const HEX& hex, BYTES_OUT& bytes_out, size_t* written) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
-inline int hex_verify(const char* hex) {
+inline bool hex_verify(const char* hex) {
     int ret = ::wally_hex_verify(hex);
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class KEY, class BYTES, class BYTES_OUT>
@@ -858,9 +858,9 @@ inline int is_elements_build(size_t* written) {
 }
 
 template <class KEY, class VAL>
-inline int keypath_bip32_verify(const KEY& key, const VAL& val) {
+inline bool keypath_bip32_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_keypath_bip32_verify(key.data(), key.size(), val.data(), val.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class VAL, class BYTES_OUT>
@@ -882,15 +882,15 @@ inline int keypath_get_path_len(const VAL& val, size_t* written) {
 }
 
 template <class KEY, class VAL>
-inline int keypath_public_key_verify(const KEY& key, const VAL& val) {
+inline bool keypath_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_keypath_public_key_verify(key.data(), key.size(), val.data(), val.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class KEY, class VAL>
-inline int keypath_xonly_public_key_verify(const KEY& key, const VAL& val) {
+inline bool keypath_xonly_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_keypath_xonly_public_key_verify(key.data(), key.size(), val.data(), val.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class MAP_IN, class KEY, class VALUE>
@@ -988,9 +988,9 @@ inline int map_get_num_items(const MAP_IN& map_in, size_t* written) {
 }
 
 template <class KEY, class VAL>
-inline int map_hash_preimage_verify(const KEY& key, const VAL& val) {
+inline bool map_hash_preimage_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_map_hash_preimage_verify(key.data(), key.size(), val.data(), val.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 inline int map_init(size_t allocation_len, wally_map_verify_fn_t verify_fn, struct wally_map* output) {
@@ -1109,9 +1109,9 @@ inline int map_sort(const MAP_IN& map_in, uint32_t flags) {
 }
 
 template <class KEY, class VAL>
-inline int merkle_path_xonly_public_key_verify(const KEY& key, const VAL& val) {
+inline bool merkle_path_xonly_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_merkle_path_xonly_public_key_verify(key.data(), key.size(), val.data(), val.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PASS, class SALT, class BYTES_OUT>
@@ -1612,9 +1612,9 @@ inline int ripemd160(const BYTES& bytes, BYTES_OUT& bytes_out) {
 }
 
 template <class SIG, class S2C_DATA, class S2C_OPENING>
-inline int s2c_commitment_verify(const SIG& sig, const S2C_DATA& s2c_data, const S2C_OPENING& s2c_opening, uint32_t flags) {
+inline bool s2c_commitment_verify(const SIG& sig, const S2C_DATA& s2c_data, const S2C_OPENING& s2c_opening, uint32_t flags) {
     int ret = ::wally_s2c_commitment_verify(sig.data(), sig.size(), s2c_data.data(), s2c_data.size(), s2c_opening.data(), s2c_opening.size(), flags);
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PRIV_KEY, class BYTES, class S2C_DATA, class S2C_OPENING_OUT, class BYTES_OUT>
@@ -2326,9 +2326,9 @@ inline int explicit_rangeproof(uint64_t value, const NONCE& nonce, const VBF& vb
 }
 
 template <class RANGEPROOF, class COMMITMENT, class GENERATOR>
-inline int explicit_rangeproof_verify(const RANGEPROOF& rangeproof, uint64_t value, const COMMITMENT& commitment, const GENERATOR& generator) {
+inline bool explicit_rangeproof_verify(const RANGEPROOF& rangeproof, uint64_t value, const COMMITMENT& commitment, const GENERATOR& generator) {
     int ret = ::wally_explicit_rangeproof_verify(rangeproof.data(), rangeproof.size(), value, commitment.data(), commitment.size(), generator.data(), generator.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class OUTPUT_ASSET, class OUTPUT_ABF, class OUTPUT_GENERATOR, class BYTES_OUT>
@@ -2338,9 +2338,9 @@ inline int explicit_surjectionproof(const OUTPUT_ASSET& output_asset, const OUTP
 }
 
 template <class SURJECTIONPROOF, class OUTPUT_ASSET, class OUTPUT_GENERATOR>
-inline int explicit_surjectionproof_verify(const SURJECTIONPROOF& surjectionproof, const OUTPUT_ASSET& output_asset, const OUTPUT_GENERATOR& output_generator) {
+inline bool explicit_surjectionproof_verify(const SURJECTIONPROOF& surjectionproof, const OUTPUT_ASSET& output_asset, const OUTPUT_GENERATOR& output_generator) {
     int ret = ::wally_explicit_surjectionproof_verify(surjectionproof.data(), surjectionproof.size(), output_asset.data(), output_asset.size(), output_generator.data(), output_generator.size());
-    return detail::check_ret(__FUNCTION__, ret);
+    return ret == WALLY_OK;
 }
 
 template <class PSBT, class SCALAR>
