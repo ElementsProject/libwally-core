@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-#ifdef BUILD_ELEMENTS
-
 #define ASSET_TAG_LEN 32 /** Length of an Asset Tag */
 
 #define BLINDING_FACTOR_LEN 32 /** Length of a Blinding Factor (or blinder) */
@@ -24,6 +22,7 @@ extern "C" {
 #define ASSET_SURJECTIONPROOF_MAX_LEN 162 /** Maximum length of a wally-produced Asset Surjection Proof */
 #define ASSET_EXPLICIT_SURJECTIONPROOF_LEN 67 /** Length of an Explicit Asset Surjection Proof */
 
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Create an Asset Generator from an either an asset commitment or asset tag plus blinding factor.
  *
@@ -657,7 +656,7 @@ WALLY_CORE_API int wally_asset_pak_whitelistproof_len(
     size_t summed_key_len,
     size_t *written);
 
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 #ifdef __cplusplus
 }

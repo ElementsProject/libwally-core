@@ -16,7 +16,7 @@ WALLY_CORE_API int wally_psbt_get_num_outputs(const struct wally_psbt *psbt, siz
 WALLY_CORE_API int wally_psbt_get_fallback_locktime(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_has_fallback_locktime(const struct wally_psbt *psbt, size_t *written);
 WALLY_CORE_API int wally_psbt_get_tx_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_global_scalars_size(const struct wally_psbt *psbt, size_t *written);
 
 /**
@@ -25,7 +25,7 @@ WALLY_CORE_API int wally_psbt_get_global_scalars_size(const struct wally_psbt *p
 WALLY_CORE_API int wally_psbt_get_global_scalar(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
 
 WALLY_CORE_API int wally_psbt_get_pset_modifiable_flags(const struct wally_psbt *psbt, size_t *written);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /* Inputs */
 WALLY_CORE_API int wally_psbt_get_input_utxo_alloc(const struct wally_psbt *psbt, size_t index, struct wally_tx **output);
@@ -92,7 +92,7 @@ WALLY_CORE_API int wally_psbt_has_input_required_locktime(const struct wally_psb
 WALLY_CORE_API int wally_psbt_set_input_required_lockheight(struct wally_psbt *psbt, size_t index, uint32_t lockheight);
 WALLY_CORE_API int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_has_input_required_lockheight(const struct wally_psbt *psbt, size_t index, size_t *written);
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_input_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
 WALLY_CORE_API int wally_psbt_get_input_amount_rangeproof(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_psbt_get_input_amount_rangeproof_len(const struct wally_psbt *psbt, size_t index, size_t *written);
@@ -164,7 +164,7 @@ WALLY_CORE_API int wally_psbt_clear_input_inflation_keys_blinding_rangeproof(str
 WALLY_CORE_API int wally_psbt_set_input_utxo_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
 WALLY_CORE_API int wally_psbt_clear_input_utxo_rangeproof(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_generate_input_explicit_proofs(struct wally_psbt *psbt, size_t index, uint64_t satoshi, const unsigned char *asset, size_t asset_len, const unsigned char *abf, size_t abf_len, const unsigned char *vbf, size_t vbf_len, const unsigned char *entropy, size_t entropy_len);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /* Outputs */
 WALLY_CORE_API int wally_psbt_get_output_redeem_script(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -192,7 +192,7 @@ WALLY_CORE_API int wally_psbt_set_output_script(struct wally_psbt *psbt, size_t 
 WALLY_CORE_API int wally_psbt_set_output_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
 WALLY_CORE_API int wally_psbt_clear_output_amount(struct wally_psbt *psbt, size_t index);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_output_blinder_index(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);
 WALLY_CORE_API int wally_psbt_has_output_blinder_index(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_output_value_commitment(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -236,7 +236,7 @@ WALLY_CORE_API int wally_psbt_clear_output_value_blinding_rangeproof(struct wall
 WALLY_CORE_API int wally_psbt_set_output_asset_blinding_surjectionproof(struct wally_psbt *psbt, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
 WALLY_CORE_API int wally_psbt_clear_output_asset_blinding_surjectionproof(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_get_output_blinding_status(const struct wally_psbt *output, size_t index, uint32_t flags, size_t *written);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 #ifdef __cplusplus
 }
 #endif

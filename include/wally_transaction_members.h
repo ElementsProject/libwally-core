@@ -27,7 +27,7 @@ WALLY_CORE_API int wally_tx_input_set_witness(struct wally_tx_input *tx_input, c
 WALLY_CORE_API int wally_tx_input_set_index(struct wally_tx_input *tx_input, uint32_t index);
 WALLY_CORE_API int wally_tx_input_set_sequence(struct wally_tx_input *tx_input, uint32_t sequence);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 
 /**
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
@@ -54,7 +54,7 @@ WALLY_CORE_API int wally_tx_input_set_inflation_keys(struct wally_tx_input *tx_i
 WALLY_CORE_API int wally_tx_input_set_inflation_keys_rangeproof(struct wally_tx_input *tx_input_in, const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
 WALLY_CORE_API int wally_tx_input_set_issuance_amount(struct wally_tx_input *tx_input_in, const unsigned char *issuance_amount, size_t issuance_amount_len);
 WALLY_CORE_API int wally_tx_input_set_issuance_amount_rangeproof(struct wally_tx_input *tx_input_in, const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /* Output */
 WALLY_CORE_API int wally_tx_output_get_script(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len, size_t *written);
@@ -64,7 +64,7 @@ WALLY_CORE_API int wally_tx_output_get_satoshi(const struct wally_tx_output *tx_
 WALLY_CORE_API int wally_tx_output_set_script(struct wally_tx_output *tx_output_in, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_tx_output_set_satoshi(struct wally_tx_output *tx_output_in, uint64_t satoshi);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 WALLY_CORE_API int wally_tx_output_get_asset(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len);
 WALLY_CORE_API int wally_tx_output_get_asset_len(const struct wally_tx_output *tx_output_in, size_t *written);
 WALLY_CORE_API int wally_tx_output_get_value(const struct wally_tx_output *tx_output_in, unsigned char *bytes_out, size_t len, size_t *written);
@@ -81,7 +81,7 @@ WALLY_CORE_API int wally_tx_output_set_value(struct wally_tx_output *tx_output_i
 WALLY_CORE_API int wally_tx_output_set_nonce(struct wally_tx_output *tx_output_in, const unsigned char *nonce, size_t nonce_len);
 WALLY_CORE_API int wally_tx_output_set_surjectionproof(struct wally_tx_output *tx_output_in, const unsigned char *surjectionproof, size_t surjectionproof_len);
 WALLY_CORE_API int wally_tx_output_set_rangeproof(struct wally_tx_output *tx_output_in, const unsigned char *rangeproof, size_t rangeproof_len);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /* Transaction */
 WALLY_CORE_API int wally_tx_get_version(const struct wally_tx *tx_in, size_t *written);
@@ -107,7 +107,7 @@ WALLY_CORE_API int wally_tx_set_input_index(const struct wally_tx *tx_in, size_t
 WALLY_CORE_API int wally_tx_set_input_sequence(const struct wally_tx *tx_in, size_t index, uint32_t sequence);
 WALLY_CORE_API int wally_tx_set_input_txhash(const struct wally_tx *tx_in, size_t index, const unsigned char *txhash, size_t txhash_len);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 
 /**
  * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
@@ -134,7 +134,7 @@ WALLY_CORE_API int wally_tx_set_input_inflation_keys(const struct wally_tx *tx_i
 WALLY_CORE_API int wally_tx_set_input_inflation_keys_rangeproof(const struct wally_tx *tx_in, size_t index, const unsigned char *inflation_keys_rangeproof, size_t inflation_keys_rangeproof_len);
 WALLY_CORE_API int wally_tx_set_input_issuance_amount(const struct wally_tx *tx_in, size_t index, const unsigned char *issuance_amount, size_t issuance_amount_len);
 WALLY_CORE_API int wally_tx_set_input_issuance_amount_rangeproof(const struct wally_tx *tx_in, size_t index, const unsigned char *issuance_amount_rangeproof, size_t issuance_amount_rangeproof_len);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /* Transaction Outputs */
 WALLY_CORE_API int wally_tx_get_output_script(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
@@ -144,7 +144,7 @@ WALLY_CORE_API int wally_tx_get_output_satoshi(const struct wally_tx *tx_in, siz
 WALLY_CORE_API int wally_tx_set_output_script(const struct wally_tx *tx_in, size_t index, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_tx_set_output_satoshi(const struct wally_tx *tx_in, size_t index, uint64_t satoshi);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 
 /**
  * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TX_ASSET_CT_ASSET_LEN)
@@ -173,7 +173,7 @@ WALLY_CORE_API int wally_tx_set_output_value(const struct wally_tx *tx_in, size_
 WALLY_CORE_API int wally_tx_set_output_nonce(const struct wally_tx *tx_in, size_t index, const unsigned char *nonce, size_t nonce_len);
 WALLY_CORE_API int wally_tx_set_output_surjectionproof(const struct wally_tx *tx_in, size_t index, const unsigned char *surjectionproof, size_t surjectionproof_len);
 WALLY_CORE_API int wally_tx_set_output_rangeproof(const struct wally_tx *tx_in, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 
 #ifdef __cplusplus

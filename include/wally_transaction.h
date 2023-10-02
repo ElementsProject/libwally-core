@@ -850,7 +850,7 @@ WALLY_CORE_API int wally_tx_is_coinbase(
     const struct wally_tx *tx,
     size_t *written);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Set issuance data on an input.
  *
@@ -1340,7 +1340,7 @@ WALLY_CORE_API int wally_tx_elements_issuance_calculate_reissuance_token(
     unsigned char *bytes_out,
     size_t len);
 
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 #ifdef __cplusplus
 }

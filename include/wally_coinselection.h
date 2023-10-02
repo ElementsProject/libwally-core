@@ -10,7 +10,7 @@ extern "C" {
 /** The maximum number of asset values that can be returned in a coin selection */
 #define WALLY_CS_MAX_ASSETS 256
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 
 /**
  * Select input asset values to meet a given payment target.
@@ -47,7 +47,7 @@ WALLY_CORE_API int wally_coinselect_assets(
     size_t indices_out_len,
     size_t *written);
 
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 #ifdef __cplusplus
 }

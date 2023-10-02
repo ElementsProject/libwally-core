@@ -453,7 +453,7 @@ WALLY_CORE_API int wally_psbt_input_set_required_lockheight(
 WALLY_CORE_API int wally_psbt_input_clear_required_lockheight(
     struct wally_psbt_input *input);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Set the unblinded amount in an input.
  *
@@ -1254,7 +1254,7 @@ WALLY_CORE_API int wally_psbt_input_generate_explicit_proofs(
     size_t vbf_len,
     const unsigned char *entropy,
     size_t entropy_len);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /**
  * Determine if a PSBT input is finalized.
@@ -1416,7 +1416,7 @@ WALLY_CORE_API int wally_psbt_output_set_script(
     const unsigned char *script,
     size_t script_len);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Set the input blinder index in an output.
  *
@@ -1875,7 +1875,7 @@ WALLY_CORE_API int wally_psbt_output_get_blinding_status(
     const struct wally_psbt_output *output,
     uint32_t flags,
     size_t *written);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /**
  * Allocate and initialize a new PSBT.
@@ -2037,7 +2037,7 @@ WALLY_CORE_API int wally_psbt_set_tx_modifiable_flags(
     struct wally_psbt *psbt,
     uint32_t flags);
 
-#ifdef BUILD_ELEMENTS
+#ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Set the scalar offsets in a PSBT.
  *
@@ -2084,7 +2084,7 @@ WALLY_CORE_API int wally_psbt_find_global_scalar(
 WALLY_CORE_API int wally_psbt_set_pset_modifiable_flags(
     struct wally_psbt *psbt,
     uint32_t flags);
-#endif /* BUILD_ELEMENTS */
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 /**
  * Find the index of the PSBT input that spends a given UTXO.

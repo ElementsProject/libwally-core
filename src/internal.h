@@ -2,6 +2,12 @@
 #define LIBWALLY_INTERNAL_H
 
 #include <include/wally_core.h>
+
+#ifdef BUILD_ELEMENTS
+#ifdef WALLY_ABI_NO_ELEMENTS
+#error "WALLY_ABI_NO_ELEMENTS cannot be defined if BUILD_ELEMENTS is defined"
+#endif
+#endif
 #include "secp256k1/include/secp256k1.h"
 #include "secp256k1/include/secp256k1_recovery.h"
 #include "secp256k1/include/secp256k1_extrakeys.h"
