@@ -61,6 +61,53 @@ WALLY_CORE_API int wally_get_build_version(
 
 #ifndef SWIG
 /**
+ * Allocate memory using the configured library allocator.
+ *
+ * :param size: Size of the memory region to allocate in bytes.
+ *
+ * The allocated memory must be freed using `wally_free`.
+ */
+WALLY_CORE_API void *wally_malloc(size_t size);
+
+/**
+ * Allocate and zero memory using the configured library allocator.
+ *
+ * :param size: Size of the memory region to allocate in bytes.
+ *
+ * The allocated memory must be freed using `wally_free`.
+ */
+WALLY_CORE_API void *wally_calloc(size_t size);
+
+/**
+ * Free memory allocated from the configured library allocator.
+ *
+ * :param ptr: The memory region to free.
+ */
+WALLY_CORE_API void wally_free(void *ptr);
+
+/**
+ * Duplicate a known-length string using the configured library allocator.
+ *
+ * :param str_in: The string to duplicate.
+ * :param str_len: The length of '`str_in`' in bytes.
+ *
+ * This function appends a NUL terminator to the string.
+ * The allocated string must be freed using `wally_free`.
+ */
+WALLY_CORE_API char *wally_strdup_n(const char *str, size_t str_len);
+
+/**
+ * Duplicate a string using the configured library allocator.
+ *
+ * :param str_in: The string to duplicate.
+ * :param str_len: The length of '`str_in`' in bytes.
+ *
+ * This function appends a NUL terminator to the string.
+ * The allocated string must be freed using `wally_free`.
+ */
+WALLY_CORE_API char *wally_strdup(const char *str);
+
+/**
  * Fetch the wally internal secp256k1 context object.
  *
  * By default, a single global context is created on demand. This behaviour
