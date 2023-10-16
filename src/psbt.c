@@ -4425,7 +4425,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     }
 
     /* Taproot */
-    if ((ret = get_scripts_and_values(psbt, &scripts, &values) == WALLY_OK)) {
+    if ((ret = get_scripts_and_values(psbt, &scripts, &values)) == WALLY_OK) {
         ret = wally_tx_get_btc_taproot_signature_hash(tx, index, &scripts,
                                                       values, psbt->num_inputs,
                                                       NULL, 0, 0, 0xFFFFFFFF,
