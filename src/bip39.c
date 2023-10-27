@@ -61,6 +61,11 @@ int bip39_get_wordlist(const char *lang, struct words **output)
     return WALLY_OK;
 }
 
+const char *bip39_get_word_by_index(const struct words *w, size_t idx)
+{
+    return wordlist_lookup_index(w ? w : &en_words, idx);
+}
+
 int bip39_get_word(const struct words *w, size_t idx,
                    char **output)
 {

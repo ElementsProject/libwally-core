@@ -61,6 +61,22 @@ WALLY_CORE_API int bip39_get_word(
     size_t index,
     char **output);
 
+#ifndef SWIG
+/**
+ * Get the 'index'th word from a word list.
+ *
+ * :param w: Word list to use. Pass NULL to use the default English list.
+ * :param index: The 0-based index of the word in ``w``.
+ *
+ * .. note:: Returns NULL if any argument is invalid or ``index`` is out of
+ *     bounds. Unlike `bip39_get_word`, the resulting word must not be
+ *     written to or freed.
+ */
+WALLY_CORE_API const char *bip39_get_word_by_index(
+    const struct words *w,
+    size_t index);
+#endif /* SWIG_PYTHON */
+
 /**
  * Generate a mnemonic sentence from the entropy in ``bytes``.
  *
