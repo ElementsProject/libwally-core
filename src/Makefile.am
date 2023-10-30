@@ -24,6 +24,7 @@ include_HEADERS += $(top_srcdir)/include/wally_psbt_members.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
 include_HEADERS += $(top_srcdir)/include/wally_symmetric.h
 include_HEADERS += $(top_srcdir)/include/wally_transaction.h
+include_HEADERS += $(top_srcdir)/include/wally_transaction_members.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = wallycore.pc
@@ -177,6 +178,7 @@ libwallycore_la_SOURCES = \
 libwallycore_la_INCLUDES = \
     include/wally.hpp \
     include/wally_address.h \
+    include/wally_anti_exfil.h \
     include/wally_bip32.h \
     include/wally_bip38.h \
     include/wally_bip39.h \
@@ -188,9 +190,11 @@ libwallycore_la_INCLUDES = \
     include/wally_elements.h \
     include/wally_map.h \
     include/wally_psbt.h \
+    include/wally_psbt_members.h \
     include/wally_script.h \
     include/wally_symmetric.h \
-    include/wally_transaction.h
+    include/wally_transaction.h \
+    include/wally_transaction_members.h
 
 if SHARED_BUILD_ENABLED
 LT_VER_CURRENT = 0   # increment at every ABI change (whether breaking or non-breaking)
