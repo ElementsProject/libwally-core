@@ -339,6 +339,9 @@ if test "x$swig_python" = "xyes"; then
     if test "x$pythonexists" != "xyes"; then
         AC_MSG_FAILURE([ERROR: No usable Python was found for swig-python])
     fi
+    if test "x$elements_abi" = "xno"; then
+        AC_MSG_FAILURE([ERROR: Python wrapper can not be enabled when Elements ABI is disabled])
+    fi
     SWIG_PYTHON
     AX_CHECK_COMPILE_FLAG([-DSWIG_PYTHON_BUILD=1], [AM_CFLAGS="$AM_CFLAGS -DSWIG_PYTHON_BUILD=1"])
 fi
@@ -349,6 +352,9 @@ AC_ARG_ENABLE(swig-java,
 AM_CONDITIONAL([USE_SWIG_JAVA], [test "x$swig_java" = "xyes"])
 
 if test "x$swig_java" = "xyes"; then
+    if test "x$elements_abi" = "xno"; then
+        AC_MSG_FAILURE([ERROR: Java wrapper can not be enabled when Elements ABI is disabled])
+    fi
     saved_JAVA_HOME=$JAVA_HOME
     if test x"$cross_compiling" = "xyes"; then
         # For cross compiling we assume the users host O/S Java install is not
