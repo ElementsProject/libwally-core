@@ -1,6 +1,6 @@
 REM Run swig to generate the wrapper source files required by
 REM setup.py build step
-call "%~dp0"\wheel_preamble.bat || echo ERRORPREAMBLE && exit /b 1
+call "%~dp0"\swig.bat || echo ERRORSWIG && exit /b 1
 
 REM Install virtualenv - this should possibly be on the CI box
 python -m pip install virtualenv

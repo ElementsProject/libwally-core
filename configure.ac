@@ -212,12 +212,6 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[int main(void){static int a[2];return *((int*)((
               have_unaligned=1, have_unaligned=0, have_unaligned=0)
 AC_DEFINE_UNQUOTED([HAVE_UNALIGNED_ACCESS], [$have_unaligned], [Define if we have unaligned access])
 
-if test "x$is_osx" != "xyes"; then
-    # Assume we are using gcc (i.e. have this attribute) if cross-compiling
-    AC_COMPILE_IFELSE([AC_LANG_SOURCE([extern int foo(int) __attribute__((weak)); int main(void){return 0;}])],
-                      [AC_DEFINE([HAVE_ATTRIBUTE_WEAK], 1, [Define if we have __attribute__((weak))])])
-fi
-
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/mman.h>]],[[mmap(0,0,0,0,0,0)]])],
                [AC_DEFINE(HAVE_MMAP, 1, [Define if we have mmap])])
 

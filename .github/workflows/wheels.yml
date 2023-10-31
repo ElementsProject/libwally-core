@@ -20,7 +20,7 @@ jobs:
       CIBW_BEFORE_ALL_LINUX: yum install -y swig || apk add swig
       CIBW_BEFORE_ALL_MACOS: brew install gnu-sed swig automake
       CIBW_BEFORE_ALL_WINDOWS: choco install swig --version=3.0.12 --no-progress --allow-downgrade -y
-      CIBW_BEFORE_BUILD_WINDOWS: .\tools\msvc\wheel_preamble.bat
+      CIBW_BEFORE_BUILD_WINDOWS: .\tools\msvc\swig.bat
       CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair --only-plat -w {dest_dir} {wheel}
       LIBWALLY_DIR: "."
       SWIG_PATH: "C:\\ProgramData\\chocolatey\\lib\\swig\\tools\\install\\swigwin-3.0.12"

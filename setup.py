@@ -56,13 +56,8 @@ if not is_windows:
 define_macros=[
     ('SWIG_PYTHON_BUILD', None),
     ('WALLY_CORE_BUILD', None),
-    ('HAVE_CONFIG_H', None),
-    ('SECP256K1_BUILD', None),
-    ('BUILD_ELEMENTS', None)
+    ('BUILD_ELEMENTS', None),
     ]
-if is_windows:
-    define_macros.append(('USE_ECMULT_STATIC_PRECOMPUTATION', None))
-    define_macros.append(('ECMULT_WINDOW_SIZE', 15))
 
 include_dirs=[
     './',
@@ -70,9 +65,6 @@ include_dirs=[
     './src/ccan',
     './src/secp256k1/include',
     ]
-if is_windows:
-    shutil.copyfile('./src/amalgamation/windows_config/libsecp256k1-config.h', 'src/secp256k1/src/libsecp256k1-config.h')
-    include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
 
 extra_compile_args = ['-flax-vector-conversions']
 
@@ -82,7 +74,7 @@ wally_ext = Extension(
     include_dirs=include_dirs,
     extra_compile_args=extra_compile_args,
     sources=[
-        'src/swig_python/swig_wrap.c' if is_windows else 'src/swig_python/swig_python_wrap.c',
+        'src/swig_python/swig_python_wrap.c',
         'src/amalgamation/combined.c',
         'src/amalgamation/combined_ccan.c',
         'src/amalgamation/combined_ccan2.c',
