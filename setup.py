@@ -40,18 +40,17 @@ if not is_windows:
     # Run the autotools/make build up front to generate our sources,
     # then build using the standard Python ext module machinery.
     # (Windows requires source generation to be done separately).
-    import multiprocessing
     import subprocess
 
     abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
 
-    def call(args):
-        subprocess.check_call(args, cwd=abs_path, env=configure_env)
+    def call(args, cwd=abs_path):
+        subprocess.check_call(args, cwd=cwd, env=configure_env)
 
     call(['./tools/cleanup.sh'])
     call(['./tools/autogen.sh'])
     call(['./configure'] + CONFIGURE_ARGS)
-    call(['make', '-j{}'.format(multiprocessing.cpu_count())])
+    call(['make', 'swig_python/swig_python_wrap.c'], abs_path + 'src/')
 
 define_macros=[
     ('SWIG_PYTHON_BUILD', None),
@@ -66,7 +65,11 @@ include_dirs=[
     './src/secp256k1/include',
     ]
 
-extra_compile_args = ['-flax-vector-conversions']
+if is_windows:
+    include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
+    extra_compile_args = []
+else:
+    extra_compile_args = ['-flax-vector-conversions']
 
 wally_ext = Extension(
     '_wallycore',
