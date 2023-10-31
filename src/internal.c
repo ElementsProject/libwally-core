@@ -29,27 +29,27 @@ int wally_get_build_version(uint32_t *value)
 
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)
 {
-    return secp256k1_ec_pubkey_combine(secp256k1_context_no_precomp, pubnonce, pubnonces, n);
+    return secp256k1_ec_pubkey_combine(secp256k1_context_static, pubnonce, pubnonces, n);
 }
 
 int pubkey_negate(secp256k1_pubkey *pubkey)
 {
-    return secp256k1_ec_pubkey_negate(secp256k1_context_no_precomp, pubkey);
+    return secp256k1_ec_pubkey_negate(secp256k1_context_static, pubkey);
 }
 
 int pubkey_parse(secp256k1_pubkey *pubkey, const unsigned char *input, size_t input_len)
 {
-    return secp256k1_ec_pubkey_parse(secp256k1_context_no_precomp, pubkey, input, input_len);
+    return secp256k1_ec_pubkey_parse(secp256k1_context_static, pubkey, input, input_len);
 }
 
 int pubkey_serialize(unsigned char *output, size_t *outputlen, const secp256k1_pubkey *pubkey, unsigned int flags)
 {
-    return secp256k1_ec_pubkey_serialize(secp256k1_context_no_precomp, output, outputlen, pubkey, flags);
+    return secp256k1_ec_pubkey_serialize(secp256k1_context_static, output, outputlen, pubkey, flags);
 }
 
 int xpubkey_parse(secp256k1_xonly_pubkey *xpubkey, const unsigned char *input, size_t input_len)
 {
-    const secp256k1_context *ctx = secp256k1_context_no_precomp;
+    const secp256k1_context *ctx = secp256k1_context_static;
     if (input_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
         return 0;
     if (input_len == EC_PUBLIC_KEY_LEN) {
@@ -67,33 +67,33 @@ int xpubkey_tweak_add(secp256k1_pubkey *pubkey,
                       const secp256k1_xonly_pubkey *xpubkey,
                       const unsigned char *tweak)
 {
-    return secp256k1_xonly_pubkey_tweak_add(secp256k1_context_no_precomp,
+    return secp256k1_xonly_pubkey_tweak_add(secp256k1_context_static,
                                             pubkey, xpubkey, tweak);
 }
 
 int xpubkey_serialize(unsigned char *output, const secp256k1_xonly_pubkey *xpubkey)
 {
-    return secp256k1_xonly_pubkey_serialize(secp256k1_context_no_precomp, output, xpubkey);
+    return secp256k1_xonly_pubkey_serialize(secp256k1_context_static, output, xpubkey);
 }
 
 int seckey_verify(const unsigned char *seckey)
 {
-    return secp256k1_ec_seckey_verify(secp256k1_context_no_precomp, seckey);
+    return secp256k1_ec_seckey_verify(secp256k1_context_static, seckey);
 }
 
 int seckey_negate(unsigned char *seckey)
 {
-    return secp256k1_ec_seckey_negate(secp256k1_context_no_precomp, seckey);
+    return secp256k1_ec_seckey_negate(secp256k1_context_static, seckey);
 }
 
 int seckey_tweak_add(unsigned char *seckey, const unsigned char *tweak)
 {
-    return secp256k1_ec_seckey_tweak_add(secp256k1_context_no_precomp, seckey, tweak);
+    return secp256k1_ec_seckey_tweak_add(secp256k1_context_static, seckey, tweak);
 }
 
 int seckey_tweak_mul(unsigned char *seckey, const unsigned char *tweak)
 {
-    return secp256k1_ec_seckey_tweak_mul(secp256k1_context_no_precomp, seckey, tweak);
+    return secp256k1_ec_seckey_tweak_mul(secp256k1_context_static, seckey, tweak);
 }
 
 int keypair_create(secp256k1_keypair *keypair, const unsigned char *priv_key)
@@ -103,17 +103,17 @@ int keypair_create(secp256k1_keypair *keypair, const unsigned char *priv_key)
 
 int keypair_xonly_pub(secp256k1_xonly_pubkey *xpubkey, const secp256k1_keypair *keypair)
 {
-    return secp256k1_keypair_xonly_pub(secp256k1_context_no_precomp, xpubkey, NULL, keypair);
+    return secp256k1_keypair_xonly_pub(secp256k1_context_static, xpubkey, NULL, keypair);
 }
 
 int keypair_sec(unsigned char *output, const secp256k1_keypair *keypair)
 {
-    return secp256k1_keypair_sec(secp256k1_context_no_precomp, output, keypair);
+    return secp256k1_keypair_sec(secp256k1_context_static, output, keypair);
 }
 
 int keypair_xonly_tweak_add(secp256k1_keypair *keypair, const unsigned char *tweak)
 {
-    return secp256k1_keypair_xonly_tweak_add(secp256k1_context_no_precomp, keypair, tweak);
+    return secp256k1_keypair_xonly_tweak_add(secp256k1_context_static, keypair, tweak);
 }
 
 #ifndef SWIG

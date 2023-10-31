@@ -222,7 +222,7 @@ int wally_ec_sig_normalize(const unsigned char *sig, size_t sig_len,
                            unsigned char *bytes_out, size_t len)
 {
     secp256k1_ecdsa_signature sig_secp, sig_low;
-    const secp256k1_context *ctx = secp256k1_context_no_precomp;
+    const secp256k1_context *ctx = secp256k1_context_static;
     bool ok;
 
     ok = sig && sig_len == EC_SIGNATURE_LEN &&
@@ -248,7 +248,7 @@ int wally_ec_sig_to_der(const unsigned char *sig, size_t sig_len,
 {
     secp256k1_ecdsa_signature sig_secp;
     size_t len_in_out = len;
-    const secp256k1_context *ctx = secp256k1_context_no_precomp;
+    const secp256k1_context *ctx = secp256k1_context_static;
     bool ok;
 
     if (written)
@@ -275,7 +275,7 @@ int wally_ec_sig_from_der(const unsigned char *bytes, size_t bytes_len,
                           unsigned char *bytes_out, size_t len)
 {
     secp256k1_ecdsa_signature sig_secp;
-    const secp256k1_context *ctx = secp256k1_context_no_precomp;
+    const secp256k1_context *ctx = secp256k1_context_static;
     bool ok;
 
     ok = bytes && bytes_len && bytes_out && len == EC_SIGNATURE_LEN &&
