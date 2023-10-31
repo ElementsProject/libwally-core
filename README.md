@@ -114,34 +114,39 @@ installed.
 
 ### Python
 
-For non-development use, you can install wally with `pip` as follows:
+For non-development use, you can install wally from PyPI with `pip` as follows:
 
 ```
 pip install wallycore==0.9.2
 ```
 
-For python development, you can build and install wally using:
+For development, you can build and install wally using:
 
 ```
 $ pip install .
 ```
 
-It is suggested you only install this way into a virtualenv while the library
-is under heavy development.
-
 If you wish to explicitly choose the python version to use, set the
-`PYTHON_VERSION` environment variable (to e.g. `3`, `3.7` etc) before
+`PYTHON_VERSION` environment variable (to e.g. `3.9`, `3.10` etc) before
 running `pip` or (when compiling manually) `./configure`.
 
 You can also install the binary [wally releases](https://github.com/ElementsProject/libwally-core/releases)
-using the released wheel files without having to compile the library, e.g.:
+using the released wheel files, for example if you don't wish to install from PyPI over the network:
 
 ```
 pip install wallycore-<version_and_architecture>.whl
 ```
 
-The script `tools/build_python_manylinux_wheels.sh` builds the Linux release files
-and can be used as an example for your own python projects.
+Each wally release includes a signed `requirements.txt` file. It is strongly
+suggested that you verify and use this file when installing, with:
+
+```
+pip -r requirements.txt
+```
+
+Doing so ensures that the wheel you install is the version you expect and an
+official build. This will detect, for example, if PyPI is hacked and a
+malicious wallycore package uploaded.
 
 ### Android
 
