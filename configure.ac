@@ -12,6 +12,9 @@ AH_BOTTOM([#include "ccan_config.h"
 
 LDPATH_VAR=LD_LIBRARY_PATH
 case $host_os in
+cygwin*|mingw*)
+    is_win="yes"
+    ;;
 *darwin*)
     is_osx="yes"
     LDPATH_VAR=DYLD_LIBRARY_PATH
@@ -389,12 +392,19 @@ AC_SUBST([JAVAC_TARGET])
 
 AC_SUBST([AM_CFLAGS])
 
+AM_CONDITIONAL([SHARED_BUILD_ENABLED], [test "x$enable_shared" = "xyes"])
 if test "x$enable_static" = "xyes"; then
     CTEST_EXTRA_STATIC='$(libwallycore_la_LIBADD)'
+    dnl Windows static builds require SECP256K1_STATIC to be defined.
+    dnl As a result, you can't build both a static (.lib) and dynamic (.dll)
+    dnl library with a single 'configure; make' invocation.
+    if test "x$is_win" = "xyes" -a "x$enable_shared" = "xyes"; then
+        AC_MSG_ERROR([Windows builds cannot build shared and static builds at the same time])
+    fi
+    AX_CHECK_COMPILE_FLAG([-DSECP256K1_STATIC=1], [AM_CFLAGS="$AM_CFLAGS -DSECP256K1_STATIC=1"])
 fi
 AC_SUBST([CTEST_EXTRA_STATIC])
 
-AM_CONDITIONAL([SHARED_BUILD_ENABLED], [test "x$enable_shared" = "xyes"])
 
 AC_CONFIG_FILES([
  Makefile
