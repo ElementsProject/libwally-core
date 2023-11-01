@@ -1,6 +1,5 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
-#include <secp256k1.h>
 #include <secp256k1_ecdh.h>
 
 int wally_ecdh(const unsigned char *pub_key, size_t pub_key_len,
