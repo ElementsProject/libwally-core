@@ -1605,6 +1605,12 @@ static const struct address_test {
         0, 0, 0,
         ADDR("15XVotxCAV7sRx1PSCkQNsGw3W9jT9A94R")
     },{
+        "descriptor - p2pkh-empty-key-origin-path",
+        "pkh([d34db33f]mainnet_xpub/)",
+        WALLY_NETWORK_BITCOIN_MAINNET,
+        0, 0, 0,
+        ADDR("15XVotxCAV7sRx1PSCkQNsGw3W9jT9A94R")
+    },{
         "address - p2pkh-parent-derive",
         "pkh([d34db33f/44'/0'/0']mainnet_xpub/1/*)",
         WALLY_NETWORK_BITCOIN_MAINNET,
@@ -1841,6 +1847,30 @@ static const struct address_test {
     },{
         "address errchk - unterminated key origin",
         "pkh([d34db33f/44'/0'/0'mainnet_xpub/1/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    },{
+        "address errchk - key origin with wildcard",
+        "pkh([d34db33f/44'/0'/*]mainnet_xpub/1/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    }, {
+        "address errchk - key origin with multi-index",
+        "pkh([d34db33f/44'/0'/<0;1>]mainnet_xpub/1/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    }, {
+        "address errchk - key origin with no path elements",
+        "pkh([d34db33f/]mainnet_xpub/1/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    }, {
+        "address errchk - key origin with double /",
+        "pkh([d34db33f//]mainnet_xpub/1/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    }, {
+        "address errchk - key origin with unmarked private index",
+        "pkh([d34db33f/2147483648]mainnet_xpub/1/*)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
+    }, {
+        "address errchk - key origin with out-of-bounds index",
+        "pkh([d34db33f/4294967296]mainnet_xpub/1/*)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
     },{
         "address errchk - double slash",

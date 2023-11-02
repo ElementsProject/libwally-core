@@ -2080,7 +2080,8 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
      */
     if (node->data[0] == '[') {
         const char *end = memchr(node->data, ']', node->data_len);
-        if (!end || end < node->data + 10 ||
+        uint32_t features;
+        if (!end || end < node->data + 9 ||
             wally_hex_n_verify(node->data + 1, 8u) != WALLY_OK ||
             (node->data[9] != ']' && node->data[9] != '/'))
             return WALLY_EINVAL; /* Invalid key origin fingerprint */
@@ -2090,6 +2091,18 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         node->number |= size;
         ctx->features |= WALLY_MS_IS_PARENTED;
         node->flags |= WALLY_MS_IS_PARENTED;
+        if (size > 10u) {
+            if (size == 11u)
+                return WALLY_EINVAL; /* Single leading '/' */
+            /* The key origin has a path. It must be a valid bare path
+             * without wildcards or multi-indices.
+             */
+            ret = bip32_path_str_n_get_features(node->data + 10, size - 11, &features);
+            if (ret != WALLY_OK ||
+                features & (BIP32_PATH_IS_WILDCARD | BIP32_PATH_IS_MULTIPATH) ||
+                !(features & BIP32_PATH_IS_BARE))
+                return WALLY_EINVAL;
+        }
         /* Remove the key origin info from the key data */
         node->data = end + 1;
         node->data_len -= size;
