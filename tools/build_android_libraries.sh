@@ -5,7 +5,7 @@
 #
 set -e
 
-if [ ! -f "src/secp256k1/README.md" ]; then
+if [ ! -f "src/secp256k1/Makefile.am" ]; then
     git submodule sync --recursive
     git submodule update --init --recursive
 fi

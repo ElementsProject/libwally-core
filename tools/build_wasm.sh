@@ -35,7 +35,7 @@ EMCC_OPTIONS="$EMCC_OPTIONS -s EXPORT_ES6=1 -s MODULARIZE=1 -s EXPORT_NAME=InitW
 # Get the list of functions to export
 source ./tools/wasm_exports.sh
 
-mkdir -p wally_dist
+mkdir -p dist
 
 emcc -O$OPTIMIZATION_LEVEL \
     -s "EXPORTED_RUNTIME_METHODS=$EXPORTED_RUNTIME_METHODS" \
@@ -43,5 +43,5 @@ emcc -O$OPTIMIZATION_LEVEL \
     -s FILESYSTEM=0 \
     $EMCC_OPTIONS \
     ./src/.libs/*.o src/secp256k1/src/*.o src/ccan/ccan/*/.libs/*.o src/ccan/ccan/*/*/.libs/*.o \
-    -o wally_dist/wallycore.html \
+    -o dist/wallycore.html \
     --shell-file contrib/shell_minimal.html

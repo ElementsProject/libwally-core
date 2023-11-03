@@ -141,7 +141,7 @@ Each wally release includes a signed `requirements.txt` file. It is strongly
 suggested that you verify and use this file when installing, with:
 
 ```
-pip -r requirements.txt
+pip install --require-hashes -r requirements.txt
 ```
 
 Doing so ensures that the wheel you install is the version you expect and an

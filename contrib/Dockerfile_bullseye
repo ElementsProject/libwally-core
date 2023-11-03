@@ -1,6 +1,12 @@
-FROM debian:bullseye@sha256:86dddd82dddf445aea3d2ea26af46cebd727bf2f47ed810fa1450a0d79722d55
-COPY bullseye_deps.sh /deps.sh
-RUN /deps.sh && rm /deps.sh
-VOLUME /wallycore
+#
+# Dockerfile for wally builds.
+# build from this directory with e.g:
+#     DOCKER_BUILDKIT=1 docker build . -t greenaddress/wallycore -f Dockerfile_bullseye
+#
+FROM debian:bullseye@sha256:d0bf7d85ad1e61ab3520b1d22d1e2a136799defd4e0d1e3f998d3b9045f38551
+WORKDIR /root
+COPY bullseye_deps.sh ./deps.sh
+COPY requirements.txt ./contrib/requirements.txt
+RUN ./deps.sh && rm ./deps.sh
 ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
 ENV ANDROID_NDK=/opt/android-ndk-r23b
