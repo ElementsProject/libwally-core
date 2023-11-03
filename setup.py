@@ -2,22 +2,34 @@
 from setuptools import setup, Extension
 import copy, os, platform, shutil
 import distutils.sysconfig
+import subprocess
+
+ABS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/'
+CONFIGURE_ENV = copy.deepcopy(os.environ)
+DISTUTILS_ENV = distutils.sysconfig.get_config_vars()
+IS_WINDOWS = platform.system() == "Windows"
+ARCH_FLAGS = os.environ.get('ARCHFLAGS','').split()
+
+def call(args, cwd=ABS_PATH):
+    subprocess.check_call(args, cwd=cwd, env=CONFIGURE_ENV)
+
+if not os.path.exists('src/secp256k1/Makefile.am'):
+    # Sync libsecp-zkp
+    call(['git','submodule','init'])
+    call(['git','submodule','sync','--recursive'])
+    call(['git','submodule','update','--init','--recursive'])
 
 CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic',
     '--enable-swig-python', '--enable-python-manylinux',
     '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking']
 
-distutils_env = distutils.sysconfig.get_config_vars()
-configure_env = copy.deepcopy(os.environ)
 
-is_windows = platform.system() == "Windows"
-arch_flags = os.environ.get('ARCHFLAGS','').split()
 archs = []
-while arch_flags:
-    if arch_flags[0] == '-arch':
-        archs.append(arch_flags[1])
-        arch_flags.pop(0)
-    arch_flags.pop(0)
+while ARCH_FLAGS:
+    if ARCH_FLAGS[0] == '-arch':
+        archs.append(ARCH_FLAGS[1])
+        ARCH_FLAGS.pop(0)
+    ARCH_FLAGS.pop(0)
 
 if os.environ.get('GITHUB_ACTION') and os.environ.get('RUNNER_OS') == 'macOS':
     # Github CI build on an macOS box
@@ -32,25 +44,18 @@ if os.environ.get('GITHUB_ACTION') and os.environ.get('RUNNER_OS') == 'macOS':
         CONFIGURE_ARGS += ['--target', '{}-apple-macos'.format(arch)]
         if len(archs) > 1:
             CONFIGURE_ARGS += ['--with-asm=no']
-        if 'PY_CFLAGS' in distutils_env:
-            configure_env['CFLAGS'] = distutils_env['PY_CFLAGS']
-            configure_env['LDFLAGS'] = distutils_env['PY_LDFLAGS']
+        if 'PY_CFLAGS' in DISTUTILS_ENV:
+            CONFIGURE_ENV['CFLAGS'] = DISTUTILS_ENV['PY_CFLAGS']
+            CONFIGURE_ENV['LDFLAGS'] = DISTUTILS_ENV['PY_LDFLAGS']
 
-if not is_windows:
+if not IS_WINDOWS:
     # Run the autotools/make build up front to generate our sources,
     # then build using the standard Python ext module machinery.
     # (Windows requires source generation to be done separately).
-    import subprocess
-
-    abs_path = os.path.dirname(os.path.abspath(__file__)) + '/'
-
-    def call(args, cwd=abs_path):
-        subprocess.check_call(args, cwd=cwd, env=configure_env)
-
     call(['./tools/cleanup.sh'])
     call(['./tools/autogen.sh'])
     call(['./configure'] + CONFIGURE_ARGS)
-    call(['make', 'swig_python/swig_python_wrap.c'], abs_path + 'src/')
+    call(['make', 'swig_python/swig_python_wrap.c'], ABS_PATH + 'src/')
 
 define_macros=[
     ('SWIG_PYTHON_BUILD', None),
@@ -65,7 +70,7 @@ include_dirs=[
     './src/secp256k1/include',
     ]
 
-if is_windows:
+if IS_WINDOWS:
     include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
     extra_compile_args = []
 else:

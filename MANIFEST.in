@@ -1,13 +1,2 @@
-graft .
-prune src/test
-prune contrib
-prune docs
-prune .git
-exclude .git*
-prune tools/android_helper.sh
-prune tools/build_android_libraries.sh
-prune tools/build_python_wheels.sh
-prune tools/coverage.sh
-prune tools/uncrustify*
-prune tools/swigjavapost.sh
-prune wally_dist
+recursive-include . configure* Makefile.am Makefile.am.include Makefile.in *.c *.h *.inl *.pc.in
+include tools/autogen.sh tools/cleanup.sh tools/msvc/*.bat ./tools/build-aux/* ./tools/build-aux/m4/* src/wallycore.pc.in ./src/secp256k1/build-aux/* ./src/secp256k1/build-aux/m4/* src/secp256k1/autogen.sh ./src/swig_python/swig.i ./src/swig_python/python_extra.py_in
