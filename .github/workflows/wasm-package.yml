@@ -12,10 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-20.04
 
-    defaults:
-      run:
-        working-directory: ./src/wasm_package
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -25,21 +21,22 @@ jobs:
       # We sed out azure to attempt to mitigate apt network failues.
       - run: sudo sed -i 's/azure\.//' /etc/apt/sources.list
 
-      # The deps script was written for Debian (11), but works as-is on Ubuntu too
-      - run: sudo ../../contrib/bullseye_deps.sh
+      # bullseye_deps.sh is written for Debian, but works as-is on Ubuntu too.
+      # Skip installing Java (-j), the Android NDK (-n) and MinGW (-w) which
+      # we don't need for building the NPM package.
+      - run: sudo contrib/bullseye_deps.sh -j -n -w
 
       # Build NPM package into a tgz file (pack internally triggers the build/prepare script)
-      - run: npm install && npm pack --foreground-scripts
+      - run: cd src/wasm_package && npm install && npm pack --foreground-scripts
         name: Build & Pack
 
       # Report the SHA256 digest of the final package. This should be deterministic (including generated WASM),
       # so it should match the package published to the NPM registry and can be used to cross-check its integrity.
-      - run: 'echo SHA256 digest: && sha256sum wallycore-*.tgz'
+      - run: 'echo SHA256 digest: && sha256sum src/wasm_package/wallycore-*.tgz'
 
-      - run: npm test
+      - run: cd src/wasm_package && npm test
 
       - uses: actions/upload-artifact@v3
         with:
           name: libwally-npm
           path: src/wasm_package/wallycore-*.tgz
-          # upload-artifact doesn't seem to take the working-directory setting into account
