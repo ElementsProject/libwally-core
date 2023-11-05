@@ -1,3 +1,6 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
 wally_release_files:
   image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
   artifacts:
@@ -32,3 +35,12 @@ wally_release_files:
     - cd ../..
     - mv wally_dist/* dist/
     - rmdir wally_dist
+
+build_mingw_static:
+  image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
+  tags:
+    - ga
+  script:
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - CC=x86_64-w64-mingw32-gcc ./configure --host=x86_64-w64-mingw32 --disable-swig-python --disable-swig-java --disable-shared --enable-static
+    - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
