@@ -246,7 +246,11 @@ AC_ARG_ENABLE(clear-tests,
     AS_HELP_STRING([--enable-clear-tests],[enable tests for memory clearing (default: yes)]),
     [clear_tests=$enableval], [clear_tests=yes])
 
-AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
+if test "x$is_mingw" = "xyes"; then
+    ac_have_pthread=no
+else
+    AX_PTHREAD([ac_have_pthread=yes], [ac_have_pthread=no])
+fi
 AM_CONDITIONAL([USE_PTHREAD], [test "x$ac_have_pthread" = "xyes" -a "x$clear_tests" = "xyes"])
 if test "x$ac_have_pthread" = "xyes"; then
     AC_DEFINE([HAVE_PTHREAD], 1, [Define if we have pthread support])
