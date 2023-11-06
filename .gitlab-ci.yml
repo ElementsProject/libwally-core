@@ -1,7 +1,7 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-wally_release_files:
+build_wally_release_files:
   image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
   artifacts:
     expire_in: 7 days
@@ -44,3 +44,21 @@ build_mingw_static:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CC=x86_64-w64-mingw32-gcc ./configure --host=x86_64-w64-mingw32 --disable-swig-python --disable-swig-java --disable-shared --enable-static
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+
+run_tests:
+  image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
+  tags:
+    - ga
+  artifacts:
+    reports:
+      codequality: valgrind.json
+  script:
+    - apt install --no-install-recommends valgrind jq -yqq
+    - pip install valgrind-codequality
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - ./configure --enable-export-all --enable-swig-python --enable-swig-java --enable-shared --disable-static
+    - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+    - make check -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+    - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do LD_LIBRARY_PATH=./src/.libs/ valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --xml=yes --xml-file=$t.xml $t; done
+    - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do valgrind-codequality --input-file $t.xml --output-file $t.json; done
+    - jq '[.[]|.[]]' -s ./src/.libs/test_*.json > valgrind.json
