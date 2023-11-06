@@ -34,13 +34,13 @@ windows_packages=
 if [ -z "$skip_windows" ]; then
     windows_packages="g++-mingw-w64-x86-64"
 fi
-apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $java_packages curl $windows_packages -yqq
+apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $java_packages curl $windows_packages valgrind jq -yqq
 
 if [ -z "$skip_java" ]; then
     update-java-alternatives -s java-1.11.0-openjdk-amd64
 fi
 
-pip3 install -r contrib/requirements.txt
+pip3 install valgrind-codequality -r contrib/requirements.txt
 
 pushd /opt
 

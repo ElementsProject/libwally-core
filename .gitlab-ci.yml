@@ -2,7 +2,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 build_wally_release_files:
-  image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
+  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
   artifacts:
     expire_in: 7 days
     name: wallycore-bindings
@@ -18,8 +18,7 @@ build_wally_release_files:
     - pip install --find-links=./dist wallycore
     - python -c "import wallycore as w; assert w.hex_from_bytes(w.hex_to_bytes('ff')) == 'ff'"
     - deactivate
-    - rm -rf .smoketest
-    - rm dist/*.whl
+    - rm -rf .smoketest dist/*.whl
     - mv dist wally_dist
     - ./tools/build_android_libraries.sh
     - mv release wallycore-android-jni
@@ -37,7 +36,7 @@ build_wally_release_files:
     - rmdir wally_dist
 
 build_mingw_static:
-  image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
+  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
   tags:
     - ga
   script:
@@ -46,15 +45,13 @@ build_mingw_static:
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 run_tests:
-  image: greenaddress/wallycore@sha256:eb0bdb6119f40df02bbc3cd38ba64ea1c3de64c2d065e61a0447986068fca6be
+  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
   tags:
     - ga
   artifacts:
     reports:
       codequality: valgrind.json
   script:
-    - apt install --no-install-recommends valgrind jq -yqq
-    - pip install valgrind-codequality
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - ./configure --enable-export-all --enable-swig-python --enable-swig-java --enable-shared --disable-static
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
