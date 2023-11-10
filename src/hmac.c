@@ -12,7 +12,11 @@
 #define HMAC_FUNCTION hmac_sha256_impl
 #define WALLY_HMAC_FUNCTION wally_hmac_sha256
 #ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
+#ifndef CONFIG_MBEDTLS_HARDWARE_SHA
+#define SHA_CTX_BUFF c.MBEDTLS_PRIVATE(buffer)
+#else
 #define SHA_CTX_BUFF c.buffer
+#endif
 #else
 #define SHA_CTX_BUFF buf.u8
 #endif
@@ -28,7 +32,11 @@
 #define WALLY_HMAC_FUNCTION wally_hmac_sha512
 #undef SHA_CTX_BUFF
 #ifdef CCAN_CRYPTO_SHA512_USE_MBEDTLS
+#ifndef CONFIG_MBEDTLS_HARDWARE_SHA
+#define SHA_CTX_BUFF c.MBEDTLS_PRIVATE(buffer)
+#else
 #define SHA_CTX_BUFF c.buffer
+#endif
 #else
 #define SHA_CTX_BUFF buf.u8
 #endif
