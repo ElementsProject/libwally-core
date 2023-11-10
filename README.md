@@ -89,9 +89,12 @@ $ brew install swig
 - `--enabled-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
 - `--enable-mbed-tls`. Use mbed-tls hashing functions if available. This typically
-   results in faster hashing on embedded platforms such as STM32. Note that the user
-   must define `MBEDTLS_SHA256_ALT` and/or `SOC_SHA_SUPPORT_PARALLEL_ENG` matching the
-   SOC support when compiling the library. (default: no)
+   results in faster hashing via hardware on embedded platforms such as ESP32.
+   Note that the caller must ensure that ``sdkconfig.h`` and ``soc/soc_caps.h``
+   are available when compiling, e.g. by setting the `CFLAGS` environment variable
+   before calling configure.
+   must define/undefine `MBEDTLS_SHA256_ALT`, `SOC_SHA_SUPPORT_PARALLEL_ENG`
+   matching the SOC support when compiling libwally. (default: no)
 - `--enable-coverage`. Enables code coverage (default: no) Note that you will
    need [lcov](http://ltp.sourceforge.net/coverage/lcov.php) installed to
    build with this option enabled and generate coverage reports.

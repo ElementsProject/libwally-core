@@ -14,6 +14,11 @@
 
 #ifdef CCAN_CRYPTO_SHA512_USE_MBEDTLS
 #include <mbedtls/sha512.h>
+#include <sdkconfig.h>
+#include <soc/soc_caps.h>
+#ifdef SOC_SHA_SUPPORT_PARALLEL_ENG
+#include <sha512_alt.h>
+#endif
 #endif
 
 /**
