@@ -16,6 +16,10 @@ if USE_LIB not in ('no', 'static', 'shared'):
     print('Warning: WALLY_ABI_PY_WHEEL_USE_LIB has unsupported value; assuming "no".\n',
         file=sys.stderr)
     USE_LIB = 'no'
+if USE_LIB != 'no' and IS_WINDOWS:
+    print('Error: WALLY_ABI_PY_WHEEL_USE_LIB is unsupported on Windows.\n',
+        file=sys.stderr)
+    sys.exit(1)
 if USE_LIB != 'shared' and (os.path.exists('src/.libs/libwallycore.so') or \
         os.path.exists('src/.libs/libwallycore.dylib')):
     print('Warning: libwallycore shared library has been found, but Python module will not'
@@ -26,11 +30,36 @@ elif USE_LIB != 'static' and os.path.exists('src/.libs/libwallycore.a'):
         '\nuse it. Set WALLY_ABI_PY_WHEEL_USE_LIB=static to link with the static library.\n',
         file=sys.stderr)
 
+def get_system_pkg(name, default_pkg):
+    pkg = os.environ.get('WALLY_ABI_PY_WHEEL_USE_PKG_' + name, '')
+    lpkg = pkg.lower()
+    if lpkg in ('0',·'n',·'no',·'f',·'false',·'off'):
+        return ''
+    if lpkg in ('1',·'y',·'yes',·'t',·'true',·'on'):
+        return default_pkg
+    return pkg
+
+PKG_SECP256K1 = get_system_pkg('SECP256K1', 'libsecp256k1_zkp')
+if PKG_SECP256K1 and USE_LIB == 'no':
+    print('Warning: WALLY_ABI_PY_WHEEL_USE_PKG_SECP256K1 has no effect when'
+        '\nWALLY_ABI_PY_WHEEL_USE_LIB=no or unset.\n',
+        file=sys.stderr)
+    PKG_SECP256K1 = ''
+
+if PKG_SECP256K1:
+    try:
+        import pkgconfig
+    except ImportError:
+        print('Error: WALLY_ABI_PY_WHEEL_USE_PKG_SECP256K1 requires the pkgconfig Python module.\n',
+            file=sys.stderr)
+        sys.exit(127)
+
 def call(args, cwd=ABS_PATH):
     subprocess.check_call(args, cwd=cwd, env=CONFIGURE_ENV)
 
-if not os.path.exists('src/secp256k1/Makefile.am'):
-    # Sync libsecp-zkp
+if (USE_LIB == 'no' or not PKG_SECP256K1) and \
+        not os.path.exists('src/secp256k1/Makefile.am'):
+    # Sync libsecp256k1-zkp (only if needed)
     call(['git','submodule','init'])
     call(['git','submodule','sync','--recursive'])
     call(['git','submodule','update','--init','--recursive'])
@@ -43,6 +72,9 @@ else:
 CONFIGURE_ARGS += [
     '--enable-swig-python', '--enable-python-manylinux',
     '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking']
+
+if PKG_SECP256K1:
+    CONFIGURE_ARGS += ['--with-system-secp256k1=' + PKG_SECP256K1]
 
 
 archs = []
@@ -90,19 +122,15 @@ define_macros=[
 include_dirs=[
     './',
     './src',
-    './src/secp256k1/include',
     ]
-library_dirs = [
-    ]
-libraries = [
-    ]
-sources = [
-    'src/swig_python/swig_python_wrap.c',
-    ]
+library_dirs = []
+libraries = []
+sources = ['src/swig_python/swig_python_wrap.c']
 
 if USE_LIB == 'no':
     include_dirs += [
         './src/ccan',
+        './src/secp256k1/include',
         ]
     sources += [
         'src/amalgamation/combined.c',
@@ -110,11 +138,20 @@ if USE_LIB == 'no':
         'src/amalgamation/combined_ccan2.c',
         ]
 else:
+    if PKG_SECP256K1:
+        secp256k1 = pkgconfig.parse(PKG_SECP256K1)
+        include_dirs += secp256k1['include_dirs']
+    else:
+        include_dirs += ['./src/secp256k1/include']
     library_dirs += ['src/.libs']
     libraries += ['wallycore']
     if USE_LIB == 'static':
-        library_dirs += ['src/secp256k1/.libs']
-        libraries += ['secp256k1']
+        if PKG_SECP256K1:
+            library_dirs += secp256k1['library_dirs']
+            libraries += secp256k1['libraries']
+        else:
+            library_dirs += ['src/secp256k1/.libs']
+            libraries += ['secp256k1']
 
 if IS_WINDOWS:
     include_dirs = ['./src/amalgamation/windows_config'] + include_dirs
