@@ -359,10 +359,10 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_SIGNATURE_LEN 64
 /** The length of a compact recoverable signature produced by EC signing */
 #define EC_SIGNATURE_RECOVERABLE_LEN 65
-/** The maximum encoded length of a DER encoded signature */
+/** The maximum encoded length of a DER signature (High-R, High-S), excluding sighash byte */
 #define EC_SIGNATURE_DER_MAX_LEN 72
-/** The maximum encoded length of a DER encoded signature created with `EC_FLAG_GRIND_R` */
-#define EC_SIGNATURE_DER_MAX_LOW_R_LEN 71
+/** The maximum encoded length of a DER signature created with `EC_FLAG_GRIND_R` (Low-R, Low-S), excluding sighash byte */
+#define EC_SIGNATURE_DER_MAX_LOW_R_LEN 70
 /** The length of a secp256k1 scalar value */
 #define EC_SCALAR_LEN 32
 
