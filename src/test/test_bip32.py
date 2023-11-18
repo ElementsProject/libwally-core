@@ -548,8 +548,8 @@ class BIP32Tests(unittest.TestCase):
                  ('m/1',          W, 1),          # Non-zero wildcard given for non-wildcard path
                  ('/*',           W, 2147483648), # Hardened wildcard
                  ('1',            0xff, 0),       # Invalid flags
-                 ('/1/<0;1>',     0, 0),          # Multi-index present without flag
-                 ('/1/<0;1>',     M, 0)]          # Multi-index flag present
+                 ('/1/<0;1>',     0, 0),          # Multi-path present without flag
+                 ('/1/<0;1>',     M, 0)]          # Multi-path flag present
 
         for path, flags, wildcard in cases:
             flags = flags | FLAG_KEY_PRIVATE
@@ -557,7 +557,7 @@ class BIP32Tests(unittest.TestCase):
                                                    wildcard, flags, key_out)
             self.assertEqual(ret, WALLY_EINVAL)
             if flags == M:
-                continue # Multi-index for bip32_path_from_str is tested below
+                continue # Multi-path for bip32_path_from_str is tested below
             ret, written = bip32_path_from_str(path, wildcard, 0, flags,
                                                c_path, len(c_path))
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))

@@ -1853,7 +1853,7 @@ static const struct address_test {
         "pkh([d34db33f/44'/0'/*]mainnet_xpub/1/*)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
     }, {
-        "address errchk - key origin with multi-index",
+        "address errchk - key origin with multi-path",
         "pkh([d34db33f/44'/0'/<0;1>]mainnet_xpub/1/*)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, ADDR("")
     }, {
