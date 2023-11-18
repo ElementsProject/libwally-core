@@ -899,7 +899,7 @@ int bip32_key_from_parent_path_str_n(const struct ext_key *hdkey,
                                      struct ext_key *key_out)
 {
     uint32_t path[BIP32_PATH_MAX_LEN], *path_p = path, features;
-    const uint32_t multi_index = 0; /* Multi-index not supported */
+    const uint32_t multi_index = 0; /* Multi-path not supported */
     size_t written;
     if (flags & BIP32_FLAG_STR_MULTIPATH)
         return WALLY_EINVAL; /* Multi-path is not supported for this call */
