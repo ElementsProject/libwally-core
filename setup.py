@@ -1,77 +1,71 @@
 """setuptools config for wallycore """
 from setuptools import setup, Extension
-import copy, os, platform, shutil
+import copy, os, platform, shutil, subprocess, sys
 import distutils.sysconfig
-import subprocess
-import sys
+
+def _msg(s):
+    print(s + '\n', file=sys.stderr)
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/'
 CONFIGURE_ENV = copy.deepcopy(os.environ)
 DISTUTILS_ENV = distutils.sysconfig.get_config_vars()
 IS_WINDOWS = platform.system() == "Windows"
-ARCH_FLAGS = os.environ.get('ARCHFLAGS','').split()
+ARCH_FLAGS = os.environ.get('ARCHFLAGS', '').split()
 USE_LIB = os.environ.get('WALLY_ABI_PY_WHEEL_USE_LIB', 'no')
 
 if USE_LIB not in ('no', 'static', 'shared'):
-    print('Warning: WALLY_ABI_PY_WHEEL_USE_LIB has unsupported value; assuming "no".\n',
-        file=sys.stderr)
+    _msg('Warning: WALLY_ABI_PY_WHEEL_USE_LIB has unsupported value; assuming "no".')
     USE_LIB = 'no'
 if USE_LIB != 'no' and IS_WINDOWS:
-    print('Error: WALLY_ABI_PY_WHEEL_USE_LIB is unsupported on Windows.\n',
-        file=sys.stderr)
+    _msg('Error: WALLY_ABI_PY_WHEEL_USE_LIB is unsupported on Windows.')
     sys.exit(1)
-if USE_LIB != 'shared' and (os.path.exists('src/.libs/libwallycore.so') or \
-        os.path.exists('src/.libs/libwallycore.dylib')):
-    print('Warning: libwallycore shared library has been found, but Python module will not'
-        '\nuse it. Set WALLY_ABI_PY_WHEEL_USE_LIB=shared to link with the shared library.\n',
-        file=sys.stderr)
+if USE_LIB != 'shared' and (os.path.exists('src/.libs/libwallycore.so') or
+                            os.path.exists('src/.libs/libwallycore.dylib')):
+    _msg('Warning: libwallycore shared library has been found, but Python module will not\n'
+         'use it. Set WALLY_ABI_PY_WHEEL_USE_LIB=shared to link with the shared library.')
 elif USE_LIB != 'static' and os.path.exists('src/.libs/libwallycore.a'):
-    print('Warning: libwallycore static library has been found, but Python module will not'
-        '\nuse it. Set WALLY_ABI_PY_WHEEL_USE_LIB=static to link with the static library.\n',
-        file=sys.stderr)
+    _msg('Warning: libwallycore static library has been found, but Python module will not\n'
+         'use it. Set WALLY_ABI_PY_WHEEL_USE_LIB=static to link with the static library.')
 
-def get_system_pkg(name, default_pkg):
+def _get_system_pkg(name, default_pkg):
     pkg = os.environ.get('WALLY_ABI_PY_WHEEL_USE_PKG_' + name, '')
-    lpkg = pkg.lower()
-    if lpkg in ('0',·'n',·'no',·'f',·'false',·'off'):
+    if pkg.lower() in ('0', 'n', 'no', 'f', 'false', 'off'):
         return ''
-    if lpkg in ('1',·'y',·'yes',·'t',·'true',·'on'):
+    if pkg.lower() in ('1', 'y', 'yes', 't', 'true', 'on'):
         return default_pkg
     return pkg
 
-PKG_SECP256K1 = get_system_pkg('SECP256K1', 'libsecp256k1_zkp')
+PKG_SECP256K1 = _get_system_pkg('SECP256K1', 'libsecp256k1_zkp')
 if PKG_SECP256K1 and USE_LIB == 'no':
-    print('Warning: WALLY_ABI_PY_WHEEL_USE_PKG_SECP256K1 has no effect when'
-        '\nWALLY_ABI_PY_WHEEL_USE_LIB=no or unset.\n',
-        file=sys.stderr)
+    _msg('Warning: WALLY_ABI_PY_WHEEL_USE_PKG_SECP256K1 has no effect when'
+         '\nWALLY_ABI_PY_WHEEL_USE_LIB=no or is unset.')
     PKG_SECP256K1 = ''
 
 if PKG_SECP256K1:
     try:
         import pkgconfig
     except ImportError:
-        print('Error: WALLY_ABI_PY_WHEEL_USE_PKG_SECP256K1 requires the pkgconfig Python module.\n',
-            file=sys.stderr)
+        _msg('Error: WALLY_ABI_PY_WHEEL_USE_PKG_SECP256K1 requires the pkgconfig Python module.')
         sys.exit(127)
 
-def call(args, cwd=ABS_PATH):
+def _call(args, cwd=ABS_PATH):
     subprocess.check_call(args, cwd=cwd, env=CONFIGURE_ENV)
 
-if (USE_LIB == 'no' or not PKG_SECP256K1) and \
-        not os.path.exists('src/secp256k1/Makefile.am'):
+if (USE_LIB == 'no' or not PKG_SECP256K1) and not os.path.exists('src/secp256k1/Makefile.am'):
     # Sync libsecp256k1-zkp (only if needed)
-    call(['git','submodule','init'])
-    call(['git','submodule','sync','--recursive'])
-    call(['git','submodule','update','--init','--recursive'])
+    _call(['git', 'submodule', 'init'])
+    _call(['git', 'submodule', 'sync', '--recursive'])
+    _call(['git', 'submodule', 'update', '--init', '--recursive'])
+
+CONFIGURE_ARGS = [
+    '--with-pic', '--enable-swig-python', '--enable-python-manylinux',
+    '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking'
+]
 
 if USE_LIB == 'shared':
-    CONFIGURE_ARGS = ['--enable-shared', '--disable-static']
+    CONFIGURE_ARGS += ['--enable-shared', '--disable-static']
 else:
-    CONFIGURE_ARGS = ['--disable-shared', '--enable-static', '--with-pic']
-
-CONFIGURE_ARGS += [
-    '--enable-swig-python', '--enable-python-manylinux',
-    '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking']
+    CONFIGURE_ARGS += ['--disable-shared', '--enable-static']
 
 if PKG_SECP256K1:
     CONFIGURE_ARGS += ['--with-system-secp256k1=' + PKG_SECP256K1]
@@ -105,43 +99,48 @@ if not IS_WINDOWS and (USE_LIB == 'no' or not os.path.exists('src/Makefile')):
     # Run the autotools/make build up front to generate our sources,
     # then build using the standard Python ext module machinery.
     # (Windows requires source generation to be done separately).
-    call(['./tools/cleanup.sh'])
-    call(['./tools/autogen.sh'])
-    call(['./configure'] + CONFIGURE_ARGS)
+    _call(['./tools/cleanup.sh'])
+    _call(['./tools/autogen.sh'])
+    _call(['./configure'] + CONFIGURE_ARGS)
     if USE_LIB == 'no':
-        call(['make', 'swig_python/swig_python_wrap.c'], ABS_PATH + 'src/')
+        _call(['make', 'swig_python/swig_python_wrap.c'], ABS_PATH + 'src/')
     else:
-        call(['make'])
+        _call(['make'])
 
-define_macros=[
+define_macros = [
     ('SWIG_PYTHON_BUILD', None),
     ('WALLY_CORE_BUILD', None),
     ('BUILD_ELEMENTS', None),
-    ]
+]
 
-include_dirs=[
+include_dirs = [
     './',
     './src',
-    ]
+]
 library_dirs = []
 libraries = []
 sources = ['src/swig_python/swig_python_wrap.c']
 
 if USE_LIB == 'no':
+    # Compile the amalgamated sources to build the wheel (default)
     include_dirs += [
         './src/ccan',
         './src/secp256k1/include',
-        ]
+    ]
     sources += [
         'src/amalgamation/combined.c',
         'src/amalgamation/combined_ccan.c',
         'src/amalgamation/combined_ccan2.c',
-        ]
+    ]
 else:
+    # Compile the swig python wrapper file and link it with wally/secp
+    # to build the wheel.
     if PKG_SECP256K1:
+        # Link with a system installed secp
         secp256k1 = pkgconfig.parse(PKG_SECP256K1)
         include_dirs += secp256k1['include_dirs']
     else:
+        # Link with the in-tree secp256k1-zkp
         include_dirs += ['./src/secp256k1/include']
     library_dirs += ['src/.libs']
     libraries += ['wallycore']
@@ -167,7 +166,7 @@ wally_ext = Extension(
     libraries=libraries,
     extra_compile_args=extra_compile_args,
     sources=sources,
-    )
+)
 
 kwargs = {
     'name': 'wallycore',
@@ -181,15 +180,12 @@ kwargs = {
     'zip_safe': False,
     'classifiers': [
         'Development Status :: 5 - Production/Stable',
-
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries',
-
         'License :: OSI Approved :: MIT License',
-
         'Programming Language :: Python :: 3',
     ],
-    'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1',
+    'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1 Blockstream Liquid Elements',
     'project_urls': {
         'Documentation': 'https://wally.readthedocs.io/en/latest',
         'Source': 'https://github.com/ElementsProject/libwally-core',
