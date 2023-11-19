@@ -299,7 +299,7 @@ AM_COND_IF([LINK_SYSTEM_SECP256K1], [
 ], [
     dnl Use the secp in-tree submodule
     libsecp256k1_CFLAGS='-I$(top_srcdir)/src/secp256k1/include'
-    libsecp256k1_LIBS='$(top_srcdir)/src/secp256k1/libsecp256k1.la'
+    libsecp256k1_LIBS='$(top_builddir)/src/secp256k1/libsecp256k1.la'
 ])
 AC_SUBST([libsecp256k1_CFLAGS])
 AC_SUBST([libsecp256k1_LIBS])
