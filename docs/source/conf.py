@@ -20,7 +20,7 @@ def preprocess_output_doc_line(l):
         len_param, param, size = parts
         text = ':param {}: Size of ``{}``. Must be `{}`.'.format(len_param, param, size)
     elif 'MAX_SIZED_OUTPUT(' in l:
-        parts = [p.strip() for p in l[len('FIXED_SIZED_OUTPUT('):-1].split(',')]
+        parts = [p.strip() for p in l[len('MAX_SIZED_OUTPUT('):-1].split(',')]
         len_param, param, max_size = parts
         text = ':param {}: Size of ``{}``. Passing `{}` will ensure the buffer is large enough.'.format(len_param, param, max_size)
     return '* ' + l if l else None, text
