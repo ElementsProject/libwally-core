@@ -88,8 +88,8 @@ WALLY_CORE_API void wally_free(void *ptr);
 /**
  * Duplicate a known-length string using the configured library allocator.
  *
- * :param str_in: The string to duplicate.
- * :param str_len: The length of '`str_in`' in bytes.
+ * :param str: The string to duplicate.
+ * :param str_len: The length of ``str`` in bytes.
  *
  * This function appends a NUL terminator to the string.
  * The allocated string must be freed using `wally_free`.
@@ -99,8 +99,8 @@ WALLY_CORE_API char *wally_strdup_n(const char *str, size_t str_len);
 /**
  * Duplicate a string using the configured library allocator.
  *
- * :param str_in: The string to duplicate.
- * :param str_len: The length of '`str_in`' in bytes.
+ * :param str: The string to duplicate.
+ * :param str_len: The length of ``str`` in bytes.
  *
  * This function appends a NUL terminator to the string.
  * The allocated string must be freed using `wally_free`.
