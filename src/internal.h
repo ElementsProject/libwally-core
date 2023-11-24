@@ -9,8 +9,11 @@
 #endif
 #else
 #ifndef BUILD_ELEMENTS
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
+#elif defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif /* __clang__/__GNUC__ */
 #endif /* BUILD_ELEMENTS */
 #endif /* WALLY_ABI_NO_ELEMENTS */
 #include <secp256k1.h>

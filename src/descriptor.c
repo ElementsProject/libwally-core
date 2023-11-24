@@ -2917,9 +2917,10 @@ int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
 }
 
 /* Ignore incorrect warnings from the ms_node cast below */
-#pragma GCC diagnostic ignored "-Wcast-align"
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wcast-align"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wcast-align"
 #endif
 static const ms_node *descriptor_get_key(const struct wally_descriptor *descriptor,
                                          size_t index)

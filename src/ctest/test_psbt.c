@@ -10,9 +10,10 @@
 #include "psbts.h"
 
 /* Ignore test logging compiler warnings */
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
 
 static void fail(const char *fmt, ...)
