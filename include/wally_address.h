@@ -263,7 +263,8 @@ WALLY_CORE_API int wally_bip32_key_to_addr_segwit(
  * Create a P2PKH address corresponding to a private key in Wallet Import Format.
  *
  * :param wif: Private key in Wallet Import Format.
- * :param prefix: Prefix byte to use, e.g. 0x80, 0xef.
+ * :param prefix: Expected prefix byte, e.g. `WALLY_ADDRESS_VERSION_WIF_MAINNET`
+ *|     or `WALLY_ADDRESS_VERSION_WIF_TESTNET`.
  * :param version: Address version to generate. One of the :ref:`address-versions`.
  * :param output: Destination for the resulting address string.
  *|    The string returned should be freed using `wally_free_string`.
