@@ -16,6 +16,7 @@ WALLY_CORE_API int wally_tx_input_get_txhash(const struct wally_tx_input *tx_inp
 
 WALLY_CORE_API int wally_tx_input_get_script(const struct wally_tx_input *tx_input_in, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_script_len(const struct wally_tx_input *tx_input_in, size_t *written);
+WALLY_CORE_API int wally_tx_input_get_witness_num_items(const struct wally_tx_input *tx_input_in, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_witness(const struct wally_tx_input *tx_input_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_witness_len(const struct wally_tx_input *tx_input_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_input_get_index(const struct wally_tx_input *tx_input_in, size_t *written);
@@ -98,6 +99,7 @@ WALLY_CORE_API int wally_tx_get_input_txhash(const struct wally_tx *tx_in, size_
 
 WALLY_CORE_API int wally_tx_get_input_script(const struct wally_tx *tx_in, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_script_len(const struct wally_tx *tx_in, size_t index, size_t *written);
+WALLY_CORE_API int wally_tx_get_input_witness_num_items(const struct wally_tx *tx_in, size_t index, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_witness(const struct wally_tx *tx_in, size_t index, size_t wit_index, unsigned char *bytes_out, size_t len, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_witness_len(const struct wally_tx *tx_in, size_t index, size_t wit_index, size_t *written);
 WALLY_CORE_API int wally_tx_get_input_index(const struct wally_tx *tx_in, size_t index, size_t *written);

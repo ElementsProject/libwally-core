@@ -394,6 +394,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_get_input_txhash' \
 ,'_wally_tx_get_input_witness' \
 ,'_wally_tx_get_input_witness_len' \
+,'_wally_tx_get_input_witness_num_items' \
 ,'_wally_tx_get_length' \
 ,'_wally_tx_get_locktime' \
 ,'_wally_tx_get_num_inputs' \
@@ -417,6 +418,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_input_get_txhash' \
 ,'_wally_tx_input_get_witness' \
 ,'_wally_tx_input_get_witness_len' \
+,'_wally_tx_input_get_witness_num_items' \
 ,'_wally_tx_input_init_alloc' \
 ,'_wally_tx_input_set_index' \
 ,'_wally_tx_input_set_script' \

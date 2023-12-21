@@ -1017,6 +1017,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %rename("_tx_get_input_sequence") wally_tx_get_input_sequence;
 %returns_size_t(_tx_get_input_sequence);
 %returns_array_(wally_tx_get_input_txhash, 3, 4, SHA256_LEN);
+%returns_size_t(wally_tx_get_input_witness_num_items);
 %rename("_tx_get_input_witness") wally_tx_get_input_witness;
 %returns_size_t(_tx_get_input_witness);
 %returns_size_t(wally_tx_get_input_witness_len);
@@ -1074,6 +1075,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_tx_input_get_txhash, 2, 3, WALLY_TXHASH_LEN);
 %rename("_tx_input_get_witness") wally_tx_input_get_witness;
 %returns_size_t(_tx_input_get_witness);
+%returns_size_t(wally_tx_input_get_witness_num_items);
 %returns_size_t(wally_tx_input_get_witness_len);
 %returns_struct(wally_tx_input_init_alloc, wally_tx_input);
 %rename("tx_input_init") wally_tx_input_init_alloc;

@@ -3547,6 +3547,16 @@ static int tx_getb_impl(const void *input,
 GET_TX_B_FIXED(tx_input, txhash, WALLY_TXHASH_LEN, WALLY_TXHASH_LEN)
 GET_TX_B(tx_input, script, input->script_len)
 
+int wally_tx_input_get_witness_num_items(const struct wally_tx_input *input, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!is_valid_tx_input(input) || !written)
+        return WALLY_EINVAL;
+    *written = input->witness ? input->witness->num_items : 0;
+    return WALLY_OK;
+}
+
 static const struct wally_tx_witness_item *get_witness_preamble(
     const struct wally_tx_input *input, size_t index, size_t *written)
 {
@@ -3563,7 +3573,7 @@ int wally_tx_input_get_witness(const struct wally_tx_input *input, size_t index,
                                unsigned char *bytes_out, size_t len, size_t *written)
 {
     const struct wally_tx_witness_item *item;
-    if (!bytes_out || !(item = get_witness_preamble(input, index, written)) ||
+    if (!(item = get_witness_preamble(input, index, written)) || !bytes_out ||
         len < item->witness_len)
         return WALLY_EINVAL;
     if (item->witness_len)
@@ -3571,10 +3581,6 @@ int wally_tx_input_get_witness(const struct wally_tx_input *input, size_t index,
     *written = item->witness_len;
     return WALLY_OK;
 }
-
-GET_TX_I(tx_input, index, size_t)
-GET_TX_I(tx_input, sequence, size_t)
-GET_TX_I(tx_input, script_len, size_t)
 
 int wally_tx_input_get_witness_len(const struct wally_tx_input *input,
                                    size_t index, size_t *written)
@@ -3585,6 +3591,10 @@ int wally_tx_input_get_witness_len(const struct wally_tx_input *input,
     *written = item->witness_len;
     return WALLY_OK;
 }
+
+GET_TX_I(tx_input, index, size_t)
+GET_TX_I(tx_input, sequence, size_t)
+GET_TX_I(tx_input, script_len, size_t)
 
 #ifndef WALLY_ABI_NO_ELEMENTS
 GET_TX_B_FIXED(tx_input, blinding_nonce, SHA256_LEN, SHA256_LEN)
@@ -3801,6 +3811,11 @@ TX_GET_B_FIXED(input, txhash)
 TX_GET_I(input, index)
 TX_GET_I(input, sequence)
 
+int wally_tx_get_input_witness_num_items(const struct wally_tx *tx, size_t index, size_t *written)
+{
+    return wally_tx_input_get_witness_num_items(tx_get_input(tx, index), written);
+}
+
 int wally_tx_get_input_witness(const struct wally_tx *tx, size_t index, size_t wit_index, unsigned char *bytes_out, size_t len, size_t *written)
 {
     return wally_tx_input_get_witness(tx_get_input(tx, index), wit_index, bytes_out, len, written);
@@ -3909,7 +3924,6 @@ int wally_tx_set_input_witness(const struct wally_tx *tx, size_t index,
 {
     return wally_tx_input_set_witness(tx_get_input(tx, index), stack);
 }
-
 
 int wally_tx_input_set_script(struct wally_tx_input *input,
                               const unsigned char *script, size_t script_len)

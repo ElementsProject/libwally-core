@@ -67,7 +67,7 @@ class TransactionTests(unittest.TestCase):
                         utf8('ff')+TX_FAKE_HEX[2:],
                         TX_FAKE_HEX,
                         TX_WITNESS_HEX ]:
-            self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, 0 ,tx_out))
+            self.assertEqual(WALLY_OK, wally_tx_from_hex(tx_hex, 0, tx_out))
             hex_ = utf8(self.tx_serialize_hex(tx_out))
             self.assertEqual(tx_hex, hex_)
             # Check the transaction can be cloned and serializes to the same hex
@@ -216,7 +216,6 @@ class TransactionTests(unittest.TestCase):
                                         2, 0xfffffffd, script, script_len, wit, 0)
         self.assertEqual(ret, WALLY_EINVAL) # Invalid index
 
-
     def test_witness(self):
         """Testing functions manipulating witness stacks"""
         witness = wally_tx_witness_stack()
@@ -255,6 +254,29 @@ class TransactionTests(unittest.TestCase):
             (witness, None, expected_len), # output too small
             ]:
             self.assertEqual((WALLY_EINVAL, 0), wally_tx_witness_stack_to_bytes(*args))
+
+        # Witness functions on inputs
+        out, out_len = make_cbuffer('00' * 128)
+        tx = pointer(wally_tx())
+        self.assertEqual(WALLY_OK, wally_tx_from_hex(TX_WITNESS_HEX, 0, tx))
+        for wit_tx, wit_index, expected_len in [
+            (None, 0, 0), # NULL tx
+            (tx,   1, 0), # Invalid input index
+            (tx,   0, 4), # Valid input index
+            ]:
+            # num items
+            ret, num_items = wally_tx_get_input_witness_num_items(wit_tx, wit_index)
+            self.assertEqual(ret, WALLY_OK if expected_len else WALLY_EINVAL)
+            self.assertEqual(num_items, expected_len)
+            item_index = expected_len - 1 if expected_len else 0
+            # item length
+            ret, item_len = wally_tx_get_input_witness_len(wit_tx, wit_index, item_index)
+            self.assertEqual(ret, WALLY_OK if expected_len else WALLY_EINVAL)
+            self.assertTrue(ret == WALLY_EINVAL or item_len > 0)
+            # item
+            ret, item_len = wally_tx_get_input_witness(wit_tx, wit_index, item_index, out, out_len)
+            self.assertEqual(ret, WALLY_OK if expected_len else WALLY_EINVAL)
+            self.assertTrue(ret == WALLY_EINVAL or item_len > 0)
 
         # Round-trip serialization
         def check_witness_to_bytes(w, expected, expected_len):

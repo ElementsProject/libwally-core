@@ -617,6 +617,7 @@ export function tx_get_input_script_len(tx_in: Ref_wally_tx, index: number): num
 export function tx_get_input_sequence(tx_in: Ref_wally_tx, index: number): number;
 export function tx_get_input_txhash(tx_in: Ref_wally_tx, index: number): Buffer;
 export function tx_get_input_witness_len(tx_in: Ref_wally_tx, index: number, wit_index: number): number;
+export function tx_get_input_witness_num_items(tx_in: Ref_wally_tx, index: number): number;
 export function tx_get_length(tx: Ref_wally_tx, flags: number): number;
 export function tx_get_locktime(tx_in: Ref_wally_tx): number;
 export function tx_get_num_inputs(tx_in: Ref_wally_tx): number;
@@ -648,6 +649,7 @@ export function tx_input_get_script_len(tx_input_in: Ref_wally_tx_input): number
 export function tx_input_get_sequence(tx_input_in: Ref_wally_tx_input): number;
 export function tx_input_get_txhash(tx_input_in: Ref_wally_tx_input): Buffer;
 export function tx_input_get_witness_len(tx_input_in: Ref_wally_tx_input, index: number): number;
+export function tx_input_get_witness_num_items(tx_input_in: Ref_wally_tx_input): number;
 export function tx_input_init(txhash: Buffer|Uint8Array, utxo_index: number, sequence: number, script: Buffer|Uint8Array, witness: Ref_wally_tx_witness_stack): Ref_wally_tx_input;
 export function tx_input_set_blinding_nonce(tx_input_in: Ref_wally_tx_input, blinding_nonce: Buffer|Uint8Array): void;
 export function tx_input_set_entropy(tx_input_in: Ref_wally_tx_input, entropy: Buffer|Uint8Array): void;

@@ -6,10 +6,14 @@
 
 - PSBT: Allow extracting partially finalized transactions in `wally_psbt_extract`
   by passing a new `WALLY_PSBT_EXTRACT_OPT_FINAL` flag.
+- Allow getting the number of items in a transactions input witness via
+  `wally_tx_input_get_witness_num_items`/`wally_tx_get_input_witness_num_items`.
 
 ### Changed
 
 ### Fixed
+
+- tx_input_get_witness now correctly returns 0 bytes written if passed a NULL input.
 
 
 ## Version 1.0.0
