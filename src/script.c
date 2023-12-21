@@ -981,7 +981,7 @@ int wally_witness_program_from_bytes_and_version(const unsigned char *bytes, siz
         *written += 1; /* For Witness version byte */
         if (flags & WALLY_SCRIPT_AS_PUSH) {
             *p = *written & 0xff;
-            *written += 1; /* For Witness version byte */
+            *written += 1; /* For Witness push opcode */
         }
     }
     return ret;
