@@ -985,8 +985,8 @@ int wally_psbt_output_get_blinding_status(const struct wally_psbt_output *output
 /* Verify that unblinded values, their commitment, and commitment proof
  * are provided/elided where required, and proofs are valid if provided.
  */
-static bool pset_check_proof(const struct wally_psbt *psbt,
-                             const struct wally_psbt_input *in,
+static bool pset_check_proof(const struct wally_psbt_input *in,
+                             const struct wally_tx_output *utxo,
                              const struct wally_psbt_output *out,
                              uint64_t value_bit,
                              uint64_t commitment_key, uint64_t proof_key, uint32_t flags)
@@ -1017,7 +1017,6 @@ static bool pset_check_proof(const struct wally_psbt *psbt,
      */
     if (is_utxo_value || is_utxo_asset) {
         /* Get explicit value and commitments from the inputs UTXO */
-        const struct wally_tx_output *utxo = utxo_from_input(psbt, in);
         has_value = is_utxo_value && in->has_amount;
         value = in->amount;
         if (utxo) {
@@ -2403,18 +2402,18 @@ unknown:
         /* Commitment key isn't used for PSET_IN_EXPLICIT_VALUE/ASSET */
         const uint64_t unused_key = 0xffffffff;
 
-        /* Explicit values are only valid if we have an input UTXO */
-#define PSET_UTXO_BITS (PSET_FT(PSBT_IN_NON_WITNESS_UTXO) | PSET_FT(PSBT_IN_WITNESS_UTXO))
+        /* Explicit values are only valid if we have an input witness UTXO */
+        const struct wally_tx_output *utxo = result->witness_utxo;
 
-        if (!pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_ISSUANCE_VALUE),
+        if (!pset_check_proof(result, utxo, NULL, PSET_FT(PSET_IN_ISSUANCE_VALUE),
                               PSET_IN_ISSUANCE_VALUE_COMMITMENT,
                               PSET_IN_ISSUANCE_BLIND_VALUE_PROOF, flags) ||
-            !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
+            !pset_check_proof(result, utxo, NULL, PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
                               PSET_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT,
                               PSET_IN_ISSUANCE_BLIND_INFLATION_KEYS_PROOF, flags) ||
-            !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_EXPLICIT_VALUE),
+            !pset_check_proof(result, utxo, NULL, PSET_FT(PSET_IN_EXPLICIT_VALUE),
                               unused_key, PSET_IN_VALUE_PROOF, strict_flags) ||
-            !pset_check_proof(psbt, result, NULL, PSET_FT(PSET_IN_EXPLICIT_ASSET),
+            !pset_check_proof(result, utxo, NULL, PSET_FT(PSET_IN_EXPLICIT_ASSET),
                               unused_key, PSET_IN_ASSET_PROOF, strict_flags))
             ret = WALLY_EINVAL;
     }
@@ -2548,10 +2547,10 @@ unknown:
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
-        if (!pset_check_proof(psbt, NULL, result, PSBT_FT(PSBT_OUT_AMOUNT),
+        if (!pset_check_proof(NULL, NULL, result, PSBT_FT(PSBT_OUT_AMOUNT),
                               PSET_OUT_VALUE_COMMITMENT,
                               PSET_OUT_BLIND_VALUE_PROOF, flags) ||
-            !pset_check_proof(psbt, NULL, result, PSET_FT(PSET_OUT_ASSET),
+            !pset_check_proof(NULL, NULL, result, PSET_FT(PSET_OUT_ASSET),
                               PSET_OUT_ASSET_COMMITMENT,
                               PSET_OUT_BLIND_ASSET_PROOF, flags))
             ret = WALLY_EINVAL;
