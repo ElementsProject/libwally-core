@@ -1,5 +1,17 @@
 # Changes
 
+## Unreleased
+
+### Added
+
+- PSBT: Allow extracting partially finalized transactions in `wally_psbt_extract`
+  by passing a new `WALLY_PSBT_EXTRACT_OPT_FINAL` flag.
+
+### Changed
+
+### Fixed
+
+
 ## Version 1.0.0
 
 This release contains ABI changes; it is not ABI compatibile with prior versions.

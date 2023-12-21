@@ -739,8 +739,20 @@ class PSBTTests(unittest.TestCase):
             # Creating a PSBT from a tx then extracting it should return
             # the same tx
             p = psbt_from_tx(dummy_tx, ver, 0)
-            tx = psbt_extract(p, WALLY_PSBT_EXTRACT_NON_FINAL)
-            self.assertEqual(dummy_tx_hex, tx_to_hex(tx, 0))
+            for flags in [WALLY_PSBT_EXTRACT_NON_FINAL, WALLY_PSBT_EXTRACT_OPT_FINAL]:
+                # dummy_tx isn't finalized, so excluding or optionally
+                # including finalization data both result in the same tx
+                tx = psbt_extract(p, flags)
+                self.assertEqual(dummy_tx_hex, tx_to_hex(tx, 0))
+            # dummy_tx isn't finalized, so EXTRACT_FINAL fails
+            self._throws(psbt_extract, p, WALLY_PSBT_EXTRACT_FINAL)
+            # Set a scriptsig to finalize the input.
+            # We can then extract with EXTRACT_FINAL
+            psbt_set_input_final_scriptsig(p, 0, b'dummy scriptsig')
+            final_tx = psbt_extract(p, WALLY_PSBT_EXTRACT_FINAL)
+            # And EXTRACT_OPT_FINAL gives us the same tx
+            final_opt_tx = psbt_extract(p, WALLY_PSBT_EXTRACT_OPT_FINAL)
+            self.assertEqual(tx_to_hex(final_tx, 0), tx_to_hex(final_opt_tx, 0))
 
 
 if __name__ == '__main__':

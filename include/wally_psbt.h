@@ -34,7 +34,10 @@ extern "C" {
 /** Include redundant information to match some buggy PSBT implementations */
 #define WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT 0x1
 
-#define WALLY_PSBT_EXTRACT_NON_FINAL 0x1 /* Extract without final scriptsig and witness */
+/*** psbt-extract Transaction extraction flags */
+#define WALLY_PSBT_EXTRACT_FINAL     0x0 /* Extract a final transaction; fail if any inputs aren't finalized */
+#define WALLY_PSBT_EXTRACT_NON_FINAL 0x1 /* Extract without any final scriptsig and witness */
+#define WALLY_PSBT_EXTRACT_OPT_FINAL 0x2 /* Extract only final scriptsigs and witnesses that are present (partial finalization) */
 
 #define WALLY_PSBT_FINALIZE_NO_CLEAR 0x1 /* Finalize without clearing redeem/witness scripts etc */
 
@@ -2550,10 +2553,10 @@ WALLY_CORE_API int wally_psbt_finalize_input(
     uint32_t flags);
 
 /**
- * Extract a network transaction from a finalized PSBT.
+ * Extract a network transaction from a partially or fully finalized PSBT.
  *
  * :param psbt: PSBT to extract from.
- * :param flags: Flags controlling signing. Must be 0 or `WALLY_PSBT_EXTRACT_NON_FINAL`.
+ * :param flags: :ref:`psbt-extract` controlling extraction.
  * :param output: Destination for the resulting transaction.
  */
 WALLY_CORE_API int wally_psbt_extract(

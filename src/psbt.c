@@ -4860,6 +4860,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt, uint32_t flags)
     return ret;
 }
 
+#define ALL_EXTRACT_FLAGS (WALLY_PSBT_EXTRACT_NON_FINAL|WALLY_PSBT_EXTRACT_OPT_FINAL)
+
 int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wally_tx **output)
 {
     struct wally_tx *result;
@@ -4869,7 +4871,8 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
 
     OUTPUT_CHECK;
 
-    if (!psbt || flags & ~WALLY_PSBT_EXTRACT_NON_FINAL)
+    if (!psbt || flags & ~ALL_EXTRACT_FLAGS ||
+        (flags & ALL_EXTRACT_FLAGS) == ALL_EXTRACT_FLAGS)
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &result, &is_pset, false)) != WALLY_OK)
@@ -4882,7 +4885,10 @@ int wally_psbt_extract(const struct wally_psbt *psbt, uint32_t flags, struct wal
 
         final_scriptsig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_FINAL_SCRIPTSIG);
 
-        if (!input->final_witness && !final_scriptsig) {
+        if (!input->final_witness && !final_scriptsig &&
+            !(flags & WALLY_PSBT_EXTRACT_OPT_FINAL)) {
+            /* Input isn't finalized, and we haven't opted
+             * in to partial finalization */
             ret = WALLY_EINVAL;
             break;
         }
