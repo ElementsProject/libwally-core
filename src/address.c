@@ -13,11 +13,12 @@ int wally_bip32_key_to_address(const struct ext_key *hdkey, uint32_t flags,
     if (output)
         *output = NULL;
 
-    if (!hdkey || (version & ~0xff) || (flags & ~0xff) || !output)
+    if (!hdkey || (version & ~0xff) || !output)
         return WALLY_EINVAL;
 
-    if (!(flags & (WALLY_ADDRESS_TYPE_P2PKH | WALLY_ADDRESS_TYPE_P2SH_P2WPKH)))
-        return WALLY_EINVAL;
+    if (flags != WALLY_ADDRESS_TYPE_P2PKH &&
+        flags != WALLY_ADDRESS_TYPE_P2SH_P2WPKH)
+        return WALLY_EINVAL; /* Invalid address type */
 
     /* Catch known incorrect combinations of address type and version */
     if ((flags & WALLY_ADDRESS_TYPE_P2PKH && version == WALLY_ADDRESS_VERSION_P2SH_MAINNET) ||
@@ -26,7 +27,7 @@ int wally_bip32_key_to_address(const struct ext_key *hdkey, uint32_t flags,
         (flags & WALLY_ADDRESS_TYPE_P2SH_P2WPKH && version == WALLY_ADDRESS_VERSION_P2PKH_TESTNET))
         return WALLY_EINVAL;
 
-    if (flags == WALLY_ADDRESS_TYPE_P2PKH) {
+    if (flags & WALLY_ADDRESS_TYPE_P2PKH) {
         /* pub_key_hash = ripemd160(sha256(pubkey) */
         address[0] = (unsigned char) version & 0xff;
         if (wally_hash160(hdkey->pub_key, sizeof(hdkey->pub_key), address + 1, HASH160_LEN) != WALLY_OK)
@@ -213,5 +214,4 @@ int wally_scriptpubkey_to_address(const unsigned char *scriptpubkey, size_t scri
     ret = wally_base58_from_bytes(bytes, sizeof(bytes), BASE58_FLAG_CHECKSUM, output);
     wally_clear(bytes, sizeof(bytes));
     return ret;
-
 }

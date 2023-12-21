@@ -99,26 +99,27 @@ class AddressTests(unittest.TestCase):
 
     def do_test_vector(self, vec, path, network):
         key = self.get_test_key(vec, path)
+        is_mainnet = network == NETWORK_BITCOIN_MAINNET
+        p2pkh_ver = (ADDRESS_VERSION_P2PKH_TESTNET, ADDRESS_VERSION_P2PKH_MAINNET)[is_mainnet]
+        p2sh_p2wsh_ver = (ADDRESS_VERSION_P2SH_TESTNET, ADDRESS_VERSION_P2SH_MAINNET)[is_mainnet]
 
-        # Address type flag is mandatory
-        version = ADDRESS_VERSION_P2PKH_MAINNET if network == NETWORK_BITCOIN_MAINNET else ADDRESS_VERSION_P2PKH_TESTNET
-        ret, new_addr = wally_bip32_key_to_address(key, 0, version)
-        self.assertEqual(ret, WALLY_EINVAL)
-
-        # Obtain legacy address (P2PKH)
-        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2PKH, version)
+        # Legacy address (P2PKH)
+        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2PKH, p2pkh_ver)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(new_addr, vec[path]['address_legacy'])
 
-        # Obtain wrapped SegWit address (P2SH_P2WPKH)
-        version = ADDRESS_VERSION_P2SH_MAINNET if network == NETWORK_BITCOIN_MAINNET else ADDRESS_VERSION_P2SH_TESTNET
-        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2SH_P2WPKH, version)
+        # P2SH-wrapped segWit address (P2SH_P2WPKH)
+        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2SH_P2WPKH, p2sh_p2wsh_ver)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(new_addr, vec[path]['address_p2sh_segwit'])
 
-        # wally_bip32_key_to_address does not support bech32 native SegWit (P2WPKH)
-        ret, new_addr = wally_bip32_key_to_address(key, ADDRESS_TYPE_P2WPKH, version)
-        self.assertEqual(ret, WALLY_EINVAL)
+        for bad_args in [
+            (key, 0,                                             p2pkh_ver), # Missing addr type
+            (key, ADDRESS_TYPE_P2WPKH,                           p2pkh_ver), # Native segit unsupported
+            (key, ADDRESS_TYPE_P2PKH | ADDRESS_TYPE_P2SH_P2WPKH, p2pkh_ver), # Multiple addr types
+            ]:
+            ret, new_addr = wally_bip32_key_to_address(*bad_args)
+            self.assertEqual(ret, WALLY_EINVAL)
 
         # Obtain native SegWit address (P2WPKH)
         bech32_prefix = 'bc' if network == NETWORK_BITCOIN_MAINNET else 'tb'
