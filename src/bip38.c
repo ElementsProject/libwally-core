@@ -156,7 +156,7 @@ int bip38_raw_from_private_key(const unsigned char *bytes, size_t bytes_len,
     if (flags & BIP38_KEY_RAW_MODE)
         buf.u.normal.hash = base58_get_checksum(bytes, bytes_len);
     else {
-        const unsigned char network = flags & 0xff;
+        const unsigned char network = flags & BIP38_KEY_NETWORK_MASK;
         char *addr58 = NULL;
         if ((ret = address_from_private_key(bytes, bytes_len,
                                             network, compressed, &addr58)))
@@ -303,7 +303,7 @@ static int to_private_key(const char *bip38,
         if (buf.u.normal.hash != base58_get_checksum(bytes_out, len))
             ret = WALLY_EINVAL;
     } else {
-        const unsigned char network = flags & 0xff;
+        const unsigned char network = flags & BIP38_KEY_NETWORK_MASK;
         char *addr58 = NULL;
         ret = address_from_private_key(bytes_out, len, network,
                                        buf.flags & BIP38_FLAG_COMPRESSED, &addr58);
