@@ -197,9 +197,12 @@ libwallycore_la_INCLUDES = \
     include/wally_transaction_members.h
 
 if SHARED_BUILD_ENABLED
-LT_VER_CURRENT = 2   # increment at every ABI change (whether breaking or non-breaking)
-LT_VER_REVISION = 0  # increment at every release, but reset to 0 at every ABI change
-LT_VER_AGE = 1       # increment at every ABI change, but reset to 0 if breaking
+# Increment at every ABI change (whether breaking or non-breaking)
+LT_VER_CURRENT = 2
+# Increment at every release, but reset to 0 at every ABI change
+LT_VER_REVISION = 0
+# Increment at every ABI change, but reset to 0 if breaking
+LT_VER_AGE = 1
 # The library filename will be "libwallycore.so.$((current-age)).$((age)).$((revision))",
 # and the soname will be "libwallycore.so.$((current-age))".
 # Do NOT try to make the library version-info follow the project release version number!
