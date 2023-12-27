@@ -2401,9 +2401,8 @@ unknown:
         const uint32_t strict_flags = flags | WALLY_PSBT_PARSE_FLAG_STRICT;
         /* Commitment key isn't used for PSET_IN_EXPLICIT_VALUE/ASSET */
         const uint64_t unused_key = 0xffffffff;
-
-        /* Explicit values are only valid if we have an input witness UTXO */
-        const struct wally_tx_output *utxo = result->witness_utxo;
+        /* This works here only for v2+, which is fine since PSET is v2+ */
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, result);
 
         if (!pset_check_proof(result, utxo, NULL, PSET_FT(PSET_IN_ISSUANCE_VALUE),
                               PSET_IN_ISSUANCE_VALUE_COMMITMENT,
