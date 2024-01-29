@@ -52,7 +52,7 @@ for arch in $ARCH_LIST; do
 done
 
 # Copy headers and Java wrapper
-# The andoid release files can be used from Java or in native code
+# The android release files can be used from Java or in native code
 mkdir -p $PWD/release/include $PWD/release/src/swig_java/src/com/blockstream/libwally
 cp $PWD/include/*.h $PWD/release/include
 cp $PWD/src/swig_java/src/com/blockstream/libwally/Wally.java $PWD/release/src/swig_java/src/com/blockstream/libwally
