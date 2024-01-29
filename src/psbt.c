@@ -3470,7 +3470,7 @@ static int merge_value_commitment(struct wally_map *dst_fields, uint64_t *dst_am
         if (ret != WALLY_OK)
             return ret;
         if (!for_clone) {
-            /* Not cloning: clear the amount when we have a committment to it */
+            /* Not cloning: clear the amount when we have a commitment to it */
             *dst_amount = 0;
         }
     }
