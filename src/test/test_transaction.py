@@ -394,7 +394,7 @@ class TransactionTests(unittest.TestCase):
         cases = [
             (None,     len(txhashes), indices, len(indices), out,  out_len), # NULL txhashes
             (txhashes, 0,             indices, len(indices), out,  out_len), # Zero hash len
-            (txhashes, 16,            indices, len(indices), out,  out_len), # Incorect hash len
+            (txhashes, 16,            indices, len(indices), out,  out_len), # Incorrect hash len
             (txhashes, len(txhashes), None,    len(indices), out,  out_len), # NULL indices
             (txhashes, len(txhashes), indices, 0,            out,  out_len), # Zero num indices
             (txhashes, len(txhashes), indices, 1,            out,  out_len), # Num indices != num hashes
