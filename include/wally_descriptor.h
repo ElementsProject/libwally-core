@@ -360,7 +360,7 @@ WALLY_CORE_API int wally_descriptor_to_script(
  * :param multi_index: The multi-path item to generate. See `wally_descriptor_get_num_paths`.
  * :param child_num: The BIP32 child number to derive, or zero for static descriptors.
  * :param flags: For future use. Must be 0.
- * :param output: Destination for the resulting addresss.
+ * :param output: Destination for the resulting address.
  *|    The string returned should be freed using `wally_free_string`.
  */
 WALLY_CORE_API int wally_descriptor_to_address(
