@@ -71,3 +71,12 @@ run_asan_ubsan_gcc:
     - sed -i 's/^JAVA = /JAVA = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
     - ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 make check V=1
+
+run_scan_build_clang:
+  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  tags:
+    - ga
+  script:
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - CC=clang CFLAGS="-O0" scan-build-11 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm
+    - scan-build-11 --keep-cc --exclude src/secp256k1/ make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
