@@ -30,11 +30,8 @@ if [ -n "$1" ]; then
 fi
 
 for arch in $ARCH_LIST; do
-    # Use API level 19 for non-64 bit targets for better device coverage
-    api="19"
-    if [[ $arch == *"64"* ]]; then
-        api="21"
-    fi
+    # Use API level 23
+    api="23"
 
     # Location of the NDK tools to build with
     toolsdir=$(android_get_build_tools_dir)
