@@ -16,4 +16,4 @@ current_version=$(grep -oP 'AC_INIT\(\[libwallycore\],\[\K[^\]]+' configure.ac)
 
 
 # Calling build_wrappers.py is also necessary to update the wasm functions.js file.
-# This is handled by update_generated.sh and by the wasm package build script.
+# This is handled by update_generated.sh which calls this script.
