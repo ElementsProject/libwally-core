@@ -2,7 +2,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 build_wally_release_files:
-  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
+  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
   artifacts:
     expire_in: 7 days
     name: wallycore-bindings
@@ -36,7 +36,7 @@ build_wally_release_files:
     - rmdir wally_dist
 
 build_mingw_static:
-  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
+  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
   tags:
     - ga
   script:
@@ -45,7 +45,7 @@ build_mingw_static:
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 run_tests:
-  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
+  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
   tags:
     - ga
   artifacts:
