@@ -13,6 +13,7 @@ find . -name "__pycache__" -exec rm -rf {} 2>/dev/null \;
 
 rm -f */*~
 rm -f *~
+rm -f a.*
 rm -f aclocal.m4
 rm -rf build/
 rm -f config.h.in
@@ -34,6 +35,9 @@ rm -f src/swig_python/wallycore/__init__.py*
 rm -f src/swig_python/swig_python_wrap.c
 rm -rf src/.libs
 rm -f src/secp256k1/build-aux/ltmain.sh-e
+rm -f src/secp256k1/a.*
+rm -rf src/wasm_package/browser-dist/
+rm -f src/wasm_package/wallycore*.tgz
 rm -f tools/build-aux/ar-lib
 rm -f tools/build-aux/compile
 rm -f tools/build-aux/config.guess
