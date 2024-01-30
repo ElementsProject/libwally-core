@@ -27,7 +27,7 @@ jobs:
       - run: sudo contrib/bullseye_deps.sh -j -n -w
 
       # Build NPM package into a tgz file (pack internally triggers the build/prepare script)
-      - run: cd src/wasm_package && npm install && npm pack --foreground-scripts
+      - run: cd src/wasm_package && npm ci && npm pack --foreground-scripts
         name: Build & Pack
 
       # Report the SHA256 digest of the final package. This should be deterministic (including generated WASM),
