@@ -3,7 +3,7 @@
 # build from this directory with e.g:
 #     DOCKER_BUILDKIT=1 docker build . -t greenaddress/wallycore -f Dockerfile_bullseye
 #
-FROM debian:bullseye@sha256:d0bf7d85ad1e61ab3520b1d22d1e2a136799defd4e0d1e3f998d3b9045f38551
+FROM debian:bullseye@sha256:71cb300d5448af821aedfe63afd55ba05f45a6a79f00dcd131b96b780bb99fe4
 WORKDIR /root
 COPY bullseye_deps.sh ./deps.sh
 COPY requirements.txt ./contrib/requirements.txt
