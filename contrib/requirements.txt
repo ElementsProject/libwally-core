@@ -1,7 +1,7 @@
 build
-sphinx<2
-sphinx-rtd-theme<0.5
-readthedocs-sphinx-ext<2.2
-docutils<0.18
-mkdocs==1.2.3
-jinja2==3.0.0
+sphinx
+sphinx-rtd-theme
+readthedocs-sphinx-ext
+docutils
+mkdocs
+jinja2
