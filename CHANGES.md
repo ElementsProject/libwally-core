@@ -1,5 +1,16 @@
 # Changes
 
+## Unreleased
+
+### Added
+
+### Changed
+
+- Javascript: The npm build now uses nodejs 20, as nodejs 16 is end-of-life.
+
+### Fixed
+
+
 ## Version 1.1.0
 
 ### Added

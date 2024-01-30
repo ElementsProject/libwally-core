@@ -52,10 +52,17 @@ if [ -z "$skip_ndk" ]; then
 fi
 
 if [ -z "$skip_emsdk" ]; then
+    # Install node 20
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt install nodejs -yqq
+    # Install emsdk
     git clone https://github.com/emscripten-core/emsdk
     cd emsdk
-    ./emsdk install 3.1.27
-    ./emsdk activate 3.1.27
+    ./emsdk install 3.1.52
+    ./emsdk activate 3.1.52
+    # Force emsdk to use the installed node version instead of its own
+    sed -i "s/^NODE_JS = .*$/NODE_JS = 'node'/g" /opt/emsdk/.emscripten
+    # Make emsdk commands available
     source ./emsdk_env.sh
 fi
 
