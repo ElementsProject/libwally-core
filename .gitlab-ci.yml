@@ -59,3 +59,15 @@ run_tests:
     - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do LD_LIBRARY_PATH=./src/.libs/ valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --xml=yes --xml-file=$t.xml $t; done
     - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do valgrind-codequality --input-file $t.xml --output-file $t.json; done
     - jq '[.[]|.[]]' -s ./src/.libs/test_*.json > valgrind.json
+
+run_asan_ubsan_gcc:
+  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  tags:
+    - ga
+  script:
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - CC=gcc CFLAGS="-O1 -fsanitize=address -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java --enable-shared --disable-static --disable-clear-tests --disable-asm
+    - sed -i 's/^PYTHON = /PYTHON = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
+    - sed -i 's/^JAVA = /JAVA = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
+    - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+    - ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 make check V=1
