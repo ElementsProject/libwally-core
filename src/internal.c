@@ -434,7 +434,9 @@ char *wally_strdup_n(const char *str, size_t str_len)
 {
     char *new_str = (char *)wally_malloc(str_len + 1);
     if (new_str) {
-        memcpy(new_str, str, str_len);
+        if (str_len) {
+            memcpy(new_str, str, str_len);
+        }
         new_str[str_len] = '\0';
     }
     return new_str;

@@ -75,7 +75,7 @@ int wally_aes_len(const unsigned char *key, size_t key_len,
                   const unsigned char *bytes, size_t bytes_len,
                   uint32_t flags, size_t *written)
 {
-    if (!written)
+    if (written)
         *written = 0;
     if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
         !bytes_len || bytes_len % AES_BLOCK_LEN || !written)

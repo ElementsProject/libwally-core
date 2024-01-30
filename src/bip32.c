@@ -149,7 +149,7 @@ static int path_from_str_n(const char *str, size_t str_len,
             if (multi < multi_index && i == start + 1)
                 goto fail; /* No number found */
         }
-        while (str[i] >= '0' && str[i] <= '9' && i < str_len) {
+        while (i < str_len && str[i] >= '0' && str[i] <= '9') {
             v = v * 10 + (str[i] - '0');
             if (v >= BIP32_INITIAL_HARDENED_CHILD)
                 goto fail; /* Derivation index too large */
@@ -185,7 +185,7 @@ static int path_from_str_n(const char *str, size_t str_len,
             ++i;
             v = child_num; /* Use the given child number for the wildcard value */
         }
-        if (is_hardened_indicator(str[i], allow_upper, features)) {
+        if (i < str_len && is_hardened_indicator(str[i], allow_upper, features)) {
             v |= BIP32_INITIAL_HARDENED_CHILD;
             ++i;
         }
