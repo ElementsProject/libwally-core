@@ -158,7 +158,7 @@ the Android NDK. The script `tools/android_helpers.sh` can be sourced from
 the shell or scripts to make it easier to produce builds:
 
 ```
-$ export ANDROID_NDK=/opt/android-ndk-r23b # r22 is the minimum supported version
+$ export ANDROID_NDK=/opt/android-ndk-r26b # r22 is the minimum supported version
 $ . ./tools/android_helpers.sh
 
 $ android_get_arch_list

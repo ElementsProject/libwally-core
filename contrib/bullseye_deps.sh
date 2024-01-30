@@ -45,8 +45,8 @@ pip3 install valgrind-codequality -r contrib/requirements.txt
 pushd /opt
 
 if [ -z "$skip_ndk" ]; then
-    curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-r23b-linux.zip
-    echo "c6e97f9c8cfe5b7be0a9e6c15af8e7a179475b7ded23e2d1c1fa0945d6fb4382 ndk.zip" | sha256sum --check
+    curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-r26b-linux.zip
+    echo "ad73c0370f0b0a87d1671ed2fd5a9ac9acfd1eb5c43a7fbfbd330f85d19dd632  ndk.zip" | shasum -a 256 -c
     unzip ndk.zip
     rm ndk.zip
 fi
