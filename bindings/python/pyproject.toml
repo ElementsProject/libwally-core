@@ -1,0 +1,49 @@
+[build-system]
+requires = [
+    "wheel",
+    "setuptools",
+    "setuptools_scm",
+    "cmake_build_extension",
+]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = 'wallycore'
+authors = [{name = "Jon Griffiths", email = "jon_p_griffiths@yahoo.com"}]
+description = 'libwally Bitcoin library'
+readme = "README.md"
+keywords = ['Bitcoin', 'wallet', 'BIP32', 'BIP38', 'BIP39', 'secp256k1']
+license = {file = 'LICENSE'}
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Libraries',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+]
+dynamic = ["version"]
+
+
+[project.urls]
+repository = 'https://github.com/ElementsProject/libwally-core'
+documentation = 'https://wally.readthedocs.io/en/latest'
+tracker = 'https://github.com/ElementsProject/libwally-core/issues'
+
+
+[tool.setuptools]
+zip-safe = false
+
+
+[tool.setuptools.dynamic]
+version = {file = "wallycore._version.py"}
+
+
+[tool.setuptools_scm]
+write_to = "_version.py"
+root = "../.."
+tag_regex = "release_(.*)"
