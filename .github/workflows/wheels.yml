@@ -42,7 +42,7 @@ jobs:
           platforms: arm64
 
       - name: Build Wheels
-        uses: pypa/cibuildwheel@v2.14
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_SKIP: "cp3{5..7}-* cp3{6..11}-win32* cp3{6..11}-musllinux_aarch64* pp*"
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
