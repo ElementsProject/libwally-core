@@ -15,10 +15,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2019, macos-11]
+        os: [ubuntu-22.04, windows-2019, macos-14]
     env:
       CIBW_BEFORE_ALL_LINUX: yum install -y swig || apk add swig
-      CIBW_BEFORE_ALL_MACOS: brew install gnu-sed swig automake
+      CIBW_BEFORE_ALL_MACOS: brew install gnu-sed swig automake libtool
       CIBW_BEFORE_ALL_WINDOWS: choco install swig --version=3.0.12 --no-progress --allow-downgrade -y
       CIBW_BEFORE_BUILD_WINDOWS: .\tools\msvc\swig.bat
       CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair --only-plat -w {dest_dir} {wheel}
