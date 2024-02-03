@@ -11,7 +11,7 @@ if [ ! -f "src/secp256k1/Makefile.am" ]; then
 fi
 
 if [ -z "$ANDROID_NDK" ]; then
-    export ANDROID_NDK=$(dirname `which ndk-build 2>/dev/null`)
+    export ANDROID_NDK=$(dirname `command -v ndk-build 2>/dev/null`)
 fi
 echo ${ANDROID_NDK:?}
 if [ -z "$JAVA_HOME" ]; then
