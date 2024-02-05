@@ -410,6 +410,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_get_weight' \
 ,'_wally_tx_get_witness_count' \
 ,'_wally_tx_init_alloc' \
+,'_wally_tx_input_clone' \
+,'_wally_tx_input_clone_alloc' \
 ,'_wally_tx_input_free' \
 ,'_wally_tx_input_get_index' \
 ,'_wally_tx_input_get_script' \

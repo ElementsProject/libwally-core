@@ -684,6 +684,8 @@ for f in (
     ('wally_tx_get_weight', c_int, [POINTER(wally_tx), c_size_t_p]),
     ('wally_tx_get_witness_count', c_int, [POINTER(wally_tx), c_size_t_p]),
     ('wally_tx_init_alloc', c_int, [c_uint32, c_uint32, c_size_t, c_size_t, POINTER(POINTER(wally_tx))]),
+    ('wally_tx_input_clone', c_int, [POINTER(wally_tx_input), POINTER(wally_tx_input)]),
+    ('wally_tx_input_clone_alloc', c_int, [POINTER(wally_tx_input), POINTER(POINTER(wally_tx_input))]),
     ('wally_tx_input_free', c_int, [POINTER(wally_tx_input)]),
     ('wally_tx_input_init_alloc', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, POINTER(wally_tx_witness_stack), POINTER(POINTER(wally_tx_input))]),
     ('wally_tx_is_coinbase', c_int, [POINTER(wally_tx), c_size_t_p]),

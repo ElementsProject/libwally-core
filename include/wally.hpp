@@ -1872,6 +1872,18 @@ inline int tx_init_alloc(uint32_t version, uint32_t locktime, size_t inputs_allo
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class TX_INPUT_IN>
+inline int tx_input_clone(const TX_INPUT_IN& tx_input_in, struct wally_tx_input* input) {
+    int ret = ::wally_tx_input_clone(detail::get_p(tx_input_in), input);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class TX_INPUT_IN>
+inline int tx_input_clone_alloc(const TX_INPUT_IN& tx_input_in, struct wally_tx_input** input) {
+    int ret = ::wally_tx_input_clone_alloc(detail::get_p(tx_input_in), input);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 inline int tx_input_free(struct wally_tx_input* input) {
     int ret = ::wally_tx_input_free(input);
     return detail::check_ret(__FUNCTION__, ret);

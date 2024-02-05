@@ -637,6 +637,8 @@ export function tx_get_vsize(tx: Ref_wally_tx): number;
 export function tx_get_weight(tx: Ref_wally_tx): number;
 export function tx_get_witness_count(tx: Ref_wally_tx): number;
 export function tx_init(version: number, locktime: number, inputs_allocation_len: number, outputs_allocation_len: number): Ref_wally_tx;
+export function tx_input_clone(tx_input_in: Ref_wally_tx_input): Ref_wally_tx_input;
+export function tx_input_clone_noalloc(tx_input_in: Ref_wally_tx_input, input: Ref_wally_tx_input): void;
 export function tx_input_free(input: Ref_wally_tx_input): void;
 export function tx_input_get_blinding_nonce(tx_input_in: Ref_wally_tx_input): Buffer;
 export function tx_input_get_entropy(tx_input_in: Ref_wally_tx_input): Buffer;

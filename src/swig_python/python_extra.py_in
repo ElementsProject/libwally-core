@@ -235,6 +235,7 @@ tx_get_output_script = _wrap_bin(tx_get_output_script, tx_get_output_script_len)
 tx_get_signature_hash = _wrap_bin(tx_get_signature_hash, SHA256_LEN)
 tx_get_txid = _wrap_bin(tx_get_txid, WALLY_TXHASH_LEN)
 tx_init = tx_init_alloc
+tx_input_clone = tx_input_clone_alloc
 tx_input_get_script = _wrap_bin(tx_input_get_script, tx_input_get_script_len)
 tx_input_get_txhash = _wrap_bin(tx_input_get_txhash, WALLY_TXHASH_LEN)
 tx_input_get_witness = _wrap_bin(tx_input_get_witness, tx_input_get_witness_len)

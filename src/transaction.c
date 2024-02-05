@@ -357,9 +357,8 @@ int wally_tx_witness_stack_set_dummy(struct wally_tx_witness_stack *stack,
     return wally_tx_witness_stack_set(stack, index, p, len);
 }
 
-static bool clone_input_to(
-    struct wally_tx_input *dst,
-    const struct wally_tx_input *src)
+int wally_tx_input_clone(const struct wally_tx_input *src,
+                         struct wally_tx_input *output)
 {
     unsigned char *new_script = NULL;
 #ifdef BUILD_ELEMENTS
@@ -368,6 +367,9 @@ static bool clone_input_to(
     struct wally_tx_witness_stack *new_pegin_witness = NULL;
 #endif
     struct wally_tx_witness_stack *new_witness = NULL;
+
+    if (!src || !output)
+        return WALLY_EINVAL;
 
     if (src->witness)
         wally_tx_witness_stack_clone_alloc(src->witness, &new_witness);
@@ -394,20 +396,36 @@ static bool clone_input_to(
         wally_tx_witness_stack_free(new_pegin_witness);
 #endif
         wally_tx_witness_stack_free(new_witness);
-        return false;
+        return WALLY_ENOMEM;
     }
 
-    memcpy(dst, src, sizeof(*src));
-    dst->script = new_script;
+    memcpy(output, src, sizeof(*src));
+    output->script = new_script;
 #ifdef BUILD_ELEMENTS
-    dst->issuance_amount = new_issuance_amount;
-    dst->inflation_keys = new_inflation_keys;
-    dst->issuance_amount_rangeproof = new_issuance_amount_rangeproof;
-    dst->inflation_keys_rangeproof = new_inflation_keys_rangeproof;
-    dst->pegin_witness = new_pegin_witness;
+    output->issuance_amount = new_issuance_amount;
+    output->inflation_keys = new_inflation_keys;
+    output->issuance_amount_rangeproof = new_issuance_amount_rangeproof;
+    output->inflation_keys_rangeproof = new_inflation_keys_rangeproof;
+    output->pegin_witness = new_pegin_witness;
 #endif
-    dst->witness = new_witness;
-    return true;
+    output->witness = new_witness;
+    return WALLY_OK;
+}
+
+int wally_tx_input_clone_alloc(const struct wally_tx_input *src,
+                               struct wally_tx_input **output)
+{
+    int ret;
+
+    OUTPUT_CHECK;
+    OUTPUT_ALLOC(struct wally_tx_input);
+
+    ret = wally_tx_input_clone(src, *output);
+    if (ret != WALLY_OK) {
+        wally_free(*output);
+        *output = NULL;
+    }
+    return ret;
 }
 
 static int tx_elements_input_issuance_proof_init(
@@ -1214,6 +1232,8 @@ int wally_tx_free(struct wally_tx *tx)
 int wally_tx_add_input_at(struct wally_tx *tx, uint32_t index,
                           const struct wally_tx_input *input)
 {
+    int ret;
+
     if (!is_valid_tx(tx) || index > tx->num_inputs || !is_valid_tx_input(input))
         return WALLY_EINVAL;
 
@@ -1233,10 +1253,10 @@ int wally_tx_add_input_at(struct wally_tx *tx, uint32_t index,
     memmove(tx->inputs + index + 1, tx->inputs + index,
             (tx->num_inputs - index) * sizeof(*input));
 
-    if (!clone_input_to(tx->inputs + index, input)) {
+    if ((ret = wally_tx_input_clone(input, tx->inputs + index)) != WALLY_OK) {
         memmove(tx->inputs + index, tx->inputs + index + 1,
                 (tx->num_inputs - index) * sizeof(*input)); /* Undo */
-        return WALLY_ENOMEM;
+        return ret;
     }
 
     tx->num_inputs += 1;

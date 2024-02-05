@@ -295,6 +295,28 @@ WALLY_CORE_API int wally_tx_input_init_alloc(
     struct wally_tx_input **output);
 
 /**
+ * Create a new copy of a transaction input.
+ *
+ * :param tx_input_in: The transaction input to clone.
+ * :param input: Destination for the resulting transaction input copy.
+ */
+WALLY_CORE_API int wally_tx_input_clone_alloc(
+    const struct wally_tx_input *tx_input_in,
+    struct wally_tx_input **input);
+
+/**
+ * Create a new copy of a transaction input in place.
+ *
+ * :param tx_input_in: The transaction input to clone.
+ * :param input: Destination for the resulting transaction input copy.
+ *
+ * .. note:: ``input`` is overwritten in place, and not cleared first.
+ */
+WALLY_CORE_API int wally_tx_input_clone(
+    const struct wally_tx_input *tx_input_in,
+    struct wally_tx_input *input);
+
+/**
  * Free a transaction input allocated by `wally_tx_input_init_alloc`.
  *
  * :param input: The transaction input to free.
