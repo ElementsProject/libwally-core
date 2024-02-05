@@ -80,3 +80,32 @@ run_scan_build_clang:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CC=clang CFLAGS="-O0" scan-build-11 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm
     - scan-build-11 --keep-cc --exclude src/secp256k1/ make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+
+cmake-test-wally:
+  image: greenaddress/wallycore@sha256:21112c3d05f0f541a43636bb5c7e1826292f9c66fca0b68546b963adac4fc4c3
+  tags:
+    - ga
+  script:
+    - mv _cmake cmake
+    - mv _CMakeLists.txt CMakeLists.txt
+    - mv src/_CMakeLists.txt src/CMakeLists.txt
+    - mv src/ctest/_CMakeLists.txt src/ctest/CMakeLists.txt
+    - cmake -B build-cmake -S .
+      -DBUILD_SHARED_LIBS:BOOL=FALSE
+      -DCMAKE_BUILD_TYPE:STRING=Debug
+      -DWALLYCORE_ENABLE_TESTS:BOOL=TRUE
+      -DWALLYCORE_ENABLE_COVERAGE:BOOL=TRUE
+    - cmake --build build-cmake
+    #- ctest --test-dir build-cmake --output-junit report.xml --output-on-failure -E "test_(clear|elements_tx)"
+    - cd build-cmake
+    - ctest --output-on-failure -E "test_(clear|elements_tx)"
+    - cd -
+    - pip install gcovr
+    - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
+  coverage: /^\s*lines:\s*\d+.\d+\%/
+  artifacts:
+    reports:
+      # junit: build-cmake/report.xml # junit report generation not available in cmake 3.18
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
