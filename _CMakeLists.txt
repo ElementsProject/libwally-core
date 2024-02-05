@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.18)
 
 project(
   libwallycore
@@ -8,54 +8,41 @@ project(
 )
 
 option(BUILD_SHARED_LIBS "Build as shared library" OFF)
-
+option(WALLYCORE_ENABLE_TESTS "Build tests" OFF)
+option(WALLYCORE_INSTALL "Enable install" OFF)
+option(WALLYCORE_COVERAGE "Enable coverage" OFF)
 
 include(cmake/utils.cmake)
 generate_config_file()
 configure_file(src/ccan_config.h ccan_config.h COPYONLY)
 
-include(cmake/libsecp256k1.cmake)
+# libsec256k1-zkp
+set(SECP256K1_ENABLE_MODULE_ECDH ON)
+set(SECP256K1_ENABLE_MODULE_RECOVERY ON)
+set(SECP256K1_ENABLE_MODULE_EXTRAKEYS ON)
+set(SECP256K1_ENABLE_MODULE_SCHNORRSIG ON)
+set(SECP256K1_ENABLE_MODULE_ELLSWIFT OFF)
+set(SECP256K1_ENABLE_MODULE_GENERATOR ON)
+set(SECP256K1_ENABLE_MODULE_RANGEPROOF ON)
+set(SECP256K1_ENABLE_MODULE_SURJECTIONPROOF ON)
+set(SECP256K1_ENABLE_MODULE_WHITELIST ON)
+set(SECP256K1_ENABLE_MODULE_MUSIG OFF)
+set(SECP256K1_ENABLE_MODULE_ECDSA_ADAPTOR OFF)
+set(SECP256K1_ENABLE_MODULE_ECDSA_S2C ON)
+set(SECP256K1_ENABLE_MODULE_BPPP OFF)
+set(SECP256K1_BUILD_BENCHMARK OFF)
+set(SECP256K1_BUILD_TESTS OFF)
+set(SECP256K1_BUILD_EXHAUSTIVE_TESTS OFF)
+set(SECP256K1_BUILD_CTIME_TESTS OFF)
+set(SECP256K1_BUILD_EXAMPLES OFF)
+set(SECP256K1_INSTALL ${WALLYCORE_INSTALL})
+add_subdirectory(./src/secp256k1/)
 
-add_subdirectory(src)
+add_subdirectory(./src)
 
+if(NOT WALLYCORE_ENABLE_TESTS)
+    return()
+endif()
 
-### install directives
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-
-set(LIB_CMAKE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/wallycore)
-
-configure_package_config_file(
-    ${CMAKE_SOURCE_DIR}/cmake/wallycore-config.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/wallycore-config.cmake"
-    INSTALL_DESTINATION ${LIB_CMAKE_INSTALL_DIR}
-    PATH_VARS LIB_CMAKE_INSTALL_DIR
-)
-write_basic_package_version_file(
-    wallycore-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-install(
-    FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/wallycore-config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/wallycore-config-version.cmake"
-    DESTINATION
-        ${LIB_CMAKE_INSTALL_DIR}
-)
-install(
-    TARGETS wallycore
-    EXPORT "wallycore-target"
-    COMPONENT wallycore
-    RUNTIME EXCLUDE_FROM_ALL
-    OBJECTS EXCLUDE_FROM_ALL
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-install(EXPORT "wallycore-target"
-    DESTINATION ${LIB_CMAKE_INSTALL_DIR}
-    NAMESPACE wallycore::
-    FILE "wallycore-targets.cmake"
-)
-
+enable_testing()
+add_subdirectory(src/ctest)
