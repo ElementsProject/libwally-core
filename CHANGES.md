@@ -1,14 +1,28 @@
 # Changes
 
-## Unreleased
+## Version 1.2.0
 
 ### Added
+
+- Python: Add Python 3.12 wheels to the binary releases/PyPI.
+- tx: expose `wally_tx_input_clone`/`wally_tx_input_clone` for input cloning.
+- Build: Add new static analysis CI runs.
 
 ### Changed
 
 - Javascript: The npm build now uses nodejs 20, as nodejs 16 is end-of-life.
+- Android: Update android NDK to version 26b.
+- libsecp256k1-zkp: The library has been updated to include the latest
+  changes to its cmake infrastructure.
+- cmake: Now takes advantage of the new libsecp256k1-zkp cmake files to build
+  experimental modules and export the project in cmake style. cmake now also
+  builds test and collects coverage data.
 
 ### Fixed
+
+- Build: Don't use `which` on Debian as it is now deprecated.
+- Various bug fixes from static analysis.
+- Various build and documentation fixes.
 
 
 ## Version 1.1.0
