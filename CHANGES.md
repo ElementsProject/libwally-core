@@ -12,6 +12,11 @@
 
 - Javascript: The npm build now uses nodejs 20, as nodejs 16 is end-of-life.
 - Android: Update android API level to 23
+- libsecp256k1-zkp: the library has been updated to include the latest changes to
+  its cmake infrastructure
+- cmake build infrastructure now takes advantage of new libsecp256k1-zkp cmake
+  files to build experimental modules and export the project in cmake style. cmake
+  now also builds test and collects coverage data
 
 ### Fixed
 
