@@ -1154,7 +1154,7 @@ static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
     if ((version != PSBT_0 && version != PSBT_2) || !psbt_out)
         return WALLY_EINVAL; /* Only v0/v2 are specified/supported */
     if (num_inputs > TX_MAX_INPUTS || num_outputs > TX_MAX_OUTPUTS)
-        return WALLY_EINVAL; /* Resulting tx could not fit in a block */
+        return WALLY_EINVAL; /* Resulting tx would be non-standard */
 #ifdef BUILD_ELEMENTS
     if (flags & ~WALLY_PSBT_INIT_PSET ||
         (flags & WALLY_PSBT_INIT_PSET && version != PSBT_2))
