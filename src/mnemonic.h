@@ -33,4 +33,20 @@ int mnemonic_to_bytes(
     size_t len,
     size_t *written);
 
+/**
+ * Convert a mnemonic representation into a block of bytes. Accepts unique prefixes of wordlist words.
+ *
+ * @w: List of words.
+ * @mnemonic: Mnemonic sentence to store.
+ * @bytes_out: Where to store the converted representation.
+ * @len: The length of @bytes_out in bytes.
+ * @written: Destination for the number of bytes written.
+ */
+int mnemonic_prefix_to_bytes(
+    const struct words *w,
+    const char *mnemonic,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
 #endif /* LIBWALLY_MNEMONIC_H */
