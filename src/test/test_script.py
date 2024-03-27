@@ -95,6 +95,16 @@ class ScriptTests(unittest.TestCase):
             ret = wally_scriptpubkey_get_type(out, ret[1])
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_OP_RETURN))
 
+        # Some scripts are considered op_return but they cannot be created with
+        # wally_scriptpubkey_op_return_from_bytes and they might not be standard
+        for script_hex in [
+            '6a',
+            '6a6a',
+        ]:
+            script, script_len = make_cbuffer(script_hex)
+            ret, typ = wally_scriptpubkey_get_type(script, script_len)
+            self.assertEqual((ret, typ), (WALLY_OK, SCRIPT_TYPE_OP_RETURN))
+
     def test_scriptpubkey_p2pkh_from_bytes(self):
         """Tests for creating p2pkh scriptPubKeys"""
         # Invalid args

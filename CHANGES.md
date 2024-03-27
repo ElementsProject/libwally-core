@@ -1,5 +1,11 @@
 # Changes
 
+## Unreleased
+
+### Fixed
+- wally_scriptpubkey_get_type: mark all scripts starting with OP_RETURN as
+  WALLY_SCRIPT_TYPE_OP_RETURN.
+
 ## Version 1.2.0
 
 ### Added
