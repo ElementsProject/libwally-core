@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2019, macos-14]
+        os: [ubuntu-22.04, windows-2022, macos-14]
     env:
       CIBW_BEFORE_ALL_LINUX: yum install -y swig || apk add swig
       CIBW_BEFORE_ALL_MACOS: brew install gnu-sed swig automake libtool
@@ -26,7 +26,7 @@ jobs:
       SWIG_PATH: "C:\\ProgramData\\chocolatey\\lib\\swig\\tools\\install\\swigwin-3.0.12"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
