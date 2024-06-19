@@ -16,6 +16,8 @@ file(
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     "*.[ch]"
 )
+list(REMOVE_ITEM ccan_srcs ccan/ccan/crypto/sha256/sha256_sse4.c)
+message("ccan_srcs: ${ccan_srcs}")
 file(
     GLOB wallycore_public_headers
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
