@@ -98,7 +98,7 @@ cmake-test:
     - cmake --build build-cmake
     #- ctest --test-dir build-cmake --output-junit report.xml --output-on-failure -E "test_(clear|elements_tx)"
     - cd build-cmake
-    - ctest --output-on-failure -E "test_(clear|elements_tx)"
+    - ctest --output-on-failure
     - cd -
     - pip install gcovr
     - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
