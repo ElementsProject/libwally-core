@@ -3002,9 +3002,9 @@ static int push_psbt_input(const struct wally_psbt *psbt,
     /* Non witness utxo */
     if (input->utxo) {
         push_psbt_key(cursor, max, PSBT_IN_NON_WITNESS_UTXO, NULL, 0);
-        if ((ret = push_length_and_tx(cursor, max,
-                                      input->utxo,
-                                      WALLY_TX_FLAG_USE_WITNESS)) != WALLY_OK)
+        /* Note we don't serialize witness data for input UTXOs */
+        ret = push_length_and_tx(cursor, max, input->utxo, 0);
+        if (ret != WALLY_OK)
             return ret;
     }
 
