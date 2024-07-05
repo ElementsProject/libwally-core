@@ -151,29 +151,49 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(self.to_base64(psbt), case['result'])
             wally_psbt_free(psbt)
 
-    def do_sign(self, b64, wifs, expected=WALLY_OK):
+    def roundtrip(self, psbt, expected=None):
+        b64_out = self.to_base64(psbt)
+        if expected:
+            self.maxDiff = None
+            self.assertEqual(b64_out, expected)
+        wally_psbt_free(psbt)
+        psbt = self.parse_base64(b64_out)
+        self.assertEqual(b64_out, self.to_base64(psbt))
+        wally_psbt_free(psbt)
+        return b64_out
+
+    def do_sign(self, case):
+        expected = case.get('result', None)
+        expected_ret = WALLY_OK if expected else WALLY_EINVAL
         priv_key, priv_key_len = make_cbuffer('00'*32)
-        psbt = self.parse_base64(b64)
-        for wif in wifs:
+        psbt = self.parse_base64(case['psbt'])
+        for wif in case['privkeys']:
             self.assertEqual(WALLY_OK, wally_wif_to_bytes(wif, 0xEF, 0, priv_key, priv_key_len))
-            self.assertEqual(expected, wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R))
-        return psbt
+            self.assertEqual(expected_ret, wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R))
+        # Check that we can roundtrip the signed PSBT (some bugs only appear here)
+        b64_out = self.roundtrip(psbt, expected)
+
+        if expected and case.get('master_xpriv', None):
+            # Test signing with the master extended private key.
+            # Note we cannot check for equality with the explicit private keys
+            # since the PSBTs contain multiple keys from the same master,
+            # and only some of them are given as explicit private keys.
+            key_out = POINTER(ext_key)()
+            ret = bip32_key_from_base58_alloc(case['master_xpriv'], byref(key_out))
+            self.assertEqual(ret, WALLY_OK)
+            psbt = self.parse_base64(case['psbt'])
+            ret = wally_psbt_sign_bip32(psbt, key_out, 0x4)
+            b64_out = self.roundtrip(psbt)
+            self.assertNotEqual(b64_out, case['psbt']) # Inputs have been signed
+            bip32_key_free(key_out)
 
     def test_signer_role(self):
         """Test the PSBT signer role"""
         for case in JSON['signer']:
-            psbt = self.do_sign(case['psbt'], case['privkeys'])
-
-            # Check that we can roundtrip the signed PSBT (some bugs only appear here)
-            b64_out = self.to_base64(psbt)
-            wally_psbt_free(psbt)
-            psbt = self.parse_base64(b64_out)
-            self.assertEqual(case['result'], b64_out)
-            wally_psbt_free(psbt)
+            self.do_sign(case)
 
         for case in JSON['invalid_signer']:
-            psbt = self.do_sign(case['psbt'], case['privkeys'], WALLY_EINVAL)
-            wally_psbt_free(psbt)
+            self.do_sign(case)
 
     def test_finalizer_role(self):
         """Test the PSBT finalizer role"""
