@@ -4572,7 +4572,7 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         if (ret == WALLY_OK)
             ret = wally_psbt_sign_input_bip32(psbt, i, subindex,
                                               txhash, sizeof(txhash),
-                                              hdkey, flags);
+                                              derived, flags);
         bip32_key_free(derived);
     }
 
