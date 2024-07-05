@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- PSBT: Do not serialize witness data for input non-witness UTXOs, in
+  order to match the current behaviour of Bitcoin core.
+
 ### Fixed
 - wally_scriptpubkey_get_type: mark all scripts starting with OP_RETURN as
   WALLY_SCRIPT_TYPE_OP_RETURN.
