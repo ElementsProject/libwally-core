@@ -8,7 +8,9 @@
   order to match the current behaviour of Bitcoin core.
 
 ### Fixed
-- wally_scriptpubkey_get_type: mark all scripts starting with OP_RETURN as
+- psbt_sign_bip32: Fix signing with parent/master keys. Only already-derived
+  keys would result in signed inputs previously.
+- wally_scriptpubkey_get_type: Mark all scripts starting with OP_RETURN as
   WALLY_SCRIPT_TYPE_OP_RETURN.
 
 ## Version 1.2.0
