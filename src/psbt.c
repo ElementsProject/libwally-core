@@ -5271,6 +5271,8 @@ int wally_psbt_is_elements(const struct wally_psbt *psbt, size_t *written)
         return WALLY_EINVAL;
 
     *written = memcmp(psbt->magic, PSET_MAGIC, sizeof(PSET_MAGIC)) ? 0 : 1;
+    if (*written && psbt->version != PSBT_2)
+        return WALLY_EINVAL; /* PSET must be v2 */
     return WALLY_OK;
 }
 
