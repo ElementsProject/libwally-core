@@ -10,6 +10,7 @@
 ### Fixed
 - psbt_sign_bip32: Fix signing with parent/master keys. Only already-derived
   keys would result in signed inputs previously.
+- PSET: Allow generating explicit proofs for inputs with only a non-witness UTXO.
 - wally_scriptpubkey_get_type: Mark all scripts starting with OP_RETURN as
   WALLY_SCRIPT_TYPE_OP_RETURN.
 
