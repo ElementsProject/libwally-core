@@ -127,21 +127,27 @@ static struct wally_psbt_output *psbt_get_output(const struct wally_psbt *psbt, 
     return &psbt->outputs[index];
 }
 
+/* Get the witness or non-witness utxo from an input.
+ * If psbt is NULL then the PSBT must be version 2.
+ */
 static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *psbt,
                                                      const struct wally_psbt_input *input)
 {
-    if (psbt && input) {
+    if (input) {
         if (input->witness_utxo)
             return input->witness_utxo;
         if (input->utxo) {
-            if (psbt->version == PSBT_2 && input->index < input->utxo->num_outputs)
-                return &input->utxo->outputs[input->index];
-            if (psbt->tx && psbt->num_inputs == psbt->tx->num_inputs) {
-                /* Get the UTXO output index from the global tx */
+            if (psbt && psbt->tx && psbt->num_inputs == psbt->tx->num_inputs) {
+                /* V0: Get the UTXO output index from the global tx */
                 size_t input_index = input - psbt->inputs;
                 size_t output_index = psbt->tx->inputs[input_index].index;
                 if (output_index < input->utxo->num_outputs)
                     return &input->utxo->outputs[output_index];
+            }
+            if ((!psbt || psbt->version == PSBT_2)) {
+                if (input->index < input->utxo->num_outputs &&
+                    !mem_is_zero(input->txhash, WALLY_TXHASH_LEN))
+                return &input->utxo->outputs[input->index];
             }
         }
     }
@@ -699,7 +705,7 @@ int wally_psbt_input_generate_explicit_proofs(
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    const struct wally_tx_output *utxo = input ? input->witness_utxo : 0;
+    const struct wally_tx_output *utxo = utxo_from_input(NULL, input);
     unsigned char proof[ASSET_SURJECTIONPROOF_MAX_LEN]; /* > ASSET_EXPLICIT_RANGEPROOF_MAX_LEN */
     size_t proof_len;
     int ret;
@@ -5664,12 +5670,19 @@ int wally_psbt_generate_input_explicit_proofs(
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
-    return wally_psbt_input_generate_explicit_proofs(psbt_get_input(psbt, index), satoshi,
-                                                     asset, asset_len,
-                                                     abf, abf_len,
-                                                     vbf, vbf_len,
-                                                     entropy, entropy_len);
+    size_t is_pset;
+    int ret = wally_psbt_is_elements(psbt, &is_pset);
+    if (ret != WALLY_OK || !is_pset) {
+        ret = WALLY_EINVAL;
+    } else {
+        struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+        ret = wally_psbt_input_generate_explicit_proofs(inp, satoshi,
+                                                        asset, asset_len,
+                                                        abf, abf_len,
+                                                        vbf, vbf_len,
+                                                        entropy, entropy_len);
+    }
+    return ret;
 #endif
 }
 #endif /* WALLY_ABI_NO_ELEMENTS */

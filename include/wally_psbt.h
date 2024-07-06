@@ -1230,7 +1230,7 @@ WALLY_CORE_API int wally_psbt_input_clear_utxo_rangeproof(
     struct wally_psbt_input *input);
 
 /**
- * Generate explicit proofs and unblinded values from an inputs witness UTXO.
+ * Generate explicit proofs and unblinded values from an inputs UTXO.
  *
  * :param input: The input to generate proofs for.
  * :param satoshi: The explicit value of the input.
@@ -1245,6 +1245,9 @@ WALLY_CORE_API int wally_psbt_input_clear_utxo_rangeproof(
  *
  * .. note:: This function exposes the unblinded asset and value in the PSET,
  *           which is only appropriate in certain multi-party protocols.
+ * .. note:: This function can only be called on v2 PSETs. It is strongly
+ *           recommended to use `wally_psbt_generate_input_explicit_proofs`
+ *           which ensures this, instead of this function.
  */
 WALLY_CORE_API int wally_psbt_input_generate_explicit_proofs(
     struct wally_psbt_input *input,
