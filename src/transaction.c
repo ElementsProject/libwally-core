@@ -2807,7 +2807,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         *expect_witnesses = false;
 
     if (!bytes || bytes_len < sizeof(uint32_t) + 2 || (flags & ~WALLY_TX_ALL_FLAGS) ||
-        !num_inputs || !num_outputs || !expect_witnesses)
+        !num_inputs || !num_outputs || !expect_witnesses || p > end)
         return WALLY_EINVAL;
 
     p += uint32_from_le_bytes(p, &tmp_tx.version);
@@ -2826,7 +2826,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         }
     }
 
-#define ensure_n(n) if (p > end || p + (n) > end) return WALLY_EINVAL
+#define ensure_n(n) if ((n) > (size_t)(end - p)) return WALLY_EINVAL
 
 #define ensure_varint(dst) ensure_n(varint_length_from_bytes(p)); \
     p += varint_from_bytes(p, (dst))
