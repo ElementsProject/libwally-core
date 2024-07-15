@@ -688,6 +688,29 @@ class BIP32Tests(unittest.TestCase):
         self.assertEqual(bip32_key_get_fingerprint(child, buf, buf_len), WALLY_OK)
         self.assertEqual(h(buf), b'f09cb160')
 
+    def test_tweak(self):
+        _, is_elements = wally_is_elements_build()
+        if not is_elements:
+            return
+        pub, priv = get_test_master_key(vec_1), get_test_master_key(vec_1)
+        self.assertEqual(bip32_key_strip_private_key(pub), WALLY_OK)
+
+        path_1 = self.path_to_c([1])
+        tweak_1 = '6505fd0f948587ff19ecb8d9b3892125897eb445e28e0ba23086a888daeb00aa'
+        for flags, expected in [
+            (FLAG_KEY_PUBLIC,                      '00' * 32),
+            (FLAG_KEY_PUBLIC | FLAG_KEY_TWEAK_SUM, tweak_1)
+        ]:
+            pub_out, priv_out = ext_key(), ext_key()
+            for parent, key_out in [ (pub, pub_out), (priv, priv_out) ]:
+                ret = bip32_key_from_parent(byref(parent), 1, flags, byref(key_out))
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(h(key_out.pub_key_tweak_sum), utf8(expected))
+                ret = bip32_key_from_parent_path(byref(parent), path_1, 1,
+                                                 flags, byref(key_out))
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(h(key_out.pub_key_tweak_sum), utf8(expected))
+
 
 if __name__ == '__main__':
     unittest.main()
