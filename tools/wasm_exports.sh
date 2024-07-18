@@ -354,6 +354,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_script_push_from_bytes' \
 ,'_wally_scriptpubkey_csv_2of2_then_1_from_bytes' \
 ,'_wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt' \
+,'_wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1' \
 ,'_wally_scriptpubkey_get_type' \
 ,'_wally_scriptpubkey_multisig_from_bytes' \
 ,'_wally_scriptpubkey_op_return_from_bytes' \

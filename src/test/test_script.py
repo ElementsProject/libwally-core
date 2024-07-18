@@ -228,16 +228,20 @@ class ScriptTests(unittest.TestCase):
 
     def test_scriptpubkey_csv_2of2_then_1_from_bytes(self):
         """Tests for creating csv 2of2 then 1 scriptPubKeys"""
+        pk = '21' + '11'*33
+        make_csv = lambda b: '748c63' + pk + 'ad67' + b + 'b27568' + pk + 'ac'
+        make_opt = lambda b: pk + 'ad' + pk + 'ac7364' + b + 'b268'
+
         # Invalid args
         out, out_len = make_cbuffer('00' * 33 * 3)
         invalid_args = [
-            (None, MPK_2_LEN, 1, 0, out, out_len), # Null bytes
-            (MPK_2, 0, 1, 0, out, out_len), # Empty bytes
-            (MPK_2, MPK_2_LEN+1, 1, 0, out, out_len), # Unsupported bytes len
-            (MPK_2, MPK_2_LEN, 16, 0, out, out_len), # Too few csv blocks
-            (MPK_2, MPK_2_LEN, 0x10000, 0, out, out_len), # Too many csv blocks
-            (MPK_2, MPK_2_LEN, 1, SCRIPT_HASH160, out, out_len), # Unsupported flags
-            (MPK_2, MPK_2_LEN, 1, 0, None, out_len), # Null output
+            (None,  MPK_2_LEN,   1,       0,   out,  out_len), # Null bytes
+            (MPK_2, 0,           1,       0,   out,  out_len), # Empty bytes
+            (MPK_2, MPK_2_LEN+1, 1,       0,   out,  out_len), # Unsupported bytes len
+            (MPK_2, MPK_2_LEN,   16,      0,   out,  out_len), # Too few csv blocks
+            (MPK_2, MPK_2_LEN,   0x10000, 0,   out,  out_len), # Too many csv blocks
+            (MPK_2, MPK_2_LEN,   1,       0x1, out,  out_len), # Unsupported flags
+            (MPK_2, MPK_2_LEN,   1,       0,   None, out_len), # Null output
         ]
         for args in invalid_args:
             for fn in [wally_scriptpubkey_csv_2of2_then_1_from_bytes,
@@ -246,35 +250,39 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            [(MPK_2, MPK_2_LEN, 17, 0, out, out_len), '748c6321'+'11'*33+'ad670111b2756821'+'11'*33+'ac'],
-            [(MPK_2, MPK_2_LEN, 0x8000, 0, out, out_len), '748c6321'+'11'*33+'ad6703008000b2756821'+'11'*33+'ac'],
+            ((MPK_2, MPK_2_LEN, 17,    0, out, out_len), '0111'),     # 17
+            ((MPK_2, MPK_2_LEN, 65535, 0, out, out_len), '03ffff00'), # 65535
         ]
-        for args, exp_script in valid_args:
-            # Un-optimized CSV
-            csv_len = 1 + (args[2] > 0x7f) + (args[2] > 0x7fff)
-            script_len = 2 * (33 + 1) + 9 + 1 + csv_len
-            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*args)
-            self.assertEqual(ret, (WALLY_OK, script_len))
-            # Check type
-            ret = wally_scriptpubkey_get_type(out, script_len)
-            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_CSV2OF2_1))
+        for args, csv_blocks in valid_args:
+            for fn, make_fn, typ in [
+                (wally_scriptpubkey_csv_2of2_then_1_from_bytes,
+                 make_csv,  SCRIPT_TYPE_CSV2OF2_1),
+                (wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt,
+                 make_opt, SCRIPT_TYPE_CSV2OF2_1_OPT)
+            ]:
+                # Check script creation
+                exp_script = make_fn(csv_blocks)
+                ret, written = fn(*args)
+                self.assertEqual((ret, written), (WALLY_OK, len(exp_script) // 2))
+                self.assertEqual(out[:written].hex(), exp_script)
+                # Check type
+                ret = wally_scriptpubkey_get_type(out, written)
+                self.assertEqual(ret, (WALLY_OK, typ))
+                # Check CSV blocks
+                ret = wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1(out, written)
+                self.assertEqual(ret, (WALLY_OK, args[2]))
+                # Check a too-short output buffer
+                args = args[:-1] + (written - 1,)
+                ret = fn(*args)
+                self.assertEqual(ret, (WALLY_OK, written))
 
-            # Optimized CSV (miniscript-compatible)
-            exp_script, _ = make_cbuffer(exp_script)
-            self.assertEqual(args[4][:script_len], exp_script)
-            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*args)
-            self.assertEqual(ret, (WALLY_OK, script_len - 3))
-            ret = wally_scriptpubkey_get_type(out, script_len - 3)
-            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_CSV2OF2_1_OPT))
-
-            # Check a too-short output buffer
-            short_out, short_out_len = make_cbuffer('00' * (script_len - 1))
-            short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len)
-            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes(*short_args)
-            self.assertEqual(ret, (WALLY_OK, script_len))
-            short_args = (args[0], args[1], args[2], args[3], short_out, short_out_len - 3)
-            ret = wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt(*short_args)
-            self.assertEqual(ret, (WALLY_OK, script_len - 3))
+        # Check invalid args for scriptpubkey_csv_blocks_from_csv_2of2_then_1
+        for args in [
+            (None, 1), # NULL script
+            (out,  0)  # Empty script
+        ]:
+            ret = wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
 
     def test_scriptsig_p2pkh(self):
         """Tests for creating p2pkh scriptsig"""

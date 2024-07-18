@@ -1630,6 +1630,12 @@ inline int scriptpubkey_csv_2of2_then_1_from_bytes_opt(const BYTES& bytes, uint3
 }
 
 template <class BYTES>
+inline int scriptpubkey_csv_blocks_from_csv_2of2_then_1(const BYTES& bytes, uint32_t* value_out) {
+    int ret = ::wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1(bytes.data(), bytes.size(), value_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
 inline int scriptpubkey_get_type(const BYTES& bytes, size_t* written) {
     int ret = ::wally_scriptpubkey_get_type(bytes.data(), bytes.size(), written);
     return detail::check_ret(__FUNCTION__, ret);

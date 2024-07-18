@@ -191,6 +191,34 @@ size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out)
     return len;
 }
 
+int64_t scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *value_out)
+{
+    int64_t mask = 0x80;
+    size_t i;
+
+    if (value_out)
+        *value_out = 0;
+
+    /* Note we only allow up to 4 byte script ints.
+     * This function is intended for parsing scripts, not evaluating them
+     * (which can use intermediate 5 byte script int stack values).
+     */
+    if (!bytes || len < 1 || len <= bytes[0] || bytes[0] > 4 || !value_out)
+        return WALLY_EINVAL;
+
+    for (i = 0; i < bytes[0]; ++i) {
+        *value_out |= (int64_t)(bytes[i + 1]) << (8 * i);
+        mask <<= 8;
+    }
+
+    if (bytes[i] & 0x80) {
+        /* Negative number */
+        *value_out ^= (mask >> 8);
+        *value_out = -*value_out;
+    }
+    return WALLY_OK;
+}
+
 static size_t get_commitment_len(const unsigned char *bytes,
                                  unsigned char prefixA, unsigned char prefixB)
 {
@@ -364,11 +392,13 @@ static bool scriptpubkey_is_multisig(const unsigned char *bytes, size_t bytes_le
     return bytes_len == 2;
 }
 
-static bool scriptpubkey_is_csv_2of2_then_1(const unsigned char *bytes, size_t bytes_len)
+static bool scriptpubkey_is_csv_2of2_then_1(const unsigned char *bytes, size_t bytes_len,
+                                            uint32_t* csv_blocks)
 {
     const size_t min_len = 9 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 2;
-    size_t csv_len;
+    int64_t blocks;
 
+    *csv_blocks = 0;
     if (bytes_len < min_len || bytes_len > min_len + 2)
         return false;
     if (bytes[0] != OP_DEPTH || bytes[1] != OP_1SUB ||
@@ -376,20 +406,31 @@ static bool scriptpubkey_is_csv_2of2_then_1(const unsigned char *bytes, size_t b
         bytes[EC_PUBLIC_KEY_LEN + 4] != OP_CHECKSIGVERIFY ||
         bytes[EC_PUBLIC_KEY_LEN + 5] != OP_ELSE)
         return false;
-    csv_len = bytes[EC_PUBLIC_KEY_LEN + 6];
-    if (csv_len < 1 || csv_len > 4 || bytes_len != min_len - 1 + csv_len)
+    bytes += EC_PUBLIC_KEY_LEN + 6;
+    bytes_len -= EC_PUBLIC_KEY_LEN + 6;
+    if (scriptint_from_bytes(bytes, bytes_len, &blocks) != WALLY_OK)
         return false;
-    bytes += EC_PUBLIC_KEY_LEN + 6 + 1 + csv_len;
-    return bytes[0] == OP_CHECKSEQUENCEVERIFY && bytes[1] == OP_DROP &&
-        bytes[2] == OP_ENDIF && bytes[3] == EC_PUBLIC_KEY_LEN &&
-        bytes[EC_PUBLIC_KEY_LEN + 4] == OP_CHECKSIG;
+    if (blocks < 17 || blocks > 65535)
+        return false;
+    bytes_len -= bytes[0] + 1;
+    bytes += bytes[0] + 1;
+    if (bytes_len < 3 + (EC_PUBLIC_KEY_LEN + 1) + 1)
+        return false;
+    if (bytes[0] != OP_CHECKSEQUENCEVERIFY || bytes[1] != OP_DROP ||
+        bytes[2] != OP_ENDIF || bytes[3] != EC_PUBLIC_KEY_LEN ||
+        bytes[EC_PUBLIC_KEY_LEN + 4] != OP_CHECKSIG)
+        return false;
+    *csv_blocks = (uint32_t)blocks;
+    return true;
 }
 
-static bool scriptpubkey_is_csv_2of2_then_1_opt(const unsigned char *bytes, size_t bytes_len)
+static bool scriptpubkey_is_csv_2of2_then_1_opt(const unsigned char *bytes, size_t bytes_len,
+                                                uint32_t* csv_blocks)
 {
     const size_t min_len = 6 + 2 * (EC_PUBLIC_KEY_LEN + 1) + 2;
-    size_t csv_len;
+    int64_t blocks;
 
+    *csv_blocks = 0;
     if (bytes_len < min_len || bytes_len > min_len + 2)
         return false;
     if (bytes[0] != EC_PUBLIC_KEY_LEN ||
@@ -397,18 +438,42 @@ static bool scriptpubkey_is_csv_2of2_then_1_opt(const unsigned char *bytes, size
         bytes[EC_PUBLIC_KEY_LEN + 2] != EC_PUBLIC_KEY_LEN)
         return false;
     bytes += EC_PUBLIC_KEY_LEN * 2 + 3;
+    bytes_len -= EC_PUBLIC_KEY_LEN * 2 + 3;
     if (bytes[0] != OP_CHECKSIG || bytes[1] != OP_IFDUP || bytes[2] != OP_NOTIF)
         return false;
-    csv_len = bytes[3];
-    if (csv_len < 1 || csv_len > 4 || bytes_len != min_len - 1 + csv_len)
+    bytes += 3;
+    bytes_len -= 3;
+    if (scriptint_from_bytes(bytes, bytes_len, &blocks) != WALLY_OK)
         return false;
-    bytes += 4 + csv_len;
-    return bytes[0] == OP_CHECKSEQUENCEVERIFY && bytes[1] == OP_ENDIF;
+    if (blocks < 17 || blocks > 65535)
+        return false;
+    bytes_len -= bytes[0] + 1;
+    bytes += bytes[0] + 1;
+    if (bytes_len != 2 || bytes[0] != OP_CHECKSEQUENCEVERIFY || bytes[1] != OP_ENDIF)
+        return false;
+    *csv_blocks = (uint32_t)blocks;
+    return true;
+}
+
+int wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1(
+    const unsigned char *bytes, size_t bytes_len, uint32_t *value_out)
+{
+    if (value_out)
+        *value_out = 0;
+    if (!bytes || !bytes_len || !value_out)
+        return WALLY_EINVAL;
+    if (scriptpubkey_is_csv_2of2_then_1(bytes, bytes_len, value_out) ||
+        scriptpubkey_is_csv_2of2_then_1_opt(bytes, bytes_len, value_out))
+        return WALLY_OK;
+    /* Not a CSV script, or CSV blocks out of bounds */
+    return WALLY_EINVAL;
 }
 
 int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
                                 size_t *written)
 {
+    uint32_t csv_blocks;
+
     if (written)
         *written = WALLY_SCRIPT_TYPE_UNKNOWN;
 
@@ -425,12 +490,12 @@ int wally_scriptpubkey_get_type(const unsigned char *bytes, size_t bytes_len,
         return WALLY_OK;
     }
 
-    if (scriptpubkey_is_csv_2of2_then_1(bytes, bytes_len)) {
+    if (scriptpubkey_is_csv_2of2_then_1(bytes, bytes_len, &csv_blocks)) {
         *written = WALLY_SCRIPT_TYPE_CSV2OF2_1;
         return WALLY_OK;
     }
 
-    if (scriptpubkey_is_csv_2of2_then_1_opt(bytes, bytes_len)) {
+    if (scriptpubkey_is_csv_2of2_then_1_opt(bytes, bytes_len, &csv_blocks)) {
         *written = WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT;
         return WALLY_OK;
     }

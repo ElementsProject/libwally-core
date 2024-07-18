@@ -595,6 +595,7 @@ export const s2c_sig_from_bytes = wrap('wally_s2c_sig_from_bytes', [T.Bytes, T.B
 export const script_push_from_bytes = wrap('wally_script_push_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, script_push_from_bytes_len, true)]);
 export const scriptpubkey_csv_2of2_then_1_from_bytes = wrap('wally_scriptpubkey_csv_2of2_then_1_from_bytes', [T.Bytes, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, scriptpubkey_csv_2of2_then_1_from_bytes_len, true)]);
 export const scriptpubkey_csv_2of2_then_1_from_bytes_opt = wrap('wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt', [T.Bytes, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, scriptpubkey_csv_2of2_then_1_from_bytes_opt_len, true)]);
+export const scriptpubkey_csv_blocks_from_csv_2of2_then_1 = wrap('wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1', [T.Bytes, T.DestPtr(T.Int32)]);
 export const scriptpubkey_get_type = wrap('wally_scriptpubkey_get_type', [T.Bytes, T.DestPtr(T.Int32)]);
 export const scriptpubkey_multisig_from_bytes = wrap('wally_scriptpubkey_multisig_from_bytes', [T.Bytes, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, scriptpubkey_multisig_from_bytes_len, true)]);
 export const scriptpubkey_op_return_from_bytes = wrap('wally_scriptpubkey_op_return_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN, true)]);
