@@ -4743,6 +4743,7 @@ static bool finalize_multisig(struct wally_psbt_input *input,
                                                 sigs, n_found * EC_SIGNATURE_LEN,
                                                 sighashes, n_found, 0,
                                                 script, sizeof(script), &script_len) != WALLY_OK ||
+            script_len > sizeof(script) ||
             wally_psbt_input_set_final_scriptsig(input, script, script_len) != WALLY_OK)
             goto fail;
     }
@@ -4765,6 +4766,79 @@ static bool finalize_p2tr(struct wally_psbt_input *input)
         return false;
 
     return true;
+}
+
+static bool is_input_csv_expired(const struct wally_psbt_input *input, uint32_t blocks)
+{
+    if (input->sequence & ((1 << 31) | (1 << 22)))
+        return false; /* Locktime opt-out enabled, or time-based lock */
+    /* Note we don't mask out the locktime value, because we don't want to
+     * finalize inputs if a soft-fork we don't know about has changed the
+     * meaning of locktime extra bits in a way we don't understand.
+     */
+    return blocks <= input->sequence;
+}
+
+static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
+                               struct wally_psbt_input *input,
+                               const unsigned char *out_script, size_t out_script_len,
+                               bool is_witness, bool is_p2sh, bool is_optimized)
+{
+    const struct wally_map_item *sig_1, *sig_2, empty = { 0 };
+    const unsigned char *pk_1, *pk_2;
+    const uint32_t tx_version = psbt->tx ? psbt->tx->version : psbt->tx_version;
+    uint32_t blocks;
+    bool is_expired;
+
+    if (!is_witness)
+        return false; /* Only supported for segwit inputs */
+
+    if (wally_scriptpubkey_csv_blocks_from_csv_2of2_then_1(out_script, out_script_len,
+                                                           &blocks) != WALLY_OK)
+        return false;
+
+    is_expired = tx_version >= 2 && is_input_csv_expired(input, blocks);
+
+    if (is_optimized) {
+        pk_1 = out_script + 1;
+        pk_2 = out_script + 1 + EC_PUBLIC_KEY_LEN + 1 + 1;
+    } else {
+        pk_1 = out_script + 4;
+        pk_2 = out_script + out_script_len - 1 - EC_PUBLIC_KEY_LEN;
+        if (is_expired) {
+            pk_1 = pk_2;
+        }
+    }
+
+    sig_1 = wally_map_get(&input->signatures, pk_1, EC_PUBLIC_KEY_LEN);
+    if (is_expired) {
+        sig_2 = &empty; /* Expired, spend with an empty witness element */
+    } else {
+        sig_2 = wally_map_get(&input->signatures, pk_2, EC_PUBLIC_KEY_LEN);
+    }
+
+    if (!sig_1 || !sig_2)
+        return false; /* Missing required signature(s) */
+
+    if (is_optimized) {
+        /* Swap the order of the sigs */
+        const struct wally_map_item *tmp = sig_1;
+        sig_1 = sig_2;
+        sig_2 = tmp;
+    }
+
+    if (wally_tx_witness_stack_init_alloc(3, &input->final_witness) != WALLY_OK)
+        return false;
+
+    if (wally_tx_witness_stack_add(input->final_witness, sig_1->value, sig_1->value_len) == WALLY_OK &&
+        wally_tx_witness_stack_add(input->final_witness, sig_2->value, sig_2->value_len) == WALLY_OK &&
+        wally_tx_witness_stack_add(input->final_witness, out_script, out_script_len) == WALLY_OK) {
+        if (!is_p2sh || finalize_p2sh_wrapped(input))
+            return true;
+    }
+    wally_tx_witness_stack_free(input->final_witness);
+    input->final_witness = NULL;
+    return false;
 }
 
 int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t flags)
@@ -4834,6 +4908,13 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
         break;
     case WALLY_SCRIPT_TYPE_P2TR:
         if (!finalize_p2tr(input))
+            return WALLY_OK;
+        break;
+    case WALLY_SCRIPT_TYPE_CSV2OF2_1:
+    case WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT:
+        if (!finalize_csv2of2_1(psbt, input, out_script, out_script_len,
+                                is_witness, is_p2sh,
+                                type == WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT))
             return WALLY_OK;
         break;
     default:
