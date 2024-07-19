@@ -5,6 +5,7 @@
 ### Added
 
 - script: Add support for fetching the CSV block count for Green CSV scripts.
+- psbt_finalize: Add support for finalizing Green CSV inputs.
 
 ### Changed
 
