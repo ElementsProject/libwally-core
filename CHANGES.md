@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- script: Add support for fetching the CSV block count for Green CSV scripts.
+
 ### Changed
 
 - PSBT: Do not serialize witness data for input non-witness UTXOs, in
