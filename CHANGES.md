@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## Version 1.3.0
 
 ### Added
 

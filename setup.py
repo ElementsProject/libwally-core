@@ -170,7 +170,7 @@ wally_ext = Extension(
 
 kwargs = {
     'name': 'wallycore',
-    'version': '1.2.0',
+    'version': '1.3.0',
     'description': 'libwally Bitcoin library',
     'long_description': 'Python bindings for the libwally Bitcoin library',
     'url': 'https://github.com/ElementsProject/libwally-core',

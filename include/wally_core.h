@@ -30,9 +30,9 @@ extern "C" {
 
 /** Library version */
 #define WALLY_MAJOR_VER 1
-#define WALLY_MINOR_VER 2
+#define WALLY_MINOR_VER 3
 #define WALLY_PATCH_VER 0
-#define WALLY_BUILD_VER 0x10200
+#define WALLY_BUILD_VER 0x10300
 
 /**
  * Initialize wally.
