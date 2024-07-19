@@ -4289,10 +4289,6 @@ static int get_scriptcode(const struct wally_psbt *psbt, size_t index,
     if (inp->utxo) {
         /* Non-segwit input */
         unsigned char txid[WALLY_TXHASH_LEN];
-        size_t is_pset;
-
-        if (wally_psbt_is_elements(psbt, &is_pset) != WALLY_OK || is_pset)
-            return WALLY_EINVAL; /* Elements doesn't support pre-segwit txs */
 
         ret = wally_psbt_get_input_previous_txid(psbt, index, txid, sizeof(txid));
         if (ret != WALLY_OK || !is_matching_txid(inp->utxo, txid, sizeof(txid)))
@@ -4407,13 +4403,13 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     sig_flags = inp->witness_utxo ? WALLY_TX_FLAG_USE_WITNESS : 0;
 
     if (is_pset) {
-        if (!inp->witness_utxo)
-            return WALLY_EINVAL; /* Must be segwit */
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
+        if (!utxo)
+            return WALLY_EINVAL; /* Prevout is required */
 #ifdef BUILD_ELEMENTS
         return wally_tx_get_elements_signature_hash(tx, index,
                                                     script, script_len,
-                                                    inp->witness_utxo->value,
-                                                    inp->witness_utxo->value_len,
+                                                    utxo->value, utxo->value_len,
                                                     sighash, sig_flags, bytes_out,
                                                     len);
 #else
