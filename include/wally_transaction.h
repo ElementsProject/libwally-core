@@ -874,6 +874,20 @@ WALLY_CORE_API int wally_tx_is_coinbase(
 
 #ifndef WALLY_ABI_NO_ELEMENTS
 /**
+ * Calculate any applicable transaction weight discount for an Elements transaction.
+ *
+ * :param tx: The transaction to compute the weight discount for.
+ * :param flags: Unused, must be 0.
+ * :param written: Destination for the weight discount.
+ *
+ * .. note:: The discount may be 0 if the transaction has no confidential outputs.
+ */
+WALLY_CORE_API int wally_tx_get_elements_weight_discount(
+    const struct wally_tx *tx,
+    uint32_t flags,
+    size_t *written);
+
+/**
  * Set issuance data on an input.
  *
  * :param input: The input to add to.

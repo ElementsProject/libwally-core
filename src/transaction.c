@@ -1965,6 +1965,49 @@ int wally_tx_get_vsize(const struct wally_tx *tx, size_t *written)
     return ret;
 }
 
+#ifndef WALLY_ABI_NO_ELEMENTS
+int wally_tx_get_elements_weight_discount(const struct wally_tx *tx,
+                                          uint32_t flags, size_t *written)
+{
+    size_t i, n = 0, is_elements = 0;
+
+    if (written)
+        *written = 0;
+
+    if (!tx || flags || !written)
+        return WALLY_EINVAL;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+
+    if (is_elements) {
+        /* ELIP 0200: Compute the value of confidential outputs as though
+         * they are non-confidential */
+        for (i = 0; i < tx->num_outputs; ++i) {
+            const struct wally_tx_output *output = tx->outputs + i;
+            /* Discount any output proofs */
+            n += varbuff_get_length(output->surjectionproof_len);
+            n += varbuff_get_length(output->rangeproof_len);
+            n -= 2; /* Add 2 bytes to serialize empty proofs */
+            if (output->value_len == WALLY_TX_ASSET_CT_VALUE_LEN) {
+                /* Discount confidential value to an explicit value */
+                n += WALLY_TX_ASSET_CT_VALUE_LEN;
+                n -= WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN;
+            }
+            if (output->nonce_len == WALLY_TX_ASSET_CT_NONCE_LEN) {
+                /* Discount nonce commitment to an empty commitment */
+                n += WALLY_TX_ASSET_CT_NONCE_LEN;
+                n -= 1; /* Add a byte for the empty commitment */
+            }
+        }
+    }
+    *written = n;
+#endif
+    return WALLY_OK;
+}
+#endif /* WALLY_ABI_NO_ELEMENTS */
+
 static int hash_prevouts(unsigned char *prevouts, size_t inputs_size,
                          unsigned char *bytes_out, size_t len, bool do_free)
 {

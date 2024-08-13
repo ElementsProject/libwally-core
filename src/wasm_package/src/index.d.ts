@@ -606,6 +606,7 @@ export function tx_from_hex(hex: string, flags: number): Ref_wally_tx;
 export function tx_get_btc_signature_hash(tx: Ref_wally_tx, index: number, script: Buffer|Uint8Array, satoshi: bigint, sighash: number, flags: number): Buffer;
 export function tx_get_btc_taproot_signature_hash(tx: Ref_wally_tx, index: number, scripts: Ref_wally_map, values: BigUint64Array|Array<bigint>, tapleaf_script: Buffer|Uint8Array, key_version: number, codesep_position: number, annex: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
 export function tx_get_elements_signature_hash(tx: Ref_wally_tx, index: number, script: Buffer|Uint8Array, value: Buffer|Uint8Array, sighash: number, flags: number): Buffer;
+export function tx_get_elements_weight_discount(tx: Ref_wally_tx, flags: number): number;
 export function tx_get_hash_prevouts(tx: Ref_wally_tx, index: number, num_inputs: number): Buffer;
 export function tx_get_input_blinding_nonce(tx_in: Ref_wally_tx, index: number): Buffer;
 export function tx_get_input_entropy(tx_in: Ref_wally_tx, index: number): Buffer;

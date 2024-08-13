@@ -3103,6 +3103,12 @@ inline int tx_get_elements_signature_hash(const TX& tx, size_t index, const SCRI
 }
 
 template <class TX>
+inline int tx_get_elements_weight_discount(const TX& tx, uint32_t flags, size_t* written) {
+    int ret = ::wally_tx_get_elements_weight_discount(detail::get_p(tx), flags, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class TX>
 inline int tx_is_elements(const TX& tx, size_t* written) {
     int ret = ::wally_tx_is_elements(detail::get_p(tx), written);
     return detail::check_ret(__FUNCTION__, ret);

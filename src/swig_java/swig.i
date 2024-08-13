@@ -997,6 +997,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_tx_get_btc_signature_hash, 8, 9, SHA256_LEN);
 %returns_array_(wally_tx_get_btc_taproot_signature_hash, 14, 15, SHA256_LEN);
 %returns_array_(wally_tx_get_elements_signature_hash, 9, 10, SHA256_LEN);
+%returns_size_t(wally_tx_get_elements_weight_discount);
 %returns_array_(wally_tx_get_hash_prevouts, 4, 5, SHA256_LEN);
 %returns_array_(wally_tx_get_input_blinding_nonce, 3, 4, SHA256_LEN);
 %returns_array_(wally_tx_get_input_entropy, 3, 4, SHA256_LEN);

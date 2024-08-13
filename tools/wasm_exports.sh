@@ -761,6 +761,7 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_tx_elements_output_init' \
 ,'_wally_tx_elements_output_init_alloc' \
 ,'_wally_tx_get_elements_signature_hash' \
+,'_wally_tx_get_elements_weight_discount' \
 ,'_wally_tx_get_input_blinding_nonce' \
 ,'_wally_tx_get_input_entropy' \
 ,'_wally_tx_get_input_inflation_keys' \

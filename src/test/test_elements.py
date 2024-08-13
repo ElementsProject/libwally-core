@@ -241,6 +241,18 @@ class ElementsTests(unittest.TestCase):
                         continue # Skip final VBF
                 self.assertEqual(h(out[:o_len]), utf8(expected))
 
+    def test_elements_tx_weights(self):
+        # Test the elements weight discount
+        with open(root_dir + 'src/data/elip200_vectors.json', 'r') as f:
+            JSON = json.load(f)
+        for case in JSON['cases']:
+            tx = pointer(wally_tx())
+            tx_flags = 0x3 # WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS
+            self.assertEqual(WALLY_OK, wally_tx_from_hex(case['tx'], tx_flags, tx))
+            self.assertEqual((WALLY_OK, case['weight']), wally_tx_get_weight(tx))
+            discount = case['weight'] - case['discount_weight']
+            self.assertEqual((WALLY_OK, discount), wally_tx_get_elements_weight_discount(tx, 0))
+
 
 if __name__ == '__main__':
     _, val = wally_is_elements_build()
