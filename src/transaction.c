@@ -1990,15 +1990,16 @@ int wally_tx_get_elements_weight_discount(const struct wally_tx *tx,
             n += varbuff_get_length(output->surjectionproof_len);
             n += varbuff_get_length(output->rangeproof_len);
             n -= 2; /* Add 2 bytes to serialize empty proofs */
+            /* Discount value and nonce, weighted as part of the tx base size */
             if (output->value_len == WALLY_TX_ASSET_CT_VALUE_LEN) {
                 /* Discount confidential value to an explicit value */
-                n += WALLY_TX_ASSET_CT_VALUE_LEN;
-                n -= WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN;
+                n += WALLY_TX_ASSET_CT_VALUE_LEN * 4;
+                n -= WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN * 4;
             }
             if (output->nonce_len == WALLY_TX_ASSET_CT_NONCE_LEN) {
                 /* Discount nonce commitment to an empty commitment */
-                n += WALLY_TX_ASSET_CT_NONCE_LEN;
-                n -= 1; /* Add a byte for the empty commitment */
+                n += WALLY_TX_ASSET_CT_NONCE_LEN * 4;
+                n -= 1 * 4; /* Add a byte for the empty commitment */
             }
         }
     }
