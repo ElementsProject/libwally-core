@@ -227,11 +227,11 @@ static size_t get_commitment_len(const unsigned char *bytes,
     if (*bytes == WALLY_TX_ASSET_CT_EXPLICIT_PREFIX) {
         /* Explicit value (unblinded) */
         if (prefixA == WALLY_TX_ASSET_CT_VALUE_PREFIX_A)
-            return WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN; /* uint64 value */
-        return WALLY_TX_ASSET_CT_LEN; /* 32 byte asset tag, or nonce */
+            return WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN; /* prefix + uint64 value */
+        return WALLY_TX_ASSET_CT_LEN; /* prefix + 32 byte asset tag or nonce */
     }
     if (*bytes == prefixA || *bytes == prefixB)
-        return WALLY_TX_ASSET_CT_LEN; /* 32 byte commitment */
+        return WALLY_TX_ASSET_CT_LEN; /* prefix + 32 byte commitment */
     return 0; /* Invalid serialization */
 }
 
