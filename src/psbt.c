@@ -2243,7 +2243,7 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
         bool is_pset_ft;
         uint64_t field_type = pull_field_type(cursor, max, &key, &key_len, is_pset, &is_pset_ft);
         const uint64_t raw_field_type = field_type;
-        uint64_t field_bit;
+        uint64_t field_bit = 0;
         bool is_known;
 
         if (is_pset_ft) {
@@ -2452,7 +2452,7 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
         bool is_pset_ft;
         uint64_t field_type = pull_field_type(cursor, max, &key, &key_len, is_pset, &is_pset_ft);
         const uint64_t raw_field_type = field_type;
-        uint64_t field_bit;
+        uint64_t field_bit = 0;
         bool is_known;
 
         if (is_pset_ft) {
@@ -2600,7 +2600,7 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
         const unsigned char *key;
         bool is_pset_ft;
         uint64_t field_type = pull_field_type(cursor, max, &key, &key_len, is_pset, &is_pset_ft);
-        uint64_t field_bit;
+        uint64_t field_bit = 0;
         bool is_known;
 
         if (is_pset_ft) {

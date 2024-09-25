@@ -772,7 +772,7 @@ int bip32_key_from_parent_path(const struct ext_key *hdkey,
 {
     struct ext_key tmp[2];
     size_t i, tmp_idx = 0, private_until = 0;
-    int ret;
+    int ret = WALLY_OK;
 
     if (flags & ~BIP32_ALL_DEFINED_FLAGS)
         return WALLY_EINVAL; /* These flags are not defined yet */
