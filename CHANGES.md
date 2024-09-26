@@ -1,5 +1,19 @@
 # Changes
 
+## Version 1.3.1
+
+### Added
+
+- Elements: Add `wally_tx_get_elements_weight_discount` for computing ELIP-0200 weight discounts.
+
+### Changed
+
+- Update JS dependencies.
+
+### Fixed
+
+- Minor build/CI fixes.
+
 ## Version 1.3.0
 
 ### Added
