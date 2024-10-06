@@ -78,6 +78,7 @@ struct wally_map;
 struct wally_tx_input;
 struct wally_tx_output;
 struct wally_tx;
+struct wally_tx_witness_stack;
 #else
 /** A transaction witness item */
 struct wally_tx_witness_item {
@@ -138,14 +139,14 @@ struct wally_tx_output {
 
 /** A parsed bitcoin transaction */
 struct wally_tx {
-    uint32_t version;
-    uint32_t locktime;
-    struct wally_tx_input *inputs;
-    size_t num_inputs;
-    size_t inputs_allocation_len;
-    struct wally_tx_output *outputs;
-    size_t num_outputs;
-    size_t outputs_allocation_len;
+    uint32_t WALLY_PRIVATE(version);
+    uint32_t WALLY_PRIVATE(locktime);
+    struct wally_tx_input *WALLY_PRIVATE(inputs);
+    size_t WALLY_PRIVATE(num_inputs);
+    size_t WALLY_PRIVATE(inputs_allocation_len);
+    struct wally_tx_output *WALLY_PRIVATE(outputs);
+    size_t WALLY_PRIVATE(num_outputs);
+    size_t WALLY_PRIVATE(outputs_allocation_len);
 };
 #endif /* SWIG */
 

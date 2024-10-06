@@ -34,6 +34,12 @@ extern "C" {
 #define WALLY_PATCH_VER 1
 #define WALLY_BUILD_VER 0x10301
 
+#ifndef WALLY_ALLOW_PRIVATE_ACCESS
+#define WALLY_PRIVATE(member) private_##member
+#else
+#define WALLY_PRIVATE(member) member
+#endif
+
 /**
  * Initialize wally.
  *

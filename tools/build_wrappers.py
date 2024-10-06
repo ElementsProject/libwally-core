@@ -579,6 +579,423 @@ def get_function_defs(non_elements, internal_only):
 
     return funcs
 
+
+def list_header_files():
+    result = subprocess.run(['ls', 'include'], capture_output=True, text=True, check=True)
+    all_files = result.stdout.strip().split('\n')
+    header_files = [file for file in all_files if file.endswith('.h')]
+    return header_files
+
+def gen_wamr_bindings(funcs, all_funcs):
+    func_dict = {f.name: f for f in funcs}
+
+    output = []
+
+    output.append('/* GENERATED FILE DO NOT EDIT */')
+    output.append('')
+    output.append('#include <wasm_export.h>')
+    output.append('#include <string.h>')
+
+    for header_fname in list_header_files():
+        output.append(f'#include <{header_fname}>')
+
+    output.append('/* do not reorder this */')
+    output.append('#include <bip32_int.h>')
+    output.append('')
+
+    for func_name in func_dict:
+        if func_name == 'wally_set_operations':
+            continue
+        func = func_dict.get(func_name)
+        wrapper_code = generate_wamr_wrapper(func)
+        output.extend(wrapper_code)
+        output.append('')
+
+    output.append('static NativeSymbol wns[] = {')
+    for func_name in func_dict:
+        if func_name == 'wally_set_operations':
+            continue
+        func = func_dict.get(func_name)
+        sig = generate_wamr_signature(func)
+        output.append(f'    EXPORT_WASM_API_WITH_SIG2({func.name}, "{sig}"),')
+    output.append('};')
+    output.append('')
+    output.append('NativeSymbol* get_wally_bindings(void) { return wns; }')
+    output.append('size_t get_wally_bindings_len(void) { return sizeof(wns) / sizeof(NativeSymbol); }')
+
+    # FIXME: change the output directory to whatever the rest of the script does I suppose
+    with open('/tmp/wally_bindings.c', 'w') as f:
+        f.write('\n'.join(output))
+
+def generate_wamr_wrapper(func):
+    code = []
+    func_name = func.name + '_wrapper'
+
+    # first argument is wasm_exec_env_t exec_env
+    args = func.args
+
+    # build wrapper arguments
+    wrapper_args = ['wasm_exec_env_t exec_env']
+    for arg in args:
+        if arg.name == 'exec_env':
+            continue  # Exclude exec_env
+        wrapper_args.append(f'{arg.type} {arg.name}')
+
+    # build function signature
+    code.append(f'static int {func_name}(')
+    code.append('    ' + ', '.join(wrapper_args) + ')')
+    code.append('{')
+
+    if args[-1].is_pointer_pointer:
+        call_args = [arg.name for arg in func.args]
+        code.append(f'    if (!{args[-1].name}) {{')
+        code.append(f'        return WALLY_EINVAL;')
+        code.append(f'    }}')
+        code.append(f'')
+        code.append(f'    {arg.type.strip()[:-1]} wamr_result = NULL;')
+        code.append(f'    const int wwres = {func.name}({", ".join(call_args[:-1] + ["&wamr_result"])});')
+        code.append(f'    if (!wamr_result) {{')
+        code.append(f'        return wwres;')
+        code.append(f'    }}')
+        code.append(f'    wasm_module_inst_t wasm_module_inst = wasm_runtime_get_module_inst(exec_env);')
+        code.append(f'    const uint32_t wamr_index_gen = wasm_runtime_addr_native_to_app(wasm_module_inst, (void*)wamr_result);')
+        code.append(f'    if (!wamr_index_gen) {{')
+        code.append(f'        return WALLY_ERROR;')
+        code.append(f'    }}')
+        code.append(f'    *{args[-1].name}= ({arg.type.strip()[:-1]})(uintptr_t)wamr_index_gen;')
+        code.append(f'    return wwres;')
+    else:
+        call_args = [arg.name for arg in func.args]
+        code.append(f'    return {func.name}({", ".join(call_args)});')
+
+    code.append('}')
+    return code
+
+def generate_wamr_signature(func):
+    param_letters = []
+    args_list = func.args
+    arg_index = 0
+
+    while arg_index < len(args_list):
+        arg = args_list[arg_index]
+        arg_type = arg.type.strip()
+
+        if arg_type in ['int', 'size_t', 'uint32_t']:
+            param_letters.append('i')
+        elif arg_type == 'uint64_t':
+            param_letters.append('I')
+        elif arg_type in ['const char*', 'char*']:
+            param_letters.append('$')
+        elif arg.is_pointer:
+            # check if next arg is length parameter
+            # FIXME: maybe there is a better way to check this
+            if (arg_index + 1 < len(args_list) and
+                args_list[arg_index + 1].type.strip() in ['size_t', 'uint32_t'] and
+                args_list[arg_index + 1].name.endswith(('_len', '_length', 'len'))):
+                param_letters.append('*')
+                param_letters.append('~')
+                arg_index += 1  # skip length parameter
+            else:
+                # FIXME: let's try some types from here
+                if arg.is_struct and arg.is_opaque:
+                    param_letters.append('r')
+                else:
+                    param_letters.append('*')
+        else:
+            # FIXME: let's try some types from here
+            if arg.is_struct and arg.is_opaque:
+                param_letters.append('r')
+            else:
+                param_letters.append('*')
+
+
+        arg_index += 1
+
+    return_type_letter = 'i'  # assuming all functions return 'int'
+    signature = '(' + ''.join(param_letters) + ')' + return_type_letter
+    return signature
+
+def generate_wamr_wrapper(func):
+    code = []
+    func_name = func.name + '_wrapper'
+
+    # first argument is wasm_exec_env_t exec_env
+    args = func.args
+
+    # build wrapper arguments
+    wrapper_args = ['wasm_exec_env_t exec_env']
+    for arg in args:
+        if arg.name == 'exec_env':
+            continue  # Exclude exec_env
+        wrapper_args.append(f'{arg.type} {arg.name}')
+
+    # build function signature
+    code.append(f'static int {func_name}(')
+    code.append('    ' + ', '.join(wrapper_args) + ')')
+    code.append('{')
+
+    if args[-1].is_pointer_pointer:
+        call_args = [arg.name for arg in func.args]
+        code.append(f'    if (!{args[-1].name}) {{')
+        code.append(f'        return WALLY_EINVAL;')
+        code.append(f'    }}')
+        code.append(f'')
+        code.append(f'    {arg.type.strip()[:-1]} wamr_result = NULL;')
+        code.append(f'    const int wwres = {func.name}({", ".join(call_args[:-1] + ["&wamr_result"])});')
+        code.append(f'    if (!wamr_result) {{')
+        code.append(f'        return wwres;')
+        code.append(f'    }}')
+        code.append(f'    wasm_module_inst_t wasm_module_inst = wasm_runtime_get_module_inst(exec_env);')
+        code.append(f'    const uint32_t wamr_index_gen = wasm_runtime_addr_native_to_app(wasm_module_inst, (void*)wamr_result);')
+        code.append(f'    if (!wamr_index_gen) {{')
+        code.append(f'        return WALLY_ERROR;')
+        code.append(f'    }}')
+        code.append(f'    *{args[-1].name}= ({arg.type.strip()[:-1]})(uintptr_t)wamr_index_gen;')
+        code.append(f'    return wwres;')
+    else:
+        call_args = [arg.name for arg in func.args]
+        code.append(f'    return {func.name}({", ".join(call_args)});')
+
+    code.append('}')
+    return code
+
+def generate_wasm_noemscripten_wrapper(func):
+    code = []
+
+    args = func.args
+
+    wrapper_args = []
+    for arg in args:
+        wrapper_args.append(f'{arg.name}')
+
+    # build function signature
+    code.append(f'    function {func.name}(')
+    code.append('        ' + ', '.join(wrapper_args) + ')')
+    code.append('    {')
+    # what do we need to do here:
+    # 1 - we received 'written' which is an index into the callers memory
+    # 2 - the caller memory is not accessible to this wally because it is running in a different instance
+    # 3 - they can share the heap but that's not helping much because if something pointing to the stack is passed things break
+    # 4 - we can have the function be passed in the memory instance
+    code.append(f'''        const otherWasmInstance = get_other_wasm_instance();
+        const other_common_imports = get_other_wasm_common();
+        const memoryViewWally = new DataView(wallyWasmInstance.exports.memory.buffer);
+        const memoryView = new DataView(otherWasmInstance.exports.memory.buffer);
+    ''')
+
+    params = []
+
+    #function wally_hex_from_bytes(
+    #    bytes, bytes_len, output)
+    # so first thing we need to do is allocate a buffer of next arg value
+
+    # so if the parameter is a pointer but is not to a char
+
+    # for each argument that is a pointer
+    skip = False
+
+    #         // WALLY_CORE_API int wally_tx_get_version(const struct wally_tx *tx_in, size_t *written);
+
+
+    for index, arg in enumerate(args):
+        if skip:
+            skip = False
+            continue
+
+        #print(arg.type)
+        # so here we can check if the next is like a len then we are golden sort of
+        if not arg.is_pointer and not arg.is_pointer_pointer or (len(args) == 1 and arg.type == 'char*') or (arg.is_struct and (arg.is_const or len(args) == 1)):
+            params.append(f'{arg.name}')
+        elif (arg.is_pointer or arg.is_pointer_pointer):
+            # say it is not a char but we should check and we assume the next thing
+            if index + 1 < len(args) and (not args[index + 1].is_pointer) and args[index+1].type in ['size_t']:
+                # so here we consume next too
+                code.append(f'''
+        const ptr_{arg.name} = common_imports.env.malloc({args[index + 1].name});
+        for (let i = 0; i < {args[index + 1].name}; ++i) {{
+            const tmp = memoryView.getUint8({arg.name} + i, true);
+            memoryViewWally.setUint8(ptr_{arg.name} + i, tmp, true);
+        }}''')
+                skip = True
+                params.append(f'ptr_{arg.name}')
+                params.append(f'{args[index + 1].name}')
+            elif arg.type == 'const char*':
+                # we need to copy the string over but we need to calculate the size first
+                # we can't call common_imports because the alue is in other wasm
+                # so for now we reimplement it?
+                code.append(f'''
+        let length_{arg.name} = 0;
+        while (memoryView.getUint8({arg.name} + length_{arg.name}) !== 0) {{
+            ++length_{arg.name};
+        }}
+        const ptr_{arg.name} = common_imports.env.malloc(length_{arg.name} + 1);
+
+        for (let i = 0; i < length_{arg.name}; ++i) {{
+            const tmp = memoryView.getUint8({arg.name} + i, true);
+            memoryViewWally.setUint8(ptr_{arg.name} + i, tmp, true);
+        }}
+        memoryViewWally.setUint8(ptr_{arg.name} + length_{arg.name}, 0, true);
+        ''')
+                params.append(f'ptr_{arg.name}')
+            else:
+                code.append(f'''
+        const ptr_{arg.name} = common_imports.env.malloc(4);
+        const {arg.name}_original_value = memoryView.getUint32({arg.name}, true);
+        memoryViewWally.setUint32(ptr_{arg.name}, {arg.name}_original_value, true);
+                ''')
+
+                params.append(f'ptr_{arg.name}')
+        else:
+            print("Other @@@@@@@@@@@@ arg", arg.type, arg.name)
+
+    # FIXME: should do all params
+    # the actual call with payload
+    code.append(f'''
+        const result = wallyWasmInstance.exports.{func.name}({", ".join(params)});
+    ''')
+
+    for index, arg in enumerate(args):
+        if not arg.is_pointer and not arg.is_pointer_pointer or (len(args) == 1 and arg.type == 'char*') or (arg.is_struct and (arg.is_const or len(args) == 1)):
+            print("Other arz", arg.type, arg.name)
+            pass
+        elif arg.is_pointer or arg.is_pointer_pointer:
+            if (not arg.is_const) and index + 1 < len(args) and (not args[index + 1].is_pointer) and args[index+1].type in ['size_t']:
+                code.append(f'''
+        for (let i = 0; i < {args[index + 1].name}; ++i) {{
+            const tmp = memoryViewWally.getUint8(ptr_{arg.name} + i, true);
+            memoryView.setUint8({arg.name} + i, tmp, true);
+        }}
+        common_imports.env.free(ptr_{arg.name});
+            ''')
+            elif arg.is_const:
+                code.append(f'''
+        common_imports.env.free(ptr_{arg.name});
+            ''')
+            elif arg.type == 'char**':
+                # so in this case wally create a string into the buffer we provided ptr_{arg.name}
+                # it seems we then need to allocate again after
+                # 1 count how many
+                # 2 malloc in the right thing - bingo we are fucked we need malloc from the companion or to share the heap
+                # 2 a - if we assumed we shared the heap then this would be it more or less maybe we can share the exit with other things
+                # 2 b - if we do not share the heap now we need to do the magic translation of heap mallocs
+                # in this case we need to call wally_free_string and copy all the data - sigh
+                code.append(f'''
+        const ptr_{arg.name}_data = memoryViewWally.getUint32(ptr_{arg.name}, true);
+        // first we need to size the returned string
+        let new_length_{arg.name} = 0;
+        while (memoryViewWally.getUint8(ptr_{arg.name}_data + new_length_{arg.name}) !== 0) {{
+            ++new_length_{arg.name};
+        }}
+        // then we need to malloc like that
+        const new_{arg.name} = other_common_imports.env.malloc(new_length_{arg.name} + 1);
+        // now we need to copy the string
+        for (let i = 0; i < new_length_{arg.name}; ++i) {{
+            const tmp = memoryViewWally.getUint8(ptr_{arg.name}_data + i, true);
+            memoryView.setUint8(new_{arg.name} + i, tmp, true);
+        }}
+        memoryView.setUint8(new_{arg.name} + new_length_{arg.name}, 0, true);
+        // now we need to free wally
+        // then we need to copy this pointer into {arg.name} with setUint32
+        memoryView.setUint32({arg.name}, new_{arg.name}, true);
+        common_imports.env.free(ptr_{arg.name});
+        wallyWasmInstance.exports.wally_free_string(ptr_output_data);
+            ''')
+            else:
+                code.append(f'''
+        const {arg.name}_actual_value = memoryViewWally.getUint32(ptr_{arg.name}, true);
+        memoryView.setUint32({arg.name}, {arg.name}_actual_value, true);
+        common_imports.env.free(ptr_{arg.name});
+            ''')
+        else:
+            assert False
+            print("Other @@@@ arz", arg.type, arg.name)
+            pass
+    code.append(f'''
+        return result;
+    ''')
+    code.append('    }')
+    return code
+
+
+wasm_loader = '''
+
+async function wally_setup(get_other_wasm_instance, get_other_wasm_common) {
+    let wallyWasmInstance;
+    let wally_memory = new WebAssembly.Memory({
+        initial : 64,
+        maximum : 256
+    });
+    function get_memory_buffer() {
+        return wallyWasmInstance.exports.memory.buffer;
+    }
+    const [init_heap, common_imports] = get_common_imports(wally_memory, get_memory_buffer);
+
+    const wallyWasmModule = await WebAssembly.instantiateStreaming(fetch('wallypure.wasm'), common_imports);
+    wallyWasmInstance = wallyWasmModule.instance;
+    init_heap(wallyWasmInstance);
+'''
+
+ad_hoc_functions = '''
+    function wally_free_string(str)
+    {
+        const otherWasmInstance = get_other_wasm_instance();
+        const memoryView = new DataView(otherWasmInstance.exports.memory.buffer);
+        const other_common_imports = get_other_wasm_common();
+
+        let str_len = 0;
+        while (memoryView.getUint8(str + str_len !== 0)) {
+            ++str_len;
+        }
+
+        if (str_len) {
+            other_common_imports.env.memset(str, 0, str_len);
+        }
+        other_common_imports.env.free(str);
+
+        return WALLY_OK;
+    }
+
+    function wally_bzero(bytes, bytes_len)
+    {
+        const other_common_imports = get_other_wasm_common();
+        other_common_imports.env.memset(bytes, 0, bytes_len);
+        return WALLY_OK;
+    }
+'''
+
+def gen_wasm_noemscripten_bindings(funcs, all_funcs):
+    func_dict = {f.name: f for f in funcs}
+
+    output = []
+
+    output.append('/* GENERATED FILE DO NOT EDIT */')
+    output.append('')
+    output.append('const WALLY_OK = 0;')
+    output.append(wasm_loader)
+
+    exclude_funcs = ['wally_free_string', 'wally_bzero']
+
+    for func_name in func_dict:
+        if func_name in exclude_funcs:
+            continue
+        func = func_dict.get(func_name)
+        wrapper_code = generate_wasm_noemscripten_wrapper(func)
+        output.extend(wrapper_code)
+        output.append('')
+
+    output.append(ad_hoc_functions)
+
+    output.append('    return {')
+    output.append('        env : {')
+    for func_name in func_dict:
+        output.append(f'            {func_name},')
+    output.append('        },')
+    output.append('    };')
+    output.append('}')
+
+    with open('/tmp/wally_bindings.js', 'w') as f:
+        f.write('\n'.join(output))
+
 if __name__ == "__main__":
     non_elements = get_non_elements_functions()
 
@@ -589,12 +1006,15 @@ if __name__ == "__main__":
     all_names = set([f.name for f in all_funcs])
 
     # Generate the wrapper code
-    gen_python_cffi(external_funcs, all_names, False)
-    gen_python_cffi(internal_funcs, all_names, True)
+    #gen_python_cffi(external_funcs, all_names, False)
+    #gen_python_cffi(internal_funcs, all_names, True)
 
-    gen_python_swig(all_funcs, all_names)
-    gen_java_swig(external_funcs, all_names)
-    gen_wally_hpp(external_funcs, all_names)
+    #gen_python_swig(all_funcs, all_names)
+    #gen_java_swig(external_funcs, all_names)
+    #gen_wally_hpp(external_funcs, all_names)
 
-    gen_wasm_exports(all_funcs, all_names)
-    gen_wasm_package(all_funcs, all_names)
+    #gen_wasm_exports(all_funcs, all_names)
+    #gen_wasm_package(all_funcs, all_names)
+
+    #gen_wamr_bindings(all_funcs, all_names)
+    gen_wasm_noemscripten_bindings(all_funcs, all_names)
