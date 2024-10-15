@@ -212,7 +212,7 @@ WALLY_CORE_API int wally_hex_from_bytes(
  * Convert a hexadecimal string to bytes.
  *
  * :param hex: String to convert.
- * :param bytes_out: Where to store the resulting bytes.
+ * :param bytes_out: Destination for the resulting bytes.
  * :param len: The length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */

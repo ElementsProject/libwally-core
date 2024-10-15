@@ -319,6 +319,12 @@ inline int bip85_get_languages(char** output) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class HDKEY, class BYTES_OUT>
+inline int bip85_get_rsa_entropy(const HDKEY& hdkey, uint32_t key_bits, uint32_t index, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::bip85_get_rsa_entropy(detail::get_p(hdkey), key_bits, index, bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class BYTES, class ADDR_FAMILY>
 inline int addr_segwit_from_bytes(const BYTES& bytes, const ADDR_FAMILY& addr_family, uint32_t flags, char** output) {
     int ret = ::wally_addr_segwit_from_bytes(bytes.data(), bytes.size(), detail::get_p(addr_family), flags, output);

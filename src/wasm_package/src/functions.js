@@ -150,6 +150,7 @@ export const bip39_mnemonic_to_seed512 = wrap('bip39_mnemonic_to_seed512', [T.St
 export const bip39_mnemonic_validate = wrap('bip39_mnemonic_validate', [T.OpaqueRef, T.String]);
 export const bip85_get_bip39_entropy = wrap('bip85_get_bip39_entropy', [T.OpaqueRef, T.String, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.HMAC_SHA512_LEN, true)]);
 export const bip85_get_languages = wrap('bip85_get_languages', [T.DestPtrPtr(T.String)]);
+export const bip85_get_rsa_entropy = wrap('bip85_get_rsa_entropy', [T.OpaqueRef, T.Int32, T.Int32, T.DestPtrVarLen(T.Bytes, C.HMAC_SHA512_LEN, true)]);
 export const bzero = wrap('wally_bzero', [T.OpaqueRef, T.Int32]);
 export const cleanup = wrap('wally_cleanup', [T.Int32]);
 export const coinselect_assets = wrap('wally_coinselect_assets', [T.Uint64Array, T.Int64, T.Int64, T.Int32, T.DestPtrVarLen(T.Uint32Array, C.WALLY_CS_MAX_ASSETS, true)]);

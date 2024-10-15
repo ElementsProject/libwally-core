@@ -20,6 +20,20 @@ cases = [
      'divorce twin tonight reason outdoor destroy simple truth cigar social volcano')
 ]
 
+# BIP85/RSA Vectors generated using https://github.com/akarve/bipsea/blob/main/tests/test_bip85.py#L127
+rsa_cases = [
+        ('b3415a819ba8175a7f11b949d75133725594ee3dcf6284dbec8fe6a625d0e0df757c148e576369f9405b19aec9356a848897de64202df8da4880a5f769aac297', 1024, 0),
+        ('ca1e93031427e4f086538f89b19f5f224719332c8a7b8c87db7eb81e4be935db24dcbc71873d0607ddd3876777cd158a2f061a5a5153413307df08fe5911a857', 1024, 1),
+        ('e3ff02b1f0b934357cc0952225bb0e90081005b0cc992c5ed22f6fb8e9c628a3a0f138f9324e33ed4ba7250e43dd66d725a4e4c683dcf5a3b4015b82bcf71934', 2048, 0),
+        ('b1b4d03eb9826aeb2fabc4529dc37da5eaaa9072d3e2b7e69da79862e2b9cd8131dbb5a9001612239cd96310f6be0417bd39c39500bf8a99ba5df32571866fe6', 2048, 1),
+        ('9bd8cb61fea01892ffd981b4da7aae22f32c9641e49c48104682e249a98f7911ed55035a52e085938291d64e34537e9cc0b730f42ae9183b5ddaac33a55764ea', 3072, 0),
+        ('fc49330db1352558f615651ae8d7840b083cce5c9e731e349847569d3813a3f7f605b5d66b178bf19fdd04bd7f48d2ddb07e16793703d17ee06c86e49e19a896', 3072, 1),
+        ('12a499947a142ee3ede9c0960061383f2564b5cc569327d0dd22f7887094676f2e5d5785cd4eb683990d12209ebf6f39a5c1b5e217ea66710260e99fbe4b2be3', 4096, 0),
+        ('a6fdf91d4f4a0cadaf3d20d638744b574306725aababa0ab7136f8f8b88c5a4c5ca6104646d695cd95a72ad15e6e6912e263762eab951bfcea8e9939ed7c03f4', 4096, 1),
+        ('b3a0baa54a6fa75363e2bc0809dafd20eacea8b4d0fba9ef26f9ea9c471e135c53c1f787fd6a7a02bf736bed620d44e5b4465856fae6c2ef2d620b730098f8e9', 8192, 0),
+        ('1b5f1ae261e9e36039cd7d55d25e71934a4f0a2fdd2d93b2f73fbd272d04257d6eba8f6ff6bc1ffe1d58f68b707b794e54e983e2f573991bb776b48b8ed9a1ca', 8192, 1),
+]
+
 # Additional test vectors
 extra_xpriv = 'xprv9s21ZrQH143K3pHDnUsnBxePpiB3pbhu3owZem9cVUPVQLknjYAhzDXGppVipPsLSnx8UM6cmSqh3nG6vUaPxn1EDNNqtF1eqi7XmdLt1v6'
 extra_cases = [
@@ -97,7 +111,7 @@ class BIP85Tests(unittest.TestCase):
             ret, _ = bip85_get_bip39_entropy(*args)
             self.assertEqual(ret, WALLY_EINVAL)
 
-    def run_test_cases(self, master_key, cases):
+    def run_bip39_test_cases(self, master_key, cases):
         ret, all_langs = bip39_get_languages()
         all_langs = all_langs.split()
 
@@ -117,14 +131,22 @@ class BIP85Tests(unittest.TestCase):
             ret = bip39_mnemonic_from_bytes(words, buf, expected_len)
             self.assertEqual(ret, (WALLY_OK, mnemonic))
 
+    def run_rsa_test_cases(self, master_key, rsa_cases):
+        buf = create_string_buffer(HMAC_SHA512_LEN)
+        for expected, key_bits, index in rsa_cases:
+            ret = bip85_get_rsa_entropy(master_key, key_bits, index, buf, HMAC_SHA512_LEN)
+            self.assertEqual(ret, (WALLY_OK, HMAC_SHA512_LEN))
+            self.assertEqual(h(buf[:HMAC_SHA512_LEN]), utf8(expected))
+
     def test_bip85_cases(self):
-        self.run_test_cases(self.master_key, cases)
+        self.run_bip39_test_cases(self.master_key, cases)
+        self.run_rsa_test_cases(self.master_key, rsa_cases)
 
     def test_additional_cases(self):
         extra_key = ext_key()
         ret = bip32_key_from_base58(utf8(extra_xpriv), byref(extra_key))
         self.assertEqual(ret, WALLY_OK)
-        self.run_test_cases(extra_key, extra_cases)
+        self.run_bip39_test_cases(extra_key, extra_cases)
 
 if __name__ == '__main__':
     unittest.main()

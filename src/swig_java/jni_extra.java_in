@@ -118,6 +118,12 @@
       return trimBuffer(buf, len);
   }
 
+  public final static byte[] bip85_get_rsa_entropy(Object hdkey, long key_bits, long index) {
+      final byte[] buf = new byte[HMAC_SHA512_LEN];
+      final int len = bip85_get_rsa_entropy(hdkey, key_bits, index, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static byte[] ecdh(byte[] jarg1, byte[] jarg2) {
       return ecdh(jarg1, jarg2, null);
   }

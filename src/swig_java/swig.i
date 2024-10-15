@@ -514,6 +514,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(bip39_mnemonic_to_seed512, 3, 4, BIP39_SEED_LEN_512);
 %returns_string(bip85_get_languages);
 %returns_size_t(bip85_get_bip39_entropy);
+%returns_size_t(bip85_get_rsa_entropy);
 %returns_string(wally_addr_segwit_from_bytes);
 %returns_size_t(wally_addr_segwit_get_version);
 %returns_size_t(wally_addr_segwit_n_get_version);

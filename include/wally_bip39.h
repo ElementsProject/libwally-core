@@ -28,7 +28,7 @@ struct words;
 #define BIP39_WORDLIST_LEN 2048
 
 /**
- * Get the list of default supported languages.
+ * Get the list of default supported languages for BIP39.
  *
  * .. note:: The string returned should be freed using `wally_free_string`.
  */
@@ -98,7 +98,7 @@ WALLY_CORE_API int bip39_mnemonic_from_bytes(
  *
  * :param w: Word list to use. Pass NULL to use the default English list.
  * :param mnemonic: Mnemonic to convert.
- * :param bytes_out: Where to store the resulting entropy.
+ * :param bytes_out: Destination for the resulting entropy.
  * MAX_SIZED_OUTPUT(len, bytes_out, BIP39_ENTROPY_MAX_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.
  */

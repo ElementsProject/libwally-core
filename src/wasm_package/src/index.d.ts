@@ -110,6 +110,7 @@ export function bip39_mnemonic_to_seed512(mnemonic: string, passphrase: string):
 export function bip39_mnemonic_validate(w: Ref_words, mnemonic: string): void;
 export function bip85_get_bip39_entropy(hdkey: Ref_ext_key, lang: string, num_words: number, index: number): Buffer;
 export function bip85_get_languages(): string;
+export function bip85_get_rsa_entropy(hdkey: Ref_ext_key, key_bits: number, index: number): Buffer;
 export function bzero(bytes: Ref, bytes_len: number): void;
 export function cleanup(flags: number): void;
 export function coinselect_assets(values: BigUint64Array|Array<bigint>, target: bigint, attempts: bigint, io_ratio: number): Uint32Array;

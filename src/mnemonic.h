@@ -18,13 +18,13 @@ char *mnemonic_from_bytes(
     size_t len);
 
 /**
- * Convert a mnemonic representation into a block of bytes.
+ * Convert a mnemonic representation into bytes.
  *
  * @w: List of words.
  * @mnemonic: Mnemonic sentence to store.
- * @bytes_out: Where to store the converted representation.
+ * @bytes_out: Destination for the resulting bytes.
  * @len: The length of @bytes_out in bytes.
- * @written: Destination for the number of bytes written.
+ * @written: Destination for the number of bytes written to ``bytes_out``.
  */
 int mnemonic_to_bytes(
     const struct words *w,

@@ -256,6 +256,7 @@ for f in (
     ('bip39_mnemonic_validate', c_int, [c_void_p, c_char_p]),
     ('bip85_get_bip39_entropy', c_int, [POINTER(ext_key), c_char_p, c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('bip85_get_languages', c_int, [c_char_p_p]),
+    ('bip85_get_rsa_entropy', c_int, [POINTER(ext_key), c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_addr_segwit_from_bytes', c_int, [c_void_p, c_size_t, c_char_p, c_uint32, c_char_p_p]),
     ('wally_addr_segwit_get_version', c_int, [c_char_p, c_char_p, c_uint32, c_size_t_p]),
     ('wally_addr_segwit_n_get_version', c_int, [c_char_p, c_size_t, c_char_p, c_size_t, c_uint32, c_size_t_p]),
