@@ -25,7 +25,7 @@ file(
 )
 
 # wallycore
-add_library(wallycore)
+add_library(wallycore STATIC)
 target_sources(wallycore PRIVATE ${ccan_srcs} ${wallycore_srcs})
 set_target_properties(wallycore PROPERTIES PUBLIC_HEADER "${wallycore_public_headers}")
 target_include_directories(
