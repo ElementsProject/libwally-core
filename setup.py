@@ -185,7 +185,17 @@ kwargs = {
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
     ],
-    'keywords': 'Bitcoin wallet BIP32 BIP38 BIP39 secp256k1 Blockstream Liquid Elements',
+    'keywords': [
+        'Bitcoin',
+        'wallet',
+        'BIP32',
+        'BIP38',
+        'BIP39',
+        'secp256k1',
+        'Blockstream',
+        'Liquid',
+        'Elements',
+    ],
     'project_urls': {
         'Documentation': 'https://wally.readthedocs.io/en/latest',
         'Source': 'https://github.com/ElementsProject/libwally-core',
