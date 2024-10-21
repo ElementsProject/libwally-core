@@ -100,3 +100,6 @@ wallycore.wasm
 *.pdb
 *.ilk
 *.exp
+
+.idea
+cmake-build-*
