@@ -14,7 +14,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
 #define MS_FLAGS_ALL (WALLY_MINISCRIPT_TAPSCRIPT | \
         WALLY_MINISCRIPT_ONLY | \
         WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \

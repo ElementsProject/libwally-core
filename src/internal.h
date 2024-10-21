@@ -81,6 +81,8 @@ const struct wally_operations *wally_ops(void);
 #endif
 #define strdup(ptr) __use_wally_strdup_internally__
 
+#define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
+
 /* Validity checking for input parameters */
 #define BYTES_VALID(p, len) ((p != NULL) == (len != 0))
 #define BYTES_INVALID(p, len) (!BYTES_VALID(p, len))

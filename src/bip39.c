@@ -3,7 +3,6 @@
 #include "wordlist.h"
 #include "hmac.h"
 #include "ccan/ccan/crypto/sha256/sha256.h"
-#include "ccan/ccan/crypto/sha512/sha512.h"
 #include <include/wally_bip39.h>
 #include <include/wally_crypto.h>
 
@@ -53,7 +52,7 @@ int bip39_get_wordlist(const char *lang, struct words **output)
     *output = (struct words *)&en_words; /* Fallback to English if not found */
 
     if (lang)
-        for (i = 0; i < sizeof(lookup) / sizeof(lookup[0]); ++i)
+        for (i = 0; i < NUM_ELEMS(lookup); ++i)
             if (!strcmp(lang, lookup[i].name)) {
                 *output = (struct words *)lookup[i].words;
                 break;

@@ -1,6 +1,4 @@
 #include "internal.h"
-#include "hmac.h"
-#include "ccan/ccan/crypto/sha512/sha512.h"
 #include <include/wally_bip32.h>
 #include <include/wally_bip39.h>
 #include <include/wally_bip85.h>
@@ -10,15 +8,14 @@
 #define BIP85_PURPOSE  (BIP32_INITIAL_HARDENED_CHILD | 83696968)
 #define BIP85_APPLICATION_39 (BIP32_INITIAL_HARDENED_CHILD | 39)
 #define BIP85_APPLICATION_RSA (BIP32_INITIAL_HARDENED_CHILD | 828365)
-#define BIP85_BIP39_ENTROPY_PATH_LEN 5
-#define BIP85_RSA_ENTROPY_PATH_LEN 4
+
 #define BIP85_ENTROPY_HMAC_KEY_LEN 18
 static const uint8_t BIP85_ENTROPY_HMAC_KEY[BIP85_ENTROPY_HMAC_KEY_LEN]
     = { 'b', 'i', 'p', '-', 'e', 'n', 't', 'r', 'o', 'p', 'y', '-', 'f', 'r', 'o', 'm', '-', 'k' };
 
 /* Bip85 specifies a language code from 0' to 8' - so order here is important */
 static const char *bip85_langs[] = { "en", "jp", "kr", "es", "zhs", "zht", "fr", "it", "cz" };
-#define BIP85_NUM_LANGS (sizeof(bip85_langs) / sizeof(bip85_langs[0]))
+
 
 static size_t get_entropy_len(uint32_t num_words)
 {
@@ -47,9 +44,10 @@ int bip85_get_bip39_entropy(const struct ext_key *hdkey,
                             unsigned char* bytes_out, size_t len,
                             size_t* written)
 {
-    const size_t entropy_len = get_entropy_len(num_words);
-    uint32_t path[BIP85_BIP39_ENTROPY_PATH_LEN], lang_idx = 0; /* 0=English */
     struct ext_key derived;
+    uint32_t path[5]; /* PURPOSE_BIP85 / APP_39 / land_idx / num_words / index */
+    uint32_t lang_idx = 0; /* 0=English */
+    const size_t entropy_len = get_entropy_len(num_words);
     int ret;
 
     if (written)
@@ -62,13 +60,13 @@ int bip85_get_bip39_entropy(const struct ext_key *hdkey,
     if (lang) {
         /* Lookup the callers language */
         size_t i;
-        for (i = 0; i < BIP85_NUM_LANGS; ++i) {
+        for (i = 0; i < NUM_ELEMS(bip85_langs); ++i) {
             if (!strcmp(lang, bip85_langs[i])) {
                 lang_idx = i;
                 break;
             }
         }
-        if (i == BIP85_NUM_LANGS)
+        if (i == NUM_ELEMS(bip85_langs))
             return WALLY_EINVAL; /* Language not found */
     }
 
@@ -78,8 +76,8 @@ int bip85_get_bip39_entropy(const struct ext_key *hdkey,
     path[2] = lang_idx | BIP32_INITIAL_HARDENED_CHILD;
     path[3] = num_words | BIP32_INITIAL_HARDENED_CHILD;
     path[4] = index | BIP32_INITIAL_HARDENED_CHILD;
-    ret = bip32_key_from_parent_path(hdkey, path, BIP85_BIP39_ENTROPY_PATH_LEN,
-                                     BIP32_FLAG_KEY_PRIVATE|BIP32_FLAG_SKIP_HASH,
+    ret = bip32_key_from_parent_path(hdkey, path, NUM_ELEMS(path),
+                                     BIP32_FLAG_KEY_PRIVATE | BIP32_FLAG_SKIP_HASH,
                                      &derived);
 
     if (ret == WALLY_OK) {
@@ -99,8 +97,8 @@ int bip85_get_bip39_entropy(const struct ext_key *hdkey,
 int bip85_get_rsa_entropy(const struct ext_key *hdkey, uint32_t key_bits, uint32_t index,
                           unsigned char *bytes_out, size_t len, size_t *written)
 {
-    uint32_t path[BIP85_RSA_ENTROPY_PATH_LEN];
     struct ext_key derived;
+    uint32_t path[4]; /* PURPOSE_BIP85 / APP_RSA / key_bits / index */
     int ret;
 
     if (written)
@@ -115,7 +113,7 @@ int bip85_get_rsa_entropy(const struct ext_key *hdkey, uint32_t key_bits, uint32
     path[1] = BIP85_APPLICATION_RSA;
     path[2] = key_bits | BIP32_INITIAL_HARDENED_CHILD;
     path[3] = index | BIP32_INITIAL_HARDENED_CHILD;
-    ret = bip32_key_from_parent_path(hdkey, path, BIP85_RSA_ENTROPY_PATH_LEN,
+    ret = bip32_key_from_parent_path(hdkey, path, NUM_ELEMS(path),
                                      BIP32_FLAG_KEY_PRIVATE | BIP32_FLAG_SKIP_HASH,
                                      &derived);
 
