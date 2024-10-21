@@ -280,17 +280,17 @@ AM_COND_IF([LINK_SYSTEM_SECP256K1], [
         AC_CHECK_FUNCS([$2], [], [missing_modules="${missing_modules} $1"])
     ])
     CHECK_MODULE([ecdh], [secp256k1_ecdh])
-    CHECK_MODULE([extrakeys], [secp256k1_xonly_pubkey_parse])
     CHECK_MODULE([recovery], [secp256k1_ecdsa_recover])
+    CHECK_MODULE([extrakeys], [secp256k1_xonly_pubkey_parse])
     CHECK_MODULE([schnorrsig], [secp256k1_schnorrsig_verify])
-    AM_COND_IF([BUILD_STANDARD_SECP], [], [
-        CHECK_MODULE([ecdsa-s2c], [secp256k1_ecdsa_s2c_sign])
-    ])
     AM_COND_IF([BUILD_ELEMENTS], [
         CHECK_MODULE([generator], [secp256k1_generator_parse])
         CHECK_MODULE([rangeproof], [secp256k1_rangeproof_verify])
         CHECK_MODULE([surjectionproof], [secp256k1_surjectionproof_initialize])
         CHECK_MODULE([whitelist], [secp256k1_whitelist_sign])
+    ])
+    AM_COND_IF([BUILD_STANDARD_SECP], [], [
+        CHECK_MODULE([ecdsa-s2c], [secp256k1_ecdsa_s2c_sign])
     ])
     AS_IF([test -n "${missing_modules}"], [
         AC_MSG_ERROR([system-installed $with_system_secp256k1 does not support these required modules:${missing_modules}])
@@ -443,7 +443,7 @@ export LD
 export LDFLAGS
 
 AM_COND_IF([LINK_SYSTEM_SECP256K1], [], [
-	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-ecdsa-s2c], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-generator], [--enable-module-extrakeys], [--enable-module-schnorrsig], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
+	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-extrakeys], [--enable-module-schnorrsig], [--enable-module-generator], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-ecdsa-s2c], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
 ])
 
 AC_OUTPUT
