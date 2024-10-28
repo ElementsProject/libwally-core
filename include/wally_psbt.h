@@ -283,7 +283,7 @@ WALLY_CORE_API int wally_psbt_input_set_keypaths(
  * .. note:: This function only finds non-taproot keypaths.
  */
 WALLY_CORE_API int wally_psbt_input_find_keypath(
-    struct wally_psbt_input *input,
+    const struct wally_psbt_input *input,
     const unsigned char *pub_key,
     size_t pub_key_len,
     size_t *written);
@@ -364,7 +364,7 @@ WALLY_CORE_API int wally_psbt_input_set_taproot_signature(
  *|    the index of the item plus one.
  */
 WALLY_CORE_API int wally_psbt_input_find_signature(
-    struct wally_psbt_input *input,
+    const struct wally_psbt_input *input,
     const unsigned char *pub_key,
     size_t pub_key_len,
     size_t *written);
@@ -405,7 +405,7 @@ WALLY_CORE_API int wally_psbt_input_set_unknowns(
  *|    the index of the item plus one.
  */
 WALLY_CORE_API int wally_psbt_input_find_unknown(
-    struct wally_psbt_input *input,
+    const struct wally_psbt_input *input,
     const unsigned char *key,
     size_t key_len,
     size_t *written);
@@ -1318,7 +1318,7 @@ WALLY_CORE_API int wally_psbt_output_set_keypaths(
  * .. note:: This function only finds non-taproot keypaths.
  */
 WALLY_CORE_API int wally_psbt_output_find_keypath(
-    struct wally_psbt_output *output,
+    const struct wally_psbt_output *output,
     const unsigned char *pub_key,
     size_t pub_key_len,
     size_t *written);
@@ -1387,7 +1387,7 @@ WALLY_CORE_API int wally_psbt_output_set_unknowns(
  *|    the index of the item plus one.
  */
 WALLY_CORE_API int wally_psbt_output_find_unknown(
-    struct wally_psbt_output *output,
+    const struct wally_psbt_output *output,
     const unsigned char *key,
     size_t key_len,
     size_t *written);

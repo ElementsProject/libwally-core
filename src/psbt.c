@@ -210,7 +210,7 @@ static bool is_taproot_input(const struct wally_psbt *psbt,
         if (!parent) return WALLY_EINVAL; \
         return wally_map_assign(&parent->NAME ## s, map_in); \
     } \
-    int PARENT ## _find_ ## NAME(struct PARENT *parent, \
+    int PARENT ## _find_ ## NAME(const struct PARENT *parent, \
                                  const unsigned char *key, size_t key_len, \
                                  size_t *written) { \
         if (written) *written = 0; \
