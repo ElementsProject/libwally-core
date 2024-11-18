@@ -3,10 +3,12 @@
 # build from this directory with e.g:
 #     DOCKER_BUILDKIT=1 docker build . -t greenaddress/wallycore -f Dockerfile_bullseye
 #
-FROM debian:bullseye@sha256:71cb300d5448af821aedfe63afd55ba05f45a6a79f00dcd131b96b780bb99fe4
+FROM debian:bullseye@sha256:01559430c84e6bc864bed554345d1bfbfa94ac108ab68f39915cae34604b15c3
 WORKDIR /root
 COPY bullseye_deps.sh ./deps.sh
 COPY requirements.txt ./contrib/requirements.txt
+ARG TARGETARCH=amd64
+ENV TARGETARCH=${TARGETARCH}
+ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-${TARGETARCH}
 RUN ./deps.sh && rm ./deps.sh
-ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
 ENV ANDROID_NDK=/opt/android-ndk-r26b

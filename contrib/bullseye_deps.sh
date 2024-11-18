@@ -37,7 +37,7 @@ fi
 apt install --no-install-recommends unzip autoconf automake autotools-dev pkg-config build-essential libtool python3{,-dev,-pip,-virtualenv} python{,-dev}-is-python3 clang{,-format,-tidy} git swig curl cmake libssl-dev libtool-bin $java_packages curl $windows_packages valgrind jq -yqq
 
 if [ -z "$skip_java" ]; then
-    update-java-alternatives -s java-1.11.0-openjdk-amd64
+    update-java-alternatives -s $(basename ${JAVA_HOME})
 fi
 
 pip3 install valgrind-codequality -r contrib/requirements.txt
@@ -58,8 +58,14 @@ if [ -z "$skip_emsdk" ]; then
     # Install emsdk
     git clone https://github.com/emscripten-core/emsdk
     cd emsdk
-    ./emsdk install 3.1.52
-    ./emsdk activate 3.1.52
+    EMSDK_VERSION=3.1.52
+    if [ "${TARGETARCH}" = "arm64" ]; then
+        # very few versions of emsdk are available for linux-arm64
+        # https://github.com/emscripten-core/emsdk/issues/547
+        EMSDK_VERSION=3.1.33
+    fi
+    ./emsdk install ${EMSDK_VERSION}
+    ./emsdk activate ${EMSDK_VERSION}
     # Force emsdk to use the installed node version instead of its own
     sed -i "s/^NODE_JS = .*$/NODE_JS = 'node'/g" /opt/emsdk/.emscripten
     # Make emsdk commands available
