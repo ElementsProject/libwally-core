@@ -7,6 +7,7 @@ FROM debian:bullseye@sha256:71cb300d5448af821aedfe63afd55ba05f45a6a79f00dcd131b9
 WORKDIR /root
 COPY bullseye_deps.sh ./deps.sh
 COPY requirements.txt ./contrib/requirements.txt
+ARG TARGETARCH
+ENV TARGETARCH=${TARGETARCH}
 RUN ./deps.sh && rm ./deps.sh
-ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
 ENV ANDROID_NDK=/opt/android-ndk-r26b
