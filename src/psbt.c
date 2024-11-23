@@ -4784,7 +4784,7 @@ static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
     const unsigned char *pk_1, *pk_2;
     const uint32_t tx_version = psbt->tx ? psbt->tx->version : psbt->tx_version;
     uint32_t blocks;
-    bool is_expired;
+    bool is_expired, is_expired_unoptimized;
 
     if (!is_witness)
         return false; /* Only supported for segwit inputs */
@@ -4794,6 +4794,7 @@ static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
         return false;
 
     is_expired = tx_version >= 2 && is_input_csv_expired(input, blocks);
+    is_expired_unoptimized = is_expired && !is_optimized;
 
     if (is_optimized) {
         pk_1 = out_script + 1;
@@ -4801,33 +4802,27 @@ static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
     } else {
         pk_1 = out_script + 4;
         pk_2 = out_script + out_script_len - 1 - EC_PUBLIC_KEY_LEN;
-        if (is_expired) {
-            pk_1 = pk_2;
-        }
     }
 
     sig_1 = wally_map_get(&input->signatures, pk_1, EC_PUBLIC_KEY_LEN);
+    sig_2 = wally_map_get(&input->signatures, pk_2, EC_PUBLIC_KEY_LEN);
     if (is_expired) {
-        sig_2 = &empty; /* Expired, spend with an empty witness element */
-    } else {
-        sig_2 = wally_map_get(&input->signatures, pk_2, EC_PUBLIC_KEY_LEN);
+        if (is_optimized) {
+            sig_2 = &empty; /* Spend with an empty witness element */
+        } else {
+            sig_1 = &empty; /* Not used except to pass the if check below */
+        }
     }
 
     if (!sig_1 || !sig_2)
         return false; /* Missing required signature(s) */
 
-    if (is_optimized) {
-        /* Swap the order of the sigs */
-        const struct wally_map_item *tmp = sig_1;
-        sig_1 = sig_2;
-        sig_2 = tmp;
-    }
-
     if (wally_tx_witness_stack_init_alloc(3, &input->final_witness) != WALLY_OK)
         return false;
 
-    if (wally_tx_witness_stack_add(input->final_witness, sig_1->value, sig_1->value_len) == WALLY_OK &&
-        wally_tx_witness_stack_add(input->final_witness, sig_2->value, sig_2->value_len) == WALLY_OK &&
+    if (wally_tx_witness_stack_add(input->final_witness, sig_2->value, sig_2->value_len) == WALLY_OK &&
+        (is_expired_unoptimized ||
+          wally_tx_witness_stack_add(input->final_witness, sig_1->value, sig_1->value_len) == WALLY_OK) &&
         wally_tx_witness_stack_add(input->final_witness, out_script, out_script_len) == WALLY_OK) {
         if (!is_p2sh || finalize_p2sh_wrapped(input))
             return true;
