@@ -4764,19 +4764,23 @@ static bool finalize_p2tr(struct wally_psbt_input *input)
     return true;
 }
 
-static bool is_input_csv_expired(const struct wally_psbt_input *input, uint32_t blocks)
+static bool is_input_csv_expired(const struct wally_psbt *psbt,
+                                 const struct wally_psbt_input *input,
+                                 size_t index, uint32_t blocks)
 {
-    if (input->sequence & ((1 << 31) | (1 << 22)))
+    uint32_t seq = psbt->version == PSBT_0 ? psbt->tx->inputs[index].sequence : input->sequence;
+    if (seq & ((1u << 31u) | (1u << 22u)))
         return false; /* Locktime opt-out enabled, or time-based lock */
+
     /* Note we don't mask out the locktime value, because we don't want to
      * finalize inputs if a soft-fork we don't know about has changed the
      * meaning of locktime extra bits in a way we don't understand.
      */
-    return blocks <= input->sequence;
+    return blocks <= seq;
 }
 
 static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
-                               struct wally_psbt_input *input,
+                               struct wally_psbt_input *input, size_t index,
                                const unsigned char *out_script, size_t out_script_len,
                                bool is_witness, bool is_p2sh, bool is_optimized)
 {
@@ -4793,7 +4797,7 @@ static bool finalize_csv2of2_1(const struct wally_psbt *psbt,
                                                            &blocks) != WALLY_OK)
         return false;
 
-    is_expired = tx_version >= 2 && is_input_csv_expired(input, blocks);
+    is_expired = tx_version >= 2 && is_input_csv_expired(psbt, input, index, blocks);
     is_expired_unoptimized = is_expired && !is_optimized;
 
     if (is_optimized) {
@@ -4903,7 +4907,7 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
         break;
     case WALLY_SCRIPT_TYPE_CSV2OF2_1:
     case WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT:
-        if (!finalize_csv2of2_1(psbt, input, out_script, out_script_len,
+        if (!finalize_csv2of2_1(psbt, input, index, out_script, out_script_len,
                                 is_witness, is_p2sh,
                                 type == WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT))
             return WALLY_OK;
