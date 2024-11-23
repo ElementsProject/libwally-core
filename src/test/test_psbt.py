@@ -197,12 +197,15 @@ class PSBTTests(unittest.TestCase):
 
     def test_finalizer_role(self):
         """Test the PSBT finalizer role"""
+        SERIALIZE_FLAG_REDUNDANT = 0x1
         for case in JSON['finalizer']:
             psbt = self.parse_base64(case['psbt'])
-            self.assertEqual(WALLY_OK, wally_psbt_finalize(psbt, 0))
+            flags = case['flags']
+            extract_flags = SERIALIZE_FLAG_REDUNDANT if flags == 1 else 0
+            self.assertEqual(WALLY_OK, wally_psbt_finalize(psbt, flags))
             ret, is_finalized = wally_psbt_is_finalized(psbt)
             self.assertEqual((ret, is_finalized), (WALLY_OK, 1))
-            self.assertEqual(self.to_base64(psbt), case['result'])
+            self.assertEqual(self.to_base64(psbt, flags=extract_flags), case['result'])
             wally_psbt_free(psbt)
 
     def test_extractor_role(self):
