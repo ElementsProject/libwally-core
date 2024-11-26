@@ -10,8 +10,12 @@
 
 #define HAVE_UNALIGNED_ACCESS 1
 
-#if (!defined(_SSIZE_T_DECLARED)) && (!defined(_ssize_t)) && (!defined(ssize_t))
-#define ssize_t long long
+#if defined (_WIN32) && !defined(_SSIZE_T_DECLARED) && !defined(_ssize_t) && !defined(ssize_t)
+#if defined(_WIN64)
+typedef __int64 ssize_t;
+#else
+typedef long ssize_t;
+#endif
 #endif
 
 #include "ccan_config.h"
