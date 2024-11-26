@@ -2,7 +2,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 build_wally_release_files:
-  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   artifacts:
     expire_in: 7 days
     name: wallycore-bindings
@@ -36,7 +36,7 @@ build_wally_release_files:
     - rmdir wally_dist
 
 build_mingw_static:
-  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   tags:
     - ga
   script:
@@ -45,7 +45,7 @@ build_mingw_static:
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 run_tests:
-  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   tags:
     - ga
   artifacts:
@@ -61,7 +61,7 @@ run_tests:
     - jq '[.[]|.[]]' -s ./src/.libs/test_*.json > valgrind.json
 
 run_asan_ubsan_gcc:
-  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   tags:
     - ga
   script:
@@ -73,7 +73,7 @@ run_asan_ubsan_gcc:
     - ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 make check V=1
 
 run_scan_build_clang:
-  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   tags:
     - ga
   script:
@@ -82,7 +82,7 @@ run_scan_build_clang:
     - scan-build-11 --keep-cc --exclude src/secp256k1/ make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 cmake-test:
-  image: greenaddress/wallycore@sha256:f159b338f3d25e13958d79fbd709238e3864de5468b9d743625466a0a681e52b
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   tags:
     - ga
   script:
