@@ -77,6 +77,11 @@
 # endif
 #endif
 
+#ifdef _WIN32
+    #if (!defined(_SSIZE_T_DECLARED)) && (!defined(_ssize_t)) && (!defined(ssize_t))
+    #define ssize_t long long
+    #endif
+#endif
 
 #include "ccan_config.h"
 #endif /*LIBWALLYCORE_CONFIG_H*/
