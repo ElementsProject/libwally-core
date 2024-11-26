@@ -7,7 +7,7 @@ FROM debian:bullseye@sha256:01559430c84e6bc864bed554345d1bfbfa94ac108ab68f39915c
 WORKDIR /root
 COPY bullseye_deps.sh ./deps.sh
 COPY requirements.txt ./contrib/requirements.txt
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ENV TARGETARCH=${TARGETARCH}
 ENV JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-${TARGETARCH}
 RUN ./deps.sh && rm ./deps.sh
