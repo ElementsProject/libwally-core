@@ -2,6 +2,8 @@
 # Dockerfile for wally builds.
 # build from this directory with e.g:
 #     DOCKER_BUILDKIT=1 docker build . -t greenaddress/wallycore -f Dockerfile_bullseye
+# and for linux/arm64:
+#     DOCKER_BUILDKIT=1 docker build . -t greenaddress/wallycore -f Dockerfile_bullseye --platform linux/arm64 --build-arg TARGETARCH=arm64
 #
 FROM debian:bullseye@sha256:01559430c84e6bc864bed554345d1bfbfa94ac108ab68f39915cae34604b15c3
 WORKDIR /root
