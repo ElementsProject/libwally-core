@@ -1,5 +1,5 @@
 #
-# Dockerfile for wally builds.
+# Dockerfile for wally builds on Debain bullseye (oldstable).
 # build from this directory with e.g:
 #     DOCKER_BUILDKIT=1 docker build . -t greenaddress/wallycore -f Dockerfile_bullseye
 # and for linux/arm64:

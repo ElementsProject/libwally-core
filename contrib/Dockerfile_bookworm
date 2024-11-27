@@ -1,0 +1,17 @@
+#
+# Dockerfile for wally builds on Debain bookworm (stable).
+# build from this directory with e.g:
+#     docker buildx build --platform linux/arm64,linux/amd64 -f Dockerfile_bullseye -t greenaddress/wallycore:bookworm .
+#
+# Note that to build both platforms you need to:
+#     apt install qemu-user-static binfmt-support
+#
+FROM debian:bookworm@sha256:10901ccd8d249047f9761845b4594f121edef079cfd8224edebd9ea726f0a7f6
+WORKDIR /root
+COPY bookworm_deps.sh ./deps.sh
+COPY requirements.txt ./contrib/requirements.txt
+ARG TARGETARCH
+ENV TARGETARCH=${TARGETARCH}
+ENV JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-${TARGETARCH}
+RUN ./deps.sh && rm ./deps.sh
+ENV ANDROID_NDK=/opt/android-ndk-r26b
