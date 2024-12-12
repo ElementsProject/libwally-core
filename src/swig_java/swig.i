@@ -950,6 +950,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_scriptpubkey_op_return_from_bytes);
 %returns_size_t(wally_scriptpubkey_p2pkh_from_bytes);
 %returns_size_t(wally_scriptpubkey_p2sh_from_bytes);
+%returns_size_t(wally_scriptpubkey_p2tr_from_bytes);
 %returns_size_t(wally_scriptpubkey_multisig_from_bytes);
 %returns_size_t(wally_scriptsig_p2pkh_from_sig);
 %returns_size_t(wally_scriptsig_p2pkh_from_der);

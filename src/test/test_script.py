@@ -22,11 +22,13 @@ MAX_OP_RETURN_LEN = 80
 SCRIPTPUBKEY_OP_RETURN_MAX_LEN = 83
 SCRIPTPUBKEY_P2PKH_LEN = 25
 SCRIPTPUBKEY_P2SH_LEN = 23
+SCRIPTPUBKEY_P2TR_LEN = 34
 HASH160_LEN = 20
 SCRIPTSIG_P2PKH_MAX_LEN = 140
 
-PK, PK_LEN = make_cbuffer('11' * 33) # Fake compressed pubkey
+PK, PK_LEN = make_cbuffer('02' * 33) # Fake compressed pubkey
 PKU, PKU_LEN = make_cbuffer('11' * 65) # Fake uncompressed pubkey
+PKX, PKX_LEN = make_cbuffer('02' * 32) # Fake x-only pubkey
 SH, SH_LEN = make_cbuffer('11' * 20)  # Fake script hash
 MPK_2, MPK_2_LEN = make_cbuffer('11' * 33 * 2) # Fake multiple (2) pubkeys
 MPK_3, MPK_3_LEN =  make_cbuffer('11' * 33 * 3) # Fake multiple (3) pubkeys
@@ -124,15 +126,14 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            [(PK, PK_LEN, SCRIPT_HASH160, out, out_len),'76a9148ec4cf3ee160b054e0abb6f5c8177b9ee56fa51e88ac'],
+            [(PK, PK_LEN, SCRIPT_HASH160, out, out_len),'76a91451814f108670aced2d77c1805ddd6634bc9d473188ac'],
             [(PKU, PKU_LEN, SCRIPT_HASH160, out, out_len),'76a914e723a0f62396b8b03dbd9e48e9b9efe2eb704aab88ac'],
             [(PKU, HASH160_LEN, 0, out, out_len),'76a914111111111111111111111111111111111111111188ac'],
         ]
         for args, exp_script in valid_args:
             ret = wally_scriptpubkey_p2pkh_from_bytes(*args)
             self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2PKH_LEN))
-            exp_script, _ = make_cbuffer(exp_script)
-            self.assertEqual(args[3], exp_script)
+            self.assertEqual(h(args[3]), utf8(exp_script))
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2PKH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2PKH))
 
@@ -172,6 +173,37 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(args[3], exp_script)
             ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2SH_LEN)
             self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2SH))
+
+    def test_scriptpubkey_p2tr_from_bytes(self):
+        """Tests for creating p2tr scriptPubKeys"""
+        # Invalid args
+        out, out_len = make_cbuffer('00' * SCRIPTPUBKEY_P2TR_LEN)
+        invalid_args = [
+            (None, PK_LEN,   0,   out,  out_len),   # Null bytes
+            (PK,   0,        0,   out,  out_len),   # Empty bytes
+            (PK,   PK_LEN,   0x8, out,  out_len),   # Unsupported flags
+            (PK,   PK_LEN+1, 0,   out,  out_len),   # Invalid pubkey len
+            (PK,   PK_LEN,   0,   None, out_len),   # Null output
+            (PK,   PK_LEN,   0,   out,  out_len-1), # Short output len
+        ]
+        for args in invalid_args:
+            ret = wally_scriptpubkey_p2tr_from_bytes(*args)
+            if ret == (WALLY_OK, SCRIPTPUBKEY_P2TR_LEN):
+                self.assertTrue(args[-1] < out_len)
+            else:
+                self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        # Valid cases
+        valid_args = [
+            [(PK,  PK_LEN,   0,   out,  out_len), '51203b6ec3adc4917224b2da531904a1d12c2ad47cabaa88fa54adc55aa2d7d29571'],
+            [(PKX, PKX_LEN,  0,   out,  out_len), '51200202020202020202020202020202020202020202020202020202020202020202'],
+        ]
+        for args, exp_script in valid_args:
+            ret = wally_scriptpubkey_p2tr_from_bytes(*args)
+            self.assertEqual(ret, (WALLY_OK, SCRIPTPUBKEY_P2TR_LEN))
+            self.assertEqual(h(args[3]), utf8(exp_script))
+            ret = wally_scriptpubkey_get_type(out, SCRIPTPUBKEY_P2TR_LEN)
+            self.assertEqual(ret, (WALLY_OK, SCRIPT_TYPE_P2TR))
 
     def test_scriptpubkey_multisig_from_bytes(self):
         """Tests for creating multisig scriptPubKeys"""
@@ -303,14 +335,13 @@ class ScriptTests(unittest.TestCase):
 
         # Valid cases
         valid_args = [
-            [(PK, PK_LEN, SIG_DER, SIG_DER_LEN, out, out_len), '4730450220'+'11'*32+'0220'+'11'*32+'0121'+'11'*33],
+            [(PK, PK_LEN, SIG_DER, SIG_DER_LEN, out, out_len), '4730450220'+'11'*32+'0220'+'11'*32+'0121'+'02'*33],
             [(PKU, PKU_LEN, SIG_DER, SIG_DER_LEN, out, out_len), '4730450220'+'11'*32+'0220'+'11'*32+'0141'+'11'*65],
         ]
         for args, exp_script in valid_args:
             ret = wally_scriptsig_p2pkh_from_der(*args)
             self.assertEqual(ret, (WALLY_OK, args[1] + args[3] + 2))
-            exp_script, _ = make_cbuffer(exp_script)
-            self.assertEqual(args[4][:(args[1] + args[3] + 2)], exp_script)
+            self.assertEqual(h(args[4][:(args[1] + args[3] + 2)]), utf8(exp_script))
 
         # From sig
         # Invalid args

@@ -1295,6 +1295,45 @@ int wally_witness_p2wpkh_from_sig(
     return ret;
 }
 
+int wally_scriptpubkey_p2tr_from_bytes(const unsigned char *bytes, size_t bytes_len,
+                                       uint32_t flags,
+                                       unsigned char *bytes_out, size_t len,
+                                       size_t *written)
+{
+    unsigned char tweaked[EC_PUBLIC_KEY_LEN];
+
+    if (written)
+        *written = 0;
+
+    /* FIXME: Support EC_FLAG_ELEMENTS for Elements P2TR */
+    if (!bytes || flags || !bytes_out || !written)
+        return WALLY_EINVAL;
+
+    if (len < WALLY_SCRIPTPUBKEY_P2TR_LEN) {
+        /* Tell the caller their buffer is too short */
+        *written = WALLY_SCRIPTPUBKEY_P2TR_LEN;
+        return WALLY_OK;
+    }
+
+    if (bytes_len == EC_PUBLIC_KEY_LEN) {
+        /* An untweaked public key, tweak it */
+        int ret = wally_ec_public_key_bip341_tweak(bytes, bytes_len, NULL, 0,
+                                                   0, tweaked, sizeof(tweaked));
+        if (ret != WALLY_OK)
+            return ret;
+        bytes = tweaked + 1; /* Convert to x-only */
+        bytes_len = EC_XONLY_PUBLIC_KEY_LEN;
+    }
+    if (bytes_len != EC_XONLY_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL; /* Not an x-only public key */
+
+    bytes_out[0] = OP_1;
+    bytes_out[1] = bytes_len;
+    memcpy(bytes_out + 2, bytes, bytes_len);
+    *written = WALLY_SCRIPTPUBKEY_P2TR_LEN;
+    return WALLY_OK;
+}
+
 int wally_witness_p2tr_from_sig(const unsigned char *sig, size_t sig_len,
                                 struct wally_tx_witness_stack **witness)
 {

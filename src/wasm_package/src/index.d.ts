@@ -562,6 +562,7 @@ export function scriptpubkey_multisig_from_bytes(bytes: Buffer|Uint8Array, thres
 export function scriptpubkey_op_return_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function scriptpubkey_p2pkh_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function scriptpubkey_p2sh_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;
+export function scriptpubkey_p2tr_from_bytes(bytes: Buffer|Uint8Array, flags: number): Buffer;
 export function scriptpubkey_to_address(scriptpubkey: Buffer|Uint8Array, network: number): string;
 export function scriptsig_multisig_from_bytes(script: Buffer|Uint8Array, bytes: Buffer|Uint8Array, sighash: Uint32Array|number[], flags: number): Buffer;
 export function scriptsig_p2pkh_from_der(pub_key: Buffer|Uint8Array, sig: Buffer|Uint8Array): Buffer;

@@ -632,6 +632,7 @@ for f in (
     ('wally_scriptpubkey_op_return_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_p2pkh_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_p2sh_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_scriptpubkey_p2tr_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptpubkey_to_address', c_int, [c_void_p, c_size_t, c_uint32, c_char_p_p]),
     ('wally_scriptsig_multisig_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_scriptsig_p2pkh_from_der', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),

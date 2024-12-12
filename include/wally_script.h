@@ -296,8 +296,29 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
     struct wally_tx_witness_stack **witness);
 
 /**
- * Create a P2TR keyspend witness from a BIP340 signature plus
- * optional sighash.
+ * Create a P2TR scriptPubkey from a compressed or x-only public key.
+ *
+ * :param bytes: Compressed or x-only public key to create a scriptPubkey for.
+ * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
+ *|    or ``EC_XONLY_PUBLIC_KEY_LEN``.
+ * :param flags: Must be 0.
+ * :param bytes_out: Destination for the resulting scriptPubkey.
+ * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_P2TR_LEN)
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *
+ * .. note:: Compressed pubkeys are tweaked according to BIP341. X-only
+ *|    pubkeys are assumed to already be tweaked, and are used as-is.
+ */
+WALLY_CORE_API int wally_scriptpubkey_p2tr_from_bytes(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
+ * Create a P2TR keyspend witness from a BIP340 signature plus optional sighash.
  *
  * :param sig: The BIP340-encoded keyspend signature, including a sighash byte
  *|    for non `WALLY_SIGHASH_DEFAULT` sighashes.

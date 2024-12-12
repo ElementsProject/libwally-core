@@ -1671,6 +1671,12 @@ inline int scriptpubkey_p2sh_from_bytes(const BYTES& bytes, uint32_t flags, BYTE
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class BYTES, class BYTES_OUT>
+inline int scriptpubkey_p2tr_from_bytes(const BYTES& bytes, uint32_t flags, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_scriptpubkey_p2tr_from_bytes(bytes.data(), bytes.size(), flags, bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class SCRIPTPUBKEY>
 inline int scriptpubkey_to_address(const SCRIPTPUBKEY& scriptpubkey, uint32_t network, char** output) {
     int ret = ::wally_scriptpubkey_to_address(scriptpubkey.data(), scriptpubkey.size(), network, output);

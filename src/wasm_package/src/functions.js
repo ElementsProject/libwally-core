@@ -602,6 +602,7 @@ export const scriptpubkey_multisig_from_bytes = wrap('wally_scriptpubkey_multisi
 export const scriptpubkey_op_return_from_bytes = wrap('wally_scriptpubkey_op_return_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN, true)]);
 export const scriptpubkey_p2pkh_from_bytes = wrap('wally_scriptpubkey_p2pkh_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_SCRIPTPUBKEY_P2PKH_LEN, true)]);
 export const scriptpubkey_p2sh_from_bytes = wrap('wally_scriptpubkey_p2sh_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_SCRIPTPUBKEY_P2SH_LEN, true)]);
+export const scriptpubkey_p2tr_from_bytes = wrap('wally_scriptpubkey_p2tr_from_bytes', [T.Bytes, T.Int32, T.DestPtrVarLen(T.Bytes, C.WALLY_SCRIPTPUBKEY_P2TR_LEN, true)]);
 export const scriptpubkey_to_address = wrap('wally_scriptpubkey_to_address', [T.Bytes, T.Int32, T.DestPtrPtr(T.String)]);
 export const scriptsig_multisig_from_bytes = wrap('wally_scriptsig_multisig_from_bytes', [T.Bytes, T.Bytes, T.Uint32Array, T.Int32, T.DestPtrVarLen(T.Bytes, scriptsig_multisig_from_bytes_len, true)]);
 export const scriptsig_p2pkh_from_der = wrap('wally_scriptsig_p2pkh_from_der', [T.Bytes, T.Bytes, T.DestPtrVarLen(T.Bytes, C.WALLY_SCRIPTSIG_P2PKH_MAX_LEN, true)]);

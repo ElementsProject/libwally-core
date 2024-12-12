@@ -361,6 +361,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_scriptpubkey_op_return_from_bytes' \
 ,'_wally_scriptpubkey_p2pkh_from_bytes' \
 ,'_wally_scriptpubkey_p2sh_from_bytes' \
+,'_wally_scriptpubkey_p2tr_from_bytes' \
 ,'_wally_scriptpubkey_to_address' \
 ,'_wally_scriptsig_multisig_from_bytes' \
 ,'_wally_scriptsig_p2pkh_from_der' \
