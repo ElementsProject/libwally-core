@@ -33,7 +33,19 @@
 #include "src/secp256k1/src/secp256k1.c"
 #include "src/secp256k1/src/precomputed_ecmult_gen.c"
 #include "src/secp256k1/src/precomputed_ecmult.c"
-#include "src/ccan/ccan/crypto/sha256/sha256.c"
+
+/* Force the inclusion of our internal header first, so that
+ * config.h (which must be provided by the amalgamation user)
+ * is included.
+ */
+#include "src/internal.h"
+
+/* The amalgamation user can provide their own defines and skip
+ * providing a ccan_config.h if they define _WALLY_CCAN_CONFIG_H_.
+ */
+#ifndef _WALLY_CCAN_CONFIG_H_
+#include "src/ccan_config.h"
+#endif
 
 #include "src/internal.c"
 #include "src/address.c"
@@ -65,6 +77,9 @@
 #include "src/transaction.c"
 #include "src/wif.c"
 #include "src/wordlist.c"
+
+/* ccan sources */
+#include "src/ccan/ccan/crypto/sha256/sha256.c"
 
 /* Redefine internal names so sha-512 can be included without conflicts */
 #define Round Round_512

@@ -1,4 +1,8 @@
+#ifndef _WALLY_CCAN_CONFIG_H_
+#define _WALLY_CCAN_CONFIG_H_ 1
+
 /* Config directives for ccan */
+
 #include <stddef.h>
 
 #ifdef WORDS_BIGENDIAN
@@ -55,3 +59,5 @@
 void wally_clear(void *p, size_t len);
 
 #define CCAN_CLEAR_MEMORY(p, len) wally_clear(p, len)
+
+#endif /*_WALLY_CCAN_CONFIG_H_ */
