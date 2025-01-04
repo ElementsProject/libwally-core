@@ -33,38 +33,70 @@
 #include "src/secp256k1/src/secp256k1.c"
 #include "src/secp256k1/src/precomputed_ecmult_gen.c"
 #include "src/secp256k1/src/precomputed_ecmult.c"
-#include "ccan/ccan/crypto/sha256/sha256.c"
+#include "src/ccan/ccan/crypto/sha256/sha256.c"
 
-#include "internal.c"
-#include "address.c"
-#include "aes.c"
-#include "anti_exfil.c"
-#include "base_58.c"
-#include "base_64.c"
-#include "bech32.c"
-#include "blech32.c"
-#include "bip32.c"
-#include "bip38.c"
-#include "bip39.c"
-#include "bip85.c"
-#include "coins.c"
-#include "descriptor.c"
-#include "ecdh.c"
-#include "elements.c"
-#include "hex_.c"
-#include "hmac.c"
-#include "map.c"
-#include "mnemonic.c"
-#include "pbkdf2.c"
-#include "pullpush.c"
-#include "psbt.c"
-#include "script.c"
-#include "scrypt.c"
-#include "sign.c"
-#include "symmetric.c"
-#include "transaction.c"
-#include "wif.c"
-#include "wordlist.c"
+#include "src/internal.c"
+#include "src/address.c"
+#include "src/aes.c"
+#include "src/anti_exfil.c"
+#include "src/base_58.c"
+#include "src/base_64.c"
+#include "src/bech32.c"
+#include "src/blech32.c"
+#include "src/bip32.c"
+#include "src/bip38.c"
+#include "src/bip39.c"
+#include "src/bip85.c"
+#include "src/coins.c"
+#include "src/descriptor.c"
+#include "src/ecdh.c"
+#include "src/elements.c"
+#include "src/hex_.c"
+#include "src/hmac.c"
+#include "src/map.c"
+#include "src/mnemonic.c"
+#include "src/pbkdf2.c"
+#include "src/pullpush.c"
+#include "src/psbt.c"
+#include "src/script.c"
+#include "src/scrypt.c"
+#include "src/sign.c"
+#include "src/symmetric.c"
+#include "src/transaction.c"
+#include "src/wif.c"
+#include "src/wordlist.c"
+
+/* Redefine internal names so sha-512 can be included without conflicts */
+#define Round Round_512
+#define Transform Transform_512
+#define Maj Maj_512
+#define Sigma0 Sigma0_512
+#define sigma0 sigma0_512
+#define Sigma1 Sigma1_512
+#define sigma1 sigma1_512
+#define add add_512
+#define Ch Ch_512
+#include "src/ccan/ccan/crypto/sha512/sha512.c"
+#undef Round
+#undef Transform
+#undef Sigma0
+#undef sigma0
+#undef sigma1
+#undef Sigma1
+#undef add
+#undef Maj
+#undef Ch
+#include "src/ccan/ccan/str/hex/hex.c"
+
+/* Redefine internal names so ripemd-160 can be included without conflicts */
+#define Transform Transform_ripemd160
+#define add add_ripemd160
+#define Round Round_ripemd160
+#include "src/ccan/ccan/crypto/ripemd160/ripemd160.c"
+#undef Transform
+#undef add
+#undef Round
+#include "src/ccan/ccan/base64/base64.c"
 
 void wally_silence_unused_warnings(void)
 {

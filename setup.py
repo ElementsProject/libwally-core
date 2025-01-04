@@ -128,9 +128,7 @@ if USE_LIB == 'no':
         './src/secp256k1/include',
     ]
     sources += [
-        'src/amalgamation/combined.c',
-        'src/amalgamation/combined_ccan.c',
-        'src/amalgamation/combined_ccan2.c',
+        'src/amalgamation/combined.c'
     ]
 else:
     # Compile the swig python wrapper file and link it with wally/secp
