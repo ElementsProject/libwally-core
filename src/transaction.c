@@ -1969,7 +1969,9 @@ int wally_tx_get_vsize(const struct wally_tx *tx, size_t *written)
 int wally_tx_get_elements_weight_discount(const struct wally_tx *tx,
                                           uint32_t flags, size_t *written)
 {
+#ifdef BUILD_ELEMENTS
     size_t i, n = 0, is_elements = 0;
+#endif /* BUILD_ELEMENTS */
 
     if (written)
         *written = 0;
@@ -2004,7 +2006,7 @@ int wally_tx_get_elements_weight_discount(const struct wally_tx *tx,
         }
     }
     *written = n;
-#endif
+#endif /* BUILD_ELEMENTS */
     return WALLY_OK;
 }
 #endif /* WALLY_ABI_NO_ELEMENTS */
