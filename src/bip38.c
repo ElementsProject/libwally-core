@@ -123,14 +123,14 @@ static int address_from_private_key(const unsigned char *bytes,
     return ret;
 }
 
-static void aes_enc_impl(const unsigned char *src, const unsigned char *xor,
+static void aes_enc_impl(const unsigned char *src, const unsigned char *xor_bytes,
                          const unsigned char *key, unsigned char *bytes_out)
 {
     unsigned char plaintext[AES_BLOCK_LEN];
     size_t i;
 
     for (i = 0; i < sizeof(plaintext); ++i)
-        plaintext[i] = src[i] ^ xor[i];
+        plaintext[i] = src[i] ^ xor_bytes[i];
 
     wally_aes(key, AES_KEY_LEN_256, plaintext, AES_BLOCK_LEN,
               AES_FLAG_ENCRYPT, bytes_out, AES_BLOCK_LEN);
@@ -219,7 +219,7 @@ int bip38_from_private_key(const unsigned char *bytes, size_t bytes_len,
 }
 
 
-static void aes_dec_impl(const unsigned char *cyphertext, const unsigned char *xor,
+static void aes_dec_impl(const unsigned char *cyphertext, const unsigned char *xor_bytes,
                          const unsigned char *key, unsigned char *bytes_out)
 {
     size_t i;
@@ -230,7 +230,7 @@ static void aes_dec_impl(const unsigned char *cyphertext, const unsigned char *x
               bytes_out, AES_BLOCK_LEN);
 
     for (i = 0; i < AES_BLOCK_LEN; ++i)
-        bytes_out[i] ^= xor[i];
+        bytes_out[i] ^= xor_bytes[i];
 }
 
 static int to_private_key(const char *bip38,
