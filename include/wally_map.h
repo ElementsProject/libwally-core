@@ -333,7 +333,7 @@ WALLY_CORE_API int wally_map_combine(
 /**
  * Replace a maps contents with another map.
  *
- * :param map_in: the destination to combine into.
+ * :param map_in: the destination to assign to.
  * :param source: the source to copy items from.
  *
  * .. note:: If this call fails, ``map_in`` is left untouched.

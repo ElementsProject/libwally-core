@@ -56,6 +56,7 @@ export function base58_get_length(str_in: string): number;
 export function base58_n_get_length(str_in: string, str_len: number): number;
 export function base64_from_bytes(bytes: Buffer|Uint8Array, flags: number): string;
 export function base64_get_maximum_length(str_in: string, flags: number): number;
+export function base64_n_get_maximum_length(str_in: string, str_len: number, flags: number): number;
 export function bip32_key_free(hdkey: Ref_ext_key): void;
 export function bip32_key_from_base58(base58: string): Ref_ext_key;
 export function bip32_key_from_base58_n(base58: string, base58_len: number): Ref_ext_key;
@@ -741,6 +742,7 @@ export function asset_pak_whitelistproof(online_keys: Buffer|Uint8Array, offline
 export function asset_surjectionproof(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array, bytes: Buffer|Uint8Array, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, generator: Buffer|Uint8Array): Buffer;
 export function base58_n_to_bytes(str_in: string, str_len: number, flags: number): Buffer;
 export function base58_to_bytes(str_in: string, flags: number): Buffer;
+export function base64_n_to_bytes(str_in: string, str_len: number, flags: number): Buffer;
 export function base64_to_bytes(str_in: string, flags: number): Buffer;
 export function descriptor_get_key_child_path_str(descriptor: Ref_wally_descriptor, index: number): string;
 export function descriptor_get_key_origin_path_str(descriptor: Ref_wally_descriptor, index: number): string;

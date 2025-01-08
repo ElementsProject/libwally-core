@@ -351,6 +351,19 @@ WALLY_CORE_API int wally_base64_to_bytes(
     size_t *written);
 
 /**
+ * Decode a known-length base64 encoded string back into into binary data.
+ *
+ * See `wally_base64_to_bytes`.
+ */
+WALLY_CORE_API int wally_base64_n_to_bytes(
+    const char *str_in,
+    size_t str_len,
+    uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
+/**
  * Return the maximum length of a base64 encoded string once decoded into bytes.
  *
  * Since base64 strings may contain line breaks and padding, it is not
@@ -366,6 +379,17 @@ WALLY_CORE_API int wally_base64_to_bytes(
  */
 WALLY_CORE_API int wally_base64_get_maximum_length(
     const char *str_in,
+    uint32_t flags,
+    size_t *written);
+
+/**
+ * Return the maximum length of a known-length base64 encoded string once decoded into bytes.
+ *
+ * See `wally_base64_get_maximum_length`.
+ */
+WALLY_CORE_API int wally_base64_n_get_maximum_length(
+    const char *str_in,
+    size_t str_len,
     uint32_t flags,
     size_t *written);
 

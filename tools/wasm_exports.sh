@@ -75,6 +75,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_base58_to_bytes' \
 ,'_wally_base64_from_bytes' \
 ,'_wally_base64_get_maximum_length' \
+,'_wally_base64_n_get_maximum_length' \
+,'_wally_base64_n_to_bytes' \
 ,'_wally_base64_to_bytes' \
 ,'_wally_bip32_key_to_addr_segwit' \
 ,'_wally_bip32_key_to_address' \

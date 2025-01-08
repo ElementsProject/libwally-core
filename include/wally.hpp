@@ -463,6 +463,18 @@ inline int base64_get_maximum_length(const STR_IN& str_in, uint32_t flags, size_
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class STR_IN>
+inline int base64_n_get_maximum_length(const STR_IN& str_in, size_t str_len, uint32_t flags, size_t* written) {
+    int ret = ::wally_base64_n_get_maximum_length(detail::get_p(str_in), str_len, flags, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class STR_IN, class BYTES_OUT>
+inline int base64_n_to_bytes(const STR_IN& str_in, size_t str_len, uint32_t flags, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_base64_n_to_bytes(detail::get_p(str_in), str_len, flags, bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class STR_IN, class BYTES_OUT>
 inline int base64_to_bytes(const STR_IN& str_in, uint32_t flags, BYTES_OUT& bytes_out, size_t* written) {
     int ret = ::wally_base64_to_bytes(detail::get_p(str_in), flags, bytes_out.data(), bytes_out.size(), written);

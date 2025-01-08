@@ -551,7 +551,9 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_base58_n_to_bytes);
 %returns_string(wally_base64_from_bytes);
 %returns_size_t(wally_base64_to_bytes);
+%returns_size_t(wally_base64_n_to_bytes);
 %returns_size_t(wally_base64_get_maximum_length);
+%returns_size_t(wally_base64_n_get_maximum_length);
 %returns_string(wally_bip32_key_to_address);
 %returns_string(wally_bip32_key_to_addr_segwit);
 %returns_array_(wally_bip340_tagged_hash, 4, 5, SHA256_LEN);

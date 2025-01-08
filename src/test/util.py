@@ -300,6 +300,8 @@ for f in (
     ('wally_base58_to_bytes', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_base64_from_bytes', c_int, [c_void_p, c_size_t, c_uint32, c_char_p_p]),
     ('wally_base64_get_maximum_length', c_int, [c_char_p, c_uint32, c_size_t_p]),
+    ('wally_base64_n_get_maximum_length', c_int, [c_char_p, c_size_t, c_uint32, c_size_t_p]),
+    ('wally_base64_n_to_bytes', c_int, [c_char_p, c_size_t, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_base64_to_bytes', c_int, [c_char_p, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_bip32_key_to_addr_segwit', c_int, [POINTER(ext_key), c_char_p, c_uint32, c_char_p_p]),
     ('wally_bip32_key_to_address', c_int, [POINTER(ext_key), c_uint32, c_uint32, c_char_p_p]),

@@ -25,15 +25,48 @@ int wally_base64_from_bytes(const unsigned char *bytes, size_t bytes_len,
     return WALLY_OK;
 }
 
-int wally_base64_get_maximum_length(const char *str_in, uint32_t flags, size_t *written)
+int wally_base64_n_get_maximum_length(const char *str_in, size_t str_len, uint32_t flags, size_t *written)
 {
     if (written)
         *written = 0;
 
-    if (!str_in || !*str_in || flags || !written)
+    if (!str_in || !str_len || flags || !written)
         return WALLY_EINVAL;
 
-    *written = base64_decoded_length(strlen(str_in));
+    *written = base64_decoded_length(str_len);
+    return WALLY_OK;
+}
+
+int wally_base64_get_maximum_length(const char *str_in, uint32_t flags, size_t *written)
+{
+    size_t str_len = str_in ? strlen(str_in) : 0;
+    return wally_base64_n_get_maximum_length(str_in, str_len, flags, written);
+}
+
+int wally_base64_n_to_bytes(const char *str_in, size_t str_len, uint32_t flags,
+                            unsigned char *bytes_out, size_t len,
+                            size_t *written)
+{
+    size_t decode_len;
+    ssize_t actual_len;
+
+    if (written)
+        *written = 0;
+
+    if (!str_in || !str_len || flags || !bytes_out || !len || !written)
+        return WALLY_EINVAL;
+
+    decode_len = base64_decoded_length(str_len);
+    if (len < decode_len) {
+        /* Not enough space; return the amount required */
+        *written = decode_len;
+        return WALLY_OK;
+    }
+
+    actual_len = base64_decode((char *)bytes_out, decode_len, str_in, str_len);
+    if (actual_len < 0)
+        return WALLY_EINVAL; /* Invalid base64 data */
+    *written = actual_len;
     return WALLY_OK;
 }
 
@@ -41,26 +74,6 @@ int wally_base64_to_bytes(const char *str_in, uint32_t flags,
                           unsigned char *bytes_out, size_t len,
                           size_t *written)
 {
-    size_t decode_len, str_in_len;
-    ssize_t actual_len;
-
-    if (written)
-        *written = 0;
-
-    if (!str_in || flags || !bytes_out || !len || !written)
-        return WALLY_EINVAL;
-
-    str_in_len = strlen(str_in);
-    decode_len = base64_decoded_length(str_in_len);
-    if (len < decode_len) {
-        /* Not enough space; return the amount required */
-        *written = decode_len;
-        return WALLY_OK;
-    }
-
-    actual_len = base64_decode((char *)bytes_out, decode_len, str_in, str_in_len);
-    if (actual_len < 0)
-        return WALLY_EINVAL; /* Invalid base64 data */
-    *written = actual_len;
-    return WALLY_OK;
+    size_t str_len = str_in ? strlen(str_in) : 0;
+    return wally_base64_n_to_bytes(str_in, str_len, flags, bytes_out, len, written);
 }

@@ -35,10 +35,17 @@ class Base64Tests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertTrue(max_len >= len(str_in))
 
+            ret, max_len_n = wally_base64_n_get_maximum_length(b64_in, len(b64_in), 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(max_len, max_len_n)
+
             ret, b64_out = wally_base64_from_bytes(utf8(str_in), len(str_in), 0)
             self.assertEqual((ret, b64_out), (WALLY_OK, b64_in))
 
             ret, written = wally_base64_to_bytes(utf8(b64_in), 0, buf, max_len)
+            self.assertEqual((ret, buf[:written]), (WALLY_OK, utf8(str_in)))
+
+            ret, written = wally_base64_n_to_bytes(utf8(b64_in), len(b64_in), 0, buf, max_len)
             self.assertEqual((ret, buf[:written]), (WALLY_OK, utf8(str_in)))
 
     def test_get_maximum_length(self):
@@ -69,6 +76,7 @@ class Base64Tests(unittest.TestCase):
         # Invalid args
         buf, buf_len = make_cbuffer('00' * 1024)
         valid_b64 = utf8(ROUND_TRIP_CASES[0][1])
+        valid_len = len(valid_b64)
         _, max_len = wally_base64_get_maximum_length(valid_b64, 0)
 
         for args in [
@@ -78,6 +86,13 @@ class Base64Tests(unittest.TestCase):
             (valid_b64, 0, buf,  0),         # Zero output length
             ]:
             ret, written = wally_base64_to_bytes(*args)
+            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+
+        for args in [
+            (None,      valid_len, 0, buf,  max_len),  # NULL base64 string, non-0 length
+            (valid_b64, 0,         0, buf,  max_len),  # Non-NULL base64 string, 0 length
+            ]:
+            ret, written = wally_base64_n_to_bytes(*args)
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
         # Too short output length returns the number of bytes needed
