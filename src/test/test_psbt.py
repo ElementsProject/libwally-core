@@ -320,13 +320,19 @@ class PSBTTests(unittest.TestCase):
 
         # psbt_from_base64
         src_base64 = JSON['valid'][0]['psbt']
+        src_len = len(src_base64)
         for args in [(None,       0,    psbt),  # NULL base64
                      ('',         0,    psbt),  # Empty base64
                      (src_base64, 0xff, psbt),  # Invalid flags
                      (src_base64, 0,    None)]: # NULL dest
             self.assertEqual(WALLY_EINVAL, wally_psbt_from_base64(*args))
 
-        self.assertEqual(WALLY_OK, wally_psbt_from_base64(JSON['valid'][0]['psbt'], 0, psbt))
+        for args in [(None,       src_len, 0, psbt),   # NULL base64 string, non-0 length
+                     (src_base64, 0,       0, psbt)]:  # Non-NULL base64 string, 0 length
+            self.assertEqual(WALLY_EINVAL, wally_psbt_from_base64_n(*args))
+
+        self.assertEqual(WALLY_OK, wally_psbt_from_base64(src_base64, 0, psbt))
+        self.assertEqual(WALLY_OK, wally_psbt_from_base64_n(src_base64, src_len, 0, psbt))
 
         # psbt_clone_alloc
         clone = pointer(wally_psbt())

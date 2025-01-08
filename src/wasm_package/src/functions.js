@@ -318,6 +318,7 @@ export const psbt_find_output_keypath = wrap('wally_psbt_find_output_keypath', [
 export const psbt_find_output_unknown = wrap('wally_psbt_find_output_unknown', [T.OpaqueRef, T.Int32, T.Bytes, T.DestPtr(T.Int32)]);
 export const psbt_free = wrap('wally_psbt_free', [T.OpaqueRef]);
 export const psbt_from_base64 = wrap('wally_psbt_from_base64', [T.String, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
+export const psbt_from_base64_n = wrap('wally_psbt_from_base64_n', [T.String, T.Int32, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_from_bytes = wrap('wally_psbt_from_bytes', [T.Bytes, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_from_tx = wrap('wally_psbt_from_tx', [T.OpaqueRef, T.Int32, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_generate_input_explicit_proofs = wrap('wally_psbt_generate_input_explicit_proofs', [T.OpaqueRef, T.Int32, T.Int64, T.Bytes, T.Bytes, T.Bytes, T.Bytes]);

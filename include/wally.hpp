@@ -1214,9 +1214,15 @@ inline int psbt_free(struct wally_psbt* psbt) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
-template <class BASE64>
-inline int psbt_from_base64(const BASE64& base64, uint32_t flags, struct wally_psbt** output) {
-    int ret = ::wally_psbt_from_base64(detail::get_p(base64), flags, output);
+template <class STR_IN>
+inline int psbt_from_base64(const STR_IN& str_in, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_base64(detail::get_p(str_in), flags, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class STR_IN>
+inline int psbt_from_base64_n(const STR_IN& str_in, size_t str_len, uint32_t flags, struct wally_psbt** output) {
+    int ret = ::wally_psbt_from_base64_n(detail::get_p(str_in), str_len, flags, output);
     return detail::check_ret(__FUNCTION__, ret);
 }
 

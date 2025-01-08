@@ -277,7 +277,8 @@ export function psbt_find_input_unknown(psbt: Ref_wally_psbt, index: number, key
 export function psbt_find_output_keypath(psbt: Ref_wally_psbt, index: number, key: Buffer|Uint8Array): number;
 export function psbt_find_output_unknown(psbt: Ref_wally_psbt, index: number, key: Buffer|Uint8Array): number;
 export function psbt_free(psbt: Ref_wally_psbt): void;
-export function psbt_from_base64(base64: string, flags: number): Ref_wally_psbt;
+export function psbt_from_base64(str_in: string, flags: number): Ref_wally_psbt;
+export function psbt_from_base64_n(str_in: string, str_len: number, flags: number): Ref_wally_psbt;
 export function psbt_from_bytes(bytes: Buffer|Uint8Array, flags: number): Ref_wally_psbt;
 export function psbt_from_tx(tx: Ref_wally_tx, version: number, flags: number): Ref_wally_psbt;
 export function psbt_generate_input_explicit_proofs(psbt: Ref_wally_psbt, index: number, satoshi: bigint, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, entropy: Buffer|Uint8Array): void;

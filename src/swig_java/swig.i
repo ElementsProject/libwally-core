@@ -731,6 +731,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_find_global_scalar);
 %returns_void__(wally_psbt_free);
 %returns_struct(wally_psbt_from_base64, wally_psbt);
+%returns_struct(wally_psbt_from_base64_n, wally_psbt);
 %returns_struct(wally_psbt_from_bytes, wally_psbt);
 %returns_struct(wally_psbt_from_tx, wally_psbt);
 %returns_void__(wally_psbt_generate_input_explicit_proofs);

@@ -3357,14 +3357,14 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     return WALLY_OK;
 }
 
-int wally_psbt_from_base64(const char *base64, uint32_t flags, struct wally_psbt **output)
+int wally_psbt_from_base64_n(const char *str_in, size_t str_len, uint32_t flags, struct wally_psbt **output)
 {
     unsigned char *decoded;
     size_t max_len, written;
     int ret;
 
     OUTPUT_CHECK;
-    if ((ret = wally_base64_get_maximum_length(base64, 0, &max_len)) != WALLY_OK)
+    if ((ret = wally_base64_n_get_maximum_length(str_in, str_len, 0, &max_len)) != WALLY_OK)
         return ret;
 
     /* Allocate the buffer to decode into */
@@ -3372,7 +3372,8 @@ int wally_psbt_from_base64(const char *base64, uint32_t flags, struct wally_psbt
         return WALLY_ENOMEM;
 
     /* Decode the base64 psbt into binary */
-    if ((ret = wally_base64_to_bytes(base64, 0, decoded, max_len, &written)) != WALLY_OK)
+    ret = wally_base64_n_to_bytes(str_in, str_len, 0, decoded, max_len, &written);
+    if (ret != WALLY_OK)
         goto done;
 
     if (written <= sizeof(PSBT_MAGIC)) {
@@ -3390,6 +3391,12 @@ int wally_psbt_from_base64(const char *base64, uint32_t flags, struct wally_psbt
 done:
     clear_and_free(decoded, max_len);
     return ret;
+}
+
+int wally_psbt_from_base64(const char *str_in, uint32_t flags, struct wally_psbt **output)
+{
+    size_t str_len = str_in ? strlen(str_in) : 0;
+    return wally_psbt_from_base64_n(str_in, str_len, flags, output);
 }
 
 int wally_psbt_to_base64(const struct wally_psbt *psbt, uint32_t flags, char **output)
