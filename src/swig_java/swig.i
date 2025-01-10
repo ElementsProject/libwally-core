@@ -802,6 +802,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_input_signature_hash);
 %returns_size_t(wally_psbt_get_input_signature_len);
 %returns_size_t(wally_psbt_get_input_sighash);
+%returns_size_t(wally_psbt_get_input_taproot_internal_key);
+%returns_size_t(wally_psbt_get_input_taproot_internal_key_len);
 %returns_size_t(wally_psbt_get_input_taproot_signature);
 %returns_size_t(wally_psbt_get_input_taproot_signature_len);
 %returns_size_t(wally_psbt_get_input_unknown);
@@ -913,6 +915,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_set_input_sighash);
 %returns_void__(wally_psbt_set_input_signatures);
 %returns_void__(wally_psbt_set_input_taproot_signature);
+%returns_void__(wally_psbt_set_input_taproot_internal_key);
 %returns_void__(wally_psbt_set_input_unknowns);
 %returns_void__(wally_psbt_set_input_utxo);
 %returns_void__(wally_psbt_set_input_utxo_rangeproof);
@@ -1292,6 +1295,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_input_get_inflation_keys_blinding_rangeproof_len;
 %ignore wally_psbt_input_set_inflation_keys_blinding_rangeproof;
 %ignore wally_psbt_input_clear_inflation_keys_blinding_rangeproof;
+%ignore wally_psbt_input_set_taproot_internal_key;
 %ignore wally_psbt_input_set_taproot_signature;
 %ignore wally_psbt_input_get_utxo_rangeproof;
 %ignore wally_psbt_input_get_utxo_rangeproof_len;

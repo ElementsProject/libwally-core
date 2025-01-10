@@ -1420,6 +1420,12 @@ inline int psbt_input_set_signatures(const INPUT& input, const struct wally_map*
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class INPUT, class PUB_KEY>
+inline int psbt_input_set_taproot_internal_key(const INPUT& input, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_input_set_taproot_internal_key(detail::get_p(input), pub_key.data(), pub_key.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class INPUT, class TAP_SIG>
 inline int psbt_input_set_taproot_signature(const INPUT& input, const TAP_SIG& tap_sig) {
     int ret = ::wally_psbt_input_set_taproot_signature(detail::get_p(input), tap_sig.data(), tap_sig.size());

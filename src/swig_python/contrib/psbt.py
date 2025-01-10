@@ -336,6 +336,7 @@ class PSBTTests(unittest.TestCase):
         dummy_sig_tap_default = TAPROOT_SIG_BYTES # SIGHASH_DEFAULT
         dummy_sig_tap_all = TAPROOT_SIG_BYTES + bytearray(b'\x01') # SIGHASH_ALL
         dummy_sig_tap_single = TAPROOT_SIG_BYTES + bytearray(b'\x03') # SIGHASH_SINGLE
+        dummy_tap_internal_key = bytearray(b'\x01' * 32) # Untweaked x-only pubkey
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
             dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
@@ -493,6 +494,9 @@ class PSBTTests(unittest.TestCase):
             self._try_get_set_b(psbt_set_input_taproot_signature,
                                 psbt_get_input_taproot_signature,
                                 None, psbt, dummy_sig_tap_default)
+            self._try_get_set_b(psbt_set_input_taproot_internal_key,
+                                psbt_get_input_taproot_internal_key,
+                                None, psbt, dummy_tap_internal_key)
             # Test finding the UXTO an input spends by txid/vout
             utxo_txhash = psbt_get_input_previous_txid(psbt, 0)
             utxo_index = psbt_get_input_output_index(psbt, 0)

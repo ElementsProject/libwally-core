@@ -197,6 +197,7 @@ psbt_get_input_scriptcode = _wrap_bin(psbt_get_input_scriptcode, psbt_get_input_
 psbt_get_input_signature = _wrap_bin(psbt_get_input_signature, psbt_get_input_signature_len)
 psbt_get_input_signature_hash = _wrap_bin(psbt_get_input_signature_hash, SHA256_LEN)
 psbt_get_input_signing_script = _wrap_bin(psbt_get_input_signing_script, psbt_get_input_signing_script_len)
+psbt_get_input_taproot_internal_key = _wrap_bin(psbt_get_input_taproot_internal_key, psbt_get_input_taproot_internal_key_len)
 psbt_get_input_taproot_signature = _wrap_bin(psbt_get_input_taproot_signature, psbt_get_input_taproot_signature_len)
 psbt_get_input_unknown = _wrap_bin(psbt_get_input_unknown, psbt_get_input_unknown_len)
 psbt_get_input_utxo = psbt_get_input_utxo_alloc

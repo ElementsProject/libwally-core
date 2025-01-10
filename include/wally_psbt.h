@@ -355,6 +355,18 @@ WALLY_CORE_API int wally_psbt_input_set_taproot_signature(
     size_t tap_sig_len);
 
 /**
+ * Set the taproot internal public key in an input.
+ *
+ * :param input: The input to update.
+ * :param pub_key: The x-only internal public key for this input.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ */
+WALLY_CORE_API int wally_psbt_input_set_taproot_internal_key(
+    struct wally_psbt_input *input,
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+/**
  * Find a partial signature matching a pubkey in an input.
  *
  * :param input: The input to search in.
