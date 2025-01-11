@@ -845,6 +845,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_output_redeem_script_len);
 %returns_size_t(wally_psbt_get_output_script);
 %returns_size_t(wally_psbt_get_output_script_len);
+%returns_size_t(wally_psbt_get_output_taproot_internal_key);
+%returns_size_t(wally_psbt_get_output_taproot_internal_key_len);
 %returns_size_t(wally_psbt_get_output_unknown);
 %returns_size_t(wally_psbt_get_output_unknown_len);
 %returns_size_t(wally_psbt_get_output_unknowns_size);
@@ -934,6 +936,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_set_output_keypaths);
 %returns_void__(wally_psbt_set_output_redeem_script);
 %returns_void__(wally_psbt_set_output_script);
+%returns_void__(wally_psbt_set_output_taproot_internal_key);
 %returns_void__(wally_psbt_set_output_unknowns);
 %returns_void__(wally_psbt_set_output_value_blinding_rangeproof);
 %returns_void__(wally_psbt_set_output_value_commitment);
@@ -1352,6 +1355,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore wally_psbt_output_set_asset_blinding_surjectionproof;
 %ignore wally_psbt_output_clear_asset_blinding_surjectionproof;
 %ignore wally_psbt_output_get_blinding_status;
+%ignore wally_psbt_output_set_taproot_internal_key;
 
 %include "../include/wally_core.h"
 %include "../include/wally_address.h"

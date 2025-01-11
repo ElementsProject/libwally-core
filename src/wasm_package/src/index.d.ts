@@ -349,6 +349,7 @@ export function psbt_get_output_keypath_len(psbt: Ref_wally_psbt, index: number,
 export function psbt_get_output_keypaths_size(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_output_redeem_script_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_output_script_len(psbt: Ref_wally_psbt, index: number): number;
+export function psbt_get_output_taproot_internal_key_len(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_output_unknown_len(psbt: Ref_wally_psbt, index: number, subindex: number): number;
 export function psbt_get_output_unknowns_size(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_get_output_value_blinding_rangeproof_len(psbt: Ref_wally_psbt, index: number): number;
@@ -483,6 +484,7 @@ export function psbt_output_set_ecdh_public_key(output: Ref_wally_psbt_output, p
 export function psbt_output_set_keypaths(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_redeem_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array): void;
 export function psbt_output_set_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array): void;
+export function psbt_output_set_taproot_internal_key(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array): void;
 export function psbt_output_set_unknowns(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_value_blinding_rangeproof(output: Ref_wally_psbt_output, rangeproof: Buffer|Uint8Array): void;
 export function psbt_output_set_value_commitment(output: Ref_wally_psbt_output, commitment: Buffer|Uint8Array): void;
@@ -542,6 +544,7 @@ export function psbt_set_output_ecdh_public_key(psbt: Ref_wally_psbt, index: num
 export function psbt_set_output_keypaths(psbt: Ref_wally_psbt, index: number, map_in: Ref_wally_map): void;
 export function psbt_set_output_redeem_script(psbt: Ref_wally_psbt, index: number, script: Buffer|Uint8Array): void;
 export function psbt_set_output_script(psbt: Ref_wally_psbt, index: number, script: Buffer|Uint8Array): void;
+export function psbt_set_output_taproot_internal_key(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array): void;
 export function psbt_set_output_unknowns(psbt: Ref_wally_psbt, index: number, map_in: Ref_wally_map): void;
 export function psbt_set_output_value_blinding_rangeproof(psbt: Ref_wally_psbt, index: number, rangeproof: Buffer|Uint8Array): void;
 export function psbt_set_output_value_commitment(psbt: Ref_wally_psbt, index: number, commitment: Buffer|Uint8Array): void;
@@ -791,6 +794,7 @@ export function psbt_get_output_ecdh_public_key(psbt: Ref_wally_psbt, index: num
 export function psbt_get_output_keypath(psbt: Ref_wally_psbt, index: number, subindex: number): Buffer;
 export function psbt_get_output_redeem_script(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_output_script(psbt: Ref_wally_psbt, index: number): Buffer;
+export function psbt_get_output_taproot_internal_key(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_output_unknown(psbt: Ref_wally_psbt, index: number, subindex: number): Buffer;
 export function psbt_get_output_value_blinding_rangeproof(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_output_value_commitment(psbt: Ref_wally_psbt, index: number): Buffer;

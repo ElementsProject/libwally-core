@@ -871,6 +871,7 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
 
 MAP_INNER_FIELD(output, redeem_script, PSBT_OUT_REDEEM_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(output, witness_script, PSBT_OUT_WITNESS_SCRIPT, psbt_fields)
+MAP_INNER_FIELD(output, taproot_internal_key, PSBT_OUT_TAP_INTERNAL_KEY, psbt_fields)
 SET_MAP(wally_psbt_output, keypath,)
 ADD_KEYPATH(wally_psbt_output)
 ADD_TAP_KEYPATH(wally_psbt_output)
@@ -5712,6 +5713,7 @@ int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t i
     if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
     return wally_psbt_input_clear_required_lockheight(psbt_get_input(psbt, index));
 }
+PSBT_FIELD(output, taproot_internal_key, PSBT_0)
 
 #ifndef WALLY_ABI_NO_ELEMENTS
 PSBT_GET_I_PSET(input, amount, uint64_t, PSBT_2)

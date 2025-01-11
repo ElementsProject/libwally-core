@@ -265,6 +265,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_get_output_redeem_script_len' \
 ,'_wally_psbt_get_output_script' \
 ,'_wally_psbt_get_output_script_len' \
+,'_wally_psbt_get_output_taproot_internal_key' \
+,'_wally_psbt_get_output_taproot_internal_key_len' \
 ,'_wally_psbt_get_output_unknown' \
 ,'_wally_psbt_get_output_unknown_len' \
 ,'_wally_psbt_get_output_unknowns_size' \
@@ -317,6 +319,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_output_set_keypaths' \
 ,'_wally_psbt_output_set_redeem_script' \
 ,'_wally_psbt_output_set_script' \
+,'_wally_psbt_output_set_taproot_internal_key' \
 ,'_wally_psbt_output_set_unknowns' \
 ,'_wally_psbt_output_set_witness_script' \
 ,'_wally_psbt_output_taproot_keypath_add' \
@@ -346,6 +349,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_set_output_keypaths' \
 ,'_wally_psbt_set_output_redeem_script' \
 ,'_wally_psbt_set_output_script' \
+,'_wally_psbt_set_output_taproot_internal_key' \
 ,'_wally_psbt_set_output_unknowns' \
 ,'_wally_psbt_set_output_witness_script' \
 ,'_wally_psbt_set_tx_modifiable_flags' \

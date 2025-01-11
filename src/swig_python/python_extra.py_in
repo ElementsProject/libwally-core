@@ -206,6 +206,7 @@ psbt_get_input_witness_utxo = psbt_get_input_witness_utxo_alloc
 psbt_get_output_keypath = _wrap_bin(psbt_get_output_keypath, psbt_get_output_keypath_len)
 psbt_get_output_redeem_script = _wrap_bin(psbt_get_output_redeem_script, psbt_get_output_redeem_script_len)
 psbt_get_output_script = _wrap_bin(psbt_get_output_script, psbt_get_output_script_len)
+psbt_get_output_taproot_internal_key = _wrap_bin(psbt_get_output_taproot_internal_key, psbt_get_output_taproot_internal_key_len)
 psbt_get_output_unknown = _wrap_bin(psbt_get_output_unknown, psbt_get_output_unknown_len)
 psbt_get_output_witness_script = _wrap_bin(psbt_get_output_witness_script, psbt_get_output_witness_script_len)
 psbt_init = psbt_init_alloc

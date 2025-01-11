@@ -655,6 +655,9 @@ class PSBTTests(unittest.TestCase):
                                 psbt_get_output_unknown,
                                 psbt_find_output_unknown,
                                 p, dummy_unknowns, dummy_unknown_key)
+            self._try_get_set_b(psbt_set_output_taproot_internal_key,
+                                psbt_get_output_taproot_internal_key,
+                                None, psbt, dummy_tap_internal_key)
 
         #
         # Outputs: PSBT V2

@@ -186,6 +186,8 @@ WALLY_CORE_API int wally_psbt_get_output_script(const struct wally_psbt *psbt, s
 WALLY_CORE_API int wally_psbt_get_output_script_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_get_output_amount(const struct wally_psbt *psbt, size_t index, uint64_t *value_out);
 WALLY_CORE_API int wally_psbt_has_output_amount(const struct wally_psbt *psbt, size_t index, size_t *written);
+WALLY_CORE_API int wally_psbt_get_output_taproot_internal_key(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len, size_t *written);
+WALLY_CORE_API int wally_psbt_get_output_taproot_internal_key_len(const struct wally_psbt *psbt, size_t index, size_t *written);
 
 WALLY_CORE_API int wally_psbt_set_output_redeem_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_psbt_set_output_witness_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
@@ -194,6 +196,7 @@ WALLY_CORE_API int wally_psbt_set_output_unknowns(struct wally_psbt *psbt, size_
 WALLY_CORE_API int wally_psbt_set_output_script(struct wally_psbt *psbt, size_t index, const unsigned char *script, size_t script_len);
 WALLY_CORE_API int wally_psbt_set_output_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
 WALLY_CORE_API int wally_psbt_clear_output_amount(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_set_output_taproot_internal_key(struct wally_psbt *psbt, size_t index, const unsigned char *pub_key, size_t pub_key_len);
 
 #ifndef WALLY_ABI_NO_ELEMENTS
 WALLY_CORE_API int wally_psbt_get_output_blinder_index(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);

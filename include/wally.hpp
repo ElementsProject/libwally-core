@@ -1533,6 +1533,12 @@ inline int psbt_output_set_script(const OUTPUT& output, const SCRIPT& script) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class OUTPUT, class PUB_KEY>
+inline int psbt_output_set_taproot_internal_key(const OUTPUT& output, const PUB_KEY& pub_key) {
+    int ret = ::wally_psbt_output_set_taproot_internal_key(detail::get_p(output), pub_key.data(), pub_key.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class OUTPUT>
 inline int psbt_output_set_unknowns(const OUTPUT& output, const struct wally_map* map_in) {
     int ret = ::wally_psbt_output_set_unknowns(detail::get_p(output), map_in);

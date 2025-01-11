@@ -1434,6 +1434,19 @@ WALLY_CORE_API int wally_psbt_output_set_script(
     const unsigned char *script,
     size_t script_len);
 
+/**
+ * Set the taproot internal public key in an output.
+ *
+ * :param output: The output to update.
+ * :param pub_key: The x-only internal public key for this output.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be `EC_XONLY_PUBLIC_KEY_LEN`.
+ */
+WALLY_CORE_API int wally_psbt_output_set_taproot_internal_key(
+    struct wally_psbt_output *output,
+    const unsigned char *pub_key,
+    size_t pub_key_len);
+
+
 #ifndef WALLY_ABI_NO_ELEMENTS
 /**
  * Set the input blinder index in an output.
