@@ -149,8 +149,12 @@ uint64_t pull_varint(const unsigned char **cursor, size_t *max)
     uint64_t v;
 
     pull_bytes(buf, 1, cursor, max);
+    if (!*cursor)
+        return 0;
     if ((len = varint_length_from_bytes(buf) - 1))
         pull_bytes(buf + 1, len, cursor, max);
+    if (!*cursor)
+        return 0;
     varint_from_bytes(buf, &v);
     return v;
 }
