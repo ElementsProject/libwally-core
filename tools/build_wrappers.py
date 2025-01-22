@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-import sys
 
 # Structs with no definition in the public header files
 OPAQUE_STRUCTS = [u'words', u'wally_descriptor']
@@ -338,9 +337,9 @@ def gen_wally_hpp(funcs, all_funcs):
             prev = func.args[-3]
             impl.append(f'    if (ret == WALLY_OK && n != static_cast<size_t>({prev.name}.size())) ret = WALLY_EINVAL;')
         if is_verify_function:
-            impl.append(f'    return ret == WALLY_OK;')
+            impl.append('    return ret == WALLY_OK;')
         else:
-            impl.append(f'    return detail::check_ret(__FUNCTION__, ret);')
+            impl.append('    return detail::check_ret(__FUNCTION__, ret);')
         impl.extend([u'}', u''])
         (cpp_elements if func.is_elements else cpp)[func.name] = impl
 
@@ -490,8 +489,10 @@ def gen_wasm_package(funcs, all_funcs):
 
                 js_args.append(js_arg_type)
 
-                if ts_arg_type:    ts_args.append(f'{arg.name}: {ts_arg_type}')
-                if ts_return_type: ts_returns.append(f'{arg.name}: {ts_return_type}')
+                if ts_arg_type:
+                    ts_args.append(f'{arg.name}: {ts_arg_type}')
+                if ts_return_type:
+                    ts_returns.append(f'{arg.name}: {ts_return_type}')
 
                 continue
 

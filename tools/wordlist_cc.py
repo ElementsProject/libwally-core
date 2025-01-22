@@ -17,7 +17,7 @@ if __name__ == "__main__":
         assert len(words) >= 2
         assert len(words) in bits
 
-        lengths = [ 0 ];
+        lengths = [ 0 ]
         for w in words:
             lengths.append(lengths[-1] + len(w.encode('utf-8')) + 1)
         idxs = ['{0}+{1}'.format(string_name, n) for n in lengths]
