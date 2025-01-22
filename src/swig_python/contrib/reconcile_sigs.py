@@ -8,12 +8,11 @@ try:
 except ImportError:
     have_pycoin = False
 
-USE_WITNESS = 1
 
 class TxTests(unittest.TestCase):
 
     def do_test_tx(self, sighash, index_, flags):
-        txhash, seq, script, witness_script = b'0' * 32, 0xffffffff, b'\x51', b'000000'
+        txhash, seq, script = b'0' * 32, 0xffffffff, b'\x51'
         out_script, spend_script, locktime = b'\x00\x00\x51', b'\x00\x51', 999999
         txs_in = [TxIn(txhash, 0, script, seq),
                   TxIn(txhash, 1, script+b'\x51', seq-1),
@@ -29,7 +28,7 @@ class TxTests(unittest.TestCase):
                          3: TxOut(5003, spend_script)}
         unspent = pytx.unspents[index_]
         pytx_hex = pytx.as_hex()
-        if flags & USE_WITNESS:
+        if flags & WALLY_TX_FLAG_USE_WITNESS:
             pytx_hash = pytx.signature_for_hash_type_segwit(unspent.script, index_, sighash)
         else:
             pytx_hash = pytx.signature_hash(spend_script, index_, sighash)
@@ -44,7 +43,6 @@ class TxTests(unittest.TestCase):
         tx_add_raw_output(tx, 54, out_script+b'\x51', 0)
         tx_add_raw_output(tx, 53, out_script+b'\x51\x51', 0)
         tx_hex = tx_to_hex(tx, 0)
-        amount = (index_ + 1) * 5000
         tx_hash = tx_get_btc_signature_hash(tx, index_,
                                             unspent.script, unspent.coin_value,
                                             sighash, flags)
@@ -57,7 +55,7 @@ class TxTests(unittest.TestCase):
         for sighash in [WALLY_SIGHASH_ALL, WALLY_SIGHASH_NONE, WALLY_SIGHASH_SINGLE]:
             for index_ in [0, 1, 2, 3]:
                 for anyonecanpay in [0, WALLY_SIGHASH_ANYONECANPAY]:
-                    for flags in [0, USE_WITNESS]:
+                    for flags in [0, WALLY_TX_FLAG_USE_WITNESS]:
                         self.do_test_tx(sighash | anyonecanpay, index_, flags)
 
 

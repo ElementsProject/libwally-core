@@ -50,12 +50,12 @@ if __name__ == "__main__":
         try:
             m.generate(BIP39_ENTROPY_LEN_256 - 1)
             assert False
-        except:
+        except Exception as _:
             pass
         try:
             m.check(phrase + ' foo')
             assert False
-        except:
+        except Exception as _:
             pass
         assert m.to_entropy(phrase) == m.to_entropy(phrase.split())
         assert m.to_mnemonic(m.to_entropy(phrase)) == phrase

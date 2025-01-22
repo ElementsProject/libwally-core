@@ -19,7 +19,7 @@ class TxTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             tx_witness_stack_clone(None)
-        cloned = tx_witness_stack_clone(witness)
+        tx_witness_stack_clone(witness)
 
     def test_tx_input(self):
         # Test invalid inputs
@@ -101,9 +101,9 @@ class TxTests(unittest.TestCase):
         self.assertEqual(tx_get_total_output_satoshi(tx), 10000)
         tx_add_raw_output(tx, 20000, script, 0)
         self.assertEqual(tx_get_total_output_satoshi(tx), 30000)
-        size = tx_get_length(tx, 0)
-        vsize = tx_vsize_from_weight(tx_get_weight(tx))
-        tx_hex = tx_to_hex(tx, FLAG_USE_WITNESS)
+        tx_get_length(tx, 0)
+        tx_vsize_from_weight(tx_get_weight(tx))
+        tx_to_hex(tx, FLAG_USE_WITNESS)
 
         with self.assertRaises(ValueError):
             tx_add_raw_output(tx, WALLY_SATOSHI_MAX + 1, script, 0)

@@ -150,7 +150,7 @@ class PSBTTests(unittest.TestCase):
             asset = hex_to_bytes('77' * 32)
             explicit_asset = hex_to_bytes('01' + '77' * 32)
             blinded_asset = hex_to_bytes('0a' + '77' * 32) # Dummy value
-            explicit_value = tx_confidential_value_from_satoshi(1234)
+            explicit_value = tx_confidential_value_from_satoshi(value)
             blinded_value = hex_to_bytes('08' + '55' * 32) # Dummy value
 
         # Inputs: BTC
@@ -166,9 +166,9 @@ class PSBTTests(unittest.TestCase):
 
         # Outputs: BTC
         psbt2 = psbt_init(2, 0, 0, 0, 0)
-        tx_output = tx_output_init(1234, script)
+        tx_output = tx_output_init(value, script)
         psbt_add_tx_output_at(psbt2, 0, 0, tx_output)
-        self.assertEqual(psbt_get_output_amount(psbt2, 0), 1234)
+        self.assertEqual(psbt_get_output_amount(psbt2, 0), value)
         self.assertEqual(psbt_get_output_script(psbt2, 0), script)
 
         if is_elements_build():
@@ -180,7 +180,7 @@ class PSBTTests(unittest.TestCase):
             # txout has explicit value/asset: Expect the values
             # set and no commitments in the PSET
             self.assertEqual(psbt_has_output_amount(pset2, 0), 1)
-            self.assertEqual(psbt_get_output_amount(pset2, 0), 1234)
+            self.assertEqual(psbt_get_output_amount(pset2, 0), value)
             self.assertEqual(psbt_get_output_value_commitment_len(pset2, 0), 0)
             self.assertTrue(not psbt_get_output_value_commitment(pset2, 0))
             self.assertEqual(psbt_get_output_script(pset2, 0), script)
@@ -339,7 +339,6 @@ class PSBTTests(unittest.TestCase):
         dummy_tap_internal_key = bytearray(b'\x01' * 32) # Untweaked x-only pubkey
         if is_elements_build():
             dummy_nonce = bytearray(b'\x00' * WALLY_TX_ASSET_CT_NONCE_LEN)
-            dummy_bf = bytearray(b'\x00' * BLINDING_FACTOR_LEN)
             dummy_blind_asset = bytearray(b'\x0a' * ASSET_COMMITMENT_LEN)
             dummy_blind_value = bytearray(b'\x08' * WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN)
             dummy_nonce = bytearray(b'\x02' * ASSET_COMMITMENT_LEN)
