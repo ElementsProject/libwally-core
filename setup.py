@@ -1,7 +1,11 @@
 """setuptools config for wallycore """
 from setuptools import setup, Extension
-import copy, os, platform, shutil, subprocess, sys
+import copy
 import distutils.sysconfig
+import os
+import platform
+import subprocess
+import sys
 
 def _msg(s):
     print(s + '\n', file=sys.stderr)

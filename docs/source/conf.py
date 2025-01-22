@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 #
 # libwally-core documentation build configuration file
+from os import getenv
+
 SCANNING, DOCS, FUNC = 1, 2, 3
 
-from os import getenv
 # DUMP_FUNCS/DUMP_INTERNAL are used by tools/build_wrappers.py to auto-generate wrapper code
 DUMP_FUNCS = getenv("WALLY_DOC_DUMP_FUNCS") is not None
 DUMP_INTERNAL = DUMP_FUNCS and getenv("WALLY_DOC_DUMP_INTERNAL") is not None
