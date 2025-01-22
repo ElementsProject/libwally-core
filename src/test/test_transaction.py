@@ -484,7 +484,6 @@ class TransactionTests(unittest.TestCase):
             annex = None
             annex_len = 0
 
-            fn = wally_tx_get_btc_taproot_signature_hash
             args = [tx, index, scripts, values, num_values, tapleaf_script, tapleaf_script_len,
                     key_version, codesep_pos, annex, annex_len, sighash, flags, bytes_out, out_len]
 

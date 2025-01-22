@@ -202,7 +202,7 @@ class ElementsTests(unittest.TestCase):
         SCALAR_OFFSET_LEN = 32
         offset, offset_len = make_cbuffer('00' * SCALAR_OFFSET_LEN)
         ret = wally_asset_scalar_offset(value, UNBLINDED_ABF, UNBLINDED_ABF_LEN,
-                                        UNBLINDED_VBF, UNBLINDED_VBF_LEN, offset, offset_len);
+                                        UNBLINDED_VBF, UNBLINDED_VBF_LEN, offset, offset_len)
         self.assertEqual(ret, WALLY_OK)
         self.assertEqual(h(offset),
                          utf8('4e5f3ca8aa2048eeacc8c300e3d63ca92048f407264352bee2fb15bd44349c45'))

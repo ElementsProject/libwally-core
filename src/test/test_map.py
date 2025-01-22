@@ -162,7 +162,7 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_find(clone, new_key, new_key_len), (WALLY_OK, 0))
 
         # Re-create clone to test combining
-        self.assertEqual(wally_map_free(clone), WALLY_OK);
+        self.assertEqual(wally_map_free(clone), WALLY_OK)
         self.assertEqual(wally_map_init_alloc(0, None, clone), WALLY_OK)
         self.assertEqual(wally_map_add(clone, new_key, new_key_len, v, vl), WALLY_OK)
 
@@ -246,7 +246,7 @@ class MapTests(unittest.TestCase):
         self.assertEqual(wally_map_add(m, bip32, bip32_len, kp_path, len(kp_path)), WALLY_OK)
 
         # Fingerprint/Path
-        out, out_len = (c_ubyte * (FP_LEN + 5 * 4))(), 24
+        out = (c_ubyte * (FP_LEN + 5 * 4))()
         cases = [
             (None,  0, out,  FP_LEN),   # NULL key
             (m,     1, out,  FP_LEN),   # Bad index
@@ -255,7 +255,6 @@ class MapTests(unittest.TestCase):
         ]
         for args in cases:
             self.assertEqual(wally_map_keypath_get_item_fingerprint(*args), WALLY_EINVAL)
-            plen = out_len - 4 if args[3] == FP_LEN else out_len - 5
             if args[0] is None or args[1] != 0:
                 ret = wally_map_keypath_get_item_path_len(args[0], args[1])
                 self.assertEqual(ret, (WALLY_EINVAL, 0))

@@ -93,7 +93,7 @@ class AESTests(unittest.TestCase):
                 self.assertEqual(h(out_buf), h(o))
 
     def test_aes_cbc_with_ecdh_key(self):
-        ENCRYPT, DECRYPT, PUBKEY_LEN, _ = 1, 2, 33, True
+        ENCRYPT, DECRYPT, _ = 1, 2, True
         a_priv = make_cbuffer('1c6a837d1ac663fdc7f1002327ca38452766eaf4fe3b80ce620bf7cd3f584cf6')[0]
         a_pub = make_cbuffer('03e581be89d1ef8ce11d60746d08e4f8aedf934d1d861dd436042ee2e3b16db918')[0]
         b_priv = make_cbuffer('0b6b3dc90d203d854100110788ac87d43aa00620c9cdb361b281b09022ef4b53')[0]

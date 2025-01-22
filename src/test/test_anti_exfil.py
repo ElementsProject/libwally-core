@@ -16,7 +16,7 @@ class AntiExfilTests(unittest.TestCase):
 
         flags = FLAG_ECDSA
 
-        ret = wally_ec_public_key_from_private_key(priv_key, 32, pub_key, 33);
+        ret = wally_ec_public_key_from_private_key(priv_key, 32, pub_key, 33)
         self.assertEqual(WALLY_OK, ret)
 
         ret = wally_ae_host_commit_from_bytes(entropy, 32, flags, host_commitment, 32)

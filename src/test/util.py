@@ -3,7 +3,6 @@ from binascii import hexlify, unhexlify
 from os.path import isfile, abspath
 from os import urandom
 import platform
-import sys
 
 # Allow to run from any sub dir
 SO_EXT = 'dylib' if platform.system() == 'Darwin' else 'dll' if platform.system() == 'Windows' else 'so'

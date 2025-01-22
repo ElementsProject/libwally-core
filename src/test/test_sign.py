@@ -188,7 +188,7 @@ class SignTests(unittest.TestCase):
                  (priv_key, len(priv_key),   out_buf, 10)]           # Wrong out len
 
         for pk, pk_len, o, o_len in cases:
-            ret = wally_ec_public_key_from_private_key(pk, pk_len, o, o_len);
+            ret = wally_ec_public_key_from_private_key(pk, pk_len, o, o_len)
             self.assertEqual(ret, WALLY_EINVAL)
 
 
