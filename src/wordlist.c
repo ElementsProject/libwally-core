@@ -83,6 +83,24 @@ size_t wordlist_lookup_word(const struct words *w, const char *word)
     return found ? found - w->indices + 1u : 0u;
 }
 
+size_t wordlist_lookup_prefix(const struct words *w, const char *prefix)
+{
+    const size_t prefix_len = strlen(prefix);
+    size_t found = 0;
+
+    size_t i;
+    for (i = 0; i < w->len; ++i) {
+        if (!strncmp(prefix, w->indices[i], prefix_len)) {
+            if (found) {
+                return 0;  // prefix match is not unique
+            }
+            found = i + 1;
+        }
+    }
+
+    return found;
+}
+
 const char *wordlist_lookup_index(const struct words *w, size_t idx)
 {
     if (idx >= w->len)
