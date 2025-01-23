@@ -2022,8 +2022,11 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
     return ret;
 }
 
-static int analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
-                              uint32_t flags, ms_node *node, bool *is_hex)
+/* take the possible hex data in node->data, if it is a valid pubkey
+ * convert it to an allocated binary buffer and make this node a key node
+ */
+static int analyze_pubkey_hex(ms_ctx *ctx, ms_node *node,
+                              uint32_t flags, bool *is_hex)
 {
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN + 1];
     size_t offset = flags & WALLY_MINISCRIPT_TAPSCRIPT ? 1 : 0;
@@ -2031,26 +2034,28 @@ static int analyze_pubkey_hex(ms_ctx *ctx, const char *str, size_t str_len,
 
     *is_hex = false;
     if (offset) {
-        if (str_len != EC_XONLY_PUBLIC_KEY_LEN * 2)
+        if (node->data_len != EC_XONLY_PUBLIC_KEY_LEN * 2)
             return WALLY_OK; /* Only X-only pubkeys allowed under tapscript */
         pubkey[0] = 2; /* Non-X-only pubkey prefix, for validation below */
     } else {
-        if (str_len != EC_PUBLIC_KEY_LEN * 2 && str_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)
+        if (node->data_len != EC_PUBLIC_KEY_LEN * 2 &&
+            node->data_len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2)
             return WALLY_OK; /* Unknown public key size */
     }
 
-    if (wally_hex_n_to_bytes(str, str_len, pubkey + offset, sizeof(pubkey) - offset, &written) != WALLY_OK ||
+    if (wally_hex_n_to_bytes(node->data, node->data_len,
+                             pubkey + offset, sizeof(pubkey) - offset, &written) != WALLY_OK ||
         wally_ec_public_key_verify(pubkey, written + offset) != WALLY_OK)
         return WALLY_OK; /* Not hex, or not a pubkey */
 
     if (!clone_bytes((unsigned char **)&node->data, pubkey + offset, written))
         return WALLY_ENOMEM;
-    node->data_len = str_len / 2;
-    if (str_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN * 2) {
+    node->data_len = node->data_len / 2;
+    if (node->data_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
         node->flags |= WALLY_MS_IS_UNCOMPRESSED;
         ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
     }
-    if (str_len == EC_XONLY_PUBLIC_KEY_LEN * 2) {
+    if (node->data_len == EC_XONLY_PUBLIC_KEY_LEN) {
         node->flags |= WALLY_MS_IS_X_ONLY;
         ctx->features |= WALLY_MS_IS_X_ONLY;
     }
@@ -2108,7 +2113,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     }
 
     /* check key (public key) */
-    ret = analyze_pubkey_hex(ctx, node->data, node->data_len, flags, node, &is_hex);
+    ret = analyze_pubkey_hex(ctx, node, flags, &is_hex);
     if (ret == WALLY_OK && is_hex)
         return WALLY_OK;
 
