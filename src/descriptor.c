@@ -1112,8 +1112,9 @@ static int generate_number(int64_t number, ms_node *parent,
     return WALLY_OK;
 }
 
-static int generate_pk_k(ms_ctx *ctx, ms_node *node,
-                         unsigned char *script, size_t script_len, size_t *written)
+static int generate_pk_k_impl(ms_ctx *ctx, ms_node *node,
+                              unsigned char *script, size_t script_len,
+                              bool force_xonly, size_t *written)
 {
     unsigned char buff[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
     int ret;
@@ -1126,13 +1127,28 @@ static int generate_pk_k(ms_ctx *ctx, ms_node *node,
         if (*written != EC_PUBLIC_KEY_LEN && *written != EC_XONLY_PUBLIC_KEY_LEN &&
             *written != EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
             return WALLY_EINVAL; /* Invalid pubkey length */
-        if (*written <= script_len) {
+        if (force_xonly) {
+            if (*written == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+                return WALLY_EINVAL; /* Can't make x-only from uncompressed key */
+            if (*written == EC_XONLY_PUBLIC_KEY_LEN)
+                force_xonly = false; /* Already x-only */
+            else
+                *written -= 1; /* Account for stripping the lead byte below */
+        }
+        if (*written + 1 <= script_len) {
             script[0] = *written & 0xff; /* push opcode */
-            memcpy(script + 1, buff, *written);
+            memcpy(script + 1, buff + (force_xonly ? 1 : 0), *written);
         }
         *written += 1;
     }
     return ret;
+}
+
+static int generate_pk_k(ms_ctx *ctx, ms_node *node,
+                         unsigned char *script, size_t script_len, size_t *written)
+{
+    const bool force_xonly = false;
+    return generate_pk_k_impl(ctx, node, script, script_len, force_xonly, written);
 }
 
 static int generate_pk_h(ms_ctx *ctx, ms_node *node,
