@@ -372,6 +372,18 @@ static const struct descriptor_test {
         "76a91477b6f27ac523d8b9aa8abcfc94fd536493202ae088ac",
         "9gv5p2gj"
     },{
+        "descriptor - rawtr - x-only",
+        "rawtr(x_only)",
+        WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, NULL, 0,
+        "5120b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+        "nsnjmrf4"
+    },{
+        "descriptor - rawtr - non-x-only returns the same script as x-only",
+        "rawtr(non_x_only)",
+        WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, NULL, 0,
+        "5120b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+        "ha989syu"
+    },{
         "descriptor - A single key",
         "wsh(c:pk_k(key_1))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
@@ -1758,6 +1770,28 @@ static const struct address_test {
         WALLY_NETWORK_BITCOIN_REGTEST,
         1, 0, 0,
         ADDR("mn9rm3FtHUHANae2p5jURy9GXJGDM1ox43")
+    },
+    /*
+     * Taproot
+     */
+    {
+        "address - rawtr (x-only)",
+        "rawtr(x_only)",
+        WALLY_NETWORK_BITCOIN_REGTEST,
+        0, 0, 0,
+        ADDR("bcrt1pkud2089tpt3dswuz63xtms3lthx2x7t73wnz938yt28hmn3ghg8qvxhwkz")
+    }, {
+        "address list - rawtr (0-4)",
+        "rawtr([59d1f3b0/86'/1'/0']tpubDC2Q4xK4XH72Gow34bNSZpx7uPcg1gfu6hPACSSieETYzpWgywMLmi2Yz9STA2Nrif3Yav7jvkzSj8q3nDKjjQrEfRYckUj5jsadYCdCw1C/0/*)#2k4we0vv",
+        WALLY_NETWORK_BITCOIN_REGTEST,
+        0, 0, 0, 5,
+        {
+            "bcrt1p7evqsttltmzxd4sjyzhdzs5nj8tmahu0qdpge8t7gp3dsr3hx3dq403ahy",
+            "bcrt1pa76letfw4eskpz9wap84ha0vcajul7xhhnhktmpp0mhgzlcdr6gswjcq3u",
+            "bcrt1phmq09p8y6efk06fp5hvf6dkvjsq2vfmph2uuy7y6ya6jvmrfxq3s44cksv",
+            "bcrt1p9s6clznyy4enaplm2ak9fa0t3d66s5q5m4khpg7w00w9wuerp93q88e9ql",
+            "bcrt1p220y7newnya8fk04079hcvd3cupx6t8ta659nayh8kaav39f3scsf63y8h",
+        }
     },
     /*
      * Multi-path
