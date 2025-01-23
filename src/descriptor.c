@@ -693,6 +693,15 @@ static int verify_raw(ms_ctx *ctx, ms_node *node)
     return WALLY_OK;
 }
 
+static int verify_raw_tr(ms_ctx *ctx, ms_node *node)
+{
+    if (node->child->builtin || !(node->child->kind & KIND_KEY) ||
+        node_has_uncompressed_key(ctx, node))
+        return WALLY_EINVAL;
+    node->type_properties = builtin_get(node)->type_properties;
+    return WALLY_OK;
+}
+
 static int verify_delay(ms_ctx *ctx, ms_node *node)
 {
     (void)ctx;
@@ -1380,6 +1389,21 @@ static int generate_raw(ms_ctx *ctx, ms_node *node,
     return *written > REDEEM_SCRIPT_MAX_SIZE ?  WALLY_EINVAL : ret;
 }
 
+static int generate_raw_tr(ms_ctx *ctx, ms_node *node,
+                           unsigned char *script, size_t script_len, size_t *written)
+{
+    int ret = WALLY_OK;
+
+    if (script_len >= WALLY_SCRIPTPUBKEY_P2TR_LEN) {
+        script[0] = OP_1;
+        const bool force_xonly = true;
+        ret = generate_pk_k_impl(ctx, node, script + 1, script_len - 1,
+                                 force_xonly, written);
+    }
+    *written = WALLY_SCRIPTPUBKEY_P2TR_LEN;
+    return ret;
+}
+
 static int generate_delay(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
@@ -1788,6 +1812,11 @@ static const struct ms_builtin_t g_builtins[] = {
         KIND_DESCRIPTOR_RAW,
         TYPE_NONE,
         0xffffffff, verify_raw, generate_raw
+    }, {
+        I_NAME("rawtr"),
+        KIND_DESCRIPTOR_RAW_TR,
+        TYPE_NONE,
+        1, verify_raw_tr, generate_raw_tr
     },
     /* miniscript */
     {
@@ -2471,6 +2500,9 @@ static int node_generation_size(const ms_node *node, size_t *total)
         case KIND_DESCRIPTOR_ADDR:
         case KIND_DESCRIPTOR_RAW:
             /* No-op */
+            break;
+        case KIND_DESCRIPTOR_RAW_TR:
+            *total += WALLY_SCRIPTPUBKEY_P2TR_LEN;
             break;
         case KIND_MINISCRIPT_PK_K:
             *total += 1;
