@@ -42,6 +42,8 @@ static struct wally_map_item g_key_map_items[] = {
     { B("mainnet_xpub"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") },
     { B("mainnet_xpriv"), B("xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU") },
     { B("uncompressed"), B("0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf") },
+    { B("x_only"), B("b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") },
+    { B("non_x_only"), B("03b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") }
 };
 
 static const struct wally_map g_key_map = {
@@ -897,7 +899,7 @@ static const struct descriptor_test {
         "d959hk4q"
     },
     /*
-     * Taproot cases
+     * Miniscript taproot cases
      */
     {
         "miniscript - taproot raw pubkey",
@@ -1140,6 +1142,14 @@ static const struct descriptor_test {
         "pk(1)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
+        "descriptor - pk - invalid public key",
+        "pk(uncompresseduncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - pk - x-only child",
+        "pk(x_only)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
         "descriptor - pk - multi-child",
         "pk(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
@@ -1250,6 +1260,26 @@ static const struct descriptor_test {
     },{
         "descriptor - raw - any parent",
         "pk(raw(000102030405060708090a0b0c0d0e0f))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - empty rawtr",
+        "rawtr()",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - rawtr - multi-child",
+        "rawtr(x_only,x_only)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - rawtr - any parent",
+        "pk(rawtr(x_only))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - rawtr - uncompressed key",
+        "rawtr(uncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - rawtr - invalid public key",
+        "rawtr(uncompresseduncompressed)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - after - non number child",
