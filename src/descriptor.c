@@ -87,6 +87,7 @@
 #define KIND_DESCRIPTOR_ADDR     (0x00040000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_RAW      (0x00050000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_RAW_TR   (0x00100000 | KIND_DESCRIPTOR)
+#define KIND_DESCRIPTOR_TR       (0x00200000 | KIND_DESCRIPTOR)
 
 /* miniscript */
 #define KIND_MINISCRIPT_PK        (0x00000100 | KIND_MINISCRIPT)
@@ -695,6 +696,18 @@ static int verify_raw(ms_ctx *ctx, ms_node *node)
 
 static int verify_raw_tr(ms_ctx *ctx, ms_node *node)
 {
+    if (node->child->builtin || !(node->child->kind & KIND_KEY) ||
+        node_has_uncompressed_key(ctx, node))
+        return WALLY_EINVAL;
+    node->type_properties = builtin_get(node)->type_properties;
+    return WALLY_OK;
+}
+
+static int verify_tr(ms_ctx *ctx, ms_node *node)
+{
+    const uint32_t child_count = node_get_child_count(node);
+    if (child_count != 1u)
+        return WALLY_EINVAL; /* FIXME: Support script paths */
     if (node->child->builtin || !(node->child->kind & KIND_KEY) ||
         node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
@@ -1404,6 +1417,35 @@ static int generate_raw_tr(ms_ctx *ctx, ms_node *node,
     return ret;
 }
 
+static int generate_tr(ms_ctx *ctx, ms_node *node,
+                       unsigned char *script, size_t script_len, size_t *written)
+{
+    unsigned char tweaked[EC_PUBLIC_KEY_LEN];
+    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN + 1];
+    size_t pubkey_len;
+    int ret;
+
+    /* Generate a push of the x-only public key of our child */
+    const bool force_xonly = true;
+    ret = generate_pk_k_impl(ctx, node, pubkey, sizeof(pubkey), force_xonly, &pubkey_len);
+    if (pubkey_len != EC_XONLY_PUBLIC_KEY_LEN + 1)
+        return WALLY_EINVAL; /* Should be PUSH_32 [x-only pubkey] */
+
+    /* Tweak it into a compressed pubkey */
+    ret = wally_ec_public_key_bip341_tweak(pubkey + 1, pubkey_len - 1,
+                                           NULL, 0, 0, /* FIXME: Support script path */
+                                           tweaked, sizeof(tweaked));
+
+    if (ret == WALLY_OK && script_len >= WALLY_SCRIPTPUBKEY_P2TR_LEN) {
+        /* Generate the script using the x-only part of the tweaked key */
+        script[0] = OP_1;
+        script[1] = sizeof(tweaked) - 1;
+        memcpy(script + 2, tweaked + 1, sizeof(tweaked) - 1);
+    }
+    *written = WALLY_SCRIPTPUBKEY_P2TR_LEN;
+    return ret;
+}
+
 static int generate_delay(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
@@ -1817,6 +1859,11 @@ static const struct ms_builtin_t g_builtins[] = {
         KIND_DESCRIPTOR_RAW_TR,
         TYPE_NONE,
         1, verify_raw_tr, generate_raw_tr
+    }, {
+        I_NAME("tr"),
+        KIND_DESCRIPTOR_TR,
+        TYPE_NONE,
+        0xffffffff, verify_tr, generate_tr
     },
     /* miniscript */
     {
@@ -2087,7 +2134,9 @@ static int analyze_pubkey_hex(ms_ctx *ctx, ms_node *node,
         wally_ec_xonly_public_key_verify(pubkey, pubkey_len) != WALLY_OK)
         return WALLY_OK; /* Not a valid pubkey */
 
-    make_xonly = node->parent && (node->parent->kind == KIND_DESCRIPTOR_RAW_TR);
+    make_xonly = node->parent &&
+        (node->parent->kind == KIND_DESCRIPTOR_RAW_TR ||
+         node->parent->kind == KIND_DESCRIPTOR_TR);
     allow_xonly = make_xonly || flags & WALLY_MINISCRIPT_TAPSCRIPT;
     if (pubkey_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN && allow_xonly)
         return WALLY_OK; /* Uncompressed key not allowed here */
@@ -2502,6 +2551,7 @@ static int node_generation_size(const ms_node *node, size_t *total)
             /* No-op */
             break;
         case KIND_DESCRIPTOR_RAW_TR:
+        case KIND_DESCRIPTOR_TR:
             *total += WALLY_SCRIPTPUBKEY_P2TR_LEN;
             break;
         case KIND_MINISCRIPT_PK_K:
