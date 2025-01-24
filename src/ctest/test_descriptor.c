@@ -384,6 +384,18 @@ static const struct descriptor_test {
         "5120b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
         "ha989syu"
     },{
+        "descriptor - tr - x-only",
+        "tr(x_only)",
+        WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, NULL, 0,
+        "51205fb8e39dbbdc7c831af59e44a9b2997f9daaf72c3e965b30982f3c731539e1db",
+        "axny68jy"
+    },{
+        "descriptor - tr - non-x-only returns the same script as x-only",
+        "tr(non_x_only)",
+        WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, NULL, 0,
+        "51205fb8e39dbbdc7c831af59e44a9b2997f9daaf72c3e965b30982f3c731539e1db",
+        "tp2ky708"
+    },{
         "descriptor - A single key",
         "wsh(c:pk_k(key_1))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
@@ -1294,6 +1306,26 @@ static const struct descriptor_test {
         "rawtr(uncompresseduncompressed)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
+        "descriptor - empty tr",
+        "tr()",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - tr - multi-child",
+        "tr(x_only,x_only)", /* FIXME: delete this case when script path is supported */
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - tr - any parent",
+        "pk(tr(x_only))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - tr - uncompressed key",
+        "tr(uncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - tr - invalid public key",
+        "tr(uncompresseduncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
         "descriptor - after - non number child",
         "wsh(after(key_1))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
@@ -1791,6 +1823,24 @@ static const struct address_test {
             "bcrt1phmq09p8y6efk06fp5hvf6dkvjsq2vfmph2uuy7y6ya6jvmrfxq3s44cksv",
             "bcrt1p9s6clznyy4enaplm2ak9fa0t3d66s5q5m4khpg7w00w9wuerp93q88e9ql",
             "bcrt1p220y7newnya8fk04079hcvd3cupx6t8ta659nayh8kaav39f3scsf63y8h",
+        }
+    }, {
+        "address - tr (x-only)",
+        "tr(x_only)",
+        WALLY_NETWORK_BITCOIN_REGTEST,
+        0, 0, 0,
+        ADDR("bcrt1pt7uw88dmm37gxxh4nez2nv5e07w64aev86t9kvyc9u78x9feu8dsp5hh3s")
+    }, {
+        "address list - tr (5-9)",
+        "tr([59d1f3b0/86'/1'/0']tpubDC2Q4xK4XH72Gow34bNSZpx7uPcg1gfu6hPACSSieETYzpWgywMLmi2Yz9STA2Nrif3Yav7jvkzSj8q3nDKjjQrEfRYckUj5jsadYCdCw1C/0/*)#9wpuzyss",
+        WALLY_NETWORK_BITCOIN_REGTEST,
+        0, 0, 5, 5,
+        {
+            "bcrt1p3hf8e9tczepujy3fe66wgq9ez5tllqkschupy08pfzukjtye5wksgtj5k2",
+            "bcrt1p9wut0rvmq347rldeyktdn9qmrj9qk9ynefykruxrp4yr9u27pzvqfd6ktq",
+            "bcrt1p3kjmw33umzaylvdmglk489vd4ph2te67ged3c4fmk20adn0pfknsm5jmvu",
+            "bcrt1pz6t2y0qg69594u60qmnlq23rezxseyf65qk0xl2kt7l02y8rcs8qndm2sm",
+            "bcrt1p2nunl5trs2hfrlu5fp6kg3hu3tffpzg0w5m56mpmx8m96pl0qxnszgdnaw",
         }
     },
     /*
