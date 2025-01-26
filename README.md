@@ -86,7 +86,7 @@ $ brew install swig
    structure members and exported functions. When configured, elements support must be
    disabled and the user must define `WALLY_ABI_NO_ELEMENTS` before including all wally
    header files. This option *must not be given if wally is being installed as a system/shared library*. (default: no).
-- `--enabled-standard-secp`. Excludes support for features that are unavailable in
+- `--enable-standard-secp`. Excludes support for features that are unavailable in
    the standard [libsecp256k1 library](https://github.com/bitcoin-core/secp256k1).
 - `--with-system-secp256k1=<package_name>`. Compile and link against a system-wide
    install of libsecp256k1 instead of the in-tree submodule. (default: not enabled).
