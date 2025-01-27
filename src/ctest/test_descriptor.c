@@ -503,6 +503,12 @@ static const struct descriptor_test {
      * Miniscript: Randomly generated test set that covers the majority of type and node type combinations
      */
     {
+        "miniscript - A single key",
+        "pk_k(key_1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048",
+        "jyazm5lc"
+    },{
         "miniscript - random 1",
         "lltvln:after(1231488000)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
@@ -787,13 +793,13 @@ static const struct descriptor_test {
      * Miniscript: BOLT examples
      */
     {
-        "miniscript - A single key",
+        "miniscript - A single key + CHECKSIG",
         "c:pk_k(key_1)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
         ""
     }, {
-        "miniscript - A single key (2)",
+        "miniscript - A single key + CHECKSIG (2)",
         "pk(key_1)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
         "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
@@ -2062,9 +2068,8 @@ static const struct address_test {
 static bool check_descriptor_to_script(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
-    size_t written, max_written;
-    const size_t script_len = 520;
-    unsigned char *script = malloc(script_len);
+    size_t written, computed_written, max_written;
+    const size_t default_script_len = 520;
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
     uint32_t multi_index = 0;
@@ -2094,23 +2099,51 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
         if (!check_ret("descriptor_parse", ret, expected_ret))
             return false;
 
-        if (expected_ret != WALLY_OK) {
-            free(script);
+        if (expected_ret != WALLY_OK)
             return true;
-        }
     }
 
+    computed_written = default_script_len;
+    if (expected_ret == WALLY_OK) {
+        /* Try the call with a too-short buffer.
+         * This returns a more exact required size for generation, although
+         * it may still overestimate by a few bytes for some descriptors.
+         */
+        unsigned char *short_script = malloc(1);
+        ret = wally_descriptor_to_script(descriptor,
+                                         test->depth, test->index,
+                                         test->variant, multi_index,
+                                         child_num, 0,
+                                         short_script, 1, &computed_written);
+        free(short_script);
+        if (!check_ret("descriptor_to_script(short buffer)\n", ret, expected_ret))
+            return false;
+    }
+
+    const size_t script_len = computed_written ? computed_written : 1;
+    unsigned char *script = malloc(script_len);
     ret = wally_descriptor_to_script(descriptor,
                                      test->depth, test->index,
                                      test->variant, multi_index,
                                      child_num, 0,
                                      script, script_len, &written);
+    if (ret == WALLY_OK && written > script_len) {
+        printf("descriptor_to_script: wrote more than computed length!\n");
+        return false;
+    }
     if (!check_ret("descriptor_to_script", ret, expected_ret))
         return false;
+
     if (expected_ret != WALLY_OK) {
+        /* Failure case: stop testing here */
         wally_descriptor_free(descriptor);
         free(script);
         return true;
+    }
+
+    if (computed_written < written) {
+        printf("descriptor_to_script: computed < written\n");
+        return false;
     }
 
     ret = wally_descriptor_get_features(descriptor, &features);
@@ -2123,6 +2156,11 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     if (!check_ret("descriptor_to_script_get_maximum_length", len_ret, WALLY_OK) ||
         max_written < written)
         return false;
+
+    if (computed_written > max_written) {
+        printf("descriptor_to_script: computed > max written\n");
+        return false;
+    }
 
     ret = wally_descriptor_get_checksum(descriptor, 0, &checksum);
     if (!check_ret("descriptor_get_checksum", ret, WALLY_OK))
