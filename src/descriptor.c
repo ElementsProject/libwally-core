@@ -2546,8 +2546,12 @@ static int node_generation_size(const ms_node *node, size_t *total)
             /* max of p2pk, p2pkh, p2wpkh, or p2sh-p2wpkh */
             *total += WALLY_SCRIPTPUBKEY_P2PKH_LEN;
             break;
-        case KIND_DESCRIPTOR_ADDR:
         case KIND_DESCRIPTOR_RAW:
+            /* Add an extra byte to handle 'raw()' which results in nothing,
+             * as empty output buffers cannot be passed to descriptor calls.
+             */
+            *total += 1;
+        case KIND_DESCRIPTOR_ADDR:
             /* No-op */
             break;
         case KIND_DESCRIPTOR_RAW_TR:
