@@ -12,9 +12,9 @@ static const char MSG_PREFIX[] = "\x18" "Bitcoin Signed Message:\n";
 static const char TAPTWEAK_BTC[] = "TapTweak";
 #ifdef BUILD_ELEMENTS
 static const char TAPTWEAK_ELEMENTS[] = "TapTweak/elements";
-#define GET_TAPTWEAK(flags) ((flags & EC_FLAG_ELEMENTS)? TAPTWEAK_ELEMENTS : TAPTWEAK_BTC)
+#define TAPTWEAK(is_elements) (is_elements) ? TAPTWEAK_ELEMENTS : TAPTWEAK_BTC
 #else
-#define GET_TAPTWEAK(flags) TAPTWEAK_BTC
+#define TAPTWEAK(is_elements) TAPTWEAK_BTC
 #endif
 
 
@@ -139,13 +139,20 @@ static int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
     unsigned char preimage[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN];
     const size_t offset = pub_key_len == EC_PUBLIC_KEY_LEN ? 1 : 0;
     const size_t preimage_len = merkle_root ? sizeof(preimage) : EC_XONLY_PUBLIC_KEY_LEN;
-    (void)flags;
+
+#ifdef BUILD_ELEMENTS
+    if (flags & ~EC_FLAG_ELEMENTS)
+#else
+    if (flags)
+#endif
+        return WALLY_EINVAL;
 
     memcpy(preimage, pub_key + offset, EC_XONLY_PUBLIC_KEY_LEN);
     if (merkle_root)
         memcpy(preimage + EC_XONLY_PUBLIC_KEY_LEN, merkle_root, SHA256_LEN);
     return wally_bip340_tagged_hash(preimage, preimage_len,
-                                    GET_TAPTWEAK(flags), tweak, tweak_len);
+                                    TAPTWEAK(flags & EC_FLAG_ELEMENTS),
+                                    tweak, tweak_len);
 }
 
 int wally_ec_public_key_bip341_tweak(
@@ -157,11 +164,6 @@ int wally_ec_public_key_bip341_tweak(
     int ret;
 
     if (!pub_key || BYTES_INVALID_N(merkle_root, merkle_root_len, SHA256_LEN) ||
-#ifdef BUILD_ELEMENTS
-        (flags & ~EC_FLAG_ELEMENTS) ||
-#else
-        flags ||
-#endif
         !bytes_out || len != EC_PUBLIC_KEY_LEN)
         return WALLY_EINVAL;
 
@@ -194,11 +196,6 @@ int wally_ec_private_key_bip341_tweak(
 
     if (!priv_key || priv_key_len != EC_PRIVATE_KEY_LEN ||
         BYTES_INVALID_N(merkle_root, merkle_root_len, SHA256_LEN) ||
-#ifdef BUILD_ELEMENTS
-        (flags & ~EC_FLAG_ELEMENTS) ||
-#else
-        flags ||
-#endif
         !bytes_out || len != EC_PRIVATE_KEY_LEN)
         return WALLY_EINVAL;
 
