@@ -1209,7 +1209,7 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - combo - any parent",
-        "pk(combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
+        "sh(combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - combo - multi-child",
@@ -1275,7 +1275,7 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - addr - any parent",
-        "pk(addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3))",
+        "sh(addr(bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - raw - multi-child",
@@ -1289,7 +1289,7 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - raw - any parent",
-        "pk(raw(000102030405060708090a0b0c0d0e0f))",
+        "sh(raw(000102030405060708090a0b0c0d0e0f))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - empty rawtr",
@@ -1301,7 +1301,7 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - rawtr - any parent",
-        "pk(rawtr(x_only))",
+        "sh(rawtr(x_only))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - rawtr - uncompressed key",
@@ -1321,7 +1321,7 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - tr - any parent",
-        "pk(tr(x_only))",
+        "sh(tr(x_only))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - tr - uncompressed key",
