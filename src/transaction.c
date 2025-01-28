@@ -1707,13 +1707,15 @@ static int get_txin_issuance_size(const struct wally_tx_input *input,
     return WALLY_OK;
 }
 
-static size_t get_bip341_size(uint32_t sighash, bool have_annex, unsigned char ext_flag)
+/* Get the (exact) BIP341 serialized tx size as per BIP341/342/118 */
+static size_t get_btc_bip341_size(const struct tx_serialize_opts *opts)
 {
-    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    /* See BIP341/342/118. Note the leading 1 for the sighash epoc byte */
-    return 1 + 174 - sh_anyonecanpay * 49 - sh_none * 32 +
-           have_annex * 32 + (ext_flag == EXT_FLAG_BIP342 ? 37 : 0);
+    const bool sh_anyonecanpay = opts->tx_sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_none = (opts->tx_sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    /* Note the leading 1 is for the sighash epoch byte */
+    return 1 + 174 - (sh_anyonecanpay ? 49 : 0) - (sh_none ? SHA256_LEN : 0) +
+           (opts->annex_len ? SHA256_LEN : 0) +
+           (opts->ext_flag == EXT_FLAG_BIP342 ? SHA256_LEN + 1 + 4 : 0);
 }
 
 /* We compute the size of the witness separately so we can compute vsize
@@ -1743,8 +1745,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
             return WALLY_ERROR; /* Segwit tx hashing uses bip143 opts member */
 
         if (opts->bip341) {
-            *base_size = get_bip341_size(opts->tx_sighash, opts->annex_len != 0,
-                                         opts->ext_flag);
+            *base_size = get_btc_bip341_size(opts);
             *witness_size = 0;
             return WALLY_OK;
         }
