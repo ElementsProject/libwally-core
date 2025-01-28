@@ -696,7 +696,7 @@ static int verify_raw(ms_ctx *ctx, ms_node *node)
 
 static int verify_raw_tr(ms_ctx *ctx, ms_node *node)
 {
-    if (node->child->builtin || !(node->child->kind & KIND_KEY) ||
+    if (node->parent || node->child->builtin || !(node->child->kind & KIND_KEY) ||
         node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
     node->type_properties = builtin_get(node)->type_properties;
@@ -708,7 +708,7 @@ static int verify_tr(ms_ctx *ctx, ms_node *node)
     const uint32_t child_count = node_get_child_count(node);
     if (child_count != 1u)
         return WALLY_EINVAL; /* FIXME: Support script paths */
-    if (node->child->builtin || !(node->child->kind & KIND_KEY) ||
+    if (node->parent || node->child->builtin || !(node->child->kind & KIND_KEY) ||
         node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
     node->type_properties = builtin_get(node)->type_properties;
