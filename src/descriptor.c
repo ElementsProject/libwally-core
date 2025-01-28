@@ -1422,13 +1422,13 @@ static int generate_tr(ms_ctx *ctx, ms_node *node,
 {
     unsigned char tweaked[EC_PUBLIC_KEY_LEN];
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN + 1];
-    size_t pubkey_len;
+    size_t pubkey_len = 0;
     int ret;
 
     /* Generate a push of the x-only public key of our child */
     const bool force_xonly = true;
     ret = generate_pk_k_impl(ctx, node, pubkey, sizeof(pubkey), force_xonly, &pubkey_len);
-    if (pubkey_len != EC_XONLY_PUBLIC_KEY_LEN + 1)
+    if (ret != WALLY_OK || pubkey_len != EC_XONLY_PUBLIC_KEY_LEN + 1)
         return WALLY_EINVAL; /* Should be PUSH_32 [x-only pubkey] */
 
     /* Tweak it into a compressed pubkey */
