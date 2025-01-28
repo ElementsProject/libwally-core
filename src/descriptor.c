@@ -375,9 +375,9 @@ static bool is_identifer_char(char c)
 static bool is_policy_start_char(char c) { return c == '@'; }
 static bool is_policy_identifer_char(char c) { return c >= '0' && c <= '9'; }
 
-static int canonicalize(const char *descriptor,
-                        const struct wally_map *vars_in, uint32_t flags,
-                        char **output, size_t *num_substitutions)
+static int canonicalize_impl(const char *descriptor,
+                             const struct wally_map *vars_in, uint32_t flags,
+                             char **output, size_t *num_substitutions)
 {
     const size_t VAR_MAX_NAME_LEN = 16;
     is_identifer_fn is_id_start = is_identifer_char, is_id_char = is_identifer_char;
@@ -2754,8 +2754,8 @@ int wally_descriptor_parse(const char *miniscript,
     ctx->num_multipaths = 1;
     ret = wally_map_init(vars_in ? vars_in->num_items : 1, NULL, &ctx->keys);
     if (ret == WALLY_OK)
-        ret = canonicalize(miniscript, vars_in, flags & MS_FLAGS_CANONICALIZE,
-                           &ctx->src, &num_substitutions);
+        ret = canonicalize_impl(miniscript, vars_in, flags & MS_FLAGS_CANONICALIZE,
+                                &ctx->src, &num_substitutions);
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
