@@ -1308,6 +1308,10 @@ static const struct descriptor_test {
         "rawtr(uncompressed)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
+        "descriptor - rawtr - explicit public key",
+        "rawtr(pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
         "descriptor - rawtr - invalid public key",
         "rawtr(uncompresseduncompressed)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
@@ -1326,6 +1330,10 @@ static const struct descriptor_test {
     },{
         "descriptor - tr - uncompressed key",
         "tr(uncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
+    },{
+        "descriptor - tr - explicit public key",
+        "tr(pk(key_1))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, ""
     },{
         "descriptor - tr - invalid public key",
