@@ -35,6 +35,15 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
 
 #define EXT_FLAG_BIP342 0x1 /* Indicates BIP342 tapscript message extension */
 
+#ifdef BUILD_ELEMENTS
+#define TAPLEAF(is_elements) (is_elements) ? "TapLeaf/elements" : "TapLeaf"
+#define TAPSIGHASH(is_elements) (is_elements) ? "TapSighash/elements" : "TapSighash"
+#else
+#define TAPLEAF(is_elements) "TapLeaf"
+#define TAPSIGHASH(is_elements) "TapSighash"
+#endif
+
+
 /* Extra options when serializing for hashing */
 struct tx_serialize_opts
 {
@@ -2531,7 +2540,8 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
             buff_p[0] = 0xC0; /* leaf_version */
             tmp_p = buff_p + 1;
             tmp_p += varbuff_to_bytes(opts->tapleaf_script, opts->tapleaf_script_len, tmp_p);
-            ret = wally_bip340_tagged_hash(buff_p, tmp_p - buff_p, "TapLeaf", p, SHA256_LEN);
+            ret = wally_bip340_tagged_hash(buff_p, tmp_p - buff_p,
+                                           TAPLEAF(is_elements), p, SHA256_LEN);
             if (ret != WALLY_OK)
                 goto error;
             p += SHA256_LEN;
@@ -3398,7 +3408,7 @@ int wally_tx_get_btc_taproot_signature_hash(
         if (n != n2)
             ret = WALLY_ERROR; /* tx_get_length/tx_to_bytes mismatch, should not happen! */
         else
-            ret = wally_bip340_tagged_hash(buff, n, "TapSighash", bytes_out, len);
+            ret = wally_bip340_tagged_hash(buff, n, TAPSIGHASH(false), bytes_out, len);
     }
     wally_clear(buff, n);
     return ret;
