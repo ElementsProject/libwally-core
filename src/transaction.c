@@ -1688,18 +1688,24 @@ static int get_txout_commitments_size(const struct wally_tx_output *output,
 }
 
 static int get_txin_issuance_size(const struct wally_tx_input *input,
-                                  size_t *written)
+                                  size_t *issuance_size, size_t *issuance_rp_size)
 {
-    *written = 0;
+    *issuance_size = 0;
+    if (issuance_rp_size)
+        *issuance_rp_size = 0;
 #ifdef BUILD_ELEMENTS
     if (input->features & WALLY_TX_IS_ISSUANCE) {
         size_t c_n;
 
-        if (!(*written = confidential_value_length_from_bytes(input->issuance_amount)))
+        if (!(*issuance_size = confidential_value_length_from_bytes(input->issuance_amount)))
             return WALLY_EINVAL;
         if (!(c_n = confidential_value_length_from_bytes(input->inflation_keys)))
             return WALLY_EINVAL;
-        *written = *written + c_n + sizeof(input->blinding_nonce) + sizeof(input->entropy);
+        *issuance_size += c_n + sizeof(input->blinding_nonce) + sizeof(input->entropy);
+        if (issuance_rp_size) {
+            *issuance_rp_size = input->issuance_amount_rangeproof_len +
+                input->inflation_keys_rangeproof_len;
+        }
     }
 #else
     (void)input;
@@ -1772,7 +1778,8 @@ static int tx_get_lengths(const struct wally_tx *tx,
             }
             *base_size += amount_size;
 
-            if (get_txin_issuance_size(tx->inputs + opts->index, &issuance_size) != WALLY_OK)
+            if (get_txin_issuance_size(tx->inputs + opts->index,
+                                       &issuance_size, NULL) != WALLY_OK)
                 return WALLY_EINVAL;
             *base_size += issuance_size;
             *witness_size = 0;
@@ -1807,7 +1814,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
              sizeof(input->index) +
              sizeof(input->sequence);
 
-        if (get_txin_issuance_size(input, &issuance_size) != WALLY_OK)
+        if (get_txin_issuance_size(input, &issuance_size, NULL) != WALLY_OK)
             return WALLY_EINVAL;
         n += issuance_size;
 
@@ -2168,7 +2175,8 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
         for (i = 0; i < tx->num_inputs; ++i) {
             if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
                 size_t issuance_size;
-                if (get_txin_issuance_size(tx->inputs + i, &issuance_size) != WALLY_OK)
+                if (get_txin_issuance_size(tx->inputs + i,
+                                           &issuance_size, NULL) != WALLY_OK)
                     return WALLY_EINVAL;
                 issuances_size += issuance_size;
             } else
