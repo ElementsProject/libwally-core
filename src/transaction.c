@@ -2350,6 +2350,48 @@ static bool tr_is_input_hash_type(uint32_t sighash, uint32_t hash_type)
     return (sighash & WALLY_SIGHASH_TR_IN_MASK) == hash_type;
 }
 
+/* Compute the max buffer size needed to create the sub-hashes for
+ * prevouts/scripts/outputs etc
+ */
+static size_t get_bip341_sub_size(const struct wally_tx *tx,
+                                  const struct tx_serialize_opts *opts,
+                                  bool is_elements)
+{
+    const bool sh_none = (opts->sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (opts->sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    size_t i, n, sub_n;
+    (void)is_elements;
+
+    n = tx->num_inputs * (WALLY_TXHASH_LEN + sizeof(uint32_t));
+
+    sub_n = 0;
+    for (i = 0; i < tx->num_inputs; ++i) {
+        const struct wally_map_item *script = wally_map_get_integer(opts->scripts, i);
+        if (!script || !script->value || !script->value_len)
+            return 0; /* Missing script */
+        sub_n += varbuff_get_length(script->value_len);
+    }
+    n = sub_n > n ? sub_n : n;
+
+    if (sh_none)
+        sub_n = 0;
+    else if (sh_single) {
+        sub_n = sizeof(uint64_t);
+        sub_n += varbuff_get_length(tx->outputs[opts->index].script_len);
+    } else {
+        sub_n = 0;
+        for (i = 0; i < tx->num_outputs; ++i) {
+            sub_n += sizeof(uint64_t);
+            sub_n += varbuff_get_length(tx->outputs[i].script_len);
+        }
+    }
+    n = sub_n > n ? sub_n : n;
+
+    sub_n = opts->tapleaf_script_len;
+    n = sub_n > n ? sub_n : n;
+    return n;
+}
+
 static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
                                      const struct tx_serialize_opts *opts,
                                      uint32_t flags,
@@ -2357,7 +2399,7 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
                                      size_t *written)
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
-    size_t i, is_elements, sub_size, buff_len = sizeof(buff);
+    size_t i, buff_len, is_elements = false;
     const bool has_annex = opts->annex != NULL;
     const bool sh_none = (opts->sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (opts->sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
@@ -2370,7 +2412,6 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
     /* Note we assume tx_to_bytes has already validated all inputs */
     (void)flags;
     (void)len;
-    (void)is_elements;
 
 #ifdef BUILD_ELEMENTS
     if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK || is_elements)
@@ -2410,36 +2451,8 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
     p += uint32_to_le_bytes(tx->version, p);  /* nVersion (4) */
     p += uint32_to_le_bytes(tx->locktime, p); /* nLockTime (4) */
 
-    /* Compute the sizes needed for prevouts/scripts/output sub-hashes */
-    sub_size = tx->num_inputs * (WALLY_TXHASH_LEN + sizeof(uint32_t));
-    buff_len = sub_size > buff_len ? sub_size : buff_len;
-
-    sub_size = 0;
-    for (i = 0; i < tx->num_inputs; ++i) {
-        const struct wally_map_item *script = wally_map_get_integer(opts->scripts, i);
-        if (!script || !script->value || !script->value_len) {
-            ret = WALLY_EINVAL; /* Missing script */
-            goto error;
-        }
-        sub_size += varbuff_get_length(script->value_len);
-    }
-    buff_len = sub_size > buff_len ? sub_size  : buff_len;
-
-    if (sh_none)
-        sub_size = 0;
-    else if (sh_single) {
-        sub_size = sizeof(uint64_t);
-        sub_size += varbuff_get_length(tx->outputs[opts->index].script_len);
-    } else {
-        sub_size = 0;
-        for (i = 0; i < tx->num_outputs; ++i) {
-            sub_size += sizeof(uint64_t);
-            sub_size += varbuff_get_length(tx->outputs[i].script_len);
-        }
-    }
-    buff_len = sub_size > buff_len ? sub_size : buff_len;
-
-    buff_len = opts->tapleaf_script_len > buff_len ? opts->tapleaf_script_len : buff_len;
+    if (!(buff_len = get_bip341_sub_size(tx, opts, is_elements)))
+        return WALLY_EINVAL; /* Error computing required sub-size */
 
     /* Allocate a larger buffer if needed to hold our sub-hashes data */
     if (buff_len > sizeof(buff) && !(buff_p = wally_malloc(buff_len)))
