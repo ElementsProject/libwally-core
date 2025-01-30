@@ -13,6 +13,9 @@
 #include "script.h"
 #include "script_int.h"
 
+/* Taproot uses this mask instead of WALLY_SIGHASH_MASK */
+#define TAPROOT_SIGHASH_MASK 0x03
+
 #define WALLY_TX_ALL_FLAGS \
     (WALLY_TX_FLAG_USE_WITNESS | WALLY_TX_FLAG_USE_ELEMENTS | \
      WALLY_TX_FLAG_ALLOW_PARTIAL | WALLY_TX_FLAG_PRE_BIP144)
@@ -1732,7 +1735,7 @@ static int get_txin_issuance_size(const struct wally_tx_input *input,
 static size_t get_btc_bip341_size(const struct tx_serialize_opts *opts)
 {
     const bool sh_anyonecanpay = opts->tx_sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_none = (opts->tx_sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_none = (opts->tx_sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     /* Note the leading 1 is for the sighash epoch byte */
     return 1 + 174 - (sh_anyonecanpay ? 49 : 0) - (sh_none ? SHA256_LEN : 0) +
            (opts->annex_len ? SHA256_LEN : 0) +
@@ -1749,8 +1752,8 @@ static size_t get_elements_bip341_size(const struct tx_serialize_opts *opts)
     size_t n = 0;
 #ifdef BUILD_ELEMENTS
     const bool sh_anyonecanpay = opts->tx_sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_none = (opts->tx_sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = (opts->tx_sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    const bool sh_none = (opts->tx_sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (opts->tx_sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
 
     if (!opts->genesis)
         return 0; /* Genesis hash is required for taproot */
@@ -2425,8 +2428,8 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t i, buff_len, is_elements = false;
     const bool has_annex = opts->annex != NULL;
-    const bool sh_none = (opts->sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = (opts->sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    const bool sh_none = (opts->sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (opts->sighash & TAPROOT_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     const bool sh_anyonecanpay = tr_is_input_hash_type(opts->sighash, WALLY_SIGHASH_ANYONECANPAY);
     const bool sh_anyprevout = tr_is_input_hash_type(opts->sighash, WALLY_SIGHASH_ANYPREVOUT);
     const bool sh_anyprevout_anyscript = tr_is_input_hash_type(opts->sighash, WALLY_SIGHASH_ANYPREVOUTANYSCRIPT);
