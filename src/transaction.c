@@ -2387,7 +2387,7 @@ static size_t get_bip341_sub_size(const struct wally_tx *tx,
     }
     n = sub_n > n ? sub_n : n;
 
-    sub_n = opts->tapleaf_script_len;
+    sub_n = varbuff_get_length(opts->tapleaf_script_len);
     n = sub_n > n ? sub_n : n;
     return n;
 }
