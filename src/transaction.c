@@ -66,8 +66,9 @@ struct tx_serialize_opts
     size_t tapleaf_script_len;       /* Length of executed tapscript */
     uint32_t key_version;            /* BIP342 key version */
     uint32_t codesep_position;       /* BIP342 codeseparator position */
+    const unsigned char *genesis;    /* 32 byte Elements genesis blockhash, or NULL */
     const unsigned char *annex;      /* Annex data to be put under sighash */
-    size_t annex_len;                /* Length of sighash data, including 0x50 prefix */
+    size_t annex_len;                /* Length of annex data, including 0x50 prefix */
 };
 
 static const unsigned char EMPTY_OUTPUT[9] = {
@@ -1738,6 +1739,51 @@ static size_t get_btc_bip341_size(const struct tx_serialize_opts *opts)
            (opts->ext_flag == EXT_FLAG_BIP342 ? SHA256_LEN + 1 + 4 : 0);
 }
 
+/* Get the (maximum) BIP341 serialized tx size as per BIP341/342/118 and
+ * https://github.com/ElementsProject/elements/blob/master/doc/taproot-sighash.mediawiki
+ * Note that this over-estimates for some transactions, since we don't have
+ * enough information at this point to have an exact estimate.
+ */
+static size_t get_elements_bip341_size(const struct tx_serialize_opts *opts)
+{
+    size_t n = 0;
+#ifdef BUILD_ELEMENTS
+    const bool sh_anyonecanpay = opts->tx_sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_none = (opts->tx_sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (opts->tx_sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+
+    if (!opts->genesis)
+        return 0; /* Genesis hash is required for taproot */
+    /* Transaction data */
+    n = 64 + 1 + 4 + 4;
+    if (!sh_anyonecanpay)
+        n += 32 * 7;
+    if (!sh_none && !sh_single)
+        n += 64;
+    /* Input */
+    n += 1;
+    if (sh_anyonecanpay) {
+        /* Note:
+         * - asset issuance data of 130 may be 1 if not required
+         * - single issuance data of 32 may be 0 if not required
+         */
+        size_t amount_size;
+        if (!(amount_size = confidential_value_length_from_bytes(opts->value)))
+            return 0; /* Amount is required for taproot */
+        n += 1 + 36 + amount_size + 35 + 4 + 130 + 32;
+    } else {
+        n += 4;
+    }
+    n += (opts->annex_len ? SHA256_LEN : 0);
+    /* Output */
+    if (sh_single)
+        n += 32 + 32;
+#else
+    (void)opts;
+#endif /* BUILD_ELEMENTS */
+    return n;
+}
+
 /* We compute the size of the witness separately so we can compute vsize
  * without iterating the transaction twice with different flags.
  */
@@ -1765,9 +1811,9 @@ static int tx_get_lengths(const struct wally_tx *tx,
             return WALLY_ERROR; /* Segwit tx hashing uses bip143 opts member */
 
         if (opts->bip341) {
-            *base_size = get_btc_bip341_size(opts);
             *witness_size = 0;
-            return WALLY_OK;
+            *base_size = (is_elements ? get_elements_bip341_size : get_btc_bip341_size)(opts);
+            return *base_size ? WALLY_OK : WALLY_EINVAL;
         }
 
         if (opts->bip143) {
@@ -3289,7 +3335,7 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
     const struct tx_serialize_opts opts = {
         sighash, tx_sighash, index, script, script_len, satoshi,
         is_bip143, value, value_len, is_bip341, ext_flag, NULL, 0, NULL,
-        NULL, 0, 0, 0, NULL, 0
+        NULL, 0, 0, 0, NULL, NULL, 0
     };
 
     if (!is_valid_tx(tx) || BYTES_INVALID(script, script_len) ||
@@ -3378,7 +3424,7 @@ int wally_tx_get_btc_taproot_signature_hash(
         values && index < num_values ? values[index] : 0,
         is_bip143, NULL, 0, is_bip341, tapleaf_script ? EXT_FLAG_BIP342 : 0,
         values, num_values, scripts, tapleaf_script, tapleaf_script_len,
-        key_version, codesep_position, annex, annex_len
+        key_version, codesep_position, NULL, annex, annex_len
     };
     size_t is_elements, n, n2;
     int ret;
