@@ -691,6 +691,7 @@ for f in (
     ('wally_tx_get_elements_signature_hash', c_int, [POINTER(wally_tx), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_tx_get_elements_weight_discount', c_int, [POINTER(wally_tx), c_uint32, c_size_t_p]),
     ('wally_tx_get_hash_prevouts', c_int, [POINTER(wally_tx), c_size_t, c_size_t, c_void_p, c_size_t]),
+    ('wally_tx_get_input_signature_hash', c_int, [POINTER(wally_tx), c_size_t, POINTER(wally_map), POINTER(wally_map), POINTER(wally_map), c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, POINTER(wally_map), c_void_p, c_size_t]),
     ('wally_tx_get_length', c_int, [POINTER(wally_tx), c_uint32, c_size_t_p]),
     ('wally_tx_get_signature_hash', c_int, [POINTER(wally_tx), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint64, c_uint32, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_tx_get_total_output_satoshi', c_int, [POINTER(wally_tx), c_uint64_p]),

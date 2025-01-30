@@ -632,6 +632,7 @@ export function tx_get_input_issuance_amount_len(tx_in: Ref_wally_tx, index: num
 export function tx_get_input_issuance_amount_rangeproof_len(tx_in: Ref_wally_tx, index: number): number;
 export function tx_get_input_script_len(tx_in: Ref_wally_tx, index: number): number;
 export function tx_get_input_sequence(tx_in: Ref_wally_tx, index: number): number;
+export function tx_get_input_signature_hash(tx: Ref_wally_tx, index: number, scripts: Ref_wally_map, assets: Ref_wally_map, values: Ref_wally_map, script: Buffer|Uint8Array, key_version: number, codesep_position: number, annex: Buffer|Uint8Array, genesis_blockhash: Buffer|Uint8Array, sighash: number, flags: number, cache: Ref_wally_map): Buffer;
 export function tx_get_input_txhash(tx_in: Ref_wally_tx, index: number): Buffer;
 export function tx_get_input_witness_len(tx_in: Ref_wally_tx, index: number, wit_index: number): number;
 export function tx_get_input_witness_num_items(tx_in: Ref_wally_tx, index: number): number;

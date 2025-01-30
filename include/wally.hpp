@@ -1897,6 +1897,12 @@ inline int tx_get_hash_prevouts(const TX& tx, size_t index, size_t num_inputs, B
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class TX, class SCRIPTS, class ASSETS, class VALUES, class SCRIPT, class ANNEX, class GENESIS_BLOCKHASH, class CACHE, class BYTES_OUT>
+inline int tx_get_input_signature_hash(const TX& tx, size_t index, const SCRIPTS& scripts, const ASSETS& assets, const VALUES& values, const SCRIPT& script, uint32_t key_version, uint32_t codesep_position, const ANNEX& annex, const GENESIS_BLOCKHASH& genesis_blockhash, uint32_t sighash, uint32_t flags, const CACHE& cache, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_get_input_signature_hash(detail::get_p(tx), index, detail::get_p(scripts), detail::get_p(assets), detail::get_p(values), script.data(), script.size(), key_version, codesep_position, annex.data(), annex.size(), genesis_blockhash.data(), genesis_blockhash.size(), sighash, flags, detail::get_p(cache), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class TX>
 inline int tx_get_length(const TX& tx, uint32_t flags, size_t* written) {
     int ret = ::wally_tx_get_length(detail::get_p(tx), flags, written);

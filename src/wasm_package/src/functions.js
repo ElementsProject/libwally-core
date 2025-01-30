@@ -672,6 +672,7 @@ export const tx_get_input_issuance_amount_len = wrap('wally_tx_get_input_issuanc
 export const tx_get_input_issuance_amount_rangeproof_len = wrap('wally_tx_get_input_issuance_amount_rangeproof_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_input_script_len = wrap('wally_tx_get_input_script_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_input_sequence = wrap('wally_tx_get_input_sequence', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
+export const tx_get_input_signature_hash = wrap('wally_tx_get_input_signature_hash', [T.OpaqueRef, T.Int32, T.OpaqueRef, T.OpaqueRef, T.OpaqueRef, T.Bytes, T.Int32, T.Int32, T.Bytes, T.Bytes, T.Int32, T.Int32, T.OpaqueRef, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const tx_get_input_txhash = wrap('wally_tx_get_input_txhash', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_TXHASH_LEN)]);
 export const tx_get_input_witness_len = wrap('wally_tx_get_input_witness_len', [T.OpaqueRef, T.Int32, T.Int32, T.DestPtr(T.Int32)]);
 export const tx_get_input_witness_num_items = wrap('wally_tx_get_input_witness_num_items', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);

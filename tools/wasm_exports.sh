@@ -409,6 +409,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_tx_get_input_script' \
 ,'_wally_tx_get_input_script_len' \
 ,'_wally_tx_get_input_sequence' \
+,'_wally_tx_get_input_signature_hash' \
 ,'_wally_tx_get_input_txhash' \
 ,'_wally_tx_get_input_witness' \
 ,'_wally_tx_get_input_witness_len' \

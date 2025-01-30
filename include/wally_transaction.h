@@ -51,6 +51,12 @@ extern "C" {
 #define WALLY_SIGHASH_MASK         0x1f /* Mask for determining ALL/NONE/SINGLE */
 #define WALLY_SIGHASH_TR_IN_MASK   0xc0 /* Taproot mask for determining input hash type */
 
+/*** tx-sighash-type Transaction signature hash flags */
+#define WALLY_SIGTYPE_PRE_SW  0x1 /* Pre-segwit signature hash */
+#define WALLY_SIGTYPE_SW_V0   0x2 /* Segwit v0 signature hash */
+#define WALLY_SIGTYPE_SW_V1   0x3 /* Segwit v1 (taproot) signature hash */
+#define WALLY_SIGTYPE_MASK    0xf /* Mask for signature hash in signature hash flags */
+
 #define WALLY_TX_ASSET_CT_EMPTY_PREFIX    0x00
 #define WALLY_TX_ASSET_CT_EXPLICIT_PREFIX 0x01
 #define WALLY_TX_ASSET_CT_VALUE_PREFIX_A  0x08
@@ -859,6 +865,63 @@ WALLY_CORE_API int wally_tx_get_signature_hash(
     uint32_t sighash,
     uint32_t tx_sighash,
     uint32_t flags,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Get the hash of the preimage for signing a transaction input.
+ *
+ * :param tx: The transaction to generate the signature hash from.
+ * :param index: The input index of the input being signed for.
+ * :param scripts: The scriptpubkeys of each input in the transaction, indexed
+ *|    by their 0-based input index. For non-taproot signing, only the
+ *|    scriptpubkey of ``index`` is required.
+ * :param assets: The asset commitments of each input in the transaction,
+ *|    or NULL for non-Elements transactions. Ignored for non-taproot signing.
+ * :param values: The satoshi values(BTC) or value commitments(Elements) of
+ *|    each input in the transaction. BTC values must be stored as bytes with
+ *|    uint64/host endiannes. For non-taproot signing, only the value
+ *|    of ``index`` is required.
+ * :param script: For segwit v0 signing, the scriptcode of the input to sign
+ *|    for. For taproot, the leaf script to sign with if any. Ignored for
+ *|    pre-segwit signing.
+ * :param script_len: Length of ``script`` in bytes.
+ * :param key_version: Version of pubkey in tapscript. Must be set
+ *|    to `0x00` or `0x01` for taproot script-path signing.
+ * :param codesep_position: BIP342 codeseparator position
+ *|    or ``WALLY_NO_CODESEPARATOR`` if none. Only used for taproot signing.
+ * :param annex: BIP341 annex, or NULL if none.
+ * :param annex_len: Length of ``annex`` in bytes. Only used for taproot signing.
+ * :param genesis_blockhash: The genesis blockhash of the chain to sign for,
+ *|    or NULL for non-Elements transactions. Only used for taproot signing.
+ * :param genesis_blockhash_len: Length of ``genesis_blockhash`` in bytes. Must
+ *|    be `SHA256_LEN` or 0.
+ * :param sighash: ``WALLY_SIGHASH_`` flags specifying the sighash flags
+ *|    to sign with.
+ * :param flags: :ref:`tx-sighash-type` controlling signature hash generation.
+ * :param cache: An opaque cache for faster generation, or NULL to disable
+ *|    caching. Must be empty on the first call to this function for a given
+ *|    transaction, and only used for signing the inputs of the same ``tx``.
+ * :param bytes_out: Destination for the resulting signature hash.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ */
+WALLY_CORE_API int wally_tx_get_input_signature_hash(
+    const struct wally_tx *tx,
+    size_t index,
+    const struct wally_map *scripts,
+    const struct wally_map *assets,
+    const struct wally_map *values,
+    const unsigned char *script,
+    size_t script_len,
+    uint32_t key_version,
+    uint32_t codesep_position,
+    const unsigned char *annex,
+    size_t annex_len,
+    const unsigned char *genesis_blockhash,
+    size_t genesis_blockhash_len,
+    uint32_t sighash,
+    uint32_t flags,
+    struct wally_map *cache,
     unsigned char *bytes_out,
     size_t len);
 
