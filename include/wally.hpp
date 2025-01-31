@@ -3186,6 +3186,12 @@ inline int tx_get_elements_signature_hash(const TX& tx, size_t index, const SCRI
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class TX, class SCRIPTS, class ASSETS, class VALUES, class TAPLEAF_SCRIPT, class ANNEX, class GENESIS_BLOCKHASH, class BYTES_OUT>
+inline int tx_get_elements_taproot_signature_hash(const TX& tx, size_t index, const SCRIPTS& scripts, const ASSETS& assets, const VALUES& values, const TAPLEAF_SCRIPT& tapleaf_script, uint32_t key_version, uint32_t codesep_position, const ANNEX& annex, const GENESIS_BLOCKHASH& genesis_blockhash, uint32_t sighash, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_tx_get_elements_taproot_signature_hash(detail::get_p(tx), index, detail::get_p(scripts), detail::get_p(assets), detail::get_p(values), tapleaf_script.data(), tapleaf_script.size(), key_version, codesep_position, annex.data(), annex.size(), genesis_blockhash.data(), genesis_blockhash.size(), sighash, flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class TX>
 inline int tx_get_elements_weight_discount(const TX& tx, uint32_t flags, size_t* written) {
     int ret = ::wally_tx_get_elements_weight_discount(detail::get_p(tx), flags, written);
