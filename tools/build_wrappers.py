@@ -611,7 +611,7 @@ def gen_wamr_bindings(funcs, all_funcs):
         output.extend(wrapper_code)
         output.append('')
 
-    output.append('static NativeSymbol wns[] = {')
+    output.append('static const NativeSymbol wns[] = {')
     for func_name in func_dict:
         if func_name == 'wally_set_operations':
             continue
@@ -620,7 +620,7 @@ def gen_wamr_bindings(funcs, all_funcs):
         output.append(f'    EXPORT_WASM_API_WITH_SIG2({func.name}, "{sig}"),')
     output.append('};')
     output.append('')
-    output.append('NativeSymbol* get_wally_bindings(void) { return wns; }')
+    output.append('const NativeSymbol* get_wally_bindings(void) { return wns; }')
     output.append('size_t get_wally_bindings_len(void) { return sizeof(wns) / sizeof(NativeSymbol); }')
 
     # FIXME: change the output directory to whatever the rest of the script does I suppose
@@ -646,7 +646,25 @@ def generate_wamr_wrapper(func):
     code.append('    ' + ', '.join(wrapper_args) + ')')
     code.append('{')
 
-    if args[-1].is_pointer_pointer:
+    map_pptr_return_value =  args[-1].is_pointer_pointer and not (args[-1].is_struct and args[-1].is_opaque)
+    if map_pptr_return_value or any(arg.is_pointer for arg in args):
+        code.append(f'    wasm_module_inst_t wasm_module_inst = wasm_runtime_get_module_inst(exec_env);')
+
+    # map input NULL pointers to native NULL - ie. do not treat as offset
+    for arg in args:
+        if arg.is_pointer or arg.type.strip() == 'wally_map_verify_fn_t':
+            code.append(f'    if (!wasm_runtime_addr_native_to_app(wasm_module_inst, (void*){arg.name})) {{')
+            code.append(f'        {arg.name} = NULL;')
+            code.append(f'    }}')
+
+            if arg.type.strip() == 'wally_map_verify_fn_t':
+                code.append(f'    if ({arg.name}) {{')
+                code.append(f'        return WALLY_EINVAL;')
+                code.append(f'    }}')
+
+    # explicitly map return value if required
+    # note output NULLs are left as NULL and not mapped
+    if map_pptr_return_value:
         call_args = [arg.name for arg in func.args]
         code.append(f'    if (!{args[-1].name}) {{')
         code.append(f'        return WALLY_EINVAL;')
@@ -654,15 +672,17 @@ def generate_wamr_wrapper(func):
         code.append(f'')
         code.append(f'    {arg.type.strip()[:-1]} wamr_result = NULL;')
         code.append(f'    const int wwres = {func.name}({", ".join(call_args[:-1] + ["&wamr_result"])});')
-        code.append(f'    if (!wamr_result) {{')
+        code.append(f'    if (wwres != WALLY_OK) {{')
         code.append(f'        return wwres;')
         code.append(f'    }}')
-        code.append(f'    wasm_module_inst_t wasm_module_inst = wasm_runtime_get_module_inst(exec_env);')
-        code.append(f'    const uint32_t wamr_index_gen = wasm_runtime_addr_native_to_app(wasm_module_inst, (void*)wamr_result);')
-        code.append(f'    if (!wamr_index_gen) {{')
-        code.append(f'        return WALLY_ERROR;')
+        code.append(f'    uint32_t wamr_index_gen = 0;')
+        code.append(f'    if (wamr_result) {{');
+        code.append(f'        wamr_index_gen = wasm_runtime_addr_native_to_app(wasm_module_inst, (void*)wamr_result);')
+        code.append(f'        if (!wamr_index_gen) {{')
+        code.append(f'            return WALLY_ERROR;')
+        code.append(f'        }}')
         code.append(f'    }}')
-        code.append(f'    *{args[-1].name}= ({arg.type.strip()[:-1]})(uintptr_t)wamr_index_gen;')
+        code.append(f'    *{args[-1].name} = ({arg.type.strip()[:-1]})(uintptr_t)wamr_index_gen;')
         code.append(f'    return wwres;')
     else:
         call_args = [arg.name for arg in func.args]
@@ -686,6 +706,8 @@ def generate_wamr_signature(func):
             param_letters.append('I')
         elif arg_type in ['const char*', 'char*']:
             param_letters.append('$')
+        elif arg.is_pointer_pointer:
+            param_letters.append('*')
         elif arg.is_pointer:
             # check if next arg is length parameter
             # FIXME: maybe there is a better way to check this
@@ -698,13 +720,15 @@ def generate_wamr_signature(func):
             else:
                 # FIXME: let's try some types from here
                 if arg.is_struct and arg.is_opaque:
-                    param_letters.append('r')
+                    #param_letters.append('r')  # FIXME
+                    param_letters.append('i')
                 else:
                     param_letters.append('*')
         else:
             # FIXME: let's try some types from here
             if arg.is_struct and arg.is_opaque:
-                param_letters.append('r')
+                #param_letters.append('r')  # FIXME
+                param_letters.append('i')
             else:
                 param_letters.append('*')
 
@@ -714,50 +738,6 @@ def generate_wamr_signature(func):
     return_type_letter = 'i'  # assuming all functions return 'int'
     signature = '(' + ''.join(param_letters) + ')' + return_type_letter
     return signature
-
-def generate_wamr_wrapper(func):
-    code = []
-    func_name = func.name + '_wrapper'
-
-    # first argument is wasm_exec_env_t exec_env
-    args = func.args
-
-    # build wrapper arguments
-    wrapper_args = ['wasm_exec_env_t exec_env']
-    for arg in args:
-        if arg.name == 'exec_env':
-            continue  # Exclude exec_env
-        wrapper_args.append(f'{arg.type} {arg.name}')
-
-    # build function signature
-    code.append(f'static int {func_name}(')
-    code.append('    ' + ', '.join(wrapper_args) + ')')
-    code.append('{')
-
-    if args[-1].is_pointer_pointer:
-        call_args = [arg.name for arg in func.args]
-        code.append(f'    if (!{args[-1].name}) {{')
-        code.append(f'        return WALLY_EINVAL;')
-        code.append(f'    }}')
-        code.append(f'')
-        code.append(f'    {arg.type.strip()[:-1]} wamr_result = NULL;')
-        code.append(f'    const int wwres = {func.name}({", ".join(call_args[:-1] + ["&wamr_result"])});')
-        code.append(f'    if (!wamr_result) {{')
-        code.append(f'        return wwres;')
-        code.append(f'    }}')
-        code.append(f'    wasm_module_inst_t wasm_module_inst = wasm_runtime_get_module_inst(exec_env);')
-        code.append(f'    const uint32_t wamr_index_gen = wasm_runtime_addr_native_to_app(wasm_module_inst, (void*)wamr_result);')
-        code.append(f'    if (!wamr_index_gen) {{')
-        code.append(f'        return WALLY_ERROR;')
-        code.append(f'    }}')
-        code.append(f'    *{args[-1].name}= ({arg.type.strip()[:-1]})(uintptr_t)wamr_index_gen;')
-        code.append(f'    return wwres;')
-    else:
-        call_args = [arg.name for arg in func.args]
-        code.append(f'    return {func.name}({", ".join(call_args)});')
-
-    code.append('}')
-    return code
 
 def generate_wasm_noemscripten_wrapper(func):
     code = []
@@ -1016,5 +996,5 @@ if __name__ == "__main__":
     #gen_wasm_exports(all_funcs, all_names)
     #gen_wasm_package(all_funcs, all_names)
 
-    #gen_wamr_bindings(all_funcs, all_names)
+    gen_wamr_bindings(all_funcs, all_names)
     gen_wasm_noemscripten_bindings(all_funcs, all_names)
