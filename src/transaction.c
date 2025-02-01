@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include "pullpush.h"
+#include "script.h"
 #include "script_int.h"
 
 #define WALLY_TX_ALL_FLAGS \
@@ -2481,8 +2482,9 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
         /* sha_scriptpubkeys */
         tmp_p = buff_p;
         for (i = 0; i < tx->num_inputs; ++i) {
-            const struct wally_map_item *script = wally_map_get_integer(opts->scripts, i);
-            tmp_p += varbuff_to_bytes(script->value, script->value_len, tmp_p);
+            const struct wally_map_item *m = wally_map_get_integer(opts->scripts, i);
+            /* validity already checked by get_bip341_sub_size() */
+            tmp_p += varbuff_to_bytes(m->value, m->value_len, tmp_p);
         }
         if ((ret = wally_sha256(buff_p, tmp_p - buff_p, p, SHA256_LEN)) != WALLY_OK)
             goto error;
@@ -2515,12 +2517,9 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
     p += uint8_to_le_bytes(opts->ext_flag * 2 + has_annex, p); /* spend_type (1) */
 
     if (sh_anyonecanpay || sh_anyprevout) {
-       const struct wally_map_item *script = wally_map_get_integer(opts->scripts, opts->index);
-        if (!script || !script->value || script->value_len != WALLY_SCRIPTPUBKEY_P2TR_LEN ||
-            script->value[0] != OP_1 || script->value[1] != 32u) {
-            ret = WALLY_EINVAL; /* Not a v1 segwit taproot script */
-            goto error;
-        }
+        const struct wally_map_item *m = wally_map_get_integer(opts->scripts, opts->index);
+        if (!m || !scriptpubkey_is_p2tr(m->value, m->value_len))
+            goto error; /* Not a v1 segwit taproot script */
         if (sh_anyonecanpay) {
             /* outpoint (36) */
             memcpy(p, tx->inputs[opts->index].txhash, WALLY_TXHASH_LEN);
@@ -2528,7 +2527,7 @@ static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
             p += uint32_to_le_bytes(tx->inputs[opts->index].index, p);
         }
         p += uint64_to_le_bytes(opts->satoshi, p);                    /* amount (8) */
-        p += varbuff_to_bytes(script->value, script->value_len, p);   /* scriptPubKey (35) */
+        p += varbuff_to_bytes(m->value, m->value_len, p);             /* scriptPubKey (35) */
         p += uint32_to_le_bytes(tx->inputs[opts->index].sequence, p); /* nSequence (4) */
     } else if (sh_anyprevout_anyscript) {
         p += uint32_to_le_bytes(tx->inputs[opts->index].sequence, p); /* nSequence (4) */
