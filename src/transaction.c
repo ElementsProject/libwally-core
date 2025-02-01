@@ -2145,11 +2145,11 @@ int wally_tx_get_hash_prevouts(const struct wally_tx *tx,
     return hash_prevouts(buff_p, inputs_size, bytes_out, len, inputs_size > sizeof(buff));
 }
 
-static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
-                                     const struct tx_serialize_opts *opts,
-                                     uint32_t flags,
-                                     unsigned char *bytes_out, size_t len,
-                                     size_t *written)
+static int tx_to_bip143_bytes(const struct wally_tx *tx,
+                              const struct tx_serialize_opts *opts,
+                              uint32_t flags,
+                              unsigned char *bytes_out, size_t len,
+                              size_t *written)
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
@@ -2419,11 +2419,11 @@ static size_t get_bip341_sub_size(const struct wally_tx *tx,
     return n;
 }
 
-static inline int tx_to_bip341_bytes(const struct wally_tx *tx,
-                                     const struct tx_serialize_opts *opts,
-                                     uint32_t flags,
-                                     unsigned char *bytes_out, size_t len,
-                                     size_t *written)
+static int tx_to_bip341_bytes(const struct wally_tx *tx,
+                              const struct tx_serialize_opts *opts,
+                              uint32_t flags,
+                              unsigned char *bytes_out, size_t len,
+                              size_t *written)
 {
     unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
     size_t i, buff_len, is_elements = false;
