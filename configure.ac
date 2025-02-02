@@ -195,6 +195,7 @@ AC_SUBST([NOBUILTIN_CFLAGS])
 SWIG_WARN_CFLAGS="-fno-strict-aliasing"
 AX_CHECK_COMPILE_FLAG([-Wno-unused-parameter], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-unused-parameter"])
 AX_CHECK_COMPILE_FLAG([-Wno-shadow], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-shadow"])
+AX_CHECK_COMPILE_FLAG([-Wno-pedantic], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-pedantic"])
 AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-missing-field-initializers"])
 if echo | "$CC" -dM -E - | grep __clang__ >/dev/null; then
     AX_CHECK_COMPILE_FLAG([-Wno-self-assign], [SWIG_WARN_CFLAGS="$SWIG_WARN_CFLAGS -Wno-self-assign"])
