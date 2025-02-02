@@ -197,16 +197,21 @@ class PSBTTests(unittest.TestCase):
 
     def test_finalizer_role(self):
         """Test the PSBT finalizer role"""
+        _, is_elements_build = wally_is_elements_build()
         SERIALIZE_FLAG_REDUNDANT = 0x1
         for case in JSON['finalizer']:
-            psbt = self.parse_base64(case['psbt'])
+            is_pset = case.get('is_pset', False)
+            expected_ret = WALLY_EINVAL if is_pset and not is_elements_build else WALLY_OK
+            psbt = self.parse_base64(case['psbt'], expected_ret)
             flags = case['flags']
-            extract_flags = SERIALIZE_FLAG_REDUNDANT if flags == 1 else 0
-            self.assertEqual(WALLY_OK, wally_psbt_finalize(psbt, flags))
-            ret, is_finalized = wally_psbt_is_finalized(psbt)
-            self.assertEqual((ret, is_finalized), (WALLY_OK, 1))
-            self.assertEqual(self.to_base64(psbt, flags=extract_flags), case['result'])
-            wally_psbt_free(psbt)
+            ret = wally_psbt_finalize(psbt, flags)
+            self.assertEqual(ret, expected_ret);
+            if expected_ret == WALLY_OK:
+                ret, is_finalized = wally_psbt_is_finalized(psbt)
+                self.assertEqual((ret, is_finalized), (WALLY_OK, 1))
+                extract_flags = SERIALIZE_FLAG_REDUNDANT if flags == 1 else 0
+                self.assertEqual(self.to_base64(psbt, flags=extract_flags), case['result'])
+                wally_psbt_free(psbt)
 
     def test_extractor_role(self):
         """Test the PSBT extractor role"""
