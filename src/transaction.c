@@ -482,8 +482,8 @@ static int tx_elements_input_issuance_init(
 #endif
 
     if (!input ||
-        BYTES_INVALID_N(nonce, nonce_len, WALLY_TX_ASSET_TAG_LEN) ||
-        BYTES_INVALID_N(entropy, entropy_len, WALLY_TX_ASSET_TAG_LEN) ||
+        BYTES_INVALID_N(nonce, nonce_len, SHA256_LEN) ||
+        BYTES_INVALID_N(entropy, entropy_len, SHA256_LEN) ||
         BYTES_INVALID(issuance_amount, issuance_amount_len) ||
         BYTES_INVALID(inflation_keys, inflation_keys_len) ||
         BYTES_INVALID(issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
@@ -1311,8 +1311,8 @@ static int tx_add_elements_raw_input_at(
         return WALLY_EINVAL; /* TODO: Allow creation of p2pkh/p2sh using flags */
 
     if (!txhash || txhash_len != WALLY_TXHASH_LEN ||
-        BYTES_INVALID_N(nonce, nonce_len, WALLY_TX_ASSET_TAG_LEN) ||
-        BYTES_INVALID_N(entropy, entropy_len, WALLY_TX_ASSET_TAG_LEN) ||
+        BYTES_INVALID_N(nonce, nonce_len, SHA256_LEN) ||
+        BYTES_INVALID_N(entropy, entropy_len, SHA256_LEN) ||
         BYTES_INVALID(issuance_amount, issuance_amount_len) ||
         BYTES_INVALID(inflation_keys, inflation_keys_len) ||
         BYTES_INVALID(issuance_amount_rangeproof, issuance_amount_rangeproof_len) ||
@@ -1336,9 +1336,9 @@ static int tx_add_elements_raw_input_at(
     memcpy(input.txhash, txhash, WALLY_TXHASH_LEN);
 #ifdef BUILD_ELEMENTS
     if (nonce)
-        memcpy(input.blinding_nonce, nonce, WALLY_TX_ASSET_TAG_LEN);
+        memcpy(input.blinding_nonce, nonce, SHA256_LEN);
     if (entropy)
-        memcpy(input.entropy, entropy, WALLY_TX_ASSET_TAG_LEN);
+        memcpy(input.entropy, entropy, SHA256_LEN);
 #endif /* BUILD_ELEMENTS */
     ret = wally_tx_add_input_at(tx, index, &input);
     wally_clear(&input, sizeof(input));
@@ -2214,10 +2214,10 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
             unsigned char *tmp_p = buff_p;
             for (i = 0; i < tx->num_inputs; ++i) {
                 if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
-                    memcpy(tmp_p, tx->inputs[i].blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
-                    tmp_p += WALLY_TX_ASSET_TAG_LEN;
-                    memcpy(tmp_p, tx->inputs[i].entropy, WALLY_TX_ASSET_TAG_LEN);
-                    tmp_p += WALLY_TX_ASSET_TAG_LEN;
+                    memcpy(tmp_p, tx->inputs[i].blinding_nonce, SHA256_LEN);
+                    tmp_p += SHA256_LEN;
+                    memcpy(tmp_p, tx->inputs[i].entropy, SHA256_LEN);
+                    tmp_p += SHA256_LEN;
                     tmp_p += confidential_value_to_bytes(tx->inputs[i].issuance_amount,
                                                          tx->inputs[i].issuance_amount_len, tmp_p);
                     tmp_p += confidential_value_to_bytes(tx->inputs[i].inflation_keys,
@@ -2249,10 +2249,10 @@ static inline int tx_to_bip143_bytes(const struct wally_tx *tx,
 
 #ifdef BUILD_ELEMENTS
     if (is_elements && (tx->inputs[opts->index].features & WALLY_TX_IS_ISSUANCE)) {
-        memcpy(p, tx->inputs[opts->index].blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
-        p += WALLY_TX_ASSET_TAG_LEN;
-        memcpy(p, tx->inputs[opts->index].entropy, WALLY_TX_ASSET_TAG_LEN);
-        p += WALLY_TX_ASSET_TAG_LEN;
+        memcpy(p, tx->inputs[opts->index].blinding_nonce, SHA256_LEN);
+        p += SHA256_LEN;
+        memcpy(p, tx->inputs[opts->index].entropy, SHA256_LEN);
+        p += SHA256_LEN;
         p += confidential_value_to_bytes(tx->inputs[opts->index].issuance_amount,
                                          tx->inputs[opts->index].issuance_amount_len, p);
         p += confidential_value_to_bytes(tx->inputs[opts->index].inflation_keys,
@@ -2660,10 +2660,10 @@ static int tx_to_bytes(const struct wally_tx *tx,
             if (!is_elements)
                 return WALLY_EINVAL;
 #ifdef BUILD_ELEMENTS
-            memcpy(p, input->blinding_nonce, WALLY_TX_ASSET_TAG_LEN);
-            p += WALLY_TX_ASSET_TAG_LEN;
-            memcpy(p, input->entropy, WALLY_TX_ASSET_TAG_LEN);
-            p += WALLY_TX_ASSET_TAG_LEN;
+            memcpy(p, input->blinding_nonce, SHA256_LEN);
+            p += SHA256_LEN;
+            memcpy(p, input->entropy, SHA256_LEN);
+            p += SHA256_LEN;
             p += confidential_value_to_bytes(input->issuance_amount, input->issuance_amount_len, p);
             p += confidential_value_to_bytes(input->inflation_keys, input->inflation_keys_len, p);
 #endif
@@ -2926,8 +2926,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         ensure_n(sizeof(uint32_t));
         p += sizeof(uint32_t);
         if (expect_issuance) {
-            ensure_n(2 * WALLY_TX_ASSET_TAG_LEN);
-            p += 2 * WALLY_TX_ASSET_TAG_LEN;
+            ensure_n(2 * SHA256_LEN);
+            p += 2 * SHA256_LEN;
             ensure_committed_value(p); /* issuance amount */
             ensure_committed_value(p); /* inflation keys */
         }
@@ -3069,9 +3069,9 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
         p += uint32_from_le_bytes(p, &sequence);
         if (is_elements && !!(index & WALLY_TX_ISSUANCE_FLAG) && !is_coinbase_bytes(txhash, WALLY_TXHASH_LEN, index)) {
             nonce = p;
-            p += WALLY_TX_ASSET_TAG_LEN;
+            p += SHA256_LEN;
             entropy = p;
-            p += WALLY_TX_ASSET_TAG_LEN;
+            p += SHA256_LEN;
             issuance_amount = p;
             p += confidential_value_varint_from_bytes(p, &issuance_amount_len);
             inflation_keys = p;
@@ -3079,8 +3079,8 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
         }
         ret = tx_elements_input_init(txhash, WALLY_TXHASH_LEN, index, sequence,
                                      script_len ? script : NULL, script_len, NULL,
-                                     nonce, nonce ? WALLY_TX_ASSET_TAG_LEN : 0,
-                                     entropy, entropy ? WALLY_TX_ASSET_TAG_LEN : 0,
+                                     nonce, nonce ? SHA256_LEN : 0,
+                                     entropy, entropy ? SHA256_LEN : 0,
                                      issuance_amount_len ? issuance_amount : NULL, issuance_amount_len,
                                      inflation_keys_len ? inflation_keys : NULL, inflation_keys_len,
                                      NULL, 0, NULL, 0, NULL, &(*output)->inputs[i], is_elements);

@@ -892,9 +892,9 @@ WALLY_CORE_API int wally_tx_get_elements_weight_discount(
  *
  * :param input: The input to add to.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `SHA256_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `SHA256_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -939,9 +939,9 @@ WALLY_CORE_API int wally_tx_elements_input_issuance_free(
  * :param script_len: Size of ``script`` in bytes.
  * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `SHA256_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `SHA256_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -1101,9 +1101,9 @@ WALLY_CORE_API int wally_tx_elements_output_init_alloc(
  * :param script_len: Size of ``script`` in bytes.
  * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `SHA256_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `SHA256_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
@@ -1153,9 +1153,9 @@ WALLY_CORE_API int wally_tx_add_elements_raw_input(
  * :param script_len: Size of ``script`` in bytes.
  * :param witness: The witness stack for the input, or NULL if no witness is present.
  * :param nonce: Asset issuance or revelation blinding factor.
- * :param nonce_len: Size of ``nonce`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param nonce_len: Size of ``nonce`` in bytes. Must be `SHA256_LEN`.
  * :param entropy: Entropy for the asset tag calculation.
- * :param entropy_len: Size of ``entropy`` in bytes. Must be `WALLY_TX_ASSET_TAG_LEN`.
+ * :param entropy_len: Size of ``entropy`` in bytes. Must be `SHA256_LEN`.
  * :param issuance_amount: The (blinded) issuance amount.
  * :param issuance_amount_len: Size of ``issuance_amount`` in bytes.
  * :param inflation_keys: The (blinded) token reissuance amount.
