@@ -4945,6 +4945,8 @@ int wally_psbt_finalize(struct wally_psbt *psbt, uint32_t flags)
     size_t i;
     int ret = WALLY_OK;
 
+    if (!psbt_is_valid(psbt) || (flags & ~WALLY_PSBT_FINALIZE_NO_CLEAR))
+        return WALLY_EINVAL;
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i)
         ret = wally_psbt_finalize_input(psbt, i, flags);
     return ret;
