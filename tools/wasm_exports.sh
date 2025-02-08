@@ -188,6 +188,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_merkle_path_xonly_public_key_verify' \
 ,'_wally_pbkdf2_hmac_sha256' \
 ,'_wally_pbkdf2_hmac_sha512' \
+,'_wally_psbt_add_input_keypath' \
 ,'_wally_psbt_add_input_signature' \
 ,'_wally_psbt_add_input_taproot_keypath' \
 ,'_wally_psbt_add_output_taproot_keypath' \

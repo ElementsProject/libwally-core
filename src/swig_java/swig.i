@@ -677,6 +677,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_pbkdf2_hmac_sha256, 7, 8, PBKDF2_HMAC_SHA256_LEN);
 %returns_array_(wally_pbkdf2_hmac_sha512, 7, 8, PBKDF2_HMAC_SHA512_LEN);
 %returns_void__(wally_psbt_add_tx_input_at);
+%returns_void__(wally_psbt_add_input_keypath);
 %returns_void__(wally_psbt_add_input_signature);
 %returns_void__(wally_psbt_add_input_taproot_keypath);
 %returns_void__(wally_psbt_add_output_taproot_keypath);

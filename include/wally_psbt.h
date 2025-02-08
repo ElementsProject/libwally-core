@@ -2136,6 +2136,28 @@ WALLY_CORE_API int wally_psbt_find_input_spending_utxo(
     size_t *written);
 
 /**
+ * Add a keypath to a given PSBT input.
+ *
+ * :param psbt: The PSBT to add the keypath to.
+ * :param index: The zero-based index of the input to add to.
+ * :param pub_key: The pubkey to add.
+ * :param pub_key_len: Length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_UNCOMPRESSED_LEN` or `EC_PUBLIC_KEY_LEN`.
+ * :param fingerprint: The master key fingerprint for the pubkey.
+ * :param fingerprint_len: Length of ``fingerprint`` in bytes. Must be `BIP32_KEY_FINGERPRINT_LEN`.
+ * :param child_path: The BIP32 derivation path for the pubkey.
+ * :param child_path_len: The number of items in ``child_path``.
+ */
+WALLY_CORE_API int wally_psbt_add_input_keypath(
+    struct wally_psbt *psbt,
+    uint32_t index,
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *fingerprint,
+    size_t fingerprint_len,
+    const uint32_t *child_path,
+    size_t child_path_len);
+
+/**
  * Add a taproot keypath to a given PSBT input.
  *
  * :param psbt: The PSBT to add the taproot keypath to.

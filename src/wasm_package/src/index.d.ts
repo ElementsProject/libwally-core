@@ -226,6 +226,7 @@ export function merkle_path_xonly_public_key_verify(key: Buffer|Uint8Array, val:
 export function pbkdf2_hmac_sha256(pass: Buffer|Uint8Array, salt: Buffer|Uint8Array, flags: number, cost: number): Buffer;
 export function pbkdf2_hmac_sha512(pass: Buffer|Uint8Array, salt: Buffer|Uint8Array, flags: number, cost: number): Buffer;
 export function psbt_add_global_scalar(psbt: Ref_wally_psbt, scalar: Buffer|Uint8Array): void;
+export function psbt_add_input_keypath(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_add_input_signature(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array, sig: Buffer|Uint8Array): void;
 export function psbt_add_input_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_add_output_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;

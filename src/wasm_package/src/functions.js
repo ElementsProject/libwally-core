@@ -266,6 +266,7 @@ export const merkle_path_xonly_public_key_verify = wrap('wally_merkle_path_xonly
 export const pbkdf2_hmac_sha256 = wrap('wally_pbkdf2_hmac_sha256', [T.Bytes, T.Bytes, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.PBKDF2_HMAC_SHA256_LEN)]);
 export const pbkdf2_hmac_sha512 = wrap('wally_pbkdf2_hmac_sha512', [T.Bytes, T.Bytes, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.PBKDF2_HMAC_SHA512_LEN)]);
 export const psbt_add_global_scalar = wrap('wally_psbt_add_global_scalar', [T.OpaqueRef, T.Bytes]);
+export const psbt_add_input_keypath = wrap('wally_psbt_add_input_keypath', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes, T.Uint32Array]);
 export const psbt_add_input_signature = wrap('wally_psbt_add_input_signature', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes]);
 export const psbt_add_input_taproot_keypath = wrap('wally_psbt_add_input_taproot_keypath', [T.OpaqueRef, T.Int32, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.Uint32Array]);
 export const psbt_add_output_taproot_keypath = wrap('wally_psbt_add_output_taproot_keypath', [T.OpaqueRef, T.Int32, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.Uint32Array]);

@@ -1690,6 +1690,22 @@ static int psbt_input_from_tx_input(struct wally_psbt *psbt,
     return ret;
 }
 
+int wally_psbt_add_input_keypath(
+    struct wally_psbt *psbt, uint32_t index,
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *fingerprint, size_t fingerprint_len,
+    const uint32_t *child_path, size_t child_path_len)
+{
+    struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    if (!inp || !psbt_is_valid(psbt) ||
+        !psbt_can_modify(psbt, WALLY_PSBT_TXMOD_INPUTS))
+        return WALLY_EINVAL;
+
+    return wally_psbt_input_keypath_add(inp, pub_key, pub_key_len,
+                                        fingerprint, fingerprint_len,
+                                        child_path, child_path_len);
+}
+
 int wally_psbt_add_input_taproot_keypath(
     struct wally_psbt *psbt,
     uint32_t index, uint32_t flags,
