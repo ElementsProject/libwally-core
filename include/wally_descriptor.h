@@ -17,18 +17,20 @@ struct wally_descriptor;
 #define WALLY_MINISCRIPT_REQUIRE_CHECKSUM 0x04 /** Require a checksum to be present */
 #define WALLY_MINISCRIPT_POLICY_TEMPLATE  0x08 /** Only allow policy templates with @n BIP32 keys */
 #define WALLY_MINISCRIPT_UNIQUE_KEYPATHS  0x10 /** For policy templates, ensure BIP32 derivation paths differ for identical keys */
+#define WALLY_MINISCRIPT_AS_ELEMENTS      0x20 /** Treat non-elements expressions as elements, e.g. tr() as eltr() */
 #define WALLY_MINISCRIPT_DEPTH_MASK       0xffff0000 /** Mask for limiting maximum depth */
 #define WALLY_MINISCRIPT_DEPTH_SHIFT      16 /** Shift to convert maximum depth to flags */
 
 /*** miniscript-features Miniscript/Descriptor feature flags */
-#define WALLY_MS_IS_RANGED       0x01 /** Allows key ranges via ``*`` */
-#define WALLY_MS_IS_MULTIPATH    0x02 /** Allows multiple paths via ``<a;b;c>`` */
-#define WALLY_MS_IS_PRIVATE      0x04 /** Contains at least one private key */
-#define WALLY_MS_IS_UNCOMPRESSED 0x08 /** Contains at least one uncompressed key */
-#define WALLY_MS_IS_RAW          0x10 /** Contains at least one raw key */
-#define WALLY_MS_IS_DESCRIPTOR   0x20 /** Contains only descriptor expressions (no miniscript) */
-#define WALLY_MS_IS_X_ONLY       0x40 /** Contains at least one x-only key */
-#define WALLY_MS_IS_PARENTED     0x80 /** Contains at least one key key with a parent key origin */
+#define WALLY_MS_IS_RANGED       0x001 /** Allows key ranges via ``*`` */
+#define WALLY_MS_IS_MULTIPATH    0x002 /** Allows multiple paths via ``<a;b;c>`` */
+#define WALLY_MS_IS_PRIVATE      0x004 /** Contains at least one private key */
+#define WALLY_MS_IS_UNCOMPRESSED 0x008 /** Contains at least one uncompressed key */
+#define WALLY_MS_IS_RAW          0x010 /** Contains at least one raw key */
+#define WALLY_MS_IS_DESCRIPTOR   0x020 /** Contains only descriptor expressions (no miniscript) */
+#define WALLY_MS_IS_X_ONLY       0x040 /** Contains at least one x-only key */
+#define WALLY_MS_IS_PARENTED     0x080 /** Contains at least one key key with a parent key origin */
+#define WALLY_MS_IS_ELEMENTS     0x100 /** Contains Elements expressions or was parsed as Elements */
 
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
 #define WALLY_MS_CANONICAL_NO_CHECKSUM 0x01 /** Do not include a checksum */

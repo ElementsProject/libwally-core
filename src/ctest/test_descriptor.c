@@ -43,7 +43,9 @@ static struct wally_map_item g_key_map_items[] = {
     { B("mainnet_xpriv"), B("xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU") },
     { B("uncompressed"), B("0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf") },
     { B("x_only"), B("b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") },
-    { B("non_x_only"), B("03b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") }
+    { B("non_x_only"), B("03b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") },
+    /* The taproot singlesig xpriv corresponding to Jades test_jade.py test script */
+    { B("jade_ss_tr_xpriv"), B("tprv8gTfWnFCND72oJZfZTokBBXcS1FzQhrtd5wNFu3FgBE76yErH49cev2Zn3Wws3o6ZwKZVZaQP1UWKVNotpPg8U6tCgGrjMfaRQJvV1Vdbi7") }
 };
 
 static const struct wally_map g_key_map = {
@@ -395,7 +397,17 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, NULL, 0,
         "51205fb8e39dbbdc7c831af59e44a9b2997f9daaf72c3e965b30982f3c731539e1db",
         "tp2ky708"
-    },{
+    },
+#ifdef BUILD_ELEMENTS
+    {
+        "descriptor - Elements tr",
+        "tr([59d1f3b0/86h/1h/0h]jade_ss_tr_xpriv/0/*)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_AS_ELEMENTS,
+        "5120900d1d75269396d4220c4529527dbcb746a6093c7209cea2d76a87c8ab9447fc",
+        "3d4maj53"
+    },
+#endif
+    {
         "descriptor - A single key",
         "wsh(c:pk_k(key_1))",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,

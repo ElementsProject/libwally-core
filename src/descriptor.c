@@ -18,7 +18,8 @@
         WALLY_MINISCRIPT_ONLY | \
         WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
         WALLY_MINISCRIPT_POLICY_TEMPLATE | \
-        WALLY_MINISCRIPT_UNIQUE_KEYPATHS)
+        WALLY_MINISCRIPT_UNIQUE_KEYPATHS | \
+        WALLY_MINISCRIPT_AS_ELEMENTS)
 #define MS_FLAGS_CANONICALIZE (WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
         WALLY_MINISCRIPT_POLICY_TEMPLATE)
 
@@ -177,8 +178,8 @@ typedef struct ms_node_t {
     uint32_t data_len;
     uint32_t child_path_len;
     char wrapper_str[12];
+    unsigned short flags; /* WALLY_MS_IS_ flags */
     unsigned char builtin;
-    unsigned char flags; /* WALLY_MS_IS_ flags */
 } ms_node;
 
 typedef struct wally_descriptor {
@@ -1293,7 +1294,7 @@ static int generate_sh_wpkh(ms_ctx *ctx, ms_node *node,
     ms_node sh_node = { NULL, node, NULL, KIND_DESCRIPTOR_SH,
                         TYPE_NONE, 0, NULL, NULL, 0, 0,
                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-                        builtin_sh_index, 0 };
+                        0, builtin_sh_index };
 
     if (ctx->variant != 3)
         return WALLY_ERROR; /* Should only be called to generate sh-wpkh */
@@ -1423,6 +1424,7 @@ static int generate_tr(ms_ctx *ctx, ms_node *node,
     unsigned char tweaked[EC_PUBLIC_KEY_LEN];
     unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN + 1];
     size_t pubkey_len = 0;
+    uint32_t tweak_flags = 0;
     int ret;
 
     /* Generate a push of the x-only public key of our child */
@@ -1432,9 +1434,13 @@ static int generate_tr(ms_ctx *ctx, ms_node *node,
         return WALLY_EINVAL; /* Should be PUSH_32 [x-only pubkey] */
 
     /* Tweak it into a compressed pubkey */
+#ifdef BUILD_ELEMENTS
+    if (node->flags & WALLY_MS_IS_ELEMENTS)
+        tweak_flags = EC_FLAG_ELEMENTS;
+#endif
     ret = wally_ec_public_key_bip341_tweak(pubkey + 1, pubkey_len - 1,
-                                           NULL, 0, 0, /* FIXME: Support script path */
-                                           tweaked, sizeof(tweaked));
+                                           NULL, 0, /* FIXME: Support script path */
+                                           tweak_flags, tweaked, sizeof(tweaked));
 
     if (ret == WALLY_OK && script_len >= WALLY_SCRIPTPUBKEY_P2TR_LEN) {
         /* Generate the script using the x-only part of the tweaked key */
@@ -2378,6 +2384,11 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         return WALLY_ENOMEM;
 
     node->parent = parent;
+#ifdef BUILD_ELEMENTS
+    if (ctx->features & WALLY_MS_IS_ELEMENTS) {
+        node->flags |= WALLY_MS_IS_ELEMENTS; /* Treat this node as an elements node */
+    }
+#endif
 
     for (i = 0; i < str_len; ++i) {
         if (!node->builtin && str[i] == ':') {
@@ -2745,6 +2756,11 @@ int wally_descriptor_parse(const char *miniscript,
         (network != WALLY_NETWORK_NONE && !addr_ver))
         return WALLY_EINVAL;
 
+#ifndef BUILD_ELEMENTS
+    if (flags & WALLY_MINISCRIPT_AS_ELEMENTS) {
+        return WALLY_EINVAL;
+    }
+#endif
     /* Allocate a context to hold the canonicalized/parsed expression */
     if (!(*output = wally_calloc(sizeof(ms_ctx))))
         return WALLY_ENOMEM;
@@ -2759,6 +2775,9 @@ int wally_descriptor_parse(const char *miniscript,
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
+        if (flags & WALLY_MINISCRIPT_AS_ELEMENTS) {
+            ctx->features |= WALLY_MS_IS_ELEMENTS; /* Treat as an elements descriptor */
+        }
 
         if (max_depth && get_max_depth(ctx->src, ctx->src_len) > max_depth)
             ret = WALLY_EINVAL;
@@ -2830,6 +2849,11 @@ int wally_descriptor_to_script_get_maximum_length(
         *written = 0;
     if (!descriptor || (flags & ~MS_FLAGS_ALL) || !written)
         return WALLY_EINVAL;
+#ifndef BUILD_ELEMENTS
+    if (flags & WALLY_MINISCRIPT_AS_ELEMENTS) {
+        return WALLY_EINVAL;
+    }
+#endif
     *written = descriptor->script_len;
     return WALLY_OK;
 }

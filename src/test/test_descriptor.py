@@ -15,6 +15,7 @@ MS_ONLY          = 0x2  # WALLY_MINISCRIPT_ONLY
 REQUIRE_CHECKSUM = 0x4  # WALLY_MINISCRIPT_REQUIRE_CHECKSUM
 POLICY           = 0x08 # WALLY_MINISCRIPT_POLICY_TEMPLATE
 UNIQUE_KEYPATHS  = 0x10 # WALLY_MINISCRIPT_UNIQUE_KEYPATHS
+AS_ELEMENTS      = 0x20 # WALLY_MINISCRIPT_AS_ELEMENTS
 
 MS_IS_RANGED       = 0x1
 MS_IS_MULTIPATH    = 0x2
@@ -24,6 +25,7 @@ MS_IS_RAW          = 0x010
 MS_IS_DESCRIPTOR   = 0x20
 MS_IS_X_ONLY       = 0x40
 MS_IS_PARENTED     = 0x80
+MS_IS_ELEMENTS     = 0x100
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
@@ -228,10 +230,12 @@ class DescriptorTests(unittest.TestCase):
 
     def test_features_and_depth(self):
         """Test descriptor feature detection and depth"""
+        _, is_elements_build = wally_is_elements_build()
+
         k1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
         k2 = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         # Valid args
-        for descriptor, flags, expected, expected_depth in [
+        cases = [
             # Bip32 xpub
             (f'pkh({k1})',
              0, MS_IS_DESCRIPTOR, 2),
@@ -258,7 +262,15 @@ class DescriptorTests(unittest.TestCase):
              0, MS_IS_PRIVATE, 5),
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
              MS_ONLY, MS_IS_PRIVATE, 5),
-        ]:
+        ]
+        if is_elements_build:
+            cases.extend([
+                # Parsing a descriptor as elements returns elements in its features
+                (f'tr({k1})',
+                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2),
+                ])
+
+        for descriptor, flags, expected, expected_depth in cases:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, flags, d)
             ret, features = wally_descriptor_get_features(d)
