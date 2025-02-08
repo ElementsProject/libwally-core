@@ -301,7 +301,7 @@ WALLY_CORE_API int wally_witness_p2wpkh_from_der(
  * :param bytes: Compressed or x-only public key to create a scriptPubkey for.
  * :param bytes_len: The length of ``bytes`` in bytes. Must be ``EC_PUBLIC_KEY_LEN``
  *|    or ``EC_XONLY_PUBLIC_KEY_LEN``.
- * :param flags: Must be 0.
+ * :param flags: Must be 0 or EC_FLAG_ELEMENTS to create an elements p2tr sctipt.
  * :param bytes_out: Destination for the resulting scriptPubkey.
  * MAX_SIZED_OUTPUT(len, bytes_out, WALLY_SCRIPTPUBKEY_P2TR_LEN)
  * :param written: Destination for the number of bytes written to ``bytes_out``.

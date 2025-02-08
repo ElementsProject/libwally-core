@@ -1305,8 +1305,13 @@ int wally_scriptpubkey_p2tr_from_bytes(const unsigned char *bytes, size_t bytes_
     if (written)
         *written = 0;
 
-    /* FIXME: Support EC_FLAG_ELEMENTS for Elements P2TR */
-    if (!bytes || flags || !bytes_out || !written)
+    if (!bytes || !bytes_out || !written)
+        return WALLY_EINVAL;
+#ifdef BUILD_ELEMENTS
+    if (flags & ~EC_FLAG_ELEMENTS)
+#else
+    if (flags)
+#endif
         return WALLY_EINVAL;
 
     if (len < WALLY_SCRIPTPUBKEY_P2TR_LEN) {
@@ -1318,7 +1323,7 @@ int wally_scriptpubkey_p2tr_from_bytes(const unsigned char *bytes, size_t bytes_
     if (bytes_len == EC_PUBLIC_KEY_LEN) {
         /* An untweaked public key, tweak it */
         int ret = wally_ec_public_key_bip341_tweak(bytes, bytes_len, NULL, 0,
-                                                   0, tweaked, sizeof(tweaked));
+                                                   flags, tweaked, sizeof(tweaked));
         if (ret != WALLY_OK)
             return ret;
         bytes = tweaked + 1; /* Convert to x-only */
