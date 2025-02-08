@@ -764,7 +764,7 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
     uint64_t *value_out);
 
 /**
- * Create a BTC transaction for signing and return its hash.
+ * Get the hash of the preimage for signing a BTC transaction input.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -790,7 +790,7 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
     size_t len);
 
 /**
- * Create a BTC transaction for taproot signing and return its hash.
+ * Get the hash of the preimage for signing a BTC taproot transaction input.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -826,7 +826,7 @@ WALLY_CORE_API int wally_tx_get_btc_taproot_signature_hash(
     size_t len);
 
 /**
- * Create a transaction for signing and return its hash.
+ * Get the hash of the preimage for signing a BTC transaction input.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -1297,7 +1297,7 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
     uint64_t *value_out);
 
 /**
- * Create an Elements transaction for signing and return its hash.
+ * Get the hash of the preimage for signing an Elements transaction input.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
