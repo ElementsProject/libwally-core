@@ -37,7 +37,9 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_bip32_key_unserialize' \
 ,'_bip32_key_unserialize_alloc' \
 ,'_bip32_path_from_str' \
+,'_bip32_path_from_str_len' \
 ,'_bip32_path_from_str_n' \
+,'_bip32_path_from_str_n_len' \
 ,'_bip32_path_str_get_features' \
 ,'_bip32_path_str_n_get_features' \
 ,'_bip38_get_flags' \

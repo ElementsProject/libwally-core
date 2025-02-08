@@ -89,7 +89,7 @@ static bool is_hardened_indicator(char c, bool allow_upper, uint32_t *features)
 static int path_from_str_n(const char *str, size_t str_len,
                            uint32_t child_num, uint32_t multi_index,
                            uint32_t *features, uint32_t flags,
-                           uint32_t *child_path, uint32_t child_path_len,
+                           uint32_t *child_path, size_t child_path_len,
                            size_t *written)
 {
     const bool allow_upper = flags & BIP32_FLAG_ALLOW_UPPER;
@@ -242,7 +242,7 @@ fail:
 int bip32_path_from_str_n(const char *str, size_t str_len,
                           uint32_t child_num, uint32_t multi_index,
                           uint32_t flags,
-                          uint32_t *child_path, uint32_t child_path_len,
+                          uint32_t *child_path, size_t child_path_len,
                           size_t *written)
 {
     uint32_t features;
@@ -250,15 +250,33 @@ int bip32_path_from_str_n(const char *str, size_t str_len,
                            flags, child_path, child_path_len, written);
 }
 
+int bip32_path_from_str_n_len(const char *str, size_t str_len,
+                              uint32_t child_num, uint32_t multi_index,
+                              uint32_t flags,
+                              size_t *written)
+{
+    uint32_t child_path;
+    return bip32_path_from_str_n(str, str_len, child_num, multi_index,
+                                 flags, &child_path, 1, written);
+}
+
 int bip32_path_from_str(const char *str, uint32_t child_num,
                         uint32_t multi_index, uint32_t flags,
-                        uint32_t *child_path, uint32_t child_path_len,
+                        uint32_t *child_path, size_t child_path_len,
                         size_t *written)
 {
     uint32_t features;
     return path_from_str_n(str, str ? strlen(str) : 0, child_num,
                            multi_index, &features, flags,
                            child_path, child_path_len, written);
+}
+
+int bip32_path_from_str_len(const char *str, uint32_t child_num,
+                            uint32_t multi_index, uint32_t flags,
+                            size_t *written)
+{
+    return bip32_path_from_str_n_len(str, str ? strlen(str) : 0, child_num,
+                           multi_index, flags, written);
 }
 
 int bip32_path_str_n_get_features(const char *str, size_t str_len,

@@ -499,6 +499,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %rename("bip32_key_unserialize") bip32_key_unserialize_alloc;
 %returns_struct(bip32_key_with_tweak_from_parent_path_alloc, ext_key);
 %rename("bip32_key_with_tweak_from_parent_path") bip32_key_with_tweak_from_parent_path_alloc;
+%returns_size_t(bip32_path_from_str_len);
+%returns_size_t(bip32_path_from_str_n_len);
 %returns_array_(bip38_raw_from_private_key, 6, 7, BIP38_SERIALIZED_LEN);
 %returns_string(bip38_from_private_key);
 %returns_array_(bip38_raw_to_private_key, 6, 7, 32);

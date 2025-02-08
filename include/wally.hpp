@@ -202,14 +202,26 @@ inline int bip32_key_unserialize_alloc(const BYTES& bytes, struct ext_key** outp
 }
 
 template <class PATH_STR>
-inline int bip32_path_from_str(const PATH_STR& path_str, uint32_t child_num, uint32_t multi_index, uint32_t flags, uint32_t* child_path_out, uint32_t child_path_out_len, size_t* written) {
+inline int bip32_path_from_str(const PATH_STR& path_str, uint32_t child_num, uint32_t multi_index, uint32_t flags, uint32_t* child_path_out, size_t child_path_out_len, size_t* written) {
     int ret = ::bip32_path_from_str(detail::get_p(path_str), child_num, multi_index, flags, child_path_out, child_path_out_len, written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
 template <class PATH_STR>
-inline int bip32_path_from_str_n(const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t multi_index, uint32_t flags, uint32_t* child_path_out, uint32_t child_path_out_len, size_t* written) {
+inline int bip32_path_from_str_len(const PATH_STR& path_str, uint32_t child_num, uint32_t multi_index, uint32_t flags, size_t* written) {
+    int ret = ::bip32_path_from_str_len(detail::get_p(path_str), child_num, multi_index, flags, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PATH_STR>
+inline int bip32_path_from_str_n(const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t multi_index, uint32_t flags, uint32_t* child_path_out, size_t child_path_out_len, size_t* written) {
     int ret = ::bip32_path_from_str_n(detail::get_p(path_str), path_str_len, child_num, multi_index, flags, child_path_out, child_path_out_len, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PATH_STR>
+inline int bip32_path_from_str_n_len(const PATH_STR& path_str, size_t path_str_len, uint32_t child_num, uint32_t multi_index, uint32_t flags, size_t* written) {
+    int ret = ::bip32_path_from_str_n_len(detail::get_p(path_str), path_str_len, child_num, multi_index, flags, written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
