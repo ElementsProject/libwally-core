@@ -433,6 +433,7 @@ for f in (
     ('wally_psbt_add_global_scalar', c_int, [POINTER(wally_psbt), c_void_p, c_size_t]),
     ('wally_psbt_add_input_keypath', c_int, [POINTER(wally_psbt), c_uint32, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
     ('wally_psbt_add_input_taproot_keypath', c_int, [POINTER(wally_psbt), c_uint32, c_uint32, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
+    ('wally_psbt_add_output_keypath', c_int, [POINTER(wally_psbt), c_uint32, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
     ('wally_psbt_add_output_taproot_keypath', c_int, [POINTER(wally_psbt), c_uint32, c_uint32, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
     ('wally_psbt_add_tx_input_at', c_int, [POINTER(wally_psbt), c_uint32, c_uint32, POINTER(wally_tx_input)]),
     ('wally_psbt_add_tx_output_at', c_int, [POINTER(wally_psbt), c_uint32, c_uint32, POINTER(wally_tx_output)]),

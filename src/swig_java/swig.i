@@ -680,6 +680,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_add_input_keypath);
 %returns_void__(wally_psbt_add_input_signature);
 %returns_void__(wally_psbt_add_input_taproot_keypath);
+%returns_void__(wally_psbt_add_output_keypath);
 %returns_void__(wally_psbt_add_output_taproot_keypath);
 %returns_void__(wally_psbt_add_tx_output_at);
 %returns_void__(wally_psbt_add_global_scalar);

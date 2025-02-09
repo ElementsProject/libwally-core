@@ -269,6 +269,7 @@ export const psbt_add_global_scalar = wrap('wally_psbt_add_global_scalar', [T.Op
 export const psbt_add_input_keypath = wrap('wally_psbt_add_input_keypath', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes, T.Uint32Array]);
 export const psbt_add_input_signature = wrap('wally_psbt_add_input_signature', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes]);
 export const psbt_add_input_taproot_keypath = wrap('wally_psbt_add_input_taproot_keypath', [T.OpaqueRef, T.Int32, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.Uint32Array]);
+export const psbt_add_output_keypath = wrap('wally_psbt_add_output_keypath', [T.OpaqueRef, T.Int32, T.Bytes, T.Bytes, T.Uint32Array]);
 export const psbt_add_output_taproot_keypath = wrap('wally_psbt_add_output_taproot_keypath', [T.OpaqueRef, T.Int32, T.Int32, T.Bytes, T.Bytes, T.Bytes, T.Uint32Array]);
 export const psbt_add_tx_input_at = wrap('wally_psbt_add_tx_input_at', [T.OpaqueRef, T.Int32, T.Int32, T.OpaqueRef]);
 export const psbt_add_tx_output_at = wrap('wally_psbt_add_tx_output_at', [T.OpaqueRef, T.Int32, T.Int32, T.OpaqueRef]);

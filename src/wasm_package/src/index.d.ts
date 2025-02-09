@@ -229,6 +229,7 @@ export function psbt_add_global_scalar(psbt: Ref_wally_psbt, scalar: Buffer|Uint
 export function psbt_add_input_keypath(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_add_input_signature(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array, sig: Buffer|Uint8Array): void;
 export function psbt_add_input_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
+export function psbt_add_output_keypath(psbt: Ref_wally_psbt, index: number, pub_key: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_add_output_taproot_keypath(psbt: Ref_wally_psbt, index: number, flags: number, pub_key: Buffer|Uint8Array, tapleaf_hashes: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function psbt_add_tx_input_at(psbt: Ref_wally_psbt, index: number, flags: number, input: Ref_wally_tx_input): void;
 export function psbt_add_tx_output_at(psbt: Ref_wally_psbt, index: number, flags: number, output: Ref_wally_tx_output): void;

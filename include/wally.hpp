@@ -1156,6 +1156,12 @@ inline int psbt_add_input_taproot_keypath(const PSBT& psbt, uint32_t index, uint
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
+inline int psbt_add_output_keypath(const PSBT& psbt, uint32_t index, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
+    int ret = ::wally_psbt_add_output_keypath(detail::get_p(psbt), index, pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class PSBT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
 inline int psbt_add_output_taproot_keypath(const PSBT& psbt, uint32_t index, uint32_t flags, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
     int ret = ::wally_psbt_add_output_taproot_keypath(detail::get_p(psbt), index, flags, pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());

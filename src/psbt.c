@@ -1856,6 +1856,22 @@ static int psbt_output_from_tx_output(struct wally_psbt *psbt,
     return ret;
 }
 
+int wally_psbt_add_output_keypath(
+    struct wally_psbt *psbt, uint32_t index,
+    const unsigned char *pub_key, size_t pub_key_len,
+    const unsigned char *fingerprint, size_t fingerprint_len,
+    const uint32_t *child_path, size_t child_path_len)
+{
+    struct wally_psbt_output *p = psbt_get_output(psbt, index);
+    if (!p || !psbt_is_valid(psbt) ||
+        !psbt_can_modify(psbt, WALLY_PSBT_TXMOD_OUTPUTS))
+        return WALLY_EINVAL;
+
+    return wally_psbt_output_keypath_add(p, pub_key, pub_key_len,
+                                         fingerprint, fingerprint_len,
+                                         child_path, child_path_len);
+}
+
 int wally_psbt_add_output_taproot_keypath(
     struct wally_psbt *psbt,
     uint32_t index, uint32_t flags,
