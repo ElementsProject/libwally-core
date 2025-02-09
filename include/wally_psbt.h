@@ -753,8 +753,7 @@ WALLY_CORE_API int wally_psbt_input_get_pegin_genesis_blockhash_len(
  *
  * :param input: The input to update.
  * :param genesis_blockhash: The peg-in genesis blockhash.
- * :param genesis_blockhash_len: Size of ``genesis_blockhash`` in bytes. Must
- *|    be `WALLY_TXHASH_LEN`.
+ * :param genesis_blockhash_len: Size of ``genesis_blockhash`` in bytes. Must be `SHA256_LEN`.
  */
 WALLY_CORE_API int wally_psbt_input_set_pegin_genesis_blockhash(
     struct wally_psbt_input *input,
@@ -2247,7 +2246,7 @@ WALLY_CORE_API int wally_psbt_get_input_signing_script_len(
  * :param psbt: The PSBT containing the input to get from.
  * :param index: The zero-based index of the input to get the script from.
  * :param bytes_out: Destination for the scriptPubKey or redeem script.
- * :param len: Length of ``bytes`` in bytes.
+ * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to bytes_out.
  */
 WALLY_CORE_API int wally_psbt_get_input_signing_script(
@@ -2281,7 +2280,7 @@ WALLY_CORE_API int wally_psbt_get_input_scriptcode_len(
  * :param script: scriptPubKey/redeem script from `wally_psbt_get_input_signing_script`.
  * :param script_len: Length of ``script`` in bytes.
  * :param bytes_out: Destination for the scriptCode.
- * :param len: Length of ``bytes`` in bytes.
+ * :param len: Length of ``bytes_out`` in bytes.
  * :param written: Destination for the number of bytes written to bytes_out.
  */
 WALLY_CORE_API int wally_psbt_get_input_scriptcode(
@@ -2421,7 +2420,7 @@ WALLY_CORE_API int wally_psbt_get_length(
  * :param psbt: the PSBT to serialize.
  * :param flags: Flags controlling serialization. Must be 0.
  * :param bytes_out: Destination for the serialized PSBT.
- * :param len: Length of ``bytes`` in bytes (use `wally_psbt_get_length`).
+ * :param len: Length of ``bytes_out`` in bytes (use `wally_psbt_get_length`).
  * :param written: number of bytes written to bytes_out.
  */
 WALLY_CORE_API int wally_psbt_to_bytes(
