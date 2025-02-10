@@ -565,6 +565,7 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_psbt_clear_output_value_rangeproof' \
 ,'_wally_psbt_find_global_scalar' \
 ,'_wally_psbt_generate_input_explicit_proofs' \
+,'_wally_psbt_get_global_genesis_blockhash' \
 ,'_wally_psbt_get_global_scalar' \
 ,'_wally_psbt_get_global_scalars_size' \
 ,'_wally_psbt_get_input_amount' \
@@ -622,6 +623,7 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_psbt_get_output_value_rangeproof' \
 ,'_wally_psbt_get_output_value_rangeproof_len' \
 ,'_wally_psbt_get_pset_modifiable_flags' \
+,'_wally_psbt_has_global_genesis_blockhash' \
 ,'_wally_psbt_has_output_blinder_index' \
 ,'_wally_psbt_input_clear_amount_rangeproof' \
 ,'_wally_psbt_input_clear_asset' \
@@ -729,6 +731,7 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_psbt_output_set_value_blinding_rangeproof' \
 ,'_wally_psbt_output_set_value_commitment' \
 ,'_wally_psbt_output_set_value_rangeproof' \
+,'_wally_psbt_set_global_genesis_blockhash' \
 ,'_wally_psbt_set_global_scalars' \
 ,'_wally_psbt_set_input_amount' \
 ,'_wally_psbt_set_input_amount_rangeproof' \

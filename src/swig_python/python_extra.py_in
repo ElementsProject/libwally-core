@@ -285,6 +285,7 @@ if is_elements_build():
     explicit_rangeproof = _wrap_bin(explicit_rangeproof, ASSET_EXPLICIT_RANGEPROOF_MAX_LEN, resize=True)
     explicit_surjectionproof = _wrap_bin(explicit_surjectionproof, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
     psbt_blind = psbt_blind_alloc
+    psbt_get_global_genesis_blockhash = _wrap_bin(psbt_get_global_genesis_blockhash, SHA256_LEN, resize=True)
     psbt_get_global_scalar = _wrap_bin(psbt_get_global_scalar, WALLY_SCALAR_OFFSET_LEN)
     psbt_get_input_amount_rangeproof = _wrap_bin(psbt_get_input_amount_rangeproof, psbt_get_input_amount_rangeproof_len)
     psbt_get_input_asset = _wrap_bin(psbt_get_input_asset, psbt_get_input_asset_len)

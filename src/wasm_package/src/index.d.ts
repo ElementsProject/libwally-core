@@ -285,6 +285,7 @@ export function psbt_from_bytes(bytes: Buffer|Uint8Array, flags: number): Ref_wa
 export function psbt_from_tx(tx: Ref_wally_tx, version: number, flags: number): Ref_wally_psbt;
 export function psbt_generate_input_explicit_proofs(psbt: Ref_wally_psbt, index: number, satoshi: bigint, asset: Buffer|Uint8Array, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array, entropy: Buffer|Uint8Array): void;
 export function psbt_get_fallback_locktime(psbt: Ref_wally_psbt): number;
+export function psbt_get_global_genesis_blockhash(psbt: Ref_wally_psbt): Buffer;
 export function psbt_get_global_scalar(psbt: Ref_wally_psbt, index: number): Buffer;
 export function psbt_get_global_scalars_size(psbt: Ref_wally_psbt): number;
 export function psbt_get_global_tx(psbt: Ref_wally_psbt): Ref_wally_tx;
@@ -363,6 +364,7 @@ export function psbt_get_tx_modifiable_flags(psbt: Ref_wally_psbt): number;
 export function psbt_get_tx_version(psbt: Ref_wally_psbt): number;
 export function psbt_get_version(psbt: Ref_wally_psbt): number;
 export function psbt_has_fallback_locktime(psbt: Ref_wally_psbt): number;
+export function psbt_has_global_genesis_blockhash(psbt: Ref_wally_psbt): number;
 export function psbt_has_input_required_lockheight(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_has_input_required_locktime(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_has_output_amount(psbt: Ref_wally_psbt, index: number): number;
@@ -496,6 +498,7 @@ export function psbt_output_taproot_keypath_add(output: Ref_wally_psbt_output, p
 export function psbt_remove_input(psbt: Ref_wally_psbt, index: number): void;
 export function psbt_remove_output(psbt: Ref_wally_psbt, index: number): void;
 export function psbt_set_fallback_locktime(psbt: Ref_wally_psbt, locktime: number): void;
+export function psbt_set_global_genesis_blockhash(psbt: Ref_wally_psbt, genesis_blockhash: Buffer|Uint8Array): void;
 export function psbt_set_global_scalars(psbt: Ref_wally_psbt, map_in: Ref_wally_map): void;
 export function psbt_set_global_tx(psbt: Ref_wally_psbt, tx: Ref_wally_tx): void;
 export function psbt_set_input_amount(psbt: Ref_wally_psbt, index: number, amount: bigint): void;

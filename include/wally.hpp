@@ -2439,6 +2439,18 @@ inline int psbt_find_global_scalar(const PSBT& psbt, const SCALAR& scalar, size_
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class BYTES_OUT>
+inline int psbt_get_global_genesis_blockhash(const PSBT& psbt, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_psbt_get_global_genesis_blockhash(detail::get_p(psbt), bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT>
+inline int psbt_has_global_genesis_blockhash(const PSBT& psbt, size_t* written) {
+    int ret = ::wally_psbt_has_global_genesis_blockhash(detail::get_p(psbt), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 inline int psbt_input_clear_amount_rangeproof(struct wally_psbt_input* input) {
     int ret = ::wally_psbt_input_clear_amount_rangeproof(input);
     return detail::check_ret(__FUNCTION__, ret);
@@ -3047,6 +3059,12 @@ inline int psbt_output_set_value_commitment(const OUTPUT& output, const COMMITME
 template <class OUTPUT, class RANGEPROOF>
 inline int psbt_output_set_value_rangeproof(const OUTPUT& output, const RANGEPROOF& rangeproof) {
     int ret = ::wally_psbt_output_set_value_rangeproof(detail::get_p(output), rangeproof.data(), rangeproof.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class GENESIS_BLOCKHASH>
+inline int psbt_set_global_genesis_blockhash(const PSBT& psbt, const GENESIS_BLOCKHASH& genesis_blockhash) {
+    int ret = ::wally_psbt_set_global_genesis_blockhash(detail::get_p(psbt), genesis_blockhash.data(), genesis_blockhash.size());
     return detail::check_ret(__FUNCTION__, ret);
 }
 

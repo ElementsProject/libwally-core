@@ -139,6 +139,7 @@ struct wally_psbt {
 #ifndef WALLY_ABI_NO_ELEMENTS
     struct wally_map global_scalars;
     uint32_t pset_modifiable_flags;
+    unsigned char genesis_blockhash[SHA256_LEN]; /* All zeros if not present */
 #endif /* WALLY_ABI_NO_ELEMENTS */
 };
 #endif /* SWIG */
@@ -2114,6 +2115,45 @@ WALLY_CORE_API int wally_psbt_find_global_scalar(
 WALLY_CORE_API int wally_psbt_set_pset_modifiable_flags(
     struct wally_psbt *psbt,
     uint32_t flags);
+
+/**
+ * Set the global genesis blockhash in a PSBT.
+ *
+ * :param psbt: The psbt to update. Must be a PSET.
+ * :param genesis_blockhash: The genesis blockhash.
+ * :param genesis_blockhash_len: Size of ``genesis_blockhash`` in bytes. Must be `SHA256_LEN`.
+ */
+WALLY_CORE_API int wally_psbt_set_global_genesis_blockhash(
+    struct wally_psbt *psbt,
+    const unsigned char *genesis_blockhash,
+    size_t genesis_blockhash_len);
+
+/**
+ * Determine if a PSBT contains a global genesis blockhash.
+ *
+ * :param psbt: The psbt to check. Must be a PSET.
+ * :param written: On success, set to zero if no genesis blockhash is present,
+ *|    otherwise set to one.
+ */
+WALLY_CORE_API int wally_psbt_has_global_genesis_blockhash(
+    struct wally_psbt *psbt,
+    size_t *written);
+
+/**
+ * Get the global genesis blockhash from a PSBT.
+ *
+ * :param psbt: The psbt to get the genesis blockhash from.
+ * :param bytes_out: Destination for the genesis blockhash.
+ * MAX_SIZED_OUTPUT(len, bytes_out, SHA256_LEN)
+ * :param written: Destination for the number of bytes written to ``bytes_out``.
+ *| Will be zero if the value is not present.
+ */
+WALLY_CORE_API int wally_psbt_get_global_genesis_blockhash(
+    struct wally_psbt *psbt,
+    unsigned char *bytes_out,
+    size_t len,
+    size_t *written);
+
 #endif /* WALLY_ABI_NO_ELEMENTS */
 
 /**

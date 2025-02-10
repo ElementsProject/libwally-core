@@ -1348,6 +1348,47 @@ PSBT_GET(num_outputs, PSBT_0)
 PSBT_GET(fallback_locktime, PSBT_2)
 PSBT_GET(tx_version, PSBT_2)
 PSBT_GET(tx_modifiable_flags, PSBT_2)
+#ifndef WALLY_ABI_NO_ELEMENTS
+int wally_psbt_set_global_genesis_blockhash(
+    struct wally_psbt *psbt,
+    const unsigned char* genesis_blockhash, size_t genesis_blockhash_len)
+{
+    size_t is_pset;
+    if ((wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK || !is_pset ||
+        !genesis_blockhash || genesis_blockhash_len != SHA256_LEN)
+        return WALLY_EINVAL;
+    memcpy(psbt->genesis_blockhash, genesis_blockhash, genesis_blockhash_len);
+    return WALLY_OK;
+}
+
+int wally_psbt_has_global_genesis_blockhash(struct wally_psbt *psbt, size_t *written)
+{
+    size_t is_pset;
+    if (written)
+        *written = 0;
+    if ((wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK || !is_pset || !written)
+        return WALLY_EINVAL;
+    *written = !mem_is_zero(psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash));
+    return WALLY_OK;
+}
+
+int wally_psbt_get_global_genesis_blockhash(struct wally_psbt *psbt,
+                                            unsigned char* bytes_out, size_t len,
+                                            size_t *written)
+{
+    size_t has_blockhash;
+    if (written)
+        *written = 0;
+     if ((wally_psbt_has_global_genesis_blockhash(psbt, &has_blockhash)) != WALLY_OK ||
+        !bytes_out || len < SHA256_LEN || !written)
+        return WALLY_EINVAL;
+    if (has_blockhash) {
+        memcpy(bytes_out, psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash));
+        *written = sizeof(psbt->genesis_blockhash);
+    }
+    return WALLY_OK;
+}
+#endif /* WALLY_ABI_NO_ELEMENTS */
 
 int wally_psbt_has_fallback_locktime(const struct wally_psbt *psbt, size_t *written)
 {
@@ -2717,6 +2758,13 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
                 if ((*output)->pset_modifiable_flags & ~PSET_TXMOD_ALL_FLAGS)
                     ret = WALLY_EINVAL; /* Invalid flags */
                 break;
+            case PSET_FT(PSET_GLOBAL_GENESIS_HASH): {
+                size_t val_len;
+                const unsigned char *val_p;
+                pull_varlength_buff(cursor, max, &val_p, &val_len);
+                ret = wally_psbt_set_global_genesis_blockhash(*output, val_p, val_len);
+                break;
+            }
 #endif /* BUILD_ELEMENTS */
             default:
                 goto unknown;
@@ -3356,6 +3404,10 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
             push_key(&cursor, &max, PSET_GLOBAL_TX_MODIFIABLE, true, NULL, 0);
             push_varint(&cursor, &max, sizeof(uint8_t));
             push_u8(&cursor, &max, psbt->pset_modifiable_flags);
+        }
+        if (!mem_is_zero(psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash))) {
+            push_key(&cursor, &max, PSET_GLOBAL_GENESIS_HASH, true, NULL, 0);
+            push_varbuff(&cursor, &max, psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash));
         }
 #endif /* BUILD_ELEMENTS */
     }

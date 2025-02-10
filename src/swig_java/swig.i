@@ -740,6 +740,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_struct(wally_psbt_from_tx, wally_psbt);
 %returns_void__(wally_psbt_generate_input_explicit_proofs);
 %returns_size_t(wally_psbt_get_pset_modifiable_flags);
+%returns_size_t(wally_psbt_get_global_genesis_blockhash);
 %returns_struct(wally_psbt_get_global_tx_alloc, wally_tx);
 %rename("psbt_get_global_tx") wally_psbt_get_global_tx_alloc;
 %returns_array_(wally_psbt_get_global_scalar, 3, 4, WALLY_SCALAR_OFFSET_LEN);
@@ -866,6 +867,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_tx_version);
 %returns_size_t(wally_psbt_get_version);
 %returns_size_t(wally_psbt_has_fallback_locktime);
+%returns_size_t(wally_psbt_has_global_genesis_blockhash);
 %returns_size_t(wally_psbt_has_input_required_lockheight);
 %returns_size_t(wally_psbt_has_input_required_locktime);
 %returns_size_t(wally_psbt_has_input_value);
@@ -889,6 +891,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_remove_output);
 %returns_void__(wally_psbt_set_pset_modifiable_flags);
 %returns_void__(wally_psbt_set_fallback_locktime);
+%returns_void__(wally_psbt_set_global_genesis_blockhash);
 %returns_void__(wally_psbt_set_global_tx);
 %returns_void__(wally_psbt_set_global_scalars);
 %returns_void__(wally_psbt_set_input_amount);

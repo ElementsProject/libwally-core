@@ -51,7 +51,8 @@
 /* Globals: PSET */
 #define PSET_GLOBAL_SCALAR 0x00
 #define PSET_GLOBAL_TX_MODIFIABLE 0x01
-#define PSET_GLOBAL_MAX PSET_GLOBAL_TX_MODIFIABLE
+#define PSET_GLOBAL_GENESIS_HASH 0x02
+#define PSET_GLOBAL_MAX PSET_GLOBAL_GENESIS_HASH
 
 /* Global PSBT/PSET fields that can be repeated */
 #define PSBT_GLOBAL_REPEATABLE (PSBT_FT(PSBT_GLOBAL_XPUB) | \
@@ -76,7 +77,8 @@
                                    PSBT_FT(PSBT_GLOBAL_OUTPUT_COUNT) | \
                                    PSBT_FT(PSBT_GLOBAL_TX_MODIFIABLE) | \
                                    PSET_FT(PSET_GLOBAL_SCALAR) | \
-                                   PSET_FT(PSET_GLOBAL_TX_MODIFIABLE))
+                                   PSET_FT(PSET_GLOBAL_TX_MODIFIABLE) | \
+                                   PSET_FT(PSET_GLOBAL_GENESIS_HASH))
 
 /* Global PSBT/PSET fields that must *not* be present in v2 */
 #define PSBT_GLOBAL_DISALLOWED_V2 PSBT_FT(PSBT_GLOBAL_UNSIGNED_TX)
