@@ -379,7 +379,7 @@ WALLY_CORE_API int wally_pbkdf2_hmac_sha512(
 #define EC_FLAG_ELEMENTS 0x10
 
 /* All defined flags */
-#define EC_FLAGS_ALL (0x1 | 0x2 | 0x4 | 0x8)
+#define EC_FLAGS_ALL (0x1 | 0x2 | 0x4 | 0x8 | 0x10)
 
 /**
  * Verify that a private key is valid.
