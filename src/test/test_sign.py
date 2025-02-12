@@ -406,7 +406,7 @@ class SignTests(unittest.TestCase):
     def test_bip340_sigs(self):
 
         num_tests_run = 0
-        sig_out, sig_out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
+        out, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
 
         for case in self.get_bip340_sign_cases():
             priv_key, priv_key_len = make_cbuffer(case['priv_key'])
@@ -416,13 +416,12 @@ class SignTests(unittest.TestCase):
             sig, sig_len = make_cbuffer(case['sig'])
             is_valid = case['is_valid']
 
-
             if priv_key_len == EC_PRIV_KEY_LEN:
                 num_tests_run += 1
                 flags = FLAG_SCHNORR
-                ret = self.sign(priv_key, msg, flags, sig_out, None, aux_rand)
+                ret = self.sign(priv_key, msg, flags, out, None, aux_rand)
                 self.assertEqual(ret, WALLY_OK)
-                self.assertEqual(sig, sig_out)
+                self.assertEqual(sig, out)
 
                 ret = wally_ec_sig_from_bytes_len(priv_key, priv_key_len,
                                                   msg, msg_len, FLAG_SCHNORR)
@@ -433,7 +432,10 @@ class SignTests(unittest.TestCase):
                                                   msg, msg_len, FLAG_SCHNORR)
                 self.assertEqual(ret, (WALLY_EINVAL, 0))
 
-                # TODO support wally_ec_public_key_from_private_key with bip340 keys to check priv_key -> pub_key
+                ret = wally_ec_public_key_from_private_key(priv_key, priv_key_len, out, EC_PUBLIC_KEY_LEN)
+                self.assertEqual(ret, WALLY_OK)
+                # pub_key is x-only, so ignore the leading byte to compare
+                self.assertEqual(out[1:EC_PUBLIC_KEY_LEN].hex(), case['pub_key'].lower())
 
             ret = wally_ec_sig_verify(pub_key, pub_key_len, msg, msg_len, FLAG_SCHNORR, sig, sig_len)
             self.assertEqual(ret == WALLY_OK, is_valid)
