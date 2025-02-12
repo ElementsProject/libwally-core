@@ -1,5 +1,5 @@
 #
-# Dockerfile for wally builds on Debain bookworm (stable).
+# Dockerfile for wally builds on Debian bookworm (stable).
 # build from this directory with e.g:
 #     docker buildx build --platform linux/arm64,linux/amd64 -f Dockerfile_bullseye -t greenaddress/wallycore:bookworm .
 #
