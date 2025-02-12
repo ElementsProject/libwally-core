@@ -406,6 +406,7 @@ class TransactionTests(unittest.TestCase):
 
     def test_bip341_tweak(self):
         """Tests for computing a public/private bip341 key tweak"""
+        _, is_elements_build = wally_is_elements_build()
 
         pubkey_cases = []
         mc = lambda h: (None, 0) if h is None else make_cbuffer(h)
@@ -422,6 +423,14 @@ class TransactionTests(unittest.TestCase):
             ret = wally_ec_public_key_bip341_tweak(*args)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(expected, h(bytes_out[1:out_len]))
+            if is_elements_build:
+                # Verify that Elements tweaking produces a different tweak.
+                # We don't have test vectors; the actual values are tested
+                # by taproot signing tests elsewhere.
+                args[4] = 0x10  # EC_FLAG_ELEMENTS
+                ret = wally_ec_public_key_bip341_tweak(*args)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertNotEqual(expected, h(bytes_out[1:out_len]))
 
         # Invalid args
         ((k, k_len), (m, m_len), _) = pubkey_cases[1]
@@ -458,6 +467,12 @@ class TransactionTests(unittest.TestCase):
             ret = wally_ec_private_key_bip341_tweak(*args)
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(expected, h(bytes_out[:out_len]))
+            if is_elements_build:
+                # Verify that Elements tweaking produces a different tweak, as above
+                args[4] = 0x10  # EC_FLAG_ELEMENTS
+                ret = wally_ec_private_key_bip341_tweak(*args)
+                self.assertEqual(ret, WALLY_OK)
+                self.assertNotEqual(expected, h(bytes_out[:out_len]))
 
         # Invalid args
         ((k, k_len), (m, m_len), _) = privkey_cases[1]
