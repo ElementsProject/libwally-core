@@ -107,7 +107,7 @@ struct wally_psbt_output {
     size_t script_len;
     struct wally_map psbt_fields; /* Binary fields keyed by PSBT keytype */
     /* Map of 1-based position to taproot leaf script, in depth first order.
-    * TODO: replace this with actual TR representaion when TR implemented */
+    * TODO: replace this with actual TR representation when TR implemented */
     struct wally_map taproot_tree;
     /* Hashes and paths for taproot bip32 derivation path */
     struct wally_map taproot_leaf_hashes;

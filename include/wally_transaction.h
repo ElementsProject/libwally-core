@@ -840,7 +840,7 @@ WALLY_CORE_API int wally_tx_get_btc_taproot_signature_hash(
  *|     flags includes `WALLY_TX_FLAG_USE_WITNESS`, pass 0 otherwise.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the type of signature desired.
  * :param tx_sighash: The 32bit sighash value to include in the preimage to hash.
- *|     This must be given in host CPU endianess; For normal Bitcoin signing
+ *|     This must be given in host CPU endianness; For normal Bitcoin signing
  *|     the value of ``sighash`` should be given.
  * :param flags: `WALLY_TX_FLAG_USE_WITNESS` to generate a BIP 143 signature, or 0
  *|     to generate a pre-segwit Bitcoin signature.

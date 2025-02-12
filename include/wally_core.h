@@ -111,7 +111,7 @@ WALLY_CORE_API char *wally_strdup(const char *str);
  * Fetch the wally internal secp256k1 context object.
  *
  * By default, a single global context is created on demand. This behaviour
- * can be overriden by providing a custom context fetching function when
+ * can be overridden by providing a custom context fetching function when
  * calling `wally_set_operations`.
  */
 WALLY_CORE_API struct secp256k1_context_struct *wally_get_secp_context(void);
@@ -163,7 +163,7 @@ WALLY_CORE_API int wally_free_string(
  *
  * The caller should call this function before using any functions that rely on
  * libsecp256k1 (i.e. Anything using public/private keys). If the caller
- * has overriden the library's default libsecp context fetching using
+ * has overridden the library's default libsecp context fetching using
  * `wally_set_operations`, then it may be necessary to call this function
  * before calling wally functions in each thread created by the caller.
  *
