@@ -405,7 +405,7 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(WALLY_EINVAL, wally_get_hash_prevouts(*args))
 
     def test_bip341_tweak(self):
-        """Tests for computing the bip341 signature hash"""
+        """Tests for computing a public/private bip341 key tweak"""
 
         pubkey_cases = []
         mc = lambda h: (None, 0) if h is None else make_cbuffer(h)
@@ -423,6 +423,26 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(expected, h(bytes_out[1:out_len]))
 
+        # Invalid args
+        ((k, k_len), (m, m_len), _) = pubkey_cases[1]
+        self.assertTrue(m_len != 0)  # We require a test case with merkle data
+        invalid_args = [
+            [None, k_len, m,    m_len, 0, bytes_out, out_len],  # NULL pubkey
+            [k,    0,     m,    m_len, 0, bytes_out, out_len],  # Empty pubkey
+            [k,    65,    m,    m_len, 0, bytes_out, out_len],  # Uncompressed pubkey
+            [k,    15,    m,    m_len, 0, bytes_out, out_len],  # Invalid pubkey length
+            [k,    k_len, None, m_len, 0, bytes_out, out_len],  # NULL merkle
+            [k,    k_len, m,    0,     0, bytes_out, out_len],  # Empty merkle
+            [k,    k_len, m,    15,    0, bytes_out, out_len],  # Invalid merkle length
+            [k,    k_len, m,    m_len, 3, bytes_out, out_len],  # Unknown flags
+            [k,    k_len, m,    m_len, 0, None,      out_len],  # NULL output
+            [k,    k_len, m,    m_len, 0, bytes_out, 0],        # Empty output
+            [k,    k_len, m,    m_len, 0, bytes_out, 15],       # Invalid output length
+        ]
+        for args in invalid_args:
+            ret = wally_ec_public_key_bip341_tweak(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
+
         privkey_cases = []
         mc = lambda h: (None, 0) if h is None else make_cbuffer(h)
         for i in range(len(JSON['keyPathSpending'][0]['inputSpending'])):
@@ -439,7 +459,24 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(ret, WALLY_OK)
             self.assertEqual(expected, h(bytes_out[:out_len]))
 
-        # FIXME: Add invalid arguments cases for pub/priv keys
+        # Invalid args
+        ((k, k_len), (m, m_len), _) = privkey_cases[1]
+        self.assertTrue(m_len != 0)  # We require a test case with merkle data
+        invalid_args = [
+            [None, k_len, m,    m_len, 0, bytes_out, out_len],  # NULL private key
+            [k,    0,     m,    m_len, 0, bytes_out, out_len],  # Empty private key
+            [k,    15,    m,    m_len, 0, bytes_out, out_len],  # Invalid private key length
+            [k,    k_len, None, m_len, 0, bytes_out, out_len],  # NULL merkle
+            [k,    k_len, m,    0,     0, bytes_out, out_len],  # Empty merkle
+            [k,    k_len, m,    15,    0, bytes_out, out_len],  # Invalid merkle length
+            [k,    k_len, m,    m_len, 3, bytes_out, out_len],  # Unknown flags
+            [k,    k_len, m,    m_len, 0, None,      out_len],  # NULL output
+            [k,    k_len, m,    m_len, 0, bytes_out, 0],        # Empty output
+            [k,    k_len, m,    m_len, 0, bytes_out, 15],       # Invalid output length
+        ]
+        for args in invalid_args:
+            ret = wally_ec_private_key_bip341_tweak(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
 
     def test_get_taproot_signature_hash(self):
         """Tests for computing the taproot signature hash"""
