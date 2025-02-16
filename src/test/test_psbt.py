@@ -176,24 +176,33 @@ class PSBTTests(unittest.TestCase):
         if expected and case.get('master_xpriv', None):
             # Test signing with the master extended private key.
             # Note we cannot check for equality with the explicit private keys
-            # since the PSBTs contain multiple keys from the same master,
-            # and only some of them are given as explicit private keys.
+            # in all cases, since the PSBTs contain multiple keys from the same
+            # master, and some test cases only give a subset as explicit private keys.
             key_out = POINTER(ext_key)()
             ret = bip32_key_from_base58_alloc(case['master_xpriv'], byref(key_out))
             self.assertEqual(ret, WALLY_OK)
             psbt = self.parse_base64(case['psbt'])
             ret = wally_psbt_sign_bip32(psbt, key_out, 0x4)
-            b64_out = self.roundtrip(psbt)
-            self.assertNotEqual(b64_out, case['psbt']) # Inputs have been signed
+            # If all of the explicit private keys resulting from the master xpriv
+            # are present, we can verify the fully signed result matches exactly
+            can_match = case.get('all_privkeys_present', False)
+            b64_out = self.roundtrip(psbt, expected if can_match else None)
+            if not can_match:
+                # Check that the result changed at least, i.e. some inputs were signed
+                self.assertNotEqual(b64_out, case['psbt'])
             bip32_key_free(key_out)
 
     def test_signer_role(self):
         """Test the PSBT signer role"""
+        _, is_elements_build = wally_is_elements_build()
+
         for case in JSON['signer']:
-            self.do_sign(case)
+            if is_elements_build or not case.get('is_pset', False):
+                self.do_sign(case)
 
         for case in JSON['invalid_signer']:
-            self.do_sign(case)
+            if is_elements_build or not case.get('is_pset', False):
+                self.do_sign(case)
 
     def test_finalizer_role(self):
         """Test the PSBT finalizer role"""
