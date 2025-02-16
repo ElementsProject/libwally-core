@@ -10,6 +10,9 @@ TX_MAX_VERSION = 2
 TX_FAKE_HEX = utf8('010000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000')
 TX_HEX = utf8('0100000001be66e10da854e7aea9338c1f91cd489768d1d6d7189f586d7a3613f2a24d5396000000008b483045022100da43201760bda697222002f56266bf65023fef2094519e13077f777baed553b102205ce35d05eabda58cd50a67977a65706347cc25ef43153e309ff210a134722e9e0141042daa93315eebbe2cb9b5c3505df4c6fb6caca8b756786098567550d4820c09db988fe9997d049d687292f815ccd6e7fb5c1b1a91137999818d17c73d0f80aef9ffffffff0123ce0100000000001976a9142bc89c2702e0e618db7d59eb5ce2f0f147b4075488ac00000000')
 TX_WITNESS_HEX = utf8('020000000001012f94ddd965758445be2dfac132c5e75c517edf5ea04b745a953d0bc04c32829901000000006aedc98002a8c500000000000022002009246bbe3beb48cf1f6f2954f90d648eb04d68570b797e104fead9e6c3c87fd40544020000000000160014c221cdfc1b867d82f19d761d4e09f3b6216d8a8304004830450221008aaa56e4f0efa1f7b7ed690944ac1b59f046a59306fcd1d09924936bd500046d02202b22e13a2ad7e16a0390d726c56dfc9f07647f7abcfac651e35e5dc9d830fc8a01483045022100e096ad0acdc9e8261d1cdad973f7f234ee84a6ee68e0b89ff0c1370896e63fe102202ec36d7554d1feac8bc297279f89830da98953664b73d38767e81ee0763b9988014752210390134e68561872313ba59e56700732483f4a43c2de24559cb8c7039f25f7faf821039eb59b267a78f1020f27a83dc5e3b1e4157e4a517774040a196e9f43f08ad17d52ae89a3b720')
+SIGTYPE_PRE_SW = 1
+SIGTYPE_SW_V0 = 2
+SIGTYPE_SW_V1 = 3
 
 # Test vectors from:
 # https://github.com/bitcoin/bips/blob/master/bip-0341/wallet-test-vectors.json
@@ -19,9 +22,11 @@ with open(root_dir + 'src/data/bip341_vectors.json', 'r') as f:
 
 class TransactionTests(unittest.TestCase):
 
-    def tx_deserialize_hex(self, hex_):
+    def tx_deserialize_hex(self, hex_, is_elements=False):
         tx_p = pointer(wally_tx())
-        self.assertEqual(WALLY_OK, wally_tx_from_hex(hex_, 0x0, tx_p))
+        USE_ELEMENTS = 2  # WALLY_TX_FLAG_USE_ELEMENTS
+        flags = USE_ELEMENTS if is_elements else 0
+        self.assertEqual(WALLY_OK, wally_tx_from_hex(hex_, flags, tx_p))
         return tx_p[0]
 
     def tx_serialize_hex(self, tx):
@@ -579,6 +584,116 @@ class TransactionTests(unittest.TestCase):
             for i, arg in case:
                 args[i] = arg
             ret = wally_tx_get_btc_taproot_signature_hash(*args)
+            self.assertEqual(ret, WALLY_EINVAL)
+
+    def test_get_elements_taproot_signature_hash(self):
+        """Tests for computing the Elements taproot signature hash"""
+        _, is_elements_build = wally_is_elements_build()
+        if not is_elements_build:
+            self.skipTest('Elements support is disabled')
+
+        keyspend_case = JSON['keyPathSpending'][1]
+        input_spending = keyspend_case['inputSpending']
+        utxos = keyspend_case['given']['utxosSpent']
+        genesis = bytes.fromhex(keyspend_case['given']['genesisBlockhash'])
+        genesis, genesis_len = make_cbuffer(bytes(reversed(genesis)).hex())
+        num_utxos = len(utxos)
+
+        def make_map(n):
+            m = pointer(wally_map())
+            wally_map_init_alloc(n, None, m)
+            return m
+
+        scripts, values, assets = [make_map(num_utxos) for i in range(3)]
+        # Bad/Faked data for invalid parameter checks
+        empty_map = pointer(wally_map())
+        non_tr_scripts = pointer(wally_map())
+        wally_map_init_alloc(num_utxos, None, non_tr_scripts)
+        fake_script, fake_script_len = make_cbuffer('00')
+        fake_annex, fake_annex_len = make_cbuffer('5000')
+        bad_annex, bad_annex_len = make_cbuffer('00')
+
+        for i, utxo in enumerate(utxos):
+            for k, m in [
+                ('scriptPubKey',    scripts),
+                ('assetCommitment', assets),
+                ('valueCommitment', values)
+            ]:
+                v, v_len = make_cbuffer(utxo[k])
+                wally_map_add_integer(m, i, v, v_len)
+
+            wally_map_add_integer(non_tr_scripts, i, fake_script, fake_script_len)
+
+        tx = self.tx_deserialize_hex(keyspend_case['given']['rawUnsignedTx'], True)
+        bytes_out, out_len = make_cbuffer('00'*32)
+
+        for input_index in range(len(input_spending)):
+            sighash = input_spending[input_index]['given']['hashType']
+            index = input_spending[input_index]['given']['txinIndex']
+            expected = utf8(input_spending[input_index]['intermediary']['sigHash'])
+
+            # Unused in these tests
+            tapleaf_script = None
+            tapleaf_script_len = 0
+            key_version = 0
+            codesep_pos = 0xFFFFFFFF
+            flags = SIGTYPE_SW_V1
+            annex = None
+            annex_len = 0
+
+            args = [tx, index, scripts, assets, values, tapleaf_script, tapleaf_script_len,
+                    key_version, codesep_pos, annex, annex_len, genesis, genesis_len,
+                    sighash, flags, None, bytes_out, out_len]
+
+            self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+            self.assertEqual(out_len, 32)
+            self.assertEqual(expected, h(bytes_out[:out_len]))
+
+        # Test that signing with a provided tapleaf script/annex works
+        args[5] = fake_script
+        args[6] = fake_script_len
+        self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+        args[9] = fake_annex
+        args[10] = fake_annex_len
+        self.assertEqual(wally_tx_get_input_signature_hash(*args), WALLY_OK)
+
+        # Invalid args
+        invalid_cases = [
+            [(0,  None)],            # NULL tx
+            [(1,  50)],              # Invalid index
+            [(2,  None)],            # NULL scripts
+            [(2,  empty_map)],       # Missing script(s)
+            [(2,  non_tr_scripts)],  # Non-taproot script (for the input being signed)
+            [(3,  None)],            # NULL assets
+            [(3,  empty_map)],       # Missing asset(s)
+            [(3,  scripts)],         # Invalid asset(s)
+            [(4,  None)],            # NULL values
+            [(4,  empty_map)],       # Missing values(s)
+            [(4,  scripts)],         # Invalid values(s)
+            [(5,  fake_script)],     # Zero-length tapleaf script
+            [(6,  fake_script_len)], # NULL tapleaf script
+            [(7,  2)],               # Invalid key version (only 0/1 are allowed)
+            [(8,  1)],               # Code separator position given (TODO: Implement)
+            [(9,  fake_annex)],      # Zero length annex
+            [(10, fake_annex_len)],  # NULL annex
+            [(9,  bad_annex), (10, bad_annex_len)], # Missing 0x50 annex prefix
+            [(11, None)],            # NULL genesis blockhash
+            [(12, 0)],               # Empty genesis blockhash
+            [(12, 16)],              # Invalid genesis blockhash len
+            [(13, 0xffffffff)],      # Invalid sighash
+            [(14, 0xff)],            # Unknown flag(s)
+            [(16, None)],            # NULL output
+            [(17, 0)],               # Zero length output
+            [(17, 33)],              # Incorrect length output
+        ]
+        for case in invalid_cases:
+            args = [tx, index, scripts, assets, values, tapleaf_script, tapleaf_script_len,
+                    key_version, codesep_pos, annex, annex_len, genesis, genesis_len,
+                    sighash, flags, None, bytes_out, out_len]
+
+            for i, arg in case:
+                args[i] = arg
+            ret = wally_tx_get_input_signature_hash(*args)
             self.assertEqual(ret, WALLY_EINVAL)
 
 
