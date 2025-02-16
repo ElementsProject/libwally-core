@@ -2614,7 +2614,9 @@ WALLY_CORE_API int wally_psbt_sign(
  *
  * :param psbt: PSBT to sign. Directly modifies this PSBT.
  * :param hdkey: The parent extended key to derive signing keys from.
- * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
+ * :param flags: Flags controlling signing. Must be 0 or `EC_FLAG_GRIND_R`.
+ *|     Note that unlike `wally_psbt_sign_input_bip32`, `EC_FLAG_ELEMENTS`
+ *|     is determined automatically and should not included in ``flags``.
  *
  * .. note:: See https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki#simple-signer-algorithm
  *|    for a description of the signing algorithm.
@@ -2633,7 +2635,8 @@ WALLY_CORE_API int wally_psbt_sign_bip32(
  * :param txhash: The signature hash to sign, from `wally_psbt_get_input_signature_hash`.
  * :param txhash_len: Size of ``txhash`` in bytes. Must be `WALLY_TXHASH_LEN`.
  * :param hdkey: The derived extended key to sign with.
- * :param flags: Flags controlling signing. Must be 0 or EC_FLAG_GRIND_R.
+ * :param flags: Flags controlling signing. Must be 0 or `EC_FLAG_GRIND_R`,
+ *|    logical or-d with `EC_FLAG_ELEMENTS` if ``psbt`` is a PSET.
  */
 WALLY_CORE_API int wally_psbt_sign_input_bip32(
     struct wally_psbt *psbt,
