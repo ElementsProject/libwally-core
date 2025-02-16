@@ -4422,19 +4422,19 @@ int wally_psbt_get_input_scriptcode(const struct wally_psbt *psbt, size_t index,
     return ret;
 }
 
-/* Get the input scripts and values for taproot signing.
+/* Get the input scripts and values for BTC taproot signing.
  * Creates a non-value-owning map, avoiding allocating/copying the scripts.
  */
-static int get_scripts_and_values(const struct wally_psbt *psbt,
-                                  struct wally_map *scripts,
-                                  uint64_t **values)
+static int get_btc_tr_signing_data(const struct wally_psbt *psbt,
+                                   struct wally_map *scripts,
+                                   uint64_t **satoshis)
 {
     size_t num_inputs = psbt->num_inputs, i;
     int ret = WALLY_OK;
 
     wally_clear(scripts, sizeof(scripts));
 
-    if (!(*values = wally_malloc(num_inputs * sizeof(uint64_t))))
+    if (!(*satoshis = wally_malloc(num_inputs * sizeof(uint64_t))))
         return WALLY_ENOMEM;
     if (!(scripts->items = wally_calloc(num_inputs * sizeof(struct wally_map_item)))) {
         ret = WALLY_ENOMEM;
@@ -4448,7 +4448,7 @@ static int get_scripts_and_values(const struct wally_psbt *psbt,
         if (!utxo || !utxo->script)
             ret = WALLY_EINVAL;
         else {
-            (*values)[i] = utxo->satoshi; /* FIXME: Support for Elements */
+            (*satoshis)[i] = utxo->satoshi;
             /* Add the script to the map without allocating/copying */
             scripts->items[i].key_len = i;
             scripts->items[i].value = utxo->script;
@@ -4461,11 +4461,68 @@ static int get_scripts_and_values(const struct wally_psbt *psbt,
         wally_free(scripts->items); /* No need to clear the value pointers */
         wally_clear(scripts, sizeof(scripts));
 fail:
-        wally_free(*values);
-        *values = NULL;
+        wally_free(*satoshis);
+        *satoshis = NULL;
     }
     return ret;
 }
+
+#ifdef BUILD_ELEMENTS
+/* Get the input scripts, assets and values for Elements taproot signing.
+ * Creates a non-value-owning map, avoiding allocating/copying the scripts.
+ */
+static int get_elements_tr_signing_data(const struct wally_psbt *psbt,
+                                        struct wally_map *scripts,
+                                        struct wally_map *assets,
+                                        struct wally_map *values)
+{
+    size_t num_inputs = psbt->num_inputs, i;
+    int ret = WALLY_OK;
+
+    scripts->items = NULL;
+    assets->items = NULL;
+    values->items = NULL;
+    if (!(scripts->items = wally_calloc(num_inputs * sizeof(struct wally_map_item))) ||
+        !(assets->items = wally_calloc(num_inputs * sizeof(struct wally_map_item))) ||
+        !(values->items = wally_calloc(num_inputs * sizeof(struct wally_map_item)))) {
+        ret = WALLY_ENOMEM;
+        goto fail;
+    }
+    scripts->items_allocation_len = num_inputs;
+    assets->items_allocation_len = num_inputs;
+    values->items_allocation_len = num_inputs;
+
+    for (i = 0; i < num_inputs && ret == WALLY_OK; ++i) {
+        const struct wally_psbt_input *p = psbt->inputs + i;
+        const struct wally_tx_output *utxo = utxo_from_input(psbt, p);
+        if (!utxo || !utxo->asset || !utxo->value)
+            ret = WALLY_EINVAL;
+        else {
+            /* Add script/asset/value to their maps without allocating/copying */
+            scripts->items[i].key_len = i;
+            scripts->items[i].value = utxo->script;
+            scripts->items[i].value_len = utxo->script_len;
+            assets->items[i].key_len = i;
+            assets->items[i].value = utxo->asset;
+            assets->items[i].value_len = utxo->asset_len;
+            values->items[i].key_len = i;
+            values->items[i].value = utxo->value;
+            values->items[i].value_len = utxo->value_len;
+        }
+    }
+    if (ret == WALLY_OK) {
+        scripts->num_items = num_inputs;
+        assets->num_items = num_inputs;
+        values->num_items = num_inputs;
+    } else {
+fail:
+        wally_free(scripts->items); /* No need to clear the value pointers */
+        wally_free(assets->items);
+        wally_free(values->items);
+    }
+    return ret;
+}
+#endif /* BUILD_ELEMENTS */
 
 int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                                         const struct wally_tx *tx,
@@ -4476,7 +4533,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     struct wally_map scripts;
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     const bool is_taproot = is_taproot_input(psbt, inp);
-    uint64_t satoshi, *values = NULL;
+    uint64_t satoshi, *satoshis = NULL;
     uint32_t sighash, sig_flags;
     size_t is_pset;
     int ret;
@@ -4496,17 +4553,36 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     sig_flags = inp->witness_utxo ? WALLY_TX_FLAG_USE_WITNESS : 0;
 
     if (is_pset) {
+#ifndef BUILD_ELEMENTS
+        return WALLY_EINVAL; /* Unsupported */
+#else
+        struct wally_map assets, values;
         const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
         if (!utxo)
             return WALLY_EINVAL; /* Prevout is required */
-#ifdef BUILD_ELEMENTS
-        return wally_tx_get_elements_signature_hash(tx, index,
-                                                    script, script_len,
-                                                    utxo->value, utxo->value_len,
-                                                    sighash, sig_flags, bytes_out,
-                                                    len);
-#else
-        return WALLY_EINVAL; /* Unsupported */
+        if (!is_taproot)
+            return wally_tx_get_elements_signature_hash(tx, index,
+                                                        script, script_len,
+                                                        utxo->value, utxo->value_len,
+                                                        sighash, sig_flags, bytes_out,
+                                                        len);
+        /* Taproot */
+        if (mem_is_zero(psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash)))
+            return WALLY_EINVAL; /* Genesis blockhash is required for taproot */
+        ret = get_elements_tr_signing_data(psbt, &scripts, &assets, &values);
+        if (ret == WALLY_OK) {
+            ret = wally_tx_get_elements_taproot_signature_hash(tx, index,
+                    &scripts, &assets, &values,
+                    NULL, 0, 0, WALLY_NO_CODESEPARATOR,
+                    NULL, 0,
+                    psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
+                    sighash,
+                    0, bytes_out, len);
+            wally_free(scripts.items); /* No need to clear the value pointers */
+            wally_free(assets.items);
+            wally_free(values.items);
+        }
+        return ret;
 #endif /* BUILD_ELEMENTS */
     }
 
@@ -4518,13 +4594,13 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     }
 
     /* Taproot */
-    if ((ret = get_scripts_and_values(psbt, &scripts, &values)) == WALLY_OK) {
+    if ((ret = get_btc_tr_signing_data(psbt, &scripts, &satoshis)) == WALLY_OK) {
         ret = wally_tx_get_btc_taproot_signature_hash(tx, index, &scripts,
-                                                      values, psbt->num_inputs,
-                                                      NULL, 0, 0, 0xFFFFFFFF,
+                                                      satoshis, psbt->num_inputs,
+                                                      NULL, 0, 0, WALLY_NO_CODESEPARATOR,
                                                       NULL, 0, sighash, 0,
                                                       bytes_out, len);
-        wally_free(values);
+        wally_free(satoshis);
         wally_free(scripts.items); /* No need to clear the value pointers */
     }
     return ret;
@@ -4545,7 +4621,7 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
     int ret;
 
     if (!inp || !hdkey || hdkey->priv_key[0] != BIP32_FLAG_KEY_PRIVATE ||
-        (flags & ~EC_FLAGS_ALL))
+        (flags & ~(EC_FLAG_GRIND_R|EC_FLAG_ELEMENTS)))
         return WALLY_EINVAL;
 
     /* Find the public key this signature is for */
@@ -4561,24 +4637,25 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
     if (ret != WALLY_OK || !pubkey_idx)
         return WALLY_EINVAL; /* Signing pubkey key not found */
 
-    /* Copy signing key so we can tweak it if needed */
-    memcpy(signing_key, hdkey->priv_key + 1, EC_PRIVATE_KEY_LEN);
-
-    if (is_taproot) {
+    if (!is_taproot) {
+        /* ECDSA: Use untweaked private key. Only grinding flag is relevant */
+        memcpy(signing_key, hdkey->priv_key + 1, EC_PRIVATE_KEY_LEN);
+        flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R);
+    } else {
         /* Schnorr BIP340: Tweak the private key */
         const struct wally_map_item *p = wally_map_get_integer(&inp->psbt_fields,
                                                                PSBT_IN_TAP_MERKLE_ROOT);
         const unsigned char *merkle_root = p ? p->value : NULL;
         const size_t merkle_root_len = p ? p->value_len : 0;
-        ret = wally_ec_private_key_bip341_tweak(signing_key, sizeof(signing_key),
+
+        ret = wally_ec_private_key_bip341_tweak(hdkey->priv_key + 1, EC_PRIVATE_KEY_LEN,
                                                 merkle_root, merkle_root_len,
-                                                0, signing_key, sizeof(signing_key));
+                                                flags & EC_FLAG_ELEMENTS,
+                                                signing_key, sizeof(signing_key));
         if (ret != WALLY_OK)
             goto done;
-        flags = EC_FLAG_SCHNORR;
-    } else {
-        /* ECDSA: Only grinding flag is relevant */
-        flags = EC_FLAG_ECDSA | (flags & EC_FLAG_GRIND_R);
+        /* Only Elements flag is relevant */
+        flags = EC_FLAG_SCHNORR | (flags & EC_FLAG_ELEMENTS);
     }
 
     sighash = inp->sighash;
@@ -4626,11 +4703,17 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
     struct wally_tx *tx;
 
     if (!hdkey || hdkey->priv_key[0] != BIP32_FLAG_KEY_PRIVATE ||
-        (flags & ~EC_FLAGS_ALL))
+        (flags & ~EC_FLAG_GRIND_R))
         return WALLY_EINVAL;
 
     if ((ret = psbt_build_tx(psbt, &tx, &is_pset, false)) != WALLY_OK)
         return ret;
+
+#ifdef BUILD_ELEMENTS
+    if (is_pset) {
+        flags |= EC_FLAG_ELEMENTS;
+    }
+#endif
 
     /* Go through each of the inputs */
     for (i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
