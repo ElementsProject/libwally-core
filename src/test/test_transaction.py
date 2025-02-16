@@ -493,8 +493,8 @@ class TransactionTests(unittest.TestCase):
             ret = wally_ec_private_key_bip341_tweak(*args)
             self.assertEqual(ret, WALLY_EINVAL)
 
-    def test_get_taproot_signature_hash(self):
-        """Tests for computing the taproot signature hash"""
+    def test_get_btc_taproot_signature_hash(self):
+        """Tests for computing the BTC taproot signature hash"""
 
         keyspend_case = JSON['keyPathSpending'][0]
         input_spending = keyspend_case['inputSpending']
@@ -506,7 +506,7 @@ class TransactionTests(unittest.TestCase):
         values = (c_uint64 * num_utxos)()
         num_values = num_utxos
         # Bad/Faked data for invalid parameter checks
-        empty_scripts = pointer(wally_map())
+        empty_map = pointer(wally_map())
         non_tr_scripts = pointer(wally_map())
         wally_map_init_alloc(num_utxos, None, non_tr_scripts)
         fake_script, fake_script_len = make_cbuffer('00')
@@ -556,12 +556,12 @@ class TransactionTests(unittest.TestCase):
             [(0,  None)],            # NULL tx
             [(1,  50)],              # Invalid index
             [(2,  None)],            # NULL scripts
-            [(2,  empty_scripts)],   # Missing script(s)
+            [(2,  empty_map)],       # Missing script(s)
+            [(2,  non_tr_scripts)],  # Non-taproot script (for the input being signed)
             [(3,  None)],            # NULL values
             [(4,  0)],               # Missing values
             [(4,  1)],               # Too few values
             [(5,  fake_script)],     # Zero-length tapleaf script
-            [(5,  non_tr_scripts)],  # Non-taproot input script
             [(6,  fake_script_len)], # NULL tapleaf script
             [(7,  2)],               # Invalid key version (only 0/1 are allowed)
             [(9,  fake_annex)],      # Zero length annex
