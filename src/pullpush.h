@@ -1,6 +1,8 @@
 #ifndef LIBWALLY_CORE_PULLPUSH_H
 #define LIBWALLY_CORE_PULLPUSH_H 1
 
+#include <stdbool.h>
+
 struct wally_tx_witness_stack;
 
 /**
