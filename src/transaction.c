@@ -12,6 +12,7 @@
 #include "pullpush.h"
 #include "script.h"
 #include "script_int.h"
+#include "tx_io.h"
 
 /* Taproot uses this mask instead of WALLY_SIGHASH_MASK */
 #define TAPROOT_SIGHASH_MASK 0x03
@@ -3707,6 +3708,24 @@ int wally_tx_get_btc_taproot_signature_hash(
     uint32_t sighash, uint32_t flags,
     unsigned char *bytes_out, size_t len)
 {
+#if 0
+    int ret;
+    {
+        /* Convert the values array into a non-owning map of input values */
+        struct wally_map values_map;
+        wally_map_init(num_values, NULL, &values_map);
+        for (size_t i = 0; i < num_values; ++i) {
+            values_map.items[i].key_len = i;
+            values_map.items[i].value = (unsigned char*)(values + i);
+            values_map.items[i].value_len = sizeof(values[0]);
+        }
+        values_map.num_items = num_values;
+        ret = txio_get_bip341_signature_hash(tx, index, scripts, NULL, &values_map, tapleaf_script, tapleaf_script_len, key_version, codesep_position, annex, annex_len, NULL, 0, sighash, flags, NULL, bytes_out, len);
+        values_map.num_items = 0;
+        wally_map_clear(&values_map);
+        return ret;
+    }
+#else
     unsigned char buff[256]; /* Largest possible hash preimage is 244 bytes */
     const bool is_bip143 = false, is_bip341 = true;
     const struct tx_serialize_opts opts = {
@@ -3723,6 +3742,7 @@ int wally_tx_get_btc_taproot_signature_hash(
     if (!values || !num_values || index >= num_values ||
         BYTES_INVALID(tapleaf_script, tapleaf_script_len) ||
         BYTES_INVALID(annex, annex_len) || (annex && *annex != 0x50) ||
+        codesep_position != WALLY_NO_CODESEPARATOR ||
         flags || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
@@ -3744,8 +3764,37 @@ int wally_tx_get_btc_taproot_signature_hash(
         else
             ret = wally_bip340_tagged_hash(buff, n, TAPSIGHASH(false), bytes_out, len);
     }
+    if (ret == WALLY_OK) {
+        // Reconcile
+        unsigned char tmp[SHA256_LEN];
+        struct wally_map values_map;
+        struct wally_map cache;
+        wally_map_init(16, NULL, &cache);
+        wally_map_init(num_values, NULL, &values_map);
+        for (size_t i = 0; i < num_values; ++i) {
+            values_map.items[i].key_len = i;
+            values_map.items[i].value = (unsigned char*)(values + i);
+            values_map.items[i].value_len = sizeof(values[0]);
+        }
+        values_map.num_items = num_values;
+        ret = txio_get_bip341_signature_hash(tx, index, scripts, NULL, &values_map, tapleaf_script, tapleaf_script_len, key_version, codesep_position, annex, annex_len, NULL, 0, sighash, flags, &cache, tmp, len);
+        if (ret != WALLY_OK)
+            return WALLY_ERROR; //abort();
+        if (memcmp(bytes_out, tmp, SHA256_LEN))
+            return WALLY_ENOMEM; //abort();
+        // Re-reconcile with cached values from above
+        memset(tmp, 0, sizeof(tmp));
+        ret = txio_get_bip341_signature_hash(tx, index, scripts, NULL, &values_map, tapleaf_script, tapleaf_script_len, key_version, codesep_position, annex, annex_len, NULL, 0, sighash, flags, &cache, tmp, len);
+        values_map.num_items = 0;
+        wally_map_clear(&values_map);
+        if (ret != WALLY_OK)
+            return WALLY_ERROR; //abort();
+        if (memcmp(bytes_out, tmp, SHA256_LEN))
+            return WALLY_ENOMEM; //abort();
+    }
     wally_clear(buff, n);
     return ret;
+#endif
 }
 
 #ifndef WALLY_ABI_NO_ELEMENTS
@@ -3771,6 +3820,9 @@ int wally_tx_get_elements_taproot_signature_hash(
     uint32_t sighash, uint32_t flags,
     unsigned char *bytes_out, size_t len)
 {
+#if 0
+    return txio_get_bip341_signature_hash(tx, index, scripts, assets, values, tapleaf_script, tapleaf_script_len, key_version, codesep_position, annex, annex_len, genesis_blockhash, genesis_blockhash_len, sighash, flags, NULL, bytes_out, len);
+#else
     unsigned char buff[512]; /* Largest possible hash preimage is 474 bytes */
     const bool is_bip143 = false, is_bip341 = true;
     const struct tx_serialize_opts opts = {
@@ -3791,6 +3843,7 @@ int wally_tx_get_elements_taproot_signature_hash(
         BYTES_INVALID(tapleaf_script, tapleaf_script_len) ||
         BYTES_INVALID(annex, annex_len) || (annex && *annex != 0x50) ||
         !genesis_blockhash || genesis_blockhash_len != SHA256_LEN ||
+        codesep_position != WALLY_NO_CODESEPARATOR ||
         flags || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
@@ -3810,8 +3863,27 @@ int wally_tx_get_elements_taproot_signature_hash(
         else
             ret = wally_bip340_tagged_hash(buff, n2, TAPSIGHASH(is_elements), bytes_out, len);
     }
+    if (ret == WALLY_OK) {
+        // Reconcile
+        unsigned char tmp[SHA256_LEN];
+        struct wally_map cache;
+        wally_map_init(16, NULL, &cache);
+        ret = txio_get_bip341_signature_hash(tx, index, scripts, assets, values, tapleaf_script, tapleaf_script_len, key_version, codesep_position, annex, annex_len, genesis_blockhash, genesis_blockhash_len, sighash, flags, &cache, tmp, len);
+        if (ret != WALLY_OK)
+            return WALLY_ERROR; //abort();
+        if (memcmp(bytes_out, tmp, SHA256_LEN))
+            return WALLY_ENOMEM; //abort();
+        // Re-reconcile with cached values from above
+        memset(tmp, 0, sizeof(tmp));
+        ret = txio_get_bip341_signature_hash(tx, index, scripts, assets, values, tapleaf_script, tapleaf_script_len, key_version, codesep_position, annex, annex_len, genesis_blockhash, genesis_blockhash_len, sighash, flags, &cache, tmp, len);
+        if (ret != WALLY_OK)
+            return WALLY_ERROR; //abort();
+        if (memcmp(bytes_out, tmp, SHA256_LEN))
+            return WALLY_ENOMEM; //abort();
+    }
     return ret;
 #endif /* BUILD_ELEMENTS */
+#endif
 }
 
 int wally_tx_confidential_value_from_satoshi(uint64_t satoshi,
