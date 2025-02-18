@@ -75,6 +75,7 @@
 #include "src/sign.c"
 #include "src/symmetric.c"
 #include "src/transaction.c"
+#include "src/tx_io.c"
 #include "src/wif.c"
 #include "src/wordlist.c"
 

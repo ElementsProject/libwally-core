@@ -167,6 +167,7 @@ libwallycore_la_SOURCES = \
     sign.c \
     symmetric.c \
     transaction.c \
+    tx_io.c \
     wif.c \
     wordlist.c \
     ccan/ccan/base64/base64.c \
