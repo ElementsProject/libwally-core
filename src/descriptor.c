@@ -2881,6 +2881,13 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
     if (!(p = wally_malloc(descriptor->script_len)))
         return WALLY_ENOMEM;
 
+    if (descriptor->features & WALLY_MS_IS_ELEMENTS) {
+        /* Disable Elements address generation until:
+         * - It is reconciled with Elements-core, and
+         * - We support blinded addresses
+         */
+        return WALLY_ERROR;
+    }
     memcpy(&ctx, descriptor, sizeof(ctx));
     ctx.variant = variant;
     if (ctx.max_path_elems &&
