@@ -167,6 +167,7 @@ class PSBTTests(unittest.TestCase):
         expected_ret = WALLY_OK if expected else WALLY_EINVAL
         priv_key, priv_key_len = make_cbuffer('00'*32)
         psbt = self.parse_base64(case['psbt'])
+        wally_psbt_signing_cache_enable(psbt, 0) # Enable signing cache
         for wif in case['privkeys']:
             self.assertEqual(WALLY_OK, wally_wif_to_bytes(wif, 0xEF, 0, priv_key, priv_key_len))
             self.assertEqual(expected_ret, wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R))
@@ -182,6 +183,7 @@ class PSBTTests(unittest.TestCase):
             ret = bip32_key_from_base58_alloc(case['master_xpriv'], byref(key_out))
             self.assertEqual(ret, WALLY_OK)
             psbt = self.parse_base64(case['psbt'])
+            wally_psbt_signing_cache_enable(psbt, 0) # Enable signing cache
             ret = wally_psbt_sign_bip32(psbt, key_out, 0x4)
             # If all of the explicit private keys resulting from the master xpriv
             # are present, we can verify the fully signed result matches exactly
