@@ -132,21 +132,12 @@ static bool is_valid_elements_tx_input_pegin(const struct wally_tx_input *input)
     return is_valid_elements_tx_input(input) && (input->features & WALLY_TX_IS_PEGIN);
 }
 
-static bool is_null_bytes(const unsigned char *bytes, size_t bytes_len)
-{
-    size_t i;
-    for (i = 0; i < bytes_len; ++i)
-        if (bytes[i])
-            return false;
-    return true;
-}
-
 static bool is_coinbase_bytes(const unsigned char *bytes, size_t bytes_len, uint32_t index)
 {
-    return index == 0xffffffff && is_null_bytes(bytes, bytes_len);
+    return index == 0xffffffff && mem_is_zero(bytes, bytes_len);
 }
 
-static bool is_valid_coinbase_input(const struct wally_tx_input *input)
+static bool is_coinbase_input(const struct wally_tx_input *input)
 {
     return input && is_coinbase_bytes(input->txhash, sizeof(input->txhash), input->index);
 }
@@ -3252,32 +3243,35 @@ int wally_tx_from_hex(const char *hex, uint32_t flags,
 
 int wally_tx_is_elements(const struct wally_tx *tx, size_t *written)
 {
+    if (written)
+        *written = 0;
     if (!tx || !written)
         return WALLY_EINVAL;
 
     *written = is_valid_elements_tx(tx);
-
     return WALLY_OK;
 }
 
 int wally_tx_elements_input_is_pegin(const struct wally_tx_input *input,
                                      size_t *written)
 {
+    if (written)
+        *written = 0;
     if (!input || !written)
         return WALLY_EINVAL;
 
     *written = is_valid_elements_tx_input_pegin(input);
-
     return WALLY_OK;
 }
 
 int wally_tx_is_coinbase(const struct wally_tx *tx, size_t *written)
 {
+    if (written)
+        *written = 0;
     if (!tx || !written)
         return WALLY_EINVAL;
 
-    *written = tx->num_inputs == 1 && is_valid_coinbase_input(tx->inputs);
-
+    *written = tx->num_inputs == 1 && is_coinbase_input(tx->inputs);
     return WALLY_OK;
 }
 
