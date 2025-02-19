@@ -955,6 +955,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_sign);
 %returns_void__(wally_psbt_sign_bip32);
 %returns_void__(wally_psbt_sign_input_bip32);
+%returns_void__(wally_psbt_signing_cache_enable);
+%returns_void__(wally_psbt_signing_cache_disable);
 %returns_string(wally_psbt_to_base64);
 %returns_size_t(wally_psbt_to_bytes);
 %returns_array_(wally_ripemd160, 3, 4, RIPEMD160_LEN);

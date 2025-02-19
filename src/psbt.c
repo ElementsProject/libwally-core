@@ -10,6 +10,7 @@
 #include "script_int.h"
 #include "script.h"
 #include "pullpush.h"
+#include "tx_io.h"
 
 /* TODO:
  * - When setting utxo in an input via the psbt (in the SWIG
@@ -1308,6 +1309,7 @@ int wally_psbt_free(struct wally_psbt *psbt)
 #ifdef BUILD_ELEMENTS
         wally_map_clear(&psbt->global_scalars);
 #endif /* BUILD_ELEMENTS */
+        wally_psbt_signing_cache_disable(psbt);
         clear_and_free(psbt, sizeof(*psbt));
     }
     return WALLY_OK;
@@ -4528,7 +4530,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                     NULL, 0,
                     psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
                     sighash, WALLY_SIGTYPE_SW_V1,
-                    NULL, bytes_out, len);
+                    psbt->signing_cache, bytes_out, len);
 
         wally_free(scripts.items); /* No need to clear the value pointers */
         wally_free(values.items);
@@ -4718,6 +4720,24 @@ int wally_psbt_sign(struct wally_psbt *psbt,
         ret = wally_psbt_sign_bip32(psbt, &hdkey, flags);
     wally_clear(&hdkey, sizeof(hdkey));
     return ret;
+}
+
+int wally_psbt_signing_cache_enable(struct wally_psbt *psbt, uint32_t flags)
+{
+    if (!psbt || flags)
+        return WALLY_EINVAL;
+    wally_psbt_signing_cache_disable(psbt);
+    return wally_map_init_alloc(TXIO_CACHE_INITIAL_SIZE, NULL,
+                                &psbt->signing_cache);
+}
+
+int wally_psbt_signing_cache_disable(struct wally_psbt *psbt)
+{
+    if (!psbt)
+        return WALLY_EINVAL;
+    wally_map_free(psbt->signing_cache);
+    psbt->signing_cache = NULL;
+    return WALLY_OK;
 }
 
 static const struct wally_map_item *get_sig(const struct wally_psbt_input *input,

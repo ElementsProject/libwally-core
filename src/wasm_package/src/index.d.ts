@@ -562,6 +562,8 @@ export function psbt_set_version(psbt: Ref_wally_psbt, flags: number, version: n
 export function psbt_sign(psbt: Ref_wally_psbt, key: Buffer|Uint8Array, flags: number): void;
 export function psbt_sign_bip32(psbt: Ref_wally_psbt, hdkey: Ref_ext_key, flags: number): void;
 export function psbt_sign_input_bip32(psbt: Ref_wally_psbt, index: number, subindex: number, txhash: Buffer|Uint8Array, hdkey: Ref_ext_key, flags: number): void;
+export function psbt_signing_cache_disable(psbt: Ref_wally_psbt): void;
+export function psbt_signing_cache_enable(psbt: Ref_wally_psbt, flags: number): void;
 export function psbt_to_base64(psbt: Ref_wally_psbt, flags: number): string;
 export function ripemd160(bytes: Buffer|Uint8Array): Buffer;
 export function s2c_commitment_verify(sig: Buffer|Uint8Array, s2c_data: Buffer|Uint8Array, s2c_opening: Buffer|Uint8Array, flags: number): void;

@@ -1641,6 +1641,17 @@ inline int psbt_sign_input_bip32(const PSBT& psbt, size_t index, size_t subindex
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+inline int psbt_signing_cache_disable(struct wally_psbt* psbt) {
+    int ret = ::wally_psbt_signing_cache_disable(psbt);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT>
+inline int psbt_signing_cache_enable(const PSBT& psbt, uint32_t flags) {
+    int ret = ::wally_psbt_signing_cache_enable(detail::get_p(psbt), flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class PSBT>
 inline int psbt_to_base64(const PSBT& psbt, uint32_t flags, char** output) {
     int ret = ::wally_psbt_to_base64(detail::get_p(psbt), flags, output);

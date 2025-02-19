@@ -141,6 +141,7 @@ struct wally_psbt {
     uint32_t pset_modifiable_flags;
     unsigned char genesis_blockhash[SHA256_LEN]; /* All zeros if not present */
 #endif /* WALLY_ABI_NO_ELEMENTS */
+    struct wally_map *signing_cache;
 };
 #endif /* SWIG */
 
@@ -2591,6 +2592,36 @@ WALLY_CORE_API int wally_psbt_blind_alloc(
     uint32_t flags,
     struct wally_map **output);
 #endif /* WALLY_ABI_NO_ELEMENTS */
+
+/**
+ * Enable caching of intermediate data when signing a PSBT.
+ *
+ * This function should be called just before signing a PSBT or the first
+ * input being signed, or before computing a signature hash for the PSBT.
+ * If the PSBT is modified in a way that would affect the signatures produced,
+ * this function should be called again to ensure that old cached data is
+ * purged before signing again.
+ *
+ * :param psbt: PSBT to enable the signing cache for. Directly modifies this PSBT.
+ * :param flags: Flags controlling the signing cache. Must be 0.
+ *
+ * .. note:: The signing cache is local to the given PSBT and is not
+ *|    serialized with it.
+ */
+WALLY_CORE_API int wally_psbt_signing_cache_enable(
+    struct wally_psbt *psbt,
+    uint32_t flags);
+
+/**
+ * Disable caching of intermediate data when signing a PSBT.
+ *
+ * This function can be called at any time to ensure that the PSBT signing
+ * cache data is not reused when signing again.
+ *
+ * :param psbt: PSBT to disable the signing cache for. Directly modifies this PSBT.
+ */
+WALLY_CORE_API int wally_psbt_signing_cache_disable(
+    struct wally_psbt *psbt);
 
 /**
  * Sign PSBT inputs corresponding to a given private key.

@@ -193,7 +193,9 @@ class wally_psbt(Structure):
                 ('has_fallback_locktime', c_uint32),
                 ('tx_modifiable_flags', c_uint32),
                 ('global_scalars', wally_map),
-                ('pset_modifiable_flags', c_uint32)]
+                ('pset_modifiable_flags', c_uint32),
+                ('genesis_blockhash', c_ubyte * 32),
+                ('signing_cache', POINTER(wally_map))]
 
 for f in (
     # Internal functions
@@ -629,6 +631,8 @@ for f in (
     ('wally_psbt_sign', c_int, [POINTER(wally_psbt), c_void_p, c_size_t, c_uint32]),
     ('wally_psbt_sign_bip32', c_int, [POINTER(wally_psbt), POINTER(ext_key), c_uint32]),
     ('wally_psbt_sign_input_bip32', c_int, [POINTER(wally_psbt), c_size_t, c_size_t, c_void_p, c_size_t, POINTER(ext_key), c_uint32]),
+    ('wally_psbt_signing_cache_disable', c_int, [POINTER(wally_psbt)]),
+    ('wally_psbt_signing_cache_enable', c_int, [POINTER(wally_psbt), c_uint32]),
     ('wally_psbt_to_base64', c_int, [POINTER(wally_psbt), c_uint32, c_char_p_p]),
     ('wally_psbt_to_bytes', c_int, [POINTER(wally_psbt), c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_ripemd160', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
