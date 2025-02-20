@@ -319,29 +319,23 @@ class TransactionTests(unittest.TestCase):
             (tx, 0, script, script_len, 1, 1, 16, out, out_len), # Invalid flags
             (tx, 0, script, script_len, 1, 1, 0, None, out_len), # Empty bytes
             (tx, 0, script, script_len, 1, 1, 0, out, 31), # Short len
-            ]:
+        ]:
             self.assertEqual(WALLY_EINVAL, wally_tx_get_btc_signature_hash(*args))
-
-        def sha256d(hex_):
-            bin_input, bin_input_len = make_cbuffer(hex_)
-            buf, buf_len = make_cbuffer('00'*32)
-            self.assertEqual(WALLY_OK, wally_sha256d(bin_input, bin_input_len, buf, buf_len))
-            return h(buf)
 
         script, script_len = make_cbuffer('00')
         out, out_len = make_cbuffer('00'*32)
         for args, expected in [
             ((tx, 0, script, script_len, 1, 1, 0, out, out_len),
              utf8('1bcf681d585c3cbbc64b30a69e60b721fc0aacc57132dfbe43af6df8f4797a80')),
-           ((tx, 1, script, script_len, 1, 1, 0, out, out_len),
-            utf8('01'+'00'*31)),
-           ((tx, 0, script, script_len, 1, 0, 0, out, out_len),
-            utf8('882630e74173c928fc18236b99e25ffd15643faabc65c010e9ca27b8db29278a')),
-           ((tx, 0, script, script_len, 1, 1, 1, out, out_len),
-            utf8('5dad88b42332e3559950b325bba69eedb64b9330e55585fc1098964572f9c45d')),
-           ((tx, 0, script, script_len, 0, 1, 1, out, out_len),
-            utf8('bb30f5feed35b2591eedd8e778d507236a756e8c2eff8cf72ef0afa83abdea31')),
-            ]:
+            ((tx, 1, script, script_len, 1, 1, 0, out, out_len),
+             utf8('01'+'00'*31)),
+            ((tx, 0, script, script_len, 1, 0, 0, out, out_len),
+             utf8('882630e74173c928fc18236b99e25ffd15643faabc65c010e9ca27b8db29278a')),
+            ((tx, 0, script, script_len, 1, 1, 1, out, out_len),
+             utf8('5dad88b42332e3559950b325bba69eedb64b9330e55585fc1098964572f9c45d')),
+            ((tx, 0, script, script_len, 0, 1, 1, out, out_len),
+             utf8('bb30f5feed35b2591eedd8e778d507236a756e8c2eff8cf72ef0afa83abdea31')),
+        ]:
             self.assertEqual(WALLY_OK, wally_tx_get_btc_signature_hash(*args))
             self.assertEqual(expected, h(out[:out_len]))
 
