@@ -1,3 +1,4 @@
+import os
 import unittest
 from util import *
 
@@ -36,6 +37,9 @@ cases = [
 class ScryptTests(unittest.TestCase):
 
     def test_scrypt(self):
+
+        if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
+            self.skipTest('Skipping expensive scrypt test')
 
         # Invalid arguments
         pwd, salt, cost, block, p, l, _ = cases[0]

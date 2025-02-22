@@ -1,3 +1,4 @@
+import os
 import unittest
 from util import *
 
@@ -65,6 +66,9 @@ class BIP38Tests(unittest.TestCase):
 
     def test_bip38(self):
 
+        if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
+            self.skipTest('Skipping expensive bip38 test')
+
         for case in cases:
             priv_key, passwd, flags, expected = case
             passwd = utf8(passwd) if type(passwd) is not bytes else passwd
@@ -81,6 +85,9 @@ class BIP38Tests(unittest.TestCase):
 
 
     def test_bip38_invalid(self):
+        if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
+            self.skipTest('Skipping expensive bip38 test')
+
         priv_key = 'CBF4B9F70470856BB4F40F80B87EDB90865997FFEE6DF315AB166D713AF433A5'
         passwd = utf8('TestingInvalidFlags')
         K_RES1 = 0x10 # BIP38_FLAG_RESERVED1

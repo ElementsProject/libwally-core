@@ -1,3 +1,4 @@
+import os
 import unittest
 from util import *
 
@@ -28,6 +29,9 @@ class PBKDF2Tests(unittest.TestCase):
 
 
     def test_pbkdf2_hmac_sha(self):
+
+        if os.getenv('WALLY_SKIP_EXPENSIVE_TESTS', None):
+            self.skipTest('Skipping expensive pbkdf2 test')
 
         # Some test vectors are nuts (e.g. 2097152 cost), so only run the
         # first few. set these to -1 to run the whole suite (only needed
