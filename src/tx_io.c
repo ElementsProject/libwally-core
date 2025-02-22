@@ -6,6 +6,8 @@
 #include "tx_io.h"
 #include <string.h>
 
+#define WALLY_SATOSHI_MAX ((uint64_t)WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC)
+
 #define SIGTYPE_ALL (WALLY_SIGTYPE_PRE_SW | WALLY_SIGTYPE_SW_V0 | WALLY_SIGTYPE_SW_V1)
 
 /* Cache keys for data that is constant while signing a given tx.
@@ -62,6 +64,14 @@ static bool value_len_ok(size_t len)
            len == WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN;
 }
 
+static uint64_t satoshi_from_item(const struct wally_map_item *item)
+{
+    uint64_t v;
+    /* Map values must be in cpu byte order, but may not be aligned */
+    memcpy(&v, item->value, item->value_len);
+    return v;
+}
+
 /* Ensure 'm' is integer-indexed with num_items valid items */
 static bool map_has_all(const struct wally_map *m, size_t num_items,
                         bool (*len_fn)(size_t))
@@ -87,8 +97,12 @@ static bool map_has_one(const struct wally_map *m, size_t index,
         const struct wally_map_item *item = m->items + i;
         if (item->key || !item->value || !len_fn(item->value_len))
             return false;
-        if (index == item->key_len)
+        if (index == item->key_len) {
+            if (len_fn == satoshi_len_ok &&
+                satoshi_from_item(item) > WALLY_SATOSHI_MAX)
+                    return false; /* Invalid BTC amount */
             return true;
+        }
     }
     return false;
 }
@@ -111,10 +125,7 @@ static inline void hash_le64(struct sha256_ctx *ctx, uint64_t v)
 static void hash_map_le64(struct sha256_ctx *ctx,
                           const struct wally_map *m, size_t index)
 {
-    const struct wally_map_item *item = wally_map_get_integer(m, index);
-    uint64_t v;
-    memcpy(&v, item->value, item->value_len);
-    hash_le64(ctx, v);
+    hash_le64(ctx, satoshi_from_item(wally_map_get_integer(m, index)));
 }
 
 static inline void hash_bytes(struct sha256_ctx *ctx,
@@ -385,11 +396,8 @@ static void txio_hash_sha_amounts(cursor_io *io, const struct wally_map *values)
     if (!txio_hash_cached_item(io, TXIO_SHA_AMOUNTS)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
-        for (size_t i = 0; i < values->num_items; ++i) {
-            uint64_t v;
-            memcpy(&v, values->items[i].value, values->items[i].value_len);
-            hash_le64(&ctx, v);
-        }
+        for (size_t i = 0; i < values->num_items; ++i)
+            hash_le64(&ctx, satoshi_from_item(values->items + i));
         txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_AMOUNTS);
     }
 }
