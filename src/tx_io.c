@@ -14,8 +14,11 @@
  * We also cache other data keyed by their binary value directly.
  */
 #define TXIO_UNCACHED                 0 /* Signals that data should not be cached */
+#define TXIO_SHA256_D                 0x80000000 /* Data should be double hashed */
+#define TXIO_UNCACHED_D               (TXIO_UNCACHED | TXIO_SHA256_D)
 #define TXIO_SHA_TAPSIGHASH_CTX       1 /* Initial sha256_ctx for taproot bip340 hashing */
-#define TXIO_SHA_OUTPOINT_FLAGS       2 /* Taproot cached data ... */
+/* Taproot cached data ... */
+#define TXIO_SHA_OUTPOINT_FLAGS       2
 #define TXIO_SHA_PREVOUTS             3
 #define TXIO_SHA_AMOUNTS              4
 #define TXIO_SHA_ASSET_AMOUNTS        5
@@ -24,7 +27,15 @@
 #define TXIO_SHA_ISSUANCES            8
 #define TXIO_SHA_ISSUANCE_RANGEPROOFS 9
 #define TXIO_SHA_OUTPUTS              10
-#define TXIO_SHA_OUTPUT_WITNESSES     11 /* ... end of taproot cached data */
+#define TXIO_SHA_OUTPUT_WITNESSES     11
+/* ... end of taproot cached data */
+/* Segwit v0 data */
+#define TXIO_SHA_PREVOUTS_D           (TXIO_SHA_PREVOUTS | TXIO_SHA256_D)
+#define TXIO_SHA_SEQUENCES_D          (TXIO_SHA_SEQUENCES | TXIO_SHA256_D)
+#define TXIO_SHA_ISSUANCES_D          (TXIO_SHA_ISSUANCES | TXIO_SHA256_D)
+#define TXIO_SHA_OUTPUTS_D            (TXIO_SHA_OUTPUTS | TXIO_SHA256_D)
+#define TXIO_SHA_OUTPUT_WITNESSES_D   (TXIO_SHA_OUTPUTS | TXIO_SHA256_D)
+/* ... end of segwit cached data */
 
 /* SHA256(TapSighash) */
 static const unsigned char TAPSIGHASH_SHA256[SHA256_LEN] = {
@@ -164,16 +175,29 @@ static void txio_hash_sha256_ctx(cursor_io *io, struct sha256_ctx *ctx, int key)
 {
     struct sha256 hash;
     sha256_done(ctx, &hash);
+    if (key & TXIO_SHA256_D) {
+        struct sha256 hash2;
+        sha256(&hash2, hash.u.u8, sizeof(hash));
+        memcpy(hash.u.u8, hash2.u.u8, sizeof(hash));
+    }
     hash_bytes(&io->ctx, hash.u.u8, sizeof(hash));
-    if (io->cache && key != TXIO_UNCACHED)
+    if (io->cache && (key & ~TXIO_SHA256_D) != TXIO_UNCACHED)
         wally_map_add_integer(io->cache, key, hash.u.u8, sizeof(hash));
 }
 
-static void txio_done(cursor_io *io)
+static int txio_done(cursor_io *io, uint32_t flags)
 {
     struct sha256 hash;
     sha256_done(&io->ctx, &hash);
-    push_bytes(&io->cursor, &io->max, hash.u.u8, sizeof(hash));
+    if (flags & TXIO_SHA256_D) {
+        struct sha256 hash2;
+        sha256(&hash2, hash.u.u8, sizeof(hash));
+        push_bytes(&io->cursor, &io->max, hash2.u.u8, sizeof(hash2));
+    } else
+        push_bytes(&io->cursor, &io->max, hash.u.u8, sizeof(hash));
+    if (io->max)
+        return WALLY_ERROR; /* Wrote the wrong number of bytes: should not happen! */
+    return WALLY_OK;
 }
 
 /* Initialize a sha256 context for bip340 tagged hashing.
@@ -226,10 +250,15 @@ static void hash_output_elements(struct sha256_ctx *ctx,
 }
 
 static void hash_output_witness(struct sha256_ctx *ctx,
-                                const struct wally_tx_output *txout)
+                                const struct wally_tx_output *txout,
+                                uint32_t key)
 {
-    hash_varbuff(ctx, txout->surjectionproof, txout->surjectionproof_len);
+    /* Elements taproot hashing reverses the order, d'oh */
+    if (!(key & TXIO_SHA256_D))
+        hash_varbuff(ctx, txout->surjectionproof, txout->surjectionproof_len);
     hash_varbuff(ctx, txout->rangeproof, txout->rangeproof_len);
+    if (key & TXIO_SHA256_D)
+        hash_varbuff(ctx, txout->surjectionproof, txout->surjectionproof_len);
 }
 
 static void txio_hash_sha_outpoint_flags(cursor_io *io, const struct wally_tx *tx)
@@ -265,9 +294,9 @@ static void txio_hash_sha_asset_amounts(cursor_io *io,
     }
 }
 
-static void txio_hash_sha_issuances(cursor_io *io, const struct wally_tx *tx)
+static void txio_hash_sha_issuances(cursor_io *io, const struct wally_tx *tx, uint32_t key)
 {
-    if (!txio_hash_cached_item(io, TXIO_SHA_ISSUANCES)) {
+    if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_inputs; ++i) {
@@ -281,7 +310,7 @@ static void txio_hash_sha_issuances(cursor_io *io, const struct wally_tx *tx)
             hash_commmitment(&ctx, txin->issuance_amount, txin->issuance_amount_len);
             hash_commmitment(&ctx, txin->inflation_keys, txin->inflation_keys_len);
         }
-        txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_ISSUANCES);
+        txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
 
@@ -296,25 +325,25 @@ static void txio_hash_sha_issuance_rangeproofs(cursor_io *io, const struct wally
     }
 }
 
-static void txio_hash_sha_outputs_elements(cursor_io *io, const struct wally_tx *tx)
+static void txio_hash_sha_outputs_elements(cursor_io *io, const struct wally_tx *tx, uint32_t key)
 {
-    if (!txio_hash_cached_item(io, TXIO_SHA_OUTPUTS)) {
+    if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_outputs; ++i)
             hash_output_elements(&ctx, tx->outputs + i);
-        txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_OUTPUTS);
+        txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
 
-static void txio_hash_sha_output_witnesses(cursor_io *io, const struct wally_tx *tx)
+static void txio_hash_sha_output_witnesses(cursor_io *io, const struct wally_tx *tx, uint32_t key)
 {
-    if (!txio_hash_cached_item(io, TXIO_SHA_OUTPUT_WITNESSES)) {
+    if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_outputs; ++i)
-            hash_output_witness(&ctx, tx->outputs + i);
-        txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_OUTPUT_WITNESSES);
+            hash_output_witness(&ctx, tx->outputs + i, key);
+        txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
 
@@ -332,24 +361,33 @@ static void txio_hash_input_elements(cursor_io *io,
                                      const struct wally_tx *tx, size_t index,
                                      const struct wally_map *scripts,
                                      const struct wally_map *assets,
-                                     const struct wally_map *values)
+                                     const struct wally_map *values,
+                                     const unsigned char *scriptcode, size_t scriptcode_len,
+                                     uint32_t hash_type)
 {
     const struct wally_tx_input *txin = tx->inputs + index;
 
-    hash_map_commmitment(&io->ctx, assets, index);
-    hash_map_commmitment(&io->ctx, values, index);
-    hash_map_varbuff(&io->ctx, scripts, index);
+    if (hash_type == WALLY_SIGTYPE_SW_V0) {
+        hash_varbuff(&io->ctx, scriptcode, scriptcode_len);
+        hash_map_commmitment(&io->ctx, values, index);
+    } else {
+        /* Elements taproot hashing reverses the order, d'oh */
+        hash_map_commmitment(&io->ctx, assets, index);
+        hash_map_commmitment(&io->ctx, values, index);
+        hash_map_varbuff(&io->ctx, scripts, index);
+    }
     hash_le32(&io->ctx, txin->sequence);
 
-    if (!(txin->features & WALLY_TX_IS_ISSUANCE))
-        hash_u8(&io->ctx, 0);
-    else {
+    if (!(txin->features & WALLY_TX_IS_ISSUANCE)) {
+        if (hash_type != WALLY_SIGTYPE_SW_V0)
+            hash_u8(&io->ctx, 0);
+    } else {
         /* asset_issuance */
         hash_bytes(&io->ctx, txin->blinding_nonce, sizeof(txin->blinding_nonce));
         hash_bytes(&io->ctx, txin->entropy, sizeof(txin->entropy));
         hash_commmitment(&io->ctx, txin->issuance_amount, txin->issuance_amount_len);
         hash_commmitment(&io->ctx, txin->inflation_keys, txin->inflation_keys_len);
-        {
+        if (hash_type != WALLY_SIGTYPE_SW_V0) {
             /* sha_single_issuance_rangeproofs */
             struct sha256_ctx ctx;
             sha256_init(&ctx);
@@ -360,34 +398,37 @@ static void txio_hash_input_elements(cursor_io *io,
 }
 
 static void txio_hash_sha_single_output_elements(cursor_io *io,
-                                                 const struct wally_tx_output *txout)
+                                                 const struct wally_tx_output *txout,
+                                                 uint32_t key)
 {
     struct sha256_ctx ctx;
     sha256_init(&ctx);
     hash_output_elements(&ctx, txout);
-    txio_hash_sha256_ctx(io, &ctx, TXIO_UNCACHED);
+    txio_hash_sha256_ctx(io, &ctx, key);
 }
 
 static void txio_hash_sha_single_output_witness(cursor_io *io,
-                                                const struct wally_tx_output *txout)
+                                                const struct wally_tx_output *txout,
+                                                uint32_t key)
 {
     struct sha256_ctx ctx;
     sha256_init(&ctx);
-    hash_output_witness(&ctx, txout);
-    txio_hash_sha256_ctx(io, &ctx, TXIO_UNCACHED);
+    hash_output_witness(&ctx, txout, key);
+    txio_hash_sha256_ctx(io, &ctx, key);
 }
 #endif /* BUILD_ELEMENTS */
 
-static void txio_hash_sha_prevouts(cursor_io *io, const struct wally_tx *tx)
+static void txio_hash_sha_prevouts(cursor_io *io, const struct wally_tx *tx,
+                                   uint32_t key)
 {
-    if (!txio_hash_cached_item(io, TXIO_SHA_PREVOUTS)) {
+    if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_inputs; ++i) {
             hash_bytes(&ctx, tx->inputs[i].txhash, WALLY_TXHASH_LEN);
             hash_le32(&ctx, tx->inputs[i].index);
         }
-        txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_PREVOUTS);
+        txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
 
@@ -413,27 +454,29 @@ static void txio_hash_sha_scriptpubkeys(cursor_io *io, const struct wally_map *s
     }
 }
 
-static void txio_hash_sha_sequences(cursor_io *io, const struct wally_tx *tx)
+static void txio_hash_sha_sequences(cursor_io *io, const struct wally_tx *tx,
+                                    uint32_t key)
 {
-    if (!txio_hash_cached_item(io, TXIO_SHA_SEQUENCES)) {
+    if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_inputs; ++i)
             hash_le32(&ctx, tx->inputs[i].sequence);
-        txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_SEQUENCES);
+        txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
 
-static void txio_hash_sha_outputs(cursor_io *io, const struct wally_tx *tx)
+static void txio_hash_sha_outputs(cursor_io *io, const struct wally_tx *tx,
+                                  uint32_t key)
 {
-    if (!txio_hash_cached_item(io, TXIO_SHA_OUTPUTS)) {
+    if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_outputs; ++i) {
             hash_le64(&ctx, tx->outputs[i].satoshi);
             hash_varbuff(&ctx, tx->outputs[i].script, tx->outputs[i].script_len);
         }
-        txio_hash_sha256_ctx(io, &ctx, TXIO_SHA_OUTPUTS);
+        txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
 
@@ -446,20 +489,30 @@ static void txio_hash_outpoint(cursor_io *io, const struct wally_tx_input *txin)
 static void txio_hash_input(cursor_io *io,
                             const struct wally_tx *tx, size_t index,
                             const struct wally_map *scripts,
-                            const struct wally_map *values)
+                            const struct wally_map *values,
+                            const unsigned char *scriptcode, size_t scriptcode_len,
+                            uint32_t hash_type)
 {
-    hash_map_le64(&io->ctx, values, index);
-    hash_map_varbuff(&io->ctx, scripts, index);
+    if (hash_type == WALLY_SIGTYPE_SW_V0) {
+        hash_varbuff(&io->ctx, scriptcode, scriptcode_len);
+        hash_map_le64(&io->ctx, values, index);
+    } else {
+        /* Elements taproot hashing reverses the order, d'oh */
+        hash_map_le64(&io->ctx, values, index);
+        hash_map_varbuff(&io->ctx, scripts, index);
+    }
     hash_le32(&io->ctx, tx->inputs[index].sequence);
 }
 
-static void txio_hash_sha_single_output(cursor_io *io, const struct wally_tx_output *txout)
+static void txio_hash_sha_single_output(cursor_io *io,
+                                        const struct wally_tx_output *txout,
+                                        uint32_t key)
 {
     struct sha256_ctx ctx;
     sha256_init(&ctx);
     hash_le64(&ctx, txout->satoshi);
     hash_varbuff(&ctx, txout->script, txout->script_len);
-    txio_hash_sha256_ctx(io, &ctx, TXIO_UNCACHED);
+    txio_hash_sha256_ctx(io, &ctx, key);
 }
 
 static void txio_hash_annex(cursor_io *io,
@@ -548,17 +601,16 @@ static int bip341_signature_hash(
     const unsigned char *genesis_blockhash, size_t genesis_blockhash_len,
     uint32_t sighash,
     struct wally_map *cache,
+    bool is_elements,
     unsigned char *bytes_out, size_t len)
 {
     const struct wally_tx_input *txin = tx ? tx->inputs + index : NULL;
     const struct wally_tx_output *txout = tx ? tx->outputs + index : NULL;
-    size_t is_elements = 0;
     const uint32_t output_type = tr_get_output_sighash_type(sighash);
     const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
     const bool sh_anyprevout = bip341_is_input_hash_type(sighash, WALLY_SIGHASH_ANYPREVOUT);
     const bool sh_anyprevout_anyscript = bip341_is_input_hash_type(sighash, WALLY_SIGHASH_ANYPREVOUTANYSCRIPT);
     cursor_io io;
-    int ret = WALLY_OK;
 
     if (!tx || index >= tx->num_inputs ||
         !values ||
@@ -570,10 +622,6 @@ static int bip341_signature_hash(
         !bytes_out || len != SHA256_LEN)
        return WALLY_EINVAL;
 
-#ifdef BUILD_ELEMENTS
-    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
-        return ret;
-#endif
     if (is_elements) {
         if (!genesis_blockhash)
            return WALLY_EINVAL;
@@ -645,7 +693,7 @@ static int bip341_signature_hash(
         txio_hash_sha_outpoint_flags(&io, tx);
 #endif
     if (!sh_anyonecanpay && !sh_anyprevout) {
-        txio_hash_sha_prevouts(&io, tx);
+        txio_hash_sha_prevouts(&io, tx, TXIO_SHA_PREVOUTS);
 #ifdef BUILD_ELEMENTS
         if (is_elements)
             txio_hash_sha_asset_amounts(&io, values, assets);
@@ -653,10 +701,10 @@ static int bip341_signature_hash(
 #endif
             txio_hash_sha_amounts(&io, values);
         txio_hash_sha_scriptpubkeys(&io, scripts);
-        txio_hash_sha_sequences(&io, tx);
+        txio_hash_sha_sequences(&io, tx, TXIO_SHA_SEQUENCES);
 #ifdef BUILD_ELEMENTS
         if (is_elements) {
-            txio_hash_sha_issuances(&io, tx);
+            txio_hash_sha_issuances(&io, tx, TXIO_SHA_ISSUANCES);
             txio_hash_sha_issuance_rangeproofs(&io, tx);
         }
 #endif
@@ -664,11 +712,11 @@ static int bip341_signature_hash(
     if (output_type == WALLY_SIGHASH_ALL) {
 #ifdef BUILD_ELEMENTS
         if (is_elements) {
-            txio_hash_sha_outputs_elements(&io, tx);
-            txio_hash_sha_output_witnesses(&io, tx);
+            txio_hash_sha_outputs_elements(&io, tx, TXIO_SHA_OUTPUTS);
+            txio_hash_sha_output_witnesses(&io, tx, TXIO_SHA_OUTPUT_WITNESSES);
         } else
 #endif
-            txio_hash_sha_outputs(&io, tx);
+            txio_hash_sha_outputs(&io, tx, TXIO_SHA_OUTPUTS);
     }
     /* Input data */
     hash_u8(&io.ctx, (tapleaf_script ? 1 : 0) * 2 + (annex ? 1 : 0)); /* spend_type */
@@ -682,10 +730,11 @@ static int bip341_signature_hash(
         }
 #ifdef BUILD_ELEMENTS
         if (is_elements)
-            txio_hash_input_elements(&io, tx, index, scripts, assets, values);
+            txio_hash_input_elements(&io, tx, index, scripts, assets, values,
+                                     NULL, 0, WALLY_SIGTYPE_SW_V1);
         else
 #endif
-            txio_hash_input(&io, tx, index, scripts, values);
+            txio_hash_input(&io, tx, index, scripts, values, NULL, 0, WALLY_SIGTYPE_SW_V1);
     } else if (sh_anyprevout_anyscript) {
         hash_le32(&io.ctx, tx->inputs[index].sequence); /* nSequence */
     } else {
@@ -698,11 +747,11 @@ static int bip341_signature_hash(
     if (output_type == WALLY_SIGHASH_SINGLE) {
 #ifdef BUILD_ELEMENTS
         if (is_elements) {
-            txio_hash_sha_single_output_elements(&io, txout);
-            txio_hash_sha_single_output_witness(&io, txout);
+            txio_hash_sha_single_output_elements(&io, txout, TXIO_UNCACHED);
+            txio_hash_sha_single_output_witness(&io, txout, TXIO_UNCACHED);
         } else
 #endif
-            txio_hash_sha_single_output(&io, txout);
+            txio_hash_sha_single_output(&io, txout, TXIO_UNCACHED);
     }
     /* Tapscript Extensions */
     if (tapleaf_script) {
@@ -711,10 +760,7 @@ static int bip341_signature_hash(
         hash_u8(&io.ctx, key_version & 0xff);
         hash_le32(&io.ctx, codesep_position);
     }
-    txio_done(&io);
-    if (io.max)
-        ret = WALLY_ERROR; /* Wrote the wrong number of bytes: should not happen! */
-    return ret;
+    return txio_done(&io, 0);
 }
 
 int wally_tx_get_input_signature_hash(
@@ -732,14 +778,26 @@ int wally_tx_get_input_signature_hash(
     struct wally_map *cache,
     unsigned char *bytes_out, size_t len)
 {
+    size_t is_elements = 0;
+    uint32_t sighash_type = flags & WALLY_SIGTYPE_MASK;
+    int ret = WALLY_EINVAL;
+
     if (!flags || (flags & ~SIGTYPE_ALL))
         return WALLY_EINVAL;
-    if (flags & WALLY_SIGTYPE_SW_V1)
+
+#ifdef BUILD_ELEMENTS
+    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
+        return ret;
+#endif
+
+    /* FIXME: Support segwit/pre-segwit hashing */
+    if (sighash_type == WALLY_SIGTYPE_SW_V1)
         return bip341_signature_hash(tx, index, scripts, assets, values,
                                      script, script_len,
                                      key_version, codesep_position,
                                      annex, annex_len,
                                      genesis_blockhash, genesis_blockhash_len,
-                                     sighash, cache, bytes_out, len);
-    return WALLY_ERROR; /* FIXME: Support segwit/pre-segwit hashing */
+                                     sighash, cache, is_elements,
+                                     bytes_out, len);
+    return ret;
 }
