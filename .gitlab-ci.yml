@@ -35,7 +35,7 @@ test_asan_ubsan_gcc:
     - ga
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - CC=gcc CFLAGS="-O2 -fsanitize=address -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static --disable-clear-tests --disable-asm
+    - CC=gcc CFLAGS="-O2 -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static --disable-clear-tests --disable-asm
     - sed -i 's/^PYTHON = /PYTHON = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
     - sed -i 's/^JAVA = /JAVA = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
