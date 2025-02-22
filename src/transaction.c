@@ -43,7 +43,6 @@ struct tx_serialize_opts
     const unsigned char *script;     /* scriptPubkey spent by the input we are signing */
     size_t script_len;               /* length of 'script' in bytes */
     uint64_t satoshi;                /* Amount of the input we are signing */
-    bool bip143;                     /* Serialize for BIP143 hash */
     const unsigned char *value;      /* Confidential value of the input we are signing */
     size_t value_len;                /* length of 'value' in bytes */
 };
@@ -1720,37 +1719,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
 
     if (opts) {
         if (flags & WALLY_TX_FLAG_USE_WITNESS)
-            return WALLY_ERROR; /* Segwit tx hashing uses bip143 opts member */
-
-        if (opts->bip143) {
-            size_t issuance_size, amount_size = sizeof(uint64_t);
-
-            *base_size = sizeof(uint32_t) + /* version */
-                         SHA256_LEN + /* hash prevouts */
-                         SHA256_LEN + /* hash sequence */
-                         WALLY_TXHASH_LEN + sizeof(uint32_t) + /* outpoint + index */
-                         varbuff_get_length(opts->script_len) + /* script */
-                         sizeof(uint32_t) + /* input sequence */
-                         SHA256_LEN + /* hash outputs */
-                         (sh_rangeproof ? SHA256_LEN : 0) + /* rangeproof */
-                         sizeof(uint32_t) + /* nlocktime */
-                         sizeof(uint32_t); /* tx sighash */
-
-            if (is_elements) {
-                /* Amount, possibly blinded */
-                if (!(amount_size = confidential_value_length_from_bytes(opts->value)))
-                    return WALLY_EINVAL;
-                amount_size += SHA256_LEN; /* TODO: Comment what this represents */
-            }
-            *base_size += amount_size;
-
-            if (get_txin_issuance_size(tx->inputs + opts->index,
-                                       &issuance_size, NULL) != WALLY_OK)
-                return WALLY_EINVAL;
-            *base_size += issuance_size;
-            *witness_size = 0;
-            return WALLY_OK;
-        }
+            return WALLY_ERROR; /* Segwit tx hashing done elsewhere */
     }
 
     if ((flags & ~WALLY_TX_ALL_FLAGS) ||
@@ -2048,233 +2017,6 @@ int wally_tx_get_hash_prevouts(const struct wally_tx *tx,
     return hash_prevouts(buff_p, inputs_size, bytes_out, len, inputs_size > sizeof(buff));
 }
 
-static int tx_to_bip143_bytes(const struct wally_tx *tx,
-                              const struct tx_serialize_opts *opts,
-                              uint32_t flags,
-                              unsigned char *bytes_out, size_t len,
-                              size_t *written)
-{
-    unsigned char buff[TX_STACK_SIZE / 2], *buff_p = buff;
-    size_t i, inputs_size, outputs_size, rangeproof_size = 0, issuances_size = 0, buff_len = sizeof(buff);
-    size_t is_elements = 0;
-    const unsigned char sighash = opts->sighash;
-    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
-    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
-    unsigned char *p = bytes_out, *output_p;
-    int ret = WALLY_OK;
-
-    (void)flags;
-    (void)len;
-    (void)sh_rangeproof;
-
-#ifdef BUILD_ELEMENTS
-    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
-        return ret;
-#endif
-
-    /* Note we assume tx_to_bytes has already validated all inputs */
-    p += uint32_to_le_bytes(tx->version, p);
-
-    inputs_size = tx->num_inputs * (WALLY_TXHASH_LEN + sizeof(uint32_t));
-    if (sh_none || (sh_single && opts->index >= tx->num_outputs))
-        outputs_size = 0;
-    else if (sh_single) {
-        const struct wally_tx_output *output = tx->outputs + opts->index;
-        size_t wit_size = 0, *wit_p = sh_rangeproof ? &wit_size : NULL;
-        outputs_size = txout_get_serialized_len(output, is_elements, wit_p);
-        if (!outputs_size)
-            goto error; /* Error getting txout length */
-        rangeproof_size += wit_size;
-    } else {
-        outputs_size = 0;
-        for (i = 0; i < tx->num_outputs; ++i) {
-            const struct wally_tx_output *output = tx->outputs + i;
-            size_t wit_size = 0, *wit_p = sh_rangeproof ? &wit_size : NULL;
-            size_t n = txout_get_serialized_len(output, is_elements, wit_p);
-            if (!n)
-                goto error; /* Error getting txout length */
-            outputs_size += n;
-            rangeproof_size += wit_size;
-        }
-    }
-
-#ifdef BUILD_ELEMENTS
-    if (is_elements && !sh_anyonecanpay) {
-        for (i = 0; i < tx->num_inputs; ++i) {
-            if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
-                size_t issuance_size;
-                if (get_txin_issuance_size(tx->inputs + i,
-                                           &issuance_size, NULL) != WALLY_OK)
-                    return WALLY_EINVAL;
-                issuances_size += issuance_size;
-            } else
-                issuances_size += 1;
-        }
-    }
-#endif /* BUILD_ELEMENTS */
-
-    if (inputs_size > buff_len || outputs_size > buff_len ||
-        rangeproof_size > buff_len || issuances_size > buff_len) {
-        buff_len = inputs_size > outputs_size ? inputs_size : outputs_size;
-        buff_len = buff_len > rangeproof_size ? buff_len : rangeproof_size;
-        buff_len = buff_len > issuances_size ? buff_len : issuances_size;
-        buff_p = wally_malloc(buff_len);
-        if (buff_p == NULL)
-            return WALLY_ENOMEM;
-    }
-
-    /* Inputs */
-    if (sh_anyonecanpay)
-        memset(p, 0, SHA256_LEN);
-    else {
-        for (i = 0; i < tx->num_inputs; ++i) {
-            unsigned char *tmp_p = buff_p + i * (WALLY_TXHASH_LEN + sizeof(uint32_t));
-            memcpy(tmp_p, tx->inputs[i].txhash, WALLY_TXHASH_LEN);
-            uint32_to_le_bytes(tx->inputs[i].index, tmp_p + WALLY_TXHASH_LEN);
-        }
-
-        if ((ret = wally_sha256d(buff_p, inputs_size, p, SHA256_LEN)) != WALLY_OK)
-            goto error;
-    }
-    p += SHA256_LEN;
-
-    /* Sequences */
-    if (sh_anyonecanpay || sh_single || sh_none)
-        memset(p, 0, SHA256_LEN);
-    else {
-        for (i = 0; i < tx->num_inputs; ++i)
-            uint32_to_le_bytes(tx->inputs[i].sequence, buff_p + i * sizeof(uint32_t));
-
-        ret = wally_sha256d(buff_p, tx->num_inputs * sizeof(uint32_t), p, SHA256_LEN);
-        if (ret != WALLY_OK)
-            goto error;
-    }
-    p += SHA256_LEN;
-
-#ifdef BUILD_ELEMENTS
-    if (is_elements) {
-        /* sha_issuances */
-        if (sh_anyonecanpay)
-            memset(p, 0, SHA256_LEN);
-        else {
-            unsigned char *tmp_p = buff_p;
-            for (i = 0; i < tx->num_inputs; ++i) {
-                if (tx->inputs[i].features & WALLY_TX_IS_ISSUANCE) {
-                    memcpy(tmp_p, tx->inputs[i].blinding_nonce, SHA256_LEN);
-                    tmp_p += SHA256_LEN;
-                    memcpy(tmp_p, tx->inputs[i].entropy, SHA256_LEN);
-                    tmp_p += SHA256_LEN;
-                    tmp_p += confidential_value_to_bytes(tx->inputs[i].issuance_amount,
-                                                         tx->inputs[i].issuance_amount_len, tmp_p);
-                    tmp_p += confidential_value_to_bytes(tx->inputs[i].inflation_keys,
-                                                         tx->inputs[i].inflation_keys_len, tmp_p);
-                }
-                else
-                    *tmp_p++ = 0;
-            }
-
-            if ((ret = wally_sha256d(buff_p, issuances_size, p, SHA256_LEN)) != WALLY_OK)
-                goto error;
-        }
-        p += SHA256_LEN;
-    }
-#endif /* BUILD_ELEMENTS */
-
-    /* Input details */
-    memcpy(p, tx->inputs[opts->index].txhash, WALLY_TXHASH_LEN);
-    p += WALLY_TXHASH_LEN;
-    p += uint32_to_le_bytes(tx->inputs[opts->index].index, p);
-    p += varbuff_to_bytes(opts->script, opts->script_len, p);
-    if (!is_elements)
-        p += uint64_to_le_bytes(opts->satoshi, p);
-#ifdef BUILD_ELEMENTS
-    else
-        p += confidential_value_to_bytes(opts->value, opts->value_len, p);
-#endif
-    p += uint32_to_le_bytes(tx->inputs[opts->index].sequence, p);
-
-#ifdef BUILD_ELEMENTS
-    if (is_elements && (tx->inputs[opts->index].features & WALLY_TX_IS_ISSUANCE)) {
-        memcpy(p, tx->inputs[opts->index].blinding_nonce, SHA256_LEN);
-        p += SHA256_LEN;
-        memcpy(p, tx->inputs[opts->index].entropy, SHA256_LEN);
-        p += SHA256_LEN;
-        p += confidential_value_to_bytes(tx->inputs[opts->index].issuance_amount,
-                                         tx->inputs[opts->index].issuance_amount_len, p);
-        p += confidential_value_to_bytes(tx->inputs[opts->index].inflation_keys,
-                                         tx->inputs[opts->index].inflation_keys_len, p);
-    }
-#endif
-
-    /* Outputs */
-    if (sh_none || (sh_single && opts->index >= tx->num_outputs))
-        memset(p, 0, SHA256_LEN);
-    else {
-        output_p = buff_p;
-        for (i = 0; i < tx->num_outputs; ++i) {
-            if (sh_single && i != opts->index)
-                continue;
-            if (!is_elements)
-                output_p += uint64_to_le_bytes(tx->outputs[i].satoshi, output_p);
-#ifdef BUILD_ELEMENTS
-            else {
-                output_p += confidential_value_to_bytes(tx->outputs[i].asset, tx->outputs[i].asset_len,
-                                                        output_p);
-                output_p += confidential_value_to_bytes(tx->outputs[i].value, tx->outputs[i].value_len,
-                                                        output_p);
-                output_p += confidential_value_to_bytes(tx->outputs[i].nonce, tx->outputs[i].nonce_len,
-                                                        output_p);
-            }
-#endif
-            output_p += varbuff_to_bytes(tx->outputs[i].script,
-                                         tx->outputs[i].script_len, output_p);
-        }
-
-        ret = wally_sha256d(buff_p, outputs_size, p, SHA256_LEN);
-        if (ret != WALLY_OK)
-            goto error;
-    }
-    p += SHA256_LEN;
-
-    /* rangeproof */
-#ifdef BUILD_ELEMENTS
-    if (is_elements && sh_rangeproof) {
-        if (sh_none || (sh_single && opts->index >= tx->num_outputs))
-            memset(p, 0, SHA256_LEN);
-        else {
-            output_p = buff_p;
-            for (i = 0; i < tx->num_outputs; ++i) {
-                if (sh_single && i != opts->index)
-                    continue;
-                output_p += varbuff_to_bytes(tx->outputs[i].rangeproof,
-                                             tx->outputs[i].rangeproof_len, output_p);
-                output_p += varbuff_to_bytes(tx->outputs[i].surjectionproof,
-                                             tx->outputs[i].surjectionproof_len, output_p);
-            }
-            ret = wally_sha256d(buff_p, rangeproof_size, p, SHA256_LEN);
-            if (ret != WALLY_OK)
-                goto error;
-        }
-        p += SHA256_LEN;
-    }
-#endif
-
-    /* nlocktime and sighash*/
-    p += uint32_to_le_bytes(tx->locktime, p);
-    p += uint32_to_le_bytes(opts->tx_sighash, p);
-
-    *written = p - bytes_out;
-
-error:
-    if (buff_p != buff)
-        clear_and_free(buff_p, buff_len);
-    else
-        wally_clear(buff, sizeof(buff));
-    return ret;
-}
-
 static int tx_to_bytes(const struct wally_tx *tx,
                        const struct tx_serialize_opts *opts,
                        uint32_t flags,
@@ -2323,9 +2065,6 @@ static int tx_to_bytes(const struct wally_tx *tx,
         *written = n;
         return WALLY_OK;
     }
-
-    if (opts && opts->bip143)
-        return tx_to_bip143_bytes(tx, opts, flags, bytes_out, len, written);
 
     if (flags & WALLY_TX_FLAG_USE_WITNESS) {
         if (wally_tx_get_witness_count(tx, &witness_count) != WALLY_OK)
@@ -2993,14 +2732,41 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
                                  uint32_t sighash, uint32_t tx_sighash, uint32_t flags,
                                  unsigned char *bytes_out, size_t len)
 {
+    size_t is_elements = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
+        return WALLY_EINVAL;
+#endif
+
+    if (extra || extra_len || extra_offset)
+        return WALLY_ERROR; /* Not implemented, not planned  */
+
+    if (flags & WALLY_TX_FLAG_USE_WITNESS) {
+        struct wally_map_item value_item;
+        struct wally_map values = { &value_item, 1, 1, NULL };
+        values.items[0].key = NULL;
+        values.items[0].key_len = index;
+        if (is_elements) {
+            value_item.value = (unsigned char*)value;
+            value_item.value_len = value_len;
+        } else {
+            value_item.value = (unsigned char*)&satoshi;
+            value_item.value_len = sizeof(uint64_t);
+        }
+        return wally_tx_get_input_signature_hash(tx, index, NULL, NULL,
+                                                 &values, script, script_len,
+                                                 0, WALLY_NO_CODESEPARATOR,
+                                                 NULL, 0, NULL, 0,
+                                                 sighash, WALLY_SIGTYPE_SW_V0,
+                                                 NULL, bytes_out, len);
+    } else {
     unsigned char buff[TX_STACK_SIZE], *buff_p = buff;
     size_t n, n2;
-    size_t is_elements = 0;
-    const bool is_bip143 = (flags & WALLY_TX_FLAG_USE_WITNESS) ? true : false;
     int ret;
     const struct tx_serialize_opts opts = {
         sighash, tx_sighash, index, script, script_len, satoshi,
-        is_bip143, value, value_len
+        value, value_len
     };
 
     if (!is_valid_tx(tx) || BYTES_INVALID(script, script_len) ||
@@ -3009,22 +2775,12 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
         (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || len < SHA256_LEN)
         return WALLY_EINVAL;
 
-    if (extra || extra_len || extra_offset)
-        return WALLY_ERROR; /* FIXME: Not implemented yet */
-
     if (index >= tx->num_inputs ||
         (index >= tx->num_outputs && (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)) {
-        if (!(flags & WALLY_TX_FLAG_USE_WITNESS)) {
-            memset(bytes_out, 0, SHA256_LEN);
-            bytes_out[0] = 0x1;
-            return WALLY_OK;
-        }
+        memset(bytes_out, 0, SHA256_LEN);
+        bytes_out[0] = 0x1;
+        return WALLY_OK;
     }
-
-#ifdef BUILD_ELEMENTS
-    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
-        goto fail;
-#endif
 
     if ((ret = tx_get_length(tx, &opts, 0, &n, is_elements != 0)) != WALLY_OK)
         goto fail;
@@ -3048,6 +2804,7 @@ fail:
     else
         wally_clear(buff, sizeof(buff));
     return ret;
+}
 }
 
 int wally_tx_get_signature_hash(const struct wally_tx *tx,
