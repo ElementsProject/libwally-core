@@ -37,6 +37,8 @@
 #define TXIO_SHA_OUTPUT_WITNESSES_D   (TXIO_SHA_OUTPUTS | TXIO_SHA256_D)
 /* ... end of segwit cached data */
 
+static const unsigned char zero_hash[SHA256_LEN];
+
 /* SHA256(TapSighash) */
 static const unsigned char TAPSIGHASH_SHA256[SHA256_LEN] = {
     0xf4, 0x0a, 0x48, 0xdf, 0x4b, 0x2a, 0x70, 0xc8, 0xb4, 0x92, 0x4b, 0xf2, 0x65, 0x46, 0x61, 0xed,
@@ -555,6 +557,107 @@ static void txio_hash_tapleaf_hash(cursor_io *io,
     }
 }
 
+/* BIP 143 */
+static int bip143_signature_hash(
+    const struct wally_tx *tx, size_t index,
+    const struct wally_map *values,
+    const unsigned char *scriptcode, size_t scriptcode_len,
+    uint32_t sighash,
+    struct wally_map *cache,
+    bool is_elements,
+    unsigned char *bytes_out, size_t len)
+{
+    const struct wally_tx_input *txin = tx ? tx->inputs + index : NULL;
+    const struct wally_tx_output *txout = tx ? tx->outputs + index : NULL;
+    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+#ifdef BUILD_ELEMENTS
+    const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
+#endif
+    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    cursor_io io;
+
+    /* Note that scriptcode can be empty, so we don't check it here */
+    if (!tx || !values || BYTES_INVALID(scriptcode, scriptcode_len) ||
+        sighash & 0xffffff00)
+        return WALLY_EINVAL;
+
+    {
+        /* Validate input values: We must have the value at 'index'. */
+        bool (*value_len_fn)(size_t) = is_elements ? value_len_ok : satoshi_len_ok;
+        if (!map_has_one(values, index, value_len_fn))
+            return WALLY_EINVAL;
+    }
+
+    /* Init */
+    io.cache = cache;
+    io.cursor = bytes_out;
+    io.max = len;
+    sha256_init(&io.ctx);
+    /* Tx data */
+    hash_le32(&io.ctx, tx->version);
+    if (sh_anyonecanpay)
+        hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
+    else
+        txio_hash_sha_prevouts(&io, tx, TXIO_SHA_PREVOUTS_D);
+    if (sh_anyonecanpay || sh_single || sh_none)
+        hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
+    else
+        txio_hash_sha_sequences(&io, tx, TXIO_SHA_SEQUENCES_D);
+#ifdef BUILD_ELEMENTS
+    if (is_elements) {
+        if (sh_anyonecanpay)
+            hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
+        else
+            txio_hash_sha_issuances(&io, tx, TXIO_SHA_ISSUANCES_D);
+    }
+#endif
+    /* Input data */
+    txio_hash_outpoint(&io, txin);
+#ifdef BUILD_ELEMENTS
+    if (is_elements)
+        txio_hash_input_elements(&io, tx, index, NULL, NULL, values,
+                                 scriptcode, scriptcode_len, WALLY_SIGTYPE_SW_V0);
+    else
+#endif
+        txio_hash_input(&io, tx, index, NULL, values,
+                        scriptcode, scriptcode_len, WALLY_SIGTYPE_SW_V0);
+
+    /* Output data */
+    if (sh_none || (sh_single && index >= tx->num_outputs))
+        hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
+    else if (sh_single) {
+#ifdef BUILD_ELEMENTS
+        if (is_elements)
+            txio_hash_sha_single_output_elements(&io, txout, TXIO_UNCACHED_D);
+        else
+#endif
+            txio_hash_sha_single_output(&io, txout, TXIO_UNCACHED_D);
+    } else {
+#ifdef BUILD_ELEMENTS
+        if (is_elements)
+            txio_hash_sha_outputs_elements(&io, tx, TXIO_SHA_OUTPUTS_D);
+        else
+#endif
+            txio_hash_sha_outputs(&io, tx, TXIO_SHA_OUTPUTS_D);
+    }
+
+#ifdef BUILD_ELEMENTS
+    if (sh_rangeproof) {
+        if (sh_none || (sh_single && index >= tx->num_outputs))
+            hash_bytes(&io.ctx, zero_hash, sizeof(zero_hash));
+        else if (sh_single)
+            txio_hash_sha_single_output_witness(&io, txout, TXIO_UNCACHED_D);
+        else
+            txio_hash_sha_output_witnesses(&io, tx, TXIO_SHA_OUTPUT_WITNESSES_D);
+    }
+#endif
+
+    hash_le32(&io.ctx, tx->locktime);
+    hash_le32(&io.ctx, sighash);
+    return txio_done(&io, TXIO_SHA256_D);
+}
+
 /* BIP 341 */
 static void txio_bip341_init(cursor_io *io,
                              const unsigned char *genesis_blockhash, size_t genesis_blockhash_len)
@@ -612,18 +715,12 @@ static int bip341_signature_hash(
     const bool sh_anyprevout_anyscript = bip341_is_input_hash_type(sighash, WALLY_SIGHASH_ANYPREVOUTANYSCRIPT);
     cursor_io io;
 
-    if (!tx || index >= tx->num_inputs ||
-        !values ||
-        BYTES_INVALID(tapleaf_script, tapleaf_script_len) ||
-        key_version > 1 ||
-        codesep_position != WALLY_NO_CODESEPARATOR || /* TODO: Add support */
-        BYTES_INVALID(annex, annex_len) || (annex && *annex != 0x50) ||
-        BYTES_INVALID_N(genesis_blockhash, genesis_blockhash_len, SHA256_LEN) ||
-        !bytes_out || len != SHA256_LEN)
-       return WALLY_EINVAL;
+    if (index >= tx->num_inputs || (annex && *annex != 0x50))
+        return WALLY_EINVAL;
 
     if (is_elements) {
-        if (!genesis_blockhash)
+        if (!genesis_blockhash ||
+            mem_is_zero(genesis_blockhash, genesis_blockhash_len))
            return WALLY_EINVAL;
     } else {
         genesis_blockhash = NULL;
@@ -651,30 +748,6 @@ static int bip341_signature_hash(
         item = wally_map_get_integer(scripts, index);
         if (!scriptpubkey_is_p2tr(item->value, item->value_len))
             return WALLY_EINVAL;
-    }
-
-    switch (sighash) {
-        case WALLY_SIGHASH_DEFAULT:
-        case WALLY_SIGHASH_ALL:
-        case WALLY_SIGHASH_NONE:
-        case WALLY_SIGHASH_SINGLE:
-        case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYONECANPAY:
-        case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYONECANPAY:
-        case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYONECANPAY:
-            break; /* Always valid */
-        case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYPREVOUT:
-        case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYPREVOUT:
-        case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYPREVOUT:
-        case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
-        case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
-        case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
-            if (key_version != 1)
-                return WALLY_EINVAL; /* Only valid for key_version 1 */
-            if (is_elements)
-                return WALLY_ERROR; /* Elements: unsure of Activation status/no ELIP */
-            break;
-        default:
-            return WALLY_EINVAL; /* Unknown sighash type */
     }
 
     /* Init */
@@ -782,7 +855,12 @@ int wally_tx_get_input_signature_hash(
     uint32_t sighash_type = flags & WALLY_SIGTYPE_MASK;
     int ret = WALLY_EINVAL;
 
-    if (!flags || (flags & ~SIGTYPE_ALL))
+    if (!tx || !tx->num_inputs || !tx->num_outputs || !values ||
+        BYTES_INVALID(script, script_len) || key_version > 1 ||
+        codesep_position != WALLY_NO_CODESEPARATOR || /* TODO: Add support */
+        BYTES_INVALID(annex, annex_len) ||
+        BYTES_INVALID_N(genesis_blockhash, genesis_blockhash_len, SHA256_LEN) ||
+        !flags || (flags & ~SIGTYPE_ALL) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
 #ifdef BUILD_ELEMENTS
@@ -790,7 +868,45 @@ int wally_tx_get_input_signature_hash(
         return ret;
 #endif
 
-    /* FIXME: Support segwit/pre-segwit hashing */
+    switch (sighash) {
+        case WALLY_SIGHASH_DEFAULT:
+#if 0
+            /* TODO: The previous impl allows a sighash of 0 for
+             * pre-segwit/segwit v0 txs. We should probably disallow this.
+             */
+            if (sighash_type != WALLY_SIGTYPE_SW_V1)
+                return WALLY_EINVAL; /* Only valid for taproot */
+            break;
+#endif
+        case WALLY_SIGHASH_ALL:
+        case WALLY_SIGHASH_NONE:
+        case WALLY_SIGHASH_SINGLE:
+        case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYONECANPAY:
+        case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYONECANPAY:
+        case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYONECANPAY:
+            break; /* Always valid */
+        case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYPREVOUT:
+        case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYPREVOUT:
+        case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYPREVOUT:
+        case WALLY_SIGHASH_ALL | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
+        case WALLY_SIGHASH_NONE | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
+        case WALLY_SIGHASH_SINGLE | WALLY_SIGHASH_ANYPREVOUT | WALLY_SIGHASH_ANYONECANPAY:
+            if (sighash_type != WALLY_SIGTYPE_SW_V1 || key_version != 1)
+                return WALLY_EINVAL; /* Only valid for taproot key version 1 */
+            if (is_elements) {
+                /* Activation status unclear and no ELIP: disallow for now */
+                return WALLY_ERROR;
+            }
+            break;
+        default:
+            return WALLY_EINVAL; /* Unknown sighash type */
+    }
+
+    /* FIXME: Support pre-segwit hashing */
+    if (sighash_type == WALLY_SIGTYPE_SW_V0)
+        return bip143_signature_hash(tx, index, values, script, script_len,
+                                     sighash, cache, is_elements,
+                                     bytes_out, len);
     if (sighash_type == WALLY_SIGTYPE_SW_V1)
         return bip341_signature_hash(tx, index, scripts, assets, values,
                                      script, script_len,
