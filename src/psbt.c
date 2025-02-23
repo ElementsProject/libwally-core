@@ -4494,8 +4494,10 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
     size_t is_pset;
-    uint32_t sighash, sig_flags;
+    uint32_t sighash;
     const bool is_taproot = is_taproot_input(psbt, inp);
+    /* FIXME: Determine segwitness in a smarter way (e.g. prevout script */
+    const bool is_segwit = inp->witness_utxo != NULL;
     int ret;
 
     if (!tx || !inp || !utxo || flags)
@@ -4514,22 +4516,24 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     else if (sighash & 0xffffff00)
         return WALLY_EINVAL;
 
-    if (is_taproot) {
+    if (is_taproot || is_segwit) {
         struct wally_map scripts, assets, values;
         struct wally_map *assets_p = is_pset ? &assets : NULL;
 
-#ifdef BUILD_ELEMENTS
-        if (is_pset && mem_is_zero(psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash)))
-            return WALLY_EINVAL; /* Genesis blockhash is required for taproot */
-#endif
+        if (is_taproot) {
+            /* FIXME: Support script path spends */
+            script = NULL;
+            script_len = 0;
+        }
         ret = get_signing_data(psbt, &scripts, assets_p, &values);
         if (ret == WALLY_OK)
             ret = wally_tx_get_input_signature_hash(tx, index,
                     &scripts, assets_p, &values,
-                    NULL, 0, 0, WALLY_NO_CODESEPARATOR,
-                    NULL, 0,
+                    script, script_len,
+                    0, WALLY_NO_CODESEPARATOR, NULL, 0,
                     psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
-                    sighash, WALLY_SIGTYPE_SW_V1,
+                    sighash,
+                    is_taproot ? WALLY_SIGTYPE_SW_V1 : WALLY_SIGTYPE_SW_V0,
                     psbt->signing_cache, bytes_out, len);
 
         wally_free(scripts.items); /* No need to clear the value pointers */
@@ -4539,18 +4543,16 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
         return ret;
     }
 
-    sig_flags = inp->witness_utxo ? WALLY_TX_FLAG_USE_WITNESS : 0;
-
 #ifdef BUILD_ELEMENTS
     if (is_pset)
         return wally_tx_get_elements_signature_hash(tx, index,
                                                     script, script_len,
                                                     utxo->value, utxo->value_len,
-                                                    sighash, sig_flags, bytes_out,
+                                                    sighash, 0, bytes_out,
                                                     len);
 #endif
     return wally_tx_get_btc_signature_hash(tx, index, script, script_len,
-                                           utxo->satoshi, sighash, sig_flags,
+                                           utxo->satoshi, sighash, 0,
                                            bytes_out, len);
 }
 
