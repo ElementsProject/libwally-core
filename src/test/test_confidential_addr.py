@@ -51,6 +51,8 @@ segwit_valid_cases = [
 class CATests(unittest.TestCase):
 
     def test_master_blinding_key(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
 
         # from Trezor firmware code
         class Slip21Node:
@@ -102,6 +104,8 @@ class CATests(unittest.TestCase):
 
     def test_confidential_addr(self):
         """Tests for confidential addresses"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
 
         # The (Liquid) address that is to be blinded
         addr = 'Q7qcjTLsYGoMA7TjUp97R6E6AM5VKqBik6'
@@ -128,6 +132,8 @@ class CATests(unittest.TestCase):
 
     def test_confidential_addr_segwit(self):
         """Tests for confidential segwit addresses"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
 
         for addr, conf_key, conf_addr in segwit_valid_cases:
             conf_key, conf_key_len = make_cbuffer(conf_key)

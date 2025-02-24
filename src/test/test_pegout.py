@@ -83,12 +83,17 @@ class PegoutTests(unittest.TestCase):
         return pegout_script, pegout_script_len
 
     def test_pegout(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         op_return_data = '6a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f1976a91420f2d8c7514c601984fffee90f988f33bd87f96f88ac2103c58ebf2840c9321e42e1859a387d42cc78241048f81ce9c911bd57b240139e9741013996e9eca65e06b3deda77fdc19b3476cd83af3ae8f543647a52b097558c33878752c52536c493ea00d446159009ce484795287aca1de8aaa52d6064b5960caa'
         buf, buf_len = make_cbuffer('00'*int(len(op_return_data)/2))
         ret, written = wally_hex_to_bytes(utf8(op_return_data), buf, buf_len)
         self.assertEqual(buf, self.generate_pegout_script()[0])
 
     def test_pegout_tx(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
         tx_hex = "02000000010111b13a9bc2833fcfddb53086fffb3cf7ff1c13948c876d9bd15df872f5fdefca0000000017160014355347fd5b11a57cddd5e1576fb38280a0627cf7fdffffff030125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000174876e80000a06a2006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f1976a91420f2d8c7514c601984fffee90f988f33bd87f96f88ac2103c58ebf2840c9321e42e1859a387d42cc78241048f81ce9c911bd57b240139e9741013996e9eca65e06b3deda77fdc19b3476cd83af3ae8f543647a52b097558c33878752c52536c493ea00d446159009ce484795287aca1de8aaa52d6064b5960caa0125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a010007751ecdd907a20017a9140fbb8e55216381f7c4e7124eaa9070d8e8dc92c7870125b251070e29ca19043cf33ccd7324e2ddab03ecc4ae0b5e77c4fc0e5cf6c95a01000000000000105e0000000000000000024730440220029550293885a772c04c2a462b0afc7d9dd03d0286d37e1273d60a64b333875e0220626baf165c2ba70d5ce202bf6d2212a0bab83b457188a52db67d5ce396601d5001210324a1cbd388173f0c72616a0c8fe363daf9c016a157b14aa1dabf6d19b85df95c00000000000000"
         asset, asset_len =  make_cbuffer('5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225')
         txhash, txhash_len = make_cbuffer('caeffdf572f85dd19b6d878c94131cfff73cfbff8630b5ddcf3f83c29b3ab111')
@@ -125,6 +130,4 @@ class PegoutTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    _, val = wally_is_elements_build()
-    if val != 0:
-        unittest.main()
+    unittest.main()

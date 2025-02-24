@@ -28,6 +28,9 @@ UNBLINDED_VBF, UNBLINDED_VBF_LEN = make_cbuffer('51f109e34d0282b6efac36d11813106
 class ElementsTests(unittest.TestCase):
 
     def test_asset_unblind(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         asset_out, _ = make_cbuffer('00' * 32)
         abf_out, _ = make_cbuffer('00' * 32)
         vbf_out, _ = make_cbuffer('00' * 32)
@@ -48,6 +51,9 @@ class ElementsTests(unittest.TestCase):
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
     def test_asset_unblind_with_nonce(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         out_nonce_hash, _ = make_cbuffer('00'*32)
         ret = wally_ecdh_nonce_hash(UNBLIND_SENDER_PK, UNBLIND_SENDER_PK_LEN,
                                     UNBLIND_OUR_SK, UNBLIND_OUR_SK_LEN,
@@ -82,6 +88,9 @@ class ElementsTests(unittest.TestCase):
                          (WALLY_OK, 80000000, UNBLINDED_ASSET, UNBLINDED_ABF, UNBLINDED_VBF))
 
     def test_asset_generator_from_bytes(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         generator, generator_len = make_cbuffer('00' * 33)
 
         # Blind the unblinded asset with its blinding factor
@@ -111,6 +120,9 @@ class ElementsTests(unittest.TestCase):
         self.assertEqual((ret, generator), (WALLY_OK, expected))
 
     def test_blinding(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         value = 80000000
 
         # asset_value_commitment
@@ -209,6 +221,9 @@ class ElementsTests(unittest.TestCase):
         self.assertEqual(wally_ec_scalar_verify(offset, offset_len), WALLY_OK)
 
     def test_deterministic_blinding_factors(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         # Test vector from:
         # https://github.com/Blockstream/Jade/blob/master/test_data/liquid_txn_ledger_compare.json
         with open(root_dir + 'src/data/liquid_txn_ledger_compare.json', 'r') as f:
@@ -242,6 +257,9 @@ class ElementsTests(unittest.TestCase):
                 self.assertEqual(h(out[:o_len]), utf8(expected))
 
     def test_elements_tx_weights(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
         # Test the elements weight discount
         with open(root_dir + 'src/data/elip200_vectors.json', 'r') as f:
             JSON = json.load(f)
@@ -255,6 +273,4 @@ class ElementsTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    _, val = wally_is_elements_build()
-    if val != 0:
-        unittest.main()
+    unittest.main()
