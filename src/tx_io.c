@@ -38,6 +38,9 @@
 /* ... end of segwit cached data */
 
 static const unsigned char zero_hash[SHA256_LEN];
+static const unsigned char EMPTY_PRE_SW_OUTPUT[9] = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
+};
 
 /* SHA256(TapSighash) */
 static const unsigned char TAPSIGHASH_SHA256[SHA256_LEN] = {
@@ -567,6 +570,92 @@ static void txio_hash_tapleaf_hash(cursor_io *io,
     }
 }
 
+/* Pre-segwit */
+static int legacy_signature_hash(
+    const struct wally_tx *tx, size_t index,
+    const struct wally_map *values,
+    const unsigned char *script, size_t script_len,
+    uint32_t sighash,
+    struct wally_map *cache,
+    bool is_elements,
+    unsigned char *bytes_out, size_t len)
+{
+    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
+    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
+    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
+    cursor_io io;
+
+    /* Note that script can be empty, so we don't check it here */
+    if (!tx || !values || BYTES_INVALID(script, script_len) ||
+        !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+    if (index >= tx->num_inputs || (sh_single  && index >= tx->num_outputs)) {
+        memset(bytes_out, 0, SHA256_LEN);
+        bytes_out[0] = 0x1;
+        return WALLY_OK;
+    }
+
+    /* Init */
+    io.cache = cache;
+    io.cursor = bytes_out;
+    io.max = len;
+    sha256_init(&io.ctx);
+    /* Tx data */
+    hash_le32(&io.ctx, tx->version);
+    /* Input data */
+    hash_varint(&io.ctx, sh_anyonecanpay ? 1 : tx->num_inputs);
+    for (size_t i = 0; i < tx->num_inputs; ++i) {
+        const struct wally_tx_input *txin = tx->inputs + i;
+        if (sh_anyonecanpay && i != index)
+            continue; /* sh_anyonecanpay only signs the given index */
+
+        hash_outpoint(&io.ctx, txin);
+        if (i == index)
+            hash_varbuff(&io.ctx, script, script_len);
+        else
+            hash_u8(&io.ctx, 0); /* Blank scripts for non-signing inputs */
+
+        if ((sh_none || sh_single) && i != index)
+            hash_le32(&io.ctx, 0);
+        else
+            hash_le32(&io.ctx, txin->sequence);
+#ifdef BUILD_ELEMENTS
+        if (is_elements && txin->features & WALLY_TX_IS_ISSUANCE)
+            hash_asset_issuance(&io.ctx, txin);
+#endif
+    }
+
+    /* Output data */
+    if (sh_none)
+        hash_u8(&io.ctx, 0);
+    else {
+        size_t num_outputs = sh_single ? index + 1 : tx->num_outputs;
+        hash_varint(&io.ctx, num_outputs);
+
+        for (size_t i = 0; i < num_outputs; ++i) {
+            const struct wally_tx_output *txout = tx->outputs + i;
+            if (sh_single && i != index)
+                hash_bytes(&io.ctx,
+                           EMPTY_PRE_SW_OUTPUT, sizeof(EMPTY_PRE_SW_OUTPUT));
+            else {
+#ifdef BUILD_ELEMENTS
+                if (is_elements) {
+                    hash_output_elements(&io.ctx, txout);
+                    if (sighash & WALLY_SIGHASH_RANGEPROOF)
+                        hash_output_witness(&io.ctx, txout, TXIO_UNCACHED_D);
+                } else
+#endif
+                    hash_output(&io.ctx, txout);
+            }
+        }
+    }
+
+    hash_le32(&io.ctx, tx->locktime);
+    hash_le32(&io.ctx, sighash);
+    return txio_done(&io, TXIO_SHA256_D);
+}
+
 /* BIP 143 */
 static int bip143_signature_hash(
     const struct wally_tx *tx, size_t index,
@@ -912,7 +1001,10 @@ int wally_tx_get_input_signature_hash(
             return WALLY_EINVAL; /* Unknown sighash type */
     }
 
-    /* FIXME: Support pre-segwit hashing */
+    if (sighash_type == WALLY_SIGTYPE_PRE_SW)
+        return legacy_signature_hash(tx, index, values, script, script_len,
+                                     sighash, cache, is_elements,
+                                     bytes_out, len);
     if (sighash_type == WALLY_SIGTYPE_SW_V0)
         return bip143_signature_hash(tx, index, values, script, script_len,
                                      sighash, cache, is_elements,
@@ -925,5 +1017,5 @@ int wally_tx_get_input_signature_hash(
                                      genesis_blockhash, genesis_blockhash_len,
                                      sighash, cache, is_elements,
                                      bytes_out, len);
-    return ret;
+    return WALLY_EINVAL;
 }
