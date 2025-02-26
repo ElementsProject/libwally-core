@@ -2732,79 +2732,41 @@ static int tx_get_signature_hash(const struct wally_tx *tx,
                                  uint32_t sighash, uint32_t tx_sighash, uint32_t flags,
                                  unsigned char *bytes_out, size_t len)
 {
+    struct wally_map_item value_item;
+    struct wally_map values = { &value_item, 1, 1, NULL };
     size_t is_elements = 0;
+    uint32_t sighash_type = WALLY_SIGTYPE_PRE_SW;
 
 #ifdef BUILD_ELEMENTS
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 #endif
 
+    if (flags & ~WALLY_TX_ALL_FLAGS)
+        return WALLY_EINVAL;
+    if (sighash != tx_sighash)
+        return WALLY_EINVAL; /* Nonstandard tx sighash flags aren't supported  */
     if (extra || extra_len || extra_offset)
         return WALLY_ERROR; /* Not implemented, not planned  */
 
-    if (flags & WALLY_TX_FLAG_USE_WITNESS) {
-        struct wally_map_item value_item;
-        struct wally_map values = { &value_item, 1, 1, NULL };
-        values.items[0].key = NULL;
-        values.items[0].key_len = index;
-        if (is_elements) {
-            value_item.value = (unsigned char*)value;
-            value_item.value_len = value_len;
-        } else {
-            value_item.value = (unsigned char*)&satoshi;
-            value_item.value_len = sizeof(uint64_t);
-        }
-        return wally_tx_get_input_signature_hash(tx, index, NULL, NULL,
-                                                 &values, script, script_len,
-                                                 0, WALLY_NO_CODESEPARATOR,
-                                                 NULL, 0, NULL, 0,
-                                                 sighash, WALLY_SIGTYPE_SW_V0,
-                                                 NULL, bytes_out, len);
+    if (flags & WALLY_TX_FLAG_USE_WITNESS)
+        sighash_type = WALLY_SIGTYPE_SW_V0;
+
+    values.items[0].key = NULL;
+    values.items[0].key_len = index;
+    if (is_elements) {
+        value_item.value = (unsigned char*)value;
+        value_item.value_len = value_len;
     } else {
-    unsigned char buff[TX_STACK_SIZE], *buff_p = buff;
-    size_t n, n2;
-    int ret;
-    const struct tx_serialize_opts opts = {
-        sighash, tx_sighash, index, script, script_len, satoshi,
-        value, value_len
-    };
-
-    if (!is_valid_tx(tx) || BYTES_INVALID(script, script_len) ||
-        BYTES_INVALID(extra, extra_len) ||
-        satoshi > WALLY_SATOSHI_MAX || (sighash & 0xffffff00) ||
-        (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || len < SHA256_LEN)
-        return WALLY_EINVAL;
-
-    if (index >= tx->num_inputs ||
-        (index >= tx->num_outputs && (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE)) {
-        memset(bytes_out, 0, SHA256_LEN);
-        bytes_out[0] = 0x1;
-        return WALLY_OK;
+        value_item.value = (unsigned char*)&satoshi;
+        value_item.value_len = sizeof(uint64_t);
     }
-
-    if ((ret = tx_get_length(tx, &opts, 0, &n, is_elements != 0)) != WALLY_OK)
-        goto fail;
-
-    if (n > sizeof(buff) && (buff_p = wally_malloc(n)) == NULL) {
-        ret = WALLY_ENOMEM;
-        goto fail;
-    }
-
-    if ((ret = tx_to_bytes(tx, &opts, 0, buff_p, n, &n2, is_elements != 0)) != WALLY_OK)
-        goto fail;
-
-    if (n != n2)
-        ret = WALLY_ERROR; /* tx_get_length/tx_to_bytes mismatch, should not happen! */
-    else
-        ret = wally_sha256d(buff_p, n2, bytes_out, len);
-
-fail:
-    if (buff_p != buff)
-        clear_and_free(buff_p, n);
-    else
-        wally_clear(buff, sizeof(buff));
-    return ret;
-}
+    return wally_tx_get_input_signature_hash(tx, index, NULL, NULL,
+                                             &values, script, script_len,
+                                             0, WALLY_NO_CODESEPARATOR,
+                                             NULL, 0, NULL, 0,
+                                             sighash, sighash_type,
+                                             NULL, bytes_out, len);
 }
 
 int wally_tx_get_signature_hash(const struct wally_tx *tx,
@@ -2825,9 +2787,9 @@ int wally_tx_get_btc_signature_hash(const struct wally_tx *tx, size_t index,
                                     uint64_t satoshi, uint32_t sighash, uint32_t flags,
                                     unsigned char *bytes_out, size_t len)
 {
-    return wally_tx_get_signature_hash(tx, index, script, script_len,
-                                       NULL, 0, 0, satoshi, sighash, sighash,
-                                       flags, bytes_out, len);
+    return tx_get_signature_hash(tx, index, script, script_len,
+                                 NULL, 0, 0, satoshi,
+                                 NULL, 0, sighash, sighash, flags, bytes_out, len);
 }
 
 int wally_tx_get_btc_taproot_signature_hash(
