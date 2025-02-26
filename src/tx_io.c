@@ -147,13 +147,19 @@ static inline void hash_bytes(struct sha256_ctx *ctx,
     sha256_update(ctx, bytes, bytes_len);
 }
 
+static void hash_varint(struct sha256_ctx *ctx,
+                         uint64_t v)
+{
+    unsigned char buff[9];
+    size_t n = varint_to_bytes(v, buff);
+    hash_bytes(ctx, buff, n);
+}
+
 static void hash_varbuff(struct sha256_ctx *ctx,
                          const unsigned char *bytes, size_t bytes_len)
 {
-    unsigned char varbuff_len[9];
-    size_t n = varint_to_bytes(bytes_len, varbuff_len);
-    sha256_update(ctx, varbuff_len, n);
-    sha256_update(ctx, bytes, bytes_len);
+    hash_varint(ctx, bytes_len);
+    hash_bytes(ctx, bytes, bytes_len);
 }
 
 static void hash_map_varbuff(struct sha256_ctx *ctx,
@@ -230,6 +236,15 @@ static void hash_map_commmitment(struct sha256_ctx *ctx,
     hash_commmitment(ctx, item->value, item->value_len);
 }
 
+static void hash_asset_issuance(struct sha256_ctx *ctx,
+                                const struct wally_tx_input *txin)
+{
+    hash_bytes(ctx, txin->blinding_nonce, sizeof(txin->blinding_nonce));
+    hash_bytes(ctx, txin->entropy, sizeof(txin->entropy));
+    hash_commmitment(ctx, txin->issuance_amount, txin->issuance_amount_len);
+    hash_commmitment(ctx, txin->inflation_keys, txin->inflation_keys_len);
+}
+
 static void hash_issuance_rangeproofs(struct sha256_ctx *ctx,
                                       const struct wally_tx_input *txin)
 {
@@ -303,14 +318,10 @@ static void txio_hash_sha_issuances(cursor_io *io, const struct wally_tx *tx, ui
         sha256_init(&ctx);
         for (size_t i = 0; i < tx->num_inputs; ++i) {
             const struct wally_tx_input *txin = tx->inputs + i;
-            if (!(txin->features & WALLY_TX_IS_ISSUANCE)) {
+            if (txin->features & WALLY_TX_IS_ISSUANCE)
+                hash_asset_issuance(&ctx, txin);
+            else
                 hash_u8(&ctx, 0);
-                continue;
-            }
-            hash_bytes(&ctx, txin->blinding_nonce, sizeof(txin->blinding_nonce));
-            hash_bytes(&ctx, txin->entropy, sizeof(txin->entropy));
-            hash_commmitment(&ctx, txin->issuance_amount, txin->issuance_amount_len);
-            hash_commmitment(&ctx, txin->inflation_keys, txin->inflation_keys_len);
         }
         txio_hash_sha256_ctx(io, &ctx, key);
     }
@@ -384,11 +395,7 @@ static void txio_hash_input_elements(cursor_io *io,
         if (hash_type != WALLY_SIGTYPE_SW_V0)
             hash_u8(&io->ctx, 0);
     } else {
-        /* asset_issuance */
-        hash_bytes(&io->ctx, txin->blinding_nonce, sizeof(txin->blinding_nonce));
-        hash_bytes(&io->ctx, txin->entropy, sizeof(txin->entropy));
-        hash_commmitment(&io->ctx, txin->issuance_amount, txin->issuance_amount_len);
-        hash_commmitment(&io->ctx, txin->inflation_keys, txin->inflation_keys_len);
+        hash_asset_issuance(&io->ctx, txin);
         if (hash_type != WALLY_SIGTYPE_SW_V0) {
             /* sha_single_issuance_rangeproofs */
             struct sha256_ctx ctx;
@@ -420,16 +427,28 @@ static void txio_hash_sha_single_output_witness(cursor_io *io,
 }
 #endif /* BUILD_ELEMENTS */
 
+static void hash_output(struct sha256_ctx *ctx,
+                        const struct wally_tx_output *txout)
+{
+    hash_le64(ctx, txout->satoshi);
+    hash_varbuff(ctx, txout->script, txout->script_len);
+}
+
+static void hash_outpoint(struct sha256_ctx *ctx,
+                          const struct wally_tx_input *txin)
+{
+    hash_bytes(ctx, txin->txhash, sizeof(txin->txhash));
+    hash_le32(ctx, txin->index);
+}
+
 static void txio_hash_sha_prevouts(cursor_io *io, const struct wally_tx *tx,
                                    uint32_t key)
 {
     if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
-        for (size_t i = 0; i < tx->num_inputs; ++i) {
-            hash_bytes(&ctx, tx->inputs[i].txhash, WALLY_TXHASH_LEN);
-            hash_le32(&ctx, tx->inputs[i].index);
-        }
+        for (size_t i = 0; i < tx->num_inputs; ++i)
+            hash_outpoint(&ctx, tx->inputs + i);
         txio_hash_sha256_ctx(io, &ctx, key);
     }
 }
@@ -474,18 +493,10 @@ static void txio_hash_sha_outputs(cursor_io *io, const struct wally_tx *tx,
     if (!txio_hash_cached_item(io, key)) {
         struct sha256_ctx ctx;
         sha256_init(&ctx);
-        for (size_t i = 0; i < tx->num_outputs; ++i) {
-            hash_le64(&ctx, tx->outputs[i].satoshi);
-            hash_varbuff(&ctx, tx->outputs[i].script, tx->outputs[i].script_len);
-        }
+        for (size_t i = 0; i < tx->num_outputs; ++i)
+            hash_output(&ctx, tx->outputs + i);
         txio_hash_sha256_ctx(io, &ctx, key);
     }
-}
-
-static void txio_hash_outpoint(cursor_io *io, const struct wally_tx_input *txin)
-{
-    hash_bytes(&io->ctx, txin->txhash, sizeof(txin->txhash));
-    hash_le32(&io->ctx, txin->index);
 }
 
 static void txio_hash_input(cursor_io *io,
@@ -512,8 +523,7 @@ static void txio_hash_sha_single_output(cursor_io *io,
 {
     struct sha256_ctx ctx;
     sha256_init(&ctx);
-    hash_le64(&ctx, txout->satoshi);
-    hash_varbuff(&ctx, txout->script, txout->script_len);
+    hash_output(&ctx, txout);
     txio_hash_sha256_ctx(io, &ctx, key);
 }
 
@@ -613,7 +623,7 @@ static int bip143_signature_hash(
     }
 #endif
     /* Input data */
-    txio_hash_outpoint(&io, txin);
+    hash_outpoint(&io.ctx, txin);
 #ifdef BUILD_ELEMENTS
     if (is_elements)
         txio_hash_input_elements(&io, tx, index, NULL, NULL, values,
@@ -799,7 +809,7 @@ static int bip341_signature_hash(
             if (is_elements)
                 txio_hash_outpoint_flag(&io, txin);
 #endif
-            txio_hash_outpoint(&io, txin);
+            hash_outpoint(&io.ctx, txin);
         }
 #ifdef BUILD_ELEMENTS
         if (is_elements)
