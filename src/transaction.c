@@ -2018,32 +2018,21 @@ int wally_tx_get_hash_prevouts(const struct wally_tx *tx,
 }
 
 static int tx_to_bytes(const struct wally_tx *tx,
-                       const struct tx_serialize_opts *opts,
                        uint32_t flags,
                        unsigned char *bytes_out, size_t len,
                        size_t *written,
                        bool is_elements)
 {
     size_t n, i, j, witness_count;
-    const unsigned char sighash = opts ? opts->sighash : 0;
-    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_rangeproof = sighash & WALLY_SIGHASH_RANGEPROOF;
-    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     unsigned char *p = bytes_out;
-
-    (void)sh_rangeproof;
 
     if (written)
         *written = 0;
 
     if (!is_valid_tx(tx) ||
         (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || !written ||
-        tx_get_length(tx, opts, flags, &n, is_elements) != WALLY_OK)
+        tx_get_length(tx, NULL, flags, &n, is_elements) != WALLY_OK)
         return WALLY_EINVAL;
-
-    if (opts && (flags & WALLY_TX_FLAG_USE_WITNESS))
-        return WALLY_ERROR; /* Segwit tx hashing is handled elsewhere */
 
     if (!(flags & WALLY_TX_FLAG_ALLOW_PARTIAL)) {
         /* 0-input/output txs can be only be written with this flag */
@@ -2075,44 +2064,28 @@ static int tx_to_bytes(const struct wally_tx *tx,
 
     p += uint32_to_le_bytes(tx->version, p);
     if (is_elements) {
-        if (!opts)
-            *p++ = flags & WALLY_TX_FLAG_USE_WITNESS ? 1 : 0;
+        *p++ = flags & WALLY_TX_FLAG_USE_WITNESS ? 1 : 0;
     } else {
         if (flags & WALLY_TX_FLAG_USE_WITNESS) {
             *p++ = 0; /* Write BIP 144 marker */
             *p++ = 1; /* Write BIP 144 flag */
         }
     }
-    if (sh_anyonecanpay)
-        *p++ = 1;
-    else
-        p += varint_to_bytes(tx->num_inputs, p);
+
+    p += varint_to_bytes(tx->num_inputs, p);
 
     for (i = 0; i < tx->num_inputs; ++i) {
         const struct wally_tx_input *input = tx->inputs + i;
-        if (sh_anyonecanpay && i != opts->index)
-            continue; /* sh_anyonecanpay only signs the given index */
-
         memcpy(p, input->txhash, sizeof(input->txhash));
         p += sizeof(input->txhash);
-        if (!opts && (input->features & WALLY_TX_IS_ISSUANCE))
+        if (input->features & WALLY_TX_IS_ISSUANCE)
             p += uint32_to_le_bytes(input->index | WALLY_TX_ISSUANCE_FLAG, p);
-        else if (!opts && (input->features & WALLY_TX_IS_PEGIN))
+        else if (input->features & WALLY_TX_IS_PEGIN)
             p += uint32_to_le_bytes(input->index | WALLY_TX_PEGIN_FLAG, p);
         else
             p += uint32_to_le_bytes(input->index, p);
-        if (opts) {
-            if (i == opts->index)
-                p += varbuff_to_bytes(opts->script, opts->script_len, p);
-            else
-                *p++ = 0; /* Blank scripts for non-signing inputs */
-        } else
-            p += varbuff_to_bytes(input->script, input->script_len, p);
-
-        if ((sh_none || sh_single) && i != opts->index)
-            p += uint32_to_le_bytes(0, p);
-        else
-            p += uint32_to_le_bytes(input->sequence, p);
+        p += varbuff_to_bytes(input->script, input->script_len, p);
+        p += uint32_to_le_bytes(input->sequence, p);
         if (input->features & WALLY_TX_IS_ISSUANCE) {
             if (!is_elements)
                 return WALLY_EINVAL;
@@ -2127,41 +2100,22 @@ static int tx_to_bytes(const struct wally_tx *tx,
         }
     }
 
-    if (sh_none)
-        *p++ = 0;
-    else {
-        size_t num_outputs = sh_single ? opts->index + 1 : tx->num_outputs;
-        p += varint_to_bytes(num_outputs, p);
+        p += varint_to_bytes(tx->num_outputs, p);
 
-        for (i = 0; i < num_outputs; ++i) {
-            const struct wally_tx_output *output = tx->outputs + i;
-            if (sh_single && i != opts->index) {
-                memcpy(p, EMPTY_OUTPUT, sizeof(EMPTY_OUTPUT));
-                p += sizeof(EMPTY_OUTPUT);
-            } else {
-                if (output->features & WALLY_TX_IS_ELEMENTS) {
-                    if (!is_elements)
-                        return WALLY_EINVAL;
+    for (i = 0; i < tx->num_outputs; ++i) {
+        const struct wally_tx_output *output = tx->outputs + i;
+        if (output->features & WALLY_TX_IS_ELEMENTS) {
+            if (!is_elements)
+                return WALLY_EINVAL;
 #ifdef BUILD_ELEMENTS
-                    p += confidential_value_to_bytes(output->asset, output->asset_len, p);
-                    p += confidential_value_to_bytes(output->value, output->value_len, p);
-                    p += confidential_value_to_bytes(output->nonce, output->nonce_len, p);
+            p += confidential_value_to_bytes(output->asset, output->asset_len, p);
+            p += confidential_value_to_bytes(output->value, output->value_len, p);
+            p += confidential_value_to_bytes(output->nonce, output->nonce_len, p);
 #endif
-                } else {
-                    p += uint64_to_le_bytes(output->satoshi, p);
-                }
-                p += varbuff_to_bytes(output->script, output->script_len, p);
-
-#ifdef BUILD_ELEMENTS
-                if (is_elements && sh_rangeproof) {
-                    p += varbuff_to_bytes(output->rangeproof,
-                                          output->rangeproof_len, p);
-                    p += varbuff_to_bytes(output->surjectionproof,
-                                          output->surjectionproof_len, p);
-                }
-#endif
-            }
+        } else {
+            p += uint64_to_le_bytes(output->satoshi, p);
         }
+        p += varbuff_to_bytes(output->script, output->script_len, p);
     }
 
     if (!is_elements && (flags & WALLY_TX_FLAG_USE_WITNESS)) {
@@ -2178,8 +2132,6 @@ static int tx_to_bytes(const struct wally_tx *tx,
     }
 
     p += uint32_to_le_bytes(tx->locktime, p);
-    if (opts)
-        uint32_to_le_bytes(opts->tx_sighash, p);
 
 #ifdef BUILD_ELEMENTS
     if (is_elements && (flags & WALLY_TX_FLAG_USE_WITNESS)) {
@@ -2224,7 +2176,7 @@ int wally_tx_to_bytes(const struct wally_tx *tx, uint32_t flags,
     if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 #endif
-    return tx_to_bytes(tx, NULL, flags, bytes_out, len, written, is_elements);
+    return tx_to_bytes(tx, flags, bytes_out, len, written, is_elements);
 }
 
 /* Common implementation for hex conversion and txid calculation */
@@ -2244,12 +2196,12 @@ static int tx_to_hex_or_txid(const struct wally_tx *tx, uint32_t flags,
         (!output && (!bytes_out || len != WALLY_TXHASH_LEN)))
         return WALLY_EINVAL;
 
-    ret = tx_to_bytes(tx, NULL, flags, buff_p, sizeof(buff), &n, is_elements);
+    ret = tx_to_bytes(tx, flags, buff_p, sizeof(buff), &n, is_elements);
     if (ret == WALLY_OK) {
         if (n > sizeof(buff)) {
             if ((buff_p = wally_malloc(n)) == NULL)
                 return WALLY_ENOMEM;
-            ret = tx_to_bytes(tx, NULL, flags, buff_p, n, &written, is_elements);
+            ret = tx_to_bytes(tx, flags, buff_p, n, &written, is_elements);
             if (n != written)
                 ret = WALLY_ERROR; /* Length calculated incorrectly */
         }
