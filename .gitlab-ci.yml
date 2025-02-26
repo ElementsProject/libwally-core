@@ -143,6 +143,10 @@ build_wally_release_files:
     - cd dist
     - tar czf wallycore-wasm.tar.gz --remove-files wallycore.html wallycore.js wallycore.wasm
     - cd ..
+    - EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_asset_value_commitment','_wally_asset_generator_from_bytes']" tools/build_wasm.sh
+    - cd dist
+    - tar czf esplora-wasm.tar.gz --remove-files wallycore.html wallycore.js wallycore.wasm
+    - cd ..
     - sphinx-build -b html -a -c docs/source docs/source docs/build/html
     - cd docs/build
     - tar czf ../../wally_dist/apidocs.tar.gz html/
