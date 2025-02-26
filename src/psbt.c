@@ -4491,16 +4491,16 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                                         uint32_t flags,
                                         unsigned char *bytes_out, size_t len)
 {
+    struct wally_map scripts, assets, values, *assets_p;
     const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
-    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
     size_t is_pset;
-    uint32_t sighash;
+    uint32_t sighash, sighash_type;
     const bool is_taproot = is_taproot_input(psbt, inp);
     /* FIXME: Determine segwitness in a smarter way (e.g. prevout script */
-    const bool is_segwit = inp->witness_utxo != NULL;
+    const bool is_segwit = inp && inp->witness_utxo != NULL;
     int ret;
 
-    if (!tx || !inp || !utxo || flags)
+    if (!tx || !inp || flags)
         return WALLY_EINVAL;
 
     if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
@@ -4509,6 +4509,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     if (is_pset)
         return WALLY_EINVAL; /* Unsupported */
 #endif
+    assets_p = is_pset ? &assets : NULL;
 
     sighash = inp->sighash;
     if (!sighash)
@@ -4516,44 +4517,31 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     else if (sighash & 0xffffff00)
         return WALLY_EINVAL;
 
-    if (is_taproot || is_segwit) {
-        struct wally_map scripts, assets, values;
-        struct wally_map *assets_p = is_pset ? &assets : NULL;
+    if (is_taproot) {
+        /* FIXME: Support script path spends */
+        script = NULL;
+        script_len = 0;
+        sighash_type = WALLY_SIGTYPE_SW_V1;
+    } else if (is_segwit)
+        sighash_type = WALLY_SIGTYPE_SW_V0;
+    else
+        sighash_type = WALLY_SIGTYPE_PRE_SW;
 
-        if (is_taproot) {
-            /* FIXME: Support script path spends */
-            script = NULL;
-            script_len = 0;
-        }
-        ret = get_signing_data(psbt, &scripts, assets_p, &values);
-        if (ret == WALLY_OK)
-            ret = wally_tx_get_input_signature_hash(tx, index,
-                    &scripts, assets_p, &values,
-                    script, script_len,
-                    0, WALLY_NO_CODESEPARATOR, NULL, 0,
-                    psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
-                    sighash,
-                    is_taproot ? WALLY_SIGTYPE_SW_V1 : WALLY_SIGTYPE_SW_V0,
-                    psbt->signing_cache, bytes_out, len);
+    ret = get_signing_data(psbt, &scripts, assets_p, &values);
+    if (ret == WALLY_OK)
+        ret = wally_tx_get_input_signature_hash(tx, index,
+                &scripts, assets_p, &values,
+                script, script_len,
+                0, WALLY_NO_CODESEPARATOR, NULL, 0,
+                psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
+                sighash, sighash_type,
+                psbt->signing_cache, bytes_out, len);
 
-        wally_free(scripts.items); /* No need to clear the value pointers */
-        wally_free(values.items);
-        if (assets_p)
-            wally_free(assets_p->items);
-        return ret;
-    }
-
-#ifdef BUILD_ELEMENTS
-    if (is_pset)
-        return wally_tx_get_elements_signature_hash(tx, index,
-                                                    script, script_len,
-                                                    utxo->value, utxo->value_len,
-                                                    sighash, 0, bytes_out,
-                                                    len);
-#endif
-    return wally_tx_get_btc_signature_hash(tx, index, script, script_len,
-                                           utxo->satoshi, sighash, 0,
-                                           bytes_out, len);
+    wally_free(scripts.items); /* No need to clear the value pointers */
+    wally_free(values.items);
+    if (assets_p)
+        wally_free(assets_p->items);
+    return ret;
 }
 
 int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
