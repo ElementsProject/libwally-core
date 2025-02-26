@@ -772,6 +772,9 @@ WALLY_CORE_API int wally_tx_get_total_output_satoshi(
 /**
  * Get the hash of the preimage for signing a BTC transaction input.
  *
+ * Deprecated, this call will be removed in a future release. Please
+ * use ``wally_tx_get_input_signature_hash``.
+ *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
  * :param script: The (unprefixed) scriptCode for the input being signed.
@@ -797,6 +800,9 @@ WALLY_CORE_API int wally_tx_get_btc_signature_hash(
 
 /**
  * Get the hash of the preimage for signing a BTC taproot transaction input.
+ *
+ * Deprecated, this call will be removed in a future release. Please
+ * use ``wally_tx_get_input_signature_hash``.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -833,6 +839,9 @@ WALLY_CORE_API int wally_tx_get_btc_taproot_signature_hash(
 
 /**
  * Get the hash of the preimage for signing a BTC transaction input.
+ *
+ * Deprecated, this call will be removed in a future release. Please
+ * use ``wally_tx_get_input_signature_hash``.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
@@ -1361,6 +1370,9 @@ WALLY_CORE_API int wally_tx_confidential_value_to_satoshi(
 
 /**
  * Get the hash of the preimage for signing an Elements transaction input.
+ *
+ * Deprecated, this call will be removed in a future release. Please
+ * use ``wally_tx_get_input_signature_hash``.
  *
  * :param tx: The transaction to generate the signature hash from.
  * :param index: The input index of the input being signed for.
