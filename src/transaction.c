@@ -34,23 +34,6 @@ static const unsigned char DUMMY_SIG[EC_SIGNATURE_DER_MAX_LEN + 1]; /* +1 for si
 
 #define MAX_INVALID_SATOSHI ((uint64_t) -1)
 
-/* Extra options when serializing for hashing */
-struct tx_serialize_opts
-{
-    uint32_t sighash;                /* 8 bit sighash value for sig */
-    uint32_t tx_sighash;             /* 32 bit sighash value for tx */
-    size_t index;                    /* index of input we are signing */
-    const unsigned char *script;     /* scriptPubkey spent by the input we are signing */
-    size_t script_len;               /* length of 'script' in bytes */
-    uint64_t satoshi;                /* Amount of the input we are signing */
-    const unsigned char *value;      /* Confidential value of the input we are signing */
-    size_t value_len;                /* length of 'value' in bytes */
-};
-
-static const unsigned char EMPTY_OUTPUT[9] = {
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
-};
-
 #define WALLY_SATOSHI_MAX ((uint64_t)WALLY_BTC_MAX * WALLY_SATOSHI_PER_BTC)
 
 /* LCOV_EXCL_START */
@@ -1699,16 +1682,11 @@ static int get_txin_issuance_size(const struct wally_tx_input *input,
  * without iterating the transaction twice with different flags.
  */
 static int tx_get_lengths(const struct wally_tx *tx,
-                          const struct tx_serialize_opts *opts, uint32_t flags,
+                          uint32_t flags,
                           size_t *base_size, size_t *witness_size,
                           size_t *witness_count, bool is_elements)
 {
     size_t n, i, j;
-    const unsigned char sighash = opts ? opts->sighash : 0;
-    const bool sh_anyonecanpay = sighash & WALLY_SIGHASH_ANYONECANPAY;
-    const bool sh_rangeproof = is_elements && (sighash & WALLY_SIGHASH_RANGEPROOF);
-    const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
-    const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
 
     *base_size = 0;
     *witness_size = 0;
@@ -1716,11 +1694,6 @@ static int tx_get_lengths(const struct wally_tx *tx,
 
     if (!is_valid_tx(tx))
         return WALLY_EINVAL;
-
-    if (opts) {
-        if (flags & WALLY_TX_FLAG_USE_WITNESS)
-            return WALLY_ERROR; /* Segwit tx hashing done elsewhere */
-    }
 
     if ((flags & ~WALLY_TX_ALL_FLAGS) ||
         ((flags & WALLY_TX_FLAG_USE_WITNESS) &&
@@ -1731,19 +1704,14 @@ static int tx_get_lengths(const struct wally_tx *tx,
         flags &= ~WALLY_TX_FLAG_USE_WITNESS;
 
     n = sizeof(tx->version) +
-        varint_get_length(sh_anyonecanpay ? 1 : tx->num_inputs) +
-        (sh_none ? 1 : varint_get_length(sh_single ? opts->index + 1 : tx->num_outputs)) +
-        sizeof(tx->locktime) +
-        (opts ? sizeof(leint32_t) : 0); /* Include trailing tx_sighash */
+        varint_get_length(tx->num_inputs) +
+        varint_get_length(tx->num_outputs) + sizeof(tx->locktime);
 
-    if (!opts && is_elements)
+    if (is_elements)
         n += sizeof(uint8_t); /* witness flag */
     for (i = 0; i < tx->num_inputs; ++i) {
         const struct wally_tx_input *input = tx->inputs + i;
         size_t issuance_size = 0;
-
-        if (sh_anyonecanpay && i != opts->index)
-            continue; /* sh_anyonecanpay only signs the given index */
 
         n += sizeof(input->txhash) +
              sizeof(input->index) +
@@ -1752,32 +1720,15 @@ static int tx_get_lengths(const struct wally_tx *tx,
         if (get_txin_issuance_size(input, &issuance_size, NULL) != WALLY_OK)
             return WALLY_EINVAL;
         n += issuance_size;
-
-        if (opts) {
-            if (i == opts->index)
-                n += varbuff_get_length(opts->script_len);
-            else
-                ++n;
-        } else
-            n += varbuff_get_length(input->script_len);
-
+        n += varbuff_get_length(input->script_len);
     }
 
-    if (!sh_none) {
-        size_t num_outputs = sh_single ? opts->index + 1 : tx->num_outputs;
-
-        for (i = 0; i < num_outputs; ++i) {
-            const struct wally_tx_output *output = tx->outputs + i;
-            if (sh_single && i != opts->index)
-                n += sizeof(EMPTY_OUTPUT);
-            else {
-                size_t wit_size = 0, *wit_p = sh_rangeproof ? &wit_size : NULL;
-                size_t txout_len = txout_get_serialized_len(output, is_elements, wit_p);
-                if (!txout_len)
-                    return WALLY_EINVAL; /* Error getting txout length */
-                n += txout_len + wit_size;
-            }
-        }
+    for (i = 0; i < tx->num_outputs; ++i) {
+        const struct wally_tx_output *output = tx->outputs + i;
+        size_t txout_len = txout_get_serialized_len(output, is_elements, NULL);
+        if (!txout_len)
+            return WALLY_EINVAL; /* Error getting txout length */
+        n += txout_len;
     }
 
     *base_size = n;
@@ -1834,8 +1785,7 @@ static int tx_get_lengths(const struct wally_tx *tx,
 }
 
 static int tx_get_length(const struct wally_tx *tx,
-                         const struct tx_serialize_opts *opts, uint32_t flags,
-                         size_t *written, bool is_elements)
+                         uint32_t flags, size_t *written, bool is_elements)
 {
     size_t base_size, witness_size, witness_count;
     int ret;
@@ -1844,7 +1794,7 @@ static int tx_get_length(const struct wally_tx *tx,
         *written = 0;
     if (!written)
         return WALLY_EINVAL;
-    ret = tx_get_lengths(tx, opts, flags, &base_size, &witness_size,
+    ret = tx_get_lengths(tx, flags, &base_size, &witness_size,
                          &witness_count, is_elements);
     if (ret == WALLY_OK) {
         if (witness_count && (flags & WALLY_TX_FLAG_USE_WITNESS))
@@ -1864,7 +1814,7 @@ int wally_tx_get_length(const struct wally_tx *tx, uint32_t flags,
         return WALLY_EINVAL;
 #endif
 
-    return tx_get_length(tx, NULL, flags, written, is_elements != 0);
+    return tx_get_length(tx, flags, written, is_elements != 0);
 }
 
 int wally_tx_get_weight(const struct wally_tx *tx, size_t *written)
@@ -1881,7 +1831,7 @@ int wally_tx_get_weight(const struct wally_tx *tx, size_t *written)
 #endif
 
     if (!written ||
-        tx_get_lengths(tx, NULL, WALLY_TX_FLAG_USE_WITNESS, &base_size,
+        tx_get_lengths(tx, WALLY_TX_FLAG_USE_WITNESS, &base_size,
                        &witness_size, &witness_count, is_elements != 0) != WALLY_OK)
         return WALLY_EINVAL;
 
@@ -2031,7 +1981,7 @@ static int tx_to_bytes(const struct wally_tx *tx,
 
     if (!is_valid_tx(tx) ||
         (flags & ~WALLY_TX_ALL_FLAGS) || !bytes_out || !written ||
-        tx_get_length(tx, NULL, flags, &n, is_elements) != WALLY_OK)
+        tx_get_length(tx, flags, &n, is_elements) != WALLY_OK)
         return WALLY_EINVAL;
 
     if (!(flags & WALLY_TX_FLAG_ALLOW_PARTIAL)) {
