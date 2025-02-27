@@ -962,9 +962,11 @@ int wally_tx_get_input_signature_hash(
         !flags || (flags & ~SIGTYPE_ALL) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-#ifdef BUILD_ELEMENTS
     if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
         return ret;
+#ifndef BUILD_ELEMENTS
+    if (is_elements)
+        return WALLY_EINVAL;
 #endif
 
     switch (sighash) {
@@ -1017,5 +1019,5 @@ int wally_tx_get_input_signature_hash(
                                      genesis_blockhash, genesis_blockhash_len,
                                      sighash, cache, is_elements,
                                      bytes_out, len);
-    return WALLY_EINVAL;
+    return WALLY_EINVAL; /* Unknown sighash type */
 }
