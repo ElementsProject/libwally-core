@@ -340,6 +340,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore bip32_key_unserialize;
 %ignore bip32_key_with_tweak_from_parent_path;
 %ignore wally_map_init;
+%ignore wally_map_keypath_get_bip32_key_from;
 %ignore wally_psbt_blind;
 %ignore wally_tx_elements_output_init;
 %ignore wally_tx_input_clone;

@@ -208,6 +208,7 @@ export function map_init_noalloc(allocation_len: number, verify_fn: Ref, output:
 export function map_keypath_add(map_in: Ref_wally_map, pub_key: Buffer|Uint8Array, fingerprint: Buffer|Uint8Array, child_path: Uint32Array|number[]): void;
 export function map_keypath_bip32_init(allocation_len: number): Ref_wally_map;
 export function map_keypath_get_bip32_key_from(map_in: Ref_wally_map, index: number, hdkey: Ref_ext_key): Ref_ext_key;
+export function map_keypath_get_bip32_key_from_noalloc(map_in: Ref_wally_map, index: number, hdkey: Ref_ext_key, output: Ref_ext_key): number;
 export function map_keypath_get_item_fingerprint(map_in: Ref_wally_map, index: number): Buffer;
 export function map_keypath_get_item_path_len(map_in: Ref_wally_map, index: number): number;
 export function map_keypath_public_key_init(allocation_len: number): Ref_wally_map;

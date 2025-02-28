@@ -1044,6 +1044,12 @@ inline int map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map*
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class MAP_IN, class HDKEY, class OUTPUT>
+inline int map_keypath_get_bip32_key_from(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, const OUTPUT& output, size_t* written) {
+    int ret = ::wally_map_keypath_get_bip32_key_from(detail::get_p(map_in), index, detail::get_p(hdkey), detail::get_p(output), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class MAP_IN, class HDKEY>
 inline int map_keypath_get_bip32_key_from_alloc(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, struct ext_key** output) {
     int ret = ::wally_map_keypath_get_bip32_key_from_alloc(detail::get_p(map_in), index, detail::get_p(hdkey), output);
