@@ -463,17 +463,20 @@ int wally_map_find_bip32_public_key_from(const struct wally_map *map_in, size_t 
     return ret;
 }
 
-int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
-                                               size_t index, const struct ext_key *hdkey,
-                                               struct ext_key **output)
+int wally_map_keypath_get_bip32_key_from(const struct wally_map *map_in,
+                                         size_t index, const struct ext_key *hdkey,
+                                         struct ext_key *output, size_t *written)
 {
     uint32_t path[BIP32_PATH_MAX_LEN];
     struct ext_key derived;
     size_t i, path_len, idx = 0;
     int ret = WALLY_OK;
 
-    OUTPUT_CHECK;
-    if (!map_in || !hdkey)
+    if (written)
+        *written = 0;
+    if (output)
+        memset(output, 0, sizeof(*output));
+    if (!map_in || !hdkey || !written || !output)
         return WALLY_EINVAL;
 
     if (mem_is_zero(hdkey->chain_code, sizeof(hdkey->chain_code))) {
@@ -516,14 +519,33 @@ int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
         }
     }
     if (ret == WALLY_OK && idx) {
-        /* Found, return the matching key */
-        *output = wally_calloc(sizeof(struct ext_key));
-        if (!*output)
-            ret = WALLY_ENOMEM;
-        else
-            memcpy(*output, hdkey, sizeof(*hdkey));
+        /* Found, return the matching key and its 1-based index */
+        *written = idx;
+        memcpy(output, hdkey, sizeof(*hdkey));
     }
     wally_clear(&derived, sizeof(derived));
+    return ret;
+}
+
+
+int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
+                                               size_t index, const struct ext_key *hdkey,
+                                               struct ext_key **output)
+{
+    struct ext_key found;
+    size_t found_index;
+    int ret;
+
+    OUTPUT_CHECK;
+    ret = wally_map_keypath_get_bip32_key_from(map_in, index, hdkey,
+                                               &found, &found_index);
+    if (ret == WALLY_OK && found_index) {
+        if (!(*output = wally_calloc(sizeof(struct ext_key))))
+            ret = WALLY_ENOMEM;
+        else
+            memcpy(*output, &found, sizeof(found));
+    }
+    wally_clear(&found, sizeof(found));
     return ret;
 }
 

@@ -415,6 +415,7 @@ for f in (
     ('wally_map_init_alloc', c_int, [c_size_t, c_void_p, POINTER(POINTER(wally_map))]),
     ('wally_map_keypath_add', c_int, [POINTER(wally_map), c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
     ('wally_map_keypath_bip32_init_alloc', c_int, [c_size_t, POINTER(POINTER(wally_map))]),
+    ('wally_map_keypath_get_bip32_key_from', c_int, [POINTER(wally_map), c_size_t, POINTER(ext_key), POINTER(ext_key), c_size_t_p]),
     ('wally_map_keypath_get_bip32_key_from_alloc', c_int, [POINTER(wally_map), c_size_t, POINTER(ext_key), POINTER(POINTER(ext_key))]),
     ('wally_map_keypath_get_item_fingerprint', c_int, [POINTER(wally_map), c_size_t, c_void_p, c_size_t]),
     ('wally_map_keypath_get_item_path', c_int, [POINTER(wally_map), c_size_t, POINTER(c_uint32), c_size_t, c_size_t_p]),

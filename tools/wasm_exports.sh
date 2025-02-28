@@ -171,6 +171,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_map_init_alloc' \
 ,'_wally_map_keypath_add' \
 ,'_wally_map_keypath_bip32_init_alloc' \
+,'_wally_map_keypath_get_bip32_key_from' \
 ,'_wally_map_keypath_get_bip32_key_from_alloc' \
 ,'_wally_map_keypath_get_item_fingerprint' \
 ,'_wally_map_keypath_get_item_path' \

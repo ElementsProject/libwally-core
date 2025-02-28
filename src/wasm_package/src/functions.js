@@ -248,6 +248,7 @@ export const map_init_noalloc = wrap('wally_map_init', [T.Int32, T.OpaqueRef, T.
 export const map_keypath_add = wrap('wally_map_keypath_add', [T.OpaqueRef, T.Bytes, T.Bytes, T.Uint32Array]);
 export const map_keypath_bip32_init = wrap('wally_map_keypath_bip32_init_alloc', [T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const map_keypath_get_bip32_key_from = wrap('wally_map_keypath_get_bip32_key_from_alloc', [T.OpaqueRef, T.Int32, T.OpaqueRef, T.DestPtrPtr(T.OpaqueRef)]);
+export const map_keypath_get_bip32_key_from_noalloc = wrap('wally_map_keypath_get_bip32_key_from', [T.OpaqueRef, T.Int32, T.OpaqueRef, T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const map_keypath_get_item_fingerprint = wrap('wally_map_keypath_get_item_fingerprint', [T.OpaqueRef, T.Int32, T.DestPtrSized(T.Bytes, C.BIP32_KEY_FINGERPRINT_LEN)]);
 export const map_keypath_get_item_path_len = wrap('wally_map_keypath_get_item_path_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const map_keypath_public_key_init = wrap('wally_map_keypath_public_key_init_alloc', [T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
