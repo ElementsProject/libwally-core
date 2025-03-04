@@ -2133,7 +2133,7 @@ static int analyze_pubkey_hex(ms_ctx *ctx, ms_node *node,
 
      *is_hex = wally_hex_n_to_bytes(node->data, node->data_len,
                                     pubkey, sizeof(pubkey), &pubkey_len) == WALLY_OK;
-     if (!is_hex || pubkey_len > sizeof(pubkey))
+     if (!*is_hex || pubkey_len > sizeof(pubkey))
         return WALLY_OK; /* Not hex, or too long */
 
     if (wally_ec_public_key_verify(pubkey, pubkey_len) != WALLY_OK &&
