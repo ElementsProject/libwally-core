@@ -151,6 +151,16 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(self.to_base64(psbt), case['result'])
             wally_psbt_free(psbt)
 
+        # Invalid cases
+        psbt = self.parse_base64(JSON['combiner'][0]['psbts'][0])
+        src = self.parse_base64(JSON['combiner'][0]['psbts'][1])
+        self.assertEqual(WALLY_EINVAL, wally_psbt_combine(None, src))        # Null dest
+        self.assertEqual(WALLY_EINVAL, wally_psbt_combine(psbt, None))       # Null src
+        self.assertEqual(WALLY_EINVAL, wally_psbt_combine_ex(None, 0, src))  # Null dest
+        self.assertEqual(WALLY_EINVAL, wally_psbt_combine_ex(psbt, 4, src))  # Unknown flags
+        self.assertEqual(WALLY_EINVAL, wally_psbt_combine_ex(psbt, 0, None)) # Null src
+        self.assertEqual(WALLY_EINVAL, wally_psbt_combine_ex(psbt, 1, src))  # Non-sig-only src
+
     def roundtrip(self, psbt, expected=None):
         b64_out = self.to_base64(psbt)
         if expected:
