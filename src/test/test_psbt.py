@@ -12,9 +12,9 @@ with open(root_dir + 'src/data/psbt.json', 'r') as f:
 
 class PSBTTests(unittest.TestCase):
 
-    def parse_base64(self, src_base64, expected=WALLY_OK):
+    def parse_base64(self, src_base64, expected=WALLY_OK, flags=0):
         psbt = pointer(wally_psbt())
-        ret = wally_psbt_from_base64(src_base64, 0, psbt)
+        ret = wally_psbt_from_base64(src_base64, flags, psbt)
         self.assertEqual(ret, expected, "{0}".format(src_base64))
         return psbt
 
@@ -162,6 +162,22 @@ class PSBTTests(unittest.TestCase):
         wally_psbt_free(psbt)
         return b64_out
 
+    def check_signature_only_psbt(self, unsigned_b64, signed_b64):
+        FLAG_SIGS_ONLY = 0x2 # WALLY_PSBT_SERIALIZE_SIGS_ONLY
+        FLAG_LOOSE = 0x2 # WALLY_PSBT_PARSE_FLAG_LOOSE
+        FLAG_COMBINE_SIGS = 0x1 # WALLY_PSBT_COMBINE_SIGS
+
+        # Convert the signed PSBT into a signature-only PSBT
+        signed = self.parse_base64(signed_b64)
+        sigs_only_b64 = self.to_base64(signed, flags=FLAG_SIGS_ONLY)
+        sigs_only = self.parse_base64(sigs_only_b64, flags=FLAG_LOOSE)
+        # Combine the sigs-only PSBT with the unsigned PSBT
+        unsigned = self.parse_base64(unsigned_b64)
+        ret = wally_psbt_combine_ex(unsigned, FLAG_COMBINE_SIGS, sigs_only)
+        # Ensure the resulting combined PSBT matches the signed psbt
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(self.to_base64(unsigned), signed_b64)
+
     def do_sign(self, case):
         expected = case.get('result', None)
         expected_ret = WALLY_OK if expected else WALLY_EINVAL
@@ -173,6 +189,7 @@ class PSBTTests(unittest.TestCase):
             self.assertEqual(expected_ret, wally_psbt_sign(psbt, priv_key, priv_key_len, FLAG_GRIND_R))
         # Check that we can roundtrip the signed PSBT (some bugs only appear here)
         b64_out = self.roundtrip(psbt, expected)
+        self.check_signature_only_psbt(case['psbt'], b64_out)
 
         if expected and case.get('master_xpriv', None):
             # Test signing with the master extended private key.
@@ -192,6 +209,7 @@ class PSBTTests(unittest.TestCase):
             if not can_match:
                 # Check that the result changed at least, i.e. some inputs were signed
                 self.assertNotEqual(b64_out, case['psbt'])
+            self.check_signature_only_psbt(case['psbt'], b64_out)
             bip32_key_free(key_out)
 
     def test_signer_role(self):
