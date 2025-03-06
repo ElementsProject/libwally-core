@@ -127,8 +127,14 @@ void push_varint(unsigned char **cursor, size_t *max, uint64_t v)
 {
     unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
     size_t len = varint_to_bytes(v, buf);
-
     push_bytes(cursor, max, buf, len);
+}
+
+void push_varint_varbuff(unsigned char **cursor, size_t *max, uint64_t v)
+{
+    unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
+    size_t len = varint_to_bytes(v, buf);
+    push_varbuff(cursor, max, buf, len);
 }
 
 void push_witness_stack(unsigned char **cursor, size_t *max,

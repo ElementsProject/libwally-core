@@ -3355,16 +3355,16 @@ static int psbt_sigs_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
                               unsigned char *bytes_out, size_t len,
                               size_t *written)
 {
-    unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
     unsigned char *cursor = bytes_out;
-    size_t max = len, n;
+    size_t max = len;
     (void)flags;
 
     push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
     push_psbt_le32(&cursor, &max, PSBT_GLOBAL_VERSION, false, 2);
     push_psbt_key(&cursor, &max, PSBT_GLOBAL_INPUT_COUNT, NULL, 0);
-    n = varint_to_bytes(psbt->num_inputs, buf);
-    push_varbuff(&cursor, &max, buf, n);
+    push_varint_varbuff(&cursor, &max, psbt->num_inputs);
+    push_psbt_key(&cursor, &max, PSBT_GLOBAL_OUTPUT_COUNT, NULL, 0);
+    push_varint_varbuff(&cursor, &max, 0);
     push_u8(&cursor, &max, PSBT_SEPARATOR);
 
     /* Push each inputs signatures */
@@ -3373,8 +3373,7 @@ static int psbt_sigs_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
         int ret;
         push_psbt_map(&cursor, &max, PSBT_IN_PARTIAL_SIG, false, &input->signatures);
         ret = push_varbuff_from_map(&cursor, &max, PSBT_IN_TAP_KEY_SIG,
-                                    PSBT_IN_TAP_KEY_SIG,
-                                    false, &input->psbt_fields);
+                                    PSBT_IN_TAP_KEY_SIG, false, &input->psbt_fields);
         if (ret == WALLY_OK)
             ret = push_taproot_leaf_signatures(&cursor, &max, PSBT_IN_TAP_SCRIPT_SIG,
                                                &input->taproot_leaf_signatures);
@@ -3430,21 +3429,16 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     push_psbt_map(&cursor, &max, PSBT_GLOBAL_XPUB, false, &psbt->global_xpubs);
 
     if (psbt->version == PSBT_2) {
-        size_t n;
-        unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
-
         push_psbt_le32(&cursor, &max, PSBT_GLOBAL_TX_VERSION, false, psbt->tx_version);
 
         if (psbt->has_fallback_locktime)
             push_psbt_le32(&cursor, &max, PSBT_GLOBAL_FALLBACK_LOCKTIME, false, psbt->fallback_locktime);
 
         push_psbt_key(&cursor, &max, PSBT_GLOBAL_INPUT_COUNT, NULL, 0);
-        n = varint_to_bytes(psbt->num_inputs, buf);
-        push_varbuff(&cursor, &max, buf, n);
+        push_varint_varbuff(&cursor, &max, psbt->num_inputs);
 
         push_psbt_key(&cursor, &max, PSBT_GLOBAL_OUTPUT_COUNT, NULL, 0);
-        n = varint_to_bytes(psbt->num_outputs, buf);
-        push_varbuff(&cursor, &max, buf, n);
+        push_varint_varbuff(&cursor, &max, psbt->num_outputs);
 
         if (psbt->tx_modifiable_flags) {
             push_psbt_key(&cursor, &max, PSBT_GLOBAL_TX_MODIFIABLE, NULL, 0);
@@ -3843,7 +3837,9 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
     size_t i;
     int ret = WALLY_OK;
 
-    if (psbt->num_inputs != src->num_inputs || psbt->num_outputs != src->num_outputs)
+    if (psbt->num_inputs != src->num_inputs ||
+        psbt->num_outputs != src->num_outputs ||
+        memcmp(psbt->magic, src->magic, sizeof(src->magic)))
         return WALLY_EINVAL;
 
     if (!psbt->has_fallback_locktime) {
@@ -3881,8 +3877,8 @@ static int psbt_combine_sigs(struct wally_psbt *psbt, const struct wally_psbt *s
     int ret = WALLY_OK;
 
     if (psbt->num_inputs != src->num_inputs || src->version != PSBT_2 ||
-        src->num_outputs)
-        return WALLY_EINVAL; /* Not a valid signature-only PSBT */
+        src->num_outputs || memcmp(psbt->magic, src->magic, sizeof(src->magic)))
+        return WALLY_EINVAL; /* Not a valid signature-only PSBT, or wrong type */
 
     for (size_t i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
         struct wally_psbt_input *dst_p = psbt->inputs + i;

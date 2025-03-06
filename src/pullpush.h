@@ -69,6 +69,8 @@ uint8_t peek_u8(const unsigned char **cursor, size_t *max);
 void push_varint(unsigned char **cursor, size_t *max, uint64_t v);
 uint64_t pull_varint(const unsigned char **cursor, size_t *max);
 
+void push_varint_varbuff(unsigned char **cursor, size_t *max, uint64_t v);
+
 void push_varbuff(unsigned char **cursor, size_t *max,
                   const unsigned char *bytes, size_t bytes_len);
 
