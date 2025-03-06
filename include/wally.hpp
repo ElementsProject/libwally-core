@@ -1056,6 +1056,12 @@ inline int map_keypath_get_bip32_key_from_alloc(const MAP_IN& map_in, size_t ind
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class MAP_IN, class HDKEY, class OUTPUT>
+inline int map_keypath_get_bip32_public_key_from(const MAP_IN& map_in, size_t index, const HDKEY& hdkey, const OUTPUT& output, size_t* written) {
+    int ret = ::wally_map_keypath_get_bip32_public_key_from(detail::get_p(map_in), index, detail::get_p(hdkey), detail::get_p(output), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class MAP_IN, class BYTES_OUT>
 inline int map_keypath_get_item_fingerprint(const MAP_IN& map_in, size_t index, BYTES_OUT& bytes_out) {
     int ret = ::wally_map_keypath_get_item_fingerprint(detail::get_p(map_in), index, bytes_out.data(), bytes_out.size());

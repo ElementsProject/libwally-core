@@ -463,9 +463,10 @@ int wally_map_find_bip32_public_key_from(const struct wally_map *map_in, size_t 
     return ret;
 }
 
-int wally_map_keypath_get_bip32_key_from(const struct wally_map *map_in,
-                                         size_t index, const struct ext_key *hdkey,
-                                         struct ext_key *output, size_t *written)
+int map_keypath_get_bip32_key_from(const struct wally_map *map_in,
+                                   size_t index, const struct ext_key *hdkey,
+                                   struct ext_key *output, uint32_t bip32_flags,
+                                   size_t *written)
 {
     uint32_t path[BIP32_PATH_MAX_LEN];
     struct ext_key derived;
@@ -502,7 +503,7 @@ int wally_map_keypath_get_bip32_key_from(const struct wally_map *map_in,
             else {
                 /* Derive the key to use */
                 ret = bip32_key_from_parent_path(hdkey, path, path_len,
-                                                 BIP32_FLAG_KEY_PRIVATE, &derived);
+                                                 bip32_flags, &derived);
             }
             if (ret == WALLY_OK) {
                 /* Check the derived public key belongs to this item */
@@ -527,6 +528,21 @@ int wally_map_keypath_get_bip32_key_from(const struct wally_map *map_in,
     return ret;
 }
 
+int wally_map_keypath_get_bip32_key_from(const struct wally_map *map_in,
+                                         size_t index, const struct ext_key *hdkey,
+                                         struct ext_key *output, size_t *written)
+{
+    return map_keypath_get_bip32_key_from(map_in, index, hdkey,
+                                          output, BIP32_FLAG_KEY_PRIVATE, written);
+}
+
+int wally_map_keypath_get_bip32_public_key_from(const struct wally_map *map_in,
+                                                size_t index, const struct ext_key *hdkey,
+                                                struct ext_key *output, size_t *written)
+{
+    return map_keypath_get_bip32_key_from(map_in, index, hdkey,
+                                          output, BIP32_FLAG_KEY_PUBLIC, written);
+}
 
 int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
                                                size_t index, const struct ext_key *hdkey,
@@ -537,8 +553,8 @@ int wally_map_keypath_get_bip32_key_from_alloc(const struct wally_map *map_in,
     int ret;
 
     OUTPUT_CHECK;
-    ret = wally_map_keypath_get_bip32_key_from(map_in, index, hdkey,
-                                               &found, &found_index);
+    ret = map_keypath_get_bip32_key_from(map_in, index, hdkey,
+                                         &found, BIP32_FLAG_KEY_PRIVATE, &found_index);
     if (ret == WALLY_OK && found_index) {
         if (!(*output = wally_calloc(sizeof(struct ext_key))))
             ret = WALLY_ENOMEM;

@@ -363,11 +363,11 @@ WALLY_CORE_API int wally_map_find_bip32_public_key_from(
 
 #ifndef SWIG
 /**
- * Return a BIP32 derived key matching the keypath of a parent in a map.
+ * Return a BIP32 derived private key matching the keypath of a parent in a map.
  *
  * :param map_in: The map to search for derived keys of ``hdkey`` in.
  * :param index: The zero-based index of the item to start searching from.
- * :param hdkey: The BIP32 parent key to derive matches from.
+ * :param hdkey: The BIP32 parent private key to derive matches from.
  * :param output: Destination for the resulting derived key. If a matching
  *|    key is not found, ``output`` is zeroed.
  * :param written: On success, set to zero if a matching derived key is
@@ -381,6 +381,28 @@ WALLY_CORE_API int wally_map_find_bip32_public_key_from(
  *|    `WALLY_OK` is returned.
  */
 WALLY_CORE_API int wally_map_keypath_get_bip32_key_from(
+    const struct wally_map *map_in,
+    size_t index,
+    const struct ext_key *hdkey,
+    struct ext_key *output,
+    size_t *written);
+
+/**
+ * Return a BIP32 derived public key matching the keypath of a parent in a map.
+ *
+ * :param map_in: The map to search for derived keys of ``hdkey`` in.
+ * :param index: The zero-based index of the item to start searching from.
+ * :param hdkey: The BIP32 parent private key to derive matches from.
+ * :param output: Destination for the resulting derived key. If a matching
+ *|    key is not found, ``output`` is zeroed.
+ * :param written: On success, set to zero if a matching derived key is
+ *|    not found, otherwise the index of the matching key plus one.
+ *
+ * .. note:: The public key equivalent of `wally_map_keypath_get_bip32_key_from`,
+ *|    however note that it requires a private extended key if the child path
+ *|    may contain hardend child indices.
+ */
+WALLY_CORE_API int wally_map_keypath_get_bip32_public_key_from(
     const struct wally_map *map_in,
     size_t index,
     const struct ext_key *hdkey,
