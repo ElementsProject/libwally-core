@@ -33,6 +33,8 @@ extern "C" {
 
 /** Include redundant information to match some buggy PSBT implementations */
 #define WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT 0x1
+/* Serialize a minimal PSBT containing signatures only (for combining) */
+#define WALLY_PSBT_SERIALIZE_SIGS_ONLY 0x2
 
 /*** psbt-extract Transaction extraction flags */
 #define WALLY_PSBT_EXTRACT_FINAL     0x0 /* Extract a final transaction; fail if any inputs aren't finalized */

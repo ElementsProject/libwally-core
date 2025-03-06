@@ -3344,10 +3344,53 @@ static int push_psbt_output(const struct wally_psbt *psbt,
     return WALLY_OK;
 }
 
+static int psbt_sigs_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
+                              unsigned char *bytes_out, size_t len,
+                              size_t *written)
+{
+    unsigned char buf[sizeof(uint8_t) + sizeof(uint64_t)];
+    unsigned char *cursor = bytes_out;
+    size_t max = len, n;
+    (void)flags;
+
+    push_bytes(&cursor, &max, psbt->magic, sizeof(psbt->magic));
+    push_psbt_le32(&cursor, &max, PSBT_GLOBAL_VERSION, false, 2);
+    push_psbt_key(&cursor, &max, PSBT_GLOBAL_INPUT_COUNT, NULL, 0);
+    n = varint_to_bytes(psbt->num_inputs, buf);
+    push_varbuff(&cursor, &max, buf, n);
+    push_u8(&cursor, &max, PSBT_SEPARATOR);
+
+    /* Push each inputs signatures */
+    for (size_t i = 0; i < psbt->num_inputs; ++i) {
+        const struct wally_psbt_input *input = &psbt->inputs[i];
+        int ret;
+        push_psbt_map(&cursor, &max, PSBT_IN_PARTIAL_SIG, false, &input->signatures);
+        ret = push_varbuff_from_map(&cursor, &max, PSBT_IN_TAP_KEY_SIG,
+                                    PSBT_IN_TAP_KEY_SIG,
+                                    false, &input->psbt_fields);
+        if (ret == WALLY_OK)
+            ret = push_taproot_leaf_signatures(&cursor, &max, PSBT_IN_TAP_SCRIPT_SIG,
+                                               &input->taproot_leaf_signatures);
+
+        if (ret != WALLY_OK)
+            return ret;
+        push_u8(&cursor, &max, PSBT_SEPARATOR);
+    }
+    if (cursor == NULL) {
+        /* Once cursor is NULL, max holds how many bytes we needed */
+        *written = len + max;
+    } else {
+        *written = len - max;
+    }
+    return WALLY_OK;
+}
+
 int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
                         unsigned char *bytes_out, size_t len,
                         size_t *written)
 {
+    const uint32_t all_flags = WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT |
+                               WALLY_PSBT_SERIALIZE_SIGS_ONLY;
     unsigned char *cursor = bytes_out;
     size_t max = len, i, is_pset;
     uint32_t tx_flags;
@@ -3356,9 +3399,11 @@ int wally_psbt_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
     if (written)
         *written = 0;
 
-    if (!psbt_is_valid(psbt) || flags & ~WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT ||
-        !written)
+    if (!psbt_is_valid(psbt) || flags & ~all_flags || !written)
         return WALLY_EINVAL;
+
+    if (flags & WALLY_PSBT_SERIALIZE_SIGS_ONLY)
+        return psbt_sigs_to_bytes(psbt, flags, bytes_out, len, written);
 
     if ((ret = wally_psbt_is_elements(psbt, &is_pset)) != WALLY_OK)
         return ret;
