@@ -205,6 +205,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_psbt_clear_output_amount' \
 ,'_wally_psbt_clone_alloc' \
 ,'_wally_psbt_combine' \
+,'_wally_psbt_combine_ex' \
 ,'_wally_psbt_extract' \
 ,'_wally_psbt_finalize' \
 ,'_wally_psbt_finalize_input' \

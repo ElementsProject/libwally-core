@@ -149,6 +149,7 @@ export const WALLY_NETWORK_NONE = 0x00; /** Used for miniscript parsing only */
 export const WALLY_NO_CODESEPARATOR = 0xffffffff; /* No BIP342 code separator position */
 export const WALLY_OK = 0; /** Success */
 export const WALLY_PATCH_VER = 1;
+export const WALLY_PSBT_COMBINE_SIGS = 0x1; /* Combine the signatures from a signature-only PSBT */
 export const WALLY_PSBT_EXTRACT_FINAL = 0x0; /* Extract a final transaction; fail if any inputs aren't finalized */
 export const WALLY_PSBT_EXTRACT_NON_FINAL = 0x1; /* Extract without any final scriptsig and witness */
 export const WALLY_PSBT_EXTRACT_OPT_FINAL = 0x2; /* Extract only final scriptsigs and witnesses that are present (partial finalization) */

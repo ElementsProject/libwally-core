@@ -44,6 +44,8 @@ extern "C" {
 
 #define WALLY_PSBT_FINALIZE_NO_CLEAR 0x1 /* Finalize without clearing redeem/witness scripts etc */
 
+#define WALLY_PSBT_COMBINE_SIGS 0x1 /* Combine the signatures from a signature-only PSBT */
+
 /*** psbt-id-flags PSBT ID calculation flags */
 #define WALLY_PSBT_ID_BIP370 0x0 /* BIP370 compatible */
 #define WALLY_PSBT_ID_AS_V2 0x1 /* Compute PSBT v0 IDs like v2 by setting inputs sequence to 0 */
@@ -2534,6 +2536,18 @@ WALLY_CORE_API int wally_psbt_from_tx(
  */
 WALLY_CORE_API int wally_psbt_combine(
     struct wally_psbt *psbt,
+    const struct wally_psbt *source);
+
+/**
+ * Combine the metadata from a source PSBT into another PSBT.
+ *
+ * :param psbt: the PSBT to combine into.
+ * :param flags: Flags controlling combining. Must be 0 or `WALLY_PSBT_COMBINE_SIGS`.
+ * :param source: the PSBT to copy data from.
+ */
+WALLY_CORE_API int wally_psbt_combine_ex(
+    struct wally_psbt *psbt,
+    uint32_t flags,
     const struct wally_psbt *source);
 
 /**

@@ -724,6 +724,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_struct(wally_psbt_clone_alloc, wally_psbt);
 %rename("psbt_clone") wally_psbt_clone_alloc;
 %returns_void__(wally_psbt_combine);
+%returns_void__(wally_psbt_combine_ex);
 %returns_struct(wally_psbt_extract, wally_tx);
 %returns_void__(wally_psbt_finalize);
 %returns_void__(wally_psbt_finalize_input);

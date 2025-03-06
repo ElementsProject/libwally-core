@@ -3876,6 +3876,32 @@ static int psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src,
     return ret;
 }
 
+static int psbt_combine_sigs(struct wally_psbt *psbt, const struct wally_psbt *src)
+{
+    int ret = WALLY_OK;
+
+    if (psbt->num_inputs != src->num_inputs || src->version != PSBT_2 ||
+        src->num_outputs)
+        return WALLY_EINVAL; /* Not a valid signature-only PSBT */
+
+    for (size_t i = 0; ret == WALLY_OK && i < psbt->num_inputs; ++i) {
+        struct wally_psbt_input *dst_p = psbt->inputs + i;
+        const struct wally_psbt_input *src_p = src->inputs + i;
+        ret = wally_map_combine(&dst_p->signatures, &src_p->signatures);
+        if (ret == WALLY_OK) {
+            const struct wally_map_item *key_sig;
+            key_sig = wally_map_get_integer(&src_p->psbt_fields, PSBT_IN_TAP_KEY_SIG);
+            if (key_sig)
+                ret = wally_map_add_integer(&dst_p->psbt_fields, PSBT_IN_TAP_KEY_SIG,
+                                            key_sig->value, key_sig->value_len);
+        }
+        if (ret == WALLY_OK)
+            ret = combine_map_if_empty(&dst_p->taproot_leaf_signatures,
+                                       &src_p->taproot_leaf_signatures);
+    }
+    return ret;
+}
+
 int wally_psbt_get_locktime(const struct wally_psbt *psbt, size_t *locktime)
 {
     bool only_locktime = false, only_lockheight = false;
@@ -4200,17 +4226,25 @@ int wally_psbt_get_id(const struct wally_psbt *psbt, uint32_t flags, unsigned ch
     return ret;
 }
 
-int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
+int wally_psbt_combine_ex(struct wally_psbt *psbt, uint32_t flags,
+                          const struct wally_psbt *src)
 {
     unsigned char id[WALLY_TXHASH_LEN], src_id[WALLY_TXHASH_LEN];
     size_t is_pset;
     int ret;
 
-    if (!psbt_is_valid(psbt) || !psbt_is_valid(src) || psbt->version != src->version)
+    if (!psbt_is_valid(psbt) || !psbt_is_valid(src) ||
+        flags & ~WALLY_PSBT_COMBINE_SIGS)
         return WALLY_EINVAL;
 
     if (psbt == src)
         return WALLY_OK; /* Combine with self: no-op */
+
+    if (flags & WALLY_PSBT_COMBINE_SIGS)
+        return psbt_combine_sigs(psbt, src);
+
+    if (psbt->version != src->version)
+        return WALLY_EINVAL;
 
     if ((ret = wally_psbt_get_id(psbt, 0, id, sizeof(id))) != WALLY_OK)
         return ret;
@@ -4224,6 +4258,11 @@ int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
     }
     wally_clear_2(id, sizeof(id), src_id, sizeof(src_id));
     return ret;
+}
+
+int wally_psbt_combine(struct wally_psbt *psbt, const struct wally_psbt *src)
+{
+    return wally_psbt_combine_ex(psbt, 0, src);
 }
 
 int wally_psbt_clone_alloc(const struct wally_psbt *psbt, uint32_t flags,

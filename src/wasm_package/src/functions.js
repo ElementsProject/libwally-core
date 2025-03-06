@@ -309,6 +309,7 @@ export const psbt_clear_output_value_commitment = wrap('wally_psbt_clear_output_
 export const psbt_clear_output_value_rangeproof = wrap('wally_psbt_clear_output_value_rangeproof', [T.OpaqueRef, T.Int32]);
 export const psbt_clone = wrap('wally_psbt_clone_alloc', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_combine = wrap('wally_psbt_combine', [T.OpaqueRef, T.OpaqueRef]);
+export const psbt_combine_ex = wrap('wally_psbt_combine_ex', [T.OpaqueRef, T.Int32, T.OpaqueRef]);
 export const psbt_extract = wrap('wally_psbt_extract', [T.OpaqueRef, T.Int32, T.DestPtrPtr(T.OpaqueRef)]);
 export const psbt_finalize = wrap('wally_psbt_finalize', [T.OpaqueRef, T.Int32]);
 export const psbt_finalize_input = wrap('wally_psbt_finalize_input', [T.OpaqueRef, T.Int32, T.Int32]);
