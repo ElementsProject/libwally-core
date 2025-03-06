@@ -159,6 +159,7 @@ export const WALLY_PSBT_ID_AS_V2 = 0x1; /* Compute PSBT v0 IDs like v2 by settin
 export const WALLY_PSBT_ID_BIP370 = 0x0; /* BIP370 compatible */
 export const WALLY_PSBT_ID_USE_LOCKTIME = 0x2; /* Do not set locktime to 0 before calculating id */
 export const WALLY_PSBT_INIT_PSET = 0x1;
+export const WALLY_PSBT_PARSE_FLAG_LOOSE = 0x2; /* Allow disallowed and missing mandatory fields */
 export const WALLY_PSBT_PARSE_FLAG_STRICT = 0x1; /* Parse strictly according to the PSBT/PSET spec */
 export const WALLY_PSBT_PROPRIETARY_TYPE = 0xFC;
 export const WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT = 0x1;

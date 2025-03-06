@@ -31,7 +31,7 @@
 #define PSBT_ID_ALL_FLAGS (WALLY_PSBT_ID_AS_V2 | WALLY_PSBT_ID_USE_LOCKTIME)
 
 /* All allowed flags for wally_psbt_from_[bytes|base64]() */
-#define PSBT_ALL_PARSE_FLAGS (WALLY_PSBT_PARSE_FLAG_STRICT)
+#define PSBT_ALL_PARSE_FLAGS (WALLY_PSBT_PARSE_FLAG_STRICT|WALLY_PSBT_PARSE_FLAG_LOOSE)
 
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
@@ -2469,10 +2469,12 @@ unknown:
         pre_key = *cursor;
     }
 
-    if (mandatory && (keyset & mandatory) != mandatory)
-        ret = WALLY_EINVAL; /* Mandatory field is missing */
-    else if (disallowed && (keyset & disallowed))
-        ret = WALLY_EINVAL; /* Disallowed field present */
+    if (!(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
+        if (mandatory && (keyset & mandatory) != mandatory)
+            ret = WALLY_EINVAL; /* Mandatory field is missing */
+        else if (disallowed && (keyset & disallowed))
+            ret = WALLY_EINVAL; /* Disallowed field present */
+    }
 
     if (ret == WALLY_OK && result->sighash) {
         /* Verify that the sighash provided matches any signatures given */
@@ -2500,7 +2502,6 @@ unknown:
             ret = WALLY_EINVAL;
     }
 #endif /* BUILD_ELEMENTS */
-    (void)flags; /* For non-elements builds */
     return ret;
 }
 
@@ -2622,11 +2623,12 @@ unknown:
     }
 #endif /* BUILD_ELEMENTS */
 
-    if (mandatory && (keyset & mandatory) != mandatory)
-        ret = WALLY_EINVAL; /* Mandatory field is missing*/
-    else if (disallowed && (keyset & disallowed))
-        ret = WALLY_EINVAL; /* Disallowed field present */
-
+    if (!(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
+        if (mandatory && (keyset & mandatory) != mandatory)
+            ret = WALLY_EINVAL; /* Mandatory field is missing*/
+        else if (disallowed && (keyset & disallowed))
+            ret = WALLY_EINVAL; /* Disallowed field present */
+    }
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
         if (!pset_check_proof(NULL, NULL, result, PSBT_FT(PSBT_OUT_AMOUNT),
@@ -2638,7 +2640,6 @@ unknown:
             ret = WALLY_EINVAL;
     }
 #endif /* BUILD_ELEMENTS */
-    (void)flags; /* For non-elements builds */
     return ret;
 }
 
@@ -2656,6 +2657,10 @@ int wally_psbt_from_bytes(const unsigned char *bytes, size_t len,
     OUTPUT_CHECK;
     if (!bytes || len < sizeof(PSBT_MAGIC) || (flags & ~PSBT_ALL_PARSE_FLAGS) || !output)
         return WALLY_EINVAL;
+
+    if ((flags & (WALLY_PSBT_PARSE_FLAG_STRICT|WALLY_PSBT_PARSE_FLAG_LOOSE)) ==
+        (WALLY_PSBT_PARSE_FLAG_STRICT|WALLY_PSBT_PARSE_FLAG_LOOSE))
+        return WALLY_EINVAL; /* Cannot use these flags together */
 
     if (!(*output = pull_psbt(cursor, max)))
         return WALLY_EINVAL;
@@ -2785,10 +2790,12 @@ unknown:
         mandatory &= PSBT_FT_MASK;
         disallowed &= PSBT_FT_MASK;
     }
-    if (mandatory && (keyset & mandatory) != mandatory)
-        ret = WALLY_EINVAL; /* Mandatory field is missing*/
-    else if (disallowed && (keyset & disallowed))
-        ret = WALLY_EINVAL; /* Disallowed field present */
+    if (!(flags & WALLY_PSBT_PARSE_FLAG_LOOSE)) {
+        if (mandatory && (keyset & mandatory) != mandatory)
+            ret = WALLY_EINVAL; /* Mandatory field is missing*/
+        else if (disallowed && (keyset & disallowed))
+            ret = WALLY_EINVAL; /* Disallowed field present */
+    }
 
     if (ret == WALLY_OK && (*output)->version == PSBT_2) {
         if ((*output)->tx_version < 2)
