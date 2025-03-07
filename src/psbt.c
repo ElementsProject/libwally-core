@@ -4657,6 +4657,10 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
         ret = wally_map_find_bip32_public_key_from(&inp->taproot_leaf_hashes,
                                                    subindex, hdkey,
                                                    &pubkey_idx);
+        if (ret == WALLY_OK && pubkey_idx && !is_taproot)
+            return WALLY_EINVAL; /* Must be tr if we have a tr key */
+    } else if (ret == WALLY_OK && pubkey_idx && is_taproot) {
+        return WALLY_EINVAL; /* Must not be tr if we have a non-tr key */
     }
 
     if (ret != WALLY_OK || !pubkey_idx)
