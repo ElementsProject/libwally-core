@@ -199,11 +199,11 @@ libwallycore_la_INCLUDES = \
 
 if SHARED_BUILD_ENABLED
 # Increment at every ABI change (whether breaking or non-breaking)
-LT_VER_CURRENT = 5
+LT_VER_CURRENT = 6
 # Increment at every release, but reset to 0 at every ABI change
 LT_VER_REVISION = 0
 # Increment at every ABI change, but reset to 0 if breaking
-LT_VER_AGE = 4
+LT_VER_AGE = 0
 # The library filename will be "libwallycore.so.$((current-age)).$((age)).$((revision))",
 # and the soname will be "libwallycore.so.$((current-age))".
 # Do NOT try to make the library version-info follow the project release version number!
