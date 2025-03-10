@@ -1,5 +1,37 @@
 # Changes
 
+## Version 1.4.0
+
+### Added
+
+- tx: Add caching to signature hash generation/PSBT signing making signing faster.
+- tx: Add support for generating Elements taproot signature hashes and signing Elements taproot inputs.
+- descriptor: Add support for "tr()/rawtr()" keyspend-only taproot descriptors.
+- descriptor: Add support for parsing Elements-core compatible descriptors, including taproot.
+- psbt: Add accessors for keypath/taproot related fields.
+- pset: Add support for ELIP-101 genesis hash.
+- psbt: Add support for serializing/parsing/combining signature-only PSBTs.
+- script: Add support for generating Elements p2tr scripts.
+- BIP85: Add support for deriving RSA keys via BIP85.
+- base64/psbt: Add support for parsing from known length (non-NUL terminated) strings.
+- build: Add Debian Bookworm docker build image.
+
+### Changed
+
+- tx: Re-implement signature hash generation to use less stack space and CPU independently of caching.
+- amalgamation: Provide the amalgamated build as a single source file, make it simpler to use.
+- build: CI improvements: New valgrind, scan-build and ubsan/addrcheck/etc builds. Add CI/test runs
+  for builds with elements support disabled.
+- build: Update/extend tests to make it easier to catch errors in the new CI builds.
+
+### Fixed
+
+- psbt: Fix detection of expired CSV inputs for v0 PSBTs.
+- psbt: Fix finalization of non-optimized CSV inputs (e.g. Green Liquid 2of2).
+- tx: Fix incorrect sighash masking for BTC taproot inputs.
+- build: Various fixes and test improvements for non-Elements builds.
+- Various minor code and build fixes.
+
 ## Version 1.3.1
 
 ### Added
