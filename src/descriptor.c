@@ -962,7 +962,7 @@ static int verify_thresh(ms_ctx *ctx, ms_node *node)
     for (child = top->next; child; child = child->next) {
         const uint32_t expected_type = count ? TYPE_W : TYPE_B;
 
-        if (!child->builtin || (~child->type_properties & (expected_type | PROP_D | PROP_U)))
+        if (!child->builtin || (~child->type_properties & (expected_type | PROP_D)))
             return WALLY_EINVAL;
 
         if (~child->type_properties & PROP_E)
