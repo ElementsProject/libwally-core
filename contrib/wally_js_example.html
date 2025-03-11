@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en-us">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Wallycore JS Example</title>
+        <style>
+            textarea { font-family: monospace; width: 80%; padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+        </style>
+    </head>
+    <link rel="icon" href="data:,">
+    <body>
+        <textarea id="output" rows="16"></textarea>
+        <script type='text/javascript'>
+            var element = document.getElementById('output');
+            var wally_example = function() {
+                const as_utf8 = function(ptr) { return Module.UTF8ToString(Module.getValue(ptr, '*')); };
+                const b2h = function(buf) { return Array.prototype.map.call(buf, x => ('00' + x.toString(16)).slice(-2)).join(''); };
+                const wally_init = Module.cwrap("wally_init", ['number'], ['number']);
+                const wally_secp_randomize = Module.cwrap("wally_secp_randomize", ['number'], ['array', 'number']);
+                const bip39_mnemonic_from_bytes = Module.cwrap('bip39_mnemonic_from_bytes', ['number'], ['number', 'array', 'number', 'number']);
+                const wally_free_string = Module.cwrap('wally_free_string', ['number'], ['number']);
+
+                // Initialize wally
+                var text = "init: " + wally_init(0) + '\n';
+                var entropy = new Uint8Array(32); // WALLY_SECP_RANDOMIZE_LEN
+                window.crypto.getRandomValues(entropy);
+                text = text + "secp_randomize: " + wally_secp_randomize(entropy, entropy.length) + '\n';
+
+                // Create a BIP39 seed
+                var seed = new Uint8Array(16); // BIP39_ENTROPY_LEN_128
+                window.crypto.getRandomValues(seed);
+                text += "seed: " + b2h(seed) + '\n';
+
+                // Generate a mnemonic from it
+                var ptr = Module._malloc(4); // Holds our output pointer
+                var ret = bip39_mnemonic_from_bytes(null, seed, seed.length, ptr);
+                const mnemonic = as_utf8(ptr);
+                text = text + "mnemonic: " + mnemonic + '\n';
+                wally_free_string(Module.getValue(ptr, '*'));
+                Module._free(ptr);
+
+                // Display our output
+                element.value = text;
+            }
+            var Module = {
+                preRun: [],
+                postRun: [wally_example],
+            };
+        </script>
+        <script type="module">
+            import InitWally from "./wallycore.js";
+            InitWally(Module);
+        </script>
+    </body>
+</html>

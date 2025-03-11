@@ -7,10 +7,6 @@ if [ "$1" = "--disable-elements" ]; then
     DISABLE_ELEMENTS="--disable-elements --disable-elements-abi"
     shift
 fi
-MODULARIZE="-s MODULARIZE=1"
-if [ "$1" = "--no-modularize" ]; then
-    MODULARIZE=""
-fi
 
 num_jobs=4
 if [ -f /proc/cpuinfo ]; then
@@ -34,9 +30,9 @@ export CFLAGS="-fno-stack-protector"
 emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $DISABLE_ELEMENTS --disable-tests --enable-export-all --enable-wasm-interface
 emmake make -j $num_jobs
 
-EMCC_OPTIONS="$EMCC_OPTIONS -s EXPORT_ES6=1 ${MODULARIZE} -s EXPORT_NAME=InitWally -s WASM_BIGINT"
+EMCC_OPTIONS="$EMCC_OPTIONS -s EXPORT_NAME=InitWally -s WASM_BIGINT"
 : ${OPTIMIZATION_LEVEL:=3}
-: ${EXPORTED_RUNTIME_METHODS:='cwrap,ccall,malloc,getValue,UTF8ToString'}
+: ${EXPORTED_RUNTIME_METHODS:='cwrap,ccall,getValue,UTF8ToString'}
 # Get the list of functions to export
 source ./tools/wasm_exports.sh
 
@@ -48,5 +44,4 @@ emcc -O$OPTIMIZATION_LEVEL \
     -s FILESYSTEM=0 \
     $EMCC_OPTIONS \
     ./src/.libs/*.o src/secp256k1/src/*.o src/ccan/ccan/*/.libs/*.o src/ccan/ccan/*/*/.libs/*.o \
-    -o dist/wallycore.html \
-    --shell-file contrib/shell_minimal.html
+    -o dist/wallycore.js
