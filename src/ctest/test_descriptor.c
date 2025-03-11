@@ -512,6 +512,16 @@ static const struct descriptor_test {
         "ks05yr6p"
     },
     /*
+     * Miniscript: https://bitcoin.sipa.be/miniscript/
+     */
+    {
+        "miniscript - A 3-of-3 that turns into a 2-of-3 after 90 days",
+        "thresh(3,pk(key_1),s:pk(key_2),s:pk(key_3),sln:older(12960))",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac7c2103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac937c2103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac937c63006702a032b29268935387",
+        "2sw64huw"
+    },
+    /*
      * Miniscript: Randomly generated test set that covers the majority of type and node type combinations
      */
     {
