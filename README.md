@@ -191,18 +191,21 @@ $ source $HOME/emsdk/emsdk_env.sh
 # Optionally set the list of wally functions to export to wasm (default: all)
 $ export EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_cleanup',...]"
 
+# Optionally set emcc options, e.g. to build as an ES6 module:
+$ export EMCC_OPTIONS="-s EXPORT_ES6=1 -s MODULARIZE=1"
+
 # Build
 $ ./tools/build_wasm.sh [--disable-elements]
 ```
 
 Note that emsdk v3.1.27 or later is required.
 
-The script `tools/build_wasm.sh` builds the `wallycore.html` example as well
-as the required `wallycore.js` and `wallycore.wasm` files, which can be used
-as an example for your own WebAssembly projects.
+The file `contrib/wally_js_example.html` is an example page using the
+`wallycore.js` and `wallycore.wasm` files, which can be used as an example
+for your own WebAssembly projects.
 
-Open `wallycore.html` in a browser via a webserver like [nginx](https://www.nginx.com/)
-or `python2 -m SimpleHTTPServer 8000` to run the example.
+Open `wally_js_example.html` in a browser via a webserver like [nginx](https://www.nginx.com/)
+or `python3 -m http.server` to run the example.
 
 ## Cleaning
 
