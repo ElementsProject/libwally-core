@@ -328,6 +328,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (unsigned char* s2c_opening_out, size_t s2c_opening_out_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char* scalar, size_t scalar_len) };
 %apply(char *STRING, size_t LENGTH) { (unsigned char* vbf_out, size_t vbf_out_len) };
+%apply(char *STRING, size_t LENGTH) { (void* bytes, size_t bytes_len) };
 %ignore bip32_key_from_base58;
 %ignore bip32_key_from_base58_n;
 %ignore bip32_key_from_parent;

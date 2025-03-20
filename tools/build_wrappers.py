@@ -149,7 +149,7 @@ def is_array(func, arg, n, num_args, types):
 
 
 def is_buffer(func, arg, n, num_args):
-    return is_array(func, arg, n, num_args, [u'const unsigned char*', u'unsigned char*'])
+    return is_array(func, arg, n, num_args, [u'const unsigned char*', u'unsigned char*', u'void*'])
 
 
 def is_int_buffer(func, arg, n, num_args):

@@ -512,8 +512,8 @@ inline int bip340_tagged_hash(const BYTES& bytes, const TAG& tag, BYTES_OUT& byt
 }
 
 template <class BYTES>
-inline int bzero(const BYTES& bytes, size_t bytes_len) {
-    int ret = ::wally_bzero(detail::get_p(bytes), bytes_len);
+inline int bzero(BYTES& bytes) {
+    int ret = ::wally_bzero(bytes.data(), bytes.size());
     return detail::check_ret(__FUNCTION__, ret);
 }
 
