@@ -81,6 +81,8 @@ extern "C" {
 
 struct wally_map;
 #ifdef SWIG
+struct wally_tx_witness_item;
+struct wally_tx_witness_stack;
 struct wally_tx_input;
 struct wally_tx_output;
 struct wally_tx;

@@ -61,8 +61,6 @@ extern "C" {
 
 #define WALLY_SCALAR_OFFSET_LEN 32 /* Length of a PSET scalar offset */
 
-struct ext_key;
-
 #ifdef SWIG
 struct wally_psbt_input;
 struct wally_psbt_output;
