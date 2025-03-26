@@ -45,9 +45,7 @@ static char hexchar(unsigned int val)
 {
 	if (val < 10)
 		return '0' + val;
-	if (val < 16)
-		return 'a' + val - 10;
-	abort();
+	return 'a' + val - 10;
 }
 
 bool hex_encode(const void *buf, size_t bufsize, char *dest, size_t destsize)
