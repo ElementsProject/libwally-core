@@ -139,12 +139,12 @@ build_wally_release_files:
     - mv release wallycore-android-jni
     - tar czf wally_dist/wallycore-android-jni.tar.gz --remove-files wallycore-android-jni
     - source /opt/emsdk/emsdk_env.sh
-    - EMCC_OPTIONS="-s EXPORT_ES6=1 -s MODULARIZE=1" tools/build_wasm.sh
+    - tools/build_wasm.sh
     - cp contrib/wally_js_example.html dist/wallycore.html
     - cd dist
     - tar czf ../wally_dist/wallycore-wasm.tar.gz --remove-files wallycore.html wallycore.js wallycore.wasm
     - cd ..
-    - EMCC_OPTIONS="-s MODULARIZE=1" EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_asset_value_commitment','_wally_asset_generator_from_bytes']" tools/build_wasm.sh
+    - EMCC_OPTIONS="-s MODULARIZE=1 -s EXPORT_NAME=InitWally" EXPORTED_FUNCTIONS="['_malloc','_free','_wally_init','_wally_asset_value_commitment','_wally_asset_generator_from_bytes']" tools/build_wasm.sh
     - cd dist
     - tar czf ../wally_dist/esplora-wasm.tar.gz --remove-files wallycore.js wallycore.wasm
     - cd ..

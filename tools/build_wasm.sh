@@ -30,7 +30,7 @@ export CFLAGS="-fno-stack-protector"
 emconfigure ./configure --build=$HOST_OS ac_cv_c_bigendian=no --disable-swig-python --disable-swig-java $DISABLE_ELEMENTS --disable-tests --enable-export-all --enable-wasm-interface
 emmake make -j $num_jobs
 
-EMCC_OPTIONS="$EMCC_OPTIONS -s EXPORT_NAME=InitWally -s WASM_BIGINT"
+: ${EMCC_OPTIONS:="-s EXPORT_ES6=1 -s WASM_BIGINT"}
 : ${OPTIMIZATION_LEVEL:=3}
 : ${EXPORTED_RUNTIME_METHODS:='cwrap,ccall,getValue,UTF8ToString'}
 # Get the list of functions to export
