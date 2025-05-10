@@ -268,6 +268,9 @@ class DescriptorTests(unittest.TestCase):
                 # Parsing a descriptor as elements returns elements in its features
                 (f'tr({k1})',
                  AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2),
+                # el-prefixed builtins return elements in their features
+                (f'eltr({k1})',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2),
                 ])
 
         for descriptor, flags, expected, expected_depth in cases:

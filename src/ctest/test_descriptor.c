@@ -401,11 +401,17 @@ static const struct descriptor_test {
     },
 #ifdef BUILD_ELEMENTS
     {
-        "descriptor - Elements tr",
+        "descriptor - tr() interpreted as Elements",
         "tr([59d1f3b0/86h/1h/0h]jade_ss_tr_xpriv/0/*)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_AS_ELEMENTS,
         "5120900d1d75269396d4220c4529527dbcb746a6093c7209cea2d76a87c8ab9447fc",
         "3d4maj53"
+    }, {
+        "descriptor - Elements eltr()",
+        "eltr([59d1f3b0/86h/1h/0h]jade_ss_tr_xpriv/0/*)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "5120900d1d75269396d4220c4529527dbcb746a6093c7209cea2d76a87c8ab9447fc",
+        "nldl65wt"
     },
 #endif
     {

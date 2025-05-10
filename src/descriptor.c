@@ -1959,9 +1959,23 @@ static const struct ms_builtin_t g_builtins[] = {
 };
 #undef I_NAME
 
+#ifdef BUILD_ELEMENTS
+static inline bool builtin_is_elements(const char *name, size_t name_len)
+{
+    /* Elements descriptor builtins are prefixed with "el" */
+    return name_len > 2 && name[0] == 'e' && name[1] == 'l';
+}
+#endif /* ifdef BUILD_ELEMENTS */
+
 static unsigned char builtin_lookup(const char *name, size_t name_len, uint32_t kind)
 {
     unsigned char i;
+#ifdef BUILD_ELEMENTS
+    if (builtin_is_elements(name, name_len)) {
+        name += 2; /* Look up without matching the prefix */
+        name_len -= 2;
+    }
+#endif /* ifdef BUILD_ELEMENTS */
 
     for (i = 0; i < NUM_ELEMS(g_builtins); ++i) {
         if ((g_builtins[i].kind & kind) &&
@@ -2409,6 +2423,11 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
                     /* Not a pure descriptor */
                     ctx->features &= ~WALLY_MS_IS_DESCRIPTOR;
                 }
+#ifdef BUILD_ELEMENTS
+                if (builtin_is_elements(str + offset, i - offset)) {
+                    ctx->features |= WALLY_MS_IS_ELEMENTS;
+                }
+#endif /* ifdef BUILD_ELEMENTS */
                 offset = i + 1;
                 child_offset = offset;
             }
