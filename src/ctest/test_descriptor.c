@@ -30,6 +30,7 @@ static struct wally_map_item g_key_map_items[] = {
     { B("key_1"), B("038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") },
     { B("key_2"), B("03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7") },
     { B("key_3"), B("03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284") },
+    { B("key_4"), B("xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH") },
     { B("key_likely"), B("038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") },
     { B("key_unlikely"), B("03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7") },
     { B("key_user"), B("038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") },
@@ -315,13 +316,13 @@ static const struct descriptor_test {
         "e0pf8z74"
     },{
         "descriptor - p2wsh-multi-xpub",
-        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))",
         WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,
         "00204616bb4e66d0b540b480c5b26c619385c4c2b83ed79f4f3eab09b01745443a55",
         "t2zpj2eu"
     },{
         "descriptor - p2wsh-sortedmulti-xpub",
-        "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))",
         WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_16, 0,
         "002002aeee9c3773dfecfe6215f2eea2908776b1232513a700e1ee516b634883ecb0",
         "v66cvalc"
@@ -445,7 +446,7 @@ static const struct descriptor_test {
         "8re62ejc"
     },{
         "descriptor - derive key index 0",
-        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))",
         WALLY_NETWORK_NONE, 0, 0, 0, &g_miniscript_index_0, 0,
         "002064969d8cdca2aa0bb72cfe88427612878db98a5f07f9a7ec6ec87b85e9f9208b",
         "t2zpj2eu"
@@ -961,7 +962,7 @@ static const struct descriptor_test {
         ""
     }, {
         "miniscript - taproot bip32 key",
-        "c:pk_k([bd16bee5/0]xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/1)",
+        "c:pk_k([bd16bee5/0]key_4/0/0/1)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
         "208c6f5956c3cc7251d483fc683fa06b22d4e2ddc7496a2590acee36c4a313f816ac",
         ""
@@ -1728,13 +1729,13 @@ static const struct address_test {
         ADDR("14qCH92HCyDDBFFZdhDt1WMfrMDYnBFYMF")
     },{
         "address - p2wsh-multi-xpub",
-        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))",
         WALLY_NETWORK_BITCOIN_MAINNET,
         0, 0, 0,
         ADDR("bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c")
     },{
         "address - p2wsh-sortedmulti-xpub",
-        "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))",
+        "wsh(sortedmulti(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))",
         WALLY_NETWORK_BITCOIN_MAINNET,
         0, 0, 0,
         ADDR("bc1qvjtfmrxu524qhdevl6yyyasjs7xmnzjlqlu60mrwepact60eyz9s9xjw0c")
@@ -1900,7 +1901,7 @@ static const struct address_test {
      */
     {
         "address list - p2wsh multisig (0-29)",
-        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))#t2zpj2eu",
+        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))#t2zpj2eu",
         WALLY_NETWORK_BITCOIN_MAINNET,
         0, 0, 0, 30,
         {
@@ -1937,7 +1938,7 @@ static const struct address_test {
         }
     }, {
         "address list - p2wsh multisig (30-40)",
-        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/0/0/*))#t2zpj2eu",
+        "wsh(multi(1,xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB/1/0/*,key_4/0/0/*))#t2zpj2eu",
         WALLY_NETWORK_BITCOIN_MAINNET,
         0, 0, 30, 11,
         {
