@@ -1435,7 +1435,7 @@ static int generate_tr(ms_ctx *ctx, ms_node *node,
 
     /* Tweak it into a compressed pubkey */
 #ifdef BUILD_ELEMENTS
-    if (node->flags & WALLY_MS_IS_ELEMENTS)
+    if (ctx->features & WALLY_MS_IS_ELEMENTS)
         tweak_flags = EC_FLAG_ELEMENTS;
 #endif
     ret = wally_ec_public_key_bip341_tweak(pubkey + 1, pubkey_len - 1,
@@ -2384,11 +2384,6 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         return WALLY_ENOMEM;
 
     node->parent = parent;
-#ifdef BUILD_ELEMENTS
-    if (ctx->features & WALLY_MS_IS_ELEMENTS) {
-        node->flags |= WALLY_MS_IS_ELEMENTS; /* Treat this node as an elements node */
-    }
-#endif
 
     for (i = 0; i < str_len; ++i) {
         if (!node->builtin && str[i] == ':') {
