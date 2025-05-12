@@ -1891,7 +1891,7 @@ static const struct address_test {
         ADDR("mn9rm3FtHUHANae2p5jURy9GXJGDM1ox43")
     },
     /*
-     * Taproot
+     * Taproot (Bitcoin)
      */
     {
         "address - rawtr (x-only)",
@@ -2006,6 +2006,34 @@ static const struct address_test {
             "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
         }
     },
+    /* Elements/Confidential descriptors */
+#ifdef BUILD_ELEMENTS
+    {
+        "address - slip77 (ELIP 150 Valid Descriptor 5)",
+        "ct(slip77(slip77_key),elpkh(key_4))#hw2glz99",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("VTq585ahVjWarEwg2nKQ9yYirmYs5F5j74CeYYA9cq1EZD9obm7hwpx6xqq3J1AY9YRaSavEMzYfr6t7")
+    }, {
+        "address - slip77 (ELIP 150 Valid Descriptor 6)",
+        "ct(slip77(slip77_key),elwpkh(key_4))#545pl285",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qqdx5wnttttzulcs6ujlg9pfts6mp3r4sdwg5ekdej566n5wxzk88vknpl78t02k2xqgdh9ltmfmpy9ssk7qfvr33xa22hpw23")
+    }, {
+        "address - slip77 (ELIP 150 Valid Descriptor 7)",
+        "ct(slip77(slip77_key),elsh(wpkh(key_4)))#m30vswxr",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("VJLFGQ17aGa3WSVEVyxzDktD9SFixJjfSmqVq8xaWmR9X6gFbiF95KFwKA41PBhu3jNTxJFKTUphHL8J")
+    }, {
+        "address - slip77 (ELIP 150 Valid Descriptor 8)",
+        "ct(slip77(slip77_key),eltr(key_4))#n3v4t5cs",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1pq26fndnz8ef6umlz6e2755sm6j5jwxv3tdt2295mr4mx6ux0uf8vcc2tuvwx7k7g9kvhhpux07vqpm3qjj8uwdj94650265ustv0xy8z8wfacw9e5a5t")
+    },
+#endif /* BUILD_ELEMENTS */
     /*
      * Address error cases
      */

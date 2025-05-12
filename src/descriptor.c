@@ -9,6 +9,9 @@
 #include <include/wally_descriptor.h>
 #include <include/wally_map.h>
 #include <include/wally_script.h>
+#ifdef BUILD_ELEMENTS
+#include <include/wally_elements.h>
+#endif
 
 #include <limits.h>
 #include <stdbool.h>
@@ -120,7 +123,9 @@ struct addr_ver_t {
     const unsigned char version_p2pkh;
     const unsigned char version_p2sh;
     const unsigned char version_wif;
-    const char family[8];
+    const unsigned char elements_prefix;
+    const char bech32[5];  /* bech32 prefix */
+    const char blech32[4]; /* blech32 prefix */
 };
 
 static const struct addr_ver_t g_address_versions[] = {
@@ -129,42 +134,54 @@ static const struct addr_ver_t g_address_versions[] = {
         WALLY_ADDRESS_VERSION_P2PKH_MAINNET,
         WALLY_ADDRESS_VERSION_P2SH_MAINNET,
         WALLY_ADDRESS_VERSION_WIF_MAINNET,
-        { 'b', 'c', '\0', '\0', '\0', '\0', '\0', '\0' }
+        0,
+        { 'b', 'c', '\0', '\0', '\0' },
+        { '\0', '\0', '\0', '\0' }
     },
     {
         WALLY_NETWORK_BITCOIN_TESTNET,
         WALLY_ADDRESS_VERSION_P2PKH_TESTNET,
         WALLY_ADDRESS_VERSION_P2SH_TESTNET,
         WALLY_ADDRESS_VERSION_WIF_TESTNET,
-        { 't', 'b', '\0', '\0', '\0', '\0', '\0', '\0' }
+        0,
+        { 't', 'b', '\0', '\0', '\0' },
+        { '\0', '\0', '\0', '\0' }
     },
     {   /* Bitcoin regtest. This must remain immediately after WALLY_NETWORK_BITCOIN_TESTNET */
         WALLY_NETWORK_BITCOIN_REGTEST,
         WALLY_ADDRESS_VERSION_P2PKH_TESTNET,
         WALLY_ADDRESS_VERSION_P2SH_TESTNET,
         WALLY_ADDRESS_VERSION_WIF_TESTNET,
-        { 'b', 'c', 'r', 't', '\0', '\0', '\0', '\0' }
+        0,
+        { 'b', 'c', 'r', 't', '\0' },
+        { '\0', '\0', '\0', '\0' }
     },
     {
         WALLY_NETWORK_LIQUID,
         WALLY_ADDRESS_VERSION_P2PKH_LIQUID,
         WALLY_ADDRESS_VERSION_P2SH_LIQUID,
         WALLY_ADDRESS_VERSION_WIF_MAINNET,
-        { 'e', 'x', '\0', '\0', '\0', '\0', '\0', '\0' }
+        12,
+        { 'e', 'x', '\0', '\0', '\0' },
+        { 'l', 'q', '\0', '\0' }
     },
     {
         WALLY_NETWORK_LIQUID_TESTNET,
         WALLY_ADDRESS_VERSION_P2PKH_LIQUID_TESTNET,
         WALLY_ADDRESS_VERSION_P2SH_LIQUID_TESTNET,
         WALLY_ADDRESS_VERSION_WIF_TESTNET,
-        { 't', 'e', 'x', '\0', '\0', '\0', '\0', '\0' }
+        23,
+        { 't', 'e', 'x', '\0', '\0' },
+        { 't', 'l', 'q', '\0' }
     },
     {
         WALLY_NETWORK_LIQUID_REGTEST,
         WALLY_ADDRESS_VERSION_P2PKH_LIQUID_REGTEST,
         WALLY_ADDRESS_VERSION_P2SH_LIQUID_REGTEST,
         WALLY_ADDRESS_VERSION_WIF_TESTNET,
-        { 'e', 'r', 't', '\0', '\0', '\0', '\0', '\0' }
+        4,
+        { 'e', 'r', 't', '\0', '\0' },
+        { 'e', 'l', '\0', '\0' }
     },
 };
 
@@ -274,8 +291,8 @@ static const struct addr_ver_t *addr_ver_from_family(
     const char *family, size_t family_len, uint32_t network)
 {
     const struct addr_ver_t *addr_ver = addr_ver_from_network(network);
-    if (!addr_ver || !family || strlen(addr_ver->family) != family_len ||
-        memcmp(family, addr_ver->family, family_len))
+    if (!addr_ver || !family || strlen(addr_ver->bech32) != family_len ||
+        memcmp(family, addr_ver->bech32, family_len))
         return NULL; /* Not found or mismatched address version */
     return addr_ver; /* Found */
 }
@@ -2961,6 +2978,63 @@ int wally_descriptor_to_script_get_maximum_length(
     return WALLY_OK;
 }
 
+static int descriptor_get_addr(struct wally_descriptor *descriptor,
+                               const unsigned char* script, size_t script_len,
+                               char **output)
+{
+    const struct addr_ver_t *addr_ver = descriptor->addr_ver;
+    char *address = NULL;
+    bool is_segwit = false;
+    int ret = wally_scriptpubkey_to_address(script, script_len,
+                                            addr_ver->network, &address);
+    if (ret == WALLY_EINVAL) {
+        /* Try a segwit address */
+        ret = wally_addr_segwit_from_bytes(script, script_len,
+                                           addr_ver->bech32, 0, &address);
+        is_segwit = true;
+    }
+    if (ret != WALLY_OK)
+        return ret;
+
+#ifndef BUILD_ELEMENTS
+    (void)is_segwit;
+#else
+    if (descriptor->features & WALLY_MS_IS_ELEMENTS) {
+        /* Elements: compute the blinding key and blind the address */
+        unsigned char pubkey[EC_PUBLIC_KEY_LEN];
+        const ms_node *blinding_node = descriptor->top_node->child->child;
+        if (descriptor->features & WALLY_MS_IS_SLIP77) {
+            const unsigned char* seed;
+            seed = (const unsigned char*)blinding_node->data;
+            ret = wally_asset_blinding_key_to_ec_public_key(seed, 32,
+                                                            script, script_len,
+                                                            pubkey, sizeof(pubkey));
+        } else
+            ret = WALLY_ERROR; /* FIXME: Support ELIP 150/151 */
+
+        if (ret == WALLY_OK) {
+            char *conf_addr = NULL;
+            if (is_segwit)
+                ret = wally_confidential_addr_from_addr_segwit(address,
+                                                               addr_ver->bech32,
+                                                               addr_ver->blech32,
+                                                               pubkey, sizeof(pubkey),
+                                                               &conf_addr);
+            else
+                ret = wally_confidential_addr_from_addr(address,
+                                                        addr_ver->elements_prefix,
+                                                        pubkey, sizeof(pubkey),
+                                                        &conf_addr);
+            wally_free_string(address);
+            address = conf_addr;
+            wally_clear(pubkey, sizeof(pubkey));
+        }
+    }
+#endif /* BUILD_ELEMENTS */
+    *output = address;
+    return ret;
+}
+
 int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
                                   uint32_t variant, uint32_t multi_index,
                                   uint32_t child_num, uint32_t flags,
@@ -2984,13 +3058,14 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
     if (!(p = wally_malloc(descriptor->script_len)))
         return WALLY_ENOMEM;
 
-    if (descriptor->features & WALLY_MS_IS_ELEMENTS) {
-        /* Disable Elements address generation until:
-         * - It is reconciled with Elements-core, and
-         * - We support blinded addresses
-         */
+#ifdef BUILD_ELEMENTS
+    if (descriptor->features & WALLY_MS_IS_ELEMENTS &&
+       !(descriptor->features & WALLY_MS_ANY_BLINDING_KEY)) {
+        // Elements requires a blinding key to generate addresses
         return WALLY_ERROR;
     }
+#endif
+
     memcpy(&ctx, descriptor, sizeof(ctx));
     ctx.variant = variant;
     if (ctx.max_path_elems &&
@@ -3006,13 +3081,7 @@ int wally_descriptor_to_addresses(const struct wally_descriptor *descriptor,
                 ret = WALLY_ERROR; /* Not enough room - should not happen! */
             else {
                 /* Generate the address corresponding to this script */
-                ret = wally_scriptpubkey_to_address(p, written,
-                                                    ctx.addr_ver->network,
-                                                    &addresses[i]);
-                if (ret == WALLY_EINVAL)
-                    ret = wally_addr_segwit_from_bytes(p, written,
-                                                       ctx.addr_ver->family,
-                                                       0, &addresses[i]);
+                ret = descriptor_get_addr(&ctx, p, written, &addresses[i]);
             }
         }
     }
