@@ -89,6 +89,9 @@
 #define KIND_DESCRIPTOR_RAW      (0x00050000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_RAW_TR   (0x00100000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_TR       (0x00200000 | KIND_DESCRIPTOR)
+#define KIND_DESCRIPTOR_CT       (0x00300000 | KIND_DESCRIPTOR)
+#define KIND_DESCRIPTOR_SLIP77   (0x00400000 | KIND_DESCRIPTOR)
+#define KIND_DESCRIPTOR_ELIP151  (0x00500000 | KIND_DESCRIPTOR)
 
 /* miniscript */
 #define KIND_MINISCRIPT_PK        (0x00000100 | KIND_MINISCRIPT)
@@ -531,6 +534,18 @@ static bool node_has_uncompressed_key(const ms_ctx *ctx, const ms_node *node)
     return false;
 }
 
+static int node_is_top(const ms_node *node)
+{
+    /* True if this is the top node in the descriptor
+     * (disregarding any ct() parent for Elements).
+     */
+#ifdef BUILD_ELEMENTS
+    return !node->parent || node->parent->kind == KIND_DESCRIPTOR_CT;
+#else
+    return !node->parent;
+#endif
+}
+
 static bool node_is_root(const ms_node *node)
 {
     /* True if this is a (possibly temporary) top level node, or an argument of a builtin */
@@ -577,7 +592,7 @@ int wally_descriptor_free(ms_ctx *ctx)
 static int verify_sh(ms_ctx *ctx, ms_node *node)
 {
     (void)ctx;
-    if (node->parent || !node->child->builtin)
+    if (!node_is_top(node) || !node->child->builtin)
         return WALLY_EINVAL;
 
     node->type_properties = node->child->type_properties;
@@ -587,7 +602,8 @@ static int verify_sh(ms_ctx *ctx, ms_node *node)
 static int verify_wsh(ms_ctx *ctx, ms_node *node)
 {
     (void)ctx;
-    if (node->parent && node->parent->kind != KIND_DESCRIPTOR_SH)
+    if (node->parent && node->parent->kind != KIND_DESCRIPTOR_SH &&
+        node->parent->kind != KIND_DESCRIPTOR_CT)
         return WALLY_EINVAL;
     if (!node->child->builtin || node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
@@ -630,7 +646,7 @@ static int verify_combo(ms_ctx *ctx, ms_node *node)
     const bool has_uncompressed_key = node_has_uncompressed_key(ctx, node);
     int ret;
 
-    if (node->parent)
+    if (!node_is_top(node))
         return WALLY_EINVAL;
 
     if (has_uncompressed_key) {
@@ -709,7 +725,7 @@ static int verify_tr(ms_ctx *ctx, ms_node *node)
     const uint32_t child_count = node_get_child_count(node);
     if (child_count != 1u)
         return WALLY_EINVAL; /* FIXME: Support script paths */
-    if (node->parent || node->child->builtin || !(node->child->kind & KIND_KEY) ||
+    if (!node_is_top(node) || node->child->builtin || !(node->child->kind & KIND_KEY) ||
         node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
     node->type_properties = builtin_get(node)->type_properties;
@@ -1002,6 +1018,46 @@ static int verify_thresh(ms_ctx *ctx, ms_node *node)
 
     return WALLY_OK;
 }
+
+#ifdef BUILD_ELEMENTS
+static int verify_ct(ms_ctx *ctx, ms_node *node)
+{
+    (void)ctx;
+    if (node->parent)
+        return WALLY_EINVAL;
+    if (node->child->kind != KIND_DESCRIPTOR_SLIP77 &&
+        !(node->child->kind & KIND_KEY) &&
+        node->child->kind != KIND_DESCRIPTOR_ELIP151)
+        return WALLY_EINVAL;
+    /* Ensure the second child is a valid top level node */
+    switch (node->child->next->kind) {
+    case KIND_DESCRIPTOR_PK | KIND_MINISCRIPT_PK:
+    case KIND_DESCRIPTOR_PKH | KIND_MINISCRIPT_PKH:
+    case KIND_DESCRIPTOR_MULTI | KIND_MINISCRIPT_MULTI:
+    case KIND_DESCRIPTOR_MULTI_S:
+    case KIND_DESCRIPTOR_SH:
+    case KIND_DESCRIPTOR_WPKH:
+    case KIND_DESCRIPTOR_WSH:
+    case KIND_DESCRIPTOR_COMBO:
+    case KIND_DESCRIPTOR_TR:
+    case KIND_MINISCRIPT_PK_K:
+    case KIND_MINISCRIPT_PK_H:
+        return WALLY_OK;
+    }
+    return WALLY_EINVAL;
+}
+
+static int verify_slip77(ms_ctx *ctx, ms_node *node)
+{
+    (void)ctx;
+    if (!node->parent || node->parent->kind != KIND_DESCRIPTOR_CT)
+        return WALLY_EINVAL;
+    if (node->child->builtin || !(node->child->kind & KIND_RAW) ||
+        node->child->data_len != 32)
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+#endif /* ifdef BUILD_ELEMENTS */
 
 static int node_verify_wrappers(ms_node *node)
 {
@@ -1956,6 +2012,20 @@ static const struct ms_builtin_t g_builtins[] = {
         KIND_MINISCRIPT_THRESH, TYPE_B | PROP_D | PROP_U,
         0xffffffff, verify_thresh, generate_thresh
     }
+    /* Elements confidential descriptors */
+#ifdef BUILD_ELEMENTS
+    , {
+        I_NAME("ct"),
+        KIND_DESCRIPTOR_CT,
+        TYPE_NONE,
+        2, verify_ct, NULL /* Generation is skipped for this node type */
+    }, {
+        I_NAME("slip77"),
+        KIND_DESCRIPTOR_SLIP77,
+        TYPE_NONE,
+        1, verify_slip77, NULL /* Generation is skipped for this node type */
+    }
+#endif /* ifdef BUILD_ELEMENTS */
 };
 #undef I_NAME
 
@@ -2354,9 +2424,11 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
         const uint32_t kind = parent->kind;
         if (kind == KIND_DESCRIPTOR_RAW || kind == KIND_MINISCRIPT_SHA256 ||
             kind == KIND_MINISCRIPT_HASH256 || kind == KIND_MINISCRIPT_RIPEMD160 ||
-            kind == KIND_MINISCRIPT_HASH160) {
-            int ret = wally_hex_n_verify(str, str_len);
-            if (ret == WALLY_OK) {
+            kind == KIND_MINISCRIPT_HASH160 || kind == KIND_DESCRIPTOR_SLIP77) {
+            int ret;
+            if (kind == KIND_DESCRIPTOR_SLIP77 && str_len != 64)
+                ret = WALLY_EINVAL; /* slip77 blinding keys must be 32 bytes */
+            else if ((ret = wally_hex_n_verify(str, str_len)) == WALLY_OK) {
                 if (!(node->data = wally_malloc(str_len / 2)))
                     ret = WALLY_ENOMEM;
                 else {
@@ -2366,6 +2438,9 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
                                          &written);
                     node->data_len = written;
                     node->kind = KIND_RAW;
+                    if (kind == KIND_DESCRIPTOR_SLIP77) {
+                        ctx->features |= (WALLY_MS_IS_ELEMENTS | WALLY_MS_IS_SLIP77);
+                    }
                 }
             }
             return ret;
@@ -2620,6 +2695,13 @@ static int node_generation_size(const ms_node *node, size_t *total)
         case KIND_MINISCRIPT_AND_V:
             /* no-op */
             break;
+#ifdef BUILD_ELEMENTS
+        case KIND_DESCRIPTOR_CT:
+        case KIND_DESCRIPTOR_SLIP77:
+        case KIND_DESCRIPTOR_ELIP151:
+            /* Confidential blinding nodes don't change the script */
+            break;
+#endif
         default:
             return WALLY_ERROR; /* Should not happen! */
         }
@@ -2668,6 +2750,13 @@ static int node_generate_script(ms_ctx *ctx, uint32_t depth, uint32_t index,
     int ret;
 
     *written = 0;
+
+#ifdef BUILD_ELEMENTS
+    if (node->kind == KIND_DESCRIPTOR_CT) {
+        /* Generate using the actual descriptor as the root */
+        node = node->child->next;
+    }
+#endif
 
     for (i = 0; i < depth; ++i) {
         if (!node->child)

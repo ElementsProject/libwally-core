@@ -26,6 +26,9 @@ MS_IS_DESCRIPTOR   = 0x20
 MS_IS_X_ONLY       = 0x40
 MS_IS_PARENTED     = 0x80
 MS_IS_ELEMENTS     = 0x100
+MS_IS_SLIP77       = 0x200
+MS_IS_ELIP150      = 0x400
+MS_IS_ELIP151      = 0x800
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
@@ -264,6 +267,7 @@ class DescriptorTests(unittest.TestCase):
              MS_ONLY, MS_IS_PRIVATE, 5),
         ]
         if is_elements_build:
+            slip77 = 'ct(slip77(b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04),elpkh(xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH))'
             cases.extend([
                 # Parsing a descriptor as elements returns elements in its features
                 (f'tr({k1})',
@@ -271,6 +275,10 @@ class DescriptorTests(unittest.TestCase):
                 # el-prefixed builtins return elements in their features
                 (f'eltr({k1})',
                  0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2),
+                # slip77 builtins return elements and slip77 in their features,
+                # and the ct() parent wrapper is included in their depth
+                (slip77,
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_SLIP77, 3),
                 ])
 
         for descriptor, flags, expected, expected_depth in cases:

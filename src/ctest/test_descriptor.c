@@ -46,7 +46,8 @@ static struct wally_map_item g_key_map_items[] = {
     { B("x_only"), B("b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") },
     { B("non_x_only"), B("03b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") },
     /* The taproot singlesig xpriv corresponding to Jades test_jade.py test script */
-    { B("jade_ss_tr_xpriv"), B("tprv8gTfWnFCND72oJZfZTokBBXcS1FzQhrtd5wNFu3FgBE76yErH49cev2Zn3Wws3o6ZwKZVZaQP1UWKVNotpPg8U6tCgGrjMfaRQJvV1Vdbi7") }
+    { B("jade_ss_tr_xpriv"), B("tprv8gTfWnFCND72oJZfZTokBBXcS1FzQhrtd5wNFu3FgBE76yErH49cev2Zn3Wws3o6ZwKZVZaQP1UWKVNotpPg8U6tCgGrjMfaRQJvV1Vdbi7") },
+    { B("slip77_key"), B("b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04") }
 };
 
 static const struct wally_map g_key_map = {
@@ -400,6 +401,7 @@ static const struct descriptor_test {
         "tp2ky708"
     },
 #ifdef BUILD_ELEMENTS
+    /* Elements/Confidential descriptors */
     {
         "descriptor - tr() interpreted as Elements",
         "tr([59d1f3b0/86h/1h/0h]jade_ss_tr_xpriv/0/*)",
@@ -412,6 +414,12 @@ static const struct descriptor_test {
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
         "5120900d1d75269396d4220c4529527dbcb746a6093c7209cea2d76a87c8ab9447fc",
         "nldl65wt"
+    }, {
+        "descriptor - slip77 (ELIP150 Valid Descriptor 5)",
+        "ct(slip77(slip77_key),elpkh(key_4))#hw2glz99",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, 0,
+        "76a9145a61ff8eb7aaca3010db97ebda76121610b7809688ac",
+        "hw2glz99"
     },
 #endif
     {
@@ -1595,6 +1603,42 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL,
         WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, ""
     }
+#ifdef BUILD_ELEMENTS
+    /* Elements/Confidential descriptor error cases */
+    , {
+        "descriptor errchk - empty ct()",
+        "ct()",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - single child ct()",
+        "ct(slip77(slip77_key))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - multiple blinding keys in ct()",
+        "ct(slip77(slip77_key),slip77(slip77_key))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - missing blinding key in ct()",
+        "ct(elpkh(key_4),elpkh(mainnet_xpub))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - multiple descriptors in ct()",
+        "ct(slip77(slip77_key),elpkh(key_4),elpkh(mainnet_xpub))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - no args to slip77()",
+        "ct(slip77,elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - empty args to slip77()",
+        "ct(slip77(),elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - invalid blinding key in slip77()",
+        "ct(slip77(010101010101010101),elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }
+#endif /* BUILD_ELEMENTS */
 };
 
 #define ADDR(a) 1, { a, "", "", "", "", "", "", "", "", "", "", "", "", "", \
