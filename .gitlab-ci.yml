@@ -25,7 +25,7 @@ test_with_valgrind:
     - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do valgrind-codequality --input-file $t.xml --output-file $t.json; done
     - for t in $(ls src/test/test_*.py | tr '\n' ' '); do WALLY_SKIP_EXPENSIVE_TESTS=1 PYTHONMALLOC=malloc PYTHONDEVMODE=1 MALLOC_CHECK_=3 valgrind --tool=memcheck --leak-check=no --verbose --xml=yes --xml-file=$t.xml python $t; done
     - for t in $(ls src/test/test_*.py | tr '\n' ' '); do valgrind-codequality --input-file $t.xml --output-file $t.json; done
-    - jq '[.[]|.[]]' -s ./src/.libs/test_*.json src/test/test_*.json > valgrind.json
+    - jq '[.[]|.[]]' -s ./src/.libs/test_*.json src/test/test_*.json > valgrind.json || true
 
 test_asan_ubsan_gcc:
   stage: test
