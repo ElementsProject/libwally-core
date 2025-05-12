@@ -853,6 +853,27 @@ int wally_asset_blinding_key_to_ec_private_key(
 #endif /* BUILD_ELEMENTS */
 }
 
+int wally_asset_blinding_key_to_ec_public_key(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *script, size_t script_len,
+    unsigned char *bytes_out, size_t len)
+{
+#ifndef BUILD_ELEMENTS
+    return WALLY_ERROR;
+#else
+    unsigned char priv_key[EC_PRIVATE_KEY_LEN];
+    int ret;
+    ret = wally_asset_blinding_key_to_ec_private_key(bytes, bytes_len,
+                                                     script, script_len,
+                                                     priv_key, sizeof(priv_key));
+    if (ret == WALLY_OK)
+        ret = wally_ec_public_key_from_private_key(priv_key, sizeof(priv_key),
+                                                   bytes_out, len);
+    wally_clear(priv_key, sizeof(priv_key));
+    return ret;
+#endif /* BUILD_ELEMENTS */
+}
+
 #define BK_ABF 0x1
 #define BK_VBF 0x2
 

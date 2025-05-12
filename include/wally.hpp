@@ -2268,6 +2268,12 @@ inline int asset_blinding_key_to_ec_private_key(const BYTES& bytes, const SCRIPT
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class BYTES, class SCRIPT, class BYTES_OUT>
+inline int asset_blinding_key_to_ec_public_key(const BYTES& bytes, const SCRIPT& script, BYTES_OUT& bytes_out) {
+    int ret = ::wally_asset_blinding_key_to_ec_public_key(bytes.data(), bytes.size(), script.data(), script.size(), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class BYTES, class HASH_PREVOUTS, class BYTES_OUT>
 inline int asset_blinding_key_to_vbf(const BYTES& bytes, const HASH_PREVOUTS& hash_prevouts, uint32_t output_index, BYTES_OUT& bytes_out) {
     int ret = ::wally_asset_blinding_key_to_vbf(bytes.data(), bytes.size(), hash_prevouts.data(), hash_prevouts.size(), output_index, bytes_out.data(), bytes_out.size());

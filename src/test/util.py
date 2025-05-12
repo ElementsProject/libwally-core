@@ -280,6 +280,7 @@ for f in (
     ('wally_asset_blinding_key_to_abf', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_asset_blinding_key_to_abf_vbf', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_asset_blinding_key_to_ec_private_key', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_asset_blinding_key_to_ec_public_key', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_asset_blinding_key_to_vbf', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_asset_final_vbf', c_int, [POINTER(c_uint64), c_size_t, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_asset_generator_from_bytes', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),

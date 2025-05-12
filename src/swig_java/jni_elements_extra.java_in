@@ -38,8 +38,13 @@
   }
 
   public final static byte[] asset_blinding_key_to_ec_private_key(byte[] asset_blinding_key,
-                                                                  byte[] script_pub_key) {
-      return asset_blinding_key_to_ec_private_key(asset_blinding_key, script_pub_key, null);
+                                                                  byte[] scriptpubkey) {
+      return asset_blinding_key_to_ec_private_key(asset_blinding_key, scriptpubkey, null);
+  }
+
+  public final static byte[] asset_blinding_key_to_ec_public_key(byte[] asset_blinding_key,
+                                                                 byte[] scriptpubkey) {
+      return asset_blinding_key_to_ec_public_key(asset_blinding_key, scriptpubkey, null);
   }
 
   public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,

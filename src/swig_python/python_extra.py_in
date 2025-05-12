@@ -266,6 +266,7 @@ if is_elements_build():
     asset_blinding_key_to_abf = _wrap_bin(asset_blinding_key_to_abf, BLINDING_FACTOR_LEN)
     asset_blinding_key_to_abf_vbf = _wrap_bin(asset_blinding_key_to_abf_vbf, WALLY_ABF_VBF_LEN)
     asset_blinding_key_to_ec_private_key = _wrap_bin(asset_blinding_key_to_ec_private_key, EC_PRIVATE_KEY_LEN)
+    asset_blinding_key_to_ec_public_key = _wrap_bin(asset_blinding_key_to_ec_public_key, EC_PUBLIC_KEY_LEN)
     asset_blinding_key_to_vbf = _wrap_bin(asset_blinding_key_to_vbf, BLINDING_FACTOR_LEN)
     asset_final_vbf = _wrap_bin(asset_final_vbf, BLINDING_FACTOR_LEN)
     asset_generator_from_bytes = _wrap_bin(asset_generator_from_bytes, ASSET_GENERATOR_LEN)

@@ -513,6 +513,25 @@ WALLY_CORE_API int wally_asset_blinding_key_to_ec_private_key(
     unsigned char *bytes_out,
     size_t len);
 
+/**
+ * Generate a blinding public key for a scriptPubkey.
+ *
+ * :param bytes: A full master blinding key, e.g. from `wally_asset_blinding_key_from_seed`,
+ *|    or a partial key of length `SHA256_LEN`, typically from the last half of the full key.
+ * :param bytes_len: Length of ``bytes``. Must be `HMAC_SHA512_LEN` or `SHA256_LEN`.
+ * :param script: The scriptPubkey for the confidential output address.
+ * :param script_len: Length of ``script``.
+ * :param bytes_out: Destination for the resulting blinding public key.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PUBLIC_KEY_LEN)
+ */
+WALLY_CORE_API int wally_asset_blinding_key_to_ec_public_key(
+    const unsigned char *bytes,
+    size_t bytes_len,
+    const unsigned char *script,
+    size_t script_len,
+    unsigned char *bytes_out,
+    size_t len);
+
 #define WALLY_ABF_VBF_LEN 64
 
 /**

@@ -37,6 +37,7 @@ export function asset_blinding_key_from_seed(bytes: Buffer|Uint8Array): Buffer;
 export function asset_blinding_key_to_abf(bytes: Buffer|Uint8Array, hash_prevouts: Buffer|Uint8Array, output_index: number): Buffer;
 export function asset_blinding_key_to_abf_vbf(bytes: Buffer|Uint8Array, hash_prevouts: Buffer|Uint8Array, output_index: number): Buffer;
 export function asset_blinding_key_to_ec_private_key(bytes: Buffer|Uint8Array, script: Buffer|Uint8Array): Buffer;
+export function asset_blinding_key_to_ec_public_key(bytes: Buffer|Uint8Array, script: Buffer|Uint8Array): Buffer;
 export function asset_blinding_key_to_vbf(bytes: Buffer|Uint8Array, hash_prevouts: Buffer|Uint8Array, output_index: number): Buffer;
 export function asset_final_vbf(values: BigUint64Array|Array<bigint>, num_inputs: number, abf: Buffer|Uint8Array, vbf: Buffer|Uint8Array): Buffer;
 export function asset_generator_from_bytes(asset: Buffer|Uint8Array, abf: Buffer|Uint8Array): Buffer;

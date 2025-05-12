@@ -548,6 +548,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_asset_blinding_key_to_abf_vbf, 6, 7, WALLY_ABF_VBF_LEN);
 %returns_array_(wally_asset_blinding_key_to_vbf, 6, 7, BLINDING_FACTOR_LEN);
 %returns_array_(wally_asset_blinding_key_to_ec_private_key, 5, 6, EC_PRIVATE_KEY_LEN);
+%returns_array_(wally_asset_blinding_key_to_ec_public_key, 5, 6, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_asset_value_commitment, 6, 7, ASSET_COMMITMENT_LEN);
 %returns_string(wally_base58_from_bytes);
 %returns_size_t(wally_base58_to_bytes);

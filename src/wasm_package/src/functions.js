@@ -77,6 +77,7 @@ export const asset_blinding_key_from_seed = wrap('wally_asset_blinding_key_from_
 export const asset_blinding_key_to_abf = wrap('wally_asset_blinding_key_to_abf', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.BLINDING_FACTOR_LEN)]);
 export const asset_blinding_key_to_abf_vbf = wrap('wally_asset_blinding_key_to_abf_vbf', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.WALLY_ABF_VBF_LEN)]);
 export const asset_blinding_key_to_ec_private_key = wrap('wally_asset_blinding_key_to_ec_private_key', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PRIVATE_KEY_LEN)]);
+export const asset_blinding_key_to_ec_public_key = wrap('wally_asset_blinding_key_to_ec_public_key', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
 export const asset_blinding_key_to_vbf = wrap('wally_asset_blinding_key_to_vbf', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.BLINDING_FACTOR_LEN)]);
 export const asset_final_vbf = wrap('wally_asset_final_vbf', [T.Uint64Array, T.Int32, T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.BLINDING_FACTOR_LEN)]);
 export const asset_generator_from_bytes = wrap('wally_asset_generator_from_bytes', [T.Bytes, T.Bytes, T.DestPtrSized(T.Bytes, C.ASSET_GENERATOR_LEN)]);

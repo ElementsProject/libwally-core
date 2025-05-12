@@ -509,6 +509,7 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_asset_blinding_key_to_abf' \
 ,'_wally_asset_blinding_key_to_abf_vbf' \
 ,'_wally_asset_blinding_key_to_ec_private_key' \
+,'_wally_asset_blinding_key_to_ec_public_key' \
 ,'_wally_asset_blinding_key_to_vbf' \
 ,'_wally_asset_final_vbf' \
 ,'_wally_asset_generator_from_bytes' \
