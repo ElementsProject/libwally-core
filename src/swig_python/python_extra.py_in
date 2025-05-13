@@ -155,6 +155,7 @@ ec_public_key_bip341_tweak = _wrap_bin(ec_public_key_bip341_tweak, EC_PUBLIC_KEY
 ec_public_key_decompress = _wrap_bin(ec_public_key_decompress, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
 ec_public_key_from_private_key = _wrap_bin(ec_public_key_from_private_key, EC_PUBLIC_KEY_LEN)
 ec_public_key_negate = _wrap_bin(ec_public_key_negate, EC_PUBLIC_KEY_LEN)
+ec_public_key_tweak = _wrap_bin(ec_public_key_tweak, EC_PUBLIC_KEY_LEN)
 ec_scalar_add = _wrap_bin(ec_scalar_add, EC_SCALAR_LEN)
 ec_scalar_multiply = _wrap_bin(ec_scalar_multiply, EC_SCALAR_LEN)
 ec_scalar_subtract = _wrap_bin(ec_scalar_subtract, EC_SCALAR_LEN)

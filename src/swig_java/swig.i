@@ -314,6 +314,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tap_sig, size_t tap_sig_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_hashes, size_t tapleaf_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* tapleaf_script, size_t tapleaf_script_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* tweak, size_t tweak_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhash, size_t txhash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txhashes, size_t txhashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* txout_proof, size_t txout_proof_len) };
@@ -595,10 +596,11 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_ec_private_key_bip341_tweak, 6, 7, EC_PRIVATE_KEY_LEN);
 %returns_void__(wally_ec_private_key_verify);
 %returns_array_(wally_ec_public_key_bip341_tweak, 6, 7, EC_PUBLIC_KEY_LEN);
-%returns_void__(wally_ec_public_key_verify);
 %returns_array_(wally_ec_public_key_decompress, 3, 4, EC_PUBLIC_KEY_UNCOMPRESSED_LEN);
-%returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_ec_public_key_from_private_key, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_array_(wally_ec_public_key_negate, 3, 4, EC_PUBLIC_KEY_LEN);
+%returns_array_(wally_ec_public_key_tweak, 5, 6, EC_PUBLIC_KEY_LEN);
+%returns_void__(wally_ec_public_key_verify);
 %returns_size_t(wally_ec_sig_from_bytes_aux_len);
 %returns_size_t(wally_ec_sig_from_bytes_len);
 %returns_array_check_flag(wally_ec_sig_from_bytes_aux, 8, 9, jarg7, 10, EC_SIGNATURE_RECOVERABLE_LEN, EC_SIGNATURE_LEN);

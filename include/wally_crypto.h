@@ -455,6 +455,24 @@ WALLY_CORE_API int wally_ec_public_key_negate(
     size_t len);
 
 /**
+ * Tweak a public key.
+ *
+ * :param pub_key: The public key to tweak.
+ * :param pub_key_len: The length of ``pub_key`` in bytes. Must be `EC_PUBLIC_KEY_LEN`.
+ * :param tweak: The scalar/private key to tweak by.
+ * :param tweak_len: The length of ``tweak``. Must be `EC_PRIVATE_KEY_LEN`.
+ * :param bytes_out: Destination for the tweaked public key.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, EC_PUBLIC_KEY_LEN)
+ */
+WALLY_CORE_API int wally_ec_public_key_tweak(
+    const unsigned char *pub_key,
+    size_t pub_key_len,
+    const unsigned char *tweak,
+    size_t tweak_len,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
  * Tweak a compressed or x-only public key for taproot.
  *
  * :param pub_key: The compressed or x-only public key to tweak.

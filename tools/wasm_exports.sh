@@ -113,6 +113,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_ec_public_key_decompress' \
 ,'_wally_ec_public_key_from_private_key' \
 ,'_wally_ec_public_key_negate' \
+,'_wally_ec_public_key_tweak' \
 ,'_wally_ec_public_key_verify' \
 ,'_wally_ec_scalar_add' \
 ,'_wally_ec_scalar_multiply' \

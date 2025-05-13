@@ -147,6 +147,7 @@ export function ec_public_key_bip341_tweak(pub_key: Buffer|Uint8Array, merkle_ro
 export function ec_public_key_decompress(pub_key: Buffer|Uint8Array): Buffer;
 export function ec_public_key_from_private_key(priv_key: Buffer|Uint8Array): Buffer;
 export function ec_public_key_negate(pub_key: Buffer|Uint8Array): Buffer;
+export function ec_public_key_tweak(pub_key: Buffer|Uint8Array, tweak: Buffer|Uint8Array): Buffer;
 export function ec_public_key_verify(pub_key: Buffer|Uint8Array): void;
 export function ec_scalar_add(scalar: Buffer|Uint8Array, operand: Buffer|Uint8Array): Buffer;
 export function ec_scalar_multiply(scalar: Buffer|Uint8Array, operand: Buffer|Uint8Array): Buffer;

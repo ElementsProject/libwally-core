@@ -132,6 +132,26 @@ int wally_ec_public_key_negate(const unsigned char *pub_key, size_t pub_key_len,
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
+int wally_ec_public_key_tweak(const unsigned char *pub_key, size_t pub_key_len,
+                              const unsigned char *tweak, size_t tweak_len,
+                              unsigned char *bytes_out, size_t len)
+{
+    const secp256k1_context *ctx = secp256k1_context_static;
+    secp256k1_pubkey pk;
+
+    if (!pub_key || pub_key_len != EC_PUBLIC_KEY_LEN ||
+        !tweak || tweak_len != EC_PRIVATE_KEY_LEN ||
+        !bytes_out || len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+
+    if (!pubkey_parse(&pk, pub_key, pub_key_len) ||
+        !pubkey_tweak_add(ctx, &pk, tweak) ||
+        !pubkey_serialize(bytes_out, &len, &pk, PUBKEY_COMPRESSED) ||
+        len != EC_PUBLIC_KEY_LEN)
+        return WALLY_ERROR; /* Out of bounds/invalid public key/tweak */
+    return WALLY_OK;
+}
+
 static int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
                             const unsigned char *merkle_root, uint32_t flags,
                             unsigned char *tweak, size_t tweak_len)
