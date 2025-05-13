@@ -16,4 +16,11 @@ typedef struct cursor_io
     size_t max;
 } cursor_io;
 
+/* Hash helpers */
+void tagged_hash_init(struct sha256_ctx *ctx,
+                      const unsigned char *hash, size_t hash_len);
+
+void hash_varbuff(struct sha256_ctx *ctx,
+                  const unsigned char *bytes, size_t bytes_len);
+
 #endif /* LIBWALLY_CORE_TX_IO_H */

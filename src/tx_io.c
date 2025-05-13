@@ -158,8 +158,8 @@ static void hash_varint(struct sha256_ctx *ctx,
     hash_bytes(ctx, buff, n);
 }
 
-static void hash_varbuff(struct sha256_ctx *ctx,
-                         const unsigned char *bytes, size_t bytes_len)
+void hash_varbuff(struct sha256_ctx *ctx,
+                  const unsigned char *bytes, size_t bytes_len)
 {
     hash_varint(ctx, bytes_len);
     hash_bytes(ctx, bytes, bytes_len);
@@ -214,8 +214,8 @@ static int txio_done(cursor_io *io, uint32_t flags)
 /* Initialize a sha256 context for bip340 tagged hashing.
  * 'hash' must be SHA256(tag), e.g. 'TapSighash', 'TapLeaf' etc.
  */
-static void tagged_hash_init(struct sha256_ctx *ctx,
-                             const unsigned char *hash, size_t hash_len)
+void tagged_hash_init(struct sha256_ctx *ctx,
+                      const unsigned char *hash, size_t hash_len)
 {
     sha256_init(ctx);
     hash_bytes(ctx, hash, hash_len);

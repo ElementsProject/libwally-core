@@ -220,7 +220,7 @@ int wally_confidential_addr_to_addr_segwit(
     return WALLY_ERROR;
 #else
     unsigned char buf[WALLY_BLECH32_MAXLEN];
-    unsigned char *hash_bytes_p = &buf[EC_PUBLIC_KEY_LEN - 2];
+    unsigned char *p = &buf[EC_PUBLIC_KEY_LEN - 2];
     size_t written = 0;
     int ret;
     uint8_t witver;
@@ -237,9 +237,9 @@ int wally_confidential_addr_to_addr_segwit(
         ret = WALLY_EINVAL;
     else {
         written = written - EC_PUBLIC_KEY_LEN + 2;
-        hash_bytes_p[0] = value_to_op_n(witver);
-        hash_bytes_p[1] = (unsigned char) (written - 2);
-        ret = wally_addr_segwit_from_bytes(hash_bytes_p, written,
+        p[0] = value_to_op_n(witver);
+        p[1] = (unsigned char) (written - 2);
+        ret = wally_addr_segwit_from_bytes(p, written,
                                            addr_family, 0, output);
     }
 
@@ -290,7 +290,7 @@ int wally_confidential_addr_from_addr_segwit(
 #else
     char result[WALLY_BLECH32_MAXLEN + 1];
     unsigned char buf[EC_PUBLIC_KEY_LEN + SHA256_LEN];
-    unsigned char *hash_bytes_p = &buf[EC_PUBLIC_KEY_LEN - 2];
+    unsigned char *p = &buf[EC_PUBLIC_KEY_LEN - 2];
     size_t written = SHA256_LEN + 2;
     int ret;
     size_t witver;
@@ -305,14 +305,14 @@ int wally_confidential_addr_from_addr_segwit(
 
     /* get witness program's script */
     ret = wally_addr_segwit_to_bytes(address, addr_family, 0,
-                                     hash_bytes_p, written, &written);
+                                     p, written, &written);
     if (ret == WALLY_OK) {
         if ((written != (HASH160_LEN + 2)) && (written != (SHA256_LEN + 2))) {
             ret = WALLY_EINVAL;
             goto done;
         }
 
-        if (!script_is_op_n(hash_bytes_p[0], true, &witver)) {
+        if (!script_is_op_n(p[0], true, &witver)) {
             ret = WALLY_EINVAL;
             goto done;
         }
