@@ -639,7 +639,6 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
                           uint32_t flags, struct ext_key *key_out)
 {
     struct sha512 sha;
-    const secp256k1_context *ctx;
     const bool we_are_private = hdkey && key_is_private(hdkey);
     const bool derive_private = !(flags & BIP32_FLAG_KEY_PUBLIC);
     const bool hardened = child_is_hardened(child_num);
@@ -649,9 +648,6 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
 
     if (!hdkey || !key_out)
         return WALLY_EINVAL;
-
-    if (!(ctx = secp_ctx()))
-        return WALLY_ENOMEM;
 
     if (!we_are_private && (derive_private || hardened))
         return wipe_key_fail(key_out); /* Unsupported derivation */
@@ -710,20 +706,14 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
     } else {
         /* The returned child key ki is point(parse256(IL) + kpar)
          * In case parse256(IL) ≥ n or Ki is the point at infinity, the
-         * resulting key is invalid (NOTE: pubkey_tweak_add checks both
-         * conditions)
+         * resulting key is invalid (NOTE: wally_ec_public_key_tweak checks
+         * both conditions)
          */
-        secp256k1_pubkey pub_key;
-        size_t len = sizeof(key_out->pub_key);
-
-        /* FIXME: Out of bounds on pubkey_tweak_add */
-        if (!pubkey_parse(&pub_key, hdkey->pub_key, sizeof(hdkey->pub_key)) ||
-            !pubkey_tweak_add(ctx, &pub_key, sha.u.u8) ||
-            !pubkey_serialize(key_out->pub_key, &len, &pub_key,
-                              PUBKEY_COMPRESSED) ||
-            len != sizeof(key_out->pub_key)) {
+        if (wally_ec_public_key_tweak(hdkey->pub_key, sizeof(hdkey->pub_key),
+                                      sha.u.u8, EC_PRIVATE_KEY_LEN,
+                                      key_out->pub_key, sizeof(key_out->pub_key))
+            != WALLY_OK)
             goto fail;
-        }
     }
 #ifndef WALLY_ABI_NO_ELEMENTS
     memset(key_out->pub_key_tweak_sum, 0,
@@ -862,27 +852,22 @@ int bip32_key_with_tweak_from_parent_path(const struct ext_key *hdkey,
 #ifndef BUILD_ELEMENTS
     return WALLY_ERROR;
 #else
-    const secp256k1_context *ctx;
-    secp256k1_pubkey pub_key;
-    size_t len = EC_PUBLIC_KEY_LEN;
     int ret;
-
-    if (!(ctx = secp_ctx()))
-        return WALLY_ENOMEM;
 
     if (!(flags & (BIP32_FLAG_KEY_TWEAK_SUM | BIP32_FLAG_KEY_PUBLIC)))
         return WALLY_EINVAL;
 
-    if ((ret = bip32_key_from_parent_path(hdkey, child_path,
-                                          child_path_len, flags, output)) != WALLY_OK)
-        return ret;
-
-    if (!pubkey_parse(&pub_key, hdkey->pub_key, sizeof(hdkey->pub_key)) ||
-        !pubkey_tweak_add(ctx, &pub_key, output->pub_key_tweak_sum) ||
-        !pubkey_serialize(output->pub_key, &len, &pub_key, PUBKEY_COMPRESSED))
-        return wipe_key_fail(output);
-
-    return WALLY_OK;
+    ret = bip32_key_from_parent_path(hdkey, child_path,
+                                     child_path_len, flags, output);
+    if (ret == WALLY_OK) {
+        ret = wally_ec_public_key_tweak(hdkey->pub_key, sizeof(hdkey->pub_key),
+                                        output->pub_key_tweak_sum,
+                                        sizeof(output->pub_key_tweak_sum),
+                                        output->pub_key, sizeof(output->pub_key));
+        if (ret != WALLY_OK)
+            wipe_key_fail(output);
+    }
+    return ret;
 #endif /* BUILD_ELEMENTS */
 }
 
