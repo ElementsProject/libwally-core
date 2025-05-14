@@ -11,6 +11,7 @@
 #include <include/wally_script.h>
 #ifdef BUILD_ELEMENTS
 #include <include/wally_elements.h>
+#include "tx_io.h"
 #endif
 
 #include <limits.h>
@@ -117,6 +118,14 @@
 #define KIND_MINISCRIPT_OR_C      (0x06000000 | KIND_MINISCRIPT)
 #define KIND_MINISCRIPT_OR_D      (0x07000000 | KIND_MINISCRIPT)
 #define KIND_MINISCRIPT_OR_I      (0x08000000 | KIND_MINISCRIPT)
+
+#ifdef BUILD_ELEMENTS
+/* SHA256(CT-Blinding-Key/1.0) */
+static const unsigned char CT_BLINDING_KEY_1_0_SHA256[SHA256_LEN] = {
+    0x02, 0xe0, 0xc2, 0x24, 0x76, 0xf8, 0xc5, 0xfd, 0xb7, 0x30, 0x5d, 0x9f, 0xd0, 0xe0, 0xa3, 0x56,
+    0xb5, 0x88, 0x77, 0x69, 0x24, 0x8e, 0x04, 0xc8, 0x6f, 0xda, 0xad, 0x35, 0x11, 0x37, 0x85, 0xb4
+};
+#endif
 
 struct addr_ver_t {
     const unsigned char network;
@@ -1046,6 +1055,11 @@ static int verify_ct(ms_ctx *ctx, ms_node *node)
         !(node->child->kind & KIND_KEY) &&
         node->child->kind != KIND_DESCRIPTOR_ELIP151)
         return WALLY_EINVAL;
+    if (node->child->kind & KIND_KEY) {
+        if (node_has_uncompressed_key(ctx, node) ||
+            (node->flags & WALLY_MS_IS_X_ONLY))
+        return WALLY_EINVAL; /* Blinding keys must be compressed non-x-only */
+    }
     /* Ensure the second child is a valid top level node */
     switch (node->child->next->kind) {
     case KIND_DESCRIPTOR_PK | KIND_MINISCRIPT_PK:
@@ -2282,9 +2296,16 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
 {
     unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
     struct ext_key extkey;
-    size_t privkey_len, size;
+    size_t privkey_len = 0, size;
     int ret;
     bool is_hex;
+#ifdef BUILD_ELEMENTS
+    /* Whether we are the blinding key child of a ct() expression */
+    const bool is_ct_key = parent && parent->kind == KIND_DESCRIPTOR_CT &&
+        !parent->child; /* If no child, we are the first child */
+#else
+    const bool is_ct_key = false;
+#endif
 
     if (!node || (parent && !parent->builtin))
         return WALLY_EINVAL;
@@ -2323,15 +2344,16 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         node->data_len -= size;
     }
 
-    /* check key (public key) */
+    /* Check for a hex public key */
     ret = analyze_pubkey_hex(ctx, node, flags, &is_hex);
     if (ret == WALLY_OK && is_hex)
         return WALLY_OK;
 
-    /* check key (private key(wif)) */
-    ret = wally_base58_n_to_bytes(node->data, node->data_len, BASE58_FLAG_CHECKSUM,
-                                  privkey, sizeof(privkey), &privkey_len);
-    if (ret == WALLY_OK && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
+    /* Check for a WIF private key (not allowed for ct() blinding keys) */
+    if (!is_ct_key)
+        ret = wally_base58_n_to_bytes(node->data, node->data_len, BASE58_FLAG_CHECKSUM,
+                                      privkey, sizeof(privkey), &privkey_len);
+    if (ret == WALLY_OK && privkey_len && privkey_len <= EC_PRIVATE_KEY_LEN + 2) {
         if (ctx->addr_ver && ctx->addr_ver->version_wif != privkey[0])
             return WALLY_EINVAL;
         if (privkey_len == EC_PRIVATE_KEY_LEN + 1) {
@@ -2358,7 +2380,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         return ret;
     }
 
-    /* check bip32 key */
+    /* Check for a bip32 key */
     if ((node->child_path = memchr(node->data, '/', node->data_len))) {
         node->child_path_len = node->data_len - (node->child_path - node->data);
         node->data_len = node->child_path - node->data; /* Trim to bip32 key */
@@ -2375,6 +2397,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             num_elems = (features & BIP32_PATH_LEN_MASK) >> BIP32_PATH_LEN_SHIFT;
             /* TODO: Check length of key origin plus our length < 255 */
             num_multi = (features & BIP32_PATH_MULTI_MASK) >> BIP32_PATH_MULTI_SHIFT;
+            if (is_ct_key &&
+                (features & (BIP32_PATH_IS_WILDCARD | BIP32_PATH_IS_MULTIPATH))) {
+                /* ct() blinding keys must resolve to a single key */
+                return WALLY_EINVAL;
+            }
             if (num_multi) {
                 if (ctx->num_multipaths != 1 && ctx->num_multipaths != num_multi)
                     return WALLY_EINVAL; /* Different multi-path lengths */
@@ -2402,8 +2429,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
 
     if (extkey.priv_key[0] == BIP32_FLAG_KEY_PRIVATE) {
         node->kind = KIND_BIP32_PRIVATE_KEY;
-        ctx->features |= WALLY_MS_IS_PRIVATE;
         node->flags |= WALLY_MS_IS_PRIVATE;
+        if (!is_ct_key) {
+            /* MS_IS_PRIVATE refers only to signing keys - not blinding keys */
+            ctx->features |= WALLY_MS_IS_PRIVATE;
+        }
     } else
         node->kind = KIND_BIP32_PUBLIC_KEY;
 
@@ -2417,11 +2447,15 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     }
 
     if (ret == WALLY_OK) {
-        if (flags & WALLY_MINISCRIPT_TAPSCRIPT) {
-            node->flags |= WALLY_MS_IS_X_ONLY;
-            ctx->features |= WALLY_MS_IS_X_ONLY;
+        if (is_ct_key) {
+            ctx->features |= WALLY_MS_IS_ELIP150;
+        } else {
+            if (flags & WALLY_MINISCRIPT_TAPSCRIPT) {
+                node->flags |= WALLY_MS_IS_X_ONLY;
+                ctx->features |= WALLY_MS_IS_X_ONLY;
+            }
+            ret = ctx_add_key_node(ctx, node);
         }
-        ret = ctx_add_key_node(ctx, node);
     }
     wally_clear(&extkey, sizeof(extkey));
     return ret;
@@ -3004,13 +3038,36 @@ static int descriptor_get_addr(struct wally_descriptor *descriptor,
         unsigned char pubkey[EC_PUBLIC_KEY_LEN];
         const ms_node *blinding_node = descriptor->top_node->child->child;
         if (descriptor->features & WALLY_MS_IS_SLIP77) {
+            /* SLIP77 blinding key */
             const unsigned char* seed;
             seed = (const unsigned char*)blinding_node->data;
             ret = wally_asset_blinding_key_to_ec_public_key(seed, 32,
                                                             script, script_len,
                                                             pubkey, sizeof(pubkey));
+        } else if (descriptor->features & WALLY_MS_IS_ELIP150) {
+            /* ELIP-150 blinding key */
+            size_t written = 0;
+            ret = generate_script(descriptor, descriptor->top_node->child,
+                                  pubkey, sizeof(pubkey), &written);
+            if (ret == WALLY_OK && written != sizeof(pubkey))
+                ret = WALLY_ERROR; /* Unsupported pubkey - should not happen! */
+            if (ret == WALLY_OK) {
+                /* Kblind = K + Htag(K, scriptPubKey)G */
+                struct sha256 sha;
+                struct sha256_ctx ctx;
+                unsigned char tweaked[EC_PUBLIC_KEY_LEN];
+                tagged_hash_init(&ctx, CT_BLINDING_KEY_1_0_SHA256, SHA256_LEN);
+                sha256_update(&ctx, pubkey, sizeof(pubkey));
+                hash_varbuff(&ctx, script, script_len); /* Consensus encoding */
+                sha256_done(&ctx, &sha);
+                ret = wally_ec_public_key_tweak(pubkey, sizeof(pubkey),
+                                                sha.u.u8, sizeof(sha),
+                                                tweaked, sizeof(tweaked));
+                memcpy(pubkey, tweaked, sizeof(tweaked));
+                wally_clear(tweaked, sizeof(tweaked));
+            }
         } else
-            ret = WALLY_ERROR; /* FIXME: Support ELIP 150/151 */
+            ret = WALLY_ERROR; /* FIXME: Support ELIP 151 */
 
         if (ret == WALLY_OK) {
             char *conf_addr = NULL;

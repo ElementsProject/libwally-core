@@ -1637,6 +1637,18 @@ static const struct descriptor_test {
         "descriptor errchk - invalid blinding key in slip77()",
         "ct(slip77(010101010101010101),elpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - ELIP 150 WIF private key",
+        "ct(L3jXxwef3fpB7hcrFozcWgHeJCPSAFiZ1Ji2YJMPxceaGvy3PC1q,elwpkh(03774eec7a3d550d18e9f89414152025b3b0ad6a342b19481f702d843cff06dfc4))#gcy6hcfz",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - ELIP 150 blinding key with wildcard",
+        "ct(mainnet_xpub/0/*,elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - ELIP 150 blinding key with multipath",
+        "ct(mainnet_xpub/<0;1>,elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
     }
 #endif /* BUILD_ELEMENTS */
 };
@@ -2009,6 +2021,42 @@ static const struct address_test {
     /* Elements/Confidential descriptors */
 #ifdef BUILD_ELEMENTS
     {
+        "address - ELIP 150 Valid Descriptor 1",
+        "ct(mainnet_xpub,elpkh(key_4))#y0lg3d5y",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("VTpvZZYdbhbyVF3Wa99eMjgXhfvu4LS26dR2FwMfNXq7FDX73HZEsZr3VvgH9EDgQnYK7sP6ACKSuMGw")
+    }, {
+        "address - ELIP 150 Valid Descriptor 2",
+        "ct(mainnet_xpub,elwpkh(key_4))#kt4e25qt",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qqg5s7xj7upzl7h4q2k2wj4vq63nvaktn0egqu09nqcr6d44p4evaqknpl78t02k2xqgdh9ltmfmpy9ssk7qfvghdsfr4mvr9c")
+    }, {
+        "address - ELIP 150 Valid Descriptor 3",
+        "ct(mainnet_xpub,elsh(wpkh(key_4)))#xg9r4jej",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("VJL8znN4XjXEUKzDaYsqdzRASGLY2KHxC4N6g5b5QvrNjXfeKp83Ci9AW2a8QzbZjpEffoy4PEywpLAZ")
+    }, {
+        "address - ELIP 150 Valid Descriptor 4",
+        "ct(mainnet_xpub,eltr(key_4))#c0pjjxyw",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1pq0nsl8du3gsuk7r90sgm78259mmv6mt9d4yvj30zr3u052ufs5meuc2tuvwx7k7g9kvhhpux07vqpm3qjj8uwdj94650265ustv0xy8zrdxdfgp8g9pl")
+    }, {
+        "address - ELIP 150 View Descriptor",
+        "ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(key_4))#j95xktq7",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qq2r0pdvcknjpwev96qu9975alzqs78cvsut5ju82t7tv8d645dgmwknpl78t02k2xqgdh9ltmfmpy9ssk7qfvtk83xqzx62q4")
+    }, {
+        "address - ELIP 150 Non-View Descriptor",
+        "ct(xpub661MyMwAqRbcEcT9W98HZP2kFzyzQQZkYnrRnrM8uD8kH8kSeFoQHq1x2iihLgC6PXGy5LrjCL66uSNhJ8pwjfx2rMUTLWuRMns2EG9xnjs,elwpkh(key_4))#elmfpmp9",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qq2r0pdvcknjpwev96qu9975alzqs78cvsut5ju82t7tv8d645dgmwknpl78t02k2xqgdh9ltmfmpy9ssk7qfvtk83xqzx62q4")
+    }, {
         "address - slip77 (ELIP 150 Valid Descriptor 5)",
         "ct(slip77(slip77_key),elpkh(key_4))#hw2glz99",
         WALLY_NETWORK_LIQUID,
