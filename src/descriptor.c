@@ -1317,7 +1317,8 @@ static int generate_sh_wsh(ms_ctx *ctx, ms_node *node,
     return ret;
 }
 
-static int generate_checksig(unsigned char *script, size_t script_len, size_t *written)
+static int generate_inplace_checksig(unsigned char *script, size_t script_len,
+                                     size_t *written)
 {
     if (!*written || (*written + 1 > WITNESS_SCRIPT_MAX_SIZE))
         return WALLY_EINVAL;
@@ -1332,14 +1333,18 @@ static int generate_pk(ms_ctx *ctx, ms_node *node,
                        unsigned char *script, size_t script_len, size_t *written)
 {
     int ret = generate_pk_k(ctx, node, script, script_len, written);
-    return ret == WALLY_OK ? generate_checksig(script, script_len, written) : ret;
+    if (ret == WALLY_OK)
+       ret = generate_inplace_checksig(script, script_len, written);
+    return ret;
 }
 
 static int generate_pkh(ms_ctx *ctx, ms_node *node,
                         unsigned char *script, size_t script_len, size_t *written)
 {
     int ret = generate_pk_h(ctx, node, script, script_len, written);
-    return ret == WALLY_OK ? generate_checksig(script, script_len, written) : ret;
+    if (ret == WALLY_OK)
+        ret = generate_inplace_checksig(script, script_len, written);
+    return ret;
 }
 
 static int generate_wpkh(ms_ctx *ctx, ms_node *node,
@@ -1362,7 +1367,8 @@ static int generate_wpkh(ms_ctx *ctx, ms_node *node,
             if (script_len < required) {
                 *written = required; /* To generate, not for the final script */
             } else {
-                ret = wally_witness_program_from_bytes(script, output_len, WALLY_SCRIPT_HASH160,
+                ret = wally_witness_program_from_bytes(script, output_len,
+                                                       WALLY_SCRIPT_HASH160,
                                                        output, final_len, written);
                 if (ret == WALLY_OK && *written <= script_len)
                     memcpy(script, output, *written);
@@ -1388,8 +1394,8 @@ static int generate_sh_wpkh(ms_ctx *ctx, ms_node *node,
     memcpy(&fake_ctx, ctx, sizeof(fake_ctx));
     fake_ctx.variant = 2; /* Generate wpkh from the combo node */
     return builtin_get(&sh_node)->generate_fn(&fake_ctx, &sh_node,
-                                             script, script_len,
-                                             written);
+                                              script, script_len,
+                                              written);
 }
 
 static int generate_combo(ms_ctx *ctx, ms_node *node,
@@ -1436,7 +1442,7 @@ static int generate_multi(ms_ctx *ctx, ms_node *node,
         ret = generate_script(ctx, child,
                               item->pubkey, sizeof(item->pubkey), &item->pubkey_len);
         if (ret == WALLY_OK && item->pubkey_len > sizeof(item->pubkey))
-            ret = WALLY_EINVAL; /* FIXME: check for valid pubkey lengths */
+            ret = WALLY_ERROR; /* FIXME: check for valid pubkey lengths */
         child = child->next;
     }
 
@@ -1543,31 +1549,31 @@ static int generate_delay(ms_ctx *ctx, ms_node *node,
                           unsigned char *script, size_t script_len, size_t *written)
 {
     int ret;
-    size_t output_len = *written;
+    size_t output_len;
     if (!node->child || !node_is_root(node) || !node->builtin)
         return WALLY_EINVAL;
 
     ret = generate_script(ctx, node->child, script, script_len, &output_len);
-    if (ret != WALLY_OK)
-        return ret;
-
-    *written = output_len + 1;
-    if (*written <= script_len) {
-        if (node->kind == KIND_MINISCRIPT_OLDER)
-            script[output_len] = OP_CHECKSEQUENCEVERIFY;
-        else if (node->kind == KIND_MINISCRIPT_AFTER)
-            script[output_len] = OP_CHECKLOCKTIMEVERIFY;
-        else
-            ret = WALLY_ERROR; /* Shouldn't happen */
+    if (ret == WALLY_OK) {
+        *written = output_len + 1;
+        if (*written <= script_len) {
+            if (node->kind == KIND_MINISCRIPT_OLDER)
+                script[output_len] = OP_CHECKSEQUENCEVERIFY;
+            else if (node->kind == KIND_MINISCRIPT_AFTER)
+                script[output_len] = OP_CHECKLOCKTIMEVERIFY;
+            else
+                ret = WALLY_ERROR; /* Shouldn't happen */
+        }
     }
     return ret;
 }
 
 static int generate_hash_type(ms_ctx *ctx, ms_node *node,
-                              unsigned char *script, size_t script_len, size_t *written)
+                              unsigned char *script, size_t script_len,
+                              size_t *written)
 {
     int ret;
-    size_t hash_size,  output_len = *written, remaining_len = 0;
+    size_t hash_size,  remaining_len = 0;
     unsigned char op_code;
 
     if (!node->child || !node_is_root(node) || !node->builtin)
@@ -1590,18 +1596,18 @@ static int generate_hash_type(ms_ctx *ctx, ms_node *node,
 
     if (script_len >= 7)
         remaining_len = script_len - 7;
-    ret = generate_script(ctx, node->child, script + 6, remaining_len, &output_len);
+    ret = generate_script(ctx, node->child, script + 6, remaining_len, written);
     if (ret == WALLY_OK) {
-        *written = output_len + 7;
-        if (*written <= script_len) {
+        if (*written + 7 <= script_len) {
             script[0] = OP_SIZE;
             script[1] = 0x01;
             script[2] = 0x20;
             script[3] = OP_EQUALVERIFY;
             script[4] = op_code;
             script[5] = hash_size;
-            script[6 + output_len] = OP_EQUAL;
+            script[6 + *written] = OP_EQUAL;
         }
+        *written += 7;
     }
     return ret;
 }
@@ -1629,7 +1635,7 @@ static int generate_concat(ms_ctx *ctx, ms_node *node, size_t target_num,
     }
 
     for (i = 0; i < target_num; ++i) {
-        size_t output_len = 0, remaining_len = 0;
+        size_t output_len, remaining_len = 0;
 
         if (insert_len[i] && offset + insert_len[i] <= script_len)
             memcpy(script + offset, insert[i], insert_len[i]);
@@ -1791,12 +1797,13 @@ static int generate_thresh(ms_ctx *ctx, ms_node *node,
     return ret;
 }
 
-static int generate_wrappers(ms_node *node,
-                             unsigned char *script, size_t script_len, size_t *written)
+static int generate_inplace_wrappers(ms_node *node,
+                                     unsigned char *script, size_t script_len,
+                                     size_t *written)
 {
-    size_t i;
+    size_t i = strlen(node->wrapper_str);
 
-    if (node->wrapper_str[0] == '\0')
+    if (!i)
         return WALLY_OK; /* No wrappers */
 
     if (!*written)
@@ -1808,9 +1815,9 @@ static int generate_wrappers(ms_node *node,
 #define WRAP_REQUIRE_END } break
 
     /* Generate the nodes wrappers in reserve order */
-    for (i = strlen(node->wrapper_str); i != 0; --i) {
+    while (i--) {
         size_t output_len = 0;
-        switch(node->wrapper_str[i - 1]) {
+        switch(node->wrapper_str[i]) {
         case 'a':
             WRAP_REQUIRE(2, 1);
             script[0] = OP_TOALTSTACK;
@@ -1844,6 +1851,10 @@ static int generate_wrappers(ms_node *node,
                 output_len = 1;
             } else {
                 unsigned char *last = script + *written - 1;
+                /* The following check cannot happen, but scan-build believes
+                 * it can - check for it to avoid false positives */
+                if (last < script)
+                    return WALLY_ERROR;
                 if (*last == OP_EQUAL)
                     *last = OP_EQUALVERIFY;
                 else if (*last == OP_NUMEQUAL)
@@ -2096,7 +2107,8 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written)
 {
     int ret = WALLY_EINVAL;
-    size_t output_len = *written;
+    size_t output_len = 0;
+    *written = 0;
 
     if (node->builtin) {
         ret = builtin_get(node)->generate_fn(ctx, node, script, script_len, &output_len);
@@ -2165,7 +2177,7 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
         }
     }
     if (ret == WALLY_OK) {
-        ret = generate_wrappers(node, script, script_len, &output_len);
+        ret = generate_inplace_wrappers(node, script, script_len, &output_len);
         if (ret == WALLY_OK)
             *written = output_len;
     }
@@ -3046,7 +3058,7 @@ static int descriptor_get_addr(struct wally_descriptor *descriptor,
                                                             pubkey, sizeof(pubkey));
         } else if (descriptor->features & WALLY_MS_IS_ELIP150) {
             /* ELIP-150 blinding key */
-            size_t written = 0;
+            size_t written;
             ret = generate_script(descriptor, descriptor->top_node->child,
                                   pubkey, sizeof(pubkey), &written);
             if (ret == WALLY_OK && written != sizeof(pubkey))
