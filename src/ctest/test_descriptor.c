@@ -1657,6 +1657,14 @@ static const struct descriptor_test {
         "descriptor errchk - ELIP 150 blinding key with multipath",
         "ct(mainnet_xpub/<0;1>,elpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - ELIP 150 short hex key",
+        "ct(fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,elwpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - ELIP 150 long hex key",
+        "ct(0202fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,elwpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
     }
 #endif /* BUILD_ELEMENTS */
 };
@@ -2064,6 +2072,18 @@ static const struct address_test {
         WALLY_NETWORK_LIQUID,
         0, 0, 0,
         ADDR("lq1qq2r0pdvcknjpwev96qu9975alzqs78cvsut5ju82t7tv8d645dgmwknpl78t02k2xqgdh9ltmfmpy9ssk7qfvtk83xqzx62q4")
+    }, {
+        "address - ELIP 150 View Descriptor 2",
+        "ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(021a8fb6bd5a653b021b98a2a785725b8ddacfe3687bc043aa7f4d25d3a48d40b5))#c2kx9zll",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qq265u4g3k3m3qpyxjwpdrtnm293wuxgvs9xzmzcs2ck0mv5rx23w4d7xfsednsmmxrszfe7s9rs0c6cvf3dfytxax3utlmm46")
+    }, {
+        "address - ELIP 150 Non-View Descriptor 2",
+        "ct(0286fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,elwpkh(021a8fb6bd5a653b021b98a2a785725b8ddacfe3687bc043aa7f4d25d3a48d40b5))#m5mvyh29",
+        WALLY_NETWORK_LIQUID,
+        0, 0, 0,
+        ADDR("lq1qq265u4g3k3m3qpyxjwpdrtnm293wuxgvs9xzmzcs2ck0mv5rx23w4d7xfsednsmmxrszfe7s9rs0c6cvf3dfytxax3utlmm46")
     }, {
         "address - slip77 (ELIP 150 Valid Descriptor 5)",
         "ct(slip77(slip77_key),elpkh(key_4))#hw2glz99",

@@ -587,7 +587,8 @@ static void node_free(ms_node *node)
             node_free(child);
             child = next;
         }
-        if (node->kind & (KIND_RAW | KIND_ADDRESS) || node->kind == KIND_PUBLIC_KEY || node->kind == KIND_PRIVATE_KEY)
+        if (node->kind & (KIND_RAW | KIND_ADDRESS) ||
+            node->kind == KIND_PUBLIC_KEY || node->kind == KIND_PRIVATE_KEY)
             clear_and_free((void*)node->data, node->data_len);
         clear_and_free(node, sizeof(*node));
     }
@@ -2249,58 +2250,80 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
     return ret;
 }
 
-/* take the possible hex data in node->data, if it is a valid pubkey
+/* take the possible hex data in node->data, if it is a valid key then
  * convert it to an allocated binary buffer and make this node a key node
  */
-static int analyze_pubkey_hex(ms_ctx *ctx, ms_node *node,
-                              uint32_t flags, bool *is_hex)
+static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
+                           uint32_t flags, bool is_ct_key, bool *is_hex)
 {
-    unsigned char pubkey[EC_PUBLIC_KEY_UNCOMPRESSED_LEN];
-    size_t pubkey_len;
-    bool allow_xonly, make_xonly = false;
+    unsigned char key[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], *key_p = key;
+    size_t key_len;
+    bool allow_xonly, make_xonly = false, is_private = false;
 
-     *is_hex = wally_hex_n_to_bytes(node->data, node->data_len,
-                                    pubkey, sizeof(pubkey), &pubkey_len) == WALLY_OK;
-     if (!*is_hex || pubkey_len > sizeof(pubkey))
-        return WALLY_OK; /* Not hex, or too long */
+    *is_hex = wally_hex_n_to_bytes(node->data, node->data_len,
+                                   key, sizeof(key), &key_len) == WALLY_OK;
+    if (!*is_hex)
+        return WALLY_OK; /* Not a hex string */
 
-    if (wally_ec_public_key_verify(pubkey, pubkey_len) != WALLY_OK &&
-        wally_ec_xonly_public_key_verify(pubkey, pubkey_len) != WALLY_OK)
-        return WALLY_OK; /* Not a valid pubkey */
+    if (key_len == EC_PRIVATE_KEY_LEN && is_ct_key) {
+        if (wally_ec_private_key_verify(key, key_len) != WALLY_OK)
+            return WALLY_OK; /* Not a valid private key */
+        is_private = true;
+    } else if (key_len == EC_XONLY_PUBLIC_KEY_LEN) {
+        if (wally_ec_xonly_public_key_verify(key, key_len) != WALLY_OK)
+            return WALLY_OK; /* Not a valid x-only key */
+    } else if (key_len == EC_PUBLIC_KEY_LEN ||
+               key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+        if (wally_ec_public_key_verify(key, key_len) != WALLY_OK)
+            return WALLY_OK; /* Not a valid compressed/uncompressed pubkey */
+    } else
+        return WALLY_OK; /* Not a pubkey */
 
-    make_xonly = node->parent &&
-        (node->parent->kind == KIND_DESCRIPTOR_RAW_TR ||
-         node->parent->kind == KIND_DESCRIPTOR_TR);
-    allow_xonly = make_xonly || flags & WALLY_MINISCRIPT_TAPSCRIPT;
-    if (pubkey_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN && allow_xonly)
-        return WALLY_OK; /* Uncompressed key not allowed here */
-    if (pubkey_len == EC_XONLY_PUBLIC_KEY_LEN && !allow_xonly)
-        return WALLY_OK; /* X-only not allowed here */
-    if (pubkey_len != EC_XONLY_PUBLIC_KEY_LEN) {
-        if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
-            return WALLY_OK; /* Only X-only pubkeys allowed under tapscript */
-        if (make_xonly) {
-            /* Convert to x-only */
-            --pubkey_len;
-            memmove(pubkey, pubkey + 1, pubkey_len);
+    if (!is_private) {
+        /* Ensure the pubkey is allowed in this context/convert as needed */
+        make_xonly = node->parent &&
+            (node->parent->kind == KIND_DESCRIPTOR_RAW_TR ||
+             node->parent->kind == KIND_DESCRIPTOR_TR);
+        allow_xonly = make_xonly || flags & WALLY_MINISCRIPT_TAPSCRIPT;
+        if (key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN && allow_xonly)
+            return WALLY_OK; /* Uncompressed key not allowed here */
+        if (key_len == EC_XONLY_PUBLIC_KEY_LEN && !allow_xonly)
+            return WALLY_OK; /* X-only not allowed here */
+        if (key_len != EC_XONLY_PUBLIC_KEY_LEN) {
+            if (flags & WALLY_MINISCRIPT_TAPSCRIPT)
+                return WALLY_OK; /* Only X-only pubkeys allowed under tapscript */
+            if (make_xonly) {
+                /* Convert to x-only */
+                --key_len;
+                ++key_p;
+            }
         }
     }
 
-    if (!clone_bytes((unsigned char **)&node->data, pubkey, pubkey_len))
+    if (!clone_bytes((unsigned char **)&node->data, key_p, key_len))
         return WALLY_ENOMEM;
-    node->data_len = pubkey_len;
+    node->data_len = key_len;
 
-    if (pubkey_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+    if (is_ct_key)
+        ctx->features |= WALLY_MS_IS_ELIP150;
+    if (is_private) {
+        node->kind = KIND_PRIVATE_KEY;
+        node->flags |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
+        return WALLY_OK;
+    }
+    node->kind = KIND_PUBLIC_KEY;
+    if (is_ct_key)
+        return WALLY_OK;
+    if (key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
         node->flags |= WALLY_MS_IS_UNCOMPRESSED;
         ctx->features |= WALLY_MS_IS_UNCOMPRESSED;
     }
-    if (pubkey_len == EC_XONLY_PUBLIC_KEY_LEN) {
+    if (key_len == EC_XONLY_PUBLIC_KEY_LEN) {
         node->flags |= WALLY_MS_IS_X_ONLY;
         ctx->features |= WALLY_MS_IS_X_ONLY;
     }
-    ctx->features |= WALLY_MS_IS_RAW;
-    node->kind = KIND_PUBLIC_KEY;
     node->flags |= WALLY_MS_IS_RAW;
+    ctx->features |= WALLY_MS_IS_RAW;
     return ctx_add_key_node(ctx, node);
 }
 
@@ -2357,8 +2380,8 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
         node->data_len -= size;
     }
 
-    /* Check for a hex public key */
-    ret = analyze_pubkey_hex(ctx, node, flags, &is_hex);
+    /* Check for a hex public key (hex private keys allowed for ct() only) */
+    ret = analyze_key_hex(ctx, node, flags, is_ct_key, &is_hex);
     if (ret == WALLY_OK && is_hex)
         return WALLY_OK;
 
