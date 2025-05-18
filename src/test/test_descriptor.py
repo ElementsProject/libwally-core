@@ -238,63 +238,81 @@ class DescriptorTests(unittest.TestCase):
         k1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
         k2 = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         # Valid args
+        # descriptor, flags, expected_features, expected_depth, expected keys
         cases = [
             # Bip32 xpub
             (f'pkh({k1})',
-             0, MS_IS_DESCRIPTOR, 2),
+             0, MS_IS_DESCRIPTOR, 2, 1),
             # Bip32 xpub with range
             (f'pkh({k1}/*)',
-             0,  MS_IS_RANGED|MS_IS_DESCRIPTOR, 2),
+             0,  MS_IS_RANGED|MS_IS_DESCRIPTOR, 2, 1),
             # BIP32 xprv
             (f'pkh({k2}/*)',
-             0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR, 2),
+             0, MS_IS_PRIVATE|MS_IS_RANGED|MS_IS_DESCRIPTOR, 2, 1),
             # WIF
             ('pkh(L1AAHuEC7XuDM7pJ7yHLEqYK1QspMo8n1kgxyZVdgvEpVC1rkUrM)',
-             0, MS_IS_PRIVATE|MS_IS_RAW|MS_IS_DESCRIPTOR, 2),
+             0, MS_IS_PRIVATE|MS_IS_RAW|MS_IS_DESCRIPTOR, 2, 1),
             # Hex pubkey, compressed
             ('pk(03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284)',
-             0, MS_IS_RAW|MS_IS_DESCRIPTOR, 2),
+             0, MS_IS_RAW|MS_IS_DESCRIPTOR, 2, 1),
             # Hex pubkey, uncompressed
             ('pk(0414fc03b8df87cd7b872996810db8458d61da8448e531569c8517b469a119d267be5645686309c6e6736dbd93940707cc9143d3cf29f1b877ff340e2cb2d259cf)',
-             0, MS_IS_UNCOMPRESSED|MS_IS_RAW|MS_IS_DESCRIPTOR, 2),
+             0, MS_IS_UNCOMPRESSED|MS_IS_RAW|MS_IS_DESCRIPTOR, 2, 1),
             # Miniscript
             ('j:and_v(vdv:after(1567547623),older(2016))',
-             MS_ONLY, 0, 3),
+             MS_ONLY, 0, 3, 0),
             # pk() is both descriptor and miniscript valid and should parse as each
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
-             0, MS_IS_PRIVATE, 5),
+             0, MS_IS_PRIVATE, 5, 2),
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
-             MS_ONLY, MS_IS_PRIVATE, 5),
+             MS_ONLY, MS_IS_PRIVATE, 5, 2),
         ]
         if is_elements_build:
             slip77 = 'ct(slip77(b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04),elpkh(xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH))'
             cases.extend([
                 # Parsing a descriptor as elements returns elements in its features
                 (f'tr({k1})',
-                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2),
+                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2, 1),
                 # el-prefixed builtins return elements in their features
                 (f'eltr({k1})',
-                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2),
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2, 1),
+                # Note that ct() blinding keys aren't returned in the key count.
                 # slip77 builtins return elements and slip77 in their features,
-                # and the ct() parent wrapper is included in their depth
+                # and the ct() parent wrapper is included in their depth.
                 (slip77,
-                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_SLIP77, 3),
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_SLIP77, 3, 1),
+                # An xpub ELIP-150 key
+                (f'ct({k1},elpkh({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                # A hex public ELIP-150 key.
+                (f'ct(0286fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,elpkh({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                # An xpriv ELIP-150 key. Note that MS_IS_PRIVATE is not
+                # returned because the blinding key is not included in the
+                # key count.
+                (f'ct({k2},elpkh({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
+                # A hex private ELIP-150 key. As above MS_IS_PRIVATE is not
+                # returned.
+                (f'ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elpkh({k1}))',
+                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS|MS_IS_ELIP150, 3, 1),
                 ])
 
-        for descriptor, flags, expected, expected_depth in cases:
+        for descriptor, flags, expected_features, expected_depth, expected_keys in cases:
             d = c_void_p()
             ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE, flags, d)
             ret, features = wally_descriptor_get_features(d)
-            self.assertEqual((ret, features), (WALLY_OK, expected))
+            self.assertEqual((ret, features), (WALLY_OK, expected_features))
             ret, depth = wally_descriptor_get_depth(d)
             self.assertEqual((ret, depth), (WALLY_OK, expected_depth))
+            ret, num_keys = wally_descriptor_get_num_keys(d)
+            self.assertEqual((ret, num_keys), (WALLY_OK, expected_keys))
             wally_descriptor_free(d)
             # Check the maximum depth parsing limit
             for limit, expected in [(depth-1, WALLY_EINVAL), (depth, WALLY_OK)]:
                 ret = wally_descriptor_parse(descriptor, None, NETWORK_NONE,
                                             flags | (limit << 16), d)
                 self.assertEqual(ret, expected)
-            wally_descriptor_free(d)
 
         # Invalid args
         ret, features = wally_descriptor_get_features(None) # NULL descriptor
