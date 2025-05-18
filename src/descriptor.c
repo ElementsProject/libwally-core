@@ -1049,7 +1049,7 @@ static int verify_thresh(ms_ctx *ctx, ms_node *node)
 static int verify_ct(ms_ctx *ctx, ms_node *node)
 {
     (void)ctx;
-    if (node->parent)
+    if (node->parent || node->wrapper_str[0])
         return WALLY_EINVAL;
     if (node->child->kind != KIND_DESCRIPTOR_SLIP77 &&
         !(node->child->kind & KIND_KEY) &&
@@ -1084,7 +1084,8 @@ static int verify_slip77(ms_ctx *ctx, ms_node *node)
     if (!node->parent || node->parent->kind != KIND_DESCRIPTOR_CT)
         return WALLY_EINVAL;
     if (node->child->builtin || !(node->child->kind & KIND_RAW) ||
-        node->child->data_len != 32)
+        node->child->data_len != 32 || node->wrapper_str[0])
+
         return WALLY_EINVAL;
     return WALLY_OK;
 }

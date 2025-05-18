@@ -1610,6 +1610,10 @@ static const struct descriptor_test {
         "ct()",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
     }, {
+        "descriptor errchk - wrapper on ct()",
+        "v:ct(slip77(slip77_key),elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
         "descriptor errchk - single child ct()",
         "ct(slip77(slip77_key))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
@@ -1636,6 +1640,10 @@ static const struct descriptor_test {
     }, {
         "descriptor errchk - invalid blinding key in slip77()",
         "ct(slip77(010101010101010101),elpkh(key_4))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
+    }, {
+        "descriptor errchk - wrapper on slip77()",
+        "ct(v:slip77(slip77_key),elpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, ""
     }, {
         "descriptor errchk - ELIP 150 WIF private key",
