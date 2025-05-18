@@ -2225,7 +2225,7 @@ static const struct address_test {
 static bool check_descriptor_to_script(const struct descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
-    size_t written, computed_written, max_written;
+    size_t written, upper_limit, max_written;
     const size_t default_script_len = 520;
     char *checksum, *canonical;
     int expected_ret, ret, len_ret;
@@ -2234,13 +2234,13 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY_TEMPLATE;
     const struct wally_map *keys = is_policy ? &g_policy_maps[0] : &g_key_map;
 
+    /* Parse the descriptor. For policy tests, use the policy keys */
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
     if (is_policy && expected_ret == WALLY_OK) {
         const char *p = strchr(test->descriptor, '@');
         if (p && strchr(p + 1, '@'))
             keys = &g_policy_maps[1]; /* 2-Element policy key map */
     }
-
     ret = wally_descriptor_parse(test->descriptor, keys, test->network,
                                  test->flags, &descriptor);
     if (is_policy && expected_ret == WALLY_OK) {
@@ -2260,24 +2260,45 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
             return true;
     }
 
-    computed_written = default_script_len;
+    /* Test script generation */
+    upper_limit = default_script_len;
     if (expected_ret == WALLY_OK) {
-        /* Try the call with a too-short buffer.
-         * This returns a more exact required size for generation, although
-         * it may still overestimate by a few bytes for some descriptors.
+        /* Try the call with too-short buffers, up to the returned required
+         * length. This returns a more exact required size for generation
+         * than wally_descriptor_to_script_get_maximum_length(), although it
+         * may still overestimate by a few bytes for some descriptors which
+         * have a variable size based on the generated contents.
          */
-        unsigned char *short_script = malloc(1);
-        ret = wally_descriptor_to_script(descriptor,
-                                         test->depth, test->index,
-                                         test->variant, multi_index,
-                                         child_num, 0,
-                                         short_script, 1, &computed_written);
-        free(short_script);
-        if (!check_ret("descriptor_to_script(short buffer)\n", ret, expected_ret))
-            return false;
+        for (size_t i = 1; i <= upper_limit; ++i) {
+            unsigned char *short_script = malloc(i);
+
+            ret = wally_descriptor_to_script(descriptor,
+                                             test->depth, test->index,
+                                             test->variant, multi_index,
+                                             child_num, 0,
+                                             short_script, i, &written);
+            free(short_script);
+            if (!check_ret("descriptor_to_script(short buffer)\n", ret, expected_ret)) {
+                wally_descriptor_free(descriptor);
+                return false;
+            }
+            if (i == 1) {
+                /* First call: store the the returned required size */
+                upper_limit = written;
+            } else {
+                /* Subsequent calls with an output buffer up up to the
+                 * required size must return at least the required size */
+                if (written > upper_limit) {
+                    printf("%s: %d > %d!\n", test->name,
+                           (int)written, (int)upper_limit);
+                    wally_descriptor_free(descriptor);
+                    return false;
+                }
+            }
+        }
     }
 
-    const size_t script_len = computed_written ? computed_written : 1;
+    const size_t script_len = upper_limit ? upper_limit : 1;
     unsigned char *script = malloc(script_len);
     ret = wally_descriptor_to_script(descriptor,
                                      test->depth, test->index,
@@ -2285,48 +2306,61 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
                                      child_num, 0,
                                      script, script_len, &written);
     if (ret == WALLY_OK && written > script_len) {
-        printf("descriptor_to_script: wrote more than computed length!\n");
-        return false;
+        printf("descriptor_to_script: wrote more than computed length:\n");
+        printf("%s: %d vs %d!\n", test->name, (int)written, (int)script_len);
+        ret = false;
+        goto end;
     }
-    if (!check_ret("descriptor_to_script", ret, expected_ret))
-        return false;
-
+    if (!check_ret("descriptor_to_script", ret, expected_ret)) {
+        ret = false;
+        goto end;
+    }
     if (expected_ret != WALLY_OK) {
         /* Failure case: stop testing here */
-        wally_descriptor_free(descriptor);
-        free(script);
-        return true;
+        ret = true;
+        goto end;
     }
 
-    if (computed_written < written) {
+    if (upper_limit < written) {
         printf("descriptor_to_script: computed < written\n");
-        return false;
+        ret = false;
+        goto end;
     }
 
     ret = wally_descriptor_get_features(descriptor, &features);
-    if (!check_ret("descriptor_get_features", ret, WALLY_OK))
-        return false;
+    if (!check_ret("descriptor_get_features", ret, WALLY_OK)) {
+        ret = false;
+        goto end;
+    }
 
     len_ret = wally_descriptor_to_script_get_maximum_length(descriptor,
                                                             0, 0, 0, 0, 0, 0,
                                                             &max_written);
     if (!check_ret("descriptor_to_script_get_maximum_length", len_ret, WALLY_OK) ||
-        max_written < written)
-        return false;
+        max_written < written) {
+        ret = false;
+        goto end;
+    }
 
-    if (computed_written > max_written) {
-        printf("descriptor_to_script: computed > max written\n");
-        return false;
+    if (upper_limit > max_written) {
+        printf("descriptor_to_script: computed %d > max written %d\n",
+               (int)upper_limit, (int)max_written);
+        ret = false;
+        goto end;
     }
 
     ret = wally_descriptor_get_checksum(descriptor, 0, &checksum);
-    if (!check_ret("descriptor_get_checksum", ret, WALLY_OK))
-        return false;
+    if (!check_ret("descriptor_get_checksum", ret, WALLY_OK)) {
+        ret = false;
+        goto end;
+    }
 
     ret = wally_descriptor_canonicalize(descriptor, 0, &canonical);
     wally_free_string(canonical);
-    if (!check_ret("descriptor_canonicalize", ret, WALLY_OK))
-        return false;
+    if (!check_ret("descriptor_canonicalize", ret, WALLY_OK)) {
+        ret = false;
+        goto end;
+    }
 
     ret = check_varbuff("descriptor_to_script", script, written, test->script) &&
           (!*test->checksum || !strcmp(checksum, test->checksum));
@@ -2335,6 +2369,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
                test->checksum, checksum);
 
     wally_free_string(checksum);
+end:
     wally_descriptor_free(descriptor);
     free(script);
     return !!ret;
