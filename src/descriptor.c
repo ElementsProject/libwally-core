@@ -11,7 +11,6 @@
 #include <include/wally_script.h>
 #ifdef BUILD_ELEMENTS
 #include <include/wally_elements.h>
-#include "tx_io.h"
 #endif
 
 #include <limits.h>
@@ -118,14 +117,6 @@
 #define KIND_MINISCRIPT_OR_C      (0x06000000 | KIND_MINISCRIPT)
 #define KIND_MINISCRIPT_OR_D      (0x07000000 | KIND_MINISCRIPT)
 #define KIND_MINISCRIPT_OR_I      (0x08000000 | KIND_MINISCRIPT)
-
-#ifdef BUILD_ELEMENTS
-/* SHA256(CT-Blinding-Key/1.0) */
-static const unsigned char CT_BLINDING_KEY_1_0_SHA256[SHA256_LEN] = {
-    0x02, 0xe0, 0xc2, 0x24, 0x76, 0xf8, 0xc5, 0xfd, 0xb7, 0x30, 0x5d, 0x9f, 0xd0, 0xe0, 0xa3, 0x56,
-    0xb5, 0x88, 0x77, 0x69, 0x24, 0x8e, 0x04, 0xc8, 0x6f, 0xda, 0xad, 0x35, 0x11, 0x37, 0x85, 0xb4
-};
-#endif
 
 struct addr_ver_t {
     const unsigned char network;
@@ -3087,21 +3078,10 @@ static int descriptor_get_addr(struct wally_descriptor *descriptor,
                                   pubkey, sizeof(pubkey), &written);
             if (ret == WALLY_OK && written != sizeof(pubkey))
                 ret = WALLY_ERROR; /* Unsupported pubkey - should not happen! */
-            if (ret == WALLY_OK) {
-                /* Kblind = K + Htag(K, scriptPubKey)G */
-                struct sha256 sha;
-                struct sha256_ctx ctx;
-                unsigned char tweaked[EC_PUBLIC_KEY_LEN];
-                tagged_hash_init(&ctx, CT_BLINDING_KEY_1_0_SHA256, SHA256_LEN);
-                sha256_update(&ctx, pubkey, sizeof(pubkey));
-                hash_varbuff(&ctx, script, script_len); /* Consensus encoding */
-                sha256_done(&ctx, &sha);
-                ret = wally_ec_public_key_tweak(pubkey, sizeof(pubkey),
-                                                sha.u.u8, sizeof(sha),
-                                                tweaked, sizeof(tweaked));
-                memcpy(pubkey, tweaked, sizeof(tweaked));
-                wally_clear(tweaked, sizeof(tweaked));
-            }
+            if (ret == WALLY_OK)
+                ret = wally_elip150_public_key_to_ec_public_key(pubkey, sizeof(pubkey),
+                                                                script, script_len,
+                                                                pubkey, sizeof(pubkey));
         } else
             ret = WALLY_ERROR; /* FIXME: Support ELIP 151 */
 

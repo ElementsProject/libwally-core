@@ -2438,6 +2438,24 @@ inline int elements_pegout_script_size(size_t genesis_blockhash_len, size_t main
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class BYTES, class SCRIPT, class BYTES_OUT>
+inline int elip150_private_key_to_ec_private_key(const BYTES& bytes, const SCRIPT& script, BYTES_OUT& bytes_out) {
+    int ret = ::wally_elip150_private_key_to_ec_private_key(bytes.data(), bytes.size(), script.data(), script.size(), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES, class SCRIPT, class BYTES_OUT>
+inline int elip150_private_key_to_ec_public_key(const BYTES& bytes, const SCRIPT& script, BYTES_OUT& bytes_out) {
+    int ret = ::wally_elip150_private_key_to_ec_public_key(bytes.data(), bytes.size(), script.data(), script.size(), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES, class SCRIPT, class BYTES_OUT>
+inline int elip150_public_key_to_ec_public_key(const BYTES& bytes, const SCRIPT& script, BYTES_OUT& bytes_out) {
+    int ret = ::wally_elip150_public_key_to_ec_public_key(bytes.data(), bytes.size(), script.data(), script.size(), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class NONCE, class VBF, class COMMITMENT, class GENERATOR, class BYTES_OUT>
 inline int explicit_rangeproof(uint64_t value, const NONCE& nonce, const VBF& vbf, const COMMITMENT& commitment, const GENERATOR& generator, BYTES_OUT& bytes_out, size_t* written) {
     int ret = ::wally_explicit_rangeproof(value, nonce.data(), nonce.size(), vbf.data(), vbf.size(), commitment.data(), commitment.size(), generator.data(), generator.size(), bytes_out.data(), bytes_out.size(), written);

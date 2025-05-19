@@ -256,6 +256,41 @@ class ElementsTests(unittest.TestCase):
                         continue # Skip final VBF
                 self.assertEqual(h(out[:o_len]), utf8(expected))
 
+    def test_elip150_blinding_keys(self):
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
+        # Ensure tweaking private and public keys results in the same key
+        priv_key, priv_key_len = make_cbuffer('66'*32)
+        pub_key, pub_key_len = make_cbuffer('00'*33)
+        ret = wally_ec_public_key_from_private_key(priv_key, priv_key_len,
+                                                   pub_key, pub_key_len)
+        self.assertEqual(WALLY_OK, ret)
+        script, script_len = make_cbuffer('11'*40)
+        out_priv, out_priv_len = make_cbuffer('00'*32)
+        out_pub, out_pub_len = make_cbuffer('00'*33)
+        ret = wally_elip150_private_key_to_ec_private_key(priv_key, priv_key_len,
+                                                          script, script_len,
+                                                          out_priv, out_priv_len)
+        self.assertEqual(WALLY_OK, ret)
+        ret = wally_ec_public_key_from_private_key(out_priv, out_priv_len,
+                                                   out_pub, out_pub_len)
+        self.assertEqual(WALLY_OK, ret)
+        expected_pubkey = h(out_pub)
+
+        ret = wally_elip150_private_key_to_ec_public_key(priv_key, priv_key_len,
+                                                         script, script_len,
+                                                         out_pub, out_pub_len)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(expected_pubkey, h(out_pub))
+
+        ret = wally_elip150_public_key_to_ec_public_key(pub_key, pub_key_len,
+                                                        script, script_len,
+                                                        out_pub, out_pub_len)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(expected_pubkey, h(out_pub))
+
+
     def test_elements_tx_weights(self):
         if not wally_is_elements_build()[1]:
             self.skipTest('Elements support not enabled')

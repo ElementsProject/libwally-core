@@ -538,6 +538,9 @@ if [ -z "$DISABLE_ELEMENTS" ]; then
 ,'_wally_elements_pegin_contract_script_from_bytes' \
 ,'_wally_elements_pegout_script_from_bytes' \
 ,'_wally_elements_pegout_script_size' \
+,'_wally_elip150_private_key_to_ec_private_key' \
+,'_wally_elip150_private_key_to_ec_public_key' \
+,'_wally_elip150_public_key_to_ec_public_key' \
 ,'_wally_explicit_rangeproof' \
 ,'_wally_explicit_rangeproof_verify' \
 ,'_wally_explicit_surjectionproof' \

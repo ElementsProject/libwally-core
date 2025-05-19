@@ -47,6 +47,21 @@
       return asset_blinding_key_to_ec_public_key(asset_blinding_key, scriptpubkey, null);
   }
 
+  public final static byte[] elip150_private_key_to_ec_private_key(byte[] priv_key,
+                                                                   byte[] scriptpubkey) {
+      return elip150_private_key_to_ec_private_key(priv_key, scriptpubkey, null);
+  }
+
+  public final static byte[] elip150_private_key_to_ec_public_key(byte[] priv_key,
+                                                                  byte[] scriptpubkey) {
+      return elip150_private_key_to_ec_public_key(priv_key, scriptpubkey, null);
+  }
+
+  public final static byte[] elip150_public_key_to_ec_public_key(byte[] pub_key,
+                                                                 byte[] scriptpubkey) {
+      return elip150_public_key_to_ec_public_key(pub_key, scriptpubkey, null);
+  }
+
   public final static long asset_unblind(byte[] pub_key, byte[] priv_key, byte[] proof,
                                          byte[] commitment, byte[] extra_in,
                                          byte[] generator,

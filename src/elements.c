@@ -1,6 +1,7 @@
 #include "internal.h"
 #ifdef BUILD_ELEMENTS
 #include "script_int.h"
+#include "tx_io.h"
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
 #include <include/wally_elements.h>
@@ -13,8 +14,14 @@
 #include <secp256k1_whitelist.h>
 
 
-static const unsigned char LABEL_STR[] = {
+static const unsigned char SLIP77_LABEL[] = {
     'S', 'L', 'I', 'P', '-', '0', '0', '7', '7'
+};
+
+/* SHA256(CT-Blinding-Key/1.0) */
+static const unsigned char CT_BLINDING_KEY_1_0_SHA256[SHA256_LEN] = {
+    0x02, 0xe0, 0xc2, 0x24, 0x76, 0xf8, 0xc5, 0xfd, 0xb7, 0x30, 0x5d, 0x9f, 0xd0, 0xe0, 0xa3, 0x56,
+    0xb5, 0x88, 0x77, 0x69, 0x24, 0x8e, 0x04, 0xc8, 0x6f, 0xda, 0xad, 0x35, 0x11, 0x37, 0x85, 0xb4
 };
 
 static int parse_generator(const secp256k1_context *ctx,
@@ -808,7 +815,8 @@ int wally_asset_blinding_key_from_seed(
 
     ret = wally_symmetric_key_from_seed(bytes, bytes_len, root, sizeof(root));
     if (ret == WALLY_OK) {
-        ret = wally_symmetric_key_from_parent(root, sizeof(root), 0, LABEL_STR, sizeof(LABEL_STR),
+        ret = wally_symmetric_key_from_parent(root, sizeof(root), 0,
+                                              SLIP77_LABEL, sizeof(SLIP77_LABEL),
                                               bytes_out, len);
         wally_clear(root, sizeof(root));
     }
@@ -870,6 +878,93 @@ int wally_asset_blinding_key_to_ec_public_key(
         ret = wally_ec_public_key_from_private_key(priv_key, sizeof(priv_key),
                                                    bytes_out, len);
     wally_clear(priv_key, sizeof(priv_key));
+    return ret;
+#endif /* BUILD_ELEMENTS */
+}
+
+#ifdef BUILD_ELEMENTS
+static void elip150_tagged_hash(const unsigned char *pubkey, size_t pubkey_len,
+                                const unsigned char *script, size_t script_len,
+                                struct sha256 *sha_out)
+{
+    struct sha256_ctx ctx;
+    tagged_hash_init(&ctx, CT_BLINDING_KEY_1_0_SHA256, SHA256_LEN);
+    sha256_update(&ctx, pubkey, pubkey_len);
+    hash_varbuff(&ctx, script, script_len); /* Consensus encoding */
+    sha256_done(&ctx, sha_out);
+}
+#endif /* BUILD_ELEMENTS */
+
+int wally_elip150_private_key_to_ec_private_key(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *script, size_t script_len,
+    unsigned char *bytes_out, size_t len)
+{
+#ifndef BUILD_ELEMENTS
+    return WALLY_ERROR;
+#else
+    unsigned char pubkey[EC_PUBLIC_KEY_LEN];
+    int ret;
+
+    if (!bytes || bytes_len != EC_PRIVATE_KEY_LEN || !script || !script_len ||
+        !bytes_out || len != EC_PRIVATE_KEY_LEN)
+        return WALLY_EINVAL;
+
+    ret = wally_ec_public_key_from_private_key(bytes, bytes_len,
+                                               pubkey, sizeof(pubkey));
+    if (ret == WALLY_OK) {
+        struct sha256 sha;
+        unsigned char tweaked[EC_PRIVATE_KEY_LEN];
+        elip150_tagged_hash(pubkey, sizeof(pubkey), script, script_len, &sha);
+        ret = wally_ec_scalar_add(bytes, bytes_len, sha.u.u8, sizeof(sha),
+                                  tweaked, sizeof(tweaked));
+        if (ret == WALLY_OK)
+            memcpy(bytes_out, tweaked, sizeof(tweaked));
+    }
+    return ret;
+#endif /* BUILD_ELEMENTS */
+}
+
+int wally_elip150_private_key_to_ec_public_key(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *script, size_t script_len,
+    unsigned char *bytes_out, size_t len)
+{
+#ifndef BUILD_ELEMENTS
+    return WALLY_ERROR;
+#else
+    unsigned char pubkey[EC_PUBLIC_KEY_LEN];
+    int ret = wally_ec_public_key_from_private_key(bytes, bytes_len,
+                                                   pubkey, sizeof(pubkey));
+    if (ret == WALLY_OK)
+        ret = wally_elip150_public_key_to_ec_public_key(pubkey, sizeof(pubkey),
+                                                        script, script_len,
+                                                        bytes_out, len);
+    return ret;
+#endif /* BUILD_ELEMENTS */
+}
+
+int wally_elip150_public_key_to_ec_public_key(
+    const unsigned char *bytes, size_t bytes_len,
+    const unsigned char *script, size_t script_len,
+    unsigned char *bytes_out, size_t len)
+{
+#ifndef BUILD_ELEMENTS
+    return WALLY_ERROR;
+#else
+    struct sha256 sha;
+    unsigned char tweaked[EC_PUBLIC_KEY_LEN];
+    int ret;
+
+    if (!bytes || bytes_len != EC_PUBLIC_KEY_LEN || !script || !script_len ||
+        !bytes_out || len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+
+    elip150_tagged_hash(bytes, bytes_len, script, script_len, &sha);
+    ret = wally_ec_public_key_tweak(bytes, bytes_len, sha.u.u8, sizeof(sha),
+                                    tweaked, sizeof(tweaked));
+    if (ret == WALLY_OK)
+        memcpy(bytes_out, tweaked, sizeof(tweaked));
     return ret;
 #endif /* BUILD_ELEMENTS */
 }

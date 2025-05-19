@@ -285,6 +285,9 @@ if is_elements_build():
     ecdh_nonce_hash = _wrap_bin(ecdh_nonce_hash, SHA256_LEN)
     elements_pegin_contract_script_from_bytes = _wrap_bin(elements_pegin_contract_script_from_bytes, elements_pegin_contract_script_from_bytes_len, resize=True)
     elements_pegout_script_from_bytes = _wrap_bin(elements_pegout_script_from_bytes, elements_pegout_script_from_bytes_len, resize=True)
+    elip150_private_key_to_ec_private_key = _wrap_bin(elip150_private_key_to_ec_private_key, EC_PRIVATE_KEY_LEN)
+    elip150_private_key_to_ec_public_key = _wrap_bin(elip150_private_key_to_ec_public_key, EC_PUBLIC_KEY_LEN)
+    elip150_public_key_to_ec_public_key = _wrap_bin(elip150_public_key_to_ec_public_key, EC_PUBLIC_KEY_LEN)
     explicit_rangeproof = _wrap_bin(explicit_rangeproof, ASSET_EXPLICIT_RANGEPROOF_MAX_LEN, resize=True)
     explicit_surjectionproof = _wrap_bin(explicit_surjectionproof, ASSET_EXPLICIT_SURJECTIONPROOF_LEN)
     psbt_blind = psbt_blind_alloc

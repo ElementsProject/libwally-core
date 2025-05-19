@@ -166,6 +166,9 @@ export function ecdh_nonce_hash(pub_key: Buffer|Uint8Array, priv_key: Buffer|Uin
 export function elements_pegin_contract_script_from_bytes(redeem_script: Buffer|Uint8Array, script: Buffer|Uint8Array, flags: number): Buffer;
 export function elements_pegout_script_from_bytes(genesis_blockhash: Buffer|Uint8Array, mainchain_script: Buffer|Uint8Array, sub_pubkey: Buffer|Uint8Array, whitelistproof: Buffer|Uint8Array, flags: number): Buffer;
 export function elements_pegout_script_size(genesis_blockhash_len: number, mainchain_script_len: number, sub_pubkey_len: number, whitelistproof_len: number): number;
+export function elip150_private_key_to_ec_private_key(bytes: Buffer|Uint8Array, script: Buffer|Uint8Array): Buffer;
+export function elip150_private_key_to_ec_public_key(bytes: Buffer|Uint8Array, script: Buffer|Uint8Array): Buffer;
+export function elip150_public_key_to_ec_public_key(bytes: Buffer|Uint8Array, script: Buffer|Uint8Array): Buffer;
 export function explicit_rangeproof(value: bigint, nonce: Buffer|Uint8Array, vbf: Buffer|Uint8Array, commitment: Buffer|Uint8Array, generator: Buffer|Uint8Array): Buffer;
 export function explicit_rangeproof_verify(rangeproof: Buffer|Uint8Array, value: bigint, commitment: Buffer|Uint8Array, generator: Buffer|Uint8Array): void;
 export function explicit_surjectionproof(output_asset: Buffer|Uint8Array, output_abf: Buffer|Uint8Array, output_generator: Buffer|Uint8Array): Buffer;
