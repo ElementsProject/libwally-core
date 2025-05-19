@@ -39,6 +39,8 @@ struct wally_descriptor;
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
 #define WALLY_MS_CANONICAL_NO_CHECKSUM 0x01 /** Do not include a checksum */
 
+#define WALLY_MS_BLINDING_KEY_INDEX 0xffffffff /* Key index for confidential blinding key */
+
 /**
  * Parse an output descriptor or miniscript expression.
  *
@@ -196,7 +198,8 @@ WALLY_CORE_API int wally_descriptor_get_depth(
  * :param descriptor: Parsed output descriptor or miniscript expression.
  * :param value_out: Destination for the number of keys.
  *
- * .. note:: Repeated keys are counted once for each time they appear.
+ * .. note:: Repeated keys are counted once for each time they appear, and any
+ *|    blinding key within the descriptor is not included in the count.
  */
 WALLY_CORE_API int wally_descriptor_get_num_keys(
     const struct wally_descriptor *descriptor,
@@ -206,13 +209,16 @@ WALLY_CORE_API int wally_descriptor_get_num_keys(
  * Get the string representation of a key in a parsed output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
- * :param index: The zero-based index of the key to get.
+ * :param index: The zero-based index of the key to get, or `WALLY_MS_BLINDING_KEY_INDEX`
+ *|    to fetch the descriptors blinding key representaton (if any).
  * :param output: Destination for the resulting string representation.
  *|    The string returned should be freed using `wally_free_string`.
  *
  * .. note:: Keys may be BIP32 xpub/xpriv, WIF or hex pubkeys, and may be
  *|    x-only. The caller can use `wally_descriptor_get_key_features` to
  *|    determine the type of a given key.
+ *
+ * .. note:: Raw private blinding keys are returned as hex, not WIF.
  */
 WALLY_CORE_API int wally_descriptor_get_key(
     const struct wally_descriptor *descriptor,
@@ -223,7 +229,8 @@ WALLY_CORE_API int wally_descriptor_get_key(
  * Get the features of a key in a parsed output descriptor or miniscript expression.
  *
  * :param descriptor: Parsed output descriptor or miniscript expression.
- * :param index: The zero-based index of the key to get.
+ * :param index: The zero-based index of the key to get, or `WALLY_MS_BLINDING_KEY_INDEX`
+ *|    to fetch the descriptors blinding key features (if any).
  * :param value_out: Destination for the resulting :ref:`miniscript-features`.
  */
 WALLY_CORE_API int wally_descriptor_get_key_features(

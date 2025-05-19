@@ -130,6 +130,7 @@ export const WALLY_MINISCRIPT_TAPSCRIPT = 0x01; /** Tapscript, use x-only pubkey
 export const WALLY_MINISCRIPT_UNIQUE_KEYPATHS = 0x10; /** For policy templates, ensure BIP32 derivation paths differ for identical keys */
 export const WALLY_MINOR_VER = 4;
 export const WALLY_MS_ANY_BLINDING_KEY = 0xE00; /** SLIP-77, ELIP-150 or ELIP-151 blinding key present */
+export const WALLY_MS_BLINDING_KEY_INDEX = 0xffffffff; /* Key index for confidential blinding key */
 export const WALLY_MS_CANONICAL_NO_CHECKSUM = 0x01; /** Do not include a checksum */
 export const WALLY_MS_IS_DESCRIPTOR = 0x020; /** Contains only descriptor expressions (no miniscript) */
 export const WALLY_MS_IS_ELEMENTS = 0x100; /** Contains Elements expressions or was parsed as Elements */

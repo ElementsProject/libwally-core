@@ -32,6 +32,8 @@ MS_IS_ELIP151      = 0x800
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
+BLINDING_KEY_INDEX = 0xffffffff
+
 def wally_map_from_dict(d):
     m = pointer(wally_map())
     assert(wally_map_init_alloc(len(d.keys()), None, m) == WALLY_OK)
@@ -307,6 +309,15 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual((ret, depth), (WALLY_OK, expected_depth))
             ret, num_keys = wally_descriptor_get_num_keys(d)
             self.assertEqual((ret, num_keys), (WALLY_OK, expected_keys))
+            ret, key_info = wally_descriptor_get_key(d, BLINDING_KEY_INDEX)
+            if descriptor.startswith('ct'):
+                self.assertEqual(ret, WALLY_OK)
+                expected_key_info = descriptor.split(',')[0][3:]
+                if expected_key_info.startswith('slip77'):
+                    expected_key_info = expected_key_info[7:-1]
+                self.assertEqual(key_info, expected_key_info)
+            else:
+                self.assertEqual(ret, WALLY_EINVAL)
             wally_descriptor_free(d)
             # Check the maximum depth parsing limit
             for limit, expected in [(depth-1, WALLY_EINVAL), (depth, WALLY_OK)]:

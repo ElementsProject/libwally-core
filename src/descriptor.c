@@ -569,6 +569,13 @@ static bool node_is_root(const ms_node *node)
     return !node->parent || node->parent->builtin;
 }
 
+#ifdef BUILD_ELEMENTS
+static bool node_is_ct(const ms_node *node)
+{
+    return !node->parent && node->kind == KIND_DESCRIPTOR_CT;
+}
+#endif
+
 static void node_free(ms_node *node)
 {
     if (node) {
@@ -3325,14 +3332,33 @@ static const ms_node *descriptor_get_key(const struct wally_descriptor *descript
 int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
                              size_t index, char **output)
 {
-    const ms_node *node = descriptor_get_key(descriptor, index);
+    const ms_node *node = NULL;
+#ifdef BUILD_ELEMENTS
+    if (index == WALLY_MS_BLINDING_KEY_INDEX) {
+        if (descriptor && node_is_ct(descriptor->top_node)) {
+            node = descriptor->top_node->child;
+            if (node && node->kind == KIND_DESCRIPTOR_SLIP77)
+                node = node->child;
+        }
+    } else
+#endif
+        node = descriptor_get_key(descriptor, index);
 
     if (output)
         *output = 0;
     if (!node || !output)
         return WALLY_EINVAL;
 
+#ifdef BUILD_ELEMENTS
+    if (index == WALLY_MS_BLINDING_KEY_INDEX) {
+        if (node->kind == KIND_PRIVATE_KEY || node->kind == KIND_RAW)
+            goto return_hex;
+    }
+#endif
     if (node->kind == KIND_PUBLIC_KEY) {
+#ifdef BUILD_ELEMENTS
+return_hex:
+#endif
         return wally_hex_from_bytes((const unsigned char *)node->data,
                                     node->data_len, output);
     }
@@ -3354,7 +3380,17 @@ int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
 int wally_descriptor_get_key_features(const struct wally_descriptor *descriptor,
                                       size_t index, uint32_t *value_out)
 {
-    const ms_node *node = descriptor_get_key(descriptor, index);
+    const ms_node *node = NULL;
+#ifdef BUILD_ELEMENTS
+    if (index == WALLY_MS_BLINDING_KEY_INDEX) {
+        if (descriptor && node_is_ct(descriptor->top_node)) {
+            node = descriptor->top_node->child;
+            if (node && node->kind == KIND_DESCRIPTOR_SLIP77)
+                node = node->child;
+        }
+    } else
+#endif
+        node = descriptor_get_key(descriptor, index);
 
     if (value_out)
         *value_out = 0;
