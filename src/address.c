@@ -139,6 +139,8 @@ int wally_address_to_scriptpubkey(const char *addr, uint32_t network, unsigned c
     version = decoded[0];
     if (network_from_addr_version(version, &addr_network) != WALLY_OK)
         return WALLY_EINVAL;
+    if (network == WALLY_NETWORK_BITCOIN_REGTEST)
+        network = WALLY_NETWORK_BITCOIN_TESTNET; /* regtest uses testnet prefix */
     if (network != addr_network)
         return WALLY_EINVAL;
 

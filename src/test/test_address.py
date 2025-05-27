@@ -17,6 +17,7 @@ ADDRESS_VERSION_P2SH_TESTNET  = 0xC4
 
 NETWORK_BITCOIN_MAINNET = 0x01
 NETWORK_BITCOIN_TESTNET = 0x02
+NETWORK_BITCOIN_REGTEST = 0xff
 NETWORK_LIQUID_MAINNET  = 0x03
 NETWORK_LIQUID_REGTEST  = 0x04
 NETWORK_LIQUID_TESTNET  = 0x05
@@ -96,6 +97,7 @@ class AddressTests(unittest.TestCase):
     def test_address_vectors(self):
         self.do_test_vector(vec, 'm/0H/1', NETWORK_BITCOIN_MAINNET)
         self.do_test_vector(vec, 'm/1H/1', NETWORK_BITCOIN_TESTNET) # Testnet
+        self.do_test_vector(vec, 'm/1H/1', NETWORK_BITCOIN_REGTEST) # Testnet
 
     def do_test_vector(self, vec, path, network):
         key = self.get_test_key(vec, path)
