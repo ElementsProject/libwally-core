@@ -1,4 +1,5 @@
 #include "internal.h"
+#include "ccan/ccan/build_assert/build_assert.h"
 #ifdef BUILD_ELEMENTS
 #include "script_int.h"
 #include "tx_io.h"
@@ -23,6 +24,15 @@ static const unsigned char CT_BLINDING_KEY_1_0_SHA256[SHA256_LEN] = {
     0x02, 0xe0, 0xc2, 0x24, 0x76, 0xf8, 0xc5, 0xfd, 0xb7, 0x30, 0x5d, 0x9f, 0xd0, 0xe0, 0xa3, 0x56,
     0xb5, 0x88, 0x77, 0x69, 0x24, 0x8e, 0x04, 0xc8, 0x6f, 0xda, 0xad, 0x35, 0x11, 0x37, 0x85, 0xb4
 };
+
+/* Macros to declare a reduced size surjection proof struct. Note we
+ * compile-time assert the value of MAX_USED_INPUTS below.
+ */
+#define SJP_REDUCE_BY(n_inp) (SECP256K1_SURJECTIONPROOF_MAX_USED_INPUTS - n_inp) * 32
+#define SJP_SIZE(n_inp) sizeof(secp256k1_surjectionproof) - SJP_REDUCE_BY(n_inp)
+#define SJP_DECLARE(n_inp) \
+    size_t sjp_bytes[(SJP_SIZE(n_inp) + sizeof(size_t) - 1) / sizeof(size_t)]; \
+    secp256k1_surjectionproof *sjp = (secp256k1_surjectionproof *)&sjp_bytes
 
 static int parse_generator(const secp256k1_context *ctx,
                            const unsigned char *generator, size_t generator_len,
@@ -510,13 +520,16 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
 {
     const secp256k1_context *ctx = secp_ctx();
     secp256k1_generator gen;
-    secp256k1_surjectionproof proof;
+    SJP_DECLARE(3);
     secp256k1_generator *generators = NULL;
     const size_t num_inputs = asset_len / ASSET_TAG_LEN;
     const size_t num_used = num_inputs > 3 ? 3 : num_inputs;
     size_t actual_index, i;
     int ret = WALLY_EINVAL;
 
+    /* Even if secp is built in reduced mode, the header file should still
+     * declare this as 256 (redefining it only internally */
+    BUILD_ASSERT(SECP256K1_SURJECTIONPROOF_MAX_USED_INPUTS == 256);
     if (written)
         *written = 0;
 
@@ -557,7 +570,7 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
             goto cleanup;
     }
 
-    if (!secp256k1_surjectionproof_initialize(ctx, &proof, &actual_index,
+    if (!secp256k1_surjectionproof_initialize(ctx, sjp, &actual_index,
                                               (const secp256k1_fixed_asset_tag *)asset,
                                               num_inputs, num_used,
                                               (const secp256k1_fixed_asset_tag *)output_asset,
@@ -566,7 +579,7 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
         goto cleanup;
     }
 
-    if (!secp256k1_surjectionproof_generate(ctx, &proof, generators, num_inputs,
+    if (!secp256k1_surjectionproof_generate(ctx, sjp, generators, num_inputs,
                                             &gen, actual_index,
                                             abf + actual_index * BLINDING_FACTOR_LEN,
                                             output_abf)) {
@@ -575,11 +588,11 @@ static int surjproof_impl(const unsigned char *output_asset, size_t output_asset
     }
 
     *written = len;
-    secp256k1_surjectionproof_serialize(ctx, bytes_out, written, &proof);
+    secp256k1_surjectionproof_serialize(ctx, bytes_out, written, sjp);
     ret = WALLY_OK;
 
 cleanup:
-    wally_clear_2(&gen, sizeof(gen), &proof, sizeof(proof));
+    wally_clear_2(&gen, sizeof(gen), sjp_bytes, sizeof(sjp_bytes));
     if (generators)
         clear_and_free(generators, num_inputs * sizeof(secp256k1_generator));
     return ret;
@@ -672,21 +685,24 @@ int wally_explicit_surjectionproof_verify(
     return WALLY_ERROR;
 #else
     const secp256k1_context *ctx = secp_ctx();
-    secp256k1_surjectionproof sjp;
+    SJP_DECLARE(1);
     secp256k1_generator asset_gen, blinded_asset_gen;
     int ret = WALLY_EINVAL;
 
     if (!ctx)
         return WALLY_ENOMEM;
-    if (surjectionproof && surjectionproof_len &&
-        secp256k1_surjectionproof_parse(ctx, &sjp, surjectionproof, surjectionproof_len) &&
+    /* Note we ensure the proof has 1 input and 1 used input before parsing
+     * to ensure parsing does not write beyond our short proof struct */
+    if (surjectionproof && surjectionproof_len == ASSET_EXPLICIT_SURJECTIONPROOF_LEN &&
+        surjectionproof[0] == 0x01 && !surjectionproof[1] && surjectionproof[2] == 0x01 &&
+        secp256k1_surjectionproof_parse(ctx, sjp, surjectionproof, surjectionproof_len) &&
         output_asset && output_asset_len == ASSET_TAG_LEN &&
         secp256k1_generator_generate(ctx, &asset_gen, output_asset) &&
         parse_generator(ctx, output_generator, output_generator_len, &blinded_asset_gen) == WALLY_OK) {
-        ret = secp256k1_surjectionproof_verify(ctx, &sjp, &asset_gen,
+        ret = secp256k1_surjectionproof_verify(ctx, sjp, &asset_gen,
                                                1, &blinded_asset_gen) ? WALLY_OK : WALLY_ERROR;
     }
-    wally_clear_3(&sjp, sizeof(sjp), &asset_gen, sizeof(asset_gen),
+    wally_clear_3(sjp_bytes, sizeof(sjp_bytes), &asset_gen, sizeof(asset_gen),
                   &blinded_asset_gen, sizeof(blinded_asset_gen));
     return ret;
 #endif /* BUILD_ELEMENTS */
