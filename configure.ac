@@ -149,6 +149,9 @@ if test "x$standard_secp" = "xyes"; then
 fi
 
 if test "x$minimal" = "xyes"; then
+    if test "x$elements" = "xno"; then
+        AC_MSG_FAILURE([ERROR: Minimal mode requires Elements support to be enabled])
+    fi
     AX_CHECK_COMPILE_FLAG([-DBUILD_MINIMAL=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_MINIMAL=1"])
 fi
 
@@ -271,6 +274,9 @@ AC_ARG_WITH([system-secp256k1],
 AM_CONDITIONAL([LINK_SYSTEM_SECP256K1], [test "x$with_system_secp256k1" != xno])
 AM_COND_IF([LINK_SYSTEM_SECP256K1], [
     dnl Use the secp installed system-wide (after checking it for suitability)
+    if test "x$minimal" = "xyes"; then
+        AC_MSG_ERROR([Minimal mode cannot be used with --with-system-secp256k1])
+    fi
     saved_LIBS=$LIBS
     m4_ifdef([PKG_CHECK_MODULES],
         [PKG_CHECK_MODULES([libsecp256k1], [$with_system_secp256k1])],
