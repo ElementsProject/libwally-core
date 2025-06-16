@@ -39,8 +39,12 @@ if(WALLYCORE_ENABLE_COVERAGE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_options(wallycore PUBLIC --coverage)
 endif()
 
-if (WALLYCORE_BUILD_ELEMENTS)
+if(WALLYCORE_BUILD_ELEMENTS)
     target_compile_definitions(wallycore PRIVATE BUILD_ELEMENTS)
+endif()
+
+if(WALLYCORE_MINIMAL)
+    target_compile_definitions(wallycore PRIVATE BUILD_MINIMAL)
 endif()
 
 if(NOT WALLYCORE_INSTALL)
