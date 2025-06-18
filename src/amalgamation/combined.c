@@ -1,3 +1,4 @@
+#ifndef WALLY_NO_AMALGAMATION
 /*
  * secp2556k1-zkp configuration
  */
@@ -129,3 +130,5 @@ void wally_silence_unused_warnings(void)
 #undef BYTES_INVALID_N
 #undef OUTPUT_CHECK
 #undef OUTPUT_ALLOC
+
+#endif /* WALLY_NO_AMALGAMATION */
