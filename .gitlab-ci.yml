@@ -101,8 +101,10 @@ test_amalgamation:
     - touch config.h
     - gcc -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
     - gcc -DBUILD_ELEMENTS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
+    - gcc -DBUILD_ELEMENTS -DBUILD_MINIMAL -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
     - clang -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
     - clang -DBUILD_ELEMENTS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
+    - clang -DBUILD_ELEMENTS -DBUILD_MINIMAL -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
 
 test_mingw_static_build:
   stage: test
