@@ -38,6 +38,7 @@
  * config.h (which must be provided by the amalgamation user)
  * is included.
  */
+#define BUILD_AMALGAMATION 1
 #include "src/internal.h"
 
 /* The amalgamation user can provide their own defines and skip
@@ -121,3 +122,10 @@ void wally_silence_unused_warnings(void)
     assert_bip38_assumptions();
     assert_tx_assumptions();
 }
+
+/* Undefine our internal macros */
+#undef BYTES_VALID
+#undef BYTES_INVALID
+#undef BYTES_INVALID_N
+#undef OUTPUT_CHECK
+#undef OUTPUT_ALLOC

@@ -73,6 +73,7 @@ bool mem_is_zero(const void *mem, size_t len);
 /* Fetch our internal operations function pointers */
 const struct wally_operations *wally_ops(void);
 
+#ifndef BUILD_AMALGAMATION
 #define malloc(size) __use_wally_malloc_internally__
 #define calloc(size) __use_wally_calloc_internally__
 #define free(ptr) __use_wally_free_internally__
@@ -80,6 +81,7 @@ const struct wally_operations *wally_ops(void);
 #undef strdup
 #endif
 #define strdup(ptr) __use_wally_strdup_internally__
+#endif
 
 #define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
 
