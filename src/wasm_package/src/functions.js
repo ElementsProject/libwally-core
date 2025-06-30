@@ -373,6 +373,7 @@ export const psbt_get_input_sequence = wrap('wally_psbt_get_input_sequence', [T.
 export const psbt_get_input_sighash = wrap('wally_psbt_get_input_sighash', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_signature_hash = wrap('wally_psbt_get_input_signature_hash', [T.OpaqueRef, T.Int32, T.OpaqueRef, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const psbt_get_input_signature_len = wrap('wally_psbt_get_input_signature_len', [T.OpaqueRef, T.Int32, T.Int32, T.DestPtr(T.Int32)]);
+export const psbt_get_input_signature_type = wrap('wally_psbt_get_input_signature_type', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_signatures_size = wrap('wally_psbt_get_input_signatures_size', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_signing_script_len = wrap('wally_psbt_get_input_signing_script_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_get_input_taproot_internal_key_len = wrap('wally_psbt_get_input_taproot_internal_key_len', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);

@@ -859,6 +859,7 @@ for f in (
     ('wally_psbt_get_input_sighash', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_signature', c_int, [POINTER(wally_psbt), c_size_t, c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_signature_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t, c_size_t_p]),
+    ('wally_psbt_get_input_signature_type', c_int, [POINTER(wally_psbt), c_size_t, c_uint32_p]),
     ('wally_psbt_get_input_signatures_size', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_taproot_internal_key', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_get_input_taproot_internal_key_len', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),

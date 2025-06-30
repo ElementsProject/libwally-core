@@ -155,34 +155,32 @@ static const struct wally_tx_output *utxo_from_input(const struct wally_psbt *ps
     return NULL;
 }
 
-/* Try to determine if a PSBT input is taproot.
- * TODO: We could verify that the script and field checks are in sync
- * here, i.e. that an input with taproot fields has a taproot script,
- * and return an error otherwise.
- */
-static bool is_taproot_input(const struct wally_psbt *psbt,
-                             const struct wally_psbt_input *inp)
+struct wally_psbt_input *psbt_get_input_signature_type(const struct wally_psbt *psbt,
+                                                       size_t index, uint32_t *value_out)
 {
-    if (!inp)
-        return false;
-    else {
-        const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
-        if (utxo) {
-            /* Determine from the scriptpubkey if possible */
-            size_t script_type;
-            int ret = wally_scriptpubkey_get_type(utxo->script, utxo->script_len,
-                                                  &script_type);
-            if (ret == WALLY_OK)
-                return script_type == WALLY_SCRIPT_TYPE_P2TR;
-        }
-        /* No usable UTXO/script for this input, check for taproot fields */
-        return inp->taproot_leaf_hashes.num_items ||
-               inp->taproot_leaf_scripts.num_items ||
-               inp->taproot_leaf_signatures.num_items ||
-               wally_map_get_integer(&inp->psbt_fields, PSBT_IN_TAP_INTERNAL_KEY) ||
-               wally_map_get_integer(&inp->psbt_fields, PSBT_IN_TAP_MERKLE_ROOT) ||
-               wally_map_get_integer(&inp->psbt_fields, PSBT_IN_TAP_KEY_SIG);
+    struct wally_psbt_input *inp = psbt_get_input(psbt, index);
+    const struct wally_tx_output *utxo = utxo_from_input(psbt, inp);
+
+    if (value_out)
+        *value_out = 0;
+    if (!utxo || !value_out)
+        return NULL;
+
+    if (scriptpubkey_is_p2tr(utxo->script, utxo->script_len)) {
+        *value_out = WALLY_SIGTYPE_SW_V1;
+        return inp;
     }
+
+    /* Otherwise, follow core and use whether a witness utxo is present */
+    *value_out = inp->witness_utxo ? WALLY_SIGTYPE_SW_V0 : WALLY_SIGTYPE_PRE_SW;
+    return inp;
+}
+
+int wally_psbt_get_input_signature_type(const struct wally_psbt *psbt,
+                                        size_t index, uint32_t *value_out)
+{
+    struct wally_psbt_input *inp = psbt_get_input_signature_type(psbt, index, value_out);
+    return inp ? WALLY_OK : WALLY_EINVAL;
 }
 
 /* Set a struct member on a parent struct */
@@ -4579,12 +4577,10 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                                         unsigned char *bytes_out, size_t len)
 {
     struct wally_map scripts, assets, values, *assets_p;
-    const struct wally_psbt_input *inp = psbt_get_input(psbt, index);
     size_t is_pset;
     uint32_t sighash, sighash_type;
-    const bool is_taproot = is_taproot_input(psbt, inp);
-    /* FIXME: Determine segwitness in a smarter way (e.g. prevout script */
-    const bool is_segwit = inp && inp->witness_utxo != NULL;
+    const struct wally_psbt_input *inp = psbt_get_input_signature_type(psbt, index, &sighash_type);
+    const bool is_taproot = sighash_type == WALLY_SIGTYPE_SW_V1;
     int ret;
 
     if (!tx || !inp || flags)
@@ -4608,11 +4604,7 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
         /* FIXME: Support script path spends */
         script = NULL;
         script_len = 0;
-        sighash_type = WALLY_SIGTYPE_SW_V1;
-    } else if (is_segwit)
-        sighash_type = WALLY_SIGTYPE_SW_V0;
-    else
-        sighash_type = WALLY_SIGTYPE_PRE_SW;
+    }
 
     ret = get_signing_data(psbt, &scripts, assets_p, &values);
     if (ret == WALLY_OK)
@@ -4640,9 +4632,9 @@ int wally_psbt_sign_input_bip32(struct wally_psbt *psbt,
     unsigned char sig[EC_SIGNATURE_LEN + 1], der[EC_SIGNATURE_DER_MAX_LEN + 1];
     unsigned char signing_key[EC_PRIVATE_KEY_LEN];
     size_t sig_len = EC_SIGNATURE_LEN, der_len, pubkey_idx;
-    uint32_t sighash;
-    struct wally_psbt_input *inp = psbt_get_input(psbt, index);
-    const bool is_taproot = is_taproot_input(psbt, inp);
+    uint32_t sighash, sighash_type;
+    struct wally_psbt_input *inp = psbt_get_input_signature_type(psbt, index, &sighash_type);
+    const bool is_taproot = sighash_type == WALLY_SIGTYPE_SW_V1;
     int ret;
 
     if (!inp || !hdkey || hdkey->priv_key[0] != BIP32_FLAG_KEY_PRIVATE ||

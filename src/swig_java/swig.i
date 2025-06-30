@@ -809,6 +809,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_input_required_locktime);
 %returns_size_t(wally_psbt_get_input_scriptcode);
 %returns_size_t(wally_psbt_get_input_scriptcode_len);
+%returns_size_t(wally_psbt_get_input_signature_type);
 %returns_size_t(wally_psbt_get_input_signing_script);
 %returns_size_t(wally_psbt_get_input_signing_script_len);
 %returns_size_t(wally_psbt_get_input_sequence);

@@ -61,6 +61,15 @@ WALLY_CORE_API int wally_psbt_get_input_unknown_len(const struct wally_psbt *psb
 WALLY_CORE_API int wally_psbt_get_input_sighash(const struct wally_psbt *psbt, size_t index, size_t *written);
 
 /**
+ * Return the signature type of a PSBT input.
+ *
+ * :param psbt: The PSBT to get the signature type from.
+ * :param index: The zero-based index of the input to get the signature type from.
+ * :param value_out: Destination for the :ref:`tx-sig-type` of the input.
+ */
+WALLY_CORE_API int wally_psbt_get_input_signature_type(const struct wally_psbt *psbt, size_t index, uint32_t *value_out);
+
+/**
  * FIXED_SIZED_OUTPUT(len, bytes_out, WALLY_TXHASH_LEN)
  */
 WALLY_CORE_API int wally_psbt_get_input_previous_txid(const struct wally_psbt *psbt, size_t index, unsigned char *bytes_out, size_t len);
