@@ -51,11 +51,11 @@ extern "C" {
 #define WALLY_SIGHASH_MASK         0x1f /* Mask for determining ALL/NONE/SINGLE */
 #define WALLY_SIGHASH_TR_IN_MASK   0xc0 /* Taproot mask for determining input hash type */
 
-/*** tx-sighash-type Transaction signature hash flags */
+/*** tx-sig-type Transaction signature type flags */
 #define WALLY_SIGTYPE_PRE_SW  0x1 /* Pre-segwit signature hash */
 #define WALLY_SIGTYPE_SW_V0   0x2 /* Segwit v0 signature hash */
 #define WALLY_SIGTYPE_SW_V1   0x3 /* Segwit v1 (taproot) signature hash */
-#define WALLY_SIGTYPE_MASK    0xf /* Mask for signature hash in signature hash flags */
+#define WALLY_SIGTYPE_MASK    0xf /* Mask for signature type in flags */
 
 #define WALLY_TX_ASSET_CT_EMPTY_PREFIX    0x00
 #define WALLY_TX_ASSET_CT_EXPLICIT_PREFIX 0x01
@@ -910,7 +910,7 @@ WALLY_CORE_API int wally_tx_get_signature_hash(
  *|    be `SHA256_LEN` or 0.
  * :param sighash: ``WALLY_SIGHASH_`` flags specifying the sighash flags
  *|    to sign with.
- * :param flags: :ref:`tx-sighash-type` controlling signature hash generation.
+ * :param flags: :ref:`tx-sig-type` controlling signature hash generation.
  * :param cache: An opaque cache for faster generation, or NULL to disable
  *|    caching. Must be empty on the first call to this function for a given
  *|    transaction, and only used for signing the inputs of the same ``tx``.
