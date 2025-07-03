@@ -198,8 +198,6 @@ int wally_sha256(const unsigned char *bytes, size_t bytes_len,
 
 static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
 {
-    size_t i;
-
 #ifdef CCAN_CRYPTO_SHA256_USE_MBEDTLS
 #ifndef CONFIG_MBEDTLS_HARDWARE_SHA
 #define SHA_CTX_STATE c.MBEDTLS_PRIVATE(state)
@@ -215,7 +213,7 @@ static void sha256_midstate(struct sha256_ctx *ctx, struct sha256 *res)
     /* HW: Already big endian */
     memcpy(res->u.u32, ctx->SHA_CTX_STATE, sizeof(ctx->SHA_CTX_STATE));
 #else
-    for (i = 0; i < NUM_ELEMS(ctx->SHA_CTX_STATE); i++)
+    for (size_t i = 0; i < NUM_ELEMS(ctx->SHA_CTX_STATE); i++)
         res->u.u32[i] = cpu_to_be32(ctx->SHA_CTX_STATE[i]);
 #endif
 
