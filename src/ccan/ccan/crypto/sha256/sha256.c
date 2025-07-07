@@ -59,6 +59,7 @@ inline void sha256_update(struct sha256_ctx *ctx, const void *p, size_t size)
 inline void sha256_done(struct sha256_ctx *ctx, struct sha256* res)
 {
 	mbedtls_sha256_finish(&ctx->c, res->u.u8);
+	mbedtls_sha256_free(&ctx->c);
 }
 void sha256_optimize(void)
 {
