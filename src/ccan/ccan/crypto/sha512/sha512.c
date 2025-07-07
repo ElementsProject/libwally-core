@@ -15,28 +15,19 @@
 #endif
 #include <string.h>
 
+#ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 static void invalidate_sha512(struct sha512_ctx *ctx)
 {
-#ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	ctx->c.md_len = 0;
-#elif defined(CCAN_CRYPTO_SHA512_USE_MBEDTLS)
-#else
-	ctx->bytes = (size_t)-1;
-#endif
 }
 
 static void check_sha512(struct sha512_ctx *ctx UNUSED)
 {
 #if 0
-#ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 	assert(ctx->c.md_len != 0);
-#else
-	assert(ctx->bytes != (size_t)-1);
-#endif
 #endif
 }
 
-#ifdef CCAN_CRYPTO_SHA512_USE_OPENSSL
 void sha512_init(struct sha512_ctx *ctx)
 {
 	SHA512_Init(&ctx->c);
@@ -62,16 +53,27 @@ inline void sha512_init(struct sha512_ctx *ctx)
 
 inline void sha512_update(struct sha512_ctx *ctx, const void *p, size_t size)
 {
-	check_sha512(ctx);
 	mbedtls_sha512_update(&ctx->c, p, size);
 }
 
 inline void sha512_done(struct sha512_ctx *ctx, struct sha512* res)
 {
 	mbedtls_sha512_finish(&ctx->c, res->u.u8);
-	invalidate_sha512(ctx);
+	mbedtls_sha512_free(&ctx->c);
 }
 #else
+static void invalidate_sha512(struct sha512_ctx *ctx)
+{
+	ctx->bytes = (size_t)-1;
+}
+
+static void check_sha512(struct sha512_ctx *ctx UNUSED)
+{
+#if 0
+	assert(ctx->bytes != (size_t)-1);
+#endif
+}
+
 static uint64_t Ch(uint64_t x, uint64_t y, uint64_t z)
 {
 	return z ^ (x & (y ^ z));
