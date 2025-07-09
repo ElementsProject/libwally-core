@@ -9,9 +9,6 @@
 #include <stdlib.h>
 
 #if defined(__x86_64__) || defined(__amd64__)
-/* TODO: Support alignment in compiler.h */
-#define ALIGNED(N) __attribute__((aligned(N)))
-
 void TransformSSE4(uint32_t* s, const uint32_t* chunk, size_t blocks)
 {
     static const uint32_t K256[] ALIGNED(16) = {

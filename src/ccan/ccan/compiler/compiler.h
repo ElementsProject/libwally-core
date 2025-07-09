@@ -228,4 +228,16 @@
 #define WARN_UNUSED_RESULT
 #endif
 #endif
+
+/* ALIGNED - ensure a structure/variable is aligned to a given number of bytes
+ *
+ */
+#ifndef ALIGNED
+#if (defined(__clang__) || defined(__GNUC__))
+#define ALIGNED(N) __attribute__((aligned(N)))
+#else
+#define ALIGNED(N)
+#endif
+#endif /* ALIGNED */
+
 #endif /* CCAN_COMPILER_H */
