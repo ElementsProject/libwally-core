@@ -31,10 +31,15 @@
  */
 struct sha256 {
 	union {
+		uint64_t u64[4];
 		uint32_t u32[8];
 		unsigned char u8[32];
 	} u;
-};
+}
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
+ALIGNED(16)
+#endif
+;
 
 /**
  * sha256_optimize - check for and enable optimised functionality if possible.
