@@ -4,6 +4,7 @@
 #include "config.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <ccan/compiler/compiler.h>
 
 /* Uncomment this to use openssl's SHA256 routines (and link with -lcrypto) */
 /*#define CCAN_CRYPTO_SHA256_USE_OPENSSL 1*/
@@ -67,7 +68,11 @@ struct sha256_ctx {
 	} buf;
 	size_t bytes;
 #endif
-};
+}
+#if defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
+ALIGNED(16)
+#endif
+;
 
 /**
  * sha256_init - initialize an SHA256 context.
