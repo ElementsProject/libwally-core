@@ -10,6 +10,16 @@
 
 #define SIGTYPE_ALL (WALLY_SIGTYPE_PRE_SW | WALLY_SIGTYPE_SW_V0 | WALLY_SIGTYPE_SW_V1)
 
+#if defined(CCAN_CRYPTO_SHA256_USE_OPENSSL) || defined(CCAN_CRYPTO_SHA256_USE_MBEDTLS)
+/* For external sha256 implementations, we cannot cache the sha256 context as
+ * they require extra setup before use that only sha256_init() provides.
+ */
+#define TXIO_CTX_CACHEABLE 0
+#else
+/* For our built-in sha256 implementation we can cache and use the context */
+#define TXIO_CTX_CACHEABLE 1
+#endif
+
 /* Cache keys for data that is constant while signing a given tx.
  * We also cache other data keyed by their binary value directly.
  */
@@ -761,12 +771,14 @@ static int bip143_signature_hash(
 static void txio_bip341_init(cursor_io *io,
                              const unsigned char *genesis_blockhash, size_t genesis_blockhash_len)
 {
-    const struct wally_map_item *item;
-    item = io->cache ? wally_map_get_integer(io->cache, TXIO_SHA_TAPSIGHASH_CTX) : NULL;
-    if (item) {
-        /* Note we hash the intial sha256_ctx itself here and so memcpy it */
-        memcpy(&io->ctx, item->value, item->value_len);
-        return;
+    if (TXIO_CTX_CACHEABLE && io->cache) {
+        const struct wally_map_item *item = NULL;
+        item = wally_map_get_integer(io->cache, TXIO_SHA_TAPSIGHASH_CTX);
+        if (item) {
+            /* Note we cached the intial sha256_ctx itself here and so memcpy it */
+            memcpy(&io->ctx, item->value, item->value_len);
+            return;
+        }
     }
 
     tagged_hash_init(&io->ctx, TAPSIGHASH_SHA256(genesis_blockhash != NULL), SHA256_LEN);
@@ -774,7 +786,7 @@ static void txio_bip341_init(cursor_io *io,
         hash_bytes(&io->ctx, genesis_blockhash, genesis_blockhash_len);
         hash_bytes(&io->ctx, genesis_blockhash, genesis_blockhash_len);
     }
-    if (io->cache)
+    if (TXIO_CTX_CACHEABLE && io->cache)
         wally_map_add_integer(io->cache, TXIO_SHA_TAPSIGHASH_CTX,
                               (const unsigned char*)&io->ctx, sizeof(io->ctx));
 }
