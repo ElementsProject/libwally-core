@@ -95,16 +95,15 @@ test_cmake:
 test_amalgamation:
   stage: test
   image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  parallel:
+    matrix:
+      - CC: [gcc, clang ]
+        BUILD_ARGS: [ "", -DBUILD_MINIMAL, -DBUILD_ELEMENTS, -DBUILD_ELEMENTS -DBUILD_MINIMAL ]
   tags:
     - ga
   script:
     - touch config.h
-    - gcc -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
-    - gcc -DBUILD_ELEMENTS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
-    - gcc -DBUILD_ELEMENTS -DBUILD_MINIMAL -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
-    - clang -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
-    - clang -DBUILD_ELEMENTS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
-    - clang -DBUILD_ELEMENTS -DBUILD_MINIMAL -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
+    - $CC $BUILD_ARGS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
 
 test_mingw_static_build:
   stage: test
