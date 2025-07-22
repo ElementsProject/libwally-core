@@ -32,7 +32,7 @@ test_asan_ubsan_gcc:
   image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   parallel:
     matrix:
-      - CONFIGURE_ARGS: [--enable-elements=yes, --enable-elements=no,--enable-minimal=yes]
+      - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
   tags:
     - ga
   script:
