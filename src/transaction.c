@@ -2111,6 +2111,8 @@ static int tx_to_bytes(const struct wally_tx *tx,
             p += varbuff_to_bytes(output->rangeproof, output->rangeproof_len, p);
         }
     }
+#else
+    (void)p; /* Prevent scan-build warning in non-elements builds */
 #endif
     *written = n;
     return WALLY_OK;
