@@ -48,19 +48,19 @@ test_scan_build_clang:
   image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
   parallel:
     matrix:
-      - CONFIGURE_ARGS: [--enable-elements=yes, --enable-elements=no,--enable-minimal=yes]
+      - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
   tags:
     - ga
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - CC=clang scan-build-11 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm
-    - scan-build-11 --keep-cc --exclude src/secp256k1/ --status-bugs --keep-empty -o scan-build$CONFIGURE_ARGS make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+    - CC=clang scan-build-11 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm $CONFIGURE_ARGS
+    - scan-build-11 --keep-cc --exclude src/secp256k1/ --status-bugs --keep-empty -o scan-build-output make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
   artifacts:
     expire_in: 3 days
-    name: scan-build$CONFIGURE_ARGS
+    name: scan-build-output
     when: on_success
     paths:
-    - scan-build$CONFIGURE_ARGS/*
+    - scan-build-output/
 
 test_cmake:
   stage: test
