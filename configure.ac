@@ -149,9 +149,6 @@ if test "x$standard_secp" = "xyes"; then
 fi
 
 if test "x$minimal" = "xyes"; then
-    if test "x$elements" = "xno"; then
-        AC_MSG_FAILURE([ERROR: Minimal mode requires Elements support to be enabled])
-    fi
     AX_CHECK_COMPILE_FLAG([-DBUILD_MINIMAL=1], [AM_CFLAGS="$AM_CFLAGS -DBUILD_MINIMAL=1"])
 fi
 
