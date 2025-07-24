@@ -1,5 +1,28 @@
 # Changes
 
+## Version 1.5.0
+
+### Added
+- psbt: add psbt_get_input_signature_type to get the type of signature required by an input.
+- descriptor: Add support for Elements el-prefixed descriptor builtins as used in rust-elements.
+- descriptor: Add support for parsing Elements ct descriptors with slip77(), elip150() and raw hex blinding keys.
+- descriptor: Add support for generating Elements confidential addresses from ct descriptors.
+- descriptor: Expose functions to perform ELIP-150 blinding key tweaking.
+- crypto: Add ec_public_key_tweak to tweak standard (non-xonly) pubkeys.
+- elements: Add asset_blinding_key_to_ec_public_key to compute the blinding pubkey from a blinding key.
+
+### Changed
+- psbt: Speed up p2tr signing slightly.
+- descriptor: Allow U type children for thresh() expressions.
+- build: Further extend CI coverage for scan-build/valgrind/asan checks.
+
+### Fixed
+- tx: Fix taproot cached hashing when using external sha256 implementations.
+- wasm: Fixes for es6 and cjs.
+- address_to_scriptpubkey: Correctly handle WALLY_NETWORK_BITCOIN_REGTEST.
+- amalgamation: Support all supported standard configurations. Minor improvements to make usage easier/more robust.
+- Various minor code and build fixes.
+
 ## Version 1.4.0
 
 ### Added
