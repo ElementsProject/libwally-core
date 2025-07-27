@@ -53,11 +53,11 @@ WALLY_CORE_API int wally_cleanup(uint32_t flags);
 /**
  * Get the version number of the library.
  *
- * :param value: Destination for the library build version. This is the
+ * :param value_out: Destination for the library build version. This is the
  *|    value of `WALLY_BUILD_VER` when the library was compiled.
  */
 WALLY_CORE_API int wally_get_build_version(
-    uint32_t *value);
+    uint32_t *value_out);
 
 #ifndef SWIG
 /**

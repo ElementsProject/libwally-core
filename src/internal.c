@@ -20,11 +20,11 @@ static secp256k1_context *global_ctx = NULL;
 /* Global extended error code. Not thread-safe unless caller-overridden */
 static int global_error = WALLY_OK;
 
-int wally_get_build_version(uint32_t *value)
+int wally_get_build_version(uint32_t *value_out)
 {
-    if (value)
-        *value = WALLY_BUILD_VER;
-    return value ? WALLY_OK : WALLY_EINVAL;
+    if (value_out)
+        *value_out = WALLY_BUILD_VER;
+    return value_out ? WALLY_OK : WALLY_EINVAL;
 }
 
 int pubkey_combine(secp256k1_pubkey *pubnonce, const secp256k1_pubkey *const *pubnonces, size_t n)

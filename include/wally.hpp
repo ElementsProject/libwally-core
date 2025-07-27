@@ -820,8 +820,8 @@ inline int free_string(char* str) {
     return detail::check_ret(__FUNCTION__, ret);
 }
 
-inline int get_build_version(uint32_t* value) {
-    int ret = ::wally_get_build_version(value);
+inline int get_build_version(uint32_t* value_out) {
+    int ret = ::wally_get_build_version(value_out);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
