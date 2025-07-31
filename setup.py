@@ -62,7 +62,7 @@ if (USE_LIB == 'no' or not PKG_SECP256K1) and not os.path.exists('src/secp256k1/
     _call(['git', 'submodule', 'update', '--init', '--recursive'])
 
 CONFIGURE_ARGS = [
-    '--with-pic', '--enable-swig-python', '--enable-python-manylinux',
+    '--with-pic', '--enable-swig-python',
     '--disable-swig-java', '--disable-tests', '--disable-dependency-tracking'
 ]
 
