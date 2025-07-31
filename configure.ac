@@ -311,11 +311,6 @@ AC_SUBST([libsecp256k1_LIBS])
 #
 # Python facilities
 #
-AC_ARG_ENABLE(python-manylinux,
-    AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
-    [python_manylinux=$enableval], [python_manylinux=no])
-AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" = "xyes"])
-
 AX_PYTHON_DEVEL([>= '2.7.0'])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
