@@ -311,12 +311,11 @@ AC_SUBST([libsecp256k1_LIBS])
 #
 # Python facilities
 #
-AC_ARG_ENABLE(python-manylinux,
-    AS_HELP_STRING([--enable-python-manylinux],[enable manylinux Python compatibility (default: no)]),
-    [python_manylinux=$enableval], [python_manylinux=no])
-AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" = "xyes"])
-
-AX_PYTHON_DEVEL([>= '2.7.0'])
+dnl We set the 'optional' flag here because manylinux cibuildwheel containers
+dnl don't include libpython*.so, and thus AX_PYTHON_DEVEL fails its final sanity
+dnl check. We actually don't link against libpython*.so anyway, so all we care
+dnl about is that we get a good value of $PYTHON_CPPFLAGS to pass to SWIG.
+AX_PYTHON_DEVEL([>= '2.7.0'], [true])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
 
@@ -338,10 +337,10 @@ AC_ARG_ENABLE(swig-python,
     [swig_python=$enableval], [swig_python=no])
 AM_CONDITIONAL([USE_SWIG_PYTHON], [test "x$swig_python" = "xyes"])
 
-AM_CONDITIONAL([RUN_PYTHON_TESTS], [test "$PYTHON" != "" -a "x$pythonexists" = "xyes"])
+AM_CONDITIONAL([RUN_PYTHON_TESTS], [test -n "$PYTHON"])
 
 if test "x$swig_python" = "xyes"; then
-    if test "x$pythonexists" != "xyes"; then
+    if test -z "$PYTHON_CPPFLAGS"; then
         AC_MSG_FAILURE([ERROR: No usable Python was found for swig-python])
     fi
     if test "x$elements_abi" = "xno"; then
