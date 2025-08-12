@@ -114,7 +114,9 @@ SWIG_JAVA_TEST_DEPS = \
     $(sjs)/$(cbt)/test_mnemonic.class
 
 if BUILD_ELEMENTS
-SWIG_JAVA_TEST_DEPS += $(sjs)/$(cbt)/test_assets.class \
+SWIG_JAVA_TEST_DEPS += \
+    $(sjs)/$(cbt)/test_assets.class \
+    $(sjs)/$(cbt)/test_elements_tx.class \
     $(sjs)/$(cbt)/test_pegs.class
 endif
 
@@ -365,6 +367,7 @@ check-swig-java: $(SWIG_JAVA_TEST_DEPS)
 	$(AM_V_at)! grep 'native Object wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
 if BUILD_ELEMENTS
 	$(AM_V_at)$(JAVA_TEST)test_assets
+	$(AM_V_at)$(JAVA_TEST)test_elements_tx
 	$(AM_V_at)$(JAVA_TEST)test_pegs
 endif
 	$(AM_V_at)$(JAVA_TEST)test_bip32
