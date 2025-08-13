@@ -195,7 +195,7 @@
 /* Input PSBT/PSET fields that must *not* be present in v2 */
 #define PSBT_IN_DISALLOWED_V2 ((uint64_t)0)
 
-/* Input PSET fields that are trivially mergable, i.e. can be
+/* Input PSET fields that are trivially mergeable, i.e. can be
  * copied when merging if missing the the destination input. */
 #define PSET_IN_MERGEABLE (PSET_FT(PSET_IN_ISSUANCE_VALUE_RANGEPROOF) | \
                            PSET_FT(PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF) | \
