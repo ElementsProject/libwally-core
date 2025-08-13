@@ -393,9 +393,13 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %typemap(jtype) const struct NAME * "Object"
 %typemap(jni) const struct NAME * "jobject"
 %typemap (in) struct NAME * {
-    $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
-    if (!$1)
-        return $null;
+    if (strcmp("NAME", "wally_map") == 0)
+        $1 = (struct NAME *)get_obj(jenv, $input, ID);
+    else {
+        $1 = (struct NAME *)get_obj_or_throw(jenv, $input, ID, "NAME");
+        if (!$1)
+            return $null;
+    }
 }
 %typemap(jtype) struct NAME * "Object"
 %typemap(jni) struct NAME * "jobject"

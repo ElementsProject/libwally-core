@@ -47,11 +47,23 @@ public class test_elements_tx {
 
         final String expected = "2c478ce6d5637e0ea8be37a53090e0955b6c501773fccf6738520cfcc5442150";
 
+        // Compute the signature hash
         Wally.tx_get_input_signature_hash(tx, input_idx, scripts, assets, values,
             tapleaf_script, key_version, codesep_pos, annex, genesis, sighash, sighash_type,
             cache, bytes_out
         );
-
+        assert_eq(expected, h(bytes_out), "different sighash");
+        // Compute again to ensure the cache works as expected
+        Wally.tx_get_input_signature_hash(tx, input_idx, scripts, assets, values,
+            tapleaf_script, key_version, codesep_pos, annex, genesis, sighash, sighash_type,
+            cache, bytes_out
+        );
+        assert_eq(expected, h(bytes_out), "different sighash");
+        // Compute with the cache disabled (passed as null)
+        Wally.tx_get_input_signature_hash(tx, input_idx, scripts, assets, values,
+            tapleaf_script, key_version, codesep_pos, annex, genesis, sighash, sighash_type,
+            null, bytes_out
+        );
         assert_eq(expected, h(bytes_out), "different sighash");
 
         Wally.map_free(cache);
