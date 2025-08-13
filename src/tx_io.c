@@ -775,7 +775,7 @@ static void txio_bip341_init(cursor_io *io,
         const struct wally_map_item *item = NULL;
         item = wally_map_get_integer(io->cache, TXIO_SHA_TAPSIGHASH_CTX);
         if (item) {
-            /* Note we cached the intial sha256_ctx itself here and so memcpy it */
+            /* Note we cached the initial sha256_ctx itself here and so memcpy it */
             memcpy(&io->ctx, item->value, item->value_len);
             return;
         }

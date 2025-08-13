@@ -73,7 +73,7 @@ class AntiExfilTests(unittest.TestCase):
         for args in [
             (None,    32, msg,     32, entropy, 32, signer_commitment, 33, flags, sig,     64), # Missing pubkey
             (pub_key, 31, msg,     32, entropy, 32, signer_commitment, 33, flags, sig,     64), # Incorrect pubkey length
-            (inv_pub, 32, msg,     32, entropy, 32, signer_commitment, 33, flags, sig,     64), # Invalud pubkey
+            (inv_pub, 32, msg,     32, entropy, 32, signer_commitment, 33, flags, sig,     64), # Invalid pubkey
             (pub_key, 32, None,    32, entropy, 32, signer_commitment, 33, flags, sig,     64), # Missing message
             (pub_key, 32, msg,     31, entropy, 32, signer_commitment, 33, flags, sig,     64), # Incorrect message length
             (pub_key, 32, inv_msg, 32, entropy, 32, signer_commitment, 33, flags, sig,     64), # Invalid message

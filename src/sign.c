@@ -388,7 +388,7 @@ int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_l
 
                 return WALLY_OK;
             }
-            /* Incremement nonce to grind for low-R */
+            /* Increment nonce to grind for low-R */
             entropy_p = extra_entropy;
             ++counter;
             uint32_to_le_bytes(counter, entropy_p);

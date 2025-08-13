@@ -279,7 +279,7 @@ class SignTests(unittest.TestCase):
 
         for args in [
             (None, 32, out1, 65, pub_key, 33),      # Missing message
-            (msg, 31, out1, 65, pub_key, 33),       # Incorrect messsage length
+            (msg, 31, out1, 65, pub_key, 33),       # Incorrect message length
             (msg, 32, None, 65, pub_key, 33),       # Missing signature
             (msg, 32, out1, 64, pub_key, 33),       # Incorrect signature length
             (msg, 32, out1, 65, None, 33),          # Missing pubkey
