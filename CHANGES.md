@@ -1,9 +1,18 @@
 # Changes
 
+## Version 1.5.1
+
+### Added
+- python: Add wheels for Python 3.13, remove support for Python 3.8.
+
+### Fixed
+- python: Fix source builds for newer pip versions.
+- java: Fix tx_get_input_signature_hash to allow passing a null cache to disable caching.
+
 ## Version 1.5.0
 
 ### Added
-- psbt: add psbt_get_input_signature_type to get the type of signature required by an input.
+- psbt: Add psbt_get_input_signature_type to get the type of signature required by an input.
 - descriptor: Add support for Elements el-prefixed descriptor builtins as used in rust-elements.
 - descriptor: Add support for parsing Elements ct descriptors with slip77(), elip150() and raw hex blinding keys.
 - descriptor: Add support for generating Elements confidential addresses from ct descriptors.
