@@ -54,8 +54,6 @@ swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_
     cat swig_python/wallycore.py swig_python/python_extra.py_in > swig_python/wallycore/__init__.py && \
     rm swig_python/wallycore.py
 
-PYTHON_SWIGTEST = PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.libs:swig_python $(PYTHON)
-
 clean-swig-python:
 	$(AM_V_at)rm -f swig_python/swig_python_wrap.c swig_python/wallycore/__init__.py
 clean-local: clean-swig-python
@@ -339,20 +337,23 @@ if BUILD_ELEMENTS
 endif
 
 if USE_SWIG_PYTHON
-check-swig-python: $(SWIG_PYTHON_TEST_DEPS)
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/aes.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/bip32.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/coinselection.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/descriptor.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/mnemonic.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/psbt.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/sha.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/signmessage.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/tx.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/anti-exfil.py
+check-swig-python:
+	$(AM_V_at)$(PYTHON) -m virtualenv $(top_builddir)/venv
+	$(AM_V_at)$(top_builddir)/venv/bin/python -m pip install $(top_srcdir)
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/aes.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/aes.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/bip32.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/coinselection.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/descriptor.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/psbt.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/sha.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/signmessage.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/tx.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python pyexample/anti-exfil.py
 if BUILD_ELEMENTS
-	$(AM_V_at)$(PYTHON_SWIGTEST) swig_python/contrib/elements_tx.py
-	$(AM_V_at)$(PYTHON_SWIGTEST) pyexample/liquid/receive-send.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/elements_tx.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python pyexample/liquid/receive-send.py
 endif
 else # USE_SWIG_PYTHON
 check-swig-python: ;
