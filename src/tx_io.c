@@ -564,6 +564,9 @@ static void txio_hash_tapleaf_hash(cursor_io *io,
                                    bool is_elements)
 {
     const struct wally_map_item *item;
+#ifndef BUILD_ELEMENTS
+    (void)is_elements;
+#endif
     item = io->cache ? wally_map_get(io->cache, tapleaf_script, tapleaf_script_len) : NULL;
     if (item) {
         hash_bytes(&io->ctx, item->value, item->value_len);
@@ -594,6 +597,9 @@ static int legacy_signature_hash(
     const bool sh_none = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_NONE;
     const bool sh_single = (sighash & WALLY_SIGHASH_MASK) == WALLY_SIGHASH_SINGLE;
     cursor_io io;
+#ifndef BUILD_ELEMENTS
+    (void)is_elements;
+#endif
 
     /* Note that script can be empty, so we don't check it here */
     if (!tx || !values || BYTES_INVALID(script, script_len) ||
@@ -964,7 +970,6 @@ int wally_tx_get_input_signature_hash(
 {
     size_t is_elements = 0;
     uint32_t sighash_type = flags & WALLY_SIGTYPE_MASK;
-    int ret = WALLY_EINVAL;
 
     if (!tx || !tx->num_inputs || !tx->num_outputs || !values ||
         BYTES_INVALID(script, script_len) || key_version > 1 ||
@@ -974,11 +979,11 @@ int wally_tx_get_input_signature_hash(
         !flags || (flags & ~SIGTYPE_ALL) || !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    if ((ret = wally_tx_is_elements(tx, &is_elements)) != WALLY_OK)
-        return ret;
-#ifndef BUILD_ELEMENTS
-    if (is_elements)
+#ifdef BUILD_ELEMENTS
+    if (wally_tx_is_elements(tx, &is_elements) != WALLY_OK)
         return WALLY_EINVAL;
+#else
+    (void)is_elements;
 #endif
 
     switch (sighash) {

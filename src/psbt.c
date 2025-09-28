@@ -4552,10 +4552,13 @@ static int get_signing_data(const struct wally_psbt *psbt,
         if (utxo) {
             /* Add items to maps without allocating/copying */
             append_signing_data(scripts, i, utxo->script, utxo->script_len);
+#ifdef BUILD_ELEMENTS
             if (assets) {
                 append_signing_data(assets, i, utxo->asset, utxo->asset_len);
                 append_signing_data(values, i, utxo->value, utxo->value_len);
-            } else {
+            } else
+#endif
+            {
                 append_signing_data(values, i, (unsigned char*)&utxo->satoshi,
                                     sizeof(utxo->satoshi));
             }
@@ -4612,7 +4615,11 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
                 &scripts, assets_p, &values,
                 script, script_len,
                 0, WALLY_NO_CODESEPARATOR, NULL, 0,
+#ifdef BUILD_ELEMENTS
                 psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
+#else
+                NULL, 0,
+#endif
                 sighash, sighash_type,
                 psbt->signing_cache, bytes_out, len);
 
