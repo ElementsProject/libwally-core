@@ -115,6 +115,17 @@ test_mingw_static_build:
     - CC=x86_64-w64-mingw32-gcc ./configure --host=x86_64-w64-mingw32 --disable-swig-python --disable-swig-java --disable-shared --enable-static
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
+test_no_elements_abi:
+  stage: test
+  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  tags:
+    - ga
+  artifacts:
+  script:
+    - ./tools/cleanup.sh && ./tools/autogen.sh
+    - CFLAGS='-Wall -W -Wextra -Werror' ./configure --disable-swig-python --disable-swig-java --disable-clear-tests --enable-elements=no --enable-elements-abi=no
+    - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+
 build_wally_release_files:
   stage: release
   needs: [test_mingw_static_build,test_with_valgrind,test_asan_ubsan_gcc,test_scan_build_clang,test_cmake,test_amalgamation]
