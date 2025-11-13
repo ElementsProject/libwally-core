@@ -83,6 +83,7 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_bip32_key_to_addr_segwit' \
 ,'_wally_bip32_key_to_address' \
 ,'_wally_bip340_tagged_hash' \
+,'_wally_bip341_control_block_verify' \
 ,'_wally_bzero' \
 ,'_wally_cleanup' \
 ,'_wally_descriptor_canonicalize' \

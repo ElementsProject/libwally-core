@@ -141,6 +141,7 @@ export const bip32_path_from_str_n_len = wrap('bip32_path_from_str_n_len', [T.St
 export const bip32_path_str_get_features = wrap('bip32_path_str_get_features', [T.String, T.DestPtr(T.Int32)]);
 export const bip32_path_str_n_get_features = wrap('bip32_path_str_n_get_features', [T.String, T.Int32, T.DestPtr(T.Int32)]);
 export const bip340_tagged_hash = wrap('wally_bip340_tagged_hash', [T.Bytes, T.String, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
+export const bip341_control_block_verify = wrap('wally_bip341_control_block_verify', [T.Bytes]);
 export const bip38_get_flags = wrap('bip38_get_flags', [T.String, T.DestPtr(T.Int32)]);
 export const bip38_raw_get_flags = wrap('bip38_raw_get_flags', [T.Bytes, T.DestPtr(T.Int32)]);
 export const bip39_get_languages = wrap('bip39_get_languages', [T.DestPtrPtr(T.String)]);

@@ -674,6 +674,15 @@ int wally_merkle_path_xonly_public_key_verify(const unsigned char *key, size_t k
     return WALLY_OK;
 }
 
+int wally_bip341_control_block_verify(const unsigned char *bytes, size_t bytes_len)
+{
+    const size_t min_len = 1 + EC_XONLY_PUBLIC_KEY_LEN;
+    if (bytes_len < min_len)
+        return WALLY_EINVAL; /* Missing parity byte and/or x-only pubkey */
+    return wally_merkle_path_xonly_public_key_verify(bytes + 1, EC_XONLY_PUBLIC_KEY_LEN,
+            bytes_len == min_len ? NULL : bytes + min_len, bytes_len - min_len);
+}
+
 int wally_map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map **output)
 {
     return wally_map_init_alloc(allocation_len, wally_keypath_bip32_verify, output);

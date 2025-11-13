@@ -512,6 +512,12 @@ inline int bip340_tagged_hash(const BYTES& bytes, const TAG& tag, BYTES_OUT& byt
 }
 
 template <class BYTES>
+inline bool bip341_control_block_verify(const BYTES& bytes) {
+    int ret = ::wally_bip341_control_block_verify(bytes.data(), bytes.size());
+    return ret == WALLY_OK;
+}
+
+template <class BYTES>
 inline int bzero(BYTES& bytes) {
     int ret = ::wally_bzero(bytes.data(), bytes.size());
     return detail::check_ret(__FUNCTION__, ret);
