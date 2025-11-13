@@ -1196,7 +1196,7 @@ static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
         wally_free(psbt_out->inputs);
         wally_free(psbt_out->outputs);
         wally_map_clear(&psbt_out->unknowns);
-        wally_clear(psbt_out, sizeof(psbt_out));
+        wally_clear(psbt_out, sizeof(*psbt_out));
         return ret != WALLY_OK ? ret : WALLY_ENOMEM;
     }
 
@@ -3961,7 +3961,7 @@ static int psbt_build_input(const struct wally_psbt_input *src,
         BUILD_ITEM(inflation_keys_rangeproof, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF);
         struct wally_map_item issuance_amount_item = { NULL, 0, issuance_amount, sizeof(issuance_amount) };
         struct wally_map_item inflation_keys_item = { NULL, 0, inflation_keys, sizeof(inflation_keys) };
-        int src_index = src->index;
+        uint32_t src_index = src->index;
 
         if (src->issuance_amount || src->inflation_keys || issuance_amount_commitment || inflation_keys_commitment)
             src_index |= WALLY_TX_ISSUANCE_FLAG;
