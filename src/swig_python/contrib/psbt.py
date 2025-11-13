@@ -224,6 +224,23 @@ class PSBTTests(unittest.TestCase):
         key = map_keypath_get_bip32_key_from(keypaths, 0, master)
         self.assertEqual(bip32_key_serialize(key, 0), bip32_key_serialize(derived, 0))
 
+    def check_taproot_keypath(self):
+        # TODO: add in-situ checks on the PSBT fields
+        # BIP-0341 control block
+        parity = hex_to_bytes('55')
+        xonly = hex_to_bytes('22' * 32)
+        bad_xonly = hex_to_bytes('04' + '22' * 32)
+        path_elem = hex_to_bytes('00' * 32)
+        bip341_control_block_verify(parity + xonly) # No path, OK
+        bip341_control_block_verify(parity + xonly + path_elem) # 1 path element, OK
+        for args in [
+            None,                                  # Null control block
+            parity + bad_xonly + path_elem,        # Bad x-only pubkey
+            parity + bad_xonly + path_elem[:-1],   # Path length not modulo 32
+            parity + bad_xonly + path_elem * 129,  # Path length too long
+        ]:
+            self.assertRaises(ValueError, lambda: bip341_control_block_verify(args))
+
     def check_txout(self, lhs, rhs):
         self.assertEqual(tx_output_get_satoshi(lhs), tx_output_get_satoshi(rhs))
         self.assertEqual(tx_output_get_script(lhs), tx_output_get_script(rhs))
@@ -350,6 +367,7 @@ class PSBTTests(unittest.TestCase):
         map_keypath_add(dummy_keypaths, dummy_pubkey, dummy_fingerprint, dummy_path)
         self.check_keypath(dummy_keypaths, master, derived,
                            dummy_pubkey, dummy_fingerprint, dummy_path)
+        self.check_taproot_keypath()
 
         empty_signatures = map_init(0, None)
         dummy_signatures = map_init(0, None) # TODO: pubkey to sig map init

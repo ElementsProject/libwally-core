@@ -486,6 +486,16 @@ WALLY_CORE_API int wally_merkle_path_xonly_public_key_verify(
     size_t val_len);
 
 /**
+ * Verify a taproot control block as specified in BIP-0341.
+ *
+ * :param bytes: Control block bytes.
+ * :param bytes_len: Length of ``bytes`` in bytes. Must be at least `EC_XONLY_PUBLIC_KEY_LEN` + 1.
+ */
+WALLY_CORE_API int wally_bip341_control_block_verify(
+    const unsigned char *bytes,
+    size_t bytes_len);
+
+/**
  * Allocate and initialize a new BIP32 keypath map.
  *
  * :param allocation_len: The number of items to allocate space for.

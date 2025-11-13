@@ -359,7 +359,7 @@ int wally_ec_sig_from_bytes_aux(const unsigned char *priv_key, size_t priv_key_l
             ret = WALLY_EINVAL;
         else if (!secp256k1_schnorrsig_sign32(ctx, bytes_out, bytes, &keypair, aux_rand))
             ret = WALLY_ERROR;
-        wally_clear(&keypair, sizeof(&keypair));
+        wally_clear(&keypair, sizeof(keypair));
         return ret;
     } else {
         unsigned char extra_entropy[32] = {0}, *entropy_p = (unsigned char *)aux_rand;

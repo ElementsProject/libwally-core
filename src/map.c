@@ -667,9 +667,20 @@ int wally_merkle_path_xonly_public_key_verify(const unsigned char *key, size_t k
 
     if (key_len != EC_XONLY_PUBLIC_KEY_LEN ||
         keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
-        extkey.version || BYTES_INVALID(val, val_len) || val_len % SHA256_LEN != 0)
+        extkey.version || BYTES_INVALID(val, val_len))
+        return WALLY_EINVAL;
+    if (val_len && (val_len % SHA256_LEN || val_len % SHA256_LEN > 128u))
         return WALLY_EINVAL;
     return WALLY_OK;
+}
+
+int wally_bip341_control_block_verify(const unsigned char *bytes, size_t bytes_len)
+{
+    const size_t min_len = 1 + EC_XONLY_PUBLIC_KEY_LEN;
+    if (bytes_len < min_len)
+        return WALLY_EINVAL; /* Missing parity byte and/or x-only pubkey */
+    return wally_merkle_path_xonly_public_key_verify(bytes + 1, EC_XONLY_PUBLIC_KEY_LEN,
+            bytes_len == min_len ? NULL : bytes + min_len, bytes_len - min_len);
 }
 
 int wally_map_keypath_bip32_init_alloc(size_t allocation_len, struct wally_map **output)
@@ -727,7 +738,7 @@ int wally_map_merkle_path_add(struct wally_map *map_in,
 
     /* Add map for tap leaves */
     return map_add(map_in, pub_key, pub_key_len,
-                   merkle_hashes, merkle_hashes_len, false, false);
+                   merkle_hashes, merkle_hashes_len, false, true);
 }
 
 int wally_keypath_get_fingerprint(const unsigned char *val, size_t val_len,

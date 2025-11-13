@@ -568,6 +568,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_string(wally_bip32_key_to_address);
 %returns_string(wally_bip32_key_to_addr_segwit);
 %returns_array_(wally_bip340_tagged_hash, 4, 5, SHA256_LEN);
+%returns_void__(wally_bip341_control_block_verify)
 %returns_size_t(wally_coinselect_assets);
 %returns_string(wally_confidential_addr_to_addr);
 %returns_array_(wally_confidential_addr_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);

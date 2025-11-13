@@ -1196,7 +1196,7 @@ static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
         wally_free(psbt_out->inputs);
         wally_free(psbt_out->outputs);
         wally_map_clear(&psbt_out->unknowns);
-        wally_clear(psbt_out, sizeof(psbt_out));
+        wally_clear(psbt_out, sizeof(*psbt_out));
         return ret != WALLY_OK ? ret : WALLY_ENOMEM;
     }
 
@@ -2217,22 +2217,15 @@ static int pull_taproot_leaf_signature(const unsigned char **cursor, size_t *max
     return map_add(leaf_sigs, xonly_hash, 64u, val, val_len, false, false);
 }
 
-static bool is_valid_control_block_len(size_t ctrl_len)
-{
-    return ctrl_len >= 33u && ctrl_len <= 33u + 128u * 32u &&
-           ((ctrl_len - 33u) % 32u) == 0;
-}
-
 static int pull_taproot_leaf_script(const unsigned char **cursor, size_t *max,
                                     const unsigned char **key, size_t *key_len,
                                     struct wally_map *leaf_scripts)
 {
-    /* TODO: use taproot constants here */
     const unsigned char *ctrl, *val;
     size_t ctrl_len = *key_len, val_len;
 
     ctrl = pull_skip(key, key_len, ctrl_len);
-    if (!ctrl || !is_valid_control_block_len(ctrl_len))
+    if (wally_bip341_control_block_verify(ctrl, ctrl_len) != WALLY_OK)
         return WALLY_EINVAL;
     subfield_nomore_end(cursor, max, *key, *key_len);
 
@@ -2987,7 +2980,8 @@ static int push_taproot_leaf_scripts(unsigned char **cursor, size_t *max, size_t
     for (i = 0; i < leaf_scripts->num_items; ++i) {
         const struct wally_map_item *item = leaf_scripts->items + i;
 
-        if (!is_valid_control_block_len(item->key_len) || !item->value_len)
+        if (wally_bip341_control_block_verify(item->key, item->key_len) != WALLY_OK ||
+            !item->value_len)
             return WALLY_EINVAL;
 
         push_key(cursor, max, ft, false, item->key, item->key_len);
@@ -3961,7 +3955,7 @@ static int psbt_build_input(const struct wally_psbt_input *src,
         BUILD_ITEM(inflation_keys_rangeproof, PSET_IN_ISSUANCE_INFLATION_KEYS_RANGEPROOF);
         struct wally_map_item issuance_amount_item = { NULL, 0, issuance_amount, sizeof(issuance_amount) };
         struct wally_map_item inflation_keys_item = { NULL, 0, inflation_keys, sizeof(inflation_keys) };
-        int src_index = src->index;
+        uint32_t src_index = src->index;
 
         if (src->issuance_amount || src->inflation_keys || issuance_amount_commitment || inflation_keys_commitment)
             src_index |= WALLY_TX_ISSUANCE_FLAG;

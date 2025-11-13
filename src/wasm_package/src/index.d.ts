@@ -101,6 +101,7 @@ export function bip32_path_from_str_n_len(path_str: string, path_str_len: number
 export function bip32_path_str_get_features(path_str: string): number;
 export function bip32_path_str_n_get_features(path_str: string, path_str_len: number): number;
 export function bip340_tagged_hash(bytes: Buffer|Uint8Array, tag: string): Buffer;
+export function bip341_control_block_verify(bytes: Buffer|Uint8Array): void;
 export function bip38_get_flags(bip38: string): number;
 export function bip38_raw_get_flags(bytes: Buffer|Uint8Array): number;
 export function bip39_get_languages(): string;

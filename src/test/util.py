@@ -310,6 +310,7 @@ for f in (
     ('wally_bip32_key_to_addr_segwit', c_int, [POINTER(ext_key), c_char_p, c_uint32, c_char_p_p]),
     ('wally_bip32_key_to_address', c_int, [POINTER(ext_key), c_uint32, c_uint32, c_char_p_p]),
     ('wally_bip340_tagged_hash', c_int, [c_void_p, c_size_t, c_char_p, c_void_p, c_size_t]),
+    ('wally_bip341_control_block_verify', c_int, [c_void_p, c_size_t]),
     ('wally_bzero', c_int, [c_void_p, c_size_t]),
     ('wally_cleanup', c_int, [c_uint32]),
     ('wally_coinselect_assets', c_int, [POINTER(c_uint64), c_size_t, c_uint64, c_uint64, c_uint32, POINTER(c_uint32), c_size_t, c_size_t_p]),
