@@ -339,6 +339,7 @@ endif
 if USE_SWIG_PYTHON
 check-swig-python:
 	$(AM_V_at)$(PYTHON) -m virtualenv $(top_builddir)/venv
+	$(AM_V_at). $(top_builddir)/venv/bin/activate
 	$(AM_V_at)$(top_builddir)/venv/bin/python -m pip install $(top_srcdir)
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/aes.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/aes.py
@@ -355,6 +356,8 @@ if BUILD_ELEMENTS
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/elements_tx.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python pyexample/liquid/receive-send.py
 endif
+	$(AM_V_at)deactivate
+
 else # USE_SWIG_PYTHON
 check-swig-python: ;
 endif # USE_SWIG_PYTHON
