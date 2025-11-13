@@ -727,7 +727,7 @@ int wally_map_merkle_path_add(struct wally_map *map_in,
 
     /* Add map for tap leaves */
     return map_add(map_in, pub_key, pub_key_len,
-                   merkle_hashes, merkle_hashes_len, false, false);
+                   merkle_hashes, merkle_hashes_len, false, true);
 }
 
 int wally_keypath_get_fingerprint(const unsigned char *val, size_t val_len,
