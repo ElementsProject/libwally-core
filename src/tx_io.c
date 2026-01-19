@@ -910,7 +910,10 @@ static int bip341_signature_hash(
     }
     /* Input data */
     hash_u8(&io.ctx, (tapleaf_script ? 1 : 0) * 2 + (annex ? 1 : 0)); /* spend_type */
-    if (sh_anyonecanpay || sh_anyprevout) {
+    if (sh_anyprevout_anyscript) {
+        // Note that this means sh_anyonecanpay is set so we check this first
+        hash_le32(&io.ctx, tx->inputs[index].sequence); /* nSequence */
+    } else if (sh_anyonecanpay || sh_anyprevout) {
         if (sh_anyonecanpay) {
 #ifdef BUILD_ELEMENTS
             if (is_elements)
@@ -925,8 +928,6 @@ static int bip341_signature_hash(
         else
 #endif
             txio_hash_input(&io, tx, index, scripts, values, NULL, 0, WALLY_SIGTYPE_SW_V1);
-    } else if (sh_anyprevout_anyscript) {
-        hash_le32(&io.ctx, tx->inputs[index].sequence); /* nSequence */
     } else {
         hash_le32(&io.ctx, index); /* input_index */
     }
