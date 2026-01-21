@@ -690,6 +690,19 @@ class TransactionTests(unittest.TestCase):
             ret = wally_tx_get_input_signature_hash(*args)
             self.assertEqual(ret, WALLY_EINVAL)
 
+    def test_elip203(self):
+        """Tests for deserializing ELIP203 test vectors"""
+        if not wally_is_elements_build()[1]:
+            self.skipTest('Elements support not enabled')
+
+        # From https://github.com/ElementsProject/ELIPs/blob/main/elip-0203.mediawiki
+        with open(root_dir + 'src/data/elip203_vectors.json', 'r') as f:
+           ELIP203_TEST_VECTORS = json.load(f)
+
+        for case in ELIP203_TEST_VECTORS['cases']:
+            tx_hex = case['tx']
+            tx = self.tx_deserialize_hex(tx_hex, is_elements=True)
+            self.assertEqual(tx_hex, self.tx_serialize_hex(tx))
 
 if __name__ == '__main__':
     unittest.main()
