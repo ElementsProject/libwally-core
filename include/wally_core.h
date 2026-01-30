@@ -31,8 +31,8 @@ extern "C" {
 /** Library version */
 #define WALLY_MAJOR_VER 1
 #define WALLY_MINOR_VER 5
-#define WALLY_PATCH_VER 1
-#define WALLY_BUILD_VER 0x10501
+#define WALLY_PATCH_VER 2
+#define WALLY_BUILD_VER 0x10502
 
 /**
  * Initialize wally.
