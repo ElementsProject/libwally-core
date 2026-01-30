@@ -2235,7 +2235,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
 #define ensure_n(n) if ((n) > (size_t)(end - p)) return WALLY_EINVAL
 
-#define ensure_varint(dst) ensure_n(varint_length_from_bytes(p)); \
+#define ensure_varint(dst) ensure_n(sizeof(uint8_t)); \
+    ensure_n(varint_length_from_bytes(p)); \
     p += varint_from_bytes(p, (dst))
 
 #define ensure_varbuff(dst) ensure_varint((dst)); \
