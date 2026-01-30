@@ -256,6 +256,10 @@ int pull_witness(const unsigned char **cursor, size_t *max,
         val_len = *max;
     }
     num_witnesses = pull_varint(&val, &val_len);
+    if (num_witnesses > val_len) {
+        /* Not enough bytes remaining for num_witnesses empty witnesses */
+        return WALLY_EINVAL;
+    }
     ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness_out);
 
     for (i = 0; ret == WALLY_OK && i < num_witnesses; ++i) {
