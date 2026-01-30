@@ -1,5 +1,18 @@
 # Changes
 
+## Version 1.5.2
+
+### Added
+- taproot: add bip341_control_block_verify().
+
+### Changed
+- map: ignore duplicates in map_merkle_path_add() for consistency.
+
+### Fixed
+- build: Fix building with the Elements ABI disabled.
+- tx: Fix BIP118 ANYPREVOUTANYSCRIPT sighash computation.
+- psbt: Fix merkle path, witness and buffer length checks when parsing.
+
 ## Version 1.5.1
 
 ### Added
