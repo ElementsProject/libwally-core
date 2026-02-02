@@ -26,6 +26,8 @@ config.sub
 configure
 depcomp
 dist
+fuzz/fuzz_*
+!fuzz/fuzz_*.c
 install-sh
 libtool
 ltmain.sh

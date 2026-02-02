@@ -91,7 +91,17 @@ AC_ARG_ENABLE(secp256k1-tests,
 AC_ARG_ENABLE(asm,
     AS_HELP_STRING([--enable-asm],[enable assembly language implementations (default: yes)]),
     [asm=$enableval], [asm=yes])
+AC_ARG_ENABLE(fuzzing,
+    AS_HELP_STRING([--enable-fuzzing],[enable fuzzing support (default: no)]),
+    [fuzzing=$enableval], [fuzzing=no])
+AC_ARG_ENABLE(address-sanitizer,
+    AS_HELP_STRING([--enable-address-sanitizer],[enable address sanitizer (default: no)]),
+    [address_sanitizer=$enableval], [address_sanitizer=no])
+AC_ARG_ENABLE(ub-sanitizer,
+    AS_HELP_STRING([--enable-ub-sanitizer],[enable undefined behavior sanitizer (default: no)]),
+    [ub_sanitizer=$enableval], [ub_sanitizer=no])
 AM_CONDITIONAL([RUN_TESTS], [test "x$tests" = "xyes"])
+AM_CONDITIONAL([BUILD_FUZZ], [test "x$fuzzing" = "xyes"])
 AM_CONDITIONAL([BUILD_ELEMENTS], [test "x$elements" = "xyes"])
 AM_CONDITIONAL([WALLY_ABI_NO_ELEMENTS], [test "x$elements_abi" = "xno"])
 AM_CONDITIONAL([BUILD_STANDARD_SECP], [test "x$standard_secp" = "xyes"])
@@ -154,6 +164,20 @@ fi
 
 if test "x$builtin_memset" = "xno"; then
     AX_CHECK_COMPILE_FLAG([-fno-builtin-memset], [AM_CFLAGS="$AM_CFLAGS -fno-builtin"])
+fi
+
+if test "x$fuzzing" = "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-fsanitize=fuzzer-no-link], [AM_CFLAGS="$AM_CFLAGS -fsanitize=fuzzer-no-link"])
+fi
+
+if test "x$address_sanitizer" = "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-fsanitize=address], [AM_CFLAGS="$AM_CFLAGS -fsanitize=address"])
+    AX_CHECK_LINK_FLAG([-fsanitize=address], [LDFLAGS="$LDFLAGS -fsanitize=address"])
+fi
+
+if test "x$ub_sanitizer" = "xyes"; then
+    AX_CHECK_COMPILE_FLAG([-fsanitize=undefined], [AM_CFLAGS="$AM_CFLAGS -fsanitize=undefined"])
+    AX_CHECK_LINK_FLAG([-fsanitize=undefined], [LDFLAGS="$LDFLAGS -fsanitize=undefined"])
 fi
 
 # -flax-vector-conversions is needed for our arm assembly
@@ -419,6 +443,10 @@ AC_CONFIG_FILES([
  src/Makefile
  src/wallycore.pc
 ])
+
+if test "x$fuzzing" = "xyes"; then
+    AC_CONFIG_FILES([fuzz/Makefile])
+fi
 
 secp_asm="--with-asm=auto"
 if test "x$asm" = "xno"; then

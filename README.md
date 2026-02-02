@@ -103,6 +103,11 @@ $ brew install swig
 - `--disable-tests`. Disables building library tests. (default: no)
 - `--disable-clear-tests`. Disables just the test_clear test (required to pass
   the test suite with some compilers). (default: no)
+- `--enable-fuzzing`. Enables fuzzing support by compiling with
+  `-fsanitize=fuzzer-no-link` and builds fuzz targets. (default: no).
+- `--enable-address-sanitizer`. Enables the address sanitizer for detecting
+  memory errors. (default: no).
+- `--enable-ub-sanitizer`. Enables the undefined behavior sanitizer. (default: no).
 
 ### Recommended development configure options
 
