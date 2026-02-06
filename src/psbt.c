@@ -868,6 +868,15 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
     return WALLY_OK;
 }
 
+static void psbt_inputs_free(struct wally_psbt_input *inputs, size_t num_inputs)
+{
+    if (inputs) {
+        for (size_t i = 0; i < num_inputs; ++i)
+            psbt_input_free(&inputs[i], false);
+        wally_free(inputs);
+    }
+}
+
 MAP_INNER_FIELD(output, redeem_script, PSBT_OUT_REDEEM_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(output, witness_script, PSBT_OUT_WITNESS_SCRIPT, psbt_fields)
 MAP_INNER_FIELD(output, taproot_internal_key, PSBT_OUT_TAP_INTERNAL_KEY, psbt_fields)
@@ -1149,6 +1158,15 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
     return WALLY_OK;
 }
 
+static void psbt_outputs_free(struct wally_psbt_output *outputs, size_t num_outputs)
+{
+    if (outputs) {
+        for (size_t i = 0; i < num_outputs; ++i)
+            psbt_output_free(&outputs[i], false);
+        wally_free(outputs);
+    }
+}
+
 static int psbt_init(uint32_t version, size_t num_inputs, size_t num_outputs,
                      size_t num_unknowns, uint32_t flags,
                      size_t max_num_inputs, size_t max_num_outputs,
@@ -1291,17 +1309,11 @@ static void psbt_claim_allocated_inputs(struct wally_psbt *psbt, size_t num_inpu
 
 int wally_psbt_free(struct wally_psbt *psbt)
 {
-    size_t i;
     if (psbt) {
         wally_tx_free(psbt->tx);
-        for (i = 0; i < psbt->num_inputs; ++i)
-            psbt_input_free(&psbt->inputs[i], false);
+        psbt_inputs_free(psbt->inputs, psbt->num_inputs);
+        psbt_outputs_free(psbt->outputs, psbt->num_outputs);
 
-        wally_free(psbt->inputs);
-        for (i = 0; i < psbt->num_outputs; ++i)
-            psbt_output_free(&psbt->outputs[i], false);
-
-        wally_free(psbt->outputs);
         wally_map_clear(&psbt->unknowns);
         wally_map_clear(&psbt->global_xpubs);
 #ifdef BUILD_ELEMENTS
@@ -1591,31 +1603,31 @@ static int psbt_set_global_tx(struct wally_psbt *psbt, struct wally_tx *tx, bool
 
     if (psbt->inputs_allocation_len < tx->num_inputs) {
         new_inputs = wally_malloc(tx->num_inputs * sizeof(struct wally_psbt_input));
-        for (i = 0; i < tx->num_inputs; ++i)
+        for (i = 0; new_inputs && i < tx->num_inputs; ++i)
             psbt_input_init(&new_inputs[i]);
     }
 
     if (psbt->outputs_allocation_len < tx->num_outputs) {
         new_outputs = wally_malloc(tx->num_outputs * sizeof(struct wally_psbt_output));
-        for (i = 0; i < tx->num_outputs; ++i)
+        for (i = 0; new_outputs && i < tx->num_outputs; ++i)
             psbt_output_init(&new_outputs[i]);
     }
 
     if ((psbt->inputs_allocation_len < tx->num_inputs && !new_inputs) ||
         (psbt->outputs_allocation_len < tx->num_outputs && !new_outputs)) {
-        wally_free(new_inputs);
-        wally_free(new_outputs);
+        psbt_inputs_free(new_inputs, tx->num_inputs);
+        psbt_outputs_free(new_outputs, tx->num_outputs);
         wally_tx_free(new_tx);
         return WALLY_ENOMEM;
     }
 
     if (new_inputs) {
-        wally_free(psbt->inputs);
+        psbt_inputs_free(psbt->inputs, psbt->num_inputs);
         psbt->inputs = new_inputs;
         psbt->inputs_allocation_len = tx->num_inputs;
     }
     if (new_outputs) {
-        wally_free(psbt->outputs);
+        psbt_outputs_free(psbt->outputs, psbt->num_outputs);
         psbt->outputs = new_outputs;
         psbt->outputs_allocation_len = tx->num_outputs;
     }
