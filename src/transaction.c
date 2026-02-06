@@ -2243,6 +2243,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
     ensure_n(*dst)
 
 #define ensure_commitment(dst, explicit_siz, prefix_a, prefix_b) \
+    ensure_n(sizeof(uint8_t)); \
     switch (*dst) { \
     case WALLY_TX_ASSET_CT_EMPTY_PREFIX: \
         ensure_n(sizeof(uint8_t)); \
