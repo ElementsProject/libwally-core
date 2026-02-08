@@ -2200,7 +2200,7 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
                       uint32_t flags, size_t *num_inputs, size_t *num_outputs,
                       bool *expect_witnesses)
 {
-    const unsigned char *p = bytes, *end = bytes + bytes_len;
+    const unsigned char *p, *end;
     uint64_t v, num_witnesses;
     size_t i, j;
     struct wally_tx tmp_tx;
@@ -2214,10 +2214,11 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         *expect_witnesses = false;
 
     if (!bytes || bytes_len < sizeof(uint32_t) + 2 || (flags & ~WALLY_TX_ALL_FLAGS) ||
-        !num_inputs || !num_outputs || !expect_witnesses || p > end)
+        !num_inputs || !num_outputs || !expect_witnesses)
         return WALLY_EINVAL;
 
-    p += uint32_from_le_bytes(p, &tmp_tx.version);
+    end = bytes + bytes_len;
+    p = bytes + uint32_from_le_bytes(bytes, &tmp_tx.version);
 
     if (is_elements) {
         if (flags & WALLY_TX_FLAG_PRE_BIP144)
