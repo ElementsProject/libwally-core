@@ -1,15 +1,14 @@
 #include <wally_psbt.h>
 
-static void test_psbt(const uint8_t *data, size_t size, uint32_t flags)
+static void test_fuzz_psbt_from_bytes(const uint8_t *data, size_t size, uint32_t flags)
 {
     struct wally_psbt *psbt = NULL;
     int ret;
 
-    /* Test strict parsing */
     ret = wally_psbt_from_bytes(data, size, flags, &psbt);
     if (psbt) {
         if (ret == WALLY_OK && flags == WALLY_PSBT_PARSE_FLAG_STRICT) {
-            /* Parsing succeeded: try to serialize it back */
+            /* Parsing succeeded: try to serialize it back to bytes */
             size_t len = 0, written = 0;
             ret = wally_psbt_get_length(psbt, 0, &len);
             if (ret == WALLY_OK && len) {
@@ -21,18 +20,17 @@ static void test_psbt(const uint8_t *data, size_t size, uint32_t flags)
             }
         }
         wally_psbt_free(psbt);
-        psbt = NULL;
     }
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     /* Test strict parsing */
-    test_psbt(data, size, WALLY_PSBT_PARSE_FLAG_STRICT);
+    test_fuzz_psbt_from_bytes(data, size, WALLY_PSBT_PARSE_FLAG_STRICT);
     /* Test loose parsing */
-    test_psbt(data, size, WALLY_PSBT_PARSE_FLAG_LOOSE);
+    test_fuzz_psbt_from_bytes(data, size, WALLY_PSBT_PARSE_FLAG_LOOSE);
     /* Test default flags (no flags) */
-    test_psbt(data, size, 0);
+    test_fuzz_psbt_from_bytes(data, size, 0);
 
     return 0;
 }
