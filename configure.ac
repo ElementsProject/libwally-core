@@ -178,6 +178,9 @@ fi
 if test "x$ub_sanitizer" = "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fsanitize=undefined], [AM_CFLAGS="$AM_CFLAGS -fsanitize=undefined"])
     AX_CHECK_LINK_FLAG([-fsanitize=undefined], [LDFLAGS="$LDFLAGS -fsanitize=undefined"])
+    # ubsan complains about unaligned reads/writes even though they are legal
+    # on x86 archs. Force alignment adjustment to avoid false positives.
+    AX_CHECK_COMPILE_FLAG([-DAVOID_UNALIGNED_ACCESS=1], [AM_CFLAGS="$AM_CFLAGS -DAVOID_UNALIGNED_ACCESS=1"])
 fi
 
 # -flax-vector-conversions is needed for our arm assembly
