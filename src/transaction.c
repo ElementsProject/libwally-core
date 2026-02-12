@@ -2243,9 +2243,9 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 #define ensure_varbuff(dst) ensure_varint((dst)); \
     ensure_n(*dst)
 
-#define ensure_commitment(dst, explicit_siz, prefix_a, prefix_b) \
+#define ensure_commitment(explicit_siz, prefix_a, prefix_b) \
     ensure_n(sizeof(uint8_t)); \
-    switch (*dst) { \
+    switch (*p) { \
     case WALLY_TX_ASSET_CT_EMPTY_PREFIX: \
         ensure_n(sizeof(uint8_t)); \
         p++; \
@@ -2263,14 +2263,14 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         return WALLY_EINVAL; \
     }
 
-#define ensure_committed_value(dst) \
-    ensure_commitment(dst, WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN, WALLY_TX_ASSET_CT_VALUE_PREFIX_A, WALLY_TX_ASSET_CT_VALUE_PREFIX_B)
+#define ensure_committed_value() \
+    ensure_commitment(WALLY_TX_ASSET_CT_VALUE_UNBLIND_LEN, WALLY_TX_ASSET_CT_VALUE_PREFIX_A, WALLY_TX_ASSET_CT_VALUE_PREFIX_B)
 
-#define ensure_committed_asset(dst) \
-    ensure_commitment(dst, WALLY_TX_ASSET_CT_ASSET_LEN, WALLY_TX_ASSET_CT_ASSET_PREFIX_A, WALLY_TX_ASSET_CT_ASSET_PREFIX_B)
+#define ensure_committed_asset() \
+    ensure_commitment(WALLY_TX_ASSET_CT_ASSET_LEN, WALLY_TX_ASSET_CT_ASSET_PREFIX_A, WALLY_TX_ASSET_CT_ASSET_PREFIX_B)
 
-#define ensure_committed_nonce(dst) \
-    ensure_commitment(dst, WALLY_TX_ASSET_CT_NONCE_LEN, WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B)
+#define ensure_committed_nonce() \
+    ensure_commitment(WALLY_TX_ASSET_CT_NONCE_LEN, WALLY_TX_ASSET_CT_NONCE_PREFIX_A, WALLY_TX_ASSET_CT_NONCE_PREFIX_B)
 
     ensure_varint(&v);
     *num_inputs = v;
@@ -2292,8 +2292,8 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
         if (expect_issuance) {
             ensure_n(2 * SHA256_LEN);
             p += 2 * SHA256_LEN;
-            ensure_committed_value(p); /* issuance amount */
-            ensure_committed_value(p); /* inflation keys */
+            ensure_committed_value(); /* issuance amount */
+            ensure_committed_value(); /* inflation keys */
         }
     }
 
@@ -2302,9 +2302,9 @@ static int analyze_tx(const unsigned char *bytes, size_t bytes_len,
 
     for (i = 0; i < *num_outputs; ++i) {
         if (is_elements) {
-            ensure_committed_asset(p);
-            ensure_committed_value(p);
-            ensure_committed_nonce(p);
+            ensure_committed_asset();
+            ensure_committed_value();
+            ensure_committed_nonce();
         } else {
             ensure_n(sizeof(uint64_t));
             p += sizeof(uint64_t);
