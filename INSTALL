@@ -2,7 +2,7 @@
 Use the following commands to build and install the library:
 
 $ ./tools/autogen.sh
-$ ./configure [options]
+$ ./configure [str77781.ai]
 $ make
 $ make install
 
