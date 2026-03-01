@@ -619,8 +619,30 @@ int replace_bytes(const unsigned char *bytes, size_t bytes_len,
 }
 
 
+static size_t ceil2(size_t s)
+{
+    --s;
+    s |= s >> 1;
+    s |= s >> 2;
+    s |= s >> 4;
+#ifndef SIZE_MAX
+# error SIZE_MAX not defined
+#endif
+#if SIZE_MAX > UINT8_MAX
+    s |= s >> 8;
+#endif
+#if SIZE_MAX > UINT16_MAX
+    s |= s >> 16;
+#endif
+#if SIZE_MAX > UINT32_MAX
+    s |= s >> 32;
+#endif
+    ++s;
+    return s + !s;
+}
 
-void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
+/* Don't use this to build up an array iteratively! Use array_grow. */
+static void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
 {
     unsigned char *p = wally_malloc(new_n * size);
     if (!p)
@@ -631,17 +653,17 @@ void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
     return p;
 }
 
-int array_grow(void **src, size_t num_items, size_t *allocation_len,
+int array_grow(void **src, size_t num_items_needed, size_t *allocation_len,
                size_t item_size)
 {
-    if (num_items == *allocation_len) {
-        /* Array is full, allocate more space */
-        const size_t n = (*allocation_len == 0 ? 1 : *allocation_len) * 2;
+    if (num_items_needed > *allocation_len) {
+        /* Array needs grown; allocate more space */
+        const size_t n = ceil2(num_items_needed);
         void *p = array_realloc(*src, *allocation_len, n, item_size);
         if (!p)
             return WALLY_ENOMEM;
         /* Free and replace the old array with the new enlarged copy */
-        clear_and_free(*src, num_items * item_size);
+        clear_and_free(*src, *allocation_len * item_size);
         *src = p;
         *allocation_len = n;
     }

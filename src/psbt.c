@@ -1785,7 +1785,7 @@ int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
         return ret;
 
     if (psbt->num_inputs >= psbt->inputs_allocation_len &&
-        (ret = array_grow((void *)&psbt->inputs, psbt->num_inputs,
+        (ret = array_grow((void *)&psbt->inputs, psbt->num_inputs + 1,
                           &psbt->inputs_allocation_len,
                           sizeof(*psbt->inputs))) != WALLY_OK)
         return ret;
@@ -1950,7 +1950,7 @@ int wally_psbt_add_tx_output_at(struct wally_psbt *psbt,
         return ret;
 
     if (psbt->num_outputs >= psbt->outputs_allocation_len &&
-        (ret = array_grow((void *)&psbt->outputs, psbt->num_outputs,
+        (ret = array_grow((void *)&psbt->outputs, psbt->num_outputs + 1,
                           &psbt->outputs_allocation_len,
                           sizeof(*psbt->outputs))) != WALLY_OK)
         return ret;

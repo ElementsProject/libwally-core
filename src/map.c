@@ -246,7 +246,7 @@ int map_add(struct wally_map *map_in,
         return ignore_dups ? WALLY_OK : WALLY_EINVAL;
     }
 
-    ret = array_grow((void *)&map_in->items, map_in->num_items,
+    ret = array_grow((void *)&map_in->items, map_in->num_items + 1,
                      &map_in->items_allocation_len, sizeof(struct wally_map_item));
     if (ret == WALLY_OK) {
         struct wally_map_item *new_item = map_in->items + map_in->num_items;

@@ -272,6 +272,7 @@ int wally_tx_witness_stack_set(struct wally_tx_witness_stack *stack, size_t inde
                                const unsigned char *witness, size_t witness_len)
 {
     unsigned char *new_witness = NULL;
+    int ret;
 
     if (!is_valid_witness_stack(stack) || (!witness && witness_len))
         return WALLY_EINVAL;
@@ -280,18 +281,12 @@ int wally_tx_witness_stack_set(struct wally_tx_witness_stack *stack, size_t inde
         return WALLY_ENOMEM;
 
     if (index >= stack->num_items) {
-        if (index >= stack->items_allocation_len) {
-            /* Expand the witness array */
-            struct wally_tx_witness_item *p;
-            p = array_realloc(stack->items, stack->items_allocation_len,
-                              index + 1, sizeof(*stack->items));
-            if (!p) {
-                clear_and_free(new_witness, witness_len);
-                return WALLY_ENOMEM;
-            }
-            clear_and_free(stack->items, stack->num_items * sizeof(*stack->items));
-            stack->items = p;
-            stack->items_allocation_len = index + 1;
+        /* Expand the witness array if needed */
+        ret = array_grow((void *)&stack->items, index + 1,
+                         &stack->items_allocation_len, sizeof(*stack->items));
+        if (ret != WALLY_OK) {
+            clear_and_free(new_witness, witness_len);
+            return ret;
         }
         stack->num_items = index + 1;
     }
@@ -1198,18 +1193,11 @@ int wally_tx_add_input_at(struct wally_tx *tx, uint32_t index,
     if (!is_valid_tx(tx) || index > tx->num_inputs || !is_valid_tx_input(input))
         return WALLY_EINVAL;
 
-    if (tx->num_inputs >= tx->inputs_allocation_len) {
-        /* Expand the inputs array */
-        struct wally_tx_input *p;
-        p = array_realloc(tx->inputs, tx->inputs_allocation_len,
-                          tx->num_inputs + 1, sizeof(*tx->inputs));
-        if (!p)
-            return WALLY_ENOMEM;
-
-        clear_and_free(tx->inputs, tx->num_inputs * sizeof(*tx->inputs));
-        tx->inputs = p;
-        tx->inputs_allocation_len += 1;
-    }
+    /* Expand the inputs array if needed */
+    ret = array_grow((void *)&tx->inputs, tx->num_inputs + 1,
+                     &tx->inputs_allocation_len, sizeof(*tx->inputs));
+    if (ret != WALLY_OK)
+        return ret;
 
     memmove(tx->inputs + index + 1, tx->inputs + index,
             (tx->num_inputs - index) * sizeof(*input));
@@ -1427,18 +1415,11 @@ int wally_tx_add_output_at(struct wally_tx *tx, uint32_t index,
     } else if (!is_valid_elements_tx_output(output))
         return WALLY_EINVAL;
 
-    if (tx->num_outputs >= tx->outputs_allocation_len) {
-        /* Expand the outputs array */
-        struct wally_tx_output *p;
-        p = array_realloc(tx->outputs, tx->outputs_allocation_len,
-                          tx->num_outputs + 1, sizeof(*tx->outputs));
-        if (!p)
-            return WALLY_ENOMEM;
-
-        clear_and_free(tx->outputs, tx->num_outputs * sizeof(*tx->outputs));
-        tx->outputs = p;
-        tx->outputs_allocation_len += 1;
-    }
+    /* Expand the outputs array if needed */
+    ret = array_grow((void *)&tx->outputs, tx->num_outputs + 1,
+                     &tx->outputs_allocation_len, sizeof(*tx->outputs));
+    if (ret != WALLY_OK)
+        return ret;
 
     memmove(tx->outputs + index + 1, tx->outputs + index,
             (tx->num_outputs - index) * sizeof(*output));

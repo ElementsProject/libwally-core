@@ -101,9 +101,7 @@ bool clone_data(void **dst, const void *src, size_t len);
 bool clone_bytes(unsigned char **dst, const unsigned char *src, size_t len);
 int replace_bytes(const unsigned char *bytes, size_t bytes_len,
                   unsigned char **bytes_out, size_t *bytes_len_out);
-void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size);
-
-int array_grow(void **src, size_t num_items, size_t *allocation_len,
+int array_grow(void **src, size_t num_items_needed, size_t *allocation_len,
                size_t item_size);
 
 struct ext_key;
