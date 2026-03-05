@@ -138,7 +138,8 @@ int wally_tx_witness_stack_clone_alloc(const struct wally_tx_witness_stack *stac
     if (!stack)
         return WALLY_EINVAL;
 
-    ret = wally_tx_witness_stack_init_alloc(stack->items_allocation_len, output);
+    ret = tx_witness_stack_init_alloc(stack->items_allocation_len,
+                                      stack->items_allocation_len, output);
     for (i = 0; ret == WALLY_OK && i < stack->num_items; ++i) {
         ret = wally_tx_witness_stack_set(*output, i,
                                          stack->items[i].witness,
@@ -151,15 +152,16 @@ int wally_tx_witness_stack_clone_alloc(const struct wally_tx_witness_stack *stac
     return ret;
 }
 
-int wally_tx_witness_stack_init_alloc(size_t allocation_len,
-                                      struct wally_tx_witness_stack **output)
+int tx_witness_stack_init_alloc(size_t allocation_len,
+                                size_t max_allocation_len,
+                                struct wally_tx_witness_stack **output)
 {
     OUTPUT_CHECK;
     OUTPUT_ALLOC(struct wally_tx_witness_stack);
 
     if (allocation_len) {
-        if (allocation_len > MAX_WITNESS_ITEMS_ALLOC)
-            allocation_len = MAX_WITNESS_ITEMS_ALLOC;
+        if (allocation_len > max_allocation_len)
+            allocation_len = max_allocation_len;
         (*output)->items = wally_calloc(allocation_len * sizeof(struct wally_tx_witness_item));
         if (!(*output)->items) {
             wally_free(*output);
@@ -170,6 +172,16 @@ int wally_tx_witness_stack_init_alloc(size_t allocation_len,
     (*output)->items_allocation_len = allocation_len;
     (*output)->num_items = 0;
     return WALLY_OK;
+}
+
+int wally_tx_witness_stack_init_alloc(size_t allocation_len,
+                                      struct wally_tx_witness_stack **output)
+{
+    /* The public interface is limited to pre-allocating enough
+     * witness items for a standard tx, and will be slow if adding more
+     */
+    return tx_witness_stack_init_alloc(allocation_len,
+                                       MAX_WITNESS_ITEMS_ALLOC, output);
 }
 
 static int tx_witness_stack_free(struct wally_tx_witness_stack *stack,
@@ -2371,7 +2383,7 @@ static int witness_stack_from_bytes(const unsigned char *bytes, struct wally_tx_
     const unsigned char *p = bytes;
     p += varint_from_bytes(p, &num_witnesses);
     if (num_witnesses) {
-        ret = wally_tx_witness_stack_init_alloc(num_witnesses, witness);
+        ret = tx_witness_stack_init_alloc(num_witnesses, num_witnesses, witness);
         if (ret != WALLY_OK)
             goto cleanup;
 
@@ -2485,8 +2497,8 @@ static int tx_from_bytes(const unsigned char *bytes, size_t bytes_len,
             p += varint_from_bytes(p, &num_witnesses);
             if (!num_witnesses)
                 continue;
-            ret = wally_tx_witness_stack_init_alloc(num_witnesses,
-                                                    &(*output)->inputs[i].witness);
+            ret = tx_witness_stack_init_alloc(num_witnesses, num_witnesses,
+                                              &(*output)->inputs[i].witness);
             if (ret != WALLY_OK)
                 goto fail;
 
