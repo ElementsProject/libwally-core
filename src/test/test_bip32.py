@@ -389,6 +389,68 @@ class BIP32Tests(unittest.TestCase):
         self.do_test_vector(vec_1)
         self.do_test_vector(vec_3)
 
+    def test_vector_5_invalid_keys(self):
+        """BIP32 Test Vector 5: invalid extended keys must be rejected"""
+        invalid_keys = [
+            # pubkey version / prvkey mismatch
+            'xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3'
+            'zgtU6LBpB85b3D2yc8sfvZU521AAwdZafEz7mnzBBsz4wKY5fTtTQBm',
+            # prvkey version / pubkey mismatch
+            'xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63o'
+            'StZzFGTQQD3dC4H2D5GBj7vWvSQaaBv5cxi9gafk7NF3pnBju6dwKvH',
+            # invalid pubkey prefix 04
+            'xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3'
+            'zgtU6Txnt3siSujt9RCVYsx4qHZGc62TG4McvMGcAUjeuwZdduYEvFn',
+            # invalid prvkey prefix 04
+            'xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63o'
+            'StZzFGpWnsj83BHtEy5Zt8CcDr1UiRXuWCmTQLxEK9vbz5gPstX92JQ',
+            # invalid pubkey prefix 01
+            'xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3'
+            'zgtU6N8ZMMXctdiCjxTNq964yKkwrkBJJwpzZS4HS2fxvyYUA4q2Xe4',
+            # invalid prvkey prefix 01
+            'xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63o'
+            'StZzFAzHGBP2UuGCqWLTAPLcMtD9y5gkZ6Eq3Rjuahrv17fEQ3Qen6J',
+            # Note we don't currently fail keys where the fingerprint
+            # and index are inconsistent, as some implementations do
+            # not set them correctly (but nonetheless work for their
+            # intended purpose(s)).
+            # zero depth with non-zero parent fingerprint (xprv)
+            #'xprv9s2SPatNQ9Vc6GTbVMFPFo7jsaZySyzk7L8n2uqKXJen3KUmvQNT'
+            #'uLh3fhZMBoG3G4ZW1N2kZuHEPY53qmbZzCHshoQnNf4GvELZfqTUrcv',
+            # zero depth with non-zero parent fingerprint (xpub)
+            #'xpub661no6RGEX3uJkY4bNnPcw4URcQTrSibUZ4NqJEw5eBkv7ovTwgi'
+            #'T91XX27VbEXGENhYRCf7hyEbWrR3FewATdCEebj6znwMfQkhRYHRLpJ',
+            # zero depth with non-zero index (xprv)
+            #'xprv9s21ZrQH4r4TsiLvyLXqM9P7k1K3EYhA1kkD6xuquB5i39AU8KF4'
+            #'2acDyL3qsDbU9NmZn6MsGSUYZEsuoePmjzsB3eFKSUEh3Gu1N3cqVUN',
+            # zero depth with non-zero index (xpub)
+            #'xpub661MyMwAuDcm6CRQ5N4qiHKrJ39Xe1R1NyfouMKTTWcguwVcfrZJ'
+            #'aNvhpebzGerh7gucBvzEQWRugZDuDXjNDRmXzSZe4c7mnTK97pTvGS8',
+            # unknown extended key version (1)
+            'DMwo58pR1QLEFihHiXPVykYB6fJmsTeHvyTp7hRThAtCX8CvYzgPcn8X'
+            'nmdfHGMQzT7ayAmfo4z3gY5KfbrZWZ6St24UVf2Qgo6oujFktLHdHY4',
+            # unknown extended key version (2)
+            'DMwo58pR1QLEFihHiXPVykYB6fJmsTeHvyTp7hRThAtCX8CvYzgPcn8X'
+            'nmdfHPmHJiEDXkTiJTVV9rHEBUem2mwVbbNfvT2MTcAqj3nesx8uBf9',
+            # private key 0 not in 1..n-1
+            'xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63o'
+            'StZzF93Y5wvzdUayhgkkFoicQZcP3y52uPPxFnfoLZB21Teqt1VvEHx',
+            # private key n not in 1..n-1
+            'xprv9s21ZrQH143K24Mfq5zL5MhWK9hUhhGbd45hLXo2Pq2oqzMMo63o'
+            'StZzFAzHGBP2UuGCqWLTAPLcMtD5SDKr24z3aiUvKr9bJpdrcLg1y3G',
+            # invalid pubkey 020000000000000000000000000000000000000000000000000000000000000007
+            'xpub661MyMwAqRbcEYS8w7XLSVeEsBXy79zSzH1J8vCdxAZningWLdN3'
+            'zgtU6Q5JXayek4PRsn35jii4veMimro1xefsM58PgBMrvdYre8QyULY',
+            # invalid checksum
+            'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPP'
+            'qjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHL',
+        ]
+
+        key_out = POINTER(ext_key)()
+        for base58_key in invalid_keys:
+            ret = bip32_key_from_base58_alloc(utf8(base58_key), byref(key_out))
+            self.assertEqual(ret, WALLY_EINVAL)
+
     def do_test_vector(self, vec):
 
         # BIP32 Test vector 1

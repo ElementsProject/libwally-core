@@ -577,6 +577,9 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
             key_out->version == BIP32_VER_TEST_PRIVATE)
             return wipe_key_fail(key_out); /* Public key data in private key */
 
+        if (wally_ec_public_key_verify(bytes, sizeof(key_out->pub_key)) != WALLY_OK)
+            return wipe_key_fail(key_out); /* Invalid public key */
+
         copy_in(key_out->pub_key, bytes, sizeof(key_out->pub_key));
         bip32_key_strip_private_key(key_out);
     }
