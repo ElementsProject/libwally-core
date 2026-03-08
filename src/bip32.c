@@ -276,7 +276,7 @@ int bip32_path_from_str_len(const char *str, uint32_t child_num,
                             size_t *written)
 {
     return bip32_path_from_str_n_len(str, str ? strlen(str) : 0, child_num,
-                           multi_index, flags, written);
+                                     multi_index, flags, written);
 }
 
 int bip32_path_str_n_get_features(const char *str, size_t str_len,
@@ -419,10 +419,10 @@ int bip32_key_from_seed(const unsigned char *bytes, size_t bytes_len,
 }
 
 #define ALLOC_KEY() \
-    if (!output) \
+        if (!output) \
         return WALLY_EINVAL; \
-    *output = wally_calloc(sizeof(struct ext_key)); \
-    if (!*output) \
+        *output = wally_calloc(sizeof(struct ext_key)); \
+        if (!*output) \
         return WALLY_ENOMEM
 
 int bip32_key_from_seed_custom_alloc(const unsigned char *bytes, size_t bytes_len,
@@ -471,6 +471,10 @@ static bool key_is_valid(const struct ext_key *hdkey)
         mem_is_zero(hdkey->pub_key + 1, sizeof(hdkey->pub_key) - 1))
         return false;
 
+    if (wally_ec_public_key_verify(hdkey->pub_key,
+                                   sizeof(hdkey->pub_key)) != WALLY_OK)
+        return false;
+
     if (hdkey->priv_key[0] != BIP32_FLAG_KEY_PUBLIC &&
         hdkey->priv_key[0] != BIP32_FLAG_KEY_PRIVATE)
         return false;
@@ -480,7 +484,8 @@ static bool key_is_valid(const struct ext_key *hdkey)
         return false;
 
     if (is_master &&
-        !mem_is_zero(hdkey->parent160, sizeof(hdkey->parent160)))
+        (hdkey->child_num != 0 ||
+         !mem_is_zero(hdkey->parent160, sizeof(hdkey->parent160))))
         return false;
 
     return true;
@@ -580,6 +585,11 @@ int bip32_key_unserialize(const unsigned char *bytes, size_t bytes_len,
         copy_in(key_out->pub_key, bytes, sizeof(key_out->pub_key));
         bip32_key_strip_private_key(key_out);
     }
+
+    /* Validate the fully populated key (covers depth-0 fingerprint/child_num,
+     * public key point-on-curve, and all other structural checks) */
+    if (!key_is_valid(key_out))
+        return wipe_key_fail(key_out);
 
     key_compute_hash160(key_out);
     return WALLY_OK;
@@ -1137,9 +1147,9 @@ static int getb_impl(const struct ext_key *hdkey,
 }
 
 #define GET_B(name) \
-    int bip32_key_get_ ## name(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len) { \
-        return getb_impl(hdkey, hdkey->name, sizeof(hdkey->name), bytes_out, len); \
-    }
+        int bip32_key_get_ ## name(const struct ext_key *hdkey, unsigned char *bytes_out, size_t len) { \
+            return getb_impl(hdkey, hdkey->name, sizeof(hdkey->name), bytes_out, len); \
+        }
 
 GET_B(chain_code)
 GET_B(parent160)
@@ -1161,12 +1171,12 @@ int bip32_key_get_priv_key(const struct ext_key *hdkey, unsigned char *bytes_out
 
 
 #define GET_I(name) \
-    int bip32_key_get_ ## name(const struct ext_key *hdkey, size_t *written) { \
-        if (written) *written = 0; \
-        if (!hdkey || !written) return WALLY_EINVAL; \
-        *written = hdkey->name; \
-        return WALLY_OK; \
-    }
+        int bip32_key_get_ ## name(const struct ext_key *hdkey, size_t *written) { \
+            if (written) *written = 0; \
+            if (!hdkey || !written) return WALLY_EINVAL; \
+            *written = hdkey->name; \
+            return WALLY_OK; \
+        }
 
 GET_I(depth)
 GET_I(child_num)
