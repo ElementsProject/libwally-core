@@ -59,6 +59,61 @@ int keypair_xonly_tweak_add(secp256k1_keypair *keypair, const unsigned char *twe
 
 
 void wally_clear(void *p, size_t len);
+
+/* Scrub SSE/AVX vector registers that may still hold copies of a secret.
+ *
+ * On x86, glibc's optimised memcpy/memset/memcmp use SSE/AVX instructions
+ * for buffers of ~16 bytes or larger. After such a call returns, the
+ * vector registers (xmm0..xmm15 / ymm0..ymm15) still contain bytes from
+ * the secret. The dynamic linker's _dl_runtime_resolve_xsavec spills all
+ * vector registers to a stack-allocated save area on the next PLT call,
+ * so the secret bytes become readable from the caller's stack frame.
+ *
+ * This helper zeroes those registers via a single VZEROALL (or per-register
+ * PXOR on pre-AVX) so the linker's xsave area receives all-zeros instead.
+ * The "memory" clobber prevents the optimiser from dropping or reordering
+ * the scrub. Call this at the exit point of every function that touches
+ * secret bytes via libc memcpy/memset/memcmp.
+ *
+ * Caveats:
+ *   - x86-only. On non-x86 architectures (ARM/AArch64/RISC-V) the helper
+ *     compiles to nothing. Those platforms have analogous vector-register
+ *     save mechanisms; if test_clear regresses on them, a per-arch scrub
+ *     is needed here.
+ *   - Does not address secrets leaked through heap allocations, side
+ *     channels, or pages swapped to disk.
+ */
+static inline void wally_scrub_vec_regs(void)
+{
+#if defined(__x86_64__) || defined(__i386__)
+#  if defined(__AVX__)
+    __asm__ __volatile__("vzeroall" ::: "memory");
+#  else
+    __asm__ __volatile__(
+        "pxor %%xmm0, %%xmm0\n\t"
+        "pxor %%xmm1, %%xmm1\n\t"
+        "pxor %%xmm2, %%xmm2\n\t"
+        "pxor %%xmm3, %%xmm3\n\t"
+        "pxor %%xmm4, %%xmm4\n\t"
+        "pxor %%xmm5, %%xmm5\n\t"
+        "pxor %%xmm6, %%xmm6\n\t"
+        "pxor %%xmm7, %%xmm7\n\t"
+#    ifdef __x86_64__
+        "pxor %%xmm8, %%xmm8\n\t"
+        "pxor %%xmm9, %%xmm9\n\t"
+        "pxor %%xmm10, %%xmm10\n\t"
+        "pxor %%xmm11, %%xmm11\n\t"
+        "pxor %%xmm12, %%xmm12\n\t"
+        "pxor %%xmm13, %%xmm13\n\t"
+        "pxor %%xmm14, %%xmm14\n\t"
+        "pxor %%xmm15, %%xmm15\n\t"
+#    endif
+        ::: "memory"
+    );
+#  endif
+#endif
+}
+
 void wally_clear_2(void *p, size_t len, void *p2, size_t len2);
 void wally_clear_3(void *p, size_t len, void *p2, size_t len2,
                    void *p3, size_t len3);
