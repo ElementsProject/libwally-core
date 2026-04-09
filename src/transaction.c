@@ -1857,6 +1857,8 @@ int wally_tx_get_weight(const struct wally_tx *tx, size_t *written)
 
 int wally_tx_vsize_from_weight(size_t weight, size_t *written)
 {
+    if (!written)
+        return WALLY_EINVAL;
     *written = (weight + 3) / 4; /* ceil(weight/4) */
     return WALLY_OK;
 }
