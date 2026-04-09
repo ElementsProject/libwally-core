@@ -80,17 +80,54 @@ class AESTests(unittest.TestCase):
         return [lines[x:x+4] for x in range(0, len(lines), 4)]
 
     def test_aes_cbc(self):
+        out_buf, out_len = make_cbuffer('00' * 80)
+        E, D = self.ENCRYPT, self.DECRYPT
+        # Encryption/decryption cases
         for c in self.get_cbc_cases():
             plain, key, iv, cypher = [make_cbuffer(s)[0] for s in c]
 
-            for p, f, o in [(plain,  self.ENCRYPT, cypher),
-                            (cypher, self.DECRYPT, plain)]:
-
-                out_buf, out_len = make_cbuffer('00' * len(o))
+            for p, f, o in [(plain,  E, cypher), (cypher, D, plain)]:
                 ret, written = wally_aes_cbc(key, len(key), iv, len(iv),
-                                             p, len(p), f, out_buf, out_len)
+                                             p or None, len(p), f, out_buf, out_len)
                 self.assertEqual((ret, written), (0, len(o)))
-                self.assertEqual(h(out_buf), h(o))
+                self.assertEqual(h(out_buf[:written]), h(o))
+                # Passing a NULL output buffer with zero length returns the
+                # number of bytes required for encrypted/decrypted output
+                ret, written = wally_aes_cbc(key, len(key), iv, len(iv),
+                                             p or None, len(p), f, None, 0)
+                self.assertEqual((ret, written), (0, len(o)))
+                # wally_aes_cbc_get_maximum_length returns tha maximum
+                # number of bytes required.
+                ret, max_len = wally_aes_cbc_get_maximum_length(key, len(key), iv, len(iv),
+                                                                p or None, len(p), f)
+                self.assertEqual(ret, 0)
+                self.assertTrue(max_len >= written and max_len % 16 == 0)
+
+        # Invalid args
+        invalid_cases = [
+            # NULL key
+            (None, len(key), iv,   len(iv), cypher, len(cypher), D, out_buf, out_len),
+            # Empty key
+            (key,   0,       iv,   len(iv), cypher, len(cypher), D, out_buf, out_len),
+            # NULL IV
+            (key,  len(key), None, len(iv), cypher, len(cypher), D, out_buf, out_len),
+            # Empty IV
+            (key,  len(key), iv,   0,       cypher, len(cypher), D, out_buf, out_len),
+            # NULL cyphertext
+            (key,  len(key), iv,   len(iv), None,   len(cypher), D, out_buf, out_len),
+            # Empty cyphertext
+            (key,  len(key), iv,   len(iv), cypher, 0,           D, out_buf, out_len),
+            # Invalid flags
+            (key,  len(key), iv,   len(iv), cypher, len(cypher), 3, out_buf, out_len),
+            # NULL out_buf
+            (key,  len(key), iv,   len(iv), cypher, len(cypher), D, None, out_len),
+        ]
+        for c in invalid_cases:
+            if c[-1] == out_len and c[-2] == out_buf:
+                ret, written = wally_aes_cbc_get_maximum_length(*c[:-2])
+                self.assertEqual((ret, written), (WALLY_EINVAL, 0))
+            ret, written = wally_aes_cbc(*c)
+            self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
     def test_aes_cbc_with_ecdh_key(self):
         ENCRYPT, DECRYPT, _ = 1, 2, True

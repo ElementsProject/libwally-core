@@ -5,8 +5,6 @@
 #include "ctaes/ctaes.h"
 #include "ctaes/ctaes.c"
 
-#define ALL_OPS (AES_FLAG_ENCRYPT | AES_FLAG_DECRYPT)
-
 static bool is_valid_key_len(size_t key_len)
 {
     return key_len == AES_KEY_LEN_128 || key_len == AES_KEY_LEN_192 ||
@@ -14,11 +12,15 @@ static bool is_valid_key_len(size_t key_len)
 }
 
 static bool are_valid_args(const unsigned char *key, size_t key_len,
-                           const unsigned char *bytes, size_t bytes_len, uint32_t flags)
+                           const unsigned char *bytes, size_t bytes_len,
+                           uint32_t flags, size_t *written)
 {
-    return key && is_valid_key_len(key_len) &&
-           (bytes != NULL || (bytes == NULL && bytes_len == 0 && (flags & AES_FLAG_ENCRYPT))) &&
-           (flags == AES_FLAG_ENCRYPT || flags == AES_FLAG_DECRYPT);
+    if (written)
+        *written = 0;
+    if (!key || !is_valid_key_len(key_len) || BYTES_INVALID(bytes, bytes_len) ||
+        (flags != AES_FLAG_ENCRYPT && flags != AES_FLAG_DECRYPT) || !written)
+        return false;
+    return true;
 }
 
 static void aes_enc(AES256_ctx *ctx,
@@ -75,10 +77,8 @@ int wally_aes_len(const unsigned char *key, size_t key_len,
                   const unsigned char *bytes, size_t bytes_len,
                   uint32_t flags, size_t *written)
 {
-    if (written)
-        *written = 0;
-    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
-        !bytes_len || bytes_len % AES_BLOCK_LEN || !written)
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags, written) ||
+        !bytes_len || bytes_len % AES_BLOCK_LEN)
         return WALLY_EINVAL;
     *written = bytes_len;
     return WALLY_OK;
@@ -90,8 +90,9 @@ int wally_aes(const unsigned char *key, size_t key_len,
               unsigned char *bytes_out, size_t len)
 {
     AES256_ctx ctx;
+    size_t written;
 
-    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags, &written) ||
         len % AES_BLOCK_LEN || !bytes_len || bytes_len % AES_BLOCK_LEN ||
         !bytes_out || !len)
         return WALLY_EINVAL;
@@ -105,43 +106,52 @@ int wally_aes(const unsigned char *key, size_t key_len,
     return WALLY_OK;
 }
 
+static bool are_valid_aes_cbc_args(const unsigned char *key, size_t key_len,
+                                   const unsigned char *iv, size_t iv_len,
+                                   const unsigned char *bytes, size_t bytes_len,
+                                   uint32_t flags,
+                                   unsigned char *bytes_out, size_t len,
+                                   size_t *written)
+{
+    if (!are_valid_args(key, key_len, bytes, bytes_len, flags, written) ||
+        !iv || iv_len != AES_BLOCK_LEN || BYTES_INVALID(bytes_out, len))
+        return false;
+
+    if (flags & AES_FLAG_ENCRYPT) {
+        if (len % AES_BLOCK_LEN)
+            return false; /* Output must be a block length multiple if given */
+    } else {
+        if (bytes_len % AES_BLOCK_LEN)
+            return false; /* Input must be a block length multiple if given */
+    }
+    return true;
+}
+
 int wally_aes_cbc_get_maximum_length(const unsigned char *key, size_t key_len,
                                      const unsigned char *iv, size_t iv_len,
                                      const unsigned char *bytes, size_t bytes_len,
                                      uint32_t flags,
                                      size_t *written)
 {
-    if (written)
-        *written = 0;
-
-    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
-        ((flags & AES_FLAG_DECRYPT) && (bytes_len % AES_BLOCK_LEN)) ||
-        !iv || iv_len != AES_BLOCK_LEN || !written)
+    if (!are_valid_aes_cbc_args(key, key_len, iv, iv_len, bytes, bytes_len,
+                                flags, NULL, 0, written))
         return WALLY_EINVAL;
-
     *written = ((bytes_len / AES_BLOCK_LEN) + 1) * AES_BLOCK_LEN;
     return WALLY_OK;
 }
 
 int wally_aes_cbc(const unsigned char *key, size_t key_len,
                   const unsigned char *iv, size_t iv_len,
-                  const unsigned char *bytes, size_t bytes_len,
-                  uint32_t flags,
-                  unsigned char *bytes_out, size_t len,
-                  size_t *written)
+                  const unsigned char *bytes, size_t bytes_len, uint32_t flags,
+                  unsigned char *bytes_out, size_t len, size_t *written)
 {
     unsigned char buf[AES_BLOCK_LEN];
     AES256_ctx ctx;
     size_t i, n, blocks;
     unsigned char remainder;
 
-    if (written)
-        *written = 0;
-
-    if (!are_valid_args(key, key_len, bytes, bytes_len, flags) ||
-        ((flags & AES_FLAG_ENCRYPT) && (len % AES_BLOCK_LEN)) ||
-        ((flags & AES_FLAG_DECRYPT) && (bytes_len % AES_BLOCK_LEN)) ||
-        !iv || iv_len != AES_BLOCK_LEN || !written)
+    if (!are_valid_aes_cbc_args(key, key_len, iv, iv_len, bytes, bytes_len,
+                                flags, bytes_out, len, written))
         return WALLY_EINVAL;
 
     blocks = bytes_len / AES_BLOCK_LEN;
@@ -173,6 +183,7 @@ int wally_aes_cbc(const unsigned char *key, size_t key_len,
         goto finish; /* Inform caller how much space is needed */
 
     if (!bytes_out) {
+        *written = 0;
         wally_clear_2(buf, sizeof(buf), &ctx, sizeof(ctx));
         return WALLY_EINVAL;
     }
