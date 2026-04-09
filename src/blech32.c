@@ -321,8 +321,10 @@ int wally_confidential_addr_from_addr_segwit(
         memcpy(buf, pub_key, pub_key_len);
         written -= 2;   /* ignore witnessVersion & hashSize */
         written += EC_PUBLIC_KEY_LEN;
-        if (!blech32_addr_encode(result, confidential_addr_family, witver & 0xff, buf, written))
-            return WALLY_ERROR;
+        if (!blech32_addr_encode(result, confidential_addr_family, witver & 0xff, buf, written)) {
+            ret = WALLY_ERROR;
+            goto done;
+        }
 
         *output = wally_strdup(result);
         ret = (*output) ? WALLY_OK : WALLY_ENOMEM;
