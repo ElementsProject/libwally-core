@@ -742,7 +742,7 @@ int wally_tx_input_init_alloc(const unsigned char *txhash, size_t txhash_len,
                               script, script_len, witness, *output);
 
     if (ret != WALLY_OK) {
-        clear_and_free(*output, sizeof(struct wally_tx_output));
+        clear_and_free(*output, sizeof(struct wally_tx_input));
         *output = NULL;
     }
     return ret;
