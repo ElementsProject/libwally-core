@@ -606,7 +606,7 @@ static int legacy_signature_hash(
         !bytes_out || len != SHA256_LEN)
         return WALLY_EINVAL;
 
-    if (index >= tx->num_inputs || (sh_single  && index >= tx->num_outputs)) {
+    if (index >= tx->num_inputs || (sh_single && index >= tx->num_outputs)) {
         memset(bytes_out, 0, SHA256_LEN);
         bytes_out[0] = 0x1;
         return WALLY_OK;
@@ -832,7 +832,9 @@ static int bip341_signature_hash(
     const bool sh_anyprevout_anyscript = bip341_is_input_hash_type(sighash, WALLY_SIGHASH_ANYPREVOUTANYSCRIPT);
     cursor_io io;
 
-    if (index >= tx->num_inputs || (annex && *annex != 0x50))
+    if (index >= tx->num_inputs ||
+        (output_type == WALLY_SIGHASH_SINGLE && index >= tx->num_outputs) ||
+        (annex && *annex != 0x50))
         return WALLY_EINVAL;
 
     if (is_elements) {
