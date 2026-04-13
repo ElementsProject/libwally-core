@@ -252,14 +252,14 @@ int map_add(struct wally_map *map_in,
         struct wally_map_item *new_item = map_in->items + map_in->num_items;
 
         if (!key) {
-            /* Integer key */
-            if (new_item->key)
-                clear_and_free_bytes(&new_item->key, &new_item->key_len);
+            new_item->key = NULL; /* Integer key */
         } else if (!clone_bytes(&new_item->key, key, key_len))
             return WALLY_ENOMEM; /* Failed to allocate byte key */
         new_item->key_len = key_len;
 
-        if (val) {
+        if (!val) {
+            new_item->value = NULL;
+        } else {
             if (take_value)
                 new_item->value = (unsigned char *)val;
             else if (!clone_bytes(&new_item->value, val, val_len)) {

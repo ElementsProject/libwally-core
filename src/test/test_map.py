@@ -194,6 +194,15 @@ class MapTests(unittest.TestCase):
 
         self.assertEqual(wally_map_free(m), WALLY_OK)
 
+        # Test re-adding an integer after removing bytes
+        m = pointer(wally_map())
+        self.assertEqual(wally_map_init_alloc(0, None, m), WALLY_OK)
+        self.assertEqual(wally_map_add(*[m, *cases[0]]), WALLY_OK)
+        self.assertEqual(wally_map_add(*[m, *cases[1]]), WALLY_OK)
+        self.assertEqual(wally_map_remove(m, cases[0][0], cases[0][1]), WALLY_OK)
+        self.assertEqual(wally_map_add_integer(m, 1, cases[0][0], cases[0][1]), WALLY_OK)
+        self.assertEqual(wally_map_free(m), WALLY_OK)
+
     def test_keypath_map(self):
         """Test keypath map functions"""
         #
