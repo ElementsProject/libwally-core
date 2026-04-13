@@ -1,12 +1,27 @@
 # Changes
 
+## Version 1.5.3
+
+### Added
+- bip32: Add updated BIP checks to bip32_key_unserialize().
+- build: Add support for fuzzing wally API calls.
+
+### Fixed
+- psbt: corectly handle allocation failures in psbt_set_global_tx().
+- tx: Avoid quadratic behaviour parsing txs with a huge number of witnesses.
+- tx: Fix parsing Liquid transactions with short commitments.
+- tx: Reject non-corresponding output as per bip341 when signing.
+- map: Fix incorrect clear when reinserting an integer after removing bytes.
+- js: Bump webpack, serialize-javascript and terser-webpack-plugin dependencies.
+- Various minor code and build fixes.
+
 ## Version 1.5.2
 
 ### Added
-- taproot: add bip341_control_block_verify().
+- taproot: Add bip341_control_block_verify().
 
 ### Changed
-- map: ignore duplicates in map_merkle_path_add() for consistency.
+- map: Ignore duplicates in map_merkle_path_add() for consistency.
 
 ### Fixed
 - build: Fix building with the Elements ABI disabled.
