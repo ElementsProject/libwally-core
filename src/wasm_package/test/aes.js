@@ -79,17 +79,24 @@ test('AES ECB', t => {
 
 test('AES CBC', function (t) {
     for (let i = 0; i < cbc_lines.length / 4; ++i) {
-        const plain = Buffer.from(cbc_lines[i * 4].split("=")[1], 'hex')
+        var plain = Buffer.from(cbc_lines[i * 4].split("=")[1], 'hex')
+        if (plain.length == 0) {
+            plain = null
+        }
         const key = Buffer.from(cbc_lines[i * 4 + 1].split("=")[1], 'hex')
         const iv = Buffer.from(cbc_lines[i * 4 + 2].split("=")[1], 'hex')
-        const cypher = Buffer.from(cbc_lines[i * 4 + 3].split("=")[1], 'hex')
+        var cypher = Buffer.from(cbc_lines[i * 4 + 3].split("=")[1], 'hex')
+        if (cypher.length == 0) {
+            cypher = null
+        }
 
+        console.log(i);
         const encryptResult = wally.aes_cbc(key, iv, plain, wally.AES_FLAG_ENCRYPT)
         assert.deepEqual(encryptResult, cypher,
-            'aes CBC encrypt(' + plain.toString('hex') + ')')
+            'aes CBC encrypt(' + (plain ?? "null").toString('hex') + ')')
 
         const decryptResult = wally.aes_cbc(key, iv, cypher, wally.AES_FLAG_DECRYPT)
-        assert.deepEqual(decryptResult, plain,
-            'aes CBC decrypt(' + cypher.toString('hex') + ')')
+        assert.deepEqual(decryptResult, plain ?? Buffer.from([]),
+            'aes CBC decrypt(' + (cypher ?? "null").toString('hex') + ')')
     }
 })
