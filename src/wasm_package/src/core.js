@@ -46,6 +46,11 @@ const _wally_free_string = Module.cwrap('wally_free_string', 'number', ['number'
 types.IntArray = (IntArrayType, heap, wrap=x=>x) => ({
     wasm_types: ['number', 'number'],
     to_wasm: int_arr => {
+        if (int_arr === null && IntArrayType == Uint8Array) {
+            return {
+                args: [null, 0]
+            }
+        }
         if (!Array.isArray(int_arr) && !(int_arr instanceof IntArrayType)) {
             throw new WallyArrayNumTypeError(int_arr, IntArrayType)
         }
