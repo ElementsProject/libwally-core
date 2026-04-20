@@ -44,6 +44,15 @@ $ make
 $ make check
 ```
 
+### Building with Docker
+
+[Install docker](https://docs.docker.com/get-docker/) and run:
+
+```bash
+# Build an Ubuntu image with the library and run tests
+$ docker build -t libwally-core .
+```
+
 ### Building on macOS
 
 Using homebrew,
