@@ -2906,7 +2906,7 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
         else if (!item->value || !item->value_len)
             ret = WALLY_EINVAL; /* No key value */
         else if (!(node = wally_calloc(sizeof(*node))))
-            ret = WALLY_EINVAL;
+            ret = WALLY_ENOMEM;
         else {
             node->data = (const char*)item->value;
             node->data_len = item->value_len;
