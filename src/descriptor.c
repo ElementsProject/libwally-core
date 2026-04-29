@@ -310,7 +310,12 @@ static bool strtoll_n(const char *str, size_t str_len, int64_t *v)
     char *end = NULL;
 
     if (!str_len || str_len > sizeof(buf) - 1u ||
-        (str[0] != '-' && (str[0] < '0' || str[0] > '9')))
+        /* Must start with '-' or a number */
+        (str[0] != '-' && (str[0] < '0' || str[0] > '9')) ||
+        /* Must not contain leading zeros */
+        (str[0] == '0' && str_len > 1) ||
+        /* Must not be negative and contain leading zeros */
+        (str[0] == '-' && str_len > 1 && str[1] == '0'))
         return false; /* Too short/long, or invalid format */
 
     memcpy(buf, str, str_len);
@@ -2893,9 +2898,10 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
     for (i = 0; ret == WALLY_OK && i < map_in->num_items; ++i) {
         const struct wally_map_item *item = &map_in->items[i];
         if (!item->key || item->key_len < 2 || item->key[0] != '@' ||
-            !strtoll_n((const char *)item->key + 1, item->key_len - 1, &v) || v < 0)
-            ret = WALLY_EINVAL; /* Policy keys can only be @n */
-        else if ((size_t)v != i)
+            !strtoll_n((const char *)item->key + 1, item->key_len - 1, &v) || v < 0) {
+            /* Policy keys can only be @n: positive integers */
+            ret = WALLY_EINVAL;
+        } else if ((size_t)v != i)
             ret = WALLY_EINVAL; /* Must be sorted in order from 0-n */
         else if (!item->value || !item->value_len)
             ret = WALLY_EINVAL; /* No key value */

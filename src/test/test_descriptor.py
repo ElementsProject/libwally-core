@@ -370,6 +370,13 @@ class DescriptorTests(unittest.TestCase):
             # Key multi-paths must be disjoint sets
             [P|K, 'sh(multi(1,@0/<0;1>/*,@0/<1;2>/*))', [xpub1]],
             [P|K, 'sh(multi(1,@0/<1;0>/*,@0/<2;1>/*))', [xpub1]],
+            # Keys must not be negative
+            [P, 'pkh(@-1/*)', {'@-1': xpub1}],
+            # Keys must not have leading space
+            [P, 'pkh(@ 0/*)', {'@ 0': xpub1}],
+            # Keys must not have leading zeros
+            [P, 'pkh(@00/*)', {'@00': xpub1}],
+            [P, 'sh(multi(1,@0/*,@01/*))', {'@0': xpub1, '@01': xpub2}],
         ]
         d = c_void_p()
         for flags, policy, key_items in bad_args:
