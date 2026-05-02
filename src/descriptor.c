@@ -301,7 +301,14 @@ static const struct addr_ver_t *addr_ver_from_family(
 static const struct ms_builtin_t *builtin_get(const ms_node *node);
 static int generate_script(ms_ctx *ctx, ms_node *node,
                            unsigned char *script, size_t script_len, size_t *written);
-static bool is_valid_policy_map(const struct wally_map *map_in);
+static int is_valid_policy_map(const struct wally_map *map_in, bool *is_elements);
+
+static bool is_elements_policy_map(const struct wally_map *map_in)
+{
+    /* Elements policy maps must have the blinding key @B first */
+    return map_in->num_items && map_in->items[0].key_len == 2 &&
+        map_in->items[0].key[0] == '@' && map_in->items[0].key[1] == 'B';
+}
 
 /* Wrapper for strtoll */
 static bool strtoll_n(const char *str, size_t str_len, int64_t *v)
@@ -399,7 +406,8 @@ static bool is_identifer_char(char c)
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 static bool is_policy_start_char(char c) { return c == '@'; }
-static bool is_policy_identifer_char(char c) { return c >= '0' && c <= '9'; }
+static bool is_policy_id_char(char c) { return c >= '0' && c <= '9'; }
+static bool is_elements_policy_id_char(char c) { return c == 'B' || is_policy_id_char(c); }
 
 static int canonicalize_impl(const char *descriptor,
                              const struct wally_map *vars_in, uint32_t flags,
@@ -411,7 +419,8 @@ static int canonicalize_impl(const char *descriptor,
     int key_index_hwm = -1;
     const char *p = descriptor, *start;
     char *out;
-    bool found_policy_single = false, found_policy_multi = false;;
+    bool found_policy_single = false, found_policy_multi = false;
+    bool found_policy_elements = false;
 
     *output = NULL;
     *num_substitutions = 0;
@@ -419,10 +428,15 @@ static int canonicalize_impl(const char *descriptor,
         return WALLY_EINVAL;
 
     if (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE) {
-        if (!is_valid_policy_map(vars_in))
-            return WALLY_EINVAL; /* Invalid policy variables given */
+        const int ret = is_valid_policy_map(vars_in, &found_policy_elements);
+        if (ret != WALLY_OK)
+            return ret; /* Invalid policy variables given */
+#ifndef BUILD_ELEMENTS
+        if (found_policy_elements)
+            return WALLY_EINVAL; /* No Elements support */
+#endif
         is_id_start = is_policy_start_char;
-        is_id_char = is_policy_identifer_char;
+        is_id_char = found_policy_elements ? is_elements_policy_id_char : is_policy_id_char;
     }
 
     /* First, find the length of the canonicalized descriptor */
@@ -457,6 +471,17 @@ static int canonicalize_impl(const char *descriptor,
                         return WALLY_EINVAL; /* Must be ordered with no gaps */
                     if (key_index > key_index_hwm)
                         key_index_hwm = key_index;
+                    if (found_policy_elements && key_index == 0) {
+                        /* The blinding key in a ct() policy */
+                        if (*p != ')' && *p != ',')
+                            return WALLY_EINVAL; /* Must be a single key */
+                        continue;
+                    }
+                    /* Check for a key path. Note that policies, unlike
+                     * raw descriptors, cannot be used to encode single
+                     * keys (as they are used to register wallet structures,
+                     * not to expose single addresses).
+                     */
                     if (*p++ != '/')
                         return WALLY_EINVAL;
                     ++required_len;
@@ -2331,7 +2356,7 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
 }
 
 static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
-                                  ms_node *node, ms_node *parent)
+                                  ms_node *node, ms_node *parent, bool force_ct)
 {
     unsigned char privkey[2 + EC_PRIVATE_KEY_LEN + BASE58_CHECKSUM_LEN];
     struct ext_key extkey;
@@ -2340,10 +2365,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     bool is_hex;
 #ifdef BUILD_ELEMENTS
     /* Whether we are the blinding key child of a ct() expression */
-    const bool is_ct_key = parent && parent->kind == KIND_DESCRIPTOR_CT &&
-        !parent->child; /* If no child, we are the first child */
+    const bool is_ct_key = force_ct || (parent && parent->kind == KIND_DESCRIPTOR_CT &&
+        !parent->child); /* If no child, we are the first child */
 #else
     const bool is_ct_key = false;
+    (void)force_ct;
 #endif
 
     if (!node || (parent && !parent->builtin))
@@ -2546,7 +2572,8 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
         node->kind = KIND_NUMBER;
         return WALLY_OK;
     }
-    return analyze_miniscript_key(ctx, flags, node, parent);
+    const bool force_ct = false;
+    return analyze_miniscript_key(ctx, flags, node, parent, force_ct);
 }
 
 static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
@@ -2880,7 +2907,7 @@ static uint32_t get_max_depth(const char *miniscript, size_t miniscript_len)
     return depth == 1 ? max_depth : 0xffffffff;
 }
 
-static bool is_valid_policy_map(const struct wally_map *map_in)
+static int is_valid_policy_map(const struct wally_map *map_in, bool *is_elements)
 {
     struct wally_map keys;
     ms_ctx ctx;
@@ -2888,6 +2915,8 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
     int64_t v;
     size_t i;
     int ret = WALLY_OK;
+
+    *is_elements = false;
 
     if (!map_in || !map_in->num_items)
         return WALLY_EINVAL; /* Must contain at least one key expression */
@@ -2898,37 +2927,56 @@ static bool is_valid_policy_map(const struct wally_map *map_in)
     for (i = 0; ret == WALLY_OK && i < map_in->num_items; ++i) {
         const struct wally_map_item *item = &map_in->items[i];
         if (!item->key || item->key_len < 2 || item->key[0] != '@' ||
-            !strtoll_n((const char *)item->key + 1, item->key_len - 1, &v) || v < 0) {
-            /* Policy keys can only be @n: positive integers */
-            ret = WALLY_EINVAL;
-        } else if ((size_t)v != i)
-            ret = WALLY_EINVAL; /* Must be sorted in order from 0-n */
-        else if (!item->value || !item->value_len)
-            ret = WALLY_EINVAL; /* No key value */
-        else if (!(node = wally_calloc(sizeof(*node))))
+            !item->value || !item->value_len)
+            goto fail; /* No valid key/value */
+
+        if (i == 0 && item->key_len == 2 && item->key[1] == 'B') {
+            /* @B can be used as the first (blinding) key for ct() policies */
+            *is_elements = true;
+        } else {
+            /* Policy keys can only be @n: positive integers,
+               and must be sorted in order from 0-n */
+            if (!strtoll_n((const char *)item->key + 1, item->key_len - 1, &v) ||
+                v < 0 || (size_t)v + (*is_elements ? 1 : 0) != i)
+                goto fail;
+        }
+
+        if (!(node = wally_calloc(sizeof(*node)))) {
             ret = WALLY_ENOMEM;
-        else {
-            node->data = (const char*)item->value;
-            node->data_len = item->value_len;
-            if (analyze_miniscript_key(&ctx, 0, node, NULL) != WALLY_OK ||
-                node->kind != KIND_BIP32_PUBLIC_KEY ||
-                node->child_path_len) {
+            goto fail_nomem;
+        }
+
+        /* Parse the key data */
+        node->data = (const char*)item->value;
+        node->data_len = item->value_len;
+        const bool force_ct = *is_elements && i == 0;
+        ret = analyze_miniscript_key(&ctx, 0, node, NULL, force_ct);
+        if (ret == WALLY_OK) {
+            if (force_ct && node->kind == KIND_PRIVATE_KEY) {
+                /* Valid 64 byte hex blinding key: */
+                /* no-op */;
+            } else if (node->kind != KIND_BIP32_PUBLIC_KEY || node->child_path_len) {
                 ret = WALLY_EINVAL; /* Only BIP32 xpubs are allowed */
-            } else if (ctx.features & (WALLY_MS_IS_MULTIPATH | WALLY_MS_IS_RANGED)) {
+            }
+            if (ctx.features & (WALLY_MS_IS_MULTIPATH | WALLY_MS_IS_RANGED)) {
                 /* Range or multipath must be part of the expression, not the key */
                 ret = WALLY_EINVAL;
-            } else {
+            } else if (ret == WALLY_OK) {
                 ret = wally_map_add(&keys, item->value, item->value_len, NULL, 0);
             }
-            node_free(node);
         }
+        node_free(node);
     }
-    if (ret == WALLY_OK && keys.num_items != map_in->num_items)
-        ret = WALLY_EINVAL; /* One of more keys is not unique */
+    if (ret == WALLY_OK && keys.num_items != map_in->num_items) {
+        /* One of more keys is not unique */
+fail:
+        ret = WALLY_EINVAL;
+    }
+fail_nomem:
     clear_and_free(ctx.keys.items,
                    ctx.keys.num_items * sizeof(*ctx.keys.items));
     wally_map_clear(&keys);
-    return ret == WALLY_OK;
+    return ret;
 }
 
 int wally_descriptor_parse(const char *miniscript,
@@ -2966,6 +3014,10 @@ int wally_descriptor_parse(const char *miniscript,
     if (ret == WALLY_OK)
         ret = canonicalize_impl(miniscript, vars_in, flags & MS_FLAGS_CANONICALIZE,
                                 &ctx->src, &num_substitutions);
+    if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE)) {
+        if (!num_substitutions)
+            ret = WALLY_EINVAL; /* Policy with no keys substituted */
+    }
     if (ret == WALLY_OK) {
         ctx->src_len = strlen(ctx->src);
         ctx->features = WALLY_MS_IS_DESCRIPTOR; /* Un-set if miniscript found */
@@ -2981,12 +3033,17 @@ int wally_descriptor_parse(const char *miniscript,
         if (ret == WALLY_OK)
             ret = node_generation_size(ctx->top_node, &ctx->script_len);
         if (ret == WALLY_OK && (flags & WALLY_MINISCRIPT_POLICY_TEMPLATE)) {
-            if (ctx->keys.num_items != num_substitutions)
+            const bool have_blinding_key = is_elements_policy_map(vars_in);
+            const size_t num_skipped_keys = have_blinding_key ? 1 : 0;
+            if (ctx->keys.num_items != num_substitutions - num_skipped_keys)
                 ret = WALLY_EINVAL; /* non-substituted key in the expression */
-            else if (vars_in && ctx->keys.num_items < vars_in->num_items)
+            else if (vars_in && ctx->keys.num_items + num_skipped_keys < vars_in->num_items)
                 ret = WALLY_EINVAL; /* non-substituted key in substitutions */
             else if (ctx->num_variants > 1 || ctx->num_multipaths > 2)
                 ret = WALLY_EINVAL; /* Solved cardinality must be 1 or 2 */
+            else if ((ctx->features & (WALLY_MS_IS_SLIP77 | WALLY_MS_IS_ELIP150)) &&
+                    !have_blinding_key)
+                ret = WALLY_EINVAL; /* this ct policy requires a blinding key var */
             else if (flags & WALLY_MINISCRIPT_UNIQUE_KEYPATHS)
                 ret = ensure_unique_policy_keys(ctx);
         }
