@@ -338,6 +338,7 @@ class DescriptorTests(unittest.TestCase):
     def test_policy(self):
         """Test policy parsing"""
         # Substitution variables
+        slip77 = 'b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04'
         xpriv = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         xpub1 = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL'
         xpub2 = 'xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU'
@@ -384,6 +385,33 @@ class DescriptorTests(unittest.TestCase):
             ret = wally_descriptor_parse(policy, keys, NETWORK_BTC_MAIN, flags, d)
             self.assertEqual(ret, WALLY_EINVAL)
             wally_map_free(keys)
+
+        # Elements confidential policy parsing"""
+        if not wally_is_elements_build()[1]:
+            return  # Not enabled
+
+        P = POLICY
+        cases = [
+            # slip77 with a 64 byte hex slip77 blinding key
+            [P, 'ct(slip77(@B),elpkh(@0/*))', {'@B': slip77, '@0': xpub1}],
+            # elip150 with a 64 byte hex private blinding key
+            [P, 'ct(@B,elpkh(@0/*))',         {'@B': slip77, '@0': xpub1}],
+            # elip150 with an xpub blinding key
+            [P, 'ct(@B,elpkh(@0/*))',         {'@B': xpub1,  '@0': xpub2}],
+        ]
+        d = c_void_p()
+        for flags, policy, key_items in cases:
+            keys = wally_map_from_dict(key_items)
+            ret = wally_descriptor_parse(policy, keys, NETWORK_LIQUID, flags, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, num_keys = wally_descriptor_get_num_keys(d)
+            self.assertEqual((ret, num_keys), (WALLY_OK, 1)) # Only non-blinding
+            ret, key_str = wally_descriptor_get_key(d, 0)
+            self.assertEqual((ret, key_str), (WALLY_OK, key_items['@0']))
+            ret, key_info = wally_descriptor_get_key(d, BLINDING_KEY_INDEX)
+            self.assertEqual((ret, key_info), (WALLY_OK, key_items['@B']))
+            wally_map_free(keys)
+            wally_descriptor_free(d)
 
     def test_key_iteration(self):
         """Test iterating descriptor keys"""

@@ -50,34 +50,39 @@ static struct wally_map_item g_key_map_items[] = {
     { B("slip77_key"), B("b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04") }
 };
 
-static const struct wally_map g_key_map = {
-    g_key_map_items,
-    NUM_ELEMS(g_key_map_items),
-    NUM_ELEMS(g_key_map_items),
-    NULL
-};
-
 static struct wally_map_item g_policy_map_items[] = {
+    { B("@B"), B("b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04") },
     { B("@0"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") },
     { B("@1"), B("xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU") }
+};
+
+static struct wally_map_item g_elip150_map_items[] = {
+    { B("@B"), B("xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL") },
+    { B("@0"), B("xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU") }
 };
 
 /* key-variable maps for policy testing.
  * The bip refers to these as "key information vectors".
  */
-static const struct wally_map g_policy_maps[3] = {
+static struct wally_map g_vars[] = {
     /* Standard convenience key map for more readable test cases */
-    g_key_map,
+    { g_key_map_items, NUM_ELEMS(g_key_map_items), NUM_ELEMS(g_key_map_items), NULL },
     /* Wallet policy key map with 1 element "@0" */
-    { g_policy_map_items, 1, 1, NULL },
+    { &g_policy_map_items[1], 1, 1, NULL },
     /* Wallet policy key map with 2 elements "@0", "@1"  */
-    { g_policy_map_items, 2, 2, NULL }
+    { &g_policy_map_items[1], 2, 2, NULL },
+    /* Confidential wallet policy key map with 2 elements "@B", "@0" */
+    { &g_policy_map_items[0], 2, 2, NULL },
+    /* Confidential wallet policy key map with 2 elements "@B", "@0" - @B is an elip150 key */
+    { &g_elip150_map_items[0], 2, 2, NULL }
 };
 
+/* Indices into g_vars */
 #define VARS_STD 0
 #define VARS_P_1 1
 #define VARS_P_2 2
 #define VARS_P_B 3
+#define VARS_PKB 4
 
 static const uint32_t g_miniscript_index_0 = 0;
 static const uint32_t g_miniscript_index_16 = 0x10;
@@ -1092,6 +1097,34 @@ static const struct descriptor_test {
         "a9146cc69bc5443e97b8a30918cb6297ba4efb3d6dc387",
         "45w36ywr", VARS_P_2
     },
+#ifdef BUILD_ELEMENTS
+    /* Elements/Confidential wallet policies */
+    {
+        "policy - single asterisk reconciliation (elements)",
+        "elpkh(mainnet_xpub/*)",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0,
+        "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
+        "j4aaf0ll", VARS_STD
+    }, {
+        "policy - single asterisk (elements)",
+        "elpkh(@0/*)", // Becomes "elpkh(mainnet_xpub/*)" i.e. the test case above this
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
+        "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
+        "j4aaf0ll", VARS_P_1
+    }, {
+        "ct policy - reconcile 'single asterisk (elements)'",
+        "ct(slip77(@B),elpkh(@0/*))", // Becomes "elpkh(mainnet_xpub/*)"
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
+        "76a914bb57ca9e62c7084081edc68d2cbc9524a523784288ac",
+        "a9kmw73l", VARS_P_B
+    }, {
+        "ct policy - elip150 pkh",
+        "ct(@B,elpkh(@0/**))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, WALLY_MINISCRIPT_POLICY_TEMPLATE,
+        "76a91462efbe8dc3addddf826260b6be0fac3489b606e088ac",
+        "q5gxyjhu", VARS_PKB
+    },
+#endif
     /*
      * Misc error cases (code coverage)
      */
@@ -1676,6 +1709,43 @@ static const struct descriptor_test {
         "ct(0202fc9a38e765d955e9b0bcc18fa9ae81b0c893e2dd1ef5542a9c73780a086b90,elwpkh(key_4))",
         WALLY_NETWORK_LIQUID, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     }
+    /* Elements/Confidential wallet policy error cases */
+    , {
+        "ct policy errchk - No substitutions",
+        "ct(slip77(b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04),elpkh(xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_1
+    }, {
+        "ct policy errchk - No blinding key substitution",
+        "ct(slip77(b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04),elpkh(@0/**))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_B
+    }, {
+        "ct policy errchk - No blinding key in vars",
+        "ct(slip77(@B),elpkh(@0/**))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_1
+    }, {
+        "ct policy errchk - blinding key with child path",
+        "ct(slip77(@B/**),elpkh(@0/**))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_B
+    }, {
+        "ct policy errchk - key without child path",
+        "ct(slip77(@B),elpkh(@0))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_B
+    }, {
+        "ct policy errchk - elip150 blinding key with child path",
+        "ct(@B/**,elpkh(@0/**))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_PKB
+    }, {
+        "ct policy errchk - elip150 with no blinding key substitution",
+        "ct(@0/**,elpkh(@1/**))",
+        WALLY_NETWORK_LIQUID, 0, 0, 0, NULL,
+        WALLY_MINISCRIPT_POLICY_TEMPLATE, NULL, "", VARS_P_2
+    },
 #endif /* BUILD_ELEMENTS */
 };
 
@@ -2270,7 +2340,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     uint32_t multi_index = 0;
     uint32_t child_num = test->child_num ? *test->child_num : 0, features;
     const bool is_policy = test->flags & WALLY_MINISCRIPT_POLICY_TEMPLATE;
-    const struct wally_map *keys = &g_policy_maps[test->policy_map_index];
+    const struct wally_map *keys = &g_vars[test->policy_map_index];
 
     /* Parse the descriptor. */
     expected_ret = test->script ? WALLY_OK : WALLY_EINVAL;
@@ -2416,8 +2486,8 @@ static bool check_descriptor_to_address(const struct address_test *test)
     size_t i;
     int ret, expected_ret = *test->addresses[0] ? WALLY_OK : WALLY_EINVAL;
 
-    ret = wally_descriptor_parse(test->descriptor, &g_key_map, test->network,
-                                 flags, &descriptor);
+    ret = wally_descriptor_parse(test->descriptor, &g_vars[VARS_STD],
+                                 test->network, flags, &descriptor);
 
     if (expected_ret == WALLY_OK || ret == expected_ret) {
         /* For failure cases, we may fail when generating instead of parsing,
