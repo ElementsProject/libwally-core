@@ -4,6 +4,7 @@ variables:
 stages:
   - test
   - release
+  - docker_build
 
 test_with_valgrind:
   stage: test
@@ -166,3 +167,39 @@ build_wally_release_files:
     - cd ../..
     - mv wally_dist/* dist/
     - rmdir wally_dist
+
+.docker_build_template:
+  stage: docker_build
+  needs: []
+  when: manual
+  variables:
+    DOCKER_HOST: tcp://localhost:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_BUILDKIT: 1
+    BUILDX_GIT_INFO: false
+  image: docker:23
+  services:
+    - docker:23-dind
+  tags:
+    - cloud
+  retry:
+    max: 2
+    when: [runner_system_failure, unknown_failure, stuck_or_timeout_failure]
+  script:
+    - echo "$DOCKER_HUB_TOKEN" | docker login --username "$DOCKER_HUB_USER" --password-stdin
+    - docker buildx create --use --platform=linux/amd64,linux/arm64 --name wally-multi-builder --buildkitd-flags '--allow-insecure-entitlement network.host'
+    - docker buildx inspect --bootstrap
+    - cd contrib
+    - docker buildx build
+      --network=host
+      -t blockstream/wallycore:${CI_COMMIT_SHA}
+      ${DOCKER_BUILD_ARGS}
+      .
+      --progress=plain
+      --push
+
+# Debian stable
+build_docker_trixie:
+  extends: .docker_build_template
+  variables:
+    DOCKER_BUILD_ARGS: -f Dockerfile_trixie --platform linux/amd64,linux/arm64
