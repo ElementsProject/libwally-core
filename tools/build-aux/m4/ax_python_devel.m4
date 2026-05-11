@@ -443,6 +443,11 @@ print(sitedir)"`
 	   AC_MSG_RESULT([$pythonexists])
 
 	   if test ! "x$pythonexists" = "xyes"; then
+		if test "x$python_manylinux" = "xyes"; then
+		# Ignore linking errors for manylinux builds (no libpython.so)
+		pythonexists="yes"
+	   else
+
 	      AC_MSG_WARN([
   Could not link test program to Python. Maybe the main Python library has been
   installed in some non-standard library path. If so, pass it to configure,
@@ -459,6 +464,7 @@ print(sitedir)"`
 	      fi
 	      ax_python_devel_found=no
 	      PYTHON_VERSION=""
+	   fi
 	   fi
 	fi
 
