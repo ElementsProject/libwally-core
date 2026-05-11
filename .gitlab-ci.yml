@@ -8,7 +8,7 @@ stages:
 
 test_with_valgrind:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   parallel:
     matrix:
       - CONFIGURE_ARGS: [--enable-elements=yes,--enable-elements=no,--enable-minimal=yes]
@@ -30,7 +30,7 @@ test_with_valgrind:
 
 test_asan_ubsan_gcc:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   parallel:
     matrix:
       - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
@@ -46,7 +46,7 @@ test_asan_ubsan_gcc:
 
 test_scan_build_clang:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   parallel:
     matrix:
       - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
@@ -65,7 +65,7 @@ test_scan_build_clang:
 
 test_cmake:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   tags:
     - ga
   script:
@@ -95,7 +95,7 @@ test_cmake:
 
 test_amalgamation:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   parallel:
     matrix:
       - CC: [gcc, clang ]
@@ -108,7 +108,7 @@ test_amalgamation:
 
 test_mingw_static_build:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   tags:
     - ga
   script:
@@ -118,7 +118,7 @@ test_mingw_static_build:
 
 test_no_elements_abi:
   stage: test
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   tags:
     - ga
   artifacts:
@@ -130,7 +130,7 @@ test_no_elements_abi:
 build_wally_release_files:
   stage: release
   needs: [test_mingw_static_build,test_with_valgrind,test_asan_ubsan_gcc,test_scan_build_clang,test_cmake,test_amalgamation]
-  image: greenaddress/wallycore@sha256:956b107d688f549c6e3884424991b7d3d34d84173990d43046fd760d7918db7c
+  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   artifacts:
     expire_in: 7 days
     name: wallycore-bindings
