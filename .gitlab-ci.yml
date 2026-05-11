@@ -21,7 +21,6 @@ test_with_valgrind:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CFLAGS='-Werror' ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
-    - make check -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
     - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do LD_LIBRARY_PATH=./src/.libs/ valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --xml=yes --xml-file=$t.xml $t; done
     - for t in $(ls src/.libs/test_* | egrep -v '_clear|xml|json' | tr '\n' ' '); do valgrind-codequality --input-file $t.xml --output-file $t.json; done
     - for t in $(ls src/test/test_*.py | tr '\n' ' '); do WALLY_SKIP_EXPENSIVE_TESTS=1 PYTHONMALLOC=malloc PYTHONDEVMODE=1 MALLOC_CHECK_=3 valgrind --tool=memcheck --leak-check=no --verbose --xml=yes --xml-file=$t.xml python $t; done
@@ -39,8 +38,8 @@ test_asan_ubsan_gcc:
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CC=gcc CFLAGS="-O2 -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static --disable-clear-tests --disable-asm
-    - sed -i 's/^PYTHON = /PYTHON = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
-    - sed -i 's/^JAVA = /JAVA = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/10\/libasan.so /g' src/Makefile
+    - sed -i 's/^PYTHON = /PYTHON = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/14\/libasan.so /g' src/Makefile
+    - sed -i 's/^JAVA = /JAVA = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/14\/libasan.so /g' src/Makefile
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
     - ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 make check V=1
 
@@ -54,8 +53,8 @@ test_scan_build_clang:
     - ga
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - CC=clang scan-build-11 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm $CONFIGURE_ARGS
-    - scan-build-11 --keep-cc --exclude src/secp256k1/ --status-bugs --keep-empty -o scan-build-output make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
+    - CC=clang scan-build-19 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm $CONFIGURE_ARGS
+    - scan-build-19 --keep-cc --exclude src/secp256k1/ --status-bugs --keep-empty -o scan-build-output make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
   artifacts:
     expire_in: 3 days
     name: scan-build-output
