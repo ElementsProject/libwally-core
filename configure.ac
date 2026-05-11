@@ -343,8 +343,8 @@ AC_ARG_ENABLE(python-manylinux,
     [python_manylinux=$enableval], [python_manylinux=no])
 AM_CONDITIONAL([PYTHON_MANYLINUX], [test "x$python_manylinux" = "xyes"])
 
-AX_PYTHON_DEVEL([>= '2.7.0'])
-AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
+AX_PYTHON_DEVEL([>= '3.9.0'], [true])
+AM_CONDITIONAL([HAVE_PYTHON], [test "x$ax_python_devel_found" = "xyes"])
 
 
 AC_ARG_ENABLE(wasm-interface,
