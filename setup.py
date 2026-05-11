@@ -1,18 +1,18 @@
 """setuptools config for wallycore """
 from setuptools import setup, Extension
 import copy
-import distutils.sysconfig
 import os
 import platform
 import subprocess
 import sys
+import sysconfig
 
 def _msg(s):
     print(s + '\n', file=sys.stderr)
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__)) + '/'
 CONFIGURE_ENV = copy.deepcopy(os.environ)
-DISTUTILS_ENV = distutils.sysconfig.get_config_vars()
+DISTUTILS_ENV = sysconfig.get_config_vars()
 IS_WINDOWS = platform.system() == "Windows"
 ARCH_FLAGS = os.environ.get('ARCHFLAGS', '').split()
 USE_LIB = os.environ.get('WALLY_ABI_PY_WHEEL_USE_LIB', 'no')
