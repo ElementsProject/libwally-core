@@ -295,8 +295,26 @@ test_elements_tx_LDADD += $(PYTHON_LIBS)
 endif
 endif
 
-check-local: check-libwallycore check-swig-python check-swig-java
+check-local: check-libwallycore check-swig-java check-swig-python
 	$(AM_V_at)! grep '^int ' $(top_srcdir)/include/*.h # Missing WALLY_CORE_API
+
+if RUN_JAVA_TESTS
+check-swig-java: $(SWIG_JAVA_TEST_DEPS) .libs/libwallycore.$(platform_dso_ext)
+	$(AM_V_at)! grep 'native int wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
+	$(AM_V_at)! grep 'native Object wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
+if BUILD_ELEMENTS
+	$(AM_V_at)$(JAVA_TEST)test_assets
+	$(AM_V_at)$(JAVA_TEST)test_elements_tx
+	$(AM_V_at)$(JAVA_TEST)test_pegs
+endif
+	$(AM_V_at)$(JAVA_TEST)test_bip32
+	$(AM_V_at)$(JAVA_TEST)test_descriptor
+	$(AM_V_at)$(JAVA_TEST)test_mnemonic
+	$(AM_V_at)$(JAVA_TEST)test_scripts
+	$(AM_V_at)$(JAVA_TEST)test_tx
+else # RUN_JAVA_TESTS
+check-swig-java: ;
+endif # RUN_JAVA_TESTS
 
 if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
@@ -337,7 +355,8 @@ if BUILD_ELEMENTS
 endif
 
 if USE_SWIG_PYTHON
-check-swig-python:
+check-swig-python: check-libwallycore check-swig-java
+	$(AM_V_at)rm -rf $(top_builddir)/venv
 	$(AM_V_at)$(PYTHON) -m virtualenv $(top_builddir)/venv
 	$(AM_V_at)$(top_builddir)/venv/bin/python -m pip install $(top_srcdir)
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/aes.py
@@ -362,27 +381,8 @@ else # RUN_PYTHON_TESTS
 check-libwallycore: ;
 endif # RUN_PYTHON_TESTS
 
-if RUN_JAVA_TESTS
-check-swig-java: $(SWIG_JAVA_TEST_DEPS)
-	$(AM_V_at)! grep 'native int wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
-	$(AM_V_at)! grep 'native Object wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
-if BUILD_ELEMENTS
-	$(AM_V_at)$(JAVA_TEST)test_assets
-	$(AM_V_at)$(JAVA_TEST)test_elements_tx
-	$(AM_V_at)$(JAVA_TEST)test_pegs
-endif
-	$(AM_V_at)$(JAVA_TEST)test_bip32
-	$(AM_V_at)$(JAVA_TEST)test_descriptor
-	$(AM_V_at)$(JAVA_TEST)test_mnemonic
-	$(AM_V_at)$(JAVA_TEST)test_scripts
-	$(AM_V_at)$(JAVA_TEST)test_tx
-else # RUN_JAVA_TESTS
-check-swig-java: ;
-endif # RUN_JAVA_TESTS
-
 endif # SHARED_BUILD_ENABLED
-.PHONY: check-libwallycore check-swig-python check-swig-java clean-swig-python clean-swig-java
+.PHONY: check-libwallycore check-swig-java check-swig-python clean-swig-java clean-swig-python
 else # RUN_TESTS
-.PHONY: clean-swig-python clean-swig-java
+.PHONY: clean-swig-java clean-swig-python
 endif # RUN_TESTS
-
