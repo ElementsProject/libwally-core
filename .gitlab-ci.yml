@@ -82,7 +82,6 @@ test_cmake:
     - cd build-cmake
     - ctest --output-on-failure
     - cd -
-    - pip install gcovr
     - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
   coverage: /^\s*lines:\s*\d+.\d+\%/
   artifacts:
