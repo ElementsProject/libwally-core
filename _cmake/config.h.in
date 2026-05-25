@@ -7,8 +7,7 @@
 /* Define to 1 if you have the <asm/page.h> header file. */
 #cmakedefine HAVE_ASM_PAGE_H @HAVE_ASM_PAGE_H@
 
-
-/* Define to 1 if you have the <byteswap.h,> header file. */
+/* Define to 1 if you have the <byteswap.h> header file. */
 #cmakedefine HAVE_BYTESWAP_H @HAVE_BYTESWAP_H@
 
 /* Define to 1 if you have the `explicit_bzero' function. */
@@ -41,6 +40,9 @@
 /* Define if we have unaligned access */
 #cmakedefine HAVE_UNALIGNED_ACCESS @HAVE_UNALIGNED_ACCESS@
 
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
+
 /* Name of package */
 #cmakedefine PACKAGE @PACKAGE@
 
@@ -65,17 +67,7 @@
 /* Version number of package */
 #cmakedefine VERSION @VERSION@
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
 #cmakedefine WORDS_BIGENDIAN @WORDS_BIGENDIAN@
-# endif
-#endif
 
 #if defined (_WIN32) && !defined(_SSIZE_T_DECLARED) && !defined(_ssize_t) && !defined(ssize_t)
 #if defined(_WIN64)
