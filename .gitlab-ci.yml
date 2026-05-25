@@ -121,13 +121,15 @@ build_wally_release_files:
     paths:
     - dist/*
   script:
-    - python3 -m build
+    - python3 -m build --wheel
+    - mv dist/*.whl ${CI_PROJECT_DIR}
+    - python3 -m build --sdist
     - virtualenv -p python3 .smoketest
     - source .smoketest/bin/activate
-    - pip install --find-links=./dist wallycore
+    - pip install --find-links=${CI_PROJECT_DIR} wallycore
     - python -c "import wallycore as w; assert w.hex_from_bytes(w.hex_to_bytes('ff')) == 'ff'"
     - deactivate
-    - rm -rf .smoketest dist/*.whl
+    - rm -rf .smoketest ${CI_PROJECT_DIR}/*.whl
     - mv dist wally_dist
     - ./tools/build_android_libraries.sh
     - mv release wallycore-android-jni
