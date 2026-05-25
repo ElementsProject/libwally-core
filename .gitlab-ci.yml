@@ -6,14 +6,17 @@ stages:
   - release
   - docker_build
 
-test_with_valgrind:
+.test_template:
   stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
+  image: blockstream/wallycore@sha256:060af7536b6d197b269f4e8bcab0e30fe082f656dd4738cf64ad9fd90b93e1d7
+  tags:
+    - ga
+
+test_with_valgrind:
+  extends: .test_template
   parallel:
     matrix:
       - CONFIGURE_ARGS: [--enable-elements=yes,--enable-elements=no,--enable-minimal=yes]
-  tags:
-    - ga
   artifacts:
     reports:
       codequality: valgrind.json
@@ -28,13 +31,10 @@ test_with_valgrind:
     - jq '[.[]|.[]]' -s ./src/.libs/test_*.json src/test/test_*.json > valgrind.json || true
 
 test_asan_ubsan_gcc:
-  stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
+  extends: .test_template
   parallel:
     matrix:
       - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
-  tags:
-    - ga
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CC=gcc CFLAGS="-O2 -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static --disable-clear-tests --disable-asm
@@ -44,13 +44,10 @@ test_asan_ubsan_gcc:
     - ASAN_OPTIONS=abort_on_error=1:fast_unwind_on_malloc=0:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 make check V=1
 
 test_scan_build_clang:
-  stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
+  extends: .test_template
   parallel:
     matrix:
       - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
-  tags:
-    - ga
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CC=clang scan-build-19 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm $CONFIGURE_ARGS
@@ -63,10 +60,7 @@ test_scan_build_clang:
     - scan-build-output/
 
 test_cmake:
-  stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
-  tags:
-    - ga
+  extends: .test_template
   script:
     - mv _cmake cmake
     - mv _CMakeLists.txt CMakeLists.txt
@@ -92,33 +86,24 @@ test_cmake:
         path: coverage.xml
 
 test_amalgamation:
-  stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
+  extends: .test_template
   parallel:
     matrix:
       - CC: [gcc, clang ]
         BUILD_ARGS: [ "", -DBUILD_MINIMAL, -DBUILD_ELEMENTS, -DBUILD_ELEMENTS -DBUILD_MINIMAL ]
-  tags:
-    - ga
   script:
     - touch config.h
     - $CC $BUILD_ARGS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
 
 test_mingw_static_build:
-  stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
-  tags:
-    - ga
+  extends: .test_template
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
     - CC=x86_64-w64-mingw32-gcc ./configure --host=x86_64-w64-mingw32 --disable-swig-python --disable-swig-java --disable-shared --enable-static
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 test_no_elements_abi:
-  stage: test
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
-  tags:
-    - ga
+  extends: .test_template
   artifacts:
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
@@ -126,17 +111,15 @@ test_no_elements_abi:
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 build_wally_release_files:
+  extends: .test_template
   stage: release
   needs: [test_mingw_static_build,test_with_valgrind,test_asan_ubsan_gcc,test_scan_build_clang,test_cmake,test_amalgamation]
-  image: blockstream/wallycore@sha256:13f822148fbbbd10f4bbc165eb9b63fbdec80d6f46c92fc325553ca5e2ff23bb
   artifacts:
     expire_in: 7 days
     name: wallycore-bindings
     when: on_success
     paths:
     - dist/*
-  tags:
-    - ga
   script:
     - python3 -m build
     - virtualenv -p python3 .smoketest
