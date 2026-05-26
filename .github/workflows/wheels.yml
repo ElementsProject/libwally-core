@@ -45,7 +45,7 @@ jobs:
       - name: Build Wheels
         uses: pypa/cibuildwheel@v3.1.4
         env:
-          CIBW_SKIP: "cp38* cp314* *-win32 *-musllinux_aarch64 pp* gp* cp3??t-*"
+          CIBW_SKIP: "cp38* cp315* *-win32 *-musllinux_aarch64 pp* gp* cp3??t-*"
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
           CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
 
