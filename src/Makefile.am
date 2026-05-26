@@ -127,7 +127,8 @@ endif # RUN_JAVA_TESTS
 $(JAVA_CLASSES) &: $(JAVA_CLASSES:.class=.java)
 	$(AM_V_at)$(JAVAC) -implicit:none -source $(JAVAC_TARGET) -target $(JAVAC_TARGET) -sourcepath $(sjs) $^
 
-JAVA_TEST = @LDPATH_VAR@=.libs $(JAVA) -Djava.library.path=.libs -classpath $(sjs) com.blockstream.test.
+JAVA_TEST_OPT = --enable-native-access=ALL-UNNAMED
+JAVA_TEST = @LDPATH_VAR@=.libs $(JAVA) $(JAVA_TEST_OPT) -Djava.library.path=.libs -classpath $(sjs) com.blockstream.test.
 
 endif # HAVE_JAVAC
 
