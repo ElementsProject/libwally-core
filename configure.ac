@@ -422,7 +422,13 @@ AM_CONDITIONAL([HAVE_JAVAC], [test "x$JAVAC" != "x"])
 AM_CONDITIONAL([RUN_JAVA_TESTS],
     dnl Only run tests if we have java-swig, compiler and interpreter
     [test "x$tests" = xyes -a "x$swig_java" = xyes -a -n "$JAVAC" -a -n "$JAVA"])
-JAVAC_TARGET=17
+JAVAC_TARGET=8
+if test "x$JAVAC" != "x"; then
+    # Use source version 17 if supported
+    TMP_OUTPUT=$($JAVAC --source 17 --help)
+    AS_IF([test $? -eq 0], [JAVAC_TARGET=17],
+          [AC_MSG_NOTICE([Java source level set to fallback (8)])])
+fi
 AC_SUBST([JAVAC_TARGET])
 
 AC_SUBST([AM_CFLAGS])
