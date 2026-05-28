@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v5
@@ -24,7 +24,7 @@ jobs:
       # bullseye_deps.sh is written for Debian, but works as-is on Ubuntu too.
       # Skip installing Java (-j), the Android NDK (-n) and MinGW (-w) which
       # we don't need for building the NPM package.
-      - run: sudo contrib/bullseye_deps.sh -j -n -w
+      - run: sudo contrib/trixie_deps.sh -j -n -w
 
       # Build NPM package into a tgz file (pack internally triggers the build/prepare script)
       - run: cd src/wasm_package && npm ci && npm pack --foreground-scripts
