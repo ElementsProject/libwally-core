@@ -5,7 +5,7 @@
 # and for linux/arm64:
 #     DOCKER_BUILDKIT=1 docker build . -t blockstream/wallycore -f Dockerfile_trixie --platform linux/arm64 --build-arg TARGETARCH=arm64
 #
-FROM debian:trixie@sha256:35b8ff74ead4880f22090b617372daff0ccae742eb5674455d542bef71ef1999
+FROM debian:trixie@sha256:4ae67669760b807c19f23902a3fd7c121a6a70cf2ae709035674b23e712e4d62
 WORKDIR /root
 COPY trixie_deps.sh ./deps.sh
 COPY requirements.txt ./contrib/requirements.txt
