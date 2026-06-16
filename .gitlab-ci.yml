@@ -8,7 +8,7 @@ stages:
 
 .test_template:
   stage: test
-  image: blockstream/wallycore@sha256:060af7536b6d197b269f4e8bcab0e30fe082f656dd4738cf64ad9fd90b93e1d7
+  image: blockstream/wallycore@sha256:f8409731379488d4f0b4a1692df2e4d42e8bfa952630e8174be08dc412ae4a82
   tags:
     - ga
 
