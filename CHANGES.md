@@ -1,5 +1,26 @@
 # Changes
 
+## Version 1.5.4
+
+### Added
+- descriptor: Add support for elements confidential wallet policies.
+- docker: Build amd64/arm64 multi-arch images, migrate to blockstream/wallycore.
+- python: Add support and release wheels for Python 3.14.
+
+### Changed
+- build: Move CI and docker images to Debian Trixie.
+- deps: Bump libsecp256k1-zkp to current master branch, update emsdk.
+- java: update source version to v17 for supported Java installs.
+- js: Move to Node v24, bump fast-uri dependency.
+
+### Fixed
+- python: Remove internal dependency on distutils (which is now deprecated).
+- descriptor: Disallow leading zero in numbers/policy key indices.
+- descriptor: Return WALLY_ENONMEM correctly on out-of-memory errors.
+- elements: Align unblinding behaviour with elements-core.
+- build: Add missing cmake defines.
+- build: Various build and test fixes.
+
 ## Version 1.5.3
 
 ### Added
@@ -7,7 +28,7 @@
 - build: Add support for fuzzing wally API calls.
 
 ### Fixed
-- psbt: corectly handle allocation failures in psbt_set_global_tx().
+- psbt: Corectly handle allocation failures in psbt_set_global_tx().
 - tx: Avoid quadratic behaviour parsing txs with a huge number of witnesses.
 - tx: Fix parsing Liquid transactions with short commitments.
 - tx: Reject non-corresponding output as per bip341 when signing.
