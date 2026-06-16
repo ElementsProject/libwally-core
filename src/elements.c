@@ -433,12 +433,35 @@ int wally_asset_unblind_with_nonce(const unsigned char *nonce_hash, size_t nonce
                                      &gen))
         goto cleanup;
 
-    /* FIXME: check results per blind.cpp */
-
-    /* Extract the asset id and asset blinding factor from the message */
-    memcpy(asset_out, message, ASSET_TAG_LEN);
-    memcpy(abf_out, message + ASSET_TAG_LEN, ASSET_TAG_LEN);
-    ret = WALLY_OK;
+    if (message_len != sizeof(message)) {
+        ret = WALLY_ERROR;
+        goto cleanup;
+    } else {
+        unsigned char msg_generator[ASSET_GENERATOR_LEN];
+        unsigned char msg_commitment[ASSET_COMMITMENT_LEN];
+        /* Extract the asset id and asset blinding factor from the message */
+        memcpy(asset_out, message, ASSET_TAG_LEN);
+        memcpy(abf_out, message + ASSET_TAG_LEN, ASSET_TAG_LEN);
+        /* Verify extracted asset */
+        ret = wally_asset_generator_from_bytes(asset_out, asset_out_len,
+                                               abf_out, abf_out_len,
+                                               msg_generator, sizeof(msg_generator));
+        if (ret != WALLY_OK || memcmp(generator, msg_generator, generator_len)) {
+            goto mismatch;
+        }
+        /* Verify unwound value */
+        ret = wally_asset_value_commitment(*value_out, vbf_out, vbf_out_len,
+                                           generator, generator_len,
+                                           msg_commitment, sizeof(msg_commitment));
+        if (ret != WALLY_OK || memcmp(commitment, msg_commitment, commitment_len)) {
+mismatch:
+            wally_clear_4(msg_commitment, sizeof(msg_commitment),
+                          msg_generator, sizeof(msg_generator),
+                          asset_out, asset_out_len, abf_out, abf_out_len);
+            ret = WALLY_ERROR;
+            goto cleanup;
+        }
+    }
 
 cleanup:
     wally_clear_3(&gen, sizeof(gen), &commit, sizeof(commit),
