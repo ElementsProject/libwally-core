@@ -202,7 +202,7 @@ if SHARED_BUILD_ENABLED
 # Increment at every ABI change (whether breaking or non-breaking)
 LT_VER_CURRENT = 9
 # Increment at every release, but reset to 0 at every ABI change
-LT_VER_REVISION = 0
+LT_VER_REVISION = 1
 # Increment at every ABI change, but reset to 0 if breaking
 LT_VER_AGE = 3
 # The library filename will be "libwallycore.so.$((current-age)).$((age)).$((revision))",
