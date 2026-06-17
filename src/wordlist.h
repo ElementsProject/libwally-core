@@ -46,6 +46,19 @@ size_t wordlist_lookup_word(
     const char *word);
 
 /**
+ * Find the unique word matching a given prefix in a wordlist.
+ *
+ * @w: Parsed list of words to look up in.
+ * @word: The prefix to look up.
+ *
+ * Returns 0 if not found OR not unique, idx + 1 otherwise.
+ * @see wordlist_init.
+ */
+size_t wordlist_lookup_prefix(
+    const struct words *w,
+    const char *prefix);
+
+/**
  * Return the Nth word in a wordlist.
  *
  * @w: Parsed list of words to look up in.
