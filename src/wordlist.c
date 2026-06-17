@@ -6,6 +6,42 @@ static int bstrcmp(const void *l, const void *r)
     return strcmp(l, (*(const char **)r));
 }
 
+/**
+ * Does a strncmp on utf8 strings. This mostly works by compairing but
+ * not counting continuation byte & accent/sound mark characters. This
+ * is not guaranteed to work for all utf8 strings but is supposed to
+ * work for the bip39 word lists in libwally.
+ */
+int utf_strncmp(const char* s1, const char* s2, size_t n) {
+    size_t p = 0;
+    size_t c = 0;
+    while ((s1[p] != '\0') && (s2[p] != '\0')) {
+        //Only count non continuation or accent characters
+        unsigned char byte = (unsigned char)s1[p];
+        if ( (byte < 0x80) || ((byte > 0xbf) && (byte != 0xcc) && (byte != 0xcd))) {
+            ++c;
+            //Skip Hiragana sound mark (e38299-e3829f)
+            const unsigned char *s = (const unsigned char*)s1;
+            if ((s[p] == 0xe3) && (s[p+1] == 0x82) && ((s[p+2] >= 0x99) && (s[p+2] <= 0x9f))) {
+                --c;
+            }
+        }
+        if (c > n) {
+            --p;
+            break;
+        }
+
+        if (s1[p] != s2[p]) return (unsigned char)s1[p] - (unsigned char)s2[p];
+        ++p;
+    }
+
+    return (unsigned char)s1[p] - (unsigned char)s2[p];
+}
+
+static int bstr4cmp(const void *l, const void *r) {
+    return utf_strncmp(l, (*(const char **)r), 4);
+}
+
 /* https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogObvious */
 static size_t get_bits(size_t n)
 {
@@ -72,13 +108,14 @@ size_t wordlist_lookup_word(const struct words *w, const char *word)
     const size_t size = sizeof(const char *);
     const char **found = NULL;
 
-    if (w->sorted)
-        found = (const char **)bsearch(word, w->indices, w->len, size, bstrcmp);
-    else {
+    if (w->sorted) {
+        found = (const char **)bsearch(word, w->indices, w->len, size, bstr4cmp);
+    } else {
         size_t i;
         for (i = 0; i < w->len && !found; ++i)
-            if (!strcmp(word, w->indices[i]))
+            if (!utf_strncmp(word, w->indices[i], 4)) {
                 found = w->indices + i;
+            }
     }
     return found ? found - w->indices + 1u : 0u;
 }
