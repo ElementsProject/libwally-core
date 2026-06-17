@@ -38,15 +38,7 @@ TOOLS_EXTRA_ARGS :=
 endif
 
 if USE_SWIG_PYTHON
-noinst_LTLIBRARIES += libswig_python.la
-libswig_python_la_SOURCES = swig_python/swig_python_wrap.c
-
-libswig_python_la_CFLAGS = -I$(top_srcdir) $(libsecp256k1_CFLAGS) $(AM_CFLAGS) $(SWIG_PYTHON_CPPFLAGS) $(SWIG_WARN_CFLAGS) $(NOALIAS_CFLAGS)
-if PYTHON_MANYLINUX
-else
-libswig_python_la_LIBADD = $(PYTHON_LIBS)
-endif # PYTHON_MANYLINUX
-
+BUILT_SOURCES = swig_python/swig_python_wrap.c
 # Append our extra wrapper code to the package
 swig_python/swig_python_wrap.c : swig_python/swig.i swig_python/python_extra.py_in
 	$(AM_V_at)$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_GEN_FLAGS) -outdir swig_python -o $@ $< && \
@@ -60,20 +52,6 @@ clean-local: clean-swig-python
 endif # USE_SWIG_PYTHON
 
 if RUN_PYTHON_TESTS
-# Python requires the shared library to be named _wallycore.so
-# for 'import' to work.
-if IS_OSX
-platform_dso_ext = dylib
-else
-if IS_MINGW
-platform_dso_ext = dll
-else
-platform_dso_ext = so
-endif # IS_MINGW
-endif # IS_OSX
-.libs/_wallycore.so: .libs/libwallycore.$(platform_dso_ext)
-	$(AM_V_at)ln -sfn libwallycore.$(platform_dso_ext) $@
-PYTHON_TEST_DEPS = .libs/_wallycore.so
 PYTHON_TEST = PYTHONDONTWRITEBYTECODE=1 $(PYTHON)
 endif
 
@@ -225,31 +203,26 @@ endif
 
 TESTS =
 noinst_PROGRAMS =
+
 if RUN_TESTS
 TESTS += test_bech32
 noinst_PROGRAMS += test_bech32
 test_bech32_SOURCES = ctest/test_bech32.c
 test_bech32_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_bech32_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_bech32_LDADD += $(PYTHON_LIBS)
-endif
+
 TESTS += test_psbt
 noinst_PROGRAMS += test_psbt
 test_psbt_SOURCES = ctest/test_psbt.c ccan/ccan/str/hex/hex.c
 test_psbt_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
 test_psbt_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_psbt_LDADD += $(PYTHON_LIBS)
-endif
+
 TESTS += test_psbt_limits
 noinst_PROGRAMS += test_psbt_limits
 test_psbt_limits_SOURCES = ctest/test_psbt_limits.c ccan/ccan/str/hex/hex.c
 test_psbt_limits_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS) -I$(srcdir)/ccan
 test_psbt_limits_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_psbt_limits_LDADD += $(PYTHON_LIBS)
-endif
+
 if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear
@@ -257,50 +230,39 @@ test_clear_SOURCES = ctest/test_clear.c
 test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(AM_CFLAGS) $(NOOPT_CFLAGS) $(NOBUILTIN_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_clear_LDADD += $(PYTHON_LIBS)
 endif
-endif
+
 TESTS += test_coinselection
 noinst_PROGRAMS += test_coinselection
 test_coinselection_SOURCES = ctest/test_coinselection.c
 test_coinselection_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_coinselection_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_coinselection_LDADD += $(PYTHON_LIBS)
-endif
+
 TESTS += test_tx
 noinst_PROGRAMS += test_tx
 test_tx_SOURCES = ctest/test_tx.c
 test_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_tx_LDADD += $(PYTHON_LIBS)
-endif
+
 TESTS += test_descriptor
 noinst_PROGRAMS += test_descriptor
 test_descriptor_SOURCES = ctest/test_descriptor.c
 test_descriptor_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_descriptor_LDADD += $(PYTHON_LIBS)
-endif
+
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
 test_elements_tx_SOURCES = ctest/test_elements_tx.c
 test_elements_tx_CFLAGS = -I$(top_srcdir)/include $(AM_CFLAGS)
 test_elements_tx_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
-if PYTHON_MANYLINUX
-test_elements_tx_LDADD += $(PYTHON_LIBS)
-endif
 endif
 
 check-local: check-libwallycore check-swig-java check-swig-python
 	$(AM_V_at)! grep '^int ' $(top_srcdir)/include/*.h # Missing WALLY_CORE_API
 
 if RUN_JAVA_TESTS
-check-swig-java: $(SWIG_JAVA_TEST_DEPS) .libs/libwallycore.$(platform_dso_ext)
+check-swig-java: $(SWIG_JAVA_TEST_DEPS) libwallycore.la
 	$(AM_V_at)! grep 'native int wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
 	$(AM_V_at)! grep 'native Object wally_' $(sjs)/$(cblw)/Wally.java # Unwrapped Java calls
 if BUILD_ELEMENTS
@@ -319,7 +281,7 @@ endif # RUN_JAVA_TESTS
 
 if SHARED_BUILD_ENABLED
 if RUN_PYTHON_TESTS
-check-libwallycore: $(PYTHON_TEST_DEPS)
+check-libwallycore:
 	$(AM_V_at)$(PYTHON_TEST) test/test_address.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_aes.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_anti_exfil.py
@@ -356,7 +318,7 @@ if BUILD_ELEMENTS
 endif
 
 if USE_SWIG_PYTHON
-check-swig-python: check-libwallycore check-swig-java
+check-swig-python:
 	$(AM_V_at)rm -rf $(top_builddir)/venv
 	$(AM_V_at)$(PYTHON) -m virtualenv $(top_builddir)/venv
 	$(AM_V_at)$(top_builddir)/venv/bin/python -m pip install $(top_srcdir)
