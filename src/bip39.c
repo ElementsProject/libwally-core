@@ -196,6 +196,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
     }
 
     wally_clear(tmp_bytes, sizeof(tmp_bytes));
+    wally_scrub_vec_regs();
     if (!ret && written)
         *written = tmp_len;
     return ret;

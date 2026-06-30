@@ -5,6 +5,7 @@
 #endif
 #include <wally_bip32.h>
 #include <wally_bip39.h>
+#include <wally_crypto.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -134,6 +135,60 @@ static bool test_bip39(void)
     return true;
 }
 
+/* Sentinel for non-bip39 secret-handling tests: 32 bytes of 0xa5.
+ * Distinct from BIP39_SECRET so test_search-style false positives can't
+ * mask a real leak. */
+static const unsigned char SECRET32[32] = {
+    0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5,
+    0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5,
+    0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5,
+    0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5
+};
+
+static bool test_bip32_from_seed(void)
+{
+    /* Derive an extended key from an all-0xa5 seed. The seed bytes
+     * pass through libc memcpy when stored into the ext_key struct
+     * and the HMAC-SHA512 input. */
+    struct ext_key key;
+    if (bip32_key_from_seed(SECRET32, sizeof(SECRET32),
+                            BIP32_VER_MAIN_PRIVATE, 0, &key))
+        return false;
+    return !in_stack("bip32_key_from_seed", SECRET32, sizeof(SECRET32));
+}
+
+static bool test_ec_private_key_verify(void)
+{
+    /* The privkey is fed through libc on its way to libsecp. */
+    if (wally_ec_private_key_verify(SECRET32, sizeof(SECRET32)))
+        return false;
+    return !in_stack("wally_ec_private_key_verify", SECRET32, sizeof(SECRET32));
+}
+
+static bool test_ec_sig_from_bytes(void)
+{
+    static unsigned char msg[32] = { 0x11 };
+    static unsigned char sig[EC_SIGNATURE_LEN];
+    /* Privkey is the secret. */
+    if (wally_ec_sig_from_bytes(SECRET32, sizeof(SECRET32),
+                                msg, sizeof(msg),
+                                EC_FLAG_ECDSA,
+                                sig, sizeof(sig)))
+        return false;
+    return !in_stack("wally_ec_sig_from_bytes", SECRET32, sizeof(SECRET32));
+}
+
+static bool test_hmac_sha256(void)
+{
+    static unsigned char out[32];
+    static unsigned char msg[32] = { 0x22 };
+    if (wally_hmac_sha256(SECRET32, sizeof(SECRET32),
+                          msg, sizeof(msg),
+                          out, sizeof(out)))
+        return false;
+    return !in_stack("wally_hmac_sha256", SECRET32, sizeof(SECRET32));
+}
+
 static void *run_tests(void *passed_stack)
 {
     if (passed_stack != gstack) {
@@ -150,6 +205,18 @@ static void *run_tests(void *passed_stack)
     /* Due to the nature of the test reading poisoned bytes off the custom stack will trigger ASAN */
     ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
     RUN(test_bip39);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_bip32_from_seed);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_ec_private_key_verify);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_ec_sig_from_bytes);
+
+    ASAN_UNPOISON_MEMORY_REGION(passed_stack, PTHREAD_STACK_MIN);
+    RUN(test_hmac_sha256);
 
     return NULL;
 }
