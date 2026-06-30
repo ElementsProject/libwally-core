@@ -262,6 +262,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* abf, size_t abf_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* adaptor, size_t adaptor_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* agg_pk, size_t agg_pk_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* agg_pubkey, size_t agg_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* annex, size_t annex_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* asset, size_t asset_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* aux_rand, size_t aux_rand_len) };
@@ -269,6 +270,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* chain_code, size_t chain_code_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* commitment, size_t commitment_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* contract_hash, size_t contract_hash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* control_block, size_t control_block_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* entropy, size_t entropy_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* extra, size_t extra_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* extra_input32, size_t extra_input32_len) };
@@ -286,6 +288,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* iv, size_t iv_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* key, size_t key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* label, size_t label_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* leaf_hash, size_t leaf_hash_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* mainchain_script, size_t mainchain_script_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_hashes, size_t merkle_hashes_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* merkle_root, size_t merkle_root_len) };
@@ -300,12 +303,18 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* output_asset, size_t output_asset_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* output_generator, size_t output_generator_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* parent160, size_t parent160_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* partial_sig, size_t partial_sig_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* partial_sigs, size_t partial_sigs_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* participant, size_t participant_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* participants, size_t participants_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pass, size_t pass_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* priv_key, size_t priv_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* proof, size_t proof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_key, size_t pub_key_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pub_keys, size_t pub_keys_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pubkey33, size_t pubkey33_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pubkey_and_hash, size_t pubkey_and_hash_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* pubnonce, size_t pubnonce_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* pubnonces, size_t pubnonces_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* rangeproof, size_t rangeproof_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* redeem_script, size_t redeem_script_len) };
@@ -317,6 +326,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* scriptpubkey, size_t scriptpubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* seckey, size_t seckey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* session_secrand32, size_t session_secrand32_len) };
+%apply(char *STRING, size_t LENGTH) { (const unsigned char* session_secrand32, size_t session_secrand_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sig, size_t sig_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* sub_pubkey, size_t sub_pubkey_len) };
 %apply(char *STRING, size_t LENGTH) { (const unsigned char* summed_key, size_t summed_key_len) };
@@ -1331,6 +1341,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_struct(wally_musig_nonce_agg,              wally_musig_aggnonce);
 %returns_struct(wally_musig_nonce_process,          wally_musig_session);
 %returns_struct(wally_musig_partial_sign,           wally_musig_partial_sig);
+%returns_struct(wally_psbt_musig2_add_nonce,        wally_musig_secnonce);
+%returns_struct(wally_psbt_musig2_sign,             wally_musig_partial_sig);
 
 /* MuSig2 opaque type destructors */
 %returns_void__(wally_musig_keyagg_cache_free);
@@ -1353,7 +1365,34 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_musig_pubkey_xonly_tweak_add,  4, 5, EC_PUBLIC_KEY_LEN);
 %returns_array_(wally_musig_partial_sig_agg,         5, 6, EC_SIGNATURE_LEN);
 %returns_void__(wally_musig_partial_sig_verify);
+
+/* MuSig2 PSBT helpers taking a keyagg cache */
+%returns_void__(wally_psbt_musig2_finalize_input);
 #endif /* ndef BUILD_STANDARD_SECP */
+
+%returns_void__(wally_psbt_populate_musig2_from_descriptor);
+%returns_void__(wally_psbt_input_populate_taproot_from_descriptor);
+%returns_void__(wally_psbt_output_populate_taproot_from_descriptor);
+
+/* PSBT input/output member accessors are not exposed in Java; the
+ * psbt-level equivalents in wally_psbt_members.h are used instead. */
+%ignore wally_psbt_input_add_taproot_leaf_script;
+%ignore wally_psbt_input_get_taproot_leaf_script_size;
+%ignore wally_psbt_input_add_taproot_leaf_signature;
+%ignore wally_psbt_input_get_taproot_leaf_signature_size;
+%ignore wally_psbt_input_get_taproot_keypaths_size;
+%ignore wally_psbt_input_add_musig2_participant_pubkeys;
+%ignore wally_psbt_input_set_musig2_pubkeys;
+%ignore wally_psbt_input_find_musig2_pubkey;
+%ignore wally_psbt_input_add_musig2_pubnonce;
+%ignore wally_psbt_input_find_musig2_pubnonce;
+%ignore wally_psbt_input_get_musig2_pubnonce_size;
+%ignore wally_psbt_input_add_musig2_partial_sig;
+%ignore wally_psbt_input_find_musig2_partial_sig;
+%ignore wally_psbt_input_get_musig2_partial_sig_size;
+%ignore wally_psbt_output_add_musig2_participant_pubkeys;
+%ignore wally_psbt_output_set_musig2_pubkeys;
+%ignore wally_psbt_output_find_musig2_pubkey;
 
 %rename("_cleanup") wally_cleanup;
 %returns_void__(_cleanup);

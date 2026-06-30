@@ -426,7 +426,12 @@ export function psbt_has_input_required_locktime(psbt: Ref_wally_psbt, index: nu
 export function psbt_has_output_amount(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_has_output_blinder_index(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_init(version: number, inputs_allocation_len: number, outputs_allocation_len: number, global_unknowns_allocation_len: number, flags: number): Ref_wally_psbt;
+export function psbt_input_add_musig2_partial_sig(input: Ref_wally_psbt_input, participant: Buffer|Uint8Array|null, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null, partial_sig: Buffer|Uint8Array|null): void;
+export function psbt_input_add_musig2_participant_pubkeys(input: Ref_wally_psbt_input, agg_pubkey: Buffer|Uint8Array|null, participants: Buffer|Uint8Array|null): void;
+export function psbt_input_add_musig2_pubnonce(input: Ref_wally_psbt_input, participant: Buffer|Uint8Array|null, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null, pubnonce: Buffer|Uint8Array|null): void;
 export function psbt_input_add_signature(input: Ref_wally_psbt_input, pub_key: Buffer|Uint8Array|null, sig: Buffer|Uint8Array|null): void;
+export function psbt_input_add_taproot_leaf_script(input: Ref_wally_psbt_input, control_block: Buffer|Uint8Array|null, script: Buffer|Uint8Array|null): void;
+export function psbt_input_add_taproot_leaf_signature(input: Ref_wally_psbt_input, pubkey_and_hash: Buffer|Uint8Array|null, sig: Buffer|Uint8Array|null): void;
 export function psbt_input_clear_amount_rangeproof(input: Ref_wally_psbt_input): void;
 export function psbt_input_clear_asset(input: Ref_wally_psbt_input): void;
 export function psbt_input_clear_asset_surjectionproof(input: Ref_wally_psbt_input): void;
@@ -446,6 +451,9 @@ export function psbt_input_clear_required_locktime(input: Ref_wally_psbt_input):
 export function psbt_input_clear_sequence(input: Ref_wally_psbt_input): void;
 export function psbt_input_clear_utxo_rangeproof(input: Ref_wally_psbt_input): void;
 export function psbt_input_find_keypath(input: Ref_wally_psbt_input, pub_key: Buffer|Uint8Array|null): number;
+export function psbt_input_find_musig2_partial_sig(input: Ref_wally_psbt_input, participant: Buffer|Uint8Array|null, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null): number;
+export function psbt_input_find_musig2_pubkey(input: Ref_wally_psbt_input, agg_pubkey: Buffer|Uint8Array|null): number;
+export function psbt_input_find_musig2_pubnonce(input: Ref_wally_psbt_input, participant: Buffer|Uint8Array|null, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null): number;
 export function psbt_input_find_signature(input: Ref_wally_psbt_input, pub_key: Buffer|Uint8Array|null): number;
 export function psbt_input_find_unknown(input: Ref_wally_psbt_input, key: Buffer|Uint8Array|null): number;
 export function psbt_input_generate_explicit_proofs(input: Ref_wally_psbt_input, satoshi: bigint, asset: Buffer|Uint8Array|null, abf: Buffer|Uint8Array|null, vbf: Buffer|Uint8Array|null, entropy: Buffer|Uint8Array|null): void;
@@ -460,12 +468,18 @@ export function psbt_input_get_issuance_amount_commitment_len(input: Ref_wally_p
 export function psbt_input_get_issuance_amount_rangeproof_len(input: Ref_wally_psbt_input): number;
 export function psbt_input_get_issuance_asset_entropy_len(input: Ref_wally_psbt_input): number;
 export function psbt_input_get_issuance_blinding_nonce_len(input: Ref_wally_psbt_input): number;
+export function psbt_input_get_musig2_partial_sig_size(input: Ref_wally_psbt_input): number;
+export function psbt_input_get_musig2_pubnonce_size(input: Ref_wally_psbt_input): number;
 export function psbt_input_get_pegin_claim_script_len(input: Ref_wally_psbt_input): number;
 export function psbt_input_get_pegin_genesis_blockhash_len(input: Ref_wally_psbt_input): number;
 export function psbt_input_get_pegin_txout_proof_len(input: Ref_wally_psbt_input): number;
+export function psbt_input_get_taproot_keypaths_size(input: Ref_wally_psbt_input): number;
+export function psbt_input_get_taproot_leaf_script_size(input: Ref_wally_psbt_input): number;
+export function psbt_input_get_taproot_leaf_signature_size(input: Ref_wally_psbt_input): number;
 export function psbt_input_get_utxo_rangeproof_len(input: Ref_wally_psbt_input): number;
 export function psbt_input_is_finalized(input: Ref_wally_psbt_input): number;
 export function psbt_input_keypath_add(input: Ref_wally_psbt_input, pub_key: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
+export function psbt_input_populate_taproot_from_descriptor(psbt: Ref_wally_psbt, index: number, descriptor: Ref_wally_descriptor, multi_index: number, child_num: number, flags: number): void;
 export function psbt_input_set_amount(input: Ref_wally_psbt_input, amount: bigint): void;
 export function psbt_input_set_amount_rangeproof(input: Ref_wally_psbt_input, rangeproof: Buffer|Uint8Array|null): void;
 export function psbt_input_set_asset(input: Ref_wally_psbt_input, asset: Buffer|Uint8Array|null): void;
@@ -483,6 +497,7 @@ export function psbt_input_set_issuance_amount_rangeproof(input: Ref_wally_psbt_
 export function psbt_input_set_issuance_asset_entropy(input: Ref_wally_psbt_input, entropy: Buffer|Uint8Array|null): void;
 export function psbt_input_set_issuance_blinding_nonce(input: Ref_wally_psbt_input, nonce: Buffer|Uint8Array|null): void;
 export function psbt_input_set_keypaths(input: Ref_wally_psbt_input, map_in: Ref_wally_map): void;
+export function psbt_input_set_musig2_pubkeys(input: Ref_wally_psbt_input, map_in: Ref_wally_map): void;
 export function psbt_input_set_output_index(input: Ref_wally_psbt_input, index: number): void;
 export function psbt_input_set_pegin_amount(input: Ref_wally_psbt_input, amount: bigint): void;
 export function psbt_input_set_pegin_claim_script(input: Ref_wally_psbt_input, script: Buffer|Uint8Array|null): void;
@@ -509,6 +524,10 @@ export function psbt_input_taproot_keypath_add(input: Ref_wally_psbt_input, pub_
 export function psbt_is_elements(psbt: Ref_wally_psbt): number;
 export function psbt_is_finalized(psbt: Ref_wally_psbt): number;
 export function psbt_is_input_finalized(psbt: Ref_wally_psbt, index: number): number;
+export function psbt_musig2_add_nonce(psbt: Ref_wally_psbt, index: number, session_secrand32: Buffer|Uint8Array|null, seckey: Buffer|Uint8Array|null, pubkey33: Buffer|Uint8Array|null, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null, keyagg_cache: Ref_wally_musig_keyagg_cache, flags: number): Ref_wally_musig_secnonce;
+export function psbt_musig2_finalize_input(psbt: Ref_wally_psbt, index: number, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null, keyagg_cache: Ref_wally_musig_keyagg_cache, flags: number): void;
+export function psbt_musig2_sign(psbt: Ref_wally_psbt, index: number, secnonce: Ref_wally_musig_secnonce, seckey: Buffer|Uint8Array|null, pubkey33: Buffer|Uint8Array|null, agg_pubkey: Buffer|Uint8Array|null, leaf_hash: Buffer|Uint8Array|null, keyagg_cache: Ref_wally_musig_keyagg_cache, flags: number): Ref_wally_musig_partial_sig;
+export function psbt_output_add_musig2_participant_pubkeys(output: Ref_wally_psbt_output, agg_pubkey: Buffer|Uint8Array|null, participants: Buffer|Uint8Array|null): void;
 export function psbt_output_clear_amount(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_asset(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_asset_blinding_surjectionproof(output: Ref_wally_psbt_output): void;
@@ -521,6 +540,7 @@ export function psbt_output_clear_value_blinding_rangeproof(output: Ref_wally_ps
 export function psbt_output_clear_value_commitment(output: Ref_wally_psbt_output): void;
 export function psbt_output_clear_value_rangeproof(output: Ref_wally_psbt_output): void;
 export function psbt_output_find_keypath(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null): number;
+export function psbt_output_find_musig2_pubkey(output: Ref_wally_psbt_output, agg_pubkey: Buffer|Uint8Array|null): number;
 export function psbt_output_find_unknown(output: Ref_wally_psbt_output, key: Buffer|Uint8Array|null): number;
 export function psbt_output_get_asset_blinding_surjectionproof_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_asset_commitment_len(output: Ref_wally_psbt_output): number;
@@ -533,6 +553,7 @@ export function psbt_output_get_value_blinding_rangeproof_len(output: Ref_wally_
 export function psbt_output_get_value_commitment_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_get_value_rangeproof_len(output: Ref_wally_psbt_output): number;
 export function psbt_output_keypath_add(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
+export function psbt_output_populate_taproot_from_descriptor(psbt: Ref_wally_psbt, index: number, descriptor: Ref_wally_descriptor, multi_index: number, child_num: number, flags: number): void;
 export function psbt_output_set_amount(output: Ref_wally_psbt_output, amount: bigint): void;
 export function psbt_output_set_asset(output: Ref_wally_psbt_output, asset: Buffer|Uint8Array|null): void;
 export function psbt_output_set_asset_blinding_surjectionproof(output: Ref_wally_psbt_output, surjectionproof: Buffer|Uint8Array|null): void;
@@ -542,6 +563,7 @@ export function psbt_output_set_blinder_index(output: Ref_wally_psbt_output, ind
 export function psbt_output_set_blinding_public_key(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null): void;
 export function psbt_output_set_ecdh_public_key(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null): void;
 export function psbt_output_set_keypaths(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
+export function psbt_output_set_musig2_pubkeys(output: Ref_wally_psbt_output, map_in: Ref_wally_map): void;
 export function psbt_output_set_redeem_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
 export function psbt_output_set_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
 export function psbt_output_set_taproot_internal_key(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null): void;
@@ -551,6 +573,7 @@ export function psbt_output_set_value_commitment(output: Ref_wally_psbt_output, 
 export function psbt_output_set_value_rangeproof(output: Ref_wally_psbt_output, rangeproof: Buffer|Uint8Array|null): void;
 export function psbt_output_set_witness_script(output: Ref_wally_psbt_output, script: Buffer|Uint8Array|null): void;
 export function psbt_output_taproot_keypath_add(output: Ref_wally_psbt_output, pub_key: Buffer|Uint8Array|null, tapleaf_hashes: Buffer|Uint8Array|null, fingerprint: Buffer|Uint8Array|null, child_path: Uint32Array|number[]): void;
+export function psbt_populate_musig2_from_descriptor(psbt: Ref_wally_psbt, descriptor: Ref_wally_descriptor, child_num: number, flags: number): void;
 export function psbt_remove_input(psbt: Ref_wally_psbt, index: number): void;
 export function psbt_remove_output(psbt: Ref_wally_psbt, index: number): void;
 export function psbt_set_fallback_locktime(psbt: Ref_wally_psbt, locktime: number): void;
