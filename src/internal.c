@@ -367,9 +367,23 @@ static int wally_internal_ec_nonce_fn(unsigned char *nonce32,
     return secp256k1_nonce_function_default(nonce32, msg32, key32, algo16, data, attempt);
 }
 
+static void wally_secp_illegal_callback(const char *str, void *data)
+{
+    /* secp256k1's default illegal-argument callback calls abort(), which would
+     * crash the host process when an API precondition is violated - e.g. when a
+     * malformed keyagg_cache/session parsed from untrusted bytes is later loaded.
+     * Ignore it instead so the calling wally_ function returns WALLY_ERROR. */
+    (void)str;
+    (void)data;
+}
+
 struct secp256k1_context_struct *wally_get_new_secp_context(void)
 {
-    return secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
+    struct secp256k1_context_struct *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY | SECP256K1_CONTEXT_SIGN);
+    if (ctx)
+        secp256k1_context_set_illegal_callback(ctx, wally_secp_illegal_callback, NULL);
+    return ctx;
 }
 
 struct secp256k1_context_struct *wally_internal_secp_context(void)

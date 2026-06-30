@@ -20,6 +20,9 @@
 #include <wally_symmetric.h>
 #include <wally_transaction.h>
 #include <wally_elements.h>
+#ifndef BUILD_STANDARD_SECP
+#include <wally_musig.h>
+#endif
 
 /* These wrappers allow passing containers such as std::vector, std::array,
  * std::string and custom classes as input/output buffers to wally functions.
@@ -1238,6 +1241,180 @@ template <class KEY, class VAL>
 inline bool merkle_path_xonly_public_key_verify(const KEY& key, const VAL& val) {
     int ret = ::wally_merkle_path_xonly_public_key_verify(key.data(), key.size(), val.data(), val.size());
     return ret == WALLY_OK;
+}
+
+inline int musig_aggnonce_free(struct wally_musig_aggnonce* nonce) {
+    int ret = ::wally_musig_aggnonce_free(nonce);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_aggnonce_parse(const BYTES& bytes, struct wally_musig_aggnonce** output) {
+    int ret = ::wally_musig_aggnonce_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class NONCE, class BYTES_OUT>
+inline int musig_aggnonce_serialize(const NONCE& nonce, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_aggnonce_serialize(detail::get_p(nonce), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_keyagg_cache_free(struct wally_musig_keyagg_cache* cache) {
+    int ret = ::wally_musig_keyagg_cache_free(cache);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_keyagg_cache_parse(const BYTES& bytes, struct wally_musig_keyagg_cache** output) {
+    int ret = ::wally_musig_keyagg_cache_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class BYTES_OUT>
+inline int musig_keyagg_cache_serialize(const CACHE& cache, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_keyagg_cache_serialize(detail::get_p(cache), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUBNONCES>
+inline int musig_nonce_agg(const PUBNONCES& pubnonces, size_t n_pubnonces, struct wally_musig_aggnonce** aggnonce_out) {
+    int ret = ::wally_musig_nonce_agg(pubnonces.data(), pubnonces.size(), n_pubnonces, aggnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SESSION_SECRAND32, class SECKEY, class PUB_KEY, class KEYAGG_CACHE, class MSG32, class EXTRA_INPUT32>
+inline int musig_nonce_gen(const SESSION_SECRAND32& session_secrand32, const SECKEY& seckey, const PUB_KEY& pub_key, const KEYAGG_CACHE& keyagg_cache, const MSG32& msg32, const EXTRA_INPUT32& extra_input32, struct wally_musig_secnonce** secnonce_out, struct wally_musig_pubnonce** pubnonce_out) {
+    int ret = ::wally_musig_nonce_gen(session_secrand32.data(), session_secrand32.size(), seckey.data(), seckey.size(), pub_key.data(), pub_key.size(), detail::get_p(keyagg_cache), msg32.data(), msg32.size(), extra_input32.data(), extra_input32.size(), secnonce_out, pubnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SECKEY, class PUB_KEY, class KEYAGG_CACHE, class MSG32, class EXTRA_INPUT32>
+inline int musig_nonce_gen_counter(uint64_t counter, const SECKEY& seckey, const PUB_KEY& pub_key, const KEYAGG_CACHE& keyagg_cache, const MSG32& msg32, const EXTRA_INPUT32& extra_input32, struct wally_musig_secnonce** secnonce_out, struct wally_musig_pubnonce** pubnonce_out) {
+    int ret = ::wally_musig_nonce_gen_counter(counter, seckey.data(), seckey.size(), pub_key.data(), pub_key.size(), detail::get_p(keyagg_cache), msg32.data(), msg32.size(), extra_input32.data(), extra_input32.size(), secnonce_out, pubnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class AGGNONCE, class MSG32, class CACHE, class ADAPTOR>
+inline int musig_nonce_process(const AGGNONCE& aggnonce, const MSG32& msg32, const CACHE& cache, const ADAPTOR& adaptor, struct wally_musig_session** session_out) {
+    int ret = ::wally_musig_nonce_process(detail::get_p(aggnonce), msg32.data(), msg32.size(), detail::get_p(cache), adaptor.data(), adaptor.size(), session_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PARTIAL_SIGS, class SESSION, class SIG64_OUT>
+inline int musig_partial_sig_agg(const PARTIAL_SIGS& partial_sigs, size_t n_sigs, const SESSION& session, SIG64_OUT& sig64_out) {
+    int ret = ::wally_musig_partial_sig_agg(partial_sigs.data(), partial_sigs.size(), n_sigs, detail::get_p(session), sig64_out.data(), sig64_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_partial_sig_free(struct wally_musig_partial_sig* sig) {
+    int ret = ::wally_musig_partial_sig_free(sig);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_partial_sig_parse(const BYTES& bytes, struct wally_musig_partial_sig** output) {
+    int ret = ::wally_musig_partial_sig_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SIG, class BYTES_OUT>
+inline int musig_partial_sig_serialize(const SIG& sig, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_partial_sig_serialize(detail::get_p(sig), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SIG, class PUBNONCE, class PUB_KEY, class CACHE>
+inline bool musig_partial_sig_verify(const SIG& sig, const PUBNONCE& pubnonce, const PUB_KEY& pub_key, const CACHE& cache, const struct wally_musig_session* session) {
+    int ret = ::wally_musig_partial_sig_verify(detail::get_p(sig), detail::get_p(pubnonce), pub_key.data(), pub_key.size(), detail::get_p(cache), session);
+    return ret == WALLY_OK;
+}
+
+template <class SECNONCE, class SECKEY, class CACHE, class SESSION>
+inline int musig_partial_sign(const SECNONCE& secnonce, const SECKEY& seckey, const CACHE& cache, const SESSION& session, struct wally_musig_partial_sig** partial_sig_out) {
+    int ret = ::wally_musig_partial_sign(detail::get_p(secnonce), seckey.data(), seckey.size(), detail::get_p(cache), detail::get_p(session), partial_sig_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEYS, class AGG_PK_OUT>
+inline int musig_pubkey_agg(const PUB_KEYS& pub_keys, AGG_PK_OUT& agg_pk_out, struct wally_musig_keyagg_cache** cache_out) {
+    int ret = ::wally_musig_pubkey_agg(pub_keys.data(), pub_keys.size(), agg_pk_out.data(), agg_pk_out.size(), cache_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class TWEAK, class PUB_KEY_OUT>
+inline int musig_pubkey_ec_tweak_add(const CACHE& cache, const TWEAK& tweak, PUB_KEY_OUT& pub_key_out) {
+    int ret = ::wally_musig_pubkey_ec_tweak_add(detail::get_p(cache), tweak.data(), tweak.size(), pub_key_out.data(), pub_key_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class PUB_KEY_OUT>
+inline int musig_pubkey_get(const CACHE& cache, PUB_KEY_OUT& pub_key_out) {
+    int ret = ::wally_musig_pubkey_get(detail::get_p(cache), pub_key_out.data(), pub_key_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class AGG_PK>
+inline int musig_pubkey_to_xpub(const AGG_PK& agg_pk, uint32_t version, struct ext_key** output) {
+    int ret = ::wally_musig_pubkey_to_xpub(agg_pk.data(), agg_pk.size(), version, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class TWEAK, class PUB_KEY_OUT>
+inline int musig_pubkey_xonly_tweak_add(const CACHE& cache, const TWEAK& tweak, PUB_KEY_OUT& pub_key_out) {
+    int ret = ::wally_musig_pubkey_xonly_tweak_add(detail::get_p(cache), tweak.data(), tweak.size(), pub_key_out.data(), pub_key_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEYS, class PUB_KEY_OUT>
+inline int musig_pubkeys_agg_then_derive(const PUB_KEYS& pub_keys, uint32_t version, uint32_t child_num, PUB_KEY_OUT& pub_key_out, struct ext_key** child_out) {
+    int ret = ::wally_musig_pubkeys_agg_then_derive(pub_keys.data(), pub_keys.size(), version, child_num, pub_key_out.data(), pub_key_out.size(), child_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class XPUBS, class AGG_PK_OUT>
+inline int musig_pubkeys_derive_then_agg(const XPUBS& xpubs, uint32_t child_num, AGG_PK_OUT& agg_pk_out, struct wally_musig_keyagg_cache** cache_out) {
+    int ret = ::wally_musig_pubkeys_derive_then_agg(xpubs.data(), xpubs.size(), child_num, agg_pk_out.data(), agg_pk_out.size(), cache_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_pubnonce_free(struct wally_musig_pubnonce* nonce) {
+    int ret = ::wally_musig_pubnonce_free(nonce);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_pubnonce_parse(const BYTES& bytes, struct wally_musig_pubnonce** output) {
+    int ret = ::wally_musig_pubnonce_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class NONCE, class BYTES_OUT>
+inline int musig_pubnonce_serialize(const NONCE& nonce, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_pubnonce_serialize(detail::get_p(nonce), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_secnonce_free(struct wally_musig_secnonce* nonce) {
+    int ret = ::wally_musig_secnonce_free(nonce);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_session_free(struct wally_musig_session* session) {
+    int ret = ::wally_musig_session_free(session);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_session_parse(const BYTES& bytes, struct wally_musig_session** output) {
+    int ret = ::wally_musig_session_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SESSION, class BYTES_OUT>
+inline int musig_session_serialize(const SESSION& session, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_session_serialize(detail::get_p(session), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
 }
 
 template <class PASS, class SALT, class BYTES_OUT>
@@ -3369,6 +3546,7 @@ inline bool is_elements_build()
     ::wally_is_elements_build(&ret);
     return ret != 0;
 }
+
 
 } /* namespace wally */
 
