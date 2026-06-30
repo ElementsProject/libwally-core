@@ -152,6 +152,7 @@ libwallycore_la_SOURCES = \
     bech32.c \
     coins.c \
     descriptor.c \
+    miniscript_decode.c \
     ecdh.c \
     elements.c \
     blech32.c \
@@ -285,6 +286,11 @@ test_descriptor_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX
 test_descriptor_LDADD += $(PYTHON_LIBS)
 endif
+TESTS += test_miniscript_decode
+noinst_PROGRAMS += test_miniscript_decode
+test_miniscript_decode_SOURCES = ctest/test_miniscript_decode.c miniscript_decode.c ctest/scriptint_shim.c
+test_miniscript_decode_CFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/src $(AM_CFLAGS)
+test_miniscript_decode_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if BUILD_ELEMENTS
 TESTS += test_elements_tx
 noinst_PROGRAMS += test_elements_tx
@@ -339,6 +345,7 @@ check-libwallycore: $(PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_TEST) test/test_internal.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_map.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_bip379_vectors.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py

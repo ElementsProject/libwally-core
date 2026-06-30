@@ -2,6 +2,7 @@
 
 #include "script.h"
 #include "script_int.h"
+#include "descriptor_int.h"
 
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
@@ -55,7 +56,7 @@
 /* OP_1 properties: Bzufmxk */
 #define PROP_OP_1  (TYPE_B | PROP_Z | PROP_U | PROP_F | PROP_M | PROP_X | PROP_K)
 
-#define KIND_MINISCRIPT 0x01
+/* KIND_MINISCRIPT is defined in descriptor_int.h */
 #define KIND_DESCRIPTOR 0x02 /* Output Descriptor */
 #define KIND_RAW        0x04
 #define KIND_NUMBER     0x08
@@ -97,29 +98,7 @@
 #define KIND_DESCRIPTOR_SLIP77   (0x00400000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_ELIP151  (0x00500000 | KIND_DESCRIPTOR)
 
-/* miniscript */
-#define KIND_MINISCRIPT_PK        (0x00000100 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_PKH       (0x00000200 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_MULTI     (0x00000300 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_PK_K      (0x00001000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_PK_H      (0x00002000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OLDER     (0x00010000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AFTER     (0x00020000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_SHA256    (0x00030000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_HASH256   (0x00040000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_RIPEMD160 (0x00050000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_HASH160   (0x00060000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_THRESH    (0x00070000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_ANDOR     (0x01000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AND_V     (0x02000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AND_B     (0x03000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AND_N     (0x04000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_B      (0x05000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_C      (0x06000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_D      (0x07000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_I      (0x08000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_MULTI_A   (0x09000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_MULTI_A_S (0x0A000000 | KIND_MINISCRIPT)
+/* miniscript KIND_MINISCRIPT_* constants are defined in descriptor_int.h */
 #define KIND_TAPTREE_BRANCH       0x40
 
 struct addr_ver_t {
@@ -189,23 +168,6 @@ static const struct addr_ver_t g_address_versions[] = {
     },
 };
 
-/* A node in a parsed miniscript expression */
-typedef struct ms_node_t {
-    struct ms_node_t *next;
-    struct ms_node_t *child;
-    struct ms_node_t *parent;
-    uint32_t kind;
-    uint32_t type_properties;
-    int64_t number;
-    const char *child_path;
-    const char *data;
-    uint32_t data_len;
-    uint32_t child_path_len;
-    char wrapper_str[12];
-    unsigned short flags; /* WALLY_MS_IS_ flags */
-    unsigned char builtin;
-} ms_node;
-
 typedef struct wally_descriptor {
     char *src; /* The canonical source script */
     size_t src_len; /* Length of src */
@@ -232,21 +194,6 @@ static int ctx_add_key_node(ms_ctx *ctx, ms_node *node)
 }
 
 static int ensure_unique_policy_keys(const ms_ctx *ctx);
-
-/* Built-in miniscript expressions */
-typedef int (*node_verify_fn_t)(ms_ctx *ctx, ms_node *node);
-typedef int (*node_gen_fn_t)(ms_ctx *ctx, ms_node *node,
-                             unsigned char *script, size_t script_len, size_t *written);
-
-struct ms_builtin_t {
-    const char *name;
-    const uint32_t name_len;
-    const uint32_t kind;
-    const uint32_t type_properties;
-    const uint32_t child_count; /* Number of expected children */
-    const node_verify_fn_t verify_fn;
-    const node_gen_fn_t generate_fn;
-};
 
 /* FIXME: the max is actually 20 in a witness script */
 #define CHECKMULTISIG_NUM_KEYS_MAX 15
@@ -998,7 +945,7 @@ static int verify_or_b(ms_ctx *ctx, ms_node *node)
         ((x_prop & y_prop) & PROP_E))
         node->type_properties |= x_prop & y_prop & PROP_M;
 
-    return WALLY_OK;
+    return (node->type_properties & TYPE_B) ? WALLY_OK : WALLY_EINVAL;
 }
 
 static int verify_or_c(ms_ctx *ctx, ms_node *node)
@@ -1017,7 +964,7 @@ static int verify_or_c(ms_ctx *ctx, ms_node *node)
     if (x_prop & PROP_E && ((x_prop | y_prop) & PROP_S))
         node->type_properties |= x_prop & y_prop & PROP_M;
 
-    return WALLY_OK;
+    return (node->type_properties & TYPE_V) ? WALLY_OK : WALLY_EINVAL;
 }
 
 static int verify_or_d(ms_ctx *ctx, ms_node *node)
@@ -2320,7 +2267,7 @@ static int generate_inplace_wrappers(ms_node *node,
 }
 
 #define I_NAME(name) name, sizeof(name) - 1
-static const struct ms_builtin_t g_builtins[] = {
+const struct ms_builtin_t g_builtins[] = {
     /* output descriptor */
     {
         I_NAME("sh"),
