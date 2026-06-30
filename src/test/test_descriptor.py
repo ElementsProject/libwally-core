@@ -29,6 +29,8 @@ MS_IS_ELEMENTS     = 0x100
 MS_IS_SLIP77       = 0x200
 MS_IS_ELIP150      = 0x400
 MS_IS_ELIP151      = 0x800
+MS_IS_TAPSCRIPT    = 0x1000
+MS_IS_MUSIG        = 0x2000
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
@@ -51,6 +53,7 @@ class DescriptorTests(unittest.TestCase):
             'key_remote': '03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7',
             'key_revocation': '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284',
             'H': 'd0721279e70d39fb4aa409b52839a0056454e3b5', # HASH160(key_local)
+            'x_only': 'b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e',
         })
         script, script_len = make_cbuffer('00' * 256 * 2)
 
@@ -71,6 +74,47 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(written, len(expected) / 2)
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
             wally_descriptor_free(d)
+
+        # pk_k and pk_h fragment tests: (miniscript, flags, expected_hex)
+        pk_args = [
+            ('c:pk_k(key_local)', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac'),
+            ('c:pk_h(key_local)', MS_ONLY,
+             '76a914d0721279e70d39fb4aa409b52839a0056454e3b588ac'),
+            ('c:pk_k(x_only)', MS_ONLY | MS_TAP,
+             '20b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0eac'),
+        ]
+        for miniscript, flags, expected in pk_args:
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, keys, NETWORK_NONE, flags, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(script[:written], make_cbuffer(expected)[0])
+            wally_descriptor_free(d)
+
+        # hash fragment tests: (miniscript, flags, expected_hex)
+        hash_args = [
+            ('sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2)', MS_ONLY,
+             '82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed287'),
+            ('hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b)', MS_ONLY,
+             '82012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b87'),
+            ('ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba)', MS_ONLY,
+             '82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87'),
+            ('hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07)', MS_ONLY,
+             '82012088a91420195b5a3d650c17f0f29f91c33f8f6335193d0787'),
+        ]
+        for hash_ms, flags, expected in hash_args:
+            d = c_void_p()
+            ret = wally_descriptor_parse(hash_ms, keys, NETWORK_NONE, flags, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(script[:written], make_cbuffer(expected)[0])
+            wally_descriptor_free(d)
+
         wally_map_free(keys)
 
         # Invalid args
@@ -268,6 +312,9 @@ class DescriptorTests(unittest.TestCase):
              0, MS_IS_PRIVATE, 5, 2),
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
              MS_ONLY, MS_IS_PRIVATE, 5, 2),
+            # tr() key-path only: MS_IS_TAPSCRIPT must NOT be set
+            (f'tr({k1})',
+             0, MS_IS_DESCRIPTOR, 2, 1),
         ]
         if is_elements_build:
             slip77 = 'ct(slip77(b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04),elpkh(xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH))'
@@ -334,6 +381,17 @@ class DescriptorTests(unittest.TestCase):
         ret = wally_descriptor_parse('pk())', None, NETWORK_NONE,
                                      flags | (5 << 16), d)
         self.assertEqual(ret, WALLY_EINVAL)
+
+        # tr() with taptree: MS_IS_TAPSCRIPT must be set in features
+        d = c_void_p()
+        desc_tree = f'tr({k1},{{pk({k1}),pk({k1})}})'
+        ret = wally_descriptor_parse(desc_tree, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, features = wally_descriptor_get_features(d)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(features & MS_IS_TAPSCRIPT, 'MS_IS_TAPSCRIPT not set for tr() with taptree')
+        self.assertTrue(features & MS_IS_DESCRIPTOR)
+        wally_descriptor_free(d)
 
     def test_policy(self):
         """Test policy parsing"""
@@ -495,6 +553,109 @@ class DescriptorTests(unittest.TestCase):
                     self.assertEqual((ret, path_str), (WALLY_OK, expected_path))
                     wally_descriptor_free(d)
 
+
+    def test_wrappers(self):
+        """Test miniscript wrapper expressions (a:, s:, c:, d:, v:, j:, n:, l:, u:, t:)"""
+        keys = wally_map_from_dict({
+            'key_local': '038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048',
+        })
+        script, script_len = make_cbuffer('00' * 256 * 2)
+
+        # pk_k push: 21 <33-byte compressed pubkey>
+        pk_push = '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048'
+
+        # (miniscript, expected_script_hex)
+        # In libwally, multiple wrappers use a single colon with all chars before it,
+        # e.g. "ac:pk_k" applies c: first then a: (wrappers applied in reverse order).
+        # c: [pk_k] CHECKSIG
+        c_pk = pk_push + 'ac'
+        # vc: pk_k CHECKSIGVERIFY (v: replaces trailing CHECKSIG with CHECKSIGVERIFY)
+        vc_pk = pk_push + 'ad'
+
+        wrapper_cases = [
+            # c: wrapper — pk_k(K) -> [K] CHECKSIG
+            ('c:pk_k(key_local)', c_pk),
+            # a: wrapper — TOALTSTACK [X] FROMALTSTACK  (X = c:pk_k, type B)
+            ('ac:pk_k(key_local)', '6b' + c_pk + '6c'),
+            # s: wrapper — SWAP [X]  (X = c:pk_k, type Bo)
+            ('sc:pk_k(key_local)', '7c' + c_pk),
+            # v: wrapper — replaces trailing CHECKSIG with CHECKSIGVERIFY
+            ('vc:pk_k(key_local)', vc_pk),
+            # d: wrapper — DUP IF [X] ENDIF  (X = v:older(1), type Vz)
+            # older(1) = OP_1(51) OP_CSV(b2); v: appends OP_VERIFY(69) since CSV not replaceable
+            ('dv:older(1)', '7663' + '51b269' + '68'),
+            # j: wrapper — SIZE 0NOTEQUAL IF [X] ENDIF  (X = c:pk_k, type Bn)
+            ('jc:pk_k(key_local)', '829263' + c_pk + '68'),
+            # n: wrapper — [X] 0NOTEQUAL  (X = c:pk_k, type B)
+            ('nc:pk_k(key_local)', c_pk + '92'),
+            # l: wrapper — or_i(0, X): IF 0 ELSE [X] ENDIF  (X = c:pk_k, type B)
+            ('lc:pk_k(key_local)', '630067' + c_pk + '68'),
+            # u: wrapper — or_i(X, 0): IF [X] ELSE 0 ENDIF  (X = c:pk_k, type B)
+            ('uc:pk_k(key_local)', '63' + c_pk + '670068'),
+            # t: wrapper — and_v(X, 1): [X] OP_1  (X = vc:pk_k, type V)
+            ('tvc:pk_k(key_local)', vc_pk + '51'),
+        ]
+
+        for miniscript, expected in wrapper_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, keys, NETWORK_NONE, MS_ONLY, d)
+            self.assertEqual(ret, WALLY_OK, f'parse failed for: {miniscript}')
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK, f'to_script failed for: {miniscript}')
+            self.assertEqual(written, len(expected) // 2,
+                             f'wrong length for: {miniscript}')
+            self.assertEqual(script[:written], make_cbuffer(expected)[0],
+                             f'wrong script for: {miniscript}')
+            wally_descriptor_free(d)
+
+        wally_map_free(keys)
+
+    def test_composite_descriptors(self):
+        """Test composite miniscript expressions (and_v, or_d, andor) including Liana-style templates"""
+        keys = wally_map_from_dict({
+            'key_local':      '038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048',
+            'key_remote':     '03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7',
+            'key_revocation': '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284',
+            'x_only':         'b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e',
+        })
+        script, script_len = make_cbuffer('00' * 512 * 2)
+
+        cases = [
+            # Case A: Liana-like recovery leaf — key + timelock
+            # and_v(X,Y) -> [X][Y]
+            # vc:pk_k -> push(K) OP_CHECKSIGVERIFY; older(52560=0xCD50) -> 03 50 CD 00 OP_CSV
+            ('and_v(vc:pk_k(key_local),older(52560))', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048'
+             'ad0350cd00b2'),
+            # Case B: Primary key OR (recovery key + timelock)
+            # or_d(X,Y) -> [X] OP_IFDUP(73) OP_NOTIF(64) [Y] OP_ENDIF(68)
+            ('or_d(c:pk_k(key_local),and_v(vc:pk_k(key_remote),older(52560)))', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac'
+             '73642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad'
+             '0350cd00b268'),
+            # Case C: andor — if primary key succeeds use timelock, else use revocation key
+            # andor(X,Y,Z) -> [X] OP_NOTIF(64) [Z] OP_ELSE(67) [Y] OP_ENDIF(68)
+            ('andor(c:pk_k(key_local),older(52560),c:pk_k(key_revocation))', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac'
+             '642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac'
+             '670350cd00b268'),
+            # Case D: Tapscript — x-only key uses 32-byte push (opcode 20)
+            ('and_v(vc:pk_k(x_only),older(52560))', MS_ONLY | MS_TAP,
+             '20b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e'
+             'ad0350cd00b2'),
+        ]
+
+        for miniscript, flags, expected in cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, keys, NETWORK_NONE, flags, d)
+            self.assertEqual(ret, WALLY_OK, f'parse failed for: {miniscript}')
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK, f'to_script failed for: {miniscript}')
+            self.assertEqual(written, len(expected) // 2, f'wrong length for: {miniscript}')
+            self.assertEqual(script[:written], make_cbuffer(expected)[0], f'wrong script for: {miniscript}')
+            wally_descriptor_free(d)
+
+        wally_map_free(keys)
 
 if __name__ == '__main__':
     unittest.main()
