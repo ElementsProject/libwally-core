@@ -152,6 +152,9 @@ class wally_psbt_input(Structure):
                 ('taproot_leaf_scripts', wally_map),
                 ('taproot_leaf_hashes', wally_map),
                 ('taproot_leaf_paths', wally_map),
+                ('musig2_pubkeys', wally_map),
+                ('musig2_pubnonces', wally_map),
+                ('musig2_partial_sigs', wally_map),
                 ('issuance_amount', c_uint64),
                 ('inflation_keys', c_uint64),
                 ('pegin_amount', c_uint64),
@@ -172,6 +175,7 @@ class wally_psbt_output(Structure):
                 ('taproot_tree', wally_map),
                 ('taproot_leaf_hashes', wally_map),
                 ('taproot_leaf_paths', wally_map),
+                ('musig2_pubkeys', wally_map),
                 ('blinder_index', c_uint32),
                 ('has_blinder_index', c_uint32),
                 ('pset_fields', wally_map)]
@@ -196,6 +200,24 @@ class wally_psbt(Structure):
                 ('pset_modifiable_flags', c_uint32),
                 ('genesis_blockhash', c_ubyte * 32),
                 ('signing_cache', POINTER(wally_map))]
+
+class wally_musig_keyagg_cache(Structure):
+    _fields_ = [('data', c_ubyte * 197)]
+
+class wally_musig_secnonce(Structure):
+    _fields_ = [('data', c_ubyte * 132)]
+
+class wally_musig_pubnonce(Structure):
+    _fields_ = [('data', c_ubyte * 66)]
+
+class wally_musig_aggnonce(Structure):
+    _fields_ = [('data', c_ubyte * 66)]
+
+class wally_musig_session(Structure):
+    _fields_ = [('data', c_ubyte * 133)]
+
+class wally_musig_partial_sig(Structure):
+    _fields_ = [('data', c_ubyte * 32)]
 
 for f in (
     # Internal functions
@@ -332,6 +354,11 @@ for f in (
     ('wally_descriptor_get_key_origin_fingerprint', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_descriptor_get_key_origin_path_str', c_int, [c_void_p, c_size_t, c_char_p_p]),
     ('wally_descriptor_get_key_origin_path_str_len', c_int, [c_void_p, c_size_t, c_size_t_p]),
+    ('wally_descriptor_get_musig_num_participants', c_int, [c_void_p, c_size_t, c_size_t_p]),
+    ('wally_descriptor_get_musig_participant_key', c_int, [c_void_p, c_size_t, c_size_t, c_char_p_p]),
+    ('wally_descriptor_get_musig_participant_key_features', c_int, [c_void_p, c_size_t, c_size_t, c_uint32_p]),
+    ('wally_descriptor_get_musig_participant_key_origin_fingerprint', c_int, [c_void_p, c_size_t, c_size_t, c_void_p, c_size_t]),
+    ('wally_descriptor_get_musig_participant_key_origin_path_str', c_int, [c_void_p, c_size_t, c_size_t, c_char_p_p]),
     ('wally_descriptor_get_network', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_num_keys', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_num_paths', c_int, [c_void_p, c_uint32_p]),
@@ -440,6 +467,36 @@ for f in (
     ('wally_map_replace_integer', c_int, [POINTER(wally_map), c_uint32, c_void_p, c_size_t]),
     ('wally_map_sort', c_int, [POINTER(wally_map), c_uint32]),
     ('wally_merkle_path_xonly_public_key_verify', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_musig_aggnonce_free', c_int, [c_void_p]),
+    ('wally_musig_aggnonce_parse', c_int, [c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_aggnonce_serialize', c_int, [c_void_p, c_void_p, c_size_t]),
+    ('wally_musig_keyagg_cache_free', c_int, [c_void_p]),
+    ('wally_musig_keyagg_cache_parse', c_int, [c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_keyagg_cache_serialize', c_int, [c_void_p, c_void_p, c_size_t]),
+    ('wally_musig_nonce_agg', c_int, [c_void_p, c_size_t, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_nonce_gen', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_void_p), POINTER(c_void_p)]),
+    ('wally_musig_nonce_gen_counter', c_int, [c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_void_p), POINTER(c_void_p)]),
+    ('wally_musig_nonce_process', c_int, [c_void_p, c_void_p, c_size_t, c_void_p, c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_partial_sig_agg', c_int, [c_void_p, c_size_t, c_size_t, c_void_p, c_void_p, c_size_t]),
+    ('wally_musig_partial_sig_free', c_int, [c_void_p]),
+    ('wally_musig_partial_sig_parse', c_int, [c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_partial_sig_serialize', c_int, [c_void_p, c_void_p, c_size_t]),
+    ('wally_musig_partial_sig_verify', c_int, [c_void_p, c_void_p, c_void_p, c_size_t, c_void_p, c_void_p]),
+    ('wally_musig_partial_sign', c_int, [c_void_p, c_void_p, c_size_t, c_void_p, c_void_p, POINTER(c_void_p)]),
+    ('wally_musig_pubkey_agg', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_pubkey_ec_tweak_add', c_int, [c_void_p, c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_musig_pubkey_get', c_int, [c_void_p, c_void_p, c_size_t]),
+    ('wally_musig_pubkey_to_xpub', c_int, [c_void_p, c_size_t, c_uint32, POINTER(POINTER(ext_key))]),
+    ('wally_musig_pubkey_xonly_tweak_add', c_int, [c_void_p, c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_musig_pubkeys_agg_then_derive', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t, POINTER(POINTER(ext_key))]),
+    ('wally_musig_pubkeys_derive_then_agg', c_int, [c_void_p, c_size_t, c_uint32, c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_pubnonce_free', c_int, [c_void_p]),
+    ('wally_musig_pubnonce_parse', c_int, [c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_pubnonce_serialize', c_int, [c_void_p, c_void_p, c_size_t]),
+    ('wally_musig_secnonce_free', c_int, [c_void_p]),
+    ('wally_musig_session_free', c_int, [c_void_p]),
+    ('wally_musig_session_parse', c_int, [c_void_p, c_size_t, POINTER(c_void_p)]),
+    ('wally_musig_session_serialize', c_int, [c_void_p, c_void_p, c_size_t]),
     ('wally_pbkdf2_hmac_sha256', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_pbkdf2_hmac_sha512', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_psbt_add_global_scalar', c_int, [POINTER(wally_psbt), c_void_p, c_size_t]),
@@ -478,6 +535,9 @@ for f in (
     ('wally_psbt_get_tx_version', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_has_global_genesis_blockhash', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_init_alloc', c_int, [c_uint32, c_size_t, c_size_t, c_size_t, c_uint32, POINTER(POINTER(wally_psbt))]),
+    ('wally_psbt_input_add_musig2_partial_sig', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_psbt_input_add_musig2_participant_pubkeys', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t]),
+    ('wally_psbt_input_add_musig2_pubnonce', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_psbt_input_add_signature', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_psbt_input_clear_amount_rangeproof', c_int, [POINTER(wally_psbt_input)]),
     ('wally_psbt_input_clear_asset', c_int, [POINTER(wally_psbt_input)]),
@@ -498,6 +558,9 @@ for f in (
     ('wally_psbt_input_clear_sequence', c_int, [POINTER(wally_psbt_input)]),
     ('wally_psbt_input_clear_utxo_rangeproof', c_int, [POINTER(wally_psbt_input)]),
     ('wally_psbt_input_find_keypath', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
+    ('wally_psbt_input_find_musig2_partial_sig', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
+    ('wally_psbt_input_find_musig2_pubkey', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
+    ('wally_psbt_input_find_musig2_pubnonce', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_input_find_signature', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_input_find_unknown', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_input_generate_explicit_proofs', c_int, [POINTER(wally_psbt_input), c_uint64, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t]),
@@ -523,6 +586,8 @@ for f in (
     ('wally_psbt_input_get_issuance_asset_entropy_len', c_int, [POINTER(wally_psbt_input), c_size_t_p]),
     ('wally_psbt_input_get_issuance_blinding_nonce', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_input_get_issuance_blinding_nonce_len', c_int, [POINTER(wally_psbt_input), c_size_t_p]),
+    ('wally_psbt_input_get_musig2_partial_sig_count', c_int, [POINTER(wally_psbt_input), c_size_t_p]),
+    ('wally_psbt_input_get_musig2_pubnonce_count', c_int, [POINTER(wally_psbt_input), c_size_t_p]),
     ('wally_psbt_input_get_pegin_claim_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_input_get_pegin_claim_script_len', c_int, [POINTER(wally_psbt_input), c_size_t_p]),
     ('wally_psbt_input_get_pegin_genesis_blockhash', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t, c_size_t_p]),
@@ -550,6 +615,7 @@ for f in (
     ('wally_psbt_input_set_issuance_asset_entropy', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t]),
     ('wally_psbt_input_set_issuance_blinding_nonce', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t]),
     ('wally_psbt_input_set_keypaths', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
+    ('wally_psbt_input_set_musig2_pubkeys', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
     ('wally_psbt_input_set_output_index', c_int, [POINTER(wally_psbt_input), c_uint32]),
     ('wally_psbt_input_set_pegin_amount', c_int, [POINTER(wally_psbt_input), c_uint64]),
     ('wally_psbt_input_set_pegin_claim_script', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t]),
@@ -564,6 +630,7 @@ for f in (
     ('wally_psbt_input_set_sequence', c_int, [POINTER(wally_psbt_input), c_uint32]),
     ('wally_psbt_input_set_sighash', c_int, [POINTER(wally_psbt_input), c_uint32]),
     ('wally_psbt_input_set_signatures', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
+    ('wally_psbt_input_set_taproot_from_descriptor', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_uint32, c_uint32, c_uint32]),
     ('wally_psbt_input_set_taproot_internal_key', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t]),
     ('wally_psbt_input_set_taproot_signature', c_int, [POINTER(wally_psbt_input), c_void_p, c_size_t]),
     ('wally_psbt_input_set_unknowns', c_int, [POINTER(wally_psbt_input), POINTER(wally_map)]),
@@ -576,6 +643,10 @@ for f in (
     ('wally_psbt_is_elements', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_is_finalized', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_is_input_finalized', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
+    ('wally_psbt_musig2_add_nonce', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_uint32, POINTER(c_void_p)]),
+    ('wally_psbt_musig2_finalize_input', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_uint32]),
+    ('wally_psbt_musig2_sign', c_int, [POINTER(wally_psbt), c_size_t, c_void_p, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_uint32, POINTER(c_void_p)]),
+    ('wally_psbt_output_add_musig2_participant_pubkeys', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_psbt_output_clear_amount', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_clear_asset', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_clear_asset_blinding_surjectionproof', c_int, [POINTER(wally_psbt_output)]),
@@ -588,6 +659,7 @@ for f in (
     ('wally_psbt_output_clear_value_commitment', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_clear_value_rangeproof', c_int, [POINTER(wally_psbt_output)]),
     ('wally_psbt_output_find_keypath', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_size_t_p]),
+    ('wally_psbt_output_find_musig2_pubkey', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_output_find_unknown', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_output_get_asset', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_size_t_p]),
     ('wally_psbt_output_get_asset_blinding_surjectionproof', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_size_t_p]),
@@ -618,6 +690,7 @@ for f in (
     ('wally_psbt_output_set_blinding_public_key', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
     ('wally_psbt_output_set_ecdh_public_key', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
     ('wally_psbt_output_set_keypaths', c_int, [POINTER(wally_psbt_output), POINTER(wally_map)]),
+    ('wally_psbt_output_set_musig2_pubkeys', c_int, [POINTER(wally_psbt_output), POINTER(wally_map)]),
     ('wally_psbt_output_set_redeem_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
     ('wally_psbt_output_set_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
     ('wally_psbt_output_set_taproot_internal_key', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
@@ -627,6 +700,7 @@ for f in (
     ('wally_psbt_output_set_value_rangeproof', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
     ('wally_psbt_output_set_witness_script', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t]),
     ('wally_psbt_output_taproot_keypath_add', c_int, [POINTER(wally_psbt_output), c_void_p, c_size_t, c_void_p, c_size_t, c_void_p, c_size_t, POINTER(c_uint32), c_size_t]),
+    ('wally_psbt_populate_musig2_from_descriptor', c_int, [POINTER(wally_psbt), c_void_p, c_uint32, c_uint32]),
     ('wally_psbt_remove_input', c_int, [POINTER(wally_psbt), c_uint32]),
     ('wally_psbt_remove_output', c_int, [POINTER(wally_psbt), c_uint32]),
     ('wally_psbt_set_fallback_locktime', c_int, [POINTER(wally_psbt), c_uint32]),

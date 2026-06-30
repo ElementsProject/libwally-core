@@ -1,5 +1,37 @@
 # Changes
 
+## Version 1.5.5
+
+### Added
+- descriptor: Add taproot (tapscript) script-path support: tr() taptrees,
+  multi_a/sortedmulti_a fragments, BIP-341 leaf/merkle hashing, and the
+  tree/leaf/control-block accessor APIs.
+- descriptor: Add a Script-to-miniscript decoder (BIP-379).
+- miniscript: Add a witness satisfier producing non-malleable, minimum-weight witnesses.
+- psbt: Add BIP-371 taproot PSBT fields (internal key, leaf scripts, merkle root,
+  tap bip32 derivation), script-path signing, and the taproot finalizers.
+- musig: Add MuSig2 (BIP-327/328/373/390) support:
+  - New `wally_musig.h` API with six opaque types: `wally_musig_keyagg_cache`,
+    `wally_musig_secnonce`, `wally_musig_pubnonce`, `wally_musig_aggnonce`,
+    `wally_musig_session`, `wally_musig_partial_sig`
+  - Key aggregation: `wally_musig_pubkey_agg`, `wally_musig_pubkey_get`,
+    `wally_musig_pubkey_ec_tweak_add`, `wally_musig_pubkey_xonly_tweak_add`
+  - BIP-328 synthetic xpub: `wally_musig_pubkey_to_xpub` enabling BIP-32
+    derivation from aggregate keys; `wally_musig_pubkeys_agg_then_derive`,
+    `wally_musig_pubkeys_derive_then_agg` for combined aggregate-and-derive flows
+  - Nonce generation: `wally_musig_nonce_gen`, `wally_musig_nonce_gen_counter`,
+    `wally_musig_nonce_agg`
+  - Signing: `wally_musig_nonce_process`, `wally_musig_partial_sign`,
+    `wally_musig_partial_sig_verify`, `wally_musig_partial_sig_agg`
+  - Serialization helpers for all six opaque types
+  - BIP-390 `musig()` key expression in `wally_descriptor_parse()`:
+    parse and evaluate `tr(musig(xpub1,xpub2)/<0;1>/*)` descriptors
+  - BIP-373 PSBT MuSig2 fields: participant pubkeys, pubnonces, partial sigs;
+    high-level helpers `wally_psbt_musig2_add_nonce`, `wally_psbt_musig2_sign`,
+    `wally_psbt_musig2_finalize_input`
+  - Python, Java/JNI, and JavaScript/WASM bindings for all MuSig2 functions
+  - Requires secp256k1-zkp with MuSig2 module (guarded by `BUILD_STANDARD_SECP`)
+
 ## Version 1.5.4
 
 ### Added

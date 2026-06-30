@@ -5,6 +5,13 @@
 #define ENABLE_MODULE_ECDH 1
 #define ENABLE_MODULE_EXTRAKEYS 1
 #define ENABLE_MODULE_SCHNORRSIG 1
+/* MuSig2 follows the standard --enable-standard-secp / -DBUILD_STANDARD_SECP
+ * knob: enabled here by default, dropped when a consumer defines
+ * BUILD_STANDARD_SECP (which also compiles out wally's musig/s2c/anti-exfil
+ * layers). Taproot (schnorr/bip341) is unaffected either way. */
+#ifndef BUILD_STANDARD_SECP
+#define ENABLE_MODULE_MUSIG 1
+#endif
 #define ENABLE_MODULE_GENERATOR 1
 #define ENABLE_MODULE_ECDSA_S2C 1
 #define ENABLE_MODULE_RECOVERY 1
@@ -68,7 +75,12 @@
 #include "src/hex_.c"
 #include "src/hmac.c"
 #include "src/map.c"
+#include "src/miniscript_decode.c"
+#include "src/miniscript_satisfy.c"
 #include "src/mnemonic.c"
+#ifndef BUILD_STANDARD_SECP
+#include "src/musig.c"
+#endif
 #include "src/pbkdf2.c"
 #include "src/pullpush.c"
 #include "src/psbt.c"

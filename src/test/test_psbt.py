@@ -1,3 +1,4 @@
+import hashlib
 import json
 import unittest
 from util import *
@@ -5,6 +6,9 @@ from util import *
 FLAG_GRIND_R = 0x4
 MOD_NONE = 0
 INIT_PSET = 1
+BIP32_VER_MAIN_PRIVATE = 0x0488ADE4
+BIP32_FLAG_KEY_PUBLIC = 0x1
+BIP32_FP_LEN = 4
 
 with open(root_dir + 'src/data/psbt.json', 'r') as f:
     JSON = json.load(f)
@@ -440,6 +444,649 @@ class PSBTTests(unittest.TestCase):
         SERIALIZE_FLAG_REDUNDANT = 0x1
         serialized = self.to_base64(psbt, None, SERIALIZE_FLAG_REDUNDANT)
         self.assertNotEqual(serialized, b64)
+
+    def test_musig2_participant_pubkeys(self):
+        """Test MuSig2 participant pubkeys for PSBT inputs and outputs"""
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        # Set a non-zero txhash on the input so v2 PSBT serialization succeeds
+        txhash, txhash_len = make_cbuffer('ab' * 32)
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_previous_txid(psbt, 0, txhash, txhash_len))
+
+        inp = psbt.contents.inputs[0]
+        out = psbt.contents.outputs[0]
+
+        # Valid keys: 33-byte agg_pubkey, 66-byte participants (2 x 33)
+        agg, agg_len = make_cbuffer('02' + 'ab' * 32)
+        parts, parts_len = make_cbuffer('03' + 'cd' * 32 + '02' + 'ef' * 32)
+
+        # --- Invalid argument tests for input ---
+        invalid_input_args = [
+            (None, agg,  agg_len,   parts, parts_len),  # NULL input
+            (inp,  None, agg_len,   parts, parts_len),  # NULL agg_pubkey
+            (inp,  agg,  32,        parts, parts_len),  # agg_pubkey_len != 33
+            (inp,  agg,  34,        parts, parts_len),  # agg_pubkey_len != 33
+            (inp,  agg,  agg_len,   None,  parts_len),  # NULL participants
+            (inp,  agg,  agg_len,   parts, 33),         # participants_len < 66 (one key only)
+            (inp,  agg,  agg_len,   parts, 0),          # participants_len == 0
+            (inp,  agg,  agg_len,   parts, 67),         # participants_len not multiple of 33
+        ]
+        for args in invalid_input_args:
+            self.assertEqual(WALLY_EINVAL, wally_psbt_input_add_musig2_participant_pubkeys(*args))
+
+        # --- Invalid argument tests for output ---
+        invalid_output_args = [
+            (None, agg,  agg_len,   parts, parts_len),  # NULL output
+            (out,  None, agg_len,   parts, parts_len),  # NULL agg_pubkey
+            (out,  agg,  32,        parts, parts_len),  # agg_pubkey_len != 33
+            (out,  agg,  34,        parts, parts_len),  # agg_pubkey_len != 33
+            (out,  agg,  agg_len,   None,  parts_len),  # NULL participants
+            (out,  agg,  agg_len,   parts, 33),         # participants_len < 66
+            (out,  agg,  agg_len,   parts, 0),          # participants_len == 0
+            (out,  agg,  agg_len,   parts, 67),         # participants_len not multiple of 33
+        ]
+        for args in invalid_output_args:
+            self.assertEqual(WALLY_EINVAL, wally_psbt_output_add_musig2_participant_pubkeys(*args))
+
+        # --- Valid add: input ---
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_participant_pubkeys(inp, agg, agg_len, parts, parts_len))
+
+        # find returns 1-based index
+        ret, idx = wally_psbt_input_find_musig2_pubkey(inp, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        # Verify stored value matches participants via map access (66 bytes = 2 * 33)
+        buf, buf_len = make_cbuffer('00' * 132)  # 132 hex chars = 66 bytes
+        ret, written = wally_map_get_item(byref(inp.musig2_pubkeys), 0, buf, buf_len)
+        self.assertEqual((ret, written), (WALLY_OK, parts_len))
+        self.assertEqual(bytes(buf[:written]), bytes(parts[:parts_len]))
+
+        # --- Valid add: output ---
+        self.assertEqual(WALLY_OK,
+            wally_psbt_output_add_musig2_participant_pubkeys(out, agg, agg_len, parts, parts_len))
+
+        ret, idx = wally_psbt_output_find_musig2_pubkey(out, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        buf2, buf2_len = make_cbuffer('00' * 132)  # 132 hex chars = 66 bytes
+        ret, written = wally_map_get_item(byref(out.musig2_pubkeys), 0, buf2, buf2_len)
+        self.assertEqual((ret, written), (WALLY_OK, parts_len))
+        self.assertEqual(bytes(buf2[:written]), bytes(parts[:parts_len]))
+
+        # --- Round-trip: serialize and deserialize, verify participants survive ---
+        b64_out = self.to_base64(psbt)
+        wally_psbt_free(psbt)
+        psbt2 = self.parse_base64(b64_out)
+        # Re-serialize and compare (checks stable encoding)
+        self.assertEqual(self.to_base64(psbt2), b64_out)
+
+        inp2 = psbt2.contents.inputs[0]
+        out2 = psbt2.contents.outputs[0]
+
+        # Verify participants are present in deserialized PSBT
+        ret, idx = wally_psbt_input_find_musig2_pubkey(inp2, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        ret, idx = wally_psbt_output_find_musig2_pubkey(out2, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        wally_psbt_free(psbt2)
+
+    def _make_musig2_v2_psbt(self):
+        """Helper: create a minimal v2 PSBT with 1 input and 1 output."""
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1234, b'\x59\x59', 2, tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+        txhash, txhash_len = make_cbuffer('ab' * 32)
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_previous_txid(psbt, 0, txhash, txhash_len))
+        return psbt
+
+    def test_musig2_pubnonces_and_partial_sigs(self):
+        """Test MuSig2 pubnonce and partial_sig PSBT fields (BIP-373)"""
+        psbt = self._make_musig2_v2_psbt()
+        inp = psbt.contents.inputs[0]
+
+        participant, part_len = make_cbuffer('02' + 'ab' * 32)   # 33-byte compressed pubkey
+        agg, agg_len = make_cbuffer('03' + 'cd' * 32)            # 33-byte compressed pubkey
+        leaf, leaf_len = make_cbuffer('ee' * 32)                  # 32-byte leaf hash
+        nonce, nonce_len = make_cbuffer('ff' * 66)                # 66-byte pubnonce
+        psig, psig_len = make_cbuffer('aa' * 32)                  # 32-byte partial sig
+
+        # --- Invalid arg tests for add_musig2_pubnonce ---
+        invalid_pubnonce_args = [
+            (None, participant, part_len, agg, agg_len, None, 0, nonce, nonce_len),   # NULL input
+            (inp, None, part_len, agg, agg_len, None, 0, nonce, nonce_len),           # NULL participant
+            (inp, participant, 32, agg, agg_len, None, 0, nonce, nonce_len),          # wrong part_len
+            (inp, participant, 34, agg, agg_len, None, 0, nonce, nonce_len),          # wrong part_len
+            (inp, participant, part_len, None, agg_len, None, 0, nonce, nonce_len),   # NULL agg
+            (inp, participant, part_len, agg, 32, None, 0, nonce, nonce_len),         # wrong agg_len
+            (inp, participant, part_len, agg, agg_len, leaf, 31, nonce, nonce_len),   # bad leaf_len
+            (inp, participant, part_len, agg, agg_len, leaf, 33, nonce, nonce_len),   # bad leaf_len
+            (inp, participant, part_len, agg, agg_len, None, 32, nonce, nonce_len),   # NULL leaf + non-zero len
+            (inp, participant, part_len, agg, agg_len, None, 0, None, nonce_len),     # NULL nonce
+            (inp, participant, part_len, agg, agg_len, None, 0, nonce, 65),           # wrong nonce_len
+            (inp, participant, part_len, agg, agg_len, None, 0, nonce, 67),           # wrong nonce_len
+        ]
+        for args in invalid_pubnonce_args:
+            self.assertEqual(WALLY_EINVAL,
+                             wally_psbt_input_add_musig2_pubnonce(*args))
+
+        # --- Valid add without leaf hash ---
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_pubnonce(
+                inp, participant, part_len, agg, agg_len, None, 0, nonce, nonce_len))
+
+        ret, idx = wally_psbt_input_find_musig2_pubnonce(
+            inp, participant, part_len, agg, agg_len, None, 0)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        # --- Valid add with leaf hash ---
+        nonce2, nonce2_len = make_cbuffer('11' * 66)
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_pubnonce(
+                inp, participant, part_len, agg, agg_len, leaf, leaf_len, nonce2, nonce2_len))
+
+        ret, idx2 = wally_psbt_input_find_musig2_pubnonce(
+            inp, participant, part_len, agg, agg_len, leaf, leaf_len)
+        self.assertEqual((ret, idx2), (WALLY_OK, 2))
+
+        # --- Count ---
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(inp)
+        self.assertEqual((ret, count), (WALLY_OK, 2))
+
+        # --- Verify stored value via map access ---
+        buf, buf_len = make_cbuffer('00' * 66)
+        ret, written = wally_map_get_item(byref(inp.musig2_pubnonces), 0, buf, buf_len)
+        self.assertEqual((ret, written), (WALLY_OK, nonce_len))
+        self.assertEqual(bytes(buf[:written]), bytes(nonce[:nonce_len]))
+
+        # --- Invalid arg tests for add_musig2_partial_sig ---
+        invalid_psig_args = [
+            (None, participant, part_len, agg, agg_len, None, 0, psig, psig_len),    # NULL input
+            (inp, None, part_len, agg, agg_len, None, 0, psig, psig_len),            # NULL participant
+            (inp, participant, 32, agg, agg_len, None, 0, psig, psig_len),           # wrong part_len
+            (inp, participant, part_len, None, agg_len, None, 0, psig, psig_len),    # NULL agg
+            (inp, participant, part_len, agg, 32, None, 0, psig, psig_len),          # wrong agg_len
+            (inp, participant, part_len, agg, agg_len, leaf, 31, psig, psig_len),    # bad leaf_len
+            (inp, participant, part_len, agg, agg_len, None, 32, psig, psig_len),    # NULL leaf + non-zero len
+            (inp, participant, part_len, agg, agg_len, None, 0, None, psig_len),     # NULL psig
+            (inp, participant, part_len, agg, agg_len, None, 0, psig, 31),           # wrong psig_len
+            (inp, participant, part_len, agg, agg_len, None, 0, psig, 33),           # wrong psig_len
+        ]
+        for args in invalid_psig_args:
+            self.assertEqual(WALLY_EINVAL,
+                             wally_psbt_input_add_musig2_partial_sig(*args))
+
+        # --- Valid add partial sig without leaf hash ---
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_partial_sig(
+                inp, participant, part_len, agg, agg_len, None, 0, psig, psig_len))
+
+        ret, idx = wally_psbt_input_find_musig2_partial_sig(
+            inp, participant, part_len, agg, agg_len, None, 0)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        # --- Valid add partial sig with leaf hash ---
+        psig2, psig2_len = make_cbuffer('bb' * 32)
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_partial_sig(
+                inp, participant, part_len, agg, agg_len, leaf, leaf_len, psig2, psig2_len))
+
+        ret, idx2 = wally_psbt_input_find_musig2_partial_sig(
+            inp, participant, part_len, agg, agg_len, leaf, leaf_len)
+        self.assertEqual((ret, idx2), (WALLY_OK, 2))
+
+        ret, count = wally_psbt_input_get_musig2_partial_sig_count(inp)
+        self.assertEqual((ret, count), (WALLY_OK, 2))
+
+        # Verify stored value
+        buf3, buf3_len = make_cbuffer('00' * 32)
+        ret, written = wally_map_get_item(byref(inp.musig2_partial_sigs), 0, buf3, buf3_len)
+        self.assertEqual((ret, written), (WALLY_OK, psig_len))
+        self.assertEqual(bytes(buf3[:written]), bytes(psig[:psig_len]))
+
+        # --- Round-trip: serialize and deserialize ---
+        b64_out = self.to_base64(psbt)
+        wally_psbt_free(psbt)
+        psbt2 = self.parse_base64(b64_out)
+        self.assertEqual(self.to_base64(psbt2), b64_out)
+
+        inp2 = psbt2.contents.inputs[0]
+
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(inp2)
+        self.assertEqual((ret, count), (WALLY_OK, 2))
+
+        ret, count = wally_psbt_input_get_musig2_partial_sig_count(inp2)
+        self.assertEqual((ret, count), (WALLY_OK, 2))
+
+        ret, idx = wally_psbt_input_find_musig2_pubnonce(
+            inp2, participant, part_len, agg, agg_len, None, 0)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        ret, idx = wally_psbt_input_find_musig2_partial_sig(
+            inp2, participant, part_len, agg, agg_len, leaf, leaf_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 2))
+
+        wally_psbt_free(psbt2)
+
+    def test_musig2_finalization_cleanup(self):
+        """Test that finalization clears MuSig2 session fields but preserves participant pubkeys"""
+        WALLY_PSBT_FINALIZE_NO_CLEAR = 0x1
+
+        participant, part_len = make_cbuffer('02' + 'ab' * 32)
+        agg, agg_len = make_cbuffer('03' + 'cd' * 32)
+        parts, parts_len = make_cbuffer('03' + 'cd' * 32 + '02' + 'ef' * 32)
+        nonce, nonce_len = make_cbuffer('ff' * 66)
+        psig, psig_len = make_cbuffer('aa' * 32)
+        dummy_script, dummy_script_len = make_cbuffer('51')  # OP_1 (trivially "spendable" for test)
+
+        def setup_psbt_with_musig2():
+            psbt = self._make_musig2_v2_psbt()
+            inp = psbt.contents.inputs[0]
+            # Mark input as already finalized so finalize_input goes to done: block
+            self.assertEqual(WALLY_OK,
+                wally_psbt_input_set_final_scriptsig(inp, dummy_script, dummy_script_len))
+            # Add MuSig2 session fields
+            self.assertEqual(WALLY_OK,
+                wally_psbt_input_add_musig2_pubnonce(
+                    inp, participant, part_len, agg, agg_len, None, 0, nonce, nonce_len))
+            self.assertEqual(WALLY_OK,
+                wally_psbt_input_add_musig2_partial_sig(
+                    inp, participant, part_len, agg, agg_len, None, 0, psig, psig_len))
+            # Add participant pubkeys (metadata, should be preserved)
+            self.assertEqual(WALLY_OK,
+                wally_psbt_input_add_musig2_participant_pubkeys(inp, agg, agg_len, parts, parts_len))
+            return psbt
+
+        # --- Test with flags=0: session fields must be cleared, participant pubkeys preserved ---
+        psbt = setup_psbt_with_musig2()
+        self.assertEqual(WALLY_OK, wally_psbt_finalize_input(psbt, 0, 0))
+
+        inp = psbt.contents.inputs[0]
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(inp)
+        self.assertEqual((ret, count), (WALLY_OK, 0))  # cleared
+
+        ret, count = wally_psbt_input_get_musig2_partial_sig_count(inp)
+        self.assertEqual((ret, count), (WALLY_OK, 0))  # cleared
+
+        ret, idx = wally_psbt_input_find_musig2_pubkey(inp, agg, agg_len)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertGreater(idx, 0)  # preserved
+
+        wally_psbt_free(psbt)
+
+        # --- Test with WALLY_PSBT_FINALIZE_NO_CLEAR: all fields must remain ---
+        psbt = setup_psbt_with_musig2()
+        self.assertEqual(WALLY_OK, wally_psbt_finalize_input(psbt, 0, WALLY_PSBT_FINALIZE_NO_CLEAR))
+
+        inp = psbt.contents.inputs[0]
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(inp)
+        self.assertEqual((ret, count), (WALLY_OK, 1))  # preserved
+
+        ret, count = wally_psbt_input_get_musig2_partial_sig_count(inp)
+        self.assertEqual((ret, count), (WALLY_OK, 1))  # preserved
+
+        ret, idx = wally_psbt_input_find_musig2_pubkey(inp, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))  # preserved
+
+        wally_psbt_free(psbt)
+
+    def test_musig2_combine_sigs(self):
+        """Test that psbt_combine with COMBINE_SIGS flag merges MuSig2 pubnonces and partial sigs"""
+        WALLY_PSBT_COMBINE_SIGS = 0x1
+
+        participant, part_len = make_cbuffer('02' + 'ab' * 32)
+        agg, agg_len = make_cbuffer('03' + 'cd' * 32)
+        nonce, nonce_len = make_cbuffer('ff' * 66)
+        psig, psig_len = make_cbuffer('aa' * 32)
+
+        # Build destination PSBT (base)
+        dst = self._make_musig2_v2_psbt()
+
+        # Build source (signature-only) PSBT with same input txhash/index
+        src = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, src))
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(src, 0, 0, tx_in))
+        txhash, txhash_len = make_cbuffer('ab' * 32)
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_previous_txid(src, 0, txhash, txhash_len))
+        # No outputs: this is a signature-only PSBT (version 2, no outputs)
+
+        src_inp = src.contents.inputs[0]
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_pubnonce(
+                src_inp, participant, part_len, agg, agg_len, None, 0, nonce, nonce_len))
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_partial_sig(
+                src_inp, participant, part_len, agg, agg_len, None, 0, psig, psig_len))
+
+        # Combine with COMBINE_SIGS flag
+        self.assertEqual(WALLY_OK, wally_psbt_combine_ex(dst, WALLY_PSBT_COMBINE_SIGS, src))
+
+        # Verify MuSig2 fields were merged into dst
+        dst_inp = dst.contents.inputs[0]
+
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(dst_inp)
+        self.assertEqual((ret, count), (WALLY_OK, 1))
+
+        ret, idx = wally_psbt_input_find_musig2_pubnonce(
+            dst_inp, participant, part_len, agg, agg_len, None, 0)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        ret, count = wally_psbt_input_get_musig2_partial_sig_count(dst_inp)
+        self.assertEqual((ret, count), (WALLY_OK, 1))
+
+        ret, idx = wally_psbt_input_find_musig2_partial_sig(
+            dst_inp, participant, part_len, agg, agg_len, None, 0)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        wally_psbt_free(dst)
+        wally_psbt_free(src)
+
+    def test_musig2_v0_v2_conversion(self):
+        """Test that MuSig2 fields survive v2->v0->v2 PSBT conversion"""
+        psbt = self._make_musig2_v2_psbt()
+        inp = psbt.contents.inputs[0]
+        out = psbt.contents.outputs[0]
+
+        agg, agg_len = make_cbuffer('02' + 'ab' * 32)
+        parts, parts_len = make_cbuffer('03' + 'cd' * 32 + '02' + 'ef' * 32)
+        participant, part_len = make_cbuffer('02' + 'ab' * 32)
+        nonce, nonce_len = make_cbuffer('ff' * 66)
+        psig, psig_len = make_cbuffer('aa' * 32)
+
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_participant_pubkeys(inp, agg, agg_len, parts, parts_len))
+        self.assertEqual(WALLY_OK,
+            wally_psbt_output_add_musig2_participant_pubkeys(out, agg, agg_len, parts, parts_len))
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_pubnonce(
+                inp, participant, part_len, agg, agg_len, None, 0, nonce, nonce_len))
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_add_musig2_partial_sig(
+                inp, participant, part_len, agg, agg_len, None, 0, psig, psig_len))
+
+        # Convert v2 -> v0
+        self.assertEqual(WALLY_OK, wally_psbt_set_version(psbt, 0, 0))
+        # Convert v0 -> v2
+        self.assertEqual(WALLY_OK, wally_psbt_set_version(psbt, 0, 2))
+
+        # All MuSig2 fields must still be present after round-trip
+        inp2 = psbt.contents.inputs[0]
+        out2 = psbt.contents.outputs[0]
+
+        ret, idx = wally_psbt_input_find_musig2_pubkey(inp2, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        ret, idx = wally_psbt_output_find_musig2_pubkey(out2, agg, agg_len)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(inp2)
+        self.assertEqual((ret, count), (WALLY_OK, 1))
+
+        ret, count = wally_psbt_input_get_musig2_partial_sig_count(inp2)
+        self.assertEqual((ret, count), (WALLY_OK, 1))
+
+        # Serialize and verify stable encoding
+        b64_out = self.to_base64(psbt)
+        wally_psbt_free(psbt)
+        psbt3 = self.parse_base64(b64_out)
+        self.assertEqual(self.to_base64(psbt3), b64_out)
+        wally_psbt_free(psbt3)
+
+
+    def test_musig2_psbt_populate_from_descriptor(self):
+        """Test wally_psbt_populate_musig2_from_descriptor"""
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+        fp1 = 'deadbeef'
+        fp2 = 'cafebabe'
+        NETWORK_NONE = 0x00
+
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+        # Add one input and one output to the v2 PSBT
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22, tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        d = c_void_p()
+        desc_str = f'tr(musig([{fp1}/86h/0h/0h]{xpub1}/0/*,[{fp2}/86h/0h/0h]{xpub2}/0/*))'
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK, f'descriptor parse failed: {desc_str}')
+
+        # Invalid args
+        self.assertEqual(WALLY_EINVAL, wally_psbt_populate_musig2_from_descriptor(None, d, 0, 0))
+        self.assertEqual(WALLY_EINVAL, wally_psbt_populate_musig2_from_descriptor(psbt, None, 0, 0))
+        self.assertEqual(WALLY_EINVAL, wally_psbt_populate_musig2_from_descriptor(psbt, d, 0, 1))
+
+        # Valid: populate with child_num=0
+        self.assertEqual(WALLY_OK, wally_psbt_populate_musig2_from_descriptor(psbt, d, 0, 0))
+
+        inp = psbt.contents.inputs[0]
+        out = psbt.contents.outputs[0]
+
+        # TAP_INTERNAL_KEY must be set (32 bytes x-only)
+        ret, ik_len = wally_psbt_get_input_taproot_internal_key_len(psbt, 0)
+        self.assertEqual((ret, ik_len), (WALLY_OK, 32))
+
+        ik_buf, ik_buf_len = make_cbuffer('00' * 32)
+        ret, ik_written = wally_psbt_get_input_taproot_internal_key(psbt, 0, ik_buf, ik_buf_len)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(ik_written, 32)
+
+        # MUSIG2_PARTICIPANT_PUBKEYS: try both 02 and 03 prefix for agg_comp
+        ik_hex = bytes(ik_buf[:32]).hex()
+        agg_02, _ = make_cbuffer('02' + ik_hex)
+        agg_03, _ = make_cbuffer('03' + ik_hex)
+        ret2, idx2 = wally_psbt_input_find_musig2_pubkey(inp, agg_02, 33)
+        ret3, idx3 = wally_psbt_input_find_musig2_pubkey(inp, agg_03, 33)
+        self.assertTrue((ret2 == WALLY_OK and idx2 > 0) or (ret3 == WALLY_OK and idx3 > 0),
+                        'MUSIG2_PARTICIPANT_PUBKEYS not found in input')
+
+        # Output must also have MUSIG2_PARTICIPANT_PUBKEYS
+        ret2, idx2 = wally_psbt_output_find_musig2_pubkey(out, agg_02, 33)
+        ret3, idx3 = wally_psbt_output_find_musig2_pubkey(out, agg_03, 33)
+        self.assertTrue((ret2 == WALLY_OK and idx2 > 0) or (ret3 == WALLY_OK and idx3 > 0),
+                        'MUSIG2_PARTICIPANT_PUBKEYS not found in output')
+
+        # TAP_BIP32_DERIVATION: 2 entries (one per participant)
+        self.assertEqual(inp.taproot_leaf_paths.num_items, 2)
+
+        wally_descriptor_free(d)
+        wally_psbt_free(psbt)
+
+        # No musig descriptor: no fields added
+        psbt2 = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt2))
+        d2 = c_void_p()
+        ret = wally_descriptor_parse(f'pk({xpub1})', None, NETWORK_NONE, 0, d2)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(WALLY_OK, wally_psbt_populate_musig2_from_descriptor(psbt2, d2, 0, 0))
+        inp2 = psbt2.contents.inputs[0]
+        self.assertEqual(inp2.taproot_leaf_paths.num_items, 0)
+        wally_descriptor_free(d2)
+        wally_psbt_free(psbt2)
+
+    def _master_and_xpub(self, seed_byte):
+        seed, seed_len = make_cbuffer(seed_byte * 64)  # 32 bytes
+        m = POINTER(ext_key)()
+        self.assertEqual(WALLY_OK, bip32_key_from_seed_alloc(
+            seed, seed_len, BIP32_VER_MAIN_PRIVATE, 0, m))
+        fp, fp_len = make_cbuffer('00' * BIP32_FP_LEN)
+        self.assertEqual(WALLY_OK, bip32_key_get_fingerprint(m, fp, fp_len))
+        ret, xpub = bip32_key_to_base58(m, BIP32_FLAG_KEY_PUBLIC)
+        self.assertEqual(ret, WALLY_OK)
+        return m, bytes(fp[:BIP32_FP_LEN]).hex(), xpub
+
+    def test_sign_taproot_script_path(self):
+        """Regression test for taproot script-path signing (psbt_sign_script_path).
+
+        Builds a tr() with an internal key A and a pk(B) script leaf, then signs
+        the script path with B's master key. The produced BIP-340 signature is
+        deterministic (NULL aux_rand), so we lock it as a fixed vector."""
+        mA, _fpA, xpubA = self._master_and_xpub('aa')
+        mB, fpB, xpubB = self._master_and_xpub('bb')
+
+        d = c_void_p()
+        desc_str = f'tr({xpubA},pk([{fpB}]{xpubB}))'
+        self.assertEqual(WALLY_OK, wally_descriptor_parse(desc_str, None, MOD_NONE, 0, d))
+
+        # Derive the tr() output scriptpubkey (the prevout being spent)
+        ret, slen = wally_descriptor_to_script_get_maximum_length(d, 0, 0, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        spk, spk_len = make_cbuffer('00' * slen)
+        ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, spk, spk_len)
+        self.assertEqual(ret, WALLY_OK)
+
+        # v2 PSBT with one taproot input and one output
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, pointer(wally_tx_input())))
+        tx_out = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab'*20, 22, tx_out))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_out))
+
+        # Witness utxo = the tr() prevout
+        utxo = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(100000, spk, written, utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_witness_utxo(psbt, 0, utxo))
+
+        # Populate taproot fields (internal key, leaf scripts, tap bip32 derivation)
+        self.assertEqual(WALLY_OK,
+            wally_psbt_input_set_taproot_from_descriptor(psbt, 0, d, 0, 0, 0))
+        inp = psbt.contents.inputs[0]
+        self.assertEqual(inp.taproot_leaf_scripts.num_items, 1)
+
+        # Sign the script path with master B
+        self.assertEqual(WALLY_OK, wally_psbt_sign_bip32(psbt, mB, 0))
+
+        # Exactly one 64-byte (SIGHASH_DEFAULT) script-path signature, with the
+        # expected deterministic value
+        self.assertEqual(inp.taproot_leaf_signatures.num_items, 1)
+        it = inp.taproot_leaf_signatures.items[0]
+        self.assertEqual(it.value_len, 64)
+        sig = bytes((c_ubyte * it.value_len).from_address(it.value)).hex()
+        expected = '25a5ee769c23e8241661cab4c0050332f14a7f06250ad97a823bf67d0bde2a8f' \
+                   '915195a83f96ec895df39eee11295b01154a024eb02496d85abe846534c41593'
+        self.assertEqual(sig, expected)
+
+        wally_descriptor_free(d)
+        wally_psbt_free(psbt)
+        bip32_key_free(mA)
+        bip32_key_free(mB)
+
+
+class Csv2of2SmokeTests(unittest.TestCase):
+    """Regression smoke: CSV2OF2_1 and CSV2OF2_1_OPT PSBT finalization witnesses."""
+
+    _SK_1 = bytes([1] + [0] * 31)  # user key
+    _SK_2 = bytes([2] + [0] * 31)  # recovery key
+    _CSV_BLOCKS = 17               # minimum
+
+    @classmethod
+    def setUpClass(cls):
+        pk_buf, pk_len = make_cbuffer('00' * 33)
+        assert wally_ec_public_key_from_private_key(cls._SK_1, 32, pk_buf, pk_len) == WALLY_OK
+        cls._PK_1 = bytes(pk_buf)
+        assert wally_ec_public_key_from_private_key(cls._SK_2, 32, pk_buf, pk_len) == WALLY_OK
+        cls._PK_2 = bytes(pk_buf)
+
+    def _build_psbt(self, is_optimized):
+        two_pks = self._PK_1 + self._PK_2
+        pks_buf, pks_len = make_cbuffer(two_pks.hex())
+
+        csv_buf, csv_len = make_cbuffer('00' * 200)
+        fn = (wally_scriptpubkey_csv_2of2_then_1_from_bytes_opt if is_optimized
+              else wally_scriptpubkey_csv_2of2_then_1_from_bytes)
+        ret, written = fn(pks_buf, pks_len, self._CSV_BLOCKS, 0, csv_buf, csv_len)
+        self.assertEqual(ret, WALLY_OK)
+        csv_script = bytes(csv_buf[:written])
+
+        p2wsh_spk = bytes([0x00, 0x20]) + hashlib.sha256(csv_script).digest()
+        spk_buf, spk_len = make_cbuffer(p2wsh_spk.hex())
+
+        output = pointer(wally_tx_output())
+        self.assertEqual(wally_tx_output_init_alloc(1_000_000, spk_buf, spk_len, output), WALLY_OK)
+
+        tx = pointer(wally_tx())
+        self.assertEqual(wally_tx_init_alloc(2, 0, 1, 1, tx), WALLY_OK)
+        txid_buf, txid_len = make_cbuffer('ab' * 32)
+        # sequence=0 ensures CSV is not expired (0 < CSV_BLOCKS=17)
+        self.assertEqual(wally_tx_add_raw_input(tx, txid_buf, txid_len, 0, 0, None, 0, None, 0), WALLY_OK)
+        self.assertEqual(wally_tx_add_output(tx, output), WALLY_OK)
+
+        psbt = pointer(wally_psbt())
+        self.assertEqual(wally_psbt_init_alloc(0, 0, 0, 0, 0, psbt), WALLY_OK)
+        self.assertEqual(wally_psbt_set_global_tx(psbt, tx), WALLY_OK)
+        self.assertEqual(wally_psbt_set_input_witness_utxo(psbt, 0, output), WALLY_OK)
+
+        csv_cbuf, csv_cbuf_len = make_cbuffer(csv_script.hex())
+        self.assertEqual(wally_psbt_set_input_witness_script(psbt, 0, csv_cbuf, csv_cbuf_len), WALLY_OK)
+
+        fp, fp_len = make_cbuffer('00' * 4)
+        for pk in [self._PK_1, self._PK_2]:
+            pk_cbuf, pk_cbuf_len = make_cbuffer(pk.hex())
+            self.assertEqual(wally_psbt_add_input_keypath(psbt, 0, pk_cbuf, pk_cbuf_len,
+                                                          fp, fp_len, None, 0), WALLY_OK)
+        return psbt, csv_script
+
+    def _sign_and_get_witness(self, psbt):
+        for sk in [self._SK_1, self._SK_2]:
+            sk_buf, sk_len = make_cbuffer(sk.hex())
+            wally_psbt_sign(psbt, sk_buf, sk_len, FLAG_GRIND_R)
+
+        self.assertEqual(wally_psbt_finalize(psbt, 0), WALLY_OK)
+        ret, is_finalized = wally_psbt_is_finalized(psbt)
+        self.assertEqual((ret, is_finalized), (WALLY_OK, 1))
+
+        fw = psbt.contents.inputs[0].final_witness
+        self.assertIsNotNone(fw)
+        stack = fw.contents
+        items = []
+        for i in range(stack.num_items):
+            item = stack.items[i]
+            if item.len == 0 or not item.witness:
+                items.append(b'')
+            else:
+                items.append(string_at(item.witness, item.len))
+        return items
+
+    def test_csv2of2_1_two_key_spend(self):
+        """CSV2OF2_1: two-key spend produces [sig_2, sig_1, csv_script]."""
+        psbt, csv_script = self._build_psbt(is_optimized=False)
+        witness = self._sign_and_get_witness(psbt)
+        wally_psbt_free(psbt)
+        self.assertEqual(len(witness), 3)
+        self.assertGreater(len(witness[0]), 0)  # sig_2
+        self.assertGreater(len(witness[1]), 0)  # sig_1
+        self.assertEqual(witness[2], csv_script)
+
+    def test_csv2of2_1_opt_two_key_spend(self):
+        """CSV2OF2_1_OPT: two-key spend produces [sig_2, sig_1, csv_script]."""
+        psbt, csv_script = self._build_psbt(is_optimized=True)
+        witness = self._sign_and_get_witness(psbt)
+        wally_psbt_free(psbt)
+        self.assertEqual(len(witness), 3)
+        self.assertGreater(len(witness[0]), 0)  # sig_2
+        self.assertGreater(len(witness[1]), 0)  # sig_1
+        self.assertEqual(witness[2], csv_script)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -54,6 +54,13 @@ int keypair_xonly_pub(secp256k1_xonly_pubkey *xpubkey, const secp256k1_keypair *
 int keypair_sec(unsigned char *output, const secp256k1_keypair *keypair);
 int keypair_xonly_tweak_add(secp256k1_keypair *keypair, const unsigned char *tweak);
 
+/* Compute the BIP-341 TapTweak scalar t = tagged_hash(TapTweak, pubkey_xonly || merkle_root).
+ * pub_key may be x-only (32) or compressed (33); merkle_root may be NULL (key-path only).
+ * flags may include EC_FLAG_ELEMENTS to select the Elements tag. Defined in sign.c. */
+int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
+                     const unsigned char *merkle_root, uint32_t flags,
+                     unsigned char *tweak, size_t tweak_len);
+
 #define PUBKEY_COMPRESSED   SECP256K1_EC_COMPRESSED
 #define PUBKEY_UNCOMPRESSED SECP256K1_EC_UNCOMPRESSED
 

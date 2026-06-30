@@ -116,7 +116,10 @@
 #define PSBT_IN_TAP_BIP32_DERIVATION 0x16
 #define PSBT_IN_TAP_INTERNAL_KEY 0x17
 #define PSBT_IN_TAP_MERKLE_ROOT 0x18
-#define PSBT_IN_MAX PSBT_IN_TAP_MERKLE_ROOT
+#define PSBT_IN_MUSIG2_PARTICIPANT_PUBKEYS 0x1a
+#define PSBT_IN_MUSIG2_PUB_NONCE           0x1b
+#define PSBT_IN_MUSIG2_PARTIAL_SIG         0x1c
+#define PSBT_IN_MAX PSBT_IN_MUSIG2_PARTIAL_SIG
 
 /* Inputs: PSET */
 #define PSET_IN_ISSUANCE_VALUE 0x00
@@ -151,7 +154,10 @@
                               PSBT_FT(PSBT_IN_HASH256) | \
                               PSBT_FT(PSBT_IN_TAP_SCRIPT_SIG) | \
                               PSBT_FT(PSBT_IN_TAP_LEAF_SCRIPT) | \
-                              PSBT_FT(PSBT_IN_TAP_BIP32_DERIVATION))
+                              PSBT_FT(PSBT_IN_TAP_BIP32_DERIVATION) | \
+                              PSBT_FT(PSBT_IN_MUSIG2_PARTICIPANT_PUBKEYS) | \
+                              PSBT_FT(PSBT_IN_MUSIG2_PUB_NONCE) | \
+                              PSBT_FT(PSBT_IN_MUSIG2_PARTIAL_SIG))
 
 /* Input PSBT/PSET fields that can be repeated */
 #define PSBT_IN_REPEATABLE PSBT_IN_HAVE_KEYDATA
@@ -224,7 +230,8 @@
 #define PSBT_OUT_TAP_INTERNAL_KEY 0x05
 #define PSBT_OUT_TAP_TREE 0x06
 #define PSBT_OUT_TAP_BIP32_DERIVATION 0x07
-#define PSBT_OUT_MAX PSBT_OUT_TAP_BIP32_DERIVATION
+#define PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS 0x08
+#define PSBT_OUT_MAX PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS
 
 /* Outputs: PSET */
 #define PSET_OUT_UNUSED_ZERO 0x00 /* Unused, WTF */
@@ -242,7 +249,8 @@
 
 /* Output PSBT/PSET fields that contain data in their keys */
 #define PSBT_OUT_HAVE_KEYDATA (PSBT_FT(PSBT_OUT_BIP32_DERIVATION) | \
-                               PSBT_FT(PSBT_OUT_TAP_BIP32_DERIVATION))
+                               PSBT_FT(PSBT_OUT_TAP_BIP32_DERIVATION) | \
+                               PSBT_FT(PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS))
 
 /* Output PSBT/PSET fields that can be repeated */
 #define PSBT_OUT_REPEATABLE PSBT_OUT_HAVE_KEYDATA

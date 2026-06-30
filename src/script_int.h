@@ -2,6 +2,7 @@
 #define LIBWALLY_CORE_SCRIPT_INT_H 1
 
 #include "ccan/ccan/endian/endian.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,6 +87,18 @@ size_t varint_from_bytes(const unsigned char *bytes, uint64_t *v);
 size_t scriptint_get_length(int64_t signed_v);
 
 size_t scriptint_to_bytes(int64_t signed_v, unsigned char *bytes_out);
+
+/* Decode a CScriptNum from bytes[1..bytes[0]], where bytes[0] is the count.
+ * len must be at least bytes[0]+1. Accepts 1–4 byte values only. */
+int64_t scriptint_from_bytes(const unsigned char *bytes, size_t len, int64_t *value_out);
+
+/* Compute the BIP-341 tapleaf hash:
+ *   tagged_hash(TAG, leaf_version || compact_size(script_len) || script)
+ * where TAG is "TapLeaf" for Bitcoin or "TapLeaf/elements" when is_elements.
+ * hash_out must have room for SHA256_LEN bytes. */
+int tapleaf_hash(unsigned char leaf_version,
+                 const unsigned char *script, size_t script_len,
+                 bool is_elements, unsigned char *hash_out);
 
 size_t varint_length_from_bytes(const unsigned char *bytes);
 
