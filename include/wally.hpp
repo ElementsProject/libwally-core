@@ -615,6 +615,42 @@ inline int descriptor_get_key_origin_path_str_len(const DESCRIPTOR& descriptor, 
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_musig_num_participants(const DESCRIPTOR& descriptor, size_t index, size_t* written) {
+    int ret = ::wally_descriptor_get_musig_num_participants(detail::get_p(descriptor), index, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, char** output) {
+    int ret = ::wally_descriptor_get_musig_participant_key(detail::get_p(descriptor), index, participant_index, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key_features(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_musig_participant_key_features(detail::get_p(descriptor), index, participant_index, value_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_musig_participant_key_origin_fingerprint(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, BYTES_OUT& bytes_out) {
+    int ret = ::wally_descriptor_get_musig_participant_key_origin_fingerprint(detail::get_p(descriptor), index, participant_index, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key_origin_path_str(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, char** output) {
+    int ret = ::wally_descriptor_get_musig_participant_key_origin_path_str(detail::get_p(descriptor), index, participant_index, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key_origin_path_str_len(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, size_t* written) {
+    int ret = ::wally_descriptor_get_musig_participant_key_origin_path_str_len(detail::get_p(descriptor), index, participant_index, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
     return detail::check_ret(__FUNCTION__, ret);
