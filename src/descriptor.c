@@ -10,6 +10,9 @@
 #include <include/wally_descriptor.h>
 #include <include/wally_map.h>
 #include <include/wally_script.h>
+#ifndef BUILD_STANDARD_SECP
+#include <include/wally_musig.h>
+#endif
 #ifdef BUILD_ELEMENTS
 #include <include/wally_elements.h>
 #endif
@@ -97,6 +100,7 @@
 #define KIND_DESCRIPTOR_CT       (0x00300000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_SLIP77   (0x00400000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_ELIP151  (0x00500000 | KIND_DESCRIPTOR)
+#define KIND_DESCRIPTOR_MUSIG    (0x00600000 | KIND_DESCRIPTOR)
 
 /* miniscript KIND_MINISCRIPT_* constants are defined in descriptor_int.h */
 #define KIND_TAPTREE_BRANCH       0x40
@@ -795,10 +799,28 @@ static int verify_raw(ms_ctx *ctx, ms_node *node)
     return WALLY_OK;
 }
 
+#ifndef BUILD_STANDARD_SECP
+static int musig_pubkey_cmp(const void *a, const void *b)
+{
+    return memcmp(a, b, EC_PUBLIC_KEY_LEN);
+}
+
+static bool node_is_musig(const ms_node *node)
+{
+    return node->builtin && builtin_get(node)->kind == KIND_DESCRIPTOR_MUSIG;
+}
+#else
+static bool node_is_musig(const ms_node *node) { (void)node; return false; }
+#endif /* ndef BUILD_STANDARD_SECP */
+
 static int verify_raw_tr(ms_ctx *ctx, ms_node *node)
 {
-    if (node->parent || node->child->builtin || !(node->child->kind & KIND_KEY) ||
-        node_has_uncompressed_key(ctx, node))
+    if (node->parent)
+        return WALLY_EINVAL;
+    if (!node_is_musig(node->child) &&
+        (node->child->builtin || !(node->child->kind & KIND_KEY)))
+        return WALLY_EINVAL;
+    if (node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
     node->type_properties = builtin_get(node)->type_properties;
     return WALLY_OK;
@@ -810,12 +832,185 @@ static int verify_tr(ms_ctx *ctx, ms_node *node)
     /* only tr(key) and tr(key, tree) is valid */
     if (child_count < 1u || child_count > 2u)
         return WALLY_EINVAL;
-    if (!node_is_top(node) || node->child->builtin || !(node->child->kind & KIND_KEY) ||
-        node_has_uncompressed_key(ctx, node))
+    if (!node_is_top(node))
+        return WALLY_EINVAL;
+    if (!node_is_musig(node->child) &&
+        (node->child->builtin || !(node->child->kind & KIND_KEY)))
+        return WALLY_EINVAL;
+    if (node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
     node->type_properties = builtin_get(node)->type_properties;
     return WALLY_OK;
 }
+
+#ifndef BUILD_STANDARD_SECP
+static int verify_musig(ms_ctx *ctx, ms_node *node)
+{
+    const uint32_t count = node_get_child_count(node);
+    ms_node *key;
+
+    /* BIP-390: musig() requires at least 2 participants */
+    if (count < 2)
+        return WALLY_EINVAL;
+
+    /* BIP-390: musig() is only valid in taproot context */
+    /* TODO: also allow miniscript pk/pkh parent kinds when tapscript path support is added (currently blocked by tr() FIXME) */
+    if (!node->parent || !node->parent->builtin)
+        return WALLY_EINVAL;
+    {
+        const uint32_t parent_kind = builtin_get(node->parent)->kind;
+        if (parent_kind != KIND_DESCRIPTOR_TR && parent_kind != KIND_DESCRIPTOR_RAW_TR)
+            return WALLY_EINVAL;
+    }
+
+    /* Each child must be a raw key expression; no nested musig(), no independent trailing paths */
+    key = node->child;
+    while (key) {
+        if (key->builtin || !(key->kind & KIND_KEY))
+            return WALLY_EINVAL;
+        /* BIP-390: participant keys must not use hardened derivation (no private key available) */
+        if (key->child_path_len) {
+            uint32_t key_features;
+            if (bip32_path_str_n_get_features(key->child_path, key->child_path_len,
+                                              &key_features) != WALLY_OK)
+                return WALLY_EINVAL;
+            if (key_features & BIP32_PATH_IS_HARDENED)
+                return WALLY_EINVAL;
+        }
+        key = key->next;
+    }
+
+    /* Validate trailing derivation path if present (set in analyze_miniscript) */
+    if (node->child_path_len) {
+        uint32_t features, num_elems, num_multi, wildcard_pos;
+        if (bip32_path_str_n_get_features(node->child_path,
+                                          node->child_path_len,
+                                          &features) != WALLY_OK)
+            return WALLY_EINVAL;
+        /* BIP-390: no hardened derivation after musig() */
+        if (features & BIP32_PATH_IS_HARDENED)
+            return WALLY_EINVAL;
+        if (!(features & BIP32_PATH_IS_BARE))
+            return WALLY_EINVAL;
+        num_elems = (features & BIP32_PATH_LEN_MASK) >> BIP32_PATH_LEN_SHIFT;
+        num_multi = (features & BIP32_PATH_MULTI_MASK) >> BIP32_PATH_MULTI_SHIFT;
+        if (num_multi) {
+            if (ctx->num_multipaths != 1 && ctx->num_multipaths != num_multi)
+                return WALLY_EINVAL; /* Conflicting multi-path lengths */
+            ctx->num_multipaths = num_multi;
+            ctx->features |= WALLY_MS_IS_MULTIPATH;
+            node->flags |= WALLY_MS_IS_MULTIPATH;
+        }
+        if (features & BIP32_PATH_IS_WILDCARD) {
+            wildcard_pos = (features & BIP32_PATH_WILDCARD_MASK) >> BIP32_PATH_WILDCARD_SHIFT;
+            if (wildcard_pos != num_elems - 1)
+                return WALLY_EINVAL; /* Wildcard must be last element */
+            ctx->features |= WALLY_MS_IS_RANGED;
+            node->flags |= WALLY_MS_IS_RANGED;
+        }
+        if (num_elems > ctx->max_path_elems)
+            ctx->max_path_elems = num_elems;
+    }
+
+    node->type_properties = builtin_get(node)->type_properties;
+    /* Register the musig() aggregate itself as a key for introspection */
+    node->flags |= WALLY_MS_IS_MUSIG;
+    ctx->features |= WALLY_MS_IS_MUSIG;
+    return ctx_add_key_node(ctx, node);
+}
+
+static int generate_musig(ms_ctx *ctx, ms_node *node,
+                          unsigned char *script, size_t script_len, size_t *written)
+{
+    const uint32_t n = node_get_child_count(node);
+    unsigned char *pubkeys = NULL;
+    unsigned char agg_xonly[EC_XONLY_PUBLIC_KEY_LEN];
+    struct ext_key *synthetic_xpub = NULL;
+    ms_node *key;
+    uint32_t i;
+    int ret = WALLY_ENOMEM;
+
+    *written = 0;
+
+    pubkeys = wally_malloc(n * EC_PUBLIC_KEY_LEN);
+    if (!pubkeys)
+        return WALLY_ENOMEM;
+
+    /* Step 1: Resolve each participant key to a 33-byte compressed pubkey.
+     * BIP-390 requires musig() participants to be standard key expressions
+     * (xpub, WIF, compressed pubkey), which always produce 33-byte output. */
+    key = node->child;
+    for (i = 0; i < n; i++, key = key->next) {
+        unsigned char buf[EC_PUBLIC_KEY_LEN];
+        size_t key_written = 0;
+        ret = generate_script(ctx, key, buf, sizeof(buf), &key_written);
+        if (ret != WALLY_OK)
+            goto cleanup;
+        if (key_written != EC_PUBLIC_KEY_LEN) {
+            ret = WALLY_EINVAL;
+            goto cleanup;
+        }
+        memcpy(pubkeys + i * EC_PUBLIC_KEY_LEN, buf, EC_PUBLIC_KEY_LEN);
+    }
+
+    /* Step 2: Sort pubkeys lexicographically per BIP-390 */
+    qsort(pubkeys, n, EC_PUBLIC_KEY_LEN, musig_pubkey_cmp);
+
+    if (node->child_path_len) {
+        /* Aggregate-then-derive: musig(k1,k2)/path
+         * Per BIP-390: aggregate -> BIP-328 synthetic xpub -> derive child. */
+        const bool is_mainnet = !ctx->addr_ver ||
+                                ctx->addr_ver->network == WALLY_NETWORK_BITCOIN_MAINNET ||
+                                ctx->addr_ver->network == WALLY_NETWORK_LIQUID;
+        const uint32_t bip32_ver = is_mainnet ? BIP32_VER_MAIN_PUBLIC : BIP32_VER_TEST_PUBLIC;
+        const uint32_t path_flags = BIP32_FLAG_STR_WILDCARD |
+                                    BIP32_FLAG_STR_BARE |
+                                    BIP32_FLAG_STR_MULTIPATH;
+        const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH | BIP32_FLAG_KEY_PUBLIC;
+        struct ext_key derived = {0};
+        size_t path_len = 0;
+
+        ret = wally_musig_pubkey_agg(pubkeys, n * EC_PUBLIC_KEY_LEN,
+                                     agg_xonly, sizeof(agg_xonly), NULL);
+        if (ret != WALLY_OK)
+            goto cleanup;
+
+        ret = wally_musig_pubkey_to_xpub(agg_xonly, sizeof(agg_xonly),
+                                         bip32_ver, &synthetic_xpub);
+        if (ret != WALLY_OK)
+            goto cleanup;
+
+        ret = bip32_path_from_str_n(
+            node->child_path, node->child_path_len,
+            (node->flags & WALLY_MS_IS_RANGED) ? ctx->child_num : 0,
+            (node->flags & WALLY_MS_IS_MULTIPATH) ? ctx->multi_index : 0,
+            path_flags, ctx->path_buff, ctx->max_path_elems, &path_len);
+        if (ret == WALLY_OK)
+            ret = bip32_key_from_parent_path(synthetic_xpub, ctx->path_buff,
+                                             path_len, derive_flags, &derived);
+        if (ret == WALLY_OK) {
+            if (script_len >= EC_XONLY_PUBLIC_KEY_LEN)
+                memcpy(script, derived.pub_key + 1, EC_XONLY_PUBLIC_KEY_LEN);
+            *written = EC_XONLY_PUBLIC_KEY_LEN;
+        }
+        wally_clear(&derived, sizeof(derived)); /* always clear key material */
+    } else {
+        /* No trailing path: aggregate and return x-only key directly */
+        ret = wally_musig_pubkey_agg(pubkeys, n * EC_PUBLIC_KEY_LEN,
+                                     agg_xonly, sizeof(agg_xonly), NULL);
+        if (ret == WALLY_OK) {
+            if (script_len >= EC_XONLY_PUBLIC_KEY_LEN)
+                memcpy(script, agg_xonly, EC_XONLY_PUBLIC_KEY_LEN);
+            *written = EC_XONLY_PUBLIC_KEY_LEN;
+        }
+    }
+
+cleanup:
+    bip32_key_free(synthetic_xpub); /* NULL-safe; defensive free */
+    wally_free(pubkeys);
+    return ret;
+}
+#endif /* ndef BUILD_STANDARD_SECP */
 
 static int verify_delay(ms_ctx *ctx, ms_node *node)
 {
@@ -2364,6 +2559,14 @@ const struct ms_builtin_t g_builtins[] = {
         TYPE_NONE,
         0xffffffff, verify_tr, generate_tr
     },
+#ifndef BUILD_STANDARD_SECP
+    {
+        I_NAME("musig"),
+        KIND_DESCRIPTOR_MUSIG,
+        TYPE_NONE,
+        0xffffffff, verify_musig, generate_musig
+    },
+#endif /* ndef BUILD_STANDARD_SECP */
     /* miniscript */
     {
         I_NAME("pk_k"),
@@ -2659,7 +2862,7 @@ static int analyze_address(ms_ctx *ctx, const char *str, size_t str_len,
 /* take the possible hex data in node->data, if it is a valid key then
  * convert it to an allocated binary buffer and make this node a key node
  */
-static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
+static int analyze_key_hex(ms_ctx *ctx, ms_node *node, ms_node *parent,
                            uint32_t flags, bool is_ct_key, bool *is_hex)
 {
     unsigned char key[EC_PUBLIC_KEY_UNCOMPRESSED_LEN], *key_p = key;
@@ -2732,6 +2935,8 @@ static int analyze_key_hex(ms_ctx *ctx, ms_node *node,
     }
     node->flags |= WALLY_MS_IS_RAW;
     ctx->features |= WALLY_MS_IS_RAW;
+    if (parent && node_is_musig(parent))
+        return WALLY_OK;
     return ctx_add_key_node(ctx, node);
 }
 
@@ -2790,7 +2995,7 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
     }
 
     /* Check for a hex public key (hex private keys allowed for ct() only) */
-    ret = analyze_key_hex(ctx, node, flags, is_ct_key, &is_hex);
+    ret = analyze_key_hex(ctx, node, parent, flags, is_ct_key, &is_hex);
     if (ret == WALLY_OK && is_hex)
         return WALLY_OK;
 
@@ -2819,6 +3024,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
             node->kind = KIND_PRIVATE_KEY;
             ctx->features |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
             node->flags |= (WALLY_MS_IS_PRIVATE | WALLY_MS_IS_RAW);
+#ifndef BUILD_STANDARD_SECP
+            if (parent && node_is_musig(parent))
+                ret = WALLY_OK;
+            else
+#endif
             ret = ctx_add_key_node(ctx, node);
         }
         wally_clear(privkey, sizeof(privkey));
@@ -2899,6 +3109,11 @@ static int analyze_miniscript_key(ms_ctx *ctx, uint32_t flags,
                 node->flags |= WALLY_MS_IS_X_ONLY;
                 ctx->features |= WALLY_MS_IS_X_ONLY;
             }
+#ifndef BUILD_STANDARD_SECP
+            if (parent && node_is_musig(parent))
+                ret = WALLY_OK;
+            else
+#endif
             ret = ctx_add_key_node(ctx, node);
         }
     }
@@ -3218,6 +3433,20 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         ctx->features |= WALLY_MS_IS_TAPSCRIPT;
     }
 
+#ifndef BUILD_STANDARD_SECP
+    /* Capture trailing derivation path for musig() nodes: musig(k1,k2)/path */
+    if (ret == WALLY_OK && node->builtin &&
+        builtin_get(node)->kind == KIND_DESCRIPTOR_MUSIG &&
+        offset < str_len && str[offset] != '#') {
+        if (str[offset] == '/') {
+            node->child_path = str + offset + 1; /* skip leading '/' */
+            node->child_path_len = str_len - offset - 1;
+        } else {
+            ret = WALLY_EINVAL; /* Unexpected trailing content after musig() */
+        }
+    }
+#endif /* ndef BUILD_STANDARD_SECP */
+
     if (ret == WALLY_OK && node->builtin) {
         const uint32_t expected_children = builtin_get(node)->child_count;
         if (expected_children != 0xffffffff && node_get_child_count(node) != expected_children)
@@ -3315,6 +3544,12 @@ static int node_generation_size(const ms_node *node, size_t *total)
              * Plus threshold (up to 3 bytes) + OP_NUMEQUAL (1 byte) = 4. */
             *total += (node_get_child_count(node) - 1) * 34 + 4;
             break;
+#ifndef BUILD_STANDARD_SECP
+        case KIND_DESCRIPTOR_MUSIG:
+            /* Placeholder: aggregated key is one x-only pubkey (32 bytes) */
+            *total += EC_XONLY_PUBLIC_KEY_LEN;
+            break;
+#endif /* ndef BUILD_STANDARD_SECP */
         case KIND_MINISCRIPT_PK_K:
             *total += 1;
             break;
@@ -3934,6 +4169,41 @@ static const ms_node *descriptor_get_key(const struct wally_descriptor *descript
     return (ms_node *)descriptor->keys.items[index].value;
 }
 
+static int format_key_node(const struct wally_descriptor *descriptor,
+                           const ms_node *node, char **output)
+{
+    if (node->kind == KIND_PUBLIC_KEY)
+        return wally_hex_from_bytes((const unsigned char *)node->data,
+                                    node->data_len, output);
+    if (node->kind == KIND_PRIVATE_KEY) {
+        uint32_t flags = node->flags & WALLY_MS_IS_UNCOMPRESSED ? WALLY_WIF_FLAG_UNCOMPRESSED : 0;
+        if (!descriptor->addr_ver)
+            return WALLY_EINVAL;
+        return wally_wif_from_bytes((const unsigned char *)node->data, node->data_len,
+                                    descriptor->addr_ver->version_wif,
+                                    flags, output);
+    }
+    if ((node->kind & KIND_BIP32) == KIND_BIP32) {
+        if (node->child_path_len) {
+            /* Include the derivation path: <key>/<child_path> */
+            size_t total = node->data_len + 1 + node->child_path_len;
+            char *buf = (char *)wally_malloc(total + 1);
+            if (!buf)
+                return WALLY_ENOMEM;
+            memcpy(buf, node->data, node->data_len);
+            buf[node->data_len] = '/';
+            memcpy(buf + node->data_len + 1, node->child_path, node->child_path_len);
+            buf[total] = '\0';
+            *output = buf;
+        } else {
+            if (!(*output = wally_strdup_n(node->data, node->data_len)))
+                return WALLY_ENOMEM;
+        }
+        return WALLY_OK;
+    }
+    return WALLY_ERROR; /* Unknown key type */
+}
+
 int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
                              size_t index, char **output)
 {
@@ -3959,6 +4229,10 @@ int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
         if (node->kind == KIND_PRIVATE_KEY || node->kind == KIND_RAW)
             goto return_hex;
     }
+#endif
+#ifndef BUILD_STANDARD_SECP
+    if (node->kind == KIND_DESCRIPTOR_MUSIG)
+        return WALLY_EINVAL; /* musig() aggregate: use wally_descriptor_get_musig_* */
 #endif
     if (node->kind == KIND_PUBLIC_KEY) {
 #ifdef BUILD_ELEMENTS
@@ -4003,6 +4277,151 @@ int wally_descriptor_get_key_features(const struct wally_descriptor *descriptor,
         return WALLY_EINVAL;
     *value_out = node->flags;
     return WALLY_OK;
+}
+
+int wally_descriptor_get_musig_num_participants(
+    const struct wally_descriptor *descriptor,
+    size_t index, size_t *written)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (written)
+        *written = 0;
+    if (!node || !written)
+        return WALLY_EINVAL;
+#ifndef BUILD_STANDARD_SECP
+    if (node->kind == KIND_DESCRIPTOR_MUSIG) {
+        const ms_node *k = node->child;
+        size_t count = 0;
+
+        while (k) { ++count; k = k->next; }
+        *written = count;
+        return WALLY_OK;
+    }
+#endif
+    return WALLY_EINVAL; /* Not a musig() key */
+}
+
+int wally_descriptor_get_musig_participant_key(
+    const struct wally_descriptor *descriptor,
+    size_t index, size_t participant_index,
+    char **output)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (output)
+        *output = NULL;
+    if (!node || !output)
+        return WALLY_EINVAL;
+#ifdef BUILD_STANDARD_SECP
+    (void)participant_index;
+#endif
+#ifndef BUILD_STANDARD_SECP
+    if (node->kind == KIND_DESCRIPTOR_MUSIG) {
+        const ms_node *k = node->child;
+        size_t i = 0;
+
+        while (k && i < participant_index) { k = k->next; ++i; }
+        if (!k)
+            return WALLY_EINVAL; /* participant_index out of range */
+        return format_key_node(descriptor, k, output);
+    }
+#endif
+    return WALLY_EINVAL; /* Not a musig() key */
+}
+
+int wally_descriptor_get_musig_participant_key_features(
+    const struct wally_descriptor *descriptor,
+    size_t index, size_t participant_index,
+    uint32_t *value_out)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (value_out)
+        *value_out = 0;
+    if (!node || !value_out)
+        return WALLY_EINVAL;
+#ifdef BUILD_STANDARD_SECP
+    (void)participant_index;
+#endif
+#ifndef BUILD_STANDARD_SECP
+    if (node->kind == KIND_DESCRIPTOR_MUSIG) {
+        const ms_node *k = node->child;
+        size_t i = 0;
+
+        while (k && i < participant_index) { k = k->next; ++i; }
+        if (!k)
+            return WALLY_EINVAL;
+        *value_out = k->flags;
+        return WALLY_OK;
+    }
+#endif
+    return WALLY_EINVAL;
+}
+
+int wally_descriptor_get_musig_participant_key_origin_fingerprint(
+    const struct wally_descriptor *descriptor,
+    size_t index, size_t participant_index,
+    unsigned char *bytes_out, size_t len)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (!node || !bytes_out || len != BIP32_KEY_FINGERPRINT_LEN)
+        return WALLY_EINVAL;
+#ifdef BUILD_STANDARD_SECP
+    (void)participant_index;
+#endif
+#ifndef BUILD_STANDARD_SECP
+    if (node->kind == KIND_DESCRIPTOR_MUSIG) {
+        const ms_node *k = node->child;
+        const char *fingerprint;
+        size_t written, i = 0;
+        int ret;
+
+        while (k && i < participant_index) { k = k->next; ++i; }
+        if (!k || !(k->flags & WALLY_MS_IS_PARENTED))
+            return WALLY_EINVAL;
+        fingerprint = descriptor->src + (((uint64_t)k->number) >> 32u) + 1;
+        ret = wally_hex_n_to_bytes(fingerprint, BIP32_KEY_FINGERPRINT_LEN * 2,
+                                   bytes_out, len, &written);
+        return ret == WALLY_OK && written != BIP32_KEY_FINGERPRINT_LEN ? WALLY_EINVAL : ret;
+    }
+#endif
+    return WALLY_EINVAL;
+}
+
+int wally_descriptor_get_musig_participant_key_origin_path_str(
+    const struct wally_descriptor *descriptor,
+    size_t index, size_t participant_index,
+    char **output)
+{
+    const ms_node *node = descriptor_get_key(descriptor, index);
+
+    if (output)
+        *output = NULL;
+    if (!node || !output)
+        return WALLY_EINVAL;
+#ifdef BUILD_STANDARD_SECP
+    (void)participant_index;
+#endif
+#ifndef BUILD_STANDARD_SECP
+    if (node->kind == KIND_DESCRIPTOR_MUSIG) {
+        const ms_node *k = node->child;
+        const char *path;
+        size_t path_len, i = 0;
+
+        while (k && i < participant_index) { k = k->next; ++i; }
+        if (!k)
+            return WALLY_EINVAL;
+        path_len = k->flags & WALLY_MS_IS_PARENTED ? k->number & 0xffffffff : 0;
+        path_len = path_len < 11u ? 0 : path_len - 11u;
+        path = descriptor->src + (((uint64_t)k->number) >> 32u) + 10u;
+        if (!(*output = wally_strdup_n(path, path_len)))
+            return WALLY_ENOMEM;
+        return WALLY_OK;
+    }
+#endif
+    return WALLY_EINVAL;
 }
 
 int wally_descriptor_get_key_child_path_str_len(

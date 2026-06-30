@@ -36,6 +36,7 @@ struct wally_descriptor;
 #define WALLY_MS_IS_ELIP150       0x0400 /** A confidential ct() descriptor with ELIP-150 blinding */
 #define WALLY_MS_IS_ELIP151       0x0800 /** A confidential ct() descriptor with ELIP-151 blinding */
 #define WALLY_MS_IS_TAPSCRIPT     0x1000 /** Node is inside tapscript context (internal) */
+#define WALLY_MS_IS_MUSIG         0x2000 /** A musig() key aggregate (BIP-390) */
 #define WALLY_MS_ANY_BLINDING_KEY 0x0E00 /** SLIP-77, ELIP-150 or ELIP-151 blinding key present */
 
 /*** ms-canonicalization-flags Miniscript/Descriptor canonicalization flags */
@@ -306,6 +307,88 @@ WALLY_CORE_API int wally_descriptor_get_key_origin_path_str_len(
 WALLY_CORE_API int wally_descriptor_get_key_origin_path_str(
     const struct wally_descriptor *descriptor,
     size_t index,
+    char **output);
+
+/**
+ * Get the number of participants in a musig() key aggregate.
+ *
+ * :param descriptor: The descriptor to get the participant count from.
+ * :param index: The index of the key in the descriptor.
+ * :param written: Destination for the number of participants.
+ *
+ * .. note:: Returns WALLY_EINVAL if the key at ``index`` is not a musig() aggregate.
+ */
+WALLY_CORE_API int wally_descriptor_get_musig_num_participants(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t *written);
+
+/**
+ * Get a participant key from a musig() key aggregate.
+ *
+ * :param descriptor: The descriptor to get the participant key from.
+ * :param index: The index of the musig() key in the descriptor.
+ * :param participant_index: The index of the participant within musig().
+ * :param output: Destination for the allocated participant key string.
+ *|    The string returned should be freed using `wally_free_string`.
+ *
+ * .. note:: Returns WALLY_EINVAL if the key at ``index`` is not a musig() aggregate
+ *|    or if ``participant_index`` is out of range.
+ */
+WALLY_CORE_API int wally_descriptor_get_musig_participant_key(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t participant_index,
+    char **output);
+
+/**
+ * Get the features flags for a participant key in a musig() key aggregate.
+ *
+ * :param descriptor: The descriptor to get the participant key features from.
+ * :param index: The index of the musig() key in the descriptor.
+ * :param participant_index: The index of the participant within musig().
+ * :param value_out: Destination for the resulting :ref:`miniscript-features`.
+ *
+ * .. note:: Returns WALLY_EINVAL if the key at ``index`` is not a musig() aggregate
+ *|    or if ``participant_index`` is out of range.
+ */
+WALLY_CORE_API int wally_descriptor_get_musig_participant_key_features(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t participant_index,
+    uint32_t *value_out);
+
+/**
+ * Get the key origin fingerprint for a participant key in a musig() key aggregate.
+ *
+ * :param descriptor: The descriptor to get the fingerprint from.
+ * :param index: The index of the musig() key in the descriptor.
+ * :param participant_index: The index of the participant within musig().
+ * :param bytes_out: Destination for the 4-byte fingerprint.
+ * FIXED_SIZED_OUTPUT(len, bytes_out, BIP32_KEY_FINGERPRINT_LEN)
+ *
+ * .. note:: Returns WALLY_EINVAL if the participant key has no key origin.
+ */
+WALLY_CORE_API int wally_descriptor_get_musig_participant_key_origin_fingerprint(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t participant_index,
+    unsigned char *bytes_out,
+    size_t len);
+
+/**
+ * Get the key origin path string for a participant key in a musig() key aggregate.
+ *
+ * :param descriptor: The descriptor to get the origin path from.
+ * :param index: The index of the musig() key in the descriptor.
+ * :param participant_index: The index of the participant within musig().
+ * :param output: Destination for the allocated origin path string (empty if not present).
+ *|    The string returned should be freed using `wally_free_string`.
+ */
+WALLY_CORE_API int wally_descriptor_get_musig_participant_key_origin_path_str(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    size_t participant_index,
     char **output);
 
 /**

@@ -543,6 +543,71 @@ class Bip328VectorTests(unittest.TestCase):
 
 
 @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+class Bip390DescriptorVectorTests(unittest.TestCase):
+    """BIP-390 musig() descriptor parsing and address generation tests."""
+
+    PK1 = '02F9308A019258C31049344F85F89D5229B531C845836F99B08601F113BCE036F9'
+    PK2 = '03DFF1D77F2A671C5F36183726DB2341BE58FEAE1DA2DECED843240F7B502BA659'
+    XPUB1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+    XPUB2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+
+    def test_tr_musig_2of2_parse_and_participants(self):
+        """tr(musig(pk1,pk2)) parses with 2 participants."""
+        desc_str = f'tr(musig({self.PK1},{self.PK2}))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+        self.assertEqual(WALLY_OK, ret, f'Failed to parse: {desc_str}')
+
+        ret, num_participants = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(2, num_participants, 'Expected 2 musig participants')
+
+        wally_descriptor_free(d)
+
+    def test_tr_musig_address_is_bech32m(self):
+        """tr(musig(pk1,pk2)) on mainnet generates a bc1p address."""
+        desc_str = f'tr(musig({self.PK1},{self.PK2}))'
+        d = c_void_p()
+        self.assertEqual(WALLY_OK,
+                         wally_descriptor_parse(desc_str, None, NETWORK_BTC_MAIN, 0, d))
+
+        ret, addr = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(WALLY_OK, ret, 'Address generation failed')
+        addr_str = addr.decode('ascii') if isinstance(addr, bytes) else addr
+        self.assertTrue(addr_str.startswith('bc1p'),
+                        f'Expected bech32m (bc1p...) address, got: {addr_str}')
+        wally_descriptor_free(d)
+
+    def test_tr_musig_with_xpub_derivation_paths(self):
+        """tr(musig([fp/path]xpub1/0/*, [fp/path]xpub2/0/*)) parses and has 2 participants."""
+        desc_str = (f'tr(musig([deadbeef/86h/0h/0h]{self.XPUB1}/0/*,'
+                    f'[cafebabe/86h/0h/0h]{self.XPUB2}/0/*))')
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+        self.assertEqual(WALLY_OK, ret, f'Failed to parse: {desc_str}')
+
+        ret, num_participants = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(2, num_participants)
+        wally_descriptor_free(d)
+
+    def test_tr_musig_xpub_multiple_address_indices(self):
+        """Different child indices produce different tr(musig) addresses."""
+        desc_str = f'tr(musig({self.XPUB1}/0/*,{self.XPUB2}/0/*))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(WALLY_OK, ret)
+
+        ret0, addr0 = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        ret1, addr1 = wally_descriptor_to_address(d, 0, 0, 1, 0)
+
+        if ret0 == WALLY_OK and ret1 == WALLY_OK:
+            a0 = addr0.decode('ascii') if isinstance(addr0, bytes) else addr0
+            a1 = addr1.decode('ascii') if isinstance(addr1, bytes) else addr1
+            self.assertNotEqual(a0, a1, 'Different indices must produce different addresses')
+        wally_descriptor_free(d)
+
+
 def _build_cache(pubkeys_flat):
     agg_pk, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
     cache = c_void_p()

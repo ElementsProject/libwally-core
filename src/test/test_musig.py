@@ -1119,6 +1119,34 @@ class MuSig2Tests(unittest.TestCase):
         wally_musig_keyagg_cache_free(cache.value)
         wally_musig_keyagg_cache_free(cache2.value)
 
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_descriptor_musig_outside_tr_rejected(self):
+        """musig() is only valid inside tr(); using it in wpkh() must fail"""
+        pk1 = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+        pk2 = '02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5'
+        bad_desc = f'wpkh(musig({pk1},{pk2}))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(bad_desc, None, 0, 0, d)
+        self.assertNotEqual(WALLY_OK, ret,
+                            'musig() inside wpkh() must be rejected')
+        if d.value:
+            wally_descriptor_free(d.value)
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_descriptor_nested_musig_rejected(self):
+        """Nested musig() must be rejected by the descriptor parser"""
+        pk1 = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+        pk2 = '02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5'
+        pk3 = '02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9'
+        bad_desc = f'tr(musig(musig({pk1},{pk2}),{pk3}))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(bad_desc, None, 0, 0, d)
+        self.assertNotEqual(WALLY_OK, ret,
+                            'nested musig() must be rejected')
+        if d.value:
+            wally_descriptor_free(d.value)
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
     def test_partial_sign_nonce_reuse_causes_abort(self):
         """SECURITY: secp256k1 zeroes the secnonce after partial_sign to prevent nonce reuse.
 
@@ -1190,3 +1218,34 @@ class MuSig2Tests(unittest.TestCase):
         wally_musig_aggnonce_free(aggnonce.value)
         wally_musig_session_free(session.value)
         wally_musig_keyagg_cache_free(cache.value)
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_descriptor_musig_hardened_rejected(self):
+        """wally_descriptor_parse must reject tr(musig()) with hardened child paths after xpub.
+
+        BIP-32 public-key-only derivation cannot produce hardened children
+        (requires the private key). musig() keys are aggregated public keys,
+        so hardened derivation paths inside musig() must be rejected.
+        """
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+        fp1 = 'deadbeef'
+        fp2 = 'cafebabe'
+
+        # Hardened child index after the xpub: /0h/* — must be rejected.
+        bad_desc = f'tr(musig([{fp1}/86h/0h/0h]{xpub1}/0h/*,[{fp2}/86h/0h/0h]{xpub2}/0h/*))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(bad_desc, None, 0, 0, d)
+        self.assertNotEqual(WALLY_OK, ret,
+                            'musig() descriptor with hardened child path after xpub must be rejected')
+        if d.value:
+            wally_descriptor_free(d.value)
+
+        # Sanity check: the same descriptor with unhardened /0/* must be accepted.
+        good_desc = f'tr(musig([{fp1}/86h/0h/0h]{xpub1}/0/*,[{fp2}/86h/0h/0h]{xpub2}/0/*))'
+        d2 = c_void_p()
+        ret2 = wally_descriptor_parse(good_desc, None, 0, 0, d2)
+        self.assertEqual(WALLY_OK, ret2,
+                         'musig() descriptor with unhardened /0/* must be accepted')
+        if d2.value:
+            wally_descriptor_free(d2.value)

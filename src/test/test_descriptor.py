@@ -657,5 +657,262 @@ class DescriptorTests(unittest.TestCase):
 
         wally_map_free(keys)
 
+    def test_musig_parser(self):
+        """Test musig() descriptor parsing (BIP-390)"""
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+        xpub3 = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL'
+
+        # Valid: tr(musig(xpub1, xpub2)) — two-participant musig in taproot
+        valid_cases = [
+            f'tr(musig({xpub1},{xpub2}))',
+            # With trailing ranged wildcard path
+            f'tr(musig({xpub1},{xpub2})/<0;1>/*)',
+            # With plain trailing derivation path
+            f'tr(musig({xpub1},{xpub2})/0/*)',
+            # Participant keys may carry their own derivation path
+            f'tr(musig({xpub1}/0,{xpub2}/1))',
+            # Three-participant musig (3-of-3)
+            f'tr(musig({xpub1},{xpub2},{xpub3}))',
+        ]
+        for desc in valid_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_OK, f'Expected WALLY_OK for: {desc}')
+
+            # MS_IS_MUSIG feature flag must be set (whole-descriptor)
+            ret, features = wally_descriptor_get_features(d)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertTrue(features & MS_IS_MUSIG, f'MS_IS_MUSIG not set for: {desc}')
+            # MS_IS_TAPSCRIPT must NOT be set (musig is the internal key, not in a leaf)
+            self.assertFalse(features & MS_IS_TAPSCRIPT, f'MS_IS_TAPSCRIPT unexpectedly set for: {desc}')
+
+            # MS_IS_MUSIG feature flag must also be set at the per-key level
+            ret, kf = wally_descriptor_get_key_features(d, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertTrue(kf & MS_IS_MUSIG, f'Per-key MS_IS_MUSIG not set for: {desc}')
+
+            wally_descriptor_free(d)
+
+        # Participant count and key extraction for the basic two-participant case
+        two_participant_cases = [
+            f'tr(musig({xpub1},{xpub2}))',
+            f'tr(musig({xpub1},{xpub2})/<0;1>/*)',
+            f'tr(musig({xpub1},{xpub2})/0/*)',
+        ]
+        for desc in two_participant_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_OK)
+            # Participant count at key index 0
+            ret, count = wally_descriptor_get_musig_num_participants(d, 0)
+            self.assertEqual((ret, count), (WALLY_OK, 2), f'Count check failed for: {desc}')
+            # Participant key extraction
+            ret, key0 = wally_descriptor_get_musig_participant_key(d, 0, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(key0, xpub1)
+            ret, key1 = wally_descriptor_get_musig_participant_key(d, 0, 1)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(key1, xpub2)
+            # Out-of-range participant index
+            ret, _ = wally_descriptor_get_musig_participant_key(d, 0, 2)
+            self.assertEqual(ret, WALLY_EINVAL)
+            wally_descriptor_free(d)
+
+        # Participant keys with per-participant paths
+        d = c_void_p()
+        desc_pp = f'tr(musig({xpub1}/0,{xpub2}/1))'
+        ret = wally_descriptor_parse(desc_pp, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, count = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual((ret, count), (WALLY_OK, 2))
+        ret, key0 = wally_descriptor_get_musig_participant_key(d, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key0, f'{xpub1}/0')
+        ret, key1 = wally_descriptor_get_musig_participant_key(d, 0, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key1, f'{xpub2}/1')
+        wally_descriptor_free(d)
+
+        # Participant count and key extraction for the three-participant case
+        d = c_void_p()
+        desc3 = f'tr(musig({xpub1},{xpub2},{xpub3}))'
+        ret = wally_descriptor_parse(desc3, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, count = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual((ret, count), (WALLY_OK, 3), f'Count check failed for: {desc3}')
+        ret, key0 = wally_descriptor_get_musig_participant_key(d, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key0, xpub1)
+        ret, key1 = wally_descriptor_get_musig_participant_key(d, 0, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key1, xpub2)
+        ret, key2 = wally_descriptor_get_musig_participant_key(d, 0, 2)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key2, xpub3)
+        # Out-of-range participant index for 3-participant case
+        ret, _ = wally_descriptor_get_musig_participant_key(d, 0, 3)
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_descriptor_free(d)
+
+        # Error: non-musig descriptor key at index 0
+        d2 = c_void_p()
+        ret = wally_descriptor_parse(f'tr({xpub1})', None, NETWORK_NONE, 0, d2)
+        self.assertEqual(ret, WALLY_OK)
+        ret, _ = wally_descriptor_get_musig_num_participants(d2, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret, _ = wally_descriptor_get_musig_participant_key(d2, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_descriptor_free(d2)
+
+        # Error: NULL descriptor
+        ret, _ = wally_descriptor_get_musig_num_participants(None, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret, _ = wally_descriptor_get_musig_participant_key(None, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+
+        # Invalid: musig() in non-taproot context or forbidden forms
+        invalid_cases = [
+            # wpkh does not accept musig()
+            f'wpkh(musig({xpub1},{xpub2}))',
+            # pk does not accept musig()
+            f'pk(musig({xpub1},{xpub2}))',
+            # pkh does not accept musig()
+            f'pkh(musig({xpub1},{xpub2}))',
+            # nested musig() is forbidden
+            f'tr(musig(musig({xpub1},{xpub2}),{xpub2}))',
+            # single participant is forbidden (BIP-390 requires >=2)
+            f'tr(musig({xpub1}))',
+            # hardened trailing derivation step is forbidden
+            f'tr(musig({xpub1},{xpub2})/1h/*)',
+        ]
+        for desc in invalid_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_EINVAL, f'Expected WALLY_EINVAL for: {desc}')
+            if ret == WALLY_OK:
+                wally_descriptor_free(d)
+
+    def test_musig_descriptor_address_generation(self):
+        """Test musig() descriptor address generation"""
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+
+        # 4a. Static musig() taproot address generation (mainnet)
+        desc = f'tr(musig({xpub1},{xpub2}))'
+        expected_addr_main = 'bc1p7y6m7r4u0035792q9dst9f32340nev5398dp9yvqw4mjkm3m4pdsqusq07'
+        expected_addr_test = 'tb1p7y6m7r4u0035792q9dst9f32340nev5398dp9yvqw4mjkm3m4pdsh5x043'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr_main = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addr_main, expected_addr_main,
+                         f'Expected known mainnet address, got: {addr_main}')
+        wally_descriptor_free(d)
+
+        # Static musig() taproot address generation (testnet)
+        # Parse with NETWORK_NONE then set testnet (mainnet xpubs work with NONE)
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_descriptor_set_network(d, NETWORK_BTC_TEST)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr_test = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addr_test, expected_addr_test,
+                         f'Expected known testnet address, got: {addr_test}')
+        wally_descriptor_free(d)
+
+        # Main and test addresses must differ
+        self.assertNotEqual(addr_main, addr_test)
+
+        # 4b. Ranged musig() address derivation
+        desc_ranged = f'tr(musig({xpub1},{xpub2})/*)'
+        addrs = (c_char_p * 3)()
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_ranged, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_descriptor_to_addresses(d, 0, 0, 0, 0, addrs, 3)
+        self.assertEqual(ret, WALLY_OK)
+        addr_strings = [a.decode() for a in addrs[:3]]
+        for a in addr_strings:
+            self.assertTrue(a.startswith('bc1p'), f'Expected bc1p prefix, got: {a}')
+        self.assertEqual(len(set(addr_strings)), 3, 'All ranged addresses must be distinct')
+        wally_descriptor_free(d)
+
+        # 4c. Multipath ranged musig() descriptor
+        desc_mp = f'tr(musig({xpub1},{xpub2})/<0;1>/*)'
+        addrs_ext = (c_char_p * 1)()
+        addrs_int = (c_char_p * 1)()
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_mp, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        # External path (multi_index=0)
+        ret = wally_descriptor_to_addresses(d, 0, 0, 0, 0, addrs_ext, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(addrs_ext[0].decode().startswith('bc1p'))
+        # Internal path (multi_index=1)
+        ret = wally_descriptor_to_addresses(d, 0, 1, 0, 0, addrs_int, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(addrs_int[0].decode().startswith('bc1p'))
+        self.assertNotEqual(addrs_ext[0], addrs_int[0])
+        wally_descriptor_free(d)
+
+        # 4d. Per-participant derivation paths
+        desc_pp = f'tr(musig({xpub1}/0,{xpub2}/1))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_pp, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(addr.startswith('bc1p'), f'Expected bc1p prefix, got: {addr}')
+        wally_descriptor_free(d)
+
+        # 4e. Address generation requires network set
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, _ = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_descriptor_free(d)
+
+        # Key order independence: swapping keys must produce the same address
+        desc_swapped = f'tr(musig({xpub2},{xpub1}))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_swapped, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr_swapped = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addr_swapped, addr_main,
+                         'Key order must not affect the aggregated taproot address')
+        wally_descriptor_free(d)
+
+        # Canonicalization: wally_descriptor_canonicalize works for musig() descriptors
+        # and produces a deterministic output.
+        # NOTE: libwally's wally_descriptor_canonicalize normalises the textual descriptor
+        # (e.g. removes whitespace, normalises separators) but intentionally does NOT
+        # re-sort participant keys inside musig().  Sorting happens at the cryptographic
+        # aggregation stage (BIP-327 KeyAgg), not at the descriptor text level, which is
+        # why two descriptors with swapped keys still produce the same address (tested
+        # above).  The canonical form therefore preserves the input key order.
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_swapped, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, canonical = wally_descriptor_canonicalize(d, NO_CHECKSUM)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(canonical, desc_swapped,
+                         'Canonical form preserves input key order (sorting is done at '
+                         'key-aggregation time, not descriptor-text level)')
+        wally_descriptor_free(d)
+
+        # musig() in a tapscript leaf is not yet supported (tr() FIXME for script paths).
+        # Verify that the parser correctly rejects this form until implemented.
+        desc_leaf = f'tr({xpub1},pk(musig({xpub1},{xpub2})))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_leaf, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertNotEqual(ret, WALLY_OK, 'Script-leaf musig() should be rejected until implemented')
+
+
 if __name__ == '__main__':
     unittest.main()
