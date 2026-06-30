@@ -974,6 +974,640 @@ class MuSig2Tests(unittest.TestCase):
         bip32_key_free(synthetic_xpub)
         bip32_key_free(child_ptr)
 
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_psbt_musig2_add_nonce(self):
+        """wally_psbt_musig2_add_nonce: generates nonce, stores pubnonce in PSBT"""
+        NETWORK_NONE = 0x00
+        SHA256_LEN = 32
+
+        # Build a minimal v2 PSBT with 1 input and 1 output via musig descriptor
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+        fp1 = 'deadbeef'
+        fp2 = 'cafebabe'
+
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK, wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22, tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        d = c_void_p()
+        desc_str = f'tr(musig([{fp1}/86h/0h/0h]{xpub1}/0/*,[{fp2}/86h/0h/0h]{xpub2}/0/*))'
+        self.assertEqual(WALLY_OK, wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d))
+        self.assertEqual(WALLY_OK, wally_psbt_populate_musig2_from_descriptor(psbt, d, 0, 0))
+
+        # Get the aggregate pubkey (x-only from taproot_internal_key)
+        ik_buf, ik_buf_len = make_cbuffer('00' * 32)
+        ret, ik_written = wally_psbt_get_input_taproot_internal_key(psbt, 0, ik_buf, ik_buf_len)
+        self.assertEqual(ret, WALLY_OK)
+        ik_hex = bytes(ik_buf[:32]).hex()
+
+        # Try both compressed prefixes to find the actual agg_pubkey in the map
+        agg_02, _ = make_cbuffer('02' + ik_hex)
+        agg_03, _ = make_cbuffer('03' + ik_hex)
+        inp = psbt.contents.inputs[0]
+        ret2, idx2 = wally_psbt_input_find_musig2_pubkey(inp, agg_02, 33)
+        ret3, idx3 = wally_psbt_input_find_musig2_pubkey(inp, agg_03, 33)
+        self.assertTrue((ret2 == WALLY_OK and idx2 > 0) or (ret3 == WALLY_OK and idx3 > 0))
+        agg_pubkey = agg_02 if (ret2 == WALLY_OK and idx2 > 0) else agg_03
+
+        # Derive the two participant pubkeys from the xpubs
+        pk1 = derive_pubkey(SECKEY1)
+        pk2 = derive_pubkey(SECKEY2)
+
+        # --- Invalid arg tests ---
+        secrand, secrand_len = make_cbuffer('aa' * 32)
+        sn_out = c_void_p()
+
+        # NULL psbt
+        self.assertEqual(WALLY_EINVAL, wally_psbt_musig2_add_nonce(
+            None, 0, secrand, secrand_len, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, byref(sn_out)))
+        # index out of range
+        self.assertEqual(WALLY_EINVAL, wally_psbt_musig2_add_nonce(
+            psbt, 99, secrand, secrand_len, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, byref(sn_out)))
+        # bad secrand_len
+        self.assertEqual(WALLY_EINVAL, wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand, 31, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, byref(sn_out)))
+        # bad pubkey_len
+        self.assertEqual(WALLY_EINVAL, wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand, secrand_len, None, 0,
+            pk1, 32, agg_pubkey, 33, None, 0, None, 0, byref(sn_out)))
+        # flags != 0
+        self.assertEqual(WALLY_EINVAL, wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand, secrand_len, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 1, byref(sn_out)))
+        # NULL secnonce_out
+        self.assertEqual(WALLY_EINVAL, wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand, secrand_len, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, None))
+
+        # --- Valid call: participant 1 ---
+        secrand1, _ = make_cbuffer('01' * 32)
+        sn1 = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand1, 32, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, byref(sn1))
+        self.assertEqual(WALLY_OK, ret)
+        self.assertIsNotNone(sn1.value, 'secnonce should be returned to caller')
+
+        # Pubnonce must now be present
+        ret, idx = wally_psbt_input_find_musig2_pubnonce(
+            psbt.contents.inputs[0], pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0)
+        self.assertEqual((ret, idx), (WALLY_OK, 1))
+
+        # Pubnonce count must be 1
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(psbt.contents.inputs[0])
+        self.assertEqual((ret, count), (WALLY_OK, 1))
+
+        # --- Nonce reuse prevention: second call for same participant returns WALLY_ERROR ---
+        secrand1b, _ = make_cbuffer('02' * 32)
+        sn1b = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand1b, 32, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, byref(sn1b))
+        self.assertEqual(WALLY_ERROR, ret, 'second call for same participant must return WALLY_ERROR')
+        self.assertIsNone(sn1b.value, 'secnonce_out must remain NULL on error')
+
+        # --- Valid call: participant 2 (different participant, same agg_pubkey) ---
+        secrand2, _ = make_cbuffer('03' * 32)
+        sn2 = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand2, 32, None, 0,
+            pk2, EC_PUBLIC_KEY_LEN, agg_pubkey, 33, None, 0, None, 0, byref(sn2))
+        self.assertEqual(WALLY_OK, ret)
+        self.assertIsNotNone(sn2.value, 'secnonce for participant 2 should be returned')
+
+        # Pubnonce count is now 2
+        ret, count2 = wally_psbt_input_get_musig2_pubnonce_count(psbt.contents.inputs[0])
+        self.assertEqual((ret, count2), (WALLY_OK, 2))
+
+        # Cleanup
+        wally_musig_secnonce_free(sn1.value)
+        wally_musig_secnonce_free(sn2.value)
+        wally_descriptor_free(d)
+        wally_psbt_free(psbt)
+
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_psbt_musig2_finalize_input(self):
+        """wally_psbt_musig2_finalize_input: aggregates partial sigs and stores TAP_KEY_SIG"""
+        # Derive participant pubkeys from two test seckeys
+        pk1 = derive_pubkey(SECKEY1)
+        pk2 = derive_pubkey(SECKEY2)
+        pub_keys_flat = pk1 + pk2
+
+        # Aggregate pubkeys → x-only agg_pk + keyagg_cache
+        agg_pk_xonly, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
+        cache = c_void_p()
+        ret = wally_musig_pubkey_agg(pub_keys_flat, len(pub_keys_flat),
+                                     agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, cache)
+        self.assertEqual(WALLY_OK, ret)
+
+        # wally_musig_pubkey_agg normalizes to even parity (02 prefix)
+        agg_pubkey = bytes([0x02]) + bytes(agg_pk_xonly)
+        agg_pubkey_buf, _ = make_cbuffer(agg_pubkey.hex())
+
+        # Build a standard BIP-341 P2TR scriptpubkey. Pass the 33-byte COMPRESSED
+        # aggregate (internal) key so wally applies the key-path output tweak: the
+        # coin is locked to Q = P + H_TapTweak(P)*G. The musig signing flow applies
+        # the same tweak internally so the aggregated signature is valid under Q.
+        # (Regression test for the key-path taproot tweak fix.)
+        p2tr_buf, _ = make_cbuffer('00' * 34)
+        ret, p2tr_written = wally_scriptpubkey_p2tr_from_bytes(
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN, 0, p2tr_buf, 34)
+        self.assertEqual(WALLY_OK, ret)
+        p2tr_bytes = bytes(p2tr_buf[:p2tr_written])
+        self.assertEqual(34, len(p2tr_bytes))
+
+        # Create PSBT v2 with 1 input and 1 output
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22,
+                                                    tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        # Set witness_utxo for the input (P2TR output, 200000 sat)
+        utxo = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(200000, p2tr_bytes, len(p2tr_bytes),
+                                                    utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_witness_utxo(psbt, 0, utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_amount(psbt, 0, 200000))
+
+        # Set taproot internal key (x-only)
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_set_input_taproot_internal_key(psbt, 0,
+                                                                    agg_pk_xonly,
+                                                                    EC_XONLY_PUBLIC_KEY_LEN))
+
+        # Register musig2 participant pubkeys in the PSBT input
+        # psbt.contents.inputs is POINTER(wally_psbt_input) pointing to inputs[0]
+        # C signature: (input, agg_pubkey, agg_pubkey_len, participants, participants_len)
+        participants_flat = bytes(pk1) + bytes(pk2)
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_input_add_musig2_participant_pubkeys(
+                             psbt.contents.inputs,
+                             agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+                             participants_flat, len(participants_flat)))
+
+        # --- Round 1: generate and store nonces for each participant ---
+        secrand1, _ = make_cbuffer('a1' * 32)
+        secrand2, _ = make_cbuffer('a2' * 32)
+        sn1 = c_void_p()
+        sn2 = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand1, 32, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, None, 0, byref(sn1))
+        self.assertEqual(WALLY_OK, ret)
+        self.assertIsNotNone(sn1.value)
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand2, 32, None, 0,
+            pk2, EC_PUBLIC_KEY_LEN, agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, None, 0, byref(sn2))
+        self.assertEqual(WALLY_OK, ret)
+        self.assertIsNotNone(sn2.value)
+
+        # --- Round 2: sign with each participant ---
+        seckey1, _ = make_cbuffer(SECKEY1.hex())
+        seckey2, _ = make_cbuffer(SECKEY2.hex())
+        ret = wally_psbt_musig2_sign(
+            psbt, 0, sn1.value,
+            seckey1, 32, pk1, EC_PUBLIC_KEY_LEN,
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, cache.value, 0, None)
+        self.assertEqual(WALLY_OK, ret, 'participant 1 sign failed')
+        ret = wally_psbt_musig2_sign(
+            psbt, 0, sn2.value,
+            seckey2, 32, pk2, EC_PUBLIC_KEY_LEN,
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, cache.value, 0, None)
+        self.assertEqual(WALLY_OK, ret, 'participant 2 sign failed')
+
+        # --- Finalize: aggregate partial sigs → TAP_KEY_SIG ---
+        ret = wally_psbt_musig2_finalize_input(
+            psbt, 0,
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0,
+            cache.value, 0)
+        self.assertEqual(WALLY_OK, ret, 'musig2_finalize_input failed')
+
+        # Verify that nonce and partial sig entries were cleared after aggregation
+        ret, nonce_count = wally_psbt_input_get_musig2_pubnonce_count(psbt.contents.inputs[0])
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(0, nonce_count, 'musig2 pubnonces should be cleared after finalize')
+        ret, sig_count = wally_psbt_input_get_musig2_partial_sig_count(psbt.contents.inputs[0])
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(0, sig_count, 'musig2 partial sigs should be cleared after finalize')
+
+        # Verify TAP_KEY_SIG is stored in the PSBT
+        sig_buf, _ = make_cbuffer('00' * EC_SIGNATURE_LEN)
+        ret, sig_written = wally_psbt_get_input_taproot_signature(psbt, 0, sig_buf, EC_SIGNATURE_LEN)
+        self.assertEqual(WALLY_OK, ret, 'TAP_KEY_SIG should be set after musig2_finalize_input')
+        self.assertEqual(EC_SIGNATURE_LEN, sig_written, 'TAP_KEY_SIG should be 64 bytes')
+
+        # Cryptographically verify the BIP-340 Schnorr signature under the taproot output key.
+        # The P2TR scriptpubkey is OP_1 <32-byte-tweaked-output-key>; bytes [2:34] are the
+        # x-only output key that the signature must verify against.
+        output_xonly_key = bytes(p2tr_bytes[2:34])
+        output_key_buf, _ = make_cbuffer(output_xonly_key.hex())
+
+        # Compute the SIGHASH_DEFAULT taproot sighash for input 0.
+        # PSBT v2 has no global tx; build the tx manually from PSBT data.
+        # Input: txhash=0..0, index=0, sequence=0 (from zero-initialized wally_tx_input)
+        # Output: 1000 sat, P2WPKH (b'\x00\x14' + b'\xab' * 20)
+        tx_pp = POINTER(wally_tx)()
+        self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 1, 1, byref(tx_pp)))
+        zero_txid, _ = make_cbuffer('00' * 32)
+        self.assertEqual(WALLY_OK,
+                         wally_tx_add_raw_input(tx_pp, zero_txid, 32, 0, 0, None, 0, None, 0))
+        out_script = b'\x00\x14' + b'\xab' * 20
+        self.assertEqual(WALLY_OK,
+                         wally_tx_add_raw_output(tx_pp, 1000, out_script, len(out_script), 0))
+
+        sighash_buf, _ = make_cbuffer('00' * 32)
+        ret = wally_psbt_get_input_signature_hash(
+            psbt, 0, tx_pp, None, 0, WALLY_SIGHASH_DEFAULT, sighash_buf, 32)
+        self.assertEqual(WALLY_OK, ret, 'sighash computation failed')
+
+        # Verify the 64-byte TAP_KEY_SIG is a valid BIP-340 Schnorr signature.
+        ret = wally_ec_sig_verify(
+            output_key_buf, EC_XONLY_PUBLIC_KEY_LEN,
+            sighash_buf, 32,
+            EC_FLAG_SCHNORR,
+            sig_buf, EC_SIGNATURE_LEN)
+        self.assertEqual(WALLY_OK, ret, 'BIP-340 signature verification failed')
+        wally_tx_free(tx_pp)
+
+        # --- Final finalization: produce witness ---
+        ret = wally_psbt_finalize_input(psbt, 0, 0)
+        self.assertEqual(WALLY_OK, ret, 'psbt_finalize_input failed')
+        self.assertIsNotNone(psbt.contents.inputs[0].final_witness,
+                             'final_witness should be set after finalize_input')
+
+        # Cleanup
+        wally_musig_secnonce_free(sn1.value)
+        wally_musig_secnonce_free(sn2.value)
+        wally_musig_keyagg_cache_free(cache.value)
+        wally_psbt_free(psbt)
+
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_psbt_musig2_full_flow_3of3(self):
+        """Full 3-of-3 MuSig2 PSBT signing flow produces a valid BIP-340 TAP_KEY_SIG"""
+        # Derive participant pubkeys from three test seckeys
+        pk1 = derive_pubkey(SECKEY1)
+        pk2 = derive_pubkey(SECKEY2)
+        pk3 = derive_pubkey(SECKEY3)
+        pub_keys_flat = pk1 + pk2 + pk3  # 99 bytes
+
+        # Aggregate pubkeys → x-only agg_pk + keyagg_cache
+        agg_pk_xonly, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
+        cache = c_void_p()
+        ret = wally_musig_pubkey_agg(pub_keys_flat, len(pub_keys_flat),
+                                     agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, cache)
+        self.assertEqual(WALLY_OK, ret)
+
+        agg_pubkey = bytes([0x02]) + bytes(agg_pk_xonly)
+        agg_pubkey_buf, _ = make_cbuffer(agg_pubkey.hex())
+
+        # Build a standard BIP-341 P2TR scriptpubkey (output tweaked to Q). Pass the
+        # 33-byte COMPRESSED aggregate key so wally applies the key-path output tweak;
+        # the musig signing flow applies the same tweak internally so the aggregated
+        # signature is valid under Q. (Regression test for the key-path tweak fix.)
+        p2tr_buf, _ = make_cbuffer('00' * 34)
+        ret, p2tr_written = wally_scriptpubkey_p2tr_from_bytes(
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN, 0, p2tr_buf, 34)
+        self.assertEqual(WALLY_OK, ret)
+        p2tr_bytes = bytes(p2tr_buf[:p2tr_written])
+        self.assertEqual(34, len(p2tr_bytes))
+
+        # Create PSBT v2 with 1 input and 1 output
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22,
+                                                    tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        utxo = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(300000, p2tr_bytes, len(p2tr_bytes), utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_witness_utxo(psbt, 0, utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_amount(psbt, 0, 300000))
+
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_set_input_taproot_internal_key(
+                             psbt, 0, agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN))
+
+        # Register musig2 participant pubkeys in the PSBT input
+        participants_flat = bytes(pk1) + bytes(pk2) + bytes(pk3)  # 99 bytes
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_input_add_musig2_participant_pubkeys(
+                             psbt.contents.inputs,
+                             agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+                             participants_flat, len(participants_flat)))
+
+        # --- Round 1: generate and store nonces for each participant ---
+        secrand1, _ = make_cbuffer('b1' * 32)
+        secrand2, _ = make_cbuffer('b2' * 32)
+        secrand3, _ = make_cbuffer('b3' * 32)
+        sn1, sn2, sn3 = c_void_p(), c_void_p(), c_void_p()
+
+        for secrand, pk, sn in [(secrand1, pk1, sn1), (secrand2, pk2, sn2),
+                                 (secrand3, pk3, sn3)]:
+            ret = wally_psbt_musig2_add_nonce(
+                psbt, 0, secrand, 32, None, 0,
+                pk, EC_PUBLIC_KEY_LEN, agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+                None, 0, None, 0, byref(sn))
+            self.assertEqual(WALLY_OK, ret)
+            self.assertIsNotNone(sn.value)
+
+        self.assertIsNotNone(sn1.value)
+        self.assertIsNotNone(sn2.value)
+        self.assertIsNotNone(sn3.value)
+
+        ret, count = wally_psbt_input_get_musig2_pubnonce_count(psbt.contents.inputs[0])
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(3, count, 'expected 3 pubnonces after round 1')
+
+        # --- Round 2: sign with each participant ---
+        seckey1, _ = make_cbuffer(SECKEY1.hex())
+        seckey2, _ = make_cbuffer(SECKEY2.hex())
+        seckey3, _ = make_cbuffer(SECKEY3.hex())
+
+        for sk, pk, sn, label in [
+            (seckey1, pk1, sn1, 'participant 1'),
+            (seckey2, pk2, sn2, 'participant 2'),
+            (seckey3, pk3, sn3, 'participant 3'),
+        ]:
+            ret = wally_psbt_musig2_sign(
+                psbt, 0, sn.value,
+                sk, 32, pk, EC_PUBLIC_KEY_LEN,
+                agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+                None, 0, cache.value, 0, None)
+            self.assertEqual(WALLY_OK, ret, f'{label} sign failed')
+
+        ret, sig_count = wally_psbt_input_get_musig2_partial_sig_count(psbt.contents.inputs[0])
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(3, sig_count, 'expected 3 partial sigs after round 2')
+
+        # --- Finalize: aggregate partial sigs → TAP_KEY_SIG ---
+        ret = wally_psbt_musig2_finalize_input(
+            psbt, 0,
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0,
+            cache.value, 0)
+        self.assertEqual(WALLY_OK, ret, 'musig2_finalize_input failed for 3-of-3')
+
+        # Verify that nonce and partial sig entries were cleared after aggregation
+        ret, nonce_count = wally_psbt_input_get_musig2_pubnonce_count(psbt.contents.inputs[0])
+        self.assertEqual((ret, nonce_count), (WALLY_OK, 0),
+                         'musig2 pubnonces should be cleared after finalize')
+        ret, sig_count = wally_psbt_input_get_musig2_partial_sig_count(psbt.contents.inputs[0])
+        self.assertEqual((ret, sig_count), (WALLY_OK, 0),
+                         'musig2 partial sigs should be cleared after finalize')
+
+        # Verify TAP_KEY_SIG is stored and has correct length
+        sig_buf, _ = make_cbuffer('00' * EC_SIGNATURE_LEN)
+        ret, sig_written = wally_psbt_get_input_taproot_signature(
+            psbt, 0, sig_buf, EC_SIGNATURE_LEN)
+        self.assertEqual(WALLY_OK, ret, 'TAP_KEY_SIG should be set after musig2_finalize_input')
+        self.assertEqual(EC_SIGNATURE_LEN, sig_written, 'TAP_KEY_SIG should be 64 bytes')
+
+        # Compute taproot sighash and verify BIP-340 signature under output key
+        output_xonly_key = bytes(p2tr_bytes[2:34])
+        output_key_buf, _ = make_cbuffer(output_xonly_key.hex())
+
+        # PSBT v2 has no global tx; build the tx manually from PSBT data.
+        # Input: txhash=0..0, index=0, sequence=0 (from zero-initialized wally_tx_input)
+        # Output: 1000 sat, P2WPKH (b'\x00\x14' + b'\xab' * 20)
+        tx_pp = POINTER(wally_tx)()
+        self.assertEqual(WALLY_OK, wally_tx_init_alloc(2, 0, 1, 1, byref(tx_pp)))
+        zero_txid, _ = make_cbuffer('00' * 32)
+        self.assertEqual(WALLY_OK,
+                         wally_tx_add_raw_input(tx_pp, zero_txid, 32, 0, 0, None, 0, None, 0))
+        out_script = b'\x00\x14' + b'\xab' * 20
+        self.assertEqual(WALLY_OK,
+                         wally_tx_add_raw_output(tx_pp, 1000, out_script, len(out_script), 0))
+
+        sighash_buf, _ = make_cbuffer('00' * 32)
+        ret = wally_psbt_get_input_signature_hash(
+            psbt, 0, tx_pp, None, 0, WALLY_SIGHASH_DEFAULT, sighash_buf, 32)
+        self.assertEqual(WALLY_OK, ret, 'sighash computation failed')
+
+        ret = wally_ec_sig_verify(
+            output_key_buf, EC_XONLY_PUBLIC_KEY_LEN,
+            sighash_buf, 32,
+            EC_FLAG_SCHNORR,
+            sig_buf, EC_SIGNATURE_LEN)
+        self.assertEqual(WALLY_OK, ret, 'BIP-340 signature invalid for 3-of-3')
+        wally_tx_free(tx_pp)
+
+        # Finalize witness and cleanup
+        ret = wally_psbt_finalize_input(psbt, 0, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertIsNotNone(psbt.contents.inputs[0].final_witness,
+                             'final_witness should be set after finalize_input')
+
+        wally_musig_secnonce_free(sn1.value)
+        wally_musig_secnonce_free(sn2.value)
+        wally_musig_secnonce_free(sn3.value)
+        wally_musig_keyagg_cache_free(cache.value)
+        wally_psbt_free(psbt)
+
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_psbt_musig2_sign_missing_nonce(self):
+        """wally_psbt_musig2_sign returns error when not all participants have contributed nonces"""
+        # Set up a 2-of-2 MuSig2 PSBT
+        pk1 = derive_pubkey(SECKEY1)
+        pk2 = derive_pubkey(SECKEY2)
+        pub_keys_flat = pk1 + pk2
+
+        agg_pk_xonly, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
+        cache = c_void_p()
+        ret = wally_musig_pubkey_agg(pub_keys_flat, len(pub_keys_flat),
+                                     agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, cache)
+        self.assertEqual(WALLY_OK, ret)
+
+        agg_pubkey = bytes([0x02]) + bytes(agg_pk_xonly)
+        agg_pubkey_buf, _ = make_cbuffer(agg_pubkey.hex())
+
+        p2tr_buf, _ = make_cbuffer('00' * 34)
+        ret, p2tr_written = wally_scriptpubkey_p2tr_from_bytes(
+            agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, 0, p2tr_buf, 34)
+        self.assertEqual(WALLY_OK, ret)
+        p2tr_bytes = bytes(p2tr_buf[:p2tr_written])
+
+        # Create PSBT v2 with 1 input and 1 output
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22,
+                                                    tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        utxo = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(200000, p2tr_bytes, len(p2tr_bytes), utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_witness_utxo(psbt, 0, utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_amount(psbt, 0, 200000))
+
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_set_input_taproot_internal_key(
+                             psbt, 0, agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN))
+
+        participants_flat = bytes(pk1) + bytes(pk2)
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_input_add_musig2_participant_pubkeys(
+                             psbt.contents.inputs,
+                             agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+                             participants_flat, len(participants_flat)))
+
+        # Scenario A: signer 2 has a valid secnonce but signer 1 never added a pubnonce.
+        # Only signer 2 adds a nonce; signer 1 does NOT.
+        secrand2, _ = make_cbuffer('c2' * 32)
+        sn2 = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand2, 32, None, 0,
+            pk2, EC_PUBLIC_KEY_LEN, agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, None, 0, byref(sn2))
+        self.assertEqual(WALLY_OK, ret)
+        self.assertIsNotNone(sn2.value)
+
+        # Verify only 1 pubnonce is registered (signer 1 has not contributed)
+        ret, nonce_count = wally_psbt_input_get_musig2_pubnonce_count(psbt.contents.inputs[0])
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(1, nonce_count)
+
+        # Signer 2 has a valid secnonce, but signer 1 never added a pubnonce —
+        # aggregate nonce cannot be formed, so sign must fail.
+        seckey2, _ = make_cbuffer(SECKEY2.hex())
+        ret = wally_psbt_musig2_sign(
+            psbt, 0, sn2.value,
+            seckey2, 32, pk2, EC_PUBLIC_KEY_LEN,
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, cache.value, 0, None)
+        self.assertNotEqual(WALLY_OK, ret,
+                            'sign must fail when a participant pubnonce is missing from PSBT')
+        wally_musig_secnonce_free(sn2.value)
+
+        # Scenario B: NULL secnonce — basic invalid-argument guard.
+        sn_null = c_void_p()  # never initialised → value is None
+        ret = wally_psbt_musig2_sign(
+            psbt, 0, sn_null.value,
+            seckey2, 32, pk2, EC_PUBLIC_KEY_LEN,
+            agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, cache.value, 0, None)
+        self.assertEqual(WALLY_EINVAL, ret,
+                         'sign must return WALLY_EINVAL for NULL secnonce')
+
+        # Cleanup
+        wally_musig_keyagg_cache_free(cache.value)
+        wally_psbt_free(psbt)
+
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_psbt_musig2_nonce_reuse(self):
+        """wally_psbt_musig2_add_nonce returns error when called twice for the same participant"""
+        pk1 = derive_pubkey(SECKEY1)
+        pk2 = derive_pubkey(SECKEY2)
+        pub_keys_flat = pk1 + pk2
+
+        agg_pk_xonly, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
+        cache = c_void_p()
+        ret = wally_musig_pubkey_agg(pub_keys_flat, len(pub_keys_flat),
+                                     agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, cache)
+        self.assertEqual(WALLY_OK, ret)
+
+        agg_pubkey = bytes([0x02]) + bytes(agg_pk_xonly)
+        agg_pubkey_buf, _ = make_cbuffer(agg_pubkey.hex())
+
+        p2tr_buf, _ = make_cbuffer('00' * 34)
+        ret, p2tr_written = wally_scriptpubkey_p2tr_from_bytes(
+            agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, 0, p2tr_buf, 34)
+        self.assertEqual(WALLY_OK, ret)
+        p2tr_bytes = bytes(p2tr_buf[:p2tr_written])
+
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22,
+                                                    tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        utxo = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(200000, p2tr_bytes, len(p2tr_bytes), utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_witness_utxo(psbt, 0, utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_amount(psbt, 0, 200000))
+
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_set_input_taproot_internal_key(
+                             psbt, 0, agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN))
+
+        participants_flat = bytes(pk1) + bytes(pk2)
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_input_add_musig2_participant_pubkeys(
+                             psbt.contents.inputs,
+                             agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+                             participants_flat, len(participants_flat)))
+
+        # First nonce for signer 1 — must succeed
+        secrand1, _ = make_cbuffer('d1' * 32)
+        sn1 = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand1, 32, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, None, 0, byref(sn1))
+        self.assertEqual(WALLY_OK, ret, 'first add_nonce for signer 1 should succeed')
+        self.assertIsNotNone(sn1.value)
+
+        # Second nonce for signer 1 (same pk, same agg_pubkey) — must fail
+        secrand1b, _ = make_cbuffer('d2' * 32)
+        sn1b = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand1b, 32, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, agg_pubkey_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, None, 0, byref(sn1b))
+        self.assertNotEqual(WALLY_OK, ret,
+                            'add_nonce must fail when called twice for the same participant')
+
+        # Cleanup
+        wally_musig_secnonce_free(sn1.value)
+        wally_musig_keyagg_cache_free(cache.value)
+        wally_psbt_free(psbt)
+
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
     def test_pubnonce_parse_invalid(self):
         """wally_musig_pubnonce_parse rejects buffers of wrong length"""
         invalid_lengths = [0, 1, 65, 67, 132]
@@ -1249,3 +1883,91 @@ class MuSig2Tests(unittest.TestCase):
                          'musig() descriptor with unhardened /0/* must be accepted')
         if d2.value:
             wally_descriptor_free(d2.value)
+
+    @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+    def test_psbt_musig2_wrong_aggregate_key(self):
+        """PSBT signing must fail when PARTICIPANT_PUBKEYS is registered under a wrong aggregate key.
+
+        If the aggregate key stored in the PSBT input does not match the real
+        aggregate key used during signing, the implementation must reject the
+        operation rather than silently producing an invalid signature.
+        """
+        pk1 = derive_pubkey(SECKEY1)
+        pk2 = derive_pubkey(SECKEY2)
+        pub_keys_flat = pk1 + pk2
+
+        # Compute the real aggregate key.
+        agg_pk_xonly, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
+        cache = c_void_p()
+        self.assertEqual(WALLY_OK, wally_musig_pubkey_agg(pub_keys_flat, len(pub_keys_flat),
+                                                          agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, cache))
+
+        real_agg_pubkey = bytes([0x02]) + bytes(agg_pk_xonly)
+        real_agg_buf, _ = make_cbuffer(real_agg_pubkey.hex())
+
+        # Build a wrong aggregate key: a random compressed pubkey unrelated to pk1/pk2.
+        wrong_agg = bytes([0x02]) + bytes([0x03] * EC_XONLY_PUBLIC_KEY_LEN)
+        wrong_agg_buf, _ = make_cbuffer(wrong_agg.hex())
+
+        # Build PSBT v2 with 1 input.
+        p2tr_buf, _ = make_cbuffer('00' * 34)
+        ret, _ = wally_scriptpubkey_p2tr_from_bytes(agg_pk_xonly, EC_XONLY_PUBLIC_KEY_LEN, 0,
+                                                     p2tr_buf, 34)
+        self.assertEqual(WALLY_OK, ret)
+        p2tr_bytes = bytes(p2tr_buf[:34])
+
+        psbt = pointer(wally_psbt())
+        self.assertEqual(WALLY_OK, wally_psbt_init_alloc(2, 1, 1, 0, 0, psbt))
+
+        tx_in = pointer(wally_tx_input())
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_input_at(psbt, 0, 0, tx_in))
+
+        tx_output = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(1000, b'\x00\x14' + b'\xab' * 20, 22,
+                                                    tx_output))
+        self.assertEqual(WALLY_OK, wally_psbt_add_tx_output_at(psbt, 0, 0, tx_output))
+
+        utxo = pointer(wally_tx_output())
+        self.assertEqual(WALLY_OK,
+                         wally_tx_output_init_alloc(200000, p2tr_bytes, len(p2tr_bytes), utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_witness_utxo(psbt, 0, utxo))
+        self.assertEqual(WALLY_OK, wally_psbt_set_input_amount(psbt, 0, 200000))
+
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_set_input_taproot_internal_key(psbt, 0,
+                                                                    agg_pk_xonly,
+                                                                    EC_XONLY_PUBLIC_KEY_LEN))
+
+        # Register participant pubkeys under the WRONG aggregate key.
+        participants_flat = bytes(pk1) + bytes(pk2)
+        self.assertEqual(WALLY_OK,
+                         wally_psbt_input_add_musig2_participant_pubkeys(
+                             psbt.contents.inputs,
+                             wrong_agg_buf, EC_PUBLIC_KEY_LEN,
+                             participants_flat, len(participants_flat)))
+
+        # Try to add a nonce using the REAL aggregate key.
+        # The lookup for the registered participant pubkeys uses the agg_pubkey
+        # as part of the key — since they were registered under wrong_agg_buf,
+        # the real agg_buf lookup must either fail or not find a matching entry.
+        secrand1, _ = make_cbuffer('e1' * 32)
+        sn1 = c_void_p()
+        ret = wally_psbt_musig2_add_nonce(
+            psbt, 0, secrand1, 32, None, 0,
+            pk1, EC_PUBLIC_KEY_LEN, real_agg_buf, EC_PUBLIC_KEY_LEN,
+            None, 0, None, 0, byref(sn1))
+        # The add_nonce must fail: participant pubkeys were registered under
+        # the wrong aggregate key, so the nonce entry cannot be stored correctly.
+        self.assertNotEqual(WALLY_OK, ret,
+                            'add_nonce must fail when participant pubkeys use a wrong aggregate key')
+        if sn1.value:
+            wally_musig_secnonce_free(sn1.value)
+
+        # Cleanup
+        wally_musig_keyagg_cache_free(cache.value)
+        wally_psbt_free(psbt)
+
+
+if __name__ == '__main__':
+    unittest.main()

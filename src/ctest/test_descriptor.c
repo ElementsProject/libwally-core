@@ -2919,6 +2919,111 @@ done_bip341:
     return ok;
 }
 
+static bool test_psbt_taproot_scriptpath(void)
+{
+    static const unsigned char prev_txid[WALLY_TXHASH_LEN] = {
+        0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+        0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+        0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
+        0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa
+    };
+    static const unsigned char op_return[] = { 0x6a }; /* OP_RETURN for dummy spend output */
+    struct wally_descriptor *desc = NULL;
+    struct wally_tx *tx = NULL;
+    struct wally_tx_input *txin = NULL;
+    struct wally_tx_output *utxo_out = NULL, *spend_out = NULL;
+    struct wally_psbt *psbt = NULL;
+    unsigned char script[64], priv_key[EC_PRIVATE_KEY_LEN];
+    size_t script_len = 0;
+    int ret;
+    bool ok = true;
+
+    /* Parse tr(x_only,pk(key_1)) descriptor */
+    ret = wally_descriptor_parse("tr(x_only,pk(key_1))", &g_vars[VARS_STD],
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, &desc);
+    if (!check_ret("psbt: parse", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Get P2TR output script (OP_1 + push32 + tweaked_output_key = 34 bytes) */
+    ret = wally_descriptor_to_script(desc, 0, 0, 0, 0, 0, 0, script, sizeof(script), &script_len);
+    if (!check_ret("psbt: to_script", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Build spending transaction with one taproot input and a dummy output */
+    ret = wally_tx_input_init_alloc(prev_txid, WALLY_TXHASH_LEN, 0, 0xffffffff,
+                                    NULL, 0, NULL, &txin);
+    if (!check_ret("psbt: tx_input_init", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    ret = wally_tx_output_init_alloc(0, op_return, sizeof(op_return), &spend_out);
+    if (!check_ret("psbt: tx_output_init", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    ret = wally_tx_init_alloc(2, 0, 1, 1, &tx);
+    if (!check_ret("psbt: tx_init", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    ret = wally_tx_add_input(tx, txin);
+    if (!check_ret("psbt: tx_add_input", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    ret = wally_tx_add_output(tx, spend_out);
+    if (!check_ret("psbt: tx_add_output", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Create PSBT v0 with properly initialized inputs via init_alloc + set_global_tx */
+    ret = wally_psbt_init_alloc(WALLY_PSBT_VERSION_0, 0, 0, 0, 0, &psbt);
+    if (!check_ret("psbt: init_alloc", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    ret = wally_psbt_set_global_tx(psbt, tx);
+    if (!check_ret("psbt: set_global_tx", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Set witness_utxo: the previous output being spent */
+    ret = wally_tx_output_init_alloc(100000000, script, script_len, &utxo_out);
+    if (!check_ret("psbt: utxo_out init", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    ret = wally_psbt_input_set_witness_utxo(&psbt->inputs[0], utxo_out);
+    if (!check_ret("psbt: set_witness_utxo", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Populate taproot PSBT input fields (internal key, leaf scripts, keypaths) */
+    ret = wally_psbt_input_set_taproot_from_descriptor(psbt, 0, desc, 0, 0, 0);
+    if (!check_ret("psbt: set_taproot_from_descriptor", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Decode raw private key for key_1 from testnet WIF */
+    ret = wally_wif_to_bytes("cNha6ams8o6qokphL3XfcUTRs7ggweD3SWn7YXLtB3Rrm3QDNxD4",
+        WALLY_ADDRESS_VERSION_WIF_TESTNET, WALLY_WIF_FLAG_COMPRESSED,
+        priv_key, sizeof(priv_key));
+    if (!check_ret("psbt: wif_to_bytes", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Sign the script-path spend */
+    ret = wally_psbt_sign(psbt, priv_key, sizeof(priv_key), 0);
+    if (!check_ret("psbt: sign", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Assert TAP_SCRIPT_SIG is present and non-empty */
+    if (psbt->inputs[0].taproot_leaf_signatures.num_items == 0) {
+        printf("[psbt] no TAP_SCRIPT_SIG after signing\n");
+        ok = false;
+        goto done_psbt;
+    }
+
+    /* Finalize the PSBT input */
+    ret = wally_psbt_finalize(psbt, 0);
+    if (!check_ret("psbt: finalize", ret, WALLY_OK)) { ok = false; goto done_psbt; }
+
+    /* Assert final witness contains [sig, leaf_script, control_block] (3 items) */
+    if (!psbt->inputs[0].final_witness) {
+        printf("[psbt] no final_witness after finalization\n");
+        ok = false;
+    } else if (psbt->inputs[0].final_witness->num_items != 3) {
+        printf("[psbt] expected 3 witness items, got %zu\n",
+               psbt->inputs[0].final_witness->num_items);
+        ok = false;
+    }
+
+done_psbt:
+    wally_descriptor_free(desc);
+    wally_tx_free(tx);
+    wally_tx_input_free(txin);
+    wally_tx_output_free(utxo_out);
+    wally_tx_output_free(spend_out);
+    wally_psbt_free(psbt);
+    memset(priv_key, 0, sizeof(priv_key));
+    return ok;
+}
+
 int main(void)
 {
     bool tests_ok = true;
@@ -2943,6 +3048,10 @@ int main(void)
         tests_ok = false;
     }
 
+    if (!test_psbt_taproot_scriptpath()) {
+        printf("[test_psbt_taproot_scriptpath] failed!\n");
+        tests_ok = false;
+    }
 
     wally_cleanup(0);
     return tests_ok ? 0 : 1;
