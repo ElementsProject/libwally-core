@@ -100,6 +100,12 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_get_key_origin_fingerprint' \
 ,'_wally_descriptor_get_key_origin_path_str' \
 ,'_wally_descriptor_get_key_origin_path_str_len' \
+,'_wally_descriptor_get_musig_num_participants' \
+,'_wally_descriptor_get_musig_participant_key' \
+,'_wally_descriptor_get_musig_participant_key_features' \
+,'_wally_descriptor_get_musig_participant_key_origin_fingerprint' \
+,'_wally_descriptor_get_musig_participant_key_origin_path_str' \
+,'_wally_descriptor_get_musig_participant_key_origin_path_str_len' \
 ,'_wally_descriptor_get_network' \
 ,'_wally_descriptor_get_num_keys' \
 ,'_wally_descriptor_get_num_paths' \

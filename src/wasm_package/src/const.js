@@ -139,6 +139,7 @@ export const WALLY_MS_IS_ELEMENTS = 0x0100; /** Contains Elements expressions or
 export const WALLY_MS_IS_ELIP150 = 0x0400; /** A confidential ct() descriptor with ELIP-150 blinding */
 export const WALLY_MS_IS_ELIP151 = 0x0800; /** A confidential ct() descriptor with ELIP-151 blinding */
 export const WALLY_MS_IS_MULTIPATH = 0x0002; /** Allows multiple paths via ``<a;b;c>`` */
+export const WALLY_MS_IS_MUSIG = 0x4000; /** A musig() key aggregate (BIP-390) */
 export const WALLY_MS_IS_PARENTED = 0x0080; /** Contains at least one key with a parent key origin */
 export const WALLY_MS_IS_PRIVATE = 0x0004; /** Contains at least one private key */
 export const WALLY_MS_IS_RANGED = 0x0001; /** Allows key ranges via ``*`` */

@@ -551,6 +551,128 @@ class Bip328VectorTests(unittest.TestCase):
 
 
 @unittest.skipUnless(wally_musig_pubkey_agg, 'MuSig2 module not enabled')
+class Bip390DescriptorVectorTests(unittest.TestCase):
+    """BIP-390 musig() descriptor parsing and address generation tests."""
+
+    PK1 = '02F9308A019258C31049344F85F89D5229B531C845836F99B08601F113BCE036F9'
+    PK2 = '03DFF1D77F2A671C5F36183726DB2341BE58FEAE1DA2DECED843240F7B502BA659'
+    XPUB1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+    XPUB2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+
+    def test_tr_musig_2of2_parse_and_participants(self):
+        """tr(musig(pk1,pk2)) parses with 2 participants."""
+        desc_str = f'tr(musig({self.PK1},{self.PK2}))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+        self.assertEqual(WALLY_OK, ret, f'Failed to parse: {desc_str}')
+
+        ret, num_participants = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(2, num_participants, 'Expected 2 musig participants')
+
+        wally_descriptor_free(d)
+
+    def test_tr_musig_address_is_bech32m(self):
+        """tr(musig(pk1,pk2)) on mainnet generates a bc1p address."""
+        desc_str = f'tr(musig({self.PK1},{self.PK2}))'
+        d = c_void_p()
+        self.assertEqual(WALLY_OK,
+                         wally_descriptor_parse(desc_str, None, NETWORK_BTC_MAIN, 0, d))
+
+        ret, addr = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(WALLY_OK, ret, 'Address generation failed')
+        addr_str = addr.decode('ascii') if isinstance(addr, bytes) else addr
+        self.assertTrue(addr_str.startswith('bc1p'),
+                        f'Expected bech32m (bc1p...) address, got: {addr_str}')
+        wally_descriptor_free(d)
+
+    def test_tr_musig_with_xpub_derivation_paths(self):
+        """tr(musig([fp/path]xpub1/0/*, [fp/path]xpub2/0/*)) parses and has 2 participants."""
+        desc_str = (f'tr(musig([deadbeef/86h/0h/0h]{self.XPUB1}/0/*,'
+                    f'[cafebabe/86h/0h/0h]{self.XPUB2}/0/*))')
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+        self.assertEqual(WALLY_OK, ret, f'Failed to parse: {desc_str}')
+
+        ret, num_participants = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual(WALLY_OK, ret)
+        self.assertEqual(2, num_participants)
+        wally_descriptor_free(d)
+
+    def test_tr_musig_xpub_multiple_address_indices(self):
+        """Different child indices produce different tr(musig) addresses."""
+        desc_str = f'tr(musig({self.XPUB1}/0/*,{self.XPUB2}/0/*))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(WALLY_OK, ret)
+
+        ret0, addr0 = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(WALLY_OK, ret0)
+        ret1, addr1 = wally_descriptor_to_address(d, 0, 0, 1, 0)
+        self.assertEqual(WALLY_OK, ret1)
+
+        a0 = addr0.decode('ascii') if isinstance(addr0, bytes) else addr0
+        a1 = addr1.decode('ascii') if isinstance(addr1, bytes) else addr1
+        self.assertNotEqual(a0, a1, 'Different indices must produce different addresses')
+        wally_descriptor_free(d)
+
+    def _descriptor_script_hex(self, desc_str, child_num):
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+        self.assertEqual(WALLY_OK, ret, f'Failed to parse: {desc_str}')
+        script, script_len = make_cbuffer('00' * 128)
+        ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, child_num, 0,
+                                                  script, script_len)
+        self.assertEqual(WALLY_OK, ret, f'to_script failed: {desc_str}')
+        wally_descriptor_free(d)
+        return script[:written].hex()
+
+    def test_bip390_valid_vectors(self):
+        """Pin the BIP-390 valid test vector scriptPubKeys."""
+        pk3 = '023590A94E768F8E1815C2F24B4D80A8E3149316C3518CE7B7AD338368D038CA66'
+        # tr(musig(...)) with three static keys
+        script = self._descriptor_script_hex(
+            f'tr(musig({self.PK1},{self.PK2},{pk3}))', 0)
+        self.assertEqual(
+            '512079e6c3e628c9bfbce91de6b7fb28e2aec7713d377cf260ab599dcbc40e542312',
+            script)
+        # Ranged musig() over xpubs, first three indices
+        xpub_a = ('xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJ'
+                  'bZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL')
+        xpub_b = ('xpub68NZiKmJWnxxS6aaHmn81bvJeTESw724CRDs6HbuccFQN9Ku14VQrAD'
+                  'WgqbhhTHBaohPX4CjNLf9fq9MYo6oDaPPLPxSb7gwQN3ih19Zm4Y')
+        expected = [
+            '51209508c08832f3bb9d5e8baf8cb5cfa3669902e2f2da19acea63ff47b93faa9bfc',
+            '51205ca1102663025a83dd9b5dbc214762c5a6309af00d48167d2d6483808525a298',
+            '51207dbed1b89c338df6a1ae137f133a19cae6e03d481196ee6f1a5c7d1aeb56b166',
+        ]
+        for child_num, want in enumerate(expected):
+            script = self._descriptor_script_hex(
+                f'rawtr(musig({xpub_a},{xpub_b})/0/*)', child_num)
+            self.assertEqual(want, script, f'index {child_num}')
+
+    def test_bip390_invalid_derivation_combos(self):
+        """BIP-390: ranged/multipath participants are invalid with a trailing path."""
+        invalid = [
+            # Ranged participants with ranged musig()
+            f'tr(musig({self.XPUB1}/*,{self.XPUB2})/0/*)',
+            # Ranged participants with a static trailing path
+            f'tr(musig({self.XPUB1}/*,{self.XPUB2}/*)/1/2)',
+            # Multipath participants with multipath musig()
+            f'tr(musig({self.XPUB1}/<0;1>,{self.XPUB2})/<2;3>)',
+        ]
+        for desc_str in invalid:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc_str, None, NETWORK_NONE, 0, d)
+            self.assertEqual(WALLY_EINVAL, ret, f'Must not parse: {desc_str}')
+        # Static participant paths plus a trailing path remain valid
+        valid = f'tr(musig({self.XPUB1}/1,{self.XPUB2}/1)/2)'
+        d = c_void_p()
+        ret = wally_descriptor_parse(valid, None, NETWORK_NONE, 0, d)
+        self.assertEqual(WALLY_OK, ret, f'Must parse: {valid}')
+        wally_descriptor_free(d)
+
+
 def _build_cache(pubkeys_flat):
     agg_pk, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
     cache = c_void_p()

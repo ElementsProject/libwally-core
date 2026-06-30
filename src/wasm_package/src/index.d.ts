@@ -135,6 +135,11 @@ export function descriptor_get_key_child_path_str_len(descriptor: Ref_wally_desc
 export function descriptor_get_key_features(descriptor: Ref_wally_descriptor, index: number): number;
 export function descriptor_get_key_origin_fingerprint(descriptor: Ref_wally_descriptor, index: number): Buffer;
 export function descriptor_get_key_origin_path_str_len(descriptor: Ref_wally_descriptor, index: number): number;
+export function descriptor_get_musig_num_participants(descriptor: Ref_wally_descriptor, index: number): number;
+export function descriptor_get_musig_participant_key(descriptor: Ref_wally_descriptor, index: number, participant_index: number): string;
+export function descriptor_get_musig_participant_key_features(descriptor: Ref_wally_descriptor, index: number, participant_index: number): number;
+export function descriptor_get_musig_participant_key_origin_fingerprint(descriptor: Ref_wally_descriptor, index: number, participant_index: number): Buffer;
+export function descriptor_get_musig_participant_key_origin_path_str_len(descriptor: Ref_wally_descriptor, index: number, participant_index: number): number;
 export function descriptor_get_network(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_keys(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;
@@ -814,6 +819,7 @@ export function bip32_path_from_str(path_str: string, child_num: number, multi_i
 export function bip32_path_from_str_n(path_str: string, path_str_len: number, child_num: number, multi_index: number, flags: number): Uint32Array;
 export function descriptor_get_key_child_path_str(descriptor: Ref_wally_descriptor, index: number): string;
 export function descriptor_get_key_origin_path_str(descriptor: Ref_wally_descriptor, index: number): string;
+export function descriptor_get_musig_participant_key_origin_path_str(descriptor: Ref_wally_descriptor, index: number, participant_index: number): string;
 export function descriptor_get_taproot_control_block(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): Buffer;
 export function descriptor_get_taproot_leaf_script(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): Buffer;
 export function descriptor_to_script(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, multi_index: number, child_num: number, flags: number): Buffer;
