@@ -2,6 +2,7 @@
 
 #include <include/wally_descriptor.h>
 #include <include/wally_elements.h>
+#include <include/wally_musig.h>
 #include <include/wally_script.h>
 #include <include/wally_psbt.h>
 #include <include/wally_psbt_members.h>
@@ -12,6 +13,9 @@
 #include "script.h"
 #include "pullpush.h"
 #include "tx_io.h"
+#include "descriptor_int.h"
+#include "miniscript_decode.h"
+#include "miniscript_satisfy.h"
 
 /* TODO:
  * - When setting utxo in an input via the psbt (in the SWIG
@@ -422,6 +426,163 @@ SET_STRUCT(wally_psbt_input, final_witness, wally_tx_witness_stack,
 SET_MAP(wally_psbt_input, keypath,)
 ADD_KEYPATH(wally_psbt_input)
 ADD_TAP_KEYPATH(wally_psbt_input)
+SET_MAP(wally_psbt_input, musig2_pubkey,)
+int wally_psbt_input_add_musig2_participant_pubkeys(struct wally_psbt_input *input,
+                                                    const unsigned char *agg_pubkey,
+                                                    size_t agg_pubkey_len,
+                                                    const unsigned char *participants,
+                                                    size_t participants_len)
+{
+    if (!input || !agg_pubkey || agg_pubkey_len != EC_PUBLIC_KEY_LEN ||
+        !participants || participants_len < EC_PUBLIC_KEY_LEN * 2 ||
+        participants_len % EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    return wally_map_replace(&input->musig2_pubkeys,
+                             agg_pubkey, agg_pubkey_len,
+                             participants, participants_len);
+}
+static void musig2_composite_key_build(const unsigned char *participant,
+                                       const unsigned char *agg_pubkey,
+                                       const unsigned char *leaf_hash,
+                                       unsigned char *key_out, size_t *key_len_out)
+{
+    size_t key_len = EC_PUBLIC_KEY_LEN * 2 + (leaf_hash ? SHA256_LEN : 0);
+    memcpy(key_out, participant, EC_PUBLIC_KEY_LEN);
+    memcpy(key_out + EC_PUBLIC_KEY_LEN, agg_pubkey, EC_PUBLIC_KEY_LEN);
+    if (leaf_hash)
+        memcpy(key_out + EC_PUBLIC_KEY_LEN * 2, leaf_hash, SHA256_LEN);
+    *key_len_out = key_len;
+}
+
+/* Add/replace (value non-NULL) or find (written non-NULL) an entry in a
+ * MuSig2 map keyed by participant + aggregate key (+ optional leaf hash) */
+static int musig2_map_add_or_find(const struct wally_map *map_in,
+                                  const unsigned char *participant,
+                                  size_t participant_len,
+                                  const unsigned char *agg_pubkey,
+                                  size_t agg_pubkey_len,
+                                  const unsigned char *leaf_hash,
+                                  size_t leaf_hash_len,
+                                  const unsigned char *value, size_t value_len,
+                                  size_t *written)
+{
+    unsigned char key[EC_PUBLIC_KEY_LEN * 2 + SHA256_LEN];
+    size_t key_len;
+
+    if (written)
+        *written = 0;
+    if (!participant || participant_len != EC_PUBLIC_KEY_LEN ||
+        !agg_pubkey || agg_pubkey_len != EC_PUBLIC_KEY_LEN ||
+        (leaf_hash && leaf_hash_len != SHA256_LEN) ||
+        (!leaf_hash && leaf_hash_len != 0))
+        return WALLY_EINVAL;
+
+    musig2_composite_key_build(participant, agg_pubkey, leaf_hash, key, &key_len);
+    if (written)
+        return wally_map_find(map_in, key, key_len, written);
+    return wally_map_replace((struct wally_map *)map_in, key, key_len, value, value_len);
+}
+
+int wally_psbt_input_add_musig2_pubnonce(struct wally_psbt_input *input,
+                                         const unsigned char *participant,
+                                         size_t participant_len,
+                                         const unsigned char *agg_pubkey,
+                                         size_t agg_pubkey_len,
+                                         const unsigned char *leaf_hash,
+                                         size_t leaf_hash_len,
+                                         const unsigned char *pubnonce,
+                                         size_t pubnonce_len)
+{
+    if (!input || !pubnonce || pubnonce_len != WALLY_MUSIG_PUBNONCE_LEN)
+        return WALLY_EINVAL;
+    return musig2_map_add_or_find(&input->musig2_pubnonces,
+                                  participant, participant_len,
+                                  agg_pubkey, agg_pubkey_len,
+                                  leaf_hash, leaf_hash_len,
+                                  pubnonce, pubnonce_len, NULL);
+}
+
+int wally_psbt_input_find_musig2_pubnonce(const struct wally_psbt_input *input,
+                                          const unsigned char *participant,
+                                          size_t participant_len,
+                                          const unsigned char *agg_pubkey,
+                                          size_t agg_pubkey_len,
+                                          const unsigned char *leaf_hash,
+                                          size_t leaf_hash_len,
+                                          size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    return musig2_map_add_or_find(&input->musig2_pubnonces,
+                                  participant, participant_len,
+                                  agg_pubkey, agg_pubkey_len,
+                                  leaf_hash, leaf_hash_len,
+                                  NULL, 0, written);
+}
+
+int wally_psbt_input_get_musig2_pubnonce_size(const struct wally_psbt_input *input,
+                                               size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    *written = input->musig2_pubnonces.num_items;
+    return WALLY_OK;
+}
+
+int wally_psbt_input_add_musig2_partial_sig(struct wally_psbt_input *input,
+                                            const unsigned char *participant,
+                                            size_t participant_len,
+                                            const unsigned char *agg_pubkey,
+                                            size_t agg_pubkey_len,
+                                            const unsigned char *leaf_hash,
+                                            size_t leaf_hash_len,
+                                            const unsigned char *partial_sig,
+                                            size_t partial_sig_len)
+{
+    if (!input || !partial_sig || partial_sig_len != WALLY_MUSIG_PARTIAL_SIG_LEN)
+        return WALLY_EINVAL;
+    return musig2_map_add_or_find(&input->musig2_partial_sigs,
+                                  participant, participant_len,
+                                  agg_pubkey, agg_pubkey_len,
+                                  leaf_hash, leaf_hash_len,
+                                  partial_sig, partial_sig_len, NULL);
+}
+
+int wally_psbt_input_find_musig2_partial_sig(const struct wally_psbt_input *input,
+                                             const unsigned char *participant,
+                                             size_t participant_len,
+                                             const unsigned char *agg_pubkey,
+                                             size_t agg_pubkey_len,
+                                             const unsigned char *leaf_hash,
+                                             size_t leaf_hash_len,
+                                             size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    return musig2_map_add_or_find(&input->musig2_partial_sigs,
+                                  participant, participant_len,
+                                  agg_pubkey, agg_pubkey_len,
+                                  leaf_hash, leaf_hash_len,
+                                  NULL, 0, written);
+}
+
+int wally_psbt_input_get_musig2_partial_sig_size(const struct wally_psbt_input *input,
+                                                  size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    *written = input->musig2_partial_sigs.num_items;
+    return WALLY_OK;
+}
+
 SET_MAP(wally_psbt_input, signature, _internal)
 int wally_psbt_input_add_signature(struct wally_psbt_input *input,
                                    const unsigned char *pub_key, size_t pub_key_len,
@@ -557,6 +718,33 @@ static int map_leaf_hashes_verify(const unsigned char *key, size_t key_len,
     return ret;
 }
 
+/* BIP-371 PSBT_IN_TAP_SCRIPT_SIG: key = x-only pubkey(32) + leaf hash(32),
+ * value = 64 or 65 byte BIP-340 Schnorr signature. */
+static int taproot_leaf_signature_verify(const unsigned char *key, size_t key_len,
+                                         const unsigned char *val, size_t val_len)
+{
+    if (!key || key_len != EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN)
+        return WALLY_EINVAL;
+    if (wally_ec_xonly_public_key_verify(key, EC_XONLY_PUBLIC_KEY_LEN) != WALLY_OK)
+        return WALLY_EINVAL;
+    if (!val || (val_len != EC_SIGNATURE_LEN && val_len != EC_SIGNATURE_LEN + 1))
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
+/* BIP-371 PSBT_IN_TAP_LEAF_SCRIPT: key = BIP-341 control block, value = the
+ * tapscript (the leaf version is taken from the control block, see BIP-341).
+ * The tapscript may be empty. */
+static int taproot_leaf_script_verify(const unsigned char *key, size_t key_len,
+                                      const unsigned char *val, size_t val_len)
+{
+    if (wally_bip341_control_block_verify(key, key_len) != WALLY_OK)
+        return WALLY_EINVAL;
+    if (BYTES_INVALID(val, val_len))
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
 /* BIP-371 PSBT_OUT_TAP_TREE value: a depth-first sequence of
  * <8-bit depth> <8-bit leaf version> <compact-size scriptlen> <script>. */
 static int taproot_tree_value_verify(const unsigned char *val, size_t val_len)
@@ -610,8 +798,8 @@ static int psbt_input_field_verify(uint32_t field_type,
             /* Scripts, or UTF-8 proof of reserves message */
             return val_len ? WALLY_OK : WALLY_EINVAL;
         case PSBT_IN_TAP_KEY_SIG:
-            /* 64 or 65 byte Schnorr signature TODO: Add constants */
-            return val_len == 64 || val_len == 65 ? WALLY_OK : WALLY_EINVAL;
+            /* 64 byte Schnorr signature, optionally with a sighash byte */
+            return val_len == EC_SIGNATURE_LEN || val_len == EC_SIGNATURE_LEN + 1 ? WALLY_OK : WALLY_EINVAL;
         case PSBT_IN_TAP_INTERNAL_KEY:
         case PSBT_IN_TAP_MERKLE_ROOT:
             /* 32 byte x-only pubkey, or 32 byte merkle hash */
@@ -621,6 +809,54 @@ static int psbt_input_field_verify(uint32_t field_type,
         }
     }
     return WALLY_EINVAL;
+}
+
+static int musig2_participant_pubkeys_verify(const unsigned char *key, size_t key_len,
+                                             const unsigned char *val, size_t val_len)
+{
+    size_t i;
+
+    /* Key must be a 33-byte compressed pubkey; value N*33, N>=2 */
+    if (!key || key_len != EC_PUBLIC_KEY_LEN ||
+        wally_ec_public_key_verify(key, key_len) != WALLY_OK)
+        return WALLY_EINVAL;
+    if (!val || val_len < EC_PUBLIC_KEY_LEN * 2 || val_len % EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    for (i = 0; i < val_len; i += EC_PUBLIC_KEY_LEN)
+        if (wally_ec_public_key_verify(val + i, EC_PUBLIC_KEY_LEN) != WALLY_OK)
+            return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
+static int musig2_composite_key_verify(const unsigned char *key, size_t key_len,
+                                       const unsigned char *val, size_t val_len,
+                                       size_t expected_val_len)
+{
+    /* Key: participant (33) + agg (33) + optional leaf_hash (32) */
+    if (!key || (key_len != EC_PUBLIC_KEY_LEN * 2 &&
+                 key_len != EC_PUBLIC_KEY_LEN * 2 + SHA256_LEN))
+        return WALLY_EINVAL;
+    if (wally_ec_public_key_verify(key, EC_PUBLIC_KEY_LEN) != WALLY_OK ||
+        wally_ec_public_key_verify(key + EC_PUBLIC_KEY_LEN,
+                                   EC_PUBLIC_KEY_LEN) != WALLY_OK)
+        return WALLY_EINVAL;
+    if (!val || val_len != expected_val_len)
+        return WALLY_EINVAL;
+    return WALLY_OK;
+}
+
+static int musig2_pubnonce_verify(const unsigned char *key, size_t key_len,
+                                  const unsigned char *val, size_t val_len)
+{
+    return musig2_composite_key_verify(key, key_len, val, val_len,
+                                       WALLY_MUSIG_PUBNONCE_LEN);
+}
+
+static int musig2_partial_sig_verify(const unsigned char *key, size_t key_len,
+                                     const unsigned char *val, size_t val_len)
+{
+    return musig2_composite_key_verify(key, key_len, val, val_len,
+                                       WALLY_MUSIG_PARTIAL_SIG_LEN);
 }
 
 static int psbt_map_input_field_verify(const unsigned char *key, size_t key_len,
@@ -900,10 +1136,13 @@ static void psbt_input_init(struct wally_psbt_input *input)
     wally_map_init(0, NULL, &input->unknowns);
     wally_map_init(0, wally_map_hash_preimage_verify, &input->preimages);
     wally_map_init(0, psbt_map_input_field_verify, &input->psbt_fields);
-    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_signatures);
-    wally_map_init(0, NULL /* FIXME */, &input->taproot_leaf_scripts);
+    wally_map_init(0, taproot_leaf_signature_verify, &input->taproot_leaf_signatures);
+    wally_map_init(0, taproot_leaf_script_verify, &input->taproot_leaf_scripts);
     wally_map_init(0, map_leaf_hashes_verify, &input->taproot_leaf_hashes);
     wally_map_init(0, wally_keypath_xonly_public_key_verify, &input->taproot_leaf_paths);
+    wally_map_init(0, musig2_participant_pubkeys_verify, &input->musig2_pubkeys);
+    wally_map_init(0, musig2_pubnonce_verify, &input->musig2_pubnonces);
+    wally_map_init(0, musig2_partial_sig_verify, &input->musig2_partial_sigs);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_input_field_verify, &input->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -924,6 +1163,9 @@ static int psbt_input_free(struct wally_psbt_input *input, bool free_parent)
         wally_map_clear(&input->taproot_leaf_scripts);
         wally_map_clear(&input->taproot_leaf_hashes);
         wally_map_clear(&input->taproot_leaf_paths);
+        wally_map_clear(&input->musig2_pubkeys);
+        wally_map_clear(&input->musig2_pubnonces);
+        wally_map_clear(&input->musig2_partial_sigs);
 #ifdef BUILD_ELEMENTS
         wally_tx_free(input->pegin_tx);
         wally_tx_witness_stack_free(input->pegin_witness);
@@ -951,6 +1193,21 @@ MAP_INNER_FIELD(output, taproot_internal_key, PSBT_OUT_TAP_INTERNAL_KEY, psbt_fi
 SET_MAP(wally_psbt_output, keypath,)
 ADD_KEYPATH(wally_psbt_output)
 ADD_TAP_KEYPATH(wally_psbt_output)
+SET_MAP(wally_psbt_output, musig2_pubkey,)
+int wally_psbt_output_add_musig2_participant_pubkeys(struct wally_psbt_output *output,
+                                                     const unsigned char *agg_pubkey,
+                                                     size_t agg_pubkey_len,
+                                                     const unsigned char *participants,
+                                                     size_t participants_len)
+{
+    if (!output || !agg_pubkey || agg_pubkey_len != EC_PUBLIC_KEY_LEN ||
+        !participants || participants_len < EC_PUBLIC_KEY_LEN * 2 ||
+        participants_len % EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    return wally_map_replace(&output->musig2_pubkeys,
+                             agg_pubkey, agg_pubkey_len,
+                             participants, participants_len);
+}
 SET_MAP(wally_psbt_output, unknown,)
 
 int wally_psbt_output_set_script(struct wally_psbt_output *output,
@@ -1202,6 +1459,7 @@ static void psbt_output_init(struct wally_psbt_output *output)
     wally_map_init(0, taproot_tree_verify, &output->taproot_tree);
     wally_map_init(0, map_leaf_hashes_verify, &output->taproot_leaf_hashes);
     wally_map_init(0, wally_keypath_xonly_public_key_verify, &output->taproot_leaf_paths);
+    wally_map_init(0, musig2_participant_pubkeys_verify, &output->musig2_pubkeys);
 #ifdef BUILD_ELEMENTS
     wally_map_init(0, pset_map_output_field_verify, &output->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -1217,6 +1475,7 @@ static int psbt_output_free(struct wally_psbt_output *output, bool free_parent)
         wally_map_clear(&output->taproot_tree);
         wally_map_clear(&output->taproot_leaf_hashes);
         wally_map_clear(&output->taproot_leaf_paths);
+        wally_map_clear(&output->musig2_pubkeys);
 #ifdef BUILD_ELEMENTS
         wally_map_clear(&output->pset_fields);
 #endif /* BUILD_ELEMENTS */
@@ -1855,6 +2114,65 @@ int wally_psbt_add_input_taproot_keypath(
                                                 child_path, child_path_len);
 }
 
+int wally_psbt_input_add_taproot_leaf_script(
+    struct wally_psbt_input *input,
+    const unsigned char *control_block, size_t control_block_len,
+    const unsigned char *script, size_t script_len)
+{
+    /* Note the maps verify_fn validates the control block and script */
+    if (!input || BYTES_INVALID(script, script_len))
+        return WALLY_EINVAL;
+    return map_add(&input->taproot_leaf_scripts,
+                   control_block, control_block_len,
+                   script, script_len, false, false);
+}
+
+int wally_psbt_input_get_taproot_leaf_script_size(
+    const struct wally_psbt_input *input, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    *written = input->taproot_leaf_scripts.num_items;
+    return WALLY_OK;
+}
+
+int wally_psbt_input_add_taproot_leaf_signature(
+    struct wally_psbt_input *input,
+    const unsigned char *pubkey_and_hash, size_t pubkey_and_hash_len,
+    const unsigned char *sig, size_t sig_len)
+{
+    /* Note the maps verify_fn validates the key and signature */
+    if (!input || !sig)
+        return WALLY_EINVAL;
+    return map_add(&input->taproot_leaf_signatures,
+                   pubkey_and_hash, pubkey_and_hash_len,
+                   sig, sig_len, false, false);
+}
+
+int wally_psbt_input_get_taproot_leaf_signature_size(
+    const struct wally_psbt_input *input, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    *written = input->taproot_leaf_signatures.num_items;
+    return WALLY_OK;
+}
+
+int wally_psbt_input_get_taproot_keypaths_size(
+    const struct wally_psbt_input *input, size_t *written)
+{
+    if (written)
+        *written = 0;
+    if (!input || !written)
+        return WALLY_EINVAL;
+    *written = input->taproot_leaf_paths.num_items;
+    return WALLY_OK;
+}
+
 int wally_psbt_add_tx_input_at(struct wally_psbt *psbt,
                                uint32_t index, uint32_t flags,
                                const struct wally_tx_input *txin)
@@ -2287,19 +2605,18 @@ static int pull_taproot_leaf_signature(const unsigned char **cursor, size_t *max
                                        const unsigned char **key, size_t *key_len,
                                        struct wally_map *leaf_sigs)
 {
-    /* TODO: use schnorr/taproot constants here */
+    const size_t sig_key_len = EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN;
     const unsigned char *val, *xonly_hash;
     size_t val_len;
 
     /* key = x-only pubkey + leaf hash */
-    if (*key_len != 64u || !(xonly_hash = pull_skip(key, key_len, *key_len)))
+    if (*key_len != sig_key_len || !(xonly_hash = pull_skip(key, key_len, *key_len)))
         return WALLY_EINVAL;
     subfield_nomore_end(cursor, max, *key, *key_len);
 
     pull_varlength_buff(cursor, max, &val, &val_len);
-    if (!val || (val_len != 64u && val_len != 65))
-        return WALLY_EINVAL; /* Invalid signature length */
-    return map_add(leaf_sigs, xonly_hash, 64u, val, val_len, false, false);
+    /* Note the maps verify_fn validates the signature length */
+    return map_add(leaf_sigs, xonly_hash, sig_key_len, val, val_len, false, false);
 }
 
 static int pull_taproot_leaf_script(const unsigned char **cursor, size_t *max,
@@ -2315,10 +2632,15 @@ static int pull_taproot_leaf_script(const unsigned char **cursor, size_t *max,
     subfield_nomore_end(cursor, max, *key, *key_len);
 
     pull_varlength_buff(cursor, max, &val, &val_len);
-    if (!val || !val_len)
+    /* BIP-371: value is the tapscript followed by a 1-byte leaf version, which
+     * must match the leaf version encoded in the control block. We store the
+     * script only; the leaf version is always recovered from the control block.
+     * The tapscript may be empty. */
+    if (!val || !val_len || val[val_len - 1] != (ctrl[0] & 0xfeu))
         return WALLY_EINVAL;
 
-    return map_add(leaf_scripts, ctrl, ctrl_len, val, val_len, false, false);
+    return map_add(leaf_scripts, ctrl, ctrl_len, val_len > 1u ? val : NULL,
+                   val_len - 1u, false, false);
 }
 
 static int pull_taproot_derivation(const unsigned char **cursor, size_t *max,
@@ -2332,7 +2654,7 @@ static int pull_taproot_derivation(const unsigned char **cursor, size_t *max,
     int ret;
 
     if (xonly_len != EC_XONLY_PUBLIC_KEY_LEN)
-        return WALLY_EINVAL;;
+        return WALLY_EINVAL;
     pull_subfield_start(cursor, max, pull_varint(cursor, max), &val, &val_len);
     num_hashes = pull_varint(&val, &val_len);
     if (num_hashes > val_len / SHA256_LEN)
@@ -2409,7 +2731,8 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 field_bit = field_type;
             }
         } else {
-            is_known = field_type <= PSBT_IN_MAX;
+            is_known = field_type <= PSBT_IN_MAX &&
+                       field_type != PSBT_IN_RESERVED_0X19;
             if (is_known)
                 field_bit = PSBT_FT(field_type);
         }
@@ -2494,6 +2817,15 @@ static int pull_psbt_input(const struct wally_psbt *psbt,
                 ret = pull_taproot_derivation(cursor, max, &key, &key_len,
                                               &result->taproot_leaf_hashes,
                                               &result->taproot_leaf_paths);
+                break;
+            case PSBT_IN_MUSIG2_PARTICIPANT_PUBKEYS:
+                ret = pull_map_item(cursor, max, key, key_len, &result->musig2_pubkeys);
+                break;
+            case PSBT_IN_MUSIG2_PUB_NONCE:
+                ret = pull_map_item(cursor, max, key, key_len, &result->musig2_pubnonces);
+                break;
+            case PSBT_IN_MUSIG2_PARTIAL_SIG:
+                ret = pull_map_item(cursor, max, key, key_len, &result->musig2_partial_sigs);
                 break;
 #ifdef BUILD_ELEMENTS
             case PSET_FT(PSET_IN_EXPLICIT_VALUE):
@@ -2665,6 +2997,9 @@ static int pull_psbt_output(const struct wally_psbt *psbt,
                 ret = pull_taproot_derivation(cursor, max, &key, &key_len,
                                               &result->taproot_leaf_hashes,
                                               &result->taproot_leaf_paths);
+                break;
+            case PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS:
+                ret = pull_map_item(cursor, max, key, key_len, &result->musig2_pubkeys);
                 break;
 #ifdef BUILD_ELEMENTS
             case PSET_FT(PSET_OUT_BLINDER_INDEX):
@@ -3073,12 +3408,14 @@ static int push_taproot_leaf_scripts(unsigned char **cursor, size_t *max, size_t
     for (i = 0; i < leaf_scripts->num_items; ++i) {
         const struct wally_map_item *item = leaf_scripts->items + i;
 
-        if (wally_bip341_control_block_verify(item->key, item->key_len) != WALLY_OK ||
-            !item->value_len)
+        if (wally_bip341_control_block_verify(item->key, item->key_len) != WALLY_OK)
             return WALLY_EINVAL;
 
         push_key(cursor, max, ft, false, item->key, item->key_len);
-        push_varbuff(cursor, max, item->value, item->value_len);
+        /* BIP-371 value = tapscript || 1-byte leaf version (from the control block) */
+        push_varint(cursor, max, item->value_len + 1u);
+        push_bytes(cursor, max, item->value, item->value_len);
+        push_u8(cursor, max, item->key[0] & 0xfeu);
     }
     return WALLY_OK;
 }
@@ -3303,6 +3640,13 @@ static int push_psbt_input(const struct wally_psbt *psbt,
                                      false, &input->psbt_fields)) != WALLY_OK)
         return ret;
 
+    push_psbt_map(cursor, max, PSBT_IN_MUSIG2_PARTICIPANT_PUBKEYS, false,
+                  &input->musig2_pubkeys);
+    push_psbt_map(cursor, max, PSBT_IN_MUSIG2_PUB_NONCE, false,
+                  &input->musig2_pubnonces);
+    push_psbt_map(cursor, max, PSBT_IN_MUSIG2_PARTIAL_SIG, false,
+                  &input->musig2_partial_sigs);
+
 #ifdef BUILD_ELEMENTS
     if (is_pset && psbt->version == PSBT_2) {
         uint32_t ft;
@@ -3409,6 +3753,9 @@ static int push_psbt_output(const struct wally_psbt *psbt,
             return ret;
     }
 
+    push_psbt_map(cursor, max, PSBT_OUT_MUSIG2_PARTICIPANT_PUBKEYS, false,
+                  &output->musig2_pubkeys);
+
 #ifdef BUILD_ELEMENTS
     if (is_pset && psbt->version == PSBT_2) {
         uint32_t ft;
@@ -3465,6 +3812,11 @@ static int psbt_sigs_to_bytes(const struct wally_psbt *psbt, uint32_t flags,
 
         if (ret != WALLY_OK)
             return ret;
+        /* MuSig2 nonces and partial signatures, merged by COMBINE_SIGS */
+        push_psbt_map(&cursor, &max, PSBT_IN_MUSIG2_PUB_NONCE, false,
+                      &input->musig2_pubnonces);
+        push_psbt_map(&cursor, &max, PSBT_IN_MUSIG2_PARTIAL_SIG, false,
+                      &input->musig2_partial_sigs);
         push_u8(&cursor, &max, PSBT_SEPARATOR);
     }
     if (cursor == NULL) {
@@ -3766,6 +4118,12 @@ static int combine_input(struct wally_psbt_input *dst,
         if (ret == WALLY_OK)
             ret = wally_map_combine(&dst->taproot_leaf_paths, &src->taproot_leaf_paths);
     }
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->musig2_pubkeys, &src->musig2_pubkeys);
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->musig2_pubnonces, &src->musig2_pubnonces);
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->musig2_partial_sigs, &src->musig2_partial_sigs);
     if (ret == WALLY_OK && is_pset) {
 #ifdef BUILD_ELEMENTS
         uint32_t ft;
@@ -3867,6 +4225,8 @@ static int combine_output(struct wally_psbt_output *dst,
         if (ret == WALLY_OK)
             ret = wally_map_combine(&dst->taproot_leaf_paths, &src->taproot_leaf_paths);
     }
+    if (ret == WALLY_OK)
+        ret = wally_map_combine(&dst->musig2_pubkeys, &src->musig2_pubkeys);
 
 #ifdef BUILD_ELEMENTS
     if (ret == WALLY_OK && is_pset) {
@@ -4014,6 +4374,10 @@ static int psbt_combine_sigs(struct wally_psbt *psbt, const struct wally_psbt *s
         if (ret == WALLY_OK)
             ret = combine_map_if_empty(&dst_p->taproot_leaf_signatures,
                                        &src_p->taproot_leaf_signatures);
+        if (ret == WALLY_OK)
+            ret = wally_map_combine(&dst_p->musig2_pubnonces, &src_p->musig2_pubnonces);
+        if (ret == WALLY_OK)
+            ret = wally_map_combine(&dst_p->musig2_partial_sigs, &src_p->musig2_partial_sigs);
         if (ret == WALLY_OK) {
             /* Update the modifiable flags for the signatures added */
             const struct wally_map *m = &src_p->signatures;
@@ -4806,7 +5170,8 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
         return WALLY_EINVAL; /* Disallow legacy SIGHASH_SINGLE bug */
 
     if (is_taproot) {
-        /* FIXME: Support script path spends */
+        /* Key-path spend: no leaf script. Script-path sighashes are
+         * computed internally during signing (psbt_sign_script_path) */
         script = NULL;
         script_len = 0;
     }
@@ -4829,6 +5194,148 @@ int wally_psbt_get_input_signature_hash(struct wally_psbt *psbt, size_t index,
     wally_free(values.items);
     if (assets_p)
         wally_free(assets_p->items);
+    return ret;
+}
+
+/* Find the leaf script in taproot_leaf_scripts whose tapleaf hash matches
+ * leaf_hash. *found is NULL if there is no match */
+static int find_tap_leaf_script_by_hash(
+    const struct wally_psbt_input *inp,
+    const unsigned char *leaf_hash,
+    bool is_elements,
+    const struct wally_map_item **found)
+{
+    unsigned char computed[SHA256_LEN];
+    size_t j;
+    int ret;
+
+    *found = NULL;
+    for (j = 0; j < inp->taproot_leaf_scripts.num_items; j++) {
+        const struct wally_map_item *ls = &inp->taproot_leaf_scripts.items[j];
+        const unsigned char lv = ls->key[0] & 0xfeu; /* BIP-341: leaf_version = ctrl_block[0] & 0xfe */
+        ret = bip341_tapleaf_hash(lv, ls->value, ls->value_len, is_elements,
+                                  computed, sizeof(computed));
+        if (ret != WALLY_OK)
+            return ret; /* Hashing failed */
+        if (!memcmp(computed, leaf_hash, SHA256_LEN)) {
+            *found = ls;
+            break;
+        }
+    }
+    return WALLY_OK;
+}
+
+/* Compute a BIP-342 script-path sighash (bypasses the key-path forced NULL).
+ * The scripts/values signing maps are loop-invariant across an input's leaves
+ * and so are supplied by the caller. */
+static int psbt_script_path_sighash(struct wally_psbt *psbt, size_t index,
+                                     const struct wally_tx *tx,
+                                     const struct wally_map *scripts,
+                                     const struct wally_map *assets,
+                                     const struct wally_map *values,
+                                     const unsigned char *leaf_script, size_t leaf_script_len,
+                                     uint32_t sighash,
+                                     unsigned char *bytes_out, size_t len)
+{
+    return wally_tx_get_input_signature_hash(tx, index,
+            scripts, assets, values,
+            leaf_script, leaf_script_len,
+            0, WALLY_NO_CODESEPARATOR, NULL, 0,
+#ifdef BUILD_ELEMENTS
+            psbt->genesis_blockhash, sizeof(psbt->genesis_blockhash),
+#else
+            NULL, 0,
+#endif
+            sighash, WALLY_SIGTYPE_SW_V1,
+            psbt->signing_cache, bytes_out, len);
+}
+
+/* Sign a taproot script-path input for all matching leaves */
+static int psbt_sign_script_path(struct wally_psbt *psbt, size_t index,
+                                  const struct wally_tx *tx,
+                                  struct wally_psbt_input *inp,
+                                  const struct wally_map_item *lh_item,
+                                  const struct ext_key *derived)
+{
+    unsigned char sig[EC_SIGNATURE_LEN + 1];
+    unsigned char sig_key[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN]; /* xonly || leaf_hash */
+    unsigned char txhash[WALLY_TXHASH_LEN];
+    struct wally_map scripts, assets, values, *assets_p;
+    size_t sig_len = EC_SIGNATURE_LEN;
+    size_t i, num_leaf_hashes, is_pset = 0;
+    uint32_t sighash;
+    bool is_elements;
+    int ret = WALLY_OK;
+
+    wally_psbt_is_elements(psbt, &is_pset);
+    is_elements = is_pset != 0;
+    assets_p = is_elements ? &assets : NULL;
+    num_leaf_hashes = lh_item->value_len / SHA256_LEN;
+    sighash = inp->sighash;
+    if (!sighash)
+        sighash = WALLY_SIGHASH_DEFAULT;
+    else if (sighash & 0xffffff00u)
+        return WALLY_EINVAL;
+
+    /* The signing data (prevout scripts/values) is identical for every leaf
+     * of this input, so fetch it once rather than per matching leaf. */
+    ret = get_signing_data(psbt, &scripts, assets_p, &values);
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Key for sig_key: xonly pubkey (32 bytes, from leaf_hashes map key) */
+    memcpy(sig_key, lh_item->key, EC_XONLY_PUBLIC_KEY_LEN);
+
+    for (i = 0; i < num_leaf_hashes; i++) {
+        const unsigned char *leaf_hash = lh_item->value + i * SHA256_LEN;
+        const struct wally_map_item *ls;
+
+        ret = find_tap_leaf_script_by_hash(inp, leaf_hash, is_elements, &ls);
+        if (ret != WALLY_OK)
+            goto done;
+        if (!ls)
+            continue; /* No leaf script for this hash - skip */
+        if ((ls->key[0] & 0xfe) != TAPSCRIPT_LEAF_VERSION(is_elements))
+            continue; /* Not a tapscript leaf: we can't sign for it */
+        if (!ls->value_len)
+            continue; /* Empty script: has no keys to sign for */
+
+        /* Compute script-path sighash directly (bypass the key-path NULL forced in public API) */
+        ret = psbt_script_path_sighash(psbt, index, tx,
+                                       &scripts, assets_p, &values,
+                                       ls->value, ls->value_len, sighash,
+                                       txhash, sizeof(txhash));
+        if (ret != WALLY_OK)
+            goto done;
+
+        /* Sign with UNTWEAKED private key */
+        ret = wally_ec_sig_from_bytes(derived->priv_key + 1, EC_PRIVATE_KEY_LEN,
+                                      txhash, sizeof(txhash),
+                                      EC_FLAG_SCHNORR,
+                                      sig, sig_len);
+        if (ret != WALLY_OK)
+            goto done;
+
+        if (sighash != WALLY_SIGHASH_DEFAULT)
+            sig[sig_len++] = sighash & 0xff;
+
+        /* Store: key = xonly_pubkey || leaf_hash */
+        memcpy(sig_key + EC_XONLY_PUBLIC_KEY_LEN, leaf_hash, SHA256_LEN);
+        ret = map_add(&inp->taproot_leaf_signatures,
+                      sig_key, sizeof(sig_key), sig, sig_len, false, true);
+        if (ret != WALLY_OK)
+            goto done;
+        psbt_signature_added(psbt, sighash);
+
+        sig_len = EC_SIGNATURE_LEN; /* Reset for next leaf */
+    }
+
+done:
+    wally_free(scripts.items);
+    wally_free(values.items);
+    if (assets_p)
+        wally_free(assets_p->items);
+    wally_clear_2(sig, sizeof(sig), txhash, sizeof(txhash));
     return ret;
 }
 
@@ -4949,6 +5456,8 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
         size_t script_len, scriptcode_len, subindex = 0;
         struct ext_key derived;
         bool found;
+        uint32_t sighash_type;
+        struct wally_psbt_input *inp;
 
         /* Get or derive a key for signing this input.
          * Note that we do not iterate subindex in this loop, so we will not
@@ -4956,8 +5465,50 @@ int wally_psbt_sign_bip32(struct wally_psbt *psbt,
          */
         ret = psbt_get_input_bip32_key_from(psbt, i, subindex, hdkey,
                                             &derived, &found);
-        if (ret == WALLY_OK && !found)
-            continue; /* No key to sign with */
+        if (ret != WALLY_OK || !found)
+            continue; /* Error, or no key to sign with */
+
+        inp = psbt_get_input_signature_type(psbt, i, &sighash_type);
+        if (!inp) {
+            wally_clear(&derived, sizeof(derived));
+            ret = WALLY_EINVAL;
+            break;
+        }
+
+        if (sighash_type == WALLY_SIGTYPE_SW_V1) {
+            /* BIP-371: a key's TAP_BIP32_DERIVATION lists the hashes of the
+             * leaves it appears in, and the internal key is listed with none.
+             * The internal key may also appear in leaves, so when the input
+             * has TAP_INTERNAL_KEY, it decides which key is key-path signed.
+             * A key that is not the internal key is never key-path signed,
+             * which would store an invalid TAP_KEY_SIG. */
+            const struct wally_map_item *ik = wally_map_get_integer(
+                &inp->psbt_fields, PSBT_IN_TAP_INTERNAL_KEY);
+            const bool is_internal = ik && ik->value_len == EC_XONLY_PUBLIC_KEY_LEN &&
+                !memcmp(ik->value, derived.pub_key + 1, EC_XONLY_PUBLIC_KEY_LEN);
+            size_t pubkey_idx = 0;
+            bool has_leaves = false;
+            int find_ret = wally_map_find_bip32_public_key_from(
+                &inp->taproot_leaf_hashes, subindex, &derived, &pubkey_idx);
+
+            if (find_ret == WALLY_OK && pubkey_idx) {
+                const struct wally_map_item *lh_item =
+                    &inp->taproot_leaf_hashes.items[pubkey_idx - 1];
+                has_leaves = lh_item->value_len > 0;
+                /* Script-path key: sign for each matching leaf, but only if
+                 * the leaf scripts are present. Without them we cannot
+                 * script-path sign. */
+                if (has_leaves && inp->taproot_leaf_scripts.num_items > 0)
+                    ret = psbt_sign_script_path(psbt, i, tx, inp, lh_item,
+                                                &derived);
+            }
+            /* Without TAP_INTERNAL_KEY, a key listed with no leaf hashes is
+             * taken to be the internal key */
+            if (ik ? !is_internal : has_leaves) {
+                wally_clear(&derived, sizeof(derived));
+                continue; /* Skip key-path signing for this input */
+            }
+        }
 
         /* Get the scriptpubkey or redeemscript */
         if (ret == WALLY_OK)
@@ -5081,110 +5632,508 @@ static bool finalize_p2wpkh(struct wally_psbt_input *input)
     return finalize_p2sh_wrapped(input);
 }
 
-static bool finalize_p2wsh(struct wally_psbt_input *input)
+static bool is_input_csv_expired(const struct wally_psbt *psbt,
+                                 const struct wally_psbt_input *input,
+                                 size_t index, uint32_t blocks);
+static const struct wally_map_item *find_preimage(
+    const struct wally_psbt_input *input,
+    unsigned char type,
+    const unsigned char *hash, size_t hash_len);
+
+struct psbt_sat_ctx {
+    const struct wally_psbt       *psbt;
+    const struct wally_psbt_input *input;
+    size_t                         index;
+    const unsigned char           *leaf_hash; /* 32-byte hash of the current
+                                               * taproot leaf, or NULL */
+};
+
+static bool p2wsh_lookup_sig(const ms_satisfier *stfr,
+                             const unsigned char *pk, size_t pk_len,
+                             unsigned char *sig_out, size_t *sig_len_out)
 {
-    (void)input;
-    return false; /* TODO */
+    const struct psbt_sat_ctx *ctx = stfr->user_data;
+    size_t idx;
+    if (wally_map_find(&ctx->input->signatures, pk, pk_len, &idx) != WALLY_OK || !idx)
+        return false;
+    const struct wally_map_item *item = &ctx->input->signatures.items[idx - 1];
+    if (item->value_len > EC_SIGNATURE_DER_MAX_LEN + 1)
+        return false; /* Too long for the satisfier's buffer */
+    memcpy(sig_out, item->value, item->value_len);
+    *sig_len_out = item->value_len;
+    return true;
 }
 
-static bool finalize_multisig(struct wally_psbt_input *input,
-                              const unsigned char *out_script, size_t out_script_len,
-                              bool is_witness, bool is_p2sh)
+static bool psbt_lookup_preimage(const ms_satisfier *stfr,
+                                 const unsigned char *hash, size_t hash_len,
+                                 uint32_t hash_type,
+                                 unsigned char preimage_out[32])
 {
-    unsigned char sigs[EC_SIGNATURE_LEN * 15];
-    uint32_t sighashes[15];
-    const unsigned char *p = out_script, *end = p + out_script_len;
-    size_t threshold, n_pubkeys, n_found = 0, i;
+    static const unsigned char ms_to_psbt[] = {
+        PSBT_IN_SHA256,    /* MS_HASH_SHA256    = 0 */
+        PSBT_IN_HASH256,   /* MS_HASH_HASH256   = 1 */
+        PSBT_IN_RIPEMD160, /* MS_HASH_RIPEMD160 = 2 */
+        PSBT_IN_HASH160,   /* MS_HASH_HASH160   = 3 */
+    };
+    const struct psbt_sat_ctx *ctx = stfr->user_data;
+    const struct wally_map_item *item;
+    if (hash_type >= sizeof(ms_to_psbt) / sizeof(ms_to_psbt[0]))
+        return false;
+    item = find_preimage(ctx->input, ms_to_psbt[hash_type], hash, hash_len);
+    if (!item || item->value_len != 32)
+        return false; /* Miniscript hash fragments require a 32 byte preimage */
+    memcpy(preimage_out, item->value, item->value_len);
+    return true;
+}
+
+static bool psbt_check_older(const ms_satisfier *stfr, uint32_t lock)
+{
+    const struct psbt_sat_ctx *ctx = stfr->user_data;
+    const struct wally_psbt *psbt = ctx->psbt;
+    const uint32_t version = psbt->tx ? psbt->tx->version : psbt->tx_version;
+    const uint32_t disable_flag = 1u << 31u, type_flag = 1u << 22u;
+    const uint32_t mask = type_flag | 0xffffu; /* BIP-68 type flag and value */
+    uint32_t seq;
+
+    /* Mirror OP_CHECKSEQUENCEVERIFY (BIP-112), since finalizing a branch
+     * whose lock it would reject produces a witness that consensus rejects:
+     * CSV is only enforced for tx version >= 2, fails if the input's sequence
+     * disables relative locks, and otherwise requires the lock and sequence
+     * to both be height-based or both time-based, with the sequence's value
+     * reaching the lock's. Bits outside the BIP-68 mask are ignored. */
+    if (version < 2)
+        return false;
+    seq = psbt->version == PSBT_0 ? psbt->tx->inputs[ctx->index].sequence
+                                  : ctx->input->sequence;
+    if (seq & disable_flag)
+        return false;
+    seq &= mask;
+    lock &= mask;
+    if ((seq & type_flag) != (lock & type_flag))
+        return false;
+    return lock <= seq;
+}
+
+static bool psbt_check_after(const ms_satisfier *stfr, uint32_t lock)
+{
+    const struct psbt_sat_ctx *ctx = stfr->user_data;
+    const struct wally_psbt *psbt = ctx->psbt;
+    size_t locktime = 0;
+    uint32_t seq;
+
+    /* OP_CHECKLOCKTIMEVERIFY (BIP-65) is only enforced when the input's
+     * sequence is not final. */
+    seq = psbt->version == PSBT_0 ? psbt->tx->inputs[ctx->index].sequence
+                                  : ctx->input->sequence;
+    if (seq == 0xffffffffu)
+        return false;
+
+    /* Use the locktime the extracted transaction will have. For v2 this is
+     * derived from the inputs' required locktimes (and the fallback), not the
+     * fallback alone. */
+    if (psbt->version == PSBT_0)
+        locktime = psbt->tx->locktime;
+    else if (wally_psbt_get_locktime(psbt, &locktime) != WALLY_OK)
+        return false;
+
+    /* Both must be block heights, or both unix times (BIP-65 threshold) */
+    if ((locktime < 500000000u) != (lock < 500000000u))
+        return false;
+    return locktime >= lock;
+}
+
+static bool p2tr_lookup_sig(const ms_satisfier *stfr,
+                             const unsigned char *pk, size_t pk_len,
+                             unsigned char *sig_out, size_t *sig_len_out)
+{
+    const struct psbt_sat_ctx *ctx = stfr->user_data;
+    unsigned char key[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN];
+    size_t idx;
+    if (pk_len != EC_XONLY_PUBLIC_KEY_LEN)
+        return false;
+    memcpy(key, pk, EC_XONLY_PUBLIC_KEY_LEN);
+    memcpy(key + EC_XONLY_PUBLIC_KEY_LEN, ctx->leaf_hash, SHA256_LEN);
+    if (wally_map_find(&ctx->input->taproot_leaf_signatures, key, sizeof(key), &idx) != WALLY_OK || !idx)
+        return false;
+    {
+        const struct wally_map_item *item = &ctx->input->taproot_leaf_signatures.items[idx - 1];
+        if (item->value_len > EC_SIGNATURE_DER_MAX_LEN + 1)
+            return false; /* Too long for the satisfier's buffer */
+        memcpy(sig_out, item->value, item->value_len);
+        *sig_len_out = item->value_len;
+    }
+    return true;
+}
+
+static bool finalize_p2wsh(const struct wally_psbt *psbt,
+                           struct wally_psbt_input *input, size_t index,
+                           int *ret_out)
+{
+    const struct wally_map_item *ws;
+    struct wally_descriptor *descriptor;
+    ms_satisfaction sat, dissat;
+    struct wally_tx_witness_stack *witness = NULL;
+    struct psbt_sat_ctx ctx = { psbt, input, index, NULL };
+    ms_satisfier stfr = {
+        p2wsh_lookup_sig,
+        psbt_lookup_preimage,
+        psbt_check_older,
+        psbt_check_after,
+        &ctx
+    };
     bool ret = false;
+    size_t i;
 
-    if (!script_is_op_n(out_script[0], false, &threshold) ||
-        input->signatures.num_items < threshold ||
-        !script_is_op_n(out_script[out_script_len - 2], false, &n_pubkeys) ||
-        n_pubkeys > 15)
-        goto fail; /* Failed to parse or invalid script */
+    ws = wally_map_get_integer(&input->psbt_fields, PSBT_IN_WITNESS_SCRIPT);
+    if (!ws)
+        return false;
 
-    ++p; /* Skip the threshold */
+    /* Keys for pk_h() are found from the input's keypaths */
+    *ret_out = ms_descriptor_from_script(ws->value, ws->value_len,
+                                         &input->keypaths, 0, &descriptor);
+    if (*ret_out == WALLY_EINVAL)
+        *ret_out = WALLY_OK; /* Not miniscript: we can't finalize it */
+    if (*ret_out != WALLY_OK)
+        return false;
 
-    /* Collect signatures corresponding to pubkeys in the multisig script */
-    for (i = 0; i < n_pubkeys && p < end; ++i) {
-        size_t opcode_size, found_pubkey_len;
-        const unsigned char *found_pubkey;
-        const struct wally_map_item *found_sig;
-        size_t sig_index;
+    ms_satisfy_node(descriptor->top_node, &stfr, true, &sat, &dissat);
+    wally_descriptor_free(descriptor);
+    if (sat.witness.kind == MS_WITNESS_OOM)
+        *ret_out = WALLY_ENOMEM;
 
-        if (script_get_push_size_from_bytes(p, end - p,
-                                            &found_pubkey_len) != WALLY_OK ||
-            script_get_push_opcode_size_from_bytes(p, end - p,
-                                                   &opcode_size) != WALLY_OK)
-            goto fail; /* Script is malformed, bail */
+    if (*ret_out != WALLY_OK || sat.witness.kind != MS_WITNESS_STACK)
+        goto cleanup;
 
-        p += opcode_size;
-        found_pubkey = p;
-        p += found_pubkey_len; /* Move to next pubkey push */
+    *ret_out = wally_tx_witness_stack_init_alloc(sat.witness.num_items + 1, &witness);
+    for (i = 0; *ret_out == WALLY_OK && i < sat.witness.num_items; i++)
+        *ret_out = wally_tx_witness_stack_add(witness,
+                                              sat.witness.items[i].data,
+                                              sat.witness.items[i].data_len);
+    if (*ret_out == WALLY_OK)
+        *ret_out = wally_tx_witness_stack_add(witness, ws->value, ws->value_len);
+    if (*ret_out != WALLY_OK)
+        goto cleanup;
 
-        /* Find the associated signature for this pubkey */
-        if (wally_map_find(&input->signatures,
-                           found_pubkey, found_pubkey_len,
-                           &sig_index) != WALLY_OK || !sig_index)
-            continue; /* Not found: try the next pubkey in the script */
-
-        found_sig = &input->signatures.items[sig_index - 1];
-
-        /* Sighash is appended to the DER signature */
-        sighashes[n_found] = found_sig->value[found_sig->value_len - 1];
-        /* Convert the DER signature to compact form */
-        if (wally_ec_sig_from_der(found_sig->value, found_sig->value_len - 1,
-                                  sigs + n_found * EC_SIGNATURE_LEN,
-                                  EC_SIGNATURE_LEN) != WALLY_OK)
-            continue; /* Failed to parse, try next pubkey */
-
-        if (++n_found == threshold)
-            break; /* We have enough signatures, ignore any more */
-    }
-
-    if (n_found != threshold)
-        goto fail; /* Failed to find enough signatures */
-
-    if (is_witness) {
-        if (wally_witness_multisig_from_bytes(out_script, out_script_len,
-                                              sigs, n_found * EC_SIGNATURE_LEN,
-                                              sighashes, n_found,
-                                              0, &input->final_witness) != WALLY_OK)
-            goto fail;
-
-        if (is_p2sh && !finalize_p2sh_wrapped(input))
-            goto fail;
-    } else {
-        unsigned char script[WALLY_SCRIPTSIG_MAX_LEN];
-        size_t script_len;
-
-        if (wally_scriptsig_multisig_from_bytes(out_script, out_script_len,
-                                                sigs, n_found * EC_SIGNATURE_LEN,
-                                                sighashes, n_found, 0,
-                                                script, sizeof(script), &script_len) != WALLY_OK ||
-            script_len > sizeof(script) ||
-            wally_psbt_input_set_final_scriptsig(input, script, script_len) != WALLY_OK)
-            goto fail;
-    }
+    wally_tx_witness_stack_free(input->final_witness);
+    input->final_witness = witness;
+    witness = NULL;
     ret = true;
-fail:
-    wally_clear_2(sigs, sizeof(sigs), sighashes, sizeof(sighashes));
+
+    if (ret && wally_map_get_integer(&input->psbt_fields, PSBT_IN_REDEEM_SCRIPT))
+        ret = finalize_p2sh_wrapped(input);
+
+cleanup:
+    ms_satisfaction_free(&sat);
+    ms_satisfaction_free(&dissat);
+    wally_tx_witness_stack_free(witness);
     return ret;
 }
 
-static bool finalize_p2tr(struct wally_psbt_input *input)
+static bool finalize_multisig(const struct wally_psbt *psbt,
+                              struct wally_psbt_input *input, size_t index,
+                              const unsigned char *out_script, size_t out_script_len,
+                              bool is_witness, bool is_p2sh, int *ret_out)
+{
+    struct wally_descriptor *descriptor;
+    ms_satisfaction sat, dissat;
+    struct wally_tx_witness_stack *witness = NULL;
+    struct psbt_sat_ctx ctx = { psbt, input, index, NULL };
+    ms_satisfier stfr = {
+        p2wsh_lookup_sig,
+        psbt_lookup_preimage,
+        psbt_check_older,
+        psbt_check_after,
+        &ctx
+    };
+    bool ret = false;
+    size_t i;
+
+    *ret_out = ms_descriptor_from_script(out_script, out_script_len,
+                                         &input->keypaths, 0, &descriptor);
+    if (*ret_out == WALLY_EINVAL)
+        *ret_out = WALLY_OK; /* Not miniscript: we can't finalize it */
+    if (*ret_out != WALLY_OK)
+        return false;
+
+    ms_satisfy_node(descriptor->top_node, &stfr, true, &sat, &dissat);
+    wally_descriptor_free(descriptor);
+    if (sat.witness.kind == MS_WITNESS_OOM)
+        *ret_out = WALLY_ENOMEM;
+
+    if (*ret_out != WALLY_OK || sat.witness.kind != MS_WITNESS_STACK)
+        goto cleanup;
+
+    if (is_witness) {
+        *ret_out = wally_tx_witness_stack_init_alloc(sat.witness.num_items + 1, &witness);
+        for (i = 0; *ret_out == WALLY_OK && i < sat.witness.num_items; i++)
+            *ret_out = wally_tx_witness_stack_add(witness,
+                                                  sat.witness.items[i].data,
+                                                  sat.witness.items[i].data_len);
+        if (*ret_out == WALLY_OK)
+            *ret_out = wally_tx_witness_stack_add(witness, out_script, out_script_len);
+        if (*ret_out != WALLY_OK)
+            goto cleanup;
+        wally_tx_witness_stack_free(input->final_witness);
+        input->final_witness = witness;
+        witness = NULL;
+        ret = true;
+        if (is_p2sh)
+            ret = finalize_p2sh_wrapped(input);
+    } else {
+        /* Legacy multisig scriptSig: OP_0 <sig>... followed, for P2SH only,
+         * by the redeem script push. A bare multisig scriptSig does not push
+         * the script (the script is the scriptPubKey). The buffer is sized to
+         * the exact length needed and every push is bounds checked, as
+         * wally_script_push_from_bytes returns WALLY_OK writing nothing when
+         * the output buffer is too small. */
+        unsigned char *script = NULL;
+        size_t script_len = 0, needed = 1, pushed; /* 1 for the leading OP_0 */
+        if (sat.witness.num_items < 1)
+            goto cleanup;
+        for (i = 1; i < sat.witness.num_items; i++)
+            needed += script_get_push_size(sat.witness.items[i].data_len);
+        if (is_p2sh)
+            needed += script_get_push_size(out_script_len);
+        if (!(script = wally_malloc(needed))) {
+            *ret_out = WALLY_ENOMEM;
+            goto cleanup;
+        }
+        script[script_len++] = OP_0;
+        /* Push the remaining items (the DER+sighash signatures) */
+        for (i = 1; i < sat.witness.num_items; i++) {
+            if (wally_script_push_from_bytes(sat.witness.items[i].data,
+                                             sat.witness.items[i].data_len,
+                                             0, script + script_len,
+                                             needed - script_len, &pushed) != WALLY_OK ||
+                pushed > needed - script_len)
+                goto cleanup_legacy;
+            script_len += pushed;
+        }
+        /* Push the redeem script for P2SH wrapped multisig only */
+        if (is_p2sh) {
+            if (wally_script_push_from_bytes(out_script, out_script_len,
+                                             0, script + script_len,
+                                             needed - script_len, &pushed) != WALLY_OK ||
+                pushed > needed - script_len)
+                goto cleanup_legacy;
+            script_len += pushed;
+        }
+        *ret_out = wally_psbt_input_set_final_scriptsig(input, script, script_len);
+        ret = *ret_out == WALLY_OK;
+cleanup_legacy:
+        if (script)
+            wally_clear(script, needed);
+        wally_free(script);
+    }
+
+cleanup:
+    ms_satisfaction_free(&sat);
+    ms_satisfaction_free(&dissat);
+    wally_tx_witness_stack_free(witness);
+    return ret;
+}
+
+/* Find a hash preimage in the input's preimage map.
+ * The map key is [type_byte || hash_bytes]. */
+static const struct wally_map_item *find_preimage(
+    const struct wally_psbt_input *input,
+    unsigned char type,
+    const unsigned char *hash, size_t hash_len)
+{
+    unsigned char key[SHA256_LEN + 1];
+    size_t idx;
+    if (hash_len > SHA256_LEN)
+        return NULL;
+    key[0] = type;
+    memcpy(key + 1, hash, hash_len);
+    /* wally_map_find returns 0 in idx if not found, otherwise (index + 1) */
+    if (wally_map_find(&input->preimages, key, hash_len + 1, &idx) != WALLY_OK || !idx)
+        return NULL;
+    return &input->preimages.items[idx - 1];
+}
+
+/* Select the taproot leaf that produces the smallest satisfiable witness.
+ * On success, sets output pointers. Caller owns *best_witness_out and must free it. */
+static int select_best_tapscript_leaf(
+    const struct wally_psbt *psbt,
+    const struct wally_psbt_input *input,
+    size_t index,
+    struct wally_tx_witness_stack **best_witness_out,
+    const unsigned char **best_script_out, size_t *best_script_len_out,
+    const unsigned char **best_ctrl_out,   size_t *best_ctrl_len_out)
+{
+    size_t i, best_weight = SIZE_MAX, is_pset = 0;
+    ms_satisfaction best_sat;
+    bool any_satisfiable = false;
+    bool is_elements;
+
+    wally_psbt_is_elements(psbt, &is_pset);
+    is_elements = is_pset != 0;
+    memset(&best_sat, 0, sizeof(best_sat));
+    *best_witness_out = NULL;
+    *best_script_out = NULL;
+    *best_script_len_out = 0;
+    *best_ctrl_out = NULL;
+    *best_ctrl_len_out = 0;
+
+    for (i = 0; i < input->taproot_leaf_scripts.num_items; i++) {
+        const struct wally_map_item *ls = &input->taproot_leaf_scripts.items[i];
+        const unsigned char *ctrl = ls->key;
+        size_t ctrl_len = ls->key_len;
+        const unsigned char *script = ls->value;
+        size_t script_len = ls->value_len;
+        unsigned char leaf_version = ctrl[0] & 0xfeu;
+        unsigned char leaf_hash[SHA256_LEN];
+        struct wally_descriptor *descriptor = NULL;
+        ms_satisfaction sat, dissat;
+        size_t j, w;
+
+        int ret;
+
+        if (leaf_version != TAPSCRIPT_LEAF_VERSION(is_elements))
+            continue; /* Not a tapscript leaf: we can't satisfy it */
+
+        ret = bip341_tapleaf_hash(leaf_version, script, script_len, is_elements,
+                                  leaf_hash, sizeof(leaf_hash));
+        /* Keys for pk_h() are found from the input's leaf keypaths */
+        if (ret == WALLY_OK)
+            ret = ms_descriptor_from_script(script, script_len,
+                                            &input->taproot_leaf_paths,
+                                            WALLY_MINISCRIPT_TAPSCRIPT, &descriptor);
+        if (ret == WALLY_EINVAL)
+            continue; /* Not miniscript: we can't satisfy it */
+        if (ret != WALLY_OK) {
+            ms_satisfaction_free(&best_sat);
+            return ret; /* Hashing or allocation failed */
+        }
+
+        {
+            struct psbt_sat_ctx ctx = { psbt, input, index, leaf_hash };
+            ms_satisfier stfr = {
+                p2tr_lookup_sig,
+                psbt_lookup_preimage,
+                psbt_check_older,
+                psbt_check_after,
+                &ctx
+            };
+            ms_satisfy_node(descriptor->top_node, &stfr, true, &sat, &dissat);
+            if (sat.witness.kind == MS_WITNESS_OOM)
+                ret = WALLY_ENOMEM;
+        }
+        wally_descriptor_free(descriptor);
+        ms_satisfaction_free(&dissat);
+        if (ret != WALLY_OK) {
+            ms_satisfaction_free(&sat);
+            ms_satisfaction_free(&best_sat);
+            return ret; /* Hashing or allocation failed */
+        }
+
+        if (sat.witness.kind != MS_WITNESS_STACK) {
+            ms_satisfaction_free(&sat);
+            continue;
+        }
+
+        /* Compute witness weight from ms_witness items */
+        w = varint_get_length(sat.witness.num_items + 2);
+        for (j = 0; j < sat.witness.num_items; j++)
+            w += varint_get_length(sat.witness.items[j].data_len) + sat.witness.items[j].data_len;
+        w += varint_get_length(script_len) + script_len;
+        w += varint_get_length(ctrl_len) + ctrl_len;
+
+        if (!any_satisfiable || w < best_weight) {
+            ms_satisfaction_free(&best_sat);
+            best_sat = sat;
+            *best_script_out = script;
+            *best_script_len_out = script_len;
+            *best_ctrl_out = ctrl;
+            *best_ctrl_len_out = ctrl_len;
+            best_weight = w;
+            any_satisfiable = true;
+        } else {
+            ms_satisfaction_free(&sat);
+        }
+    }
+
+    if (!any_satisfiable)
+        return WALLY_EINVAL;
+
+    /* Build the final witness stack from the best satisfaction */
+    {
+        struct wally_tx_witness_stack *ws = NULL;
+        if (wally_tx_witness_stack_init_alloc(best_sat.witness.num_items + 2, &ws) != WALLY_OK) {
+            ms_satisfaction_free(&best_sat);
+            return WALLY_ENOMEM;
+        }
+        for (i = 0; i < best_sat.witness.num_items; i++) {
+            int ret = wally_tx_witness_stack_add(ws,
+                    best_sat.witness.items[i].data,
+                    best_sat.witness.items[i].data_len);
+            if (ret != WALLY_OK) {
+                wally_tx_witness_stack_free(ws);
+                ms_satisfaction_free(&best_sat);
+                return ret;
+            }
+        }
+        ms_satisfaction_free(&best_sat);
+        *best_witness_out = ws;
+    }
+    return WALLY_OK;
+}
+
+/* Finalize a P2TR input via script-path spend.
+ * Returns true on success (sets input->final_witness). */
+static bool finalize_p2tr_script_path(const struct wally_psbt *psbt,
+                                       struct wally_psbt_input *input,
+                                       size_t index, int *ret_out)
+{
+    struct wally_tx_witness_stack *witness = NULL;
+    const unsigned char *script, *ctrl;
+    size_t script_len, ctrl_len;
+    int ret;
+
+    /* Select the best (smallest weight) satisfiable leaf */
+    ret = select_best_tapscript_leaf(psbt, input, index, &witness,
+                                     &script, &script_len,
+                                     &ctrl,   &ctrl_len);
+    if (ret != WALLY_OK || !witness) {
+        if (ret != WALLY_EINVAL)
+            *ret_out = ret; /* Hashing/allocation failed, not just unsatisfiable */
+        return false;
+    }
+
+    /* Append the leaf script as the second-to-last witness item */
+    if ((*ret_out = wally_tx_witness_stack_add(witness, script, script_len)) != WALLY_OK)
+        goto fail;
+
+    /* Append the control block as the last witness item */
+    if ((*ret_out = wally_tx_witness_stack_add(witness, ctrl, ctrl_len)) != WALLY_OK)
+        goto fail;
+
+    /* Install as final witness */
+    wally_tx_witness_stack_free(input->final_witness);
+    input->final_witness = witness;
+    return true;
+
+fail:
+    wally_tx_witness_stack_free(witness);
+    return false;
+}
+
+/* Finalize P2TR: try key-path first, then script-path */
+static bool finalize_p2tr(const struct wally_psbt *psbt,
+                           struct wally_psbt_input *input,
+                           size_t index, int *ret_out)
 {
     const struct wally_map_item *sig;
 
+    /* Try key-path spend first (TAP_KEY_SIG present) */
     sig = wally_map_get_integer(&input->psbt_fields, PSBT_IN_TAP_KEY_SIG);
+    if (sig && wally_witness_p2tr_from_sig(sig->value, sig->value_len,
+                                           &input->final_witness) == WALLY_OK)
+        return true;
 
-    /* TODO support tapleaf spends input->taproot_leaf_signatures */
-    if (!sig ||
-        wally_witness_p2tr_from_sig(sig->value, sig->value_len,
-                                    &input->final_witness) != WALLY_OK)
-        return false;
-
-    return true;
+    /* Fall back to script-path spend via miniscript leaf satisfaction */
+    return finalize_p2tr_script_path(psbt, input, index, ret_out);
 }
 
 static bool is_input_csv_expired(const struct wally_psbt *psbt,
@@ -5269,6 +6218,7 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
     size_t out_script_len = 0, type = WALLY_SCRIPT_TYPE_UNKNOWN;
     uint32_t utxo_index;
     bool is_witness = false, is_p2sh = false;
+    int ret = WALLY_OK;
 
     if (!psbt_is_valid(psbt) || !input || (flags & ~WALLY_PSBT_FINALIZE_NO_CLEAR))
         return WALLY_EINVAL;
@@ -5309,6 +6259,14 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
         wally_scriptpubkey_get_type(out_script, out_script_len, &type) != WALLY_OK)
         return WALLY_OK; /* Invalid/missing script */
 
+    /* When a witness script replaced out_script but its type is unrecognised,
+     * re-detect from the utxo scriptpubkey so miniscript P2WSH reaches
+     * finalize_p2wsh (which reads the witness script internally). */
+    if (type == WALLY_SCRIPT_TYPE_UNKNOWN && is_witness && script &&
+        input->witness_utxo && input->witness_utxo->script_len)
+        wally_scriptpubkey_get_type(input->witness_utxo->script,
+                                    input->witness_utxo->script_len, &type);
+
     switch (type) {
     case WALLY_SCRIPT_TYPE_P2PKH:
         if (!finalize_p2pkh(input))
@@ -5319,16 +6277,16 @@ int wally_psbt_finalize_input(struct wally_psbt *psbt, size_t index, uint32_t fl
             return WALLY_OK;
         break;
     case WALLY_SCRIPT_TYPE_P2WSH:
-        if (!finalize_p2wsh(input))
-            return WALLY_OK;
+        if (!finalize_p2wsh(psbt, input, index, &ret))
+            return ret;
         break;
     case WALLY_SCRIPT_TYPE_MULTISIG:
-        if (!finalize_multisig(input, out_script, out_script_len, is_witness, is_p2sh))
-            return WALLY_OK;
+        if (!finalize_multisig(psbt, input, index, out_script, out_script_len, is_witness, is_p2sh, &ret))
+            return ret;
         break;
     case WALLY_SCRIPT_TYPE_P2TR:
-        if (!finalize_p2tr(input))
-            return WALLY_OK;
+        if (!finalize_p2tr(psbt, input, index, &ret))
+            return ret;
         break;
     case WALLY_SCRIPT_TYPE_CSV2OF2_1:
     case WALLY_SCRIPT_TYPE_CSV2OF2_1_OPT:
@@ -5355,6 +6313,9 @@ done:
         wally_map_clear(&input->taproot_leaf_signatures);
         wally_map_clear(&input->taproot_leaf_scripts);
         wally_map_clear(&input->taproot_leaf_hashes);
+        wally_map_clear(&input->musig2_pubkeys);
+        wally_map_clear(&input->musig2_pubnonces);
+        wally_map_clear(&input->musig2_partial_sigs);
         input->sighash = 0;
     }
     return WALLY_OK;
@@ -6340,3 +7301,1332 @@ int wally_psbt_get_output_blinding_status(const struct wally_psbt *psbt, size_t 
 }
 #undef MAX_INVALID_SATOSHI
 #endif /* WALLY_ABI_NO_ELEMENTS */
+
+/*
+ * Helper: build binary derivation path for a descriptor key.
+ * Returns a malloc'd uint32_t array (caller frees). *path_len is set to the number of elements.
+ */
+static int psbt_descriptor_key_binary_path(
+    const struct wally_descriptor *descriptor,
+    size_t key_index,
+    uint32_t multi_index, uint32_t child_num,
+    uint32_t **path_out, size_t *path_len_out)
+{
+    const uint32_t child_flags = BIP32_FLAG_STR_WILDCARD | BIP32_FLAG_STR_BARE |
+                                 BIP32_FLAG_STR_MULTIPATH;
+    char *origin_str = NULL, *child_str = NULL;
+    size_t origin_str_len = 0, child_str_len = 0;
+    size_t origin_path_len = 0, child_path_len = 0, total_path_len = 0;
+    uint32_t *path_buf = NULL, features;
+    int ret;
+
+    *path_out = NULL;
+    *path_len_out = 0;
+
+    /* Only ranged/multi-path keys use the child number/multi-path index */
+    if ((ret = wally_descriptor_get_key_features(descriptor, key_index,
+                                                 &features)) != WALLY_OK)
+        return ret;
+    if (!(features & WALLY_MS_IS_RANGED))
+        child_num = 0;
+    if (!(features & WALLY_MS_IS_MULTIPATH))
+        multi_index = 0;
+
+    /* Get origin path string (may be empty if no origin info) */
+    ret = wally_descriptor_get_key_origin_path_str_len(descriptor, key_index,
+                                                        &origin_str_len);
+    if (ret != WALLY_OK)
+        return ret;
+
+    /* Get child path string length */
+    ret = wally_descriptor_get_key_child_path_str_len(descriptor, key_index,
+                                                       &child_str_len);
+    if (ret != WALLY_OK)
+        return ret;
+
+    if (origin_str_len) {
+        ret = wally_descriptor_get_key_origin_path_str(descriptor, key_index,
+                                                        &origin_str);
+        if (ret != WALLY_OK)
+            goto done;
+        ret = bip32_path_from_str_n_len(origin_str, origin_str_len,
+                                        0, 0, BIP32_FLAG_STR_BARE, &origin_path_len);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    if (child_str_len) {
+        ret = wally_descriptor_get_key_child_path_str(descriptor, key_index,
+                                                       &child_str);
+        if (ret != WALLY_OK)
+            goto done;
+        ret = bip32_path_from_str_n_len(child_str, child_str_len,
+                                        child_num, multi_index, child_flags,
+                                        &child_path_len);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    total_path_len = origin_path_len + child_path_len;
+    if (!total_path_len) {
+        ret = WALLY_OK;
+        goto done;
+    }
+
+    if (!(path_buf = wally_malloc(total_path_len * sizeof(uint32_t)))) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+
+    if (origin_path_len && origin_str) {
+        ret = bip32_path_from_str_n(origin_str, origin_str_len,
+                                    0, 0, BIP32_FLAG_STR_BARE,
+                                    path_buf, total_path_len, &origin_path_len);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    if (child_path_len && child_str) {
+        ret = bip32_path_from_str_n(child_str, child_str_len,
+                                    child_num, multi_index, child_flags,
+                                    path_buf + origin_path_len,
+                                    total_path_len - origin_path_len,
+                                    &child_path_len);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    *path_out = path_buf;
+    *path_len_out = origin_path_len + child_path_len;
+    path_buf = NULL;
+
+done:
+    wally_free_string(origin_str);
+    wally_free_string(child_str);
+    wally_free(path_buf);
+    return ret;
+}
+
+/* Populate TAP_BIP32_DERIVATION for the internal key and all keys in a tr()
+ * descriptor's taptree. `leaf_paths`/`leaf_hashes` are the
+ * taproot_leaf_paths/taproot_leaf_hashes maps of the PSBT input or output
+ * being populated. A key can appear under several descriptor key indices
+ * (e.g. once per leaf it is used in): its entry lists all of its leaves. */
+/* A descriptor key's x-only pubkey and index, for sorting */
+struct tap_key_ref {
+    unsigned char xonly[EC_XONLY_PUBLIC_KEY_LEN];
+    uint32_t index;
+};
+
+static int tap_key_ref_compare(const void *lhs, const void *rhs)
+{
+    const struct tap_key_ref *l = lhs, *r = rhs;
+    int ret = memcmp(l->xonly, r->xonly, sizeof(l->xonly));
+    if (!ret)
+        ret = l->index < r->index ? -1 : l->index > r->index;
+    return ret;
+}
+
+static int psbt_populate_taproot_keypaths_from_descriptor(
+    struct wally_map *leaf_paths, struct wally_map *leaf_hashes,
+    const struct wally_descriptor *descriptor,
+    uint32_t multi_index, uint32_t child_num)
+{
+    uint32_t num_leaves = 0, num_desc_keys = 0, leaf_idx, key_idx, i;
+    unsigned char fingerprint[BIP32_KEY_FINGERPRINT_LEN];
+    struct tap_key_ref *keys = NULL;
+    /* Per descriptor key: its canonical index (the first index with the
+     * same x-only pubkey), the last leaf counted for it, and the start and
+     * end of its leaf hashes in hash_buf */
+    uint32_t *canonical = NULL, *last_leaf = NULL, *starts = NULL, *ends = NULL;
+    uint32_t *leaf_keys = NULL, *leaf_starts = NULL; /* Each leaf's key indices */
+    unsigned char *all_leaf_hashes = NULL, *hash_buf = NULL;
+    uint32_t *path_buf = NULL;
+    size_t path_len = 0, max_leaf_hashes, num_leaf_keys = 0, num_hashes = 0, pos;
+    int ret = WALLY_OK;
+
+    if ((ret = wally_descriptor_get_taproot_num_leaves(descriptor, &num_leaves)) != WALLY_OK)
+        return ret;
+    if ((ret = wally_descriptor_get_num_keys(descriptor, &num_desc_keys)) != WALLY_OK)
+        return ret;
+    /* A key appears at most once per leaf */
+    max_leaf_hashes = PSBT_TAPLEAF_HASHES_MAX_LEN / SHA256_LEN;
+    if (num_leaves < max_leaf_hashes)
+        max_leaf_hashes = num_leaves;
+    /* Heap-allocate the scratch buffers to keep them off the (small, on
+     * embedded targets) stack; they hold public data only. */
+    keys = array_calloc(num_desc_keys, sizeof(*keys));
+    canonical = array_calloc(num_desc_keys, sizeof(*canonical));
+    last_leaf = array_calloc(num_desc_keys, sizeof(*last_leaf));
+    starts = array_calloc(num_desc_keys, sizeof(*starts));
+    ends = array_calloc(num_desc_keys, sizeof(*ends));
+    leaf_starts = array_calloc(num_leaves + 1, sizeof(*leaf_starts));
+    if (!keys || !canonical || !last_leaf || !starts || !ends || !leaf_starts) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+
+    /* Get the x-only pubkey of every key, to match keys across indices:
+     * the same key may appear under several indices (e.g. in several
+     * leaves). Sort to find duplicates, and map each to its first index. */
+    for (key_idx = 0; key_idx < num_desc_keys; key_idx++) {
+        keys[key_idx].index = key_idx;
+        ret = descriptor_get_key_xonly_public_key(descriptor, key_idx,
+                                                  multi_index, child_num,
+                                                  keys[key_idx].xonly,
+                                                  EC_XONLY_PUBLIC_KEY_LEN);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+    qsort(keys, num_desc_keys, sizeof(*keys), tap_key_ref_compare);
+    for (i = 0; i < num_desc_keys; i++) {
+        if (!i || memcmp(keys[i - 1].xonly, keys[i].xonly, EC_XONLY_PUBLIC_KEY_LEN))
+            key_idx = keys[i].index; /* First index of this key */
+        canonical[keys[i].index] = key_idx;
+    }
+
+    /* Compute each leaf's tapleaf hash and collect its keys once here,
+     * rather than once per key that appears in it: both are O(the leaf's
+     * size), so doing them per key made population quadratic (or worse)
+     * in the key count. */
+    if (num_leaves) {
+        all_leaf_hashes = array_calloc(num_leaves, SHA256_LEN);
+        if (!all_leaf_hashes) {
+            ret = WALLY_ENOMEM;
+            goto done;
+        }
+        for (leaf_idx = 0; leaf_idx < num_leaves; leaf_idx++) {
+            size_t num_keys = 0;
+            ret = wally_descriptor_get_taproot_leaf_hash(
+                descriptor, leaf_idx, multi_index, child_num, 0,
+                all_leaf_hashes + leaf_idx * SHA256_LEN, SHA256_LEN);
+            if (ret == WALLY_OK)
+                ret = descriptor_get_taproot_leaf_key_indices(descriptor, leaf_idx,
+                                                              NULL, 0, &num_keys);
+            if (ret != WALLY_OK)
+                goto done;
+            leaf_starts[leaf_idx] = (uint32_t)num_leaf_keys;
+            num_leaf_keys += num_keys;
+        }
+        leaf_starts[num_leaves] = (uint32_t)num_leaf_keys;
+        if (!(leaf_keys = array_calloc(num_leaf_keys ? num_leaf_keys : 1, sizeof(*leaf_keys)))) {
+            ret = WALLY_ENOMEM;
+            goto done;
+        }
+        for (leaf_idx = 0; leaf_idx < num_leaves; leaf_idx++) {
+            const size_t num_keys = leaf_starts[leaf_idx + 1] - leaf_starts[leaf_idx];
+            size_t written = 0;
+            ret = descriptor_get_taproot_leaf_key_indices(descriptor, leaf_idx,
+                                                          leaf_keys + leaf_starts[leaf_idx],
+                                                          num_keys, &written);
+            if (ret == WALLY_OK && written != num_keys)
+                ret = WALLY_EINVAL; /* Shouldn't happen */
+            if (ret != WALLY_OK)
+                goto done;
+        }
+    }
+
+    /* Count the leaves each key participates in (each leaf once, under the
+     * key's canonical index), then lay out their hashes contiguously */
+    for (pos = 0; pos < num_leaf_keys; pos++) {
+        if (leaf_keys[pos] >= num_desc_keys) {
+            ret = WALLY_EINVAL;
+            goto done;
+        }
+        leaf_keys[pos] = canonical[leaf_keys[pos]];
+    }
+    for (key_idx = 0; key_idx < num_desc_keys; key_idx++)
+        last_leaf[key_idx] = 0xffffffffu;
+    for (leaf_idx = 0; leaf_idx < num_leaves; leaf_idx++)
+        for (pos = leaf_starts[leaf_idx]; pos < leaf_starts[leaf_idx + 1]; pos++) {
+            key_idx = leaf_keys[pos];
+            if (last_leaf[key_idx] == leaf_idx)
+                continue; /* Count each leaf once */
+            last_leaf[key_idx] = leaf_idx;
+            if (++ends[key_idx] > max_leaf_hashes) {
+                ret = WALLY_EINVAL; /* Too many leaf hashes */
+                goto done;
+            }
+        }
+    for (key_idx = 0; key_idx < num_desc_keys; key_idx++) {
+        starts[key_idx] = (uint32_t)num_hashes;
+        num_hashes += ends[key_idx];
+        ends[key_idx] = starts[key_idx]; /* Reset to the write cursor */
+        last_leaf[key_idx] = 0xffffffffu;
+    }
+    if (!(hash_buf = array_calloc(num_hashes ? num_hashes : 1, SHA256_LEN))) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+    for (leaf_idx = 0; leaf_idx < num_leaves; leaf_idx++)
+        for (pos = leaf_starts[leaf_idx]; pos < leaf_starts[leaf_idx + 1]; pos++) {
+            key_idx = leaf_keys[pos];
+            if (last_leaf[key_idx] == leaf_idx)
+                continue; /* Add each leaf once */
+            last_leaf[key_idx] = leaf_idx;
+            memcpy(hash_buf + ends[key_idx]++ * SHA256_LEN,
+                   all_leaf_hashes + leaf_idx * SHA256_LEN, SHA256_LEN);
+        }
+
+    for (key_idx = 0; key_idx < num_desc_keys; key_idx++) {
+        const unsigned char *xonly_pub, *key_hashes;
+        size_t num_leaf_hashes;
+
+        if (canonical[key_idx] != key_idx)
+            continue; /* Already added under an earlier key index */
+        num_leaf_hashes = ends[key_idx] - starts[key_idx];
+        key_hashes = num_leaf_hashes ? hash_buf + starts[key_idx] * SHA256_LEN : NULL;
+
+        if (!num_leaf_hashes) {
+            /* BIP-371: the internal key (key 0) is listed without leaf
+             * hashes. musig() internal keys are handled by
+             * wally_psbt_populate_musig2_from_descriptor */
+            uint32_t key_features;
+            if (key_idx)
+                continue; /* Not in any leaf and not the internal key */
+            ret = wally_descriptor_get_key_features(descriptor, key_idx, &key_features);
+            if (ret != WALLY_OK)
+                goto done;
+            if (key_features & WALLY_MS_IS_MUSIG)
+                continue;
+        }
+
+        /* Get fingerprint (use zeros if no origin info) */
+        memset(fingerprint, 0, sizeof(fingerprint));
+        (void)wally_descriptor_get_key_origin_fingerprint(descriptor, key_idx,
+                                                           fingerprint, sizeof(fingerprint));
+        /* Ignore error - if no origin, zeros are used */
+
+        /* Get full binary derivation path */
+        wally_free(path_buf);
+        path_buf = NULL;
+        path_len = 0;
+        ret = psbt_descriptor_key_binary_path(descriptor, key_idx, multi_index, child_num,
+                                              &path_buf, &path_len);
+        if (ret != WALLY_OK)
+            goto done;
+
+        /* Add TAP_BIP32_DERIVATION entry (as per ADD_TAP_KEYPATH) */
+        for (i = 0; i < num_desc_keys && keys[i].index != key_idx; i++)
+            ;
+        xonly_pub = keys[i].xonly;
+        ret = map_leaf_hashes_verify(xonly_pub, EC_XONLY_PUBLIC_KEY_LEN,
+                                     key_hashes, num_leaf_hashes * SHA256_LEN);
+        if (ret == WALLY_OK)
+            ret = wally_map_keypath_add(leaf_paths, xonly_pub, EC_XONLY_PUBLIC_KEY_LEN,
+                                        fingerprint, sizeof(fingerprint),
+                                        path_buf, path_len);
+        if (ret == WALLY_OK)
+            ret = wally_map_merkle_path_add(leaf_hashes, xonly_pub, EC_XONLY_PUBLIC_KEY_LEN,
+                                            key_hashes, num_leaf_hashes * SHA256_LEN);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+done:
+    wally_free(keys);
+    wally_free(canonical);
+    wally_free(last_leaf);
+    wally_free(starts);
+    wally_free(ends);
+    wally_free(leaf_keys);
+    wally_free(leaf_starts);
+    wally_free(all_leaf_hashes);
+    wally_free(hash_buf);
+    wally_free(path_buf);
+    return ret;
+}
+
+/* Fetch the internal key of a tr() descriptor. This is always key index 0,
+ * including for ct() descriptors, since blinding keys are not indexed keys.
+ * The result is returned as an extended key whose x-only public key is
+ * pub_key + 1 (for bare x-only keys, pub_key[0] is zero, not a parity byte).
+ */
+static int descriptor_get_taproot_internal_key(
+    const struct wally_descriptor *descriptor,
+    uint32_t multi_index, uint32_t child_num, struct ext_key *output)
+{
+    uint32_t features;
+    int ret = wally_descriptor_get_features(descriptor, &features);
+
+    if (ret != WALLY_OK)
+        return ret;
+    if (!(features & WALLY_MS_IS_TAPROOT))
+        return WALLY_EINVAL; /* Not a taproot descriptor */
+    return wally_descriptor_derive_bip32_key(descriptor, 0, 0, multi_index,
+                                             child_num,
+                                             BIP32_FLAG_KEY_PUBLIC | BIP32_FLAG_SKIP_HASH,
+                                             output);
+}
+
+/* Check that a Bitcoin descriptor is used with a PSBT and an Elements
+ * descriptor with a PSET */
+static int descriptor_psbt_network_check(const struct wally_psbt *psbt,
+                                         const struct wally_descriptor *descriptor)
+{
+    uint32_t features;
+    size_t is_pset;
+    int ret = wally_descriptor_get_features(descriptor, &features);
+    if (ret == WALLY_OK)
+        ret = wally_psbt_is_elements(psbt, &is_pset);
+    if (ret == WALLY_OK && !(features & WALLY_MS_IS_ELEMENTS) != !is_pset)
+        ret = WALLY_EINVAL; /* Bitcoin/Elements descriptor/PSBT mismatch */
+    return ret;
+}
+
+int wally_psbt_input_populate_taproot_from_descriptor(
+    struct wally_psbt *psbt, size_t index,
+    const struct wally_descriptor *descriptor,
+    uint32_t multi_index, uint32_t child_num, uint32_t flags)
+{
+    const size_t ctrl_block_len = 1 + EC_XONLY_PUBLIC_KEY_LEN +
+                                  WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH * SHA256_LEN;
+    struct wally_psbt_input *inp;
+    struct ext_key internal_key;
+    unsigned char *ctrl_block = NULL;
+    unsigned char *leaf_script = NULL;
+    unsigned char merkle_root[SHA256_LEN];
+    uint32_t num_leaves = 0, leaf_idx;
+    size_t ctrl_len, script_len;
+    int ret;
+
+    if (!psbt || !descriptor || flags)
+        return WALLY_EINVAL;
+    if (!(inp = psbt_get_input(psbt, index)))
+        return WALLY_EINVAL;
+    if ((ret = descriptor_psbt_network_check(psbt, descriptor)) != WALLY_OK)
+        return ret;
+
+    /* Heap-allocate the control block scratch to keep it off the (small,
+     * on embedded targets) stack; it holds public data only. */
+    if (!(ctrl_block = wally_malloc(ctrl_block_len)))
+        return WALLY_ENOMEM;
+
+    ret = descriptor_get_taproot_internal_key(descriptor, multi_index, child_num,
+                                              &internal_key);
+    if (ret == WALLY_OK)
+        ret = wally_psbt_input_set_taproot_internal_key(inp, internal_key.pub_key + 1,
+                                                        EC_XONLY_PUBLIC_KEY_LEN);
+    wally_clear(&internal_key, sizeof(internal_key));
+    if (ret != WALLY_OK)
+        goto done;
+
+    ret = wally_descriptor_get_taproot_num_leaves(descriptor, &num_leaves);
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* TAP_MERKLE_ROOT is only set when the descriptor has a taptree */
+    if (num_leaves > 0) {
+        ret = wally_descriptor_get_taproot_merkle_root(descriptor, multi_index, child_num, 0,
+                                                        merkle_root, sizeof(merkle_root));
+        if (ret != WALLY_OK)
+            goto done;
+        ret = map_field_set(&inp->psbt_fields, PSBT_IN_TAP_MERKLE_ROOT,
+                             merkle_root, sizeof(merkle_root));
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    /* Add TAP_LEAF_SCRIPT for each leaf */
+    for (leaf_idx = 0; leaf_idx < num_leaves; leaf_idx++) {
+        ctrl_len = 0;
+        script_len = 0;
+
+        /* Get control block (query size first) */
+        ret = wally_descriptor_get_taproot_control_block(descriptor, leaf_idx,
+                multi_index, child_num, 0,
+                NULL, 0, &ctrl_len);
+        if (ret != WALLY_OK)
+            goto done;
+        if (ctrl_len > ctrl_block_len) {
+            ret = WALLY_EINVAL;
+            goto done;
+        }
+        ret = wally_descriptor_get_taproot_control_block(descriptor, leaf_idx,
+                multi_index, child_num, 0,
+                ctrl_block, ctrl_len, &ctrl_len);
+        if (ret != WALLY_OK)
+            goto done;
+
+        /* Get leaf script (query size first, then allocate dynamically) */
+        ret = wally_descriptor_get_taproot_leaf_script_len(descriptor, leaf_idx,
+                multi_index, child_num, 0, &script_len);
+        if (ret != WALLY_OK)
+            goto done;
+        leaf_script = wally_malloc(script_len ? script_len : 1);
+        if (!leaf_script) {
+            ret = WALLY_ENOMEM;
+            goto done;
+        }
+        ret = wally_descriptor_get_taproot_leaf_script(descriptor, leaf_idx,
+                multi_index, child_num, 0,
+                leaf_script, script_len, &script_len);
+        if (ret != WALLY_OK)
+            goto done;
+
+        /* Ignore existing leaves, so that populating again succeeds */
+        ret = map_add(&inp->taproot_leaf_scripts, ctrl_block, ctrl_len,
+                      leaf_script, script_len, false, true);
+        wally_free(leaf_script);
+        leaf_script = NULL;
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    /* Add TAP_BIP32_DERIVATION for the internal key and each taptree key */
+    ret = psbt_populate_taproot_keypaths_from_descriptor(&inp->taproot_leaf_paths,
+                                                         &inp->taproot_leaf_hashes,
+                                                         descriptor,
+                                                         multi_index, child_num);
+
+done:
+    wally_free(leaf_script);
+    wally_free(ctrl_block);
+    return ret;
+}
+
+int wally_psbt_output_populate_taproot_from_descriptor(
+    struct wally_psbt *psbt, size_t index,
+    const struct wally_descriptor *descriptor,
+    uint32_t multi_index, uint32_t child_num, uint32_t flags)
+{
+    struct wally_psbt_output *outp;
+    struct ext_key internal_key;
+    int ret;
+
+    if (!psbt || !descriptor || flags)
+        return WALLY_EINVAL;
+    if (!(outp = psbt_get_output(psbt, index)))
+        return WALLY_EINVAL;
+    if ((ret = descriptor_psbt_network_check(psbt, descriptor)) != WALLY_OK)
+        return ret;
+
+    /* Set TAP_INTERNAL_KEY */
+    ret = descriptor_get_taproot_internal_key(descriptor, multi_index, child_num,
+                                              &internal_key);
+    if (ret == WALLY_OK)
+        ret = wally_psbt_output_set_taproot_internal_key(outp, internal_key.pub_key + 1,
+                                                         EC_XONLY_PUBLIC_KEY_LEN);
+    wally_clear(&internal_key, sizeof(internal_key));
+    if (ret == WALLY_OK) {
+        /* Add TAP_BIP32_DERIVATION for the internal key and each taptree key */
+        ret = psbt_populate_taproot_keypaths_from_descriptor(&outp->taproot_leaf_paths,
+                                                             &outp->taproot_leaf_hashes,
+                                                             descriptor,
+                                                             multi_index, child_num);
+    }
+    return ret;
+}
+
+#ifndef BUILD_STANDARD_SECP
+
+static int pubkey_cmp(const void *a, const void *b)
+{
+    return memcmp(a, b, EC_PUBLIC_KEY_LEN);
+}
+
+int wally_psbt_populate_musig2_from_descriptor(
+    struct wally_psbt *psbt,
+    const struct wally_descriptor *descriptor,
+    uint32_t multi_index,
+    uint32_t child_num,
+    uint32_t flags)
+{
+    unsigned char spk[WALLY_SCRIPTPUBKEY_P2TR_LEN];
+    bool have_spk = false;
+    uint32_t num_keys, features;
+    size_t musig_idx;
+    int ret = WALLY_OK;
+
+    if (!psbt || !descriptor || flags)
+        return WALLY_EINVAL;
+    if ((ret = descriptor_psbt_network_check(psbt, descriptor)) != WALLY_OK)
+        return ret;
+
+    ret = wally_descriptor_get_num_keys(descriptor, &num_keys);
+    if (ret != WALLY_OK)
+        return ret;
+
+    for (musig_idx = 0; musig_idx < num_keys && ret == WALLY_OK; ++musig_idx) {
+        unsigned char *raw_pubkeys = NULL, *sorted_pubkeys = NULL;
+        unsigned char agg_xonly[EC_XONLY_PUBLIC_KEY_LEN];
+        unsigned char agg_comp[EC_PUBLIC_KEY_LEN];
+        struct wally_musig_keyagg_cache *cache = NULL;
+        unsigned char *fps = NULL;
+        uint32_t **paths = NULL;
+        size_t *path_lens = NULL;
+        size_t n_participants = 0, j, k;
+
+        features = 0;
+        ret = wally_descriptor_get_key_features(descriptor, musig_idx, &features);
+        if (ret != WALLY_OK)
+            break;
+        if (!(features & WALLY_MS_IS_MUSIG))
+            continue;
+
+        /* Derive the descriptor's scriptPubKey for this child number, to
+         * match against the PSBTs input/output scripts below. musig() is
+         * only valid inside tr(), so the script is always P2TR. */
+        if (!have_spk) {
+            size_t written = 0;
+            ret = wally_descriptor_to_script(descriptor, 0, 0, 0, multi_index,
+                                             child_num, 0, spk, sizeof(spk), &written);
+            if (ret == WALLY_OK && written != sizeof(spk))
+                ret = WALLY_EINVAL;
+            if (ret != WALLY_OK)
+                break;
+            have_spk = true;
+        }
+
+        /* Collect participant pubkeys */
+        ret = wally_descriptor_get_musig_num_participants(
+            descriptor, musig_idx, &n_participants);
+        if (ret != WALLY_OK)
+            break;
+        if (n_participants < 2) {
+            ret = WALLY_EINVAL;
+            break;
+        }
+
+        raw_pubkeys = array_calloc(n_participants, EC_PUBLIC_KEY_LEN);
+        sorted_pubkeys = array_calloc(n_participants, EC_PUBLIC_KEY_LEN);
+        fps = array_calloc(n_participants, BIP32_KEY_FINGERPRINT_LEN);
+        paths = array_calloc(n_participants, sizeof(uint32_t *));
+        path_lens = array_calloc(n_participants, sizeof(size_t));
+        if (!raw_pubkeys || !sorted_pubkeys || !fps || !paths || !path_lens) {
+            ret = WALLY_ENOMEM;
+            goto free_bufs;
+        }
+
+        /* Derive each participant's pubkey and key path. These depend only
+         * on the participant, not the input, so are derived once here. */
+        for (k = 0; k < n_participants && ret == WALLY_OK; ++k)
+            ret = descriptor_get_musig_participant_keypath(
+                descriptor, musig_idx, k, multi_index, child_num,
+                raw_pubkeys + k * EC_PUBLIC_KEY_LEN, EC_PUBLIC_KEY_LEN,
+                fps + k * BIP32_KEY_FINGERPRINT_LEN, BIP32_KEY_FINGERPRINT_LEN,
+                &paths[k], &path_lens[k]);
+        if (ret != WALLY_OK)
+            goto free_bufs;
+
+        /* Sort participant pubkeys for aggregation (BIP-390) */
+        memcpy(sorted_pubkeys, raw_pubkeys, n_participants * EC_PUBLIC_KEY_LEN);
+        qsort(sorted_pubkeys, n_participants, EC_PUBLIC_KEY_LEN, pubkey_cmp);
+
+        /* Compute aggregate pubkeys */
+        ret = wally_musig_pubkey_agg(sorted_pubkeys,
+                                     n_participants * EC_PUBLIC_KEY_LEN,
+                                     agg_xonly, sizeof(agg_xonly), &cache);
+        if (ret != WALLY_OK)
+            goto free_bufs;
+
+        ret = wally_musig_pubkey_get(cache, agg_comp, sizeof(agg_comp));
+        wally_musig_keyagg_cache_free(cache);
+        cache = NULL;
+        if (ret != WALLY_OK)
+            goto free_bufs;
+
+        /* The aggregate must be the descriptors taproot internal key. It is
+         * not for BIP-390 aggregate-then-derive musig(k1,k2)/path expressions,
+         * whose signing needs BIP-328 tweaks that we do not yet support:
+         * reject them rather than populate an internal key we cannot sign. */
+        {
+            struct ext_key internal_key;
+            ret = descriptor_get_taproot_internal_key(descriptor, multi_index,
+                                                      child_num, &internal_key);
+            if (ret == WALLY_OK &&
+                memcmp(internal_key.pub_key + 1, agg_xonly, sizeof(agg_xonly)))
+                ret = WALLY_EINVAL; /* Aggregate-then-derive: unsupported */
+            wally_clear(&internal_key, sizeof(internal_key));
+        }
+        if (ret != WALLY_OK)
+            goto free_bufs;
+
+        /* Populate only inputs spending this descriptor's scriptPubKey */
+        for (j = 0; j < psbt->num_inputs && ret == WALLY_OK; ++j) {
+            struct wally_psbt_input *inp = &psbt->inputs[j];
+
+            if (!inp->witness_utxo ||
+                inp->witness_utxo->script_len != sizeof(spk) ||
+                memcmp(inp->witness_utxo->script, spk, sizeof(spk)))
+                continue; /* Input does not spend this descriptor */
+
+            ret = wally_psbt_input_add_musig2_participant_pubkeys(
+                inp, agg_comp, EC_PUBLIC_KEY_LEN,
+                sorted_pubkeys, n_participants * EC_PUBLIC_KEY_LEN);
+            if (ret != WALLY_OK)
+                break;
+
+            ret = wally_psbt_input_set_taproot_internal_key(
+                inp, agg_xonly, EC_XONLY_PUBLIC_KEY_LEN);
+            if (ret != WALLY_OK)
+                break;
+
+            for (k = 0; k < n_participants && ret == WALLY_OK; ++k) {
+                const unsigned char *xonly = raw_pubkeys + k * EC_PUBLIC_KEY_LEN + 1;
+
+                ret = wally_psbt_input_taproot_keypath_add(
+                    inp,
+                    xonly, EC_XONLY_PUBLIC_KEY_LEN,
+                    NULL, 0,
+                    fps + k * BIP32_KEY_FINGERPRINT_LEN, BIP32_KEY_FINGERPRINT_LEN,
+                    paths[k], path_lens[k]);
+            }
+        }
+        if (ret != WALLY_OK)
+            goto free_bufs;
+
+        /* Populate only outputs paying to this descriptor's scriptPubKey */
+        for (j = 0; j < psbt->num_outputs && ret == WALLY_OK; ++j) {
+            struct wally_psbt_output *out = &psbt->outputs[j];
+            const unsigned char *out_script = out->script;
+            size_t out_script_len = out->script_len;
+
+            if (psbt->version == PSBT_0 && psbt->tx && j < psbt->tx->num_outputs) {
+                out_script = psbt->tx->outputs[j].script;
+                out_script_len = psbt->tx->outputs[j].script_len;
+            }
+            if (!out_script || out_script_len != sizeof(spk) ||
+                memcmp(out_script, spk, sizeof(spk)))
+                continue; /* Output does not pay to this descriptor */
+
+            ret = wally_psbt_output_add_musig2_participant_pubkeys(
+                out, agg_comp, EC_PUBLIC_KEY_LEN,
+                sorted_pubkeys, n_participants * EC_PUBLIC_KEY_LEN);
+        }
+
+free_bufs:
+        if (paths)
+            for (k = 0; k < n_participants; ++k)
+                wally_free(paths[k]);
+        wally_free(fps);
+        wally_free(paths);
+        wally_free(path_lens);
+        wally_free(raw_pubkeys);
+        wally_free(sorted_pubkeys);
+    }
+    return ret;
+}
+
+/* Compute the sighash that a MuSig2 signature for input `index` commits to.
+ * Returns WALLY_EINVAL if the PSBT lacks a complete transaction or the
+ * UTXO/script data needed to compute the sighash. */
+static int musig2_input_sighash(struct wally_psbt *psbt, size_t index,
+                                unsigned char *sighash, size_t sighash_len)
+{
+    unsigned char p2pkh[WALLY_SCRIPTPUBKEY_P2PKH_LEN];
+    const unsigned char *script = NULL, *scriptcode = NULL;
+    size_t script_len = 0, scriptcode_len = 0;
+    struct wally_tx *tx = NULL;
+    bool is_pset;
+    int ret;
+
+    ret = psbt_build_tx(psbt, &tx, &is_pset, false);
+    if (ret == WALLY_OK) {
+        ret = get_signing_script(psbt, index, &script, &script_len);
+        if (ret == WALLY_OK)
+            ret = get_scriptcode(psbt, index, p2pkh, sizeof(p2pkh),
+                                 script, script_len, &scriptcode, &scriptcode_len);
+        if (ret == WALLY_OK)
+            ret = wally_psbt_get_input_signature_hash(psbt, index, tx,
+                                                      scriptcode, scriptcode_len,
+                                                      0, sighash, sighash_len);
+        wally_tx_free(tx);
+    }
+    return ret; /* EINVAL if data is missing, ERROR if hashing failed */
+}
+
+int wally_psbt_musig2_add_nonce(
+    struct wally_psbt *psbt,
+    size_t index,
+    const unsigned char *session_secrand32,
+    size_t session_secrand_len,
+    const unsigned char *seckey,
+    size_t seckey_len,
+    const unsigned char *pubkey33,
+    size_t pubkey33_len,
+    const unsigned char *agg_pubkey,
+    size_t agg_pubkey_len,
+    const unsigned char *leaf_hash,
+    size_t leaf_hash_len,
+    const struct wally_musig_keyagg_cache *keyagg_cache,
+    uint32_t flags,
+    struct wally_musig_secnonce **secnonce_out)
+{
+    struct wally_musig_secnonce *secnonce = NULL;
+    struct wally_musig_pubnonce *pubnonce = NULL;
+    const struct wally_map_item *pubkeys_item;
+    unsigned char sighash[SHA256_LEN];
+    unsigned char pubnonce_bytes[WALLY_MUSIG_PUBNONCE_LEN];
+    size_t existing = 0, i;
+    const unsigned char *msg32 = NULL;
+    size_t msg_len = 0;
+    int ret;
+
+    if (secnonce_out)
+        *secnonce_out = NULL;
+    if (!psbt || index >= psbt->num_inputs)
+        return WALLY_EINVAL;
+    if (!session_secrand32 || session_secrand_len != 32)
+        return WALLY_EINVAL;
+    if (seckey && seckey_len != EC_PRIVATE_KEY_LEN)
+        return WALLY_EINVAL;
+    if (!seckey && seckey_len != 0)
+        return WALLY_EINVAL;
+    if (!pubkey33 || pubkey33_len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    if (!agg_pubkey || agg_pubkey_len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    if (leaf_hash && leaf_hash_len != SHA256_LEN)
+        return WALLY_EINVAL;
+    if (!leaf_hash && leaf_hash_len != 0)
+        return WALLY_EINVAL;
+    if (leaf_hash)
+        return WALLY_EINVAL; /* Script-path MuSig2 not yet supported (would sign a key-path BIP-341 sighash) */
+    if (flags)
+        return WALLY_EINVAL;
+    if (!secnonce_out)
+        return WALLY_EINVAL;
+
+    /* Verify the signer is a registered participant for this aggregate key */
+    pubkeys_item = wally_map_get(&psbt->inputs[index].musig2_pubkeys,
+                                 agg_pubkey, agg_pubkey_len);
+    if (!pubkeys_item || !pubkeys_item->value ||
+        pubkeys_item->value_len < EC_PUBLIC_KEY_LEN * 2 ||
+        pubkeys_item->value_len % EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    for (i = 0; i < pubkeys_item->value_len; i += EC_PUBLIC_KEY_LEN)
+        if (!memcmp(pubkeys_item->value + i, pubkey33, EC_PUBLIC_KEY_LEN))
+            break;
+    if (i >= pubkeys_item->value_len)
+        return WALLY_EINVAL; /* Signer is not in the participant set */
+
+    /* Nonce reuse prevention: reject if a pubnonce already exists */
+    ret = wally_psbt_input_find_musig2_pubnonce(
+        &psbt->inputs[index],
+        pubkey33, pubkey33_len,
+        agg_pubkey, agg_pubkey_len,
+        leaf_hash, leaf_hash_len,
+        &existing);
+    if (ret != WALLY_OK)
+        return ret;
+    if (existing)
+        return WALLY_ERROR;
+
+    /* Try to compute the sighash to bind the nonce to this transaction.
+     * If the PSBT lacks a complete transaction or UTXO, skip silently. */
+    ret = musig2_input_sighash(psbt, index, sighash, sizeof(sighash));
+    if (ret == WALLY_OK) {
+        msg32 = sighash;
+        msg_len = sizeof(sighash);
+    } else if (ret != WALLY_EINVAL)
+        goto done; /* Hashing/allocation failed: don't drop the msg binding */
+
+    /* Generate the nonce pair */
+    ret = wally_musig_nonce_gen(session_secrand32, session_secrand_len,
+                                seckey, seckey_len,
+                                pubkey33, pubkey33_len,
+                                keyagg_cache,
+                                msg32, msg_len,
+                                NULL, 0,
+                                &secnonce, &pubnonce);
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Serialize the public nonce to bytes */
+    ret = wally_musig_pubnonce_serialize(pubnonce, pubnonce_bytes, sizeof(pubnonce_bytes));
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Store the serialized pubnonce in the PSBT */
+    ret = wally_psbt_input_add_musig2_pubnonce(
+        &psbt->inputs[index],
+        pubkey33, pubkey33_len,
+        agg_pubkey, agg_pubkey_len,
+        leaf_hash, leaf_hash_len,
+        pubnonce_bytes, sizeof(pubnonce_bytes));
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Transfer secnonce ownership to caller */
+    *secnonce_out = secnonce;
+    secnonce = NULL;
+
+done:
+    wally_musig_pubnonce_free(pubnonce);
+    if (secnonce)
+        wally_musig_secnonce_free(secnonce);
+    wally_clear(sighash, sizeof(sighash));
+    return ret;
+}
+
+/* For a key-path taproot MuSig2 spend the aggregated signature must verify
+ * against the BIP-341 tweaked output key Q = P + H_TapTweak(P, merkle_root)*G,
+ * not the internal aggregate key P. secp256k1 applies such an output tweak via
+ * the keyagg cache, so we sign with a tweaked *copy* of the caller's cache,
+ * leaving the caller's cache untouched. On success *out is the tweaked cache
+ * (caller must free) for the key-path case, or NULL for the script-path case
+ * (leaf_hash set), where the leaf script commits to the aggregate key directly
+ * and no output tweak is applied. */
+static int musig2_get_signing_cache(
+    const struct wally_psbt *psbt, size_t index,
+    const struct wally_musig_keyagg_cache *keyagg_cache,
+    const unsigned char *leaf_hash,
+    struct wally_musig_keyagg_cache **out)
+{
+    unsigned char cache_bytes[WALLY_MUSIG_KEYAGG_CACHE_LEN];
+    unsigned char agg_pk[EC_PUBLIC_KEY_LEN];
+    unsigned char tweak[SHA256_LEN];
+    unsigned char tweaked_pk[EC_PUBLIC_KEY_LEN];
+    const struct wally_map_item *mr;
+    const unsigned char *merkle_root;
+    struct wally_musig_keyagg_cache *copy = NULL;
+    uint32_t tweak_flags = 0;
+    int ret;
+
+    *out = NULL;
+    if (leaf_hash)
+        return WALLY_OK; /* Script-path: sign under the aggregate key, no output tweak */
+
+    mr = wally_map_get_integer(&psbt->inputs[index].psbt_fields,
+                               PSBT_IN_TAP_MERKLE_ROOT);
+    if (mr && mr->value_len != SHA256_LEN)
+        return WALLY_EINVAL;
+    merkle_root = mr ? mr->value : NULL;
+
+#ifdef BUILD_ELEMENTS
+    {
+        size_t is_pset = 0;
+        if (wally_psbt_is_elements(psbt, &is_pset) == WALLY_OK && is_pset)
+            tweak_flags = EC_FLAG_ELEMENTS;
+    }
+#endif
+
+    /* P = the aggregate (internal) key held in the cache */
+    ret = wally_musig_pubkey_get(keyagg_cache, agg_pk, sizeof(agg_pk));
+    if (ret == WALLY_OK)
+        ret = get_bip341_tweak(agg_pk, sizeof(agg_pk), merkle_root, tweak_flags,
+                               tweak, sizeof(tweak));
+    /* Copy the cache (serialize+parse) so the caller's cache is not mutated */
+    if (ret == WALLY_OK)
+        ret = wally_musig_keyagg_cache_serialize(keyagg_cache, cache_bytes,
+                                                 sizeof(cache_bytes));
+    if (ret == WALLY_OK)
+        ret = wally_musig_keyagg_cache_parse(cache_bytes, sizeof(cache_bytes), &copy);
+    if (ret == WALLY_OK)
+        ret = wally_musig_pubkey_xonly_tweak_add(copy, tweak, sizeof(tweak),
+                                                 tweaked_pk, sizeof(tweaked_pk));
+    if (ret == WALLY_OK)
+        *out = copy;
+    else
+        wally_musig_keyagg_cache_free(copy);
+    return ret;
+}
+
+/* Create a MuSig2 signing session for input `index`: look up the participant
+ * list for `agg_pubkey` (verifying that `pubkey33` is a member, if given),
+ * collect and aggregate all participant pubnonces, compute the sighash and
+ * process the aggregate nonce with it.
+ * On success returns the participant list, the collected pubnonces (owned by
+ * the caller), the tweaked signing cache from musig2_get_signing_cache (owned
+ * by the caller, NULL for the script-path case) and the session (owned by
+ * the caller). */
+static int musig2_session_init(
+    struct wally_psbt *psbt, size_t index,
+    const unsigned char *pubkey33,
+    const unsigned char *agg_pubkey,
+    const unsigned char *leaf_hash,
+    const struct wally_musig_keyagg_cache *keyagg_cache,
+    const unsigned char **participants_out, size_t *n_participants_out,
+    unsigned char **pubnonces_out,
+    struct wally_musig_keyagg_cache **signing_cache_out,
+    struct wally_musig_session **session_out)
+{
+    const struct wally_map_item *pubkeys_item;
+    unsigned char composite_key[EC_PUBLIC_KEY_LEN * 2 + SHA256_LEN];
+    size_t composite_key_len;
+    unsigned char sighash[SHA256_LEN];
+    unsigned char *pubnonces_buf = NULL;
+    const unsigned char *participants;
+    size_t participants_len, n_participants, i;
+    struct wally_musig_aggnonce *aggnonce = NULL;
+    int ret;
+
+    *participants_out = NULL;
+    *n_participants_out = 0;
+    *pubnonces_out = NULL;
+    *signing_cache_out = NULL;
+    *session_out = NULL;
+
+    {
+        /* Verify the given keyagg cache corresponds to the aggregate key.
+         * This also catches callers passing an (incorrectly) pre-tweaked
+         * cache, which would otherwise sign under the wrong key. */
+        unsigned char derived[EC_PUBLIC_KEY_LEN];
+        if (wally_musig_pubkey_get(keyagg_cache, derived,
+                                   sizeof(derived)) != WALLY_OK ||
+            memcmp(derived, agg_pubkey, sizeof(derived)))
+            return WALLY_EINVAL;
+    }
+
+    /* Look up the participant pubkeys for this aggregate key */
+    pubkeys_item = wally_map_get(&psbt->inputs[index].musig2_pubkeys,
+                                 agg_pubkey, EC_PUBLIC_KEY_LEN);
+    if (!pubkeys_item)
+        return WALLY_EINVAL;
+    participants = pubkeys_item->value;
+    participants_len = pubkeys_item->value_len;
+    if (!participants || participants_len < EC_PUBLIC_KEY_LEN * 2 ||
+        participants_len % EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    n_participants = participants_len / EC_PUBLIC_KEY_LEN;
+
+    if (pubkey33) {
+        /* Verify the signer is a registered participant for this aggregate key */
+        for (i = 0; i < n_participants; ++i)
+            if (!memcmp(participants + i * EC_PUBLIC_KEY_LEN, pubkey33, EC_PUBLIC_KEY_LEN))
+                break;
+        if (i == n_participants)
+            return WALLY_EINVAL; /* Signer is not in the participant set */
+    }
+
+    /* Allocate flat buffer for all serialized pubnonces */
+    pubnonces_buf = wally_malloc(n_participants * WALLY_MUSIG_PUBNONCE_LEN);
+    if (!pubnonces_buf)
+        return WALLY_ENOMEM;
+
+    /* Collect all pubnonces in participant order */
+    for (i = 0; i < n_participants; ++i) {
+        const unsigned char *participant_i = participants + i * EC_PUBLIC_KEY_LEN;
+        const struct wally_map_item *nonce_item;
+
+        musig2_composite_key_build(participant_i, agg_pubkey, leaf_hash,
+                                   composite_key, &composite_key_len);
+        nonce_item = wally_map_get(&psbt->inputs[index].musig2_pubnonces,
+                                   composite_key, composite_key_len);
+        if (!nonce_item || nonce_item->value_len != WALLY_MUSIG_PUBNONCE_LEN) {
+            ret = WALLY_ERROR;
+            goto done;
+        }
+        memcpy(pubnonces_buf + i * WALLY_MUSIG_PUBNONCE_LEN,
+               nonce_item->value, WALLY_MUSIG_PUBNONCE_LEN);
+    }
+
+    /* Aggregate all pubnonces */
+    ret = wally_musig_nonce_agg(pubnonces_buf,
+                                n_participants * WALLY_MUSIG_PUBNONCE_LEN,
+                                n_participants, &aggnonce);
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Compute the sighash to bind the session to this transaction */
+    ret = musig2_input_sighash(psbt, index, sighash, sizeof(sighash));
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* For a key-path spend, sign with a BIP-341 output-tweaked copy of the cache
+     * so the aggregated signature is valid under the on-chain output key. */
+    ret = musig2_get_signing_cache(psbt, index, keyagg_cache, leaf_hash,
+                                   signing_cache_out);
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Process the aggregate nonce with the sighash to create a signing session */
+    ret = wally_musig_nonce_process(aggnonce, sighash, sizeof(sighash),
+                                    *signing_cache_out ? *signing_cache_out : keyagg_cache,
+                                    NULL, 0, session_out);
+
+done:
+    if (ret == WALLY_OK) {
+        *participants_out = participants;
+        *n_participants_out = n_participants;
+        *pubnonces_out = pubnonces_buf;
+    } else {
+        wally_clear(pubnonces_buf, n_participants * WALLY_MUSIG_PUBNONCE_LEN);
+        wally_free(pubnonces_buf);
+        wally_musig_keyagg_cache_free(*signing_cache_out);
+        *signing_cache_out = NULL;
+    }
+    wally_musig_aggnonce_free(aggnonce);
+    wally_clear(sighash, sizeof(sighash));
+    return ret;
+}
+
+int wally_psbt_musig2_sign(
+    struct wally_psbt *psbt,
+    size_t index,
+    struct wally_musig_secnonce *secnonce,
+    const unsigned char *seckey,
+    size_t seckey_len,
+    const unsigned char *pubkey33,
+    size_t pubkey33_len,
+    const unsigned char *agg_pubkey,
+    size_t agg_pubkey_len,
+    const unsigned char *leaf_hash,
+    size_t leaf_hash_len,
+    const struct wally_musig_keyagg_cache *keyagg_cache,
+    uint32_t flags,
+    struct wally_musig_partial_sig **partial_sig_out)
+{
+    unsigned char partial_sig_bytes[WALLY_MUSIG_PARTIAL_SIG_LEN];
+    unsigned char signer_pubkey[EC_PUBLIC_KEY_LEN];
+    unsigned char psig_key[EC_PUBLIC_KEY_LEN * 2 + SHA256_LEN];
+    unsigned char *pubnonces_buf = NULL;
+    const unsigned char *participants;
+    size_t n_participants, psig_key_len, psig_idx = 0;
+    struct wally_map *psigs = NULL;
+    struct wally_musig_session *session = NULL;
+    struct wally_musig_partial_sig *partial_sig = NULL;
+    struct wally_musig_keyagg_cache *signing_cache = NULL;
+    bool added_psig = false;
+    int ret;
+
+    if (partial_sig_out)
+        *partial_sig_out = NULL;
+    if (!psbt || index >= psbt->num_inputs)
+        return WALLY_EINVAL;
+    if (!secnonce)
+        return WALLY_EINVAL;
+    if (!seckey || seckey_len != EC_PRIVATE_KEY_LEN)
+        return WALLY_EINVAL;
+    if (!pubkey33 || pubkey33_len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    if (!agg_pubkey || agg_pubkey_len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    if (leaf_hash && leaf_hash_len != SHA256_LEN)
+        return WALLY_EINVAL;
+    if (!leaf_hash && leaf_hash_len != 0)
+        return WALLY_EINVAL;
+    if (leaf_hash)
+        return WALLY_EINVAL; /* Script-path MuSig2 not yet supported (would sign a key-path BIP-341 sighash) */
+    if (!keyagg_cache)
+        return WALLY_EINVAL;
+    if (flags)
+        return WALLY_EINVAL;
+
+    /* The partial signature is stored under pubkey33: it must be ours */
+    ret = wally_ec_public_key_from_private_key(seckey, seckey_len,
+                                               signer_pubkey, sizeof(signer_pubkey));
+    if (ret == WALLY_OK && memcmp(signer_pubkey, pubkey33, sizeof(signer_pubkey)))
+        ret = WALLY_EINVAL;
+    if (ret != WALLY_OK)
+        return ret;
+
+    ret = musig2_session_init(psbt, index, pubkey33, agg_pubkey, leaf_hash,
+                              keyagg_cache, &participants, &n_participants,
+                              &pubnonces_buf, &signing_cache, &session);
+    if (ret != WALLY_OK)
+        return ret;
+
+    /* Signing consumes the secnonce, so nothing may fail after it: add the
+     * PSBT entry for the partial signature now, filling it in after signing */
+    psigs = &psbt->inputs[index].musig2_partial_sigs;
+    musig2_composite_key_build(pubkey33, agg_pubkey, leaf_hash, psig_key, &psig_key_len);
+    ret = wally_map_find(psigs, psig_key, psig_key_len, &psig_idx);
+    if (ret == WALLY_OK && !psig_idx) {
+        memset(partial_sig_bytes, 0, sizeof(partial_sig_bytes));
+        ret = wally_map_add(psigs, psig_key, psig_key_len,
+                            partial_sig_bytes, sizeof(partial_sig_bytes));
+        added_psig = ret == WALLY_OK;
+        if (ret == WALLY_OK)
+            ret = wally_map_find(psigs, psig_key, psig_key_len, &psig_idx);
+    }
+    if (ret == WALLY_OK &&
+        psigs->items[psig_idx - 1].value_len != WALLY_MUSIG_PARTIAL_SIG_LEN)
+        ret = WALLY_EINVAL; /* Should not happen: validated by the map */
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Produce the partial signature (secnonce is zeroed by this call) */
+    ret = wally_musig_partial_sign(secnonce,
+                                   seckey, seckey_len,
+                                   signing_cache ? signing_cache : keyagg_cache,
+                                   session,
+                                   &partial_sig);
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Serialize the partial signature into the PSBT */
+    ret = wally_musig_partial_sig_serialize(partial_sig,
+                                            partial_sig_bytes,
+                                            sizeof(partial_sig_bytes));
+    if (ret != WALLY_OK)
+        goto done;
+    memcpy(psigs->items[psig_idx - 1].value, partial_sig_bytes, sizeof(partial_sig_bytes));
+    added_psig = false; /* The entry is now complete */
+
+    /* Transfer ownership to caller if requested */
+    if (partial_sig_out) {
+        *partial_sig_out = partial_sig;
+        partial_sig = NULL;
+    }
+
+done:
+    if (added_psig)
+        wally_map_remove(psigs, psig_key, psig_key_len); /* Doesn't allocate */
+    wally_clear(pubnonces_buf, n_participants * WALLY_MUSIG_PUBNONCE_LEN);
+    wally_free(pubnonces_buf);
+    wally_musig_session_free(session);
+    wally_musig_keyagg_cache_free(signing_cache);
+    if (partial_sig)
+        wally_musig_partial_sig_free(partial_sig);
+    wally_clear(partial_sig_bytes, sizeof(partial_sig_bytes));
+    return ret;
+}
+
+int wally_psbt_musig2_finalize_input(
+    struct wally_psbt *psbt,
+    size_t index,
+    const unsigned char *agg_pubkey,
+    size_t agg_pubkey_len,
+    const unsigned char *leaf_hash,
+    size_t leaf_hash_len,
+    const struct wally_musig_keyagg_cache *keyagg_cache,
+    uint32_t flags)
+{
+    unsigned char composite_key[EC_PUBLIC_KEY_LEN * 2 + SHA256_LEN];
+    size_t composite_key_len;
+    unsigned char sig64[EC_SIGNATURE_LEN];
+    unsigned char sig65[EC_SIGNATURE_LEN + 1]; /* for non-default sighash */
+    unsigned char tap_sig_key[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN]; /* 64-byte leaf sig key */
+    unsigned char *pubnonces_buf = NULL;
+    unsigned char *partial_sigs_buf = NULL;
+    const unsigned char *participants;
+    size_t n_participants, i;
+    struct wally_musig_session *session = NULL;
+    struct wally_musig_keyagg_cache *signing_cache = NULL;
+    const struct wally_musig_keyagg_cache *use_cache;
+    int ret;
+
+    if (!psbt || index >= psbt->num_inputs)
+        return WALLY_EINVAL;
+    if (!agg_pubkey || agg_pubkey_len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    if (leaf_hash && leaf_hash_len != SHA256_LEN)
+        return WALLY_EINVAL;
+    if (!leaf_hash && leaf_hash_len != 0)
+        return WALLY_EINVAL;
+    if (leaf_hash)
+        return WALLY_EINVAL; /* Script-path MuSig2 not yet supported (would sign a key-path BIP-341 sighash) */
+    if (!keyagg_cache)
+        return WALLY_EINVAL;
+    if (flags)
+        return WALLY_EINVAL;
+
+    ret = musig2_session_init(psbt, index, NULL, agg_pubkey, leaf_hash,
+                              keyagg_cache, &participants, &n_participants,
+                              &pubnonces_buf, &signing_cache, &session);
+    if (ret != WALLY_OK)
+        return ret;
+    use_cache = signing_cache ? signing_cache : keyagg_cache;
+
+    /* Allocate flat buffer for all partial sigs */
+    partial_sigs_buf = wally_malloc(n_participants * WALLY_MUSIG_PARTIAL_SIG_LEN);
+    if (!partial_sigs_buf) {
+        ret = WALLY_ENOMEM;
+        goto done;
+    }
+
+    /* Collect all partial sigs in participant order */
+    for (i = 0; i < n_participants; ++i) {
+        const unsigned char *participant_i = participants + i * EC_PUBLIC_KEY_LEN;
+        const struct wally_map_item *sig_item;
+
+        musig2_composite_key_build(participant_i, agg_pubkey, leaf_hash,
+                                   composite_key, &composite_key_len);
+        sig_item = wally_map_get(&psbt->inputs[index].musig2_partial_sigs,
+                                 composite_key, composite_key_len);
+        if (!sig_item || sig_item->value_len != WALLY_MUSIG_PARTIAL_SIG_LEN) {
+            ret = WALLY_ERROR;
+            goto done;
+        }
+        memcpy(partial_sigs_buf + i * WALLY_MUSIG_PARTIAL_SIG_LEN,
+               sig_item->value, WALLY_MUSIG_PARTIAL_SIG_LEN);
+    }
+
+    /* Verify each partial sig so a corrupt or malicious contribution is
+     * detected before aggregation, leaving the PSBT contents unchanged */
+    for (i = 0; i < n_participants; ++i) {
+        const unsigned char *participant_i = participants + i * EC_PUBLIC_KEY_LEN;
+        struct wally_musig_partial_sig *psig = NULL;
+        struct wally_musig_pubnonce *pubnonce = NULL;
+
+        ret = wally_musig_partial_sig_parse(
+            partial_sigs_buf + i * WALLY_MUSIG_PARTIAL_SIG_LEN,
+            WALLY_MUSIG_PARTIAL_SIG_LEN, &psig);
+        if (ret == WALLY_OK)
+            ret = wally_musig_pubnonce_parse(
+                pubnonces_buf + i * WALLY_MUSIG_PUBNONCE_LEN,
+                WALLY_MUSIG_PUBNONCE_LEN, &pubnonce);
+        if (ret == WALLY_OK)
+            ret = wally_musig_partial_sig_verify(psig, pubnonce,
+                                                 participant_i, EC_PUBLIC_KEY_LEN,
+                                                 use_cache, session);
+        wally_musig_partial_sig_free(psig);
+        wally_musig_pubnonce_free(pubnonce);
+        if (ret != WALLY_OK)
+            goto done;
+    }
+
+    /* Aggregate all partial sigs into a final 64-byte BIP-340 signature */
+    ret = wally_musig_partial_sig_agg(partial_sigs_buf,
+                                      n_participants * WALLY_MUSIG_PARTIAL_SIG_LEN,
+                                      n_participants,
+                                      session,
+                                      sig64, sizeof(sig64));
+    if (ret != WALLY_OK)
+        goto done;
+
+    /* Store the final signature in the PSBT.
+     * For non-default sighash, append the sighash byte to produce a 65-byte sig. */
+    {
+        const uint32_t input_sighash = psbt->inputs[index].sighash;
+        const unsigned char *sig_to_store = sig64;
+        size_t sig_len = sizeof(sig64);
+
+        if (input_sighash & ~(uint32_t)0xff) {
+            ret = WALLY_EINVAL; /* Sighash does not fit in the sighash byte */
+            goto done;
+        }
+        if (input_sighash) {
+            memcpy(sig65, sig64, EC_SIGNATURE_LEN);
+            sig65[EC_SIGNATURE_LEN] = (unsigned char)input_sighash;
+            sig_to_store = sig65;
+            sig_len = sizeof(sig65);
+        }
+
+        if (!leaf_hash) {
+            ret = wally_map_replace_integer(&psbt->inputs[index].psbt_fields,
+                                            PSBT_IN_TAP_KEY_SIG,
+                                            sig_to_store, sig_len);
+        } else {
+            /* taproot_leaf_signatures key is x-only agg_pubkey(32) + leaf_hash(32) */
+            memcpy(tap_sig_key, agg_pubkey + 1, EC_XONLY_PUBLIC_KEY_LEN);
+            memcpy(tap_sig_key + EC_XONLY_PUBLIC_KEY_LEN, leaf_hash, leaf_hash_len);
+            ret = wally_map_replace(&psbt->inputs[index].taproot_leaf_signatures,
+                                    tap_sig_key, sizeof(tap_sig_key),
+                                    sig_to_store, sig_len);
+        }
+    }
+
+    /* Remove nonce and partial sig entries now that aggregation is complete */
+    if (ret == WALLY_OK) {
+        wally_map_clear(&psbt->inputs[index].musig2_pubnonces);
+        wally_map_clear(&psbt->inputs[index].musig2_partial_sigs);
+    }
+
+done:
+    wally_clear(pubnonces_buf, n_participants * WALLY_MUSIG_PUBNONCE_LEN);
+    wally_free(pubnonces_buf);
+    if (partial_sigs_buf) {
+        wally_clear(partial_sigs_buf, n_participants * WALLY_MUSIG_PARTIAL_SIG_LEN);
+        wally_free(partial_sigs_buf);
+    }
+    wally_musig_session_free(session);
+    wally_musig_keyagg_cache_free(signing_cache);
+    wally_clear(sig64, sizeof(sig64));
+    wally_clear(sig65, sizeof(sig65));
+    return ret;
+}
+
+#endif /* ndef BUILD_STANDARD_SECP */
