@@ -3,6 +3,7 @@
 #include "script.h"
 #include "script_int.h"
 #include "tx_io.h"
+#include "descriptor_int.h"
 
 #include <include/wally_address.h>
 #include <include/wally_bip32.h>
@@ -27,36 +28,14 @@
 #define MS_FLAGS_CANONICALIZE (WALLY_MINISCRIPT_REQUIRE_CHECKSUM | \
         WALLY_MINISCRIPT_POLICY_TEMPLATE)
 
-/* Properties and expressions definition */
-#define TYPE_NONE  0x00
-#define TYPE_B     0x01  /* Base expressions */
-#define TYPE_V     0x02  /* Verify expressions */
-#define TYPE_K     0x04  /* Key expressions */
-#define TYPE_W     0x08  /* Wrapped expressions */
-#define TYPE_MASK  0x0F  /* expressions mask */
-
-#define PROP_Z  0x00000100  /* Zero-arg property */
-#define PROP_O  0x00000200  /* One-arg property */
-#define PROP_N  0x00000400  /* Nonzero arg property */
-#define PROP_D  0x00000800  /* Dissatisfiable property */
-#define PROP_U  0x00001000  /* Unit property */
-#define PROP_E  0x00002000  /* Expression property */
-#define PROP_F  0x00004000  /* Forced property */
-#define PROP_S  0x00008000  /* Safe property */
-#define PROP_M  0x00010000  /* Nonmalleable property */
-#define PROP_X  0x00020000  /* Expensive verify */
-#define PROP_G  0x00040000  /* Relative time timelock */
-#define PROP_H  0x00080000  /* Relative height timelock */
-#define PROP_I  0x00100000  /* Absolute time timelock */
-#define PROP_J  0x00200000  /* Absolute time heightlock */
-#define PROP_K  0x00400000  /* No timelock mixing allowed */
+/* The TYPE_ and PROP_ type/property bits are defined in descriptor_int.h */
 
 /* OP_0 properties: Bzudemsxk */
 #define PROP_OP_0  (TYPE_B | PROP_Z | PROP_U | PROP_D | PROP_E | PROP_M | PROP_S | PROP_X | PROP_K)
 /* OP_1 properties: Bzufmxk */
 #define PROP_OP_1  (TYPE_B | PROP_Z | PROP_U | PROP_F | PROP_M | PROP_X | PROP_K)
 
-#define KIND_MINISCRIPT 0x01
+/* KIND_MINISCRIPT is defined in descriptor_int.h */
 #define KIND_DESCRIPTOR 0x02 /* Output Descriptor */
 #define KIND_RAW        0x04
 #define KIND_NUMBER     0x08
@@ -99,29 +78,7 @@
 #define KIND_DESCRIPTOR_SLIP77   (0x00400000 | KIND_DESCRIPTOR)
 #define KIND_DESCRIPTOR_ELIP151  (0x00500000 | KIND_DESCRIPTOR)
 
-/* miniscript */
-#define KIND_MINISCRIPT_PK        (0x00000100 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_PKH       (0x00000200 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_MULTI     (0x00000300 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_PK_K      (0x00001000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_PK_H      (0x00002000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OLDER     (0x00010000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AFTER     (0x00020000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_SHA256    (0x00030000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_HASH256   (0x00040000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_RIPEMD160 (0x00050000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_HASH160   (0x00060000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_THRESH    (0x00070000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_ANDOR     (0x01000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AND_V     (0x02000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AND_B     (0x03000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_AND_N     (0x04000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_B      (0x05000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_C      (0x06000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_D      (0x07000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_OR_I      (0x08000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_MULTI_A   (0x09000000 | KIND_MINISCRIPT)
-#define KIND_MINISCRIPT_MULTI_A_S (0x0A000000 | KIND_MINISCRIPT)
+/* miniscript KIND_MINISCRIPT_* constants are defined in descriptor_int.h */
 
 struct addr_ver_t {
     const unsigned char network;
@@ -190,24 +147,8 @@ static const struct addr_ver_t g_address_versions[] = {
     },
 };
 
-/* A node in a parsed miniscript expression */
-typedef struct ms_node_t {
-    struct ms_node_t *next;
-    struct ms_node_t *child;
-    struct ms_node_t *parent;
-    uint32_t kind;
-    uint32_t type_properties;
-    int64_t number;
-    const char *child_path;
-    const char *data;
-    uint32_t data_len;
-    uint32_t child_path_len;
-    char wrapper_str[12];
-    unsigned short flags; /* WALLY_MS_IS_ flags */
-    unsigned char builtin;
-} ms_node;
-
-typedef struct wally_descriptor {
+/* ms_ctx is descriptor_int.h's typedef for struct wally_descriptor */
+struct wally_descriptor {
     char *src; /* The canonical source script */
     size_t src_len; /* Length of src */
     ms_node *top_node; /* The first node of the parse tree */
@@ -223,7 +164,7 @@ typedef struct wally_descriptor {
     uint32_t *path_buff; /* Path buffer for deriving keys */
     uint32_t max_path_elems; /* Max path length seen in the descriptor */
     struct wally_map keys;
-} ms_ctx;
+};
 
 static int ctx_add_key_node(ms_ctx *ctx, ms_node *node)
 {
@@ -1050,7 +991,7 @@ static int verify_and_b(ms_ctx *ctx, ms_node *node)
         !has_two_different_lock_states(x_prop, y_prop))
         node->type_properties |= PROP_K;
 
-    return WALLY_OK;
+    return (node->type_properties & TYPE_B) ? WALLY_OK : WALLY_EINVAL;
 }
 
 static int verify_and_n(ms_ctx *ctx, ms_node *node)
@@ -1080,7 +1021,7 @@ static int verify_or_b(ms_ctx *ctx, ms_node *node)
         ((x_prop & y_prop) & PROP_E))
         node->type_properties |= x_prop & y_prop & PROP_M;
 
-    return WALLY_OK;
+    return (node->type_properties & TYPE_B) ? WALLY_OK : WALLY_EINVAL;
 }
 
 static int verify_or_c(ms_ctx *ctx, ms_node *node)
@@ -1099,7 +1040,7 @@ static int verify_or_c(ms_ctx *ctx, ms_node *node)
     if (x_prop & PROP_E && ((x_prop | y_prop) & PROP_S))
         node->type_properties |= x_prop & y_prop & PROP_M;
 
-    return WALLY_OK;
+    return (node->type_properties & TYPE_V) ? WALLY_OK : WALLY_EINVAL;
 }
 
 static int verify_or_d(ms_ctx *ctx, ms_node *node)
@@ -1119,7 +1060,7 @@ static int verify_or_d(ms_ctx *ctx, ms_node *node)
     if (x_prop & PROP_E && ((x_prop | y_prop) & PROP_S))
         node->type_properties |= x_prop & y_prop & PROP_M;
 
-    return WALLY_OK;
+    return (node->type_properties & TYPE_B) ? WALLY_OK : WALLY_EINVAL;
 }
 
 static uint32_t verify_or_i_property(uint32_t x_prop, uint32_t y_prop)
@@ -1323,9 +1264,11 @@ static int node_verify_wrappers(ms_ctx *ctx, ms_node *node)
             }
             break;
         case 'n':
+            /* n:X is Bzondfemsk from X, plus u and x (BIP-379) */
             PROP_REQUIRE(TYPE_B);
             PROP_CHANGE(PROP_Z | PROP_O | PROP_N | PROP_D | PROP_F | PROP_E |
-                        PROP_M | PROP_S | PROP_N | PROP_D | PROP_X, PROP_X);
+                        PROP_M | PROP_S | PROP_G | PROP_H | PROP_I | PROP_J |
+                        PROP_K, PROP_U | PROP_X);
             break;
         case 'l':
             *properties = verify_or_i_property(PROP_OP_0, x_prop);
