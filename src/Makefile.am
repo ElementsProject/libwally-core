@@ -153,6 +153,7 @@ libwallycore_la_SOURCES = \
     coins.c \
     descriptor.c \
     miniscript_decode.c \
+    miniscript_satisfy.c \
     ecdh.c \
     elements.c \
     blech32.c \
@@ -288,8 +289,8 @@ test_descriptor_LDADD += $(PYTHON_LIBS)
 endif
 TESTS += test_miniscript_decode
 noinst_PROGRAMS += test_miniscript_decode
-test_miniscript_decode_SOURCES = ctest/test_miniscript_decode.c miniscript_decode.c ctest/scriptint_shim.c
-test_miniscript_decode_CFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/src $(AM_CFLAGS)
+test_miniscript_decode_SOURCES = ctest/test_miniscript_decode.c miniscript_decode.c miniscript_satisfy.c ctest/scriptint_shim.c ctest/satisfy_shim.c
+test_miniscript_decode_CFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/src $(libsecp256k1_CFLAGS) $(AM_CFLAGS)
 test_miniscript_decode_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if BUILD_ELEMENTS
 TESTS += test_elements_tx

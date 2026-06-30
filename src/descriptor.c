@@ -577,6 +577,40 @@ static void node_free(ms_node *node)
     }
 }
 
+int ms_witness_init(ms_witness *w, uint32_t kind)
+{
+    memset(w, 0, sizeof(*w));
+    w->kind = kind;
+    return WALLY_OK;
+}
+
+void ms_witness_free(ms_witness *w)
+{
+    if (w) {
+        for (size_t i = 0; i < w->num_items; i++)
+            wally_free(w->items[i].data);
+        wally_free(w->items);
+        memset(w, 0, sizeof(*w));
+    }
+}
+
+int ms_satisfaction_init(ms_satisfaction *s, uint32_t witness_kind)
+{
+    int ret = ms_witness_init(&s->witness, witness_kind);
+    s->has_sig = false;
+    s->absolute_timelock = 0;
+    s->relative_timelock = 0;
+    return ret;
+}
+
+void ms_satisfaction_free(ms_satisfaction *s)
+{
+    if (s) {
+        ms_witness_free(&s->witness);
+        memset(s, 0, sizeof(*s));
+    }
+}
+
 static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
 {
     return ((primary & PROP_G) && (secondary & PROP_H)) ||
