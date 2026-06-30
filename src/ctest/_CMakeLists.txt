@@ -27,7 +27,7 @@ target_include_directories(test_elements_tx PRIVATE ${CMAKE_BINARY_DIR})
 target_link_libraries(test_elements_tx PRIVATE wallycore)
 add_test(test_elements_tx test_elements_tx)
 
-add_executable(test_miniscript_decode test_miniscript_decode.c ../miniscript_decode.c)
+add_executable(test_miniscript_decode test_miniscript_decode.c ../miniscript_decode.c ../miniscript_satisfy.c)
 target_include_directories(test_miniscript_decode PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/secp256k1/include>)
 target_link_libraries(test_miniscript_decode PRIVATE wallycore)
 add_test(test_miniscript_decode test_miniscript_decode)
