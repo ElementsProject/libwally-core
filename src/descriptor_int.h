@@ -129,4 +129,29 @@ struct wally_descriptor {
 
 typedef struct wally_descriptor ms_ctx;
 
+/* Write the descriptor key index of each key in taproot leaf ``leaf_index``,
+ * in leaf order. ``written`` is set to the number of keys in the leaf;
+ * the indices are only written if ``num_indices`` is large enough. */
+int descriptor_get_taproot_leaf_key_indices(
+    const struct wally_descriptor *descriptor,
+    uint32_t leaf_index,
+    uint32_t *indices_out, size_t num_indices, size_t *written);
+
+/* Derive the x-only pubkey for the descriptor key at ``index`` */
+int descriptor_get_key_xonly_public_key(
+    const struct wally_descriptor *descriptor,
+    size_t index, uint32_t multi_index, uint32_t child_num,
+    unsigned char *bytes_out, size_t len);
+
+/* Derive the compressed pubkey of a musig() participant, and get its origin
+ * fingerprint (zero if none) and full derivation path (origin path followed
+ * by its child path). The caller must wally_free(*path_out) */
+int descriptor_get_musig_participant_keypath(
+    const struct wally_descriptor *descriptor,
+    size_t index, size_t participant_index,
+    uint32_t multi_index, uint32_t child_num,
+    unsigned char *pub_key_out, size_t pub_key_len,
+    unsigned char *fingerprint_out, size_t fingerprint_len,
+    uint32_t **path_out, size_t *path_len_out);
+
 #endif /* LIBWALLY_CORE_DESCRIPTOR_INT_H */
