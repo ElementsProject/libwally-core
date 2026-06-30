@@ -149,6 +149,7 @@ bip39_mnemonic_to_seed512 = _wrap_bin(bip39_mnemonic_to_seed512, BIP39_SEED_LEN_
 bip85_get_bip39_entropy = _wrap_bin(bip85_get_bip39_entropy, HMAC_SHA512_LEN, resize=True)
 bip85_get_rsa_entropy = _wrap_bin(bip85_get_rsa_entropy, HMAC_SHA512_LEN, resize=True)
 descriptor_get_key_origin_fingerprint = _wrap_bin(descriptor_get_key_origin_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
+descriptor_get_musig_participant_key_origin_fingerprint = _wrap_bin(descriptor_get_musig_participant_key_origin_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
 descriptor_to_script = _wrap_bin(descriptor_to_script, descriptor_to_script_get_maximum_length, resize=True)
 ec_private_key_bip341_tweak = _wrap_bin(ec_private_key_bip341_tweak, EC_PRIVATE_KEY_LEN)
 ec_public_key_bip341_tweak = _wrap_bin(ec_public_key_bip341_tweak, EC_PUBLIC_KEY_LEN)
@@ -184,6 +185,15 @@ map_keypath_get_item_fingerprint = _wrap_bin(map_keypath_get_item_fingerprint, B
 map_keypath_get_item_path = _wrap_int_array(map_keypath_get_item_path, map_keypath_get_item_path_len)
 map_keypath_public_key_init = map_keypath_public_key_init_alloc
 map_preimage_init = map_preimage_init_alloc
+musig_aggnonce_serialize = _wrap_bin(musig_aggnonce_serialize, WALLY_MUSIG_AGGNONCE_LEN)
+musig_keyagg_cache_serialize = _wrap_bin(musig_keyagg_cache_serialize, WALLY_MUSIG_KEYAGG_CACHE_LEN)
+musig_partial_sig_agg = _wrap_bin(musig_partial_sig_agg, EC_SIGNATURE_LEN)
+musig_partial_sig_serialize = _wrap_bin(musig_partial_sig_serialize, WALLY_MUSIG_PARTIAL_SIG_LEN)
+musig_pubkey_ec_tweak_add = _wrap_bin(musig_pubkey_ec_tweak_add, EC_PUBLIC_KEY_LEN)
+musig_pubkey_get = _wrap_bin(musig_pubkey_get, EC_PUBLIC_KEY_LEN)
+musig_pubkey_xonly_tweak_add = _wrap_bin(musig_pubkey_xonly_tweak_add, EC_PUBLIC_KEY_LEN)
+musig_pubnonce_serialize = _wrap_bin(musig_pubnonce_serialize, WALLY_MUSIG_PUBNONCE_LEN)
+musig_session_serialize = _wrap_bin(musig_session_serialize, WALLY_MUSIG_SESSION_LEN)
 pbkdf2_hmac_sha256 = _wrap_bin(pbkdf2_hmac_sha256, PBKDF2_HMAC_SHA256_LEN)
 pbkdf2_hmac_sha512 = _wrap_bin(pbkdf2_hmac_sha512, PBKDF2_HMAC_SHA512_LEN)
 psbt_clone = psbt_clone_alloc

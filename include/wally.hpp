@@ -20,6 +20,9 @@
 #include <wally_symmetric.h>
 #include <wally_transaction.h>
 #include <wally_elements.h>
+#ifndef BUILD_STANDARD_SECP
+#include <wally_musig.h>
+#endif
 
 /* These wrappers allow passing containers such as std::vector, std::array,
  * std::string and custom classes as input/output buffers to wally functions.
@@ -600,6 +603,36 @@ inline int descriptor_get_key_origin_path_str_len(const DESCRIPTOR& descriptor, 
 }
 
 template <class DESCRIPTOR>
+inline int descriptor_get_musig_num_participants(const DESCRIPTOR& descriptor, size_t index, size_t* written) {
+    int ret = ::wally_descriptor_get_musig_num_participants(detail::get_p(descriptor), index, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, char** output) {
+    int ret = ::wally_descriptor_get_musig_participant_key(detail::get_p(descriptor), index, participant_index, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key_features(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_musig_participant_key_features(detail::get_p(descriptor), index, participant_index, value_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_musig_participant_key_origin_fingerprint(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, BYTES_OUT& bytes_out) {
+    int ret = ::wally_descriptor_get_musig_participant_key_origin_fingerprint(detail::get_p(descriptor), index, participant_index, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_musig_participant_key_origin_path_str(const DESCRIPTOR& descriptor, size_t index, size_t participant_index, char** output) {
+    int ret = ::wally_descriptor_get_musig_participant_key_origin_path_str(detail::get_p(descriptor), index, participant_index, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
 inline int descriptor_get_network(const DESCRIPTOR& descriptor, uint32_t* value_out) {
     int ret = ::wally_descriptor_get_network(detail::get_p(descriptor), value_out);
     return detail::check_ret(__FUNCTION__, ret);
@@ -1168,6 +1201,182 @@ inline bool merkle_path_xonly_public_key_verify(const KEY& key, const VAL& val) 
     return ret == WALLY_OK;
 }
 
+#ifndef BUILD_STANDARD_SECP
+inline int musig_aggnonce_free(struct wally_musig_aggnonce* nonce) {
+    int ret = ::wally_musig_aggnonce_free(nonce);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_aggnonce_parse(const BYTES& bytes, struct wally_musig_aggnonce** output) {
+    int ret = ::wally_musig_aggnonce_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class NONCE, class BYTES_OUT>
+inline int musig_aggnonce_serialize(const NONCE& nonce, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_aggnonce_serialize(detail::get_p(nonce), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_keyagg_cache_free(struct wally_musig_keyagg_cache* cache) {
+    int ret = ::wally_musig_keyagg_cache_free(cache);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_keyagg_cache_parse(const BYTES& bytes, struct wally_musig_keyagg_cache** output) {
+    int ret = ::wally_musig_keyagg_cache_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class BYTES_OUT>
+inline int musig_keyagg_cache_serialize(const CACHE& cache, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_keyagg_cache_serialize(detail::get_p(cache), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUBNONCES>
+inline int musig_nonce_agg(const PUBNONCES& pubnonces, size_t n_pubnonces, struct wally_musig_aggnonce** aggnonce_out) {
+    int ret = ::wally_musig_nonce_agg(pubnonces.data(), pubnonces.size(), n_pubnonces, aggnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SESSION_SECRAND32, class SECKEY, class PUBKEY33, class KEYAGG_CACHE, class MSG32, class EXTRA_INPUT32>
+inline int musig_nonce_gen(const SESSION_SECRAND32& session_secrand32, const SECKEY& seckey, const PUBKEY33& pubkey33, const KEYAGG_CACHE& keyagg_cache, const MSG32& msg32, const EXTRA_INPUT32& extra_input32, struct wally_musig_secnonce** secnonce_out, struct wally_musig_pubnonce** pubnonce_out) {
+    int ret = ::wally_musig_nonce_gen(session_secrand32.data(), session_secrand32.size(), seckey.data(), seckey.size(), pubkey33.data(), pubkey33.size(), detail::get_p(keyagg_cache), msg32.data(), msg32.size(), extra_input32.data(), extra_input32.size(), secnonce_out, pubnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SECKEY, class PUBKEY33, class KEYAGG_CACHE, class MSG32, class EXTRA_INPUT32>
+inline int musig_nonce_gen_counter(uint64_t counter, const SECKEY& seckey, const PUBKEY33& pubkey33, const KEYAGG_CACHE& keyagg_cache, const MSG32& msg32, const EXTRA_INPUT32& extra_input32, struct wally_musig_secnonce** secnonce_out, struct wally_musig_pubnonce** pubnonce_out) {
+    int ret = ::wally_musig_nonce_gen_counter(counter, seckey.data(), seckey.size(), pubkey33.data(), pubkey33.size(), detail::get_p(keyagg_cache), msg32.data(), msg32.size(), extra_input32.data(), extra_input32.size(), secnonce_out, pubnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class AGGNONCE, class MSG32, class CACHE, class ADAPTOR>
+inline int musig_nonce_process(const AGGNONCE& aggnonce, const MSG32& msg32, const CACHE& cache, const ADAPTOR& adaptor, struct wally_musig_session** session_out) {
+    int ret = ::wally_musig_nonce_process(detail::get_p(aggnonce), msg32.data(), msg32.size(), detail::get_p(cache), adaptor.data(), adaptor.size(), session_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PARTIAL_SIGS, class SESSION, class SIG64_OUT>
+inline int musig_partial_sig_agg(const PARTIAL_SIGS& partial_sigs, size_t n_sigs, const SESSION& session, SIG64_OUT& sig64_out) {
+    int ret = ::wally_musig_partial_sig_agg(partial_sigs.data(), partial_sigs.size(), n_sigs, detail::get_p(session), sig64_out.data(), sig64_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_partial_sig_free(struct wally_musig_partial_sig* sig) {
+    int ret = ::wally_musig_partial_sig_free(sig);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_partial_sig_parse(const BYTES& bytes, struct wally_musig_partial_sig** output) {
+    int ret = ::wally_musig_partial_sig_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SIG, class BYTES_OUT>
+inline int musig_partial_sig_serialize(const SIG& sig, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_partial_sig_serialize(detail::get_p(sig), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SIG, class PUBNONCE, class PUBKEY, class CACHE>
+inline bool musig_partial_sig_verify(const SIG& sig, const PUBNONCE& pubnonce, const PUBKEY& pubkey, const CACHE& cache, const struct wally_musig_session* session) {
+    int ret = ::wally_musig_partial_sig_verify(detail::get_p(sig), detail::get_p(pubnonce), pubkey.data(), pubkey.size(), detail::get_p(cache), session);
+    return ret == WALLY_OK;
+}
+
+template <class SECNONCE, class SECKEY, class CACHE, class SESSION>
+inline int musig_partial_sign(const SECNONCE& secnonce, const SECKEY& seckey, const CACHE& cache, const SESSION& session, struct wally_musig_partial_sig** partial_sig_out) {
+    int ret = ::wally_musig_partial_sign(detail::get_p(secnonce), seckey.data(), seckey.size(), detail::get_p(cache), detail::get_p(session), partial_sig_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEYS, class AGG_PK_OUT>
+inline int musig_pubkey_agg(const PUB_KEYS& pub_keys, AGG_PK_OUT& agg_pk_out, struct wally_musig_keyagg_cache** cache_out) {
+    int ret = ::wally_musig_pubkey_agg(pub_keys.data(), pub_keys.size(), agg_pk_out.data(), agg_pk_out.size(), cache_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class TWEAK, class PUB_KEY_OUT>
+inline int musig_pubkey_ec_tweak_add(const CACHE& cache, const TWEAK& tweak, PUB_KEY_OUT& pub_key_out) {
+    int ret = ::wally_musig_pubkey_ec_tweak_add(detail::get_p(cache), tweak.data(), tweak.size(), pub_key_out.data(), pub_key_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class PUB_KEY_OUT>
+inline int musig_pubkey_get(const CACHE& cache, PUB_KEY_OUT& pub_key_out) {
+    int ret = ::wally_musig_pubkey_get(detail::get_p(cache), pub_key_out.data(), pub_key_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class AGG_PK>
+inline int musig_pubkey_to_xpub(const AGG_PK& agg_pk, uint32_t version, struct ext_key** output) {
+    int ret = ::wally_musig_pubkey_to_xpub(agg_pk.data(), agg_pk.size(), version, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class CACHE, class TWEAK, class PUB_KEY_OUT>
+inline int musig_pubkey_xonly_tweak_add(const CACHE& cache, const TWEAK& tweak, PUB_KEY_OUT& pub_key_out) {
+    int ret = ::wally_musig_pubkey_xonly_tweak_add(detail::get_p(cache), tweak.data(), tweak.size(), pub_key_out.data(), pub_key_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEYS, class PUB_KEY_OUT>
+inline int musig_pubkeys_agg_then_derive(const PUB_KEYS& pub_keys, uint32_t version, uint32_t child_num, PUB_KEY_OUT& pub_key_out, struct ext_key** child_out) {
+    int ret = ::wally_musig_pubkeys_agg_then_derive(pub_keys.data(), pub_keys.size(), version, child_num, pub_key_out.data(), pub_key_out.size(), child_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class XPUBS, class AGG_PK_OUT>
+inline int musig_pubkeys_derive_then_agg(const XPUBS& xpubs, uint32_t child_num, AGG_PK_OUT& agg_pk_out, struct wally_musig_keyagg_cache** cache_out) {
+    int ret = ::wally_musig_pubkeys_derive_then_agg(xpubs.data(), xpubs.size(), child_num, agg_pk_out.data(), agg_pk_out.size(), cache_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_pubnonce_free(struct wally_musig_pubnonce* nonce) {
+    int ret = ::wally_musig_pubnonce_free(nonce);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_pubnonce_parse(const BYTES& bytes, struct wally_musig_pubnonce** output) {
+    int ret = ::wally_musig_pubnonce_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class NONCE, class BYTES_OUT>
+inline int musig_pubnonce_serialize(const NONCE& nonce, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_pubnonce_serialize(detail::get_p(nonce), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_secnonce_free(struct wally_musig_secnonce* nonce) {
+    int ret = ::wally_musig_secnonce_free(nonce);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+inline int musig_session_free(struct wally_musig_session* session) {
+    int ret = ::wally_musig_session_free(session);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class BYTES>
+inline int musig_session_parse(const BYTES& bytes, struct wally_musig_session** output) {
+    int ret = ::wally_musig_session_parse(bytes.data(), bytes.size(), output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class SESSION, class BYTES_OUT>
+inline int musig_session_serialize(const SESSION& session, BYTES_OUT& bytes_out) {
+    int ret = ::wally_musig_session_serialize(detail::get_p(session), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+#endif /* ndef BUILD_STANDARD_SECP */
+
 template <class PASS, class SALT, class BYTES_OUT>
 inline int pbkdf2_hmac_sha256(const PASS& pass, const SALT& salt, uint32_t flags, uint32_t cost, BYTES_OUT& bytes_out) {
     int ret = ::wally_pbkdf2_hmac_sha256(pass.data(), pass.size(), salt.data(), salt.size(), flags, cost, bytes_out.data(), bytes_out.size());
@@ -1357,6 +1566,24 @@ inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH, class PARTIAL_SIG>
+inline int psbt_input_add_musig2_partial_sig(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const PARTIAL_SIG& partial_sig) {
+    int ret = ::wally_psbt_input_add_musig2_partial_sig(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), partial_sig.data(), partial_sig.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class AGG_PUBKEY, class PARTICIPANTS>
+inline int psbt_input_add_musig2_participant_pubkeys(const INPUT& input, const AGG_PUBKEY& agg_pubkey, const PARTICIPANTS& participants) {
+    int ret = ::wally_psbt_input_add_musig2_participant_pubkeys(detail::get_p(input), agg_pubkey.data(), agg_pubkey.size(), participants.data(), participants.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH, class PUBNONCE>
+inline int psbt_input_add_musig2_pubnonce(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const PUBNONCE& pubnonce) {
+    int ret = ::wally_psbt_input_add_musig2_pubnonce(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), pubnonce.data(), pubnonce.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class INPUT, class PUB_KEY, class SIG>
 inline int psbt_input_add_signature(const INPUT& input, const PUB_KEY& pub_key, const SIG& sig) {
     int ret = ::wally_psbt_input_add_signature(detail::get_p(input), pub_key.data(), pub_key.size(), sig.data(), sig.size());
@@ -1384,6 +1611,24 @@ inline int psbt_input_find_keypath(const INPUT& input, const PUB_KEY& pub_key, s
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH>
+inline int psbt_input_find_musig2_partial_sig(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, size_t* written) {
+    int ret = ::wally_psbt_input_find_musig2_partial_sig(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class AGG_PUBKEY>
+inline int psbt_input_find_musig2_pubkey(const INPUT& input, const AGG_PUBKEY& agg_pubkey, size_t* written) {
+    int ret = ::wally_psbt_input_find_musig2_pubkey(detail::get_p(input), agg_pubkey.data(), agg_pubkey.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH>
+inline int psbt_input_find_musig2_pubnonce(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, size_t* written) {
+    int ret = ::wally_psbt_input_find_musig2_pubnonce(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class INPUT, class PUB_KEY>
 inline int psbt_input_find_signature(const INPUT& input, const PUB_KEY& pub_key, size_t* written) {
     int ret = ::wally_psbt_input_find_signature(detail::get_p(input), pub_key.data(), pub_key.size(), written);
@@ -1393,6 +1638,18 @@ inline int psbt_input_find_signature(const INPUT& input, const PUB_KEY& pub_key,
 template <class INPUT, class KEY>
 inline int psbt_input_find_unknown(const INPUT& input, const KEY& key, size_t* written) {
     int ret = ::wally_psbt_input_find_unknown(detail::get_p(input), key.data(), key.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_get_musig2_partial_sig_count(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_musig2_partial_sig_count(detail::get_p(input), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_get_musig2_pubnonce_count(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_musig2_pubnonce_count(detail::get_p(input), written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1423,6 +1680,12 @@ inline int psbt_input_set_final_witness(const INPUT& input, const struct wally_t
 template <class INPUT>
 inline int psbt_input_set_keypaths(const INPUT& input, const struct wally_map* map_in) {
     int ret = ::wally_psbt_input_set_keypaths(detail::get_p(input), map_in);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_set_musig2_pubkeys(const INPUT& input, const struct wally_map* map_in) {
+    int ret = ::wally_psbt_input_set_musig2_pubkeys(detail::get_p(input), map_in);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1540,6 +1803,30 @@ inline int psbt_is_input_finalized(const PSBT& psbt, size_t index, size_t* writt
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class SESSION_SECRAND32, class SECKEY, class PUBKEY33, class AGG_PUBKEY, class LEAF_HASH, class KEYAGG_CACHE>
+inline int psbt_musig2_add_nonce(const PSBT& psbt, size_t index, const SESSION_SECRAND32& session_secrand32, const SECKEY& seckey, const PUBKEY33& pubkey33, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const KEYAGG_CACHE& keyagg_cache, uint32_t flags, struct wally_musig_secnonce** secnonce_out) {
+    int ret = ::wally_psbt_musig2_add_nonce(detail::get_p(psbt), index, session_secrand32.data(), session_secrand32.size(), seckey.data(), seckey.size(), pubkey33.data(), pubkey33.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), detail::get_p(keyagg_cache), flags, secnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class AGG_PUBKEY, class LEAF_HASH, class KEYAGG_CACHE>
+inline int psbt_musig2_finalize_input(const PSBT& psbt, size_t index, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const KEYAGG_CACHE& keyagg_cache, uint32_t flags) {
+    int ret = ::wally_psbt_musig2_finalize_input(detail::get_p(psbt), index, agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), detail::get_p(keyagg_cache), flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class SECNONCE, class SECKEY, class PUBKEY33, class AGG_PUBKEY, class LEAF_HASH, class KEYAGG_CACHE>
+inline int psbt_musig2_sign(const PSBT& psbt, size_t index, const SECNONCE& secnonce, const SECKEY& seckey, const PUBKEY33& pubkey33, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const KEYAGG_CACHE& keyagg_cache, uint32_t flags, struct wally_musig_partial_sig** partial_sig_out) {
+    int ret = ::wally_psbt_musig2_sign(detail::get_p(psbt), index, detail::get_p(secnonce), seckey.data(), seckey.size(), pubkey33.data(), pubkey33.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), detail::get_p(keyagg_cache), flags, partial_sig_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class AGG_PUBKEY, class PARTICIPANTS>
+inline int psbt_output_add_musig2_participant_pubkeys(const OUTPUT& output, const AGG_PUBKEY& agg_pubkey, const PARTICIPANTS& participants) {
+    int ret = ::wally_psbt_output_add_musig2_participant_pubkeys(detail::get_p(output), agg_pubkey.data(), agg_pubkey.size(), participants.data(), participants.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
     int ret = ::wally_psbt_output_clear_amount(output);
     return detail::check_ret(__FUNCTION__, ret);
@@ -1548,6 +1835,12 @@ inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
 template <class OUTPUT, class PUB_KEY>
 inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key, size_t* written) {
     int ret = ::wally_psbt_output_find_keypath(detail::get_p(output), pub_key.data(), pub_key.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class AGG_PUBKEY>
+inline int psbt_output_find_musig2_pubkey(const OUTPUT& output, const AGG_PUBKEY& agg_pubkey, size_t* written) {
+    int ret = ::wally_psbt_output_find_musig2_pubkey(detail::get_p(output), agg_pubkey.data(), agg_pubkey.size(), written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1572,6 +1865,12 @@ inline int psbt_output_set_amount(const OUTPUT& output, uint64_t amount) {
 template <class OUTPUT>
 inline int psbt_output_set_keypaths(const OUTPUT& output, const struct wally_map* map_in) {
     int ret = ::wally_psbt_output_set_keypaths(detail::get_p(output), map_in);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT>
+inline int psbt_output_set_musig2_pubkeys(const OUTPUT& output, const struct wally_map* map_in) {
+    int ret = ::wally_psbt_output_set_musig2_pubkeys(detail::get_p(output), map_in);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1608,6 +1907,12 @@ inline int psbt_output_set_witness_script(const OUTPUT& output, const SCRIPT& sc
 template <class OUTPUT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
 inline int psbt_output_taproot_keypath_add(const OUTPUT& output, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
     int ret = ::wally_psbt_output_taproot_keypath_add(detail::get_p(output), pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class DESCRIPTOR>
+inline int psbt_populate_musig2_from_descriptor(const PSBT& psbt, const DESCRIPTOR& descriptor, uint32_t child_num, uint32_t flags) {
+    int ret = ::wally_psbt_populate_musig2_from_descriptor(detail::get_p(psbt), detail::get_p(descriptor), child_num, flags);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -3297,6 +3602,7 @@ inline bool is_elements_build()
     ::wally_is_elements_build(&ret);
     return ret != 0;
 }
+
 
 } /* namespace wally */
 

@@ -484,7 +484,7 @@ export LD
 export LDFLAGS
 
 AM_COND_IF([LINK_SYSTEM_SECP256K1], [], [
-	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-extrakeys], [--enable-module-schnorrsig], [--enable-module-generator], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-ecdsa-s2c], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
+	AX_SUBDIRS_CONFIGURE([src/secp256k1], [[--disable-shared], [--enable-static], [--with-pic], [--enable-experimental], [--enable-module-ecdh], [--enable-module-recovery], [--enable-module-extrakeys], [--enable-module-schnorrsig], [--enable-module-musig], [--enable-module-generator], [--enable-module-rangeproof], [--enable-module-surjectionproof], [--enable-module-whitelist], [--enable-module-ecdsa-s2c], [$secp256k1_test_opt], [--enable-exhaustive-tests=no], [--enable-benchmark=no], [--disable-dependency-tracking], [$secp_asm]])
 ])
 
 AC_OUTPUT
