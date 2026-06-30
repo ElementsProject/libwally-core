@@ -14,6 +14,7 @@ libwally-core documentation
    bip85
    coinselection
    map
+   musig
    psbt
    script
    descriptor
