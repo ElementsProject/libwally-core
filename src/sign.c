@@ -1,6 +1,7 @@
 #include "internal.h"
 #include <include/wally_crypto.h>
 #include "script_int.h"
+#include "tx_io.h"
 #include <secp256k1_schnorrsig.h>
 #include "ccan/ccan/build_assert/build_assert.h"
 
@@ -183,9 +184,9 @@ int wally_ec_public_key_tweak(const unsigned char *pub_key, size_t pub_key_len,
     return WALLY_OK;
 }
 
-static int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
-                            const unsigned char *merkle_root, uint32_t flags,
-                            unsigned char *tweak, size_t tweak_len)
+int get_bip341_tweak(const unsigned char *pub_key, size_t pub_key_len,
+                     const unsigned char *merkle_root, uint32_t flags,
+                     unsigned char *tweak, size_t tweak_len)
 {
     unsigned char preimage[EC_XONLY_PUBLIC_KEY_LEN + SHA256_LEN];
     const size_t offset = pub_key_len == EC_PUBLIC_KEY_LEN ? 1 : 0;
