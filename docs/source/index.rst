@@ -29,6 +29,7 @@ libwally-core documentation
    Library Conventions <conventions.rst>
    Liquid <Liquid.rst>
    Anti Exfil Protocol <anti_exfil_protocol.rst>
+   Miniscript Satisfier <satisfier.rst>
 
 Indices and tables
 ==================
