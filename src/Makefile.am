@@ -19,6 +19,7 @@ include_HEADERS += $(top_srcdir)/include/wally_crypto.h
 include_HEADERS += $(top_srcdir)/include/wally_descriptor.h
 include_HEADERS += $(top_srcdir)/include/wally_elements.h
 include_HEADERS += $(top_srcdir)/include/wally_map.h
+include_HEADERS += $(top_srcdir)/include/wally_musig.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt.h
 include_HEADERS += $(top_srcdir)/include/wally_psbt_members.h
 include_HEADERS += $(top_srcdir)/include/wally_script.h
@@ -162,6 +163,7 @@ libwallycore_la_SOURCES = \
     miniscript_decode.c \
     miniscript_satisfy.c \
     mnemonic.c \
+    musig.c \
     pbkdf2.c \
     psbt.c \
     pullpush.c \
@@ -194,6 +196,7 @@ libwallycore_la_INCLUDES = \
     include/wally_descriptor.h \
     include/wally_elements.h \
     include/wally_map.h \
+    include/wally_musig.h \
     include/wally_psbt.h \
     include/wally_psbt_members.h \
     include/wally_script.h \
@@ -375,6 +378,8 @@ check-libwallycore: $(PYTHON_TEST_DEPS)
 	$(AM_V_at)$(PYTHON_TEST) test/test_internal.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_map.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_mnemonic.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_musig.py
+	$(AM_V_at)$(PYTHON_TEST) test/test_musig_vectors.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_psbt.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_pbkdf2.py
 	$(AM_V_at)$(PYTHON_TEST) test/test_script.py
@@ -402,6 +407,7 @@ check-swig-python: check-libwallycore check-swig-java
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/coinselection.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/descriptor.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/mnemonic.py
+	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/musig.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/psbt.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/sha.py
 	$(AM_V_at)$(top_builddir)/venv/bin/python swig_python/contrib/signmessage.py
