@@ -128,7 +128,7 @@ else:
     for m in [
         'address', 'anti_exfil', 'bip32', 'bip38', 'bip39', 'bip85',
         'coinselection', 'core', 'crypto', 'descriptor', 'elements',
-        'map', 'psbt', 'script', 'symmetric', 'transaction'
+        'map', 'musig', 'psbt', 'script', 'symmetric', 'transaction'
         ]:
         extract_docs('../../include/wally_%s.h' % m, '%s.rst' % m)
 
