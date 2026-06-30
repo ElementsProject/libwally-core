@@ -130,4 +130,10 @@ void ms_satisfy_node(const ms_node *node, const ms_satisfier *stfr,
                      bool malleable,
                      ms_satisfaction *sat_out, ms_satisfaction *dissat_out);
 
+/* Derive the x-only pubkey for the descriptor key at ``index`` */
+int descriptor_get_key_xonly_public_key(
+    const struct wally_descriptor *descriptor,
+    size_t index, uint32_t multi_index, uint32_t child_num,
+    unsigned char *bytes_out, size_t len);
+
 #endif /* WALLY_DESCRIPTOR_INT_H */

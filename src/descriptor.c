@@ -4771,6 +4771,45 @@ int wally_descriptor_get_taproot_leaf_key_index(
     return leaf_keys_impl(descriptor, leaf_index, key_position, value_out, false);
 }
 
+/* Internal: derive the x-only pubkey for a descriptor key (used by psbt.c).
+ * FIXME: replace with a public get_bip32_key() returning a populated ext_key */
+int descriptor_get_key_xonly_public_key(
+    const struct wally_descriptor *descriptor,
+    size_t index, uint32_t multi_index, uint32_t child_num,
+    unsigned char *bytes_out, size_t len)
+{
+    const ms_node *key_node;
+    ms_ctx ctx;
+    unsigned char pubkey[EC_PUBLIC_KEY_LEN];
+    size_t written = 0;
+    int ret;
+
+    if (!descriptor || !bytes_out || len != EC_XONLY_PUBLIC_KEY_LEN ||
+        !index_args_valid(descriptor, 0, multi_index, child_num))
+        return WALLY_EINVAL;
+    if (!(key_node = descriptor_get_key(descriptor, index)))
+        return WALLY_EINVAL;
+
+    if ((ret = ctx_clone(descriptor, 0, multi_index, child_num, &ctx)) != WALLY_OK)
+        return ret;
+
+    /* Generate the pubkey for this key node */
+    ret = generate_script(&ctx, (ms_node *)key_node, pubkey, sizeof(pubkey), &written);
+    wally_free(ctx.path_buff);
+
+    if (ret == WALLY_OK) {
+        if (written == EC_XONLY_PUBLIC_KEY_LEN) {
+            memcpy(bytes_out, pubkey, EC_XONLY_PUBLIC_KEY_LEN);
+        } else if (written == EC_PUBLIC_KEY_LEN) {
+            /* Compressed key: strip the parity byte */
+            memcpy(bytes_out, pubkey + 1, EC_XONLY_PUBLIC_KEY_LEN);
+        } else {
+            ret = WALLY_EINVAL;
+        }
+    }
+    return ret;
+}
+
 int wally_descriptor_get_taproot_merkle_root(
     const struct wally_descriptor *descriptor,
     uint32_t multi_index, uint32_t child_num, uint32_t flags,

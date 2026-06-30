@@ -1642,9 +1642,39 @@ inline int psbt_init_alloc(uint32_t version, size_t inputs_allocation_len, size_
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH, class PARTIAL_SIG>
+inline int psbt_input_add_musig2_partial_sig(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const PARTIAL_SIG& partial_sig) {
+    int ret = ::wally_psbt_input_add_musig2_partial_sig(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), partial_sig.data(), partial_sig.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class AGG_PUBKEY, class PARTICIPANTS>
+inline int psbt_input_add_musig2_participant_pubkeys(const INPUT& input, const AGG_PUBKEY& agg_pubkey, const PARTICIPANTS& participants) {
+    int ret = ::wally_psbt_input_add_musig2_participant_pubkeys(detail::get_p(input), agg_pubkey.data(), agg_pubkey.size(), participants.data(), participants.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH, class PUBNONCE>
+inline int psbt_input_add_musig2_pubnonce(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const PUBNONCE& pubnonce) {
+    int ret = ::wally_psbt_input_add_musig2_pubnonce(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), pubnonce.data(), pubnonce.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class INPUT, class PUB_KEY, class SIG>
 inline int psbt_input_add_signature(const INPUT& input, const PUB_KEY& pub_key, const SIG& sig) {
     int ret = ::wally_psbt_input_add_signature(detail::get_p(input), pub_key.data(), pub_key.size(), sig.data(), sig.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class CONTROL_BLOCK, class SCRIPT>
+inline int psbt_input_add_taproot_leaf_script(const INPUT& input, const CONTROL_BLOCK& control_block, const SCRIPT& script) {
+    int ret = ::wally_psbt_input_add_taproot_leaf_script(detail::get_p(input), control_block.data(), control_block.size(), script.data(), script.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class PUBKEY_AND_HASH, class SIG>
+inline int psbt_input_add_taproot_leaf_signature(const INPUT& input, const PUBKEY_AND_HASH& pubkey_and_hash, const SIG& sig) {
+    int ret = ::wally_psbt_input_add_taproot_leaf_signature(detail::get_p(input), pubkey_and_hash.data(), pubkey_and_hash.size(), sig.data(), sig.size());
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1669,6 +1699,24 @@ inline int psbt_input_find_keypath(const INPUT& input, const PUB_KEY& pub_key, s
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH>
+inline int psbt_input_find_musig2_partial_sig(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, size_t* written) {
+    int ret = ::wally_psbt_input_find_musig2_partial_sig(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class AGG_PUBKEY>
+inline int psbt_input_find_musig2_pubkey(const INPUT& input, const AGG_PUBKEY& agg_pubkey, size_t* written) {
+    int ret = ::wally_psbt_input_find_musig2_pubkey(detail::get_p(input), agg_pubkey.data(), agg_pubkey.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT, class PARTICIPANT, class AGG_PUBKEY, class LEAF_HASH>
+inline int psbt_input_find_musig2_pubnonce(const INPUT& input, const PARTICIPANT& participant, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, size_t* written) {
+    int ret = ::wally_psbt_input_find_musig2_pubnonce(detail::get_p(input), participant.data(), participant.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class INPUT, class PUB_KEY>
 inline int psbt_input_find_signature(const INPUT& input, const PUB_KEY& pub_key, size_t* written) {
     int ret = ::wally_psbt_input_find_signature(detail::get_p(input), pub_key.data(), pub_key.size(), written);
@@ -1682,6 +1730,36 @@ inline int psbt_input_find_unknown(const INPUT& input, const KEY& key, size_t* w
 }
 
 template <class INPUT>
+inline int psbt_input_get_musig2_partial_sig_size(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_musig2_partial_sig_size(detail::get_p(input), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_get_musig2_pubnonce_size(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_musig2_pubnonce_size(detail::get_p(input), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_get_taproot_keypaths_size(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_taproot_keypaths_size(detail::get_p(input), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_get_taproot_leaf_script_size(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_taproot_leaf_script_size(detail::get_p(input), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_get_taproot_leaf_signature_size(const INPUT& input, size_t* written) {
+    int ret = ::wally_psbt_input_get_taproot_leaf_signature_size(detail::get_p(input), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
 inline int psbt_input_is_finalized(const INPUT& input, size_t* written) {
     int ret = ::wally_psbt_input_is_finalized(detail::get_p(input), written);
     return detail::check_ret(__FUNCTION__, ret);
@@ -1690,6 +1768,12 @@ inline int psbt_input_is_finalized(const INPUT& input, size_t* written) {
 template <class INPUT, class PUB_KEY, class FINGERPRINT, class CHILD_PATH>
 inline int psbt_input_keypath_add(const INPUT& input, const PUB_KEY& pub_key, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
     int ret = ::wally_psbt_input_keypath_add(detail::get_p(input), pub_key.data(), pub_key.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class DESCRIPTOR>
+inline int psbt_input_populate_taproot_from_descriptor(const PSBT& psbt, size_t index, const DESCRIPTOR& descriptor, uint32_t multi_index, uint32_t child_num, uint32_t flags) {
+    int ret = ::wally_psbt_input_populate_taproot_from_descriptor(detail::get_p(psbt), index, detail::get_p(descriptor), multi_index, child_num, flags);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1708,6 +1792,12 @@ inline int psbt_input_set_final_witness(const INPUT& input, const struct wally_t
 template <class INPUT>
 inline int psbt_input_set_keypaths(const INPUT& input, const struct wally_map* map_in) {
     int ret = ::wally_psbt_input_set_keypaths(detail::get_p(input), map_in);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class INPUT>
+inline int psbt_input_set_musig2_pubkeys(const INPUT& input, const struct wally_map* map_in) {
+    int ret = ::wally_psbt_input_set_musig2_pubkeys(detail::get_p(input), map_in);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1825,6 +1915,30 @@ inline int psbt_is_input_finalized(const PSBT& psbt, size_t index, size_t* writt
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class SESSION_SECRAND32, class SECKEY, class PUBKEY33, class AGG_PUBKEY, class LEAF_HASH, class KEYAGG_CACHE>
+inline int psbt_musig2_add_nonce(const PSBT& psbt, size_t index, const SESSION_SECRAND32& session_secrand32, const SECKEY& seckey, const PUBKEY33& pubkey33, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const KEYAGG_CACHE& keyagg_cache, uint32_t flags, struct wally_musig_secnonce** secnonce_out) {
+    int ret = ::wally_psbt_musig2_add_nonce(detail::get_p(psbt), index, session_secrand32.data(), session_secrand32.size(), seckey.data(), seckey.size(), pubkey33.data(), pubkey33.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), detail::get_p(keyagg_cache), flags, secnonce_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class AGG_PUBKEY, class LEAF_HASH, class KEYAGG_CACHE>
+inline int psbt_musig2_finalize_input(const PSBT& psbt, size_t index, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const KEYAGG_CACHE& keyagg_cache, uint32_t flags) {
+    int ret = ::wally_psbt_musig2_finalize_input(detail::get_p(psbt), index, agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), detail::get_p(keyagg_cache), flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class SECNONCE, class SECKEY, class PUBKEY33, class AGG_PUBKEY, class LEAF_HASH, class KEYAGG_CACHE>
+inline int psbt_musig2_sign(const PSBT& psbt, size_t index, const SECNONCE& secnonce, const SECKEY& seckey, const PUBKEY33& pubkey33, const AGG_PUBKEY& agg_pubkey, const LEAF_HASH& leaf_hash, const KEYAGG_CACHE& keyagg_cache, uint32_t flags, struct wally_musig_partial_sig** partial_sig_out) {
+    int ret = ::wally_psbt_musig2_sign(detail::get_p(psbt), index, detail::get_p(secnonce), seckey.data(), seckey.size(), pubkey33.data(), pubkey33.size(), agg_pubkey.data(), agg_pubkey.size(), leaf_hash.data(), leaf_hash.size(), detail::get_p(keyagg_cache), flags, partial_sig_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class AGG_PUBKEY, class PARTICIPANTS>
+inline int psbt_output_add_musig2_participant_pubkeys(const OUTPUT& output, const AGG_PUBKEY& agg_pubkey, const PARTICIPANTS& participants) {
+    int ret = ::wally_psbt_output_add_musig2_participant_pubkeys(detail::get_p(output), agg_pubkey.data(), agg_pubkey.size(), participants.data(), participants.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
     int ret = ::wally_psbt_output_clear_amount(output);
     return detail::check_ret(__FUNCTION__, ret);
@@ -1833,6 +1947,12 @@ inline int psbt_output_clear_amount(struct wally_psbt_output* output) {
 template <class OUTPUT, class PUB_KEY>
 inline int psbt_output_find_keypath(const OUTPUT& output, const PUB_KEY& pub_key, size_t* written) {
     int ret = ::wally_psbt_output_find_keypath(detail::get_p(output), pub_key.data(), pub_key.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT, class AGG_PUBKEY>
+inline int psbt_output_find_musig2_pubkey(const OUTPUT& output, const AGG_PUBKEY& agg_pubkey, size_t* written) {
+    int ret = ::wally_psbt_output_find_musig2_pubkey(detail::get_p(output), agg_pubkey.data(), agg_pubkey.size(), written);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1848,6 +1968,12 @@ inline int psbt_output_keypath_add(const OUTPUT& output, const PUB_KEY& pub_key,
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class PSBT, class DESCRIPTOR>
+inline int psbt_output_populate_taproot_from_descriptor(const PSBT& psbt, size_t index, const DESCRIPTOR& descriptor, uint32_t multi_index, uint32_t child_num, uint32_t flags) {
+    int ret = ::wally_psbt_output_populate_taproot_from_descriptor(detail::get_p(psbt), index, detail::get_p(descriptor), multi_index, child_num, flags);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class OUTPUT>
 inline int psbt_output_set_amount(const OUTPUT& output, uint64_t amount) {
     int ret = ::wally_psbt_output_set_amount(detail::get_p(output), amount);
@@ -1857,6 +1983,12 @@ inline int psbt_output_set_amount(const OUTPUT& output, uint64_t amount) {
 template <class OUTPUT>
 inline int psbt_output_set_keypaths(const OUTPUT& output, const struct wally_map* map_in) {
     int ret = ::wally_psbt_output_set_keypaths(detail::get_p(output), map_in);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class OUTPUT>
+inline int psbt_output_set_musig2_pubkeys(const OUTPUT& output, const struct wally_map* map_in) {
+    int ret = ::wally_psbt_output_set_musig2_pubkeys(detail::get_p(output), map_in);
     return detail::check_ret(__FUNCTION__, ret);
 }
 
@@ -1893,6 +2025,12 @@ inline int psbt_output_set_witness_script(const OUTPUT& output, const SCRIPT& sc
 template <class OUTPUT, class PUB_KEY, class TAPLEAF_HASHES, class FINGERPRINT, class CHILD_PATH>
 inline int psbt_output_taproot_keypath_add(const OUTPUT& output, const PUB_KEY& pub_key, const TAPLEAF_HASHES& tapleaf_hashes, const FINGERPRINT& fingerprint, const CHILD_PATH& child_path) {
     int ret = ::wally_psbt_output_taproot_keypath_add(detail::get_p(output), pub_key.data(), pub_key.size(), tapleaf_hashes.data(), tapleaf_hashes.size(), fingerprint.data(), fingerprint.size(), child_path.data(), child_path.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PSBT, class DESCRIPTOR>
+inline int psbt_populate_musig2_from_descriptor(const PSBT& psbt, const DESCRIPTOR& descriptor, uint32_t child_num, uint32_t flags) {
+    int ret = ::wally_psbt_populate_musig2_from_descriptor(detail::get_p(psbt), detail::get_p(descriptor), child_num, flags);
     return detail::check_ret(__FUNCTION__, ret);
 }
 

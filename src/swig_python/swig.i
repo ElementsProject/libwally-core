@@ -342,6 +342,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* abf, size_t abf_len);
 %pybuffer_nullable_binary(const unsigned char* adaptor, size_t adaptor_len);
 %pybuffer_nullable_binary(const unsigned char* agg_pk, size_t agg_pk_len);
+%pybuffer_nullable_binary(const unsigned char* agg_pubkey, size_t agg_pubkey_len);
 %pybuffer_nullable_binary(const unsigned char* annex, size_t annex_len);
 %pybuffer_nullable_binary(const unsigned char* asset, size_t asset_len);
 %pybuffer_nullable_binary(const unsigned char* aux_rand, size_t aux_rand_len);
@@ -350,6 +351,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* chain_code, size_t chain_code_len);
 %pybuffer_nullable_binary(const unsigned char* commitment, size_t commitment_len);
 %pybuffer_nullable_binary(const unsigned char* contract_hash, size_t contract_hash_len);
+%pybuffer_nullable_binary(const unsigned char* control_block, size_t control_block_len);
 %pybuffer_nullable_binary(const unsigned char* entropy, size_t entropy_len);
 %pybuffer_nullable_binary(const unsigned char* extra, size_t extra_len);
 %pybuffer_nullable_binary(const unsigned char* extra_input32, size_t extra_input32_len);
@@ -367,6 +369,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* iv, size_t iv_len);
 %pybuffer_nullable_binary(const unsigned char* key, size_t key_len);
 %pybuffer_nullable_binary(const unsigned char* label, size_t label_len);
+%pybuffer_nullable_binary(const unsigned char* leaf_hash, size_t leaf_hash_len);
 %pybuffer_nullable_binary(const unsigned char* mainchain_script, size_t mainchain_script_len);
 %pybuffer_nullable_binary(const unsigned char* merkle_hashes, size_t merkle_hashes_len);
 %pybuffer_nullable_binary(const unsigned char* merkle_root, size_t merkle_root_len);
@@ -381,12 +384,18 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* output_asset, size_t output_asset_len);
 %pybuffer_nullable_binary(const unsigned char* output_generator, size_t output_generator_len);
 %pybuffer_nullable_binary(const unsigned char* parent160, size_t parent160_len);
+%pybuffer_nullable_binary(const unsigned char* partial_sig, size_t partial_sig_len);
 %pybuffer_nullable_binary(const unsigned char* partial_sigs, size_t partial_sigs_len);
+%pybuffer_nullable_binary(const unsigned char* participant, size_t participant_len);
+%pybuffer_nullable_binary(const unsigned char* participants, size_t participants_len);
 %pybuffer_nullable_binary(const unsigned char* pass, size_t pass_len);
 %pybuffer_nullable_binary(const unsigned char* priv_key, size_t priv_key_len);
 %pybuffer_nullable_binary(const unsigned char* proof, size_t proof_len);
 %pybuffer_nullable_binary(const unsigned char* pub_key, size_t pub_key_len);
 %pybuffer_nullable_binary(const unsigned char* pub_keys, size_t pub_keys_len);
+%pybuffer_nullable_binary(const unsigned char* pubkey33, size_t pubkey33_len);
+%pybuffer_nullable_binary(const unsigned char* pubkey_and_hash, size_t pubkey_and_hash_len);
+%pybuffer_nullable_binary(const unsigned char* pubnonce, size_t pubnonce_len);
 %pybuffer_nullable_binary(const unsigned char* pubnonces, size_t pubnonces_len);
 %pybuffer_nullable_binary(const unsigned char* rangeproof, size_t rangeproof_len);
 %pybuffer_nullable_binary(const unsigned char* redeem_script, size_t redeem_script_len);
@@ -398,6 +407,7 @@ static void destroy_words(PyObject *obj) { (void)obj; }
 %pybuffer_nullable_binary(const unsigned char* scriptpubkey, size_t scriptpubkey_len);
 %pybuffer_nullable_binary(const unsigned char* seckey, size_t seckey_len);
 %pybuffer_nullable_binary(const unsigned char* session_secrand32, size_t session_secrand32_len);
+%pybuffer_nullable_binary(const unsigned char* session_secrand32, size_t session_secrand_len);
 %pybuffer_nullable_binary(const unsigned char* sig, size_t sig_len);
 %pybuffer_nullable_binary(const unsigned char* sub_pubkey, size_t sub_pubkey_len);
 %pybuffer_nullable_binary(const unsigned char* summed_key, size_t summed_key_len);
