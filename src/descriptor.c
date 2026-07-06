@@ -725,23 +725,22 @@ static int verify_combo(ms_ctx *ctx, ms_node *node)
 static int verify_multi(ms_ctx *ctx, ms_node *node)
 {
     (void)ctx;
-    const int64_t count = node_get_child_count(node);
-    ms_node *top, *key;
+    const ms_node *top = node->child;
+    ms_node *key = top ? top->next : NULL;
+    int64_t key_count = 0;
 
-    if (count < 2 || count - 1 > MINISCRIPT_MULTI_MAX)
+    if (!top || !key || top->builtin ||
+        top->kind != KIND_NUMBER || top->number <= 0)
         return WALLY_EINVAL;
 
-    top = node->child;
-    if (!top->next || top->builtin || top->kind != KIND_NUMBER ||
-        top->number <= 0 || count < top->number)
-        return WALLY_EINVAL;
-
-    key = top->next;
     while (key) {
-        if (key->builtin || !(key->kind & KIND_KEY))
+        if (key->builtin || !(key->kind & KIND_KEY) ||
+            ++key_count > MINISCRIPT_MULTI_MAX)
             return WALLY_EINVAL;
         key = key->next;
     }
+    if (top->number > key_count)
+        return WALLY_EINVAL;
 
     node->type_properties = builtin_get(node)->type_properties;
     return WALLY_OK;
