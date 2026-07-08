@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include "internal.h"
 
 /**
  * struct words- structure representing a parsed list of words
@@ -30,7 +31,7 @@ struct words {
  *
  * The returned structure contains a copy of @text.
  */
-struct words *wordlist_init(const char *text);
+WALLY_INTERNAL_API struct words *wordlist_init(const char *text);
 
 /**
  * Find a word in a wordlist.
@@ -41,7 +42,7 @@ struct words *wordlist_init(const char *text);
  * Returns 0 if not found, idx + 1 otherwise.
  * @see wordlist_init.
  */
-size_t wordlist_lookup_word(
+WALLY_INTERNAL_API size_t wordlist_lookup_word(
     const struct words *w,
     const char *word);
 
@@ -53,7 +54,7 @@ size_t wordlist_lookup_word(
  *
  * Returns NULL if not found, the word otherwise.
  */
-const char *wordlist_lookup_index(
+WALLY_INTERNAL_API const char *wordlist_lookup_index(
     const struct words *w,
     size_t idx);
 
@@ -61,6 +62,6 @@ const char *wordlist_lookup_index(
  * wordlist_free - Free a words structure.
  * @w: structure to free.
  */
-void wordlist_free(struct words *w);
+WALLY_INTERNAL_API void wordlist_free(struct words *w);
 
 #endif /* LIBWALLY_WORDLIST_H */

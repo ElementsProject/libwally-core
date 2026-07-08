@@ -1,6 +1,8 @@
 #ifndef LIBWALLY_MNEMONIC_H
 #define LIBWALLY_MNEMONIC_H
 
+#include "internal.h"
+
 struct words;
 
 /**
@@ -12,7 +14,7 @@ struct words;
  *
  * @bytes must be an even multiple of the number of bits in the wordlist used.
  */
-char *mnemonic_from_bytes(
+WALLY_INTERNAL_API char * mnemonic_from_bytes(
     const struct words *w,
     const unsigned char *bytes,
     size_t len);
@@ -26,7 +28,7 @@ char *mnemonic_from_bytes(
  * @len: The length of @bytes_out in bytes.
  * @written: Destination for the number of bytes written to ``bytes_out``.
  */
-int mnemonic_to_bytes(
+WALLY_INTERNAL_API int mnemonic_to_bytes(
     const struct words *w,
     const char *mnemonic,
     unsigned char *bytes_out,

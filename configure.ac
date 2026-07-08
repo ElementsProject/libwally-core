@@ -236,6 +236,8 @@ AM_CONDITIONAL([EXPORT_ALL], [test "x$export_all" = "xyes"])
 
 if test "x$export_all" != "xyes"; then
     AX_CHECK_COMPILE_FLAG([-fvisibility=hidden], [AM_CFLAGS="$AM_CFLAGS -fvisibility=hidden"])
+else
+    AX_CHECK_COMPILE_FLAG([-DWALLY_EXPORT_ALL=1], [AM_CFLAGS="$AM_CFLAGS -DWALLY_EXPORT_ALL=1"])
 fi
 
 # Assume we have no unaligned access if cross-compiling

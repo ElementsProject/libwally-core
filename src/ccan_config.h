@@ -59,7 +59,11 @@
 #define CCAN_CRYPTO_SHA512_USE_MBEDTLS 1
 #endif
 
+#if !defined(WALLY_EXPORT_ALL) && !defined(_WIN32)
+void __attribute__ ((visibility ("hidden"))) wally_clear(void *p, size_t len);
+#else
 void wally_clear(void *p, size_t len);
+#endif
 
 #define CCAN_CLEAR_MEMORY(p, len) wally_clear(p, len)
 
