@@ -37,7 +37,7 @@ test_asan_ubsan_gcc:
       - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - CC=gcc CFLAGS="-O2 -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static --disable-clear-tests --disable-asm
+    - CC=gcc CFLAGS="-O2 -fsanitize=address -fsanitize=bounds -fsanitize=undefined -fsanitize=alignment -fsanitize-address-use-after-scope -fno-sanitize-recover=all" ./configure --enable-export-all --enable-swig-python --enable-swig-java $CONFIGURE_ARGS --enable-shared --disable-static --disable-asm
     - sed -i 's/^PYTHON = /PYTHON = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/14\/libasan.so /g' src/Makefile
     - sed -i 's/^JAVA = /JAVA = LD_PRELOAD=\/usr\/lib\/gcc\/x86_64-linux-gnu\/14\/libasan.so /g' src/Makefile
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
@@ -50,7 +50,7 @@ test_scan_build_clang:
       - CONFIGURE_ARGS: [ --enable-elements=no, --enable-elements=no --enable-minimal=yes, "", --enable-minimal=yes ]
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - CC=clang scan-build-19 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-clear-tests --disable-asm $CONFIGURE_ARGS
+    - CC=clang scan-build-19 ./configure --enable-export-all --enable-swig-python --enable-swig-java --disable-asm $CONFIGURE_ARGS
     - scan-build-19 --keep-cc --exclude src/secp256k1/ --status-bugs --keep-empty -o scan-build-output make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
   artifacts:
     expire_in: 3 days
@@ -93,7 +93,7 @@ test_amalgamation:
         BUILD_ARGS: [ "", -DBUILD_MINIMAL, -DBUILD_ELEMENTS, -DBUILD_ELEMENTS -DBUILD_MINIMAL ]
   script:
     - touch config.h
-    - $CC $BUILD_ARGS -Wall -W -Wextra -Werror -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
+    - $CC $BUILD_ARGS -Wall -W -Wextra -Werror -Wno-unknown-attributes -I. -I./src -I./src/ccan -I./src/secp256k1/include src/ctest/amalgamation_compile_test.c
 
 test_mingw_static_build:
   extends: .test_template
@@ -107,7 +107,7 @@ test_no_elements_abi:
   artifacts:
   script:
     - ./tools/cleanup.sh && ./tools/autogen.sh
-    - CFLAGS='-Wall -W -Wextra -Werror' ./configure --disable-swig-python --disable-swig-java --disable-clear-tests --enable-elements=no --enable-elements-abi=no
+    - CFLAGS='-Wall -W -Wextra -Werror' ./configure --disable-swig-python --disable-swig-java --enable-elements=no --enable-elements-abi=no
     - make -j $(($(grep ^processor /proc/cpuinfo | wc -l) / 2))
 
 build_wally_release_files:
