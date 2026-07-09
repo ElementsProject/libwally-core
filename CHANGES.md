@@ -1,5 +1,10 @@
 # Changes
 
+## Version 1.5.5
+
+### Fixed
+- De-optimize some memcpy calls on x86 to prevent leaks via extended registers.
+
 ## Version 1.5.4
 
 ### Added
