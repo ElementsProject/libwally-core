@@ -7,7 +7,7 @@ add_test(test_bech32 test_bech32)
 
 if(NOT WIN32)
     add_executable(test_clear test_clear.c)
-    target_include_directories(test_clear PRIVATE ${CMAKE_BINARY_DIR})
+    target_include_directories(test_clear PRIVATE ${CMAKE_BINARY_DIR} $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/secp256k1/include>)
     target_link_libraries(test_clear PRIVATE wallycore pthread)
     add_test(test_clear test_clear)
 endif()

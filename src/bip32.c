@@ -364,7 +364,7 @@ int bip32_key_from_private_key(uint32_t version,
     key_out->version = version;
     /* Copy the private key and set its prefix */
     key_out->priv_key[0] = BIP32_FLAG_KEY_PRIVATE;
-    memcpy(key_out->priv_key + 1, priv_key, priv_key_len);
+    wally_memcpy(key_out->priv_key + 1, priv_key, priv_key_len);
     /* Compute the public key */
     if (key_compute_pub_key(key_out) != WALLY_OK)
         return wipe_key_fail(key_out);
@@ -400,7 +400,7 @@ int bip32_key_from_seed_custom(const unsigned char *bytes, size_t bytes_len,
     ret = bip32_key_from_private_key(version, sha.u.u8, EC_PRIVATE_KEY_LEN, key_out);
     if (ret == WALLY_OK) {
         /* Copy the chain code and set other members */
-        memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
+        wally_memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2, sizeof(sha) / 2);
         key_out->depth = 0; /* Master key, depth 0 */
         key_out->child_num = 0;
         if (!(flags & BIP32_FLAG_SKIP_HASH))
@@ -453,7 +453,7 @@ int bip32_key_from_seed_alloc(const unsigned char *bytes, size_t bytes_len,
 static unsigned char *copy_out(unsigned char *dest,
                                const void *src, size_t len)
 {
-    memcpy(dest, src, len);
+    wally_memcpy(dest, src, len);
     return dest + len;
 }
 
@@ -536,7 +536,7 @@ int bip32_key_serialize(const struct ext_key *hdkey, uint32_t flags,
 static const unsigned char *copy_in(void *dest,
                                     const unsigned char *src, size_t len)
 {
-    memcpy(dest, src, len);
+    wally_memcpy(dest, src, len);
     return src + len;
 }
 
@@ -674,13 +674,13 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
     /* NB: We use the key_outs' priv_key+child_num to hold 'Data' here */
     if (hardened) {
         /* Hardened: Data = 0x00 || ser256(kpar) || ser32(i)) */
-        memcpy(key_out->priv_key, hdkey->priv_key, sizeof(hdkey->priv_key));
+        wally_memcpy(key_out->priv_key, hdkey->priv_key, sizeof(hdkey->priv_key));
     } else {
         /* Non Hardened Private: Data = serP(point(kpar)) || ser32(i)
          * Non Hardened Public : Data = serP(kpar) || ser32(i)
          *   point(kpar) when par is private is the public key.
          */
-        memcpy(key_out->priv_key, hdkey->pub_key, sizeof(hdkey->pub_key));
+        wally_memcpy(key_out->priv_key, hdkey->pub_key, sizeof(hdkey->pub_key));
     }
 
     /* This is the '|| ser32(i)' part of the above */
@@ -694,7 +694,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
     /* Split I into two 32-byte sequences, IL and IR
      * The returned chain code ci is IR (i.e. the 2nd half of our hmac sha512)
      */
-    memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
+    wally_memcpy(key_out->chain_code, sha.u.u8 + sizeof(sha) / 2,
            sizeof(key_out->chain_code));
 
     if (we_are_private) {
@@ -702,7 +702,7 @@ int bip32_key_from_parent(const struct ext_key *hdkey, uint32_t child_num,
          * In case parse256(IL) ≥ n or ki = 0, the resulting key is invalid
          * (NOTE: seckey_tweak_add checks both conditions)
          */
-        memcpy(key_out->priv_key, hdkey->priv_key, sizeof(hdkey->priv_key));
+        wally_memcpy(key_out->priv_key, hdkey->priv_key, sizeof(hdkey->priv_key));
         if (!seckey_tweak_add(key_out->priv_key + 1, sha.u.u8) ||
             key_compute_pub_key(key_out) != WALLY_OK)
             goto fail;
@@ -822,7 +822,7 @@ int bip32_key_from_parent_path(const struct ext_key *hdkey,
     }
 
     if (ret == WALLY_OK)
-        memcpy(key_out, hdkey, sizeof(*key_out));
+        wally_memcpy(key_out, hdkey, sizeof(*key_out));
 
     wally_clear(tmp, sizeof(tmp));
     return ret;
@@ -1010,9 +1010,9 @@ int bip32_key_init(uint32_t version, uint32_t depth, uint32_t child_num,
     key_out->depth = depth;
     key_out->child_num = child_num;
 
-    memcpy(key_out->chain_code, chain_code, key_size(chain_code));
+    wally_memcpy(key_out->chain_code, chain_code, key_size(chain_code));
     if (priv_key && version != BIP32_VER_MAIN_PUBLIC && version != BIP32_VER_TEST_PUBLIC)
-        memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
+        wally_memcpy(key_out->priv_key + 1, priv_key, key_size(priv_key) - 1);
     else
         key_out->priv_key[0] = BIP32_FLAG_KEY_PUBLIC;
     if (pub_key)
@@ -1135,7 +1135,7 @@ static int getb_impl(const struct ext_key *hdkey,
 {
     if (!hdkey || !bytes_out || len != src_len)
         return WALLY_EINVAL;
-    memcpy(bytes_out, src, len);
+    wally_memcpy(bytes_out, src, len);
     return WALLY_OK;
 }
 

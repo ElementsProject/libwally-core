@@ -24,6 +24,12 @@
 #define WALLY_INTERNAL_API
 #endif
 
+#if defined(__clang__) || defined(__GNUC__)
+#define WALLY_NO_OPTIMIZE __attribute__((optimize("O0")))
+#else
+#define WALLY_NO_OPTIMIZE
+#endif
+
 #include <secp256k1.h>
 #include <secp256k1_recovery.h>
 #include <secp256k1_extrakeys.h>
@@ -94,6 +100,9 @@ WALLY_INTERNAL_API const struct wally_operations *wally_ops(void);
 #endif
 #define strdup(ptr) __use_wally_strdup_internally__
 #endif
+
+/* Used for copying secret data to avoid leaks via registers */
+WALLY_INTERNAL_API WALLY_NO_OPTIMIZE void wally_memcpy(void *dest, const void *src, size_t n);
 
 #define NUM_ELEMS(a) (sizeof(a) / sizeof(a[0]))
 

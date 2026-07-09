@@ -254,7 +254,7 @@ if USE_PTHREAD
 TESTS += test_clear
 noinst_PROGRAMS += test_clear
 test_clear_SOURCES = ctest/test_clear.c
-test_clear_CFLAGS = -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(AM_CFLAGS) $(NOOPT_CFLAGS) $(NOBUILTIN_CFLAGS)
+test_clear_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir) -I$(top_srcdir)/src/secp256k1/include $(PTHREAD_CFLAGS) $(AM_CFLAGS) $(NOOPT_CFLAGS) $(NOBUILTIN_CFLAGS)
 test_clear_LIBS = $(PTHREAD_LIBS)
 test_clear_LDADD = $(lib_LTLIBRARIES) @CTEST_EXTRA_STATIC@
 if PYTHON_MANYLINUX

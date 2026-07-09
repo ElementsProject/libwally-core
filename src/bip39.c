@@ -127,7 +127,7 @@ int bip39_mnemonic_from_bytes(const struct words *w,
     if (w->bits != 11u || !(mask = len_to_mask(bytes_len)))
         return WALLY_EINVAL;
 
-    memcpy(tmp_bytes, bytes, bytes_len);
+    wally_memcpy(tmp_bytes, bytes, bytes_len);
     checksum = bip39_checksum(bytes, bytes_len, mask);
     tmp_bytes[bytes_len] = checksum & 0xff;
     if (mask > 0xff)
@@ -190,7 +190,7 @@ int bip39_mnemonic_to_bytes(const struct words *w, const char *mnemonic,
                     ret = WALLY_EINVAL; /* Bad checksum */
                 }
                 else
-                    memcpy(bytes_out, tmp_bytes, tmp_len);
+                    wally_memcpy(bytes_out, tmp_bytes, tmp_len);
             }
         }
     }
@@ -232,9 +232,9 @@ int bip39_mnemonic_to_seed(const char *mnemonic, const char *passphrase,
     if (!salt)
         return WALLY_ENOMEM;
 
-    memcpy(salt, prefix, prefix_len);
+    wally_memcpy(salt, prefix, prefix_len);
     if (passphrase_len)
-        memcpy(salt + prefix_len, passphrase, passphrase_len);
+        wally_memcpy(salt + prefix_len, passphrase, passphrase_len);
 
     ret = wally_pbkdf2_hmac_sha512((unsigned char *)mnemonic, strlen(mnemonic),
                                    salt, salt_len, 0,

@@ -428,12 +428,34 @@ void wally_free(void *ptr)
     _ops.free_fn(ptr);
 }
 
+#if (defined(__x86_64__) || defined(__i386__)) && !defined(_WIN32)
+/* On x86, optimized memcpy in libc can use SSE/AVX registers,
+ * leaving copied data in registers of up to 512 bits in size.
+ * In shared library builds if a call though the PLT is made before
+ * something else overwites these registers, they are spilled to the
+ * stack and not later cleared.
+ * Use an unoptimized, byte-by-byte impl to prevent this (we only
+ * need this for secret/potentially secret data which is usually small).
+ */
+void wally_memcpy(void *dest, const void *src, size_t n)
+{
+    for (size_t i = 0; i < n; ++i) {
+        ((unsigned char*)dest)[i] = ((const unsigned char*)src)[i];
+    }
+}
+#else
+void wally_memcpy(void *dest, const void *src, size_t n)
+{
+    memcpy(dest, src, n);
+}
+#endif
+
 char *wally_strdup_n(const char *str, size_t str_len)
 {
     char *new_str = (char *)wally_malloc(str_len + 1);
     if (new_str) {
         if (str_len) {
-            memcpy(new_str, str, str_len);
+            wally_memcpy(new_str, str, str_len);
         }
         new_str[str_len] = '\0';
     }
@@ -591,7 +613,7 @@ bool clone_data(void **dst, const void *src, size_t len)
     }
     *dst = wally_malloc(len);
     if (*dst)
-        memcpy(*dst, src, len);
+        wally_memcpy(*dst, src, len);
     return *dst != NULL;
 }
 
@@ -626,7 +648,7 @@ void *array_realloc(const void *src, size_t old_n, size_t new_n, size_t size)
     if (!p)
         return NULL;
     if (src)
-        memcpy(p, src, old_n * size);
+        wally_memcpy(p, src, old_n * size);
     wally_clear(p + old_n * size, (new_n - old_n) * size);
     return p;
 }

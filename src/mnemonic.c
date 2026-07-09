@@ -49,7 +49,7 @@ char *mnemonic_from_bytes(const struct words *w, const unsigned char *bytes, siz
             size_t idx = extract_index(w->bits, bytes, i);
             size_t mnemonic_len = strlen(w->indices[idx]);
 
-            memcpy(out, w->indices[idx], mnemonic_len);
+            wally_memcpy(out, w->indices[idx], mnemonic_len);
             out[mnemonic_len] = ' '; /* separator */
             out += mnemonic_len + 1;
         }

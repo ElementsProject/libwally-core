@@ -297,7 +297,7 @@ int wally_aes_cbc_with_ecdh_key(
 
     if (is_encrypt) {
         /* Copy the IV to the start of the encrypted output */
-        memcpy(bytes_out, iv, iv_len);
+        wally_memcpy(bytes_out, iv, iv_len);
     } else {
         /* The IV is the first AES_BLOCK_LEN bytes of the payload */
         iv = bytes;

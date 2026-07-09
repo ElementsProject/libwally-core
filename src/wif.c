@@ -23,7 +23,7 @@ int wally_wif_from_bytes(const unsigned char *priv_key,
         return WALLY_EINVAL;
 
     buf[0] = (unsigned char) prefix & 0xff;
-    memcpy(&buf[1], priv_key, EC_PRIVATE_KEY_LEN);
+    wally_memcpy(&buf[1], priv_key, EC_PRIVATE_KEY_LEN);
 
     if (flags & WALLY_WIF_FLAG_UNCOMPRESSED)
         buf_len--;
@@ -82,7 +82,7 @@ int wally_wif_to_bytes(const char *wif,
         return WALLY_EINVAL; /** Incorrect format, prefix does not match or inconsistent flag */
     }
 
-    memcpy(bytes_out, &buf[1], EC_PRIVATE_KEY_LEN);
+    wally_memcpy(bytes_out, &buf[1], EC_PRIVATE_KEY_LEN);
 
     wally_clear(buf, sizeof(buf));
     return WALLY_OK;
