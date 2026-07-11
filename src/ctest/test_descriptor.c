@@ -1268,6 +1268,18 @@ static const struct descriptor_test {
         "sh(wsh(v:pk(key_1)))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
+        "descriptor - wsh - trailing garbage in nested expression",
+        "wsh(pk(key_1)garbage)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - sh - trailing garbage in nested expression",
+        "sh(wsh(pk(key_1)garbage))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - wsh - trailing garbage in inner expression",
+        "wsh(and_v(v:pk(key_1),pk(key_2)garbage))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
         "descriptor - pk - non-key child",
         "pk(1)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD

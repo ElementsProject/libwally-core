@@ -2687,6 +2687,11 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
         }
     }
 
+    /* A nested expression must consume its entire input. The top
+     * level is delimited by its checksum instead. */
+    if (ret == WALLY_OK && parent && node->builtin && offset != str_len)
+        ret = WALLY_EINVAL;
+
     if (ret == WALLY_OK && !seen_indent) {
         /* A constant value. Parse it ignoring any already added wrappers */
         offset = node->wrapper_str[0] ? strlen(node->wrapper_str) + 1 : 0;
