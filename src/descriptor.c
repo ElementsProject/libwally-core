@@ -644,10 +644,20 @@ int wally_descriptor_free(ms_ctx *ctx)
     return WALLY_OK;
 }
 
+static bool child_is_valid_script(const ms_node *node)
+{
+    /* Miniscript children must be top-level, i.e. type B. Descriptor-only
+     * children (e.g. sortedmulti) have no miniscript type and are not checked.
+     */
+    return !(node->child->kind & KIND_MINISCRIPT) ||
+           (node->child->type_properties & TYPE_B);
+}
+
 static int verify_sh(ms_ctx *ctx, ms_node *node)
 {
     (void)ctx;
-    if (!node_is_top(node) || !node->child->builtin)
+    if (!node_is_top(node) || !node->child->builtin ||
+        !child_is_valid_script(node))
         return WALLY_EINVAL;
 
     node->type_properties = node->child->type_properties;
@@ -660,7 +670,8 @@ static int verify_wsh(ms_ctx *ctx, ms_node *node)
     if (node->parent && node->parent->kind != KIND_DESCRIPTOR_SH &&
         node->parent->kind != KIND_DESCRIPTOR_CT)
         return WALLY_EINVAL;
-    if (!node->child->builtin || node_has_uncompressed_key(ctx, node))
+    if (!node->child->builtin || !child_is_valid_script(node) ||
+        node_has_uncompressed_key(ctx, node))
         return WALLY_EINVAL;
 
     node->type_properties = node->child->type_properties;

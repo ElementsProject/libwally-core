@@ -1248,6 +1248,26 @@ static const struct descriptor_test {
         "wsh(03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556,03fff97bd5755eeea420453a14355235d382f6472f8568a18b2f057a1460297556)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
+        "descriptor - wsh - non-B top level miniscript (V)",
+        "wsh(v:pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - wsh - non-B top level miniscript (K)",
+        "wsh(pk_k(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - wsh - non-B top level miniscript (W)",
+        "wsh(a:pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - sh - non-B top level miniscript",
+        "sh(v:pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - sh-wsh - non-B top level miniscript",
+        "sh(wsh(v:pk(key_1)))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
         "descriptor - pk - non-key child",
         "pk(1)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
