@@ -1,9 +1,15 @@
 # Changes
 
-## Version 1.5.5
+## Version 1.5.6
 
 ### Fixed
-- De-optimize some memcpy calls on x86 to prevent leaks via extended registers.
+- internal: De-optimize some memcpy calls on x86 to prevent leaks via extended registers.
+- descriptor: Require base miniscript expressions for sh()/wsh().
+- descriptor: Reject nested expressions with unconsumed trailing input.
+
+## Version 1.5.5
+
+(Unreleased)
 
 ## Version 1.5.4
 
