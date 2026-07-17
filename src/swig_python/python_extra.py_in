@@ -99,7 +99,7 @@ if is_elements_build():
     def elements_pegin_contract_script_from_bytes_len(rs, cs, flags):
         return len(rs)
 
-# Work around SWIG wrapping unisgned constants
+# Work around SWIG wrapping unsigned constants
 # See https://github.com/swig/swig/issues/1287
 BIP32_INITIAL_HARDENED_CHILD = 0x80000000
 WALLY_PSET_BLIND_ALL = 0xffffffff
@@ -150,6 +150,10 @@ bip85_get_bip39_entropy = _wrap_bin(bip85_get_bip39_entropy, HMAC_SHA512_LEN, re
 bip85_get_rsa_entropy = _wrap_bin(bip85_get_rsa_entropy, HMAC_SHA512_LEN, resize=True)
 descriptor_derive_bip32_key = descriptor_derive_bip32_key_alloc
 descriptor_get_key_origin_fingerprint = _wrap_bin(descriptor_get_key_origin_fingerprint, BIP32_KEY_FINGERPRINT_LEN)
+descriptor_get_taproot_control_block = _wrap_bin(descriptor_get_taproot_control_block, descriptor_get_taproot_control_block_len)
+descriptor_get_taproot_leaf_hash = _wrap_bin(descriptor_get_taproot_leaf_hash, SHA256_LEN)
+descriptor_get_taproot_leaf_script = _wrap_bin(descriptor_get_taproot_leaf_script, descriptor_get_taproot_leaf_script_len)
+descriptor_get_taproot_merkle_root = _wrap_bin(descriptor_get_taproot_merkle_root, SHA256_LEN)
 descriptor_to_script = _wrap_bin(descriptor_to_script, descriptor_to_script_get_maximum_length, resize=True)
 ec_private_key_bip341_tweak = _wrap_bin(ec_private_key_bip341_tweak, EC_PRIVATE_KEY_LEN)
 ec_public_key_bip341_tweak = _wrap_bin(ec_public_key_bip341_tweak, EC_PUBLIC_KEY_LEN)

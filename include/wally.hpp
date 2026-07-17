@@ -635,6 +635,60 @@ inline int descriptor_get_num_variants(const DESCRIPTOR& descriptor, uint32_t* v
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_taproot_control_block(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_descriptor_get_taproot_control_block(detail::get_p(descriptor), leaf_index, multi_index, child_num, flags, bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_taproot_control_block_len(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t multi_index, uint32_t child_num, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_get_taproot_control_block_len(detail::get_p(descriptor), leaf_index, multi_index, child_num, flags, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_taproot_leaf_hash(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_descriptor_get_taproot_leaf_hash(detail::get_p(descriptor), leaf_index, multi_index, child_num, flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_taproot_leaf_key_index(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t key_position, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_taproot_leaf_key_index(detail::get_p(descriptor), leaf_index, key_position, value_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_taproot_leaf_num_keys(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_taproot_leaf_num_keys(detail::get_p(descriptor), leaf_index, value_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_taproot_leaf_script(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out, size_t* written) {
+    int ret = ::wally_descriptor_get_taproot_leaf_script(detail::get_p(descriptor), leaf_index, multi_index, child_num, flags, bytes_out.data(), bytes_out.size(), written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_taproot_leaf_script_len(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t multi_index, uint32_t child_num, uint32_t flags, size_t* written) {
+    int ret = ::wally_descriptor_get_taproot_leaf_script_len(detail::get_p(descriptor), leaf_index, multi_index, child_num, flags, written);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR, class BYTES_OUT>
+inline int descriptor_get_taproot_merkle_root(const DESCRIPTOR& descriptor, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out) {
+    int ret = ::wally_descriptor_get_taproot_merkle_root(detail::get_p(descriptor), multi_index, child_num, flags, bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_get_taproot_num_leaves(const DESCRIPTOR& descriptor, uint32_t* value_out) {
+    int ret = ::wally_descriptor_get_taproot_num_leaves(detail::get_p(descriptor), value_out);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 template <class DESCRIPTOR, class VARS_IN>
 inline int descriptor_parse(const DESCRIPTOR& descriptor, const VARS_IN& vars_in, uint32_t network, uint32_t flags, struct wally_descriptor** output) {
     int ret = ::wally_descriptor_parse(detail::get_p(descriptor), detail::get_p(vars_in), network, flags, output);

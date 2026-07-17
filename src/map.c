@@ -2,6 +2,7 @@
 
 #include <include/wally_bip32.h>
 #include <include/wally_crypto.h>
+#include <include/wally_descriptor.h>
 #include <include/wally_map.h>
 #include "psbt_io.h"
 
@@ -669,7 +670,8 @@ int wally_merkle_path_xonly_public_key_verify(const unsigned char *key, size_t k
         keypath_key_verify(key, key_len, &extkey) != WALLY_OK ||
         extkey.version || BYTES_INVALID(val, val_len))
         return WALLY_EINVAL;
-    if (val_len && (val_len % SHA256_LEN || val_len % SHA256_LEN > 128u))
+    if (val_len && (val_len % SHA256_LEN ||
+        val_len % SHA256_LEN > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH))
         return WALLY_EINVAL;
     return WALLY_OK;
 }
