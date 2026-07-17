@@ -23,4 +23,12 @@ void tagged_hash_init(struct sha256_ctx *ctx,
 void hash_varbuff(struct sha256_ctx *ctx,
                   const unsigned char *bytes, size_t bytes_len);
 
+int bip341_tapbranch_hash(const unsigned char *lhs, size_t lhs_len,
+                          const unsigned char *rhs, size_t rhs_len,
+                          bool is_elements, unsigned char *bytes_out, size_t len);
+
+int bip341_tapleaf_hash(unsigned char leaf_version,
+                        const unsigned char *script, size_t script_len,
+                        bool is_elements, unsigned char *bytes_out, size_t len);
+
 #endif /* LIBWALLY_CORE_TX_IO_H */

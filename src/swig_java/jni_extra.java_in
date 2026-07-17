@@ -516,6 +516,20 @@
       return checkBuffer(buf, len);
   }
 
+  public final static byte[] descriptor_get_taproot_leaf_script(Object descriptor, long leaf_index, long multi_index, long child_num, long flags) {
+      final byte[] buf = new byte[descriptor_get_taproot_leaf_script_len(descriptor, leaf_index, multi_index, child_num, flags)];
+      if (buf.length == 0) return buf;
+      final int len = descriptor_get_taproot_leaf_script(descriptor, leaf_index, multi_index, child_num, flags, buf);
+      return checkBuffer(buf, len);
+  }
+
+  public final static byte[] descriptor_get_taproot_control_block(Object descriptor, long leaf_index, long multi_index, long child_num, long flags) {
+      final byte[] buf = new byte[descriptor_get_taproot_control_block_len(descriptor, leaf_index, multi_index, child_num, flags)];
+      if (buf.length == 0) return buf;
+      final int len = descriptor_get_taproot_control_block(descriptor, leaf_index, multi_index, child_num, flags, buf);
+      return checkBuffer(buf, len);
+  }
+
   public final static void cleanup() {
       _cleanup(0);
   }

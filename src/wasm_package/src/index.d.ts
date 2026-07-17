@@ -139,6 +139,13 @@ export function descriptor_get_network(descriptor: Ref_wally_descriptor): number
 export function descriptor_get_num_keys(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_variants(descriptor: Ref_wally_descriptor): number;
+export function descriptor_get_taproot_control_block_len(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): number;
+export function descriptor_get_taproot_leaf_hash(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): Buffer;
+export function descriptor_get_taproot_leaf_key_index(descriptor: Ref_wally_descriptor, leaf_index: number, key_index: number): number;
+export function descriptor_get_taproot_leaf_num_keys(descriptor: Ref_wally_descriptor, leaf_index: number): number;
+export function descriptor_get_taproot_leaf_script_len(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): number;
+export function descriptor_get_taproot_merkle_root(descriptor: Ref_wally_descriptor, multi_index: number, child_num: number, flags: number): Buffer;
+export function descriptor_get_taproot_num_leaves(descriptor: Ref_wally_descriptor): number;
 export function descriptor_parse(descriptor: string, vars_in: Ref_wally_map, network: number, flags: number): Ref_wally_descriptor;
 export function descriptor_set_network(descriptor: Ref_wally_descriptor, network: number): void;
 export function descriptor_to_address(descriptor: Ref_wally_descriptor, variant: number, multi_index: number, child_num: number, flags: number): string;
@@ -777,6 +784,8 @@ export function bip32_path_from_str(path_str: string, child_num: number, multi_i
 export function bip32_path_from_str_n(path_str: string, path_str_len: number, child_num: number, multi_index: number, flags: number): Uint32Array;
 export function descriptor_get_key_child_path_str(descriptor: Ref_wally_descriptor, index: number): string;
 export function descriptor_get_key_origin_path_str(descriptor: Ref_wally_descriptor, index: number): string;
+export function descriptor_get_taproot_control_block(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): Buffer;
+export function descriptor_get_taproot_leaf_script(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): Buffer;
 export function descriptor_to_script(descriptor: Ref_wally_descriptor, depth: number, index: number, variant: number, multi_index: number, child_num: number, flags: number): Buffer;
 export function ec_sig_from_bytes(priv_key: Buffer|Uint8Array|null, bytes: Buffer|Uint8Array|null, flags: number): Buffer;
 export function ec_sig_from_bytes_aux(priv_key: Buffer|Uint8Array|null, bytes: Buffer|Uint8Array|null, aux_rand: Buffer|Uint8Array|null, flags: number): Buffer;

@@ -47,7 +47,8 @@ static struct wally_map_item g_key_map_items[] = {
     { B("non_x_only"), B("03b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e") },
     /* The taproot singlesig xpriv corresponding to Jades test_jade.py test script */
     { B("jade_ss_tr_xpriv"), B("tprv8gTfWnFCND72oJZfZTokBBXcS1FzQhrtd5wNFu3FgBE76yErH49cev2Zn3Wws3o6ZwKZVZaQP1UWKVNotpPg8U6tCgGrjMfaRQJvV1Vdbi7") },
-    { B("slip77_key"), B("b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04") }
+    { B("slip77_key"), B("b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04") },
+    { B("bip341_vec1"), B("d6889cb081036e0faefa3a35157ad71086b123b2b144b649798b494c300a961d") }
 };
 
 static struct wally_map_item g_policy_map_items[] = {
@@ -111,7 +112,7 @@ static bool check_varbuff(const char *function, const unsigned char *src, size_t
 
 #define DEPTH_TEST_DESCRIPTOR "sh(wsh(multi(1,03f28773c2d975288bc7d1d205c3748651b075fbc6610e58cddeeddf8f19405aa8,03499fdf9e895e719cfd64e67f07d38e3226aa7b63678949e6e49b241a60e823e4,02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e)))"
 
-static const struct descriptor_test {
+typedef struct {
     const char *name;
     const char *descriptor;
     const uint32_t network;
@@ -123,7 +124,9 @@ static const struct descriptor_test {
     const char *script;
     const char *checksum;
     int policy_map_index;
-} g_descriptor_cases[] = {
+} descriptor_test;
+
+static const descriptor_test g_descriptor_cases[] = {
     /*
      * Output descriptors
      */
@@ -414,6 +417,42 @@ static const struct descriptor_test {
         WALLY_NETWORK_BITCOIN_REGTEST, 0, 0, 0, NULL, 0,
         "51205fb8e39dbbdc7c831af59e44a9b2997f9daaf72c3e965b30982f3c731539e1db",
         "tp2ky708", VARS_STD
+    },{
+        "descriptor - tr - bip341 test vector 1",
+        "tr(bip341_vec1)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "512053a1f6e454df1aa2776a2814a721372d6258050de330b3c6d10ee8f4e0dda343",
+        "zd5eym6u", VARS_STD
+    },{
+        "descriptor - tr - single leaf pk",
+        "tr(x_only,pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120951b6ab79b75bf3083163e8c4a3df1cba0928e07b3b2e3732503bb7fe6df804b",
+        "", VARS_STD
+    },{
+        "descriptor - tr - balanced 2-leaf",
+        "tr(x_only,{pk(key_1),pk(key_2)})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "512082a4c5d240cadcf568140691f751370be05e3da59df98c3b1e92a37f1bfd7dfe",
+        "", VARS_STD
+    },{
+        "descriptor - tr - unbalanced 3-leaf",
+        "tr(x_only,{pk(key_1),{pk(key_2),pk(key_3)}})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "51201edef6eaf60517b880b7c721436840e45c487f4f7d4b544848a1fa8ecae1a146",
+        "", VARS_STD
+    },{
+        "descriptor - tr - multi_a leaf",
+        "tr(x_only,multi_a(2,key_1,key_2,key_3))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120e96b74eb71c05f7362ab7977c829d78256685d87fc4e1e44545146466caedd19",
+        "", VARS_STD
+    },{
+        "descriptor - tr - mixed multi_a and and_v",
+        "tr(x_only,{multi_a(2,key_1,key_2,key_3),and_v(v:pk(key_1),older(52560))})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "51207b56ea61956475f5751c4da934cd2ac20d3088f327c60ffe249bc7a66b9952b0",
+        "", VARS_STD
     },
 #ifdef BUILD_ELEMENTS
     /* Elements/Confidential descriptors */
@@ -980,10 +1019,54 @@ static const struct descriptor_test {
         "5192", /* 1 OP_0NOTEQUAL */
         "d959hk4q", VARS_STD
     },
+    {
+        "miniscript - pk_k segwit v0",
+        "c:pk_k(key_1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        "", VARS_STD
+    },
+    {
+        "miniscript - pk_h segwit v0",
+        "c:pk_h(key_1)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "76a914d0721279e70d39fb4aa409b52839a0056454e3b588ac",
+        "", VARS_STD
+    }, {
+        "miniscript - sha256 segwit v0",
+        "sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed287",
+        "", VARS_STD
+    }, {
+        "miniscript - hash256 segwit v0",
+        "hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b87",
+        "", VARS_STD
+    }, {
+        "miniscript - ripemd160 segwit v0",
+        "ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87",
+        "", VARS_STD
+    }, {
+        "miniscript - hash160 segwit v0",
+        "hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY,
+        "82012088a91420195b5a3d650c17f0f29f91c33f8f6335193d0787",
+        "", VARS_STD
+    },
     /*
      * Miniscript taproot cases
      */
     {
+        "miniscript - pk_k tapscript x-only",
+        "c:pk_k(x_only)",
+        WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
+        "20b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0eac",
+        "", VARS_STD
+    }, {
         "miniscript - taproot raw pubkey",
         "c:pk_k(daed4f2be3a8bf278e70132fb0beb7522f570e144bf615c07e996d443dee8729)",
         WALLY_NETWORK_NONE, 0, 0, 0, NULL, WALLY_MINISCRIPT_ONLY | WALLY_MINISCRIPT_TAPSCRIPT,
@@ -1223,7 +1306,7 @@ static const struct descriptor_test {
         "addr(ex1qwu7hp9vckakyuw6htsy244qxtztrlyez4l7qlrpg68v6drgvj39q06fgz7)",
         WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
-        "descriptor - multisig too many keys",
+        "descriptor - multi() too many keys",
         /*        1     2     3     4     5     6     7     8     9     10    11    12    13    14    15      16 */
         "sh(multi(1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1,key_1))",
         WALLY_NETWORK_LIQUID_REGTEST, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
@@ -1272,7 +1355,7 @@ static const struct descriptor_test {
         "wsh(pk(key_1)garbage)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
-        "descriptor - sh - trailing garbage in nested expression",
+        "descriptor - sh(wsh) - trailing garbage in nested expression",
         "sh(wsh(pk(key_1)garbage))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
@@ -1340,16 +1423,36 @@ static const struct descriptor_test {
         "multi(1)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
-        "descriptor - multi - no number",
+        "descriptor - multi - no threshold",
         "multi(022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4,025cbdf0646e5db4eaa398f365f2ea7a0e3d419b7e0330e39ce92bddedcac4f9bc)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
-        "descriptor - multi - negative number",
+        "descriptor - multi - zero threshold",
+        "multi(0,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi - negative threshold",
         "multi(-1,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi - too-high threshold",
+        "multi(2,022f8bde4d1a07209355b4a7250a5c5128e88b84bddc619ab7cba8d569b240efe4)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
         "descriptor - multi - non-key child",
         "multi(1,1)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi - invalid pubkey child",
+        "multi(1,020000000000000000000000000000000000000000000000000000000000000000)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi - mixed pubkey children",
+        "multi(1,key_1,uncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi - x-only pubkey child",
+        "multi(1,x_only)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
         "descriptor - sortedmulti - no args",
@@ -1432,8 +1535,8 @@ static const struct descriptor_test {
         "tr()",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
-        "descriptor - tr - multi-child",
-        "tr(x_only,x_only)", /* FIXME: delete this case when script path is supported */
+        "descriptor - tr - 3 children",
+        "tr(x_only,multi_a(2,key_1,key_2),multi_a(2,key_1,key_2))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
         "descriptor - tr - any parent",
@@ -1450,6 +1553,70 @@ static const struct descriptor_test {
     },{
         "descriptor - tr - invalid public key",
         "tr(uncompresseduncompressed)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - multi() fragment not allowed in tapscript",
+        "tr(x_only,multi(2,key_1,key_2))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - K miniscript not allowed as tapleaf root",
+        "tr(x_only,pk_k(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - V miniscript not allowed as tapleaf root",
+        "tr(x_only,v:pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - W miniscript not allowed as tapleaf root",
+        "tr(x_only,a:pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - trailing garbage after tapleaf",
+        "tr(x_only,pk(key_1)garbage)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - trailing garbage after branched tapleaf",
+        "tr(x_only,{pk(key_1),pk(key_2)garbage})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - single element in braces not allowed",
+        "tr(x_only,{pk(key_1)})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - three elements in braces not allowed",
+        "tr(x_only,{pk(key_1),pk(key_2),pk(key_3)})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - empty braces not allowed",
+        "tr(x_only,{})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - wsh() inside tr not allowed",
+        "tr(x_only,wsh(pk(key_1)))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - combo() inside tr not allowed",
+        "tr(x_only,combo(0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - tr() inside tr not allowed",
+        "tr(x_only,tr(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - wsh() inside taptree leaf not allowed",
+        "tr(x_only,{wsh(pk(key_1)),pk(key_2)})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - tr - tr() inside taptree leaf not allowed",
+        "tr(x_only,{tr(key_1),pk(key_2)})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - wsh - tr() inside wsh not allowed",
+        "wsh(and_v(v:pk(key_1),tr(key_2)))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
+    },{
+        "descriptor - multi_a not allowed outside tapscript context",
+        "wsh(multi_a(2,key_1,key_2))",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0, NULL, "", VARS_STD
     },{
         "descriptor - after - non number child",
@@ -1780,6 +1947,195 @@ static const struct descriptor_test {
     },
 #endif /* BUILD_ELEMENTS */
 };
+
+#define MAX_LEAVES 5
+
+typedef struct {
+    const char *items[MAX_LEAVES];
+} taproot_descriptor_test_keys;
+
+#define TR_K_NONE             { "", "", "", "", "" }
+#define TR_K1(k1)             { k1, "", "", "", "" }
+#define TR_K2(k1, k2)         { k1, k2, "", "", "" }
+#define TR_K3(k1, k2, k3)     { k1, k2, k3, "", "" }
+#define TR_K4(k1, k2, k3, k4) { k1, k2, k3, k4, "" }
+
+typedef struct {
+    descriptor_test test;
+    uint32_t depth;
+    const char *internal_key;
+    const char *merkle_root;
+    const char *leaf_scripts[MAX_LEAVES];
+    const char *leaf_hashes[MAX_LEAVES];
+    const char *control_blocks[MAX_LEAVES];
+    taproot_descriptor_test_keys keys[MAX_LEAVES];
+} taproot_descriptor_test;
+
+static const taproot_descriptor_test g_taproot_cases[] = {
+    {{
+        "taproot - keyspend only",
+        "tr(x_only)",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "51205fb8e39dbbdc7c831af59e44a9b2997f9daaf72c3e965b30982f3c731539e1db",
+        "", VARS_STD
+    },
+    2,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "", /* No taptree, so no merkle root */
+    {
+        /* scripts */
+        "", "", "", "", "",
+    }, {
+        /* hashes */
+        "", "", "", "", "",
+    }, {
+        /* control blocks */
+        "", "", "", "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - single leaf pk",
+        "tr(x_only,pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120951b6ab79b75bf3083163e8c4a3df1cba0928e07b3b2e3732503bb7fe6df804b",
+        "", VARS_STD
+    },
+    3,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e1",
+    {
+        /* scripts */
+        /* = [key_1_xonly] OP_CHECKSIG */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e1",
+        "", "", "", "",
+    }, {
+        /* control blocks */
+        /* /LHS: [internal_key] + 1 leaf = 65 bytes (no siblings for single leaf) */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+        "", "", "", "",
+    }, {
+        /* leaf_keys */
+        /* leaf 0 key 0 = key_1 (stripped to x-only) */
+        { TR_K1("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") },
+        { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - 3 leaf left balanced",
+        "tr(x_only,{{pk(key_1),pk(key_2)},pk(key_3)})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120e557ef32f751b835ac15bf75769802ec65e1df31559aecab23dae39aa4a5c77f",
+        "", VARS_STD
+    },
+    5,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "65fc067c1d21f9fa0449348ea63dde5e6a1bdad2da98f505b3b7478b949e211f",
+    {
+        /* scripts */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac", /* [k1] CHECKSIG */
+        "20a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac", /* [k2] CHECKSIG */
+        "20b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac", /* [k3] CHECKSIG */
+        "", "",
+    }, {
+        /* hashes */
+        "815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e1", /* k1 */
+        "7c285d60b6e125d82ed715992dae12db8091bd9b9d92c48d768e6c043deca50d", /* k2 */
+        "15ba0270b5e0006a16b832bd0f875873bb957516603e9a08ae3e968dbf4672f8", /* k3 */
+        "", "",
+    }, {
+        /* control blocks */
+        /* /LHS/LHS: [internal_key] + 2 leaves + parent = 97 bytes */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e7c285d60b6e125d82ed715992dae12db8091bd9b9d92c48d768e6c043deca50d15ba0270b5e0006a16b832bd0f875873bb957516603e9a08ae3e968dbf4672f8",
+        /* /RHS/RHS: [internal_key] + 2 leaves + parent = 97 bytes */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e115ba0270b5e0006a16b832bd0f875873bb957516603e9a08ae3e968dbf4672f8",
+        /* /RHS: [internal_key] + 2 leaves + = 65 bytes */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e7d35d60d6e53dac2f6cf4b638d50a67ea8963843eabfab3839ef7343893ce704",
+        "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K1("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") }, /* k1 xo */
+        { TR_K1("a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7") }, /* k2 xo */
+        { TR_K1("b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284") }, /* k3 xo */
+        { TR_K_NONE }, { TR_K_NONE }
+    }},
+    /* This is the test case above, with the tree balanced to the right.
+     * Note that iteration of the keys happens in the same DFS order, so
+     * scripts, hashes and leaf keys are the same.
+     * Because the path to each key is different, the control blocks and
+     * merkle root differ.
+     */
+    {{
+        "taproot - 3 leaf right balanced",
+        "tr(x_only,{pk(key_1),{pk(key_2),pk(key_3)}})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "51201edef6eaf60517b880b7c721436840e45c487f4f7d4b544848a1fa8ecae1a146",
+        "", VARS_STD
+    },
+    5,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "e6229e969670aedf50e45d06fb764d38d92090fb8ddd45051dbf572ce4aaa126",
+    {
+        /* scripts */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac", /* [k1] CHECKSIG */
+        "20a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ac", /* [k2] CHECKSIG */
+        "20b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac", /* [k3] CHECKSIG */
+        "", "",
+    }, {
+        /* hashes */
+        "815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e1", /* k1 */
+        "7c285d60b6e125d82ed715992dae12db8091bd9b9d92c48d768e6c043deca50d", /* k2 */
+        "15ba0270b5e0006a16b832bd0f875873bb957516603e9a08ae3e968dbf4672f8", /* k3 */
+        "", "",
+    }, {
+        /* control blocks */
+        /* /LHS: [internal_key] + 2 leaves = 65 bytes */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e211d67a9121e03064b2928aab2c7912fd759e0f51d8c0dcf071cebd4b1d56c3d",
+        /* /RHS/LHS: [internal_key] + 2 leaves + parent = 97 bytes */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e15ba0270b5e0006a16b832bd0f875873bb957516603e9a08ae3e968dbf4672f8815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e1",
+        /* /RHS/RHS: [internal_key] + 2 leaves + parent = 97 bytes */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e7c285d60b6e125d82ed715992dae12db8091bd9b9d92c48d768e6c043deca50d815764544533858b85135d9ddf54e667a2e7bc0e3bfa4ab8fdcc8c22b7ba93e1",
+        "", "",
+    }, {
+        /* leaf_keys */
+        { TR_K1("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048") }, /* k1 xo */
+        { TR_K1("a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7") }, /* k2 xo */
+        { TR_K1("b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284") }, /* k3 xo */
+        { TR_K_NONE }, { TR_K_NONE }
+    }},
+    {{
+        "taproot - 2of3 multi_a single script path",
+        "tr(x_only,multi_a(2,key_1,key_2,key_3))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0, NULL, 0,
+        "5120e96b74eb71c05f7362ab7977c829d78256685d87fc4e1e44545146466caedd19",
+        "", VARS_STD
+    },
+    3,
+    "b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e",
+    "d5b9b3b8c9611d90d8205d3334e4ec016c828bb175e39cbedb23a151d40b0de0",
+    {
+        /* scripts */
+        "208bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac20a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ba20b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ba529c",
+        "", "", "", "",
+    }, {
+        /* hashes */
+        "d5b9b3b8c9611d90d8205d3334e4ec016c828bb175e39cbedb23a151d40b0de0", "", "", "", "",
+    }, {
+        /* control blocks */
+        "c1b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e", "", "", "", "",
+    }, {
+        /* leaf_keys */
+        /* k1,k2,k3 inside multi_a() (as x-only) */
+         { TR_K3("8bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048", "a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7", "b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284" ) },
+         { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }, { TR_K_NONE }
+    }}
+    /* FIXME: Elements test cases */
+};
+
 
 #define ADDR(a) 1, { a, "", "", "", "", "", "", "", "", "", "", "", "", "", \
     "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" }
@@ -2359,10 +2715,20 @@ static const struct address_test {
         "address errchk - Invalid multi-path index",
         "pkh(mainnet_xpub/<0;1>)",
         WALLY_NETWORK_BITCOIN_MAINNET, 0, 2, 0, ADDR("")
+    },{
+        "address - tr - single leaf pk(key_1)",
+        "tr(x_only,pk(key_1))",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0,
+        ADDR("bc1pj5dk4dumwklnpqck86xy5003ewsf9rs8kwewxue9qwahleklsp9sdyja0e")
+    },{
+        "address - tr - unbalanced 3-leaf",
+        "tr(x_only,{pk(key_1),{pk(key_2),pk(key_3)}})",
+        WALLY_NETWORK_BITCOIN_MAINNET, 0, 0, 0,
+        ADDR("bc1prm00d6hkq5tm3q9hcus5x6zqu3wysl600494gjzg58agajhp59rqudfe9j")
     }
 };
 
-static bool check_descriptor_to_script(const struct descriptor_test* test)
+static bool check_descriptor_to_script(const descriptor_test* test)
 {
     struct wally_descriptor *descriptor;
     size_t written, upper_limit, max_written;
@@ -2500,7 +2866,7 @@ static bool check_descriptor_to_script(const struct descriptor_test* test)
     ret = check_varbuff("descriptor_to_script", script, written, test->script) &&
           (!*test->checksum || !strcmp(checksum, test->checksum));
     if (!ret)
-        printf("%s:  expected [%s], got [%s]\n", "descriptor_to_script",
+        printf("descriptor_to_script:  expected checksum [%s], got [%s]\n",
                test->checksum, checksum);
 
     wally_free_string(checksum);
@@ -2551,6 +2917,223 @@ static bool check_descriptor_to_address(const struct address_test *test)
     return true;
 }
 
+static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
+{
+    unsigned char buf[1024];
+    struct wally_descriptor *descriptor;
+    const descriptor_test* test = &tr_test->test;
+    const struct wally_map *keys = &g_vars[test->policy_map_index];
+    size_t i, n, written;
+    uint32_t num_leaves, expected_num_leaves = 0;
+    int ret, expected_ret;
+
+    if (!check_descriptor_to_script(test))
+        return false;
+
+    for (i = tr_test->depth - 1; i <= tr_test->depth; ++i) {
+        uint32_t flags = (i << WALLY_MINISCRIPT_DEPTH_SHIFT) | test->flags;
+        struct ext_key *internal_key;
+        uint32_t features;
+
+        /* Ensure depth parsing limits include the taptree */
+        expected_ret = i == tr_test->depth ? WALLY_OK : WALLY_EINVAL;
+        ret = wally_descriptor_parse(test->descriptor, keys, test->network,
+                                     flags, &descriptor);
+
+        if (!check_ret("descriptor_parse", ret, expected_ret))
+            return false;
+        if (expected_ret != WALLY_OK)
+            continue;
+
+        /* The internal key is always key index 0 */
+        ret = wally_descriptor_derive_bip32_key_alloc(descriptor, 0,
+                                                      0, 0, 0, 0,
+                                                      &internal_key);
+        if (!check_ret("derive_bip32_key(internal)", ret, WALLY_OK))
+            return false;
+        if (!check_varbuff("internal_key", internal_key->pub_key + 1,
+                           EC_XONLY_PUBLIC_KEY_LEN, tr_test->internal_key))
+            return false;
+        bip32_key_free(internal_key);
+
+        ret = wally_descriptor_get_key_features(descriptor, 0, &features);
+        if (!check_ret("get_key_features(internal)", ret, WALLY_OK))
+            return false;
+        if (features != (WALLY_MS_IS_X_ONLY|WALLY_MS_IS_RAW)) {
+            printf("features(internal): expected raw x-only, got %x\n",
+                    features);
+            return false;
+        }
+    }
+
+    for (i = 0; i < NUM_ELEMS(tr_test->leaf_scripts); ++i)
+        expected_num_leaves += tr_test->leaf_scripts[i][0] ? 1 : 0;
+
+    ret = wally_descriptor_get_taproot_num_leaves(descriptor, &num_leaves);
+    if (!check_ret("get_taproot_num_leaves", ret, WALLY_OK))
+        return false;
+    if (num_leaves != expected_num_leaves) {
+        printf("num_leaves: expected %u, got %u\n", expected_num_leaves, num_leaves);
+        return false;
+    }
+
+    /* If there is no taptree, get_taproot_merkle_root returns WALLY_EINVAL */
+    ret = wally_descriptor_get_taproot_merkle_root(descriptor, 0, 0, 0,
+                                                   buf, SHA256_LEN);
+    if (!check_ret("get_taproot_merkle_root", ret,
+                   num_leaves ? WALLY_OK : WALLY_EINVAL))
+        return false;
+    if (num_leaves &&
+        !check_varbuff("merkle_root", buf, SHA256_LEN, tr_test->merkle_root))
+        return false;
+
+
+    /* Iterate checking each leaf and then the keys within each leaf */
+    for (i = 0; i < num_leaves + 1; ++i) {
+        uint32_t key_index, num_keys, expected_num_keys = 0;
+        size_t cb_len;
+        int expected_sub_ret;
+
+        expected_ret = i == num_leaves ? WALLY_EINVAL : WALLY_OK;
+        expected_sub_ret = expected_ret;
+
+        ret = wally_descriptor_get_taproot_leaf_script(descriptor, i, 0, 0, 0,
+                                                       buf, sizeof(buf), &written);
+        if (!check_ret("get_taproot_leaf_script", ret, expected_ret))
+            return false;
+        if (expected_ret == WALLY_OK &&
+            !check_varbuff("leaf_script", buf, written, tr_test->leaf_scripts[i]))
+            return false;
+
+        ret = wally_descriptor_get_taproot_leaf_hash(descriptor, i, 0, 0, 0,
+                                                     buf, SHA256_LEN);
+        if (!check_ret("get_taproot_leaf_hash", ret, expected_ret))
+            return false;
+        if (expected_ret == WALLY_OK &&
+            !check_varbuff("leaf_hash", buf, SHA256_LEN, tr_test->leaf_hashes[i]))
+            return false;
+
+        ret = wally_descriptor_get_taproot_control_block(descriptor, i, 0, 0, 0,
+                                                         buf, sizeof(buf), &written);
+        if (!check_ret("get_taproot_control_block", ret, expected_ret))
+            return false;
+
+        ret = wally_descriptor_get_taproot_control_block_len(descriptor,
+                                                             i, 0, 0, 0, &cb_len);
+        if (!check_ret("get_taproot_control_block_len", ret, expected_ret))
+            return false;
+
+        if (expected_ret == WALLY_OK) {
+            const size_t expected_cb_len = (size_t)strlen(tr_test->control_blocks[i]) / 2;
+            if (written != expected_cb_len) {
+                printf("control_block len: expected %zu, got %zu\n",
+                       expected_cb_len, written);
+                return false;
+            }
+            if (!check_varbuff("control_block", buf, written, tr_test->control_blocks[i]))
+                return false;
+
+            if (cb_len != expected_cb_len) {
+                printf("control_block_len: expected %zu, got %zu\n",
+                       expected_cb_len, cb_len);
+                return false;
+            }
+
+            ret = wally_bip341_control_block_verify(buf, written);
+            if (!check_ret("bip341_control_block_verify", ret, WALLY_OK))
+                return false;
+        }
+
+        if (expected_ret == WALLY_OK)
+            for (n = 0; n < NUM_ELEMS(tr_test->keys[i].items); ++n)
+                expected_num_keys += tr_test->keys[i].items[n][0] ? 1 : 0;
+
+        ret = wally_descriptor_get_taproot_leaf_num_keys(descriptor, i, &num_keys);
+        if (!check_ret("get_taproot_leaf_num_keys", ret, expected_ret))
+            return false;
+        if (expected_ret == WALLY_OK) {
+            if (num_keys != expected_num_keys) {
+                printf("leaf_num_keys: expected %u, got %u\n",
+                       expected_num_keys, num_keys);
+                return false;
+            }
+        }
+
+        /* Check the keys in each tapleaf script */
+        for (n = 0; n < expected_num_keys + 1; ++n) {
+            uint32_t features;
+            if (n == expected_num_keys)
+                expected_sub_ret = WALLY_EINVAL; /* Instead of expected_ret */
+            ret = wally_descriptor_get_taproot_leaf_key_index(descriptor, i, n,
+                                                              &key_index);
+            if (!check_ret("get_taproot_leaf_key_index", ret, expected_sub_ret))
+                return false;
+
+            if (expected_sub_ret == WALLY_OK) {
+                char *key_out;
+                ret = wally_descriptor_get_key(descriptor, key_index, &key_out);
+                if (!check_ret("get_key", ret, WALLY_OK))
+                    return false;
+                if (strcmp(key_out, tr_test->keys[i].items[n])) {
+                    printf("get_key: expected %s got %s\n",
+                           tr_test->keys[i].items[n], key_out);
+                    return false;
+                }
+                ret = wally_descriptor_get_key_features(descriptor, key_index, &features);
+                if (!check_ret("get_key_features", ret, WALLY_OK))
+                    return false;
+                if (!(features & WALLY_MS_IS_X_ONLY)) {
+                    printf("features: expected x-only got %x\n", features);
+                    return false;
+                }
+                wally_free_string(key_out);
+            }
+        }
+    }
+
+    wally_descriptor_free(descriptor);
+    return true;
+}
+
+/* Verify the BIP-341 taptree depth limit: a leaf nested in 128 branches
+ * (merkle path of 128 hashes) is the deepest valid leaf, matching core.
+ */
+static bool check_taptree_depth_limit(void)
+{
+    const char *key = "a34b99f22c790c4e36b2b3c2c35a36db06226e41c692fc82b8b56ac1c540c5bd";
+    static char descriptor_str[16384];
+    size_t depth, i;
+    bool tests_ok = true;
+
+    for (depth = WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH;
+         depth <= WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH + 1; ++depth) {
+        /* Build tr(key,{...{pk(key),pk(key)}...}) with `depth` nested braces,
+         * placing the deepest leaves at a merkle path length of `depth` */
+        const int expected_ret =
+            depth > WALLY_DESCRIPTOR_TAPTREE_MAX_DEPTH ? WALLY_EINVAL : WALLY_OK;
+        struct wally_descriptor *descriptor = NULL;
+        char *p = descriptor_str;
+        int ret;
+
+        p += sprintf(p, "tr(%s,", key);
+        for (i = 0; i < depth; ++i)
+            *p++ = '{';
+        p += sprintf(p, "pk(%s)", key);
+        for (i = 0; i < depth; ++i)
+            p += sprintf(p, ",pk(%s)}", key);
+        *p++ = ')';
+        *p = '\0';
+
+        ret = wally_descriptor_parse(descriptor_str, NULL,
+                                     WALLY_NETWORK_BITCOIN_MAINNET, 0,
+                                     &descriptor);
+        if (!check_ret("taptree depth limit", ret, expected_ret))
+            tests_ok = false;
+        wally_descriptor_free(descriptor);
+    }
+    return tests_ok;
+}
+
 int main(void)
 {
     bool tests_ok = true;
@@ -2568,6 +3151,18 @@ int main(void)
             printf("[%s] descriptor_address test failed!\n", g_address_cases[i].name);
             tests_ok = false;
         }
+    }
+
+    for (i = 0; i < NUM_ELEMS(g_taproot_cases); ++i) {
+        if (!check_taproot_descriptor(&g_taproot_cases[i])) {
+            printf("[%s] taproot test failed!\n", g_taproot_cases[i].test.name);
+            tests_ok = false;
+        }
+    }
+
+    if (!check_taptree_depth_limit()) {
+        printf("taptree depth limit test failed!\n");
+        tests_ok = false;
     }
 
     wally_cleanup(0);

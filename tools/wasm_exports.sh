@@ -104,6 +104,15 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_get_num_keys' \
 ,'_wally_descriptor_get_num_paths' \
 ,'_wally_descriptor_get_num_variants' \
+,'_wally_descriptor_get_taproot_control_block' \
+,'_wally_descriptor_get_taproot_control_block_len' \
+,'_wally_descriptor_get_taproot_leaf_hash' \
+,'_wally_descriptor_get_taproot_leaf_key_index' \
+,'_wally_descriptor_get_taproot_leaf_num_keys' \
+,'_wally_descriptor_get_taproot_leaf_script' \
+,'_wally_descriptor_get_taproot_leaf_script_len' \
+,'_wally_descriptor_get_taproot_merkle_root' \
+,'_wally_descriptor_get_taproot_num_leaves' \
 ,'_wally_descriptor_parse' \
 ,'_wally_descriptor_set_network' \
 ,'_wally_descriptor_to_address' \
