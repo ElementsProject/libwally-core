@@ -1,4 +1,5 @@
 #include "internal.h"
+#include <include/wally_script.h>
 #include <include/wally_transaction.h>
 #include "pullpush.h"
 #include "script.h"
@@ -62,6 +63,11 @@ static const unsigned char TAPLEAF_SHA256[SHA256_LEN] = {
     0xae, 0xea, 0x8f, 0xdc, 0x42, 0x08, 0x98, 0x31, 0x05, 0x73, 0x4b, 0x58, 0x08, 0x1d, 0x1e, 0x26,
     0x38, 0xd3, 0x5f, 0x1c, 0xb5, 0x40, 0x08, 0xd4, 0xd3, 0x57, 0xca, 0x03, 0xbe, 0x78, 0xe9, 0xee
 };
+/* SHA256(TapBranch) */
+static const unsigned char TAPBRANCH_SHA256[SHA256_LEN] = {
+    0x19, 0x41, 0xa1, 0xf2, 0xe5, 0x6e, 0xb9, 0x5f, 0xa2, 0xa9, 0xf1, 0x94, 0xbe, 0x5c, 0x01, 0xf7,
+    0x21, 0x6f, 0x33, 0xed, 0x82, 0xb0, 0x91, 0x46, 0x34, 0x90, 0xd0, 0x5b, 0xf5, 0x16, 0xa0, 0x15
+};
 
 #ifdef BUILD_ELEMENTS
 /* SHA256(TapSighash/elements) */
@@ -74,11 +80,18 @@ static const unsigned char TAPLEAF_SHA256_ELEMENTS[SHA256_LEN] = {
     0x69, 0xff, 0xb5, 0x5a, 0xb8, 0xc8, 0x1c, 0x21, 0xf5, 0x8b, 0x2a, 0xdc, 0xb0, 0x83, 0x5a, 0x08,
     0x60, 0x8a, 0xf5, 0x9d, 0x04, 0x2f, 0x03, 0x37, 0x64, 0x33, 0x9c, 0xd8, 0xe6, 0xba, 0x33, 0xe7
 };
+/* SHA256(TapBranch/elements) */
+static const unsigned char TAPBRANCH_SHA256_ELEMENTS[SHA256_LEN] = {
+    0xa0, 0x37, 0x22, 0xab, 0xcb, 0x0d, 0x54, 0xaa, 0x9e, 0x6b, 0x38, 0x93, 0xe9, 0xf8, 0x13, 0x7d,
+    0x90, 0x60, 0x21, 0x9c, 0x42, 0xcc, 0x13, 0x9c, 0x32, 0xc2, 0xeb, 0x67, 0x08, 0x0d, 0x73, 0xc6
+};
 #define TAPSIGHASH_SHA256(is_elements) (is_elements ? TAPSIGHASH_SHA256_ELEMENTS : TAPSIGHASH_SHA256)
 #define TAPLEAF_SHA256(is_elements) (is_elements ? TAPLEAF_SHA256_ELEMENTS : TAPLEAF_SHA256)
+#define TAPBRANCH_SHA256(is_elements) (is_elements ? TAPBRANCH_SHA256_ELEMENTS : TAPBRANCH_SHA256)
 #else
 #define TAPSIGHASH_SHA256(is_elements) TAPSIGHASH_SHA256
 #define TAPLEAF_SHA256(is_elements) TAPLEAF_SHA256
+#define TAPBRANCH_SHA256(is_elements) TAPBRANCH_SHA256
 #endif /* BUILD_ELEMENTS */
 
 static bool script_len_ok(size_t len) { return len != 0; }
@@ -559,7 +572,63 @@ static void txio_hash_annex(cursor_io *io,
     }
 }
 
-static void txio_hash_tapleaf_hash(cursor_io *io,
+int bip341_tapbranch_hash(const unsigned char *lhs, size_t lhs_len,
+                          const unsigned char *rhs, size_t rhs_len,
+                          bool is_elements, unsigned char *bytes_out, size_t len)
+{
+    struct sha256_ctx ctx;
+    struct sha256 hash;
+
+    if (!lhs || lhs_len != SHA256_LEN || !rhs || rhs_len != SHA256_LEN ||
+        !bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+#ifndef BUILD_ELEMENTS
+    if (is_elements)
+        return WALLY_EINVAL;
+#endif
+
+    tagged_hash_init(&ctx, TAPBRANCH_SHA256(is_elements), SHA256_LEN);
+    /* BIP-341: child hashes are sorted lexicographically before hashing so
+     * the merkle path doesn't need to encode left/right direction.
+     *   If k_j < e_j: k_{j+1} = hash_TapBranch(k_j || e_j)
+     *   If k_j >= e_j: k_{j+1} = hash_TapBranch(e_j || k_j) */
+    if (memcmp(lhs, rhs, lhs_len) > 0) {
+        const unsigned char *tmp = lhs;
+        lhs = rhs;
+        rhs = tmp;
+    }
+    hash_bytes(&ctx, lhs, lhs_len);
+    hash_bytes(&ctx, rhs, rhs_len);
+    sha256_done(&ctx, &hash);
+    memcpy(bytes_out, hash.u.u8, sizeof(hash));
+    return WALLY_OK;
+}
+
+int bip341_tapleaf_hash(unsigned char leaf_version,
+                        const unsigned char *script, size_t script_len,
+                        bool is_elements, unsigned char *bytes_out, size_t len)
+{
+    struct sha256_ctx ctx;
+    struct sha256 hash;
+
+    if (!bytes_out || len != SHA256_LEN)
+        return WALLY_EINVAL;
+
+#ifndef BUILD_ELEMENTS
+    if (is_elements)
+        return WALLY_EINVAL;
+#endif
+
+    tagged_hash_init(&ctx, TAPLEAF_SHA256(is_elements), SHA256_LEN);
+    hash_u8(&ctx, leaf_version);
+    hash_varbuff(&ctx, script, script_len);
+    sha256_done(&ctx, &hash);
+    memcpy(bytes_out, hash.u.u8, sizeof(hash));
+    return WALLY_OK;
+}
+
+static void txio_hash_tapleaf_hash(cursor_io *io, unsigned char leaf_version,
                                    const unsigned char *tapleaf_script, size_t tapleaf_script_len,
                                    bool is_elements)
 {
@@ -571,15 +640,12 @@ static void txio_hash_tapleaf_hash(cursor_io *io,
     if (item) {
         hash_bytes(&io->ctx, item->value, item->value_len);
     } else {
-        struct sha256_ctx ctx;
-        struct sha256 hash;
-        tagged_hash_init(&ctx, TAPLEAF_SHA256(is_elements), SHA256_LEN);
-        hash_u8(&ctx, 0xc0); /* leaf_version */
-        hash_varbuff(&ctx, tapleaf_script, tapleaf_script_len);
-        sha256_done(&ctx, &hash);
-        hash_bytes(&io->ctx, hash.u.u8, sizeof(hash));
+        unsigned char hash[SHA256_LEN];
+        bip341_tapleaf_hash(leaf_version, tapleaf_script, tapleaf_script_len,
+                            is_elements, hash, sizeof(hash));
+        hash_bytes(&io->ctx, hash, sizeof(hash));
         if (io->cache)
-            wally_map_add(io->cache, tapleaf_script, tapleaf_script_len, hash.u.u8, sizeof(hash));
+            wally_map_add(io->cache, tapleaf_script, tapleaf_script_len, hash, sizeof(hash));
     }
 }
 
@@ -949,7 +1015,8 @@ static int bip341_signature_hash(
     /* Tapscript Extensions */
     if (tapleaf_script) {
         if (!sh_anyprevout_anyscript)
-            txio_hash_tapleaf_hash(&io, tapleaf_script, tapleaf_script_len, is_elements);
+            txio_hash_tapleaf_hash(&io, WALLY_LEAF_VERSION_TAPSCRIPT,
+                                   tapleaf_script, tapleaf_script_len, is_elements);
         hash_u8(&io.ctx, key_version & 0xff);
         hash_le32(&io.ctx, codesep_position);
     }

@@ -27,6 +27,8 @@ extern "C" {
 #define WALLY_SCRIPTPUBKEY_P2WSH_LEN  34 /** OP_0 [SHA256] */
 #define WALLY_SCRIPTPUBKEY_P2TR_LEN   34 /** OP_1 [X-ONLY-PUBKEY] */
 
+#define WALLY_LEAF_VERSION_TAPSCRIPT  0xc0 /** BIP-342 tapscript leaf version */
+
 #define WALLY_SCRIPTPUBKEY_OP_RETURN_MAX_LEN 83 /** OP_RETURN [80 bytes of data] */
 
 #define WALLY_MAX_OP_RETURN_LEN 80 /* Maximum length of OP_RETURN data push */
@@ -170,6 +172,8 @@ extern "C" {
 #define OP_NOP8 0xb7
 #define OP_NOP9 0xb8
 #define OP_NOP10 0xb9
+
+#define OP_CHECKSIGADD 0xba /* BIP-342 tapscript */
 
 #define OP_INVALIDOPCODE 0xff
 #endif  /* WALLY_DISABLE_OP_CODE */
