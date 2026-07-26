@@ -596,7 +596,6 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_descriptor_get_num_variants);
 %returns_size_t(wally_descriptor_get_taproot_control_block);
 %returns_size_t(wally_descriptor_get_taproot_control_block_len);
-%returns_array_(wally_descriptor_get_taproot_internal_key, 5, 6, EC_XONLY_PUBLIC_KEY_LEN);
 %returns_size_t(wally_descriptor_get_taproot_leaf_key_index);
 %returns_size_t(wally_descriptor_get_taproot_leaf_num_keys);
 %returns_size_t(wally_descriptor_get_taproot_leaf_script);

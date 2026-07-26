@@ -599,26 +599,6 @@ WALLY_CORE_API int wally_descriptor_get_taproot_leaf_key_index(
     uint32_t *value_out);
 
 /**
- * Get the x-only internal key of a tr() descriptor.
- *
- * Returns WALLY_EINVAL if the descriptor is not taproot.
- *
- * :param descriptor: Parsed tr() output descriptor.
- * :param multi_index: See `wally_descriptor_get_num_paths`.
- * :param child_num: BIP32 child number, or 0 for static descriptors.
- * :param flags: For future use. Must be 0.
- * :param bytes_out: Destination for the 32-byte x-only internal key.
- * FIXED_SIZED_OUTPUT(len, bytes_out, EC_XONLY_PUBLIC_KEY_LEN)
- */
-WALLY_CORE_API int wally_descriptor_get_taproot_internal_key(
-    const struct wally_descriptor *descriptor,
-    uint32_t multi_index,
-    uint32_t child_num,
-    uint32_t flags,
-    unsigned char *bytes_out,
-    size_t len);
-
-/**
  * Get the merkle root of the taptree in a tr() descriptor.
  *
  * Returns WALLY_EINVAL if the descriptor does not contain a taptree.

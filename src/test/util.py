@@ -340,7 +340,6 @@ for f in (
     ('wally_descriptor_get_num_variants', c_int, [c_void_p, c_uint32_p]),
     ('wally_descriptor_get_taproot_control_block', c_int, [c_void_p, c_uint32, c_uint32, c_uint32, c_uint32, c_void_p, c_size_t, c_size_t_p]),
     ('wally_descriptor_get_taproot_control_block_len', c_int, [c_void_p, c_uint32, c_uint32, c_uint32, c_uint32, c_size_t_p]),
-    ('wally_descriptor_get_taproot_internal_key', c_int, [c_void_p, c_uint32, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_descriptor_get_taproot_leaf_hash', c_int, [c_void_p, c_uint32, c_uint32, c_uint32, c_uint32, c_void_p, c_size_t]),
     ('wally_descriptor_get_taproot_leaf_key_index', c_int, [c_void_p, c_uint32, c_uint32, c_uint32_p]),
     ('wally_descriptor_get_taproot_leaf_num_keys', c_int, [c_void_p, c_uint32, c_uint32_p]),

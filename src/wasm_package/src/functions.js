@@ -180,7 +180,6 @@ export const descriptor_get_num_keys = wrap('wally_descriptor_get_num_keys', [T.
 export const descriptor_get_num_paths = wrap('wally_descriptor_get_num_paths', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_num_variants = wrap('wally_descriptor_get_num_variants', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const descriptor_get_taproot_control_block_len = wrap('wally_descriptor_get_taproot_control_block_len', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.Int32, T.DestPtr(T.Int32)]);
-export const descriptor_get_taproot_internal_key = wrap('wally_descriptor_get_taproot_internal_key', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.EC_XONLY_PUBLIC_KEY_LEN)]);
 export const descriptor_get_taproot_leaf_hash = wrap('wally_descriptor_get_taproot_leaf_hash', [T.OpaqueRef, T.Int32, T.Int32, T.Int32, T.Int32, T.DestPtrSized(T.Bytes, C.SHA256_LEN)]);
 export const descriptor_get_taproot_leaf_key_index = wrap('wally_descriptor_get_taproot_leaf_key_index', [T.OpaqueRef, T.Int32, T.Int32, T.DestPtr(T.Int32)]);
 export const descriptor_get_taproot_leaf_num_keys = wrap('wally_descriptor_get_taproot_leaf_num_keys', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);

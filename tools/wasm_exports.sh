@@ -106,7 +106,6 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_descriptor_get_num_variants' \
 ,'_wally_descriptor_get_taproot_control_block' \
 ,'_wally_descriptor_get_taproot_control_block_len' \
-,'_wally_descriptor_get_taproot_internal_key' \
 ,'_wally_descriptor_get_taproot_leaf_hash' \
 ,'_wally_descriptor_get_taproot_leaf_key_index' \
 ,'_wally_descriptor_get_taproot_leaf_num_keys' \

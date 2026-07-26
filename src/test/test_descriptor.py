@@ -682,8 +682,6 @@ class DescriptorTests(unittest.TestCase):
                 merkle_internal_args = (args[0],) + args[2:-1] + (32,)
                 ret = wally_descriptor_get_taproot_merkle_root(*merkle_internal_args)
                 self.assertEqual(ret, WALLY_EINVAL)
-                ret = wally_descriptor_get_taproot_internal_key(*merkle_internal_args)
-                self.assertEqual(ret, WALLY_EINVAL)
 
         ret = wally_descriptor_get_taproot_num_leaves(None) # NULL descriptor
         self.assertEqual(ret, (WALLY_EINVAL, 0))

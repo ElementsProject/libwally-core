@@ -140,7 +140,6 @@ export function descriptor_get_num_keys(descriptor: Ref_wally_descriptor): numbe
 export function descriptor_get_num_paths(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_num_variants(descriptor: Ref_wally_descriptor): number;
 export function descriptor_get_taproot_control_block_len(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): number;
-export function descriptor_get_taproot_internal_key(descriptor: Ref_wally_descriptor, multi_index: number, child_num: number, flags: number): Buffer;
 export function descriptor_get_taproot_leaf_hash(descriptor: Ref_wally_descriptor, leaf_index: number, multi_index: number, child_num: number, flags: number): Buffer;
 export function descriptor_get_taproot_leaf_key_index(descriptor: Ref_wally_descriptor, leaf_index: number, key_position: number): number;
 export function descriptor_get_taproot_leaf_num_keys(descriptor: Ref_wally_descriptor, leaf_index: number): number;

@@ -2943,12 +2943,17 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
         if (expected_ret != WALLY_OK)
             continue;
 
-        ret = wally_descriptor_get_taproot_internal_key(descriptor, 0, 0, 0,
-                                                        buf, SHA256_LEN);
-        if (!check_ret("get_taproot_internal_key", ret, WALLY_OK))
+        /* The internal key is always key index 0 */
+        struct ext_key* internal_key;
+        ret = wally_descriptor_derive_bip32_key_alloc(descriptor, 0,
+                                                      0, 0, 0, 0,
+                                                      &internal_key);
+        if (!check_ret("derive_bip32_key(internal)", ret, WALLY_OK))
             return false;
-        if (!check_varbuff("internal_key", buf, SHA256_LEN, tr_test->internal_key))
+        if (!check_varbuff("internal_key", internal_key->pub_key + 1,
+                           EC_XONLY_PUBLIC_KEY_LEN, tr_test->internal_key))
             return false;
+        bip32_key_free(internal_key);
     }
 
     for (i = 0; i < NUM_ELEMS(tr_test->leaf_scripts); ++i)

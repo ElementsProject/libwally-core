@@ -4373,40 +4373,6 @@ int wally_descriptor_get_taproot_leaf_key_index(
     return WALLY_EINVAL; /* key not found in map (should not happen) */
 }
 
-int wally_descriptor_get_taproot_internal_key(
-    const struct wally_descriptor *descriptor,
-    uint32_t multi_index, uint32_t child_num, uint32_t flags,
-    unsigned char *bytes_out, size_t len)
-{
-    ms_ctx ctx;
-    unsigned char pubkey[EC_PUBLIC_KEY_LEN]; /* x-only (32) or compressed (33) key */
-    size_t pubkey_len = 0;
-    int ret;
-
-    if (!index_args_valid(descriptor, 0, multi_index, child_num) ||
-        flags || !bytes_out || len != EC_XONLY_PUBLIC_KEY_LEN ||
-        !(descriptor->features & WALLY_MS_IS_TAPROOT))
-        return WALLY_EINVAL;
-    if ((ret = ctx_clone(descriptor, 0, multi_index, child_num, &ctx)) != WALLY_OK)
-        return ret;
-
-    ret = generate_script(&ctx, tr_get_tr(&ctx)->child, pubkey, sizeof(pubkey),
-                          &pubkey_len);
-    ctx_clear(&ctx);
-
-    if (ret == WALLY_OK) {
-        if (pubkey_len == EC_XONLY_PUBLIC_KEY_LEN) {
-            memcpy(bytes_out, pubkey, EC_XONLY_PUBLIC_KEY_LEN);
-        } else if (pubkey_len == EC_PUBLIC_KEY_LEN) {
-            /* Compressed key: strip the parity byte */
-            memcpy(bytes_out, pubkey + 1, EC_XONLY_PUBLIC_KEY_LEN);
-        } else {
-            ret = WALLY_EINVAL;
-        }
-    }
-    return ret;
-}
-
 int wally_descriptor_get_taproot_merkle_root(
     const struct wally_descriptor *descriptor,
     uint32_t multi_index, uint32_t child_num, uint32_t flags,

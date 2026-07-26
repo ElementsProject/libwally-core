@@ -648,12 +648,6 @@ inline int descriptor_get_taproot_control_block_len(const DESCRIPTOR& descriptor
 }
 
 template <class DESCRIPTOR, class BYTES_OUT>
-inline int descriptor_get_taproot_internal_key(const DESCRIPTOR& descriptor, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out) {
-    int ret = ::wally_descriptor_get_taproot_internal_key(detail::get_p(descriptor), multi_index, child_num, flags, bytes_out.data(), bytes_out.size());
-    return detail::check_ret(__FUNCTION__, ret);
-}
-
-template <class DESCRIPTOR, class BYTES_OUT>
 inline int descriptor_get_taproot_leaf_hash(const DESCRIPTOR& descriptor, uint32_t leaf_index, uint32_t multi_index, uint32_t child_num, uint32_t flags, BYTES_OUT& bytes_out) {
     int ret = ::wally_descriptor_get_taproot_leaf_hash(detail::get_p(descriptor), leaf_index, multi_index, child_num, flags, bytes_out.data(), bytes_out.size());
     return detail::check_ret(__FUNCTION__, ret);
