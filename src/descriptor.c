@@ -4079,26 +4079,19 @@ int wally_descriptor_derive_bip32_key(
 
     if (output)
         wally_clear(output, sizeof(*output));
-    if (!node || variant >= descriptor->num_variants ||
-        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
-        (child_num && !(descriptor->features & WALLY_MS_IS_RANGED)) ||
-        multi_index >= descriptor->num_multipaths ||
+    if (!node || !index_args_valid(descriptor, variant, multi_index, child_num) ||
         flags & ~(BIP32_FLAG_KEY_PUBLIC|BIP32_FLAG_SKIP_HASH) || !output)
         return WALLY_EINVAL;
     if ((node->kind & KIND_BIP32) == KIND_BIP32 && node->child_path_len) {
         /* Non-static key: create context required for deriving */
-        memcpy(&ctx, descriptor, sizeof(ctx));
-        ctx.variant = variant;
-        ctx.child_num = child_num;
-        ctx.multi_index = multi_index;
-        if (ctx.max_path_elems &&
-            !(ctx.path_buff = wally_malloc(ctx.max_path_elems * sizeof(uint32_t))))
-            return WALLY_ENOMEM;
+        ret = ctx_clone(descriptor, variant, multi_index, child_num, &ctx);
+        if (ret != WALLY_OK)
+            return ret;
         ctx_p = &ctx;
     }
     ret = node_derive_key(ctx_p, node, flags, output);
-    if (ctx_p && ctx_p->path_buff)
-        wally_free(ctx_p->path_buff);
+    if (ctx_p)
+        ctx_clear(ctx_p);
     return ret;
 }
 
