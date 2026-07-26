@@ -622,33 +622,31 @@ static bool node_has_uncompressed_key(const ms_ctx *ctx, const ms_node *node)
     return false;
 }
 
+static inline bool node_is_ct(const ms_node *node)
+{
+#ifdef BUILD_ELEMENTS
+    return !node->parent && node->kind == KIND_DESCRIPTOR_CT;
+#else
+    (void)node;
+    return false;
+#endif
+}
+
 static int node_is_top(const ms_node *node)
 {
     /* True if this is the top node in the descriptor
-     * (disregarding any ct() parent for Elements).
-     */
-#ifdef BUILD_ELEMENTS
-    return !node->parent || node->parent->kind == KIND_DESCRIPTOR_CT;
-#else
-    return !node->parent;
-#endif
+     * (ignoring ct() parent for Elements) */
+    return !node->parent || node_is_ct(node->parent);
 }
 
 static bool node_is_root(const ms_node *node)
 {
     /* True if this is a (possibly temporary) top level node, or an argument of a builtin,
      * or a direct child of a taptree branch node (each taptree leaf is an independent
-     * miniscript expression that must be validated as its own root). */
+     * miniscript expression that must be validated as its own root) */
     return !node->parent || node->parent->builtin ||
            node->parent->kind == KIND_BRANCH;
 }
-
-#ifdef BUILD_ELEMENTS
-static bool node_is_ct(const ms_node *node)
-{
-    return !node->parent && node->kind == KIND_DESCRIPTOR_CT;
-}
-#endif
 
 static void node_free(ms_node *node)
 {
@@ -1716,10 +1714,8 @@ static bool ms_ctx_is_elements(const ms_ctx *ctx)
 static inline ms_node *tr_get_tr(const struct wally_descriptor *descriptor)
 {
     ms_node *node = descriptor->top_node;
-#ifdef BUILD_ELEMENTS
-    if (descriptor->features & WALLY_MS_ANY_BLINDING_KEY)
+    if (node_is_ct(node))
         node = node->child->next; /* tr() from ct(blinding_key,tr(...)) */
-#endif
     return node;
 }
 
@@ -2513,24 +2509,25 @@ static const struct ms_builtin_t g_builtins[] = {
 };
 #undef I_NAME
 
-#ifdef BUILD_ELEMENTS
 static inline bool builtin_is_elements(const char *name, size_t name_len)
 {
+#ifdef BUILD_ELEMENTS
     /* Elements descriptor builtins are prefixed with "el" */
     return name_len > 2 && name[0] == 'e' && name[1] == 'l';
-}
+#else
+    (void)name;
+    (void)name_len;
+    return false;
 #endif /* ifdef BUILD_ELEMENTS */
+}
 
 static unsigned char builtin_lookup(const char *name, size_t name_len, uint32_t kind)
 {
     unsigned char i;
-#ifdef BUILD_ELEMENTS
     if (builtin_is_elements(name, name_len)) {
         name += 2; /* Look up without matching the prefix */
         name_len -= 2;
     }
-#endif /* ifdef BUILD_ELEMENTS */
-
     for (i = 0; i < NUM_ELEMS(g_builtins); ++i) {
         if ((g_builtins[i].kind & kind) &&
             g_builtins[i].name_len == name_len &&
@@ -3127,10 +3124,8 @@ static int analyze_miniscript(ms_ctx *ctx, const char *str, size_t str_len,
                     /* Not a pure descriptor */
                     ctx->features &= ~WALLY_MS_IS_DESCRIPTOR;
                 }
-#ifdef BUILD_ELEMENTS
                 if (builtin_is_elements(str + offset, i - offset))
                     ctx->features |= WALLY_MS_IS_ELEMENTS;
-#endif /* ifdef BUILD_ELEMENTS */
                 if (node->kind == KIND_DESCRIPTOR_TR)
                     ctx->features |= WALLY_MS_IS_TAPROOT;
                 offset = i + 1;
@@ -3923,7 +3918,7 @@ static const ms_node *descriptor_get_key(const struct wally_descriptor *descript
     const ms_node *node = NULL;
     if (!descriptor)
         return NULL;
-#ifdef BUILD_ELEMENTS
+
     if (index == WALLY_MS_BLINDING_KEY_INDEX) {
         if (node_is_ct(descriptor->top_node)) {
             node = descriptor->top_node->child;
@@ -3934,7 +3929,6 @@ static const ms_node *descriptor_get_key(const struct wally_descriptor *descript
         }
         return node;
     }
-#endif
     if (index >= descriptor->keys.num_items)
         return NULL;
     return (ms_node *)descriptor->keys.items[index].value;
