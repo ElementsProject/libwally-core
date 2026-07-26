@@ -145,6 +145,7 @@ export function descriptor_to_script_get_maximum_length(descriptor: Ref_wally_de
 export function ec_private_key_bip341_tweak(priv_key: Buffer|Uint8Array|null, merkle_root: Buffer|Uint8Array|null, flags: number): Buffer;
 export function ec_private_key_verify(priv_key: Buffer|Uint8Array|null): void;
 export function ec_public_key_bip341_tweak(pub_key: Buffer|Uint8Array|null, merkle_root: Buffer|Uint8Array|null, flags: number): Buffer;
+export function ec_public_key_compress(pub_key: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_decompress(pub_key: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_from_private_key(priv_key: Buffer|Uint8Array|null): Buffer;
 export function ec_public_key_negate(pub_key: Buffer|Uint8Array|null): Buffer;

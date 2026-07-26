@@ -345,6 +345,7 @@ for f in (
     ('wally_ec_private_key_bip341_tweak', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
     ('wally_ec_private_key_verify', c_int, [c_void_p, c_size_t]),
     ('wally_ec_public_key_bip341_tweak', c_int, [c_void_p, c_size_t, c_void_p, c_size_t, c_uint32, c_void_p, c_size_t]),
+    ('wally_ec_public_key_compress', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_public_key_decompress', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_public_key_from_private_key', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),
     ('wally_ec_public_key_negate', c_int, [c_void_p, c_size_t, c_void_p, c_size_t]),

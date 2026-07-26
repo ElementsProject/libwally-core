@@ -40,6 +40,8 @@ class SignTests(unittest.TestCase):
     def test_sign_and_verify(self):
         sig, sig2, sig_low_r = self.cbufferize(['00' * EC_SIGNATURE_LEN] * 3)
         der, der_len = make_cbuffer('00' * EC_SIGNATURE_DER_MAX_LEN)
+        pub_key, pub_key2 = make_cbuffer('00' * 33)[0], make_cbuffer('00' * 33)[0]
+        pub_unc, pub_unc2 = make_cbuffer('00' * 65)[0], make_cbuffer('00' * 65)[0]
 
         for case in self.get_sign_cases():
             priv_key, msg, nonce, r, s = case
@@ -74,7 +76,6 @@ class SignTests(unittest.TestCase):
             self.assertEqual((ret, h(sig)), (WALLY_OK, h(sig2))) # All sigs low-s
 
             # Verify
-            pub_key, _ = make_cbuffer('00' * 33)
             ret = wally_ec_public_key_from_private_key(priv_key, len(priv_key),
                                                        pub_key, len(pub_key))
             self.assertEqual(ret, WALLY_OK)
@@ -83,12 +84,22 @@ class SignTests(unittest.TestCase):
                                           FLAG_ECDSA, s, len(s))
                 self.assertEqual(ret, WALLY_OK)
 
-            # Validate public key
-            pub_unc, _ = make_cbuffer('00' * 65)
+            # Validate public key, Check pubkey compression/decompression
+            self.assertEqual(wally_ec_public_key_verify(pub_key, len(pub_key)), WALLY_OK)
+
             ret = wally_ec_public_key_decompress(pub_key, len(pub_key), pub_unc, len(pub_unc))
             self.assertEqual(ret, WALLY_OK)
-            self.assertEqual(wally_ec_public_key_verify(pub_key, len(pub_key)), WALLY_OK)
             self.assertEqual(wally_ec_public_key_verify(pub_unc, len(pub_unc)), WALLY_OK)
+            ret = wally_ec_public_key_decompress(pub_unc, len(pub_unc), pub_unc2, len(pub_unc2))
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(pub_unc, pub_unc2)
+
+            for p, l in [(pub_key, len(pub_key)),(pub_unc, len(pub_unc))]:
+                ret = wally_ec_public_key_compress(p, l, pub_key2, len(pub_key2))
+                self.assertEqual(ret, WALLY_OK)
+                self.assertEqual(pub_key, pub_key2)
+                ret = wally_ec_public_key_verify(pub_key2, len(pub_key2))
+                self.assertEqual(ret, WALLY_OK)
 
         set_fake_ec_nonce(None)
 

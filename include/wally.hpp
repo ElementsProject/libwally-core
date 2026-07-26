@@ -678,6 +678,12 @@ inline int ec_public_key_bip341_tweak(const PUB_KEY& pub_key, const MERKLE_ROOT&
 }
 
 template <class PUB_KEY, class BYTES_OUT>
+inline int ec_public_key_compress(const PUB_KEY& pub_key, BYTES_OUT& bytes_out) {
+    int ret = ::wally_ec_public_key_compress(pub_key.data(), pub_key.size(), bytes_out.data(), bytes_out.size());
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class PUB_KEY, class BYTES_OUT>
 inline int ec_public_key_decompress(const PUB_KEY& pub_key, BYTES_OUT& bytes_out) {
     int ret = ::wally_ec_public_key_decompress(pub_key.data(), pub_key.size(), bytes_out.data(), bytes_out.size());
     return detail::check_ret(__FUNCTION__, ret);

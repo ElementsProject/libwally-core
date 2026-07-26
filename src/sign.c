@@ -93,24 +93,51 @@ int wally_ec_public_key_from_private_key(const unsigned char *priv_key, size_t p
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
+static int pk_compress_impl(const unsigned char *pub_key, size_t pub_key_len,
+                            unsigned char *bytes_out, size_t len)
+{
+    secp256k1_pubkey pub;
+    unsigned int flags = len == EC_PUBLIC_KEY_LEN ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED;
+    size_t len_in_out = len;
+    bool ok;
+
+    ok = pubkey_parse(&pub, pub_key, pub_key_len) &&
+         pubkey_serialize(bytes_out, &len_in_out, &pub, flags) &&
+         len_in_out == len;
+
+    if (!ok && bytes_out && len)
+        wally_clear(bytes_out, len);
+    return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+int wally_ec_public_key_compress(const unsigned char *pub_key, size_t pub_key_len,
+                                 unsigned char *bytes_out, size_t len)
+{
+    int ret = WALLY_EINVAL;
+    if (pub_key && bytes_out && len == EC_PUBLIC_KEY_LEN) {
+        if (pub_key_len == EC_PUBLIC_KEY_LEN) {
+            memcpy(bytes_out, pub_key, pub_key_len); /* No-op */
+            ret = WALLY_OK;
+        } else if (pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+            ret = pk_compress_impl(pub_key, pub_key_len, bytes_out, len);
+    }
+    return ret;
+}
+
 int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_len,
                                    unsigned char *bytes_out, size_t len)
 {
-    secp256k1_pubkey pub;
-    size_t len_in_out = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-    bool ok;
-
-    ok = pub_key && pub_key_len == EC_PUBLIC_KEY_LEN &&
-         bytes_out && len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN &&
-         pubkey_parse(&pub, pub_key, pub_key_len) &&
-         pubkey_serialize(bytes_out, &len_in_out, &pub, PUBKEY_UNCOMPRESSED) &&
-         len_in_out == EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
-
-    if (!ok && bytes_out)
-        wally_clear(bytes_out, len);
-    wally_clear(&pub, sizeof(pub));
-    return ok ? WALLY_OK : WALLY_EINVAL;
+    int ret = WALLY_EINVAL;
+    if (pub_key && bytes_out && len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+        if (pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) {
+            memcpy(bytes_out, pub_key, pub_key_len); /* No-op */
+            ret = WALLY_OK;
+        } else if (pub_key_len == EC_PUBLIC_KEY_LEN)
+            ret = pk_compress_impl(pub_key, pub_key_len, bytes_out, len);
+    }
+    return ret;
 }
+
 
 int wally_ec_public_key_negate(const unsigned char *pub_key, size_t pub_key_len,
                                unsigned char *bytes_out, size_t len)
