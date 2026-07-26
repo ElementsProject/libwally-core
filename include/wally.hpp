@@ -534,6 +534,18 @@ inline int descriptor_canonicalize(const DESCRIPTOR& descriptor, uint32_t flags,
     return detail::check_ret(__FUNCTION__, ret);
 }
 
+template <class DESCRIPTOR>
+inline int descriptor_derive_bip32_key(const DESCRIPTOR& descriptor, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, struct ext_key* output) {
+    int ret = ::wally_descriptor_derive_bip32_key(detail::get_p(descriptor), index, variant, multi_index, child_num, flags, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
+template <class DESCRIPTOR>
+inline int descriptor_derive_bip32_key_alloc(const DESCRIPTOR& descriptor, uint32_t index, uint32_t variant, uint32_t multi_index, uint32_t child_num, uint32_t flags, struct ext_key** output) {
+    int ret = ::wally_descriptor_derive_bip32_key_alloc(detail::get_p(descriptor), index, variant, multi_index, child_num, flags, output);
+    return detail::check_ret(__FUNCTION__, ret);
+}
+
 inline int descriptor_free(struct wally_descriptor* descriptor) {
     int ret = ::wally_descriptor_free(descriptor);
     return detail::check_ret(__FUNCTION__, ret);

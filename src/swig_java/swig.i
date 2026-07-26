@@ -341,6 +341,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %ignore bip32_key_init;
 %ignore bip32_key_unserialize;
 %ignore bip32_key_with_tweak_from_parent_path;
+%ignore wally_descriptor_derive_bip32_key;
 %ignore wally_map_init;
 %ignore wally_map_keypath_get_bip32_key_from;
 %ignore wally_psbt_blind;
@@ -577,6 +578,8 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_array_(wally_confidential_addr_segwit_to_ec_public_key, 3, 4, EC_PUBLIC_KEY_LEN);
 %returns_string(wally_confidential_addr_from_addr_segwit);
 %returns_string(wally_descriptor_canonicalize);
+%returns_struct(wally_descriptor_derive_bip32_key_alloc, ext_key);
+%rename("descriptor_derive_bip32_key") wally_descriptor_derive_bip32_key_alloc;
 %returns_string(wally_descriptor_get_checksum);
 %returns_size_t(wally_descriptor_get_depth);
 %returns_size_t(wally_descriptor_get_features);
