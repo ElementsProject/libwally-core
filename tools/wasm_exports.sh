@@ -87,6 +87,8 @@ EXPORTED_FUNCTIONS="['_malloc','_free','_bip32_key_free' \
 ,'_wally_bzero' \
 ,'_wally_cleanup' \
 ,'_wally_descriptor_canonicalize' \
+,'_wally_descriptor_derive_bip32_key' \
+,'_wally_descriptor_derive_bip32_key_alloc' \
 ,'_wally_descriptor_free' \
 ,'_wally_descriptor_get_checksum' \
 ,'_wally_descriptor_get_depth' \

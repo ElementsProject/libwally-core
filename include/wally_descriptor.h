@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+struct ext_key;
 struct wally_map;
 /** An opaque type holding a parsed minscript/descriptor expression */
 struct wally_descriptor;
@@ -305,6 +306,49 @@ WALLY_CORE_API int wally_descriptor_get_key_origin_path_str(
     const struct wally_descriptor *descriptor,
     size_t index,
     char **output);
+
+
+/**
+ * Derive a BIP32 extended key from a parsed output descriptor or miniscript expression.
+ *
+ * :param descriptor: Parsed output descriptor or miniscript expression.
+ * :param index: The zero-based index of the key to get, or `WALLY_MS_BLINDING_KEY_INDEX`
+ *|    to fetch the descriptors blinding key representaton (if any).
+ * :param variant: The variant of descriptor to derive from. See `wally_descriptor_get_num_variants`.
+ * :param multi_index: The multi-path item to derive from. See `wally_descriptor_get_num_paths`.
+ * :param child_num: The BIP32 child number to derive, or 0 for static descriptors.
+ * :param flags: Use `BIP32_FLAG_KEY_PUBLIC` to return public keys from private keys,
+ *|    and `BIP32_FLAG_SKIP_HASH` to avoid populating the derived key fingerprint.
+ * :param output: Destination for the resulting derived key.
+ *
+ * .. note:: The returned key may be bare (have only the public or private key populated).
+ *|    x-only bare keys have a prefix byte of 0x00. The caller can use `wally_descriptor_get_key_features` to
+ *|    determine the type of a given key before extracting data from it.
+ *
+ * .. note:: SLIP77 blinding keys are returned in the private key of the extended key.
+ */
+WALLY_CORE_API int wally_descriptor_derive_bip32_key(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    uint32_t variant,
+    uint32_t multi_index,
+    uint32_t child_num,
+    uint32_t flags,
+    struct ext_key *output);
+
+/**
+ * Derive a BIP32 extended key from a parsed output descriptor or miniscript expression.
+ *
+ * See `wally_descriptor_derive_bip32_key`.
+ */
+WALLY_CORE_API int wally_descriptor_derive_bip32_key_alloc(
+    const struct wally_descriptor *descriptor,
+    size_t index,
+    uint32_t variant,
+    uint32_t multi_index,
+    uint32_t child_num,
+    uint32_t flags,
+    struct ext_key **output);
 
 /**
  * Get the maximum length of a script corresponding to an output descriptor.

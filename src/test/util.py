@@ -321,6 +321,8 @@ for f in (
     ('wally_confidential_addr_to_addr_segwit', c_int, [c_char_p, c_char_p, c_char_p, c_char_p_p]),
     ('wally_confidential_addr_to_ec_public_key', c_int, [c_char_p, c_uint32, c_void_p, c_size_t]),
     ('wally_descriptor_canonicalize', c_int, [c_void_p, c_uint32, c_char_p_p]),
+    ('wally_descriptor_derive_bip32_key', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_uint32, c_uint32, POINTER(ext_key)]),
+    ('wally_descriptor_derive_bip32_key_alloc', c_int, [c_void_p, c_size_t, c_uint32, c_uint32, c_uint32, c_uint32, POINTER(POINTER(ext_key))]),
     ('wally_descriptor_free', c_int, [c_void_p]),
     ('wally_descriptor_get_checksum', c_int, [c_void_p, c_uint32, c_char_p_p]),
     ('wally_descriptor_get_depth', c_int, [c_void_p, c_uint32_p]),

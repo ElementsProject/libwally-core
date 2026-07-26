@@ -21,7 +21,7 @@ MS_IS_RANGED       = 0x1
 MS_IS_MULTIPATH    = 0x2
 MS_IS_PRIVATE      = 0x4
 MS_IS_UNCOMPRESSED = 0x08
-MS_IS_RAW          = 0x010
+MS_IS_RAW          = 0x10
 MS_IS_DESCRIPTOR   = 0x20
 MS_IS_X_ONLY       = 0x40
 MS_IS_PARENTED     = 0x80
@@ -33,6 +33,9 @@ MS_IS_ELIP151      = 0x800
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
 BLINDING_KEY_INDEX = 0xffffffff
+
+FLAG_KEY_PRIVATE = 0x0
+FLAG_KEY_PUBLIC  = 0x1
 
 def wally_map_from_dict(d):
     m = pointer(wally_map())
@@ -341,6 +344,7 @@ class DescriptorTests(unittest.TestCase):
         slip77 = 'b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04'
         xpriv = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         xpub1 = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL'
+        xpub1_pubkey = '02d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f0'
         xpub2 = 'xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU'
 
         def make_keys(xpubs):
@@ -400,7 +404,7 @@ class DescriptorTests(unittest.TestCase):
             [P, 'ct(@B,elpkh(@0/*))',         {'@B': xpub1,  '@0': xpub2}],
         ]
         d = c_void_p()
-        for flags, policy, key_items in cases:
+        for i, (flags, policy, key_items) in enumerate(cases):
             keys = wally_map_from_dict(key_items)
             ret = wally_descriptor_parse(policy, keys, NETWORK_LIQUID, flags, d)
             self.assertEqual(ret, WALLY_OK)
@@ -410,6 +414,26 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual((ret, key_str), (WALLY_OK, key_items['@0']))
             ret, key_info = wally_descriptor_get_key(d, BLINDING_KEY_INDEX)
             self.assertEqual((ret, key_info), (WALLY_OK, key_items['@B']))
+            key_out = ext_key()
+            ret, features = wally_descriptor_get_key_features(d, BLINDING_KEY_INDEX)
+            self.assertEqual(ret, WALLY_OK)
+            ret = wally_descriptor_derive_bip32_key(d, BLINDING_KEY_INDEX,
+                                                    0, 0, 0, 0, key_out)
+            self.assertEqual(ret, WALLY_OK)
+            if i == 0:
+                # SLIP-77 blinding keys are returned in the private key
+                self.assertEqual(key_out.priv_key[0], FLAG_KEY_PRIVATE)
+                self.assertEqual(bytes(key_out.priv_key[1:]).hex(), slip77)
+                self.assertEqual(features, MS_IS_RAW|MS_IS_SLIP77)
+            elif i == 1:
+                self.assertEqual(key_out.priv_key[0], FLAG_KEY_PRIVATE)
+                self.assertEqual(bytes(key_out.priv_key[1:]).hex(), slip77)
+                self.assertEqual(features, MS_IS_RAW|MS_IS_PRIVATE)
+            else:
+                self.assertEqual(key_out.priv_key[0], FLAG_KEY_PUBLIC)
+                self.assertEqual(bytes(key_out.pub_key).hex(), xpub1_pubkey)
+                self.assertEqual(features, 0)  # Standard unranged xpub
+
             wally_map_free(keys)
             wally_descriptor_free(d)
 

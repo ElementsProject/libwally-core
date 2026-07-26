@@ -124,6 +124,8 @@ export function confidential_addr_to_addr(address: string, prefix: number): stri
 export function confidential_addr_to_addr_segwit(address: string, confidential_addr_family: string, addr_family: string): string;
 export function confidential_addr_to_ec_public_key(address: string, prefix: number): Buffer;
 export function descriptor_canonicalize(descriptor: Ref_wally_descriptor, flags: number): string;
+export function descriptor_derive_bip32_key(descriptor: Ref_wally_descriptor, index: number, variant: number, multi_index: number, child_num: number, flags: number): Ref_ext_key;
+export function descriptor_derive_bip32_key_noalloc(descriptor: Ref_wally_descriptor, index: number, variant: number, multi_index: number, child_num: number, flags: number, output: Ref_ext_key): void;
 export function descriptor_free(descriptor: Ref_wally_descriptor): void;
 export function descriptor_get_checksum(descriptor: Ref_wally_descriptor, flags: number): string;
 export function descriptor_get_depth(descriptor: Ref_wally_descriptor): number;
