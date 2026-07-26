@@ -2954,6 +2954,16 @@ static bool check_taproot_descriptor(const taproot_descriptor_test* tr_test)
                            EC_XONLY_PUBLIC_KEY_LEN, tr_test->internal_key))
             return false;
         bip32_key_free(internal_key);
+
+        uint32_t features;
+        ret = wally_descriptor_get_key_features(descriptor, 0, &features);
+        if (!check_ret("get_key_features(internal)", ret, WALLY_OK))
+            return false;
+        if (features != (WALLY_MS_IS_X_ONLY|WALLY_MS_IS_RAW)) {
+            printf("features(internal): expected raw x-only, got %x\n",
+                    features);
+            return false;
+        }
     }
 
     for (i = 0; i < NUM_ELEMS(tr_test->leaf_scripts); ++i)
