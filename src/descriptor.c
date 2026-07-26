@@ -622,6 +622,63 @@ static void node_free(ms_node *node)
     }
 }
 
+static int node_derive_key(ms_ctx* ctx, const ms_node* node,
+                           uint32_t flags, struct ext_key* output)
+{
+    const unsigned char* data = (const unsigned char*)node->data;
+
+    if (node->kind == KIND_PUBLIC_KEY) {
+        if (node->data_len == EC_XONLY_PUBLIC_KEY_LEN) {
+            memcpy(output->pub_key+1, data, node->data_len);
+            return WALLY_OK;
+        }
+        return wally_ec_public_key_compress(data, node->data_len,
+                                            output->pub_key,
+                                            sizeof(output->pub_key));
+    } else if (node->kind == KIND_PRIVATE_KEY) {
+        if (!(flags & BIP32_FLAG_KEY_PUBLIC)) {
+            memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
+            return WALLY_OK;
+        }
+        return wally_ec_public_key_from_private_key(data, node->data_len,
+                                                    output->pub_key, sizeof(output->pub_key));
+    } else if (node->kind == KIND_RAW && node->parent &&
+               node->parent->kind == KIND_DESCRIPTOR_SLIP77) {
+        /* SLIP77 blinding key is returned as a private key */
+        memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
+        return WALLY_OK;
+    } else if ((node->kind & KIND_BIP32) == KIND_BIP32) {
+        int ret = bip32_key_from_base58_n(node->data, node->data_len, output);
+        if (ret == WALLY_OK && node->child_path_len) {
+            size_t path_len;
+            const uint32_t path_flags = BIP32_FLAG_STR_WILDCARD |
+                                        BIP32_FLAG_STR_BARE |
+                                        BIP32_FLAG_STR_MULTIPATH;
+            const uint32_t derive_flags = flags & (BIP32_FLAG_SKIP_HASH |
+                                                   BIP32_FLAG_KEY_PUBLIC);
+            const bool is_ranged = node->flags & WALLY_MS_IS_RANGED;
+            const bool is_multi = node->flags & WALLY_MS_IS_MULTIPATH;
+            struct ext_key derived;
+
+            ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
+                                        is_ranged ? ctx->child_num : 0,
+                                        is_multi ? ctx->multi_index : 0,
+                                        path_flags, ctx->path_buff, ctx->max_path_elems,
+                                        &path_len);
+            if (ret == WALLY_OK)
+                ret = bip32_key_from_parent_path(output, ctx->path_buff, path_len,
+                                                 derive_flags, &derived);
+            if (ret == WALLY_OK)
+                memcpy(output, &derived, sizeof(derived));
+            wally_clear(&derived, sizeof(derived));
+        } else if (ret == WALLY_OK && (flags & BIP32_FLAG_KEY_PUBLIC)) {
+            ret = bip32_key_strip_private_key(output);
+        }
+        return ret;
+    }
+    return WALLY_ERROR; /* Not a key node */
+}
+
 static bool has_two_different_lock_states(uint32_t primary, uint32_t secondary)
 {
     return ((primary & PROP_G) && (secondary & PROP_H)) ||
@@ -2187,32 +2244,12 @@ static int generate_script(ms_ctx *ctx, ms_node *node,
             ret = WALLY_OK; /* Return required length without writing */
         } else {
             struct ext_key master;
-
-            ret = bip32_key_from_base58_n(node->data, node->data_len, &master);
-            if (ret == WALLY_OK && node->child_path_len) {
-                size_t path_len;
-                const uint32_t flags = BIP32_FLAG_STR_WILDCARD |
-                                       BIP32_FLAG_STR_BARE |
-                                       BIP32_FLAG_STR_MULTIPATH;
-                const uint32_t derive_flags = BIP32_FLAG_SKIP_HASH |
-                                              BIP32_FLAG_KEY_PUBLIC;
-                const bool is_ranged = node->flags & WALLY_MS_IS_RANGED;
-                const bool is_multi = node->flags & WALLY_MS_IS_MULTIPATH;
-                struct ext_key derived;
-
-                ret = bip32_path_from_str_n(node->child_path, node->child_path_len,
-                                            is_ranged ? ctx->child_num : 0,
-                                            is_multi ? ctx->multi_index : 0,
-                                            flags, ctx->path_buff, ctx->max_path_elems,
-                                            &path_len);
-                if (ret == WALLY_OK)
-                    ret = bip32_key_from_parent_path(&master, ctx->path_buff, path_len,
-                                                     derive_flags, &derived);
-                if (ret == WALLY_OK)
-                    memcpy(&master, &derived, sizeof(master));
-            }
+            ret = node_derive_key(ctx, node,
+                                  BIP32_FLAG_SKIP_HASH|BIP32_FLAG_KEY_PUBLIC,
+                                  &master);
             if (ret == WALLY_OK)
-                memcpy(script, master.pub_key + ((node->flags & WALLY_MS_IS_X_ONLY) ? 1 : 0), output_len);
+                memcpy(script, master.pub_key + EC_PUBLIC_KEY_LEN - output_len,
+                       output_len);
             wally_clear(&master, sizeof(master));
         }
     }
@@ -2565,6 +2602,7 @@ static int analyze_miniscript_value(ms_ctx *ctx, const char *str, size_t str_len
                     node->data_len = written;
                     node->kind = KIND_RAW;
                     if (kind == KIND_DESCRIPTOR_SLIP77) {
+                        node->flags = WALLY_MS_IS_RAW | WALLY_MS_IS_SLIP77;
                         ctx->features |= (WALLY_MS_IS_ELEMENTS | WALLY_MS_IS_SLIP77);
                     }
                 }
@@ -3402,7 +3440,22 @@ int wally_descriptor_get_num_keys(const struct wally_descriptor *descriptor,
 static const ms_node *descriptor_get_key(const struct wally_descriptor *descriptor,
                                          size_t index)
 {
-    if (!descriptor || index >= descriptor->keys.num_items)
+    if (!descriptor)
+        return NULL;
+#ifdef BUILD_ELEMENTS
+    if (index == WALLY_MS_BLINDING_KEY_INDEX) {
+        const ms_node *node = NULL;
+        if (node_is_ct(descriptor->top_node)) {
+            node = descriptor->top_node->child;
+            if (node && node->kind == KIND_DESCRIPTOR_SLIP77)
+                node = node->child;
+            else if (node && node->kind == KIND_DESCRIPTOR_ELIP151)
+                node = NULL; /* FIXME: Support ELIP-151 derivation */
+        }
+        return node;
+    }
+#endif
+    if (index >= descriptor->keys.num_items)
         return NULL;
     return (ms_node *)descriptor->keys.items[index].value;
 }
@@ -3410,17 +3463,7 @@ static const ms_node *descriptor_get_key(const struct wally_descriptor *descript
 int wally_descriptor_get_key(const struct wally_descriptor *descriptor,
                              size_t index, char **output)
 {
-    const ms_node *node = NULL;
-#ifdef BUILD_ELEMENTS
-    if (index == WALLY_MS_BLINDING_KEY_INDEX) {
-        if (descriptor && node_is_ct(descriptor->top_node)) {
-            node = descriptor->top_node->child;
-            if (node && node->kind == KIND_DESCRIPTOR_SLIP77)
-                node = node->child;
-        }
-    } else
-#endif
-        node = descriptor_get_key(descriptor, index);
+    const ms_node *node = descriptor_get_key(descriptor, index);
 
     if (output)
         *output = 0;
@@ -3458,17 +3501,7 @@ return_hex:
 int wally_descriptor_get_key_features(const struct wally_descriptor *descriptor,
                                       size_t index, uint32_t *value_out)
 {
-    const ms_node *node = NULL;
-#ifdef BUILD_ELEMENTS
-    if (index == WALLY_MS_BLINDING_KEY_INDEX) {
-        if (descriptor && node_is_ct(descriptor->top_node)) {
-            node = descriptor->top_node->child;
-            if (node && node->kind == KIND_DESCRIPTOR_SLIP77)
-                node = node->child;
-        }
-    } else
-#endif
-        node = descriptor_get_key(descriptor, index);
+    const ms_node *node = descriptor_get_key(descriptor, index);
 
     if (value_out)
         *value_out = 0;
@@ -3554,6 +3587,55 @@ int wally_descriptor_get_key_origin_path_str(
     if (!(*output = wally_strdup_n(path, path_len)))
         return WALLY_ENOMEM;
     return WALLY_OK;
+}
+
+int wally_descriptor_derive_bip32_key(
+    const struct wally_descriptor *descriptor, uint32_t index, uint32_t variant,
+    uint32_t multi_index, uint32_t child_num, uint32_t flags, struct ext_key* output)
+{
+    ms_ctx ctx, *ctx_p = NULL;
+    const ms_node *node = descriptor_get_key(descriptor, index);
+    int ret;
+
+    if (output)
+        wally_clear(output, sizeof(*output));
+    if (!node || variant >= descriptor->num_variants ||
+        child_num >= BIP32_INITIAL_HARDENED_CHILD ||
+        (child_num && !(descriptor->features & WALLY_MS_IS_RANGED)) ||
+        multi_index >= descriptor->num_multipaths ||
+        flags & ~(BIP32_FLAG_KEY_PUBLIC|BIP32_FLAG_SKIP_HASH) || !output)
+        return WALLY_EINVAL;
+    if ((node->kind & KIND_BIP32) == KIND_BIP32 && node->child_path_len) {
+        /* Non-static key: create context required for deriving */
+        memcpy(&ctx, descriptor, sizeof(ctx));
+        ctx.variant = variant;
+        ctx.child_num = child_num;
+        ctx.multi_index = multi_index;
+        if (ctx.max_path_elems &&
+            !(ctx.path_buff = wally_malloc(ctx.max_path_elems * sizeof(uint32_t))))
+            return WALLY_ENOMEM;
+        ctx_p = &ctx;
+    }
+    ret = node_derive_key(ctx_p, node, flags, output);
+    if (ctx_p && ctx_p->path_buff)
+        wally_free(ctx_p->path_buff);
+    return ret;
+}
+
+int wally_descriptor_derive_bip32_key_alloc(
+    const struct wally_descriptor *descriptor, uint32_t index, uint32_t variant,
+    uint32_t multi_index, uint32_t child_num, uint32_t flags, struct ext_key** output)
+{
+    int ret;
+    OUTPUT_CHECK;
+    OUTPUT_ALLOC(struct ext_key);
+    ret = wally_descriptor_derive_bip32_key(descriptor, index, variant, multi_index,
+                                            child_num, flags, *output);
+    if (ret != WALLY_OK) {
+        clear_and_free(*output, sizeof(struct ext_key));
+        *output = NULL;
+    }
+    return ret;
 }
 
 static const char *get_multipath_child(const char* p, uint32_t *v)
