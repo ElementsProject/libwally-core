@@ -4177,7 +4177,7 @@ static int tr_get_leaf(const struct wally_descriptor *descriptor,
                        uint32_t leaf_index, ms_node **leaf)
 {
     *leaf = NULL;
-    if (descriptor->features & WALLY_MS_IS_TAPSCRIPT) {
+    if (descriptor && descriptor->features & WALLY_MS_IS_TAPSCRIPT) {
         ms_node *taptree = tr_get_tree(descriptor);
         if (taptree)
             *leaf = find_taptree_leaf(taptree, leaf_index, NULL);
@@ -4325,52 +4325,50 @@ int wally_descriptor_get_taproot_control_block_len(
     return WALLY_OK;
 }
 
-int wally_descriptor_get_taproot_leaf_num_keys(
-    const struct wally_descriptor *descriptor,
-    uint32_t leaf_index,
-    uint32_t *value_out)
+static int num_keys_impl(const struct wally_descriptor *descriptor,
+                         uint32_t leaf_index, uint32_t key_index,
+                         uint32_t *value_out, bool get_num_keys)
 {
-    ms_node *leaf;
+    ms_node *leaf, *key_node;
     int ret;
 
     if (value_out)
         *value_out = 0;
-    if (!descriptor || !value_out)
+    else
         return WALLY_EINVAL;
-    if ((ret = tr_get_leaf(descriptor, leaf_index, &leaf)) == WALLY_OK)
+    if ((ret = tr_get_leaf(descriptor, leaf_index, &leaf)) != WALLY_OK)
+        return ret;
+
+    if (get_num_keys) {
         *value_out = count_keys_in_subtree(leaf);
-    return ret;
+        return WALLY_OK;
+    }
+    if ((key_node = find_nth_key_in_subtree(leaf, key_index)) != NULL) {
+        for (uint32_t i = 0; i < descriptor->keys.num_items; i++) {
+            if ((ms_node *)descriptor->keys.items[i].value == key_node) {
+                *value_out = i; /* Found: return descriptor-level key index */
+                return WALLY_OK;
+            }
+        }
+    }
+    return WALLY_EINVAL; /* key not found in map (should not happen) */
+}
+
+ int wally_descriptor_get_taproot_leaf_num_keys(
+    const struct wally_descriptor *descriptor,
+    uint32_t leaf_index,
+    uint32_t *value_out)
+{
+    return num_keys_impl(descriptor, leaf_index, 0, value_out, true);
 }
 
 int wally_descriptor_get_taproot_leaf_key_index(
     const struct wally_descriptor *descriptor,
     uint32_t leaf_index,
-    uint32_t key_position,
+    uint32_t key_index,
     uint32_t *value_out)
 {
-    ms_node *leaf, *key_node;
-    size_t i;
-    int ret;
-
-    if (value_out)
-        *value_out = 0;
-    if (!descriptor || !value_out)
-        return WALLY_EINVAL;
-    if ((ret = tr_get_leaf(descriptor, leaf_index, &leaf)) != WALLY_OK)
-        return ret;
-
-    key_node = find_nth_key_in_subtree(leaf, key_position);
-    if (!key_node)
-        return WALLY_EINVAL; /* key_position out of range */
-
-    /* Map key node pointer to descriptor-level key index */
-    for (i = 0; i < descriptor->keys.num_items; i++) {
-        if ((ms_node *)descriptor->keys.items[i].value == key_node) {
-            *value_out = (uint32_t)i;
-            return WALLY_OK;
-        }
-    }
-    return WALLY_EINVAL; /* key not found in map (should not happen) */
+    return num_keys_impl(descriptor, leaf_index, key_index, value_out, false);
 }
 
 int wally_descriptor_get_taproot_merkle_root(
