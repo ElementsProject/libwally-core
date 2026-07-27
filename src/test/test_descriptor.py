@@ -34,6 +34,9 @@ NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
 BLINDING_KEY_INDEX = 0xffffffff
 
+BIP32_FLAG_KEY_PRIVATE = 0x0
+BIP32_FLAG_KEY_PUBLIC  = 0x1
+
 def wally_map_from_dict(d):
     m = pointer(wally_map())
     assert(wally_map_init_alloc(len(d.keys()), None, m) == WALLY_OK)
@@ -427,6 +430,10 @@ class DescriptorTests(unittest.TestCase):
             else:
                 self.assertEqual(bytes(key_out.pub_key).hex(), xpub1_pubkey)
                 self.assertEqual(features, 0)  # Standard unranged xpub
+            # Bare keys must flag whether a private key is present, so that
+            # bip32_key_is_private() and friends do not lie about them
+            self.assertEqual(key_out.priv_key[0],
+                             BIP32_FLAG_KEY_PRIVATE if i < 2 else BIP32_FLAG_KEY_PUBLIC)
             wally_map_free(keys)
             wally_descriptor_free(d)
 

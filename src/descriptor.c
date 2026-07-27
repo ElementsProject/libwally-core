@@ -628,20 +628,28 @@ static int node_derive_key(ms_ctx* ctx, const ms_node* node,
     const unsigned char* data = (const unsigned char*)node->data;
 
     if (node->kind == KIND_PUBLIC_KEY) {
+        int ret;
         if (node->data_len == EC_XONLY_PUBLIC_KEY_LEN) {
             memcpy(output->pub_key+1, data, node->data_len);
-            return WALLY_OK;
-        }
-        return wally_ec_public_key_compress(data, node->data_len,
-                                            output->pub_key,
-                                            sizeof(output->pub_key));
+            ret = WALLY_OK;
+        } else
+            ret = wally_ec_public_key_compress(data, node->data_len,
+                                               output->pub_key,
+                                               sizeof(output->pub_key));
+        if (ret == WALLY_OK)
+            output->priv_key[0] = BIP32_FLAG_KEY_PUBLIC; /* No private key */
+        return ret;
     } else if (node->kind == KIND_PRIVATE_KEY) {
+        int ret;
         if (!(flags & BIP32_FLAG_KEY_PUBLIC)) {
             memcpy(output->priv_key + 1, data, sizeof(output->priv_key) - 1);
             return WALLY_OK;
         }
-        return wally_ec_public_key_from_private_key(data, node->data_len,
-                                                    output->pub_key, sizeof(output->pub_key));
+        ret = wally_ec_public_key_from_private_key(data, node->data_len,
+                                                   output->pub_key, sizeof(output->pub_key));
+        if (ret == WALLY_OK)
+            output->priv_key[0] = BIP32_FLAG_KEY_PUBLIC; /* No private key */
+        return ret;
     } else if (node->kind == KIND_RAW && node->parent &&
                node->parent->kind == KIND_DESCRIPTOR_SLIP77) {
         /* SLIP77 blinding key is returned as a private key */
