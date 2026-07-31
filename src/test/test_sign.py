@@ -92,6 +92,17 @@ class SignTests(unittest.TestCase):
 
         set_fake_ec_nonce(None)
 
+    def test_der_convert(self):
+        out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
+        long_der = '3081c4026001aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa026001bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        for bad_der in [
+            long_der,            # R or S overflow
+            '3006020100020101',  # R = 0
+            '3006020101020100'   # S = 0
+        ]:
+            der, der_len = make_cbuffer(bad_der)
+            ret = wally_ec_sig_from_der(der, der_len, out_buf, out_len)
+            self.assertEqual(ret, WALLY_EINVAL)
 
     def test_invalid_inputs(self):
         out_buf, out_len = make_cbuffer('00' * EC_SIGNATURE_LEN)
