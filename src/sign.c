@@ -295,9 +295,14 @@ int wally_ec_sig_from_der(const unsigned char *bytes, size_t bytes_len,
     const secp256k1_context *ctx = secp256k1_context_static;
     bool ok;
 
-    ok = bytes && bytes_len && bytes_out && len == EC_SIGNATURE_LEN &&
+    ok = bytes && bytes_len && bytes_len <= EC_SIGNATURE_DER_MAX_LEN &&
+         bytes_out && len == EC_SIGNATURE_LEN &&
          secp256k1_ecdsa_signature_parse_der(ctx, &sig_secp, bytes, bytes_len) &&
          secp256k1_ecdsa_signature_serialize_compact(ctx, bytes_out, &sig_secp);
+
+    if (ok && (mem_is_zero(bytes_out, EC_SIGNATURE_LEN / 2) ||
+        mem_is_zero(bytes_out + EC_SIGNATURE_LEN / 2, EC_SIGNATURE_LEN / 2)))
+        ok = false; /* R or S are 0: this signature is invalid */
 
     if (!ok && bytes_out)
         wally_clear(bytes_out, len);
