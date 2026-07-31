@@ -93,23 +93,45 @@ int wally_ec_public_key_from_private_key(const unsigned char *priv_key, size_t p
     return ok ? WALLY_OK : WALLY_EINVAL;
 }
 
-int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_len,
-                                   unsigned char *bytes_out, size_t len)
+/* Serialize a public key of either format into the format implied by `len`.
+ * Keys are always parsed, so that invalid keys are rejected even when the
+ * input and output formats are the same.
+ */
+static int pk_convert_impl(const unsigned char *pub_key, size_t pub_key_len,
+                           unsigned char *bytes_out, size_t len)
 {
     secp256k1_pubkey pub;
-    size_t len_in_out = EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+    unsigned int flags = len == EC_PUBLIC_KEY_LEN ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED;
+    size_t len_in_out = len;
     bool ok;
 
-    ok = pub_key && pub_key_len == EC_PUBLIC_KEY_LEN &&
-         bytes_out && len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN &&
-         pubkey_parse(&pub, pub_key, pub_key_len) &&
-         pubkey_serialize(bytes_out, &len_in_out, &pub, PUBKEY_UNCOMPRESSED) &&
-         len_in_out == EC_PUBLIC_KEY_UNCOMPRESSED_LEN;
+    ok = pub_key &&
+         (pub_key_len == EC_PUBLIC_KEY_LEN ||
+          pub_key_len == EC_PUBLIC_KEY_UNCOMPRESSED_LEN) &&
+         bytes_out && pubkey_parse(&pub, pub_key, pub_key_len) &&
+         pubkey_serialize(bytes_out, &len_in_out, &pub, flags) &&
+         len_in_out == len;
 
-    if (!ok && bytes_out)
+    if (!ok && bytes_out && len)
         wally_clear(bytes_out, len);
     wally_clear(&pub, sizeof(pub));
     return ok ? WALLY_OK : WALLY_EINVAL;
+}
+
+int wally_ec_public_key_compress(const unsigned char *pub_key, size_t pub_key_len,
+                                 unsigned char *bytes_out, size_t len)
+{
+    if (len != EC_PUBLIC_KEY_LEN)
+        return WALLY_EINVAL;
+    return pk_convert_impl(pub_key, pub_key_len, bytes_out, len);
+}
+
+int wally_ec_public_key_decompress(const unsigned char *pub_key, size_t pub_key_len,
+                                   unsigned char *bytes_out, size_t len)
+{
+    if (len != EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
+        return WALLY_EINVAL;
+    return pk_convert_impl(pub_key, pub_key_len, bytes_out, len);
 }
 
 int wally_ec_public_key_negate(const unsigned char *pub_key, size_t pub_key_len,

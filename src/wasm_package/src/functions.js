@@ -185,6 +185,7 @@ export const descriptor_to_script_get_maximum_length = wrap('wally_descriptor_to
 export const ec_private_key_bip341_tweak = wrap('wally_ec_private_key_bip341_tweak', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.EC_PRIVATE_KEY_LEN)]);
 export const ec_private_key_verify = wrap('wally_ec_private_key_verify', [T.Bytes]);
 export const ec_public_key_bip341_tweak = wrap('wally_ec_public_key_bip341_tweak', [T.Bytes, T.Bytes, T.Int32, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
+export const ec_public_key_compress = wrap('wally_ec_public_key_compress', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
 export const ec_public_key_decompress = wrap('wally_ec_public_key_decompress', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_UNCOMPRESSED_LEN)]);
 export const ec_public_key_from_private_key = wrap('wally_ec_public_key_from_private_key', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);
 export const ec_public_key_negate = wrap('wally_ec_public_key_negate', [T.Bytes, T.DestPtrSized(T.Bytes, C.EC_PUBLIC_KEY_LEN)]);

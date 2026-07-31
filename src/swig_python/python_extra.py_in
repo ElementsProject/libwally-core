@@ -152,6 +152,7 @@ descriptor_get_key_origin_fingerprint = _wrap_bin(descriptor_get_key_origin_fing
 descriptor_to_script = _wrap_bin(descriptor_to_script, descriptor_to_script_get_maximum_length, resize=True)
 ec_private_key_bip341_tweak = _wrap_bin(ec_private_key_bip341_tweak, EC_PRIVATE_KEY_LEN)
 ec_public_key_bip341_tweak = _wrap_bin(ec_public_key_bip341_tweak, EC_PUBLIC_KEY_LEN)
+ec_public_key_compress = _wrap_bin(ec_public_key_compress, EC_PUBLIC_KEY_LEN)
 ec_public_key_decompress = _wrap_bin(ec_public_key_decompress, EC_PUBLIC_KEY_UNCOMPRESSED_LEN)
 ec_public_key_from_private_key = _wrap_bin(ec_public_key_from_private_key, EC_PUBLIC_KEY_LEN)
 ec_public_key_negate = _wrap_bin(ec_public_key_negate, EC_PUBLIC_KEY_LEN)
