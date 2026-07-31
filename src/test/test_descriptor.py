@@ -21,7 +21,7 @@ MS_IS_RANGED       = 0x1
 MS_IS_MULTIPATH    = 0x2
 MS_IS_PRIVATE      = 0x4
 MS_IS_UNCOMPRESSED = 0x08
-MS_IS_RAW          = 0x010
+MS_IS_RAW          = 0x10
 MS_IS_DESCRIPTOR   = 0x20
 MS_IS_X_ONLY       = 0x40
 MS_IS_PARENTED     = 0x80
@@ -29,10 +29,16 @@ MS_IS_ELEMENTS     = 0x100
 MS_IS_SLIP77       = 0x200
 MS_IS_ELIP150      = 0x400
 MS_IS_ELIP151      = 0x800
+MS_IS_TAPROOT      = 0x1000
+MS_IS_TAPSCRIPT    = 0x2000
+MS_IS_MUSIG        = 0x4000
 
 NO_CHECKSUM = 0x1 # WALLY_MS_CANONICAL_NO_CHECKSUM
 
 BLINDING_KEY_INDEX = 0xffffffff
+
+BIP32_FLAG_KEY_PRIVATE = 0x0
+BIP32_FLAG_KEY_PUBLIC  = 0x1
 
 def wally_map_from_dict(d):
     m = pointer(wally_map())
@@ -44,14 +50,16 @@ def wally_map_from_dict(d):
 
 class DescriptorTests(unittest.TestCase):
 
+    keys = wally_map_from_dict({
+        'key_local': '038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048',
+        'key_remote': '03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7',
+        'key_revocation': '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284',
+        'H': 'd0721279e70d39fb4aa409b52839a0056454e3b5', # HASH160(key_local)
+        'x_only': 'b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e',
+    })
+
     def test_parse_and_to_script(self):
         """Test parsing and script generation"""
-        keys = wally_map_from_dict({
-            'key_local': '038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048',
-            'key_remote': '03a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7',
-            'key_revocation': '03b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284',
-            'H': 'd0721279e70d39fb4aa409b52839a0056454e3b5', # HASH160(key_local)
-        })
         script, script_len = make_cbuffer('00' * 256 * 2)
 
         # Valid args
@@ -63,7 +71,7 @@ class DescriptorTests(unittest.TestCase):
         ]
         for miniscript, child_num, expected in args:
             d = c_void_p()
-            ret = wally_descriptor_parse(miniscript, keys, NETWORK_NONE, MS_ONLY, d)
+            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE, MS_ONLY, d)
             self.assertEqual(ret, WALLY_OK)
             ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, child_num,
                                                       0, script, script_len)
@@ -71,7 +79,46 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual(written, len(expected) / 2)
             self.assertEqual(script[:written], make_cbuffer(expected)[0])
             wally_descriptor_free(d)
-        wally_map_free(keys)
+
+        # pk_k and pk_h fragment tests: (miniscript, flags, expected_hex)
+        pk_args = [
+            ('c:pk_k(key_local)', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac'),
+            ('c:pk_h(key_local)', MS_ONLY,
+             '76a914d0721279e70d39fb4aa409b52839a0056454e3b588ac'),
+            ('c:pk_k(x_only)', MS_ONLY | MS_TAP,
+             '20b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0eac'),
+        ]
+        for miniscript, flags, expected in pk_args:
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE, flags, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(script[:written], make_cbuffer(expected)[0])
+            wally_descriptor_free(d)
+
+        # hash fragment tests: (miniscript, flags, expected_hex)
+        hash_args = [
+            ('sha256(9267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed2)', MS_ONLY,
+             '82012088a8209267d3dbed802941483f1afa2a6bc68de5f653128aca9bf1461c5d0a3ad36ed287'),
+            ('hash256(131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b)', MS_ONLY,
+             '82012088aa20131772552c01444cd81360818376a040b7c3b2b7b0a53550ee3edde216cec61b87'),
+            ('ripemd160(6ad07d21fd5dfc646f0b30577045ce201616b9ba)', MS_ONLY,
+             '82012088a6146ad07d21fd5dfc646f0b30577045ce201616b9ba87'),
+            ('hash160(20195b5a3d650c17f0f29f91c33f8f6335193d07)', MS_ONLY,
+             '82012088a91420195b5a3d650c17f0f29f91c33f8f6335193d0787'),
+        ]
+        for hash_ms, flags, expected in hash_args:
+            d = c_void_p()
+            ret = wally_descriptor_parse(hash_ms, self.keys, NETWORK_NONE, flags, d)
+            self.assertEqual(ret, WALLY_OK)
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(written, len(expected) // 2)
+            self.assertEqual(script[:written], make_cbuffer(expected)[0])
+            wally_descriptor_free(d)
 
         # Invalid args
         M, U = NETWORK_BTC_MAIN, 0x33 # Unknown network
@@ -268,16 +315,22 @@ class DescriptorTests(unittest.TestCase):
              0, MS_IS_PRIVATE, 5, 2),
             (f'or_d(thresh(1,pk({k1})),and_v(v:thresh(1,pk({k2}/)),older(30)))',
              MS_ONLY, MS_IS_PRIVATE, 5, 2),
+            # tr() key-path only: MS_IS_TAPSCRIPT must NOT be set
+            (f'tr({k1})',
+             0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT, 2, 1),
+            # tr() with taptree: MS_IS_TAPSCRIPT must be set
+            (f'tr({k1},{{pk({k1}),pk({k1})}})',
+             0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_TAPSCRIPT|MS_IS_X_ONLY, 4, 3),
         ]
         if is_elements_build:
             slip77 = 'ct(slip77(b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04),elpkh(xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH))'
             cases.extend([
                 # Parsing a descriptor as elements returns elements in its features
                 (f'tr({k1})',
-                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2, 1),
+                 AS_ELEMENTS, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_ELEMENTS, 2, 1),
                 # el-prefixed builtins return elements in their features
                 (f'eltr({k1})',
-                 0, MS_IS_DESCRIPTOR|MS_IS_ELEMENTS, 2, 1),
+                 0, MS_IS_DESCRIPTOR|MS_IS_TAPROOT|MS_IS_ELEMENTS, 2, 1),
                 # Note that ct() blinding keys aren't returned in the key count.
                 # slip77 builtins return elements and slip77 in their features,
                 # and the ct() parent wrapper is included in their depth.
@@ -335,12 +388,14 @@ class DescriptorTests(unittest.TestCase):
                                      flags | (5 << 16), d)
         self.assertEqual(ret, WALLY_EINVAL)
 
+
     def test_policy(self):
         """Test policy parsing"""
         # Substitution variables
         slip77 = 'b2396b3ee20509cdb64fe24180a14a72dbd671728eaa49bac69d2bdecb5f5a04'
         xpriv = 'xprvA2YKGLieCs6cWCiczALiH1jzk3VCCS5M1pGQfWPkamCdR9UpBgE2Gb8AKAyVjKHkz8v37avcfRjdcnP19dVAmZrvZQfvTcXXSAiFNQ6tTtU'
         xpub1 = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL'
+        xpub1_pubkey = '02d2b36900396c9282fa14628566582f206a5dd0bcc8d5e892611806cafb0301f0'
         xpub2 = 'xpub6AHA9hZDN11k2ijHMeS5QqHx2KP9aMBRhTDqANMnwVtdyw2TDYRmF8PjpvwUFcL1Et8Hj59S3gTSMcUQ5gAqTz3Wd8EsMTmF3DChhqPQBnU'
 
         def make_keys(xpubs):
@@ -400,7 +455,7 @@ class DescriptorTests(unittest.TestCase):
             [P, 'ct(@B,elpkh(@0/*))',         {'@B': xpub1,  '@0': xpub2}],
         ]
         d = c_void_p()
-        for flags, policy, key_items in cases:
+        for i, (flags, policy, key_items) in enumerate(cases):
             keys = wally_map_from_dict(key_items)
             ret = wally_descriptor_parse(policy, keys, NETWORK_LIQUID, flags, d)
             self.assertEqual(ret, WALLY_OK)
@@ -410,6 +465,26 @@ class DescriptorTests(unittest.TestCase):
             self.assertEqual((ret, key_str), (WALLY_OK, key_items['@0']))
             ret, key_info = wally_descriptor_get_key(d, BLINDING_KEY_INDEX)
             self.assertEqual((ret, key_info), (WALLY_OK, key_items['@B']))
+            key_out = ext_key()
+            ret, features = wally_descriptor_get_key_features(d, BLINDING_KEY_INDEX)
+            self.assertEqual(ret, WALLY_OK)
+            ret = wally_descriptor_derive_bip32_key(d, BLINDING_KEY_INDEX,
+                                                    0, 0, 0, 0, key_out)
+            self.assertEqual(ret, WALLY_OK)
+            if i == 0:
+                # SLIP-77 blinding keys are returned in the private key
+                self.assertEqual(bytes(key_out.priv_key[1:]).hex(), slip77)
+                self.assertEqual(features, MS_IS_RAW|MS_IS_SLIP77)
+            elif i == 1:
+                self.assertEqual(bytes(key_out.priv_key[1:]).hex(), slip77)
+                self.assertEqual(features, MS_IS_RAW|MS_IS_PRIVATE)
+            else:
+                self.assertEqual(bytes(key_out.pub_key).hex(), xpub1_pubkey)
+                self.assertEqual(features, 0)  # Standard unranged xpub
+            # Bare keys must flag whether a private key is present, so that
+            # bip32_key_is_private() and friends do not lie about them
+            self.assertEqual(key_out.priv_key[0],
+                             BIP32_FLAG_KEY_PRIVATE if i < 2 else BIP32_FLAG_KEY_PUBLIC)
             wally_map_free(keys)
             wally_descriptor_free(d)
 
@@ -494,6 +569,481 @@ class DescriptorTests(unittest.TestCase):
                     expected_path = origin_path if expect_origin_path else ''
                     self.assertEqual((ret, path_str), (WALLY_OK, expected_path))
                     wally_descriptor_free(d)
+
+    def test_wrappers(self):
+        """Test miniscript wrapper expressions (a:, s:, c:, d:, v:, j:, n:, l:, u:, t:)"""
+        script, script_len = make_cbuffer('00' * 256 * 2)
+
+        # pk_k push: 21 <33-byte compressed pubkey>
+        pk_push = '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048'
+
+        # (miniscript, expected_script_hex)
+        # In libwally, multiple wrappers use a single colon with all chars before it,
+        # e.g. "ac:pk_k" applies c: first then a: (wrappers applied in reverse order).
+        # c: [pk_k] CHECKSIG
+        c_pk = pk_push + 'ac'
+        # vc: pk_k CHECKSIGVERIFY (v: replaces trailing CHECKSIG with CHECKSIGVERIFY)
+        vc_pk = pk_push + 'ad'
+
+        wrapper_cases = [
+            # c: wrapper — pk_k(K) -> [K] CHECKSIG
+            ('c:pk_k(key_local)', c_pk),
+            # a: wrapper — TOALTSTACK [X] FROMALTSTACK  (X = c:pk_k, type B)
+            ('ac:pk_k(key_local)', '6b' + c_pk + '6c'),
+            # s: wrapper — SWAP [X]  (X = c:pk_k, type Bo)
+            ('sc:pk_k(key_local)', '7c' + c_pk),
+            # v: wrapper — replaces trailing CHECKSIG with CHECKSIGVERIFY
+            ('vc:pk_k(key_local)', vc_pk),
+            # d: wrapper — DUP IF [X] ENDIF  (X = v:older(1), type Vz)
+            # older(1) = OP_1(51) OP_CSV(b2); v: appends OP_VERIFY(69) since CSV not replaceable
+            ('dv:older(1)', '7663' + '51b269' + '68'),
+            # j: wrapper — SIZE 0NOTEQUAL IF [X] ENDIF  (X = c:pk_k, type Bn)
+            ('jc:pk_k(key_local)', '829263' + c_pk + '68'),
+            # n: wrapper — [X] 0NOTEQUAL  (X = c:pk_k, type B)
+            ('nc:pk_k(key_local)', c_pk + '92'),
+            # l: wrapper — or_i(0, X): IF 0 ELSE [X] ENDIF  (X = c:pk_k, type B)
+            ('lc:pk_k(key_local)', '630067' + c_pk + '68'),
+            # u: wrapper — or_i(X, 0): IF [X] ELSE 0 ENDIF  (X = c:pk_k, type B)
+            ('uc:pk_k(key_local)', '63' + c_pk + '670068'),
+            # t: wrapper — and_v(X, 1): [X] OP_1  (X = vc:pk_k, type V)
+            ('tvc:pk_k(key_local)', vc_pk + '51'),
+        ]
+
+        for miniscript, expected in wrapper_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE, MS_ONLY, d)
+            self.assertEqual(ret, WALLY_OK, f'parse failed for: {miniscript}')
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK, f'to_script failed for: {miniscript}')
+            self.assertEqual(written, len(expected) // 2,
+                             f'wrong length for: {miniscript}')
+            self.assertEqual(script[:written], make_cbuffer(expected)[0],
+                             f'wrong script for: {miniscript}')
+            wally_descriptor_free(d)
+
+    def test_composite_descriptors(self):
+        """Test composite miniscript expressions (and_v, or_d, andor) including Liana-style templates"""
+        script, script_len = make_cbuffer('00' * 512 * 2)
+
+        cases = [
+            # Case A: Liana-like recovery leaf — key + timelock
+            # and_v(X,Y) -> [X][Y]
+            # vc:pk_k -> push(K) OP_CHECKSIGVERIFY; older(52560=0xCD50) -> 03 50 CD 00 OP_CSV
+            ('and_v(vc:pk_k(key_local),older(52560))', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048'
+             'ad0350cd00b2'),
+            # Case B: Primary key OR (recovery key + timelock)
+            # or_d(X,Y) -> [X] OP_IFDUP(73) OP_NOTIF(64) [Y] OP_ENDIF(68)
+            ('or_d(c:pk_k(key_local),and_v(vc:pk_k(key_remote),older(52560)))', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac'
+             '73642103a22745365f673e658f0d25eb0afa9aaece858c6a48dfe37a67210c2e23da8ce7ad'
+             '0350cd00b268'),
+            # Case C: andor — if primary key succeeds use timelock, else use revocation key
+            # andor(X,Y,Z) -> [X] OP_NOTIF(64) [Z] OP_ELSE(67) [Y] OP_ENDIF(68)
+            ('andor(c:pk_k(key_local),older(52560),c:pk_k(key_revocation))', MS_ONLY,
+             '21038bc7431d9285a064b0328b6333f3a20b86664437b6de8f4e26e6bbdee258f048ac'
+             '642103b428da420cd337c7208ed42c5331ebb407bb59ffbe3dc27936a227c619804284ac'
+             '670350cd00b268'),
+            # Case D: Tapscript — x-only key uses 32-byte push (opcode 20)
+            ('and_v(vc:pk_k(x_only),older(52560))', MS_ONLY | MS_TAP,
+             '20b71aa79cab0ae2d83b82d44cbdc23f5dcca3797e8ba622c4e45a8f7dce28ba0e'
+             'ad0350cd00b2'),
+        ]
+
+        for miniscript, flags, expected in cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(miniscript, self.keys, NETWORK_NONE, flags, d)
+            self.assertEqual(ret, WALLY_OK, f'parse failed for: {miniscript}')
+            ret, written = wally_descriptor_to_script(d, 0, 0, 0, 0, 0, 0, script, script_len)
+            self.assertEqual(ret, WALLY_OK, f'to_script failed for: {miniscript}')
+            self.assertEqual(written, len(expected) // 2, f'wrong length for: {miniscript}')
+            self.assertEqual(script[:written], make_cbuffer(expected)[0], f'wrong script for: {miniscript}')
+            wally_descriptor_free(d)
+
+    def test_taproot_bad_args(self):
+        buf, buf_len = make_cbuffer('00' * 1024)
+        d = c_void_p()
+        ret = wally_descriptor_parse('tr(x_only,pk(key_local))',
+                                     self.keys, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        for args in [
+            (None, 0, 0, 0, 0, buf,  buf_len),  # NULL descriptor
+            (d,    1, 0, 0, 0, buf,  buf_len),  # Invalid leaf_index
+            (d,    0, 1, 0, 0, buf,  buf_len),  # Invalid multi_index
+            (d,    0, 0, 1, 0, buf,  buf_len),  # Invalid child_num
+            (d,    0, 0, 0, 1, buf,  buf_len),  # Invalid flags
+            (None, 0, 0, 0, 0, None, buf_len),  # NULL output buff
+            (None, 0, 0, 0, 0, buf,  0),        # Empty output buff
+        ]:
+            ret = wally_descriptor_get_taproot_control_block(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            ret = wally_descriptor_get_taproot_control_block_len(*(args[:-2]))
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            ret = wally_descriptor_get_taproot_leaf_script(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            ret = wally_descriptor_get_taproot_leaf_script_len(*(args[:-2]))
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+            ret = wally_descriptor_get_taproot_leaf_hash(*(args[:-1] + (32,)))
+            self.assertEqual(ret, WALLY_EINVAL)
+            if args[1] != 1:
+                # Not a leaf_index test case, test calls that don't take it
+                merkle_internal_args = (args[0],) + args[2:-1] + (32,)
+                ret = wally_descriptor_get_taproot_merkle_root(*merkle_internal_args)
+                self.assertEqual(ret, WALLY_EINVAL)
+
+        ret = wally_descriptor_get_taproot_num_leaves(None) # NULL descriptor
+        self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        for args in [
+            (None, 0),  # NULL descriptor
+            (d,    1),  # Invalid leaf_index
+        ]:
+            ret = wally_descriptor_get_taproot_leaf_num_keys(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+        for args in [
+            (None, 0, 0),  # NULL descriptor
+            (d,    1, 0),  # Invalid leaf_index
+            (d,    0, 1),  # Invalid key_position
+        ]:
+            ret = wally_descriptor_get_taproot_leaf_key_index(*args)
+            self.assertEqual(ret, (WALLY_EINVAL, 0))
+
+    def test_musig_parser(self):
+        """Test musig() descriptor parsing (BIP-390)"""
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+        xpub3 = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL'
+
+        # Valid: tr(musig(xpub1, xpub2)) — two-participant musig in taproot
+        valid_cases = [
+            f'tr(musig({xpub1},{xpub2}))',
+            # With trailing ranged wildcard path
+            f'tr(musig({xpub1},{xpub2})/<0;1>/*)',
+            # With plain trailing derivation path
+            f'tr(musig({xpub1},{xpub2})/0/*)',
+            # Participant keys may carry their own derivation path
+            f'tr(musig({xpub1}/0,{xpub2}/1))',
+            # Three-participant musig (3-of-3)
+            f'tr(musig({xpub1},{xpub2},{xpub3}))',
+        ]
+        for desc in valid_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_OK, f'Expected WALLY_OK for: {desc}')
+
+            # MS_IS_MUSIG feature flag must be set (whole-descriptor)
+            ret, features = wally_descriptor_get_features(d)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertTrue(features & MS_IS_MUSIG, f'MS_IS_MUSIG not set for: {desc}')
+            # MS_IS_TAPSCRIPT must NOT be set (musig is the internal key, not in a leaf)
+            self.assertFalse(features & MS_IS_TAPSCRIPT, f'MS_IS_TAPSCRIPT unexpectedly set for: {desc}')
+
+            # MS_IS_MUSIG feature flag must also be set at the per-key level
+            ret, kf = wally_descriptor_get_key_features(d, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertTrue(kf & MS_IS_MUSIG, f'Per-key MS_IS_MUSIG not set for: {desc}')
+
+            wally_descriptor_free(d)
+
+        # Valid cases must also parse with the tapscript flag: it propagates
+        # to the internal key, whose trailing derivation path must not be
+        # rejected as unconsumed input.
+        for desc in valid_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, MS_TAP, d)
+            self.assertEqual(ret, WALLY_OK, f'{desc} (tapscript flag)')
+            wally_descriptor_free(d)
+
+        # Participant count and key extraction for the basic two-participant case
+        two_participant_cases = [
+            f'tr(musig({xpub1},{xpub2}))',
+            f'tr(musig({xpub1},{xpub2})/<0;1>/*)',
+            f'tr(musig({xpub1},{xpub2})/0/*)',
+        ]
+        for desc in two_participant_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_OK)
+            # Participant count at key index 0
+            ret, count = wally_descriptor_get_musig_num_participants(d, 0)
+            self.assertEqual((ret, count), (WALLY_OK, 2), f'Count check failed for: {desc}')
+            # Participant key extraction
+            ret, key0 = wally_descriptor_get_musig_participant_key(d, 0, 0)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(key0, xpub1)
+            ret, key1 = wally_descriptor_get_musig_participant_key(d, 0, 1)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(key1, xpub2)
+            # Out-of-range participant index
+            ret, _ = wally_descriptor_get_musig_participant_key(d, 0, 2)
+            self.assertEqual(ret, WALLY_EINVAL)
+            wally_descriptor_free(d)
+
+        # Participant keys with per-participant paths
+        d = c_void_p()
+        desc_pp = f'tr(musig({xpub1}/0,{xpub2}/1))'
+        ret = wally_descriptor_parse(desc_pp, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, count = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual((ret, count), (WALLY_OK, 2))
+        ret, key0 = wally_descriptor_get_musig_participant_key(d, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key0, f'{xpub1}/0')
+        ret, key1 = wally_descriptor_get_musig_participant_key(d, 0, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key1, f'{xpub2}/1')
+        wally_descriptor_free(d)
+
+        # Participant count and key extraction for the three-participant case
+        d = c_void_p()
+        desc3 = f'tr(musig({xpub1},{xpub2},{xpub3}))'
+        ret = wally_descriptor_parse(desc3, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, count = wally_descriptor_get_musig_num_participants(d, 0)
+        self.assertEqual((ret, count), (WALLY_OK, 3), f'Count check failed for: {desc3}')
+        ret, key0 = wally_descriptor_get_musig_participant_key(d, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key0, xpub1)
+        ret, key1 = wally_descriptor_get_musig_participant_key(d, 0, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key1, xpub2)
+        ret, key2 = wally_descriptor_get_musig_participant_key(d, 0, 2)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(key2, xpub3)
+        # Out-of-range participant index for 3-participant case
+        ret, _ = wally_descriptor_get_musig_participant_key(d, 0, 3)
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_descriptor_free(d)
+
+        # Error: non-musig descriptor key at index 0
+        d2 = c_void_p()
+        ret = wally_descriptor_parse(f'tr({xpub1})', None, NETWORK_NONE, 0, d2)
+        self.assertEqual(ret, WALLY_OK)
+        ret, _ = wally_descriptor_get_musig_num_participants(d2, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret, _ = wally_descriptor_get_musig_participant_key(d2, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_descriptor_free(d2)
+
+        # Error: NULL descriptor
+        ret, _ = wally_descriptor_get_musig_num_participants(None, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        ret, _ = wally_descriptor_get_musig_participant_key(None, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+
+        # Invalid: musig() in non-taproot context or forbidden forms
+        invalid_cases = [
+            # wpkh does not accept musig()
+            f'wpkh(musig({xpub1},{xpub2}))',
+            # pk does not accept musig()
+            f'pk(musig({xpub1},{xpub2}))',
+            # pkh does not accept musig()
+            f'pkh(musig({xpub1},{xpub2}))',
+            # nested musig() is forbidden
+            f'tr(musig(musig({xpub1},{xpub2}),{xpub2}))',
+            # single participant is forbidden (BIP-390 requires >=2)
+            f'tr(musig({xpub1}))',
+            # hardened trailing derivation step is forbidden
+            f'tr(musig({xpub1},{xpub2})/1h/*)',
+        ]
+        for desc in invalid_cases:
+            d = c_void_p()
+            ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+            self.assertEqual(ret, WALLY_EINVAL, f'Expected WALLY_EINVAL for: {desc}')
+            if ret == WALLY_OK:
+                wally_descriptor_free(d)
+
+    def test_musig_derive_bip32_key(self):
+        """Test deriving the musig() aggregate key (BIP-390/BIP-328)"""
+        BIP32_VER_MAIN_PUBLIC = 0x0488B21E
+        EC_PUBLIC_KEY_LEN, EC_XONLY_PUBLIC_KEY_LEN = 33, 32
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+
+        # Independently aggregate the participant keys, sorted as per BIP-390
+        pubkeys = []
+        for xpub in (xpub1, xpub2):
+            key = ext_key()
+            self.assertEqual(WALLY_OK, bip32_key_from_base58(xpub.encode(), key))
+            pubkeys.append(bytes(key.pub_key))
+        flat = b''.join(sorted(pubkeys))
+        agg_xonly, _ = make_cbuffer('00' * EC_XONLY_PUBLIC_KEY_LEN)
+        cache = c_void_p()
+        self.assertEqual(WALLY_OK, wally_musig_pubkey_agg(flat, len(flat), agg_xonly,
+                                                          EC_XONLY_PUBLIC_KEY_LEN, cache))
+        agg_full, _ = make_cbuffer('00' * EC_PUBLIC_KEY_LEN)
+        self.assertEqual(WALLY_OK, wally_musig_pubkey_get(cache.value, agg_full,
+                                                          EC_PUBLIC_KEY_LEN))
+        wally_musig_keyagg_cache_free(cache.value)
+
+        # A musig() aggregate is a key in its own right, at key index 0
+        d = c_void_p()
+        ret = wally_descriptor_parse(f'tr(musig({xpub1},{xpub2}))', None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, features = wally_descriptor_get_key_features(d, 0)
+        self.assertEqual((ret, features & MS_IS_MUSIG), (WALLY_OK, MS_IS_MUSIG))
+
+        # With no trailing path, a bare key holding the aggregate is returned
+        key = ext_key()
+        ret = wally_descriptor_derive_bip32_key(d, 0, 0, 0, 0, 0, key)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(bytes(key.pub_key), bytes(agg_full))
+        self.assertEqual(bytes(key.pub_key)[1:], bytes(agg_xonly))
+        self.assertEqual(key.priv_key[0], BIP32_FLAG_KEY_PUBLIC)
+        wally_descriptor_free(d)
+
+        # With a trailing path, the BIP-328 synthetic xpub is derived from
+        synthetic = POINTER(ext_key)()
+        ret = wally_musig_pubkey_to_xpub(agg_full, EC_PUBLIC_KEY_LEN,
+                                         BIP32_VER_MAIN_PUBLIC, synthetic)
+        self.assertEqual(ret, WALLY_OK)
+
+        d = c_void_p()
+        ret = wally_descriptor_parse(f'tr(musig({xpub1},{xpub2})/0/*)', None,
+                                     NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        derived_keys = []
+        for child_num in (0, 1):
+            path = (c_uint32 * 2)(0, child_num)
+            expected = ext_key()
+            self.assertEqual(WALLY_OK,
+                bip32_key_from_parent_path(synthetic, path, 2,
+                                           BIP32_FLAG_KEY_PUBLIC, expected))
+            key = ext_key()
+            ret = wally_descriptor_derive_bip32_key(d, 0, 0, 0, child_num, 0, key)
+            self.assertEqual(ret, WALLY_OK)
+            self.assertEqual(bytes(key.pub_key), bytes(expected.pub_key))
+            self.assertEqual(bytes(key.chain_code), bytes(expected.chain_code))
+            derived_keys.append(bytes(key.pub_key))
+        self.assertNotEqual(derived_keys[0], derived_keys[1])
+
+        # musig() keys are only valid under tr(): no other key index exists
+        key = ext_key()
+        self.assertEqual(WALLY_EINVAL,
+                         wally_descriptor_derive_bip32_key(d, 1, 0, 0, 0, 0, key))
+        wally_descriptor_free(d)
+        bip32_key_free(synthetic)
+
+    def test_musig_descriptor_address_generation(self):
+        """Test musig() descriptor address generation"""
+        xpub1 = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB'
+        xpub2 = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH'
+
+        # 4a. Static musig() taproot address generation (mainnet)
+        desc = f'tr(musig({xpub1},{xpub2}))'
+        expected_addr_main = 'bc1p7y6m7r4u0035792q9dst9f32340nev5398dp9yvqw4mjkm3m4pdsqusq07'
+        expected_addr_test = 'tb1p7y6m7r4u0035792q9dst9f32340nev5398dp9yvqw4mjkm3m4pdsh5x043'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr_main = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addr_main, expected_addr_main,
+                         f'Expected known mainnet address, got: {addr_main}')
+        wally_descriptor_free(d)
+
+        # Static musig() taproot address generation (testnet)
+        # Parse with NETWORK_NONE then set testnet (mainnet xpubs work with NONE)
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_descriptor_set_network(d, NETWORK_BTC_TEST)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr_test = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addr_test, expected_addr_test,
+                         f'Expected known testnet address, got: {addr_test}')
+        wally_descriptor_free(d)
+
+        # Main and test addresses must differ
+        self.assertNotEqual(addr_main, addr_test)
+
+        # 4b. Ranged musig() address derivation
+        desc_ranged = f'tr(musig({xpub1},{xpub2})/*)'
+        addrs = (c_char_p * 3)()
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_ranged, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret = wally_descriptor_to_addresses(d, 0, 0, 0, 0, addrs, 3)
+        self.assertEqual(ret, WALLY_OK)
+        addr_strings = [a.decode() for a in addrs[:3]]
+        for a in addr_strings:
+            self.assertTrue(a.startswith('bc1p'), f'Expected bc1p prefix, got: {a}')
+        self.assertEqual(len(set(addr_strings)), 3, 'All ranged addresses must be distinct')
+        wally_descriptor_free(d)
+
+        # 4c. Multipath ranged musig() descriptor
+        desc_mp = f'tr(musig({xpub1},{xpub2})/<0;1>/*)'
+        addrs_ext = (c_char_p * 1)()
+        addrs_int = (c_char_p * 1)()
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_mp, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        # External path (multi_index=0)
+        ret = wally_descriptor_to_addresses(d, 0, 0, 0, 0, addrs_ext, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(addrs_ext[0].decode().startswith('bc1p'))
+        # Internal path (multi_index=1)
+        ret = wally_descriptor_to_addresses(d, 0, 1, 0, 0, addrs_int, 1)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(addrs_int[0].decode().startswith('bc1p'))
+        self.assertNotEqual(addrs_ext[0], addrs_int[0])
+        wally_descriptor_free(d)
+
+        # 4d. Per-participant derivation paths
+        desc_pp = f'tr(musig({xpub1}/0,{xpub2}/1))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_pp, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertTrue(addr.startswith('bc1p'), f'Expected bc1p prefix, got: {addr}')
+        wally_descriptor_free(d)
+
+        # 4e. Address generation requires network set
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, _ = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_EINVAL)
+        wally_descriptor_free(d)
+
+        # Key order independence: swapping keys must produce the same address
+        desc_swapped = f'tr(musig({xpub2},{xpub1}))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_swapped, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, addr_swapped = wally_descriptor_to_address(d, 0, 0, 0, 0)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(addr_swapped, addr_main,
+                         'Key order must not affect the aggregated taproot address')
+        wally_descriptor_free(d)
+
+        # Canonicalization: wally_descriptor_canonicalize works for musig() descriptors
+        # and produces a deterministic output.
+        # NOTE: libwally's wally_descriptor_canonicalize normalises the textual descriptor
+        # (e.g. removes whitespace, normalises separators) but intentionally does NOT
+        # re-sort participant keys inside musig().  Sorting happens at the cryptographic
+        # aggregation stage (BIP-327 KeyAgg), not at the descriptor text level, which is
+        # why two descriptors with swapped keys still produce the same address (tested
+        # above).  The canonical form therefore preserves the input key order.
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_swapped, None, NETWORK_NONE, 0, d)
+        self.assertEqual(ret, WALLY_OK)
+        ret, canonical = wally_descriptor_canonicalize(d, NO_CHECKSUM)
+        self.assertEqual(ret, WALLY_OK)
+        self.assertEqual(canonical, desc_swapped,
+                         'Canonical form preserves input key order (sorting is done at '
+                         'key-aggregation time, not descriptor-text level)')
+        wally_descriptor_free(d)
+
+        # musig() in a tapscript leaf is not yet supported (tr() FIXME for script paths).
+        # Verify that the parser correctly rejects this form until implemented.
+        desc_leaf = f'tr({xpub1},pk(musig({xpub1},{xpub2})))'
+        d = c_void_p()
+        ret = wally_descriptor_parse(desc_leaf, None, NETWORK_BTC_MAIN, 0, d)
+        self.assertNotEqual(ret, WALLY_OK, 'Script-leaf musig() should be rejected until implemented')
 
 
 if __name__ == '__main__':
