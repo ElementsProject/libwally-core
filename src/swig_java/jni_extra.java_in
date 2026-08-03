@@ -31,7 +31,9 @@
   }
 
   public final static byte[] aes(byte[] jarg1, byte[] jarg2, long jarg3) {
-      return aes(jarg1, jarg2, jarg3, null);
+      final int len = aes_len(jarg1, jarg2, jarg3);
+      final byte[] ret = new byte[len];
+      return aes(jarg1, jarg2, jarg3, ret);
   }
 
   public final static String base58check_from_bytes(byte[] bytes) {
