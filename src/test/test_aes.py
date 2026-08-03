@@ -51,9 +51,10 @@ cases = [
            "23304b7a39f9f3ff067d8d8f9e24ecc7" ],
 ]
 
-class AESTests(unittest.TestCase):
+ENCRYPT, DECRYPT = 1, 2
 
-    ENCRYPT, DECRYPT = 1, 2
+
+class AESTests(unittest.TestCase):
 
     def test_aes(self):
 
@@ -62,13 +63,36 @@ class AESTests(unittest.TestCase):
             key_bytes = { 128: 16, 192: 24, 256: 32}[c[0]]
             self.assertEqual(len(key), key_bytes)
 
-            for p, f, o in [(plain,  self.ENCRYPT, cypher),
-                            (cypher, self.DECRYPT, plain)]:
+            for p, f, o in [(plain,  ENCRYPT, cypher),
+                            (cypher, DECRYPT, plain)]:
 
                 out_buf, out_len = make_cbuffer('00' * len(o))
                 ret = wally_aes(key, len(key), p, len(p), f, out_buf, out_len)
-                self.assertEqual(ret, 0)
+                self.assertEqual(ret, WALLY_OK)
                 self.assertEqual(h(out_buf), h(o))
+
+        # Invalid args
+        key = make_cbuffer('2b7e151628aed2a6abf7158809cf4f3c')[0]
+        plain = make_cbuffer('ae2d8a571e03ac9c9eb76fac45af8e51ae2d8a571e03ac9c9eb76fac45af8e51')[0]
+        out, out_len = make_cbuffer('00' * len(plain))
+        invalid_cases = [
+            (None, len(key), plain, len(plain), ENCRYPT, out,  out_len), # NULL key
+            (key,  0,        plain, len(plain), ENCRYPT, out,  out_len), # Empty key
+            (key,  15,       plain, len(plain), ENCRYPT, out,  out_len), # Invalid key len
+            (key,  len(key), None,  len(plain), ENCRYPT, out,  out_len), # NULL plaintext
+            (key,  len(key), plain, 0,          ENCRYPT, out,  out_len), # Empty plaintext
+            (key,  len(key), plain, 15,         ENCRYPT, out,  out_len), # Non-blocksize plaintext
+            (key,  len(key), plain, len(plain), 0,       out,  out_len), # No flags
+            (key,  len(key), plain, len(plain), ENCRYPT | \
+                                                DECRYPT, out,  out_len), # Conflicting flags
+            (key,  len(key), plain, len(plain), 4,       out,  out_len), # Unknown flags
+            (key,  len(key), plain, len(plain), ENCRYPT, None, out_len), # NULL output
+            (key,  len(key), plain, len(plain), ENCRYPT, out,  0),       # Empty output
+            (key,  len(key), plain, len(plain), ENCRYPT, out,  16),      # Too short output
+        ]
+        for c in invalid_cases:
+            ret = wally_aes(*c)
+            self.assertEqual(ret, WALLY_EINVAL)
 
 
     def get_cbc_cases(self):
@@ -81,12 +105,11 @@ class AESTests(unittest.TestCase):
 
     def test_aes_cbc(self):
         out_buf, out_len = make_cbuffer('00' * 80)
-        E, D = self.ENCRYPT, self.DECRYPT
         # Encryption/decryption cases
         for c in self.get_cbc_cases():
             plain, key, iv, cypher = [make_cbuffer(s)[0] for s in c]
 
-            for p, f, o in [(plain,  E, cypher), (cypher, D, plain)]:
+            for p, f, o in [(plain, ENCRYPT, cypher), (cypher, DECRYPT, plain)]:
                 ret, written = wally_aes_cbc(key, len(key), iv, len(iv),
                                              p or None, len(p), f, out_buf, out_len)
                 self.assertEqual((ret, written), (0, len(o)))
@@ -100,10 +123,11 @@ class AESTests(unittest.TestCase):
                 # number of bytes required.
                 ret, max_len = wally_aes_cbc_get_maximum_length(key, len(key), iv, len(iv),
                                                                 p or None, len(p), f)
-                self.assertEqual(ret, 0)
+                self.assertEqual(ret, WALLY_OK)
                 self.assertTrue(max_len >= written and max_len % 16 == 0)
 
         # Invalid args
+        D = DECRYPT
         invalid_cases = [
             # NULL key
             (None, len(key), iv,   len(iv), cypher, len(cypher), D, out_buf, out_len),
@@ -130,7 +154,6 @@ class AESTests(unittest.TestCase):
             self.assertEqual((ret, written), (WALLY_EINVAL, 0))
 
     def test_aes_cbc_with_ecdh_key(self):
-        ENCRYPT, DECRYPT, _ = 1, 2, True
         a_priv = make_cbuffer('1c6a837d1ac663fdc7f1002327ca38452766eaf4fe3b80ce620bf7cd3f584cf6')[0]
         a_pub = make_cbuffer('03e581be89d1ef8ce11d60746d08e4f8aedf934d1d861dd436042ee2e3b16db918')[0]
         b_priv = make_cbuffer('0b6b3dc90d203d854100110788ac87d43aa00620c9cdb361b281b09022ef4b53')[0]
@@ -148,6 +171,7 @@ class AESTests(unittest.TestCase):
         self.assertEqual(ret, WALLY_OK) # Make sure good args work
         encrypted = make_cbuffer(buf[:written].hex())[0]
 
+        _ = True
         invalid_cases = [
             (None, _, _,    _, _,    _, _,    _, _,    _, _,    _, _), # NULL privkey
             (_,    0, _,    _, _,    _, _,    _, _,    _, _,    _, _), # Empty privkey

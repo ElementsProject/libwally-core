@@ -92,9 +92,8 @@ int wally_aes(const unsigned char *key, size_t key_len,
     AES256_ctx ctx;
     size_t written;
 
-    if (!are_valid_args(key, key_len, bytes, bytes_len, flags, &written) ||
-        len % AES_BLOCK_LEN || !bytes_len || bytes_len % AES_BLOCK_LEN ||
-        !bytes_out || !len)
+    if (wally_aes_len(key, key_len, bytes, bytes_len, flags, &written) != WALLY_OK ||
+        !bytes_out || !len || len < bytes_len)
         return WALLY_EINVAL;
 
     if (flags & AES_FLAG_ENCRYPT)
