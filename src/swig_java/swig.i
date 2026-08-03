@@ -845,7 +845,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_get_locktime);
 %returns_size_t(wally_psbt_get_num_inputs);
 %returns_size_t(wally_psbt_get_num_outputs);
-%returns_size_t(wally_psbt_get_output_amount);
+%returns_uint64(wally_psbt_get_output_amount);
 %returns_size_t(wally_psbt_get_output_asset);
 %returns_size_t(wally_psbt_get_output_asset_len);
 %returns_size_t(wally_psbt_get_output_asset_blinding_surjectionproof);
