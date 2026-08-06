@@ -91,6 +91,9 @@ static const struct psbt_test invalid_psbts[] =
     /* PSBT v0 with duplicate 0 length script */
     {"cHNidP8BADMBAAAAAREREREREREREREREREREREREfrK3hERERERERERERERfwAAAAD/////AAAAAAAAAQEJAOH1BQAAAAAAAQgBAAEIAwEBUQA=", false, true},
 
+    /* PSBT v0 with one P2PKH input. Outputs are empty. With trailing byte 0x00 */
+    {"cHNidP8BAHUCAAAAASaBcTce3/KF6Tet7qSze3gADAVmy7OtZGQXE8pCFxv2AAAAAAD+////AtPf9QUAAAAAGXapFNDFmQPFusKGh2DpD9UhpGZap2UgiKwA4fUFAAAAABepFDVF5uM7gyxHBQ8k0+65PJwDlIvHh7MuEwAAAQD9pQEBAAAAAAECiaPHHqtNIOA3G7ukzGmPopXJRjr6Ljl/hTPMti+VZ+UBAAAAFxYAFL4Y0VKpsBIDna89p95PUzSe7LmF/////4b4qkOnHf8USIk6UwpyN+9rRgi7st0tAXHmOuxqSJC0AQAAABcWABT+Pp7xp0XpdNkCxDVZQ6vLNL1TU/////8CAMLrCwAAAAAZdqkUhc/xCX/Z4Ai7NK9wnGIZeziXikiIrHL++E4sAAAAF6kUM5cluiHv1irHU6m80GfWx6ajnQWHAkcwRAIgJxK+IuAnDzlPVoMR3HyppolwuAJf3TskAinwf4pfOiQCIAGLONfc0xTnNMkna9b7QPZzMlvEuqFEyADS8vAtsnZcASED0uFWdJQbrUqZY3LLh+GFbTZSYG2YVi/jnF6efkE/IQUCSDBFAiEA0SuFLYXc2WHS9fSrZgZU327tzHlMDDPOXMMJ/7X85Y0CIGczio4OFyXBl/saiK9Z9R5E5CVbIBZ8hoQDHAXR8lkqASECI7cr7vCWXRC+B3jv7NYfysb3mk6haTkzgHNEZPhPKrMAAAAAAAAAAA==", false, true},
+
     /* PSBT v2 With Global tx version number < 2 */
     {"cHNidP8B+wQCAAAAAQIEAQAAAAEDBAECAwQBBAEAAQUBAAA=", false, true},
 
@@ -102,6 +105,9 @@ static const struct psbt_test invalid_psbts[] =
 
     /* PSBT v2 missing tx version */
     {"cHNidP8B+wQCAAAAAQQBAAEFAQAA", false, true},
+
+    /* PSBT v2 (no inputs, no outputs) with trailing byte 0x00 */
+    {"cHNidP8BAgQCAAAAAQMEAAAAAAEEAQABBQEAAfsEAgAAAAAA", false, true},
 
     /* PSBT v3 - invalid version number */
     {"cHNidP8B+wQDAAAAAQIEAgAAAAEFAQAA", false, true},

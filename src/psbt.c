@@ -2830,6 +2830,8 @@ unknown:
 
     if (ret == WALLY_OK && !*cursor)
         ret = WALLY_EINVAL; /* Ran out of data */
+    else if (ret == WALLY_OK && *max != 0)
+        ret = WALLY_EINVAL; /* Trailing data */
 
     if (ret != WALLY_OK) {
         wally_psbt_free(*output);
