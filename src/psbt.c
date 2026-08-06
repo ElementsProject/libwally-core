@@ -31,7 +31,9 @@
 #define PSBT_ID_ALL_FLAGS (WALLY_PSBT_ID_AS_V2 | WALLY_PSBT_ID_USE_LOCKTIME)
 
 /* All allowed flags for wally_psbt_from_[bytes|base64]() */
-#define PSBT_ALL_PARSE_FLAGS (WALLY_PSBT_PARSE_FLAG_STRICT|WALLY_PSBT_PARSE_FLAG_LOOSE)
+#define PSBT_ALL_PARSE_FLAGS (WALLY_PSBT_PARSE_FLAG_STRICT | \
+    WALLY_PSBT_PARSE_FLAG_LOOSE | \
+    WALLY_PSBT_PARSE_FLAG_COMPLETE)
 
 static const uint8_t PSBT_MAGIC[5] = {'p', 's', 'b', 't', 0xff};
 static const uint8_t PSET_MAGIC[5] = {'p', 's', 'e', 't', 0xff};
@@ -2830,6 +2832,8 @@ unknown:
 
     if (ret == WALLY_OK && !*cursor)
         ret = WALLY_EINVAL; /* Ran out of data */
+    else if (ret == WALLY_OK && *max && (flags & WALLY_PSBT_PARSE_FLAG_COMPLETE))
+        ret = WALLY_EINVAL; /* Trailing data */
 
     if (ret != WALLY_OK) {
         wally_psbt_free(*output);
@@ -3523,8 +3527,9 @@ int wally_psbt_from_base64_n(const char *str_in, size_t str_len, uint32_t flags,
         goto done;
     }
 
-    /* decode the psbt */
-    ret = wally_psbt_from_bytes(decoded, written, flags, output);
+    /* Parse the psbt. For base64, require all bytes to be consumed. */
+    ret = wally_psbt_from_bytes(decoded, written,
+                                flags | WALLY_PSBT_PARSE_FLAG_COMPLETE, output);
 
 done:
     clear_and_free(decoded, max_len);

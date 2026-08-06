@@ -29,8 +29,9 @@ extern "C" {
 #define WALLY_PSBT_TXMOD_SINGLE 0x4 /* SIGHASH_SINGLE signature is present */
 #define WALLY_PSET_TXMOD_RESERVED 0x1 /* Elements: Reserved: not used and ignored if set */
 
-#define WALLY_PSBT_PARSE_FLAG_STRICT 0x1 /* Parse strictly according to the PSBT/PSET spec */
-#define WALLY_PSBT_PARSE_FLAG_LOOSE 0x2 /* Allow disallowed and missing mandatory fields */
+#define WALLY_PSBT_PARSE_FLAG_STRICT   0x1 /* Parse strictly according to the PSBT/PSET spec */
+#define WALLY_PSBT_PARSE_FLAG_LOOSE    0x2 /* Allow disallowed and missing mandatory fields */
+#define WALLY_PSBT_PARSE_FLAG_COMPLETE 0x4 /* Require parsing to consume the entire input */
 
 /** Include redundant information to match some buggy PSBT implementations */
 #define WALLY_PSBT_SERIALIZE_FLAG_REDUNDANT 0x1
