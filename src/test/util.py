@@ -917,6 +917,7 @@ for f in (
     ('wally_psbt_get_tx_modifiable_flags', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_get_version', c_int, [POINTER(wally_psbt), c_size_t_p]),
     ('wally_psbt_has_fallback_locktime', c_int, [POINTER(wally_psbt), c_size_t_p]),
+    ('wally_psbt_has_input_amount', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_has_input_required_lockheight', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_has_input_required_locktime', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),
     ('wally_psbt_has_output_amount', c_int, [POINTER(wally_psbt), c_size_t, c_size_t_p]),

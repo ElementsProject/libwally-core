@@ -376,6 +376,7 @@ export function psbt_get_tx_version(psbt: Ref_wally_psbt): number;
 export function psbt_get_version(psbt: Ref_wally_psbt): number;
 export function psbt_has_fallback_locktime(psbt: Ref_wally_psbt): number;
 export function psbt_has_global_genesis_blockhash(psbt: Ref_wally_psbt): number;
+export function psbt_has_input_amount(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_has_input_required_lockheight(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_has_input_required_locktime(psbt: Ref_wally_psbt, index: number): number;
 export function psbt_has_output_amount(psbt: Ref_wally_psbt, index: number): number;

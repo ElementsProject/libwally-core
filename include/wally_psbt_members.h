@@ -142,6 +142,7 @@ WALLY_CORE_API int wally_psbt_get_input_utxo_rangeproof_len(const struct wally_p
 
 WALLY_CORE_API int wally_psbt_set_input_amount(struct wally_psbt *psbt, size_t index, uint64_t amount);
 WALLY_CORE_API int wally_psbt_clear_input_amount(struct wally_psbt *psbt, size_t index);
+WALLY_CORE_API int wally_psbt_has_input_amount(const struct wally_psbt *psbt, size_t index, size_t *written);
 WALLY_CORE_API int wally_psbt_set_input_amount_rangeproof(struct wally_psbt *psbt, size_t index, const unsigned char *rangeproof, size_t rangeproof_len);
 WALLY_CORE_API int wally_psbt_clear_input_amount_rangeproof(struct wally_psbt *psbt, size_t index);
 WALLY_CORE_API int wally_psbt_set_input_asset(struct wally_psbt *psbt, size_t index, const unsigned char *asset, size_t asset_len);

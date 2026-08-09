@@ -586,14 +586,18 @@ class PSBTTests(unittest.TestCase):
         #
         if is_elements_build():
             # PSET: Explicit amount/issuance amount/inflation keys/pegin amount
-            for setfn, getfn in [
-                (psbt_set_input_amount, psbt_get_input_amount),
-                (psbt_set_input_issuance_amount, psbt_get_input_issuance_amount),
-                (psbt_set_input_inflation_keys,  psbt_get_input_inflation_keys),
-                (psbt_set_input_pegin_amount, psbt_get_input_pegin_amount)]:
+            for setfn, clearfn, getfn, hasfn in [
+                (psbt_set_input_amount, psbt_clear_input_amount,
+                 psbt_get_input_amount, psbt_has_input_amount),
+                (psbt_set_input_issuance_amount, None,
+                 psbt_get_input_issuance_amount, None),
+                (psbt_set_input_inflation_keys, None,
+                 psbt_get_input_inflation_keys, None),
+                (psbt_set_input_pegin_amount, None,
+                 psbt_get_input_pegin_amount, None)]:
                 self._throws(setfn, psbt, 0, 1234) # Non v2 PSBT
                 self._throws(getfn, psbt, 0)       # Non v2 PSBT
-                self._try_get_set_i(setfn, None, getfn, None, pset2, 1234)
+                self._try_get_set_i(setfn, clearfn, getfn, hasfn, pset2, 1234)
 
             # Explicit amount
             self._throws(psbt_clear_input_amount, psbt, 0) # Non v2 PSBT

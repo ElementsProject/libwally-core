@@ -5932,7 +5932,35 @@ int wally_psbt_clear_input_required_lockheight(struct wally_psbt *psbt, size_t i
 PSBT_FIELD(output, taproot_internal_key, PSBT_0)
 
 #ifndef WALLY_ABI_NO_ELEMENTS
+#ifndef BUILD_ELEMENTS
 PSBT_GET_I_PSET(input, amount, uint64_t, PSBT_2)
+int wally_psbt_has_input_amount(const struct wally_psbt *psbt, size_t index, size_t* written)
+{
+    if (written)
+        *written = 0;
+    return WALLY_EINVAL;
+}
+#else
+int wally_psbt_get_input_amount(const struct wally_psbt *psbt, size_t index,
+                                uint64_t *written)
+{
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    if (written) *written = 0;
+    if (!p || !written || psbt->version != PSBT_2 || !p->has_amount)
+        return WALLY_EINVAL;
+    *written = p->amount;
+    return WALLY_OK;
+}
+int wally_psbt_has_input_amount(const struct wally_psbt *psbt, size_t index, size_t* written)
+{
+    struct wally_psbt_input *p = psbt_get_input(psbt, index);
+    if (written) *written = 0;
+    if (!p || !written || psbt->version != PSBT_2)
+        return WALLY_EINVAL;
+    *written = p->has_amount ? 1 : 0;
+    return WALLY_OK;
+}
+#endif
 int wally_psbt_clear_input_amount(struct wally_psbt *psbt, size_t index) {
     if (!psbt || psbt->version != PSBT_2) return WALLY_EINVAL;
     return wally_psbt_input_clear_amount(psbt_get_input(psbt, index));

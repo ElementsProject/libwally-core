@@ -723,7 +723,6 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_clear_input_required_locktime);
 %returns_void__(wally_psbt_clear_input_sequence);
 %returns_void__(wally_psbt_clear_input_utxo_rangeproof);
-%returns_void__(wally_psbt_clear_input_value);
 %returns_void__(wally_psbt_clear_output_amount);
 %returns_void__(wally_psbt_clear_output_asset);
 %returns_void__(wally_psbt_clear_output_asset_blinding_surjectionproof);
@@ -835,7 +834,6 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %rename("psbt_get_input_utxo") wally_psbt_get_input_utxo_alloc;
 %returns_size_t(wally_psbt_get_input_utxo_rangeproof);
 %returns_size_t(wally_psbt_get_input_utxo_rangeproof_len);
-%returns_uint64(wally_psbt_get_input_value);
 %returns_size_t(wally_psbt_get_input_witness_script);
 %returns_size_t(wally_psbt_get_input_witness_script_len);
 %returns_struct(wally_psbt_get_input_witness_utxo_alloc, wally_tx_output);
@@ -887,7 +885,7 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_size_t(wally_psbt_has_global_genesis_blockhash);
 %returns_size_t(wally_psbt_has_input_required_lockheight);
 %returns_size_t(wally_psbt_has_input_required_locktime);
-%returns_size_t(wally_psbt_has_input_value);
+%returns_size_t(wally_psbt_has_input_amount);
 %returns_size_t(wally_psbt_has_output_amount);
 %returns_size_t(wally_psbt_has_output_asset);
 %returns_size_t(wally_psbt_has_output_asset_blinding_surjectionproof);
@@ -945,7 +943,6 @@ static jobjectArray create_jstringArray(JNIEnv *jenv, char **p, size_t len) {
 %returns_void__(wally_psbt_set_input_unknowns);
 %returns_void__(wally_psbt_set_input_utxo);
 %returns_void__(wally_psbt_set_input_utxo_rangeproof);
-%returns_void__(wally_psbt_set_input_value);
 %returns_void__(wally_psbt_set_input_witness_script);
 %returns_void__(wally_psbt_set_input_witness_utxo);
 %returns_void__(wally_psbt_set_input_witness_utxo_from_tx);

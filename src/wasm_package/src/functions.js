@@ -416,6 +416,7 @@ export const psbt_get_tx_version = wrap('wally_psbt_get_tx_version', [T.OpaqueRe
 export const psbt_get_version = wrap('wally_psbt_get_version', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const psbt_has_fallback_locktime = wrap('wally_psbt_has_fallback_locktime', [T.OpaqueRef, T.DestPtr(T.Int32)]);
 export const psbt_has_global_genesis_blockhash = wrap('wally_psbt_has_global_genesis_blockhash', [T.OpaqueRef, T.DestPtr(T.Int32)]);
+export const psbt_has_input_amount = wrap('wally_psbt_has_input_amount', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_has_input_required_lockheight = wrap('wally_psbt_has_input_required_lockheight', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_has_input_required_locktime = wrap('wally_psbt_has_input_required_locktime', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
 export const psbt_has_output_amount = wrap('wally_psbt_has_output_amount', [T.OpaqueRef, T.Int32, T.DestPtr(T.Int32)]);
