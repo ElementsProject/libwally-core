@@ -5994,7 +5994,17 @@ PSBT_FIELD(output, redeem_script, PSBT_0)
 PSBT_FIELD(output, witness_script, PSBT_0)
 PSBT_GET_M(output, keypath)
 PSBT_GET_M(output, unknown)
-PSBT_GET_I(output, amount, uint64_t, PSBT_2)
+int wally_psbt_get_output_amount(const struct wally_psbt *psbt, size_t index,
+                                 uint64_t *written)
+{
+    struct wally_psbt_output *p = psbt_get_output(psbt, index);
+    if (written) *written = 0;
+    if (!p || !written || psbt->version != PSBT_2 || !p->has_amount)
+        return WALLY_EINVAL;
+    *written = p->amount;
+    return WALLY_OK;
+}
+
 int wally_psbt_has_output_amount(const struct wally_psbt *psbt, size_t index, size_t *written) {
     struct wally_psbt_output *p = psbt_get_output(psbt, index);
     if (written) *written = 0;

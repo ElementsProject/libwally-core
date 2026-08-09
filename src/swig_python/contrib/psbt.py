@@ -53,9 +53,12 @@ class PSBTTests(unittest.TestCase):
             self._throws(func, psbt, 0, null_value)
         self._try_invalid(func, psbt, valid_value)
 
-    def _try_get_set_i(self, setfn, clearfn, getfn, psbt, valid_value, invalid_value=None, mandatory=False):
+    def _try_get_set_i(self, setfn, clearfn, getfn, hasfn, psbt,
+                       valid_value, invalid_value=None, mandatory=False):
         self._try_invalid(setfn, psbt, valid_value)
         setfn(psbt, 0, valid_value) # Set
+        if hasfn:
+            self.assertTrue(hasfn(psbt, 0))
         self._round_trip(psbt)
         self._try_invalid(getfn, psbt)
         ret = getfn(psbt, 0) # Get
@@ -63,6 +66,9 @@ class PSBTTests(unittest.TestCase):
         if clearfn:
             self._try_invalid(clearfn, psbt)
             clearfn(psbt, 0)
+            if hasfn:
+                self.assertFalse(hasfn(psbt, 0))
+                self._throws(getfn, psbt, 0)
             if mandatory:
                 setfn(psbt, 0, valid_value) # Set Again
             else:
@@ -195,7 +201,7 @@ class PSBTTests(unittest.TestCase):
             # txout has blinded value/asset, expect no values
             # and the commitments set in the PSET
             self.assertEqual(psbt_has_output_amount(pset2, 0), 0)
-            self.assertEqual(psbt_get_output_amount(pset2, 0), 0)
+            self._throws(psbt_get_output_amount, pset2, 0)
             self.assertEqual(psbt_get_output_value_commitment_len(pset2, 0), len(blinded_value))
             self.assertEqual(psbt_get_output_value_commitment(pset2, 0), blinded_value)
             self.assertEqual(psbt_get_output_script(pset2, 0), script)
@@ -504,7 +510,7 @@ class PSBTTests(unittest.TestCase):
                                 p, dummy_unknowns, dummy_unknown_key)
             psbt_set_input_signatures(p, 0, empty_signatures)
             self._try_get_set_i(psbt_set_input_sighash, None,
-                                psbt_get_input_sighash, p, 0xff) # FIXME 0x100 as invalid_value should fail
+                                psbt_get_input_sighash, None, p, 0xff) # FIXME 0x100 as invalid_value should fail
             for sig_type in [dummy_sig_tap_default, dummy_sig_tap_all, dummy_sig_tap_single]:
                 psbt_set_input_taproot_signature(p, 0, sig_type)
                 self.assertEqual(psbt_get_input_taproot_signature(p, 0), sig_type)
@@ -542,9 +548,9 @@ class PSBTTests(unittest.TestCase):
 
         # V2: Output Index
         self._throws(psbt_set_input_output_index, psbt, 0, 1234) # Non v2 PSBT
-        self._try_get_set_i(psbt_set_input_output_index,
-                            None,
-                            psbt_get_input_output_index, psbt2, 1234)
+        self._try_get_set_i(psbt_set_input_output_index, None,
+                            psbt_get_input_output_index, None,
+                            psbt2, 1234)
         # For v0 PSBTs, fetching returns the value from the global tx
         out_idx = tx_get_input_index(global_tx, 0)
         self.assertEqual(psbt_get_input_output_index(psbt, 0), out_idx)
@@ -552,9 +558,9 @@ class PSBTTests(unittest.TestCase):
         # V2: Sequence
         self._throws(psbt_set_input_sequence, psbt, 0, 1234) # Non v2 PSBT
         self._throws(psbt_clear_input_sequence, psbt, 0)     # Non v2 PSBT
-        self._try_get_set_i(psbt_set_input_sequence,
-                            psbt_clear_input_sequence,
-                            psbt_get_input_sequence, psbt2, 1234)
+        self._try_get_set_i(psbt_set_input_sequence, psbt_clear_input_sequence,
+                            psbt_get_input_sequence, None,
+                            psbt2, 1234)
         # If no sequence is present, it defaults to final (0xffffffff)
         psbt_clear_input_sequence(psbt2, 0)
         self.assertEqual(psbt_get_input_sequence(psbt2, 0), 0xffffffff)
@@ -573,7 +579,7 @@ class PSBTTests(unittest.TestCase):
             self._throws(g_fn, psbt, 0)     # Non v2 PSBT
             self._throws(h_fn, psbt, 0)     # Non v2 PSBT
             self._throws(c_fn, psbt, 0)     # Non v2 PSBT
-            self._try_get_set_i(s_fn, c_fn, g_fn, psbt2, v)
+            self._try_get_set_i(s_fn, c_fn, g_fn, h_fn, psbt2, v)
 
         #
         # Inputs: PSET
@@ -587,7 +593,7 @@ class PSBTTests(unittest.TestCase):
                 (psbt_set_input_pegin_amount, psbt_get_input_pegin_amount)]:
                 self._throws(setfn, psbt, 0, 1234) # Non v2 PSBT
                 self._throws(getfn, psbt, 0)       # Non v2 PSBT
-                self._try_get_set_i(setfn, None, getfn, pset2, 1234)
+                self._try_get_set_i(setfn, None, getfn, None, pset2, 1234)
 
             # Explicit amount
             self._throws(psbt_clear_input_amount, psbt, 0) # Non v2 PSBT
@@ -687,9 +693,9 @@ class PSBTTests(unittest.TestCase):
         self._throws(psbt_has_output_amount, psbt2, 1)        # Invalid Index
         self.assertEqual(psbt_has_output_amount(psbt2, 0), 1) # Non v2 PSBT
         self._throws(psbt_clear_output_amount, psbt, 0)       # Non v2 PSBT
-        self._try_get_set_i(psbt_set_output_amount,
-                            psbt_clear_output_amount,
-                            psbt_get_output_amount, psbt2, 1234, mandatory=True)
+        self._try_get_set_i(psbt_set_output_amount, psbt_clear_output_amount,
+                            psbt_get_output_amount, psbt_has_output_amount,
+                            psbt2, 1234, mandatory=True)
 
         # V2: Script
         self._throws(psbt_set_output_script, psbt, 0, dummy_bytes) # Non v2 PSBT
@@ -711,7 +717,7 @@ class PSBTTests(unittest.TestCase):
                 (psbt_set_output_blinder_index, psbt_get_output_blinder_index)]:
                 self._throws(setfn, psbt, 0, 1234) # Non v2 PSBT
                 self._throws(getfn, psbt, 0)       # Non v2 PSBT
-                self._try_get_set_i(setfn, None, getfn, pset2, 1234)
+                self._try_get_set_i(setfn, None, getfn, None, pset2, 1234)
 
             cases = [
                 ('value_commitment',               dummy_blind_value, dummy_blind_asset),
